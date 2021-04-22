@@ -1,3 +1,4 @@
+
 package com.atakmap.android.fires.bridge;
 
 /**
@@ -5,9 +6,6 @@ package com.atakmap.android.fires.bridge;
  */
 public class PreferenceConstants {
 
-
     public static final String VMF_MODE_PREFERENCE = "nine_line_vmf_mode";
-
-
 
 }

@@ -8,7 +8,7 @@
 #include "renderer/GLES20FixedPipeline.h"
 #include "renderer/GLTriangulate.h"
 #include "renderer/GLTriangulate2.h"
-#include "renderer/core/GLMapView2.h"
+#include "renderer/core/GLGlobeBase.h"
 #include "renderer/feature/GLBatchPolygon3.h"
 #include "renderer/feature/GLGeometry.h"
 
@@ -167,7 +167,7 @@ TAKErr GLBatchPolygon3::setGeometryImpl(const atakmap::feature::Geometry &geom) 
     return TE_Ok;
 }
 
-TAKErr GLBatchPolygon3::draw(const GLMapView2 &view, const int render_pass, const int vertices_type) NOTHROWS
+TAKErr GLBatchPolygon3::draw(const GLGlobeBase &view, const int render_pass, const int vertices_type) NOTHROWS
 {
     TAKErr code;
 
@@ -209,7 +209,7 @@ TAKErr GLBatchPolygon3::draw(const GLMapView2 &view, const int render_pass, cons
     return code;
 }
 
-TAKErr GLBatchPolygon3::drawFillTriangulate(const GLMapView2 &view, const float *v, const int size) NOTHROWS
+TAKErr GLBatchPolygon3::drawFillTriangulate(const GLGlobeBase &view, const float *v, const int size) NOTHROWS
 {
     GLES20FixedPipeline::getInstance()->glEnableClientState(GLES20FixedPipeline::ClientState::CS_GL_VERTEX_ARRAY);
     glEnable(GL_BLEND);
@@ -229,7 +229,7 @@ TAKErr GLBatchPolygon3::drawFillTriangulate(const GLMapView2 &view, const float 
     return TE_Ok;
 }
 
-TAKErr GLBatchPolygon3::drawFillConvex(const GLMapView2 &view, const float *v, const int size) NOTHROWS
+TAKErr GLBatchPolygon3::drawFillConvex(const GLGlobeBase &view, const float *v, const int size) NOTHROWS
 {
     GLES20FixedPipeline::getInstance()->glEnableClientState(GLES20FixedPipeline::ClientState::CS_GL_VERTEX_ARRAY);
     glEnable(GL_BLEND);
@@ -248,7 +248,7 @@ TAKErr GLBatchPolygon3::drawFillConvex(const GLMapView2 &view, const float *v, c
     return TE_Ok;
 }
 
-TAKErr GLBatchPolygon3::drawFillStencil(const GLMapView2 &view, const float *v, const int size) NOTHROWS
+TAKErr GLBatchPolygon3::drawFillStencil(const GLGlobeBase &view, const float *v, const int size) NOTHROWS
 {
     GLES20FixedPipeline::getInstance()->glEnableClientState(GLES20FixedPipeline::ClientState::CS_GL_VERTEX_ARRAY);
 
@@ -281,7 +281,7 @@ TAKErr GLBatchPolygon3::drawFillStencil(const GLMapView2 &view, const float *v, 
     return TE_Ok;
 }
 
-TAKErr GLBatchPolygon3::batchImpl(const GLMapView2 &view, const int render_pass, GLRenderBatch2 &batch, const int vertices_type, const float *v) NOTHROWS
+TAKErr GLBatchPolygon3::batchImpl(const GLGlobeBase &view, const int render_pass, GLRenderBatch2 &batch, const int vertices_type, const float *v) NOTHROWS
 {
     TAKErr code(TE_Ok);
     if (this->fillColorA > 0)

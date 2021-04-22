@@ -3,11 +3,14 @@
 #include <algorithm>
 #include "util/MathUtils.h"
 
+using namespace TAK::Engine::Renderer::Raster::TileReader;
+
 using namespace TAK::Engine;
 using namespace TAK::Engine::Util;
 using namespace TAK::Engine::Core;
 using namespace TAK::Engine::Raster;
-using namespace TAK::Engine::Renderer::Raster::TileReader;
+using namespace TAK::Engine::Raster::TileReader;
+using namespace TAK::Engine::Renderer::Core;
 
 using atakmap::math::Rectangle;
 
@@ -43,7 +46,7 @@ namespace {
         }
     }
 
-    TAKErr getRasterROI2Impl(bool *ret, Rectangle<double> &roi, const Renderer::Core::GLMapView2 &view, double viewNorth, double viewWest,
+    TAKErr getRasterROI2Impl(bool *ret, Rectangle<double> &roi, const Renderer::Core::GLGlobeBase &view, double viewNorth, double viewWest,
                              double viewSouth, double viewEast, int64_t rasterWidth, int64_t rasterHeight, const DatasetProjection2 &proj,
                              GeoPoint2 ulG_R, GeoPoint2 urG_R, GeoPoint2 lrG_R, GeoPoint2 llG_R, double unwrap)
     {
@@ -116,11 +119,133 @@ namespace {
         return code;
     }
 
+
+
+    struct PrefetchedInitializer : public GLQuadTileNode2::Initializer
+    {
+    public :
+        PrefetchedInitializer(const std::shared_ptr<TileReader2> &reader_) NOTHROWS :
+            reader(reader_)
+        {}
+
+        virtual TAKErr init(std::shared_ptr<TileReader2> &value,
+                            DatasetProjection2Ptr &imprecise,
+                            DatasetProjection2Ptr &precise, const ImageInfo *info,
+                            TileReaderFactory2Options &readerOpts) const
+        {
+            TAKErr code(TE_Ok);
+            if (!reader)
+                return TE_Err;
+            value = reader;
+            code = DatasetProjection2_create(imprecise, info->srid, info->width, info->height, info->upperLeft, info->upperRight, info->lowerRight, info->lowerLeft);
+            TE_CHECKRETURN_CODE(code);
+            return code;
+        }
+    private :
+        mutable std::shared_ptr<TileReader2> reader;
+    };
 }
 
 
+GLTiledMapLayer2::GLTiledMapLayer2(const atakmap::raster::ImageDatasetDescriptor& desc_) NOTHROWS :
+    GLTiledMapLayer2(desc_, TileReader2Ptr(nullptr, nullptr))
+{}
+GLTiledMapLayer2::GLTiledMapLayer2(const atakmap::raster::ImageDatasetDescriptor& desc_, TAK::Engine::Raster::TileReader::TileReader2Ptr&& prealloced_) NOTHROWS :
+    desc(nullptr, nullptr),
+    prealloced(std::move(prealloced_)),
+    impl(nullptr, nullptr),
+    initialized(false)
+{
+    desc_.clone(desc);
+}
+GLTiledMapLayer2::~GLTiledMapLayer2() NOTHROWS
+{}
+const char* GLTiledMapLayer2::getLayerUri() const NOTHROWS
+{
+    return desc->getURI();
+}
+const atakmap::raster::DatasetDescriptor* GLTiledMapLayer2::getInfo() const NOTHROWS
+{
+    return desc.get();
+}
+Util::TAKErr GLTiledMapLayer2::getControl(void** ctrl, const char* type) const NOTHROWS
+{
+    return TE_InvalidArg;
+}
+void GLTiledMapLayer2::draw(const GLGlobeBase& view, const int renderPass) NOTHROWS
+{
+    if (!initialized) {
+        std::shared_ptr<TileReader2> reader(prealloced);
+        if (!reader) {
+            TileReader2Ptr ureader(nullptr, nullptr);
+            if (TileReaderFactory2_create(ureader, getLayerUri()) == TE_Ok)
+                reader = std::move(ureader);
+        }
+        if (reader) {
+            const auto& image = static_cast<const atakmap::raster::ImageDatasetDescriptor&>(*desc);
+            ImageInfo info;
+            info.srid = image.getSpatialReferenceID();
+            info.width = (int)image.getWidth();
+            info.height = (int)image.getHeight();
+            info.maxGsd = image.getMaxResolution();
+            info.path = image.getURI();
+            info.type = image.getImageryType();
+            info.upperLeft.latitude = image.getUpperLeft().latitude;
+            info.upperLeft.longitude = image.getUpperLeft().longitude;
+            info.upperRight.latitude = image.getUpperRight().latitude;
+            info.upperRight.longitude = image.getUpperRight().longitude;
+            info.lowerRight.latitude = image.getLowerRight().latitude;
+            info.lowerRight.longitude = image.getLowerRight().longitude;
+            info.lowerLeft.latitude = image.getLowerLeft().latitude;
+            info.lowerLeft.longitude = image.getLowerLeft().longitude;
+
+            TileReaderFactory2Options readerOpts;
+            readerOpts.cacheUri = desc->getExtraData("offlineCache");
+            GLQuadTileNode2::Options nodeOpts;
+            nodeOpts.levelTransitionAdjustment = 0.5;
+            // if multi-res, child copy does not resolve; read actual tile
+            {
+                bool b;
+                if (reader->isMultiResolution(&b) == TE_Ok)
+                    nodeOpts.childTextureCopyResolvesParent = !b;
+            }
+            // progressive load if streaming
+            nodeOpts.progressiveLoad = image.isRemote();
+            nodeOpts.textureCopyEnabled = true;
+            nodeOpts.textureBorrowEnabled = true;
+
+            PrefetchedInitializer init(reader);
+            GLQuadTileNode2::create(impl, &view.context, &info, readerOpts, nodeOpts, init);
+        }
+        initialized = true;
+    }
+
+    if (impl)
+        impl->draw(view, renderPass);
+}
+void GLTiledMapLayer2::release() NOTHROWS
+{
+    if (impl) {
+        impl->release();
+        impl.reset();
+        initialized = false;
+    }
+}
+int GLTiledMapLayer2::getRenderPass() NOTHROWS
+{
+    return GLGlobeBase::Surface;
+}
+void GLTiledMapLayer2::start() NOTHROWS
+{
+    impl->start();
+}
+void GLTiledMapLayer2::stop() NOTHROWS
+{
+    impl->stop();
+}
+
 TAKErr TAK::Engine::Renderer::Raster::TileReader::GLTiledMapLayer2_getRasterROI2(Rectangle<double> (&rois)[2], size_t *numROIs,
-    const Renderer::Core::GLMapView2 &view, int64_t rasterWidth, int64_t rasterHeight,
+    const Renderer::Core::GLGlobeBase &view, int64_t rasterWidth, int64_t rasterHeight,
     const DatasetProjection2 &proj, const GeoPoint2 &ulG_R,
     const GeoPoint2 &urG_R, const GeoPoint2 &lrG_R,
     const GeoPoint2 &llG_R, double unwrap, double padding)
@@ -128,24 +253,24 @@ TAKErr TAK::Engine::Renderer::Raster::TileReader::GLTiledMapLayer2_getRasterROI2
     TAKErr code(TE_Ok);
     int retval = 0;
     bool implRetval;
-    if (view.crossesIDL) {
+    if (view.renderPass->crossesIDL) {
         // west of IDL
-        code = getRasterROI2Impl(&implRetval, rois[retval], view, view.northBound + padding, view.westBound - padding, view.southBound - padding, 180.0,
+        code = getRasterROI2Impl(&implRetval, rois[retval], view, view.renderPass->northBound + padding, view.renderPass->westBound - padding, view.renderPass->southBound - padding, 180.0,
                                  rasterWidth, rasterHeight, proj, ulG_R, urG_R, lrG_R, llG_R, unwrap);
         TE_CHECKRETURN_CODE(code);
         if (implRetval) {
             retval++;
         }
         // east of IDL
-        code = getRasterROI2Impl(&implRetval, rois[retval], view, view.northBound + padding, -180.0, view.southBound - padding,
-                                 view.eastBound + padding, rasterWidth, rasterHeight, proj, ulG_R, urG_R, lrG_R, llG_R, unwrap);
+        code = getRasterROI2Impl(&implRetval, rois[retval], view, view.renderPass->northBound + padding, -180.0, view.renderPass->southBound - padding,
+                                 view.renderPass->eastBound + padding, rasterWidth, rasterHeight, proj, ulG_R, urG_R, lrG_R, llG_R, unwrap);
         TE_CHECKRETURN_CODE(code);
         if (implRetval) {
             retval++;
         }
     } else {
-        code = getRasterROI2Impl(&implRetval, rois[retval], view, view.northBound + padding, view.westBound - padding,
-                                 view.southBound - padding, view.eastBound + padding, rasterWidth, rasterHeight, proj, ulG_R, urG_R, lrG_R,
+        code = getRasterROI2Impl(&implRetval, rois[retval], view, view.renderPass->northBound + padding, view.renderPass->westBound - padding,
+                                 view.renderPass->southBound - padding, view.renderPass->eastBound + padding, rasterWidth, rasterHeight, proj, ulG_R, urG_R, lrG_R,
                                  llG_R, unwrap);
         TE_CHECKRETURN_CODE(code);
         if (implRetval) {

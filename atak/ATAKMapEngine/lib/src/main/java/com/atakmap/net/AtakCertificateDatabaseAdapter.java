@@ -14,6 +14,7 @@ import com.atakmap.database.QueryIface;
 import com.atakmap.database.StatementIface;
 import com.atakmap.database.impl.DatabaseImpl;
 import com.atakmap.filesystem.HashingUtils;
+import com.atakmap.annotations.ModifierApi;
 
 import java.io.File;
 import java.net.InetAddress;
@@ -25,7 +26,11 @@ import java.util.concurrent.CountDownLatch;
 
 /**
  * Class responsible for the local calls similar to {@link AtakCertificateDatabaseAdapter}.
+ *
  */
+@ModifierApi(since = "4.3", target = "4.6", modifiers = {
+        "final"
+})
 public final class AtakCertificateDatabaseAdapter implements AtakCertificateDatabaseIFace {
 
     /**
@@ -51,7 +56,11 @@ public final class AtakCertificateDatabaseAdapter implements AtakCertificateData
      */
     public void dispose() {
         synchronized (lock) {
-            certDb.close();
+            if (certDb != null) {
+                try {
+                    certDb.close();
+                } catch (Exception e) { }
+            }
         }
     }
 
@@ -63,6 +72,7 @@ public final class AtakCertificateDatabaseAdapter implements AtakCertificateData
     public void clear(File databaseFile) {
         synchronized (lock) {
             FileSystemUtils.deleteFile(databaseFile);
+            certDb = null;
         }
     }
 
@@ -338,6 +348,9 @@ public final class AtakCertificateDatabaseAdapter implements AtakCertificateData
      * @return true if successful, false otherwise.
      */
     private boolean saveCertificate(String type, byte[] cert, String hash) {
+        if(this.certDb == null)
+            return false;
+
         byte[] existing = getCertificate(type);
         if (existing == null || existing.length == 0) {
             StatementIface stmt = null;
@@ -454,6 +467,9 @@ public final class AtakCertificateDatabaseAdapter implements AtakCertificateData
      * @return The <code>byte[]</code> of the certificate of the given type, null if doesn't exist.
      */
     private byte[] getCertificateForServer(String type, String server) {
+        if(this.certDb == null)
+            return null;
+
         String sql = "SELECT certificate FROM server_certificates WHERE type = ? AND server = ?;";
         QueryIface query = null;
         try {
@@ -559,6 +575,8 @@ public final class AtakCertificateDatabaseAdapter implements AtakCertificateData
      * @return True if successful, false otherwise.
      */
     private boolean deleteCertificateForServer(String type, String server) {
+        if(this.certDb == null)
+            return false;
         String sql = "DELETE FROM server_certificates WHERE type = ? AND server = ?;";
         StatementIface sqlStatement = null;
         try {

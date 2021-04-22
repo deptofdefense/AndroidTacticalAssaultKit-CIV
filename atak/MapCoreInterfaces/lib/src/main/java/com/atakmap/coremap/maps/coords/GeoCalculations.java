@@ -552,6 +552,32 @@ public final class GeoCalculations {
                 distance, 0);
     }
 
+    public static GeoPoint pointAtDistance(GeoPoint src, GeoPoint dst,
+            double weight) {
+        final double srcLat = src.getLatitude();
+        final double srcLng = src.getLongitude();
+        final double dstLat = dst.getLatitude();
+        final double dstLng = dst.getLongitude();
+
+        // interpolate the surface location
+        final GeoPoint surface = pointAtDistance(
+                srcLat,
+                srcLng,
+                bearing(srcLat, srcLng, dstLat, dstLng, 0),
+                distance(srcLat, srcLng, 0, dstLat, dstLng, 0, 0) * weight,
+                0);
+
+        if (!src.isAltitudeValid() && !dst.isAltitudeValid())
+            return surface;
+
+        // interpolate the altitude
+        double srcAlt = src.isAltitudeValid() ? src.getAltitude() : 0d;
+        double dstAlt = dst.isAltitudeValid() ? dst.getAltitude() : 0d;
+
+        return new GeoPoint(surface.getLatitude(), surface.getLongitude(),
+                srcAlt + (dstAlt - srcAlt) * weight);
+    }
+
     /**
      * Computes the inclination from one point to another.
      * @param start the starting point

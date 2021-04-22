@@ -39,6 +39,8 @@ namespace TAK {
                         int patchesGridOffsetY;
                         int numPatchesX;
                         int numPatchesY;
+
+                        int lastPumpDrawn;
     
                        public:
                         const TAK::Engine::Raster::TileMatrix::TileMatrix::ZoomLevel info;
@@ -62,11 +64,11 @@ namespace TAK {
 
                         /*********************************************************************/
                         // GLMapBatchable2
-                        Util::TAKErr batch(const Renderer::Core::GLMapView2 &view, const int renderPass, TAK::Engine::Renderer::GLRenderBatch2 &batch) NOTHROWS override;
+                        Util::TAKErr batch(const Renderer::Core::GLGlobeBase &view, const int renderPass, TAK::Engine::Renderer::GLRenderBatch2 &batch) NOTHROWS override;
 
                         /*********************************************************************/
                         // GLMapRenderable2
-                        void draw(const Renderer::Core::GLMapView2 &view, const int renderPass) NOTHROWS override;
+                        void draw(const Renderer::Core::GLGlobeBase &view, const int renderPass) NOTHROWS override;
                         void release() NOTHROWS override;
                         int getRenderPass() NOTHROWS override;
                         void start() NOTHROWS override;
@@ -87,7 +89,7 @@ namespace TAK {
                          * @param maxY
                          */
                         void getTiles(std::set<std::shared_ptr<GLTile>> *tiles, double minX, double minY, double maxX, double maxY);
-                        bool release(bool unusedOnly);
+                        bool release(bool unusedOnly, int renderPump);
 
                     };
                 }

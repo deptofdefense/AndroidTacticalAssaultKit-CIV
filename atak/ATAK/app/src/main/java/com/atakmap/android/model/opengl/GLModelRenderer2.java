@@ -4,6 +4,7 @@ package com.atakmap.android.model.opengl;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.opengl.GLES30;
 import android.os.SystemClock;
 
 import com.atakmap.android.data.URIContentManager;
@@ -199,7 +200,13 @@ public class GLModelRenderer2 implements GLMapRenderable2, ModelHitTestControl {
             }
         }
 
+        view.scratch.depth.save();
+        if (view.currentScene.drawTilt == 0d) {
+            GLES30.glDisable(GLES30.GL_DEPTH_TEST);
+            GLES30.glDepthMask(false);
+        }
         glpoint.draw(view);
+        view.scratch.depth.restore();
 
         if (_verts != null && progressVisible) {
 
@@ -688,7 +695,7 @@ public class GLModelRenderer2 implements GLMapRenderable2, ModelHitTestControl {
         if (!exists)
             return false;
 
-        try(FileInputStream fis = IOProviderFactory.getInputStream(f)) {
+        try (FileInputStream fis = IOProviderFactory.getInputStream(f)) {
             props.load(fis);
             return true;
         } catch (IOException e) {
@@ -704,7 +711,7 @@ public class GLModelRenderer2 implements GLMapRenderable2, ModelHitTestControl {
                 Log.w(TAG,
                         "Could not create the directory: " + f.getParentFile());
 
-        try(OutputStream os = IOProviderFactory.getOutputStream(f)) {
+        try (OutputStream os = IOProviderFactory.getOutputStream(f)) {
             props.store(os, null);
             return true;
         } catch (IOException e) {

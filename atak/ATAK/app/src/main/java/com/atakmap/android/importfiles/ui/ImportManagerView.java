@@ -28,6 +28,7 @@ import com.atakmap.android.importfiles.task.ImportFileTask;
 import com.atakmap.android.importfiles.task.ImportFilesTask;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.ATAKActivity;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -215,12 +216,9 @@ public class ImportManagerView extends BroadcastReceiver implements
     private void importLocalFile() {
         final ImportManagerFileBrowser importView = ImportManagerFileBrowser
                 .inflate(_mapView);
-
-        final String _lastDirectory = defaultPrefs.getString("lastDirectory",
-                Environment.getExternalStorageDirectory().getPath());
-
         importView.setTitle(R.string.select_files_to_import);
-        importView.setStartDirectory(_lastDirectory);
+        importView.setStartDirectory(
+                ATAKUtilities.getStartDirectory(_mapView.getContext()));
         importView.setExtensionTypes(ImportFilesTask.getSupportedExtensions());
         AlertDialog.Builder b = new AlertDialog.Builder(_mapView.getContext());
         b.setView(importView);

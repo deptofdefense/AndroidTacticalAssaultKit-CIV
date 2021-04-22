@@ -1,4 +1,4 @@
-#include "AsyncBitmapLoader2.h"
+#include "renderer/AsyncBitmapLoader2.h"
 
 
 #include "renderer/BitmapFactory2.h"
@@ -18,19 +18,25 @@ namespace
 {
     FileProtocolHandler fileHandler;
     ZipProtocolHandler zipHandler;
+
+    bool registerHandlers() NOTHROWS
+    {
+        AsyncBitmapLoader2::registerProtocolHandler("file", &fileHandler, "LOCAL");
+        AsyncBitmapLoader2::registerProtocolHandler("zip", &zipHandler, "LOCAL_COMPRESSED");
+        AsyncBitmapLoader2::registerProtocolHandler("arc", &zipHandler, "LOCAL_COMPRESSED");
+        return true;
+    }
 }
 
 RWMutex AsyncBitmapLoader2::decoderHandlerMutex;
-std::map<std::string, AsyncBitmapLoader2::ProtocolHandlerEntry> AsyncBitmapLoader2::protoHandlers;
+std::map<std::string, std::string> AsyncBitmapLoader2::protoSchemeQueueHints;
 
 AsyncBitmapLoader2::AsyncBitmapLoader2(const std::size_t threadCount, bool notifyThreadsOnDestruct) NOTHROWS :
     threadCount(threadCount),
     notifyThreadsOnDestruct(notifyThreadsOnDestruct),
     shouldTerminate(false)
 {
-    registerProtocolHandler("file", &fileHandler, "LOCAL");
-    registerProtocolHandler("zip", &zipHandler, "LOCAL_COMPRESSED");
-    registerProtocolHandler("arc", &zipHandler, "LOCAL_COMPRESSED");
+    static bool rh = registerHandlers();
 }
 
 AsyncBitmapLoader2::~AsyncBitmapLoader2() NOTHROWS
@@ -44,9 +50,6 @@ AsyncBitmapLoader2::~AsyncBitmapLoader2() NOTHROWS
     for (iter = queues.begin(); iter != queues.end(); iter++)
         delete iter->second;
     queues.clear();
-
-    unregisterProtocolHandler(zipHandler);
-    unregisterProtocolHandler(fileHandler);
 }
 
 
@@ -71,23 +74,21 @@ TAKErr AsyncBitmapLoader2::loadBitmapUri(Task &task, const char *curi) NOTHROWS
     }
 
     std::string scheme = uri.substr(0, cloc);
-    std::map<std::string, ProtocolHandlerEntry>::iterator handler;
-
-    handler = protoHandlers.find(scheme);
-    if (handler == protoHandlers.end()) {
+    if (!ProtocolHandler_isHandlerRegistered(scheme.c_str())) {
         Logger::log(Logger::Error, "no protocol handler found: %s", scheme.c_str());
         return TE_Err;
     }
 
 
-    if (!ensureThread(handler->second.queueHint.c_str())) {
+    std::string queueHint = protoSchemeQueueHints[scheme];
+    if (!ensureThread(queueHint.c_str())) {
         // Already in shutdown mode - don't allow the job
         return TE_IllegalState;
     }
 
     task.reset(new FutureTask<std::shared_ptr<Bitmap2>>(decodeUriFn, (void*)new std::string(uri)));
 
-    Queue *queue = queues[handler->second.queueHint];
+    Queue *queue = queues[queueHint];
     Lock queueLock(queue->jobMutex);
     queue->jobQueue.push_back(Task(task));
     queue->jobCond.signal(queueLock);
@@ -116,39 +117,34 @@ TAKErr AsyncBitmapLoader2::loadBitmapTask(const Task &task, const char *queueHin
 
 TAKErr AsyncBitmapLoader2::registerProtocolHandler(const char *scheme, ProtocolHandler *handler, const char *queueHint) NOTHROWS
 {
+    TAKErr code(TE_Ok);
     if (!scheme || !handler)
         return TE_InvalidArg;
     WriteLock lock(decoderHandlerMutex);
-    protoHandlers[scheme] = ProtocolHandlerEntry{ handler, std::string(queueHint ? queueHint : "") };
-    return TE_Ok;
+    code = ProtocolHandler_registerHandler(scheme, *handler);
+    TE_CHECKRETURN_CODE(code);
+    protoSchemeQueueHints[scheme] = std::string(queueHint ? queueHint : "");
+    return code;
 }
 
 TAKErr AsyncBitmapLoader2::unregisterProtocolHandler(const char *scheme) NOTHROWS
 {
+    TAKErr code(TE_Ok);
     if (!scheme)
         return TE_InvalidArg;
     WriteLock lock(decoderHandlerMutex);
-    if (protoHandlers.find(scheme) == protoHandlers.end())
-        return TE_InvalidArg;
-    protoHandlers.erase(scheme);
-    return TE_Ok;
+    code = ProtocolHandler_unregisterHandler(scheme);
+    TE_CHECKRETURN_CODE(code);
+    protoSchemeQueueHints.erase(scheme);
+    return code;
 }
 TAKErr AsyncBitmapLoader2::unregisterProtocolHandler(const ProtocolHandler &handler) NOTHROWS
 {
     TAKErr code(TE_Ok);
     WriteLock lock(decoderHandlerMutex);
+    code = ProtocolHandler_unregisterHandler(handler);
     TE_CHECKRETURN_CODE(code);
-    auto entry = protoHandlers.begin();
-    code = TE_InvalidArg;
-    while(entry != protoHandlers.end()) {
-        if (entry->second.handler != &handler) {
-            entry++;
-        } else {
-            entry = protoHandlers.erase(entry);
-            code = TE_Ok;
-        }
-    }
-
+    // XXX - won't erase the scheme hint -- but since no handler is registered, moot
     return code;
 }
 
@@ -227,14 +223,9 @@ std::shared_ptr<Bitmap2> AsyncBitmapLoader2::decodeUriFn(void *opaque)
         throw std::invalid_argument("no protocol defined");
 
     std::string scheme = uri->substr(0, cloc);
-    std::map<std::string, ProtocolHandlerEntry>::iterator handler;
-
-    handler = protoHandlers.find(scheme);
-    if (handler == protoHandlers.end())
-        throw std::out_of_range("no protocol handler found");
 
     DataInput2Ptr ctx(nullptr, nullptr);
-    code = handler->second.handler->handleURI(ctx, uri->c_str());
+    code = ProtocolHandler_handleURI(ctx, uri->c_str());
     if (code != TE_Ok)
         throw std::runtime_error("failed to handle URI");
 

@@ -38,11 +38,6 @@ namespace TAK
             private :
                 struct Queue;
 
-                struct ProtocolHandlerEntry
-                {
-                    Util::ProtocolHandler *handler;
-                    std::string queueHint;
-                };
             public :
                 // Normally deleting the loader will wait on queue threads to exit, but
                 // specifically on Windows, if the thread has exited during process shutdown
@@ -75,7 +70,7 @@ namespace TAK
                 bool ensureThread(const char *queue);
             private :
                 static Thread::RWMutex decoderHandlerMutex;
-                static std::map<std::string, ProtocolHandlerEntry> protoHandlers;
+                static std::map<std::string, std::string> protoSchemeQueueHints;
             private :
                 const std::size_t threadCount;
                 const bool notifyThreadsOnDestruct;

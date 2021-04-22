@@ -43,28 +43,21 @@ bool AABB::contains(const Point2<double> &point) const NOTHROWS
 //Most notably https://gist.github.com/aadnk/7123926 as it returns the intersection point.
 bool AABB::intersect(Point2<double> *isectPoint, const Ray2<double> &ray) const
 {
-    Point2<double> invDir = Point2<double> (1.0 / ray.direction.x, 
-        1.0 / ray.direction.y, 
-        1.0 / ray.direction.z);
-
-    bool signDirX = invDir.x < 0;
-    bool signDirY = invDir.y < 0;
-    bool signDirZ = invDir.z < 0;
+    const std::size_t signDirX = ray.direction.x < 0 ? 1u : 0u;
+    const std::size_t signDirY = ray.direction.y < 0 ? 1u : 0u;
+    const std::size_t signDirZ = ray.direction.z < 0 ? 1u : 0u;
 
     const Point2<double> minPt(minX, minY, minZ);
     const Point2<double> maxPt(maxX, maxY, maxZ);
 
+    const Point2<double> pts[2u] { minPt, maxPt };
+
     //This differs from Amy et Al's algorithm, but it does save making the int[3] on creation of the
     //AABB object. If it's slower it may be worth swapping over?
-    Point2<double> bbox = signDirX ? maxPt : minPt;
-    double tmin = (bbox.x - ray.origin.x) * invDir.x;
-    bbox = signDirX ? minPt : maxPt;
-    double tmax = (bbox.x - ray.origin.x) * invDir.x;
-    bbox = signDirY ? maxPt : minPt;
-    double tymin = (bbox.y - ray.origin.y) * invDir.y;
-    bbox = signDirY ? minPt : maxPt;
-    double tymax = (bbox.y - ray.origin.y) * invDir.y;
-
+    double tmin = (pts[signDirX].x - ray.origin.x) / ray.direction.x;
+    double tmax = (pts[1u-signDirX].x - ray.origin.x) / ray.direction.x;
+    double tymin = (pts[signDirY].y - ray.origin.y) / ray.direction.y;
+    double tymax = (pts[1u-signDirY].y - ray.origin.y) / ray.direction.y;
     if ((tmin > tymax) || (tymin > tymax))
     {
         return false;
@@ -78,10 +71,8 @@ bool AABB::intersect(Point2<double> *isectPoint, const Ray2<double> &ray) const
         tmax = tymax;
     }
 
-    bbox = signDirZ ? maxPt : minPt;
-    double tzmin = (bbox.z - ray.origin.z) * invDir.z;
-    bbox = signDirZ ? minPt : maxPt;
-    double tzmax = (bbox.z - ray.origin.z) * invDir.z;
+    double tzmin = (pts[signDirZ].z - ray.origin.z) / ray.direction.z;
+    double tzmax = (pts[1u-signDirZ].z - ray.origin.z) / ray.direction.z;
     if ((tmin > tzmax) || (tzmin > tmax)) 
     {
         return false;

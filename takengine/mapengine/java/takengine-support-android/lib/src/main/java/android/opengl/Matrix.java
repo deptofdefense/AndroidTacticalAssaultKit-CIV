@@ -141,9 +141,31 @@ public class Matrix {
      * or lhsMatOffset + 16 > lhsMat.length or
      * rhsVecOffset + 4 > rhsVec.length.
      */
-    public static native void multiplyMV(float[] resultVec,
+    public static void multiplyMV(float[] resultVec,
                                          int resultVecOffset, float[] lhsMat, int lhsMatOffset,
-                                         float[] rhsVec, int rhsVecOffset);
+                                         float[] rhsVec, int rhsVecOffset) {
+        // XXX - not sure if column major or row major
+        resultVec[resultVecOffset+0] =
+                lhsMat[lhsMatOffset+0] * rhsVec[rhsVecOffset+0] +
+                lhsMat[lhsMatOffset+1] * rhsVec[rhsVecOffset+1] +
+                lhsMat[lhsMatOffset+2] * rhsVec[rhsVecOffset+2] +
+                lhsMat[lhsMatOffset+3] * rhsVec[rhsVecOffset+3];
+        resultVec[resultVecOffset+1] =
+                lhsMat[lhsMatOffset+4] * rhsVec[rhsVecOffset+0] +
+                lhsMat[lhsMatOffset+5] * rhsVec[rhsVecOffset+1] +
+                lhsMat[lhsMatOffset+6] * rhsVec[rhsVecOffset+2] +
+                lhsMat[lhsMatOffset+7] * rhsVec[rhsVecOffset+3];
+        resultVec[resultVecOffset+2] =
+                lhsMat[lhsMatOffset+8] * rhsVec[rhsVecOffset+0] +
+                lhsMat[lhsMatOffset+9] * rhsVec[rhsVecOffset+1] +
+                lhsMat[lhsMatOffset+10] * rhsVec[rhsVecOffset+2] +
+                lhsMat[lhsMatOffset+11] * rhsVec[rhsVecOffset+3];
+        resultVec[resultVecOffset+3] =
+                lhsMat[lhsMatOffset+12] * rhsVec[rhsVecOffset+0] +
+                lhsMat[lhsMatOffset+13] * rhsVec[rhsVecOffset+1] +
+                lhsMat[lhsMatOffset+14] * rhsVec[rhsVecOffset+2] +
+                lhsMat[lhsMatOffset+15] * rhsVec[rhsVecOffset+3];
+    }
     /**
      * Transposes a 4 x 4 matrix.
      *

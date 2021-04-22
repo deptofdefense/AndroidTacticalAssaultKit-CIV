@@ -705,6 +705,20 @@ public class PersistentRasterDataStore extends LocalRasterDataStore implements R
         return (this.layersDb != null);
     }
 
+    @Override
+    public synchronized boolean updateExtraData(DatasetDescriptor info) {
+        try {
+            if (this.layersDb != null)
+                this.layersDb.updateLayerExtras(info);
+            else
+                super.updateExtraData(info);
+            return true;
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to update layer extras for " + info.getName(), e);
+            return false;
+        }
+    }
+
     /**************************************************************************/
     // Currency
     

@@ -258,7 +258,7 @@ public class ModelMapComponent extends AbstractMapComponent {
         File versionFile = FileSystemUtils
                 .getItem("Databases/models.db/catalog.version");
         boolean reimport = true;
-        try(RandomAccessFile ver = IOProviderFactory
+        try (RandomAccessFile ver = IOProviderFactory
                 .getRandomAccessFile(versionFile, "rw")) {
             do {
                 // if there's at least 4 bytes, compare the version
@@ -347,6 +347,7 @@ public class ModelMapComponent extends AbstractMapComponent {
         ImportFilesTask.registerExtension(".obj");
         ImportFilesTask.registerExtension(".zip");
         ImportFilesTask.registerExtension(".json");
+        ImportFilesTask.registerExtension(".3tz");
 
         ServiceFactory.registerServiceQuery(new Cesium3DTilesServiceQuery());
 
@@ -464,9 +465,9 @@ public class ModelMapComponent extends AbstractMapComponent {
     static String getPointIconUri(Context ctx) {
         File f = new File(ctx.getCacheDir(), "icon_3d_map.png");
         if (!IOProviderFactory.exists(f)) {
-            try(InputStream is = ctx.getResources()
-                        .openRawResource(R.drawable.icon_3d_map);
-                OutputStream os = IOProviderFactory.getOutputStream(f)) {
+            try (InputStream is = ctx.getResources()
+                    .openRawResource(R.drawable.icon_3d_map);
+                    OutputStream os = IOProviderFactory.getOutputStream(f)) {
                 FileSystemUtils.copy(is, os);
             } catch (Throwable t) {
                 return "resource://" + R.drawable.icon_3d_map;

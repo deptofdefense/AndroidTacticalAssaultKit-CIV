@@ -13,6 +13,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -318,16 +319,28 @@ public class GdalLayerInfo extends AbstractDatasetDescriptorSpi {
         }else{
             Dataset dataset = null;
             try{
+                // Make sure the dataset can be opened by GDAL
                 dataset = GdalLibrary.openDatasetFromFile(file);
                 if (dataset == null)
                     return false;
 
-                // Shallow projection check
-                if (dataset.GetMetadata_Dict("SUBDATASETS").isEmpty()
-                        && GdalDatasetProjection2.getInstance(dataset) == null)
-                    return false;
+                // Valid dataset projection
+                if (GdalDatasetProjection2.getInstance(dataset) != null)
+                    return true;
 
-                return true;
+                // Check sub-datasets if there are any
+                Set<String> uris = getSubDatasetURIs(dataset);
+                if (!uris.isEmpty()) {
+                    // Check if any of the sub-datasets are different from the
+                    // base file
+                    String path = file.getAbsolutePath();
+                    for (String uri : uris) {
+                        if (!uri.endsWith(path))
+                            return true;
+                    }
+                }
+
+                return false;
             }finally{
                 if(dataset != null){
                     dataset.delete();
@@ -523,20 +536,8 @@ public class GdalLayerInfo extends AbstractDatasetDescriptorSpi {
             return;
 
         // look for subdatasets
-        Map<String, String> subdatasets = (Map<String, String>) dataset
-                .GetMetadata_Dict("SUBDATASETS");
-        if (subdatasets.size() > 0) {
-            // build the list of subdatasets
-            Set<String> uris = new LinkedHashSet<String>();
-            Iterator<Map.Entry<String, String>> subdatasetIter = subdatasets.entrySet().iterator();
-            Map.Entry<String, String> entry;
-            while (subdatasetIter.hasNext()) {
-                entry = subdatasetIter.next();
-                if (entry.getKey().matches("SUBDATASET\\_\\d+\\_NAME")) {
-                    uris.add(entry.getValue());
-                }
-            }
-
+        Set<String> uris = getSubDatasetURIs(dataset);
+        if (!uris.isEmpty()) {
             // close parent
             dataset.delete();
 
@@ -547,7 +548,7 @@ public class GdalLayerInfo extends AbstractDatasetDescriptorSpi {
             Map<String, String> subdatasetExtraData;
             while (uriIter.hasNext()) {
                 subdatasetUri = uriIter.next();
-                subdatasetExtraData = new LinkedHashMap<String, String>(extraData);
+                subdatasetExtraData = new LinkedHashMap<>(extraData);
                 subdatasetExtraData.put("gdalSubdataset", subdatasetUri);
                 try {
                     createGdalLayer(baseFile, workingDir, name + "["
@@ -565,6 +566,28 @@ public class GdalLayerInfo extends AbstractDatasetDescriptorSpi {
             
             retval.add(info);
         }
+    }
+
+    private static Set<String> getSubDatasetURIs(Dataset dataset) {
+        Set<String> uris = new LinkedHashSet<>();
+        Hashtable<?, ?> tbl = dataset.GetMetadata_Dict("SUBDATASETS");
+        if (tbl == null || tbl.isEmpty())
+            return uris;
+        try {
+            Map<String, String> subdatasets = (Map<String, String>) tbl;
+            // build the list of subdatasets
+            Iterator<Map.Entry<String, String>> subdatasetIter = subdatasets
+                    .entrySet().iterator();
+            Map.Entry<String, String> entry;
+            while (subdatasetIter.hasNext()) {
+                entry = subdatasetIter.next();
+                if (entry.getKey().matches("SUBDATASET\\_\\d+\\_NAME"))
+                    uris.add(entry.getValue());
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to read sub-datasets", e);
+        }
+        return uris;
     }
 
     private static Frame createGdalLayerImpl(File derivedFrom, File workingDir,

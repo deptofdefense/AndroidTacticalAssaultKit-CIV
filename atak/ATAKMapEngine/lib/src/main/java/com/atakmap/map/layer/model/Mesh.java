@@ -17,6 +17,8 @@ public interface Mesh extends Disposable {
         Points,
         Triangles,
         TriangleStrip,
+        Lines,
+        LineStrip,
     }
 
     public final static int VERTEX_ATTR_TEXCOORD_0 = 1;

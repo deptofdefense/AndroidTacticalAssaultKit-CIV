@@ -2,6 +2,7 @@ package com.atakmap.net;
 
 import android.net.Uri;
 
+import com.atakmap.annotations.ModifierApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
@@ -14,6 +15,9 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+@ModifierApi(since = "4.3", target = "4.6", modifiers = {
+        "final"
+})
 public final class AtakAuthenticationDatabaseAdapter implements AtakAuthenticationDatabaseIFace {
 
     /**
@@ -49,6 +53,18 @@ public final class AtakAuthenticationDatabaseAdapter implements AtakAuthenticati
     public void dispose() {
         synchronized (lock) {
             close();
+        }
+    }
+
+    /**
+     * Deletes the given file.
+     *
+     * @param databaseFile the file to delete.
+     */
+    public void clear(File databaseFile) {
+        synchronized (lock) {
+            FileSystemUtils.deleteFile(databaseFile);
+            authenticationDb = null;
         }
     }
 
@@ -140,7 +156,8 @@ public final class AtakAuthenticationDatabaseAdapter implements AtakAuthenticati
      * @param type     the type
      * @param username the username
      * @param password the password
-     * @param expires  when this credential expires.
+     * @param expires  if true the expiration time is set to 30 days from the current system time
+     *                 from the time this method is called.
      */
     @Override
     public void saveCredentialsForType(
@@ -206,7 +223,7 @@ public final class AtakAuthenticationDatabaseAdapter implements AtakAuthenticati
 
     /**
      * Closes the Auth DB.
-     * @return True if successful, false otherwise.
+     * @return true if successful, false otherwise.
      */
     protected boolean close() {
         if (this.authenticationDb != null) {
@@ -316,6 +333,11 @@ public final class AtakAuthenticationDatabaseAdapter implements AtakAuthenticati
      * @return True if successful, false otherwise.
      */
     protected boolean saveCredentials(String type, String site, String username, String password, long expires) {
+        if (authenticationDb == null) {
+            return false;
+        }
+
+
         AtakAuthenticationCredentials creds = getCredentials(type, site);
         if (creds == null || creds.password == null) {
             StatementIface stmt = null;
@@ -373,12 +395,24 @@ public final class AtakAuthenticationDatabaseAdapter implements AtakAuthenticati
      * @return True if successful, false otherwise.
      */
     protected boolean invalidate(String type, String site) {
-        String sql = "DELETE FROM credentials WHERE type = ? AND site = ?;";
+        if (authenticationDb == null) {
+            return false;
+        }
+
+        String sql = "DELETE FROM credentials WHERE type = ?";
+        if (!FileSystemUtils.isEmpty(site)) {
+            sql = sql + " AND site = ?;";
+        } else {
+            sql = sql + ";";
+        }
+
         StatementIface sqlStatement = null;
         try {
             sqlStatement = authenticationDb.compileStatement(sql);
             sqlStatement.bind(1, type);
-            sqlStatement.bind(2, site);
+
+            if (!FileSystemUtils.isEmpty(site))
+                sqlStatement.bind(2, site);
 
             try {
                 sqlStatement.execute();
@@ -402,6 +436,10 @@ public final class AtakAuthenticationDatabaseAdapter implements AtakAuthenticati
      */
     @Override
     public boolean deleteExpiredCredentials(long time) {
+        if (authenticationDb == null) {
+            return false;
+        }
+
         String sql = "DELETE FROM credentials WHERE expires > 0 AND expires <= ?;";
         StatementIface sqlStatement = null;
         try {

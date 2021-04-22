@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+     <ScrollView
+        android:layout_width="wrap_content"
+        android:layout_weight="1"
+        android:layout_height="0dp"
+        android:fadeScrollbars="false" >
+
+          <LinearLayout
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:orientation="vertical">
+               <TextView
+                   android:layout_width="match_parent"
+                   android:layout_height="wrap_content"
+                   android:text="@string/location_permission_guidance_1"
+                   android:textColor="@color/white"
+                   android:padding="6dp"
+                   android:textSize="16sp"/>
+
+               <TextView
+                   android:layout_width="match_parent"
+                   android:layout_height="wrap_content"
+                   android:text="@string/step_one_with_colon"
+                   android:textStyle="bold"
+                   android:textColor="@color/white"
+                   android:textSize="16sp"/>
+
+               <ImageView
+                   android:layout_width="match_parent"
+                   android:layout_height="wrap_content"
+                   android:src="@drawable/location_permission_step1"
+                   android:padding="5dp"
+                   android:textSize="16sp"/>
+
+               <TextView
+                   android:layout_width="match_parent"
+                   android:layout_height="wrap_content"
+                   android:textStyle="bold"
+                   android:text="@string/location_permission_step2"
+                   android:textColor="@color/white"
+                   android:textSize="16sp"/>
+
+
+               <ImageView
+                   android:layout_width="match_parent"
+                   android:layout_height="wrap_content"
+                   android:src="@drawable/location_permission_step2"
+                   android:padding="5dp"
+                   android:textSize="16sp"/>
+
+               <TextView
+                   android:layout_width="match_parent"
+                   android:layout_height="wrap_content"
+                   android:textStyle="bold"
+                   android:text="@string/location_permission_step3"
+                   android:textColor="@color/white"
+                   android:textSize="16sp"/>
+
+               <ImageView
+                   android:layout_width="match_parent"
+                   android:layout_height="wrap_content"
+                   android:src="@drawable/location_permission_step3"
+                   android:padding="5dp"
+                   android:textSize="16sp"/>
+          </LinearLayout>
+
+     </ScrollView>
+</LinearLayout>

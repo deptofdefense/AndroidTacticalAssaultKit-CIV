@@ -3,21 +3,26 @@ package com.atakmap.android.gridlines.graphics;
 
 import com.atakmap.android.maps.Polyline;
 import com.atakmap.android.maps.graphics.GLPolyline;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.map.Globe;
 import com.atakmap.map.RenderSurface;
 import com.atakmap.map.opengl.GLMapRenderable;
+import com.atakmap.map.opengl.GLMapRenderable2;
 import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.math.MathUtils;
+import com.atakmap.math.Rectangle;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLText;
+import com.atakmap.util.DirectExecutorService;
 
 import java.util.ArrayList;
 import java.util.UUID;
+import java.util.concurrent.Executor;
 
-public class GLZonesOverlay implements GLMapRenderable {
+public class GLZonesOverlay implements GLMapRenderable, GLMapRenderable2 {
     protected GLText _glText;
     protected String _text;
 
@@ -44,6 +49,14 @@ public class GLZonesOverlay implements GLMapRenderable {
 
     @Override
     public void draw(GLMapView map) {
+        draw(map, GLMapView.RENDER_PASS_SURFACE);
+    }
+
+    @Override
+    public void draw(GLMapView map, int renderPass) {
+        if ((renderPass & getRenderPass()) == 0)
+            return;
+
         if (!_type.equals("MGRS"))
             return;
         if (_zones == null) {
@@ -55,51 +68,83 @@ public class GLZonesOverlay implements GLMapRenderable {
 
         final double drawZoom = convertMapScaleToLegacyZoom(
                 map.getRenderSurface(),
-                map.drawMapScale);
+                Globe.getMapScale(map.currentScene.scene.dpi,
+                        map.currentScene.drawMapResolution));
 
         float alpha = (float) Math.max(Math.min(drawZoom / 15d, 1d), 0d);
         GLES20FixedPipeline.glColor4f(_red, _green, _blue, alpha);
         GLES20FixedPipeline.glEnable(GLES20FixedPipeline.GL_BLEND);
 
-        if (map.crossesIDL) {
-            _drawLatLines(map,
-                    map.eastBoundUnwrapped,
-                    map.westBoundUnwrapped,
-                    map.southBound,
-                    map.northBound,
-                    alpha);
-            // west of IDL
-            _drawLngLines(map,
-                    map.southBound,
-                    map.northBound,
-                    map.westBound,
-                    180d,
-                    alpha);
-            // east of IDL
-            _drawLngLines(map,
-                    map.southBound,
-                    map.northBound,
-                    -180d,
-                    map.eastBound,
-                    alpha);
-        } else {
-            _drawLatLines(map,
-                    map.eastBound,
-                    map.westBound,
-                    map.southBound,
-                    map.northBound,
-                    alpha);
-            _drawLngLines(map,
-                    map.southBound,
-                    map.northBound,
-                    map.westBound,
-                    map.eastBound,
-                    alpha);
+        if (MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SURFACE)) {
+            if (map.crossesIDL) {
+                _drawLatLines(map,
+                        map.eastBoundUnwrapped,
+                        map.westBoundUnwrapped,
+                        map.southBound,
+                        map.northBound,
+                        alpha, renderPass);
+                // west of IDL
+                _drawLngLines(map,
+                        map.southBound,
+                        map.northBound,
+                        map.westBound,
+                        180d,
+                        alpha, renderPass);
+                // east of IDL
+                _drawLngLines(map,
+                        map.southBound,
+                        map.northBound,
+                        -180d,
+                        map.eastBound,
+                        alpha, renderPass);
+            } else {
+                _drawLatLines(map,
+                        map.eastBound,
+                        map.westBound,
+                        map.southBound,
+                        map.northBound,
+                        alpha, renderPass);
+                _drawLngLines(map,
+                        map.southBound,
+                        map.northBound,
+                        map.westBound,
+                        map.eastBound,
+                        alpha, renderPass);
+            }
         }
 
-        //alpha = (float) Math.max(Math.min(drawZoom / 25d, 1d), 0d);
-        _markZones(map);
-        _drawZones(map.getSurface(), map);
+        // mark all zones that will be drawn in this pass
+        if (MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SPRITES))
+            _markZones(map);
+        // draw the zones for this pass
+        _drawZones(map.getSurface(), map, renderPass);
+        // perform culling
+        if (MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SPRITES)
+                && !map.multiPartPass) {
+            for (GLZoneRegion z = zoneDrawList; z != null; z = z.next) {
+                if (z.mark) {
+                    // unmark for next pump
+                    z.mark = false;
+                } else {
+                    // cull all that were not marked on this pump
+                    if (z.next != null) {
+                        z.next.prev = z.prev;
+                    }
+                    if (z.prev != null) {
+                        z.prev.next = z.next;
+                    }
+                    if (zoneDrawList == z) {
+                        zoneDrawList = z.next;
+                    }
+                    _zones[z.gridY][z.gridX] = null;
+                }
+            }
+        }
+    }
+
+    @Override
+    public int getRenderPass() {
+        return GLMapView.RENDER_PASS_SURFACE | GLMapView.RENDER_PASS_SPRITES;
     }
 
     @Override
@@ -124,7 +169,7 @@ public class GLZonesOverlay implements GLMapRenderable {
 
     private void _drawLngLines(GLMapView map, double south, double north,
             double west, double east,
-            float alpha) {
+            float alpha, int renderPass) {
         south = Math.max(south, -80);
         north = Math.min(north, 84);
         west = Math.max(west, -180);
@@ -195,13 +240,11 @@ public class GLZonesOverlay implements GLMapRenderable {
 
     private void _drawLatLines(GLMapView map, double east, double west,
             double south, double north,
-            float alpha) {
+            float alpha, int renderPass) {
         south = Math.max(south, -80);
         north = Math.min(north, 84);
         west = Math.max(west, map.continuousScrollEnabled ? -360 : -180);
         east = Math.min(east, map.continuousScrollEnabled ? 360 : 180);
-
-        GLES20FixedPipeline.glPushMatrix();
 
         double lat = -80d;
 
@@ -215,8 +258,6 @@ public class GLZonesOverlay implements GLMapRenderable {
                 lat += 4d;
             }
         }
-
-        GLES20FixedPipeline.glPopMatrix();
     }
 
     private void _markZones(GLMapView map) {
@@ -271,6 +312,7 @@ public class GLZonesOverlay implements GLMapRenderable {
 
                 boolean shouldMark = true;
                 GLZoneRegion z = _zones[y][x];
+                // non-null implies in draw list
                 if (z == null) {
                     double s = lat;
                     double n = s + 8;
@@ -301,6 +343,8 @@ public class GLZonesOverlay implements GLMapRenderable {
                         }
                     }
                     z = new GLZoneRegion(s, w, n, e);
+                    z._genGridTileExecutor = _genGridTileExecutor;
+                    z._segmentLabelsExecutor = _segmentLabelsExecutor;
                     _zones[y][x] = z;
                     z.next = zoneDrawList;
                     if (zoneDrawList != null) {
@@ -321,23 +365,17 @@ public class GLZonesOverlay implements GLMapRenderable {
         }
     }
 
-    private void _drawZones(GLMapSurface surface, GLMapView ortho) {
+    private void _drawZones(GLMapSurface surface, GLMapView ortho,
+            int renderPass) {
         GLGridTile.debugDrawCount = 0;
         for (GLZoneRegion z = zoneDrawList; z != null; z = z.next) {
-            if (z.mark) {
-                z.draw(surface, ortho, _red, _green, _blue);
-                z.mark = false;
-            } else {
-                if (z.next != null) {
-                    z.next.prev = z.prev;
-                }
-                if (z.prev != null) {
-                    z.prev.next = z.next;
-                }
-                if (zoneDrawList == z) {
-                    zoneDrawList = z.next;
-                }
-                _zones[z.gridY][z.gridX] = null;
+            if (Rectangle.intersects(ortho.westBound, ortho.southBound,
+                    ortho.eastBound, ortho.northBound,
+                    z._west, z._south,
+                    z._east, z._north,
+                    false)) {
+
+                z.draw(surface, ortho, _red, _green, _blue, renderPass);
             }
         }
     }
@@ -362,7 +400,9 @@ public class GLZonesOverlay implements GLMapRenderable {
         final double dlng = (lng1 - lng0);
 
         double d = Math.sqrt(dlat * dlat + dlng * dlng);
-        if (view.scene.mapProjection.is3D() && (dlat * dlng) == 0
+        if (view.currentScene.scene.mapProjection
+                .getSpatialReferenceID() == 4978
+                && (dlat * dlng) == 0
                 && d > threshold) {
             // tessellate
             ArrayList<GeoPoint> ptsArr = new ArrayList<>(
@@ -398,8 +438,11 @@ public class GLZonesOverlay implements GLMapRenderable {
         glline.draw(view, GLMapView.RENDER_PASS_SURFACE);
     }
 
+    /** @deprecated use {@link MathUtils#distance(double, double, double, double)} */
+    @Deprecated
+    @DeprecatedApi(since = "4.3", forRemoval = true, removeAt = "4.6")
     protected static double dist(double x0, double y0, double x1, double y1) {
-        return Math.sqrt((x0 - x1) * (x0 - x1) + (y0 - y1) * (y0 - y1));
+        return MathUtils.distance(x0, y0, x1, y1);
     }
 
     protected int _color;
@@ -411,4 +454,6 @@ public class GLZonesOverlay implements GLMapRenderable {
     private GLZoneRegion[][] _zones;
     protected Polyline line;
     GLPolyline glline;
+    Executor _genGridTileExecutor;
+    Executor _segmentLabelsExecutor = new DirectExecutorService();
 }

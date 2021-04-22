@@ -93,11 +93,6 @@ public final class GLMapGroup {
 
             if (item instanceof SensorFOV)
                 return new GLSensorFOV(surface, (SensorFOV) item);
-            else if (item instanceof AngleOverlayShape)
-                return new GLAngleOverlay(surface, (AngleOverlayShape) item);
-            else if (item instanceof AutoSizeAngleOverlayShape)
-                return new GLAutoSizeAngleOverlay(surface,
-                        (AutoSizeAngleOverlayShape) item);
             else if (item instanceof MetaMapPoint || item instanceof MetaShape
                     || item instanceof CrumbTrail)
                 // Meta items don't have a graphical representation themselves, since they manage

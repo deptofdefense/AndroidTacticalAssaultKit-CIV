@@ -547,14 +547,12 @@ public class ConversationFragment extends Fragment implements
             // trim any trailing spaces
             try {
                 msg = msg.replaceFirst("\\s++$", "");
-            } catch (Exception e) { }
-
+            } catch (Exception e) {
+            }
 
             // Ignore empty message
             if (msg.isEmpty())
                 return;
-
-
 
             // Check if the message has anywhere to go
             final List<Contact> contacts = _destinations.getDestinations();

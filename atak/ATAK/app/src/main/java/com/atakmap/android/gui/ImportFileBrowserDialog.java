@@ -10,6 +10,7 @@ import android.os.Environment;
 import android.preference.PreferenceManager;
 
 import com.atakmap.android.importfiles.ui.ImportManagerFileBrowser;
+import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
 import com.atakmap.coremap.log.Log;
 
@@ -83,7 +84,8 @@ public class ImportFileBrowserDialog {
      * Show the dialog
      */
     public void show() {
-        show(_title, _startPath, _exts, _dismissListener, _context, _useProvider);
+        show(_title, _startPath, _exts, _dismissListener, _context,
+                _useProvider);
     }
 
     /**
@@ -188,11 +190,8 @@ public class ImportFileBrowserDialog {
         if (location != null) {
             importFileBrowser.setStartDirectory(location);
         } else {
-            final String _lastDirectory = defaultPrefs
-                    .getString("lastDirectory",
-                            Environment.getExternalStorageDirectory()
-                                    .getPath());
-            importFileBrowser.setStartDirectory(_lastDirectory);
+            importFileBrowser
+                    .setStartDirectory(ATAKUtilities.getStartDirectory(mapCtx));
         }
 
         importFileBrowser.setExtensionTypes(extensionTypes);

@@ -2,6 +2,8 @@ package com.atakmap.map.layer.raster.opengl;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.layer.control.SurfaceRendererControl;
+import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.opengl.GLAsynchronousLayer;
 import com.atakmap.map.layer.raster.AbstractDataStoreRasterLayer2;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
@@ -10,7 +12,9 @@ import com.atakmap.map.layer.raster.RasterDataStore;
 import com.atakmap.map.layer.raster.RasterLayer2;
 import com.atakmap.map.layer.raster.service.RasterDataAccessControl;
 import com.atakmap.map.opengl.GLMapView;
+import com.atakmap.util.Collections2;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -39,10 +43,31 @@ public abstract class GLAbstractDataStoreRasterLayer2 extends GLAsynchronousLaye
     // GL Asynchronous Map Renderable
 
     @Override
+    public void draw(GLMapView view) {
+
+        // Check for surface bounds update when the map isn't moving
+        // TODO: More efficient check for surface bounds change
+        if (this.targetState != null && view.settled && !view.multiPartPass) {
+
+            // Get the latest surface bounds
+            Collection<Envelope> surfaceBounds = new ArrayList<>();
+            SurfaceRendererControl ctrl = view.getControl(SurfaceRendererControl.class);
+            if (ctrl != null)
+                surfaceBounds = ctrl.getSurfaceBounds();
+
+            // If the surface bounds have changed then invalidate
+            if (!Collections2.equals(surfaceBounds, this.targetState.surfaceRegions))
+                invalidateNoSync();
+        }
+
+        super.draw(view);
+    }
+
+    @Override
     protected void releaseImpl() {
         super.releaseImpl();
 
-        this.renderable.clear();;
+        this.renderable.clear();
     }
 
     @Override
@@ -249,7 +274,24 @@ public abstract class GLAbstractDataStoreRasterLayer2 extends GLAsynchronousLaye
                     this.queryParams.spatialFilter = new RasterDataStore.DatasetQueryParameters.RegionSpatialFilter(this.upperLeft, this.lowerRight);
                 }
             }
-            this.queryParams.minGsd = this.drawMapResolution;
+
+            // Utilize surface regions to calculate minimum GSD
+            double minGsd = this.drawMapResolution;
+            int width = Math.abs(_right - _left);
+            int height = Math.abs(_top - _bottom);
+            GeoPoint ul = GeoPoint.createMutable();
+            GeoPoint ur = GeoPoint.createMutable();
+            GeoPoint lr = GeoPoint.createMutable();
+            GeoPoint ll = GeoPoint.createMutable();
+            for (Envelope e : this.surfaceRegions) {
+                ul.set(e.maxY, e.minX);
+                ur.set(e.maxY, e.maxX);
+                lr.set(e.minY, e.maxX);
+                ll.set(e.minY, e.minX);
+                double gsd = DatasetDescriptor.computeGSD(width, height, ul, ur, lr, ll);
+                minGsd = Math.min(minGsd, gsd);
+            }
+            this.queryParams.minGsd = minGsd;
         }
     }
 }

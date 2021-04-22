@@ -1,5 +1,7 @@
 package com.atakmap.map.layer.feature.geometry;
 
+import com.atakmap.math.MathUtils;
+
 public final class Envelope {
 
     public double minX;
@@ -30,6 +32,20 @@ public final class Envelope {
 
     public boolean crossesIDL() {
         return minX < -180 && maxX >= -180 || minX <= 180 && maxX > 180;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if(!(o instanceof Envelope))
+            return false;
+        final Envelope other = (Envelope)o;
+        return MathUtils.equals(this.minX, other.minX) &&
+               MathUtils.equals(this.minY, other.minY) &&
+               MathUtils.equals(this.minZ, other.minZ) &&
+               MathUtils.equals(this.maxX, other.maxX) &&
+               MathUtils.equals(this.maxY, other.maxY) &&
+               MathUtils.equals(this.maxZ, other.maxZ);
+
     }
 
     @Override

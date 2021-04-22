@@ -88,12 +88,14 @@ public class ResectionDropDownReceiver extends DropDownReceiver
 
     @Override
     public String getIdealConditions() {
-        return _context.getString(R.string.resection_classic_tool_ideal_conditions);
+        return _context
+                .getString(R.string.resection_classic_tool_ideal_conditions);
     }
 
     @Override
     public String getRelativeAccuracy() {
-        return _context.getString(R.string.resection_classic_tool_relative_accuracy);
+        return _context
+                .getString(R.string.resection_classic_tool_relative_accuracy);
     }
 
     @Override

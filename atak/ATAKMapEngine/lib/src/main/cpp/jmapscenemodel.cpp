@@ -4,6 +4,8 @@
 #include <core/MapSceneModel2.h>
 #include <core/Projection2.h>
 #include <core/ProjectionFactory3.h>
+#include <feature/GeometryTransformer.h>
+#include <math/Frustum2.h>
 #include <math/Matrix.h>
 #include <math/Point2.h>
 #include <math/Rectangle.h>
@@ -20,6 +22,16 @@ using namespace TAK::Engine::Util;
 using namespace TAKEngineJNI::Interop;
 using namespace TAKEngineJNI::Interop::Core;
 
+JNIEXPORT jdouble JNICALL Java_com_atakmap_map_MapSceneModel_gsd
+  (JNIEnv *env, jclass clazz, jdouble range, jdouble fov, jint height)
+{
+    return MapSceneModel2_gsd(range, fov, height);
+}
+JNIEXPORT jdouble JNICALL Java_com_atakmap_map_MapSceneModel_range
+  (JNIEnv *env, jclass clazz, jdouble gsd, jdouble fov, jint height)
+{
+    return MapSceneModel2_range(gsd, fov, height);
+}
 JNIEXPORT jobject JNICALL Java_com_atakmap_map_MapSceneModel_clone
   (JNIEnv *env, jclass clazz, jlong ptr)
 {
@@ -49,6 +61,34 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_MapSceneModel_create
                                                 resolution),
                              Memory_deleter_const<MapSceneModel2>);
     return NewPointer(env, std::move(retval));
+}
+JNIEXPORT void JNICALL Java_com_atakmap_map_MapSceneModel_set__JDIIIDDDZFFDDD
+  (JNIEnv *env, jclass clazz, jlong ptr, jdouble dpi, jint width, jint height, jint srid, jdouble focusLat, jdouble focusLng, jdouble focusAlt, jboolean focusAltAbsolute, jfloat focusX, jfloat focusY, jdouble rotation, jdouble tilt, jdouble resolution)
+{
+    MapSceneModel2 *model = JLONG_TO_INTPTR(MapSceneModel2, ptr);
+    if(!model) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return;
+    }
+    model->set(dpi,
+               width, height,
+               srid,
+               GeoPoint2(focusLat, focusLng, focusAlt, focusAltAbsolute ? AltitudeReference::HAE : AltitudeReference::AGL, NAN, NAN),
+               focusX, focusY,
+               rotation,
+               tilt,
+               resolution);
+}
+JNIEXPORT void JNICALL Java_com_atakmap_map_MapSceneModel_set__JJ
+  (JNIEnv *env, jclass clazz, jlong ptr, jlong otherPtr)
+{
+    MapSceneModel2 *model = JLONG_TO_INTPTR(MapSceneModel2, ptr);
+    MapSceneModel2 *other = JLONG_TO_INTPTR(MapSceneModel2, otherPtr);
+    if(!model || !other) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return;
+    }
+    *model = *other;
 }
 JNIEXPORT jobject JNICALL Java_com_atakmap_map_MapSceneModel_getEarth
   (JNIEnv *env, jclass clazz, jlong ptr)
@@ -148,6 +188,16 @@ JNIEXPORT jdouble JNICALL Java_com_atakmap_map_MapSceneModel_getGsd
     }
 
     return model->gsd;
+}
+JNIEXPORT jdouble JNICALL Java_com_atakmap_map_MapSceneModel_getDpi
+  (JNIEnv *env, jclass clazz, jlong ptr)
+{
+    MapSceneModel2 *model = JLONG_TO_INTPTR(MapSceneModel2, ptr);
+    if(!model) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return 0.0;
+    }
+    return model->displayDpi;
 }
 JNIEXPORT jobject JNICALL Java_com_atakmap_map_MapSceneModel_getDisplayModel
   (JNIEnv *env, jclass clazz, jlong ptr)
@@ -275,6 +325,16 @@ JNIEXPORT jdouble JNICALL Java_com_atakmap_map_MapSceneModel_getCameraNear
 
     return model->camera.near;
 }
+JNIEXPORT jdouble JNICALL Java_com_atakmap_map_MapSceneModel_getCameraNearMeters
+  (JNIEnv *env, jclass clazz, jlong ptr)
+{
+    MapSceneModel2 *model = JLONG_TO_INTPTR(MapSceneModel2, ptr);
+    if(!model) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return 0.0;
+    }
+    return model->camera.nearMeters;
+}
 JNIEXPORT jdouble JNICALL Java_com_atakmap_map_MapSceneModel_getCameraFar
   (JNIEnv *env, jclass clazz, jlong ptr)
 {
@@ -285,6 +345,16 @@ JNIEXPORT jdouble JNICALL Java_com_atakmap_map_MapSceneModel_getCameraFar
     }
 
     return model->camera.far;
+}
+JNIEXPORT jdouble JNICALL Java_com_atakmap_map_MapSceneModel_getCameraFarMeters
+  (JNIEnv *env, jclass clazz, jlong ptr)
+{
+    MapSceneModel2 *model = JLONG_TO_INTPTR(MapSceneModel2, ptr);
+    if(!model) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return 0.0;
+    }
+    return model->camera.farMeters;
 }
 JNIEXPORT jboolean JNICALL Java_com_atakmap_map_MapSceneModel_isCameraPerspective
   (JNIEnv *env, jclass clazz, jlong ptr)
@@ -376,105 +446,72 @@ JNIEXPORT jboolean JNICALL Java_com_atakmap_map_MapSceneModel_isPerspectiveCamer
 {
     return MapSceneModel2_getCameraMode() == MapCamera2::Perspective;
 }
-  
-JNIEXPORT jboolean JNICALL Java_com_atakmap_map_MapSceneModel_intersects
+
+JNIEXPORT jboolean JNICALL Java_com_atakmap_map_MapSceneModel_intersectsAAbbWgs84
   (JNIEnv *env, jclass clazz,
    jlong ptr,
    jdouble mbbMinX, jdouble mbbMinY, jdouble mbbMinZ,
    jdouble mbbMaxX, jdouble mbbMaxY, jdouble mbbMaxZ)
 {
     MapSceneModel2 *scene = JLONG_TO_INTPTR(MapSceneModel2, ptr);
-    Matrix2 xform(scene->forwardTransform);
-
-    double minX;
-    double minY;
-    double minZ;
-    double maxX;
-    double maxY;
-    double maxZ;
+    TAK::Engine::Feature::Envelope2 aabb(mbbMinX, mbbMinY, mbbMinZ, mbbMaxX, mbbMaxY, mbbMaxZ);
 
     // transform the MBB to the native projection
-    if(scene->projection->getSpatialReferenceID() != 4326) {
-        GeoPoint2 points[8];
-        points[0] = GeoPoint2(mbbMinY, mbbMinX, mbbMinZ, AltitudeReference::HAE);
-        points[1] = GeoPoint2(mbbMinY, mbbMaxX, mbbMinZ, AltitudeReference::HAE);
-        points[2] = GeoPoint2(mbbMaxY, mbbMaxX, mbbMinZ, AltitudeReference::HAE);
-        points[3] = GeoPoint2(mbbMaxY, mbbMinX, mbbMinZ, AltitudeReference::HAE);
-        points[4] = GeoPoint2(mbbMinY, mbbMinX, mbbMaxZ, AltitudeReference::HAE);
-        points[5] = GeoPoint2(mbbMinY, mbbMaxX, mbbMaxZ, AltitudeReference::HAE);
-        points[6] = GeoPoint2(mbbMaxY, mbbMaxX, mbbMaxZ, AltitudeReference::HAE);
-        points[7] = GeoPoint2(mbbMaxY, mbbMinX, mbbMaxZ, AltitudeReference::HAE);
+    const int srid = scene->projection->getSpatialReferenceID();
+    if(srid != 4326)
+        TAK::Engine::Feature::GeometryTransformer_transform(&aabb, aabb, 4326, srid);
 
-        std::size_t idx = 0u;
-        for( ; idx < 8u; idx++) {
-            Point2<double> scratch;
-            if(scene->projection->forward(&scratch, points[idx]) != TE_Ok)
-                continue;
-            mbbMinX = scratch.x;
-            mbbMinY = scratch.y;
-            mbbMinZ = scratch.z;
-            mbbMaxX = scratch.x;
-            mbbMaxY = scratch.y;
-            mbbMaxZ = scratch.z;
-            break;
-        }
-        if(idx == 8u)
-            return false;
-        for( ; idx < 8u; idx++) {
-            Point2<double> scratch;
-            if(scene->projection->forward(&scratch, points[idx]) != TE_Ok)
-                continue;
-            if(scratch.x < mbbMinX)        mbbMinX = scratch.x;
-            else if(scratch.x > mbbMaxX)   mbbMaxX = scratch.x;
-            if(scratch.y < mbbMinY)        mbbMinY = scratch.y;
-            else if(scratch.y > mbbMaxY)   mbbMaxY = scratch.y;
-            if(scratch.z < mbbMinZ)        mbbMinZ = scratch.z;
-            else if(scratch.z > mbbMaxZ)   mbbMaxZ = scratch.z;
-        }
+    Matrix2 mx(scene->camera.projection);
+    mx.concatenate(scene->camera.modelView);
+    Frustum2 frustum(mx);
+    bool result = frustum.intersects(
+            AABB(
+                    Point2<double>(aabb.minX, aabb.minY, aabb.minZ),
+                    Point2<double>(aabb.maxX, aabb.maxY, aabb.maxZ)));
+    // check IDL crossing
+    if(!result && srid == 4326 && ((aabb.minX+aabb.maxX)/2.0)*scene->camera.location.x < 0.0) {
+        const double hemishift = (scene->camera.location.x < 0.0) ? -360.0 : 360.0;
+        result |= frustum.intersects(
+            AABB(
+                    Point2<double>(aabb.minX+hemishift, aabb.minY, aabb.minZ),
+                    Point2<double>(aabb.maxX+hemishift, aabb.maxY, aabb.maxZ)));
     }
+    return result;
+}
 
-    Point2<double> points[8];
-    points[0] = Point2<double>(mbbMinX, mbbMinY, mbbMinZ);
-    points[1] = Point2<double>(mbbMinX, mbbMaxY, mbbMinZ);
-    points[2] = Point2<double>(mbbMaxX, mbbMaxY, mbbMinZ);
-    points[3] = Point2<double>(mbbMaxX, mbbMinY, mbbMinZ);
-    points[4] = Point2<double>(mbbMinX, mbbMinY, mbbMaxZ);
-    points[5] = Point2<double>(mbbMinX, mbbMaxY, mbbMaxZ);
-    points[6] = Point2<double>(mbbMaxX, mbbMaxY, mbbMaxZ);
-    points[7] = Point2<double>(mbbMaxX, mbbMinY, mbbMaxZ);
+JNIEXPORT jboolean JNICALL Java_com_atakmap_map_MapSceneModel_intersectsSphereWgs84
+  (JNIEnv *, jclass clazz, jlong ptr, jdouble cx, jdouble cy, jdouble cz, jdouble radiusMeters)
+{
+    MapSceneModel2 *scene = JLONG_TO_INTPTR(MapSceneModel2, ptr);
+    Point2<double> center(cx, cy, cz);
 
-    std::size_t idx = 0u;
-    for( ; idx < 8u; idx++) {
-        Point2<double> scratch;
-        if(xform.transform(&scratch, points[idx]) != TE_Ok)
-            continue;
-        minX = scratch.x;
-        minY = scratch.y;
-        minZ = scratch.z;
-        maxX = scratch.x;
-        maxY = scratch.y;
-        maxZ = scratch.z;
-        break;
+    // transform the MBB to the native projection
+    const int srid = scene->projection->getSpatialReferenceID();
+    if(srid != 4326)
+        scene->projection->forward(&center, GeoPoint2(center.y, center.x, center.z, AltitudeReference::HAE));
+
+    Matrix2 mx(scene->camera.projection);
+    mx.concatenate(scene->camera.modelView);
+    // scale to nominal display meters for proper interpretation of radius
+    mx.scale(scene->displayModel->projectionXToNominalMeters,
+             scene->displayModel->projectionYToNominalMeters,
+             scene->displayModel->projectionZToNominalMeters);
+
+    center.x *= scene->displayModel->projectionXToNominalMeters;
+    center.y *= scene->displayModel->projectionYToNominalMeters;
+    center.z *= scene->displayModel->projectionZToNominalMeters;
+
+    Frustum2 frustum(mx);
+    bool result = frustum.intersects(Sphere2(center, radiusMeters));
+    // check IDL crossing
+    if(!result && srid == 4326 && center.x*scene->camera.location.x < 0.0) {
+        const double hemishift = (scene->camera.location.x < 0.0) ? -360.0 : 360.0;
+        result |= frustum.intersects(Sphere2(
+                    Point2<double>(
+                               center.x+(hemishift*scene->displayModel->projectionXToNominalMeters),
+                                center.y,
+                                center.z),
+                    radiusMeters));
     }
-    if(idx == 8u)
-        return false;
-    for( ; idx < 8u; idx++) {
-        Point2<double> scratch;
-        if(xform.transform(&scratch, points[idx]) != TE_Ok)
-            continue;
-        if(scratch.x < minX)        minX = scratch.x;
-        else if(scratch.x > maxX)   maxX = scratch.x;
-        if(scratch.y < minY)        minY = scratch.y;
-        else if(scratch.y > maxY)   maxY = scratch.y;
-        if(scratch.z < minZ)        minZ = scratch.z;
-        else if(scratch.z > maxZ)   maxZ = scratch.z;
-    }
-
-#if 1
-    // XXX - observing intersect failure for equirectangular with perspective camera on Y-axis
-    if(scene->projection->getSpatialReferenceID() == 4326 && scene->camera.mode == MapCamera2::Perspective)
-        return atakmap::math::Rectangle<double>::intersects(0, 0, scene->width, scene->height, minX, 0, maxX, scene->height);
-    else
-#endif
-    return atakmap::math::Rectangle<double>::intersects(0, 0, scene->width, scene->height, minX, minY, maxX, maxY);
+    return result;
 }

@@ -121,8 +121,9 @@ public class RouteAroundRegionManager {
             return;
         }
         // Read a string from the file
-        try(Reader r = IOProviderFactory.getFileReader(new File(f.getAbsolutePath()));
-            BufferedReader reader = new BufferedReader(r)) {
+        try (Reader r = IOProviderFactory
+                .getFileReader(new File(f.getAbsolutePath()));
+                BufferedReader reader = new BufferedReader(r)) {
             StringBuilder stringBuilder = new StringBuilder();
             char[] buffer = new char[10];
             while (reader.read(buffer) != -1) {
@@ -133,7 +134,8 @@ public class RouteAroundRegionManager {
 
             JSONObject doc = (JSONObject) new JSONTokener(rawDoc).nextValue();
             JSONArray regionUidsArray = doc.getJSONArray("regionUids");
-            boolean routeAroundGeoFences = doc.getBoolean("routeAroundGeoFences");
+            boolean routeAroundGeoFences = doc
+                    .getBoolean("routeAroundGeoFences");
 
             ArrayList<String> regionUids = new ArrayList<>();
 
@@ -141,7 +143,8 @@ public class RouteAroundRegionManager {
                 String entry = (String) regionUidsArray.get(i);
                 regionUids.add(entry);
             }
-            RegionManagerState state = new RegionManagerState(routeAroundGeoFences,
+            RegionManagerState state = new RegionManagerState(
+                    routeAroundGeoFences,
                     regionUids);
             restoreManagerFromState(state);
             _isLoaded = true;
@@ -171,7 +174,8 @@ public class RouteAroundRegionManager {
 
         // Write the serialized state to a string.
         try (BufferedWriter out = new BufferedWriter(
-                IOProviderFactory.getFileWriter(new File(f.getAbsolutePath())))) {
+                IOProviderFactory
+                        .getFileWriter(new File(f.getAbsolutePath())))) {
             out.write(serializedState);
         } catch (IOException e) {
             Log.e(TAG, e.getMessage());

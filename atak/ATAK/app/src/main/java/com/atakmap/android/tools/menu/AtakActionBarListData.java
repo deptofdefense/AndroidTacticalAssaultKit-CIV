@@ -376,12 +376,7 @@ public class AtakActionBarListData {
         if (!IOProviderFactory.exists(actionBarDir))
             IOProviderFactory.mkdirs(actionBarDir);
         for (AtakActionBarMenuData actionBar : actionbars) {
-            File actionBarFile = new File(actionBarDir,
-                    FileSystemUtils.sanitizeWithSpacesAndSlashes(
-                            actionBar.getLabel() + "_"
-                                    + actionBar.getOrientation()
-                                    + ".xml".toLowerCase(
-                                            LocaleUtil.getCurrent())));
+            File actionBarFile = actionBar.getFile();
             try (FileOutputStream fos = IOProviderFactory
                     .getOutputStream(actionBarFile)) {
                 Serializer serializer = new Persister();

@@ -2,20 +2,20 @@
 package com.atakmap.android.track.maps;
 
 import android.graphics.Color;
-import android.graphics.PointF;
 import android.util.Pair;
 
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
-import com.atakmap.android.maps.graphics.GLCrumb;
 import com.atakmap.android.maps.graphics.GLMapItem2;
 import com.atakmap.android.maps.graphics.GLMapItemSpi3;
 import com.atakmap.android.maps.graphics.GLPolyline;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.opengl.GLMapBatchable;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.math.MathUtils;
+import com.atakmap.math.Matrix;
 import com.atakmap.math.PointD;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLRenderBatch;
@@ -46,13 +46,25 @@ public class GLTrackPolyline extends GLPolyline implements GLMapBatchable {
 
     private final TrackPolyline _subject;
 
-    private FloatBuffer _arrowBuffer;
-    private long _arrowBufferPtr;
+    private FloatBuffer _arrowSrcBuffer;
+    private FloatBuffer _arrowDstBuffer;
+    private long _arrowSrcBufferPtr, _arrowDstBufferPtr;
+    private float _radius;
+
+    private final static Matrix BATCH_XFORM = Matrix.getIdentity();
 
     public GLTrackPolyline(MapRenderer surface, TrackPolyline subject) {
         super(surface, subject);
         _subject = subject;
         _verts2Size = 3;
+        altitudeMode = Feature.AltitudeMode.Absolute;
+    }
+
+    @Override
+    protected void finalize() throws Throwable {
+        super.finalize();
+        Unsafe.free(_arrowSrcBuffer);
+        Unsafe.free(_arrowDstBuffer);
     }
 
     @Override
@@ -61,6 +73,10 @@ public class GLTrackPolyline extends GLPolyline implements GLMapBatchable {
             super.draw(ortho, renderPass);
             return;
         }
+
+        // Don't render anything on the surface
+        if (!MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SPRITES))
+            return;
 
         if (currentDraw != ortho.drawVersion)
             recompute = true;
@@ -75,13 +91,9 @@ public class GLTrackPolyline extends GLPolyline implements GLMapBatchable {
         if (_verts2 == null)
             return;
 
-        GLES20FixedPipeline.glPushMatrix();
-
         // software project the vertices
         _projectVerts(ortho);
 
-        GLES20FixedPipeline.glVertexPointer(_verts2Size,
-                GLES20FixedPipeline.GL_FLOAT, 0, _verts2);
         GLES20FixedPipeline
                 .glEnableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
 
@@ -89,15 +101,11 @@ public class GLTrackPolyline extends GLPolyline implements GLMapBatchable {
         GLES20FixedPipeline.glBlendFunc(GLES20FixedPipeline.GL_SRC_ALPHA,
                 GLES20FixedPipeline.GL_ONE_MINUS_SRC_ALPHA);
 
-        GLES20FixedPipeline.glVertexPointer(_verts2Size,
-                GLES20FixedPipeline.GL_FLOAT, 0, _verts2);
-
-        _projectArrows(ortho);
+        _projectArrows(ortho, null);
 
         GLES20FixedPipeline.glDisable(GLES20FixedPipeline.GL_BLEND);
         GLES20FixedPipeline
                 .glDisableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
-        GLES20FixedPipeline.glPopMatrix();
 
         drawLabels(ortho);
 
@@ -105,27 +113,32 @@ public class GLTrackPolyline extends GLPolyline implements GLMapBatchable {
     }
 
     // calculates and draws arrows
-    private void _projectArrows(final GLMapView ortho) {
-        if (_arrowBuffer == null) {
-            _arrowBuffer = Unsafe.allocateDirect(8, FloatBuffer.class);
-            _arrowBufferPtr = Unsafe.getBufferPointer(_arrowBuffer);
+    private void _projectArrows(final GLMapView ortho, GLRenderBatch batch) {
+
+        float radius = (float) (_subject.getCrumbSize() * MapView.DENSITY);
+
+        // Update base arrow when radius changes
+        if (_arrowSrcBuffer == null || _radius != radius) {
+            // 3 (3 verts) * 3 (x and y) * 4 (floats) + closed
+            if (_arrowSrcBuffer == null) {
+                _arrowSrcBuffer = Unsafe.allocateDirect(48, FloatBuffer.class);
+                _arrowSrcBufferPtr = Unsafe.getBufferPointer(_arrowSrcBuffer);
+            }
+            Unsafe.setFloats(_arrowSrcBufferPtr, 0, radius, 0);
+            Unsafe.setFloats(_arrowSrcBufferPtr + 12, radius / 2, radius / -2, 0);
+            Unsafe.setFloats(_arrowSrcBufferPtr + 24, radius / -2, radius / -2, 0);
+            Unsafe.setFloats(_arrowSrcBufferPtr + 36, 0, radius, 0);
         }
+        _radius = radius;
 
-        // XXX - ortho.drawTilt is always 0 at this point
-        // Need to read from the map subject
-        final double tiltSkew = Math.sin(Math.toRadians(ortho.drawTilt));
-        final double scaleAdj = 1d + (tiltSkew * 2d);
-
-        float radius = (float) ((_subject.getCrumbSize() * MapView.DENSITY)
-                / scaleAdj);
+        if (_arrowDstBuffer == null) {
+            _arrowDstBuffer = Unsafe.allocateDirect(48, FloatBuffer.class);
+            _arrowDstBufferPtr = Unsafe.getBufferPointer(_arrowDstBuffer);
+        }
 
         PointD p0 = new PointD(0d, 0d, 0d);
         PointD p1 = new PointD(0d, 0d, 0d);
         double angle;
-
-        PointF t1 = new PointF();
-        PointF t2 = new PointF();
-        PointF t3 = new PointF();
 
         final int numArrows = this.numPoints - 1;
         // don't draw last arrow (-1)
@@ -138,7 +151,7 @@ public class GLTrackPolyline extends GLPolyline implements GLMapBatchable {
         p1.y = Unsafe.getFloat(_verts2Ptr + 4);
         p1.z = (_verts2Size == 3) ? Unsafe.getFloat(_verts2Ptr + 8) : 0f;
 
-        final float threshold = (float) (16 / scaleAdj);
+        final float threshold = 16f;
 
         float lastX = -(threshold + 1);
         float lastY = -(threshold + 1);
@@ -170,50 +183,43 @@ public class GLTrackPolyline extends GLPolyline implements GLMapBatchable {
 
             angle = Math.atan2(p1.y - p0.y, p1.x - p0.x) * div_180_pi;
 
-            // triangle, with original point as center
-            t1.set((float) p0.x, (float) (p0.y + radius)); // top
-            t2.set((float) (p0.x + (radius / 2)),
-                    (float) (p0.y - (radius / 2))); // botton left
-            t3.set((float) (p0.x - (radius / 2)),
-                    (float) (p0.y - (radius / 2))); // bottom right
+            // transform the vertices
+            BATCH_XFORM.setToTranslation(p0.x, p0.y, p0.z);
+            BATCH_XFORM.rotate(Math.toRadians(ortho.currentScene.drawTilt), 1.0, 0.0, 0.0);
+            BATCH_XFORM.rotate(Math.toRadians(angle - 90));
 
-            // add triangle points
-            Unsafe.setFloat(_arrowBufferPtr + 0, t1.x);
-            Unsafe.setFloat(_arrowBufferPtr + 4, t1.y);
-            Unsafe.setFloat(_arrowBufferPtr + 8, t2.x);
-            Unsafe.setFloat(_arrowBufferPtr + 12, t2.y);
-            Unsafe.setFloat(_arrowBufferPtr + 16, t3.x);
-            Unsafe.setFloat(_arrowBufferPtr + 20, t3.y);
-            // close outline
-            Unsafe.setFloat(_arrowBufferPtr + 24, t1.x);
-            Unsafe.setFloat(_arrowBufferPtr + 28, t1.y);
+            long srcPtr = _arrowSrcBufferPtr;
+            long dstPtr = _arrowDstBufferPtr;
+            for (int v = 0; v < 4; v++) {
+                ortho.scratch.pointD.x = Unsafe.getFloat(srcPtr);
+                ortho.scratch.pointD.y = Unsafe.getFloat(srcPtr + 4);
+                ortho.scratch.pointD.z = Unsafe.getFloat(srcPtr + 8);
+                BATCH_XFORM.transform(ortho.scratch.pointD, ortho.scratch.pointD);
+                Unsafe.setFloats(dstPtr, (float) ortho.scratch.pointD.x,
+                        (float) ortho.scratch.pointD.y, 7e-8f);
+                srcPtr += 12;
+                dstPtr += 12;
+            }
 
-            GLES20FixedPipeline.glPushMatrix();
+            if (batch != null) {
+                // crumb
+                batch.addTriangleFan(_arrowDstBuffer, red, green, blue, alpha);
 
-            // move to origin, rotate, move back, then draw
-            GLES20FixedPipeline.glTranslatef((float) p0.x, (float) p0.y, 0f);
-            GLES20FixedPipeline.glRotatef((float) angle - 90, 0f, 0f, 1f);
-            GLES20FixedPipeline.glTranslatef((float) -p0.x, (float) -p0.y, 0f);
+                // outline
+                batch.addLineStrip(_arrowDstBuffer, 2f, 0f, 0f, 0f, alpha);
+            } else {
+                GLES20FixedPipeline.glVertexPointer(3, GLES20FixedPipeline.GL_FLOAT,
+                        0, _arrowDstBuffer);
 
-            GLES20FixedPipeline.glTranslatef(0f, 0f, (float) p0.z);
+                GLES20FixedPipeline.glColor4f(red, green, blue, alpha);
+                GLES20FixedPipeline.glDrawArrays(GLES20FixedPipeline.GL_TRIANGLE_FAN,
+                        0, 3);
 
-            GLES20FixedPipeline.glVertexPointer(2,
-                    GLES20FixedPipeline.GL_FLOAT, 0, _arrowBuffer);
-
-            GLES20FixedPipeline.glColor4f(
-                    red,
-                    green,
-                    blue,
-                    alpha);
-            GLES20FixedPipeline.glDrawArrays(GLES20FixedPipeline.GL_TRIANGLES,
-                    0, 3);
-
-            GLES20FixedPipeline.glColor4f(0f, 0f, 0f, 1f);
-            GLES20FixedPipeline.glLineWidth((float) (1f / scaleAdj));
-            GLES20FixedPipeline.glDrawArrays(GLES20FixedPipeline.GL_LINE_STRIP,
-                    0, 4);
-
-            GLES20FixedPipeline.glPopMatrix();
+                GLES20FixedPipeline.glColor4f(0f, 0f, 0f, 1f);
+                GLES20FixedPipeline.glLineWidth((float) 1f);
+                GLES20FixedPipeline.glDrawArrays(GLES20FixedPipeline.GL_LINE_STRIP,
+                        0, 4);
+            }
         }
     }
 
@@ -257,57 +263,8 @@ public class GLTrackPolyline extends GLPolyline implements GLMapBatchable {
         }
 
         _projectVerts(view);
+        _projectArrows(view, batch);
 
-        PointD p0 = new PointD(0d, 0d, 0d);
-        PointD p1 = new PointD(0d, 0d, 0d);
-        double angle;
-
-        // don't draw last arrow (-1)
-        final float alpha = Color.alpha(strokeColor) / 255f;
-        final float red = Color.red(strokeColor) / 255f;
-        final float green = Color.green(strokeColor) / 255f;
-        final float blue = Color.blue(strokeColor) / 255f;
-
-        p1.x = Unsafe.getFloat(_verts2Ptr + 0);
-        p1.y = Unsafe.getFloat(_verts2Ptr + 4);
-        p1.z = (_verts2Size == 3) ? Unsafe.getFloat(_verts2Ptr + 8) : 0f;
-
-        final float threshold = 16;
-
-        float lastX = -(threshold + 1);
-        float lastY = -(threshold + 1);
-        for (int i = 0; i < numArrows; i++) {
-            // NOTE: points have already been projected to vertices
-
-            p0.x = p1.x;
-            p0.y = p1.y;
-
-            p1.x = Unsafe.getFloat(_verts2Ptr + ((i + 1) * _verts2Size) * 4);
-            p1.y = Unsafe
-                    .getFloat(_verts2Ptr + ((i + 1) * _verts2Size + 1) * 4);
-            p1.z = (_verts2Size == 3)
-                    ? Unsafe.getFloat(
-                            _verts2Ptr + ((i + 1) * _verts2Size + 2) * 4)
-                    : 0f;
-
-            if (p0.x < view._left || p0.x > view._right || p0.y < view._bottom
-                    || p0.y > view._top)
-                continue;
-
-            if (MathUtils.distance(p0.x, p0.y, lastX, lastY) < threshold)
-                continue;
-
-            lastX = (float) p0.x;
-            lastY = (float) p0.y;
-
-            angle = Math.atan2(p1.y - p0.y, p1.x - p0.x) * div_180_pi;
-
-            GLCrumb.batch(view, batch, (float) p0.x, (float) p0.y,
-                    _subject.getCrumbSize() * MapView.DENSITY,
-                    (float) (angle - 90 - view.drawRotation), 2f,
-                    red, green, blue, alpha);
-
-        }
         this.recompute = false;
     }
 }

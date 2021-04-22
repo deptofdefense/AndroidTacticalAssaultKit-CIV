@@ -15,8 +15,8 @@ public final class IoUtils {
             if (ref != null)
                 ref.close();
         } catch (IOException e) {
-            if(tag != null) {
-                if(msg != null) {
+            if (tag != null) {
+                if (msg != null) {
                     Log.w(tag, msg, e);
                 } else {
                     Log.e(tag, "close: ", e);

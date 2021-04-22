@@ -49,7 +49,7 @@
     <string name="no_more_data">no more map data this direction</string>
     <string name="cancel">Cancel</string>
     <string name="dump_upload">Upload</string>
-    <string name="placeholder_title">PLACEHOLDER</string>
+    <string name="placeholder_title" translatable="false">PLACEHOLDER</string>
     <string name="reset_hint">"Do not show this hint again.\nTo reset, go to Settings->Support->Reset Hints"</string>
     <string name="name">Name</string>
     <string name="center">Center</string>
@@ -248,7 +248,6 @@
     <string name="media">Attachments</string>
     <string name="attachment_details">Attachment Details</string>
     <string name="loc_error">Location Error %s</string>
-    <string name="dim_brightness_pref_key">dim_map_with_brightness_key</string>
 
     <!--Accounts-->
     <string name="accounts">Accounts</string>
@@ -362,7 +361,7 @@
     <string name="preferences_text42">Remove all marker types from map when they stale out</string>
     <string name="preferences_text43">Manage image and video data</string>
     <string name="preferences_text44">Enable to delete all non-archival types from device when their stale-out time is reached. Items will be deleted based on \'Stale item clean up time\' below</string>
-    <string name="preferences_text45">Delete items from device after they\'ve been stale for this many minutes</string>
+    <string name="preferences_text45">Delete items from device after they have been stale for this many minutes</string>
     <string name="preferences_text46">Remove Unknown markers when they stale out</string>
     <string name="preferences_text47">Enable to delete Unknown marker types from device when their stale-out time is reached</string>
     <string name="preferences_text48">Quit On Back Press</string>
@@ -475,7 +474,7 @@
     <string name="preferences_text144">Default size of the font used for labeling entities in the Map. This will require a restart so all rendered entities can utilize the new font size.</string>
     <string name="preferences_text145">Enables All Map Items To Dim/Brighten With The Brightness Tool</string>
     <string name="preferences_text146">Map Overlay\'s Dimming/Brightening</string>
-    <string name="preferences_text147">Adjust O.S. display preferences, including screen time out</string>
+    <string name="preferences_text147">Adjust Operating System display preferences, including screen time out</string>
     <string name="preferences_text148">Manage grid line behavior and appearance</string>
     <string name="preferences_text149">Manage layer outline behavior and appearance</string>
     <string name="preferences_text150">Manage off-screen indicator options</string>
@@ -601,7 +600,7 @@
     <string name="preferences_text230">Monitor Server Connections</string>
     <string name="preferences_text231">Enable to monitor connections and ping server after periods of network inactivity</string>
     <string name="preferences_text232">Default SSL/TLS TrustStore Location</string>
-    <string name="preferences_text233">The default PKCS12 keystore with your Certificate Authorities (.p12 file). May use this keystore for connections, or load per-connection CAs</string>
+    <string name="preferences_text233">The default PKCS12 keystore with your Certificate Authorities (.p12 file). May use this keystore for connections, or load per-connection Certificate Authorities</string>
     <string name="preferences_text234">Default SSL/TLS TrustStore Password</string>
     <string name="preferences_text235">Default SSL/TLS Client Certificate Store</string>
     <string name="preferences_text236">The default PKCS12 keystore with your client Certificate (.p12 file). May use this keystore for connections, or load per-connection client certifcates</string>
@@ -646,8 +645,8 @@
     <string name="preferences_text252_summary">If checked captures all outgoing network traffic to a Comma Separated Values (CSV) file</string>
     <string name="preferences_text253">TCP Connection Timeout</string>
     <string name="preferences_text254">How long (in sec) to wait for TCP connections to complete. Shorter values make failed connections happen sooner (more responsive), but if the value is too short for your network then you may get spurious connection failures</string>
-    <string name="preferences_text255">MulticastRejoin interval</string>
-    <string name="preferences_text256">Interval between Multicast rejoin attempts (in seconds). Zero indicates do not try to rejoin.</string>
+    <string name="preferences_text255">Multicast Network Rejoin interval</string>
+    <string name="preferences_text256">Interval between Multicast Network rejoin attempts (in seconds). Zero indicates do not try to rejoin.</string>
     <string name="preferences_text257a">Multicast Traffic Loopback</string>
     <string name="preferences_text257b">Unless instructed, do not enable Multicast Traffic Loopback unless you are using another application on the same device to listen to traffic being sent by this application.   This will cause degradation in the performance of the network handling on this device because causes all outgoing traffic to be processed as incoming data to this application.    Filters exist to protect this application from consuming data it is generating, but require resources to run.</string>
     <string name="preferences_text257">Leave Multicast group before attempting to rejoin.</string>
@@ -3941,6 +3940,8 @@
     <string name="export_to_missionpackage_name">Name of the toolbar Data Package</string>
     <string name="continuous_rendering">Continuous Rendering</string>
     <string name="continuous_rendering_summary">Continuous Rendering is the legacy model for updating graphics on the screen and has been replaced with a more efficient rendering mechanism. Enable this feature only if there are rendering issues observed when using the software.</string>
+    <string name="developer_tools">Developer Tools</string>
+    <string name="developer_tools_summary">Enable the Developer Tools in the Overlay Manager</string>
 
     <string name="resection_workflow">Resection Workflow</string>
     <string name="resection">Resection</string>
@@ -4359,7 +4360,7 @@
 
 
     <string name="use_your_location_title">Use Your Location in the Background</string>
-    <string name="background_permission_warning">ATAK asks for the ability to collect location in the background so that when users are running ATAK and background it to perform other activities, it can continue to report the precise location to team members either on a local network of via a TAK Server that the user has configured to use.   The data is sent out to other team members to show the precise location of the individual helping with coordinating such things such as incident response, disaster relief, and personal safety.</string>
+    <string name="background_permission_warning">ATAK asks for the ability to collect location in the background so that when users are running ATAK and background it to perform other activities, it can continue to report the precise location to team members either on a local network via a TAK Server that the user has configured to use.   The data is sent out to other team members to show the precise location of the individual helping with coordinating such things such as incident response, disaster relief, and personal safety.</string>
     <string name="background_permission_warning_bullet">\t1) This data is not sent to the developers of the application.\n\t2) ATAK does not collect location data when the app is not running, only when it is backgrounded.</string>
     <string name="background_permission_warning_action">This application requires the location permission to be set to \'Allow all of the time\'</string>
     <string name="delete_elevation_data_warning">You cannot delete the entire elevation data set. Please select a specific set.</string>
@@ -4388,5 +4389,27 @@
     <string name="polygon_area_prompt">Tap points along the route wish to select.</string>
     <string name="lasso_area_prompt">Drag to draw lasso around the area of interest.</string>
     <string name="lasso">Lasso</string>
+    <string name="shapes">Shapes</string>
+    <string name="files">Files</string>
+    <string name="android_11_warning">Android 11 Warning</string>
+    <string name="android_11_warning_details">Android 11 restricts the use of GPS in the background.   To continue publishing your location when ATAK is in the background you need to manually grant ATAK the \'Allow all the time\' permission. You can access the Android Location Permission screen by selecting the Allow in Settings prompt when the Device Location\'s Permission screen is displayed.\n\nPlease note - ATAK does not collect GPS information while it is not running.</string>
+
+
+    <string name="http_code_message">Error %d - If you believe this is an error and do not have login credentials, click \'Cancel\'.   Please notify the server administrator.</string>
+    <string name="address_blank_error">Address cannot be blank</string>
+    <string name="address_invalid_error">Address is invalid %s</string>
+
+
+    <string name="location_perm_warning_1">In order to enable GPS usage while ATAK is running but in the background, you have two chances to enable this.</string>
+    <string name="location_perm_warning_2">WARNING: If you miss these chances, then you will need to do it manually. Android intentionally makes this difficult</string>
+    <string name="location_perm_warning_chance1">Chance 1: Click on \'Allow In Settings\'</string>
+    <string name="location_perm_warning_chance2">Chance 2: Click on \'Allow In Settings\'</string>
+    <string name="select_with_colon">Select:</string>
+    <string name="location_permission_guidance_1">In order to enable GPS usage while ATAK is running but in the background, perform the following steps.</string>
+    <string name="step_one_with_colon">Step 1:</string>
+    <string name="location_permission_step2">Step 2:</string>
+    <string name="location_permission_step3">Step 3:</string>
+    <string name="general_permission_step1">Step 1:</string>
+    <string name="general_permission_step2">Step 2: Review the Denied List</string>
 
 </resources>

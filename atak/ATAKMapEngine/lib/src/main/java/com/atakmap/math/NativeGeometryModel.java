@@ -10,9 +10,9 @@ import com.atakmap.util.ReadWriteLock;
 public class NativeGeometryModel implements GeometryModel, Disposable {
     final static NativePeerManager.Cleaner CLEANER = new InteropCleaner(GeometryModel.class);
 
-    private final ReadWriteLock rwlock = new ReadWriteLock();
+    final ReadWriteLock rwlock = new ReadWriteLock();
     private final Cleaner cleaner;
-    private Pointer pointer;
+    Pointer pointer;
     private Object owner;
 
     NativeGeometryModel(Pointer pointer, Object owner) {
@@ -73,6 +73,8 @@ public class NativeGeometryModel implements GeometryModel, Disposable {
             return new Sphere(pointer, owner);
         else if(gc == getGeometryModel2_GeometryClass_MESH())
             return new Mesh(pointer, owner);
+        else if(gc == getGeometryModel2_GeometryClass_AABB())
+            return new AABB(pointer, owner);
         else if(isWrapped(pointer.raw))
             return unwrap(pointer.raw);
         else

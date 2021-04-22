@@ -18,6 +18,7 @@ import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
 import com.atakmap.coremap.maps.assets.Icon;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
 import java.util.ArrayList;
@@ -194,8 +195,11 @@ public class ResectionMapManager implements MapGroup.OnItemListChangedListener,
             Marker m = (Marker) item;
             double bearing = m.getMetaDouble("bearing", 0);
             bearing = (bearing + 180d) % 360d;
-            GeoPoint endPoint = DistanceCalculations.computeDestinationPoint(
+            GeoPoint endPoint = GeoPoint.createMutable();
+            GeoPoint e = GeoCalculations.pointAtDistance(
                     m.getPoint(), bearing, 1000d);
+            endPoint.set(e);
+            endPoint.set(m.getPoint().getAltitude());
 
             String endUID = m.getUID() + ".end";
             Marker end = (Marker) _mapGroup.deepFindUID(endUID);
@@ -282,7 +286,7 @@ public class ResectionMapManager implements MapGroup.OnItemListChangedListener,
             setStyle(STYLE_DASHED);
             setStrokeWeight(3);
             setColor(Color.GREEN);
-            setClampToGround(false);
+            setClampToGround(true);
             setMetaBoolean("addToObjList", false);
         }
 

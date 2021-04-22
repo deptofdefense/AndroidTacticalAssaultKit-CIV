@@ -38,6 +38,17 @@ import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.map.AtakMapController;
+import com.atakmap.map.CameraController;
+import com.atakmap.map.MapRenderer2;
+import com.atakmap.map.MapRenderer3;
+import com.atakmap.map.MapSceneModel;
+import com.atakmap.map.RenderSurface;
+import com.atakmap.map.elevation.ElevationManager;
+
+import com.atakmap.math.MathUtils;
+import com.atakmap.math.Plane;
+import com.atakmap.math.PointD;
+import com.atakmap.math.Vector3D;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -57,6 +68,14 @@ public class MapTouchController implements OnTouchListener,
     public static final String TAG = "MapTouchController";
 
     public static final int MAXITEMS = 24;
+
+    /**
+     * Relative density threshold between the current camera focus and the
+     * desired pan-to location. Values numerically greater than this value may
+     * use pan-to; values numerically less then use pan-by. This limits
+     * velocity of movement of the foreground.
+     */
+    private static final double PAN_TO_RELATIVE_DENSITY_LIMIT = 0.75d;
 
     private boolean _recentlyZoomed = false;
     private boolean _lockControls = false;
@@ -94,6 +113,32 @@ public class MapTouchController implements OnTouchListener,
     // in the onRelease 
     private SortedSet<MapItem> onDownHitItems;
 
+    /** screen x of focus on gesture start */
+    private float _originalFocusX;
+    /** screen y of focus on gesture start */
+    private float _originalFocusY;
+    /** _surface_ LLA corresponding to gesture start point*/
+    private final GeoPoint _originalFocusPoint = GeoPoint.createMutable();
+    private float _originalCenterX;
+    private float _originalCenterY;
+    private double _originalAgl;
+    /** _surface_ LLA corresponding to renderer focus on gesture start */
+    private final GeoPoint _centerOnPress = GeoPoint.createMutable();
+    /** hint for using <code>panTo</code> versus <code>panBy</code> */
+    private boolean _cameraPanTo;
+    /** If <code>true</code>, scroll motion will always be raised as `panBy` */
+    private boolean _forceCameraPanBy = false;
+    /** Geopoint at focus when density threshold is exceeded in gesture */
+    private GeoPoint _gestureDensityThresholdExceededPoint;
+    private boolean _gestureDensityThresholdExceededPointFixedCenter;
+
+    // internal use for debugging purposes
+    private final boolean zoomEnabled = true;
+
+    private MapRenderer3 _glglobe;
+
+    LongTouchDraggerListener longDraggerListener = new LongTouchDraggerListener();
+
     public void lockControls() {
         _lockControls = true;
     }
@@ -103,6 +148,8 @@ public class MapTouchController implements OnTouchListener,
     }
 
     public MapTouchController(final MapView view) {
+        _glglobe = view.getRenderer3();
+
         _gestureDetector = new GestureDetector(view.getContext(), this);
         _gestureDetector.setOnDoubleTapListener(this);
         _scaleGestureDetector = new ScaleGestureDetector(view.getContext(),
@@ -141,6 +188,14 @@ public class MapTouchController implements OnTouchListener,
             longtouchTimer.purge();
         }
         longtouchTimer = null;
+    }
+
+    public void setCameraPanToEnabled(boolean b) {
+        _forceCameraPanBy = !b;
+    }
+
+    public boolean isCameraPanToEnabled() {
+        return !_forceCameraPanBy;
     }
 
     protected void onItemLongPress(MapItem item, MotionEvent event) {
@@ -205,8 +260,8 @@ public class MapTouchController implements OnTouchListener,
                 .setItem(item);
         //Not sure about this, I added the point to the event, so even if they
         //click an item we can still know the point aswell
-        Point p = new Point();
-        p.set(Math.round(event.getX()), Math.round(event.getY()));
+        PointF p = new PointF();
+        p.set(event.getX(), event.getY());
         eventBuilder
                 .setPoint(p);
         eventDispatcher.dispatch(eventBuilder.build());
@@ -254,7 +309,11 @@ public class MapTouchController implements OnTouchListener,
         MapEvent.Builder eventBuilder = new MapEvent.Builder(
                 MapEvent.MAP_DOUBLE_TAP);
         eventBuilder
-                .setPoint(new Point((int) event.getX(), (int) event.getY()));
+                .setPoint(new PointF(event.getX(), event.getY()));
+        Bundle scaleExtras = new Bundle();
+        scaleExtras.putParcelable("originalFocus", _originalFocusPoint);
+        ;
+        eventBuilder.setExtras(scaleExtras);
         eventDispatcher.dispatch(eventBuilder.build());
     }
 
@@ -486,8 +545,8 @@ public class MapTouchController implements OnTouchListener,
         float x = event.getX();
         float y = event.getY();
 
-        final GeoPoint geo = _mapView.inverse(x, y, MapView.InverseMode.RayCast)
-                .get();
+        onGestureStart(x, y, false);
+        final GeoPoint geo = _originalFocusPoint;
 
         _downHitItem = null;
         SortedSet<MapItem> hitItems = _fetchOrthoHitItems(x, y, geo);
@@ -521,10 +580,8 @@ public class MapTouchController implements OnTouchListener,
                 _pressedMarkers.add(marker);
             }
             onItemPress(_downHitItem, event);
-        } else {
-            if (geo.isValid()) {
-                onMapPress(event, geo);
-            }
+        } else if (geo.isValid()) {
+            onMapPress(event, geo);
         }
         return true;
     }
@@ -1126,6 +1183,21 @@ public class MapTouchController implements OnTouchListener,
                     MapEvent.MAP_SCROLL);
             eventBuilder
                     .setPoint(new Point((int) dx, (int) dy));
+            final MapSceneModel sm = _glglobe.getMapSceneModel(false,
+                    MapRenderer2.DisplayOrigin.UpperLeft);
+            boolean cameraPanTo = _cameraPanTo &&
+                    !_forceCameraPanBy &&
+                    (CameraController.Util.computeRelativeDensityRatio(
+                            sm, e2.getX(),
+                            e2.getY()) > PAN_TO_RELATIVE_DENSITY_LIMIT
+                                    * Math.abs(Math.cos(Math
+                                            .toRadians(sm.camera.elevation))));
+            Bundle panExtras = new Bundle();
+            panExtras.putBoolean("cameraPanTo", cameraPanTo);
+            panExtras.putParcelable("originalFocus", _originalFocusPoint);
+            panExtras.putFloat("x", e2.getX());
+            panExtras.putFloat("y", e2.getY());
+            eventBuilder.setExtras(panExtras);
             eventDispatcher.dispatch(eventBuilder.build());
             // draw event for telestration
             MapEventDispatcher drawEventDispatcher = _mapView
@@ -1196,13 +1268,6 @@ public class MapTouchController implements OnTouchListener,
         }
     };
 
-    private float _originalFocusX;
-    private float _originalFocusY;
-    private GeoPointMetaData _originalFocusPoint;
-
-    // internal use for debugging purposes
-    private final boolean zoomEnabled = true;
-
     public void setUserOrientation(boolean orientation) {
         _userOrientation = orientation;
     }
@@ -1237,10 +1302,12 @@ public class MapTouchController implements OnTouchListener,
         if (DeveloperOptions.getIntOption("disable-3D-mode", 0) == 1)
             return;
 
-        double tilt = _mapView.getMapTilt();
+        final MapSceneModel sm = _glglobe.getMapSceneModel(false,
+                MapRenderer2.DisplayOrigin.UpperLeft);
+        final double tilt = 90d + sm.camera.elevation;
         GeoPointMetaData focus = _mapView.inverseWithElevation(
-                _mapView.getMapController().getFocusX(),
-                _mapView.getMapController().getFocusY());
+                sm.focusx,
+                sm.focusy);
         GeoPoint ffPoint = _freeFormPoint;
         if (ffPoint == null)
             ffPoint = focus.get();
@@ -1316,35 +1383,129 @@ public class MapTouchController implements OnTouchListener,
         return null;
     }
 
+    private static boolean checkCollide() {
+        return false;
+    }
+
     @Override
     public boolean onScale(ScaleGestureDetector detector) {
-        AtakMapController cont = _mapView.getMapController();
         if (_dragStarted && _itemDragged != null)
             onItemDragDropped(_itemDragged, _lastDrag);
         _recentlyZoomed = true;
         float factor = detector.getScaleFactor();
-        int focusx = (int) detector.getFocusX();
-        int focusy = (int) detector.getFocusY();
+        float focusx = detector.getFocusX();
+        float focusy = detector.getFocusY();
 
-        GeoPoint focusPoint = _originalFocusPoint.get();
+        final MapSceneModel sm = _glglobe.getMapSceneModel(false,
+                MapRenderer2.DisplayOrigin.UpperLeft);
+
+        GeoPoint focusPoint = _originalFocusPoint;
         if (_freeFormPoint != null) {
             focusPoint = _freeFormPoint;
             PointF p = _mapView.forward(focusPoint);
-            focusx = (int) p.x;
-            focusy = (int) p.y;
+            focusx = p.x;
+            focusy = p.y;
+
+            // XXX - using legacy behavior for now where freeform point always
+            //       returns to center on gesture. the behavior works
+            //       reasonably well, but there are small vertical shifts on
+            //       tilt when the rotation axis origin is not aligned with
+            //       the screenspace focus.
+            focusx = sm.focusx;
+            focusy = sm.focusy;
         } else if (_lockedZoomFocus != null) {
-            focusx = _lockedZoomFocus.x == -1 ? (int) cont.getFocusX()
+            focusx = _lockedZoomFocus.x == -1 ? sm.focusx
                     : _lockedZoomFocus.x;
-            focusy = _lockedZoomFocus.y == -1 ? (int) cont.getFocusY()
+            focusy = _lockedZoomFocus.y == -1 ? sm.focusy
                     : _lockedZoomFocus.y;
+        } else if (_tiltEnabled == STATE_TILT_ENABLED) {
+            // XXX - if tilt is enabled, force the focus to stick on the
+            //       original focus point. If the instantaneous gesture focus
+            //       is used, the map will slide with the gesture focus point.
+            //       This motion is very intuitive for rotate and zoom, but not
+            //       with tilt
+            focusx = _originalCenterX;
+            focusy = _originalCenterY;
+            focusPoint = _centerOnPress;
         }
+
+        // if the focus point is allowed to drift from screenspace focus,
+        // ensure that the requested location meets thresholds set for
+        // relative density
+        final boolean focusSatisfiesDensityThreshold = (_freeFormPoint != null)
+                ||
+                (_tiltEnabled == STATE_TILT_ENABLED) ||
+                CameraController.Util.computeRelativeDensityRatio(
+                        sm,
+                        focusx,
+                        focusy) > PAN_TO_RELATIVE_DENSITY_LIMIT * Math.abs(
+                                Math.cos(Math.toRadians(sm.camera.elevation)));
+
+        // if the density threshold is not satisfied at the target, execute
+        // motions around current look-at, respecting focus X if possible
+        if (!focusSatisfiesDensityThreshold) {
+            // fix focusy
+            focusy = sm.focusy;
+            if (_gestureDensityThresholdExceededPoint == null) {
+                _gestureDensityThresholdExceededPoint = GeoPoint
+                        .createMutable();
+                if (_glglobe.inverse(new PointD(focusx, focusy, 0d),
+                        _gestureDensityThresholdExceededPoint,
+                        MapRenderer2.InverseMode.RayCast, 0,
+                        MapRenderer2.DisplayOrigin.UpperLeft) == MapRenderer2.InverseResult.None) {
+                    sm.mapProjection.inverse(
+                            sm.camera.target,
+                            _gestureDensityThresholdExceededPoint);
+                    _gestureDensityThresholdExceededPointFixedCenter = true;
+                } else {
+                    _gestureDensityThresholdExceededPointFixedCenter = false;
+                }
+            }
+            if (_gestureDensityThresholdExceededPointFixedCenter)
+                focusx = sm.focusx;
+            focusPoint = _gestureDensityThresholdExceededPoint;
+        } else if (focusSatisfiesDensityThreshold) {
+            _gestureDensityThresholdExceededPoint = null;
+        }
+
+        // NOTE: it is critical that the same focus pair (screen and LLA) be
+        // passed through to all camera control operations
+
         _mapPressed = false;
         if (zoomEnabled) {
+            // compare camera altitude versus distance to focus and use it to limit zoom
+            final double focuslen = MathUtils.distance(
+                    sm.camera.target.x
+                            * sm.displayModel.projectionXToNominalMeters,
+                    sm.camera.target.y
+                            * sm.displayModel.projectionYToNominalMeters,
+                    sm.camera.target.z
+                            * sm.displayModel.projectionZToNominalMeters,
+                    sm.camera.location.x
+                            * sm.displayModel.projectionXToNominalMeters,
+                    sm.camera.location.y
+                            * sm.displayModel.projectionYToNominalMeters,
+                    sm.camera.location.z
+                            * sm.displayModel.projectionZToNominalMeters)
+                    / 16d;
+            float scaleFactor = factor;
+
+            // if the camera AGL is sufficiently close to the length between
+            // the camera and its focus point, slow down the zoom.
+            if (Math.abs(_originalAgl) < focuslen) {
+                scaleFactor = 1f +
+                        (scaleFactor - 1f) * (float) Math.max(0.125d,
+                                Math.abs(_originalAgl) / focuslen);
+            }
+
             MapEvent.Builder eventBuilder = new MapEvent.Builder(
                     MapEvent.MAP_SCALE);
             eventBuilder
-                    .setPoint(new Point(focusx, focusy))
-                    .setScaleFactor(factor);
+                    .setPoint(new PointF(focusx, focusy))
+                    .setScaleFactor(scaleFactor);
+            Bundle scaleExtras = new Bundle();
+            scaleExtras.putParcelable("originalFocus", focusPoint);
+            eventBuilder.setExtras(scaleExtras);
             _mapView.getMapEventDispatcher().dispatch(eventBuilder.build());
         }
         _inGesture = true;
@@ -1358,29 +1519,22 @@ public class MapTouchController implements OnTouchListener,
 
         // rotation
         if (_userOrientation || isFreeForm3DEnabled()) {
-            double angle = detector.getAngle();
-            //this._mapView.getMapController().rotateTo(
-            //        _originalMapAngle + (angle - _originalAngle), true);
+            final double angle = detector.getAngle();
             Bundle b = new Bundle();
             b.putBoolean("eventNotHandled", true);
             b.putDouble("angle", angle);
             MapEvent.Builder eb = new MapEvent.Builder(MapEvent.MAP_ROTATE);
-            eb.setPoint(new Point(focusx, focusy));
+            eb.setPoint(new PointF(focusx, focusy));
             eb.setExtras(b);
             MapEvent evt = eb.build();
             _mapView.getMapEventDispatcher().dispatch(evt);
             if (evt.getExtras().getBoolean("eventNotHandled")) {
-                if (_mapView.getMapTilt() > 0d || isFreeForm3DEnabled()) {
-                    // XXX - rotateBy requires center, once this is resolves change to use detector
-                    //       focus
-                    cont.rotateBy((_originalMapAngle + (angle - _originalAngle))
-                            - _mapView.getMapRotation(), focusPoint, true);
-
-                } else {
-                    cont.rotateBy((_originalMapAngle + (angle - _originalAngle))
-                            - _mapView.getMapRotation(),
-                            focusx, focusy, true);
-                }
+                CameraController.Interactive.rotateTo(_glglobe,
+                        (_originalMapAngle + (angle - _originalAngle)),
+                        focusPoint,
+                        focusx, focusy,
+                        MapRenderer3.CameraCollision.AdjustCamera,
+                        true);
             }
         }
 
@@ -1430,8 +1584,15 @@ public class MapTouchController implements OnTouchListener,
             MapEvent evt = eb.build();
             _mapView.getMapEventDispatcher().dispatch(evt);
             if (Double.compare(tiltBy, 0) != 0 && evt.getExtras()
-                    .getBoolean("eventNotHandled"))
-                cont.tiltBy(tiltBy, focusPoint, false);
+                    .getBoolean("eventNotHandled")) {
+
+                // stop tilting towards surface when a collision occurs
+                final MapRenderer3.CameraCollision collide = (tiltBy > 0d)
+                        ? MapRenderer3.CameraCollision.Abort
+                        : MapRenderer3.CameraCollision.AdjustFocus;
+                CameraController.Interactive.tiltBy(_glglobe, tiltBy,
+                        focusPoint, focusx, focusy, collide, false);
+            }
         }
 
         return true;
@@ -1453,21 +1614,19 @@ public class MapTouchController implements OnTouchListener,
             }
         }
 
-        _originalFocusX = detector.getFocusX();
-        _originalFocusY = detector.getFocusY();
-
-        // XXX - requires center for rotateBy -- change to detector focus once this is fixed
-
-        // XXX - use render terrain elevation
-        _originalFocusPoint = _mapView.inverseWithElevation(
-                _mapView.getMapController().getFocusX(),
-                _mapView.getMapController().getFocusY());
+        onGestureStart(detector.getFocusX(), detector.getFocusY(), true);
 
         return true;
     }
 
     @Override
     public void onScaleEnd(ScaleGestureDetector detector) {
+        // scale has ended because one or all pointers have been removed. if
+        // one pointer remains, we want to recompute the focus to avoid
+        // shifts on subsequent scrolls
+        onGestureStart(detector.getFocusX(), detector.getFocusY(), false);
+
+        _gestureDensityThresholdExceededPoint = null;
     }
 
     @Override
@@ -1501,15 +1660,18 @@ public class MapTouchController implements OnTouchListener,
             return false;
         }
 
+        final MapSceneModel sm = _glglobe.getMapSceneModel(false,
+                MapRenderer2.DisplayOrigin.UpperLeft);
+
         // Do map zoom
         float scaleFactor = (event.getY() - _mapDoubleTapLastY)
-                / (_mapView.getHeight() / 2.5f);
+                / (sm.height / 2.5f);
         if (scaleFactor >= 0)
             scaleFactor += 1;
         else
             scaleFactor = 1.0f / (Math.abs(scaleFactor) + 1.0f);
-        int focusx = (int) _mapView.getMapController().getFocusX();
-        int focusy = (int) _mapView.getMapController().getFocusY();
+        int focusx = (int) sm.focusx;
+        int focusy = (int) sm.focusy;
         if (_lockedZoomFocus != null) {
             if (_lockedZoomFocus.x != -1)
                 focusx = _lockedZoomFocus.x;
@@ -1521,6 +1683,13 @@ public class MapTouchController implements OnTouchListener,
         eventBuilder
                 .setPoint(new Point(focusx, focusy))
                 .setScaleFactor(scaleFactor);
+        Bundle scaleExtras = new Bundle();
+        // XXX - need to have explicit instruction on intended behavior with
+        //       this feature. current implementation does not seem correct.
+        if (_lockedZoomFocus == null)
+            scaleExtras.putParcelable("originalFocus",
+                    sm.mapProjection.inverse(sm.camera.target, null));
+        eventBuilder.setExtras(scaleExtras);
         _mapView.getMapEventDispatcher().dispatch(eventBuilder.build());
         _mapDoubleTapLastY = event.getY();
         _inGesture = true;
@@ -1589,9 +1758,135 @@ public class MapTouchController implements OnTouchListener,
         _skipDeconfliction = skip;
     }
 
-    LongTouchDraggerListener longDraggerListener = new LongTouchDraggerListener();
+    private void onGestureStart(float gestureFocusX, float gestureFocusY,
+            boolean captureCenter) {
+        final MapSceneModel sm = _glglobe.getMapSceneModel(false,
+                MapRenderer2.DisplayOrigin.UpperLeft);
 
-    class LongTouchDraggerListener implements OnTouchListener {
+        // record where the press started
+        _originalFocusX = gestureFocusX;
+        _originalFocusY = gestureFocusY;
+
+        // record the center when the press occurred
+        _originalCenterX = sm.focusx;
+        _originalCenterY = sm.focusy;
+
+        GeoPoint cam = GeoPoint.createMutable();
+        sm.mapProjection.inverse(sm.camera.location, cam);
+        _originalAgl = cam.getAltitude();
+        if (Double.isNaN(_originalAgl))
+            _originalAgl = 0d;
+        final double localel = ElevationManager.getElevation(cam.getLatitude(),
+                cam.getLongitude(), null);
+        if (!Double.isNaN(localel))
+            _originalAgl -= localel;
+
+        if (_freeFormPoint == null) {
+            // capture focus point on surface
+            if (captureCenter) {
+                _centerOnPress.set(Double.NaN, Double.NaN);
+                _glglobe.inverse(
+                        new PointD(_originalCenterX, _originalCenterY, 0d),
+                        _centerOnPress, MapRenderer2.InverseMode.RayCast, 0,
+                        MapRenderer2.DisplayOrigin.UpperLeft);
+            }
+            _originalFocusPoint.set(Double.NaN, Double.NaN);
+            _glglobe.inverse(new PointD(_originalFocusX, _originalFocusY, 0d),
+                    _originalFocusPoint, MapRenderer2.InverseMode.RayCast, 0,
+                    MapRenderer2.DisplayOrigin.UpperLeft);
+            if (!_originalFocusPoint.isAltitudeValid())
+                _originalFocusPoint.set(0d);
+        } else {
+            // the user has specified a location to be locked on. The focus
+            // point at press needs to be derived from this location
+
+            // TODO - better handling for case of camera below focus plane
+            GeoPoint focus = GeoPoint.createMutable();
+            {
+                // create plane at press location
+                PointD startProj = sm.mapProjection.forward(_freeFormPoint,
+                        null);
+                PointD startProjUp = sm.mapProjection
+                        .forward(
+                                new GeoPoint(_freeFormPoint.getLatitude(),
+                                        _freeFormPoint.getLongitude(),
+                                        _freeFormPoint.getAltitude() + 100d),
+                                null);
+
+                // compute the normal at the start point
+                Vector3D startNormal = new Vector3D(startProjUp.x - startProj.x,
+                        startProjUp.y - startProj.y,
+                        startProjUp.z - startProj.z);
+                startNormal.X *= sm.displayModel.projectionXToNominalMeters;
+                startNormal.Y *= sm.displayModel.projectionYToNominalMeters;
+                startNormal.Z *= sm.displayModel.projectionZToNominalMeters;
+                final double startNormalLen = MathUtils.distance(startNormal.X,
+                        startNormal.Y, startNormal.Z, 0d, 0d, 0d);
+                startNormal.X /= startNormalLen;
+                startNormal.Y /= startNormalLen;
+                startNormal.Z /= startNormalLen;
+
+                final Plane panPlane = new Plane(startNormal, startProj);
+
+                // intersect the end point with the plane to determine the
+                // focus point. focus point should be adjusted to source
+                // location altitude as altitude will not be constant across
+                // the tangent plane
+                if (sm.inverse(new PointF(gestureFocusX, gestureFocusY), focus,
+                        panPlane) != null)
+                    focus.set(_freeFormPoint.getAltitude());
+                else
+                    focus.set(_freeFormPoint);
+            }
+            _originalFocusPoint.set(focus);
+            _centerOnPress.set(focus);
+        }
+
+        // establish whether the camera is below the tangent plane at the press location
+        {
+            // create plane at press location
+            PointD startProj = sm.mapProjection.forward(_originalFocusPoint,
+                    null);
+            PointD startProjUp = sm.mapProjection
+                    .forward(
+                            new GeoPoint(_originalFocusPoint.getLatitude(),
+                                    _originalFocusPoint.getLongitude(),
+                                    _originalFocusPoint.getAltitude() + 100d),
+                            null);
+
+            // compute the normal at the start point
+            final Vector3D startNormal = new Vector3D(
+                    startProjUp.x - startProj.x, startProjUp.y - startProj.y,
+                    startProjUp.z - startProj.z);
+            startNormal.X *= sm.displayModel.projectionXToNominalMeters;
+            startNormal.Y *= sm.displayModel.projectionYToNominalMeters;
+            startNormal.Z *= sm.displayModel.projectionZToNominalMeters;
+            final double startNormalLen = MathUtils.distance(startNormal.X,
+                    startNormal.Y, startNormal.Z, 0d, 0d, 0d);
+            startNormal.X /= startNormalLen;
+            startNormal.Y /= startNormalLen;
+            startNormal.Z /= startNormalLen;
+
+            final double d = -startNormal.dot(startProj.x, startProj.y,
+                    startProj.z);
+            final double above = startNormal.dot(startProjUp.x, startProjUp.y,
+                    startProjUp.z) + d;
+            final double camera = startNormal.dot(sm.camera.location.x,
+                    sm.camera.location.y, sm.camera.location.z) + d;
+
+            // determine what side of the plane the camera is on; if the
+            // camera is below the plane, we'll do an ortho style drag,
+            // otherwise we'll do a real drag.
+            _cameraPanTo = sm.camera.perspective && (above * camera > 0d) &&
+                    (CameraController.Util.computeRelativeDensityRatio(
+                            sm, gestureFocusX,
+                            gestureFocusY) > (PAN_TO_RELATIVE_DENSITY_LIMIT
+                                    * Math.abs(Math.cos(Math
+                                            .toRadians(sm.camera.elevation)))));
+        }
+    }
+
+    final class LongTouchDraggerListener implements OnTouchListener {
 
         float x;
         float y;

@@ -23,7 +23,7 @@ import com.atakmap.map.layer.raster.ImageInfo;
 import com.atakmap.map.layer.raster.tilereader.TileReader;
 import com.atakmap.map.layer.raster.tilereader.TileReaderFactory;
 import com.atakmap.map.layer.raster.tilereader.opengl.GLQuadTileNode2;
-import com.atakmap.map.layer.raster.tilereader.opengl.GLQuadTileNode3;
+import com.atakmap.map.layer.raster.tilereader.opengl.GLQuadTileNode4;
 import com.atakmap.map.layer.raster.tilereader.opengl.PrefetchedInitializer;
 import com.atakmap.map.projection.Projection;
 import com.atakmap.math.MathUtils;
@@ -161,7 +161,7 @@ public final class GLBaseMap implements GLMapRenderable {
         TileReaderFactory.Options readerOpts = null;
         GLQuadTileNode2.Options opts = null;
 
-        return new GLQuadTileNode3(ctx, info, readerOpts, opts, init);
+        return new GLQuadTileNode4(ctx, info, readerOpts, opts, init);
     }
 
     private void initSource(GLMapView view) {
@@ -399,8 +399,13 @@ public final class GLBaseMap implements GLMapRenderable {
         public Interleave getInterleave() {
             return Interleave.BIP;
         }
+
+        @Override
+        public boolean isMultiResolution() {
+            return true;
+        }
     }
-    
+
     private static class SubimageTileReader extends TileReader {
 
         private final TileReader impl;
@@ -456,6 +461,10 @@ public final class GLBaseMap implements GLMapRenderable {
         public Interleave getInterleave() {
             return this.impl.getInterleave();
         }
-        
+
+        @Override
+        public boolean isMultiResolution() {
+            return this.impl.isMultiResolution();
+        }
     }
 }

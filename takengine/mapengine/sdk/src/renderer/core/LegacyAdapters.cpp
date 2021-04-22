@@ -25,7 +25,7 @@ namespace
     public :
         GLMapRenderable2Adapter(GLMapRenderablePtr &&value) NOTHROWS;
     public :
-        void draw(const GLMapView2& view, const int renderPass) NOTHROWS override;
+        void draw(const GLGlobeBase& view, const int renderPass) NOTHROWS override;
         void release() NOTHROWS override;
         int getRenderPass() NOTHROWS override;
         void start() NOTHROWS override;
@@ -52,7 +52,7 @@ namespace
     public:
         GLLayerSpi2Adapter(GLLayerSpiPtr &&opaque) NOTHROWS;
     public:
-        TAKErr create(GLLayer2Ptr &value, GLMapView2 &renderer, Layer2 &subject) NOTHROWS override;
+        TAKErr create(GLLayer2Ptr &value, GLGlobeBase &renderer, Layer2 &subject) NOTHROWS override;
     public :
         GLLayerSpiPtr opaque;
     };
@@ -98,15 +98,16 @@ namespace
         opaque(std::move(opaque_))
     {}
 
-    void GLMapRenderable2Adapter::draw(const GLMapView2& view, const int renderPass) NOTHROWS
+    void GLMapRenderable2Adapter::draw(const GLGlobeBase& view, const int renderPass) NOTHROWS
     {
         if (!(renderPass&getRenderPass()))
             return;
        
         // XXX - don't like having to use const-cast here, but usage in
         //       constructor is const friendly and so is subsequent invocation
-        std::shared_ptr<GLMapView> legacyView(new GLMapView(std::move(GLMapView2Ptr(&const_cast<GLMapView2 &>(view), Memory_leaker_const<GLMapView2>))));
-        opaque->draw(legacyView.get());
+        GLMapView legacyView(std::move(GLGlobeBasePtr(&const_cast<GLGlobeBase &>(view), Memory_leaker_const<GLGlobeBase>)));
+        // XXX - sync fields
+        opaque->draw(&legacyView);
     }
     void GLMapRenderable2Adapter::release() NOTHROWS
     {
@@ -114,7 +115,7 @@ namespace
     }
     int GLMapRenderable2Adapter::getRenderPass() NOTHROWS
     {
-        return GLMapView2::Surface;
+        return GLGlobeBase::Surface;
     }
     void GLMapRenderable2Adapter::start() NOTHROWS
     {
@@ -147,7 +148,7 @@ namespace
         opaque(std::move(opaque_))
     {}
     
-    TAKErr GLLayerSpi2Adapter::create(GLLayer2Ptr &value, GLMapView2 &renderer, Layer2 &subject) NOTHROWS
+    TAKErr GLLayerSpi2Adapter::create(GLLayer2Ptr &value, GLGlobeBase &renderer, Layer2 &subject) NOTHROWS
     {
         TAKErr code(TE_Ok);
 
@@ -155,7 +156,7 @@ namespace
         code = LegacyAdapters_find(legacyLayer, subject);
         TE_CHECKRETURN_CODE(code);
 
-        std::shared_ptr<GLMapView> legacyView(new GLMapView(std::move(GLMapView2Ptr(&renderer, Memory_leaker_const<GLMapView2>))));
+        std::shared_ptr<GLMapView> legacyView(new GLMapView(std::move(GLGlobeBasePtr(&renderer, Memory_leaker_const<GLGlobeBase>))));
 
         GLLayerPtr retval(opaque->create(GLLayerSpiArg(legacyView.get(), legacyLayer.get())), Memory_deleter_const<GLLayer>);
         if (!retval.get())

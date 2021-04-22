@@ -8,7 +8,7 @@
         }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.0.1'
+        classpath 'com.android.tools.build:gradle:4.0.2'
     }
  }
 
@@ -28,7 +28,7 @@ apply plugin: 'com.android.library'
 
 android {
     compileSdkVersion 21
-    buildToolsVersion "29.0.2"
+    buildToolsVersion "29.0.3"
     ndkVersion "12.1.2977051"
 
     defaultConfig {
@@ -162,6 +162,7 @@ def isNativeBuildEnabled() {
     // Only enable externalNativeBuild on machines with NDK installed -> valid ndkDir
     try {
         def ndkDir = project.android.ndkDirectory
+         
         if(ndkDir == null || ndkDir.toString().isEmpty()) {
             return false
         }

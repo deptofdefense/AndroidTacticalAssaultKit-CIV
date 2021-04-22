@@ -72,11 +72,11 @@ namespace TAK {
                 private:
                     friend class GLContentHolder;
 
-                    class GLC3DTPendingContent : public TAK::Engine::Renderer::Core::GLMapRenderable2 {
+                    class GLPendingContent : public TAK::Engine::Renderer::Core::GLMapRenderable2 {
                     public:
-                        virtual ~GLC3DTPendingContent() NOTHROWS;
+                        virtual ~GLPendingContent() NOTHROWS;
 
-                        virtual void draw(const TAK::Engine::Renderer::Core::GLMapView2& view, const int renderPass) NOTHROWS;
+                        virtual void draw(const TAK::Engine::Renderer::Core::GLGlobeBase& view, const int renderPass) NOTHROWS;
                         virtual void release() NOTHROWS;
                         virtual int getRenderPass() NOTHROWS;
                         virtual void start() NOTHROWS;
@@ -118,8 +118,8 @@ namespace TAK {
 
                     struct PendingNode_ : Node_ {
                         PendingNode_() : pending_content_() {}
-                        GLC3DTPendingContent pending_content_;
-                        static PendingNode_* fromPendingContent(GLC3DTPendingContent* content) NOTHROWS;
+                        GLPendingContent pending_content_;
+                        static PendingNode_* fromPendingContent(GLPendingContent* content) NOTHROWS;
                     };
 
                 private:

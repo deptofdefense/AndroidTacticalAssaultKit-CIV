@@ -106,7 +106,9 @@ public class ImportCertSort extends ImportInternalSDResolver {
                     connectString);
 
             SharedPreferences.Editor editor = prefs.edit();
-            editor.remove(caPassword).apply();
+            editor.remove(caLocation);
+            editor.remove(caPassword);
+            editor.apply();
 
             importedCaCert = true;
         }
@@ -124,7 +126,9 @@ public class ImportCertSort extends ImportInternalSDResolver {
                     connectString);
 
             SharedPreferences.Editor editor = prefs.edit();
-            editor.remove(clientPassword).apply();
+            editor.remove(certificateLocation);
+            editor.remove(clientPassword);
+            editor.apply();
 
             importedClientCert = true;
         }
@@ -257,7 +261,8 @@ public class ImportCertSort extends ImportInternalSDResolver {
                 String cacheCreds = properties.getProperty("cacheCreds", "");
                 CertificateEnrollmentClient.getInstance().enroll(
                         MapView.getMapView().getContext(),
-                        description, connectString, cacheCreds, expiration, null, true);
+                        description, connectString, cacheCreds, expiration,
+                        null, true);
             }
         }
 

@@ -54,13 +54,18 @@ namespace takenginetests {
     }
 
     TEST_F(Cesium3DTilesSceneInfoTests, testSampleDatasetTilesetJSONURI) {
-        std::string basePath = TAK::Engine::Tests::getResource("CesiumSample");
-        std::string resource = basePath + Platform_pathSep() + "tileset.json";
-        Cesium3DTilesSceneInfoSpi spi;
-        std::vector<SceneInfoPtr> scenes;
-        STLVectorAdapter<SceneInfoPtr> adapter(scenes);
-        TAKErr code = spi.create(adapter, resource.c_str());
-        ASSERT_TRUE(code == TE_Ok);
-        assertSampleScene(scenes, basePath.c_str());
+        {
+            std::string basePath = TAK::Engine::Tests::getResource("CesiumSample");
+            std::string resource = basePath + Platform_pathSep() + "tileset.json";
+            Cesium3DTilesSceneInfoSpi spi;
+            std::vector<SceneInfoPtr> scenes;
+            STLVectorAdapter<SceneInfoPtr> adapter(scenes);
+            TAKErr code = TE_Ok;
+            {
+                code = spi.create(adapter, resource.c_str());
+            }
+            ASSERT_TRUE(code == TE_Ok);
+            assertSampleScene(scenes, basePath.c_str());
+        }
     }
 }

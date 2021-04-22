@@ -311,6 +311,8 @@ final class NativeMesh implements Mesh {
     static native int getTEDM_Points();
     static native int getTEDM_Triangles();
     static native int getTEDM_TriangleStrip();
+    static native int getTEDM_Lines();
+    static native int getTEDM_LineStrip();
 
     static native int getTEVA_Position();
     static native int getTEVA_TexCoord0();
@@ -354,6 +356,10 @@ final class NativeMesh implements Mesh {
                 return getTEDM_Triangles();
             case TriangleStrip:
                 return getTEDM_TriangleStrip();
+            case Lines :
+                return getTEDM_Lines();
+            case LineStrip:
+                return getTEDM_LineStrip();
             default :
                 throw new IllegalArgumentException();
         }
@@ -365,6 +371,10 @@ final class NativeMesh implements Mesh {
             return DrawMode.Triangles;
         else if(tedm == getTEDM_TriangleStrip())
             return DrawMode.TriangleStrip;
+        else if(tedm == getTEDM_Lines())
+            return DrawMode.Lines;
+        else if(tedm == getTEDM_LineStrip())
+            return DrawMode.LineStrip;
         else
             throw new IllegalArgumentException();
     }

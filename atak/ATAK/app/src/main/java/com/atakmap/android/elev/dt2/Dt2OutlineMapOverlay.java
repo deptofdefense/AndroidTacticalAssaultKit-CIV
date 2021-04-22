@@ -28,6 +28,7 @@ import com.atakmap.android.preference.AtakPreferences;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.map.layer.opengl.GLLayerFactory;
 
@@ -36,7 +37,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class Dt2OutlineMapOverlay extends AbstractMapOverlay2 implements
         Dt2FileWatcher.Listener {
@@ -50,6 +53,7 @@ public class Dt2OutlineMapOverlay extends AbstractMapOverlay2 implements
     private final AtakPreferences _prefs;
     private final Dt2FileWatcher _dtedWatcher;
     private final GLDt2OutlineOverlay.Instance _outlineOverlay;
+    private final Set<String> _ignorePaths = new HashSet<>();
 
     private ListModel _listModel;
 
@@ -195,7 +199,7 @@ public class Dt2OutlineMapOverlay extends AbstractMapOverlay2 implements
             _childCount = _dtedWatcher.getFileCount();
             List<HierarchyListItem> filtered = new ArrayList<>();
             for (int level = 0; level < 4; level++) {
-                DirectoryItem item = new DirectoryItem(level, "DTED", listener);
+                DirectoryItem item = new DirectoryItem(level, "DTED", -1, listener);
                 if (this.filter.accept(item)) {
                     item.syncRefresh(listener, filter);
                     filtered.add(item);
@@ -235,7 +239,8 @@ public class Dt2OutlineMapOverlay extends AbstractMapOverlay2 implements
             _mapView.post(new Runnable() {
                 @Override
                 public void run() {
-                    Toast.makeText(_context, R.string.delete_elevation_data_warning,
+                    Toast.makeText(_context,
+                            R.string.delete_elevation_data_warning,
                             Toast.LENGTH_LONG).show();
                 }
             });
@@ -266,17 +271,16 @@ public class Dt2OutlineMapOverlay extends AbstractMapOverlay2 implements
         private GeoBounds _bounds;
         private int _childCount;
 
-        DirectoryItem(int level, String path, BaseAdapter listener) {
+        DirectoryItem(int level, String path, int lng, BaseAdapter listener) {
             _level = level;
             _path = path;
+            _longitude = lng;
             this.listener = listener;
             this.reusable = this.asyncRefresh = true;
             _root = _path.equals("DTED");
             if (_root)
                 _title = "DTED" + _level;
             else {
-                int lng = _longitude = getValue(_path.substring(
-                        _path.lastIndexOf('/') + 1));
                 _title = Math.abs(lng) + CHAR_DEG + (lng < 0 ? " W" : " E");
                 _bounds = new GeoBounds(-90, lng, 90, lng + 1);
                 _bounds.setWrap180(true);
@@ -326,11 +330,21 @@ public class Dt2OutlineMapOverlay extends AbstractMapOverlay2 implements
             List<String> files = _dtedWatcher.getFiles(_level, _path);
             List<HierarchyListItem> filtered = new ArrayList<>();
             for (String f : files) {
+                if (_ignorePaths.contains(f))
+                    continue;
+                int value;
+                try {
+                    value = getValue(f.substring(f.lastIndexOf('/') + 1));
+                } catch (Exception e) {
+                    Log.w(TAG, "Invalid file path: " + f + " Ignoring...", e);
+                    _ignorePaths.add(f);
+                    continue;
+                }
                 HierarchyListItem item;
                 if (_root)
-                    item = new DirectoryItem(_level, f, listener);
+                    item = new DirectoryItem(_level, f, value, listener);
                 else
-                    item = new FileItem(this, f);
+                    item = new FileItem(this, f, value);
                 if (this.filter.accept(item))
                     filtered.add(item);
             }
@@ -393,18 +407,18 @@ public class Dt2OutlineMapOverlay extends AbstractMapOverlay2 implements
             final AlertDialog d = b.show();
             d.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(
                     new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    if (!switch1.isChecked() || !switch2.isChecked()) {
-                        Toast.makeText(_context,
-                                R.string.delete_elevation_please_lock,
-                                Toast.LENGTH_LONG).show();
-                        return;
-                    }
-                    d.dismiss();
-                    Dt2FileWatcher.getInstance().delete(_level, _path);
-                }
-            });
+                        @Override
+                        public void onClick(View v) {
+                            if (!switch1.isChecked() || !switch2.isChecked()) {
+                                Toast.makeText(_context,
+                                        R.string.delete_elevation_please_lock,
+                                        Toast.LENGTH_LONG).show();
+                                return;
+                            }
+                            d.dismiss();
+                            Dt2FileWatcher.getInstance().delete(_level, _path);
+                        }
+                    });
         }
     }
 
@@ -430,12 +444,12 @@ public class Dt2OutlineMapOverlay extends AbstractMapOverlay2 implements
         private final int _latitude;
         private final int _level;
 
-        FileItem(DirectoryItem parent, String path) {
+        FileItem(DirectoryItem parent, String path, int latitude) {
             _parent = parent;
             _path = path;
+            _latitude = latitude;
 
             _name = path.substring(path.lastIndexOf('/') + 1);
-            _latitude = getValue(_name);
             _level = Integer.parseInt(_name.substring(
                     _name.lastIndexOf('.') + 3));
             GeoBounds bounds = parent._bounds;

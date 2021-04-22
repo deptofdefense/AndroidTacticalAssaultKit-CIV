@@ -260,15 +260,16 @@ public class TrackDetailsView extends LinearLayout implements
         setStartDateTime(_track.getStartTime());
         _totalTime.setText(MathUtils.GetTimeRemainingString(_track
                 .getTimeElapsedLong()));
-        long millisNow = new CoordinatedTime().getMilliseconds();
-        long millisAgo = millisNow - _track.getStartTime();
+        final long millisNow = new CoordinatedTime().getMilliseconds();
+        final long millisAgo = millisNow - _track.getStartTime();
         _timeAgo.setText(MathUtils.GetTimeRemainingOrDateString(millisNow,
                 millisAgo, false));
 
         // Update units
-        int spanUnits = Integer.parseInt(_prefs.getString(
+        final int spanUnits = Integer.parseInt(_prefs.getString(
                 "rab_rng_units_pref", String.valueOf(Span.METRIC)));
-        String label = spanUnits == Span.METRIC ? "M/KM" : "Ft/Mi";
+
+        String label = spanUnits == Span.METRIC ? "M/KM" : (spanUnits == Span.ENGLISH) ? "Ft/Mi" : "NM";
         _distUnits.setText(label);
         _distance.setText(_track.getDistanceString(spanUnits));
         _gain.setText(_track.getGainString());
@@ -414,6 +415,7 @@ public class TrackDetailsView extends LinearLayout implements
                     android.R.layout.select_dialog_singlechoice);
             adapter.add("Ft/Mi");
             adapter.add("M/KM");
+            adapter.add("NM");
 
             int units = Span.METRIC;
             try {

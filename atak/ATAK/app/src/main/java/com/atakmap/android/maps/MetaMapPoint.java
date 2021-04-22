@@ -11,9 +11,8 @@ public class MetaMapPoint extends PointMapItem {
 
     public MetaMapPoint(final GeoPointMetaData point,
             final String uid) {
-        this(MapItem.createSerialId(), new DefaultMetaDataHolder(), point.get(),
-                uid);
-        this.copyMetaData(point.getMetaData());
+        super(point, uid);
+        setMetaBoolean("addToObjList", false);
     }
 
     public MetaMapPoint(final long serialId,

@@ -129,7 +129,7 @@ public abstract class GLInstancedRenderable implements GLMapRenderable2 {
         boolean updateMatrices = false;
 
         // Map has been moved - need to update LCS
-        if (view.scene != _lcs.sceneModel) {
+        if (!view.scene.equals(_lcs.sceneModel)) {
             view.scratch.geo.set(view.drawLat, view.drawLng);
             view.scratch.geo.set(GeoPoint.UNKNOWN);
             view.scene.mapProjection.forward(view.scratch.geo,

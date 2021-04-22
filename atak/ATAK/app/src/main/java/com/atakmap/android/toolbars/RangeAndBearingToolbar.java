@@ -82,8 +82,10 @@ public class RangeAndBearingToolbar implements IToolbarExtension,
         _tools.add(new RangeAndBearingTool(_mapView, buttonRangeBearing));
         _tools.add(rabepTool);
         _tools.add(_spbt);
-        _tools.add(new BullseyeTool(_mapView, buttonBullseye));
-        _tools.add(new RangeCircleButtonTool(_mapView, buttonCircle));
+        _tools.add(RangeAndBearingCompat.createBullseyeToolInstance(_mapView,
+                buttonBullseye));
+        _tools.add(RangeAndBearingCompat
+                .createRangeCircleButtonToolInstance(_mapView, buttonCircle));
 
         DocumentedIntentFilter filter = new DocumentedIntentFilter();
         filter.addAction(REDX_CLICK);

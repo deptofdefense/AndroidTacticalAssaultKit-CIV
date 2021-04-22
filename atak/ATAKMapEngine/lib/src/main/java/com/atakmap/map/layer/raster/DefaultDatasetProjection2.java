@@ -19,8 +19,16 @@ public class DefaultDatasetProjection2 implements DatasetProjection2 {
     private final Matrix img2proj;
     private final Matrix proj2img;
     private PointD projected;
-    
+
+    public DefaultDatasetProjection2(ImageInfo info) {
+        this(info.srid, info.width, info.height, info.upperLeft, info.upperRight, info.lowerRight, info.lowerLeft);
+    }
+
     public DefaultDatasetProjection2(int srid, int width, int height, GeoPoint ul, GeoPoint ur, GeoPoint lr, GeoPoint ll) {
+        this(srid, width&0xFFFFFFFFL, height&0xFFFFFFFFL, ul, ur, lr, ll);
+    }
+
+    public DefaultDatasetProjection2(int srid, long width, long height, GeoPoint ul, GeoPoint ur, GeoPoint lr, GeoPoint ll) {
         Projection proj = ProjectionFactory.getProjection(srid);
         if(proj == null) {
             proj = EquirectangularMapProjection.INSTANCE;
@@ -31,13 +39,13 @@ public class DefaultDatasetProjection2 implements DatasetProjection2 {
         PointD imgUL = new PointD(0, 0);
         PointD projUL = this.mapProjection.forward(ul, null);
         checkThrowUnusable(projUL);
-        PointD imgUR = new PointD(width-1, 0);
+        PointD imgUR = new PointD(width, 0);
         PointD projUR = this.mapProjection.forward(ur, null);
         checkThrowUnusable(projUR);
-        PointD imgLR = new PointD(width-1, height-1);
+        PointD imgLR = new PointD(width, height);
         PointD projLR = this.mapProjection.forward(lr, null);
         checkThrowUnusable(projLR);
-        PointD imgLL = new PointD(0, height-1);
+        PointD imgLL = new PointD(0, height);
         PointD projLL = this.mapProjection.forward(ll, null);
         checkThrowUnusable(projLL);
         

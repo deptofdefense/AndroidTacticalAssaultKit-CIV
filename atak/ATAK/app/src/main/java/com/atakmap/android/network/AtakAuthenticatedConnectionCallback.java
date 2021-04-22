@@ -24,20 +24,32 @@ import android.widget.TextView;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class AtakAuthenticatedConnectionCallback implements
-        AtakAuthenticationHandlerHTTP.OnAuthenticateCallback {
+        AtakAuthenticationHandlerHTTP.OnAuthenticateCallbackV2 {
 
     private final Activity activity;
+
+    // if the user has declined to enter a username / password for authentication, do not request
+    // again during this session.
+    private final Set<String> cancelled = new HashSet<>();
 
     public AtakAuthenticatedConnectionCallback(final Activity activity) {
         this.activity = activity;
     }
 
-    // XXX - use instance synchronization ???
-
     @Override
     public String[] getBasicAuth(final URL url, final int previousStatus) {
+        return getBasicAuth(url, previousStatus, null);
+    }
+
+    @Override
+    public String[] getBasicAuth(final URL url, final int previousStatus,
+            Map<String, String> properties) {
         if (url == null)
             return null;
 
@@ -50,11 +62,15 @@ public class AtakAuthenticatedConnectionCallback implements
                 false
         };
 
+        if (cancelled.contains(requestingSite))
+            return null;
+
         synchronized (AtakAuthenticatedConnectionCallback.class) {
             this.activity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    showPrompt(requestingSite, previousStatus, result,
+                    showPrompt(requestingSite, properties, previousStatus,
+                            result,
                             complete);
                 }
             });
@@ -70,15 +86,19 @@ public class AtakAuthenticatedConnectionCallback implements
             return result;
     }
 
-    private void showPrompt(final String site, final int previousStatus,
-            final String[] result,
+    private void showPrompt(final String site, Map<String, String> properties,
+            final int previousStatus, final String[] result,
             final boolean[] complete) {
         LayoutInflater inflater = LayoutInflater.from(this.activity);
         View dialogView = inflater.inflate(R.layout.login_dialog, null);
 
         final TextView reason = dialogView.findViewById(R.id.reason);
+        final TextView reasonExtra = dialogView.findViewById(R.id.reasonExtra);
 
         reason.setVisibility(View.VISIBLE);
+        reasonExtra.setVisibility(View.VISIBLE);
+        reasonExtra.setText(reason.getContext()
+                .getString(R.string.http_code_message, previousStatus));
 
         if (previousStatus == HttpURLConnection.HTTP_UNAUTHORIZED) {
             // Similar to 403 Forbidden, but specifically for use when
@@ -93,11 +113,20 @@ public class AtakAuthenticatedConnectionCallback implements
             reason.setText(R.string.http_403_message);
         } else {
             reason.setVisibility(View.GONE);
+            reasonExtra.setVisibility(View.GONE);
         }
 
         final AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(
                 this.activity);
-        dialogBuilder.setTitle(activity.getString(R.string.login_to, site));
+
+        // try to grab a human readable name, otherwise use the address for the site (previous behavior)
+        String siteName = null;
+        if (properties != null)
+            siteName = properties.get(WELL_KNOWN_NAME);
+        if (siteName == null || siteName.length() == 0)
+            siteName = site;
+
+        dialogBuilder.setTitle(activity.getString(R.string.login_to, siteName));
         dialogBuilder.setView(dialogView);
         dialogBuilder.setCancelable(false);
 
@@ -177,14 +206,7 @@ public class AtakAuthenticatedConnectionCallback implements
                     @Override
                     public void onClick(DialogInterface dialog,
                             int which) {
-                        dialog.cancel();
-                    }
-                });
-
-        dialogBuilder.setOnCancelListener(
-                new DialogInterface.OnCancelListener() {
-                    @Override
-                    public void onCancel(DialogInterface dialog) {
+                        cancelled.add(site);
                         try {
                             result[0] = null;
                             result[1] = null;

@@ -62,7 +62,7 @@ public abstract class JumpUpdateReceiver {
      * 
      * @param dip - the primary DIP marker
      */
-    public abstract void jumpStarted(Marker dip);
+    public abstract void jumpStarted(Marker dip, double startPlannedHeading);
 
     /**
      * This method is called when a Jump Ends
@@ -78,4 +78,8 @@ public abstract class JumpUpdateReceiver {
      */
     public abstract void updateField(FieldOptions fo, Unit u, String val);
 
+    /**
+     * This method will be called when the planned jumper heading is changed, due to a planned turn
+     */
+    public abstract void updatePlannedJumpHeading(double heading);
 }

@@ -342,7 +342,7 @@ public class ProductRepository {
         } catch (Exception ioe) {
             Log.d(TAG, "error occurred handling updates", ioe);
         } finally {
-            IoUtils.close(in,TAG,"error closing the input stream");
+            IoUtils.close(in, TAG, "error closing the input stream");
         }
 
         if (FileSystemUtils.isEmpty(products)) {
@@ -370,7 +370,8 @@ public class ProductRepository {
 
         try {
             // Closed in passed-to method
-            BufferedReader reader = new BufferedReader(IOProviderFactory.getFileReader(in));
+            BufferedReader reader = new BufferedReader(
+                    IOProviderFactory.getFileReader(in));
             return parseRepo(context, in.getAbsolutePath(), repoType, reader);
         } catch (IOException ex) {
             Log.w(TAG, "Failed parse: " + in.getAbsolutePath(), ex);

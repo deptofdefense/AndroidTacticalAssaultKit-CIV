@@ -38,7 +38,7 @@ namespace
         void start() NOTHROWS override;
         void stop() NOTHROWS override;
         int getRenderPass() NOTHROWS override;
-        void draw(const GLMapView2 &view, const int renderPass) NOTHROWS override;
+        void draw(const GLGlobeBase &view, const int renderPass) NOTHROWS override;
         void release() NOTHROWS override;
     public :
         Layer2 &getSubject() NOTHROWS override;
@@ -99,7 +99,7 @@ TAKErr TAK::Engine::Renderer::Core::GLLayerFactory2_unregisterSpi(const GLLayerS
     }
     return TE_InvalidArg;
 }
-TAKErr TAK::Engine::Renderer::Core::GLLayerFactory2_create(GLLayer2Ptr &value, GLMapView2 &view, TAK::Engine::Core::Layer2 &subject) NOTHROWS
+TAKErr TAK::Engine::Renderer::Core::GLLayerFactory2_create(GLLayer2Ptr &value, GLGlobeBase& view, TAK::Engine::Core::Layer2 &subject) NOTHROWS
 {
     ReadLock lock(mutex());
 
@@ -145,7 +145,7 @@ namespace
     {
         return impl_->getRenderPass();
     }
-    void GLMapRenderable2Layer::draw(const GLMapView2 &view, const int renderPass) NOTHROWS
+    void GLMapRenderable2Layer::draw(const GLGlobeBase &view, const int renderPass) NOTHROWS
     {
         if (!visible_)
             return;

@@ -35,7 +35,7 @@ public final class GeoPoint implements Parcelable {
     public final static GeoPoint UNKNOWN_POINT = new GeoPoint(UNKNOWN, UNKNOWN,
             UNKNOWN, AltitudeReference.HAE, UNKNOWN, UNKNOWN, Access.READ_ONLY);
 
-    private static final double MIN_ACCEPTABLE_ALTITUDE = -3600;
+    public static final double MIN_ACCEPTABLE_ALTITUDE = -3600;
     private static final double MAX_ACCEPTABLE_ALTITUDE = 76000;
 
     public enum AltitudeReference {

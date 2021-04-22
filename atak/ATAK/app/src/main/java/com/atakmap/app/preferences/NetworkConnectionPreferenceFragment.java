@@ -25,8 +25,10 @@ import android.widget.EditText;
 import com.atakmap.android.gui.ImportFileBrowserDialog;
 import com.atakmap.android.gui.PanEditTextPreference;
 import com.atakmap.android.ipc.AtakBroadcast;
+import com.atakmap.android.maps.MapView;
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.android.preference.PreferenceSearchIndex;
+import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
 import com.atakmap.comms.NetConnectString;
 import com.atakmap.comms.app.CotInputsListActivity;
@@ -281,8 +283,9 @@ public class NetworkConnectionPreferenceFragment
     }
 
     public void readKey() {
-
         ImportFileBrowserDialog.show("Select Mesh Encryption Key to Import",
+                ATAKUtilities
+                        .getStartDirectory(MapView.getMapView().getContext()),
                 new String[] {
                         "pref"
                 },

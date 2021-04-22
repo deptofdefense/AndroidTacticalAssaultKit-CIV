@@ -11,6 +11,7 @@ import com.atakmap.android.layers.RasterUtils;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.graphics.GLCapture;
 import com.atakmap.android.math.MathUtils;
+import com.atakmap.android.tilecapture.imagery.ImageryCaptureTask;
 import com.atakmap.android.tilecapture.reader.BitmapReader;
 import com.atakmap.android.tilecapture.reader.DatasetTileReader;
 import com.atakmap.android.tilecapture.reader.GdalTileReader;
@@ -48,6 +49,8 @@ import java.util.List;
 /**
  * Reads tiles from a mobile or local tileset with the intent of capturing
  * each tile to a file
+ *
+ * Use with {@link ImageryCaptureTask} for asynchronous capture of map imagery
  */
 public class TileCapture extends DatasetTileReader {
 
@@ -112,8 +115,10 @@ public class TileCapture extends DatasetTileReader {
             GeoPoint lr = info.getLowerRight();
 
             if (info.getProvider().equals("mobac")) {
-                int width = info.getWidth() * (1 << tc._levelOffset);
-                int height = info.getHeight() * (1 << tc._levelOffset);
+                long width = (long) (info.getWidth() & 0xFFFFFFFFL)
+                        * (1L << (long) tc._levelOffset);
+                long height = (long) (info.getHeight() & 0xFFFFFFFFL)
+                        * (1L << (long) tc._levelOffset);
                 tc._imprecise = new DefaultDatasetProjection2(
                         srid, width, height,
                         ul, ur, lr, ll);

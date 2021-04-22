@@ -12,6 +12,7 @@ import com.atakmap.android.maps.graphics.GLShape;
 import com.atakmap.android.maps.graphics.GLTriangle;
 import com.atakmap.android.widgets.AutoSizeAngleOverlayShape;
 import com.atakmap.android.widgets.AutoSizeAngleOverlayShape.OnPropertyChangedListener;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.conversions.Angle;
 import com.atakmap.coremap.conversions.AngleUtilities;
 import com.atakmap.coremap.maps.coords.GeoBounds;
@@ -27,6 +28,11 @@ import com.atakmap.opengl.GLText;
 
 import java.util.ArrayList;
 
+/**
+ * @deprecated Use {@link com.atakmap.android.maps.graphics.GLAutoSizeAngleOverlay2}
+ */
+@Deprecated
+@DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
 public class GLAutoSizeAngleOverlay extends GLShape implements
         OnPointsChangedListener, OnPropertyChangedListener {
 

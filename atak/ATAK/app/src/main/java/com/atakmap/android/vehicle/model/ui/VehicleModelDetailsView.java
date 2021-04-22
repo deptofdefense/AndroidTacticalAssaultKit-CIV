@@ -299,8 +299,7 @@ public class VehicleModelDetailsView extends GenericDetailsView implements
                 if (result == CoordDialogView.Result.VALID_CHANGED) {
                     _vehicle.move(_vehicle.getCenter(), p, true);
                     _centerButton.setText(coordView.getFormattedString());
-                    _mapView.getMapController().panTo(_vehicle.getCenterPoint(),
-                            true);
+                    ATAKUtilities.scaleToFit(_vehicle);
                 }
                 d.dismiss();
             }

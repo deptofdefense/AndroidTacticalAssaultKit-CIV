@@ -1,15 +1,15 @@
 #include "renderer/elevation/GLTerrainTile.h"
 
+#include "elevation/ElevationManager.h"
 #include "math/Ellipsoid2.h"
 #include "renderer/GLMatrix.h"
 #include "renderer/GLSLUtil.h"
 #include "thread/Mutex.h"
 
-#include <algorithm>
-
 using namespace TAK::Engine::Renderer::Elevation;
 
 using namespace TAK::Engine::Core;
+using namespace TAK::Engine::Elevation;
 using namespace TAK::Engine::Math;
 using namespace TAK::Engine::Model;
 using namespace TAK::Engine::Port;
@@ -148,7 +148,9 @@ using namespace TAK::Engine::Util;
     "uniform vec4 uColor;\n" \
     "varying vec2 vTexPos;\n" \
     "void main(void) {\n" \
-    "  gl_FragColor = texture2D(uTexture, vTexPos)*uColor;\n"\
+    "  float min_clamp = step(0.0, vTexPos.x) * step(0.0, vTexPos.y);\n" \
+    "  float max_clamp = step(0.0, 1.0-vTexPos.x) * step(0.0, 1.0-vTexPos.y);\n" \
+    "  gl_FragColor = texture2D(uTexture, vTexPos)*uColor*vec4(1.0, 1.0, 1.0, min_clamp*max_clamp);\n" \
     "}"
 #endif
 // depth shaders
@@ -242,11 +244,11 @@ namespace
 {
     TAKErr lla2ecef_transform(Matrix2 *value, const Projection2 &ecef, const Matrix2 *localFrame) NOTHROWS;
     void setOrtho(Matrix2 *value, const double left, const double right, const double bottom, const double top, const double zNear, const double zFar) NOTHROWS;
-    void drawTerrainTilesImpl(const GLMapView2::State *renderPasses, const std::size_t numRenderPasses, const TerrainTileShader &shader, const Matrix2 &mvp, const Matrix2 *local, const std::size_t numLocal, const GLTexture2 &texture, const GLTerrainTile *terrainTiles, const std::size_t numTiles, const float r, const float g, const float b, const float a) NOTHROWS;
+    void drawTerrainTilesImpl(const GLGlobeBase::State *renderPasses, const std::size_t numRenderPasses, const TerrainTileShader &shader, const Matrix2 &mvp, const Matrix2 *local, const std::size_t numLocal, const GLTexture2 &texture, const GLTerrainTile *terrainTiles, const std::size_t numTiles, const float r, const float g, const float b, const float a) NOTHROWS;
     void glUniformMatrix4(GLint location, const Matrix2 &matrix) NOTHROWS;
     void glUniformMatrix4v(GLint location, const Matrix2 *matrix, const std::size_t count) NOTHROWS;
     void drawTerrainTileImpl(const Matrix2 &lla2tex, const TerrainTileShader &shader, const Matrix2 &mvp, const Matrix2 *local, const std::size_t numLocal, const GLTerrainTile &gltile, const bool drawSkirt, const float r, const float g, const float b, const float a) NOTHROWS;
-    TAKErr validateSceneModel(GLMapView2::State *view, const std::size_t width, const std::size_t height) NOTHROWS;
+    void glSceneModel(MapSceneModel2 &scene) NOTHROWS;
     TAKErr createTerrainTileShader(TerrainTileShader *value, const char *vertShaderSrc, const char *fragShaderSrc) NOTHROWS;
     TAKErr createTerrainTileShaders(TerrainTileShaders *value,
                                   const char *hiVertShaderSrc, const char *mdVertShaderSrc, const char *loVertShaderSrc,
@@ -256,42 +258,52 @@ namespace
 
 }
 
-void TAK::Engine::Renderer::Elevation::GLTerrainTile_drawTerrainTiles(const TAK::Engine::Renderer::Core::GLMapView2::State *states, const std::size_t numStates, const GLTerrainTile *terrainTiles, const std::size_t numTiles, const TerrainTileShaders &shaders, const GLTexture2 &tex, const float elevationScale, const float r, const float g, const float b, const float a) NOTHROWS
+void TAK::Engine::Renderer::Elevation::GLTerrainTile_drawTerrainTiles(const GLGlobeBase::State *states, const std::size_t numStates, const GLTerrainTile *terrainTiles, const std::size_t numTiles, const TerrainTileShaders &shaders, const GLTexture2 &tex, const float elevationScale, const float r, const float g, const float b, const float a) NOTHROWS
 {
     if(!numStates)
         return; // nothing to draw
 
-    const TAK::Engine::Renderer::Core::GLMapView2::State &view = states[0];
+    const GLGlobeBase::State &view = states[0];
 
-    TerrainTileRenderContext ctx = GLTerrainTile_begin(view, shaders);
+    TerrainTileRenderContext ctx = GLTerrainTile_begin(view.scene, shaders);
     GLTerrainTile_setElevationScale(ctx, elevationScale);
     GLTerrainTile_bindTexture(ctx, tex.getTexId(), tex.getTexWidth(), tex.getTexHeight());
     GLTerrainTile_drawTerrainTiles(ctx, states, numStates, terrainTiles, numTiles, r, g, b, a);
     GLTerrainTile_end(ctx);
 }
 
-TerrainTileRenderContext TAK::Engine::Renderer::Elevation::GLTerrainTile_begin(const TAK::Engine::Renderer::Core::GLMapView2::State &view, const TerrainTileShaders &shaders) NOTHROWS
+TerrainTileRenderContext TAK::Engine::Renderer::Elevation::GLTerrainTile_begin(const MapSceneModel2 &scene, const TerrainTileShaders &shaders) NOTHROWS
 {
     TerrainTileRenderContext ctx;
 
+    GeoPoint2 focus;
+    scene.projection->inverse(&focus, scene.camera.target);
+
+    // select GSD based on AGL if specified
+    double gsd = scene.gsd;
+    if(!isnan(scene.camera.agl)) {
+        const double aglgsd = MapSceneModel2_gsd(scene.camera.agl, scene.camera.fov, scene.height);
+        gsd = std::min(scene.gsd, aglgsd);
+    }
+
     // select shader
-    if(view.scene.displayModel->earth->getGeomClass() == TAK::Engine::Math::GeometryModel2::ELLIPSOID) {
-        if(view.drawMapResolution <= shaders.hi_threshold) {
+    if(scene.displayModel->earth->getGeomClass() == TAK::Engine::Math::GeometryModel2::ELLIPSOID) {
+        if(gsd <= shaders.hi_threshold) {
             Matrix2 tx;
-            tx.setToTranslate(view.drawLng, view.drawLat, 0.0);
-            lla2ecef_transform(&ctx.localFrame.primary[0], *view.scene.projection, &tx);
-            ctx.localFrame.primary[0].translate(-view.drawLng, -view.drawLat, 0.0);
+            tx.setToTranslate(focus.longitude, focus.latitude, 0.0);
+            lla2ecef_transform(&ctx.localFrame.primary[0], *scene.projection, &tx);
+            ctx.localFrame.primary[0].translate(-focus.longitude, -focus.latitude, 0.0);
             ctx.numLocalFrames++;
-        } else if (view.drawMapResolution <= shaders.md_threshold) {
-            const auto &ellipsoid = static_cast<const Ellipsoid2 &>(*view.scene.displayModel->earth);
+        } else if (gsd <= shaders.md_threshold) {
+            const auto &ellipsoid = static_cast<const Ellipsoid2 &>(*scene.displayModel->earth);
 
             const double a = ellipsoid.radiusX;
             const double b = ellipsoid.radiusZ;
 
-            const double cosLat0d = cos(view.drawLat*M_PI/180.0);
-            const double cosLng0d = cos(view.drawLng*M_PI/180.0);
-            const double sinLat0d = sin(view.drawLat*M_PI/180.0);
-            const double sinLng0d = sin(view.drawLng*M_PI/180.0);
+            const double cosLat0d = cos(focus.latitude*M_PI/180.0);
+            const double cosLng0d = cos(focus.longitude*M_PI/180.0);
+            const double sinLat0d = sin(focus.latitude*M_PI/180.0);
+            const double sinLng0d = sin(focus.longitude*M_PI/180.0);
 
             const double a2_b2 = (a*a)/(b*b);
             const double b2_a2 = (b*b)/(a*a);
@@ -312,7 +324,7 @@ TerrainTileRenderContext TAK::Engine::Renderer::Elevation::GLTerrainTile_begin(c
             ctx.numLocalFrames++;
 
             // degrees are relative to focus
-            ctx.localFrame.primary[1].setToTranslate(-view.drawLng, -view.drawLat, 0);
+            ctx.localFrame.primary[1].setToTranslate(-focus.longitude, -focus.latitude, 0);
             ctx.numLocalFrames++;
 
             // degrees are relative to focus
@@ -321,9 +333,9 @@ TerrainTileRenderContext TAK::Engine::Renderer::Elevation::GLTerrainTile_begin(c
         }
     }
 
-    ctx.shader = (view.drawMapResolution <= shaders.hi_threshold) ?
+    ctx.shader = (gsd <= shaders.hi_threshold) ?
                                 shaders.hi :
-                                (view.drawMapResolution <= shaders.md_threshold) ?
+                                (gsd <= shaders.md_threshold) ?
                                 shaders.md : shaders.lo;
 
     glUseProgram(ctx.shader.base.handle);
@@ -339,64 +351,93 @@ TerrainTileRenderContext TAK::Engine::Renderer::Elevation::GLTerrainTile_begin(c
     // first pass
     {
         // construct the MVP matrix
-        if (view.scene.camera.mode == MapCamera2::Perspective) {
-            ctx.mvp.primary = view.scene.camera.projection;
-            ctx.mvp.primary.concatenate(view.scene.camera.modelView);
+        if (scene.camera.mode == MapCamera2::Perspective) {
+            ctx.mvp.primary = scene.camera.projection;
+            ctx.mvp.primary.concatenate(scene.camera.modelView);
         } else {
             // projection
-            setOrtho(&ctx.mvp.primary, view.left, view.right, view.bottom, view.top, view.near, view.far);
+            setOrtho(&ctx.mvp.primary, 0.0, (double)scene.width, 0.0, (double)scene.height, scene.camera.near, scene.camera.far);
             // model-view
-            ctx.mvp.primary.concatenate(view.scene.forwardTransform);
+            ctx.mvp.primary.concatenate(scene.forwardTransform);
         }
     }
 
-#if 0
-    if(view.scene.displayModel->earth->getGeomClass() == GeometryModel2::PLANE && view.crossesIDL) {
-        GLMapView2::State hemi2(view);
-        // reconstruct the scene model in the secondary hemisphere
-        if (view.drawLng  < 0.0)
-            hemi2.drawLng += 360.0;
-        else
-            hemi2.drawLng -= 360.0;
+    // if the projection is planar or we're not using the lo-res ECEF shader,
+    // may need to handle IDL crossings
+    bool handleIdlCrossing = ((scene.displayModel->earth->getGeomClass() == GeometryModel2::PLANE) ||
+            (ctx.shader.base.handle != shaders.lo.base.handle));
+    if(handleIdlCrossing) {
+#define sgn(a) ((a) < 0.0 ? -1.0 : 1.0)
+        // construct segment in screen space along the IDL
+        Point2<double> idlNxy;
+        Point2<double> idlSxy;
+        if(scene.projection->getSpatialReferenceID() == 4978) {
+            // if the projection is ECEF, we can't simply transform the pole
+            // locations to screen xy. we'll create an ENU frame with the
+            // current focus as the origin and plot the IDL meridian in that
+            // coordinate system for cartesian evaluation
+            Matrix2 lla2enu;
+            Matrix2 localOrigin;
+            localOrigin.setToTranslate(focus.longitude, focus.latitude, 0.0);
+            lla2ecef_transform(&lla2enu, *scene.projection, &localOrigin);
 
-        hemi2.sceneModelVersion = ~hemi2.sceneModelVersion;
-        validateSceneModel(&hemi2, hemi2.scene.width, hemi2.scene.height);
+            lla2enu.transform(&idlNxy, Point2<double>((sgn(focus.longitude) *180.0)-focus.longitude, 90.0-focus.latitude, 0.0));
+            scene.forwardTransform.transform(&idlNxy, idlNxy);
+            lla2enu.transform(&idlSxy, Point2<double>((sgn(focus.longitude) *180.0)-focus.longitude, -90.0-focus.latitude, 0.0));
+            scene.forwardTransform.transform(&idlSxy, idlSxy);
+        } else {
+            scene.forward(&idlNxy, GeoPoint2(90.0, sgn(focus.longitude) * 180.0));
+            scene.forward(&idlSxy, GeoPoint2(-90.0, sgn(focus.longitude) * 180.0));
+        }
 
-        // construct the MVP matrix
-        // projection
-        setOrtho(&ctx.mvp.secondary, view.left, view.right, view.bottom, view.top, view.near, view.far);
-        // model-view
-        ctx.mvp.secondary.concatenate(hemi2.scene.forwardTransform);
+        // find distance from focus xy to IDL screenspace segment
+        //https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
+        const double x2 = idlSxy.x;
+        const double x1 = idlNxy.x;
+        const double y2 = idlSxy.y;
+        const double y1 = idlNxy.y;
+        const double x0 = scene.width/2.0;
+        const double y0 = scene.height/2.0;
+        const double test = fabs(((x2-x1)*(y1-y0))-((x1-x0)*(y2-y1))) / sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
 
-        ctx.hasSecondary = true;
+        handleIdlCrossing = test <= Vector2_length(Point2<double>(scene.width/2.0, scene.height/2.0, 0.0));
     }
-#else
-    if(view.crossesIDL &&
-        ((view.scene.displayModel->earth->getGeomClass() == GeometryModel2::PLANE) ||
-            (&ctx.shader != &shaders.lo))) {
 
-        GLMapView2::State hemi2(view);
+    if(handleIdlCrossing) {
         for(std::size_t i = 0u; i < TE_GLTERRAINTILE_MAX_LOCAL_TRANSFORMS; i++)
             ctx.localFrame.secondary[i].set(ctx.localFrame.primary[i]);
 
-        if(hemi2.scene.displayModel->earth->getGeomClass() == GeometryModel2::PLANE) {
+        MapSceneModel2 hemi2(scene);
+        if(scene.displayModel->earth->getGeomClass() == GeometryModel2::PLANE) {
             // reconstruct the scene model in the secondary hemisphere
-            if (hemi2.drawLng  < 0.0)
-                hemi2.drawLng += 360.0;
+            GeoPoint2 focus2(focus);
+            if (focus2.longitude  < 0.0)
+                focus2.longitude += 360.0;
             else
-                hemi2.drawLng -= 360.0;
+                focus2.longitude -= 360.0;
 
-            hemi2.sceneModelVersion = ~hemi2.sceneModelVersion;
-            validateSceneModel(&hemi2, hemi2.scene.width, hemi2.scene.height);
+            hemi2.set(
+                    hemi2.displayDpi,
+                    hemi2.width,
+                    hemi2.height,
+                    hemi2.projection->getSpatialReferenceID(),
+                    focus2,
+                    hemi2.focusX,
+                    hemi2.focusY,
+                    hemi2.camera.azimuth,
+                    90.0+hemi2.camera.elevation,
+                    hemi2.gsd,
+                    hemi2.camera.mode);
+            glSceneModel(hemi2);
         } else if(ctx.shader.base.handle == shaders.hi.base.handle) {
             // reconstruct the scene model in the secondary hemisphere
-            if (hemi2.drawLng  < 0.0)
+            if (focus.longitude  < 0.0)
                 ctx.localFrame.secondary[0].translate(-360.0, 0.0, 0.0);
             else
                 ctx.localFrame.secondary[0].translate(360.0, 0.0, 0.0);
         } else if(ctx.shader.base.handle == shaders.md.base.handle) {
             // reconstruct the scene model in the secondary hemisphere
-            if (hemi2.drawLng  < 0.0)
+            if (focus.longitude  < 0.0)
                 ctx.localFrame.secondary[1].translate(-360.0, 0.0, 0.0);
             else
                 ctx.localFrame.secondary[1].translate(360.0, 0.0, 0.0);
@@ -405,19 +446,18 @@ TerrainTileRenderContext TAK::Engine::Renderer::Elevation::GLTerrainTile_begin(c
         // construct the MVP matrix
         Matrix2 mvp;
         // projection
-        if (hemi2.scene.camera.mode == MapCamera2::Perspective) {
-            ctx.mvp.secondary = hemi2.scene.camera.projection;
-            ctx.mvp.secondary.concatenate(hemi2.scene.camera.modelView);
+        if (hemi2.camera.mode == MapCamera2::Perspective) {
+            ctx.mvp.secondary = hemi2.camera.projection;
+            ctx.mvp.secondary.concatenate(hemi2.camera.modelView);
         } else {
             // projection
-            setOrtho(&ctx.mvp.secondary, hemi2.left, hemi2.right, hemi2.bottom, hemi2.top, hemi2.near, hemi2.far);
+            setOrtho(&ctx.mvp.secondary, 0.0, (double)hemi2.width, 0.0, (double)hemi2.height, hemi2.camera.near, hemi2.camera.far);
             // model-view
-            ctx.mvp.secondary.concatenate(hemi2.scene.forwardTransform);
+            ctx.mvp.secondary.concatenate(hemi2.forwardTransform);
         }
 
         ctx.hasSecondary = true;
     }
-#endif
 
     glEnableVertexAttribArray(ctx.shader.base.aVertexCoords);
 
@@ -439,7 +479,7 @@ void TAK::Engine::Renderer::Elevation::GLTerrainTile_setElevationScale(TerrainTi
         ctx.elevationScale = elevationScale;
     }
 }
-void TAK::Engine::Renderer::Elevation::GLTerrainTile_drawTerrainTiles(TerrainTileRenderContext& ctx, const TAK::Engine::Renderer::Core::GLMapView2::State* states, const std::size_t numStates, const GLTerrainTile* terrainTile, const std::size_t numTiles, const float r, const float g, const float b, const float a) NOTHROWS
+void TAK::Engine::Renderer::Elevation::GLTerrainTile_drawTerrainTiles(TerrainTileRenderContext& ctx, const GLGlobeBase::State* states, const std::size_t numStates, const GLTerrainTile* terrainTile, const std::size_t numTiles, const float r, const float g, const float b, const float a) NOTHROWS
 {
     GLTexture2 *tex = nullptr;
 
@@ -448,6 +488,17 @@ void TAK::Engine::Renderer::Elevation::GLTerrainTile_drawTerrainTiles(TerrainTil
     if(ctx.hasSecondary)
         drawTerrainTilesImpl(states, numStates, ctx.shader, ctx.mvp.secondary, ctx.localFrame.secondary, ctx.numLocalFrames, *tex, terrainTile, numTiles, r, g, b, a);
 }
+void TAK::Engine::Renderer::Elevation::GLTerrainTile_drawTerrainTiles(TerrainTileRenderContext& ctx, const Matrix2& lla2tex, const GLTerrainTile* terrainTiles, const std::size_t numTiles, const float r, const float g, const float b, const float a) NOTHROWS
+{
+    // draw terrain tiles
+    for (std::size_t idx = 0u; idx < numTiles; idx++) {
+        auto tile = terrainTiles[idx];
+        drawTerrainTileImpl(lla2tex, ctx.shader, ctx.mvp.primary, ctx.localFrame.primary, ctx.numLocalFrames, tile, a == 1.f, r, g, b, a);
+        if(ctx.hasSecondary)
+            drawTerrainTileImpl(lla2tex, ctx.shader, ctx.mvp.secondary, ctx.localFrame.secondary, ctx.numLocalFrames, tile, a == 1.f, r, g, b, a);
+    }
+}
+
 void TAK::Engine::Renderer::Elevation::GLTerrainTile_end(TerrainTileRenderContext &ctx) NOTHROWS
 {
     glDisableVertexAttribArray(ctx.shader.base.aVertexCoords);
@@ -473,8 +524,13 @@ TerrainTileShaders TAK::Engine::Renderer::Elevation::GLTerrainTile_getColorShade
             createTerrainTileShaders(&shaders,
                     OFFSCREEN_PLANAR_VERT_SHADER_SRC, OFFSCREEN_ECEF_VERT_MD_SHADER_SRC, OFFSCREEN_ECEF_VERT_LO_SHADER_SRC,
                     OFFSCREEN_FRAG_SHADER_SRC);
+#ifndef __ANDROID__
             shaders.hi_threshold = 1.5;
             shaders.md_threshold = 100.0;
+#else
+            shaders.hi_threshold = 1.5;
+            shaders.md_threshold = 0.0;
+#endif
             colorShaders[&ctx][srid] = shaders;
             break;
         }
@@ -512,10 +568,15 @@ TerrainTileShaders TAK::Engine::Renderer::Elevation::GLTerrainTile_getDepthShade
         case 4978 :
         {
             createTerrainTileShaders(&shaders,
-                    OFFSCREEN_PLANAR_VERT_SHADER_SRC, OFFSCREEN_PLANAR_VERT_SHADER_SRC, OFFSCREEN_PLANAR_VERT_SHADER_SRC,
+                    DEPTH_ECEF_VERT_LO_SHADER_SRC, DEPTH_ECEF_VERT_MD_SHADER_SRC, DEPTH_PLANAR_VERT_SHADER_SRC,
                     OFFSCREEN_FRAG_SHADER_SRC);
+#ifndef __ANDROID__
             shaders.hi_threshold = 1.5;
             shaders.md_threshold = 100.0;
+#else
+            shaders.hi_threshold = 1.5;
+            shaders.md_threshold = 0.0;
+#endif
             colorShaders[&ctx][srid] = shaders;
             break;
         }
@@ -542,9 +603,9 @@ namespace
     void setOrtho(Matrix2 *value, const double left, const double right, const double bottom, const double top, const double zNear, const double zFar) NOTHROWS
     {
         float mxf[16u];
-        atakmap::renderer::GLMatrix::orthoM(mxf, 
-            static_cast<float>(left), static_cast<float>(right), 
-            static_cast<float>(bottom), static_cast<float>(top), 
+        atakmap::renderer::GLMatrix::orthoM(mxf,
+            static_cast<float>(left), static_cast<float>(right),
+            static_cast<float>(bottom), static_cast<float>(top),
             static_cast<float>(zNear), static_cast<float>(zFar));
         for(std::size_t i = 0u; i < 16u; i++)
             value->set(i%4, i/4, mxf[i]);
@@ -609,14 +670,14 @@ namespace
         return code;
     }
 
-    void drawTerrainTilesImpl(const GLMapView2::State *renderPasses, const std::size_t numRenderPasses, const TerrainTileShader &shader, const Matrix2 &mvp, const Matrix2 *local, const std::size_t numLocal, const GLTexture2 &ignored0, const GLTerrainTile *terrainTiles, const std::size_t numTiles, const float r, const float g, const float b, const float a) NOTHROWS
+    void drawTerrainTilesImpl(const GLGlobeBase::State *renderPasses, const std::size_t numRenderPasses, const TerrainTileShader &shader, const Matrix2 &mvp, const Matrix2 *local, const std::size_t numLocal, const GLTexture2 &ignored0, const GLTerrainTile *terrainTiles, const std::size_t numTiles, const float r, const float g, const float b, const float a) NOTHROWS
     {
         // draw terrain tiles
         for (std::size_t idx = 0u; idx < numTiles; idx++) {
             auto tile = terrainTiles[idx];
             for (std::size_t i = numRenderPasses; i > 0; i--) {
                 if (renderPasses[i - 1u].texture) {
-                    const GLMapView2::State &s = renderPasses[i - 1u];
+                    const GLGlobeBase::State &s = renderPasses[i - 1u];
                     const bool swapHemi = s.crossesIDL &&
                         ((s.drawLng < 0.0 && (tile.tile->aabb_wgs84.minX + tile.tile->aabb_wgs84.maxX) / 2.0 > 0.0) ||
                          (s.drawLng > 0.0 && (tile.tile->aabb_wgs84.minX + tile.tile->aabb_wgs84.maxX) / 2.0 < 0.0));
@@ -631,8 +692,6 @@ namespace
                 }
             }
         }
-
-        
     }
 
     void glUniformMatrix4(GLint location, const Matrix2 &matrix) NOTHROWS
@@ -796,27 +855,11 @@ namespace
         if (hasWinding)
             glDisable(GL_CULL_FACE);
     }
-    TAKErr validateSceneModel(GLMapView2::State *view, const std::size_t width, const std::size_t height) NOTHROWS
+    void glSceneModel(MapSceneModel2 &scene) NOTHROWS
     {
-        TAKErr code(TE_Ok);
-        if (view->sceneModelVersion != view->drawVersion) {
-            const std::size_t vflipHeight = height;
-            if (vflipHeight != view->verticalFlipTranslateHeight) {
-                view->verticalFlipTranslate.setToTranslate(0, static_cast<double>(vflipHeight));
-                view->verticalFlipTranslateHeight = static_cast<int>(vflipHeight);
-            }
-
-            view->scene.set(view->scene.displayDpi,
-                            width,
-                            height,
-                            view->drawSrid,
-                            GeoPoint2(view->drawLat, view->drawLng),
-                            view->focusx,
-                            view->focusy,
-                            view->drawRotation,
-                            view->drawTilt,
-                            view->drawMapResolution);
-
+            const std::size_t vflipHeight = scene.height;
+            Matrix2 verticalFlipTranslate;
+            verticalFlipTranslate.setToTranslate(0, static_cast<double>(vflipHeight));
             const Matrix2 xformVerticalFlipScale(
                 1, 0, 0, 0,
                 0, -1, 0, 0,
@@ -824,25 +867,11 @@ namespace
                 0, 0, 0, 1);
 
             // account for flipping of y-axis for OpenGL coordinate space
-            view->scene.inverseTransform.concatenate(view->verticalFlipTranslate);
-            view->scene.inverseTransform.concatenate(xformVerticalFlipScale);
+            scene.inverseTransform.concatenate(verticalFlipTranslate);
+            scene.inverseTransform.concatenate(xformVerticalFlipScale);
 
-            view->scene.forwardTransform.preConcatenate(xformVerticalFlipScale);
-            view->scene.forwardTransform.preConcatenate(view->verticalFlipTranslate);
-
-            {
-                // fill the forward matrix for the Model-View
-                double matrixD[16];
-                view->scene.forwardTransform.get(matrixD, Matrix2::COLUMN_MAJOR);
-                for (int i = 0; i < 16; i++)
-                    view->sceneModelForwardMatrix[i] = (float)matrixD[i];
-            }
-
-            // mark as valid
-            view->sceneModelVersion = view->drawVersion;
-        }
-
-        return code;
+            scene.forwardTransform.preConcatenate(xformVerticalFlipScale);
+            scene.forwardTransform.preConcatenate(verticalFlipTranslate);
     }
     TAKErr createTerrainTileShader(TerrainTileShader *value, const char *vertShaderSrc, const char *fragShaderSrc) NOTHROWS
     {

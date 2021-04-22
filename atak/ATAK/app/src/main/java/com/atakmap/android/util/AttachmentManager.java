@@ -337,7 +337,7 @@ public class AttachmentManager {
 
         File outDir = new File(path);
         File attachment;
-        try(InputStream is = IOProviderFactory.getInputStream(f)) {
+        try (InputStream is = IOProviderFactory.getInputStream(f)) {
             attachment = new File(outDir, f.getName());
 
             // the passed in file is equal to the location where it will be attached

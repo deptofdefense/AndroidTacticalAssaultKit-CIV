@@ -12,30 +12,30 @@ using namespace TAK::Engine::Port;
 // GLC3DTPendingContent
 //
 
-GLContentContext::GLC3DTPendingContent::~GLC3DTPendingContent() NOTHROWS {
+GLContentContext::GLPendingContent::~GLPendingContent() NOTHROWS {
     this->future_.cancel(); // does nothing if already detached
 }
 
-void GLContentContext::GLC3DTPendingContent::draw(const TAK::Engine::Renderer::Core::GLMapView2& view, const int renderPass) NOTHROWS {
+void GLContentContext::GLPendingContent::draw(const TAK::Engine::Renderer::Core::GLGlobeBase& view, const int renderPass) NOTHROWS {
 
 }
 
-void GLContentContext::GLC3DTPendingContent::release() NOTHROWS {
+void GLContentContext::GLPendingContent::release() NOTHROWS {
     // triggers a self delete
     GLContentContext::PendingNode_* node = PendingNode_::fromPendingContent(this);
     node->selfRemove();
     delete node;
 }
 
-int GLContentContext::GLC3DTPendingContent::getRenderPass() NOTHROWS {
+int GLContentContext::GLPendingContent::getRenderPass() NOTHROWS {
     return 0;
 }
 
-void GLContentContext::GLC3DTPendingContent::start() NOTHROWS {
+void GLContentContext::GLPendingContent::start() NOTHROWS {
 
 }
 
-void GLContentContext::GLC3DTPendingContent::stop() NOTHROWS {
+void GLContentContext::GLPendingContent::stop() NOTHROWS {
 
 }
 
@@ -104,7 +104,7 @@ void GLContentContext::Node_::selfRemove() {
     prev->next = next;
 }
 
-GLContentContext::PendingNode_* GLContentContext::PendingNode_::fromPendingContent(GLC3DTPendingContent* content) NOTHROWS {
+GLContentContext::PendingNode_* GLContentContext::PendingNode_::fromPendingContent(GLPendingContent* content) NOTHROWS {
     // we know address is inside a PendingNode_, so offsetof will work
     uint8_t* addr = reinterpret_cast<uint8_t*>(content);
     return reinterpret_cast<PendingNode_*>(addr - offsetof(PendingNode_, pending_content_));
@@ -122,20 +122,25 @@ TAKErr GLContentContext::updateTask_(Core::GLMapRenderable2*& output, GLMapRende
 
     // in the GLThread
 
-    GLC3DTPendingContent* pending = static_cast<GLC3DTPendingContent*>(holder->content_.release());
+    // nothing to do
+    if (!holder->content_)
+        return TE_Ok;
 
-    // prevent cancel for doing anything when PendingContent releases
-    pending->future_.detach();
+    if (holder->state_.load() == GLContentHolder::LOADING) {
+        GLPendingContent* pending = static_cast<GLPendingContent*>(holder->content_.release());
 
-    // remove node
-    PendingNode_* node = PendingNode_::fromPendingContent(pending);
-    node->selfRemove();
-    delete node;
+        // prevent cancel for doing anything when PendingContent releases
+        pending->future_.detach();
+
+        // remove node
+        PendingNode_* node = PendingNode_::fromPendingContent(pending);
+        node->selfRemove();
+        delete node;
+    }
 
     // update the holder
     holder->content_ = std::move(input);
     holder->state_.store(GLContentHolder::LOADED, std::memory_order_release);
-
     output = holder->content_.get();
 
     return TE_Ok;
@@ -176,7 +181,7 @@ Future<GLMapRenderable2*> GLContentHolder::load(GLContentContext& context, const
 }
 
 void GLContentHolder::unload() {
-    impl_->content_.release();
+    impl_->content_.reset();
     impl_->state_.store(EMPTY, std::memory_order_release);
 }
 

@@ -649,7 +649,7 @@ static std::pair<std::string, std::string> splitVPath(const char *vpath) NOTHROW
 
     TAK::Engine::Port::String ext;
     const char *extPos = nullptr;
-    TAKErr code = IO_getExt(ext, &extPos, vpath);
+    TAKErr code = IO_getFirstExt(ext, &extPos, vpath);
     while(code != TE_Done) {
         if (ext.get() && isArchiveExt(ext)) {
             size_t pathSep = pathStr.find_first_of("\\/", static_cast<size_t>(extPos - vpath));
@@ -661,7 +661,7 @@ static std::pair<std::string, std::string> splitVPath(const char *vpath) NOTHROW
                 return std::make_pair(pathStr, ".");
             }
         }
-        code = IO_getExt(ext, &extPos, extPos + 1);
+        code = IO_getFirstExt(ext, &extPos, extPos + 1);
     }
     return std::make_pair(pathStr, "");
 }
@@ -916,7 +916,10 @@ TAKErr TAK::Engine::Util::File_getRuntimePath(TAK::Engine::Port::String &path) N
 #endif
 
 TAKErr TAK::Engine::Util::IO_getExt(Port::String &ext, const char **extPos, const char *path) NOTHROWS {
+    return IO_getFirstExt(ext, extPos, path);
+}
 
+TAKErr TAK::Engine::Util::IO_getFirstExt(Port::String &ext, const char **extPos, const char *path) NOTHROWS {
     std::string pathStr = path;
     size_t extDot = std::string::npos;
     size_t extEnd = pathStr.length();
@@ -957,6 +960,17 @@ TAKErr TAK::Engine::Util::IO_getExt(Port::String &ext, const char **extPos, cons
         *extPos = nullptr;
 
     return TE_Done;
+}
+
+TAKErr TAK::Engine::Util::IO_getExt(Port::String &ext, const char *path) NOTHROWS {
+    const char *extPos = nullptr;
+    TAKErr code = IO_getFirstExt(ext, &extPos, path);
+    while (code != TE_Done) {
+        code = IO_getFirstExt(ext, &extPos, extPos + 1);
+    }
+
+    if (code == TE_Done) return TE_Ok;
+    return code;
 }
 
 TAKErr TAK::Engine::Util::IO_correctPathSeps(Port::String &result, const char *path) NOTHROWS {

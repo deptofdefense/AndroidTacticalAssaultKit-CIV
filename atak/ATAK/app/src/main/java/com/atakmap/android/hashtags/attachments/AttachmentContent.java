@@ -117,12 +117,10 @@ public class AttachmentContent implements HashtagContent, GoTo, Delete,
         if (ImageContainer.JPEG_FilenameFilter.accept(dir, name)) {
             // Update EXIF image description
             TiffImageMetadata exif = ExifHelper.getExifMetadata(_file);
-            if (exif != null) {
-                TiffOutputSet tos = ExifHelper.getExifOutput(exif);
-                if (ExifHelper.updateField(tos,
-                        TiffConstants.TIFF_TAG_IMAGE_DESCRIPTION, caption))
-                    ExifHelper.saveExifOutput(tos, _file);
-            }
+            TiffOutputSet tos = ExifHelper.getExifOutput(exif);
+            if (ExifHelper.updateField(tos,
+                    TiffConstants.TIFF_TAG_IMAGE_DESCRIPTION, caption))
+                ExifHelper.saveExifOutput(tos, _file);
         } else if (ImageContainer.NITF_FilenameFilter.accept(dir, name)) {
             // Update NITF file title
             Dataset nitf = GdalLibrary.openDatasetFromFile(_file);

@@ -1,3 +1,4 @@
+
 package com.atakmap.android.fires.bridge;
 
 import android.graphics.drawable.Drawable;
@@ -8,7 +9,7 @@ import com.atakmap.android.maps.AbstractMapComponent;
 /**
  * Bridge component in support of the the flavor subsystem.
  */
-public abstract class AdditionalCFFMapComponent  extends AbstractMapComponent {
+public abstract class AdditionalCFFMapComponent extends AbstractMapComponent {
 
     private static AdditionalCFFMapComponent impl;
 
@@ -16,10 +17,10 @@ public abstract class AdditionalCFFMapComponent  extends AbstractMapComponent {
         return impl;
     }
 
-    public static void registerImplementation(AdditionalCFFMapComponent concreteImpl) {
+    public static void registerImplementation(
+            AdditionalCFFMapComponent concreteImpl) {
         impl = concreteImpl;
     }
-
 
     /**
      * Allows for additional Call for Fire buttons to be made available to the
@@ -27,8 +28,9 @@ public abstract class AdditionalCFFMapComponent  extends AbstractMapComponent {
      * @param i is the intent string to call.  This intent is filled in with
      * targetUID and friendlyUID.
      */
-    public abstract TileButtonDialog.TileButton registerCapability(Drawable icon,
-                                                          String text, final String i);
+    public abstract TileButtonDialog.TileButton registerCapability(
+            Drawable icon,
+            String text, final String i);
 
     /**
      * Removes the additional call for fire button from the tile button dialog.

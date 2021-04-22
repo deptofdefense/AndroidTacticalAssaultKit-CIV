@@ -202,7 +202,7 @@ public class KMLNetworkLinkDownloader extends NetworkLinkDownloader {
                         File fout = new File(request.getDir(),
                                 request.getFileName());
 
-                        try(FileOutputStream fos = IOProviderFactory
+                        try (FileOutputStream fos = IOProviderFactory
                                 .getOutputStream(fout)) {
                             FileSystemUtils.copy(input, fos);
                             Log.d(TAG, "success: " + request.getDir() + "/"
@@ -274,8 +274,8 @@ public class KMLNetworkLinkDownloader extends NetworkLinkDownloader {
                 //String cookies = conn
                 //        .getHeaderField("Set-Cookie");
 
-                // open the new connnection again
 
+                // open the new connnection again
                 if (newUrl != null &&
                         (newUrl.startsWith("http://")
                                 || newUrl.startsWith("https://"))) {
@@ -283,6 +283,13 @@ public class KMLNetworkLinkDownloader extends NetworkLinkDownloader {
                     String userAgent = conn.getRequestProperty("User-Agent");
                     int connectionTimeout = conn.getConnectTimeout();
                     int readTimeout = conn.getReadTimeout();
+
+                    /**
+                     * Fortify flags this as a Server-Side Request Forgery
+                     * but the URL containing the KML file has rediected us to a new site.
+                     * This protection should be part of the network management / firewall and 
+                     * is too broad scoped for the application.
+                     */
                     retval = new URL(newUrl)
                             .openConnection();
                     retval.setRequestProperty("User-Agent", userAgent);
@@ -322,6 +329,12 @@ public class KMLNetworkLinkDownloader extends NetworkLinkDownloader {
         HttpURLConnection retval = (HttpURLConnection) conn.getURL()
                 .openConnection();
         retval.setRequestProperty("User-Agent", "TAK");
+
+        final String xcommonsitename = conn
+                .getRequestProperty("x-common-site-name");
+        if (xcommonsitename != null) {
+            retval.setRequestProperty("x-common-site-name", xcommonsitename);
+        }
         retval.setUseCaches(conn.getUseCaches());
         retval.setConnectTimeout(conn.getConnectTimeout());
         retval.setReadTimeout(conn.getReadTimeout());
@@ -377,8 +390,10 @@ public class KMLNetworkLinkDownloader extends NetworkLinkDownloader {
                                     + downloadedFile);
                     postNotification(initialRequest,
                             R.drawable.ic_network_error_notification_icon,
-                            getString(R.string.importmgr_remote_kml_download_failed),
-                            getString(R.string.importmgr_failed_to_create_local_file_filename,
+                            getString(
+                                    R.string.importmgr_remote_kml_download_failed),
+                            getString(
+                                    R.string.importmgr_failed_to_create_local_file_filename,
                                     curRequest.getFileName()));
                     continue;
                     //return;
@@ -405,8 +420,10 @@ public class KMLNetworkLinkDownloader extends NetworkLinkDownloader {
                                         + renamed.getAbsolutePath());
                         postNotification(initialRequest,
                                 R.drawable.ic_network_error_notification_icon,
-                                getString(R.string.importmgr_remote_kml_download_failed),
-                                getString(R.string.importmgr_failed_to_create_local_file_filename,
+                                getString(
+                                        R.string.importmgr_remote_kml_download_failed),
+                                getString(
+                                        R.string.importmgr_failed_to_create_local_file_filename,
                                         curRequest.getFileName()));
                         return;
                     }
@@ -422,8 +439,10 @@ public class KMLNetworkLinkDownloader extends NetworkLinkDownloader {
                                     + downloadedFile);
                     postNotification(initialRequest,
                             R.drawable.ic_network_error_notification_icon,
-                            getString(R.string.importmgr_remote_kml_download_failed),
-                            getString(R.string.importmgr_failed_to_create_local_file_filename,
+                            getString(
+                                    R.string.importmgr_remote_kml_download_failed),
+                            getString(
+                                    R.string.importmgr_failed_to_create_local_file_filename,
                                     curRequest.getFileName()));
                     return;
                 }
@@ -458,7 +477,8 @@ public class KMLNetworkLinkDownloader extends NetworkLinkDownloader {
                             e);
                     postNotification(initialRequest,
                             R.drawable.ic_network_error_notification_icon,
-                            getString(R.string.importmgr_remote_kml_download_failed),
+                            getString(
+                                    R.string.importmgr_remote_kml_download_failed),
                             getString(R.string.importmgr_invalid_kml,
                                     curRequest.getFileName()));
                     return;
@@ -505,7 +525,8 @@ public class KMLNetworkLinkDownloader extends NetworkLinkDownloader {
                             "Remote KML Download Failed - KML has invalid Link");
                     postNotification(initialRequest,
                             R.drawable.ic_network_error_notification_icon,
-                            getString(R.string.importmgr_remote_kml_download_failed),
+                            getString(
+                                    R.string.importmgr_remote_kml_download_failed),
                             getString(R.string.importmgr_kml_has_invalid_link,
                                     curRequest.getFileName()));
                     return false;
@@ -517,8 +538,10 @@ public class KMLNetworkLinkDownloader extends NetworkLinkDownloader {
                     Log.e(TAG, "Unsupported NetworkLink URL: : " + url);
                     postNotification(initialRequest,
                             R.drawable.ic_network_error_notification_icon,
-                            getString(R.string.importmgr_remote_kml_download_failed),
-                            getString(R.string.importmgr_only_http_s_network_links_supported,
+                            getString(
+                                    R.string.importmgr_remote_kml_download_failed),
+                            getString(
+                                    R.string.importmgr_only_http_s_network_links_supported,
                                     curRequest.getFileName()));
                     return false;
                 }
@@ -530,8 +553,10 @@ public class KMLNetworkLinkDownloader extends NetworkLinkDownloader {
                                     + url);
                     postNotification(initialRequest,
                             R.drawable.ic_network_error_notification_icon,
-                            getString(R.string.importmgr_remote_kml_download_failed),
-                            getString(R.string.importmgr_unable_to_determine_filename));
+                            getString(
+                                    R.string.importmgr_remote_kml_download_failed),
+                            getString(
+                                    R.string.importmgr_unable_to_determine_filename));
                     return false;
                 }
 

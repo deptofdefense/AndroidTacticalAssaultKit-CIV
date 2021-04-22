@@ -62,7 +62,8 @@ public final class Doghouse extends Polyline implements
         NEXT_CHECKPOINT("Next Checkpoint"),
         BEARING_TO_NEXT("Bearing to Next"),
         DISTANCE_TO_NEXT("Distance to Next"),
-        ETE_NEXT("Time");
+        ETE_NEXT("Time"),
+        CUMULATIVE_TIME("Cumulative Time");
 
         private final String _repr;
 
@@ -433,7 +434,6 @@ public final class Doghouse extends Polyline implements
             listener.onDoghouseChanged(this);
         }
     }
-
 
     private void fireOnDoghouseRemoved() {
         for (DoghouseChangeListener listener : _listeners) {

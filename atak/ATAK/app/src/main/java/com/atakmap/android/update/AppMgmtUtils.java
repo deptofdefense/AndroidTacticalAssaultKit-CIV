@@ -70,7 +70,7 @@ public class AppMgmtUtils {
 
     public static boolean install(Context context, File apk) {
         //Use java.io.File operations for Android installation purposes
-        
+
         if (apk == null || !apk.isFile()) {
             String message = (apk == null ? "" : apk.getAbsolutePath());
             Log.w(TAG,

@@ -24,6 +24,9 @@ sourceSets {
         java {
             srcDirs 'src/main/test'
         }
+        resources {
+            srcDirs 'src/main/test'
+        }
     }
 }
 

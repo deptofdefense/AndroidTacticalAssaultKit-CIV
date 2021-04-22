@@ -236,7 +236,7 @@ public class ImageActivity {
     }
 
     public void saveImageFile(byte[] data) {
-        try(OutputStream outStream = IOProviderFactory
+        try (OutputStream outStream = IOProviderFactory
                 .getOutputStream(_output)) {
             outStream.write(data);
 

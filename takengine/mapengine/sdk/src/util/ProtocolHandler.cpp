@@ -1,23 +1,101 @@
 #include "ProtocolHandler.h"
 
+#include <map>
 #include <regex>
 #include <sstream>
 #include <vector>
 
 #include "port/String.h"
+#include "thread/RWMutex.h"
 #include "util/IO2.h"
 #include "util/Logging2.h"
 
 
-using namespace TAK::Engine::Port;
 using namespace TAK::Engine::Util;
+
+using namespace TAK::Engine::Port;
+using namespace TAK::Engine::Thread;
 
 namespace {
     TAKErr normalizePath(std::string &normalized, const std::string& source, const bool &preserve_leading_separator);
+    RWMutex& decoderHandlerMutex() NOTHROWS
+    {
+        static RWMutex m;
+        return m;
+    }
+    std::map<std::string, ProtocolHandler*>& protoHandlers() NOTHROWS
+    {
+        static std::map<std::string, ProtocolHandler*> m;
+        return m;
+    }
 }
 
 ProtocolHandler::~ProtocolHandler() NOTHROWS
 {}
+
+TAKErr TAK::Engine::Util::ProtocolHandler_registerHandler(const char *scheme, ProtocolHandler &handler) NOTHROWS
+{
+    if (!scheme)
+        return TE_InvalidArg;
+    WriteLock lock(decoderHandlerMutex());
+    protoHandlers()[scheme] = &handler;
+    return TE_Ok;
+}
+
+TAKErr TAK::Engine::Util::ProtocolHandler_unregisterHandler(const char *scheme) NOTHROWS
+{
+    if (!scheme)
+        return TE_InvalidArg;
+    WriteLock lock(decoderHandlerMutex());
+    if (protoHandlers().find(scheme) == protoHandlers().end())
+        return TE_InvalidArg;
+    protoHandlers().erase(scheme);
+    return TE_Ok;
+}
+TAKErr TAK::Engine::Util::ProtocolHandler_unregisterHandler(const ProtocolHandler &handler) NOTHROWS
+{
+    TAKErr code(TE_Ok);
+    WriteLock lock(decoderHandlerMutex());
+    TE_CHECKRETURN_CODE(code);
+    auto entry = protoHandlers().begin();
+    code = TE_InvalidArg;
+    while(entry != protoHandlers().end()) {
+        if (entry->second != &handler) {
+            entry++;
+        } else {
+            entry = protoHandlers().erase(entry);
+            code = TE_Ok;
+        }
+    }
+
+    return code;
+}
+TAKErr TAK::Engine::Util::ProtocolHandler_handleURI(DataInput2Ptr& ctx, const char* curi) NOTHROWS
+{
+    TAKErr code(TE_Ok);
+    if (!curi)
+        return TE_InvalidArg;
+    std::string uri(curi);
+    // First try to handle the protocol
+    size_t cloc = uri.find_first_of(':');
+    if (cloc == std::string::npos)
+        return TE_InvalidArg;
+
+    std::string scheme = uri.substr(0, cloc);
+
+    ReadLock lock(decoderHandlerMutex());
+    auto handler = protoHandlers().find(scheme);
+    if (handler == protoHandlers().end())
+        return TE_InvalidArg;
+
+    return handler->second->handleURI(ctx, curi);
+}
+bool TAK::Engine::Util::ProtocolHandler_isHandlerRegistered(const char* scheme) NOTHROWS
+{
+    ReadLock lock(decoderHandlerMutex());
+    auto handler = protoHandlers().find(scheme);
+    return (handler != protoHandlers().end());
+}
 
 TAKErr FileProtocolHandler::handleURI(DataInput2Ptr &ctx, const char * uri) NOTHROWS
 {

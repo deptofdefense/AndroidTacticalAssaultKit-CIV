@@ -15,6 +15,7 @@ import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
 import com.atakmap.coremap.maps.coords.Vector3D;
+import com.atakmap.math.MathUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,23 +59,12 @@ public class Arrow extends Shape {
     public boolean testOrthoHit(int xpos, int ypos, GeoPoint point,
             MapView view) {
 
-        final boolean tilted = view.getMapTilt() != 0d;
-        // Let the endpoints bleed through so they can be repositioned or otherwise interacted with
-
         float hitRadius = !Float.isNaN(_hitRadius)
                 ? _hitRadius
                 : getHitRadius(view);
         float hitRadiusSq = !Float.isNaN(_hitRadiusSq)
                 ? _hitRadiusSq
                 : (hitRadius * hitRadius);
-        final GeoBounds hitBox = view.createHitbox(
-                view.getRenderElevationAdjustedPoint(point), hitRadius);
-
-        // if the map is not tilted, we can do a quick check against the
-        // surface bounds
-        if (!tilted && !this.minimumBoundingBox.intersects(hitBox)) {
-            return false;
-        }
 
         // if either endpoint is null, we do not have a segment, return
         if (_point1 == null || _point2 == null)
@@ -84,14 +74,8 @@ public class Arrow extends Shape {
         GeoPoint p2 = _point2.get();
 
         // adjust the endpoints to account for terrain offset/scale if tilted
-        if (tilted) {
-            p1 = view.getRenderElevationAdjustedPoint(p1);
-            p2 = view.getRenderElevationAdjustedPoint(p2);
-        }
-
-        // Bleed through to endpoint items
-        if (!tilted && (hitBox.contains(p1) || hitBox.contains(p2)))
-            return false;
+        p1 = view.getRenderElevationAdjustedPoint(p1);
+        p2 = view.getRenderElevationAdjustedPoint(p2);
 
         double unwrap = view.getIDLHelper().getUnwrap(this.minimumBoundingBox);
 
@@ -102,37 +86,58 @@ public class Arrow extends Shape {
         if (Float.isNaN(temp.x) || Float.isNaN(temp.y))
             return false;
         // bleed through on endpoint item
-        if (tilted &&
-                com.atakmap.math.Rectangle.contains(xpos - hitRadius,
-                        ypos - hitRadius,
-                        xpos + hitRadius,
-                        ypos + hitRadius,
-                        temp.x, temp.y)) {
+        if (com.atakmap.math.Rectangle.contains(xpos - hitRadius,
+                ypos - hitRadius,
+                xpos + hitRadius,
+                ypos + hitRadius,
+                temp.x, temp.y)) {
 
             return false;
         }
         PointF temp2 = view.forward(p2, unwrap);
         if (Float.isNaN(temp2.x) || Float.isNaN(temp2.y))
             return false;
-        if (tilted &&
-                com.atakmap.math.Rectangle.contains(xpos - hitRadius,
-                        ypos - hitRadius,
-                        xpos + hitRadius,
-                        ypos + hitRadius,
-                        temp2.x, temp2.y)) {
+        if (com.atakmap.math.Rectangle.contains(xpos - hitRadius,
+                ypos - hitRadius,
+                xpos + hitRadius,
+                ypos + hitRadius,
+                temp2.x, temp2.y)) {
 
             return false;
         }
+
+        // Check if the touch hit the line
         Vector3D nearest = Vector3D.nearestPointOnSegment(touch,
-                new Vector3D(temp.x, temp.y, 0), new Vector3D(temp2.x,
-                        temp2.y, 0));
+                new Vector3D(temp.x, temp.y, 0),
+                new Vector3D(temp2.x, temp2.y, 0));
         if (hitRadiusSq > nearest.distanceSq(touch)) {
+            // Compute geodetic touch point
             _touchPoint = view.inverse(nearest.x, nearest.y,
                     MapView.InverseMode.RayCast).get();
-            if (!p1.isAltitudeValid() || !p2.isAltitudeValid()) {
+
+            double seg_px = MathUtils.distance(temp.x, temp.y, temp2.x,
+                    temp2.y);
+            double seg_pct = MathUtils.distance(nearest.x, nearest.y, temp.x,
+                    temp.y);
+            double seg_ratio = seg_pct / seg_px;
+
+            _touchPoint = GeoCalculations.pointAtDistance(p1,
+                    p1.bearingTo(p2), p1.distanceTo(p2) * seg_ratio);
+
+            // Altitude correction
+            if (p1.isAltitudeValid() && p2.isAltitudeValid()) {
+                // Compute altitude at the touched point on the line
+                double touchAlt = p1.getAltitude() + (p2.getAltitude()
+                        - p1.getAltitude()) * seg_ratio;
+                _touchPoint = new GeoPoint(_touchPoint.getLatitude(),
+                        _touchPoint.getLongitude(), touchAlt);
+            } else {
+                // Remove altitude if either point is missing it
                 _touchPoint = new GeoPoint(_touchPoint.getLatitude(),
                         _touchPoint.getLongitude());
             }
+
+            // Save touch point
             setMetaString("menu_point", _touchPoint.toString());
             setTouchPoint(_touchPoint);
             return true;
@@ -220,9 +225,10 @@ public class Arrow extends Shape {
     @Override
     public GeoPointMetaData getCenter() {
         MapView mv = MapView.getMapView();
-        return GeoPointMetaData.wrap(GeoCalculations.midPointCartesian(_point1.get(),
-                _point2.get(), mv != null
-                        && mv.isContinuousScrollEnabled()));
+        return GeoPointMetaData
+                .wrap(GeoCalculations.midPointCartesian(_point1.get(),
+                        _point2.get(), mv != null
+                                && mv.isContinuousScrollEnabled()));
     }
 
     @Override

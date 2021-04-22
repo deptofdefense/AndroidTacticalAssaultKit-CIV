@@ -1,10 +1,14 @@
 
 package com.atakmap.map.opengl;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
-import com.atakmap.map.MapRenderer;
+import com.atakmap.map.Globe;
+import com.atakmap.map.RenderContext;
+import com.atakmap.map.layer.control.SurfaceRendererControl;
+import com.atakmap.map.layer.feature.geometry.Envelope;
 
 /**
  * @author Developer
@@ -65,7 +69,8 @@ public abstract class GLAsynchronousMapRenderable<Pending>
 
     private Thread backgroundWorkerThread;
 
-    private MapRenderer renderCtx;
+    private RenderContext renderCtx;
+    private SurfaceRendererControl surfaceControl;
 
     /**
      * Instantiates a new <code>GLAsynchronousMapRenderable</code>
@@ -82,6 +87,7 @@ public abstract class GLAsynchronousMapRenderable<Pending>
         this.queryStateCaptureDelay = 0L;
 
         this.renderCtx = null;
+        this.surfaceControl = null;
     }
 
     /**
@@ -228,7 +234,11 @@ public abstract class GLAsynchronousMapRenderable<Pending>
      */
     protected void invalidateNoSync() {
         this.invalid = true;
-        final MapRenderer ctx = this.renderCtx;
+        final SurfaceRendererControl ctrl = this.surfaceControl;
+        final ViewState p = this.preparedState;
+        if (ctrl != null)
+            ctrl.markDirty();
+        final RenderContext ctx = this.renderCtx;
         if(ctx != null)
             ctx.requestRefresh();
     }
@@ -281,11 +291,17 @@ public abstract class GLAsynchronousMapRenderable<Pending>
             this.backgroundWorkerThread.start();
 
             this.initImpl(view);
+            this.renderCtx = view.getRenderContext();
+            this.surfaceControl = view.getControl(SurfaceRendererControl.class);
 
             this.initialized = true;
         }
 
-        this.targetState.set(view);
+        // if the target state has not already been computed for the pump and
+        // it is a sprite pass if there is any sprite content or there is a pass
+        // match and there is not any sprite content, update the target state
+        if (this.invalid || (this.targetState.drawVersion != view.currentScene.drawVersion))
+            this.targetState.set(view);
         if (!this.servicingRequest && this.isDirty())
             this.notify();
 
@@ -318,6 +334,7 @@ public abstract class GLAsynchronousMapRenderable<Pending>
             this.targetState = null;
 
             this.renderCtx = null;
+            this.surfaceControl = null;
 
             this.initialized = false;
         }
@@ -438,6 +455,7 @@ public abstract class GLAsynchronousMapRenderable<Pending>
         public boolean settled;
         public boolean crossesIDL;
         public boolean continuousScrollEnabled;
+        public ArrayList<Envelope> surfaceRegions;
 
         public ViewState() {
             this.drawMapScale = Double.NaN;
@@ -465,6 +483,7 @@ public abstract class GLAsynchronousMapRenderable<Pending>
             this.settled = false;
             this.crossesIDL = false;
             this.continuousScrollEnabled = false;
+            this.surfaceRegions = new ArrayList<>();
         }
 
         /**
@@ -485,31 +504,36 @@ public abstract class GLAsynchronousMapRenderable<Pending>
          * @param view  The view
          */
         public void set(GLMapView view) {
-            this.drawMapScale = view.drawMapScale;
-            this.drawMapResolution = view.drawMapResolution;
-            this.drawLat = view.drawLat;
-            this.drawLng = view.drawLng;
-            this.drawRotation = view.drawRotation;
-            this.animationFactor = view.animationFactor;
-            this.drawVersion = view.drawVersion;
-            this.drawSrid = view.drawSrid;
-            this.westBound = view.westBound;
-            this.southBound = view.southBound;
-            this.northBound = view.northBound;
-            this.eastBound = view.eastBound;
-            this.upperLeft.set(view.upperLeft.getLatitude(), view.upperLeft.getLongitude());
-            this.upperRight.set(view.upperRight.getLatitude(), view.upperRight.getLongitude());
-            this.lowerRight.set(view.lowerRight.getLatitude(), view.lowerRight.getLongitude());
-            this.lowerLeft.set(view.lowerLeft.getLatitude(), view.lowerLeft.getLongitude());
-            this._left = view._left;
-            this._right = view._right;
-            this._top = view._top;
-            this._bottom = view._bottom;
-            this.focusx = view.focusx;
-            this.focusy = view.focusy;
+            this.drawMapScale = Globe.getMapScale(view.currentScene.scene.dpi, view.currentScene.drawMapResolution);
+            this.drawMapResolution = view.currentScene.drawMapResolution;
+            this.drawLat = view.currentScene.drawLat;
+            this.drawLng = view.currentScene.drawLng;
+            this.drawRotation = view.currentScene.drawRotation;
+            this.drawVersion = view.currentScene.drawVersion;
+            this.drawSrid = view.currentScene.drawSrid;
+            this.westBound = view.currentScene.westBound;
+            this.southBound = view.currentScene.southBound;
+            this.northBound = view.currentScene.northBound;
+            this.eastBound = view.currentScene.eastBound;
+            this.upperLeft.set(view.currentScene.upperLeft.getLatitude(), view.currentScene.upperLeft.getLongitude());
+            this.upperRight.set(view.currentScene.upperRight.getLatitude(), view.currentScene.upperRight.getLongitude());
+            this.lowerRight.set(view.currentScene.lowerRight.getLatitude(), view.currentScene.lowerRight.getLongitude());
+            this.lowerLeft.set(view.currentScene.lowerLeft.getLatitude(), view.currentScene.lowerLeft.getLongitude());
+            this._left = view.currentScene.left;
+            this._right = view.currentScene.right;
+            this._top = view.currentScene.top;
+            this._bottom = view.currentScene.bottom;
+            this.focusx = view.currentScene.focusx;
+            this.focusy = view.currentScene.focusy;
+            this.crossesIDL = view.currentScene.crossesIDL;
+
             this.settled = view.settled;
-            this.crossesIDL = view.crossesIDL;
+            this.animationFactor = view.animationFactor;
             this.continuousScrollEnabled = view.continuousScrollEnabled;
+            this.surfaceRegions.clear();
+            SurfaceRendererControl ctrl = view.getControl(SurfaceRendererControl.class);
+            if (ctrl != null)
+                this.surfaceRegions.addAll(ctrl.getSurfaceBounds());
         }
 
         /**
@@ -544,6 +568,8 @@ public abstract class GLAsynchronousMapRenderable<Pending>
             this.settled = view.settled;
             this.crossesIDL = view.crossesIDL;
             this.continuousScrollEnabled = view.continuousScrollEnabled;
+            this.surfaceRegions.clear();
+            this.surfaceRegions.addAll(view.surfaceRegions);
         }
     }
 
@@ -572,8 +598,14 @@ public abstract class GLAsynchronousMapRenderable<Pending>
                         // update release/renderable collections
                         if (GLAsynchronousMapRenderable.this.servicingRequest
                                 && GLAsynchronousMapRenderable.this
-                                        .updateRenderableReleaseLists(pendingData))
+                                        .updateRenderableReleaseLists(pendingData)) {
                             GLAsynchronousMapRenderable.this.preparedState.copy(queryState);
+                            if(GLAsynchronousMapRenderable.this.renderCtx != null)
+                                GLAsynchronousMapRenderable.this.renderCtx.requestRefresh();
+                            if(GLAsynchronousMapRenderable.this.surfaceControl != null) {
+                                GLAsynchronousMapRenderable.this.surfaceControl.markDirty();
+                            }
+                        }
                         GLAsynchronousMapRenderable.this.resetPendingData(pendingData);
                         GLAsynchronousMapRenderable.this.servicingRequest = false;
 

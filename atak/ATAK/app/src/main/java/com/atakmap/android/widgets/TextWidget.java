@@ -16,8 +16,8 @@ public class TextWidget extends MapWidget2 {
     private final ConcurrentLinkedQueue<OnTextChangedListener> _onTextChanged = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<OnColorChangedListener> _onColorChanged = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<OnHasBackgroundChangedListener> _onHasBackgroundChanged = new ConcurrentLinkedQueue<>();
-    private String _text;
-    private int _lineCount = 0;
+    protected String _text;
+    protected int _lineCount = 0;
     private int[] _colors;
     protected MapTextFormat _textFormat;
     protected int background;
@@ -122,6 +122,10 @@ public class TextWidget extends MapWidget2 {
             }
             onTextChanged();
         }
+    }
+
+    public void setText(CharSequence text) {
+        setText(text == null ? "" : text.toString());
     }
 
     /**

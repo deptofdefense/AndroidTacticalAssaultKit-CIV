@@ -97,7 +97,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="15"
-                        android:maxLength="15"
+                        android:maxLength="18"
                         android:ellipsize="end"
                         android:gravity="center"
                         android:hint="@string/mgrs"

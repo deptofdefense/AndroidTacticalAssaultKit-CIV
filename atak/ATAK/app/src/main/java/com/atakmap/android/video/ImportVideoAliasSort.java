@@ -40,7 +40,8 @@ public class ImportVideoAliasSort extends ImportResolver {
     public boolean match(final File file) {
         if (!super.match(file))
             return false;
-        try(BufferedReader br = new BufferedReader(IOProviderFactory.getFileReader(file))) {
+        try (BufferedReader br = new BufferedReader(
+                IOProviderFactory.getFileReader(file))) {
             // read first few hundred bytes and search for known strings
             char[] buffer = new char[1024];
             int numRead = br.read(buffer);

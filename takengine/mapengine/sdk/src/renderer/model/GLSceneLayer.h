@@ -35,7 +35,7 @@ namespace TAK {
                 public :
                     virtual Util::TAKErr getSceneObjectControl(SceneObjectControl **ctrl, const int64_t sid) NOTHROWS;
                 private :
-                    Util::TAKErr queryImpl(std::set<std::shared_ptr<SceneRenderer>> &result, const Core::GLAsynchronousMapRenderable3::ViewState &state)  NOTHROWS;
+                    Util::TAKErr queryImpl(std::set<std::shared_ptr<SceneRenderer>> &result, const Core::GLMapView2::State &state)  NOTHROWS;
                 public : // SceneLayer::ContentChangedListener
                     Util::TAKErr contentChanged(const TAK::Engine::Model::SceneLayer &layer) NOTHROWS;
                 public : // GLLayer2
@@ -48,7 +48,7 @@ namespace TAK {
                     Util::TAKErr getRenderables(Port::Collection<Core::GLMapRenderable2 *>::IteratorPtr &iter) NOTHROWS;
                 protected :
                     Util::TAKErr updateRenderableLists(Core::GLAsynchronousMapRenderable3::QueryContext &pendingData) NOTHROWS;
-                    Util::TAKErr query(Core::GLAsynchronousMapRenderable3::QueryContext &result, const Core::GLAsynchronousMapRenderable3::ViewState &state)  NOTHROWS;
+                    Util::TAKErr query(Core::GLAsynchronousMapRenderable3::QueryContext &result, const Core::GLMapView2::State &state)  NOTHROWS;
                 public : // GLMapRenderable
                     int getRenderPass() NOTHROWS;
                     void start() NOTHROWS;

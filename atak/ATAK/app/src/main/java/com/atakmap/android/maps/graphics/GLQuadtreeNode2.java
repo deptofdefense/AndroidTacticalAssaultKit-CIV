@@ -12,16 +12,27 @@ import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
 import com.atakmap.lang.Unsafe;
+import com.atakmap.map.MapSceneModel;
+import com.atakmap.map.layer.feature.geometry.Envelope;
+import com.atakmap.map.layer.feature.geometry.Geometry;
+import com.atakmap.map.layer.feature.geometry.GeometryFactory;
 import com.atakmap.map.opengl.GLAsynchronousMapRenderable2;
 import com.atakmap.map.opengl.GLMapBatchable;
 import com.atakmap.map.opengl.GLMapBatchable2;
+import com.atakmap.map.opengl.GLMapRenderable;
 import com.atakmap.map.opengl.GLMapRenderable2;
 import com.atakmap.map.opengl.GLMapView;
+import com.atakmap.map.projection.EquirectangularMapProjection;
+import com.atakmap.map.projection.Projection;
+import com.atakmap.math.AABB;
+import com.atakmap.math.Frustum;
 import com.atakmap.math.MathUtils;
+import com.atakmap.math.Matrix;
 import com.atakmap.math.PointD;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLRenderBatch;
 import com.atakmap.opengl.GLRenderBatch2;
+import com.atakmap.spatial.GeometryTransformer;
 
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -31,6 +42,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 public class GLQuadtreeNode2 extends
@@ -65,7 +77,10 @@ public class GLQuadtreeNode2 extends
     private GLRenderBatch2 batch;
     private GLRenderBatch batchLegacy;
 
-    private final LinkedList<GLMapRenderable2> renderable;
+    private final List<GLMapRenderable2> surfaceRenderables;
+    private final List<GLMapRenderable2> spriteRenderables;
+    private final Renderable renderable;
+    private final Collection<GLMapRenderable2> renderList;
 
     /**
      * Provides better information as to the nature of of the item that triggered the warning.
@@ -90,7 +105,11 @@ public class GLQuadtreeNode2 extends
         this.root = new QuadTreeNode();
         this.queryBounds = new MutableGeoBounds(0, 0, 0, 0);
 
-        this.renderable = new LinkedList<>();
+        this.surfaceRenderables = new ArrayList<>();
+        this.spriteRenderables = new ArrayList<>();
+        this.renderable = new Renderable();
+        this.renderList = Collections
+                .<GLMapRenderable2> singleton(this.renderable);
     }
 
     /**
@@ -123,7 +142,7 @@ public class GLQuadtreeNode2 extends
                 if (com.atakmap.app.BuildConfig.DEBUG)
                     Log.e(TAG, "backtrace", new Exception());
             } else {
-                ((QuadTreeNode) opaque).remove(item);
+                ((QuadTreeNode) opaque).removeImpl(item, true);
             }
         }
     }
@@ -158,7 +177,7 @@ public class GLQuadtreeNode2 extends
 
     @Override
     protected Collection<GLMapRenderable2> getRenderList() {
-        return this.renderable;
+        return this.renderList;
     }
 
     @Override
@@ -185,52 +204,63 @@ public class GLQuadtreeNode2 extends
         if (this.invalid)
             return false;
 
-        this.renderable.clear();
+        this.surfaceRenderables.clear();
+        this.spriteRenderables.clear();
 
-        SurfacePassBookends bookend = new SurfacePassBookends();
-
-        //this.renderable.add(bookend.entry);
-        GLBatchRenderer batchRenderer = null;
+        GLBatchRenderer[] spriteBatch = new GLBatchRenderer[1];
+        GLBatchRenderer[] surfaceBatch = new GLBatchRenderer[1];
         for (GLMapItem2 item : pendingData) {
-            // XXX - need to be conscious of render pass given 2D batch
-            if (item instanceof GLMapBatchable2) {
-                // push the sprite into the current batch renderer
-                if (batchRenderer == null)
-                    batchRenderer = new GLBatchRenderer();
-                batchRenderer.addSprite(item);
-            } else if (item instanceof GLMapBatchable) {
-                // push the sprite into the current batch renderer
-                if (batchRenderer == null)
-                    batchRenderer = new GLBatchRenderer();
-                batchRenderer.addSprite(item);
-            } else {
-                // if we've been batching sprites, push the batch renderer onto
-                // the renderable list
-                if (batchRenderer != null) {
-                    // make sure we have more than one sprite, if not, push the
-                    // sprite onto the list by itself to avoid the batch render
-                    // overhead
-                    if (batchRenderer.batchables.size() > 1)
-                        this.renderable.add(batchRenderer);
-                    else
-                        this.renderable
-                                .add(batchRenderer.batchables.getFirst());
-                    batchRenderer = null;
-                }
-                this.renderable.add(item);
-            }
+            if (MathUtils.hasBits(item.getRenderPass(),
+                    GLMapView.RENDER_PASS_SPRITES))
+                process(item, spriteRenderables, spriteBatch);
+            if (MathUtils.hasBits(item.getRenderPass(),
+                    GLMapView.RENDER_PASS_SURFACE))
+                process(item, surfaceRenderables, surfaceBatch);
         }
 
-        if (batchRenderer != null && batchRenderer.batchables.size() > 1)
-            this.renderable.add(batchRenderer);
-        else if (batchRenderer != null)
-            this.renderable.add(batchRenderer.batchables.getFirst());
-
-        //this.renderable.add(bookend.exit);
-
+        if (spriteBatch[0] != null && spriteBatch[0].batchables.size() > 1)
+            this.spriteRenderables.add(spriteBatch[0]);
+        else if (spriteBatch[0] != null)
+            this.spriteRenderables.add(spriteBatch[0].batchables.getFirst());
+        if (surfaceBatch[0] != null && surfaceBatch[0].batchables.size() > 1)
+            this.surfaceRenderables.add(surfaceBatch[0]);
+        else if (surfaceBatch[0] != null)
+            this.surfaceRenderables.add(surfaceBatch[0].batchables.getFirst());
         pendingData.clear();
 
         return true;
+    }
+
+    private void process(GLMapItem2 item,
+            Collection<GLMapRenderable2> renderables,
+            GLBatchRenderer[] batchRenderer) {
+        // XXX - need to be conscious of render pass given 2D batch
+        if (item instanceof GLMapBatchable2) {
+            // push the sprite into the current batch renderer
+            if (batchRenderer[0] == null)
+                batchRenderer[0] = new GLBatchRenderer();
+            batchRenderer[0].addSprite(item);
+        } else if (item instanceof GLMapBatchable) {
+            // push the sprite into the current batch renderer
+            if (batchRenderer[0] == null)
+                batchRenderer[0] = new GLBatchRenderer();
+            batchRenderer[0].addSprite(item);
+        } else {
+            // if we've been batching sprites, push the batch renderer onto
+            // the renderable list
+            if (batchRenderer[0] != null) {
+                // make sure we have more than one sprite, if not, push the
+                // sprite onto the list by itself to avoid the batch render
+                // overhead
+                if (batchRenderer[0].batchables.size() > 1)
+                    renderables.add(batchRenderer[0]);
+                else
+                    renderables
+                            .add(batchRenderer[0].batchables.getFirst());
+                batchRenderer[0] = null;
+            }
+            renderables.add(item);
+        }
     }
 
     @Override
@@ -243,12 +273,14 @@ public class GLQuadtreeNode2 extends
             // west of IDL
             this.queryBounds.set(state.northBound, state.westBound,
                     state.southBound, 180d);
-            this.queryImpl(this.queryBounds, state.drawMapResolution,
+            this.queryImpl(state.scene, this.queryBounds,
+                    state.drawMapResolution,
                     resultSet);
             // east of IDL
             this.queryBounds.set(state.northBound, -180d, state.southBound,
                     state.eastBound);
-            this.queryImpl(this.queryBounds, state.drawMapResolution,
+            this.queryImpl(state.scene, this.queryBounds,
+                    state.drawMapResolution,
                     resultSet);
             result.addAll(resultSet);
         } else {
@@ -256,7 +288,8 @@ public class GLQuadtreeNode2 extends
                     state.westBound,
                     state.southBound,
                     state.eastBound);
-            this.queryImpl(this.queryBounds, state.drawMapResolution, result);
+            this.queryImpl(state.scene, this.queryBounds,
+                    state.drawMapResolution, result);
         }
 
         try {
@@ -274,6 +307,7 @@ public class GLQuadtreeNode2 extends
     }
 
     private void queryImpl(
+            MapSceneModel scene,
             GeoBounds bnds,
             double resolution,
             Collection<GLMapItem2> result) {
@@ -282,7 +316,7 @@ public class GLQuadtreeNode2 extends
             return;
 
         synchronized (this.root) {
-            this.root.collectDrawables(bnds, resolution,
+            this.root.collectDrawables(scene, bnds, resolution,
                     result);
         }
     }
@@ -322,7 +356,9 @@ public class GLQuadtreeNode2 extends
             this.depth = (this.parent != null) ? this.parent.depth + 1 : 0;
         }
 
-        public final void collectDrawables(GeoBounds queryBounds,
+        final void collectDrawables(
+                MapSceneModel scene,
+                GeoBounds queryBounds,
                 double mapResolution,
                 Collection<GLMapItem2> retval) {
 
@@ -333,7 +369,43 @@ public class GLQuadtreeNode2 extends
                 if (mapResolution > item.getMinDrawResolution())
                     continue;
                 item.getBounds(bnds);
-                if (bnds.intersects(queryBounds))
+                boolean intersects;
+                do {
+                    intersects = false;
+                    final int renderPass = item.getRenderPass();
+                    if (MathUtils.hasBits(renderPass,
+                            GLMapView.RENDER_PASS_SURFACE))
+                        intersects |= bnds.intersects(queryBounds);
+                    if (MathUtils.hasBits(renderPass,
+                            GLMapView.RENDER_PASS_SPRITES)) {
+                        // XXX - crude heuristic to filter out items beyond the
+                        //       far plane. An assumption is being made that
+                        //       sprite renderables have relatively small
+                        //       coverages
+                        GeoPoint center = bnds.getCenter(null);
+                        final double radius = GeoCalculations.distanceTo(
+                                new GeoPoint(bnds.getNorth(), bnds.getWest()),
+                                center);
+                        final double slant = GeoCalculations
+                                .slantDistanceTo(
+                                        scene.mapProjection.inverse(
+                                                scene.camera.location, null),
+                                        center);
+                        if (slant > (radius + scene.camera.farMeters))
+                            break;
+
+                        // XXX - renderables only have surface MBB defined with
+                        //       current API, create a pillar at the location
+                        //       and check for intersection with the frustum
+                        double maxAlt = 19000d;
+                        double minAlt = -900d;
+
+                        intersects |= MapSceneModel.intersects(scene,
+                                bnds.getWest(), bnds.getSouth(), minAlt,
+                                bnds.getEast(), bnds.getNorth(), maxAlt);
+                    }
+                } while (false);
+                if (intersects)
                     retval.add(item);
             }
             if (accessCheckQueryThreadAbort())
@@ -342,15 +414,26 @@ public class GLQuadtreeNode2 extends
             for (QuadTreeNode child : this.children) {
                 if (accessCheckQueryThreadAbort())
                     break;
+                if (child == null)
+                    continue;
 
-                if (child != null
-                        && child.bounds.intersects(queryBounds))
-                    if (queryBounds.contains(child.bounds))
-                        child
-                                .collectDrawables(mapResolution, retval);
-                    else
-                        child.collectDrawables(queryBounds,
-                                mapResolution, retval);
+                boolean intersects = child.bounds.intersects(queryBounds);
+                // if no surface intersection, check for frustum intersection
+                if (!intersects) {
+                    double maxAlt = 19000d;
+                    double minAlt = -900d;
+
+                    intersects |= MapSceneModel.intersects(scene,
+                            bnds.getWest(), bnds.getSouth(), minAlt,
+                            bnds.getEast(), bnds.getNorth(), maxAlt);
+                }
+                if (!intersects)
+                    continue;
+                if (queryBounds.contains(child.bounds))
+                    child.collectDrawables(mapResolution, retval);
+                else
+                    child.collectDrawables(scene, queryBounds,
+                            mapResolution, retval);
             }
         }
 
@@ -378,6 +461,15 @@ public class GLQuadtreeNode2 extends
         }
 
         public final void add(GLMapItem2 item) {
+            if (this != GLQuadtreeNode2.this.root)
+                throw new IllegalStateException(
+                        "GLQuadtreeNode2.add may only be invoked on root node!");
+
+            this.addImpl(item);
+            GLQuadtreeNode2.this.invalidate();
+        }
+
+        private void addImpl(GLMapItem2 item) {
             if (this.depth < MAX_DEPTH) {
                 MutableGeoBounds bnds = new MutableGeoBounds(0d, 0d, 0d, 0d);
                 item.getBounds(bnds);
@@ -407,49 +499,55 @@ public class GLQuadtreeNode2 extends
                             this.children[i] = new QuadTreeNode(this, qLat,
                                     qLng, qLat - halfLat,
                                     qLng + halfLng);
-                            this.children[i].add(item);
+                            this.children[i].addImpl(item);
                             return;
                         }
                     } else if (this.children[i].bounds.contains(bnds)) {
-                        this.children[i].add(item);
+                        this.children[i].addImpl(item);
                         return;
                     }
                 }
             }
 
-            this.addImpl(item);
-        }
-
-        private void addImpl(GLMapItem2 item) {
-            this.drawables.add(item);
-            item.setOpaque(this);
-            item.addBoundsListener(this);
-
-            GLQuadtreeNode2.this.invalidate();
+            // add the item to this node
+            {
+                this.drawables.add(item);
+                item.setOpaque(this);
+                item.addBoundsListener(this);
+            }
         }
 
         public final void remove(GLMapItem2 item) {
+            if (this != GLQuadtreeNode2.this.root)
+                throw new IllegalStateException(
+                        "GLQuadtreeNode2.remove may only be invoked on root node!");
+            removeRecursive(item, true);
+        }
+
+        private void removeRecursive(GLMapItem2 item, boolean notifyInvalid) {
             if (this.depth < MAX_DEPTH) {
                 MutableGeoBounds bnds = new MutableGeoBounds(0d, 0d, 0d, 0d);
                 item.getBounds(bnds);
                 for (QuadTreeNode child : this.children) {
                     if (child != null
                             && child.bounds.contains(bnds)) {
-                        child.remove(item);
+                        child.removeRecursive(item, notifyInvalid);
                         return;
                     }
                 }
             }
 
-            this.removeImpl(item);
+            removeImpl(item, notifyInvalid);
         }
 
-        private void removeImpl(GLMapItem2 item) {
+        // remove the item
+        private void removeImpl(GLMapItem2 item, boolean notifyInvalid) {
             item.removeBoundsListener(this);
             item.setOpaque(null);
             this.drawables.remove(item);
 
-            GLQuadtreeNode2.this.invalidate();
+            if (notifyInvalid)
+                GLQuadtreeNode2.this.invalidate();
             prune(this);
         }
 
@@ -500,8 +598,12 @@ public class GLQuadtreeNode2 extends
         @Override
         public void onBoundsChanged(GLMapItem2 item, GeoBounds bnds) {
             synchronized (GLQuadtreeNode2.this.root) {
-                this.removeImpl(item);
-                GLQuadtreeNode2.this.root.add(item);
+                // remove without invalidation
+                this.removeImpl(item, false);
+                // add without invalidation
+                GLQuadtreeNode2.this.root.addImpl(item);
+                // mark layer invalid
+                GLQuadtreeNode2.this.invalidate();
             }
         }
     }
@@ -755,24 +857,32 @@ public class GLQuadtreeNode2 extends
             // push it back for purposes of computing range for depth sort. The
             // distance we move the camera back isn't strictly important as we
             // are only looking to establish relative back to front
-            if(!state.scene.camera.perspective) {
-                final double dx = state.scene.camera.location.x-state.scene.camera.target.x;
-                final double dy = state.scene.camera.location.y-state.scene.camera.target.y;
-                final double dz = state.scene.camera.location.z-state.scene.camera.target.z;
+            if (!state.scene.camera.perspective) {
+                final double dx = state.scene.camera.location.x
+                        - state.scene.camera.target.x;
+                final double dy = state.scene.camera.location.y
+                        - state.scene.camera.target.y;
+                final double dz = state.scene.camera.location.z
+                        - state.scene.camera.target.z;
                 final double range = Math.max(MathUtils.distance(
-                        dx*state.scene.displayModel.projectionXToNominalMeters,
-                        dy*state.scene.displayModel.projectionYToNominalMeters,
-                        dz*state.scene.displayModel.projectionZToNominalMeters,
-                        0d, 0d, 0d
-                ), 4000);
+                        dx * state.scene.displayModel.projectionXToNominalMeters,
+                        dy * state.scene.displayModel.projectionYToNominalMeters,
+                        dz * state.scene.displayModel.projectionZToNominalMeters,
+                        0d, 0d, 0d), 4000);
 
                 camera = state.scene.mapProjection
                         .inverse(
                                 new PointD(
-                                    state.scene.camera.target.x+(dx*range)/state.scene.displayModel.projectionXToNominalMeters,
-                                    state.scene.camera.target.y+(dy*range)/state.scene.displayModel.projectionYToNominalMeters,
-                                    state.scene.camera.target.z+(dz*range)/state.scene.displayModel.projectionZToNominalMeters
-                                ), null);
+                                        state.scene.camera.target.x + (dx
+                                                * range)
+                                                / state.scene.displayModel.projectionXToNominalMeters,
+                                        state.scene.camera.target.y + (dy
+                                                * range)
+                                                / state.scene.displayModel.projectionYToNominalMeters,
+                                        state.scene.camera.target.z + (dz
+                                                * range)
+                                                / state.scene.displayModel.projectionZToNominalMeters),
+                                null);
             } else {
                 camera = state.scene.mapProjection
                         .inverse(state.scene.camera.location, null);
@@ -838,8 +948,10 @@ public class GLQuadtreeNode2 extends
             // approximate meters per degree given center
 
             // compute distance-squared for comparison
-            final double aDistSq = GeoCalculations.slantDistanceTo(camera, new GeoPoint(adlat, adlng));
-            final double bDistSq = GeoCalculations.slantDistanceTo(camera, new GeoPoint(bdlat, bdlng));
+            final double aDistSq = GeoCalculations.slantDistanceTo(camera,
+                    new GeoPoint(adlat, adlng));
+            final double bDistSq = GeoCalculations.slantDistanceTo(camera,
+                    new GeoPoint(bdlat, bdlng));
 
             if (aDistSq < bDistSq)
                 return 1;
@@ -848,6 +960,32 @@ public class GLQuadtreeNode2 extends
             else
                 return ITEM_COMPARATOR.compare(a, b);
         }
+    }
 
+    private class Renderable implements GLMapRenderable2 {
+
+        @Override
+        public void draw(GLMapView view, int renderPass) {
+            if (MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SURFACE))
+                for (GLMapRenderable2 r : surfaceRenderables)
+                    r.draw(view, renderPass);
+            if (MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SPRITES))
+                for (GLMapRenderable2 r : spriteRenderables)
+                    r.draw(view, renderPass);
+        }
+
+        @Override
+        public void release() {
+            for (GLMapRenderable2 r : surfaceRenderables)
+                r.release();
+            for (GLMapRenderable2 r : spriteRenderables)
+                r.release();
+        }
+
+        @Override
+        public int getRenderPass() {
+            return GLMapView.RENDER_PASS_SURFACE
+                    | GLMapView.RENDER_PASS_SPRITES;
+        }
     }
 }

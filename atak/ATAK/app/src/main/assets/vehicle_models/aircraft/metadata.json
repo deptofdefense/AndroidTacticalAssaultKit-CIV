@@ -46,6 +46,10 @@
       "file": "b-727.zip"
     },
     {
+      "name": "B-737",
+      "file": "b-737.zip"
+    },
+    {
       "name": "B-747",
       "file": "b-747.zip"
     },
@@ -64,6 +68,10 @@
     {
       "name": "C-20",
       "file": "c-20.zip"
+    },
+    {
+      "name": "C-27",
+      "file": "c-27.zip"
     },
     {
       "name": "C-32",
@@ -166,8 +174,20 @@
       "file": "f-117.zip"
     },
     {
+      "name": "HC-27J",
+      "file": "hc-27j.zip"
+    },
+    {
+      "name": "HC-144A",
+      "file": "hc-144a.zip"
+    },
+    {
       "name": "HH-53",
       "file": "hh-53.zip"
+    },
+    {
+      "name": "HH-60",
+      "file": "hh-60.zip"
     },
     {
       "name": "KC-10",
@@ -190,12 +210,20 @@
       "file": "l-100.zip"
     },
     {
+      "name": "L-1011",
+      "file": "l-1011.zip"
+    },
+    {
       "name": "M-28",
       "file": "m-28.zip"
     },
     {
       "name": "MH-6",
       "file": "mh-6.zip"
+    },
+    {
+      "name": "MH-65",
+      "file": "mh-65.zip"
     },
     {
       "name": "MQ-1",

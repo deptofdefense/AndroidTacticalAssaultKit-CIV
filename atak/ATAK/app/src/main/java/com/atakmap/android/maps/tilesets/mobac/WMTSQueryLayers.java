@@ -1015,8 +1015,8 @@ public class WMTSQueryLayers extends QueryLayers {
             }
 
             // and print out the XML itself.
-            try(Writer w = IOProviderFactory.getFileWriter(f);
-                PrintWriter out = new PrintWriter(w)) {
+            try (Writer w = IOProviderFactory.getFileWriter(f);
+                    PrintWriter out = new PrintWriter(w)) {
                 out.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
                 out.println("<customMapSource>");
                 out.println("    <name>" + title + " on "

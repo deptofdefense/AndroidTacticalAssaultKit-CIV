@@ -152,7 +152,7 @@
 
     <string-array translatable="false" name="speed_units_display">
         <item>MPH</item>
-        <item>Kmph</item>
+        <item>km/h</item>
         <item>Kts</item>
         <item>MPS</item>
     </string-array>

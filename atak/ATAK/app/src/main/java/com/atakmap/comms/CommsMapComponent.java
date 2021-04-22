@@ -247,8 +247,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
     private final Map<String, StreamingNetInterface> streamingIfaces;
 
     private final Map<String, Contact> uidsToContacts;
-    private final ConcurrentLinkedQueue<CotServiceRemote.CotEventListener> cotEventListeners =
-            new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<CotServiceRemote.CotEventListener> cotEventListeners = new ConcurrentLinkedQueue<>();
 
     private WifiManager.MulticastLock multicastLock;
     private WifiManager.WifiLock wifiLock;
@@ -2447,7 +2446,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
 
             // Generate new cert
             byte[] cert = commo.generateSelfSignedCert("atakatak");
-            try(OutputStream fos = IOProviderFactory
+            try (OutputStream fos = IOProviderFactory
                     .getOutputStream(httpsCertFile)) {
                 fos.write(cert);
                 Log.d(TAG, "HttpsCert new cert stored for later use");

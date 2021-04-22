@@ -35,6 +35,12 @@ namespace TAK
 
                 Util::TAKErr handleURI(Util::DataInput2Ptr &ctx, const char * uri) NOTHROWS override;
             };
+
+            ENGINE_API TAKErr ProtocolHandler_registerHandler(const char *scheme, ProtocolHandler &handler) NOTHROWS;
+            ENGINE_API TAKErr ProtocolHandler_unregisterHandler(const ProtocolHandler &handler) NOTHROWS;
+            ENGINE_API TAKErr ProtocolHandler_unregisterHandler(const char *scheme) NOTHROWS;
+            ENGINE_API TAKErr ProtocolHandler_handleURI(DataInput2Ptr& ctx, const char* uri) NOTHROWS;
+            ENGINE_API bool ProtocolHandler_isHandlerRegistered(const char* scheme) NOTHROWS;
         }
     }
 }

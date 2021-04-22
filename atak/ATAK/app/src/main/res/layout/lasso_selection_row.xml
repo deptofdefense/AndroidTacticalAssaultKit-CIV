@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:descendantFocusability="blocksDescendants">
+
+    <ImageView
+        android:id="@+id/checkbox"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="24dp"
+        android:src="@drawable/btn_check_off"
+        android:focusable="true"
+        android:focusableInTouchMode="true"/>
+
+    <ImageView
+        android:id="@+id/icon"
+        android:layout_width="@dimen/button_small"
+        android:layout_height="@dimen/button_small"
+        android:padding="@dimen/auto_space_big"
+        android:src="@drawable/ic_circle"/>
+
+    <TextView
+        android:id="@+id/name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textSize="@dimen/fontSize"
+        android:textColor="#FFF"
+        android:text="@string/title"
+        android:singleLine="true"
+        android:ellipsize="middle"/>
+
+    <TextView
+        android:id="@+id/size"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/scroll_margin"
+        android:textSize="@dimen/fontSize"
+        android:text="@string/size"/>
+
+</LinearLayout>

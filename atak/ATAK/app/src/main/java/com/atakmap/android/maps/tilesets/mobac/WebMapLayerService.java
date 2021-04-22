@@ -58,7 +58,7 @@ public class WebMapLayerService implements Service {
         try {
             f = impl.writeMobacXML(style);
             try (InputStream is = IOProviderFactory.getInputStream(f)) {
-                FileSystemUtils.copyStream(is,true, sink,false);
+                FileSystemUtils.copyStream(is, true, sink, false);
             }
         } finally {
             if (f != null)

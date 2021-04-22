@@ -17,6 +17,7 @@ import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
 import com.atakmap.coremap.maps.coords.Vector3D;
+import com.atakmap.math.PointD;
 import com.atakmap.spatial.file.export.KMZFolder;
 import com.atakmap.spatial.kml.KMLUtil;
 import com.ekito.simpleKML.model.Coordinates;
@@ -33,6 +34,8 @@ import com.ekito.simpleKML.model.StyleSelector;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
+import com.atakmap.annotations.DeprecatedApi;
 
 /**
  * Visible link between two PointMapItems
@@ -67,19 +70,19 @@ public class Association extends Shape implements AnchoredMapItem {
     /**
      * The link will be solid throughout
      */
-    public static final int STYLE_SOLID = 0;
+    public static final int STYLE_SOLID = BASIC_LINE_STYLE_SOLID;
 
     /**
      * The link will be dotted
      */
-    public static final int STYLE_DOTTED = 1;
+    public static final int STYLE_DOTTED = BASIC_LINE_STYLE_DOTTED;
 
     /**
      * The link will be dashed
      */
-    public static final int STYLE_DASHED = 2;
+    public static final int STYLE_DASHED = BASIC_LINE_STYLE_DASHED;
 
-    public static final int STYLE_OUTLINED = 3;
+    public static final int STYLE_OUTLINED = BASIC_LINE_STYLE_OUTLINED;
 
     private static final String TAG = "Association";
 
@@ -367,7 +370,7 @@ public class Association extends Shape implements AnchoredMapItem {
     /**
      * Set the link style
      * 
-     * @param style STYLE_SOLID, STYLE_DOTTED, or STYLE_DASHED
+     * @param style STYLE_SOLID, STYLE_DOTTED, STYLE_DASHED, or STYLE_OUTLINED
      */
     @Override
     public void setStyle(int style) {
@@ -375,6 +378,23 @@ public class Association extends Shape implements AnchoredMapItem {
             _style = style;
             onStyleChanged();
         }
+    }
+
+
+    /**
+     * Set the link style
+     *
+     * @param basicLineStyle STYLE_SOLID, STYLE_DOTTED, or STYLE_DASHED
+     */
+    @Override
+    public void setBasicLineStyle(int basicLineStyle) {
+        super.setBasicLineStyle(basicLineStyle);
+        setStyle(basicLineStyle);
+    }
+
+    @Override
+    public int getBasicLineStyle() {
+        return getStyle();
     }
 
     /**
@@ -533,15 +553,28 @@ public class Association extends Shape implements AnchoredMapItem {
             p1 = view.getRenderElevationAdjustedPoint(p1);
             p2 = view.getRenderElevationAdjustedPoint(p2);
         }
-        PointF pt1 = view.forward(p1, unwrap);
-        PointF pt2 = view.forward(p2, unwrap);
+        PointD pt1 = new PointD(0d, 0d, 0d);
+        if (view.isContinuousScrollEnabled()
+                && (unwrap * p1.getLongitude()) < 0)
+            p1 = new GeoPoint(p1.getLatitude(), p1.getLongitude() + unwrap,
+                    p1.getAltitude());
+        view.getSceneModel().forward(p1, pt1);
+        PointD pt2 = new PointD(0d, 0d, 0d);
+        if (view.isContinuousScrollEnabled()
+                && (unwrap * p2.getLongitude()) < 0)
+            p2 = new GeoPoint(p2.getLatitude(), p2.getLongitude() + unwrap,
+                    p2.getAltitude());
+        view.getSceneModel().forward(p2, pt2);
+
+        if (pt1.z >= 1d && pt2.z >= 1d)
+            return false;
 
         // Check for touches on the actual association line
         Vector3D touch = new Vector3D(xpos, ypos, 0);
 
         Vector3D nearest = Vector3D.nearestPointOnSegment(touch, new Vector3D(
-                pt1.x, pt1.y, 0),
-                new Vector3D(pt2.x, pt2.y, 0));
+                (float) pt1.x, (float) pt1.y, 0),
+                new Vector3D((float) pt2.x, (float) pt2.y, 0));
         if (Math.pow(hitRadius, 2) > nearest.distanceSq(touch)) {
             GeoPoint _touchPoint = view.inverse(nearest.x,
                     nearest.y, MapView.InverseMode.RayCast).get();

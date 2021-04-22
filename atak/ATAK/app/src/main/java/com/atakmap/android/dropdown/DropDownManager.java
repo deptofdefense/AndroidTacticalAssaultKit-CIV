@@ -1,6 +1,7 @@
 
 package com.atakmap.android.dropdown;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -149,6 +150,7 @@ public class DropDownManager extends BroadcastReceiver {
             sendHideToolbarHandleIntent();
             sidePane.setLeftDropDown(dd);
             sidePane.adjustMargin();
+            sidePane.open();
         } else {
 
             Log.d(TAG, "calling show on (right side): " + ddr);
@@ -333,7 +335,9 @@ public class DropDownManager extends BroadcastReceiver {
 
     public void closeAllDropDowns() {
 
-        MapView.getMapView().post(new Runnable() {
+        MapView mv = MapView.getMapView();
+
+        mv.post(new Runnable() {
             @Override
             public void run() {
                 if (leftSide != null)

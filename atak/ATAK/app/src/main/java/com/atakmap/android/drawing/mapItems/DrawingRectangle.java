@@ -219,7 +219,7 @@ public class DrawingRectangle extends Rectangle implements Exportable {
         return cotEvent;
     }
 
-    private Folder toKml() {
+    protected Folder toKml() {
         try {
             // style element
             Style style = new Style();
@@ -351,14 +351,14 @@ public class DrawingRectangle extends Rectangle implements Exportable {
         return null;
     }
 
-    private KMZFolder toKmz() {
+    protected KMZFolder toKmz() {
         Folder f = toKml();
         if (f == null)
             return null;
         return new KMZFolder(f);
     }
 
-    private OGRFeatureExportWrapper toOgrGeomtry()
+    protected OGRFeatureExportWrapper toOgrGeometry()
             throws FormatNotSupportedException {
         org.gdal.ogr.Geometry geometry = new org.gdal.ogr.Geometry(
                 org.gdal.ogr.ogrConstants.wkbLineString);
@@ -479,7 +479,7 @@ public class DrawingRectangle extends Rectangle implements Exportable {
         } else if (GPXExportWrapper.class.equals(target)) {
             return toGpx();
         } else if (OGRFeatureExportWrapper.class.equals(target)) {
-            return toOgrGeomtry();
+            return toOgrGeometry();
         }
 
         return null;
@@ -495,4 +495,5 @@ public class DrawingRectangle extends Rectangle implements Exportable {
     public void drawCanvas(CapturePP capture, Bundle data) {
         // Let the lines draw themselves
     }
+
 }

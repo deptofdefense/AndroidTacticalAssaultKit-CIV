@@ -30,6 +30,7 @@ import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 
 import java.net.NetworkInterface;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -182,24 +183,30 @@ public class AddEditAlias {
                         p == Protocol.RTMP ||
                         p == Protocol.RTMPS ||
                         p == Protocol.HTTPS) {
-                    Log.d(TAG,
-                            "host contains a port, split into host and port: "
-                                    + host);
-                    if (host.contains(":")) {
-                        String[] vals = host.split(":");
-                        if (vals.length > 0) {
-                            host = vals[0];
-                            if (vals.length > 1)
-                                portVal = vals[1];
-                        } else {
-                            url.requestFocus();
-                            Toast.makeText(context,
-                                    R.string.video_text38_host,
-                                    Toast.LENGTH_LONG).show();
-                            return;
-                        }
 
+                    try {
+                        String temp = "http://" + host;
+
+
+                        URI u = URI.create(temp);
+                        if (u.getPort() > 0)
+                            portVal = "" + u.getPort();
+                        host = u.getHost();
+                        if (host == null)
+                            throw new Exception("badhost");
+
+                        if (!FileSystemUtils.isEmpty(u.getUserInfo()) )
+                            host = u.getUserInfo() + "@" + host;
+
+                    } catch (Exception e) {
+                        url.requestFocus();
+                        Toast.makeText(context,
+                                R.string.video_text38_host,
+                                Toast.LENGTH_LONG).show();
+                        return;
                     }
+
+
                 } else {
                     Log.d(TAG,
                             "ignoring format of the raw video alias, but it was not flagged as RAW: "

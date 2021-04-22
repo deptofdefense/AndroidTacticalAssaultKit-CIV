@@ -38,7 +38,7 @@ namespace TAK {
                         const char *getLayerUri() const NOTHROWS override;
                         const atakmap::raster::DatasetDescriptor *getInfo() const NOTHROWS override;
                         Util::TAKErr getControl(void **ctrl, const char *type) const NOTHROWS override;
-                        void draw(const Core::GLMapView2 &view, const int renderPass) NOTHROWS override;
+                        void draw(const Core::GLGlobeBase &view, const int renderPass) NOTHROWS override;
                         int getRenderPass() NOTHROWS override;
                         void start() NOTHROWS override;
                         void stop() NOTHROWS override;
@@ -51,10 +51,9 @@ namespace TAK {
                         // Java - updateRenderableReleaseLists()
                         Util::TAKErr updateRenderableLists(QueryContext &pendingData) NOTHROWS override;
                         Util::TAKErr releaseImpl() NOTHROWS override;
-                        Util::TAKErr query(QueryContext &result, const ViewState &state) NOTHROWS override;
-                        Util::TAKErr newViewStateInstance(ViewStatePtr &value) NOTHROWS override;
+                        Util::TAKErr query(QueryContext &result, const TAK::Engine::Renderer::Core::GLGlobeBase::State &state) NOTHROWS override;
                         Util::TAKErr getBackgroundThreadName(TAK::Engine::Port::String &value) NOTHROWS override;
-                        void initImpl(const Core::GLMapView2 &view) NOTHROWS override;
+                        void initImpl(const Core::GLGlobeBase &view) NOTHROWS override;
                         // Java - checkState()
                         bool shouldQuery() NOTHROWS override;
                         bool shouldCancel() NOTHROWS override;
@@ -64,15 +63,14 @@ namespace TAK {
 
                        private:
                         class GLQuadTileNodeInitializer;
-                        class QueryArgument;
                         class RenderableListIter;
                         class RasterDataAccessControlImpl;
                         class SelectControlImpl;
 
                         void commonInit(TAK::Engine::Core::RenderContext *context, atakmap::raster::MosaicDatasetDescriptor *info) NOTHROWS;
                         Util::TAKErr constructQueryParams(std::list<TAK::Engine::Raster::Mosaic::MosaicDatabase2::QueryParameters> *retval, 
-                            const QueryArgument &localQuery) NOTHROWS;
-                        Util::TAKErr queryImpl(QueryContext &result, const QueryArgument &localQuery) NOTHROWS;
+                            const TAK::Engine::Renderer::Core::GLGlobeBase::State &localQuery) NOTHROWS;
+                        Util::TAKErr queryImpl(QueryContext &result, const TAK::Engine::Renderer::Core::GLGlobeBase::State &localQuery) NOTHROWS;
                         Util::TAKErr resolvePath(Port::String &value, const Port::String &path) NOTHROWS;
 
                        public:
@@ -116,6 +114,9 @@ namespace TAK {
                         std::unique_ptr<SelectControlImpl> select_control_;
                         ImagerySelectionControl::Mode resolution_select_mode_;
                         std::set<Port::String> imagery_type_filter_;
+
+                        Feature::Envelope2 data_region_;
+                        bool data_region_update_;
                     };
 
                 }  // namespace Mosaic

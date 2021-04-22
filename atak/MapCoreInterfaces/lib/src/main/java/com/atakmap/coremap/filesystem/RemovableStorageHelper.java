@@ -1,3 +1,4 @@
+
 package com.atakmap.coremap.filesystem;
 
 import android.content.Context;
@@ -37,23 +38,28 @@ public class RemovableStorageHelper {
         if (Build.VERSION.SDK_INT > 29) {
 
             if (context == null) {
-                Log.d(TAG, "RemovableStorageHelper not initialized, returning " + android_storage);
-                return new String[]{android_storage};
+                Log.d(TAG, "RemovableStorageHelper not initialized, returning "
+                        + android_storage);
+                return new String[] {
+                        android_storage
+                };
             }
             final File[] folders = context.getExternalCacheDirs();
             for (File f : folders) {
                 try {
                     final String path = f.getCanonicalPath();
-                    if (path.startsWith(android_storage) && !path.contains("emulated/0")) {
+                    if (path.startsWith(android_storage)
+                            && !path.contains("emulated/0")) {
                         try {
                             String[] pathSplit = path.split("/");
-                            String sdcardMntPt = pathSplit[1] + "/" + pathSplit[2] + "/";
+                            String sdcardMntPt = pathSplit[1] + "/"
+                                    + pathSplit[2] + "/";
                             mount_points.add(sdcardMntPt);
                         } catch (Exception e) {
                             Log.e(TAG, "error finding removable sdcard", e);
                         }
                     }
-                } catch (Exception e){
+                } catch (Exception e) {
                     Log.e(TAG, "error finding: " + f);
                 }
             }
@@ -73,7 +79,6 @@ public class RemovableStorageHelper {
                     }
                 }
             }
-
 
         }
         if (mount_points.isEmpty())

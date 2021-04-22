@@ -20,6 +20,7 @@ namespace TAK {
                     int stencilFormat = GL_NONE;
                     int stencilInternalFormat = GL_NONE;
                     int stencilType = GL_NONE;
+                    GLenum bufferMask{ GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT };
                 };
 
                 GLuint handle = GL_NONE;
@@ -32,7 +33,7 @@ namespace TAK {
                 GLuint stencilTexture = GL_NONE;
                 GLuint depthStencilTexture = GL_NONE;
 
-                void bind();
+                void bind(const bool clear = true) NOTHROWS;
 
                 ~GLOffscreenFramebuffer() NOTHROWS;
 
@@ -40,15 +41,19 @@ namespace TAK {
                 GLOffscreenFramebuffer() = default;
             private :
                 bool releaseOnDestruct{ false };
+                GLuint renderBuffers[3]{ GL_NONE, GL_NONE, GL_NONE };
+                GLsizei numRenderBuffers{ 0 };
 
-                friend TAK::Engine::Util::TAKErr GLOffscreenFramebuffer_create(std::unique_ptr<GLOffscreenFramebuffer, void (*)(GLOffscreenFramebuffer*)>& result, int width, int height, GLOffscreenFramebuffer::Options opts) NOTHROWS;
+                friend TAK::Engine::Util::TAKErr GLOffscreenFramebuffer_create(std::unique_ptr<GLOffscreenFramebuffer, void (*)(GLOffscreenFramebuffer*)>&, int, int, GLOffscreenFramebuffer::Options) NOTHROWS;
+                friend TAK::Engine::Util::TAKErr GLOffscreenFramebuffer_create(GLOffscreenFramebuffer *, int, int, GLOffscreenFramebuffer::Options) NOTHROWS;
+                friend TAK::Engine::Util::TAKErr GLOffscreenFramebuffer_release(GLOffscreenFramebuffer &) NOTHROWS;
             };
 
             typedef std::unique_ptr<GLOffscreenFramebuffer, void (*)(GLOffscreenFramebuffer*)> GLOffscreenFramebufferPtr;
 
             TAK::Engine::Util::TAKErr GLOffscreenFramebuffer_create(GLOffscreenFramebufferPtr& result, int width, int height, GLOffscreenFramebuffer::Options opts) NOTHROWS;
             TAK::Engine::Util::TAKErr GLOffscreenFramebuffer_create(GLOffscreenFramebuffer *result, int width, int height, GLOffscreenFramebuffer::Options opts) NOTHROWS;
-            TAK::Engine::Util::TAKErr GLOffscreenFramebuffer_release(GLOffscreenFramebuffer &offscreen);
+            TAK::Engine::Util::TAKErr GLOffscreenFramebuffer_release(GLOffscreenFramebuffer &offscreen) NOTHROWS;
         }
     }
 }

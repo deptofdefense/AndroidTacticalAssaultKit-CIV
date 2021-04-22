@@ -71,7 +71,7 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
     private Polyline _filledShape;
     private Marker _center;
     private final MapGroup _childMapGroup;
-    private int _color, _fillColor, _lineStyle;
+    private int _color, _fillColor;
     private boolean _tacticalOverlay;
     private boolean _showLines = true;
     private final UnitPreferences _unitPrefs;
@@ -621,6 +621,14 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
         super.setStrokeColor(strokeColor);
     }
 
+
+    @Override
+    public void setBasicLineStyle(int basicLineStyle) {
+        for (Association a : _lines)
+            a.setBasicLineStyle(basicLineStyle);
+        super.setBasicLineStyle(basicLineStyle);
+    }
+
     /**
      * Same method as {@link #getStrokeColor()}
      */
@@ -642,9 +650,7 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
      * STYLE_SOLID = 0, STYLE_DOTTED = 1, STYLE_DASHED = 2 and STYLE_OUTLINED
      */
     public void setLineStyle(int style) {
-        for (Association a : _lines)
-            a.setStyle(style);
-        _lineStyle = style;
+        setBasicLineStyle(style);
     }
 
     /**
@@ -653,7 +659,7 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
      *         STYLE_SOLID = 0, STYLE_DOTTED = 1, STYLE_DASHED = 2 and STYLE_OUTLINED
      */
     public int getLineStyle() {
-        return _lineStyle;
+        return getBasicLineStyle();
     }
 
     /**
@@ -1845,5 +1851,10 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
                 return _type;
             }
         }
+    }
+
+    @Override
+    public double getArea() {
+        return getLength() * getWidth();
     }
 }

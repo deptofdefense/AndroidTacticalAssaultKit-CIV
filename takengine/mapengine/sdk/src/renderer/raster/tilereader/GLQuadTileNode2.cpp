@@ -9,8 +9,11 @@
 #include "renderer/GLES20FixedPipeline.h"
 #include "renderer/GLText2.h"
 #include "renderer/GLWireframe.h"
+#include "renderer/core/GLGlobeSurfaceRenderer.h"
 #include "renderer/map/layer/raster/gdal/GdalGraphicUtils.h"
 #include "renderer/raster/tilereader/GLTiledMapLayer2.h"
+#include "renderer/raster/tilereader/TileReadRequestPrioritizer.h"
+#include "util/BlockPoolAllocator.h"
 #include "util/ConfigOptions.h"
 #include "util/MathUtils.h"
 
@@ -22,28 +25,28 @@ using namespace TAK::Engine::Raster::TileReader;
 using namespace TAK::Engine::Renderer;
 using namespace TAK::Engine::Renderer::Raster::TileReader;
 
+#define DEFAULT_TILE_SIZE 256u
+#define BITMAP_POOL_BLOCK_SIZE (DEFAULT_TILE_SIZE*DEFAULT_TILE_SIZE*4u)
+
 namespace {
 
     bool offscreenFboFailed = false;
     const bool MIPMAP_ENABLED = false;
     const bool DEBUG_QUADTILE = false;
     const int TEXTURE_CACHE_HINT_RESOLVED = 0x00000001;
-    const int POI_ITERATION_BIAS[] = {
-        1, 3, 0, 2,  // 0
-        1, 0, 2, 3,  // 1
-        0, 1, 2, 3,  // 2
-        0, 2, 1, 3,  // 3
-        2, 0, 3, 1,  // 4
-        2, 3, 0, 1,  // 5
-        3, 2, 1, 0,  // 6
-        3, 1, 2, 0,  // 7
-    };
+
     const int STATE_RESOLVED = 0x01;
     const int STATE_RESOLVING = 0x02;
     const int STATE_UNRESOLVED = 0x04;
     const int STATE_UNRESOLVABLE = 0x08;
     const int STATE_SUSPENDED = 0x10;
     const double POLE_LATITUDE_LIMIT_EPISLON = 0.00001;
+
+    BlockPoolAllocator& textureDataPool() NOTHROWS
+    {
+        static BlockPoolAllocator a(BITMAP_POOL_BLOCK_SIZE, 16u);
+        return a;
+    }
 
     double DistanceCalculations_calculateRange(const GeoPoint2 &start, const GeoPoint2 &destination)
     {
@@ -87,11 +90,11 @@ class GLQuadTileNode2::VertexResolver
 {
    public:
     virtual ~VertexResolver() = 0;
-    virtual void beginDraw(const Core::GLMapView2 &view) = 0;
-    virtual void endDraw(const Core::GLMapView2 &view) = 0;
+    virtual void beginDraw(const Core::GLGlobeBase &view) = 0;
+    virtual void endDraw(const Core::GLGlobeBase &view) = 0;
     virtual void beginNode(GLQuadTileNode2 *node) = 0;
     virtual void endNode(GLQuadTileNode2 *node) = 0;
-    virtual Util::TAKErr project(GridVertex *vert, const Core::GLMapView2 &view, int64_t imgSrcX, int64_t imgSrcY) = 0;
+    virtual Util::TAKErr project(GridVertex *vert, const Core::GLGlobeBase &view, int64_t imgSrcX, int64_t imgSrcY) = 0;
     virtual void release() = 0;
     virtual void nodeDestroying(GLQuadTileNode2 *node) = 0;
 };
@@ -102,11 +105,11 @@ class GLQuadTileNode2::DefaultVertexResolver : public GLQuadTileNode2::VertexRes
     DefaultVertexResolver();
     ~DefaultVertexResolver() override;
 
-    void beginDraw(const Renderer::Core::GLMapView2 &view) override;
-    void endDraw(const Renderer::Core::GLMapView2 &view) override;
+    void beginDraw(const Renderer::Core::GLGlobeBase &view) override;
+    void endDraw(const Renderer::Core::GLGlobeBase &view) override;
     void beginNode(GLQuadTileNode2 *node) override;
     void endNode(GLQuadTileNode2 *node) override;
-    Util::TAKErr project(GridVertex *vert, const Renderer::Core::GLMapView2 &view, int64_t imgSrcX, int64_t imgSrcY) override;
+    Util::TAKErr project(GridVertex *vert, const Renderer::Core::GLGlobeBase &view, int64_t imgSrcX, int64_t imgSrcY) override;
     void release() override;
     void nodeDestroying(GLQuadTileNode2 *node) override;
 
@@ -129,11 +132,11 @@ class GLQuadTileNode2::PreciseVertexResolver : public DefaultVertexResolver
 
     /**********************************************************************/
     // Vertex Resolver
-    void beginDraw(const Renderer::Core::GLMapView2 &view) override;
-    void endDraw(const Renderer::Core::GLMapView2 &view) override;
+    void beginDraw(const Renderer::Core::GLGlobeBase &view) override;
+    void endDraw(const Renderer::Core::GLGlobeBase &view) override;
     void beginNode(GLQuadTileNode2 *node) override;
     void endNode(GLQuadTileNode2 *node) override;
-    Util::TAKErr project(GridVertex *vert, const Renderer::Core::GLMapView2 &view, int64_t imgSrcX, int64_t imgSrcY) override;
+    Util::TAKErr project(GridVertex *vert, const Renderer::Core::GLGlobeBase &view, int64_t imgSrcX, int64_t imgSrcY) override;
     void release() override;
     void nodeDestroying(GLQuadTileNode2 *node) override;
 
@@ -228,15 +231,46 @@ struct GLQuadTileNode2::IOCallbackOpaque
     const int reqId;
 
     // Used by updates only
-    BitmapPtr data;
+    struct {
+        std::unique_ptr<void, void(*)(const void*)> data = std::unique_ptr<void, void(*)(const void*)>(nullptr, nullptr);
+        std::size_t width;
+        std::size_t height;
+        Bitmap2::Format format;
+    } bitmap;
 
     IOCallbackOpaque(UpdateType type, GLQuadTileNode2 &owner, int reqId) NOTHROWS
-        : type(type), owner(&owner), reqId(reqId), data(nullptr, nullptr)
+        : type(type), owner(&owner), reqId(reqId)
     {}
 
     IOCallbackOpaque(GLQuadTileNode2 &owner, int reqId, const Bitmap2 &data) NOTHROWS
-        : type(CB_Update), owner(&owner), reqId(reqId), data(new(std::nothrow) Bitmap2(data), Memory_deleter_const<Bitmap2>)
-    {}
+        : type(CB_Update), owner(&owner), reqId(reqId)
+    {
+        bitmap.width = data.getWidth();
+        bitmap.height = data.getHeight();
+        bitmap.format = data.getFormat();
+
+        do {
+            std::size_t pixelSize;
+            if (Bitmap2_formatPixelSize(&pixelSize, bitmap.format) != TE_Ok)
+                break;
+
+            // try to obtain a block from the pool; if that fails or the block
+            // is too large, heap allocate
+            if ((pixelSize*bitmap.width*bitmap.height) > BITMAP_POOL_BLOCK_SIZE ||
+                textureDataPool().allocate(bitmap.data, false) != TE_Ok) {
+
+                const std::size_t dataSize = (pixelSize * bitmap.width * bitmap.height);
+                bitmap.data = std::unique_ptr<void, void(*)(const void*)>(new(std::nothrow) uint8_t[dataSize], Memory_void_array_deleter_const<uint8_t>);
+                if (!bitmap.data)
+                    break;
+            }
+
+            // copy the bitmap
+            Bitmap2::DataPtr pixels(static_cast<uint8_t*>(bitmap.data.get()), Memory_leaker_const<uint8_t>);
+            Bitmap2 bmp(std::move(pixels), bitmap.width, bitmap.height, bitmap.format);
+            bmp.setRegion(data, 0, 0);
+        } while (false);
+    }
 };
 
 TAKErr GLQuadTileNode2::create(GLQuadTileNode2Ptr &value, TAK::Engine::Core::RenderContext *context, const ImageInfo *info,
@@ -265,11 +299,6 @@ TAKErr GLQuadTileNode2::create(GLQuadTileNode2Ptr &value, GLQuadTileNode2 *paren
 
 GLQuadTileNode2::GLQuadTileNode2()
     : core_(nullptr),
-      current_request_id_(0),
-      current_request_level_(0),
-      current_request_row_(0),
-      current_request_col_(0),
-      current_request_id_valid_(false),
       texture_(nullptr, nullptr),
       tile_row_(-1),
       tile_column_(-1),
@@ -323,7 +352,7 @@ GLQuadTileNode2::GLQuadTileNode2()
       loading_tex_coords_vert_count_(0),
       derived_unresolvable_data_(false),
       should_borrow_texture_(false),
-      last_touch_(-1),
+      last_touch2_(-1),
       fade_timer_(0),
       read_request_start_(0),
       read_request_complete_(0),
@@ -331,7 +360,6 @@ GLQuadTileNode2::GLQuadTileNode2()
       debug_draw_indices_(nullptr, Memory_array_deleter_const<uint16_t>),
       debug_draw_indices_capacity_(0),
       debug_draw_indices_count_(0),
-      is_overdraw_(false),
       texture_key_("")
 {}
 
@@ -439,9 +467,10 @@ TAKErr GLQuadTileNode2::super_set(int64_t tileColumn, int64_t tileRow, size_t le
     if (this->tile_column_ == tileColumn && this->tile_row_ == tileRow && this->level_ == level)
         return TE_Ok;
 
-    if (this->current_request_id_valid_) {
-        this->core_->tileReader->asyncCancel(this->current_request_id_);
-        this->current_request_id_valid_ = false;
+    if (this->current_request_) {
+        this->current_request_->cancel();
+        this->read_requests_.remove(this->current_request_);
+        this->current_request_.reset();
     }
 
     if (this->core_->textureCache != nullptr && ((this->state_ == State::RESOLVED) || this->received_update_))
@@ -615,7 +644,12 @@ void GLQuadTileNode2::releaseTexture()
 
 void GLQuadTileNode2::release() NOTHROWS
 {
-    this->abandon();
+    for (std::size_t i = 0u; i < 4; i++) {
+        if (this->children_[i]) {
+            this->children_[i]->release();
+            this->children_[i].reset();
+        }
+    }
     if (this->borrowing_from_ != nullptr) {
         this->borrowing_from_->unborrowTexture(this);
         this->borrowing_from_ = nullptr;
@@ -638,9 +672,13 @@ void GLQuadTileNode2::release() NOTHROWS
 
 void GLQuadTileNode2::super_release()
 {
-    this->current_request_id_valid_ = false;
-    if (this->core_)
-        this->core_->tileReader->asyncAbort(*this);
+    if (this->current_request_) {
+        this->current_request_.reset();
+    }
+    for (auto rr : read_requests_)
+        rr->cancel();
+    read_requests_.clear();
+
     {
         Thread::Lock lock(queued_callbacks_mutex_);
         for (IOCallbackOpaque *cbo : queued_callbacks_)
@@ -862,13 +900,13 @@ TAKErr GLQuadTileNode2::validateTexVerts()
     return code;
 }
 
-TAKErr GLQuadTileNode2::validateVertexCoords(const Renderer::Core::GLMapView2 &view)
+TAKErr GLQuadTileNode2::validateVertexCoords(const Renderer::Core::GLGlobeBase &view)
 {
     TAKErr code(TE_Ok);
 
-    if (!this->vertex_coords_valid_ || (this->vertex_coord_srid_ != view.drawSrid)) {
-        if (this->vertex_coord_srid_ != view.drawSrid) {
-            code = view.scene.projection->forward(&this->centroid_proj_, this->centroid_);
+    if (!this->vertex_coords_valid_ || (this->vertex_coord_srid_ != view.renderPass->drawSrid)) {
+        if (this->vertex_coord_srid_ != view.renderPass->drawSrid) {
+            code = view.renderPass->scene.projection->forward(&this->centroid_proj_, this->centroid_);
             TE_CHECKRETURN_CODE(code);
         }
 
@@ -890,10 +928,10 @@ TAKErr GLQuadTileNode2::validateVertexCoords(const Renderer::Core::GLMapView2 &v
                 GeoPoint2 v(this->grid_vertices_[gridVertsIdx].value);
 
                 // reproject LLA to the current map projection
-                if (this->grid_vertices_[gridVertsIdx].projectedSrid != view.drawSrid) {
-                    code = view.scene.projection->forward(&this->grid_vertices_[gridVertsIdx].projected, v);
+                if (this->grid_vertices_[gridVertsIdx].projectedSrid != view.renderPass->drawSrid) {
+                    code = view.renderPass->scene.projection->forward(&this->grid_vertices_[gridVertsIdx].projected, v);
                     TE_CHECKBREAK_CODE(code);
-                    this->grid_vertices_[gridVertsIdx].projectedSrid = view.drawSrid;
+                    this->grid_vertices_[gridVertsIdx].projectedSrid = view.renderPass->drawSrid;
                 }
 
                 Math::Point2<double> pointD;
@@ -911,13 +949,13 @@ TAKErr GLQuadTileNode2::validateVertexCoords(const Renderer::Core::GLMapView2 &v
 
         this->vertex_coords_valid_ = true;
 
-        this->vertex_coord_srid_ = view.drawSrid;
+        this->vertex_coord_srid_ = view.renderPass->drawSrid;
         this->verts_draw_version_ = view.drawVersion;
     }
     return code;
 }
 
-void GLQuadTileNode2::draw(const Renderer::Core::GLMapView2 &view, const int renderPass) NOTHROWS
+void GLQuadTileNode2::draw(const Renderer::Core::GLGlobeBase &view, const int renderPass) NOTHROWS
 {
     TAKErr code(TE_Ok);
 
@@ -925,6 +963,21 @@ void GLQuadTileNode2::draw(const Renderer::Core::GLMapView2 &view, const int ren
         Util::Logger_log(LogLevel::TELL_Error, "External draw method should only be invoked on root node!");
         return;
     }
+
+    if (!core_->surfaceRenderer)
+        core_->surfaceRenderer = view.getSurfaceRendererControl();
+
+    // XXX-
+#if 0
+    if(this->lastTouch != view.renderPump) {
+        // prioritize read requests based on camera location
+        view.full_scene.mapProjection.inverse(view.full_scene.camera.location, view.scratch.geo);
+
+        view.scratch.geo.set(0d);
+        this.core.imprecise.groundToImage(view.scratch.geo, view.scratch.pointD);
+        this.core.requestPrioritizer.setFocus((long) view.scratch.pointD.x, (long) view.scratch.pointD.y, null, 0);
+    }
+#endif
 
     core_->tilesThisFrame = 0;
     int64_t trw, trh;
@@ -936,12 +989,15 @@ void GLQuadTileNode2::draw(const Renderer::Core::GLMapView2 &view, const int ren
     size_t numRois;
     code = GLTiledMapLayer2_getRasterROI2(this->core_->drawROI, &numRois, view, trw, trh, *(this->core_->imprecise), this->core_->upperLeft,
                                           this->core_->upperRight, this->core_->lowerRight, this->core_->lowerLeft, 0.0,
-                                          360.0 / ((int64_t)1 << atakmap::raster::osm::OSMUtils::mapnikTileLevel(view.drawMapResolution)));
+                                          0.0);
 
-    if (numRois < 1)  // no intersection
+    if (numRois < 1) { // no intersection
+        if (!view.multiPartPass)
+            cull(view.renderPass->renderPump);
         return;
+    }
 
-    const double scale = (this->core_->gsd / view.drawMapResolution);
+    const double scale = (this->core_->gsd / view.renderPass->drawMapResolution);
 
     // XXX - tune level calculation -- it may look better to swap to the
     // next level before we actually cross the threshold
@@ -958,13 +1014,14 @@ void GLQuadTileNode2::draw(const Renderer::Core::GLMapView2 &view, const int ren
     int64_t poiX = 0;
     int64_t poiY = 0;
     Math::Point2<double> pointD;
-    if (this->core_->imprecise->groundToImage(&pointD, GeoPoint2(view.drawLat, view.drawLng)) == TE_Ok) {
+    if (this->core_->imprecise->groundToImage(&pointD, GeoPoint2(view.renderPass->drawLat, view.renderPass->drawLng)) == TE_Ok) {
         poiX = (int64_t)pointD.x;
         poiY = (int64_t)pointD.y;
     }
-    if (view.crossesIDL) {
+
+    if (view.renderPass->crossesIDL) {
         Math::Point2<double> poi2;
-        if (this->core_->imprecise->groundToImage(&poi2, GeoPoint2(view.drawLat, view.drawLng+((view.drawLng>0.0)?-360.0:360.0))) == TE_Ok) {
+        if (this->core_->imprecise->groundToImage(&poi2, GeoPoint2(view.renderPass->drawLat, view.renderPass->drawLng+((view.renderPass->drawLng>0.0)?-360.0:360.0))) == TE_Ok) {
             Math::Point2<double> cpoi1(MathUtils_clamp((double)poiX, (double)tile_src_x_, (double)(tile_src_x_+tile_src_width_)), MathUtils_clamp((double)poiY, (double)tile_src_y_, (double)(tile_src_y_+tile_src_height_)));
             Math::Point2<double> cpoi2(MathUtils_clamp(poi2.x, (double)tile_src_x_, (double)(tile_src_x_+tile_src_width_)), MathUtils_clamp(poi2.y, (double)tile_src_y_, (double)(tile_src_y_+tile_src_height_)));
 
@@ -975,6 +1032,11 @@ void GLQuadTileNode2::draw(const Renderer::Core::GLMapView2 &view, const int ren
             }
 #undef __te_distance_squared
         }
+    }
+
+    if (this->last_touch2_ != view.renderPass->renderPump) {
+        // XXX - 
+        this->core_->readRequestPrioritizer->update(poiX, poiY, this->core_->drawROI, numRois);
     }
 
     code = TE_Ok;
@@ -999,15 +1061,36 @@ void GLQuadTileNode2::draw(const Renderer::Core::GLMapView2 &view, const int ren
         size_t maxResLevels;
         code = core_->tileReader->getMaximumNumResolutionLevels(&maxResLevels);
         TE_CHECKBREAK_CODE(code);
-        this->draw(view, std::min(level, maxResLevels - 1), (int64_t)roi.x, (int64_t)roi.y,
-                   (int64_t)(ceil(roi.x + roi.width) - (int64_t)roi.x), (int64_t)(ceil(roi.y + roi.height) - (int64_t)roi.y), poiX, poiY,
-                   ((i + 1) == numRois));
+        this->draw(view,
+                   std::min(level, root_->level_), (int64_t)roi.x, (int64_t)roi.y,
+                   (int64_t)(ceil(roi.x + roi.width) - (int64_t)roi.x), (int64_t)(ceil(roi.y + roi.height) - (int64_t)roi.y), poiX, poiY);
     }
     this->core_->vertexResolver->endDraw(view);
     if (this->core_->tileReader.get() != nullptr)
         this->core_->tileReader->stop();
 
     // Log.v(TAG, "Tiles this frame: " + core->tilesThisFrame);
+
+    if(!view.multiPartPass)
+        this->cull(view.renderPass->renderPump);
+}
+
+void GLQuadTileNode2::cull(const int renderPump) NOTHROWS
+{
+    if (!this->last_touch2_ == renderPump) {
+        this->release();
+    } else {
+        for (std::size_t i = 0u; i < 4u; i++) {
+            if (!this->children_[i])
+                continue;
+            if (this->children_[i]->last_touch2_ != renderPump) {
+                this->children_[i]->release();
+                this->children_[i].reset();
+            } else {
+                this->children_[i]->cull(renderPump);
+            }
+        }
+    }
 }
 
 bool GLQuadTileNode2::shouldResolve()
@@ -1021,7 +1104,7 @@ bool GLQuadTileNode2::shouldResolve()
 
 int GLQuadTileNode2::getRenderPass() NOTHROWS
 {
-    return Renderer::Core::GLMapView2::Surface;
+    return Renderer::Core::GLGlobeBase::Surface;
 }
 
 void GLQuadTileNode2::start() NOTHROWS {}
@@ -1030,7 +1113,7 @@ void GLQuadTileNode2::stop() NOTHROWS {}
 
 bool GLQuadTileNode2::super_shouldResolve()
 {
-    return (this->state_ == State::UNRESOLVED) && (!this->current_request_id_valid_);
+    return (this->state_ == State::UNRESOLVED) && (!this->current_request_);
 }
 
 bool GLQuadTileNode2::useCachedTexture()
@@ -1154,7 +1237,7 @@ void GLQuadTileNode2::resolveTexture()
                 float *texCoordBuffer = this->texture_coordinates_.get();
 
                 glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-                glClear(GL_COLOR_BUFFER_BIT);
+                glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
                 int tx;
                 int ty;
@@ -1262,9 +1345,6 @@ void GLQuadTileNode2::resolveTexture()
         this->state_ = State::UNRESOLVED;
     }
 
-    // abandon the children before drawing ourself
-    this->abandon();
-
     if (this->state_ == State::UNRESOLVED) {
         super_resolveTexture();
     }
@@ -1284,16 +1364,68 @@ TAKErr GLQuadTileNode2::super_resolveTexture()
 {
     this->state_ = State::RESOLVING;
     this->read_request_start_ = Port::Platform_systime_millis();
-    return this->core_->tileReader->asyncRead(static_cast<int>(this->level_), this->tile_column_, this->tile_row_, this);
+    if (this->current_request_)
+        this->current_request_->cancel();
+    this->current_request_.reset(
+        new TileReader2::ReadRequest(
+            this->core_->tileReader,
+            static_cast<int>(this->level_),
+            this->tile_column_,
+            this->tile_row_, this));
+    this->read_requests_.push_back(this->current_request_);
+    this->core_->asyncio->asyncRead(this->current_request_);
+    return TE_Ok;
 }
 
-void GLQuadTileNode2::draw(const Renderer::Core::GLMapView2 &view, size_t level, int64_t srcX, int64_t srcY, int64_t srcW, int64_t srcH,
-                           int64_t poiX, int64_t poiY, bool cull)
+double GLMapView_estimateResolution(const TAK::Engine::Renderer::Core::GLGlobeBase &cview, const double ullat, const double ullng, const double lrlat, const double lrlng) {
+    TAK::Engine::Core::MapSceneModel2 cmodel(cview.renderPasses[0u].scene);
+    TAK::Engine::Math::Point2<double> camdir;
+    TAK::Engine::Math::Vector2_subtract(&camdir, cmodel.camera.location, cmodel.camera.target);
+    cmodel.projection->forward(&cmodel.camera.target, TAK::Engine::Core::GeoPoint2(cview.renderPass->drawLat, cview.renderPass->drawLng));
+    TAK::Engine::Math::Vector2_add(&cmodel.camera.location, cmodel.camera.target, camdir);
+
+    const TAK::Engine::Core::GeoPoint2 tgt(cview.renderPass->drawLat, cview.renderPass->drawLng);
+    if (atakmap::math::Rectangle<double>::contains(ullng, lrlat, lrlng, ullat, tgt.longitude, tgt.latitude))
+        return cmodel.gsd;
+
+    const double sceneHalfWidth = cmodel.width / 2.0;
+    const double sceneHalfHeight = cmodel.height / 2.0;
+    const double sceneRadius = cmodel.gsd*sqrt((sceneHalfWidth*sceneHalfWidth) + (sceneHalfHeight*sceneHalfHeight));
+    
+    const TAK::Engine::Core::GeoPoint2 aoiCentroid((ullat + lrlat) / 2.0, (ullng + lrlng) / 2.0);
+    double aoiRadius;
+    {
+        const double uld = TAK::Engine::Core::GeoPoint2_distance(aoiCentroid, TAK::Engine::Core::GeoPoint2(ullat, ullng), true);
+        const double urd = TAK::Engine::Core::GeoPoint2_distance(aoiCentroid, TAK::Engine::Core::GeoPoint2(ullat, lrlng), true);
+        const double lrd = TAK::Engine::Core::GeoPoint2_distance(aoiCentroid, TAK::Engine::Core::GeoPoint2(lrlat, lrlng), true);
+        const double lld = TAK::Engine::Core::GeoPoint2_distance(aoiCentroid, TAK::Engine::Core::GeoPoint2(lrlat, ullng), true);
+        aoiRadius = std::max(std::max(uld, urd), std::max(lrd, lld));
+    }
+    const double d = TAK::Engine::Core::GeoPoint2_distance(aoiCentroid, tgt, true);
+    if((d-aoiRadius) < sceneRadius)
+        return cmodel.gsd;
+    if(true)
+        return atakmap::raster::osm::OSMUtils::mapnikTileResolution(1);
+    // adjust GSD based on the angle between the slant and the AOI
+    const double camlocx = cmodel.camera.location.x*cmodel.displayModel->projectionXToNominalMeters;
+    const double camlocy = cmodel.camera.location.y*cmodel.displayModel->projectionYToNominalMeters;
+    const double camlocz = cmodel.camera.location.z*cmodel.displayModel->projectionZToNominalMeters;
+    const double camtgtx = cmodel.camera.target.x*cmodel.displayModel->projectionXToNominalMeters;
+    const double camtgty = cmodel.camera.target.y*cmodel.displayModel->projectionYToNominalMeters;
+    const double camtgtz = cmodel.camera.target.z*cmodel.displayModel->projectionZToNominalMeters;
+    double slant;
+    TAK::Engine::Math::Vector2_length(&slant, TAK::Engine::Math::Point2<double>(camlocx-camtgtx, camlocy-camtgty, camlocz-camtgtz));
+    //return cmodel->gsd*(sqrt(((d-aoiRadius)*(d-aoiRadius))+(slant*slant))/slant);
+    //return cmodel->gsd*(sqrt(((d)*(d))+(slant*slant))/slant);
+    return cmodel.gsd*pow((sqrt(((d)*(d))+(slant*slant))/slant), (sqrt(((d)*(d))+(slant*slant))/slant));
+}
+
+void GLQuadTileNode2::draw(const Renderer::Core::GLGlobeBase &view, size_t level, int64_t srcX, int64_t srcY, int64_t srcW, int64_t srcH,
+                           int64_t poiX, int64_t poiY)
 {
     // dynamically refine level based on expected nominal resolution for tile as rendered
     TAKErr code(TE_Ok);
-    double tileGsd;
-    code = GLMapView2_estimateResolution(&tileGsd, nullptr, view, max_lat_, min_lng_, min_lat_, max_lng_);
+    double tileGsd = ::GLMapView_estimateResolution(view, max_lat_, min_lng_, min_lat_, max_lng_);
     TE_CHECKRETURN(code);
     double scale = (this->core_->gsd / tileGsd);
     const int computed = (int)ceil(std::max((log(1.0 / scale) / log(2.0)) + this->core_->options.levelTransitionAdjustment, 0.0));
@@ -1301,11 +1433,10 @@ void GLQuadTileNode2::draw(const Renderer::Core::GLMapView2 &view, size_t level,
         level = (static_cast<std::size_t>(computed) > this->level_) ? this->level_ : level;
     }
 
+    this->last_touch2_ = view.renderPass->renderPump;
+
     if (this->level_ == level) {
-        const bool abandon = (this->texture_ == nullptr);
         this->drawImpl(view);
-        if (abandon && (this->texture_.get() != nullptr))
-            this->abandon();
     } else if (this->level_ > level) {
         bool unresolvedChildren = false;
         bool isMultiRes;
@@ -1374,13 +1505,6 @@ void GLQuadTileNode2::draw(const Renderer::Core::GLMapView2 &view, size_t level,
         const bool right = (srcX < std::min(tileMaxSrcX, limitX)) && (maxSrcX > std::max(tileMidSrcX, (int64_t)0));
         const bool lower = (srcY < std::min(tileMaxSrcY, limitY)) && (maxSrcY > std::max(tileMidSrcY, (int64_t)0));
 
-        // orphan all children that are not visible
-        std::vector<GLQuadTileNode2Ptr> orphanVec;
-        if (cull) {
-            code = this->orphan(&orphanVec, view.drawVersion, !(upper && left), !(upper & right), !(lower && left), !(lower && right));
-            TE_CHECKRETURN(code);
-        }
-
         bool visibleChildren[4] = {
             (upper && left),
             (upper && right),
@@ -1389,20 +1513,13 @@ void GLQuadTileNode2::draw(const Renderer::Core::GLMapView2 &view, size_t level,
         };
 
         int visCount = 0;
-        auto orphanIter = orphanVec.begin();
         for (int i = 0; i < 4; i++) {
             if (visibleChildren[i]) {
-                if (this->children_[i] == nullptr) {
-                    if (orphanIter != orphanVec.end()) {
-                        code = this->adopt(i, std::move(*orphanIter));
-                        orphanIter++;
-                        TE_CHECKBREAK_CODE(code);
-                    } else {
-                        GLQuadTileNode2Ptr newChild(nullptr, nullptr);
-                        code = create(newChild, this, i);
-                        this->children_[i] = std::move(newChild);
-                        TE_CHECKBREAK_CODE(code);
-                    }
+                if (!this->children_[i]) {
+                    GLQuadTileNode2Ptr newChild(nullptr, nullptr);
+                    code = create(newChild, this, i);
+                    this->children_[i] = std::move(newChild);
+                    TE_CHECKBREAK_CODE(code);
                 }
                 // XXX - overdraw above is emitting 0 dimension children
                 //       causing subsequent FBO failure. implementing
@@ -1411,79 +1528,32 @@ void GLQuadTileNode2::draw(const Renderer::Core::GLMapView2 &view, size_t level,
                 if (!visibleChildren[i])
                     continue;
 
-                this->children_[i]->last_touch_ = view.drawVersion;
                 visCount++;
             }
         }
         TE_CHECKRETURN(code);
 
-        // there are no visible children. this node must have been selected
-        // for overdraw -- draw it and return
-        if (visCount == 0) {
-            this->is_overdraw_ = true;
-            this->drawImpl(view);
-            return;
-        } else if (!cull) {
-            // if this is not the 'cull' pass and we have not performed
-            // overdraw
-            this->is_overdraw_ = false;
-        }
-
-        // if there are no unresolved children and this node is requesting
-        // tile data, cancel request
-        if (!unresolvedChildren && this->current_request_id_valid_ && (cull && !this->is_overdraw_)) {
-            this->core_->tileReader->asyncCancel(this->current_request_id_);
-            this->current_request_id_valid_ = false;
-        }
-
-        int iterOffset = 2;
-        if (poiX > 0L || poiY > 0L) {
-            // XXX - I think this should happen implicitly based on the
-            //       POI vector, but it doesn't appear to???
-            if (atakmap::math::Rectangle<int64_t>::contains(this->tile_src_x_, this->tile_src_y_, this->tile_src_x_ + this->tile_src_width_,
-                                                            this->tile_src_y_ + this->tile_src_height_, poiX, poiY)) {
-                for (int i = 0; i < 4; i++) {
-                    if (visibleChildren[i] && atakmap::math::Rectangle<int64_t>::contains(
-                                                  this->children_[i]->tile_src_x_, this->children_[i]->tile_src_y_,
-                                                  this->children_[i]->tile_src_x_ + this->children_[i]->tile_src_width_,
-                                                  this->children_[i]->tile_src_y_ + this->children_[i]->tile_src_height_, poiX, poiY)) {
-                        this->children_[i]->vertices_invalid_ = this->vertices_invalid_;
-                        this->children_[i]->draw(view, level, srcX, srcY, srcW, srcH, poiX, poiY, cull);
-
-                        // already drawn
-                        visibleChildren[i] = false;
-
-                        break;
-                    }
-                }
-            }
-
-            // obtain angle between tile center and POI
-            const int64_t dx = poiX - tileMidSrcX;
-            const int64_t dy = poiY - tileMidSrcY;
-            double theta = atan2(dy, dx) * 180.0 / M_PI;
-            if (theta < 0.0)
-                theta += 360.0;
-
-            // determine the half quadrant that the vector the POI extends
-            // through
-            int halfQuadrant = (int)(theta / 45.0) % 8;
-            if (halfQuadrant >= 0 && halfQuadrant <= 7)
-                iterOffset = halfQuadrant;
-        }
-
-        for (int j = 0; j < 4; j++) {
-            const int i = POI_ITERATION_BIAS[(iterOffset * 4) + j];
+        for (std::size_t i = 0u; i < 4u; i++) {
             if (visibleChildren[i]) {
                 this->children_[i]->vertices_invalid_ = this->vertices_invalid_;
-                this->children_[i]->draw(view, level, srcX, srcY, srcW, srcH, poiX, poiY, cull);
-                visibleChildren[i] = false;
+                this->children_[i]->draw(view, level, srcX, srcY, srcW, srcH, poiX, poiY);
             }
         }
 
         // if no one is borrowing from us, release our texture
-        if (this->borrowers_.empty() && this->texture_ != nullptr && !unresolvedChildren && (cull && !this->is_overdraw_))
+        if (this->borrowers_.empty() &&
+            this->texture_ != nullptr &&
+            !unresolvedChildren &&
+            this->core_->options.childTextureCopyResolvesParent) {
+
+            // XXX - not sure why this is needed
+            if (current_request_) {
+                current_request_->cancel();
+                read_requests_.remove(current_request_);
+                current_request_.reset();
+            }
             this->releaseTexture();
+        }
     } else {
         // throw new IllegalStateException();
         return;
@@ -1503,7 +1573,7 @@ void GLQuadTileNode2::draw(const Renderer::Core::GLMapView2 &view, size_t level,
     this->vertices_invalid_ = false;
 }
 
-void GLQuadTileNode2::drawTexture(const Renderer::Core::GLMapView2 &view, Renderer::GLTexture2 *tex, float *texCoords)
+void GLQuadTileNode2::drawTexture(const Renderer::Core::GLGlobeBase &view, Renderer::GLTexture2 *tex, float *texCoords)
 {
     if (tex == this->texture_.get()) {
         if (this->texture_->getMinFilter() != this->core_->minFilter)
@@ -1514,13 +1584,13 @@ void GLQuadTileNode2::drawTexture(const Renderer::Core::GLMapView2 &view, Render
     super_drawTexture(view, tex, texCoords);
 }
 
-void GLQuadTileNode2::setLCS(const Renderer::Core::GLMapView2 &view)
+void GLQuadTileNode2::setLCS(const Renderer::Core::GLGlobeBase &view)
 {
     Math::Matrix2 matrix;
-    matrix.concatenate(view.scene.forwardTransform);
+    matrix.concatenate(view.renderPass->scene.forwardTransform);
     matrix.translate(centroid_proj_.x, centroid_proj_.y, centroid_proj_.z);
-    if (view.drawSrid == 4326 && view.crossesIDL && centroid_.longitude*view.drawLng < 0)
-        matrix.translate((view.drawLng < 0) ? -360.0 : 360.0, 0.0, 0.0);
+    if (view.renderPass->drawSrid == 4326 && view.renderPass->crossesIDL && centroid_.longitude*view.renderPass->drawLng < 0)
+        matrix.translate((view.renderPass->drawLng < 0) ? -360.0 : 360.0, 0.0, 0.0);
     double matrixD[16];
     matrix.get(matrixD, Math::Matrix2::COLUMN_MAJOR);
     float matrixF[16];
@@ -1529,7 +1599,7 @@ void GLQuadTileNode2::setLCS(const Renderer::Core::GLMapView2 &view)
     atakmap::renderer::GLES20FixedPipeline::getInstance()->glLoadMatrixf(matrixF);
 }
 
-void GLQuadTileNode2::super_drawTexture(const Renderer::Core::GLMapView2 &view, Renderer::GLTexture2 *tex, float *texCoords)
+void GLQuadTileNode2::super_drawTexture(const Renderer::Core::GLGlobeBase &view, Renderer::GLTexture2 *tex, float *texCoords)
 {
     atakmap::renderer::GLES20FixedPipeline *fixedPipe = atakmap::renderer::GLES20FixedPipeline::getInstance();
     fixedPipe->glPushMatrix();
@@ -1586,7 +1656,7 @@ void GLQuadTileNode2::super_invalidateVertexCoords()
     this->vertex_coords_valid_ = false;
 }
 
-void GLQuadTileNode2::drawImpl(const Renderer::Core::GLMapView2 &view)
+void GLQuadTileNode2::drawImpl(const Renderer::Core::GLGlobeBase &view)
 {
     this->vertex_coords_valid_ &= !this->vertices_invalid_;
 
@@ -1606,7 +1676,7 @@ void GLQuadTileNode2::drawImpl(const Renderer::Core::GLMapView2 &view)
     }
 }
 
-void GLQuadTileNode2::super_draw(const Renderer::Core::GLMapView2 &view)
+void GLQuadTileNode2::super_draw(const Renderer::Core::GLGlobeBase &view)
 {
     if (this->core_->textureCache != nullptr && !((this->state_ == State::RESOLVED) || this->received_update_))
         this->useCachedTexture();
@@ -1666,7 +1736,7 @@ void GLQuadTileNode2::super_draw(const Renderer::Core::GLMapView2 &view)
         this->debugDraw(view);
 }
 
-void GLQuadTileNode2::debugDraw(const Renderer::Core::GLMapView2 &view)
+void GLQuadTileNode2::debugDraw(const Renderer::Core::GLGlobeBase &view)
 {
     this->validateVertexCoords(view);
 
@@ -1712,55 +1782,26 @@ void GLQuadTileNode2::debugDraw(const Renderer::Core::GLMapView2 &view)
     pointD.x = static_cast<double>(this->tile_src_x_ + this->tile_src_width_ / 2);
     pointD.y = static_cast<double>(this->tile_src_y_ + this->tile_src_height_ / 2);
     this->core_->imprecise->imageToGround(&geo, pointD);
-    view.forward(&pointF, geo);
+    view.renderPass->scene.forward(&pointF, geo);
     fixedPipe->glPushMatrix();
     fixedPipe->glTranslatef(pointF.x, pointF.y, 0);
 
+    
+
     std::stringstream sstr;
-    sstr << this->tile_column_ << "," << this->tile_row_ << "," << this->level_ << " " << getNameForState(this->state_);
+    sstr << this->tile_column_ << "," << this->tile_row_ << "," << this->level_ << "\n" << getNameForState(this->state_);
     std::string s = sstr.str();
-    _titleText->draw(s.c_str(), 0.0f, 0.0f, 1.0f, 1.0f);
+    if(this->state_ == State::UNRESOLVED)
+        _titleText->draw(s.c_str(), 0.7f, 0.7f, 0.7f, 1.0f);
+    else if(this->state_ == State::RESOLVING)
+        _titleText->draw(s.c_str(), 1.0f, 1.0f, 0.0f, 1.0f);
+    else if(this->state_ == State::RESOLVED)
+        _titleText->draw(s.c_str(), 0.0f, 1.0f, 0.0f, 1.0f);
+    else if(this->state_ == State::UNRESOLVABLE)
+        _titleText->draw(s.c_str(), 1.0f, 0.0f, 0.0f, 1.0f);
+    else
+        _titleText->draw(s.c_str(), 1.0f, 1.0f, 1.0f, 1.0f);
     fixedPipe->glPopMatrix();
-}
-
-TAKErr GLQuadTileNode2::adopt(int idx, GLQuadTileNode2Ptr child)
-{
-    if (this->children_[idx] != nullptr)
-        return TE_IllegalState;
-    this->children_[idx] = std::move(child);
-    TAKErr code = this->children_[idx]->set((this->tile_column_ * 2) + (idx % 2), (this->tile_row_ * 2) + (idx / 2), this->level_ - 1);
-    this->children_[idx]->parent_ = this;
-    return code;
-}
-
-TAKErr GLQuadTileNode2::orphan(std::vector<GLQuadTileNode2Ptr> *orphans, int64_t drawVersion, bool upperLeft, bool upperRight,
-                               bool lowerLeft, bool lowerRight)
-{
-    const bool shouldOrphan[]{
-        upperLeft,
-        upperRight,
-        lowerLeft,
-        lowerRight,
-    };
-
-    for (int i = 0; i < 4; i++) {
-        if (shouldOrphan[i] && this->children_[i] != nullptr && this->children_[i]->last_touch_ != drawVersion) {
-            this->children_[i]->parent_ = nullptr;
-            orphans->push_back(std::move(this->children_[i]));
-        }
-    }
-    std::sort(orphans->begin(), orphans->end(), orphanSort);
-    return TE_Ok;
-}
-
-/**
- * Abandons all of the children.
- */
-void GLQuadTileNode2::abandon()
-{
-    for (int i = 0; i < 4; i++) {
-        this->children_[i].reset();
-    }
 }
 
 /**************************************************************************/
@@ -1844,8 +1885,10 @@ void GLQuadTileNode2::suspend()
 
 void GLQuadTileNode2::super_suspend()
 {
-    if (this->state_ == State::RESOLVING && this->current_request_id_valid_) {
-        this->core_->tileReader->asyncCancel(this->current_request_id_);
+    if (this->state_ == State::RESOLVING && this->current_request_) {
+        this->current_request_->cancel();
+        this->read_requests_.remove(this->current_request_);
+        this->current_request_.reset();
         this->state_ = State::SUSPENDED;
     }
 }
@@ -1871,7 +1914,7 @@ void GLQuadTileNode2::super_resume()
 
 TAKErr GLQuadTileNode2::getType(Port::String &value) NOTHROWS
 {
-    value = this->core_->type.c_str();
+    value = this->core_->imageInfo.type;
     return TE_Ok;
 }
 
@@ -1968,7 +2011,7 @@ TAKErr GLQuadTileNode2::groundToImage(Math::Point2<double> *image, bool *isPreci
 
 TAKErr GLQuadTileNode2::getSpatialReferenceId(int *value) NOTHROWS
 {
-    *value = this->core_->srid;
+    *value = this->core_->imageInfo.srid;
     return TE_Ok;
 }
 
@@ -2000,30 +2043,7 @@ TAKErr GLQuadTileNode2::getImageInfo(ImageInfoPtr_const &info) NOTHROWS
 {
     TAKErr code(TE_Ok);
     Thread::Lock lock(this->core_->infoLock);
-    if (!this->core_->imageInfo) {
-        GeoPoint2 ul, lr, ll, ur;
-        int tw, th;
-        bool isPrecise;
-        code = getHeight(&th);
-        TE_CHECKRETURN_CODE(code);
-        code = getWidth(&tw);
-        TE_CHECKRETURN_CODE(code);
-        code = this->imageToGround(&ul, &isPrecise, Math::Point2<double>(0, 0, 0));
-        TE_CHECKRETURN_CODE(code);
-        code = this->imageToGround(&ur, &isPrecise, Math::Point2<double>(tw, 0, 0));
-        TE_CHECKRETURN_CODE(code);
-        code = this->imageToGround(&lr, &isPrecise, Math::Point2<double>(tw, th, 0));
-        TE_CHECKRETURN_CODE(code);
-        code = this->imageToGround(&ll, &isPrecise, Math::Point2<double>(0, th, 0));
-        TE_CHECKRETURN_CODE(code);
-
-        double gsd = atakmap::raster::DatasetDescriptor::computeGSD(tw, th, atakmap::core::GeoPoint(ul), atakmap::core::GeoPoint(ur), atakmap::core::GeoPoint(lr), atakmap::core::GeoPoint(ll));
-
-        this->core_->imageInfo = ImageInfoPtr(
-            new ImageInfo(core_->uri.c_str(), core_->type.c_str(), core_->precise != nullptr, ul, ur, lr, ll, gsd, tw, th, core_->srid),
-            Memory_deleter_const<ImageInfo>);
-    }
-    info = ImageInfoPtr_const(this->core_->imageInfo.get(), Memory_leaker_const<ImageInfo>);
+    info = ImageInfoPtr_const(&this->core_->imageInfo, Memory_leaker_const<ImageInfo>);
     return TE_Ok;
 }
 
@@ -2042,7 +2062,9 @@ void GLQuadTileNode2::rendererIORunnableImpl(IOCallbackOpaque *iocb)
     if (this->checkRequest(iocb->reqId)) {
         switch (iocb->type) {
             case IOCallbackOpaque::UpdateType::CB_Canceled:
-                this->current_request_id_valid_ = false;
+
+                this->read_requests_.remove(this->current_request_);
+                this->current_request_.reset();
                 break;
 
             case IOCallbackOpaque::UpdateType::CB_Completed:
@@ -2060,37 +2082,44 @@ void GLQuadTileNode2::rendererIORunnableImpl(IOCallbackOpaque *iocb)
                 }
 
                 // XXX - should be packaged in read request
-                this->core_->tileReader->getTileVersion(&this->tile_version_, this->current_request_level_, this->current_request_col_,
-                                                       this->current_request_row_);
+                this->core_->tileReader->getTileVersion(&this->tile_version_, this->current_request_->level, this->current_request_->tileColumn,
+                                                       this->current_request_->tileRow);
 
-                this->current_request_id_valid_ = false;
+                this->read_requests_.remove(this->current_request_);
+                this->current_request_.reset();
 
                 break;
 
             case IOCallbackOpaque::UpdateType::CB_Error:
-                this->current_request_id_valid_ = false;
-
                 // XXX - should be packaged in read request
-                this->core_->tileReader->getTileVersion(&this->tile_version_, this->current_request_level_, this->current_request_col_,
-                                                       this->current_request_row_);
+                this->core_->tileReader->getTileVersion(&this->tile_version_, this->current_request_->level, this->current_request_->tileColumn,
+                                                       this->current_request_->tileRow);
+
+                this->read_requests_.remove(this->current_request_);
+                this->current_request_.reset();
 
                 this->state_ = State::UNRESOLVABLE;
                 break;
 
             case IOCallbackOpaque::UpdateType::CB_Update:
-                if (iocb->data.get()) {
-                    this->texture_->load(*iocb->data);
+                if (iocb->bitmap.data.get()) {
+                    this->texture_->load(Bitmap2(Bitmap2::DataPtr(static_cast<uint8_t *>(iocb->bitmap.data.get()), Memory_leaker_const<uint8_t>), iocb->bitmap.width, iocb->bitmap.height, iocb->bitmap.format));
+                    iocb->bitmap.data.reset();
                     this->received_update_ = true;
                 } else {
                     // OOM occured
                     // XXX - should be packaged in read request
-                    this->core_->tileReader->getTileVersion(&this->tile_version_, this->current_request_level_, this->current_request_col_,
-                                                           this->current_request_row_);
+                    this->core_->tileReader->getTileVersion(&this->tile_version_, this->current_request_->level, this->current_request_->tileColumn,
+                                                           this->current_request_->tileRow);
 
                     this->state_ = State::UNRESOLVABLE;
                 }
                 break;
         }
+
+        // an update was received, mark the corresponding version as dirty
+        if (this->core_->surfaceRenderer)
+            this->core_->surfaceRenderer->markDirty(TAK::Engine::Feature::Envelope2(min_lng_, min_lat_, 0.0, max_lng_, max_lat_, 0.0), false);
     }
     Thread::Lock lock(this->queued_callbacks_mutex_);
 
@@ -2111,33 +2140,29 @@ void GLQuadTileNode2::queueGLCallback(IOCallbackOpaque *iocb)
 
 bool GLQuadTileNode2::checkRequest(int id)
 {
-    return (this->current_request_id_valid_ && this->current_request_id_ == id);
+    return (this->current_request_ && this->current_request_->id == id);
 }
 
 void GLQuadTileNode2::requestCreated(const int id) NOTHROWS
-{
-    this->current_request_id_ = id;
-    this->current_request_id_valid_ = true;
-    this->current_request_level_ = this->level_;
-    this->current_request_row_ = this->tile_row_;
-    this->current_request_col_ = this->tile_column_;
-}
+{}
 
 void GLQuadTileNode2::requestStarted(const int id) NOTHROWS
 {
+    std::shared_ptr<TileReader2::ReadRequest> cur(this->current_request_);
     if (DEBUG_QUADTILE) {
-        Util::Logger_log(LogLevel::TELL_Debug, "%s requestStarted(id=%d), currentRequest=%d)", toString(false), id, this->current_request_id_);
+        Util::Logger_log(LogLevel::TELL_Debug, "%s requestStarted(id=%d), currentRequest=%d)", toString(false), id, (cur ? cur->id : 0));
     }
 }
 
 void GLQuadTileNode2::requestUpdate(const int id, const Bitmap2 &data) NOTHROWS
 {
+    std::shared_ptr<TileReader2::ReadRequest> cur(this->current_request_);
     if (DEBUG_QUADTILE) {
-        Logger_log(TELL_Debug, "%s requestUpdate(id=%d), currentRequest=%d)", toString(false), id, this->current_request_id_);
+        Logger_log(TELL_Debug, "%s requestUpdate(id=%d), currentRequest=%d)", toString(false), id, (cur ? cur->id : 0));
     }
 
-    const bool curidvalid = this->current_request_id_valid_;
-    const int curid = this->current_request_id_;
+    const bool curidvalid = !!cur;
+    const int curid = curidvalid ? cur->id : 0;
     if (!curidvalid || curid != id)
         return;
 
@@ -2151,13 +2176,14 @@ void GLQuadTileNode2::requestUpdate(const int id, const Bitmap2 &data) NOTHROWS
 
 void GLQuadTileNode2::requestCompleted(const int id) NOTHROWS
 {
+    std::shared_ptr<TileReader2::ReadRequest> cur(this->current_request_);
     if (DEBUG_QUADTILE) {
         Util::Logger_log(LogLevel::TELL_Debug, "%s requestCompleted(id=%d), currentRequest=%d)", toString(false), id,
-                         this->current_request_id_);
+                        (cur ? cur->id : 0));
     }
 
-    const int curId = current_request_id_;
-    if (!current_request_id_valid_ || curId != id)
+    const int curId = (cur ? cur->id : 0);
+    if (!cur || curId != id)
         return;
 
     queueGLCallback(new IOCallbackOpaque(IOCallbackOpaque::UpdateType::CB_Completed, *this, curId));
@@ -2165,12 +2191,13 @@ void GLQuadTileNode2::requestCompleted(const int id) NOTHROWS
 
 void GLQuadTileNode2::requestCanceled(const int id) NOTHROWS
 {
+    std::shared_ptr<TileReader2::ReadRequest> cur(this->current_request_);
     if (DEBUG_QUADTILE) {
         Util::Logger_log(LogLevel::TELL_Debug, "%s requestCanceled(id=%d), currentRequest=%d)", toString(false), id,
-                         this->current_request_id_);
+                         (cur ? cur->id : 0));
     }
-    const int curId = current_request_id_;
-    if (!current_request_id_valid_ || curId != id)
+    const int curId = (cur ? cur->id : 0);
+    if (!cur || curId != id)
         return;
 
     queueGLCallback(new IOCallbackOpaque(IOCallbackOpaque::UpdateType::CB_Canceled, *this, curId));
@@ -2178,14 +2205,14 @@ void GLQuadTileNode2::requestCanceled(const int id) NOTHROWS
 
 void GLQuadTileNode2::requestError(const int id, const Util::TAKErr code, const char *msg) NOTHROWS
 {
+    std::shared_ptr<TileReader2::ReadRequest> cur(this->current_request_);
     if (DEBUG_QUADTILE) {
-        Util::Logger_log(LogLevel::TELL_Debug, "%s requestError(id=%d), currentRequest=%d)", toString(false), id, this->current_request_id_);
+        Util::Logger_log(LogLevel::TELL_Debug, "%s requestError(id=%d), currentRequest=%d)", toString(false), id, (cur ? cur->id : 0));
+        Util::Logger_log(LogLevel::TELL_Error, "asynchronous read error id = %d  code = %d (%s)", id, code, msg ? msg : "no message");
     }
 
-    Util::Logger_log(LogLevel::TELL_Error, "asynchronous read error id = %d  code = %d (%s)", id, code, msg ? msg : "no message");
-
-    const int curId = current_request_id_;
-    if (!current_request_id_valid_ || curId != id)
+    const int curId = (cur ? cur->id : 0);
+    if (!cur || curId != id)
         return;
 
     queueGLCallback(new IOCallbackOpaque(IOCallbackOpaque::UpdateType::CB_Error, *this, curId));
@@ -2199,27 +2226,6 @@ std::string GLQuadTileNode2::toString(bool l)
         sstr << " {level=" << this->level_ << ",tileColumn=" << this->tile_column_ << ",tileRow=" << this->tile_row_
              << ",tileWidth=" << this->tile_width_ << ",tileHeight=" << this->tile_height_ << "}";
     return sstr.str();
-}
-
-// Porting notes: Java comparitor is <0 if n1 before n2, 0 if equal or >0 if n2 before n1
-// std sort comparitor wants true iff n1 before n2
-bool GLQuadTileNode2::orphanSort(const GLQuadTileNode2Ptr &n1, const GLQuadTileNode2Ptr &n2)
-{
-    if (n1->texture_ != nullptr && n2->texture_ != nullptr) {
-        std::size_t dx = (n1->texture_->getTexWidth() - n2->texture_->getTexWidth());
-        std::size_t dy = (n1->texture_->getTexHeight() - n2->texture_->getTexHeight());
-        if ((dx * dy) > 0)
-            return dx < 0;
-
-    } else if (n1->texture_ != nullptr && n2->texture_ == nullptr) {
-        // n2 has tex, so orphan it before n1
-        return false;
-    } else if (n1->texture_ == nullptr && n2->texture_ != nullptr) {
-        // n1 has tex, so orphan it before n2
-        return true;
-    }
-
-    return (n2.get() - n1.get()) > 0;
 }
 
 /**************************************************************************/
@@ -2247,17 +2253,15 @@ GLQuadTileNode2::GridVertex::GridVertex() : value(), resolved(false), projected(
 /**************************************************************************/
 // NodeCore
 
-GLQuadTileNode2::NodeCore::NodeCore(TAK::Engine::Core::RenderContext *context, const char *type, const Initializer &init,
-                                    TileReader2Ptr &reader, DatasetProjection2Ptr &imprecise,
-                                    DatasetProjection2Ptr &precise, int srid, const Options &opts)
-    : tileReader(std::move(reader)),
+GLQuadTileNode2::NodeCore::NodeCore(TAK::Engine::Core::RenderContext *context, const ImageInfo &info, const Initializer &init,
+                                    const std::shared_ptr<TileReader2> &reader, const std::shared_ptr<TileReader2::AsynchronousIO> &asyncio, DatasetProjection2Ptr &imprecise,
+                                    DatasetProjection2Ptr &precise, const Options &opts) NOTHROWS
+    : tileReader(reader),
+      asyncio(asyncio),
       imprecise(std::move(imprecise)),
       precise(std::move(precise)),
-      srid(srid),
-      type(type),
       options(opts),
       context(context),
-      uri(),
       textureBorrowEnabled(false),
       textureCopyEnabled(false),
       gsd(0.0),
@@ -2287,69 +2291,84 @@ GLQuadTileNode2::NodeCore::NodeCore(TAK::Engine::Core::RenderContext *context, c
       versionCheckEnabled(true),
       tilesThisFrame(0),
       infoLock(),
-      imageInfo(nullptr, nullptr)
-{}
-
-TAKErr GLQuadTileNode2::NodeCore::initCore(double gsdHint)
+      imageInfo(info),
+      readRequestPrioritizer(new TileReadRequestPrioritizer(opts)),
+      status(TE_Err),
+      surfaceRenderer(nullptr)
 {
-    TAKErr code;
-    Port::String pstr;
-    bool b;
+    // XXX -
+    //textureCache = nullptr;
+    do {
+        Port::String pstr;
+        bool b;
 
-    code = this->tileReader->getUri(pstr);
-    TE_CHECKRETURN_CODE(code);
-    this->uri = pstr;
+        this->status = this->tileReader->getUri(pstr);
+        TE_CHECKBREAK_CODE(this->status);
+        this->uri = pstr;
 
-    code = this->tileReader->isMultiResolution(&b);
-    TE_CHECKRETURN_CODE(code);
-    this->options.progressiveLoad &= b;
+        this->status = this->tileReader->isMultiResolution(&b);
+        TE_CHECKBREAK_CODE(this->status);
+        this->options.progressiveLoad &= b;
 
-    this->enableTextureTargetFBO = (ConfigOptions_getIntOptionOrDefault("glquadtilenode2.enableTextureTargetFBO", 1) != 0);
-    this->debugDrawEnabled = (ConfigOptions_getIntOptionOrDefault("imagery.debug-draw-enabled", 0) != 0);
-    this->fadeTimerLimit = ConfigOptions_getIntOptionOrDefault("glquadtilenode2.fade-timer-limit", 0);
+        this->enableTextureTargetFBO = (ConfigOptions_getIntOptionOrDefault("glquadtilenode2.enableTextureTargetFBO", 1) != 0);
+        this->debugDrawEnabled = (ConfigOptions_getIntOptionOrDefault("imagery.debug-draw-enabled", 0) != 0);
+        this->fadeTimerLimit = ConfigOptions_getIntOptionOrDefault("glquadtilenode2.fade-timer-limit", 0);
 
-    this->textureBorrowEnabled = (ConfigOptions_getIntOptionOrDefault("imagery.texture-borrow", 1) != 0);
-    this->textureCopyEnabled = (ConfigOptions_getIntOptionOrDefault("imagery.texture-copy", 1) != 0);
+        this->textureBorrowEnabled = (ConfigOptions_getIntOptionOrDefault("imagery.texture-borrow", 1) != 0);
+        this->textureCopyEnabled = (ConfigOptions_getIntOptionOrDefault("imagery.texture-copy", 1) != 0);
 
-    int64_t trw, trh;
-    code = this->tileReader->getWidth(&trw);
-    TE_CHECKRETURN_CODE(code);
-    code = this->tileReader->getHeight(&trh);
-    TE_CHECKRETURN_CODE(code);
+        int64_t trw, trh;
+        this->status = this->tileReader->getWidth(&trw);
+        TE_CHECKBREAK_CODE(this->status);
+        this->status = this->tileReader->getHeight(&trh);
+        TE_CHECKBREAK_CODE(this->status);
 
-    code = this->imprecise->imageToGround(&(this->upperLeft), Math::Point2<double>(0, 0));
-    TE_CHECKRETURN_CODE(code);
-    code = this->imprecise->imageToGround(&(this->upperRight), Math::Point2<double>(static_cast<double>(trw - 1), 0));
-    TE_CHECKRETURN_CODE(code);
-    code = this->imprecise->imageToGround(&(this->lowerRight), Math::Point2<double>(static_cast<double>(trw - 1), static_cast<double>(trh - 1)));
-    TE_CHECKRETURN_CODE(code);
-    code = this->imprecise->imageToGround(&(this->lowerLeft), Math::Point2<double>(0, static_cast<double>(trh - 1)));
-    TE_CHECKRETURN_CODE(code);
+        this->status = this->imprecise->imageToGround(&(this->upperLeft), Math::Point2<double>(0, 0));
+        TE_CHECKBREAK_CODE(this->status);
+        this->status = this->imprecise->imageToGround(&(this->upperRight), Math::Point2<double>(static_cast<double>(trw - 1), 0));
+        TE_CHECKBREAK_CODE(this->status);
+        this->status = this->imprecise->imageToGround(&(this->lowerRight), Math::Point2<double>(static_cast<double>(trw - 1), static_cast<double>(trh - 1)));
+        TE_CHECKBREAK_CODE(this->status);
+        this->status = this->imprecise->imageToGround(&(this->lowerLeft), Math::Point2<double>(0, static_cast<double>(trh - 1)));
+        TE_CHECKBREAK_CODE(this->status);
 
-    // if dataset bounds cross poles (e.g. Google "Flat Projection"
-    // tile server), clip the bounds inset a very small amount from the
-    // poles
-    const double minLat = std::min({this->upperLeft.latitude, this->upperRight.latitude, this->lowerRight.latitude});
-    const double maxLat = std::max({this->upperLeft.latitude, this->upperRight.latitude, this->lowerRight.latitude});
+        // if dataset bounds cross poles (e.g. Google "Flat Projection"
+        // tile server), clip the bounds inset a very small amount from the
+        // poles
+        const double minLat = std::min({this->upperLeft.latitude, this->upperRight.latitude, this->lowerRight.latitude});
+        const double maxLat = std::max({this->upperLeft.latitude, this->upperRight.latitude, this->lowerRight.latitude});
 
-    if (minLat < -90.0 || maxLat > 90.0) {
-        const double minLatLimit = -90.0 + POLE_LATITUDE_LIMIT_EPISLON;
-        const double maxLatLimit = 90.0 - POLE_LATITUDE_LIMIT_EPISLON;
-        this->upperLeft.latitude = MathUtils_clamp(this->upperLeft.latitude, minLatLimit, maxLatLimit);
-        this->upperRight.latitude = MathUtils_clamp(this->upperRight.latitude, minLatLimit, maxLatLimit);
-        this->lowerRight.latitude = MathUtils_clamp(this->lowerRight.latitude, minLatLimit, maxLatLimit);
-        this->lowerLeft.latitude = MathUtils_clamp(this->lowerLeft.latitude, minLatLimit, maxLatLimit);
-    }
-    if (!isnan(gsdHint)) {
-        this->gsd = gsdHint;
-    } else {
-        atakmap::core::GeoPoint ul(this->upperLeft);
-        atakmap::core::GeoPoint ur(this->upperRight);
-        atakmap::core::GeoPoint lr(this->lowerRight);
-        atakmap::core::GeoPoint ll(this->lowerLeft);
-        this->gsd = atakmap::raster::DatasetDescriptor::computeGSD(static_cast<unsigned long>(trw), static_cast<unsigned long>(trh), ul, ur, lr, ll);
-    }
-    return code;
+        if (minLat < -90.0 || maxLat > 90.0) {
+            const double minLatLimit = -90.0 + POLE_LATITUDE_LIMIT_EPISLON;
+            const double maxLatLimit = 90.0 - POLE_LATITUDE_LIMIT_EPISLON;
+            this->upperLeft.latitude = MathUtils_clamp(this->upperLeft.latitude, minLatLimit, maxLatLimit);
+            this->upperRight.latitude = MathUtils_clamp(this->upperRight.latitude, minLatLimit, maxLatLimit);
+            this->lowerRight.latitude = MathUtils_clamp(this->lowerRight.latitude, minLatLimit, maxLatLimit);
+            this->lowerLeft.latitude = MathUtils_clamp(this->lowerLeft.latitude, minLatLimit, maxLatLimit);
+        }
+        if (!isnan(this->imageInfo.maxGsd)) {
+            this->gsd = this->imageInfo.maxGsd;
+        } else {
+            atakmap::core::GeoPoint ul(this->upperLeft);
+            atakmap::core::GeoPoint ur(this->upperRight);
+            atakmap::core::GeoPoint lr(this->lowerRight);
+            atakmap::core::GeoPoint ll(this->lowerLeft);
+            this->gsd = atakmap::raster::DatasetDescriptor::computeGSD(static_cast<unsigned long>(trw), static_cast<unsigned long>(trh), ul, ur, lr, ll);
+        }
+
+        if(this->tileReader)
+            this->asyncio->setReadRequestPrioritizer(*this->tileReader, ReadRequestPrioritizerPtr(this->readRequestPrioritizer.get(), Memory_leaker_const<TileReader2::ReadRequestPrioritizer>));
+
+        // successfully initialized
+        this->status = TE_Ok;
+    } while (false);
+}
+
+GLQuadTileNode2::NodeCore::~NodeCore() NOTHROWS
+{
+    // clear the prioritizer
+    if(this->asyncio && this->tileReader)
+        this->asyncio->setReadRequestPrioritizer(*this->tileReader, ReadRequestPrioritizerPtr(nullptr, Memory_leaker_const<TileReader2::ReadRequestPrioritizer>));
 }
 
 TAKErr GLQuadTileNode2::NodeCore::create(NodeCore **value, TAK::Engine::Core::RenderContext *context, const ImageInfo *info,
@@ -2357,8 +2376,10 @@ TAKErr GLQuadTileNode2::NodeCore::create(NodeCore **value, TAK::Engine::Core::Re
                                          bool failOnReaderFailedInit, const Initializer &init)
 {
     TAKErr code(TE_Ok);
+    if (!info)
+        return TE_InvalidArg;
 
-    ::TileReader::TileReader2Ptr reader(nullptr, nullptr);
+    std::shared_ptr<::TileReader::TileReader2> reader;
     DatasetProjection2Ptr imprecise(nullptr, nullptr);
     DatasetProjection2Ptr precise(nullptr, nullptr);
 
@@ -2366,16 +2387,19 @@ TAKErr GLQuadTileNode2::NodeCore::create(NodeCore **value, TAK::Engine::Core::Re
     if (code != TE_Ok && failOnReaderFailedInit)
         return code;
 
-    if (reader == nullptr || imprecise == nullptr)
+    if (!reader || !imprecise)
         // These are required so error out
         return TE_Err;
 
-    auto *core = new NodeCore(context, info->type, init, reader, imprecise, precise, info->srid, opts);
-    code = core->initCore(info->maxGsd);
-    if (code != TE_Ok)
-        delete core;
-    else
-        *value = core;
+    std::shared_ptr<TileReader2::AsynchronousIO> asyncio = readerOpts.asyncIO;
+    if (!asyncio)
+        asyncio = std::shared_ptr<TileReader2::AsynchronousIO>(TileReader2_getMasterIOThread(), Memory_leaker<TileReader2::AsynchronousIO>);
+    std::unique_ptr<NodeCore> core(new(std::nothrow) NodeCore(context, *info, init, reader, asyncio, imprecise, precise, opts));
+    if (!core)
+        return TE_OutOfMemory;
+    code = core->status;
+    if(core->status == TE_Ok)
+        *value = core.release();
 
     return code;
 }
@@ -2392,9 +2416,9 @@ GLQuadTileNode2::DefaultVertexResolver::DefaultVertexResolver() : scratch_img_(0
 
 GLQuadTileNode2::DefaultVertexResolver::~DefaultVertexResolver() {}
 
-void GLQuadTileNode2::DefaultVertexResolver::beginDraw(const Renderer::Core::GLMapView2 &view) {}
+void GLQuadTileNode2::DefaultVertexResolver::beginDraw(const Renderer::Core::GLGlobeBase &view) {}
 
-void GLQuadTileNode2::DefaultVertexResolver::endDraw(const Renderer::Core::GLMapView2 &view) {}
+void GLQuadTileNode2::DefaultVertexResolver::endDraw(const Renderer::Core::GLGlobeBase &view) {}
 
 void GLQuadTileNode2::DefaultVertexResolver::beginNode(GLQuadTileNode2 *node)
 {
@@ -2409,7 +2433,7 @@ void GLQuadTileNode2::DefaultVertexResolver::endNode(GLQuadTileNode2 *node)
     this->node_ = nullptr;
 }
 
-Util::TAKErr GLQuadTileNode2::DefaultVertexResolver::project(GridVertex *vert, const Renderer::Core::GLMapView2 &view, int64_t imgSrcX,
+Util::TAKErr GLQuadTileNode2::DefaultVertexResolver::project(GridVertex *vert, const Renderer::Core::GLGlobeBase &view, int64_t imgSrcX,
                                                              int64_t imgSrcY)
 {
     this->scratch_img_.x = static_cast<double>(imgSrcX);
@@ -2490,13 +2514,13 @@ GLQuadTileNode2::PreciseVertexResolver::~PreciseVertexResolver()
     release();
 }
 
-void GLQuadTileNode2::PreciseVertexResolver::beginDraw(const Renderer::Core::GLMapView2 &view)
+void GLQuadTileNode2::PreciseVertexResolver::beginDraw(const Renderer::Core::GLGlobeBase &view)
 {
     this->currentRequest.clear();
     this->numNodesPending = 0;
 }
 
-void GLQuadTileNode2::PreciseVertexResolver::endDraw(const Renderer::Core::GLMapView2 &view)
+void GLQuadTileNode2::PreciseVertexResolver::endDraw(const Renderer::Core::GLGlobeBase &view)
 {
     if (!view.targeting && this->numNodesPending == 0) {
         // all node grids are full resolved, go ahead and expand the
@@ -2561,7 +2585,7 @@ void GLQuadTileNode2::PreciseVertexResolver::endNode(GLQuadTileNode2 *node)
     DefaultVertexResolver::endNode(node);
 }
 
-Util::TAKErr GLQuadTileNode2::PreciseVertexResolver::project(GridVertex *vert, const Renderer::Core::GLMapView2 &view, int64_t imgSrcX,
+Util::TAKErr GLQuadTileNode2::PreciseVertexResolver::project(GridVertex *vert, const Renderer::Core::GLGlobeBase &view, int64_t imgSrcX,
                                                              int64_t imgSrcY)
 {
     GeoPoint2 geo;

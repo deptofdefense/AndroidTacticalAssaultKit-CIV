@@ -220,7 +220,6 @@
 <string name="media">添付ファイル</string>
 <string name="attachment_details">添付ファイルの詳細</string>
 <string name="loc_error">位置エラー %s</string>
-<string name="dim_brightness_pref_key">dim_map_with_brightness_key</string>
 <string name="accounts">アカウント</string>
 <string name="accounts_desc">アカウント証明書を管理</string>
 <string name="add_account">アカウントを追加</string>
@@ -3444,6 +3443,8 @@ unable_to_config"Unable to configure </string>
 <string name="export_to_missionpackage_name">Name of the toolbar Data Package</string>
 <string name="continuous_rendering">Continuous Rendering</string>
 <string name="continuous_rendering_summary">Continuous Rendering is the legacy model for updating graphics on the screen and has been replaced with a more efficient rendering mechanism. Enable this feature only if there are rendering issues observed when using the software.</string>
+<string name="developer_tools">Developer Tools</string>
+<string name="developer_tools_summary">Enable the Developer Tools in the Overlay Manager</string>
 <string name="resection_workflow">Resection Workflow</string>
 <string name="resection">Resection</string>
 <string name="resection_options">Resection Options</string>
@@ -3836,5 +3837,24 @@ unable_to_config"Unable to configure </string>
     <string name="polygon_area_prompt">Tap points along the route wish to select.</string>
     <string name="lasso_area_prompt">Drag to draw lasso around the area of interest.</string>
     <string name="lasso">Lasso</string>
+    <string name="shapes">Shapes</string>
+    <string name="files">Files</string>
+    <string name="android_11_warning">Android 11 Warning</string>
+    <string name="android_11_warning_details">Android 11 restricts the use of GPS in the background.   To continue publishing your location when ATAK is in the background you need to manually grant ATAK the \'Allow all the time\' permission. You can access the Android Location Permission screen by selecting the Allow in Settings prompt when the Device Location\'s Permission screen is displayed.\n\nPlease note - ATAK does not collect GPS information while it is not running.</string>
+    <string name="http_code_message">Error %d - If you believe this is an error and do not have login credentials, click \'Cancel\'.   Please notify the server administrator.</string>
+    <string name="address_blank_error">Address cannot be blank</string>
+    <string name="address_invalid_error">Address is invalid %s</string>
+
+    <string name="location_perm_warning_1">In order to enable GPS usage while ATAK is running but in the background, you have two chances to enable this.</string>
+    <string name="location_perm_warning_2">WARNING: If you miss these chances, then you will need to do it manually. Android intentionally makes this difficult</string>
+    <string name="location_perm_warning_chance1">Chance 1: Click on \'Allow In Settings\'</string>
+    <string name="location_perm_warning_chance2">Chance 2: Click on \'Allow In Settings\'</string>
+    <string name="select_with_colon">Select:</string>
+    <string name="location_permission_guidance_1">In order to enable GPS usage while ATAK is running but in the background, perform the following steps.</string>
+    <string name="step_one_with_colon">Step 1:</string>
+    <string name="location_permission_step2">Step 2:</string>
+    <string name="location_permission_step3">Step 3:</string>
+    <string name="general_permission_step1">Step 1:</string>
+    <string name="general_permission_step2">Step 2: Review the Denied List</string>
 
 </resources>

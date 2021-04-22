@@ -6,6 +6,7 @@ import android.content.res.AssetManager;
 
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
@@ -23,6 +24,12 @@ import java.util.HashMap;
 import com.atakmap.coremap.locale.LocaleUtil;
 import java.util.Map;
 
+/**
+ * @deprecated Transitioned to Map Engine Features API
+ * Replaced by {@link FalconViewSpatialDb}
+ */
+@Deprecated
+@DeprecatedApi(since = "4.3", forRemoval = true, removeAt = "4.6")
 public class LptFileDatabase extends FileDatabase {
     private static final String TAG = "LptFileDatabase";
 
@@ -77,7 +84,7 @@ public class LptFileDatabase extends FileDatabase {
             return;
         Envelope.Builder bounds = new Envelope.Builder();
         Database msaccessDb = null;
-        try(FileChannel channel = IOProviderFactory.getChannel(lptFile, "r")) {
+        try (FileChannel channel = IOProviderFactory.getChannel(lptFile, "r")) {
             DatabaseBuilder db = new DatabaseBuilder();
             db.setChannel(channel);
             db.setReadOnly(true);

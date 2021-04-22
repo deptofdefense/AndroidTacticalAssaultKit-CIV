@@ -53,6 +53,8 @@ namespace TAK
             ENGINE_API double GeoPoint2_approximateMetersPerDegreeLongitude(const double latitude) NOTHROWS;
 
             ENGINE_API TAK::Engine::Util::TAKErr GeoPoint2_lobIntersection(GeoPoint2 &intersection, const GeoPoint2 &p1, const double &brng1, const GeoPoint2 &p2, const double &brng2) NOTHROWS;
+
+            ENGINE_API double GeoPoint2_distanceToHorizon(const double altitudeMsl) NOTHROWS;
         }
     }
 }

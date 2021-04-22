@@ -1,3 +1,4 @@
+
 package com.atakmap.android.importfiles.http;
 
 import android.app.Activity;
@@ -15,7 +16,8 @@ import java.util.Set;
 /**
  * Abstract network link downloader/refresher
  */
-public abstract class NetworkLinkDownloader implements RequestManager.RequestListener {
+public abstract class NetworkLinkDownloader
+        implements RequestManager.RequestListener {
 
     protected final Context _context;
     protected final Set<String> _downloading = new HashSet<>();
@@ -64,7 +66,8 @@ public abstract class NetworkLinkDownloader implements RequestManager.RequestLis
      * @param resource Remote resource
      * @param showNotifications True to show notifications during DL/import
      */
-    public abstract void download(RemoteResource resource, boolean showNotifications);
+    public abstract void download(RemoteResource resource,
+            boolean showNotifications);
 
     public void download(RemoteResource resource) {
         download(resource, true);
@@ -74,14 +77,17 @@ public abstract class NetworkLinkDownloader implements RequestManager.RequestLis
         _refresher.shutdown();
     }
 
-    protected void postNotification(int notifyId, int icon, String title, String msg) {
+    protected void postNotification(int notifyId, int icon, String title,
+            String msg) {
         NotificationUtil.getInstance().postNotification(notifyId, icon,
                 isErrorNotification(icon)
                         ? NotificationUtil.RED
-                        : NotificationUtil.BLUE, title, msg, msg);
+                        : NotificationUtil.BLUE,
+                title, msg, msg);
     }
 
-    protected void postNotification(int notifyId, int icon, int title, int msg) {
+    protected void postNotification(int notifyId, int icon, int title,
+            int msg) {
         postNotification(notifyId, icon, getString(title), getString(msg));
     }
 

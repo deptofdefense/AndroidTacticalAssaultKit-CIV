@@ -21,14 +21,17 @@ import com.atakmap.coremap.maps.time.CoordinatedTime;
 public class SpeedFormatter implements
         SharedPreferences.OnSharedPreferenceChangeListener {
 
-    public static CoordinatedTime.SimpleDateFormatThread dateTimeFormat = new CoordinatedTime.SimpleDateFormatThread(
-            "HH:mm:ss");
-
     public static final String TAG = "SpeedFormatter";
 
     private static SpeedFormatter _instance;
     private int currentSpeedFormat;
     private final SharedPreferences _pref;
+
+
+    public static final int MPH = 0;      // miles per hour
+    public static final int KMPH = 1;     // kilometers per hour
+    public static final int KTS = 2;      // knots
+    public static final int MPS = 3;      // meters per second
 
     private final String[] speedArray;
 
@@ -38,7 +41,7 @@ public class SpeedFormatter implements
                 .getMapView().getContext());
         _pref.registerOnSharedPreferenceChangeListener(this);
 
-        String type = _pref.getString("speed_unit_pref", "0");
+        String type = _pref.getString("speed_unit_pref", Integer.toString(MPH));
 
         try {
             currentSpeedFormat = Integer.parseInt(type);
@@ -110,21 +113,21 @@ public class SpeedFormatter implements
         double factor;
         String type;
         switch (speed_unit) {
-            case 0: //mph
+            case MPH: //mph
                 factor = ConversionFactors.METERS_PER_S_TO_MILES_PER_H;
-                type = speedArray[0];
+                type = speedArray[MPH];
                 break;
-            case 1: //kmph
+            case KMPH: //kmph
                 factor = ConversionFactors.METERS_PER_S_TO_KILOMETERS_PER_H;
-                type = speedArray[1];
+                type = speedArray[KMPH];
                 break;
-            case 2: //Kts
+            case KTS: //Kts
                 factor = ConversionFactors.METERS_PER_S_TO_KNOTS;
-                type = speedArray[2];
+                type = speedArray[KTS];
                 break;
-            case 3:
+            case MPS:
                 factor = 1;
-                type = speedArray[3];
+                type = speedArray[MPS];
                 break;
             default:
                 factor = ConversionFactors.METERS_PER_S_TO_MILES_PER_H;

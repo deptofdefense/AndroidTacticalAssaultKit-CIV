@@ -14,6 +14,7 @@ import com.atakmap.android.importexport.ImportReceiver;
 import com.atakmap.android.importexport.Importer;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.overlay.MapOverlay;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 
@@ -46,7 +47,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-/** @deprecated transition to Map Engine Features API */
+/**
+ * @deprecated Transitioned to Map Engine Features API
+ * Replaced by {@link FalconViewSpatialDb}
+ */
+@Deprecated
+@DeprecatedApi(since = "4.3", forRemoval = true, removeAt = "4.6")
 public abstract class FileDatabase extends CatalogDatabase implements
         CatalogCurrency, Importer {
 

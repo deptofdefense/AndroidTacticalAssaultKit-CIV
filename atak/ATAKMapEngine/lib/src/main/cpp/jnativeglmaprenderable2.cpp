@@ -24,7 +24,7 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_NativeGLMapRenderable2_draw
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return;
     }
-    std::shared_ptr<GLMapView2> cview;
+    std::shared_ptr<GLGlobeBase> cview;
     code = Renderer::Core::Interop_marshal(cview, *env, mview);
     if(ATAKMapEngineJNI_checkOrThrow(env, code))
         return;

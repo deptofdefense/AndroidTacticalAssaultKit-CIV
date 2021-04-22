@@ -46,7 +46,7 @@ namespace
     class Spi : public GLLayerSpi2
     {
     public :
-        TAKErr create(GLLayer2Ptr &value, GLMapView2 &ctx, Layer2 &subject) NOTHROWS override;
+        TAKErr create(GLLayer2Ptr &value, GLGlobeBase &ctx, Layer2 &subject) NOTHROWS override;
     };
 
     void glReleaseRenderableSet(void *opaque) NOTHROWS
@@ -225,29 +225,27 @@ TAKErr GLSceneLayer::updateRenderableLists(GLAsynchronousMapRenderable3::QueryCo
 
     
 //protected void query(ViewState state, Collection<GLMapRenderable2> result)
-TAKErr GLSceneLayer::query(GLAsynchronousMapRenderable3::QueryContext &result, const GLAsynchronousMapRenderable3::ViewState &state)  NOTHROWS
+TAKErr GLSceneLayer::query(GLAsynchronousMapRenderable3::QueryContext &result, const GLMapView2::State &state)  NOTHROWS
 {
     TAKErr code(TE_Ok);
     
     std::set<std::shared_ptr<SceneRenderer>> renderers;
     if (state.crossesIDL) {
-        ViewStatePtr scratch(nullptr, nullptr);
-        code = this->newViewStateInstance(scratch);
-        TE_CHECKRETURN_CODE(code);
+        GLMapView2::State scratch;
 
-        scratch->copy(state);
+        scratch = state;
 
         // west of IDL
-        scratch->eastBound = 180.0;
-        code = queryImpl(renderers, *scratch);
+        scratch.eastBound = 180.0;
+        code = queryImpl(renderers, scratch);
         TE_CHECKRETURN_CODE(code);
 
         // reset
-        scratch->copy(state);
+        scratch = state;
 
         // east of IDL
-        scratch->westBound = -180.0;
-        code =queryImpl(renderers, *scratch);
+        scratch.westBound = -180.0;
+        code =queryImpl(renderers, scratch);
         TE_CHECKRETURN_CODE(code);
 
     } else {
@@ -275,7 +273,7 @@ TAKErr GLSceneLayer::query(GLAsynchronousMapRenderable3::QueryContext &result, c
 }
 
 //private void queryImpl(ViewState state, Collection<GLMapRenderable2> retval)
-TAKErr GLSceneLayer::queryImpl(std::set<std::shared_ptr<SceneRenderer>> &ctx, const GLAsynchronousMapRenderable3::ViewState &state)  NOTHROWS
+TAKErr GLSceneLayer::queryImpl(std::set<std::shared_ptr<SceneRenderer>> &ctx, const GLMapView2::State &state)  NOTHROWS
 {
     TAKErr code(TE_Ok);
 
@@ -641,7 +639,7 @@ GLLayerSpi2 &TAK::Engine::Renderer::Model::GLSceneLayer_spi() NOTHROWS
 namespace
 {
 
-    TAKErr Spi::create(GLLayer2Ptr &value, GLMapView2 &ctx, Layer2 &subject) NOTHROWS
+    TAKErr Spi::create(GLLayer2Ptr &value, GLGlobeBase &ctx, Layer2 &subject) NOTHROWS
     {
         auto *impl = dynamic_cast<SceneLayer *>(&subject);
         if (!impl)

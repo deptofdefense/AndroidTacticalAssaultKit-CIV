@@ -56,7 +56,7 @@ public class BitmapTest {
         Assert.assertTrue(alpha.hasAlpha());
 
         Bitmap noalpha = Bitmap.createBitmap(100, 200, Bitmap.Config.RGB_565);
-        Assert.assertFalse(alpha.hasAlpha());
+        Assert.assertFalse(noalpha.hasAlpha());
     }
 
     @Test
@@ -64,12 +64,24 @@ public class BitmapTest {
         final int width = 100;
         final int height = 200;
         Bitmap bitmap = Bitmap.createBitmap(100, 200, Bitmap.Config.ARGB_8888);
-        Assert.fail();
+
+        final int pixel0 = bitmap.getPixel(bitmap.getWidth()/2, bitmap.getHeight()/2);
+        assertEquals(0, pixel0);
+        bitmap.setPixel(bitmap.getWidth()/2, bitmap.getHeight()/2, 0x1234567);
+        final int pixel1 = bitmap.getPixel(bitmap.getWidth()/2, bitmap.getHeight()/2);
+        assertEquals(0x1234567, pixel1);
     }
 
     @Test
     public void getPixels() {
-        Assert.fail();
+        Bitmap b = Bitmap.createBitmap(16, 16, Bitmap.Config.ARGB_8888);
+        for(int i = 0; i < (b.getWidth()*b.getHeight()); i++) {
+            b.setPixel(i%b.getWidth(), i/b.getWidth(), i);
+        }
+        int[] pixels = new int[b.getWidth()*b.getHeight()];
+        b.getPixels(pixels, 0, b.getWidth(), 0, 0, b.getWidth(), b.getHeight());
+        for(int i = 0; i < (b.getWidth()*b.getHeight()); i++)
+            assertEquals(i, pixels[i]);
     }
 
     @Test
@@ -88,7 +100,7 @@ public class BitmapTest {
             ibuffer.order(ByteOrder.BIG_ENDIAN);
             bitmap_argb8888.copyPixelsToBuffer(ibuffer);
             for (int i = 0; i < 4; i++)
-                Assert.assertEquals(data[i], ibuffer.getInt(i * 4));
+                Assert.assertEquals(data[i], rgba2argb(ibuffer.getInt(i * 4)));
         }
         // RGB_565
         {
@@ -120,6 +132,8 @@ public class BitmapTest {
         int[] argb = new int[src.getWidth()*src.getHeight()];
         ibuffer.order(ByteOrder.BIG_ENDIAN);
         ibuffer.asIntBuffer().get(argb);
+        for(int i = 0; i < argb.length; i++)
+            argb[i] = rgba2argb(argb[i]);
 
         Bitmap result = Bitmap.createBitmap(argb, src.getWidth(), src.getHeight(), Bitmap.Config.ARGB_8888);
         for(int y = 0; y < src.getHeight(); y++)
@@ -129,7 +143,8 @@ public class BitmapTest {
 
     @Test
     public void getConfig() {
-        Assert.fail();
+        assertSame(Bitmap.Config.ARGB_8888, Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888).getConfig());
+        assertSame(Bitmap.Config.RGB_565, Bitmap.createBitmap(1, 1, Bitmap.Config.RGB_565).getConfig());
     }
 
     @Test
@@ -264,5 +279,12 @@ public class BitmapTest {
 
         Assert.assertNotNull(bitmap);
         return bitmap;
+    }
+
+    static int argb2rgba(int argb) {
+        return (argb<<8)|((argb&0xFF000000)>>>24);
+    }
+    static int rgba2argb(int rgba) {
+        return (rgba>>>8)|((rgba&0xFF)<<24);
     }
 }

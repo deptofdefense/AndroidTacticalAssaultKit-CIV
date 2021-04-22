@@ -163,16 +163,32 @@ namespace takenginetests {
 		const char *extPos = nullptr;
 		TAK::Engine::Port::String ext;
 
-		TAK::Engine::Util::TAKErr code = TAK::Engine::Util::IO_getExt(ext, &extPos, path);
+		TAK::Engine::Util::TAKErr code = TAK::Engine::Util::IO_getFirstExt(ext, &extPos, path);
 		ASSERT_EQ((int)TE_Ok, (int)code);
 		ASSERT_STREQ(ext.get(), ".thing");
 
-		code = TAK::Engine::Util::IO_getExt(ext, &extPos, extPos + 1);
+		code = TAK::Engine::Util::IO_getFirstExt(ext, &extPos, extPos + 1);
 		ASSERT_EQ((int)TE_Ok, (int)code);
 		ASSERT_STREQ(ext.get(), ".zip");
 
-		code = TAK::Engine::Util::IO_getExt(ext, &extPos, extPos + 1);
+		code = TAK::Engine::Util::IO_getFirstExt(ext, &extPos, extPos + 1);
 		ASSERT_EQ((int)TE_Done, (int)code);
 		ASSERT_EQ(nullptr, extPos);
+	}
+
+	TEST(IOTests, testGetExt) {
+		const char *path = "folder.thing/foo.zip";
+		TAK::Engine::Port::String ext;
+
+		TAK::Engine::Util::TAKErr code = TAK::Engine::Util::IO_getExt(ext, path);
+		ASSERT_EQ((int)TE_Ok, (int)code);
+        ASSERT_STREQ(ext.get(), ".zip");
+
+        const char *path2 = "folder/thing/foo.zip";
+        TAK::Engine::Port::String ext2;
+
+        code = TAK::Engine::Util::IO_getExt(ext2, path2);
+        ASSERT_EQ((int)TE_Ok, (int)code);
+        ASSERT_STREQ(ext2.get(), ".zip");
 	}
 }

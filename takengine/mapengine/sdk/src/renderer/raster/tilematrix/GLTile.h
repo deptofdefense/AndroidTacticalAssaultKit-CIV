@@ -41,13 +41,13 @@ namespace TAK {
                             bool vetoed;
                             bool refreshOnComplete;
                             std::shared_ptr<TAK::Engine::Raster::TileMatrix::TileMatrix> matrix;
-                            const Core::GLMapView2 &view;
+                            const Core::GLGlobeBase &view;
                             int tileX;
                             int tileY;
                             int tileZ;
                             int tileDrawVersion;
                             BitmapLoadContext(bool refreshOnComplete, std::shared_ptr<TAK::Engine::Raster::TileMatrix::TileMatrix> &matrix,
-                                              const Core::GLMapView2 &view, int tileX, int tileY, int tileZ, int tileDrawVersion);
+                                              const Core::GLGlobeBase &view, int tileX, int tileY, int tileZ, int tileDrawVersion);
 
                             void veto();
                             static std::shared_ptr<Bitmap2> load(void *opaque);
@@ -105,6 +105,8 @@ namespace TAK {
                         std::set<BorrowRecord *> borrowRecords;
                         int tileVersion;
 
+                        int lastPumpDrawn;
+
                     public:
                         /**
                          * Creates a new tile renderer.
@@ -143,12 +145,12 @@ namespace TAK {
 
                         /*********************************************************************/
                         // GLMapBatchable2
-                        Util::TAKErr batch(const Renderer::Core::GLMapView2 &view, const int renderPass,
+                        Util::TAKErr batch(const Renderer::Core::GLGlobeBase &view, const int renderPass,
                                            TAK::Engine::Renderer::GLRenderBatch2 &batch) NOTHROWS override;
 
                         /*********************************************************************/
                         // GLMapRenderable2
-                        void draw(const Renderer::Core::GLMapView2 &view, const int renderPass) NOTHROWS override;
+                        void draw(const Renderer::Core::GLGlobeBase &view, const int renderPass) NOTHROWS override;
                         void release() NOTHROWS override;
                         int getRenderPass() NOTHROWS override;
                         void start() NOTHROWS override;
@@ -176,9 +178,11 @@ namespace TAK {
                         void unborrow();
     
                         bool checkForCachedTexture();
-                        bool renderCommon(const Renderer::Core::GLMapView2 &view, int renderPass);
+                        bool renderCommon(const Renderer::Core::GLGlobeBase &view, int renderPass);
 
-                        void debugDraw(const Renderer::Core::GLMapView2 &view);
+                        void debugDraw(const Renderer::Core::GLGlobeBase &view);
+
+                        friend class GLTilePatch;
 
                     };
                 }

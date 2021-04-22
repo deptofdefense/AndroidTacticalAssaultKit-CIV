@@ -60,7 +60,7 @@ public class BullseyeTool extends ButtonTool implements
     public static final String BULLSEYE_COT_TYPE = "u-r-b-bullseye";
     public static final int MAX_RADIUS = 1500000;
 
-    private final Context _context;
+    protected final Context _context;
     private GeoPointMetaData centerLoc = null;
     private GeoPointMetaData edgeLoc = null;
     private Marker centerMarker = null;
@@ -96,8 +96,7 @@ public class BullseyeTool extends ButtonTool implements
                 MapEvent.ITEM_LONG_PRESS, this);
         _mapView.getMapTouchController().setToolActive(true);
 
-        TextContainer.getInstance().displayPrompt(_context.getString(
-                R.string.rb_bullseye));
+        prompt(R.string.rb_bullseye);
 
         return true;
     }
@@ -123,8 +122,7 @@ public class BullseyeTool extends ButtonTool implements
                         MapEvent.MAP_LONG_PRESS, this);
 
                 TextContainer.getInstance().closePrompt();
-                TextContainer.getInstance().displayPrompt(_context.getString(
-                        R.string.rb_bullseye_edge));
+                prompt(R.string.rb_bullseye_edge);
             } else {
                 //check max length
                 GeoPointMetaData edgePt = _mapView.inverseWithElevation(pt.x,
@@ -662,5 +660,10 @@ public class BullseyeTool extends ButtonTool implements
             centerMarker.removeMetaData("bullseyeUID");
             centerMarker.removeMetaData("bullseyeOverlay");
         }
+    }
+
+    synchronized protected void prompt(int stringId) {
+        TextContainer.getInstance().displayPrompt(_context
+                .getString(stringId));
     }
 }

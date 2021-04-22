@@ -315,13 +315,25 @@ namespace
         const std::size_t dstStep = formatSize[Bitmap2::dstFmt]; \
         uint8_t r, g, b, a, mono; \
         const uint8_t endianXor = (atakmap::util::PlatformEndian == atakmap::util::LITTLE_ENDIAN) ? 0x01u : 0x00u; \
-        for(std::size_t y = 0; y < h; y++) { \
-            pDst = dst+(y*dstStride); \
-            pSrc = src+(y*srcStride); \
-            for (std::size_t x = 0; x < w; x++) { \
-                conv; \
-                pSrc += srcStep; \
-                pDst += dstStep; \
+        if(dstStep <= srcStep) { \
+            for(std::size_t y = 0; y < h; y++) { \
+                pDst = dst+(y*dstStride); \
+                pSrc = src+(y*srcStride); \
+                for (std::size_t x = 0; x < w; x++) { \
+                    conv; \
+                    pSrc += srcStep; \
+                    pDst += dstStep; \
+                } \
+            } \
+        } else { \
+            for(std::size_t y = h; y > 0; y--) { \
+                pDst = dst+((y-1u)*dstStride) + ((w-1u)*dstStep); \
+                pSrc = src+((y-1u)*srcStride) + ((w-1u)*srcStep); \
+                for (std::size_t x = w; x > 0; x--) { \
+                    conv; \
+                    pSrc -= srcStep; \
+                    pDst -= dstStep; \
+                } \
             } \
         } \
     }

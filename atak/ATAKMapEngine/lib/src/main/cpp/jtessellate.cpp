@@ -1,6 +1,7 @@
 #include "jtessellate.h"
 
 #include <renderer/Tessellate.h>
+#include <interop/JNIIntArray.h>
 
 #include "common.h"
 #include "junsafe.h"
@@ -126,8 +127,9 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_opengl_Tessellate_linestring__ILjava_
     memcpy(JLONG_TO_INTPTR(void, buf), result->data, outputCount*stride);
     return Java_com_atakmap_lang_Unsafe_newDirectBuffer(env, NULL, buf, outputCount*stride);
 }
-JNIEXPORT jobject JNICALL Java_com_atakmap_opengl_Tessellate_polygonImpl
-  (JNIEnv *env, jclass clazz, jobject jsrc, jint stride, jint size, jint count, jdouble threshold, jboolean wgs84)
+JNIEXPORT jobject JNICALL
+Java_com_atakmap_opengl_Tessellate_polygonImpl__Ljava_nio_DoubleBuffer_2IIIDZ
+        (JNIEnv *env, jclass clazz, jobject jsrc, jint stride, jint size, jint count, jdouble threshold, jboolean wgs84)
 {
     if(!jsrc) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
@@ -149,6 +151,44 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_opengl_Tessellate_polygonImpl
     std::size_t outputCount;
 
     code = Tessellate_polygon<double>(result, &outputCount, src, count, threshold, wgs84 ? Tessellate_WGS84Algorithm() : Tessellate_CartesianAlgorithm());
+    if(code == TE_Done)
+        return jsrc;
+    else if(ATAKMapEngineJNI_checkOrThrow(env, code))
+        return NULL;
+
+    // XXX - requires copy currently due to buffer free mechanism
+    jlong buf = Java_com_atakmap_lang_Unsafe_allocate(env, NULL, outputCount*stride);
+    memcpy(JLONG_TO_INTPTR(void, buf), result->data, outputCount*stride);
+    return Java_com_atakmap_lang_Unsafe_newDirectBuffer(env, NULL, buf, outputCount*stride);
+}
+
+JNIEXPORT jobject JNICALL
+Java_com_atakmap_opengl_Tessellate_polygonImpl__Ljava_nio_DoubleBuffer_2II_3I_3IIDZ
+        (JNIEnv *env, jclass clazz, jobject jsrc, jint stride, jint size, jintArray counts, jintArray startIndices, jint numPolygons, jdouble threshold, jboolean wgs84)
+{
+    if(!jsrc) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return NULL;
+    }
+
+    TAKErr code(TE_Ok);
+
+    // check for default stride requested
+    if(!stride)
+        stride = size*8;
+
+    VertexData src;
+    src.data = GET_BUFFER_POINTER(void, jsrc);
+    src.stride = stride;
+    src.size = size;
+
+    VertexDataPtr result(NULL, NULL);
+    std::size_t outputCount;
+
+    JNIIntArray countArray(*env, counts, JNI_ABORT);
+    JNIIntArray startIndexArray(*env, startIndices, JNI_ABORT);
+
+    code = Tessellate_polygon<double>(result, &outputCount, src, countArray.get<const int>(), startIndexArray.get<const int>(), static_cast<int>(numPolygons), threshold, wgs84 ? Tessellate_WGS84Algorithm() : Tessellate_CartesianAlgorithm());
     if(code == TE_Done)
         return jsrc;
     else if(ATAKMapEngineJNI_checkOrThrow(env, code))

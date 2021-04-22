@@ -960,8 +960,10 @@ public class CoordDialogView extends LinearLayout implements
                     GeoPoint gp = CoordinateFormatUtilities.convert(
                             s.toString(),
                             CoordinateFormat.MGRS);
-                    if (gp != null)
+                    if (gp != null) {
                         _setPoint(GeoPointMetaData.wrap(gp));
+                        _result = Result.VALID_CHANGED;
+                    }
                 } catch (Exception e) {
                     Log.e(TAG, "error occurred", e);
                 }
@@ -980,8 +982,10 @@ public class CoordDialogView extends LinearLayout implements
                     GeoPoint gp = CoordinateFormatUtilities.convert(
                             s.toString(),
                             CoordinateFormat.UTM);
-                    if (gp != null)
+                    if (gp != null) {
                         _setPoint(GeoPointMetaData.wrap(gp));
+                        _result = Result.VALID_CHANGED;
+                    }
                 } catch (Exception e) {
                     Log.e(TAG, "error occurred", e);
                 }

@@ -239,9 +239,15 @@ public class IconsMapComponent extends AbstractMapComponent {
         if (urlIconCacheDatabase == null) {
             final File cacheFile = GLBitmapLoader.getIconCacheDb();
             if (cacheFile != null) {
-                urlIconCacheDatabase = IOProviderFactory.createDatabase(
-                        new DatabaseInformation(Uri.fromFile(cacheFile),
-                                DatabaseInformation.OPTION_READONLY));
+
+                try {
+                    urlIconCacheDatabase = IOProviderFactory.createDatabase(
+                            new DatabaseInformation(Uri.fromFile(cacheFile),
+                                    DatabaseInformation.OPTION_READONLY));
+                } catch (Exception e) {
+                    Log.e(TAG, "error opening cacheFile: " + cacheFile + " for "
+                            + url);
+                }
             }
         }
         if (urlIconCacheDatabase == null) {

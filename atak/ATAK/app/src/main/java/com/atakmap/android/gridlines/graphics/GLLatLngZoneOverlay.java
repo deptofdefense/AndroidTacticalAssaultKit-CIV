@@ -1,19 +1,20 @@
 
 package com.atakmap.android.gridlines.graphics;
 
-import android.graphics.PointF;
-
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Polyline;
 import com.atakmap.android.maps.graphics.GLPolyline;
+import com.atakmap.android.maps.graphics.GLSegmentFloatingLabel;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
-import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.coremap.maps.coords.Vector2D;
+import com.atakmap.map.Globe;
 import com.atakmap.map.opengl.GLMapView;
-import com.atakmap.map.opengl.GLRenderGlobals;
+import com.atakmap.math.MathUtils;
+import com.atakmap.math.Rectangle;
 import com.atakmap.opengl.GLES20FixedPipeline;
-import com.atakmap.opengl.GLNinePatch;
 import com.atakmap.opengl.GLText;
 
 import org.apache.commons.lang.StringUtils;
@@ -36,12 +37,12 @@ public class GLLatLngZoneOverlay extends GLZonesOverlay {
     GeoPointMetaData[] scratch = new GeoPointMetaData[0];
 
     @Override
-    public void draw(GLMapView map) {
+    public void draw(GLMapView map, int renderPass) {
         if (_type.equals("Degrees, Minutes, Seconds")
                 || _type.equals("Decimal Degrees")) {
-            if (map.drawMapResolution > 10000)
+            if (map.currentScene.drawMapResolution > 10000)
                 return;
-            drawLinesImpl(map);
+            drawLinesImpl(map, renderPass);
         }
     }
 
@@ -57,7 +58,7 @@ public class GLLatLngZoneOverlay extends GLZonesOverlay {
      */
     void _drawLatLines(GLMapView map, double east, double west,
             double south, double north,
-            float alpha) {
+            float alpha, int renderPass) {
         south = Math.max(south, -90);
         north = Math.min(north, 90);
         west = Math.max(west, map.continuousScrollEnabled ? -360 : -180);
@@ -65,18 +66,22 @@ public class GLLatLngZoneOverlay extends GLZonesOverlay {
 
         double resolutionStep = calcStep(map);
         double lat = roundUp((int) south, (int) resolutionStep);
-        GLES20FixedPipeline.glPushMatrix();
         for (; lat <= north;) {
             if (lat >= south || lat <= north) {
-                drawLine(map, lat, east, lat, west, alpha, lat == 0.0);
-                if (line != null) {
-                    if (_glText == null) {
-                        _glText = GLText
-                                .getInstance(MapView.getDefaultTextFormat());
-                    }
-
+                if (MathUtils.hasBits(renderPass,
+                        GLMapView.RENDER_PASS_SURFACE))
+                    drawLine(map, lat, east, lat, west, alpha, lat == 0.0);
+                if (MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SPRITES)
+                        &&
+                        map.currentScene.drawTilt < 40d &&
+                        map.currentScene.drawMapResolution <= 1500 &&
+                        line != null) {
+                    // if surface pass not included, need to validate
+                    if (!MathUtils.hasBits(renderPass,
+                            GLMapView.RENDER_PASS_SURFACE))
+                        validateLine(map, lat, east, lat, west, alpha,
+                                lat == 0.0);
                     GeoPoint pt = line.getPoints()[line.getPoints().length - 1];
-
                     if (_type.equals("Decimal Degrees")) {
                         if (lat == 0.0) {
                             _text = "0";
@@ -93,53 +98,27 @@ public class GLLatLngZoneOverlay extends GLZonesOverlay {
                     }
                     if (StringUtils.isEmpty(_text))
                         return;
-                    map.forward(pt, map.scratch.pointF);
-                    // Loop through the line until we find a segment that crosses x = 0, this
-                    // prevents the labels from spazzing out when zooming out.
-                    if (map.scratch.pointF.x < 0) {
-                        PointF prev = map.scratch.pointF;
-                        for (int i = line.getPoints().length - 1; i > 1; i--) {
-                            PointF curr = map.forward(line.getPoints()[i - 1]);
-                            if (prev.x < 0 && curr.x > 0) {
-                                float deltaX = curr.x - prev.x;
-                                float deltaY = curr.y - prev.y;
-                                float slope = deltaY / deltaX;
-                                map.scratch.pointF.y = curr.y - slope * curr.x;
-                                map.scratch.pointF.x = 0;
-                            }
+                    GLSegmentFloatingLabel lbl = new GLSegmentFloatingLabel();
+                    lbl.setClampToGround(true);
+                    lbl.setTextColor(_red, _green, _blue, 1f);
+                    lbl.setBackgroundColor(0f, 0f, 0f, 0.6f);
+                    lbl.setRotateToAlign(false);
+                    lbl.setInsets(0f, 0f, 0f,
+                            MapView.getMapView().getActionBarHeight());
+
+                    GeoPoint[] pts = line.getPoints();
+                    for (int i = 0; i < pts.length; i++) {
+                        if (validateLabel(map, lbl, pts[(i + 1) % pts.length],
+                                pts[i])) {
+                            lbl.setText(_text);
+                            lbl.draw(map);
+                            break;
                         }
                     }
-
-                    float yoffset;
-                    float xoffset = (map.scratch.pointF.x
-                            + (_glText.getStringWidth(_text)) / 2);
-                    yoffset = (map.scratch.pointF.y - (_glText.getStringHeight()
-                            / 2));
-
-                    GLNinePatch smallNinePatch = GLRenderGlobals.get(map)
-                            .getSmallNinePatch();
-                    if (smallNinePatch != null) {
-                        GLES20FixedPipeline.glColor4f(0f, 0f, 0f, 0.6f);
-                        GLES20FixedPipeline.glPushMatrix();
-                        GLES20FixedPipeline.glTranslatef(xoffset, yoffset,
-                                0f);
-                        smallNinePatch.draw(_glText.getStringWidth(_text) + 16f,
-                                Math.max(26f, _glText.getStringHeight()));
-                        GLES20FixedPipeline.glPopMatrix();
-                    }
-
-                    // draw labels only if too far out
-                    GLES20FixedPipeline.glPushMatrix();
-                    GLES20FixedPipeline.glTranslatef(xoffset + 9f, yoffset + 4f,
-                            0f);
-                    _glText.draw(_text, _red, _green, _blue, 1.0f);
-                    GLES20FixedPipeline.glPopMatrix();
                 }
             }
             lat += resolutionStep;
         }
-
-        GLES20FixedPipeline.glPopMatrix();
     }
 
     /**
@@ -149,20 +128,19 @@ public class GLLatLngZoneOverlay extends GLZonesOverlay {
      * @return double of step count
      */
     private double calcStep(GLMapView map) {
-        if (map.drawMapResolution > 6000) {
+        if (map.currentScene.drawMapResolution > 6000) {
             return 10d;
-        } else if (map.drawMapResolution >= 3000) {
+        } else if (map.currentScene.drawMapResolution >= 3000) {
             return 6d;
-        } else if (map.drawMapResolution >= 1000
-                || map.drawMapResolution > 250) {
+        } else if (map.currentScene.drawMapResolution >= 1000
+                || map.currentScene.drawMapResolution > 250) {
             return 3d;
         } else {
             return 1d;
         }
     }
 
-    // TODO - terribly poor efficiency.   Need to look at reworking in the future.
-    protected void drawLine(GLMapView view, double lat0, double lng0,
+    private void validateLine(GLMapView view, double lat0, double lng0,
             double lat1, double lng1, float alpha, boolean is0) {
         if (line == null) {
             line = new Polyline(UUID.randomUUID().toString());
@@ -181,7 +159,7 @@ public class GLLatLngZoneOverlay extends GLZonesOverlay {
         final double dlng = (lng1 - lng0);
 
         double d = Math.sqrt(dlat * dlat + dlng * dlng);
-        if (view.scene.mapProjection.is3D() && (dlat * dlng) == 0
+        if (view.currentScene.drawSrid == 4978 && (dlat * dlng) == 0
                 && d > threshold) {
             // tessellate
 
@@ -218,6 +196,13 @@ public class GLLatLngZoneOverlay extends GLZonesOverlay {
         }
 
         line.setPoints(scratch);
+    }
+
+    // TODO - terribly poor efficiency.   Need to look at reworking in the future.
+    protected void drawLine(GLMapView view, double lat0, double lng0,
+            double lat1, double lng1, float alpha, boolean is0) {
+
+        validateLine(view, lat0, lng0, lat1, lng1, alpha, is0);
 
         // zones have no elevation, just render them as part of the SURFACE pass.
         glline.draw(view, GLMapView.RENDER_PASS_SURFACE);
@@ -241,13 +226,11 @@ public class GLLatLngZoneOverlay extends GLZonesOverlay {
 
     void _drawLngLines(GLMapView map, double south, double north,
             double west, double east,
-            float alpha) {
+            float alpha, int renderPass) {
         south = Math.max(south, -90);
         north = Math.min(north, 90);
         west = Math.max(west, map.continuousScrollEnabled ? -360 : -180);
         east = Math.min(east, map.continuousScrollEnabled ? 360 : 180);
-
-        GLES20FixedPipeline.glPushMatrix();
 
         double resolutionStep = calcStep(map);
         double lng = roundUp((int) Math.round(west), (int) resolutionStep);
@@ -255,13 +238,19 @@ public class GLLatLngZoneOverlay extends GLZonesOverlay {
             if (lng < -180 || lng > 180 || lng > east) {
                 break;
             }
-            drawLine(map, north, lng, south, lng, alpha, lng == 0.0);
+            if (MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SURFACE)) {
+                drawLine(map, north, lng, south, lng, alpha, lng == 0.0);
+            }
             //only draw every other lng line
-            if (line != null) {
-                if (_glText == null) {
-                    _glText = GLText
-                            .getInstance(MapView.getDefaultTextFormat());
-                }
+            if (MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SPRITES) &&
+                    map.currentScene.drawTilt < 40d &&
+                    map.currentScene.drawMapResolution <= 1500 &&
+                    line != null) {
+                // if surface pass not included, line needs to be validated
+                if (!MathUtils.hasBits(renderPass,
+                        GLMapView.RENDER_PASS_SURFACE))
+                    validateLine(map, north, lng, south, lng, alpha,
+                            lng == 0.0);
 
                 if (_type.equals("Decimal Degrees")) {
                     //0,0  on lng side is the prime no Degree symbol for this so use the known name
@@ -284,72 +273,39 @@ public class GLLatLngZoneOverlay extends GLZonesOverlay {
 
                 if (StringUtils.isEmpty(_text))
                     return;
+                GLSegmentFloatingLabel lbl = new GLSegmentFloatingLabel();
+                lbl.setClampToGround(true);
+                lbl.setTextColor(_red, _green, _blue, 1f);
+                lbl.setBackgroundColor(0f, 0f, 0f, 0.6f);
+                lbl.setRotateToAlign(false);
+                lbl.setInsets(0f, 0f, 0f,
+                        MapView.getMapView().getActionBarHeight());
 
-                map.forward(line.getPoints()[0], map.scratch.pointF);
-                float yoffset;
-                if (MapView.getMapView().getActionBarHeight() > 0
-                        && (MapView.getMapView().getHeight()
-                                - map.scratch.pointF.y <= MapView.getMapView()
-                                        .getActionBarHeight())) {
-                    map.scratch.pointF.y = MapView.getMapView().getHeight()
-                            - MapView.getMapView().getActionBarHeight();
-                    yoffset = (map.scratch.pointF.y - (_glText.getStringHeight()
-                            / 2) - 8f);
-                } else {
-                    // Do the same thing as in _drawLatLines() except we treat the y-values as x-values
-                    // and vice versa. Essentially rotating a cartesian graph to the right by 90 degrees.
-                    int height = MapView.getMapView().getHeight();
-                    if (map.scratch.pointF.y > height) {
-                        PointF prev = map.scratch.pointF;
-                        for (int i = 1; i < line.getPoints().length - 1; i++) {
-                            PointF curr = map.forward(line.getPoints()[i + 1]);
-                            if (prev.y > height && curr.y < height) {
-                                float deltaX = curr.x - prev.x;
-                                float deltaY = curr.y - prev.y;
-                                float slope = deltaX / deltaY;
-                                map.scratch.pointF.y = height;
-                                // Have to find the xIntercept since the point we're solving for
-                                // isn't at y = 0.
-                                float xIntercept = curr.x - slope * curr.y;
-                                map.scratch.pointF.x = (height * slope)
-                                        + xIntercept;
-                            }
-                        }
-
+                GeoPoint[] pts = line.getPoints();
+                for (int i = 0; i < pts.length; i++) {
+                    if (validateLabel(map, lbl, pts[i],
+                            pts[(i + 1) % pts.length])) {
+                        lbl.setText(_text);
+                        lbl.draw(map);
+                        break;
                     }
-                    yoffset = (map.scratch.pointF.y - (_glText.getStringHeight()
-                            / 2) - 8f);
                 }
-                float xoffset = (map.scratch.pointF.x
-                        - (_glText.getStringWidth(_text)) / 2);
-
-                GLNinePatch smallNinePatch = GLRenderGlobals.get(map)
-                        .getSmallNinePatch();
-                if (smallNinePatch != null) {
-                    GLES20FixedPipeline.glColor4f(0f, 0f, 0f, 0.6f);
-                    GLES20FixedPipeline.glPushMatrix();
-                    GLES20FixedPipeline.glTranslatef(xoffset, yoffset,
-                            0f);
-                    smallNinePatch.draw(_glText.getStringWidth(_text) + 16f,
-                            Math.max(16f, _glText.getStringHeight()));
-                    GLES20FixedPipeline.glPopMatrix();
-                }
-
-                // draw labels only if too far out
-                GLES20FixedPipeline.glPushMatrix();
-                GLES20FixedPipeline.glTranslatef(xoffset + 9f, yoffset + 4f,
-                        0f);
-                _glText.draw(_text, _red, _green, _blue, 1.0f);
-                GLES20FixedPipeline.glPopMatrix();
             }
         }
-        GLES20FixedPipeline.glPopMatrix();
     }
 
+    /** @deprecated use {@link @drawLinesImpl(GLMapView, int)} */
+    @Deprecated
+    @DeprecatedApi(since = "4.3", forRemoval = true, removeAt = "4.6")
     protected void drawLinesImpl(GLMapView map) {
+        drawLinesImpl(map, GLMapView.RENDER_PASS_SURFACE);
+    }
+
+    protected void drawLinesImpl(GLMapView map, int renderPass) {
         final double drawZoom = convertMapScaleToLegacyZoom(
                 map.getRenderSurface(),
-                map.drawMapScale);
+                Globe.getMapScale(map.currentScene.scene.dpi,
+                        map.currentScene.drawMapResolution));
 
         float alpha = (float) Math.max(Math.min(drawZoom / 15d, 1d), 0d);
         GLES20FixedPipeline.glColor4f(_red, _green, _blue, alpha);
@@ -361,34 +317,34 @@ public class GLLatLngZoneOverlay extends GLZonesOverlay {
                     map.westBoundUnwrapped,
                     map.southBound,
                     map.northBound,
-                    alpha);
+                    alpha, renderPass);
             // west of IDL
             _drawLngLines(map,
                     map.southBound,
                     map.northBound,
                     map.westBound,
                     180d,
-                    alpha);
+                    alpha, renderPass);
             // east of IDL
             _drawLngLines(map,
                     map.southBound,
                     map.northBound,
                     -180d,
                     map.eastBound,
-                    alpha);
+                    alpha, renderPass);
         } else {
             _drawLatLines(map,
                     map.eastBound,
                     map.westBound,
                     map.southBound,
                     map.northBound,
-                    alpha);
+                    alpha, renderPass);
             _drawLngLines(map,
                     map.southBound,
                     map.northBound,
                     map.westBound,
                     map.eastBound,
-                    alpha);
+                    alpha, renderPass);
         }
     }
 
@@ -400,5 +356,74 @@ public class GLLatLngZoneOverlay extends GLZonesOverlay {
     private double round(double value) {
         int scale = (int) Math.pow(10, 0);
         return (double) Math.round(value * scale) / scale;
+    }
+
+    static boolean validateLabel(GLMapView ortho, GLSegmentFloatingLabel lbl,
+            GeoPoint start, GeoPoint end) {
+        ortho.scratch.geo.set(start);
+        ortho.scratch.geo.set(
+                ortho.getTerrainMeshElevation(ortho.scratch.geo.getLatitude(),
+                        ortho.scratch.geo.getLongitude()));
+        ortho.forward(ortho.scratch.geo, ortho.scratch.pointD);
+        if (ortho.scratch.pointD.z >= 1d)
+            return false;
+        float sx = (float) ortho.scratch.pointD.x;
+        float sy = (float) ortho.scratch.pointD.y;
+        ortho.scratch.geo.set(end);
+        ortho.scratch.geo.set(
+                ortho.getTerrainMeshElevation(ortho.scratch.geo.getLatitude(),
+                        ortho.scratch.geo.getLongitude()));
+        ortho.forward(ortho.scratch.geo, ortho.scratch.pointD);
+        float ex = (float) ortho.scratch.pointD.x;
+        float ey = (float) ortho.scratch.pointD.y;
+        if (ortho.scratch.pointD.z >= 1d)
+            return false;
+
+        final float actionBarPad = MapView.getMapView().getActionBarHeight();
+        final float l = ortho.currentScene.left;
+        final float r = ortho.currentScene.right;
+        final float t = ortho.currentScene.top - actionBarPad;
+        final float b = ortho.currentScene.bottom;
+
+        // quickly filter out any segments that are contained within the viewport
+        final boolean containsStart = Rectangle.contains(l, b, r, t, sx, sy);
+        final boolean containsEnd = Rectangle.contains(l, b, r, t, ex, ey);
+
+        if (containsStart && containsEnd)
+            return false;
+
+        float weight = 0f;
+
+        // NOTE: bias is always against top if the segment intersects
+        // both the left and top edges
+
+        // verify that we intersect the left or top edges
+        Vector2D lin = Vector2D.segmentToSegmentIntersection(
+                new Vector2D(sx, sy), new Vector2D(ex, ey), new Vector2D(l, t),
+                new Vector2D(l, b));
+        Vector2D tin = Vector2D.segmentToSegmentIntersection(
+                new Vector2D(sx, sy), new Vector2D(ex, ey), new Vector2D(l, t),
+                new Vector2D(r, t));
+
+        if (lin == null && tin == null)
+            return false;
+        if (containsStart != containsEnd) {
+            // only one edge intersects
+            weight = !containsStart ? 0f : 1f;
+        } else {
+            // both edges intersect, we will weight towards the
+            // top-most or end-most endpoint
+            if (tin != null) {
+                weight = (sy >= sy) ? 0f : 1f;
+            } else if (lin != null) {
+                weight = (sx <= ex) ? 0f : 1f;
+            }
+        }
+
+        lbl.setSegmentPositionWeight(weight);
+        lbl.setSegment(new GeoPoint[] {
+                start, end
+        });
+        return true;
     }
 }

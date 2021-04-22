@@ -682,8 +682,8 @@ public class RangeAndBearingDropDown extends DropDownReceiver implements
 
         if (pending != null) {
             _rabItem = pending;
-            openRangeAndBearing();
             pending = null;
+            openRangeAndBearing();
         } else {
             _rabItem = null;
         }

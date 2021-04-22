@@ -10,6 +10,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -39,6 +40,7 @@ public class TileButtonDialog implements DialogInterface.OnDismissListener,
     private AlertDialog _dialog;
     private TextView _messageTxt;
     private DialogInterface.OnClickListener _onClick;
+    private DialogInterface.OnCancelListener _onCancel;
     private Drawable _icon;
     private String _title;
     private String _message, _cancelText;
@@ -201,6 +203,12 @@ public class TileButtonDialog implements DialogInterface.OnDismissListener,
         return this;
     }
 
+    public synchronized TileButtonDialog setOnCancelListener(
+            DialogInterface.OnCancelListener onCancel) {
+        _onCancel = onCancel;
+        return this;
+    }
+
     public synchronized TileButtonDialog setIcon(Drawable icon) {
         _icon = icon;
         if (_dialog != null)
@@ -271,7 +279,9 @@ public class TileButtonDialog implements DialogInterface.OnDismissListener,
                     new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface d, int w) {
-                            if (_onClick != null)
+                            if (_onCancel != null)
+                                _onCancel.onCancel(d);
+                            else if (_onClick != null)
                                 _onClick.onClick(_dialog, WHICH_CANCEL);
                         }
                     });
@@ -280,6 +290,7 @@ public class TileButtonDialog implements DialogInterface.OnDismissListener,
         try {
             _dialog.show();
             _dialog.setOnDismissListener(this);
+            _dialog.setOnCancelListener(_onCancel);
             // Dialog window doesn't size correctly for some reason...
             forceWrapContent(cont);
 
@@ -360,8 +371,14 @@ public class TileButtonDialog implements DialogInterface.OnDismissListener,
                     break;
                 }
 
-                // Modify the layout
-                current.getLayoutParams().width = ViewGroup.LayoutParams.WRAP_CONTENT;
+                // Modify the layout so it wraps content width and is centered
+                // horizontally on the screen
+                ViewGroup.LayoutParams lp = current.getLayoutParams();
+                if (lp instanceof FrameLayout.LayoutParams)
+                    ((FrameLayout.LayoutParams) lp).gravity = Gravity.CENTER_HORIZONTAL;
+                if (lp instanceof LinearLayout.LayoutParams)
+                    ((LinearLayout.LayoutParams) lp).gravity = Gravity.CENTER_HORIZONTAL;
+                lp.width = ViewGroup.LayoutParams.WRAP_CONTENT;
             }
         } while (current.getParent() != null);
 
@@ -417,7 +434,8 @@ public class TileButtonDialog implements DialogInterface.OnDismissListener,
          * registered listener will be replaced.
          * @param olcl The listener to register.
          */
-        public synchronized void setOnLongClickListener(final View.OnLongClickListener olcl) {
+        public synchronized void setOnLongClickListener(
+                final View.OnLongClickListener olcl) {
             view.setOnLongClickListener(
                     internalLongClickListener = new View.OnLongClickListener() {
 
@@ -428,8 +446,7 @@ public class TileButtonDialog implements DialogInterface.OnDismissListener,
                             }
                             return false;
                         }
-                    }
-            );
+                    });
         }
     }
 }

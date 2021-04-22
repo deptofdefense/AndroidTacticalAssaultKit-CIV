@@ -91,10 +91,22 @@ GLText2 *TAK::Engine::Renderer::GLText2_intern(std::shared_ptr<TextFormat2> text
 }
 GLText2 *TAK::Engine::Renderer::GLText2_intern(const TextFormatParams &params) NOTHROWS
 {
+
     TextFormat2Ptr fmt(nullptr, nullptr);
-    if (TextFormat2_createTextFormat(fmt, params) != TE_Ok)
+    if (TextFormat2_createTextFormat(fmt, params) == TE_Ok)
+        return GLText2_intern(std::move(fmt));
+#ifdef __ANDROID__
+    Lock lock(cacheMutex);
+    if(glTextCache.empty())
         return nullptr;
-    return GLText2_intern(std::move(fmt));
+
+    for(auto &entry : glTextCache) {
+        // XXX - other properties
+        if(entry.first->getFontSize() == params.size)
+            return entry.second.get();
+    }
+#endif
+    return nullptr;
 }
 
 /**********************************************************************/

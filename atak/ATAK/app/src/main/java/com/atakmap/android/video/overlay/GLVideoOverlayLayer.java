@@ -5,21 +5,28 @@ import android.graphics.SurfaceTexture;
 import android.opengl.GLES30;
 import android.opengl.Matrix;
 import android.util.Pair;
+import android.view.Surface;
 
 import com.atakmap.android.video.VideoOverlayLayer;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.lang.Unsafe;
+import com.atakmap.map.MapControl;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.MapRenderer3;
 import com.atakmap.map.layer.Layer;
+import com.atakmap.map.layer.control.SurfaceRendererControl;
+import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.opengl.GLAbstractLayer;
 import com.atakmap.map.layer.opengl.GLLayer2;
 import com.atakmap.map.layer.opengl.GLLayerSpi2;
 import com.atakmap.map.layer.raster.DatasetProjection2;
 import com.atakmap.map.layer.raster.DefaultDatasetProjection2;
 import com.atakmap.map.opengl.GLMapView;
+import com.atakmap.math.MathUtils;
 import com.atakmap.math.PointD;
 import com.atakmap.opengl.GLES20FixedPipeline;
+import com.atakmap.util.Visitor;
 import com.partech.mobilevid.*;
 import com.partech.mobilevid.gl.*;
 
@@ -68,6 +75,9 @@ public class GLVideoOverlayLayer extends GLAbstractLayer implements
     private final float[] mvandp = new float[16 * 2];
     private final float[] mvp = new float[16];
 
+    private Envelope frameMbb;
+    private SurfaceRendererControl surfaceCtrl;
+
     private GLVideoOverlayLayer(final MapRenderer surface,
             final VideoOverlayLayer subject) {
         super(surface, subject);
@@ -79,6 +89,17 @@ public class GLVideoOverlayLayer extends GLAbstractLayer implements
                 FloatBuffer.class);
         texTransform = new float[16];
         proj = null;
+        frameMbb = null;
+        if (surface instanceof MapRenderer3)
+            surfaceCtrl = ((MapRenderer3) surface)
+                    .getControl(SurfaceRendererControl.class);
+        else
+            surface.visitControl(null, new Visitor<SurfaceRendererControl>() {
+                @Override
+                public void visit(SurfaceRendererControl object) {
+                    surfaceCtrl = object;
+                }
+            }, SurfaceRendererControl.class);
     }
 
     @Override
@@ -164,6 +185,8 @@ public class GLVideoOverlayLayer extends GLAbstractLayer implements
         textureHandler = null;
         sourceWidth = sourceHeight = 0;
 
+        frameMbb = null;
+
         super.release();
     }
 
@@ -234,6 +257,28 @@ public class GLVideoOverlayLayer extends GLAbstractLayer implements
                     // X, Y (longitude, latitude)
                     fillVideoPoints(w, h, ul, ur, lr, ll);
 
+                    if (surfaceCtrl != null) {
+                        // mark old MBB dirty
+                        if (frameMbb != null)
+                            surfaceCtrl.markDirty(frameMbb, true);
+                        else
+                            frameMbb = new Envelope(0d, 0d, 0d, 0d, 0d, 0d);
+                        // update MBB
+                        frameMbb.minX = MathUtils.min(ul.getLongitude(),
+                                ur.getLongitude(), lr.getLongitude(),
+                                ll.getLongitude());
+                        frameMbb.minY = MathUtils.min(ul.getLatitude(),
+                                ur.getLatitude(), lr.getLatitude(),
+                                ll.getLatitude());
+                        frameMbb.maxX = MathUtils.min(ul.getLongitude(),
+                                ur.getLongitude(), lr.getLongitude(),
+                                ll.getLongitude());
+                        frameMbb.maxY = MathUtils.min(ul.getLatitude(),
+                                ur.getLatitude(), lr.getLatitude(),
+                                ll.getLatitude());
+                        // mark new MBB dirty
+                        surfaceCtrl.markDirty(frameMbb, true);
+                    }
                 } finally {
                     frameIsUpdating = false;
                 }

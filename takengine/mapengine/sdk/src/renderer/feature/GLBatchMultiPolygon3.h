@@ -7,7 +7,7 @@ namespace TAK {
     namespace Engine {
         namespace Renderer {
             namespace Feature {
-                class GLBatchMultiPolygon3 : public GLBatchGeometryCollection3
+                class ENGINE_API GLBatchMultiPolygon3 : public GLBatchGeometryCollection3
                 {
                 public:
                     GLBatchMultiPolygon3(TAK::Engine::Core::RenderContext &surface);

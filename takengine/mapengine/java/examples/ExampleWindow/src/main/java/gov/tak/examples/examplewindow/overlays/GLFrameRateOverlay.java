@@ -12,6 +12,7 @@ import com.atakmap.map.layer.opengl.GLAbstractLayer2;
 import com.atakmap.map.layer.opengl.GLLayer2;
 import com.atakmap.map.layer.opengl.GLLayerSpi2;
 import com.atakmap.map.opengl.GLMapView;
+import com.atakmap.math.MathUtils;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLText;
 
@@ -47,6 +48,9 @@ public class GLFrameRateOverlay extends GLAbstractLayer2 {
 
     @Override
     protected void drawImpl(GLMapView view, int renderPass) {
+        if(!MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_UI))
+            return;
+
         if (textRenderer == null)
             textRenderer = GLText.getInstance(new MapTextFormat(Typeface.DEFAULT_BOLD, true, 24));
 

@@ -1,8 +1,11 @@
 package com.atakmap.map.layer.raster;
 
+import android.graphics.Color;
+
 import java.util.Collection;
 import java.util.HashSet;
 
+import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.map.layer.feature.geometry.Geometry;
 import com.atakmap.map.layer.raster.service.DefaultOnlineImageryExtension;
 
@@ -62,5 +65,27 @@ public class DatasetRasterLayer2 extends AbstractDataStoreRasterLayer2 {
     @Override
     public double getMaximumResolution(String selection) {
         return this.dataStore.getMaximumResolution(selection, null);
+    }
+
+    /**
+     * Initialize transparency and visibility vars for dataset descriptor
+     * based on its imported state
+     * @param desc Dataset
+     */
+    public void initDataset(DatasetDescriptor desc) {
+        // Initial alpha value (default = 255)
+        String colorStr = desc.getExtraData("color");
+        if (!FileSystemUtils.isEmpty(colorStr)) {
+            try {
+                int alpha = Color.alpha(Integer.parseInt(colorStr));
+                setTransparency(desc.getName(), alpha / 255f);
+            } catch (Exception ignored) {
+            }
+        }
+
+        // Initial visibility (default = true)
+        String vizStr = desc.getExtraData("visible");
+        if (!FileSystemUtils.isEmpty(vizStr))
+            setVisible(desc.getName(), Boolean.parseBoolean(vizStr));
     }
 }

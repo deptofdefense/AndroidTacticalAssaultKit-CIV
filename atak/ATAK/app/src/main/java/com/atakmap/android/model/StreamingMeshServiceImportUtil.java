@@ -46,7 +46,8 @@ final class StreamingMeshServiceImportUtil {
                 return null;
             try {
                 byte[] read = new byte[4096];
-                try (FileInputStream fis = IOProviderFactory.getInputStream(f)) {
+                try (FileInputStream fis = IOProviderFactory
+                        .getInputStream(f)) {
                     int count = fis.read(read);
                     if (count > 0) {
                         String s = new String(read, 0, count,

@@ -1,10 +1,7 @@
 package gov.tak.examples.examplewindow;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
-import com.atakmap.map.CameraController;
-import com.atakmap.map.MapRenderer2;
-import com.atakmap.map.MapSceneModel;
-import com.atakmap.map.RenderSurface;
+import com.atakmap.map.*;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.PointD;
 import com.atakmap.math.Vector3D;
@@ -18,7 +15,7 @@ public class MouseMapInputHandler extends MouseAdapter implements MouseWheelList
     final static GeoPoint offworldCheckGeo = GeoPoint.createMutable();
     final static int offworldCheckHints = MapRenderer2.HINT_RAYCAST_IGNORE_SURFACE_MESH|MapRenderer2.HINT_RAYCAST_IGNORE_TERRAIN_MESH;
 
-    final MapRenderer2 glglobe;
+    final MapRenderer3 glglobe;
 
     boolean isPan;
     boolean isTilt;
@@ -32,7 +29,7 @@ public class MouseMapInputHandler extends MouseAdapter implements MouseWheelList
     double dragStartRotation;
     boolean cameraPanTo;
 
-    MouseMapInputHandler(MapRenderer2 glglobe) {
+    MouseMapInputHandler(MapRenderer3 glglobe) {
         this.glglobe = glglobe;
     }
 
@@ -112,9 +109,9 @@ public class MouseMapInputHandler extends MouseAdapter implements MouseWheelList
             }
 
             if(doPanTo)
-                CameraController.panTo(glglobe, pressLocation, e.getX(), e.getY(), false);
+                CameraController.Interactive.panTo(glglobe, pressLocation, e.getX(), e.getY(), MapRenderer3.CameraCollision.AdjustFocus, false);
             else
-                CameraController.panBy(glglobe, lastX - e.getX(), lastY - e.getY(), false);
+                CameraController.Interactive.panBy(glglobe, lastX - e.getX(), lastY - e.getY(), MapRenderer3.CameraCollision.AdjustFocus, false);
         } else if(isRotate) {
             // map center
             final float centerX = glglobe.getRenderContext().getRenderSurface().getWidth() / 2f;
@@ -130,11 +127,11 @@ public class MouseMapInputHandler extends MouseAdapter implements MouseWheelList
 
             // the new rotation azimuth is the rotation on drag start plus
             // the current relative rotation
-            CameraController.rotateTo(glglobe, dragStartRotation - relativeRotation, centerOnPress, false);
+            CameraController.Interactive.rotateTo(glglobe, dragStartRotation - relativeRotation, centerOnPress, centerX, centerY, MapRenderer3.CameraCollision.AdjustCamera, false);
         } else if(isTilt) {
             // NOTE: currently set for drag up => tilt forward
             final MapSceneModel currentModel = glglobe.getMapSceneModel(false, MapRenderer2.DisplayOrigin.UpperLeft);
-            CameraController.tiltTo(glglobe, (90d+currentModel.camera.elevation)+(lastY-e.getY()), centerOnPress, false);
+            CameraController.Interactive.tiltTo(glglobe, (90d+currentModel.camera.elevation)+(lastY-e.getY()), centerOnPress, currentModel.focusx, currentModel.focusy, MapRenderer3.CameraCollision.Abort, false);
         }
         // update the last drag location
         lastX = e.getX();
@@ -143,6 +140,13 @@ public class MouseMapInputHandler extends MouseAdapter implements MouseWheelList
 
     @Override
     public void mouseWheelMoved(MouseWheelEvent e) {
-        CameraController.zoomBy(glglobe, Math.pow(2.0, -e.getWheelRotation()), e.getX(), e.getY(), false);
+        GeoPoint focus = GeoPoint.createMutable();
+        final MapRenderer2.InverseResult result = glglobe.inverse(new PointD(e.getX(), e.getY(), 0d), focus, MapRenderer2.InverseMode.RayCast, 0, MapRenderer2.DisplayOrigin.UpperLeft);
+        MapRenderer3.CameraCollision collide = (e.getWheelRotation() < 0) ?
+                MapRenderer3.CameraCollision.Abort : MapRenderer3.CameraCollision.AdjustCamera;
+        if(result != MapRenderer2.InverseResult.None)
+            CameraController.Interactive.zoomBy(glglobe, Math.pow(2.0, -e.getWheelRotation()), focus, e.getX(), e.getY(), collide, false);
+        else
+            CameraController.Interactive.zoomBy(glglobe, Math.pow(2.0, -e.getWheelRotation()), collide, false);
     }
 }

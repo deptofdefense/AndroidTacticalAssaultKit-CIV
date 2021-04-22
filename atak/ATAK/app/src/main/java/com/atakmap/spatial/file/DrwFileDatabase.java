@@ -17,6 +17,7 @@ import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.Polyline;
 import com.atakmap.android.maps.SimpleRectangle;
 import com.atakmap.android.maps.Shape;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
@@ -38,6 +39,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * @deprecated Transitioned to Map Engine Features API
+ * Replaced by {@link FalconViewSpatialDb}
+ */
+@Deprecated
+@DeprecatedApi(since = "4.3", forRemoval = true, removeAt = "4.6")
 public class DrwFileDatabase extends
         FileDatabase {
     private static final String TAG = "DrwFileDatabase";
@@ -102,7 +109,7 @@ public class DrwFileDatabase extends
             return;
         Envelope.Builder bounds = new Envelope.Builder();
         Database msaccessDb = null;
-        try(FileChannel channel = IOProviderFactory.getChannel(drwFile, "r")) {
+        try (FileChannel channel = IOProviderFactory.getChannel(drwFile, "r")) {
             DatabaseBuilder db = new DatabaseBuilder();
             db.setChannel(channel);
             db.setReadOnly(true);

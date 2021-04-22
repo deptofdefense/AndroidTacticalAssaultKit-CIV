@@ -1,7 +1,7 @@
 
 package com.atakmap.android.dropdown;
 
-import android.graphics.Color;
+import android.app.Activity;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import androidx.fragment.app.FragmentActivity;
@@ -27,7 +27,7 @@ class SidePane implements OnTouchListener {
     private int state;
 
     private final FrameLayout mapLayout;
-    private final ViewGroup sideLayout;
+    private final ViewGroup rightLayout, leftLayout;
     private final RelativeLayout parent;
 
     final private View sideHandle;
@@ -50,21 +50,17 @@ class SidePane implements OnTouchListener {
      * @param view ATAK's content view.
      */
     SidePane(MapView view) {
-        mapLayout = ((FragmentActivity) view.getContext())
-                .findViewById(R.id.main_map_container);
-
-        sideLayout = ((FragmentActivity) view.getContext())
-                .findViewById(R.id.right_side_panel_container);
-
-        parent = ((FragmentActivity) view.getContext())
-                .findViewById(R.id.map_parent);
+        FragmentActivity act = (FragmentActivity) view.getContext();
+        mapLayout = act.findViewById(R.id.main_map_container);
+        rightLayout = act.findViewById(R.id.right_side_panel_container);
+        leftLayout = act.findViewById(R.id.left_side_panel_container);
+        parent = act.findViewById(R.id.map_parent);
 
         pHeight = parent.getHeight();
         pWidth = parent.getWidth();
 
-        sideHandle = ((FragmentActivity) view.getContext())
-                .findViewById(R.id.sidepanehandle_background);
-        bottomHandle = ((FragmentActivity) view.getContext())
+        sideHandle = act.findViewById(R.id.sidepanehandle_background);
+        bottomHandle = act
                 .findViewById(R.id.sidepanehandle_background_portrait);
 
         sideHandle.setOnTouchListener(this);
@@ -143,10 +139,10 @@ class SidePane implements OnTouchListener {
                 int abHeight = mapView.getActionBarHeight();
                 if (Double.compare(heightFraction,
                         DropDownReceiver.FULL_HEIGHT) == 0) {
-                    LayoutParams sidePanelLP = (LayoutParams) sideLayout
+                    LayoutParams sidePanelLP = (LayoutParams) rightLayout
                             .getLayoutParams();
                     sidePanelLP.topMargin = hidden ? 0 : abHeight;
-                    sideLayout.setLayoutParams(sidePanelLP);
+                    rightLayout.setLayoutParams(sidePanelLP);
                 }
                 mapLayout.setPadding(0, leftDD == null || hidden ? 0 : abHeight,
                         0, 0);
@@ -171,7 +167,7 @@ class SidePane implements OnTouchListener {
                         .getWidth();
 
         LayoutParams mapPanelLP;
-        LayoutParams sidePanelLP;
+        LayoutParams rightPanelLP, leftPanelLP;
 
         // make sure that the drop downs width fraction falls between
         // NO_WIDTH and FULL_WIDTH
@@ -182,6 +178,8 @@ class SidePane implements OnTouchListener {
         // NO_HEIGHT and FULL_HEIGHT
         double heightFraction = Math.max(DropDownReceiver.NO_HEIGHT,
                 Math.min(dd.getHeightFraction(), DropDownReceiver.FULL_HEIGHT));
+
+        double leftWidth, leftHeight;
 
         final int width = pWidth;
         final int height = pHeight;
@@ -205,9 +203,13 @@ class SidePane implements OnTouchListener {
                 w = (int) (width * widthFraction);
                 h = (int) (height * heightFraction);
             }
-            sidePanelLP = new LayoutParams(w, h);
-            sidePanelLP.leftMargin = x;
-            sidePanelLP.topMargin = y;
+            rightPanelLP = new LayoutParams(w, h);
+            rightPanelLP.leftMargin = x;
+            rightPanelLP.topMargin = y;
+            leftPanelLP = new LayoutParams(mapPanelLP);
+            leftPanelLP.topMargin = y;
+            leftWidth = 1 - widthFraction;
+            leftHeight = heightFraction;
         } else {
             int x = 0, y, w, h;
             if (Double.compare(heightFraction,
@@ -228,28 +230,41 @@ class SidePane implements OnTouchListener {
                 w = (int) (width * widthFraction);
                 h = (int) (height * heightFraction);
             }
-            sidePanelLP = new LayoutParams(w, h);
-            sidePanelLP.leftMargin = x;
-            sidePanelLP.topMargin = y;
+            rightPanelLP = new LayoutParams(w, h);
+            rightPanelLP.leftMargin = x;
+            rightPanelLP.topMargin = y;
+            leftPanelLP = new LayoutParams(mapPanelLP);
+            leftPanelLP.leftMargin = x;
+            leftWidth = widthFraction;
+            leftHeight = 1 - heightFraction;
         }
 
         this.widthFraction = widthFraction;
         this.heightFraction = heightFraction;
 
         mapLayout.setLayoutParams(mapPanelLP);
-        sideLayout.setLayoutParams(sidePanelLP);
+        rightLayout.setLayoutParams(rightPanelLP);
+        leftLayout.setLayoutParams(leftPanelLP);
+
+        // XXX - In order to keep the map surface view behaving properly we
+        // need to hide the map view when it's no longer visible
+        // See ATAK-14582
+        mapView.setVisibility(mapPanelLP.width == 0 || mapPanelLP.height == 0
+                ? View.GONE : View.VISIBLE);
 
         refresh(prevValue);
 
         //By shear virtue if the drawer size changes, then we probably want to tell the dropdown.
-        if (dd != null) {
+        if (dd != null)
             dd.setDimensions(widthFraction, heightFraction);
-        }
+        if (leftDD != null)
+            leftDD.setDimensions(leftWidth, leftHeight);
 
         //By shear virtue of calling open, lets just say for sake of argument, that it might be visible?.
-        if (dd != null) {
+        if (dd != null)
             dd.setVisibility(true);
-        }
+        if (leftDD != null)
+            leftDD.setVisibility(true);
 
         //Nobody likes a handle on when the widthFraction is something other than 0.   Thats just rude.
 
@@ -277,7 +292,8 @@ class SidePane implements OnTouchListener {
                         .getWidth();
 
         contractSidePane();
-        sideLayout.removeAllViews();
+        leftLayout.removeAllViews();
+        rightLayout.removeAllViews();
 
         widthFraction = DropDownReceiver.NO_WIDTH;
         heightFraction = DropDownReceiver.FULL_HEIGHT;
@@ -343,13 +359,16 @@ class SidePane implements OnTouchListener {
         mapLayout.setLayoutParams(mapPanelLP);
 
         // no margin required
-        LayoutParams sidePanelLP = (LayoutParams) sideLayout
+        LayoutParams sidePanelLP = (LayoutParams) rightLayout
                 .getLayoutParams();
         sidePanelLP.topMargin = 0;
         sidePanelLP.leftMargin = 0;
         sidePanelLP.width = 0;
         sidePanelLP.height = 0;
-        sideLayout.setLayoutParams(sidePanelLP);
+        rightLayout.setLayoutParams(sidePanelLP);
+
+        // Show map view again in case visibility was turned off
+        mapView.setVisibility(View.VISIBLE);
     }
 
     private void refresh(final int prevValue) {

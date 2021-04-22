@@ -314,7 +314,7 @@ public class DeviceProfileOperation extends HTTPOperation {
         int len;
         byte[] buf = new byte[8192];
         try (OutputStream fos = IOProviderFactory.getOutputStream(downloaded);
-             InputStream in = resEntity.getContent()) {
+                InputStream in = resEntity.getContent()) {
             while ((len = in.read(buf)) > 0) {
                 fos.write(buf, 0, len);
 

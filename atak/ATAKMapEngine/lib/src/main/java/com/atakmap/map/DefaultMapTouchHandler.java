@@ -112,7 +112,7 @@ public class DefaultMapTouchHandler implements MapTouchHandler {
         this.scaleGestures.onTouchEvent(event);
 
         if(this.scaleGestures.isInProgress() && event.getPointerCount() != 2)
-            this.scaleGestures = new ScaleGestureDetector(view.getContext(), new PinchZoomScaleGesture(view.getMapController()));
+            this.scaleGestures = new ScaleGestureDetector(view.getContext(), new PinchZoomScaleGesture(this.controller));
         this.gestureDetector.onTouchEvent(event);
         return true;
     }
@@ -286,7 +286,7 @@ public class DefaultMapTouchHandler implements MapTouchHandler {
             //final double zoomLevel = TATouchController.this.mapView.getMapView().getZoomLevelAsDouble();
             //zoomByAbout( Math.floor(zoomLevel) + 1, e.getX(), e.getY());
             // XXX - 
-            this.map.getMapController().zoomBy(2, e.getX(), e.getY(), false);
+            DefaultMapTouchHandler.this.controller.zoomBy(2, e.getX(), e.getY(), false);
             return true;
         }
 
@@ -323,7 +323,7 @@ public class DefaultMapTouchHandler implements MapTouchHandler {
             {
                 // check if this is not a long press event
                 if( !customLongPress.isLongPressEvent( e2, distanceX, distanceY))
-                    DefaultMapTouchHandler.this.map.getMapController().panBy(distanceX, distanceY, false);
+                    DefaultMapTouchHandler.this.controller.panBy(distanceX, distanceY, false);
             }
             return true;
         }

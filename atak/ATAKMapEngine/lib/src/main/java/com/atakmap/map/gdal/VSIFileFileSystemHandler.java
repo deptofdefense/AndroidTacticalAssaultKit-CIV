@@ -101,6 +101,10 @@ public final class VSIFileFileSystemHandler extends VSIJFileFilesystemHandler {
             }
             statBuffer.st_nlink = 0; // no links
             statBuffer.st_mode = 0x666; // r+w
+            if(IOProviderFactory.isDirectory(file)) {
+                final int S_IFDIR = 0040000;
+                statBuffer.st_mode |= S_IFDIR;
+            }
             return 0;
         }
         return -1;

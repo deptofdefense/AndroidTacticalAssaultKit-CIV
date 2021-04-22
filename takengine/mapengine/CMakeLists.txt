@@ -91,6 +91,7 @@ set (takengine_COMMON_SRCS
     ${SRCDIR}/feature/DefaultSchemaDefinition.cpp
     ${SRCDIR}/feature/DrawingTool.cpp
     ${SRCDIR}/feature/Envelope2.cpp
+    ${SRCDIR}/feature/FalconViewFeatureDataSource.cpp
     ${SRCDIR}/feature/FDB.cpp
     ${SRCDIR}/feature/Feature.cpp
     ${SRCDIR}/feature/Feature2.cpp
@@ -125,7 +126,9 @@ set (takengine_COMMON_SRCS
     ${SRCDIR}/feature/Point2.cpp
     ${SRCDIR}/feature/Polygon.cpp
     ${SRCDIR}/feature/Polygon2.cpp
+    ${SRCDIR}/feature/QuadBlob2.cpp
     ${SRCDIR}/feature/ShapefileDriverDefinition2.cpp
+    ${SRCDIR}/feature/SpatialCalculator2.cpp
     ${SRCDIR}/feature/Style.cpp
 
     #Formats
@@ -144,6 +147,7 @@ set (takengine_COMMON_SRCS
     ${SRCDIR}/formats/glues/tessmono.c
     ${SRCDIR}/formats/s3tc/S3TC.cpp
     ${SRCDIR}/formats/wmm/GeomagnetismLibrary.cpp
+    ${SRCDIR}/formats/msaccess/MsAccessDatabaseFactory.cpp
     
     # Math
     ${SRCDIR}/math/AABB.cpp
@@ -187,6 +191,7 @@ set (takengine_COMMON_SRCS
     ${SRCDIR}/raster/mosaic/FilterMosaicDatabaseCursor2.cpp
     ${SRCDIR}/raster/mosaic/MosaicDatabase2.cpp
     ${SRCDIR}/raster/mosaic/MultiplexingMosaicDatabaseCursor2.cpp
+    ${SRCDIR}/raster/tilematrix/TileMatrix.cpp
 
     # Renderer
     ${SRCDIR}/renderer/AsyncBitmapLoader2.cpp
@@ -214,13 +219,21 @@ set (takengine_COMMON_SRCS
     ${SRCDIR}/renderer/Shader.cpp
     ${SRCDIR}/renderer/Skirt.cpp
     ${SRCDIR}/renderer/Tessellate.cpp
+    ${SRCDIR}/renderer/core/ColorControl.cpp
     ${SRCDIR}/renderer/core/GLAntiMeridianHelper.cpp
+	${SRCDIR}/renderer/core/GLAtmosphere.cpp
+    ${SRCDIR}/renderer/core/GLDiagnostics.cpp
+    ${SRCDIR}/renderer/core/GLDirtyRegion.cpp
+	${SRCDIR}/renderer/core/GLGlobe.cpp
+	${SRCDIR}/renderer/core/GLGlobeBase.cpp
+    ${SRCDIR}/renderer/core/GLGlobeSurfaceRenderer.cpp
     ${SRCDIR}/renderer/core/GLLayer2.cpp
     ${SRCDIR}/renderer/core/GLLayerFactory2.cpp
     ${SRCDIR}/renderer/core/GLLayerSpi2.cpp
     ${SRCDIR}/renderer/core/GLMapRenderGlobals.cpp
     ${SRCDIR}/renderer/core/GLMapRenderable2.cpp
     ${SRCDIR}/renderer/core/GLMapView2.cpp
+    ${SRCDIR}/renderer/core/GLMapViewDebug.cpp
     ${SRCDIR}/renderer/elevation/ElMgrTerrainRenderService.cpp
     ${SRCDIR}/renderer/elevation/GLTerrainTile.cpp
     ${SRCDIR}/renderer/elevation/TerrainRenderService.cpp
@@ -414,6 +427,7 @@ set (takengine_WINDOWS_SRCS
     ${SRCDIR}/renderer/map/GLAsynchronousMapRenderable.cpp
     ${SRCDIR}/renderer/core/GLAsynchronousMapRenderable2.cpp
     ${SRCDIR}/renderer/core/GLAsynchronousMapRenderable3.cpp
+    ${SRCDIR}/renderer/core/GLDiagnostics.cpp
     ${SRCDIR}/renderer/core/GLContentIndicator.cpp
     ${SRCDIR}/renderer/core/GLLabel.cpp
     ${SRCDIR}/renderer/core/GLLabelManager.cpp
@@ -655,6 +669,11 @@ elseif (ANDROID)
     set (takengine_INCS ${takengine_COMMON_INCS} ${takengine_ANDROID_INCS})
 endif ()
 
+#
+# Optimization flags
+#
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O3")
 
 link_directories (${takengine_LDIRS})
 add_library (takengine SHARED ${takengine_SRCS})

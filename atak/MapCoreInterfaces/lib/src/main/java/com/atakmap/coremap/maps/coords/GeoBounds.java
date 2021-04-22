@@ -166,8 +166,10 @@ public class GeoBounds {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         GeoBounds geoBounds = (GeoBounds) o;
         return Double.compare(geoBounds._south, _south) == 0 &&
                 Double.compare(geoBounds._west, _west) == 0 &&

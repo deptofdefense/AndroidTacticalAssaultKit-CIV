@@ -340,6 +340,9 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
                         .getSerializableExtra("hier_mode");
                 final List<String> listItemPaths = intent
                         .getStringArrayListExtra("list_item_paths");
+                final List<String> selectedPaths = intent
+                        .getStringArrayListExtra(
+                                "hier_userselect_selected_paths");
                 boolean refresh = intent.getBooleanExtra("refresh", false);
                 boolean isRootList = intent.getBooleanExtra("isRootList",
                         false);
@@ -371,7 +374,6 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
                     final List<String> handlerMapItemUIDs = intent
                             .getStringArrayListExtra(
                                     "hier_userselect_mapitems_uids");
-
                     try {
                         Log.d(TAG, "Creating User Select Handler of type: "
                                 + handlerClassName
@@ -426,6 +428,8 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
                         userSelectHandler, this);
                 this.adapter.registerListener();
                 this.content.setAdapter(this.adapter);
+                if (selectedPaths != null)
+                    this.adapter.setSelectedPaths(selectedPaths);
                 setCurrentMode(setMode);
                 overlayManagerDropDown.showDropDown();
                 updateCheckAll(HierarchyListAdapter.UNCHECKED);
@@ -536,10 +540,8 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
         }
 
         // Cancel multi-select mode
-        else if (id == R.id.hierarchy_back_out_mode) {
-            if (this.adapter != null)
-                this.adapter.setSelectHandler(null);
-        }
+        else if (id == R.id.hierarchy_back_out_mode)
+            cancelUserSelection();
 
         // Finish multi-select mode
         else if (id == R.id.hierarchy_process_user_selected_button) {
@@ -568,6 +570,7 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
 
         // Close OM
         else if (id == R.id.close_hmv) {
+            cancelUserSelection();
             closeDropDown(false);
         }
     }
@@ -611,7 +614,7 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
                     if (mode == HIERARCHY_MODE.NONE)
                         closeDropDown(false);
                     else if (mode == HIERARCHY_MODE.MULTISELECT)
-                        adapter.clearHandler();
+                        cancelUserSelection();
                     else
                         setPreviousMode();
                     return;
@@ -623,17 +626,17 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
         } else if ((buttonId == R.id.hierarchy_back_button || buttonId == 0)
                 && mode == HIERARCHY_MODE.MULTISELECT) {
             // else if at root level, exit any special modes
-            adapter.clearHandler();
-        } else if (buttonId == 0 && mode == HIERARCHY_MODE.TOOL_SELECT
-                && this.adapter != null) {
-            // Back button hit on tool select root list - simulate a "Cancel"
-            this.adapter.setHierManView(content);
-            if (!this.adapter.processUserSelections())
-                closeDropDown();
+            cancelUserSelection();
         } else if (buttonId == 0) {
             // Device back button hit on root list
+            cancelUserSelection();
             closeDropDown();
         }
+    }
+
+    private void cancelUserSelection() {
+        if (adapter != null && adapter.getSelectHandler() != null)
+            adapter.cancelUserSelection();
     }
 
     private void refreshDropDown(Intent intent) {
@@ -762,7 +765,8 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
                         File exportDir = FileSystemUtils
                                 .getItem(FileSystemUtils.EXPORT_DIRECTORY);
 
-                        if (exportDir != null && IOProviderFactory.exists(exportDir)
+                        if (exportDir != null
+                                && IOProviderFactory.exists(exportDir)
                                 && IOProviderFactory.isDirectory(exportDir))
                             startDirectory = exportDir.getAbsolutePath();
                         else
@@ -1094,7 +1098,7 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
     /**
      * This sets up the Overlay Manager Action bar to the current mode
      */
-   public void setViewToMode() {
+    public void setViewToMode() {
         if (adapter == null || !overlayManagerDropDown.isVisible())
             return;
 

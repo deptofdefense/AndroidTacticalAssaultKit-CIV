@@ -11,6 +11,7 @@
 #include "feature/LineString.h"
 #include "feature/Point.h"
 #include "feature/Point2.h"
+#include "feature/SpatialCalculator2.h"
 #include "math/Point2.h"
 
 #include "core/AtakMapView.h"
@@ -24,7 +25,6 @@
 #include "renderer/feature/GLBatchPoint3.h"
 #include "renderer/feature/GLGeometry.h"
 #include "renderer/GLMatrix.h"
-#include "renderer/map/GLMapView.h"
 #include "util/ConfigOptions.h"
 #include "util/Distance.h"
 #include "util/Logging.h"
@@ -558,25 +558,45 @@ TAKErr GLBatchGeometryRenderer3::setBatch(Collection<GLBatchGeometry3 *> &value)
         std::sort(this->batchPoints.begin(), this->batchPoints.end(), cmp);
     }
 
-    std::set<GLBatchGeometry3 *, FidComparator>::iterator iter;
-
-    for (iter = this->sortedLines.begin(); iter != this->sortedLines.end(); iter++) {
+    TAK::Engine::Feature::Envelope2 mbb;
+    bool initMbb = false;
+    for (auto iter = this->sortedLines.begin(); iter != this->sortedLines.end(); iter++) {
         auto *line = static_cast<GLBatchLineString3 *>(*iter);
-        if (line->altitudeMode == TAK::Engine::Feature::AltitudeMode::TEAM_ClampToGround)
+        if (line->altitudeMode == TAK::Engine::Feature::AltitudeMode::TEAM_ClampToGround) {
             surfaceLines.push_back(line);
-        else
+            TAK::Engine::Feature::Envelope2 line_mbb(line->mbb.minX, line->mbb.minY, line->mbb.minZ, line->mbb.maxX, line->mbb.maxY, line->mbb.maxZ);
+            if (initMbb) {
+                mbb = line_mbb;
+                initMbb = false;
+            } else {
+                mbb = TAK::Engine::Feature::SpatialCalculator_union(line_mbb, mbb);
+            }
+        } else {
             spriteLines.push_back(line);
+    }
     }
     this->sortedLines.clear();
 
-    for (iter = this->sortedPolys.begin(); iter != this->sortedPolys.end(); iter++) {
+    for (auto iter = this->sortedPolys.begin(); iter != this->sortedPolys.end(); iter++) {
         auto *poly = static_cast<GLBatchPolygon3 *>(*iter);
-        if (poly->altitudeMode == TAK::Engine::Feature::AltitudeMode::TEAM_ClampToGround)
+        if (poly->altitudeMode == TAK::Engine::Feature::AltitudeMode::TEAM_ClampToGround) {
             surfacePolys.push_back(poly);
-        else
+            TAK::Engine::Feature::Envelope2 poly_mbb(poly->mbb.minX, poly->mbb.minY, poly->mbb.minZ, poly->mbb.maxX, poly->mbb.maxY, poly->mbb.maxZ);
+            if (initMbb) {
+                mbb = poly_mbb;
+                initMbb = false;
+            } else {
+                mbb = TAK::Engine::Feature::SpatialCalculator_union(poly_mbb, mbb);
+            }
+        } else {
             spritePolys.push_back(poly);
     }
+    }
     this->sortedPolys.clear();
+
+    surfaceCoverage.clear();
+    if(!initMbb)
+        surfaceCoverage.push_back(mbb);
 
     batchState.sprites.srid = -1;
     batchState.surface.srid = -1;
@@ -622,25 +642,45 @@ TAKErr GLBatchGeometryRenderer3::setBatch(Collection<SharedGLBatchGeometryPtr> &
         std::sort(this->batchPoints.begin(), this->batchPoints.end(), cmp);
     }
 
-    std::set<GLBatchGeometry3 *, FidComparator>::iterator iter;
-
-    for (iter = this->sortedLines.begin(); iter != this->sortedLines.end(); iter++) {
+    TAK::Engine::Feature::Envelope2 mbb;
+    bool initMbb = false;
+    for (auto iter = this->sortedLines.begin(); iter != this->sortedLines.end(); iter++) {
         auto *line = static_cast<GLBatchLineString3 *>(*iter);
-        if (line->altitudeMode == TAK::Engine::Feature::AltitudeMode::TEAM_ClampToGround)
+        if (line->altitudeMode == TAK::Engine::Feature::AltitudeMode::TEAM_ClampToGround) {
             surfaceLines.push_back(line);
-        else
+            TAK::Engine::Feature::Envelope2 line_mbb(line->mbb.minX, line->mbb.minY, line->mbb.minZ, line->mbb.maxX, line->mbb.maxY, line->mbb.maxZ);
+            if (initMbb) {
+                mbb = line_mbb;
+                initMbb = false;
+            } else {
+                mbb = TAK::Engine::Feature::SpatialCalculator_union(line_mbb, mbb);
+            }
+        } else {
             spriteLines.push_back(line);
+    }
     }
     this->sortedLines.clear();
 
-    for (iter = this->sortedPolys.begin(); iter != this->sortedPolys.end(); iter++) {
+    for (auto iter = this->sortedPolys.begin(); iter != this->sortedPolys.end(); iter++) {
         auto *poly = static_cast<GLBatchPolygon3 *>(*iter);
-        if (poly->altitudeMode == TAK::Engine::Feature::AltitudeMode::TEAM_ClampToGround)
+        if (poly->altitudeMode == TAK::Engine::Feature::AltitudeMode::TEAM_ClampToGround) {
             surfacePolys.push_back(poly);
-        else
+            TAK::Engine::Feature::Envelope2 poly_mbb(poly->mbb.minX, poly->mbb.minY, poly->mbb.minZ, poly->mbb.maxX, poly->mbb.maxY, poly->mbb.maxZ);
+            if (initMbb) {
+                mbb = poly_mbb;
+                initMbb = false;
+            } else {
+                mbb = TAK::Engine::Feature::SpatialCalculator_union(poly_mbb, mbb);
+            }
+        } else {
             spritePolys.push_back(poly);
     }
+    }
     this->sortedPolys.clear();
+
+    surfaceCoverage.clear();
+    if(!initMbb)
+        surfaceCoverage.push_back(mbb);
 
     batchState.surface.srid = -1;
     batchState.sprites.srid = -1;
@@ -960,42 +1000,42 @@ TAKErr GLBatchGeometryRenderer3::extrudePoints() NOTHROWS {
     return code;
 }
 
-void GLBatchGeometryRenderer3::draw(const GLMapView2 &view, const int renderPass) NOTHROWS
+void GLBatchGeometryRenderer3::draw(const GLGlobeBase &view, const int renderPass) NOTHROWS
 {
     const bool depthEnabled = glIsEnabled(GL_DEPTH_TEST) != 0;
-    const bool surface = !!(renderPass & GLMapView2::Surface);
-    const bool sprites = !!(renderPass & GLMapView2::Sprites);
-    if (surface || (view.drawTilt == 0.0))
+    const bool surface = !!(renderPass & GLGlobeBase::Surface);
+    const bool sprites = !!(renderPass & GLGlobeBase::Sprites);
+    if (surface || (view.renderPass->drawTilt == 0.0))
         glDisable(GL_DEPTH_TEST);
     
     const int terrainVersion = view.getTerrainVersion();
 
     // match batches as dirty
-    if (surface && batchState.surface.srid != view.drawSrid) {
+    if (surface && batchState.surface.srid != view.renderPass->drawSrid) {
         // reset relative to center
-        batchState.surface.centroid.latitude = view.drawLat;
-        batchState.surface.centroid.longitude = view.drawLng;
-        view.scene.projection->forward(&batchState.surface.centroidProj, batchState.surface.centroid);
-        batchState.surface.srid = view.drawSrid;
+        batchState.surface.centroid.latitude = view.renderPass->drawLat;
+        batchState.surface.centroid.longitude = view.renderPass->drawLng;
+        view.renderPass->scene.projection->forward(&batchState.surface.centroidProj, batchState.surface.centroid);
+        batchState.surface.srid = view.renderPass->drawSrid;
 
         batchState.surface.localFrame.setToTranslate(batchState.surface.centroidProj.x, batchState.surface.centroidProj.y, batchState.surface.centroidProj.z);
 
         // mark batches dirty
         rebuildBatchBuffers = 0xFFFFFFFF;
-        batchTerrainVersion = view.getTerrainVersion();
+        batchTerrainVersion = terrainVersion;
     }
-    if (sprites && batchState.sprites.srid != view.drawSrid) {
+    if (sprites && batchState.sprites.srid != view.renderPass->drawSrid) {
         // reset relative to center
-        batchState.sprites.centroid.latitude = view.drawLat;
-        batchState.sprites.centroid.longitude = view.drawLng;
-        view.scene.projection->forward(&batchState.sprites.centroidProj, batchState.sprites.centroid);
-        batchState.sprites.srid = view.drawSrid;
+        batchState.sprites.centroid.latitude = view.renderPass->drawLat;
+        batchState.sprites.centroid.longitude = view.renderPass->drawLng;
+        view.renderPass->scene.projection->forward(&batchState.sprites.centroidProj, batchState.sprites.centroid);
+        batchState.sprites.srid = view.renderPass->drawSrid;
 
         batchState.sprites.localFrame.setToTranslate(batchState.sprites.centroidProj.x, batchState.sprites.centroidProj.y, batchState.sprites.centroidProj.z);
 
         // mark batches dirty
         rebuildBatchBuffers = 0xFFFFFFFF;
-        batchTerrainVersion = view.getTerrainVersion();
+        batchTerrainVersion = terrainVersion;
     }
     
     if (batchTerrainVersion != terrainVersion) {
@@ -1015,9 +1055,12 @@ void GLBatchGeometryRenderer3::draw(const GLMapView2 &view, const int renderPass
         glEnable(GL_DEPTH_TEST);
 }
 
-void GLBatchGeometryRenderer3::drawSurface(const GLMapView2 &view) NOTHROWS
+void GLBatchGeometryRenderer3::drawSurface(const GLGlobeBase &view) NOTHROWS
 {
-    const bool is3D = view.scene.projection->is3D();
+    if (!(rebuildBatchBuffers&GLGlobeBase::Surface) && !surfaceCoverage.intersects(TAK::Engine::Feature::Envelope2(view.renderPass->westBound, view.renderPass->southBound, 0.0, view.renderPass->eastBound, view.renderPass->northBound, 0.0)))
+        return;
+
+    const bool is3D = view.renderPass->scene.projection->is3D();
 
     // reset the state to the defaults
     //C# TO C++ CONVERTER TODO TASK: There is no C++ equivalent to 'unchecked' in this context:
@@ -1041,7 +1084,7 @@ void GLBatchGeometryRenderer3::drawSurface(const GLMapView2 &view) NOTHROWS
         try {
             float modelView[16u];
             int vertType;
-            if (view.drawMapResolution < view.hardwareTransformResolutionThreshold) {
+            if (view.renderPass->drawMapResolution < 1.0/*view.hardwareTransformResolutionThreshold*/) {
                 // XXX - force all polygons projected as pixels as stroking does
                 //       not work properly. since vertices are in projected
                 //       coordinate space units, width also needs to be
@@ -1054,21 +1097,21 @@ void GLBatchGeometryRenderer3::drawSurface(const GLMapView2 &view) NOTHROWS
                 atakmap::renderer::GLMatrix::identity(modelView);
             } else {
                 vertType = GLGeometry::VERTICES_PROJECTED;
-                memcpy(modelView, view.sceneModelForwardMatrix, sizeof(float) * 16u);
+                memcpy(modelView, view.renderPass->sceneModelForwardMatrix, sizeof(float) * 16u);
             }
 
             int hints = GLRenderBatch2::Untextured;
-            if (!(vertType == GLGeometry::VERTICES_PROJECTED && view.scene.projection->is3D())) hints |= GLRenderBatch2::TwoDimension;
+            if (!(vertType == GLGeometry::VERTICES_PROJECTED && view.renderPass->scene.projection->is3D())) hints |= GLRenderBatch2::TwoDimension;
 
             this->batch->begin(hints);
             {
                 float proj[16];
-                atakmap::renderer::GLMatrix::orthoM(proj, (float)view.left, (float)view.right, (float)view.bottom, (float)view.top, (float)view.scene.camera.near, (float)view.scene.camera.far);
+                atakmap::renderer::GLMatrix::orthoM(proj, (float)view.renderPass->left, (float)view.renderPass->right, (float)view.renderPass->bottom, (float)view.renderPass->top, (float)view.renderPass->scene.camera.near, (float)view.renderPass->scene.camera.far);
                 this->batch->setMatrix(GL_PROJECTION, proj);
                 this->batch->setMatrix(GL_MODELVIEW, modelView);
             }
             for (auto poly = this->surfacePolys.begin(); poly != this->surfacePolys.end(); poly++)
-                (*poly)->batch(view, GLMapView2::Surface, *this->batch, vertType);
+                (*poly)->batch(view, GLGlobeBase::Surface, *this->batch, vertType);
             this->batch->end();
         }
         catch (std::out_of_range &e) {
@@ -1079,7 +1122,7 @@ void GLBatchGeometryRenderer3::drawSurface(const GLMapView2 &view) NOTHROWS
     // lines
     if (!this->surfaceLines.empty())
     {
-        if (rebuildBatchBuffers&GLMapView2::Surface) {
+        if (rebuildBatchBuffers&GLGlobeBase::Surface) {
             for (auto it = surfaceLineBuffers.begin(); it != surfaceLineBuffers.end(); it++)
                 glDeleteBuffers(1u, &(*it).vbo);
             surfaceLineBuffers.clear();
@@ -1090,7 +1133,7 @@ void GLBatchGeometryRenderer3::drawSurface(const GLMapView2 &view) NOTHROWS
     }
 }
 
-void GLBatchGeometryRenderer3::drawSprites(const GLMapView2 &view) NOTHROWS
+void GLBatchGeometryRenderer3::drawSprites(const GLGlobeBase &view) NOTHROWS
 {
     // points
 
@@ -1131,7 +1174,7 @@ void GLBatchGeometryRenderer3::drawSprites(const GLMapView2 &view) NOTHROWS
                 draw_points_.push_back(*node);
             }
             node = this->loadingPoints.erase(node);
-            rebuildBatchBuffers |= GLMapView2::Sprites;
+            rebuildBatchBuffers |= GLGlobeBase::Sprites;
         } else {
             node++;
         }
@@ -1150,7 +1193,7 @@ void GLBatchGeometryRenderer3::drawSprites(const GLMapView2 &view) NOTHROWS
         try {
             float modelView[16u];
             int vertType;
-            if (view.drawMapResolution < view.hardwareTransformResolutionThreshold) {
+            if (view.renderPass->drawMapResolution < 1.0/*view.hardwareTransformResolutionThreshold*/) {
                 // XXX - force all polygons projected as pixels as stroking does
                 //       not work properly. since vertices are in projected
                 //       coordinate space units, width also needs to be
@@ -1163,21 +1206,21 @@ void GLBatchGeometryRenderer3::drawSprites(const GLMapView2 &view) NOTHROWS
                 atakmap::renderer::GLMatrix::identity(modelView);
             } else {
                 vertType = GLGeometry::VERTICES_PROJECTED;
-                memcpy(modelView, view.sceneModelForwardMatrix, sizeof(float) * 16u);;
+                memcpy(modelView, view.renderPass->sceneModelForwardMatrix, sizeof(float) * 16u);;
             }
 
             int hints = GLRenderBatch2::Untextured;
-            if (!(vertType == GLGeometry::VERTICES_PROJECTED && view.scene.projection->is3D())) hints |= GLRenderBatch2::TwoDimension;
+            if (!(vertType == GLGeometry::VERTICES_PROJECTED && view.renderPass->scene.projection->is3D())) hints |= GLRenderBatch2::TwoDimension;
 
             this->batch->begin(hints);
             {
                 float proj[16];
-                atakmap::renderer::GLMatrix::orthoM(proj, (float)view.left, (float)view.right, (float)view.bottom, (float)view.top, (float)view.scene.camera.near, (float)view.scene.camera.far);
+                atakmap::renderer::GLMatrix::orthoM(proj, (float)view.renderPass->left, (float)view.renderPass->right, (float)view.renderPass->bottom, (float)view.renderPass->top, (float)view.renderPass->scene.camera.near, (float)view.renderPass->scene.camera.far);
                 this->batch->setMatrix(GL_PROJECTION, proj);
                 this->batch->setMatrix(GL_MODELVIEW, modelView);
             }
             for (auto poly = this->spritePolys.begin(); poly != this->spritePolys.end(); poly++)
-                (*poly)->batch(view, GLMapView2::Surface, *this->batch, vertType);
+                (*poly)->batch(view, GLGlobeBase::Surface, *this->batch, vertType);
             this->batch->end();
         } catch (std::out_of_range &e) {
             Util::Logger_log(Util::LogLevel::TELL_Error, "Error drawing sprites: %s", e.what());
@@ -1186,7 +1229,7 @@ void GLBatchGeometryRenderer3::drawSprites(const GLMapView2 &view) NOTHROWS
 
     // lines
     if (!this->spriteLines.empty()) {
-        if (rebuildBatchBuffers&GLMapView2::Sprites) {
+        if (rebuildBatchBuffers&GLGlobeBase::Sprites) {
             for (auto it = spriteLineBuffers.begin(); it != spriteLineBuffers.end(); it++)
                 glDeleteBuffers(1u, &(*it).vbo);
             spriteLineBuffers.clear();
@@ -1197,7 +1240,7 @@ void GLBatchGeometryRenderer3::drawSprites(const GLMapView2 &view) NOTHROWS
     }
 
     if (!this->batchPoints.empty() || !this->pointsBuffers.empty()) {
-        if (rebuildBatchBuffers&GLMapView2::Sprites) {
+        if (rebuildBatchBuffers&GLGlobeBase::Sprites) {
             for (auto it = pointsBuffers.begin(); it != pointsBuffers.end(); it++)
                 glDeleteBuffers(1u, &(*it).vbo);
             pointsBuffers.clear();
@@ -1213,10 +1256,10 @@ void GLBatchGeometryRenderer3::drawSprites(const GLMapView2 &view) NOTHROWS
 
 int GLBatchGeometryRenderer3::getRenderPass() NOTHROWS
 {
-    return GLMapView2::Surface | GLMapView2::Sprites;
+    return GLGlobeBase::Surface | GLGlobeBase::Sprites;
 }
 
-TAKErr GLBatchGeometryRenderer3::buildLineBuffers(std::vector<LinesBuffer> &linesBuf, const GLMapView2 &view, const BatchState &ctx, const std::list<GLBatchLineString3 *> &lines) NOTHROWS {
+TAKErr GLBatchGeometryRenderer3::buildLineBuffers(std::vector<LinesBuffer> &linesBuf, const GLGlobeBase &view, const BatchState &ctx, const std::list<GLBatchLineString3 *> &lines) NOTHROWS {
     TAKErr code(TE_Ok);
 
     try {
@@ -1265,7 +1308,7 @@ TAKErr GLBatchGeometryRenderer3::buildLineBuffers(std::vector<LinesBuffer> &line
     vbuf.put<uint8_t>(line.stroke[i].color.argb&0xFF); \
     vbuf.put<uint8_t>((line.stroke[i].color.argb>>24u)&0xFF); \
     vbuf.put<uint8_t>(n); \
-    vbuf.put<uint8_t>(static_cast<uint8_t>(std::min(line.stroke[i].width/4.0f, 255.0f))); \
+    vbuf.put<uint8_t>(static_cast<uint8_t>(std::min(line.stroke[i].width/4.0f*GLMapRenderGlobals_getRelativeDisplayDensity(), 255.0f))); \
     vbuf.put<uint8_t>(dir); \
     vbuf.put<uint32_t>(line.stroke[i].factor ? static_cast<uint16_t>(line.stroke[i].pattern) : 0xFFFFu); \
     vbuf.put<uint8_t>(line.stroke[i].factor ? static_cast<uint8_t>(line.stroke[i].factor) : 0x1u);
@@ -1303,7 +1346,7 @@ TAKErr GLBatchGeometryRenderer3::buildLineBuffers(std::vector<LinesBuffer> &line
 
     return code;
 }
-TAKErr GLBatchGeometryRenderer3::drawLineBuffers(const GLMapView2 &view, const BatchState &ctx, const std::vector<LinesBuffer> &buf) NOTHROWS {
+TAKErr GLBatchGeometryRenderer3::drawLineBuffers(const GLGlobeBase &view, const BatchState &ctx, const std::vector<LinesBuffer> &buf) NOTHROWS {
     TAKErr code(TE_Ok);
 
     if (!this->lineShader.base.handle) {
@@ -1342,11 +1385,11 @@ TAKErr GLBatchGeometryRenderer3::drawLineBuffers(const GLMapView2 &view, const B
         Matrix2 mvp;
         // projection
         float matrixF[16u];
-        atakmap::renderer::GLMatrix::orthoM(matrixF, (float)view.left, (float)view.right, (float)view.bottom, (float)view.top, (float)view.scene.camera.near, (float)view.scene.camera.far);
+        atakmap::renderer::GLMatrix::orthoM(matrixF, (float)view.renderPass->left, (float)view.renderPass->right, (float)view.renderPass->bottom, (float)view.renderPass->top, (float)view.renderPass->scene.camera.near, (float)view.renderPass->scene.camera.far);
         for(std::size_t i = 0u; i < 16u; i++)
             mvp.set(i%4, i/4, matrixF[i]);
         // model-view
-        mvp.concatenate(view.scene.forwardTransform);
+        mvp.concatenate(view.renderPass->scene.forwardTransform);
         mvp.translate(ctx.centroidProj.x, ctx.centroidProj.y, ctx.centroidProj.z);
         for (std::size_t i = 0u; i < 16u; i++) {
             double v;
@@ -1403,7 +1446,7 @@ TAKErr GLBatchGeometryRenderer3::drawLineBuffers(const GLMapView2 &view, const B
     return code;
 }
 
-TAKErr GLBatchGeometryRenderer3::buildPointsBuffers(std::vector<PointsBuffer> &linesBuf, const GLMapView2 &view, const BatchState &ctx, const std::vector<GLBatchPoint3 *> &points) NOTHROWS {
+TAKErr GLBatchGeometryRenderer3::buildPointsBuffers(std::vector<PointsBuffer> &linesBuf, const GLGlobeBase &view, const BatchState &ctx, const std::vector<GLBatchPoint3 *> &points) NOTHROWS {
     TAKErr code(TE_Ok);
 
     try {
@@ -1432,7 +1475,7 @@ TAKErr GLBatchGeometryRenderer3::buildPointsBuffers(std::vector<PointsBuffer> &l
             lastTexId = point.textureId;
             point.validateProjectedLocation(view);
 
-            auto relativeScaling = static_cast<float>(1.0f / view.pixelDensity);
+            auto relativeScaling = static_cast<float>(1.0f / /*view.pixelDensity*/1.0);
 
             int textureSize = static_cast<int>(std::ceil(point.iconAtlas->getTextureSize() * relativeScaling));
             std::size_t iconSize;
@@ -1475,7 +1518,7 @@ TAKErr GLBatchGeometryRenderer3::buildPointsBuffers(std::vector<PointsBuffer> &l
 
     return code;
 }
-TAKErr GLBatchGeometryRenderer3::batchDrawPoints(const GLMapView2 &view, const BatchState &ctx) NOTHROWS
+TAKErr GLBatchGeometryRenderer3::batchDrawPoints(const GLGlobeBase &view, const BatchState &ctx) NOTHROWS
 {
     TAKErr code(TE_Ok);
 
@@ -1518,14 +1561,14 @@ TAKErr GLBatchGeometryRenderer3::batchDrawPoints(const GLMapView2 &view, const B
 
 
         float scratchMatrix[16];
-        atakmap::renderer::GLMatrix::orthoM(scratchMatrix, (float)view.left, (float)view.right, (float)view.bottom, (float)view.top, (float)view.scene.camera.near, (float)view.scene.camera.far);
+        atakmap::renderer::GLMatrix::orthoM(scratchMatrix, (float)view.renderPass->left, (float)view.renderPass->right, (float)view.renderPass->bottom, (float)view.renderPass->top, (float)view.renderPass->scene.camera.near, (float)view.renderPass->scene.camera.far);
         glUniformMatrix4fv(pointShader.uProjectionHandle, 1, false, scratchMatrix);
 
         // we will concatenate the local frame to the MapSceneModel's Model-View matrix to transform
         // from the Local Coordinate System into world coordinates before applying the model view.
         // If we do this all in double precision, then cast to single-precision, we'll avoid the
         // precision issues with trying to cast the world coordinates to float
-        Matrix2 modelView(view.scene.forwardTransform);
+        Matrix2 modelView(view.renderPass->scene.forwardTransform);
         modelView.concatenate(ctx.localFrame);
         double modelViewMxD[16];
         modelView.get(modelViewMxD, Matrix2::COLUMN_MAJOR);
@@ -1598,20 +1641,20 @@ TAKErr GLBatchGeometryRenderer3::batchDrawPoints(const GLMapView2 &view, const B
 }
 
 
-TAKErr GLBatchGeometryRenderer3::drawPoints(const TAK::Engine::Renderer::Core::GLMapView2 &view) NOTHROWS
+TAKErr GLBatchGeometryRenderer3::drawPoints(const TAK::Engine::Renderer::Core::GLGlobeBase &view) NOTHROWS
 {
     TAKErr code(TE_Ok);
 
     for (auto iter = this->draw_points_.begin(); iter != this->draw_points_.end(); iter++) {
         GLBatchPoint3 *point = *iter;
 
-        point->draw(view, GLMapView2::Sprites);
+        point->draw(view, GLGlobeBase::Sprites);
     }
 
     return code;
 }
 
-TAKErr GLBatchGeometryRenderer3::renderPointsBuffers(const GLMapView2 &view, GLBatchPointBuffer & batch_point_buffer) NOTHROWS
+TAKErr GLBatchGeometryRenderer3::renderPointsBuffers(const GLGlobeBase &view, GLBatchPointBuffer & batch_point_buffer) NOTHROWS
 {
     return TE_Ok;
 }
@@ -1634,6 +1677,8 @@ void GLBatchGeometryRenderer3::release() NOTHROWS
     this->loadingPoints.clear();
     this->draw_points_.clear();
     this->labels.clear();
+
+    this->surfaceCoverage.clear();
 
     // clear the tracking pointers
     this->geoms.clear();

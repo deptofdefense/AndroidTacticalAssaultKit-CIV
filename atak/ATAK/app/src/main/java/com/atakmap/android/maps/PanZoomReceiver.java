@@ -10,6 +10,7 @@ import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.AtakMapController;
+import com.atakmap.map.MapRenderer2;
 import com.atakmap.map.MapSceneModel;
 import com.atakmap.map.elevation.ElevationManager;
 import com.atakmap.map.layer.feature.geometry.Envelope;
@@ -97,17 +98,20 @@ public class PanZoomReceiver extends BroadcastReceiver {
 
     public static double estimateScaleToFitResolution(MapView map, Envelope mbb,
             int widthOnScreen, int heightOnScreen) {
-        AtakMapController ctrl = map.getMapController();
-        MapSceneModel centered = new MapSceneModel(map,
-                map.getProjection(),
+        final MapSceneModel sm = map.getRenderer3().getMapSceneModel(
+                false, MapRenderer2.DisplayOrigin.UpperLeft);
+        MapSceneModel centered = new MapSceneModel(map.getDisplayDpi(),
+                sm.width,
+                sm.height,
+                sm.mapProjection,
                 new GeoPoint((mbb.maxY + mbb.minY) / 2d,
                         (mbb.maxX + mbb.minX) / 2d),
-                ctrl.getFocusX(),
-                ctrl.getFocusY(),
-                map.getMapRotation(),
-                map.getMapTilt(),
-                map.getMapScale(),
-                map.isContinuousScrollEnabled());
+                sm.focusx,
+                sm.focusy,
+                sm.camera.azimuth,
+                90d + sm.camera.elevation,
+                sm.gsd,
+                true);
 
         // get the extremes in pixel-size so we can zoom to that size
         PointF northWest = new PointF();

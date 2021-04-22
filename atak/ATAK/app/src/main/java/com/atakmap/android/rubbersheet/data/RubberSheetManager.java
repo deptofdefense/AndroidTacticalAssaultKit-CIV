@@ -113,7 +113,7 @@ public class RubberSheetManager implements MapGroup.OnItemListChangedListener,
                     data.add(rmd);
             }
         }
-        try(OutputStream fos = IOProviderFactory.getOutputStream(SAVE_FILE)) {
+        try (OutputStream fos = IOProviderFactory.getOutputStream(SAVE_FILE)) {
             JSONArray arr = new JSONArray();
             for (AbstractSheetData rsd : data) {
                 JSONObject o = rsd.toJSON();

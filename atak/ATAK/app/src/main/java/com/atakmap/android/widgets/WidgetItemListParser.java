@@ -44,7 +44,7 @@ public class WidgetItemListParser {
     public WidgetItemList parse(String filePath) throws IOException,
             SAXException {
         WidgetItemList list = null;
-        try(FileInputStream fis = IOProviderFactory
+        try (FileInputStream fis = IOProviderFactory
                 .getInputStream(
                         new File(_currentDirectory + filePath))) {
             list = parse(fis);
@@ -188,7 +188,7 @@ public class WidgetItemListParser {
         WidgetItem.Builder b = _itemCache.get(path);
         if (b == null) {
 
-            try(FileInputStream fis = IOProviderFactory
+            try (FileInputStream fis = IOProviderFactory
                     .getInputStream(
                             new File(_currentDirectory + path))) {
                 DocumentBuilderFactory dbf = XMLUtils

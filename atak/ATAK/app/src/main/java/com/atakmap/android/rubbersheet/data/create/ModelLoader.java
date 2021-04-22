@@ -12,12 +12,15 @@ import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.layer.feature.geometry.Envelope;
+import com.atakmap.map.layer.model.Mesh;
 import com.atakmap.map.layer.model.Model;
 import com.atakmap.map.layer.model.ModelFactory;
 import com.atakmap.map.layer.model.ModelInfo;
 import com.atakmap.map.layer.model.ModelInfoFactory;
 import com.atakmap.map.layer.model.ModelSpi;
 import com.atakmap.map.layer.model.Models;
+import com.atakmap.map.layer.model.VertexDataLayout;
+import com.atakmap.math.MathUtils;
 import com.atakmap.math.Matrix;
 import com.atakmap.math.PointD;
 
@@ -113,7 +116,6 @@ public class ModelLoader implements ModelSpi.Callback {
                     || Double.isNaN(e.minZ) || Double.isNaN(e.maxZ))
                 continue;
 
-
             PointD offset = new PointD((e.minX + e.maxX) / 2.0,
                     (e.minY + e.maxY) / 2.0, e.minZ);
 
@@ -123,7 +125,6 @@ public class ModelLoader implements ModelSpi.Callback {
             double width = Math.abs(e.maxX - e.minX);
             double length = Math.abs(e.maxY - e.minY);
             double height = Math.abs(e.maxZ - e.minZ);
-
 
             // Clear out the local frame since we'll be manipulating it anyway
             Matrix originalLocalFrame = info.localFrame;
@@ -170,33 +171,46 @@ public class ModelLoader implements ModelSpi.Callback {
                 if (needsCenter)
                     trInfo.localFrame.translate(offset.x, offset.y);
 
-
                 // TODO: maybe use the new aabb of the transformed model to find the location offset
                 model = Models.transform(info, model, trInfo,
                         new ModelTransformListener(model,
                                 _onTransformProgress));
 
-                // Use the pre-transformed minZ value to fix elevation issues for rubber models.
-                model.getAABB().minZ = e.minZ;
                 info = trInfo;
                 info.localFrame = null; // Used by the renderer later
 
-                // Check that the output bounds are valid
-                // For some reason these gets squashed to NaN when transforming
-                // certain models
+                // Recalculate the AABB based on the model's transformed points
+                Envelope.Builder eb = new Envelope.Builder();
+                PointD pd = new PointD(0, 0, 0);
+                int meshCount = model.getNumMeshes();
+                for (int m = 0; m < meshCount; m++) {
+                    Mesh mesh = model.getMesh(m);
+                    if (mesh == null)
+                        continue;
 
-                if (Double.isNaN(e.minX) || Double.isNaN(e.maxX)
-                        || Double.isNaN(e.minY) || Double.isNaN(e.maxY)
-                        || Double.isNaN(e.minZ) || Double.isNaN(e.maxZ)) {
-                    Log.w(TAG, "Model " + name
-                            + " has invalid transformed AABB. Manually correcting...");
-                    e.minX = -width / 2;
-                    e.maxX = width / 2;
-                    e.minY = -length / 2;
-                    e.maxY = length / 2;
-                    e.minZ = 0;
-                    e.maxZ = height;
+                    // Make sure the mesh has position data
+                    VertexDataLayout vdl = mesh.getVertexDataLayout();
+                    if (!MathUtils.hasBits(vdl.attributes,
+                            Mesh.VERTEX_ATTR_POSITION))
+                        continue;
+
+                    // For every vertex in the model, calculate the envelope
+                    int vCount = mesh.getNumVertices();
+                    for (int v = 0; v < vCount; v++) {
+                        mesh.getPosition(v, pd);
+                        eb.add(pd.x, pd.y, pd.z);
+                    }
                 }
+
+                // Set the model's AABB to the calculated value
+                e = eb.build();
+                Envelope aabb = model.getAABB();
+                aabb.minX = e.minX;
+                aabb.minY = e.minY;
+                aabb.minZ = e.minZ;
+                aabb.maxX = e.maxX;
+                aabb.maxY = e.maxY;
+                aabb.maxZ = e.maxZ;
 
                 Log.d(TAG, "Took " + (SystemClock.elapsedRealtime() - start)
                         + "ms to transform " + name);

@@ -36,6 +36,8 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.NorthReference;
 import com.atakmap.map.AtakMapController;
+import com.atakmap.map.MapRenderer2;
+import com.atakmap.map.MapSceneModel;
 
 /**
  * Rotation tool
@@ -329,8 +331,15 @@ public class RubberSheetEditTool extends RectangleEditTool
 
         int mode = getMode();
         if (mode == HEADING && _center != null) {
-            _mapView.getMapController().tiltTo(0, false);
-            _mapView.getMapController().panTo(_center.get(), false);
+            final MapSceneModel sm = _mapView.getRenderer3().getMapSceneModel(
+                    false, MapRenderer2.DisplayOrigin.UpperLeft);
+            _mapView.getMapController().dispatchOnPanRequested();
+            _mapView.getRenderer3().lookAt(
+                    _center.get(),
+                    sm.gsd,
+                    sm.camera.azimuth,
+                    0d,
+                    false);
         }
         _sheet.setEditable(mode == DRAG);
         _mapView.getMapTouchController().setUserOrientation(freeRotate()

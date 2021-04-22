@@ -8,14 +8,21 @@ import java.util.UUID;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Point;
+import android.graphics.PointF;
+import android.os.Bundle;
 import android.preference.PreferenceManager;
 
 import com.atakmap.android.gui.HintDialogHelper;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.tools.ActionBarReceiver;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.map.AtakMapController;
+import com.atakmap.map.CameraController;
+import com.atakmap.map.MapRenderer2;
+import com.atakmap.map.MapRenderer3;
+import com.atakmap.math.PointD;
 
 /**
  * Default map event listener
@@ -66,13 +73,65 @@ class MapTouchEventListener implements
             return;
 
         if (MapEvent.MAP_SCALE.equals(event.getType())) {
-            AtakMapController ctrl = _mapView.getMapController();
-            Point p = event.getPoint();
-            ctrl.zoomBy(event.getScaleFactor(), p.x, p.y, false);
+            PointF p = event.getPointF();
+            GeoPoint focus = null;
+            Bundle panExtras = event.getExtras();
+            if (panExtras != null)
+                focus = panExtras.getParcelable("originalFocus");
+            if (focus == null) {
+                focus = GeoPoint.createMutable();
+                _mapView.getRenderer3().inverse(new PointD(p.x, p.y), focus,
+                        MapRenderer2.InverseMode.RayCast,
+                        MapRenderer2.HINT_RAYCAST_IGNORE_SURFACE_MESH
+                                | MapRenderer2.HINT_RAYCAST_IGNORE_TERRAIN_MESH,
+                        MapRenderer2.DisplayOrigin.UpperLeft);
+            }
+            // abort camera motion if collision occurs when zooming in
+            final MapRenderer3.CameraCollision collide = (event
+                    .getScaleFactor() > 1d) ? MapRenderer3.CameraCollision.Abort
+                            : MapRenderer3.CameraCollision.AdjustCamera;
+            if (focus != null && focus.isValid())
+                CameraController.Interactive.zoomBy(_mapView.getRenderer3(),
+                        event.getScaleFactor(), focus, p.x, p.y, collide,
+                        false);
+            else
+                CameraController.Interactive.zoomBy(_mapView.getRenderer3(),
+                        event.getScaleFactor(), collide, false);
         } else if (MapEvent.MAP_SCROLL.equals(event.getType())) {
-            AtakMapController ctrl = _mapView.getMapController();
-            Point p = event.getPoint();
-            ctrl.panBy(p.x, p.y, false, false);
+            PointF p = event.getPointF();
+            do {
+                Bundle panExtras = event.getExtras();
+                if (panExtras == null)
+                    break;
+                boolean doPanTo = panExtras.getBoolean("cameraPanTo", false);
+                if (!doPanTo)
+                    break;
+                final float x = panExtras.getFloat("x", Float.NaN);
+                final float y = panExtras.getFloat("y", Float.NaN);
+                if (Float.isNaN(x) || Float.isNaN(y))
+                    break;
+                final GeoPoint originalFocus = panExtras
+                        .getParcelable("originalFocus");
+                final MapRenderer3 glglobe = _mapView.getRenderer3();
+
+                // don't attempt pan-to when off world
+                final MapRenderer2.InverseResult result = glglobe.inverse(
+                        new PointD(x, y, 0d),
+                        GeoPoint.createMutable(),
+                        MapRenderer2.InverseMode.RayCast,
+                        MapRenderer2.HINT_RAYCAST_IGNORE_SURFACE_MESH
+                                | MapRenderer2.HINT_RAYCAST_IGNORE_TERRAIN_MESH,
+                        MapRenderer2.DisplayOrigin.UpperLeft);
+
+                if (result == MapRenderer2.InverseResult.None)
+                    break;
+
+                CameraController.Interactive.panTo(glglobe, originalFocus, x, y,
+                        MapRenderer3.CameraCollision.AdjustFocus, false);
+                return;
+            } while (false);
+            CameraController.Interactive.panBy(_mapView.getRenderer3(), p.x,
+                    p.y, MapRenderer3.CameraCollision.AdjustFocus, false);
         } else if (MapEvent.MAP_LONG_PRESS.equals(event.getType())) {
             if (atakTapToggleActionBar) {
                 HintDialogHelper
@@ -91,15 +150,33 @@ class MapTouchEventListener implements
             }
         } else if (MapEvent.MAP_DOUBLE_TAP.equals(event.getType())) {
             if (atakDoubleTapToZoom) {
-                AtakMapController ctrl = _mapView.getMapController();
-                Point p = event.getPoint();
-                ctrl.zoomBy(2, p.x, p.y, false);
+                PointF p = event.getPointF();
+                GeoPoint focus = null;
+                Bundle panExtras = event.getExtras();
+                if (panExtras != null)
+                    focus = panExtras.getParcelable("originalFocus");
+                if (focus == null) {
+                    focus = GeoPoint.createMutable();
+                    _mapView.getRenderer3().inverse(new PointD(p.x, p.y), focus,
+                            MapRenderer2.InverseMode.RayCast,
+                            MapRenderer2.HINT_RAYCAST_IGNORE_SURFACE_MESH
+                                    | MapRenderer2.HINT_RAYCAST_IGNORE_TERRAIN_MESH,
+                            MapRenderer2.DisplayOrigin.UpperLeft);
+                }
+                // XXX - don't allow further zoom in once collision occurs
+                final MapRenderer3.CameraCollision collide = MapRenderer3.CameraCollision.Abort;
+                if (focus != null && focus.isValid())
+                    CameraController.Interactive.zoomBy(_mapView.getRenderer3(),
+                            2d, focus, p.x, p.y, collide, false);
+                else
+                    CameraController.Interactive.zoomBy(_mapView.getRenderer3(),
+                            2d, collide, false);
             }
         }
     }
 
     private void dropHostile(final MapEvent event) {
-        Point p = event.getPoint();
+        PointF p = event.getPointF();
 
         GeoPointMetaData gp = _mapView.inverseWithElevation(p.x, p.y);
         if (gp == null || !gp.get().isValid()) {

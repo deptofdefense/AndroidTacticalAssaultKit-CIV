@@ -206,9 +206,11 @@ public class AttachmentMapOverlay extends AbstractMapOverlay2 {
                 pointPlacemark.setVisibility(mi.getVisible() ? 1 : 0);
 
                 Coordinate coord = null;
+                String altitudeMode = "absolute";
                 if (mi instanceof PointMapItem) {
-                    coord = KMLUtil.convertKmlCoord(
-                            ((PointMapItem) mi).getGeoPointMetaData(), false);
+                    PointMapItem pmi = (PointMapItem) mi;
+                    coord = KMLUtil.convertKmlCoord(pmi.getGeoPointMetaData(), false);
+                    altitudeMode = KMLUtil.convertAltitudeMode(pmi.getAltitudeMode());
                 }
                 if (coord == null) {
                     Log.w(TAG, "No marker location set");
@@ -217,7 +219,7 @@ public class AttachmentMapOverlay extends AbstractMapOverlay2 {
 
                 Point centerPoint = new Point();
                 centerPoint.setCoordinates(coord);
-                centerPoint.setAltitudeMode("absolute");
+                centerPoint.setAltitudeMode(altitudeMode);
 
                 List<Geometry> pointGeomtries = new ArrayList<>();
                 pointGeomtries.add(centerPoint);
@@ -316,11 +318,11 @@ public class AttachmentMapOverlay extends AbstractMapOverlay2 {
                 pointPlacemark.setVisibility(mi.getVisible() ? 1 : 0);
 
                 Coordinate coord = null;
+                String altitudeMode = "absolute";
                 if (mi instanceof PointMapItem) {
-                    coord = KMLUtil.convertKmlCoord(
-                            GeoPointMetaData.wrap(
-                                    ((PointMapItem) mi).getPoint()),
-                            false);
+                    PointMapItem pmi = (PointMapItem) mi;
+                    coord = KMLUtil.convertKmlCoord(pmi.getGeoPointMetaData(), false);
+                    altitudeMode = KMLUtil.convertAltitudeMode(pmi.getAltitudeMode());
                 }
                 if (coord == null) {
                     Log.w(TAG, "No marker location set");
@@ -329,7 +331,7 @@ public class AttachmentMapOverlay extends AbstractMapOverlay2 {
 
                 Point centerPoint = new Point();
                 centerPoint.setCoordinates(coord);
-                centerPoint.setAltitudeMode("absolute");
+                centerPoint.setAltitudeMode(altitudeMode);
 
                 List<Geometry> geometryList = new ArrayList<>();
                 geometryList.add(centerPoint);

@@ -184,9 +184,11 @@ public class ImportNetworkLinksTask extends
 
                     String ext = sorter.getExt();
                     if (FileSystemUtils.isEmpty(ext))
-                        ext = FileSystemUtils.getExtension(destPath, true, false);
+                        ext = FileSystemUtils.getExtension(destPath, true,
+                                false);
                     if (ext.startsWith("."))
-                        ext = ext.substring(1).toUpperCase(LocaleUtil.getCurrent());
+                        ext = ext.substring(1)
+                                .toUpperCase(LocaleUtil.getCurrent());
 
                     res.setType(ext);
                     res.setLocalPath(destPath.getAbsolutePath());
@@ -265,7 +267,7 @@ public class ImportNetworkLinksTask extends
                         R.drawable.ic_network_error_notification_icon,
                         NotificationUtil.RED,
                         _context.getString(
-                                    R.string.importmgr_remote_kml_import_failed),
+                                R.string.importmgr_remote_kml_import_failed),
                         _context.getString(R.string.failed_to_import),
                         _context.getString(R.string.failed_to_import));
             return;
@@ -282,12 +284,14 @@ public class ImportNetworkLinksTask extends
                         _notificationId,
                         R.drawable.ic_kml_file_notification_icon,
                         NotificationUtil.GREEN,
-                        _context.getString(R.string.importmgr_remote_kml_download_complete),
-                        _context.getString(R.string.importmgr_download_complete_importing_files,
-                                    result.fileCount),
-                            _context.getString(
-                                    R.string.importmgr_download_complete_importing_files,
-                                    result.fileCount));
+                        _context.getString(
+                                R.string.importmgr_remote_kml_download_complete),
+                        _context.getString(
+                                R.string.importmgr_download_complete_importing_files,
+                                result.fileCount),
+                        _context.getString(
+                                R.string.importmgr_download_complete_importing_files,
+                                result.fileCount));
 
             // send an intent so adapter can update details about the local cache of the remote
             // resource
@@ -302,7 +306,8 @@ public class ImportNetworkLinksTask extends
                         "Scheduling refresh task for top level resource: "
                                 + _resource.toString());
                 Intent intent = new Intent();
-                intent.setAction(ImportExportMapComponent.KML_NETWORK_LINK_REFRESH);
+                intent.setAction(
+                        ImportExportMapComponent.KML_NETWORK_LINK_REFRESH);
                 intent.putExtra("kml_networklink_url", _resource.getUrl());
                 intent.putExtra("kml_networklink_filename",
                         _resource.getName());
@@ -325,7 +330,7 @@ public class ImportNetworkLinksTask extends
                         R.drawable.ic_network_error_notification_icon,
                         NotificationUtil.RED,
                         _context.getString(
-                                    R.string.importmgr_remote_kml_download_cancelled),
+                                R.string.importmgr_remote_kml_download_cancelled),
                         error, error);
         }
     }
@@ -351,7 +356,7 @@ public class ImportNetworkLinksTask extends
 
         // TODO for performance do not need to parse entire document? just need list of NetworkLinks
 
-        try(InputStream is = IOProviderFactory.getInputStream(fileToParse)) {
+        try (InputStream is = IOProviderFactory.getInputStream(fileToParse)) {
             beginNetworkLinkRefresh(is, file.getName());
         } catch (Exception e) {
             Log.e(TAG, "Error parsing KML file: " + file.getAbsolutePath(), e);

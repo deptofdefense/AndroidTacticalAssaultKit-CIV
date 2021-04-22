@@ -129,18 +129,13 @@ public class GLMultiLayer extends GLAbstractLayer2 implements
     
     protected void refreshLayers2() {
         final List<Layer> layers = this.subject.getLayers();
-
-        if(this.renderContext.isRenderThread()) {
-            this.refreshLayersImpl2(layers, this.renderers);
-        } else {
-            final Map<Layer, GLLayer2> renderers = new IdentityHashMap<Layer, GLLayer2>(this.renderers);
-            this.renderContext.queueEvent(new Runnable() {
-                @Override
-                public void run() {
-                    GLMultiLayer.this.refreshLayersImpl2(layers, renderers);
-                }
-            });
-        }
+        runOnGLThread(new Runnable() {
+            @Override
+            public void run() {
+                refreshLayersImpl2(layers, renderers);
+                invalidateNoSync();
+            }
+        });
     }
 
     protected void refreshLayersImpl2(List<Layer> layers, Map<Layer, GLLayer2> renderers) {

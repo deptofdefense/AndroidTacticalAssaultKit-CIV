@@ -185,12 +185,10 @@ public class GLBatchPoint extends GLBatchGeometry {
      * @return
      */
     private double validateLocalElevation(GLMapView ortho) {
-        if(ortho.drawTilt > 0d) {
-            final int renderTerrainVersion = ortho.getTerrainVersion();
-            if(this.terrainVersion != renderTerrainVersion) {
-                this.localTerrainValue = ortho.getTerrainMeshElevation(this.latitude, this.longitude);
-                this.terrainVersion = renderTerrainVersion;
-            }
+        final int renderTerrainVersion = ortho.getTerrainVersion();
+        if(this.terrainVersion != renderTerrainVersion) {
+            this.localTerrainValue = ortho.getTerrainMeshElevation(this.latitude, this.longitude);
+            this.terrainVersion = renderTerrainVersion;
         }
         return this.localTerrainValue;
     }
@@ -206,29 +204,19 @@ public class GLBatchPoint extends GLBatchGeometry {
         // Z/altitude
         boolean belowTerrain = false;
         double posEl = 0d;
-        if(ortho.drawTilt > 0d) {
-            double alt = computeAltitude(ortho);
-            if (!Double.isNaN(localTerrainValue) && (alt < localTerrainValue)) {
-                // if the explicitly specified altitude is below the terrain,
-                // float above and annotate appropriately
-                belowTerrain = true;
-                alt = localTerrainValue;
-            }
-
-            // note: always NaN if source alt is NaN
-            double adjustedAlt = (alt+ortho.elevationOffset)*ortho.elevationScaleFactor;
-            
-            // move up half icon height
-            if(this.textureKey != 0L) {
-                adjustedAlt += ortho.drawMapResolution*(iconHeight/2d);
-            }
-    
-            // move up ~5 pixels from surface
-            adjustedAlt += ortho.drawMapResolution*10d;
-            
-            ortho.scratch.geo.set(adjustedAlt);
-            posEl = Double.isNaN(adjustedAlt) ? 0d : adjustedAlt;
+        double alt = computeAltitude(ortho);
+        if (!Double.isNaN(localTerrainValue) && (alt < localTerrainValue)) {
+            // if the explicitly specified altitude is below the terrain,
+            // float above and annotate appropriately
+            belowTerrain = true;
+            alt = localTerrainValue;
         }
+
+        // note: always NaN if source alt is NaN
+        double adjustedAlt = (alt+ortho.elevationOffset)*ortho.elevationScaleFactor;
+
+        ortho.scratch.geo.set(adjustedAlt);
+        posEl = Double.isNaN(adjustedAlt) ? 0d : adjustedAlt;
 
         if( Double.compare(posProjectedEl,posEl) != 0 || posProjectedSrid != ortho.drawSrid || wrappedLng != posProjectedLng) {
             ortho.scene.mapProjection.forward(ortho.scratch.geo, posProjected);
@@ -243,6 +231,15 @@ public class GLBatchPoint extends GLBatchGeometry {
         float ypos = (float)ortho.scratch.pointD.y;
         float zpos = (float)ortho.scratch.pointD.z;
 
+        boolean tilted = ortho.currentScene.drawTilt > 0d;
+        boolean renderZ = (tilted || ortho.currentScene.scene.camera.perspective)
+                && zpos < 1f;
+
+        if (tilted && this.textureKey != 0L) {
+            // move up half icon height
+            ypos += iconHeight / 2d;
+        }
+
         this.screenX = xpos;
         this.screenY = ypos;
         
@@ -250,7 +247,7 @@ public class GLBatchPoint extends GLBatchGeometry {
 
         // if tilted, draw a line segment from the center of the point into the
         // earth's surface
-        if(ortho.drawTilt > 0d) {
+        if(renderZ) {
             final double terrain = this.validateLocalElevation(ortho);
             final double surfaceEl = (Math.min(terrain,  0d)+ GLMapView.elevationOffset)*ortho.elevationScaleFactor;
             
@@ -401,7 +398,7 @@ public class GLBatchPoint extends GLBatchGeometry {
                     else if(labelAlignX < 0)
                         offtx = iconWidth * iconScale / 2f;
 
-                    if(ortho.drawTilt > 0d)
+                    if(tilted)
                         offy = (offy*-1f) + textHeight + glText.getDescent();
                 } else {
                     offy = -textHeight / 2;
@@ -425,7 +422,7 @@ public class GLBatchPoint extends GLBatchGeometry {
 
                 GLES20FixedPipeline.glTranslatef(textTx, textTy, 0f);
 
-                if (labelRotationAbsolute || ortho.drawTilt > 0) {
+                if (labelRotationAbsolute || tilted) {
                     // rotate relative to screen up
                     GLES20FixedPipeline.glRotatef(labelRotation, 0f, 0f, 1f);
                 } else {
@@ -611,31 +608,22 @@ public class GLBatchPoint extends GLBatchGeometry {
         // Z/altitude
         boolean belowTerrain = false;
         double posEl = 0d;
-        if(view.drawTilt > 0d) {
-            // XXX - altitude (for now will always make sure alt == terrain based on the if check.)
-            // in the future will need to make sure that alt and terrain are both !NaN.
-            double alt = computeAltitude(view);
-            if (!Double.isNaN(localTerrainValue) && (alt < localTerrainValue)) {
-                // if the explicitly specified altitude is below the terrain,
-                // float above and annotate appropriately
-                belowTerrain = true;
-                alt = localTerrainValue;
-            }
-    
-            // note: always NaN if source alt is NaN
-            double adjustedAlt = (alt+ GLMapView.elevationOffset)*view.elevationScaleFactor;
-            
-            // move up half icon height
-            if(this.textureKey != 0L) {
-                adjustedAlt += view.drawMapResolution*(iconHeight/2d);
-            }
-    
-            // move up ~5 pixels from surface
-            adjustedAlt += view.drawMapResolution*10d;
-            
-            view.scratch.geo.set(adjustedAlt);
-            posEl = Double.isNaN(adjustedAlt) ? 0d : adjustedAlt;
+
+        // XXX - altitude (for now will always make sure alt == terrain based on the if check.)
+        // in the future will need to make sure that alt and terrain are both !NaN.
+        double alt = computeAltitude(view);
+        if (!Double.isNaN(localTerrainValue) && (alt < localTerrainValue)) {
+            // if the explicitly specified altitude is below the terrain,
+            // float above and annotate appropriately
+            belowTerrain = true;
+            alt = localTerrainValue;
         }
+
+        // note: always NaN if source alt is NaN
+        double adjustedAlt = (alt+ GLMapView.elevationOffset)*view.elevationScaleFactor;
+
+        view.scratch.geo.set(adjustedAlt);
+        posEl = Double.isNaN(adjustedAlt) ? 0d : adjustedAlt;
 
         if( Double.compare(posProjectedEl,posEl) != 0 || posProjectedSrid != view.drawSrid) {
             view.scene.mapProjection.forward(view.scratch.geo, posProjected);
@@ -648,6 +636,15 @@ public class GLBatchPoint extends GLBatchGeometry {
         float ypos = (float)view.scratch.pointD.y;
         float zpos = (float)view.scratch.pointD.z;
 
+        boolean tilted = view.currentScene.drawTilt > 0d;
+        boolean renderZ = (tilted|| view.currentScene.scene.camera.perspective)
+                && zpos < 1f;
+
+        if (tilted && this.textureKey != 0L) {
+            // move up half icon height
+            ypos += iconHeight / 2d;
+        }
+
         this.screenX = xpos;
         this.screenY = ypos;
         
@@ -655,7 +652,7 @@ public class GLBatchPoint extends GLBatchGeometry {
 
         // if tilted, draw a line segment from the center of the point into the
         // earth's surface
-        if(view.drawTilt > 0d) {
+        if(renderZ) {
             final double surfaceEl = GLMapView.elevationOffset *view.elevationScaleFactor;
             
             if(Double.compare(surfaceProjectedEl,surfaceEl) != 0 || surfaceProjectedSrid != view.drawSrid) {
@@ -743,7 +740,7 @@ public class GLBatchPoint extends GLBatchGeometry {
                     else if(labelAlignX < 0)
                         offtx = iconRenderW / 2f;
                     
-                    if(view.drawTilt > 0d)
+                    if(tilted)
                         offy = (offy*-1f) + textHeight + glText.getDescent();
                 } else {
                     offy = -textHeight / 2;
@@ -771,7 +768,7 @@ public class GLBatchPoint extends GLBatchGeometry {
                 // reset the matrix and set up for the rotation
                 Matrix.setIdentityM(view.scratch.matrixF, 0);
                 Matrix.translateM(view.scratch.matrixF, 0, xpos, ypos, zpos);
-                if (labelRotationAbsolute || view.drawTilt > 0) {
+                if (labelRotationAbsolute || tilted) {
                     Matrix.rotateM(view.scratch.matrixF, 0, labelRotation, 0, 0, 1);
                 } else {
                     Matrix.rotateM(view.scratch.matrixF, 0, (float) view.drawRotation + labelRotation, 0, 0, 1);

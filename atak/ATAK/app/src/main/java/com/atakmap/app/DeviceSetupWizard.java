@@ -280,7 +280,8 @@ class DeviceSetupWizard implements CredentialsDialog.Callback {
 
                     CredentialsDialog.createCredentialDialog(desc,
                             connectString, usernameString,
-                            passwordString, cacheCreds, expiration, _context, this); //display if credentials are missing
+                            passwordString, cacheCreds, expiration, _context,
+                            this); //display if credentials are missing
                 }
             }
         }

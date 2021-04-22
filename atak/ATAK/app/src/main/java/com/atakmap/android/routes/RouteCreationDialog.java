@@ -205,10 +205,12 @@ public class RouteCreationDialog extends BroadcastReceiver implements
         String line;
         RECENT_ADDRESSES.clear();
 
-
         if (IOProviderFactory.exists(recentlyUsed)) {
-            try(InputStream is = IOProviderFactory.getInputStream(recentlyUsed);
-                BufferedReader reader = new BufferedReader(new InputStreamReader(is, FileSystemUtils.UTF8_CHARSET)) ) {
+            try (InputStream is = IOProviderFactory
+                    .getInputStream(recentlyUsed);
+                    BufferedReader reader = new BufferedReader(
+                            new InputStreamReader(is,
+                                    FileSystemUtils.UTF8_CHARSET))) {
                 while ((line = reader.readLine()) != null) {
                     String[] info = line.split("\t");
                     RECENT_ADDRESSES.add(new Pair<>(info[0],

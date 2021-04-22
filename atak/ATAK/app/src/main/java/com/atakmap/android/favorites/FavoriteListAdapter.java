@@ -54,7 +54,7 @@ public class FavoriteListAdapter extends BaseAdapter {
     public static final String FAVS = "::ATAK FAVORITES";
     public static final String TAG = "FavoriteListAdapter";
 
-    private final static int VERSION = 5;
+    private final static int VERSION = 6;
 
     protected final List<Favorite> mData;
     public static final String DIRNAME = FileSystemUtils.TOOL_DATA_DIRECTORY
@@ -255,7 +255,7 @@ public class FavoriteListAdapter extends BaseAdapter {
     }
 
     protected String getLocationText(final int position,
-                                     final CoordinateFormat cf) {
+            final CoordinateFormat cf) {
         final Favorite fav = mData.get(position);
         if (fav != null) {
             final GeoPoint gp = new GeoPoint(fav.latitude, fav.longitude);
@@ -306,9 +306,9 @@ public class FavoriteListAdapter extends BaseAdapter {
                     FileSystemUtils.sanitizeWithSpacesAndSlashes(file));
             if (IOProviderFactory.exists(f)) {
                 try (InputStream is = IOProviderFactory.getInputStream(f);
-                     InputStreamReader isr = new InputStreamReader(is,
-                             FileSystemUtils.UTF8_CHARSET);
-                     BufferedReader reader = new BufferedReader(isr)) {
+                        InputStreamReader isr = new InputStreamReader(is,
+                                FileSystemUtils.UTF8_CHARSET);
+                        BufferedReader reader = new BufferedReader(isr)) {
 
                     String line;
                     int version = 0;
@@ -330,6 +330,9 @@ public class FavoriteListAdapter extends BaseAdapter {
 
                         // parse the line per the version
                         switch (version) {
+                            case 6:
+                                fav = parseVersion6(line);
+                                break;
                             case 5:
                                 fav = parseVersion5(line);
                                 break;
@@ -452,6 +455,23 @@ public class FavoriteListAdapter extends BaseAdapter {
         }
     }
 
+    private static Favorite parseVersion6(final String line) {
+        final String[] parts = line.split(DELIMITER);
+        if (parts.length != 10)
+            return null;
+
+        try {
+            return new Favorite(parts[0], Double.parseDouble(parts[1]),
+                    Double.parseDouble(parts[2]), Double.parseDouble(parts[3]),
+                    Double.parseDouble(parts[4]), Double.parseDouble(parts[5]),
+                    Double.parseDouble(parts[6]),
+                    parts[7], parts[8], Integer.parseInt(parts[9]) != 0);
+        } catch (Exception e) {
+            Log.d(TAG, "error reading v5 line, skipping: " + line, e);
+            return null;
+        }
+    }
+
     public void write(File file, FavoriteListAdapter.Favorite fav) {
         writeList(file, Collections.singletonList(fav));
     }
@@ -466,8 +486,8 @@ public class FavoriteListAdapter extends BaseAdapter {
             return;
         }
 
-        try(Writer fos = IOProviderFactory.getFileWriter(file);
-            BufferedWriter bufferedWriter = new BufferedWriter(fos)) {
+        try (Writer fos = IOProviderFactory.getFileWriter(file);
+                BufferedWriter bufferedWriter = new BufferedWriter(fos)) {
             File parent = file.getParentFile();
             if (parent != null && !IOProviderFactory.exists(parent)
                     && !IOProviderFactory.mkdirs(parent)) {
@@ -490,6 +510,7 @@ public class FavoriteListAdapter extends BaseAdapter {
                         .append(i.title).append(DELIMITER)
                         .append(i.latitude).append(DELIMITER)
                         .append(i.longitude).append(DELIMITER)
+                        .append(i.altitude).append(DELIMITER)
                         .append(i.zoomLevel).append(DELIMITER)
                         .append(i.tilt).append(DELIMITER)
                         .append(i.rotation).append(DELIMITER)
@@ -509,6 +530,7 @@ public class FavoriteListAdapter extends BaseAdapter {
         public String title;
         public double latitude;
         public double longitude;
+        public double altitude;
         public double zoomLevel;
         public double tilt;
         public double rotation;
@@ -525,9 +547,32 @@ public class FavoriteListAdapter extends BaseAdapter {
                 final String layer,
                 final String selection,
                 final boolean locked) {
+            this(title,
+                    latitude,
+                    longitude,
+                    0d,
+                    zoomLevel,
+                    tilt,
+                    rotation,
+                    layer,
+                    selection,
+                    locked);
+        }
+
+        Favorite(final String title,
+                final double latitude,
+                final double longitude,
+                final double altitude,
+                final double zoomLevel,
+                final double tilt,
+                final double rotation,
+                final String layer,
+                final String selection,
+                final boolean locked) {
             this.title = title;
             this.latitude = latitude;
             this.longitude = longitude;
+            this.altitude = altitude;
             this.tilt = tilt;
             this.rotation = rotation;
             this.zoomLevel = zoomLevel;
@@ -541,6 +586,7 @@ public class FavoriteListAdapter extends BaseAdapter {
             dest.writeString(title);
             dest.writeDouble(latitude);
             dest.writeDouble(longitude);
+            dest.writeDouble(altitude);
             dest.writeDouble(zoomLevel);
             dest.writeDouble(tilt);
             dest.writeDouble(rotation);
@@ -565,6 +611,7 @@ public class FavoriteListAdapter extends BaseAdapter {
             title = in.readString();
             latitude = in.readDouble();
             longitude = in.readDouble();
+            altitude = in.readDouble();
             zoomLevel = in.readDouble();
             tilt = in.readDouble();
             rotation = in.readDouble();
@@ -596,6 +643,8 @@ public class FavoriteListAdapter extends BaseAdapter {
                 return false;
             if (Double.compare(longitude, c.longitude) != 0)
                 return false;
+            if (Double.compare(altitude, c.altitude) != 0)
+                return false;
             if (Double.compare(zoomLevel, c.zoomLevel) != 0)
                 return false;
             if (Double.compare(tilt, c.tilt) != 0)
@@ -617,7 +666,8 @@ public class FavoriteListAdapter extends BaseAdapter {
         public String toString() {
             return title + ", " + layer + ", "
                     + selection + ", " + latitude + ","
-                    + longitude + ", " + zoomLevel + ","
+                    + longitude + ", " + altitude + ", "
+                    + zoomLevel + ","
                     + tilt + ", " + rotation + "," + locked;
         }
     }
@@ -659,6 +709,15 @@ public class FavoriteListAdapter extends BaseAdapter {
             final double zoom, final double tilt, double rotation,
             final String layer, final String selection,
             final boolean locked) {
+        add(title, latitude, longitude, 0d, zoom, tilt, rotation, layer,
+                selection, locked);
+    }
+
+    public void add(final String title, final double latitude,
+            final double longitude, final double altitude,
+            final double zoom, final double tilt, double rotation,
+            final String layer, final String selection,
+            final boolean locked) {
         final String favTitle;
 
         if (title == null || title.length() < 1)
@@ -666,7 +725,7 @@ public class FavoriteListAdapter extends BaseAdapter {
         else
             favTitle = title;
 
-        add(new Favorite(favTitle, latitude, longitude, zoom,
+        add(new Favorite(favTitle, latitude, longitude, altitude, zoom,
                 tilt, rotation,
                 layer, selection, locked));
     }

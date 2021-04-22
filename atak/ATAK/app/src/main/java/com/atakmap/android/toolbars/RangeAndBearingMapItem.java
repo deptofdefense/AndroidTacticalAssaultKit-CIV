@@ -829,15 +829,17 @@ public class RangeAndBearingMapItem extends Arrow implements
     @Override
     public void onPointChanged(PointMapItem item) {
         if (item != null) {
-            if (_pt1 == null || _pt2 == null) {
+            final PointMapItem lPt1 = _pt1;
+            final PointMapItem lPt2 = _pt2;
+            if (lPt1 == null || lPt2 == null) {
                 Log.w(TAG, "Called onPointChanged with null points.");
                 return;
             }
-            _point1 = _pt1.getGeoPointMetaData();
-            _point2 = _pt2.getGeoPointMetaData();
+            _point1 = lPt1.getGeoPointMetaData();
+            _point2 = lPt2.getGeoPointMetaData();
             _range = _point1.get().distanceTo(_point2.get());
             _slantRange = DistanceCalculations.calculateSlantRange(
-                    _pt1.getPoint(), _pt2.getPoint());
+                    lPt1.getPoint(), lPt2.getPoint());
 
             if (!Double.isNaN(_slantRange)) {
                 // CAH 

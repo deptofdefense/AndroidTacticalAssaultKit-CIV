@@ -61,14 +61,14 @@ public class RemoteResources {
      */
     public static RemoteResources load(File file, Serializer serializer) {
         RemoteResources resources = null;
-        try(InputStream fis = IOProviderFactory.getInputStream(file)) {
+        try (InputStream fis = IOProviderFactory.getInputStream(file)) {
             resources = serializer.read(RemoteResources.class, fis);
             Log.d(TAG,
                     "Loaded " + resources.getResources().size()
                             + " resources from: "
                             + file.getAbsolutePath());
             // Hook child up to parent
-            for(RemoteResource r : resources.getResources()) {
+            for (RemoteResource r : resources.getResources()) {
                 if (r.hasChildren()) {
                     for (RemoteResource child : r.getChildren())
                         child.setParent(r);
@@ -95,7 +95,7 @@ public class RemoteResources {
             Log.w(TAG, "Failed to create " + file.getAbsolutePath());
             return false;
         }
-        try(FileOutputStream fos = IOProviderFactory.getOutputStream(file)) {
+        try (FileOutputStream fos = IOProviderFactory.getOutputStream(file)) {
             serializer.write(this, fos);
             Log.d(TAG, "save " + getResources().size() + " resources to: "
                     + file.getAbsolutePath());

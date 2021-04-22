@@ -17,6 +17,7 @@ import android.view.WindowManager;
 
 import com.atakmap.android.maps.MapTextFormat;
 import com.atakmap.annotations.DeprecatedApi;
+import com.atakmap.annotations.IncubatingApi;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -26,6 +27,7 @@ import com.atakmap.map.gdal.GdalLibrary;
 import com.atakmap.map.layer.Layer;
 import com.atakmap.map.layer.Layers;
 import com.atakmap.map.layer.feature.FeatureDataSourceContentFactory;
+import com.atakmap.map.layer.feature.falconview.FalconViewFeatureDataSource;
 import com.atakmap.map.layer.feature.ogr.OgrFeatureDataSource;
 import com.atakmap.map.layer.raster.gpkg.GeoPackageMosaicDatabase;
 import com.atakmap.map.layer.raster.mbtiles.MBTilesMosaicDatabase;
@@ -393,8 +395,6 @@ public class AtakMapView extends ViewGroup {
         this.addOnDisplayFlagsChangedListener(this.glSurface);
 
         final GLMapView glMapView = this.glSurface.getGLMapView();
-        // start GLMapView to sync with the globe and start receiving events
-        glMapView.start();
     }
 
     protected void registerServiceProviders() {
@@ -402,7 +402,8 @@ public class AtakMapView extends ViewGroup {
         
         // FeatureDataSource
 
-        FeatureDataSourceContentFactory.register(new OgrFeatureDataSource());
+        FeatureDataSourceContentFactory.register(new FalconViewFeatureDataSource(), 2);
+        FeatureDataSourceContentFactory.register(new OgrFeatureDataSource(), 1);
 
         // MosaicDatabaseSpi
         MosaicDatabaseFactory2.register(NativeImageryMosaicDatabase2.SPI);
@@ -683,7 +684,11 @@ public class AtakMapView extends ViewGroup {
      * Returns the map controller.
      * 
      * @return  The map controller
+     *
+     * @deprecated To be removed without replacement
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.3", forRemoval = true, removeAt = "4.6")
     public AtakMapController getMapController() {
         return this.controller;
     }
@@ -707,7 +712,15 @@ public class AtakMapView extends ViewGroup {
         return this.glSurface;
     }
 
+    /** @deprecated use {@link #getRenderer3()} */
+    @Deprecated
+    @DeprecatedApi(since = "4.3", forRemoval = true, removeAt = "4.6")
     public MapRenderer getRenderer() {
+        return this.glSurface.getGLMapView();
+    }
+
+    @IncubatingApi(since = "4.3")
+    public MapRenderer3 getRenderer3() {
         return this.glSurface.getGLMapView();
     }
 
@@ -825,10 +838,9 @@ public class AtakMapView extends ViewGroup {
         {
             switch (event.getAction()) {
                 case MotionEvent.ACTION_SCROLL: {
-                    final double mapScale = Globe.getMapScale(getDisplayDpi(), tMapSceneModel.gsd);
                     final double dir = (event.getAxisValue(MotionEvent.AXIS_VSCROLL) < 0.0f) ? 0.5d : 2d;
 
-                    getMapController().zoomTo (mapScale*dir, true);
+                    CameraController.Programmatic.zoomTo (getRenderer3(), tMapSceneModel.gsd/dir, true);
                     return true;
                 }
             }
@@ -1323,7 +1335,7 @@ public class AtakMapView extends ViewGroup {
     @DeprecatedApi(since = "4.1")
     public GeoPoint getRenderElevationAdjustedPoint(final GeoPoint point,
             final double elevOffset) {
-        if (point == null || this.getMapTilt() == 0d)
+        if (point == null)
             return point;
 
         final GLMapView glview = this.getGLSurface().getGLMapView();

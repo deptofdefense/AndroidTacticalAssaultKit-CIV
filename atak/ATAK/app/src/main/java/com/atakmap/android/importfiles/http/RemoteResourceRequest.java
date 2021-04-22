@@ -17,7 +17,8 @@ class RemoteResourceRequest extends GetFileRequest {
 
     RemoteResourceRequest(RemoteResource resource, String dir,
             int notificationId, boolean showNotifications) {
-        this(resource, resource.getName(), dir, notificationId, showNotifications);
+        this(resource, resource.getName(), dir, notificationId,
+                showNotifications);
     }
 
     RemoteResourceRequest(RemoteResource resource, String fileName, String dir,

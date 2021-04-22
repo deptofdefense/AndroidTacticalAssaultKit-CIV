@@ -115,6 +115,8 @@ jar {
     exclude 'com/atakmap/util/Visitor$*.class'
     exclude 'com/atakmap/util/ReferenceCount.class'
     exclude 'com/atakmap/util/ReferenceCount$*.class'
+    exclude 'com/atakmap/util/zip/IoUtils.class'
+    exclude 'com/atakmap/util/zip/IoUtils$*.class'
     exclude 'com/atakmap/util/zip/ZipEntry.class'
     exclude 'com/atakmap/util/zip/ZipEntry$*.class'
     exclude 'com/atakmap/util/zip/ZipFile.class'
@@ -135,6 +137,8 @@ jar {
     exclude 'com/atakmap/coremap/concurrent/NamedThreadFactory$*.class'
     exclude 'com/atakmap/coremap/filesystem/FileSystemUtils.class'
     exclude 'com/atakmap/coremap/filesystem/FileSystemUtils$*.class'
+    exclude 'com/atakmap/coremap/filesystem/RemovableStorageHelper.class'
+    exclude 'com/atakmap/coremap/filesystem/RemovableStorageHelper$*.class'
     exclude 'com/atakmap/coremap/filesystem/SecureDelete.class'
     exclude 'com/atakmap/coremap/filesystem/SecureDelete$*.class'
     exclude 'com/atakmap/coremap/filesystem/SecureDeleteEvent.class'
@@ -192,6 +196,7 @@ task importDepends {
                 include 'com/atakmap/net/KeyManagerFactoryIFace.java'
                 include 'com/atakmap/coremap/concurrent/NamedThreadFactory.java'
                 include 'com/atakmap/coremap/filesystem/FileSystemUtils.java'
+                include 'com/atakmap/coremap/filesystem/RemovableStorageHelper.java'
                 include 'com/atakmap/coremap/filesystem/SecureDelete.java'
                 include 'com/atakmap/coremap/filesystem/SecureDeleteEvent.java'
                 include 'com/atakmap/coremap/filesystem/SecureDeleteThread.java'
@@ -205,6 +210,7 @@ task importDepends {
                 include 'com/atakmap/coremap/maps/time/CoordinatedTime.java'
                 include 'com/atakmap/interop/Pointer.java'
                 include 'com/atakmap/util/Collections2.java'
+                include 'com/atakmap/util/zip/IoUtils.java'
             }
             into 'src/external/java'
         }

@@ -295,18 +295,21 @@
 -keep class com.atakmap.map.opengl.GLAntiMeridianHelper {*;}
 -keep class com.atakmap.map.opengl.GLMapRenderable2 {*;}
 -keep class com.atakmap.map.opengl.GLMapView {*;}
+-keep class com.atakmap.map.opengl.GLMapView$* {*;}
 -keep class com.atakmap.map.opengl.NativeGLMapRenderable2 {*;}
 -keep class com.atakmap.map.projection.NativeProjection {*;}
 -keep class com.atakmap.map.projection.MapProjectionDisplayModel {*;}
 -keep class com.atakmap.map.projection.Projection {*;}
 -keep class com.atakmap.map.projection.ProjectionFactory {*;}
 -keep class com.atakmap.map.projection.ProjectionSpi {*;}
+-keep class com.atakmap.math.Frustum {*;}
 -keep class com.atakmap.math.GeometryModel {*;}
 -keep class com.atakmap.math.Matrix {*;}
 -keep class com.atakmap.math.NativeGeometryModel {*;}
 -keep class com.atakmap.math.PointD {*;}
 -keep class com.atakmap.math.Ray {*;}
 -keep class com.atakmap.math.Vector3D {*;}
+-keep class com.atakmap.map.layer.feature.falconview.FalconViewFeatureDataSource {*;}
 
 # For 4.2.1 to preserve the mapping
 

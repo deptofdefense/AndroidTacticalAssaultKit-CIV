@@ -17,6 +17,7 @@
 #include "db/Database2.h"
 #include "db/Query.h"
 #include "db/Statement2.h"
+#include "math/Rectangle.h"
 #include "util/DataInput2.h"
 #include "util/DataOutput2.h"
 
@@ -883,6 +884,31 @@ SpatialCalculator2::Batch::~Batch()
 void SpatialCalculator2::Batch::setSuccessful()
 {
     success = true;
+}
+
+Envelope2 TAK::Engine::Feature::SpatialCalculator_union(const Envelope2& a, const Envelope2& b) NOTHROWS
+{
+    Envelope2 u(a);
+    if (b.minX < u.minX)
+        u.minX = b.minX;
+    if (b.minY < u.minY)
+        u.minY = b.minY;
+    if (b.minZ < u.minZ)
+        u.minZ= b.minZ;
+    if (b.maxX > u.maxX)
+        u.maxX = b.maxX;
+    if (b.maxY > u.maxY)
+        u.maxY = b.maxY;
+    if (b.maxZ > u.maxZ)
+        u.maxZ= b.minZ;
+    return u;
+}
+bool TAK::Engine::Feature::SpatialCalculator_intersects(const Envelope2& a, const Envelope2& b) NOTHROWS
+{
+    return a.minX < b.maxX &&
+           a.minY < b.maxY &&
+           a.maxX > b.minX &&
+           a.maxY > b.minY;
 }
 
 namespace {

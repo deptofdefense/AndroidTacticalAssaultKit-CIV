@@ -347,7 +347,8 @@ public class ModelContentHandler extends FileOverlayContentHandler implements
                 try {
                     if (c != null)
                         c.close();
-                } catch (Exception ignore) {}
+                } catch (Exception ignore) {
+                }
             }
 
             // We obtained the actual bounds of the model while loading

@@ -15,6 +15,17 @@ public final class DepthSampler implements Disposable {
 
     private final static String DEPTH_VERT_SHADER =
             "precision highp float;\n" +
+            "uniform mat4 uMVP;\n" +
+            "attribute vec3 aVertexCoords;\n" +
+            "varying highp float vDepth;\n" +
+            "void main() {\n" +
+            "  vec4 vcoords = uMVP * vec4(aVertexCoords.xyz, 1.0);\n" +
+            "  vDepth = ((vcoords.z / vcoords.w) + 1.0) * 0.5;\n" +
+            "  gl_Position = vcoords;\n" +
+            "}";
+
+    private final static String DEPTH_FRAG_SHADER_SRC =
+            "precision mediump float;\n" +
             "vec4 PackDepth(in float v)\n" +
             "{\n" +
             "  float v_a = floor(v);\n" +
@@ -23,21 +34,10 @@ public final class DepthSampler implements Disposable {
             "  float v_b = floor(fract(fract(fract(v) * 255.0) * 255.0) * 255.0) / 255.0;\n" +
             "  return vec4(v_r, v_g, v_b, v_a);" +
             "}\n" +
-            "uniform mat4 uMVP;\n" +
-            "attribute vec3 aVertexCoords;\n" +
-            "varying vec4 vDepthColor;\n" +
-            "void main() {\n" +
-            "  vec4 vcoords = uMVP * vec4(aVertexCoords.xyz, 1.0);\n" +
-            "  float depth = (vcoords.z + 1.0) * 0.5;\n" +
-            "  vDepthColor = PackDepth(depth);\n" +
-            "  gl_Position = vcoords;\n" +
-            "}";
-
-    private final static String DEPTH_FRAG_SHADER_SRC =
-            "precision mediump float;\n" +
-            "varying vec4 vDepthColor;\n" +
+            "varying highp float vDepth;\n" +
             "void main(void) {\n" +
-            "  gl_FragColor = vDepthColor;\n" +
+            "  vec4 depth = PackDepth(vDepth);\n" +
+            "  gl_FragColor = depth;\n" +
             "}";
 
     public final Program program;

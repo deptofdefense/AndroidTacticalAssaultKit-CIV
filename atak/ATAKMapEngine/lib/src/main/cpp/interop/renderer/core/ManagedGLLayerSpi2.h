@@ -15,7 +15,7 @@ namespace TAKEngineJNI {
                     ManagedGLLayerSpi2(JNIEnv &env, jobject impl) NOTHROWS;
                     ~ManagedGLLayerSpi2() NOTHROWS;
                 public:
-                    virtual TAK::Engine::Util::TAKErr create(TAK::Engine::Renderer::Core::GLLayer2Ptr &value, TAK::Engine::Renderer::Core::GLMapView2 &renderer, TAK::Engine::Core::Layer2 &subject) NOTHROWS;
+                    virtual TAK::Engine::Util::TAKErr create(TAK::Engine::Renderer::Core::GLLayer2Ptr &value, TAK::Engine::Renderer::Core::GLGlobeBase& renderer, TAK::Engine::Core::Layer2 &subject) NOTHROWS;
                 public :
                     jobject impl;
                 };

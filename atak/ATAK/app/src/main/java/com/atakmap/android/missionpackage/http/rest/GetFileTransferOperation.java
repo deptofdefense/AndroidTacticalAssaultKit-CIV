@@ -195,8 +195,9 @@ public final class GetFileTransferOperation extends HTTPOperation {
             // if this is a restart, update initial content length
             progressTracker.setCurrentLength((bRestart ? existingLength : 0));
 
-            try (OutputStream fos = IOProviderFactory.getOutputStream(temp, bRestart);
-                 InputStream in = resEntity.getContent()) {
+            try (OutputStream fos = IOProviderFactory.getOutputStream(temp,
+                    bRestart);
+                    InputStream in = resEntity.getContent()) {
                 while ((len = in.read(buf)) > 0) {
                     fos.write(buf, 0, len);
 

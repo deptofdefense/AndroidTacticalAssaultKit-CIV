@@ -54,6 +54,11 @@ public class GLTilePatch implements GLMapRenderable2, GLMapBatchable2{
     private double patchMinLng;
     private double patchMaxLat;
     private double patchMaxLng;
+
+    /**
+     * The render pump that this patch was last drawn
+     */
+    int lastPumpDrawn;
     
     /**
      * Creates a new tile patch.
@@ -113,6 +118,8 @@ public class GLTilePatch implements GLMapRenderable2, GLMapBatchable2{
         patchMinLng = MathUtils.min(lng0, lng1, lng2, lng3);
         patchMaxLat = MathUtils.max(lat0, lat1, lat2, lat3);
         patchMaxLng = MathUtils.max(lng0, lng1, lng2, lng3);
+
+        lastPumpDrawn = -1;
     }
 
     @Override
@@ -131,7 +138,9 @@ public class GLTilePatch implements GLMapRenderable2, GLMapBatchable2{
 
             return;
         }
-        
+
+        this.lastPumpDrawn = view.currentPass.renderPump;
+
         final double isectMinLat = Math.max(patchMinLat, view.southBound);
         final double isectMinLng = Math.max(patchMinLng, view.westBound);
         final double isectMaxLat = Math.min(patchMinLat, view.northBound);
@@ -169,21 +178,6 @@ public class GLTilePatch implements GLMapRenderable2, GLMapBatchable2{
                 tiles[idx].batch(view, batch, renderPass);
             }
         }
-        
-        // release any tiles that do not intersect the AOI and are not being
-        // borrowed from
-        for(int row = gridOffsetY; row < (gridOffsetY+gridRows); row++) {
-            if(row >= minTileDrawRow && row <= maxTileDrawRow)
-                continue;
-            for(int col = gridOffsetX; col < (gridOffsetX+gridColumns); col++) {
-                if(row >= minTileDrawCol && col <= maxTileDrawCol)
-                    continue;
-                
-                int idx = ((row-gridOffsetY)*gridColumns) + (col-gridOffsetX);
-                if(tiles[idx] != null && !tiles[idx].hasBorrowers())
-                    tiles[idx].release();
-            }
-        }
     }
 
     @Override
@@ -202,7 +196,9 @@ public class GLTilePatch implements GLMapRenderable2, GLMapBatchable2{
 
             return;
         }
-        
+
+        this.lastPumpDrawn = view.currentPass.renderPump;
+
         if(core.debugDraw)
             this.debugDraw(view);
 
@@ -241,21 +237,6 @@ public class GLTilePatch implements GLMapRenderable2, GLMapBatchable2{
                 }
                 
                 tiles[idx].draw(view, renderPass);
-            }
-        }
-        
-        // release any tiles that do not intersect the AOI and are not being
-        // borrowed from
-        for(int row = gridOffsetY; row < (gridOffsetY+gridRows); row++) {
-            if(row >= minTileDrawRow && row <= maxTileDrawRow)
-                continue;
-            for(int col = gridOffsetX; col < (gridOffsetX+gridColumns); col++) {
-                if(row >= minTileDrawCol && col <= maxTileDrawCol)
-                    continue;
-                
-                int idx = ((row-gridOffsetY)*gridColumns) + (col-gridOffsetX);
-                if(tiles[idx] != null && !tiles[idx].hasBorrowers())
-                    tiles[idx].release();
             }
         }
     }
@@ -298,10 +279,10 @@ public class GLTilePatch implements GLMapRenderable2, GLMapBatchable2{
         Unsafe.free(dbg);
     }
 
-    boolean release(boolean unusedOnly) {
+    boolean release(boolean unusedOnly, int renderPump) {
         boolean cleared = true;
         for(int i = 0; i < this.tiles.length; i++) {
-            if(this.tiles[i] != null && (!unusedOnly || !this.tiles[i].hasBorrowers())) {
+            if(this.tiles[i] != null && (!unusedOnly || !this.tiles[i].hasBorrowers()) && this.tiles[i].lastPumpDrawn != renderPump) {
                 this.tiles[i].release();
                 this.tiles[i] = null;
             } else if(this.tiles[i] != null) {
@@ -313,7 +294,7 @@ public class GLTilePatch implements GLMapRenderable2, GLMapBatchable2{
 
     @Override
     public void release() {
-        this.release(false);
+        this.release(false, -1);
     }
 
     @Override

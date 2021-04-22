@@ -12,14 +12,15 @@ import android.widget.Toast;
 import com.atakmap.android.importfiles.task.ImportFileTask;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.DefaultIOProvider;
 import com.atakmap.coremap.io.IOProvider;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.util.zip.IoUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.concurrent.Semaphore;
 
@@ -32,8 +33,8 @@ import java.util.concurrent.Semaphore;
  *     <LI>Files chosen through Android system file browser
  * </UL>
  */
-public class AttachFileTask extends
-        AsyncTask<File, File, AttachFileTask.Result> {
+public class AttachFileTask extends AsyncTask<File, File, AttachFileTask.Result>
+        implements DialogInterface.OnCancelListener {
 
     private static final String TAG = "AttachFileTask";
 
@@ -149,10 +150,19 @@ public class AttachFileTask extends
                     + _context.getString(R.string.ellipses));
         else
             _progressDialog.setMessage(_context.getString(R.string.attaching));
-        _progressDialog.setIndeterminate(true);
-        _progressDialog.setCancelable(true);
         _progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-        // _progressDialog.setOnCancelListener(this);
+        _progressDialog.setMax(100);
+        _progressDialog.setCancelable(false);
+        _progressDialog.setCanceledOnTouchOutside(false);
+        _progressDialog.setOnCancelListener(this);
+        _progressDialog.setButton(DialogInterface.BUTTON_NEGATIVE,
+                _context.getString(R.string.cancel),
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface d, int w) {
+                        _progressDialog.cancel();
+                    }
+                });
         _progressDialog.show();
 
     }
@@ -167,8 +177,8 @@ public class AttachFileTask extends
         }
 
         // obtain the provider instance to be used for the task execution
-        final IOProvider sourceProvider = (_provider != null) ?
-                _provider : IOProviderFactory.getProvider();
+        final IOProvider sourceProvider = (_provider != null) ? _provider
+                : IOProviderFactory.getProvider();
 
         // just take first file for now
         File file = params[0];
@@ -197,13 +207,21 @@ public class AttachFileTask extends
                 return new Result(
                         "Import directory is empty: " + file.getName());
             for (String fn : files) {
-                Result res = copyFile(parent, new File(file, fn), sourceProvider);
+                Result res = copyFile(parent, new File(file, fn),
+                        sourceProvider);
                 if (!res.success)
                     return res;
             }
             return new Result(file);
         }
         return copyFile(parent, file, sourceProvider);
+    }
+
+    @Override
+    public void onCancel(DialogInterface dialog) {
+        cancel(false);
+        Toast.makeText(_context, R.string.import_cancelled, Toast.LENGTH_SHORT)
+                .show();
     }
 
     private Result copyFile(File parent, File file, IOProvider sourceProvider) {
@@ -245,13 +263,12 @@ public class AttachFileTask extends
                     "Failed to create directories" + parent.getAbsolutePath());
 
         try {
-            copyMoveFile(file, destPath, sourceProvider, !checkFlag(ImportFileTask.FlagCopyFile));
+            return copyMoveFile(file, destPath, sourceProvider,
+                    !checkFlag(ImportFileTask.FlagCopyFile));
         } catch (IOException e) {
             Log.e(TAG, "Failed to copy file: " + file, e);
             return new Result("Failed to copy: " + file.getName());
         }
-
-        return new Result(destPath);
     }
 
     /**
@@ -271,17 +288,14 @@ public class AttachFileTask extends
      *                          delete.
      * @throws IOException
      */
-    private static void copyMoveFile(File srcFile, File dstFile, IOProvider srcFileProvider, boolean move) throws IOException {
-        if(!srcFile.equals(dstFile)) {
+    private Result copyMoveFile(File srcFile, File dstFile,
+            IOProvider srcFileProvider, boolean move) throws IOException {
+        if (!srcFile.equals(dstFile)
+                || srcFileProvider != IOProviderFactory.getProvider()) {
             try (FileInputStream fis = srcFileProvider.getInputStream(srcFile);
-                 OutputStream os = IOProviderFactory.getOutputStream(dstFile)) {
-                FileSystemUtils.copyStream(fis, os);
-            }
-        } else if(srcFileProvider != IOProviderFactory.getProvider()) {
-            try (FileInputStream fis = srcFileProvider.getInputStream(srcFile);
-                 OutputStream os = IOProviderFactory.getOutputStream(dstFile)) {
-
-                FileSystemUtils.copyStream(fis, os);
+                    OutputStream os = IOProviderFactory
+                            .getOutputStream(dstFile)) {
+                copyStream(fis, os, srcFileProvider.length(srcFile));
             }
         } else {
             // file is the same and using same IO provider so copy/move
@@ -289,9 +303,46 @@ public class AttachFileTask extends
             // delete the file
             move = false;
         }
+
         // move was requested, perform delete in the case that we copied
-        if(move)
+        if (move)
             srcFileProvider.delete(srcFile, IOProvider.SECURE_DELETE);
+
+        // Delete the output file if the user cancelled
+        if (isCancelled()) {
+            FileSystemUtils.delete(dstFile);
+            return new Result(_context.getString(
+                    R.string.importmgr_cancelled_import, dstFile.getName()));
+        }
+
+        return new Result(dstFile);
+    }
+
+    private void copyStream(InputStream in, OutputStream out, long fileLen)
+            throws IOException {
+        byte[] buf = new byte[FileSystemUtils.BUF_SIZE];
+        try {
+            int len;
+            long written = 0;
+            while (!isCancelled() && (len = in.read(buf)) > 0) {
+                out.write(buf, 0, len);
+                written += len;
+                updateProgress(written, fileLen);
+            }
+        } finally {
+            IoUtils.close(in);
+            IoUtils.close(out);
+        }
+    }
+
+    private void updateProgress(long written, long total) {
+        final int prog = (int) Math.round(((double) written / total) * 100);
+        ((Activity) _context).runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                _progressDialog.setProgress(prog);
+            }
+        });
     }
 
     @Override

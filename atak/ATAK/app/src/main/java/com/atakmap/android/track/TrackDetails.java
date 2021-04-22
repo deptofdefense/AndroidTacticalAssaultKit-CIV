@@ -15,6 +15,7 @@ import com.atakmap.android.routes.elevation.model.UnitConverter;
 import com.atakmap.android.track.crumb.CrumbDatabase;
 import com.atakmap.android.track.maps.TrackPolyline;
 import com.atakmap.android.util.AltitudeUtilities;
+import com.atakmap.android.util.SpeedFormatter;
 import com.atakmap.coremap.conversions.ConversionFactors;
 import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.conversions.SpanUtilities;
@@ -468,24 +469,17 @@ public class TrackDetails
         return getSpeedString(_maxSpeed, units);
     }
 
-    private String getSpeedString(double speed, int units) {
-        double speedDisplay = speed;
-        String speedUnit;
-
+    private String getSpeedString(final double speed, final int units) {
         switch (units) {
+            case Span.NM:
+                return SpeedFormatter.getInstance().getSpeedFormatted(speed, SpeedFormatter.KTS);
+            case Span.METRIC:
+                return SpeedFormatter.getInstance().getSpeedFormatted(speed, SpeedFormatter.KMPH);
             case Span.ENGLISH:
             default:
-                speedUnit = "MPH";
-                speedDisplay *= ConversionFactors.METERS_PER_S_TO_MILES_PER_H;
-                break;
-            case Span.METRIC:
-                speedUnit = "KMpH";
-                speedDisplay *= ConversionFactors.METERS_PER_S_TO_KILOMETERS_PER_H;
-                break;
+               return SpeedFormatter.getInstance().getSpeedFormatted(speed, SpeedFormatter.MPH);
         }
 
-        return ((speedDisplay > 0) ? Math.round(speedDisplay) : "---") + " "
-                + speedUnit;
     }
 
     public void setAvgSpeed(double d) {

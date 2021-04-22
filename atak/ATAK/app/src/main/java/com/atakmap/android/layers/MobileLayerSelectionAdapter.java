@@ -375,7 +375,7 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
     }
 
     protected int getTileCount2(MobileImagerySpec spec, double minRes,
-                                double maxRes) {
+            double maxRes) {
         ResolutionLevelSpec res = resolutionLevel.get(spec.desc);
         if (res != null && maxRes < res.defaultMinRes) {
 
@@ -774,7 +774,8 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
      * @param resMin - the minimum resolution chosen by the user
      * @param resMax - the max resolution chosen by the user
      */
-    protected void setCurrentRes(TextView resView, double resMin, double resMax) {
+    protected void setCurrentRes(TextView resView, double resMin,
+            double resMax) {
         String postfix1 = "m";
         String postfix2 = "m";
         String resString1 = String.valueOf(Math.round(resMin));

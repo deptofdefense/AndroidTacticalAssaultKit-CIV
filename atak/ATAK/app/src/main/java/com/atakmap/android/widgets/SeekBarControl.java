@@ -92,8 +92,10 @@ public final class SeekBarControl implements OnMapViewResizedListener {
         stopHideTimer();
         _mapView.removeOnMapViewResizedListener(this);
         this.seekBar.setVisibility(View.GONE);
-        if (subject != null)
+        if (subject != null) {
             subject.onControlDismissed();
+            subject = null;
+        }
     }
 
     protected void stopHideTimer() {

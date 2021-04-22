@@ -70,4 +70,42 @@ public final class Imagery {
 
         return new DatasetRasterLayer2(name, rds, 1);
     }
+
+    public static DatasetDescriptor createTiledImageryDescriptor(String name, String url, File cacheDir) throws IOException {
+        return createTiledImageryDescriptor(name, url, 0, 21, cacheDir);
+    }
+
+    public static DatasetDescriptor createTiledImageryDescriptor(String name, String url, int minZoom, int maxZoom, File cacheDir) throws IOException {
+        if(url == null)
+            return null;
+        url = url.replace("&", "&amp;");
+        StringBuilder sb = new StringBuilder();
+        sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+        sb.append("<customMapSource>");
+        sb.append("    <name>").append(name).append("</name>");
+        sb.append("    <minZoom>").append(minZoom).append("</minZoom>");
+        sb.append("    <maxZoom>").append(maxZoom).append("</maxZoom>");
+        sb.append("    <tileType>image/png</tileType>");
+        sb.append("    <url>" + url + "</url>");
+        sb.append("    <tileUpdate>false</tileUpdate>");
+        sb.append("    <backgroundColor>#000000</backgroundColor>");
+        sb.append("    <ignoreErrors>false</ignoreErrors>");
+        sb.append("    <serverParts></serverParts>");
+        sb.append("</customMapSource>");
+
+        File config;
+        if(cacheDir == null)
+            config = IOProviderFactory.createTempFile("config", ".xml", null);
+        else
+            config = new File(cacheDir, name + ".xml");
+
+        try(FileOutputStream fos = new FileOutputStream(config)) {
+            FileSystemUtils.write(fos, sb.toString());
+        }
+
+        Set<DatasetDescriptor> descs = DatasetDescriptorFactory2.create(config, cacheDir, null, null);
+        if(descs == null || descs.isEmpty())
+            return null;
+        return descs.iterator().next();
+    }
 }

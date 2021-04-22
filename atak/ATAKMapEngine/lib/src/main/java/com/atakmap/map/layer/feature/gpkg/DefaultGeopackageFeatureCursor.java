@@ -168,7 +168,7 @@ public final class DefaultGeopackageFeatureCursor extends RowIteratorWrapper imp
             Log.e("DefaultGeopackageFeatureCursor", "Unexpected error parsing Geopackage geometry", t);
             return null;
         }
-        if(this.geometrySrid != -1) {
+        if(this.geometrySrid != -1 && this.row.geometry != null) {
             this.row.geometry = GeometryTransformer.transform(this.row.geometry,
                                                               this.geometrySrid,
                                                               4326);

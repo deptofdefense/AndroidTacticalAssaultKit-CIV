@@ -87,6 +87,11 @@ final class LayersDatabase extends CatalogDatabase {
                         COLUMN_IMAGERY_TYPES_MAX_GSD + ") " +   // 5
             "VALUES (?, ?, ?, ?, ?)";
 
+    private final static String SQL_UPDATE_LAYER_EXTRAS_STMT =
+            "UPDATE " + TABLE_LAYERS + " SET " + COLUMN_LAYERS_INFO
+                    + " = ? WHERE " + COLUMN_LAYERS_ID + " = ?";
+
+
     /**************************************************************************/
 
     public LayersDatabase(File databaseFile, CatalogCurrencyRegistry r) {
@@ -333,6 +338,28 @@ final class LayersDatabase extends CatalogDatabase {
             //this.database.setTransactionSuccessful();
         } finally {
             //this.database.endTransaction();
+        }
+    }
+
+    /**
+     * Update layer extras metadata in the database
+     * For a complete update (name/geometry change), remove and re-insert instead
+     *
+     * @param info Dataset info
+     * @throws IOException Database error
+     */
+    public synchronized void updateLayerExtras(DatasetDescriptor info) throws IOException {
+        StatementIface updateStmt = null;
+        try {
+            long layerId = info.getLayerId();
+            updateStmt = this.database.compileStatement(SQL_UPDATE_LAYER_EXTRAS_STMT);
+            updateStmt.clearBindings();
+            updateStmt.bind(1, info.encode(layerId));
+            updateStmt.bind(2, layerId);
+            updateStmt.execute();
+        } finally {
+            if (updateStmt != null)
+                updateStmt.close();
         }
     }
 

@@ -42,7 +42,7 @@ namespace
 {
     GLText2 *defaultText(nullptr);
 
-    float computeLabelAlpha(const GLMapView2 &view, const int64_t labelFadeTimer) NOTHROWS;
+    float computeLabelAlpha(const GLGlobeBase &view, const int64_t labelFadeTimer) NOTHROWS;
 }
 
 GLNinePatch *GLBatchPoint3::smallNinePatch = nullptr;
@@ -173,15 +173,15 @@ TAKErr GLBatchPoint3::getIconSize(size_t *width, size_t *height) const NOTHROWS 
     return code;
 }
 
-void GLBatchPoint3::draw(const GLMapView2 &ortho, const int render_pass) NOTHROWS
+void GLBatchPoint3::draw(const GLGlobeBase &ortho, const int render_pass) NOTHROWS
 {
-    if (!(render_pass&GLMapView2::Sprites))
+    if (!(render_pass&GLGlobeBase::Sprites))
         return;
 
     this->validateProjectedLocation(ortho);
 
     Math::Point2<double> scratchPoint;
-    ortho.scene.forwardTransform.transform(&scratchPoint, posProjected);
+    ortho.renderPass->scene.forwardTransform.transform(&scratchPoint, posProjected);
     auto xpos = (float)scratchPoint.x + iconOffsetX;
     auto ypos = (float)scratchPoint.y - iconOffsetY; // GL LL origin
     auto zpos = (float)scratchPoint.z;
@@ -190,8 +190,8 @@ void GLBatchPoint3::draw(const GLMapView2 &ortho, const int render_pass) NOTHROW
 
     // if tilted, draw a line segment from the center of the point into the
     // earth's surface
-    if (extrude < 0.0 && altitudeMode !=TEAM_ClampToGround && ortho.drawTilt > 0.0) {
-        ortho.scene.forwardTransform.transform(&scratchPoint, surfaceProjected);
+    if (extrude < 0.0 && altitudeMode !=TEAM_ClampToGround && ortho.renderPass->drawTilt > 0.0) {
+        ortho.renderPass->scene.forwardTransform.transform(&scratchPoint, surfaceProjected);
         auto xsurface = (float)scratchPoint.x + iconOffsetX;
         auto ysurface = (float)scratchPoint.y - iconOffsetY; // GL LL origin
         auto zsurface = (float)scratchPoint.z;
@@ -245,7 +245,7 @@ void GLBatchPoint3::draw(const GLMapView2 &ortho, const int render_pass) NOTHROW
                 auto iconW = static_cast<float>(iconWi);
                 auto iconH = static_cast<float>(iconHi);
 
-                auto densityMultiplier = static_cast<float>(1.0f / ortho.pixelDensity);
+                auto densityMultiplier = static_cast<float>(1.0f / /*ortho.pixelDensity*/1.0f);
                 float iconWc = iconWi * densityMultiplier;
                 float iconHc = iconHi * densityMultiplier;
 
@@ -280,7 +280,7 @@ void GLBatchPoint3::draw(const GLMapView2 &ortho, const int render_pass) NOTHROW
             float icon_rotation = this->iconRotation;
             // if icon rotation is absolute we want to rotate the icon with the map
             if (this->absoluteIconRotation) {
-                icon_rotation = static_cast<float>(fmod(icon_rotation + ortho.drawRotation, 360.0));
+                icon_rotation = static_cast<float>(fmod(icon_rotation + ortho.renderPass->drawRotation, 360.0));
             }
             GLES20FixedPipeline::getInstance()->glRotatef(icon_rotation, 0.0f, 0.0f, 1.0f);
 
@@ -584,7 +584,7 @@ bool GLBatchPoint3::hasBatchProhibitiveAttributes() const NOTHROWS {
            this->iconOffsetX || this->iconOffsetY; // icon offset
 }
 
-bool GLBatchPoint3::validateProjectedLocation(const GLMapView2 &view) NOTHROWS
+bool GLBatchPoint3::validateProjectedLocation(const GLGlobeBase &view) NOTHROWS
 {
     bool valid = true;
 
@@ -594,7 +594,7 @@ bool GLBatchPoint3::validateProjectedLocation(const GLMapView2 &view) NOTHROWS
     // Z/altitude
     bool belowTerrain = false;
     double posEl = 0.0;
-    if (view.drawTilt > 0.0) {
+    if (view.renderPass->drawTilt > 0.0) {
         // XXX - altitude
         double alt = this->altitude;
         double terrain;
@@ -619,39 +619,39 @@ bool GLBatchPoint3::validateProjectedLocation(const GLMapView2 &view) NOTHROWS
             iconAtlas->getImageHeight(&iconH, this->textureKey);
             if (isnan(adjustedAlt))
                 adjustedAlt = 0;
-            adjustedAlt += view.drawMapResolution*((double)iconH / 2.0);
+            adjustedAlt += view.renderPass->drawMapResolution*((double)iconH / 2.0);
         }
 
         // move up ~5 pixels from surface
-        adjustedAlt += view.drawMapResolution * 10.0;
+        adjustedAlt += view.renderPass->drawMapResolution * 10.0;
 
         scratchGeo.altitude = adjustedAlt;
         scratchGeo.altitudeRef = AltitudeReference::HAE;
         posEl = isnan(adjustedAlt) ? 0.0 : adjustedAlt;
     }
 
-    if (posProjectedEl != posEl || posProjectedSrid != view.drawSrid || terrainVersion != view.getTerrainVersion()) {
-        view.scene.projection->forward(&posProjected, scratchGeo);
+    if (posProjectedEl != posEl || posProjectedSrid != view.renderPass->drawSrid || terrainVersion != view.getTerrainVersion()) {
+        view.renderPass->scene.projection->forward(&posProjected, scratchGeo);
         posProjectedEl = posEl;
-        posProjectedSrid = view.drawSrid;
+        posProjectedSrid = view.renderPass->drawSrid;
         terrainVersion = view.getTerrainVersion();
         valid = false;
     }
 
-    if (surfaceProjectedSrid != view.drawSrid) {
+    if (surfaceProjectedSrid != view.renderPass->drawSrid) {
         scratchGeo.altitude = 0.0;
         scratchGeo.altitudeRef = AltitudeReference::HAE;
-        view.scene.projection->forward(&surfaceProjected, scratchGeo);
-        surfaceProjectedSrid = view.drawSrid;
+        view.renderPass->scene.projection->forward(&surfaceProjected, scratchGeo);
+        surfaceProjectedSrid = view.renderPass->drawSrid;
         valid = false;
     }
 
     return valid;
 }
 
-TAKErr GLBatchPoint3::batch(const GLMapView2 &view, const int render_pass, GLRenderBatch2 &batch) NOTHROWS {
+TAKErr GLBatchPoint3::batch(const GLGlobeBase &view, const int render_pass, GLRenderBatch2 &batch) NOTHROWS {
     TAKErr code(TE_Ok);
-    if (!(render_pass&GLMapView2::Sprites))
+    if (!(render_pass&GLGlobeBase::Sprites))
         return code;
 
     if (this->iconUri && !this->textureKey) {
@@ -663,7 +663,7 @@ TAKErr GLBatchPoint3::batch(const GLMapView2 &view, const int render_pass, GLRen
     this->validateProjectedLocation(view);
 
     Math::Point2<double> scratchPoint;
-    view.scene.forwardTransform.transform(&scratchPoint, posProjected);
+    view.renderPass->scene.forwardTransform.transform(&scratchPoint, posProjected);
     auto xpos = (float)scratchPoint.x + iconOffsetX;
     auto ypos = (float)scratchPoint.y - iconOffsetY; // GL LL origin
     auto zpos = (float)scratchPoint.z;
@@ -672,8 +672,8 @@ TAKErr GLBatchPoint3::batch(const GLMapView2 &view, const int render_pass, GLRen
 
     // if tilted, draw a line segment from the center of the point into the
     // earth's surface
-    if (extrude < 0.0 && altitudeMode !=TEAM_ClampToGround && view.drawTilt > 0.0) {
-        view.scene.forwardTransform.transform(&scratchPoint, surfaceProjected);
+    if (extrude < 0.0 && altitudeMode !=TEAM_ClampToGround && view.renderPass->drawTilt > 0.0) {
+        view.renderPass->scene.forwardTransform.transform(&scratchPoint, surfaceProjected);
         auto xsurface = (float)scratchPoint.x + iconOffsetX;
         auto ysurface = (float)scratchPoint.y - iconOffsetY; // GL LL origin
         auto zsurface = (float)scratchPoint.z;
@@ -725,7 +725,7 @@ TAKErr GLBatchPoint3::batch(const GLMapView2 &view, const int render_pass, GLRen
         auto iconWidth = static_cast<float>(iconWidthi);
         auto iconHeight = static_cast<float>(iconHeighti);
 
-        auto densityMultiplier = static_cast<float>(1.0f / view.pixelDensity);
+        auto densityMultiplier = static_cast<float>(1.0f / /*view.pixelDensity*/1.0f);
         float iconRenderWidth = iconWidth * densityMultiplier;
         float iconRenderHeight = iconHeight * densityMultiplier;
         
@@ -768,22 +768,22 @@ TAKErr GLBatchPoint3::batch(const GLMapView2 &view, const int render_pass, GLRen
     return code;
 }
 
-TAKErr GLBatchPoint3::batchLabels(const TAK::Engine::Renderer::Core::GLMapView2 &view, const int render_pass, GLRenderBatch2 & batch)
+TAKErr GLBatchPoint3::batchLabels(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const int render_pass, GLRenderBatch2 & batch)
 {
     TAKErr code(TE_Ok);
 
-    if (!(render_pass&GLMapView2::Sprites))
+    if (!(render_pass&GLGlobeBase::Sprites))
         return code;
 
     Math::Point2<double> scratchPoint;
-    view.scene.forwardTransform.transform(&scratchPoint, posProjected);
+    view.renderPass->scene.forwardTransform.transform(&scratchPoint, posProjected);
     auto xpos = (float)scratchPoint.x;
     auto ypos = (float)scratchPoint.y;
     auto zpos = (float)scratchPoint.z;
 
     // if the displayLables preference is checked display the text if
     // the marker requested to always have the text show or if the scale is zoomed in enough
-    if (/*TODO: AtakMapView::SETTING_displayLabels*/true && view.drawMapScale >= defaultLabelRenderScale)
+    if (/*TODO: AtakMapView::SETTING_displayLabels*/true && view.renderPass->drawMapScale >= defaultLabelRenderScale)
     {
         //JAVA TO C# CONVERTER WARNING: The original Java variable was marked 'final':
         //ORIGINAL LINE: final String text = this.name;
@@ -1016,7 +1016,7 @@ TAKErr GLBatchPoint3::dereferenceIconLoaderNoSync(const char *iconUri) NOTHROWS
 
 namespace
 {
-    float computeLabelAlpha(const GLMapView2 &view, const int64_t labelFadeTimer) NOTHROWS
+    float computeLabelAlpha(const GLGlobeBase &view, const int64_t labelFadeTimer) NOTHROWS
     {
         const int64_t settleDelta = std::max(std::min((view.animationLastTick - labelFadeTimer), 1000LL), 200LL);
         return (float)settleDelta / 1000.0f;

@@ -102,10 +102,10 @@ namespace atakmap
         private:
             TAK::Engine::Renderer::GLRenderBatch2 impl;
 
-            friend TAK::Engine::Renderer::GLRenderBatch2 &GLRenderBatch_adapt(GLRenderBatch &legacy) NOTHROWS;
+            friend ENGINE_API TAK::Engine::Renderer::GLRenderBatch2 &GLRenderBatch_adapt(GLRenderBatch &legacy) NOTHROWS;
         };
 
-        TAK::Engine::Renderer::GLRenderBatch2 &GLRenderBatch_adapt(GLRenderBatch &legacy) NOTHROWS;
+        ENGINE_API TAK::Engine::Renderer::GLRenderBatch2 &GLRenderBatch_adapt(GLRenderBatch &legacy) NOTHROWS;
 
     }
 }

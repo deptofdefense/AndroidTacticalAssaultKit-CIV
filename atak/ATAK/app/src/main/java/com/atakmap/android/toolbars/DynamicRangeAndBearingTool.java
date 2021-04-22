@@ -42,7 +42,7 @@ public class DynamicRangeAndBearingTool extends Tool implements
     private RangeAndBearingMapItem _rab;
     private final String _rabUUID = UUID.randomUUID().toString();
 
-    private final Context _context;
+    protected final Context _context;
     private final MapGroup _rabGroup;
 
     private boolean _complete;
@@ -55,14 +55,15 @@ public class DynamicRangeAndBearingTool extends Tool implements
     synchronized public static DynamicRangeAndBearingTool getInstance(
             MapView mapView, ImageButton button) {
         if (_instance == null)
-            _instance = new DynamicRangeAndBearingTool(mapView, button);
+            _instance = RangeAndBearingCompat
+                    .getDynamicRangeAndBearingInstance(mapView, button);
         else
             _instance.addButton(button);
 
         return _instance;
     }
 
-    private DynamicRangeAndBearingTool(MapView mapView, ImageButton button) {
+    protected DynamicRangeAndBearingTool(MapView mapView, ImageButton button) {
         super(mapView, TOOL_NAME);
         _context = mapView.getContext();
         if (_buttons == null)
@@ -319,7 +320,7 @@ public class DynamicRangeAndBearingTool extends Tool implements
         }
     };
 
-    synchronized private void prompt(int stringId) {
+    synchronized protected void prompt(int stringId) {
         TextContainer.getInstance().displayPrompt(_context
                 .getString(stringId));
     }

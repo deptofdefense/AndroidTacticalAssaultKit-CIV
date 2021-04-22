@@ -8,7 +8,13 @@ import com.atakmap.lang.Unsafe;
 public final class GeometryFactory {
 
     private GeometryFactory() {}
-    
+
+    /**
+     * Returns a 2D {@link Polygon} constructed from the specified minmium
+     * bounding region.
+     * @param mbb
+     * @return
+     */
     public static Geometry fromEnvelope(Envelope mbb) {
         LineString retval = new LineString(2);
         retval.addPoint(mbb.minX, mbb.minY);

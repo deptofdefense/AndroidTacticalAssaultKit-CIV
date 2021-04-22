@@ -702,8 +702,8 @@ public class WMSQueryLayers extends QueryLayers {
             }
 
             // and print out the XML itself.
-            try(FileWriter w = IOProviderFactory.getFileWriter(f);
-                PrintWriter out = new PrintWriter(w)) {
+            try (FileWriter w = IOProviderFactory.getFileWriter(f);
+                    PrintWriter out = new PrintWriter(w)) {
                 out.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
                 out.println("<customWmsMapSource>");
                 out.println("    <name>" + title + " on "
@@ -711,7 +711,8 @@ public class WMSQueryLayers extends QueryLayers {
                         + "</name>");
                 out.println("    <version>" + version + "</version>");
                 out.println("    <minZoom>" + minZoom + "</minZoom>");
-                out.println("    <maxZoom>" + Math.max(minZoom, 23) + "</maxZoom>");
+                out.println(
+                        "    <maxZoom>" + Math.max(minZoom, 23) + "</maxZoom>");
                 out.println("    <tileType>" + format + "</tileType>");
                 out.println("    <url>" + queryLayer.getGetMapURL() + "</url>");
                 out.println("    <coordinatesystem>EPSG:" + srid

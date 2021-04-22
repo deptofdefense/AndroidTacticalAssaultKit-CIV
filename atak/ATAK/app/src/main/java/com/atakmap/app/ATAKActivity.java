@@ -24,6 +24,7 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
@@ -34,6 +35,8 @@ import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import androidx.annotation.NonNull;
+
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -49,6 +52,12 @@ import android.widget.Toast;
 
 import com.atakmap.android.data.ClearContentTask;
 import com.atakmap.android.dropdown.DropDownManager;
+import com.atakmap.map.CameraController;
+import com.atakmap.map.Globe;
+import com.atakmap.map.MapRenderer2;
+import com.atakmap.map.MapSceneModel;
+import com.atakmap.map.elevation.ElevationManager;
+import com.atakmap.app.system.EncryptionProvider;
 import com.atakmap.coremap.filesystem.RemovableStorageHelper;
 import com.atakmap.os.FileObserver;
 import com.atakmap.android.gui.HintDialogHelper;
@@ -191,13 +200,7 @@ public class ATAKActivity extends MapActivity implements
         acceptedPermissions = EulaHelper.showEULA(this);
         if (!acceptedPermissions) {
             Log.d(TAG, "eula has not been accepted...");
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-            setContentView(R.layout.atak_splash);
-            setupSplash(findViewById(android.R.id.content));
-            final ActionBar actionBar = this.getActionBar();
-            if (actionBar != null)
-                actionBar.hide();
-            super.onCreate(null);
+            onCreateWaitMode();
             return;
         }
 
@@ -205,14 +208,64 @@ public class ATAKActivity extends MapActivity implements
                 .checkPermissions(this);
         if (!acceptedPermissions) {
             Log.d(TAG, "permissions have not been accepted...");
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-            setContentView(R.layout.atak_splash);
-            setupSplash(findViewById(android.R.id.content));
-            final ActionBar actionBar = this.getActionBar();
-            if (actionBar != null)
-                actionBar.hide();
-            super.onCreate(null);
+            onCreateWaitMode();
             return;
+        }
+
+        // Currently the Encryption plugin implementation requires some aynchronous interaction before
+        // continuing to load ATAK.
+
+        final EncryptionProvider encryptionProvider = SystemComponentLoader
+                .getEncryptionProvider();
+        if (encryptionProvider != null) {
+            if (!encryptionProvider.setup(new EncryptionProvider.Callback() {
+                @Override
+                public void complete(int condition, String title, Drawable icon,
+                        String msg) {
+                    if (!encryptionCallbackValid) {
+                        Log.e(TAG,
+                                "encryption provider callback no longer valid");
+                        return;
+                    }
+                    encryptionCallbackValid = false;
+
+                    if (condition != EncryptionProvider.Callback.SETUP_SUCCESSFUL) {
+                        SystemComponentLoader
+                                .disableEncryptionProvider(ATAKActivity.this);
+                        // will clean this up after the first structural review of the code
+                        final AlertDialog.Builder alertBuilder = new AlertDialog.Builder(
+                                ATAKActivity.this);
+
+                        // will clean this up after the first structural review of the code
+                        View view = LayoutInflater.from(ATAKActivity.this)
+                                .inflate(R.layout.dialog_message, null);
+                        TextView tv = view.findViewById(R.id.block1);
+                        view.findViewById(R.id.block2).setVisibility(View.GONE);
+                        view.findViewById(R.id.block3).setVisibility(View.GONE);
+                        tv.setText(msg);
+
+                        alertBuilder
+                                .setTitle(title)
+                                .setIcon(icon)
+                                .setView(view)
+                                .setPositiveButton(R.string.ok, null);
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                alertBuilder.show();
+                            }
+                        });
+
+                    }
+                    onCreate(null);
+
+                }
+            })) {
+                onCreateWaitMode();
+                return;
+            } else {
+                encryptionCallbackValid = false;
+            }
         }
 
         MigrationShim.onMigration(this);
@@ -284,7 +337,6 @@ public class ATAKActivity extends MapActivity implements
 
         super.onCreate(null);
 
-
         // set up visual splash screen
 
         final View splash;
@@ -299,7 +351,8 @@ public class ATAKActivity extends MapActivity implements
 
             if (_controlPrefs.getBoolean("atakControlForcePortrait",
                     false)) {
-                splash = View.inflate(ATAKActivity.this, R.layout.atak_splash_port,
+                splash = View.inflate(ATAKActivity.this,
+                        R.layout.atak_splash_port,
                         null);
             } else {
                 splash = View
@@ -356,6 +409,21 @@ public class ATAKActivity extends MapActivity implements
             }
         }, 1500);
 
+    }
+
+    /**
+     * This method is called when ATAK is waiting for external stimulus to occur before it can
+     * completely startup.   The callee *MUST* only call this from onCreate and immediately after
+     * calling, this method, return must be called.
+     */
+    private void onCreateWaitMode() {
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        setContentView(R.layout.atak_splash);
+        setupSplash(findViewById(android.R.id.content));
+        final ActionBar actionBar = this.getActionBar();
+        if (actionBar != null)
+            actionBar.hide();
+        super.onCreate(null);
     }
 
     /**
@@ -505,10 +573,14 @@ public class ATAKActivity extends MapActivity implements
                     "cowardly refusing to enable the NetworkDeviceManager device list because NetworkMonitor is not configured");
             AlertDialog.Builder alertBuilder = new AlertDialog.Builder(
                     ATAKActivity.this);
+            View view = LayoutInflater.from(ATAKActivity.this)
+                    .inflate(R.layout.dialog_message, null);
+            TextView tv = view.findViewById(R.id.block1);
+            tv.setText(R.string.preferences_text419);
+
             alertBuilder
                     .setTitle(R.string.preferences_text418)
-                    .setMessage(
-                            R.string.preferences_text419)
+                    .setView(view)
                     .setPositiveButton(R.string.ok, null);
             alertBuilder.create().show();
             FileSystemUtils.delete(networkMap);
@@ -1528,6 +1600,8 @@ public class ATAKActivity extends MapActivity implements
                     "screenViewLat", "0"));
             double lon = Double.parseDouble(_controlPrefs.getString(
                     "screenViewLon", "0"));
+            double alt = Double.parseDouble(_controlPrefs.getString(
+                    "screenViewAlt", "0"));
             double scale = Double.parseDouble(_controlPrefs.getString(
                     "screenViewMapScale", "0"));
             double tilt = Double.parseDouble(_controlPrefs.getString(
@@ -1535,11 +1609,26 @@ public class ATAKActivity extends MapActivity implements
             boolean enabled3D = _controlPrefs.getBoolean(
                     "status_3d_enabled", false);
 
+            // XXX - this will need to be revisited with subterranean support
+
+            // if there was no elevation data during the last run and has been
+            // subsequently loaded, adjust the altitude to prevent the camera
+            // from starting underneath the terrain
+            final double localTerrain = ElevationManager.getElevation(lat, lon, null);
+            if(Double.isNaN(alt) || alt < localTerrain) {
+                if(!Double.isNaN(localTerrain) && localTerrain > 0d)
+                    alt = localTerrain;
+                double gsd = Globe.getMapResolution(_mapView.getDisplayDpi(), scale);
+                double range = MapSceneModel.range(gsd, 45d, _mapView.getHeight());
+                scale = Globe.getMapScale(
+                        _mapView.getDisplayDpi(),
+                        MapSceneModel.gsd(range+alt, 45d, _mapView.getHeight()));
+            }
             Log.d(TAG, "using saved screen location lat: " + lat + " lon: "
                     + lon
                     + " scale: " + scale);
             if (lat != 0 || lon != 0 || scale != 0) {
-                ctrl.panZoomTo(new GeoPoint(lat, lon), scale, true);
+                ctrl.panZoomTo(new GeoPoint(lat, lon, alt), scale, true);
                 if (tilt != 0 && enabled3D)
                     ctrl.tiltTo(tilt, true);
             } else {
@@ -1603,8 +1692,16 @@ public class ATAKActivity extends MapActivity implements
         try {
             // Record the screen positional information prior to doing anything
             // else.
-            double lat = _mapView.getLatitude();
-            double lon = _mapView.getLongitude();
+            final MapSceneModel sm = _mapView.getRenderer3().getMapSceneModel(
+                    false, MapRenderer2.DisplayOrigin.UpperLeft);
+            GeoPoint focus = sm.mapProjection.inverse(sm.camera.target, null);
+            double lat = (focus != null) ? focus.getLatitude()
+                    : _mapView.getLatitude();
+            double lon = (focus != null) ? focus.getLongitude()
+                    : _mapView.getLongitude();
+            double alt = (focus != null && focus.isAltitudeValid())
+                    ? focus.getAltitude()
+                    : 0d;
             double scale = _mapView.getMapScale();
             double tilt = _mapView.getMapTilt();
 
@@ -1612,6 +1709,7 @@ public class ATAKActivity extends MapActivity implements
                 Editor editor = _controlPrefs.edit();
                 editor.putString("screenViewLat", String.valueOf(lat));
                 editor.putString("screenViewLon", String.valueOf(lon));
+                editor.putString("screenViewAlt", String.valueOf(alt));
                 editor.putString("screenViewMapScale", String.valueOf(scale));
                 editor.putString("screenViewMapTilt", String.valueOf(tilt));
                 editor.apply();
@@ -2241,10 +2339,24 @@ public class ATAKActivity extends MapActivity implements
                         Intent advancedPrefsActivity = new Intent(
                                 getBaseContext(),
                                 SettingsActivity.class);
+                        final MapSceneModel sm = _mapView.getRenderer3()
+                                .getMapSceneModel(false,
+                                        MapRenderer2.DisplayOrigin.UpperLeft);
+                        GeoPoint focus = sm.mapProjection
+                                .inverse(sm.camera.target, null);
+                        double lat = (focus != null) ? focus.getLatitude()
+                                : _mapView.getLatitude();
+                        double lon = (focus != null) ? focus.getLongitude()
+                                : _mapView.getLongitude();
+                        double alt = (focus != null && focus.isAltitudeValid())
+                                ? focus.getAltitude()
+                                : 0d;
                         advancedPrefsActivity.putExtra("screenViewLat",
-                                _mapView.getLatitude());
+                                lat);
                         advancedPrefsActivity.putExtra("screenViewLon",
-                                _mapView.getLongitude());
+                                lon);
+                        advancedPrefsActivity.putExtra("screenViewAlt",
+                                alt);
                         advancedPrefsActivity.putExtra("screenViewScale",
                                 _mapView.getMapScale());
 
@@ -2549,11 +2661,20 @@ public class ATAKActivity extends MapActivity implements
                         "com.atakmap.app.FavMapScale", 1.0d / 98609.5);
                 Log.d(TAG, "using favorite: " + tempLat + " lon: " + tempLon
                         + " scale: " + tempScale);
-                AtakMapController ctrl = _mapView.getMapController();
-                GeoPoint spot = new GeoPoint(tempLat, tempLon);
-                ctrl.panTo(spot, true);
-                ctrl.zoomTo(tempScale, false);
+                GeoPoint spot = new GeoPoint(tempLat, tempLon,
+                        ElevationManager.getElevation(tempLat, tempLat, null));
 
+                _mapView.getMapController().dispatchOnPanRequested();
+                final MapSceneModel sm = _mapView.getRenderer3()
+                        .getMapSceneModel(
+                                false, MapRenderer2.DisplayOrigin.UpperLeft);
+                _mapView.getRenderer3().lookAt(
+                        spot,
+                        Globe.getMapResolution(_mapView.getDisplayDpi(),
+                                tempScale),
+                        sm.camera.azimuth,
+                        90d + sm.camera.elevation,
+                        true);
             } else {
                 Log.d(TAG, "result not ok");
             }
@@ -2561,15 +2682,25 @@ public class ATAKActivity extends MapActivity implements
             if (resultCode == RESULT_OK) {
                 double lat = data.getDoubleExtra("screenViewLat", 0.0);
                 double lon = data.getDoubleExtra("screenViewLon", 0.0);
+                double alt = data.getDoubleExtra("screenViewAlt", 0.0);
                 double scale = data.getDoubleExtra("screenViewMapScale", 0.0);
                 Log.d(TAG, "settingRequestCode saved screen location lat: "
                         + lat
                         + " lon: " + lon + " scale: " + scale);
 
                 if (lat != 0 || lon != 0 || scale != 0) {
-                    _mapView.getMapController()
-                            .panTo(new GeoPoint(lat, lon), false);
-                    _mapView.getMapController().zoomTo(scale, true);
+                    _mapView.getMapController().dispatchOnPanRequested();
+                    final MapSceneModel sm = _mapView.getRenderer3()
+                            .getMapSceneModel(
+                                    false,
+                                    MapRenderer2.DisplayOrigin.UpperLeft);
+                    _mapView.getRenderer3().lookAt(
+                            new GeoPoint(lat, lon, alt),
+                            Globe.getMapResolution(_mapView.getDisplayDpi(),
+                                    scale),
+                            sm.camera.azimuth,
+                            90d + sm.camera.elevation,
+                            true);
                 }
             }
         } else if (requestCode == NETWORK_SETTINGS_REQUEST_CODE) {
@@ -2894,7 +3025,24 @@ public class ATAKActivity extends MapActivity implements
     public void onRequestPermissionsResult(int requestCode,
             @NonNull String[] permissions, @NonNull int[] grantResults) {
 
-        if (requestCode == Permissions.REQUEST_ID) {
+        super.onRequestPermissionsResult(requestCode, permissions,
+                grantResults);
+
+        if (requestCode == Permissions.LOCATION_REQUEST_ID) {
+            boolean b = Permissions.onRequestPermissionsResult(requestCode,
+                    permissions, grantResults);
+            if (b) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+                    requestPermissions(Permissions.PermissionsList,
+                        Permissions.REQUEST_ID);
+            } else {
+                Log.d(TAG, "location permission set not granted, retry...");
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+                    requestPermissions(Permissions.locationPermissionsList,
+                            Permissions.REQUEST_ID);
+            }
+
+        } else if (requestCode == Permissions.REQUEST_ID) {
             boolean b = Permissions.onRequestPermissionsResult(requestCode,
                     permissions, grantResults);
             if (b) {
@@ -3063,6 +3211,7 @@ public class ATAKActivity extends MapActivity implements
     public static final String BACKGROUND_IMMEDIATELY = "com.atakmap.app.BACKGROUND_IMMEDIATELY";
 
     private boolean acceptedPermissions = false;
+    private boolean encryptionCallbackValid = true;
 
     private boolean runningSettings = false;
     private boolean paused = false;

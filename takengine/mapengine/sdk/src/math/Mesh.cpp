@@ -163,6 +163,22 @@ bool intersectGeneric(Point2<double> *value, const Ray2<double> &ray, const Mode
     }
 
     double isectDistSq = NAN;
+    bool haveCandidate = false;
+
+    // transform the ray into the local CS (if applicable)
+    Ray2<double> localRay(ray);
+    if(localFrame) {
+        Matrix2 invLocalFrame;
+        localFrame->createInverse(&invLocalFrame);
+        Point2<double> localRayOrg;
+        invLocalFrame.transform(&localRayOrg, ray.origin);
+        Point2<double> localRayDir(ray.origin.x+ray.direction.x, ray.origin.y+ray.direction.y, ray.origin.z+ray.direction.z);
+        invLocalFrame.transform(&localRayDir, localRayDir);
+        localRayDir.x -= localRayOrg.x;
+        localRayDir.y -= localRayOrg.y;
+        localRayDir.z -= localRayOrg.z;
+        localRay = Ray2<double>(localRayOrg, Vector4<double>(localRayDir.x, localRayDir.y, localRayDir.z));
+    }
 
     const std::size_t faceCount = mesh.getNumFaces();
     const bool indices = mesh.isIndexed();
@@ -184,32 +200,48 @@ bool intersectGeneric(Point2<double> *value, const Ray2<double> &ray, const Mode
         Point2<double> c;
         mesh.getPosition(&c, cidx);
 
-        if (localFrame) {
-            localFrame->transform(&a, a);
-            localFrame->transform(&b, b);
-            localFrame->transform(&c, c);
+        Point2<double> abc[3] = { a, b, c};
+
+        AABB aabb(abc, 3u);
+        Point2<double> p;
+        if(!aabb.intersect(&p, localRay))
+            continue;
+
+        if(haveCandidate) {
+            const double dx = (p.x - localRay.origin.x);
+            const double dy = (p.y - localRay.origin.y);
+            const double dz = (p.z - localRay.origin.z);
+            const double distSq = (dx*dx) + (dy*dy) + (dz*dz);
+            if(distSq > isectDistSq)
+                continue;
         }
 
-        Point2<double> p;
         int code = Triangle_intersect(&p,
             a.x, a.y, a.z,
             b.x, b.y, b.z,
             c.x, c.y, c.z,
-            ray);
+            localRay);
         if (code != TE_Ok)
             continue;
 
-        const double dx = (p.x - ray.origin.x);
-        const double dy = (p.y - ray.origin.y);
-        const double dz = (p.z - ray.origin.z);
+        const double dx = (p.x - localRay.origin.x);
+        const double dy = (p.y - localRay.origin.y);
+        const double dz = (p.z - localRay.origin.z);
         const double distSq = (dx*dx) + (dy*dy) + (dz*dz);
-        if (isnan(isectDistSq) || (distSq < isectDistSq)) {
+        if (!haveCandidate || (distSq < isectDistSq)) {
             *value = p;
             isectDistSq = distSq;
+            haveCandidate = true;
         }
     }
 
-    return !isnan(isectDistSq);
+    if(!haveCandidate)
+        return false;
+
+    // transform the intersect point from the local CS (if applicable
+    if(localFrame)
+        localFrame->transform(value, *value);
+    return true;
 }
 
 template<class V, class I>
@@ -234,6 +266,24 @@ bool intersectImpl(Point2<double> *value, const Ray2<double> &ray, const Model::
     const void *positions;
     mesh.getVertices(&positions, Model::TEVA_Position);
 
+    // transform the ray into the local CS (if applicable)
+    Ray2<double> localRay(ray);
+    if(localFrame) {
+        Matrix2 invLocalFrame;
+        localFrame->createInverse(&invLocalFrame);
+        Point2<double> localRayOrg;
+        invLocalFrame.transform(&localRayOrg, ray.origin);
+        Point2<double> localRayDir(ray.origin.x+ray.direction.x, ray.origin.y+ray.direction.y, ray.origin.z+ray.direction.z);
+        invLocalFrame.transform(&localRayDir, localRayDir);
+        localRayDir.x -= localRayOrg.x;
+        localRayDir.y -= localRayOrg.y;
+        localRayDir.z -= localRayOrg.z;
+        localRay = Ray2<double>(localRayOrg, Vector4<double>(localRayDir.x, localRayDir.y, localRayDir.z));
+    }
+
+    const std::size_t position_offset = mesh.getVertexDataLayout().position.offset;
+    const std::size_t position_stride = mesh.getVertexDataLayout().position.stride;
+    bool haveCandidate = false;
     for (std::size_t face = 0; face < faceCount; face++) {
         std::size_t aidx = face * s;
         std::size_t bidx = face * s + 1;
@@ -251,39 +301,55 @@ bool intersectImpl(Point2<double> *value, const Ray2<double> &ray, const Model::
 
         const V *pos;
 
-        pos = reinterpret_cast<const V *>(static_cast<const uint8_t *>(positions) + mesh.getVertexDataLayout().position.offset + (aidx*mesh.getVertexDataLayout().position.stride));
+        pos = reinterpret_cast<const V *>(static_cast<const uint8_t *>(positions) + position_offset + (aidx*position_stride));
         Point2<double> a(pos[0], pos[1], pos[2]);
-        pos = reinterpret_cast<const V *>(static_cast<const uint8_t *>(positions) + mesh.getVertexDataLayout().position.offset + (bidx*mesh.getVertexDataLayout().position.stride));
+        pos = reinterpret_cast<const V *>(static_cast<const uint8_t *>(positions) + position_offset + (bidx*position_stride));
         Point2<double> b(pos[0], pos[1], pos[2]);
-        pos = reinterpret_cast<const V *>(static_cast<const uint8_t *>(positions) + mesh.getVertexDataLayout().position.offset + (cidx*mesh.getVertexDataLayout().position.stride));
+        pos = reinterpret_cast<const V *>(static_cast<const uint8_t *>(positions) + position_offset + (cidx*position_stride));
         Point2<double> c(pos[0], pos[1], pos[2]);
 
-        if (localFrame) {
-            localFrame->transform(&a, a);
-            localFrame->transform(&b, b);
-            localFrame->transform(&c, c);
+        Point2<double> abc[3] = { a, b, c};
+
+        AABB aabb(abc, 3u);
+        Point2<double> p;
+        if(!aabb.intersect(&p, localRay))
+            continue;
+
+        if(haveCandidate) {
+            const double dx = (p.x - localRay.origin.x);
+            const double dy = (p.y - localRay.origin.y);
+            const double dz = (p.z - localRay.origin.z);
+            const double distSq = (dx*dx) + (dy*dy) + (dz*dz);
+            if(distSq > isectDistSq)
+                continue;
         }
 
-        Point2<double> p;
         int code = Triangle_intersect(&p,
             a.x, a.y, a.z,
             b.x, b.y, b.z,
             c.x, c.y, c.z,
-            ray);
+            localRay);
         if (code != TE_Ok)
             continue;
 
-        const double dx = (p.x - ray.origin.x);
-        const double dy = (p.y - ray.origin.y);
-        const double dz = (p.z - ray.origin.z);
+        const double dx = (p.x - localRay.origin.x);
+        const double dy = (p.y - localRay.origin.y);
+        const double dz = (p.z - localRay.origin.z);
         const double distSq = (dx*dx) + (dy*dy) + (dz*dz);
-        if (isnan(isectDistSq) || (distSq < isectDistSq)) {
+        if (!haveCandidate || (distSq < isectDistSq)) {
             *value = p;
             isectDistSq = distSq;
+            haveCandidate = true;
         }
     }
 
-    return !isnan(isectDistSq);
+    if(!haveCandidate)
+        return false;
+
+    // transform the intersect point from the local CS (if applicable
+    if(localFrame)
+        localFrame->transform(value, *value);
+    return true;
 }
 
 AABB aabb(const Model::Mesh &mesh, const Matrix2 *localFrame) NOTHROWS

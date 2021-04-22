@@ -45,7 +45,7 @@ namespace TAK {
                     void setMatrices(const Renderer::Shader2& shader, const bool mvp, const bool imv) const NOTHROWS;
                     void updateBindVbo() NOTHROWS;
                 public:
-                    void draw(const Core::GLMapView2& view, const int renderPass) NOTHROWS;
+                    void draw(const Core::GLGlobeBase& view, const int renderPass) NOTHROWS;
                 public: // GLDepthSamplerDrawable
                     virtual Util::TAKErr gatherDepthSamplerDrawables(std::vector<GLDepthSamplerDrawable*>& result, int levelDepth, const TAK::Engine::Core::MapSceneModel2& sceneModel, float x, float y) NOTHROWS;
                     virtual void depthSamplerDraw(GLDepthSampler& sampler, const TAK::Engine::Core::MapSceneModel2& sceneModel) NOTHROWS;
@@ -58,7 +58,7 @@ namespace TAK {
                         Util::TAKErr (*getTerrainMeshElevation)(double* value, const double latitude, const double longitude, const void *opaque) NOTHROWS;
                         const void *opaque;
                     };
-                    void draw(const Core::GLMapView2 &view, Renderer::RenderState &state, const int renderPass) NOTHROWS;
+                    void draw(const Core::GLGlobeBase &view, Renderer::RenderState &state, const int renderPass) NOTHROWS;
                     void draw(const ViewState_ &args, Renderer::RenderState& state, const int renderPass) NOTHROWS;
                     void draw(/*const Core::GLMapView2& view,*/ const Renderer::Shader& shader, GLMaterial& material, const bool reset)  const NOTHROWS;
                     void draw(const Shader2 &shader, const ViewState_ &viewState, Renderer::RenderState &state, bool wireframe) NOTHROWS;

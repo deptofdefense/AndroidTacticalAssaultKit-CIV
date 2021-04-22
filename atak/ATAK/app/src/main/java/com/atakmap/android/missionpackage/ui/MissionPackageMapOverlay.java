@@ -79,6 +79,7 @@ import com.atakmap.android.missionpackage.file.task.MissionPackageBaseTask;
 import com.atakmap.android.overlay.AbstractMapOverlay2;
 import com.atakmap.android.routes.Route;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
+import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.util.AttachmentManager;
 import com.atakmap.android.util.ServerListDialog;
 import com.atakmap.app.R;
@@ -128,6 +129,7 @@ public class MissionPackageMapOverlay extends AbstractMapOverlay2 implements
             MIMEType mime = ResourceFile.getMIMETypeForFile(fn);
             return mime == MIMEType.KML || mime == MIMEType.KMZ
                     || mime == MIMEType.GPX || mime == MIMEType.SHP
+                    || mime == MIMEType.GML
                     || mime == MIMEType.SHPZ || mime == MIMEType.LPT
                     || mime == MIMEType.DRW || mime == MIMEType.TIF
                     || mime == MIMEType.TIFF;
@@ -136,6 +138,7 @@ public class MissionPackageMapOverlay extends AbstractMapOverlay2 implements
 
     private final MapView _view;
     private final Context _context;
+    private final SharedPreferences _prefs;
     private final MissionPackageMapComponent _component;
     private final MissionPackageReceiver _receiver;
     private final MissionPackageViewUserState _userState;
@@ -154,6 +157,7 @@ public class MissionPackageMapOverlay extends AbstractMapOverlay2 implements
             MissionPackageMapComponent component) {
         this._view = view;
         this._context = view.getContext();
+        _prefs = PreferenceManager.getDefaultSharedPreferences(_context);
         this._component = component;
         _receiver = component.getReceiver();
         _userState = _receiver.getUserState();
@@ -1114,22 +1118,14 @@ public class MissionPackageMapOverlay extends AbstractMapOverlay2 implements
                 }
 
                 // Content providers
-                else if (which >= 3 && which - 3 < providers.size()) {
+                else if (which - 3 < providers.size()) {
                     URIContentProvider provider = providers.get(which - 3);
                     provider.addContent("Data Package", new Bundle(),
                             new URIContentProvider.Callback() {
                                 @Override
                                 public void onAddContent(URIContentProvider p,
                                         List<String> uris) {
-                                    List<String> paths = new ArrayList<>(
-                                            uris.size());
-                                    for (String uri : uris) {
-                                        File f = URIHelper.getFile(uri);
-                                        if (f != null)
-                                            paths.add(f.getAbsolutePath());
-                                    }
-                                    addFiles(group, true,
-                                            paths.toArray(new String[0]));
+                                    addURIs(group, uris);
                                 }
                             });
                 }
@@ -1139,12 +1135,38 @@ public class MissionPackageMapOverlay extends AbstractMapOverlay2 implements
         d.show(true);
     }
 
+    private void addURIs(MissionPackageListGroup group, List<String> uris) {
+        MissionPackageExportWrapper w = new MissionPackageExportWrapper();
+        for (String uri : uris) {
+            MapItem mi = URIHelper.getMapItem(_view, uri);
+            File f = URIHelper.getFile(uri);
+            if (mi != null)
+                w.addUID(mi.getUID());
+            else if (f != null)
+                w.addFile(f);
+            else
+                Log.w(TAG, "Ignoring unsupported URI: " + uri);
+        }
+        MissionPackageExportMarshal marshal = new MissionPackageExportMarshal(
+                _context, _userState.isIncludeAttachments());
+        if (group != null)
+            marshal.setMissionPackageUID(group.getManifest().getUID());
+        try {
+            List<Exportable> exports = new ArrayList<>();
+            exports.add(w);
+            marshal.execute(exports);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to add exportables", e);
+        }
+    }
+
     private void addFiles(final MissionPackageListGroup group) {
         final ImportManagerFileBrowser importView = ImportManagerFileBrowser
                 .inflate(_view);
 
         importView.setTitle(R.string.select_files_to_import);
-        importView.setStartDirectory(_userState.getLastImportDirectory());
+        importView.setStartDirectory(
+                ATAKUtilities.getStartDirectory(_view.getContext()));
 
         importView.setExtensionTypes(new String[] {
                 "*"
@@ -1170,10 +1192,11 @@ public class MissionPackageMapOverlay extends AbstractMapOverlay2 implements
                     Log.d(TAG, "Selected " + selectedFiles.length + " files");
                     // Add files to current MP
                     addFiles(group, true, selectedFiles);
-                    _userState.setLastImportDirectory(
-                            importView.getCurrentPath());
-                }
 
+                    _prefs.edit().putString("lastDirectory",
+                            importView.getCurrentPath())
+                            .apply();
+                }
             }
         });
         final AlertDialog alert = b.create();
@@ -1267,10 +1290,8 @@ public class MissionPackageMapOverlay extends AbstractMapOverlay2 implements
                     callsign = CotUtils.getCallsign(event);
                     CotPoint cp = event.getCotPoint();
                     if (cp != null) {
-                        SharedPreferences sp = PreferenceManager
-                                .getDefaultSharedPreferences(_context);
                         CoordinateFormat cf = CoordinateFormat.find(
-                                sp.getString("coord_display_pref", _context
+                                _prefs.getString("coord_display_pref", _context
                                         .getString(
                                                 R.string.coord_display_pref_default)));
                         if (cf != null)

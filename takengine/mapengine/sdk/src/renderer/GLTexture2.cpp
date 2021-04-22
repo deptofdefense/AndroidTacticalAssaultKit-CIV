@@ -55,8 +55,8 @@ void GLTexture2::apply() NOTHROWS
     if (!id_)
         return;
 
-    int t;
-    glGetIntegerv(GL_TEXTURE_2D, &t);
+    GLint t;
+    glGetIntegerv(GL_TEXTURE_BINDING_2D, &t);
     glBindTexture(GL_TEXTURE_2D, id_);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag_filter_);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter_);
@@ -114,8 +114,8 @@ GLTexture2::~GLTexture2() NOTHROWS
 void GLTexture2::init() NOTHROWS
 {
     if (id_ == 0) {
-        int t;
-        glGetIntegerv(GL_TEXTURE_2D, &t);
+        GLint t;
+        glGetIntegerv(GL_TEXTURE_BINDING_2D, &t);
 
         // clear any error codes
         //glCheckForError(GL_NONE);
@@ -730,6 +730,16 @@ TAKErr TAK::Engine::Renderer::GLTexture2_createCompressedTexture(GLTexture2Ptr &
 	value = GLTexture2Ptr(new GLTexture2(tex), Memory_deleter_const<GLTexture2>);
 	tex.id_ = 0;
 	return code;
+}
+
+TAKErr TAK::Engine::Renderer::GLTexture2_orphan(GLuint* result, GLTexture2& texture) NOTHROWS {
+
+    if (!result)
+        return TE_InvalidArg;
+
+    *result = texture.id_;
+    texture.id_ = 0;
+    return TE_Ok;
 }
 
 namespace

@@ -159,8 +159,8 @@ public class GLTiledMapLayer2 implements GLMapLayer3, GLResolvableMapRenderable,
         
                 DatasetProjection2 imprecise =
                         new DefaultDatasetProjection2(this.info.getSpatialReferenceID(),
-                                                      (int)this.tileReader.getWidth(),
-                                                      (int)this.tileReader.getHeight(),
+                                                      this.tileReader.getWidth(),
+                                                      this.tileReader.getHeight(),
                                                       ul, ur, lr, ll);
                 
                 DatasetProjection2 precise = null;
@@ -184,8 +184,8 @@ public class GLTiledMapLayer2 implements GLMapLayer3, GLResolvableMapRenderable,
                 if(this.textureCacheEnabled)
                     opts.textureCache = GLRenderGlobals.get(this.surface).getTextureCache();
 
-                GLQuadTileNode3 quadTree =
-                        new GLQuadTileNode3(LegacyAdapters.getRenderContext(this.surface),
+                GLQuadTileNode4 quadTree =
+                        new GLQuadTileNode4(LegacyAdapters.getRenderContext(this.surface),
                                             new ImageInfo(img.getUri(),
                                                           img.getImageryType(),
                                                           img.isPrecisionImagery(),
@@ -334,23 +334,27 @@ public class GLTiledMapLayer2 implements GLMapLayer3, GLResolvableMapRenderable,
         @Override
         public void setColor(final int color) {
             if(GLTiledMapLayer2.this.surface.isRenderThread()) {
-                this.color = color;
-                if(GLTiledMapLayer2.this.renderable instanceof GLQuadTileNode3)
-                    ((GLQuadTileNode3)GLTiledMapLayer2.this.renderable).setColor(this.color);
-                else if(GLTiledMapLayer2.this.quadTree != null)
-                    GLTiledMapLayer2.this.quadTree.setColor(this.color);
+                setColorImpl(color);
             } else {
                 GLTiledMapLayer2.this.surface.queueEvent(new Runnable() {
                     @Override
                     public void run() {
-                        ColorControlImpl.this.color = color;
-                        if(GLTiledMapLayer2.this.renderable instanceof GLQuadTileNode3)
-                            ((GLQuadTileNode3)GLTiledMapLayer2.this.renderable).setColor(ColorControlImpl.this.color);
-                        else if(GLTiledMapLayer2.this.quadTree != null)
-                            GLTiledMapLayer2.this.quadTree.setColor(ColorControlImpl.this.color);
+                        setColorImpl(color);
                     }
                 });
             }
+        }
+
+        private void setColorImpl(int color) {
+            this.color = color;
+
+            // TODO: Consolidate this with a setColor interface
+            if(GLTiledMapLayer2.this.renderable instanceof GLQuadTileNode4)
+                ((GLQuadTileNode4)GLTiledMapLayer2.this.renderable).setColor(color);
+            else if(GLTiledMapLayer2.this.renderable instanceof GLQuadTileNode3)
+                ((GLQuadTileNode3)GLTiledMapLayer2.this.renderable).setColor(color);
+            else if(GLTiledMapLayer2.this.quadTree != null)
+                GLTiledMapLayer2.this.quadTree.setColor(color);
         }
         
         @Override

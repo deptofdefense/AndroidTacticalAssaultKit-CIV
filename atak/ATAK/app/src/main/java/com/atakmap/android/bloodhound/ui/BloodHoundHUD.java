@@ -126,7 +126,7 @@ public class BloodHoundHUD extends TextWidget
 
     @Override
     public void onMapWidgetLongPress(MapWidget widget) {
-        // if (timerTask != null)
-        //    timerTask.setDismissed(true);
+        if (_bloodhoundTool != null)
+            _bloodhoundTool.dismissTimer();
     }
 }

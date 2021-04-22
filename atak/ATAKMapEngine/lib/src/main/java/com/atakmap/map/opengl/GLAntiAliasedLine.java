@@ -252,6 +252,8 @@ public class GLAntiAliasedLine {
      *                     no outline is applied
      */
     public void draw(GLMapView view, int factor, short pattern, float red, float green, float blue, float alpha, float width, float outlineRed, float outlineGreen, float outlineBlue, float outlineAlpha, float outlineWidth) {
+        if(_forwardSegmentVerts == null)
+            return;
         AntiAliasingProgram program = AntiAliasingProgram.get();
         // if the projection has changed or the geometry is relative to terrain
         // and the terrain has changed, we need to refresh
@@ -365,6 +367,21 @@ public class GLAntiAliasedLine {
         _setUniforms(view, program, factor, pattern, width, red, green, blue, alpha, outlineWidth, outlineRed, outlineGreen, outlineBlue, outlineAlpha);
 
         GLES30.glDrawArrays(GLES30.GL_TRIANGLES, 0, _forwardSegmentVerts.limit()/6);
+        // If the geometry crosses the IDL and unwrapping is occuring draw
+        // again without the unwrap. This addresses the case where the geometry
+        // may cross into the secondary hemisphere without crossing the IDL
+        if(_crossesIDL && GLAntiMeridianHelper.getUnwrap(view, _crossesIDL, _primaryHemi) != 0d) {
+            view.scratch.matrix.set(view.scene.forward);
+            view.scratch.matrix.translate(_rtcX, _rtcY, _rtcZ);
+            view.scratch.matrix.get(view.scratch.matrixD, Matrix.MatrixOrder.COLUMN_MAJOR);
+            for (int i = 0; i < 16; i++) {
+                view.scratch.matrixF[i] = (float)view.scratch.matrixD[i];
+            }
+            GLES30.glUniformMatrix4fv(program.uModelView, 1, false, view.scratch.matrixF, 0);
+
+            GLES30.glDrawArrays(GLES30.GL_TRIANGLES, 0, _forwardSegmentVerts.limit()/6);
+        }
+
         GLES30.glDisableVertexAttribArray(AntiAliasingProgram.aNormal);
         GLES30.glDisableVertexAttribArray(AntiAliasingProgram.aPosition1);
         GLES30.glDisableVertexAttribArray(AntiAliasingProgram.aPosition0);
@@ -408,7 +425,7 @@ public class GLAntiAliasedLine {
         GLES20FixedPipeline.glGetFloatv(GLES20FixedPipeline.GL_PROJECTION, view.scratch.matrixF, 0);
         GLES30.glUniformMatrix4fv(program.uProjection, 1, false, view.scratch.matrixF, 0);
 
-        GLES30.glUniform1f(program.uHalfWidth, width / 2f);
+        GLES30.glUniform1f(program.uHalfWidth, width / view.currentPass.relativeScaleHint / 2f);
         GLES30.glUniform4f(program.uColor, sr, sg, sb, sa);
         GLES30.glUniform1i(program.uPattern, pattern);
         GLES30.glUniform1i(program.uFactor, factor);
@@ -416,7 +433,7 @@ public class GLAntiAliasedLine {
         GLES30.glUniform1f(program.uFilterWidth, FILTER_WIDTH);
 
         // apply outline
-        GLES30.glUniform1f(program.uOutlineWidth, owidth);
+        GLES30.glUniform1f(program.uOutlineWidth, owidth / view.currentPass.relativeScaleHint);
         if(owidth > 0f)
             GLES30.glUniform4f(program.uOutlineColor, or, og, ob, oa);
         else // no outline, specify stroke color to be used in anti-alias region
@@ -511,8 +528,8 @@ public class GLAntiAliasedLine {
                 "  float adjY = normalDir*(dy/dist)*((uHalfWidth + uFilterWidth + uOutlineWidth)/uViewportSize.x);\n" +
                 "  float adjX = normalDir*(dx/dist)*((uHalfWidth + uFilterWidth + uOutlineWidth)/uViewportSize.y);\n" +
                 "  gl_Position = mix(p0, p1, aNormal.z);\n" +
-                "  gl_Position.x = gl_Position.x - adjY;\n" +
-                "  gl_Position.y = gl_Position.y + adjX;\n" +
+                "  gl_Position.x = gl_Position.x - adjY*gl_Position.w;\n" +
+                "  gl_Position.y = gl_Position.y + adjX*gl_Position.w;\n" +
                 // flip the normal used in the distance calculation here to avoid unnecessary per-fragment overhead
                 "  fNormal = normalize(vec2(screen_p1.xy-screen_p0.xy)) * ((2.0*aNormal.y) - 1.0);\n" +
                 // XXX - the offset should be specified as the signed stroke

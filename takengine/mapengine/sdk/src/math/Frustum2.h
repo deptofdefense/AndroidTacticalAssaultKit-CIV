@@ -33,8 +33,8 @@ namespace TAK
                 double depthIfInside(const Sphere2 &s) const NOTHROWS;
                 Matrix2 getClip() const NOTHROWS;
             private :
-                static void normalize(Plane *dst, const Plane &src);
-                static double distance(const Plane &dst, const Vector4<double> &v);
+                static void normalize(Plane *dst, const Plane &src) NOTHROWS;
+                static double distance(const Plane &dst, const Vector4<double> &v) NOTHROWS;
             private:
                 Plane frustum[6];
                 Matrix2 clip;

@@ -29,7 +29,7 @@ public class LocalCoordinateSystem {
         this.forwardF = new float[16];
         System.arraycopy(other.forwardF, 0, this.forwardF, 0, 16);
         this.proj = other.proj;
-        this.sceneModel = other.sceneModel;
+        this.sceneModel = new MapSceneModel(other.sceneModel);
     }
 
     public static void deriveFrom(MapSceneModel scene, PointD origin,
@@ -38,7 +38,10 @@ public class LocalCoordinateSystem {
         lcs.origin.y = origin.y;
         lcs.origin.z = origin.z;
         lcs.proj = scene.mapProjection;
-        lcs.sceneModel = scene;
+        if (lcs.sceneModel == null)
+            lcs.sceneModel = new MapSceneModel(scene);
+        else
+            lcs.sceneModel.set(scene);
         if (lcs.forward == null)
             lcs.forward = Matrix.getIdentity();
         lcs.forward.set(scene.forward);

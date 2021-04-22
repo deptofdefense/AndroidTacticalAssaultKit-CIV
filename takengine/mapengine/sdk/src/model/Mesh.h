@@ -29,6 +29,8 @@ namespace TAK {
                 TEDM_Triangles,
                 TEDM_TriangleStrip,
                 TEDM_Points,
+                TEDM_Lines,
+                TEDM_LineStrip,
             };
 
             class ENGINE_API Mesh

@@ -393,7 +393,8 @@ namespace {
             strm << gdalVsiPrefix;
             strm << openPath;
             openPath = strm.str().c_str();
-        } else if(strstr(openPath, ".zip")) {
+        }
+        if(strstr(openPath, ".zip")) {
             std::ostringstream strm;
             strm << "/vsizip";
             if(openPath[0] != '/')

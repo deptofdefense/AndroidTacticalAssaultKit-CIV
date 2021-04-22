@@ -105,32 +105,66 @@ public abstract class HierarchyListUserSelect extends HierarchyListFilter {
     /**
      * Provide title for HierarchyListReceiver Drop Down
      * 
-     * @return
+     * @return Overlay Manager title
      */
     public abstract String getTitle();
 
     /**
      * Provide text for button once item(s) are selected
      * 
-     * @return
+     * @return Button text
      */
     public abstract String getButtonText();
 
     /**
      * Get Button Mode for the user select handler
      * 
-     * @return
+     * @return {@link ButtonMode#ALWAYS_VISIBLE} or {@link ButtonMode#VISIBLE_WHEN_SELECTED}
      */
     public abstract ButtonMode getButtonMode();
 
     /**
+     * An item has been selected
+     *
+     * @param om Overlay manager
+     * @param item Selected item
+     * @return True if handled, false to continue
+     */
+    public boolean onItemSelected(HierarchyListAdapter om,
+            HierarchyListItem item) {
+        return false;
+    }
+
+    /**
+     * An item has been deselected
+     *
+     * @param om Overlay manager
+     * @param item Selected item
+     * @return True if handled, false to continue
+     */
+    public boolean onItemDeselected(HierarchyListAdapter om,
+            HierarchyListItem item) {
+        return false;
+    }
+
+    /**
      * Process the user selections. Invoke when button is pressed by the user
-     * 
-     * @param selected
-     * @return
+     *
+     * @param context Application context
+     * @param selected Set of selected list items
+     * @return True if handled
      */
     public abstract boolean processUserSelections(Context context,
             Set<HierarchyListItem> selected);
+
+    /**
+     * The user has cancelled multi-select
+     *
+     * @param context Application context
+     */
+    public void cancel(Context context) {
+        // Default behavior is to do nothing
+    }
 
     /**
      * Whether or not this accepts multiple selections

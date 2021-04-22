@@ -887,7 +887,8 @@ public class FilterMapOverlay extends AbstractMapOverlay2
 
     private static void loadOverlayFilters(MapView mapView) throws IOException {
 
-        try (InputStream inputStream = ((MapActivity) mapView.getContext()).getMapAssets()
+        try (InputStream inputStream = ((MapActivity) mapView.getContext())
+                .getMapAssets()
                 .getInputStream(
                         Uri.parse("filters/overlays_hier.xml"))) {
             overlayFilters = MapOverlayFilters.Load(inputStream);

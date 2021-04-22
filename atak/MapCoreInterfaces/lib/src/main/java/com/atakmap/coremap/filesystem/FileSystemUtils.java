@@ -3,6 +3,7 @@ package com.atakmap.coremap.filesystem;
 
 import android.content.Context;
 import android.os.Environment;
+
 import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.io.IOProvider;
 import com.atakmap.coremap.io.IOProviderFactory;
@@ -317,7 +318,8 @@ public class FileSystemUtils {
 
         String android_storage = System.getenv("ANDROID_STORAGE");
         if (android_storage != null) {
-            String[] directories = RemovableStorageHelper.getRemovableStorageDirectory();
+            String[] directories = RemovableStorageHelper
+                    .getRemovableStorageDirectory();
             if (directories != null) {
                 for (String subdir : directories) {
                     if (subdir != null) {
@@ -555,15 +557,16 @@ public class FileSystemUtils {
         copyStream(in, true, out, true);
     }
 
-    public static String copyStreamToString(final File file, IOProvider provider)
+    public static String copyStreamToString(final File file,
+            IOProvider provider)
             throws IOException {
-            return copyStreamToString(provider.getInputStream(file), true,
-                    FileSystemUtils.UTF8_CHARSET);
+        return copyStreamToString(provider.getInputStream(file), true,
+                FileSystemUtils.UTF8_CHARSET);
     }
 
     public static String copyStreamToString(final File file)
             throws IOException {
-        try(InputStream is = IOProviderFactory.getInputStream(file)) {
+        try (InputStream is = IOProviderFactory.getInputStream(file)) {
             return copyStreamToString(is, true,
                     FileSystemUtils.UTF8_CHARSET);
         }
@@ -589,8 +592,8 @@ public class FileSystemUtils {
 
         StringBuilder fileData = new StringBuilder(BUF_SIZE);
 
-        try(InputStreamReader isr = new InputStreamReader(in, charSet);
-            BufferedReader reader = new BufferedReader(isr)) {
+        try (InputStreamReader isr = new InputStreamReader(in, charSet);
+                BufferedReader reader = new BufferedReader(isr)) {
 
             int numRead;
             String readData;
@@ -617,9 +620,10 @@ public class FileSystemUtils {
     public static List<String> readLines(final String filename)
             throws Exception {
         List<String> ret = new java.util.LinkedList<>();
-        try (InputStream is = IOProviderFactory.getInputStream(new File(filename));
-             InputStreamReader isr = new InputStreamReader(is,UTF8_CHARSET);
-             BufferedReader reader = new BufferedReader(isr)) {
+        try (InputStream is = IOProviderFactory
+                .getInputStream(new File(filename));
+                InputStreamReader isr = new InputStreamReader(is, UTF8_CHARSET);
+                BufferedReader reader = new BufferedReader(isr)) {
             String line = reader.readLine();
             while (line != null) {
                 ret.add(line);
@@ -1134,8 +1138,9 @@ public class FileSystemUtils {
                 Log.d(TAG, "Parent directory could not be created: " +
                         outputFile.getParentFile().getAbsolutePath());
         }
-        try(InputStream in = context.getAssets().open(fileName);
-            OutputStream out = IOProviderFactory.getOutputStream(outputFile)) {
+        try (InputStream in = context.getAssets().open(fileName);
+                OutputStream out = IOProviderFactory
+                        .getOutputStream(outputFile)) {
             FileSystemUtils.copyStream(in, out);
         } catch (IOException ioe) {
             Log.e(TAG, "could not copy " + fileName + " to " + outputPath, ioe);
@@ -1351,7 +1356,8 @@ public class FileSystemUtils {
      * @param f File to move
      * @return Temp file
      */
-    public static File moveToTemp(Context c, File f, boolean useRoot, IOProvider provider) {
+    public static File moveToTemp(Context c, File f, boolean useRoot,
+            IOProvider provider) {
         String root = getItemOnSameRoot(f, "tmp").getAbsolutePath();
         String del = "delete_" + f.getName();
         File moved;
@@ -1424,9 +1430,10 @@ public class FileSystemUtils {
         return true;
     }
 
-    public static void copyFile(final File src, final File dst, IOProvider provider)
+    public static void copyFile(final File src, final File dst,
+            IOProvider provider)
             throws IOException {
-            copyFile(src, dst, new byte[BUF_SIZE], provider);
+        copyFile(src, dst, new byte[BUF_SIZE], provider);
     }
 
     public static void copyFile(final File src, final File dst)
@@ -1440,10 +1447,11 @@ public class FileSystemUtils {
         copyFile(src, dst, buf, IOProviderFactory.getProvider());
     }
 
-    public static void copyFile(File src, File dst, byte[] buf, IOProvider provider)
+    public static void copyFile(File src, File dst, byte[] buf,
+            IOProvider provider)
             throws IOException {
         try (FileInputStream fis = provider.getInputStream(src);
-             FileOutputStream fos = provider.getOutputStream(dst, false)) {
+                FileOutputStream fos = provider.getOutputStream(dst, false)) {
             copyStream(fis, fos, buf);
         }
     }
@@ -1485,7 +1493,8 @@ public class FileSystemUtils {
     }
 
     public static byte[] read(File f) throws IOException {
-        try (FileInputStream inputStream = IOProviderFactory.getInputStream(f)) {
+        try (FileInputStream inputStream = IOProviderFactory
+                .getInputStream(f)) {
             final byte[] retval = new byte[(int) IOProviderFactory.length(f)];
 
             int numRead;
@@ -1569,9 +1578,11 @@ public class FileSystemUtils {
                 long fileLength = IOProviderFactory.length(platform);
                 boolean readingPermission = false;
                 boolean fileModified = false;
-                try(InputStream is = IOProviderFactory.getInputStream(platform);
-                    InputStreamReader isr = new InputStreamReader(is,UTF8_CHARSET);
-                    BufferedReader br = new BufferedReader(isr)) {
+                try (InputStream is = IOProviderFactory
+                        .getInputStream(platform);
+                        InputStreamReader isr = new InputStreamReader(is,
+                                UTF8_CHARSET);
+                        BufferedReader br = new BufferedReader(isr)) {
                     while ((line = br.readLine()) != null) {
                         if (readingPermission)
                             permissions.append(line);
@@ -1604,7 +1615,8 @@ public class FileSystemUtils {
 
                 // Write permission to file
                 if (fileModified) {
-                    try (FileOutputStream fos = IOProviderFactory.getOutputStream((platform))) {
+                    try (FileOutputStream fos = IOProviderFactory
+                            .getOutputStream((platform))) {
                         fos.write(platformContents.toString().getBytes(
                                 UTF8_CHARSET));
                     } catch (IOException e) {
@@ -1691,7 +1703,8 @@ public class FileSystemUtils {
      * @param destDir   the destination directory to unzip to
      * @param overwrite true to overwrite existing files
      */
-    public static void unzip(File zip, File destDir, boolean overwrite, IOProvider provider)
+    public static void unzip(File zip, File destDir, boolean overwrite,
+            IOProvider provider)
             throws IOException {
         if (zip == null || !provider.exists(zip)) {
             throw new IOException("Cannot extract missing file: "
@@ -1735,10 +1748,14 @@ public class FileSystemUtils {
                 // stream from in zip to out file
 
                 final boolean exists = provider.exists(f);
-                try (FileOutputStream fos = provider.getOutputStream(f, false)) {
+                try (FileOutputStream fos = provider.getOutputStream(f,
+                        false)) {
                     if (!exists || overwrite) {
-                        Log.d(TAG, (exists ? "Overwriting" : "Extracting") + " zip file: "
-                                + zinEntry.getName() + " to " + f.getAbsolutePath());
+                        Log.d(TAG,
+                                (exists ? "Overwriting" : "Extracting")
+                                        + " zip file: "
+                                        + zinEntry.getName() + " to "
+                                        + f.getAbsolutePath());
                         FileSystemUtils.copyStream(zin, false, fos, true,
                                 buffer);
                     }
@@ -1812,10 +1829,7 @@ public class FileSystemUtils {
             return null;
         }
 
-        ZipOutputStream zos = null;
-        try(FileOutputStream fos = IOProviderFactory.getOutputStream(dest);
-            BufferedOutputStream bfos = new BufferedOutputStream(fos)) {
-            zos = new ZipOutputStream(bfos);
+        try (ZipOutputStream zos = getZipOutputStream(dest)) {
 
             // Don't compress the ZIP
             if (!compress)
@@ -1840,17 +1854,9 @@ public class FileSystemUtils {
                     addFile(zos, file);
                 }
             }
-            // underlying streams will be closed prior to `finally` block since
-            // they are try-with-resources; if arrive at the end of scope,
-            // close the stream and clear the reference to ensure EOCD is
-            // written and stream is flushed
-            IoUtils.close(zos,TAG,"Failed to close Zip: " + dest.getAbsolutePath());
-            zos = null;
         } catch (Exception e) {
             Log.e(TAG, "Failed to create Zip file", e);
             throw new IOException(e);
-        } finally {
-            IoUtils.close(zos,TAG,"Failed to close Zip: " + dest.getAbsolutePath());
         }
 
         //validate the required files
@@ -1891,10 +1897,7 @@ public class FileSystemUtils {
         }
 
         List<String> filenames = new ArrayList<>();
-        ZipOutputStream zos = null;
-        try(FileOutputStream fos = IOProviderFactory.getOutputStream(dest);
-            final BufferedOutputStream bfos = new BufferedOutputStream(fos)) {
-            zos = new ZipOutputStream(bfos);
+        try (ZipOutputStream zos = getZipOutputStream(dest)) {
 
             // Don't compress the ZIP
             if (!compress)
@@ -1920,8 +1923,6 @@ public class FileSystemUtils {
         } catch (Exception e) {
             Log.e(TAG, "Failed to create Zip file", e);
             throw new IOException(e);
-        } finally {
-            IoUtils.close(zos,TAG,"Failed to close Zip: " + dest.getAbsolutePath());
         }
 
         //validate the required files
@@ -1939,6 +1940,18 @@ public class FileSystemUtils {
     public static File zipDirectory(List<File> files, File dest)
             throws IOException {
         return zipDirectory(files, dest, true);
+    }
+
+    /**
+     * Creates a new buffered ZIP output stream
+     * @param file File to write the ZIP content to
+     * @return ZIP output stream
+     * @throws IOException Stream failed to be opened
+     */
+    public static ZipOutputStream getZipOutputStream(File file)
+            throws IOException {
+        return new ZipOutputStream(new BufferedOutputStream(
+                IOProviderFactory.getOutputStream(file)));
     }
 
     /**

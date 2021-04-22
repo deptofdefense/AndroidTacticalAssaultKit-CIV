@@ -377,12 +377,6 @@ public class GLHeatMap extends GLAsynchronousMapRenderable<HeatMapParams>
             result.lowerLeft.set(state.lowerLeft);
         }
 
-        // Clamp corners
-        clamp(result.upperLeft);
-        clamp(result.upperRight);
-        clamp(result.lowerRight);
-        clamp(result.lowerLeft);
-
         final double distance;
         GeoPoint gp1, gp2;
 
@@ -421,11 +415,6 @@ public class GLHeatMap extends GLAsynchronousMapRenderable<HeatMapParams>
                     * result.ySampleResolution)];
 
         this.updateRGBA((HeatMapState) state, result);
-    }
-
-    private static void clamp(GeoPoint gp) {
-        gp.set(MathUtils.clamp(gp.getLatitude(), -90, 90),
-                MathUtils.clamp(gp.getLongitude(), -180, 180));
     }
 
     /**
@@ -753,48 +742,6 @@ public class GLHeatMap extends GLAsynchronousMapRenderable<HeatMapParams>
         return queryExtensions;
     }
 
-    private static String _makeFileName(StringBuilder p, double lat,
-            double lng) {
-        if (lng > 180)
-            lng -= 360;
-        else if (lng < -180)
-            lng += 360;
-        int lngIndex = (int) lng;
-        if (lng >= 0) {
-            p.append("e");
-        } else {
-            p.append("w");
-            lngIndex = -lngIndex + 1;
-        }
-
-        p.append(pad3(lngIndex));
-        p.append(File.separator);
-
-        int latIndex = (int) lat;
-        if (lat >= 0) {
-            p.append("n");
-        } else {
-            p.append("s");
-            latIndex = -latIndex + 1;
-        }
-
-        if (latIndex < 10)
-            p.append("0");
-
-        p.append(latIndex);
-
-        return p.toString();
-    }
-
-    private static String pad3(int value) {
-        if (value < 10)
-            return "00" + value;
-        else if (value < 100)
-            return "0" + value;
-        else
-            return "" + value;
-    }
-
     /** MIL-PRF-89020A 3.11.3.1 */
     private static float getDtedHeight(short s) {
         // note that cast of Double.NaN to float results in Float.NaN
@@ -854,10 +801,8 @@ public class GLHeatMap extends GLAsynchronousMapRenderable<HeatMapParams>
             final double minLat = this.result.getMinLatitude();
             final double maxLon = this.result.getMaxLongitude();
 
-            this.numCellsX = ((int) maxLon
-                    - (int) Math.floor(minLon) + 1);
-            this.numCellsY = ((int) maxLat
-                    - (int) Math.floor(minLat) + 1);
+            this.numCellsX = (int) (Math.floor(maxLon) - Math.floor(minLon)) + 1;
+            this.numCellsY = (int) (Math.floor(maxLat) - Math.floor(minLat)) + 1;
 
             this.geo2img = Matrix.mapQuads(
                     this.result.upperLeft.getLongitude(),
@@ -913,13 +858,16 @@ public class GLHeatMap extends GLAsynchronousMapRenderable<HeatMapParams>
                         return;
                     }
 
-                    int lat = (int) (result.getMaxLatitude() - celly);
-                    int lng = (int) (result.getMinLongitude() + cellx);
+                    int lat = (int) Math.floor(result.getMaxLatitude() - celly);
+                    int lng = (int) Math.floor(result.getMinLongitude() + cellx);
+
+                    // Wrap IDL crossing
+                    if (lng >= 180) lng -= 360;
+                    else if (lng < -180) lng += 360;
+
                     int cvIdx = Dt2FileWatcher.getCoverageIndex(lat, lng);
                     if (cvIdx < 0 || cvIdx >= coverages[0].size())
                         continue;
-
-                    String filePathWithoutExt = null;
 
                     outer: for (int level : queryLevels) {
 
@@ -948,15 +896,9 @@ public class GLHeatMap extends GLAsynchronousMapRenderable<HeatMapParams>
                             channel = null;
                             boolean missingElev = false;
                             try {
-                                if (filePathWithoutExt == null) {
-                                    filePathWithoutExt = _makeFileName(
-                                            p, lat, lng);
-                                    p.delete(0, p.length());
-                                }
-                                File file = new File(dtedPath
-                                        + filePathWithoutExt + ".dt" + level);
-                                channel = IOProviderFactory.getChannel(file,
-                                        "r");
+                                File file = new File(dtedPath, Dt2FileWatcher
+                                        .getRelativePath(level, lat, lng));
+                                channel = IOProviderFactory.getChannel(file, "r");
 
                                 dted.readHeader(
                                         channel,
@@ -1213,13 +1155,16 @@ public class GLHeatMap extends GLAsynchronousMapRenderable<HeatMapParams>
                         return;
                     }
 
-                    int lat = (int) (result.getMaxLatitude() - celly);
-                    int lng = (int) (result.getMinLongitude() + cellx);
+                    int lat = (int) Math.floor(result.getMaxLatitude() - celly);
+                    int lng = (int) Math.floor(result.getMinLongitude() + cellx);
+
+                    // Wrap IDL crossing
+                    if (lng >= 180) lng -= 360;
+                    else if (lng < -180) lng += 360;
+
                     int cvIdx = Dt2FileWatcher.getCoverageIndex(lat, lng);
                     if (cvIdx < 0 || cvIdx >= coverages[0].size())
                         continue;
-
-                    String filePathWithoutExt = null;
 
                     outer: for (int level : queryLevels) {
 
@@ -1288,15 +1233,9 @@ public class GLHeatMap extends GLAsynchronousMapRenderable<HeatMapParams>
                             channel = null;
                             boolean missingElev = false;
                             try {
-                                if (filePathWithoutExt == null) {
-                                    filePathWithoutExt = _makeFileName(
-                                            p, lat, lng);
-                                    p.delete(0, p.length());
-                                }
-                                File file = new File(dtedPath
-                                        + filePathWithoutExt + ".dt" + level);
-                                channel = IOProviderFactory.getChannel(file,
-                                        "r");
+                                File file = new File(dtedPath, Dt2FileWatcher
+                                        .getRelativePath(level, lat, lng));
+                                channel = IOProviderFactory.getChannel(file, "r");
 
                                 dted.readHeader(channel, cellMaxLat,
                                         cellMinLng);

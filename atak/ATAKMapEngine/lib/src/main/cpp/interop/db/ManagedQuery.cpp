@@ -162,7 +162,8 @@ ManagedQuery::getString(const char **value, const std::size_t columnIndex) NOTHR
     auto entry = m_bindValues.find(columnIndex);
     if(entry == m_bindValues.end())
     {
-        JNIStringUTF jstrValue(*env, (jstring)env->CallObjectMethod(m_instance, QueryIface_class.getStringMethodId, (jint)columnIndex));
+        JNILocalRef mstr(*env, env->CallObjectMethod(m_instance, QueryIface_class.getStringMethodId, (jint)columnIndex));
+        JNIStringUTF jstrValue(*env, (jstring)mstr);
         if(env->ExceptionCheck())
         {
             env->ExceptionClear();

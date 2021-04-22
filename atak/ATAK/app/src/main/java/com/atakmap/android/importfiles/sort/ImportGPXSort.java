@@ -47,7 +47,7 @@ public class ImportGPXSort extends ImportInPlaceResolver {
             return false;
 
         // it is a .gpx, now lets see if it contains reasonable xml
-        try(InputStream fis = IOProviderFactory.getInputStream(file)) {
+        try (InputStream fis = IOProviderFactory.getInputStream(file)) {
             return isGpx(fis);
         } catch (IOException e) {
             Log.e(TAG, "Error checking if GPX: " + file.getAbsolutePath(), e);

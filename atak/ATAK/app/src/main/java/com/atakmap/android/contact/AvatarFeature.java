@@ -105,7 +105,8 @@ public abstract class AvatarFeature {
         }
 
         if (bCreate) {
-            try(OutputStream fos = IOProviderFactory.getOutputStream(avatarFile)) {
+            try (OutputStream fos = IOProviderFactory
+                    .getOutputStream(avatarFile)) {
                 Log.d(TAG, "Creating avatar file: " + avatarFile + ", hash="
                         + newHash);
                 fos.write(getAvatarBytes());

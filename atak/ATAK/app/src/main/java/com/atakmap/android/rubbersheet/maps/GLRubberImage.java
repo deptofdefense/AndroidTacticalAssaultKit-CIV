@@ -15,13 +15,18 @@ import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.AtakMapView;
+import com.atakmap.map.MapControl;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.MapRenderer3;
+import com.atakmap.map.layer.control.SurfaceRendererControl;
+import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.raster.DatasetProjection2;
 import com.atakmap.map.layer.raster.DefaultDatasetProjection2;
 import com.atakmap.map.layer.raster.tilereader.opengl.GLTileMesh;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.math.MathUtils;
 import com.atakmap.opengl.GLTexture;
+import com.atakmap.util.Visitor;
 
 import java.nio.DoubleBuffer;
 
@@ -57,6 +62,8 @@ public class GLRubberImage extends AbstractGLMapItem2 implements
     private int _alpha = 255;
     private boolean _onScreen = false;
 
+    private SurfaceRendererControl _surfaceCtrl;
+
     public GLRubberImage(MapRenderer surface, RubberImage subject) {
         super(surface, subject, GLMapView.RENDER_PASS_SURFACE);
         _mapView = MapView.getMapView();
@@ -70,6 +77,17 @@ public class GLRubberImage extends AbstractGLMapItem2 implements
 
         _mapView.addOnMapViewResizedListener(this);
         _mapView.addOnMapMovedListener(this);
+
+        if (surface instanceof MapRenderer3)
+            _surfaceCtrl = ((MapRenderer3) surface)
+                    .getControl(SurfaceRendererControl.class);
+        else
+            surface.visitControl(null, new Visitor<SurfaceRendererControl>() {
+                @Override
+                public void visit(SurfaceRendererControl object) {
+                    _surfaceCtrl = object;
+                }
+            }, SurfaceRendererControl.class);
     }
 
     @Override
@@ -250,6 +268,13 @@ public class GLRubberImage extends AbstractGLMapItem2 implements
     @Override
     public void onAlphaChanged(AbstractSheet sheet, int alpha) {
         _alpha = alpha;
+        if (_surfaceCtrl != null) {
+            _surfaceCtrl.markDirty(
+                    new Envelope(
+                            bounds.getWest(), bounds.getSouth(), 0d,
+                            bounds.getEast(), bounds.getNorth(), 0d),
+                    true);
+        }
         context.requestRefresh();
     }
 

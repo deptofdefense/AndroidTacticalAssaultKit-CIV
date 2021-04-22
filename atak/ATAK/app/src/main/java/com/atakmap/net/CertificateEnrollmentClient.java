@@ -76,7 +76,8 @@ public class CertificateEnrollmentClient implements
     }
 
     public void enroll(final Context context, final String desc,
-            final String connectString, final String cacheCreds, final Long expiration,
+            final String connectString, final String cacheCreds,
+            final Long expiration,
             CertificateEnrollmentCompleteCallback certificateEnrollmentCompleteCallback,
             final boolean getProfile) {
         this.context = context;
@@ -137,7 +138,8 @@ public class CertificateEnrollmentClient implements
             });
         } else {
             CertificateConfigRequest request = new CertificateConfigRequest(
-                    connectString, cacheCreds, desc, username, password, expiration);
+                    connectString, cacheCreds, desc, username, password,
+                    expiration);
             verifyTrust(request);
         }
     }
@@ -151,7 +153,8 @@ public class CertificateEnrollmentClient implements
                 .setCredentialsForStream(connectString, username, password);
 
         CertificateConfigRequest request = new CertificateConfigRequest(
-                connectString, cacheCreds, description, username, password, expiration);
+                connectString, cacheCreds, description, username, password,
+                expiration);
 
         verifyTrust(request);
     }
@@ -488,12 +491,14 @@ public class CertificateEnrollmentClient implements
                             }
                         });
 
-        try { 
+        try {
             alertDialog.show();
-        } catch (Exception e) { 
+        } catch (Exception e) {
             // if enrollment does not complete on time and the preference activity has been closed, 
             // just continue on with the application and do not error out.
-            Log.e(TAG, "error occured and the preference activity has been closed prior to the enrollment completing", e);
+            Log.e(TAG,
+                    "error occured and the preference activity has been closed prior to the enrollment completing",
+                    e);
         }
     }
 }

@@ -109,11 +109,14 @@ public class GLTileMatrixLayer implements GLMapLayer3 {
             toDraw.draw(view, GLMapView.RENDER_PASS_SURFACE);
         if(this.core.debugDraw)
             debugDraw(view);
-        
-        for(int i = this.zoomLevels.length-1; i >= 0; i--) {
-            if(zoomLevels[i] == toDraw)
-                continue;
-            zoomLevels[i].release(true);
+
+        // release unused on end of pump
+        if(!view.multiPartPass) {
+            for (int i = this.zoomLevels.length - 1; i >= 0; i--) {
+                if (zoomLevels[i] == toDraw)
+                    continue;
+                zoomLevels[i].release(true, view.currentPass.renderPump);
+            }
         }
     }
     

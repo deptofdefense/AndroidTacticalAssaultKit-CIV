@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -67,8 +68,11 @@ public abstract class FileObserver extends android.os.FileObserver {
         private Handler observerHandler;
         private final HashMap<String, PathObservers> m_observers = new HashMap<>();
 
-        public ObserverThread() {
+        private final CountDownLatch latch;
+
+        public ObserverThread(CountDownLatch latch) {
             super("TAKFileObserver");
+            this.latch = latch;
         }
 
         @Override
@@ -76,6 +80,7 @@ public abstract class FileObserver extends android.os.FileObserver {
             Looper.prepare();
             observerHandler = new Handler(
                     Objects.requireNonNull(Looper.myLooper()));
+            latch.countDown();
             Looper.loop();
         }
 
@@ -318,8 +323,19 @@ public abstract class FileObserver extends android.os.FileObserver {
     private static ObserverThread s_observerThread;
 
     static {
-        s_observerThread = new ObserverThread();
+        CountDownLatch latch = new CountDownLatch(1);
+        s_observerThread = new ObserverThread(latch);
         s_observerThread.start();
+        try {
+            boolean timedout = latch.await(1, TimeUnit.SECONDS);
+            if (!timedout) {
+                Log.w(LOG_TAG, "Timed out waiting for observerThread to start");
+            }
+        } catch (InterruptedException e) {
+            Log.w(LOG_TAG,
+                    "Thread interrupted while waiting for observerThread to start");
+            Thread.currentThread().interrupt();
+        }
     }
 
     private final File mFile;

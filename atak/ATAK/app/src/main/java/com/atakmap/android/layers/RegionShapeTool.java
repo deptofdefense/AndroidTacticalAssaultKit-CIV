@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Point;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -61,10 +62,16 @@ public class RegionShapeTool extends Tool implements Undoable,
     public static final String TOOL_ID = "com.atakmap.android.layers.RegionShapeTool";
 
     public enum Mode {
-        RECTANGLE(R.drawable.rectangle, R.string.rectangle, R.string.select_area_prompt),
-        FREE_FORM(R.drawable.sse_shape, R.string.free_form, R.string.polygon_area_prompt),
+        RECTANGLE(R.drawable.rectangle,
+                R.string.rectangle,
+                R.string.select_area_prompt),
+        FREE_FORM(R.drawable.sse_shape,
+                R.string.free_form,
+                R.string.polygon_area_prompt),
         LASSO(R.drawable.ic_lasso, R.string.lasso, R.string.lasso_area_prompt),
-        SELECT(R.drawable.select_from_map, R.string.map_select, R.string.map_item_select_prompt);
+        SELECT(R.drawable.select_from_map,
+                R.string.map_select,
+                R.string.map_item_select_prompt);
 
         final int iconId, titleId, promptId;
 
@@ -97,6 +104,7 @@ public class RegionShapeTool extends Tool implements Undoable,
     private Intent _callback;
     private Shape _shape;
     private DrawingShape _drawShape;
+    private Point _lastPt;
     private Marker _firstPoint;
     private double _expandDistance;
     protected DrawingRectangle.Builder _builder;
@@ -133,7 +141,8 @@ public class RegionShapeTool extends Tool implements Undoable,
         // Legacy mode select
         if (extras.get("freeform") != null)
             _mode = extras.getBoolean("freeform", false)
-                    ? Mode.FREE_FORM : Mode.RECTANGLE;
+                    ? Mode.FREE_FORM
+                    : Mode.RECTANGLE;
 
         // Drawing mode
         Object mode = extras.get("mode");
@@ -149,6 +158,7 @@ public class RegionShapeTool extends Tool implements Undoable,
         _builder = null;
         _shape = null;
         _drawShape = null;
+        _lastPt = null;
         _expandDistance = 0;
 
         // Prompt to select mode
@@ -373,9 +383,21 @@ public class RegionShapeTool extends Tool implements Undoable,
             // Start/add to lasso
             if (e.equals(MapEvent.MAP_DRAW)
                     || e.equals(MapEvent.ITEM_DRAG_STARTED)
-                    || e.equals(MapEvent.ITEM_DRAG_CONTINUED))
+                    || e.equals(MapEvent.ITEM_DRAG_CONTINUED)) {
+
+                // Prevent redundant points that are too close together
+                Point p = event.getPoint();
+                if (_lastPt != null && _drawShape != null
+                        && Math.hypot(p.x - _lastPt.x,
+                                p.y - _lastPt.y) <= _drawShape
+                                        .getHitRadius(_mapView))
+                    return;
+                _lastPt = p;
+
+                // Add point to lasso
                 addPointToShape(point);
-            else if (_drawShape != null) {
+            } else if (_drawShape != null && _drawShape.getNumPoints() > 2) {
+                // Close lasso and finish
                 closeShape();
                 requestEndTool();
             }

@@ -6,14 +6,18 @@ import android.graphics.drawable.Drawable;
 import com.atakmap.android.hierarchy.action.Visibility;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 
 import java.io.File;
 
 /**
- * Abstract handler for file databases (LPT, DRW)
+ * @deprecated Transitioned to Map Engine Features API
+ * Replaced by {@link FalconViewContentHandler}
  */
+@Deprecated
+@DeprecatedApi(since = "4.3", forRemoval = true, removeAt = "4.6")
 public class FileDatabaseContentHandler extends FileOverlayContentHandler
         implements Visibility {
 

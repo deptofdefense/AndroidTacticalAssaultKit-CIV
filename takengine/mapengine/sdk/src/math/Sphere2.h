@@ -25,6 +25,8 @@ namespace TAK
                 Point2<double> center;
                 double radius;
             };
+
+            ENGINE_API double Sphere2_getRadius(const double radius, const double offsetFromCenter) NOTHROWS;
         }
     }
 }

@@ -26,6 +26,7 @@ import org.gdal.osr.SpatialReference;
 
 import android.database.DatabaseErrorHandler;
 import android.database.sqlite.SQLiteDatabase;
+import android.speech.tts.TextToSpeech;
 
 import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.io.IOProviderFactory;
@@ -53,12 +54,19 @@ public class GdalLibrary {
 
     /*************************************************************************/
 
-    public static synchronized boolean init(File gdalDataDir) {
+    /** @deprecated use {@link GdalLibrary#init()} */
+    @Deprecated
+    @DeprecatedApi(since = "4.3", forRemoval = true, removeAt = "4.6")
+    public static boolean init(File ignored) {
+        return init();
+    }
+
+    public static synchronized boolean init() {
         if (!initialized) {
             try {
                 EngineLibrary.initialize();
 
-                initImpl(gdalDataDir);
+                initImpl();
             } catch (IOException ignored) {
             } finally {
                 initialized = true;
@@ -71,7 +79,7 @@ public class GdalLibrary {
         return initialized;
     }
 
-    private static void initImpl(File gdalDir) throws IOException {
+    private static void initImpl() throws IOException {
 
         // IMPORTANT: as of GDAL upgrade 2.2.3, some SQLite containers are now
         //            supported natively by GDAL. Specify that these drivers
@@ -82,9 +90,28 @@ public class GdalLibrary {
 
         gdal.SetConfigOption("GDAL_SKIP", "MBTiles,GPKG");
 
+        // construct the classpath path to the GDAL_DATA content
+        String gdalDataPath = null;
+        try {
+            // obtain the resource URL
+            URL u = GdalLibrary.class.getClassLoader().getResource("gdal/data/gdaldata.files");
+            gdalDataPath = u.toString();
+            // exchange protocol for `/vsizip/` prefix, remove the file and the
+            // archive/entry separator character. The path to the archive is
+            // enclosed in braces as GDAL is only automatically able to
+            // determine archive path by ".zip" extension.
+            gdalDataPath = gdalDataPath.replace("jar:file:", "/vsizip/{");
+            gdalDataPath = gdalDataPath.replace("gdaldata.files", "");
+            gdalDataPath = gdalDataPath.replace("!", "}");
+        } catch(Exception e) {
+            Log.d("GdalLibrary", "XXX: Failed construct GDAL_DATA path from classpath");
+        }
+
+        System.out.println("GDAL_DATA=" + gdalDataPath);
         // NOTE: AllRegister automatically loads the shared libraries
         gdal.AllRegister();
-        gdal.SetConfigOption("GDAL_DATA", gdalDir.getAbsolutePath());
+        if(gdalDataPath != null)
+            gdal.SetConfigOption("GDAL_DATA", gdalDataPath);
         // debugging
         gdal.SetConfigOption("CPL_DEBUG", "OFF");
         gdal.SetConfigOption("CPL_LOG_ERRORS", "ON");
@@ -99,78 +126,13 @@ public class GdalLibrary {
         // https://jira.takmaps.com/browse/ATAK-14344
         gdal.SetConfigOption("GDAL_PDF_DPI", "300");
 
-
-        if (!IOProviderFactory.exists(gdalDir)) {
-            if (!IOProviderFactory.mkdirs(gdalDir)) {
-                Log.d("GdalLibrary", "XXX: bad could not make the gdalDir: " + gdalDir);
-            }
+        // try to init the spatial reference
+        try {
+            EPSG_4326 = new SpatialReference();
+            EPSG_4326.ImportFromEPSG(4326);
+        } catch(Exception e) {
+            Log.d("GdalLibrary", "XXX: Failed to init GDAL_DATA");
         }
-        File gdalDataVer = new File(gdalDir, "gdal.version");
-        boolean unpackData = true;
-        if (IOProviderFactory.exists(gdalDataVer)) {
-            byte[] versionBytes = new byte[(int) IOProviderFactory.length(gdalDataVer)];
-            try (InputStream inputStream = IOProviderFactory
-                    .getInputStream(gdalDataVer)) {
-                int r = inputStream.read(versionBytes);
-                if (r != versionBytes.length)
-                    Log.d("GdalLibrary", "versionBytes, read: " + r + " expected: " + versionBytes.length);
-
-            }
-            final int libVersion = Integer.parseInt(gdal.VersionInfo("VERSION_NUM"));
-            final int devVersion = Integer.parseInt(new String(versionBytes, FileSystemUtils.UTF8_CHARSET));
-
-            unpackData = (libVersion > devVersion);
-        }
-        
-        // make sure all files from the last unpack are present
-        File gdalDataList = new File(gdalDir, "gdaldata.list2");
-        if(!unpackData && IOProviderFactory.exists(gdalDataList)) {
-            try (FileInputStream inputStream = IOProviderFactory
-                    .getInputStream(gdalDataList);
-                 DataInputStream dataInput = new DataInputStream(inputStream)) {
-
-                final int numFiles = dataInput.readInt();
-                int fileSize;
-                String fileName;
-                File dataFile;
-                for (int i = 0; i < numFiles; i++) {
-                    fileSize = dataInput.readInt();
-                    fileName = dataInput.readUTF();
-
-                    dataFile = new File(gdalDir, FileSystemUtils.sanitizeWithSpacesAndSlashes(fileName));
-                    if (!IOProviderFactory.exists(dataFile) || IOProviderFactory.length(dataFile) != fileSize) {
-                        unpackData = true;
-                        break;
-                    }
-                }
-            } catch (IOException e) {
-                Log.w("GdalLibrary", "Unexpected IO error validating GDAL data list", e);
-                unpackData = true;
-            }
-        } else {
-            unpackData = true;
-        }
-    
-        boolean initFailed = false;
-        do {
-            if (unpackData)
-                unpackData(gdalDir, gdalDataVer, gdalDataList);
-    
-            if(!initFailed) {
-                // if the unpack looks good try to init the spatial reference
-                try {
-                    EPSG_4326 = new SpatialReference();
-                    EPSG_4326.ImportFromEPSG(4326);
-                } catch(Exception e) {
-                    // general exception occurred, force unpack
-                    initFailed = true;
-                    unpackData = true;
-                    continue;
-                }
-            }
-            
-            break;
-        } while(true);
 
         registerProjectionSpi();
         VSIFileFileSystemHandler vsiJfileHandler = new VSIFileFileSystemHandler();
@@ -182,90 +144,6 @@ public class GdalLibrary {
             ConfigOptions.setOption("gdal-vsi-prefix", VSIFileFileSystemHandler.PREFIX);
 
         initSuccess = true;
-    }
-    
-    private static void unpackData(File gdalDir, File gdalDataVer, File gdalDataList) throws IOException {
-        FileOutputStream fileOutputStream = null;
-
-        InputStream inputStream = null;
-
-        // obtain the data files listing
-        URL url = GdalLibrary.class.getClassLoader().getResource("gdal/data/gdaldata.files");
-        if (url == null)
-            return;
-
-        Collection<String> dataFiles = new LinkedList<>();
-
-        InputStreamReader inputStreamReader;
-        BufferedReader bufferedReader;
-        try {
-            inputStream = url.openStream();
-
-            inputStreamReader = new InputStreamReader(inputStream);
-            bufferedReader = new BufferedReader(inputStreamReader);
-            String line = bufferedReader.readLine();
-            while (line != null) {
-                url = GdalLibrary.class.getClassLoader().getResource("gdal/data/" + line);
-                if (url != null) {
-                    // XXX - warn file not found
-                    dataFiles.add(line);
-                }
-                
-                line = bufferedReader.readLine();
-            }
-        } finally {
-            if (inputStream != null)
-                try {
-                    inputStream.close();
-                } catch (IOException ignored) {
-                }
-        }
-
-        Iterator<String> iter = dataFiles.iterator();
-        String dataFileName;
-        byte[] transfer = new byte[8192];
-        int transferSize;
-        File dataFile;
-        try (FileOutputStream dataListFileStream = IOProviderFactory.getOutputStream(gdalDataList);
-             DataOutputStream dataListStream = new DataOutputStream(dataListFileStream)) {
-
-            dataListStream.writeInt(dataFiles.size());
-
-            while (iter.hasNext()) {
-                dataFileName = FileSystemUtils.sanitizeWithSpacesAndSlashes(iter.next());
-
-                inputStream = null;
-                fileOutputStream = null;
-                try {
-                    url = GdalLibrary.class.getClassLoader().getResource("gdal/data/" + dataFileName);
-                    inputStream = url.openStream();
-                    dataFile = new File(gdalDir, dataFileName);
-                    fileOutputStream = IOProviderFactory.getOutputStream(dataFile);
-
-                    do {
-                        transferSize = inputStream.read(transfer);
-                        if (transferSize > 0)
-                            fileOutputStream.write(transfer, 0, transferSize);
-                    } while (transferSize >= 0);
-                } finally {
-                    IoUtils.close(fileOutputStream, TAG);
-                    IoUtils.close(inputStream, TAG);
-                }
-
-                dataListStream.writeInt((int) IOProviderFactory.length(dataFile));
-                dataListStream.writeUTF(dataFileName);
-            }
-        }
-
-        // write out the gdal version that the data files correspond to
-        try {
-            fileOutputStream = IOProviderFactory.getOutputStream(gdalDataVer);
-            fileOutputStream.write(gdal.VersionInfo("VERSION_NUM").getBytes());
-        } catch (IOException ignored) {
-            // not really a major issue
-        } finally {
-            IoUtils.close(fileOutputStream);
-        }
     }
 
     public static int getSpatialReferenceID(SpatialReference srs) {

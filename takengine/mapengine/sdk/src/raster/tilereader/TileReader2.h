@@ -5,10 +5,11 @@
 #include <list>
 #include <map>
 #include <string>
+#include <vector>
 
 #include "thread/Cond.h"
 #include "thread/Mutex.h"
-#include "thread/Thread.h"
+#include "thread/ThreadPool.h"
 
 #include "port/Platform.h"
 #include "port/Collection.h"
@@ -32,13 +33,11 @@ namespace TAK {
                  * @author Developer
                  */
                 class ENGINE_API TileReader2 {
-                   private:
-                    class ReadRequest;
-
                    public:
+                    class ReadRequest;
                     class AsynchronousReadRequestListener;
                     class AsynchronousIO;
-
+                    class ReadRequestPrioritizer;
                     /**************************************************************************/
                    protected:
                     /**
@@ -46,11 +45,6 @@ namespace TAK {
                      */
                     TileReader2(const char *uri) NOTHROWS;
                     virtual ~TileReader2();
-
-                    // Installs given AsynchronousIO to be used. May only be invoked if the deferred init constructor was used,
-                    // and may only be invoked once. Pass nullptr to have this TileReader2 create its own AsynchronousIO.
-                    void installAsynchronousIO(std::shared_ptr<AsynchronousIO> io);
-
                    public:
                     /**
                      * Obtains the URI for the data.
@@ -156,53 +150,8 @@ namespace TAK {
                     virtual Util::TAKErr read(uint8_t *buf, const int64_t srcX, const int64_t srcY, const int64_t srcW, const int64_t srcH,
                                               const size_t dstW, const size_t dstH) NOTHROWS = 0;
 
-                    /**
-                     * Performs an asynchronous read of a single tile from the dataset at the
-                     * specified resolution level.
-                     *
-                     * @param level         The resolution level
-                     * @param tileColumn    The tile column at the specified resolution level
-                     * @param tileRow       The tile column at the specified resolution level
-                     * @param callback      The callback listener that the data will be
-                     *                      delivered to
-                     */
-                    virtual Util::TAKErr asyncRead(const int level, const int64_t tileColumn, const int64_t tileRow,
-                                                   AsynchronousReadRequestListener *callback) NOTHROWS;
-
-                    /**
-                     * Cancels an async read that had previously been created.
-                     * @param id id of the async read, obtained from AsynchronousReadRequestListener callbacks
-                     * @return TE_Ok if the cancel request was accepted, TE_InvalidArg if no request with the given id was found
-                     */
-                    virtual Util::TAKErr asyncCancel(int id) NOTHROWS;
-
-                    /*
-                     * Aborts all async reads previously created that match the given callback.
-                     * Aborted reads will try to stop as soon as possible
-                     * and, once this call completes, no longer receive any callback notifications.
-                     * @return TE_Ok if the abort request was accepted, TE_InvalidArg if no requests with the given callback were found
-                     */
-                    virtual Util::TAKErr asyncAbort(AsynchronousReadRequestListener &callback) NOTHROWS;
-
-                    /**
-                     * Performs an asynchronous read of an arbitrary region of the image at an
-                     * arbitrary scale. The source data will be scaled to meet <code>dstW</code>
-                     * and <code>dstH</code>.
-                     *
-                     * @param srcX      The source (unscaled) x-coordinate of the region
-                     * @param srcY      The source (unscaled) y-coordinate of the region
-                     * @param srcW      The source (unscaled) width of the region
-                     * @param srcH      The source (unscaled) height of the region
-                     * @param dstW      The output width
-                     * @param dstH      The output size
-                     * @param callback  The callback listener that the data will be delivered
-                     *                  to
-                     */
-                    virtual Util::TAKErr asyncRead(const int64_t srcX, const int64_t srcY, const int64_t srcW, const int64_t srcH, const size_t dstW,
-                                                   const size_t dstH, AsynchronousReadRequestListener *callback) NOTHROWS;
-
                    private:
-                    Util::TAKErr asyncRead(ReadRequest *retval) NOTHROWS;
+                    int nextRequestId() NOTHROWS;
 
                    protected:
                     /**
@@ -222,31 +171,7 @@ namespace TAK {
                      * @param request   The request to be filled.
                      * @return TE_Ok on success, various codes on failure
                      */
-                    Util::TAKErr fill(ReadRequest &request) NOTHROWS;
-
-                   private:
-                    /**
-                     * Fills the asynchronous read request. This method should issue the
-                     * AsynchronousReadRequestListener::requestUpdate()
-                     * and
-                     * AsynchronousReadRequest::requestError()
-                     * callbacks as appropriate before this method returns. The
-                     * AsynchronousReadRequest::requestStarted(),
-                     * AsynchronousReadRequest::requestCanceled()
-                     * and
-                     * AsynchronousReadRequest::requestCompleted()
-                     * will be issued as appropriate externally.
-                     *
-                     * This method should always be invoked after being externally
-                     * synchronized on <code>this.readLock</code>.
-                     *
-                     * @param request
-                     *
-                     * @return TE_Ok on success, various codes on failure
-                     */
-                    Util::TAKErr fillImpl(ReadRequest &request) NOTHROWS;
-
-                    Util::TAKErr fillDirect(ReadRequest &request) NOTHROWS;
+                    Util::TAKErr fill(uint8_t *buffer, ReadRequest &request) NOTHROWS;
 
                    public:
                     /**
@@ -363,28 +288,6 @@ namespace TAK {
                     virtual Util::TAKErr isCanceled(bool *value, const ReadRequest &request) NOTHROWS;
 
                     /**
-                     * Dispatches an update for the specified asynchronous read request.
-                     *
-                     * @param request   The request
-                     * @param data      The update data; contains <code>dstW*dstH</code> pixels
-                     * @param dstX      The x-coordinate for the update data in the destination
-                     *                  pixel buffer
-                     * @param dstY      The y-coordinate for the update data in the destination
-                     *                  pixel buffer
-                     * @param dstW      The width of the update data
-                     * @param dstH      The height of the udpdate data
-                     */
-                    virtual Util::TAKErr dispatchUpdate(ReadRequest &request, const Renderer::Bitmap2 &data) NOTHROWS;
-
-                    /**
-                     * Dispatches an error for the specified asynchronous read request.
-                     *
-                     * @param request   The request
-                     * @param code     The error that occurred.
-                     */
-                    virtual Util::TAKErr dispatchError(ReadRequest &request, const Util::TAKErr code, const char *msg) NOTHROWS;
-
-                    /**
                      * Returns the transfer size, in bytes, for a buffer of <code>width</code>
                      * by <code>height</code> pixels.
                      *
@@ -450,33 +353,26 @@ namespace TAK {
                     Util::TAKErr getControls(Port::Collection<Core::Control *> &ctrls) NOTHROWS;
 
                    protected:
-                    typedef void (*AsyncRunnable)(TileReader2 *, void *);
-                    /**
-                     * Run 'r' asynchronously on the IO thread. "opaque" must remain valid
-                     * until the task runs or is cancelled, at which point the caller must release
-                     * it as needed.  The cancel runnable is notified if the task is cancelled and may
-                     * be null if not needed.  If TE_Ok is not returned, the task is not accepted and
-                     * no callback will be invoked.
-                     */
-                    Util::TAKErr asyncRun(void *opaque, AsyncRunnable r, AsyncRunnable cancel, AsyncRunnable cleanup) NOTHROWS;
+                    typedef void (*AsyncRunnable)(TileReader2 *, void *, TileReader2::AsynchronousIO &);
 
                     /**************************************************************************/
                    private:
-                    static void ReadRequest_run(TileReader2 *reader, void *opaque);
-                    static void ReadRequest_abort(TileReader2 *reader, void *opaque);
-                    static void ReadRequest_cleanup(TileReader2 *reader, void *opaque);
-                    static bool ReadRequest_cancelcheck(TileReader2 *reader, AsyncRunnable action, void *requestOpaque, void *cancelOpaque);
-                    static bool ReadRequest_abortcheck(TileReader2 *reader, AsyncRunnable action, void *requestOpaque, void *abortOpaque);
+                    static void ReadRequest_run(uint8_t *readBuffer, ReadRequest &request) NOTHROWS;
+                    static void ReadRequest_abort(ReadRequest &request) NOTHROWS;
 
                    protected:
                     const Port::String uri;
-                    std::shared_ptr<AsynchronousIO> asynchronousIO;
                     int asyncRequestId;
 
                     /**
                      * The object used for synchronization of reads.
                      */
                     Thread::Mutex readLock;
+
+                    /**
+                     * The object used for synchronization of reads.
+                     */
+                    Thread::Mutex idLock;
 
                     /**
                      * Flag indicating whether or not this instance is valid. Remains
@@ -498,11 +394,18 @@ namespace TAK {
                  *
                  * @author Developer
                  */
-                class TileReader2::ReadRequest {
+                class TileReader2::ReadRequest
+                {
                    public:
-                    ReadRequest(TileReader2 &owner, const int id, const int64_t srcX, const int64_t srcY, const int64_t srcW, const int64_t srcH,
+                    ReadRequest(const std::shared_ptr<TileReader2> &owner, const int64_t srcX, const int64_t srcY, const int64_t srcW, const int64_t srcH,
                                 const size_t dstW, const size_t dstH, const int level, const int64_t tileColumn, const int64_t tileRow,
                                 AsynchronousReadRequestListener *callback) NOTHROWS;
+                    ReadRequest(const std::shared_ptr<TileReader2> &owner, const int level, const int64_t tileColumn, const int64_t tileRow,
+                                AsynchronousReadRequestListener *callback) NOTHROWS;
+                   private:
+                    ReadRequest(const std::shared_ptr<TileReader2> &owner, const int id, const int64_t srcX, const int64_t srcY, const int64_t srcW, const int64_t srcH,
+                                const size_t dstW, const size_t dstH, const int level, const int64_t tileColumn, const int64_t tileRow,
+                                AsynchronousReadRequestListener *callback, bool b) NOTHROWS;
 
                    public:
                     /**
@@ -514,7 +417,7 @@ namespace TAK {
                     void cancel() NOTHROWS;
 
                    private:
-                    TileReader2 &owner;
+                    std::shared_ptr<TileReader2> owner;
 
                    public:
                     /**
@@ -557,6 +460,10 @@ namespace TAK {
 
                     Thread::Mutex lock;
                     AsynchronousReadRequestListener *callback;
+
+                private :
+                    friend class TileReader2;
+                    friend class TileReader2::AsynchronousIO;
                 };
 
                 /**
@@ -626,6 +533,19 @@ namespace TAK {
                     virtual void requestError(const int id, const Util::TAKErr code, const char *msg) NOTHROWS = 0;
                 };  // AsynchronousReadRequestListener
 
+                class TileReader2::ReadRequestPrioritizer
+                {
+                public :
+                    virtual ~ReadRequestPrioritizer() NOTHROWS = 0;
+                public :
+                    /**
+                     * @return  `true` if `a` is higher priority than `b`, `false` otherwise
+                     */
+                    virtual bool compare(const TileReader2::ReadRequest& a, const TileReader2::ReadRequest& b) NOTHROWS = 0;
+                };
+
+                typedef std::unique_ptr<TileReader2::ReadRequestPrioritizer, void(*)(const TileReader2::ReadRequestPrioritizer *)> ReadRequestPrioritizerPtr;
+
                 /**
                  * The asynchronous I/O thread for use by one or more
                  * <code>TileReader</code> instances. The same instance can be utilized by
@@ -638,25 +558,6 @@ namespace TAK {
                  * @author Developer
                  */
                 class TileReader2::AsynchronousIO {
-                   private:
-                   struct Task {
-                       public:
-                        Task() : opaque(nullptr), action(nullptr), abort(nullptr), cleanup(nullptr), reader(nullptr) {}
-                        Task(TileReader2 *reader, void *opaque, AsyncRunnable action, AsyncRunnable abort, AsyncRunnable cleanup) NOTHROWS
-                                                                                                                     : opaque(opaque),
-                                                                                                                       action(action),
-                                                                                                                       abort(abort),
-                                                                                                                       cleanup(cleanup),
-                                                                                                                       reader(reader) {}
-
-                       public:
-                        void *opaque;
-                        AsyncRunnable action;
-                        AsyncRunnable abort;
-                        AsyncRunnable cleanup;
-                        TileReader2 *reader;
-                    };
-
                    public:
                     typedef bool (*AsyncCancelCheck)(TileReader2 *reader, AsyncRunnable requestAction, void *requestOpaque,
                                                      void *cancelOpaque);
@@ -664,9 +565,6 @@ namespace TAK {
                     AsynchronousIO() NOTHROWS;
                     AsynchronousIO(const int64_t maxIdle) NOTHROWS;
                     ~AsynchronousIO() NOTHROWS;
-
-                   private:
-                    Util::TAKErr getReadBuffer(uint8_t **value, const size_t size) NOTHROWS;
 
                    public:
                     /**
@@ -685,38 +583,32 @@ namespace TAK {
                     Util::TAKErr abortRequests(TileReader2 *reader) NOTHROWS;
 
                     /**
-                     * Similar to above, but aborts only those requests for which the given check returns true
-                     */
-                    Util::TAKErr abortRequests(TileReader2 *reader, AsyncCancelCheck check, void *opaque) NOTHROWS;
-
-                    /**
-                     * Cancel all requests belonging to the given reader that match the provided cancel check.
-                     * All requests not yet serviced and the one actively being serviced are checked
+                     * Queues an asynchronous read.
                      *
-                     * @param reader the reader to match requests against
+                     * @param request   The read request
+                     * 
+                     * @return  TE_Ok on success, others on failure
                      */
-                    Util::TAKErr cancelRequests(TileReader2 *reader, AsyncCancelCheck check, void *opaque) NOTHROWS;
+                    Util::TAKErr asyncRead(const std::shared_ptr<ReadRequest> &request) NOTHROWS;
 
+                    void setReadRequestPrioritizer(const TileReader2& reader, ReadRequestPrioritizerPtr&& prioritizer) NOTHROWS;
                    private:
-                    Util::TAKErr runLater(TileReader2 *reader, void *opaque, AsyncRunnable run, AsyncRunnable cancel, AsyncRunnable cleanup) NOTHROWS;
 
                     Util::TAKErr runImpl() NOTHROWS;
 
                     static void *threadRun(void *threadData);
 
                    private:
-                    std::list<Task> tasks;
+                    std::map<const TileReader2 *, ReadRequestPrioritizerPtr> requestPrioritizers;
+                    std::map<const TileReader2 *, std::vector<std::shared_ptr<TileReader2::ReadRequest>>> tasks;
                     // Valid only when holding lock
-                    Task *currentTask;
+                    std::shared_ptr<TileReader2::ReadRequest> currentTask;
                     Thread::Mutex syncOn;
                     Thread::CondVar cv;
-                    Thread::ThreadPtr thread;
+                    Thread::ThreadPoolPtr thread;
                     bool dead;
                     bool started;
                     const int64_t maxIdle;
-
-                    uint8_t *readBuffer;
-                    size_t readBufferLength;
 
                     friend class TileReader2;
                 };  // AsynchronousIO

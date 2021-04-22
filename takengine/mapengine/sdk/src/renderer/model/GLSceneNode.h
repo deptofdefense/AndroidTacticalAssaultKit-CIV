@@ -11,7 +11,7 @@
 #include "renderer/RenderState.h"
 #include "renderer/core/ColorControl.h"
 #include "renderer/core/GLMapRenderable2.h"
-#include "renderer/core/GLMapView2.h"
+#include "renderer/core/GLGlobeBase.h"
 #include "renderer/model/MaterialManager.h"
 #include "thread/Mutex.h"
 #include "util/Error.h"
@@ -67,10 +67,10 @@ namespace TAK {
                     GLSceneNode(TAK::Engine::Core::RenderContext &ctx, const std::shared_ptr<TAK::Engine::Model::SceneNode> &subject, const TAK::Engine::Model::SceneInfo &info, const std::shared_ptr<MaterialManager> &matmgr) NOTHROWS;
                 private :
                     Util::TAKErr asyncLoad(LoadContext &ctx, bool *cancelToken) NOTHROWS;
-                    bool isLoaded(const Core::GLMapView2  &view) const NOTHROWS;
-                    Util::TAKErr prepareLoadContext(LoadContext *ctx, const Core::GLMapView2 &view) const NOTHROWS;
+                    bool isLoaded(const Core::GLGlobeBase  &view) const NOTHROWS;
+                    Util::TAKErr prepareLoadContext(LoadContext *ctx, const Core::GLGlobeBase &view) const NOTHROWS;
                     Util::TAKErr prepareLoadContext(LoadContext* ctx, const TAK::Engine::Core::MapSceneModel2& scene, double drawMapResolution) const NOTHROWS;
-                    RenderVisibility isRenderable(const Core::GLMapView2 &view) const NOTHROWS;
+                    RenderVisibility isRenderable(const Core::GLGlobeBase &view) const NOTHROWS;
                     Util::TAKErr unloadLODs() NOTHROWS;
                     bool hasLODs() const NOTHROWS;
                     Util::TAKErr hitTest(TAK::Engine::Core::GeoPoint2 *value, const TAK::Engine::Core::MapSceneModel2 &sceneModel, const float x, const float y) NOTHROWS;
@@ -84,7 +84,7 @@ namespace TAK {
                 private : // ColorControl
                     Util::TAKErr setColor(const Core::ColorControl::Mode mode, const unsigned int argb) NOTHROWS;
                 public: // GLMapRenderable2
-                    void draw(const Core::GLMapView2 &view, const int renderPass) NOTHROWS;
+                    void draw(const Core::GLGlobeBase &view, const int renderPass) NOTHROWS;
                     void release() NOTHROWS;
                     int getRenderPass() NOTHROWS;
                     void start() NOTHROWS;
@@ -93,7 +93,7 @@ namespace TAK {
                     virtual Util::TAKErr gatherDepthSamplerDrawables(std::vector<GLDepthSamplerDrawable*>& result, int levelDepth, const TAK::Engine::Core::MapSceneModel2& sceneModel, float x, float y) NOTHROWS;
                     virtual void depthSamplerDraw(GLDepthSampler& sampler, const TAK::Engine::Core::MapSceneModel2& sceneModel) NOTHROWS;
                 private :
-                    void draw(const Core::GLMapView2 &view, Renderer::RenderState &state, const int renderPass) NOTHROWS;
+                    void draw(const Core::GLGlobeBase &view, Renderer::RenderState &state, const int renderPass) NOTHROWS;
                 private :
                     std::vector<std::unique_ptr<LODMeshes>> lodMeshes;
 

@@ -27,14 +27,25 @@ namespace {
     }
 
     static const std::regex uri_regex_(
-        "([a-zA-Z][a-zA-Z0-9+.-]*):" // scheme
-        "([^?#]*)" // authority
+        "(?:([a-zA-Z][a-zA-Z0-9+.-]*):)?" // scheme
+        "(?://([^/?#]*))?" // authority
+        "(?:([^\\?#]*))?" // path
         "(?:\\?([^#]*))?" // query
         "(?:#(.*))?"); // fragment
 
-    static const std::regex uri_auth_and_path_regex_(
-        "//([^/]*)" // host
-        "(/.*)?"); // path
+    static const std::regex uri_auth_regex_(
+        "(?:(.*)@)?" // userInfo
+        "([^:]*)" // host
+        "(?:\\:(.*))?"); // port
+
+    TAKErr buildImpl(
+        String* result,
+        const char* scheme,
+        const char* auth,
+        const char* pathPrefix,
+        const char* pathSuffix,
+        const char* query,
+        const char* frag) NOTHROWS;
 }
 
 TAKErr TAK::Engine::Util::URI_open(DataInput2Ptr& result, const char* URI) NOTHROWS {
@@ -57,13 +68,27 @@ TAKErr TAK::Engine::Util::URI_unregisterProtocolHandler(const std::shared_ptr<Pr
 }
 
 TAKErr TAK::Engine::Util::URI_parse(
-    String *scheme,
-    String *authority,
-    String *host,
-    String *path,
-    String *query,
-    String *fragment,
-    const char *URI) NOTHROWS {
+    String* scheme,
+    String* authority,
+    String* host,
+    String* path,
+    String* query,
+    String* fragment,
+    const char* URI) NOTHROWS {
+
+    return URI_parse(scheme, authority, nullptr, host, nullptr, path, query, fragment, URI);
+}
+
+TAKErr TAK::Engine::Util::URI_parse(
+    String* scheme,
+    String* authority,
+    String* userInfo,
+    String* host,
+    String* port,
+    String* path,
+    String* query,
+    String* fragment,
+    const char* URI) NOTHROWS {
     
     if (!URI)
         return TE_InvalidArg;
@@ -76,24 +101,29 @@ TAKErr TAK::Engine::Util::URI_parse(
 
     if (scheme && baseMatch.size() >= 2 && baseMatch[1].matched)
         *scheme = baseMatch[1].str().c_str();
-    if ((authority || host || path) && baseMatch.size() >= 3 && baseMatch[2].matched) {
+    if (authority && baseMatch.size() >= 3 && baseMatch[2].matched)
+        *authority = baseMatch[2].str().c_str();
+    if (path && baseMatch.size() >= 4 && baseMatch[3].matched)
+        *path = baseMatch[3].str().c_str();
+
+    if ((host || userInfo || port) && baseMatch.size() >= 3 && baseMatch[2].matched) {
+        std::smatch hostMatch;
         std::string auth = baseMatch[2].str();
-        if (authority)
-            *authority = auth.c_str();
-        if (host || path) {
-            std::smatch hostMatch;
-            if (!std::regex_match(auth, hostMatch, uri_auth_and_path_regex_))
-                return TE_InvalidArg;
-            if (host && hostMatch.size() >= 2 && hostMatch[1].matched)
-                *host = hostMatch[1].str().c_str();
-            if (path && hostMatch.size() >= 3 && hostMatch[2].matched)
-                *path = hostMatch[2].str().c_str();
-        }
+        if (!std::regex_match(auth, hostMatch, uri_auth_regex_))
+            return TE_InvalidArg;
+
+        if (userInfo && hostMatch.size() >= 2 && hostMatch[1].matched)
+            *userInfo = hostMatch[1].str().c_str();
+        if (host && hostMatch.size() >= 3 && hostMatch[2].matched)
+            *host = hostMatch[2].str().c_str();
+        if (port && hostMatch.size() >= 4 && hostMatch[3].matched)
+            *port = hostMatch[3].str().c_str();
     }
-    if (query && baseMatch.size() >= 4 && baseMatch[3].matched)
-        *query = baseMatch[3].str().c_str();
-    if (fragment && baseMatch.size() >= 5)
-        *fragment = baseMatch[4].str().c_str();
+    
+    if (query && baseMatch.size() >= 5 && baseMatch[4].matched)
+        *query = baseMatch[4].str().c_str();
+    if (fragment && baseMatch.size() >= 6 && baseMatch[5].matched)
+        *fragment = baseMatch[5].str().c_str();
 
     return TE_Ok;
 }
@@ -104,35 +134,31 @@ TAKErr TAK::Engine::Util::URI_getParent(Port::String* result, const char* URI) N
         return TE_InvalidArg;
 
     String scheme;
-    String authority;
-    TAKErr code = URI_parse(&scheme, &authority, nullptr, nullptr, nullptr, nullptr, URI);
+    String auth;
+    String path;
+    String query;
+    String frag;
+    TAKErr code = URI_parse(&scheme, &auth, nullptr, &path, &query, &frag, URI);
     if (code != TE_Ok)
         return code;
 
-    if (!authority)
-        return TE_InvalidArg;
-
-    std::string authStr = authority.get();
-    if (authStr.size() > 0 && authStr.back() == '/')
-        authority = authStr.substr(0, authStr.size() - 1).c_str();
-
-    String parentAuth;
-    IO_getParentFile(parentAuth, authority.get());
-
-    if (!parentAuth || strcmp(parentAuth, "/") == 0)
+    if (!path) {
+        *result = URI;
         return TE_Done;
-
-    StringBuilder sb;
-    if (scheme) {
-        sb.append(scheme);
-        sb.append(":");
     }
-    sb.append(parentAuth);
-    sb.append("/");
-    *result = sb.c_str();
 
-    return TE_Ok;
+    String parentPath;
+    IO_getParentFile(parentPath, path.get());
+
+    if (!parentPath || strcmp(parentPath, "/") == 0) {
+        *result = URI;
+        return TE_Done;
+    }
+
+    return buildImpl(result, scheme.get(), auth.get(), parentPath.get(), "", query.get(), frag.get());
 }
+
+
 
 TAKErr TAK::Engine::Util::URI_combine(Port::String* result, const char* base, const char* suffix) NOTHROWS {
 
@@ -145,50 +171,61 @@ TAKErr TAK::Engine::Util::URI_combine(Port::String* result, const char* base, co
     String path;
     String query;
     String frag;
-    bool treatAsFilePath = false;
 
     TAKErr code = URI_parse(&scheme, &auth, nullptr, &path, &query, &frag, base);
+    if (code == TE_Ok)
+        return buildImpl(result, scheme.get(), auth.get(), path.get(), suffix, query.get(), frag.get());
+    return buildImpl(result, nullptr, nullptr, base, suffix, nullptr, nullptr);
+}
 
-    if (scheme && code == TE_Ok) {
-        
-        // assume path sep is '/'
-        const char *sep = "/";
-        if (auth && String_endsWith(auth, "/"))
-            sep = "";
+TAKErr TAK::Engine::Util::URI_getRelative(Port::String* result, const char* baseURI, const char* URI) NOTHROWS {
 
-        StringBuilder sb;
-        code = StringBuilder_combine(sb, 
-            scheme, 
-            ":",
-            auth.get() ? auth.get() : "",
-            sep, 
-            suffix, 
-            query.get() ? query.get() : "", 
-            frag.get() ? frag.get() : "");
-        if (code != TE_Ok)
-            return code;
+    if (!result)
+        return TE_InvalidArg;
 
-        *result = sb.c_str();
-        return TE_Ok;
-    }
+    String scheme, baseScheme;
+    String auth, baseAuth;
+    String path, basePath;
+    String query, baseQuery;
+    String frag, baseFrag;
 
-    // no scheme-- treat as just a path
-
-    char sep[2] = { Platform_pathSep(), '\0' };
-    
-    // already ends with sep?
-    if (String_endsWith(base, "\\") ||
-        String_endsWith(base, "/")) {
-        sep[0] = '\0';
-    }
-
-    StringBuilder sb;
-    code = StringBuilder_combine(sb, base, sep, suffix);
+    TAKErr code = URI_parse(&scheme, &auth, nullptr, &path, &query, &frag, URI);
     if (code != TE_Ok)
         return code;
 
-    // correct any seps not native to platform
-    return IO_correctPathSeps(*result, sb.c_str());
+    code = URI_parse(&baseScheme, &baseAuth, nullptr, &basePath, &baseQuery, &baseFrag, baseURI);
+    if (code != TE_Ok)
+        return code;
+
+    if (!(scheme == baseScheme || String_strcasecmp(scheme, baseScheme) == 0))
+        return TE_InvalidArg;
+    if (!(auth == baseAuth || String_strcasecmp(scheme, baseScheme) == 0))
+        return TE_InvalidArg;
+    if (path == nullptr || basePath == nullptr)
+        return TE_InvalidArg;
+
+    const char *bp = basePath.get();
+    const char *pp = path.get();
+    while (*bp && *pp && *bp == *pp) {
+        ++bp;
+        ++pp;
+    }
+
+#define IS_PATH_SEP(c) \
+    (c) == '\\' || (c) == '/' || (c) == ':'
+
+
+    if (*bp == '\0' && bp > basePath.get() && pp > path.get()) {
+        if (IS_PATH_SEP(pp[-1])) {
+            *result = pp;
+            return TE_Ok;
+        } else if (IS_PATH_SEP(pp[0])) {
+            *result = pp + 1;
+            return TE_Ok;
+        }
+    }
+
+    return TE_InvalidArg;
 }
 
 namespace {
@@ -220,4 +257,58 @@ namespace {
         return code;
     }
 
+    TAKErr buildImpl(
+        String* result,
+        const char* scheme,
+        const char* auth,
+        const char* pathPrefix,
+        const char* pathSuffix,
+        const char* query,
+        const char* frag) NOTHROWS {
+
+        if (scheme) {
+
+            // assume path sep is '/'
+            const char* sep = "/";
+            if ((pathPrefix && String_endsWith(pathPrefix, "/")) || *pathSuffix == '/' || *pathSuffix == '\0')
+                sep = "";
+
+            StringBuilder sb;
+            TAKErr code = StringBuilder_combine(sb,
+                scheme,
+                ":",
+                auth ? "//" : "",
+                auth ? auth : "",
+                pathPrefix,
+                sep,
+                pathSuffix,
+                query ? "?" : "",
+                query ? query : "",
+                frag ? "#" : "",
+                frag ? frag : "");
+            if (code != TE_Ok)
+                return code;
+
+            *result = sb.c_str();
+            return TE_Ok;
+        }
+
+        // no scheme-- treat as just a path
+
+        char sep[2] = { Platform_pathSep(), '\0' };
+
+        // already ends with sep?
+        if (String_endsWith(pathPrefix, "\\") ||
+            String_endsWith(pathPrefix, "/")) {
+            sep[0] = '\0';
+        }
+
+        StringBuilder sb;
+        TAKErr code = StringBuilder_combine(sb, pathPrefix, sep, pathSuffix);
+        if (code != TE_Ok)
+            return code;
+
+        // correct any seps not native to platform
+        return IO_correctPathSeps(*result, sb.c_str());
+    }
 }

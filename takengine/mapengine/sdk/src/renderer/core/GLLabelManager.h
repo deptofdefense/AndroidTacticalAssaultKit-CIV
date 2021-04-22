@@ -51,14 +51,19 @@ namespace TAK
                     void setColor(const uint32_t id, const int color) NOTHROWS;
                     void setBackColor(const uint32_t id, const int color) NOTHROWS;
                     void setFill(const uint32_t id, const bool fill) NOTHROWS;
+                    void setRotation(const uint32_t id, const float rotation, const bool absolute) NOTHROWS;
+                    void setPriority(const uint32_t, const Priority priority) NOTHROWS;
                     void getSize(const uint32_t id, atakmap::math::Rectangle<double>& size_rect) NOTHROWS;
                     void setVisible(const bool visible) NOTHROWS;
                 public:
-                    void draw(const GLMapView2& view, const int render_pass) NOTHROWS override;
+                    void draw(const GLGlobeBase& view, const int render_pass) NOTHROWS override;
                     void release() NOTHROWS override;
                     int getRenderPass() NOTHROWS override;
                     void start() NOTHROWS override;
                     void stop() NOTHROWS override;
+                private:
+                    void draw(const GLGlobeBase& view, const Priority priority,
+                              std::vector<atakmap::math::Rectangle<double>>& label_placements) NOTHROWS;
                 private:
                     static float defaultFontSize;
                     static GLText2* getDefaultText() NOTHROWS;
@@ -68,6 +73,7 @@ namespace TAK
                     int64_t labelFadeTimer;
                 private:
                     std::map<uint32_t, GLLabel> labels_;
+                    std::map<Priority, std::set<uint32_t>> label_priorities_;
                     uint32_t map_idx_;
                     uint32_t always_render_idx_;
                     int draw_version_;

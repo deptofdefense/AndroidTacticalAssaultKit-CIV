@@ -119,13 +119,13 @@ public class CotServiceRemote {
      * @param cel the cot event listener to use.   If a previous one is set, then it is unregistered
      */
     public void setCotEventListener(final CotEventListener cel) {
-        if (this.cel != null) { 
+        if (this.cel != null) {
             CommsMapComponent.getInstance().removeOnCotEventListener(this.cel);
-        } 
-        
+        }
+
         this.cel = cel;
 
-        if (cel != null) 
+        if (cel != null)
             CommsMapComponent.getInstance().addOnCotEventListener(cel);
     }
 

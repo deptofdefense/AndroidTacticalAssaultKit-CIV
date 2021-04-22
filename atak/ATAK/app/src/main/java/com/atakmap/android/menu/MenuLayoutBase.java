@@ -260,7 +260,8 @@ public class MenuLayoutBase extends LayoutWidget implements
             if (parentButton.isDisabled())
                 childButton.setDisabled(true);
 
-            final float radius = getChildMenuRadius(submenuWidget, parentButton);
+            final float radius = getChildMenuRadius(submenuWidget,
+                    parentButton);
             childButton.setOrientation(childButton.getOrientationAngle(),
                     radius);
 
@@ -432,19 +433,13 @@ public class MenuLayoutBase extends LayoutWidget implements
     protected void layoutAsSubmenu(MapMenuWidget menuWidget,
             MapMenuButtonWidget parentButton) {
 
-        // cull before we figure our dimensioning
-        final float totalWeight = cullAndWeighButtons(menuWidget, true);
-
-        float submenuSpan = menuWidget.getButtonSpan();
-        float coveredAngle = menuWidget.getCoveredAngle();
-        if (!menuWidget.getExplicitSizing()) {
+        // get all buttons possible prior to culling, and their unit span
+        float submenuSpan = 0f; // an unreasonable default, but defined.
+        if (menuWidget.getExplicitSizing()) {
+            submenuSpan = menuWidget.getCoveredAngle()
+                    / menuWidget.getChildCount();
+        } else {
             submenuSpan = parentButton.getButtonSpan();
-            coveredAngle = submenuSpan * menuWidget.getChildCount();
-            if (360f < coveredAngle) {
-                submenuSpan = 360f / menuWidget.getChildCount();
-                coveredAngle = 360f;
-            }
-            menuWidget.setCoveredAngle(coveredAngle);
 
             // parentButton's orientation radius appears to be its inner dimension
             // Size the submenu button for nominally equivalent arc length as its parent
@@ -454,6 +449,16 @@ public class MenuLayoutBase extends LayoutWidget implements
             final float parentWidth = parentButton.getButtonWidth();
             menuWidget.setButtonWidth(parentWidth);
         }
+
+        // cull before we figure our dimensioning
+        final float totalWeight = cullAndWeighButtons(menuWidget, true);
+
+        float coveredAngle = submenuSpan * menuWidget.getChildCount();
+        if (360f < coveredAngle) {
+            submenuSpan = 360f / menuWidget.getChildCount();
+            coveredAngle = 360f;
+        }
+        menuWidget.setCoveredAngle(coveredAngle);
 
         final float parentOrient = parentButton.getOrientationAngle();
         final float startingAngle = normalizeAngle(

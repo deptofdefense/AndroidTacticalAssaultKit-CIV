@@ -310,7 +310,6 @@ public final class DoghouseViewModel {
         _cache.put(route.getUID(), doghouses);
     }
 
-
     void updateDoghouses(Route route) {
         List<Doghouse> doghouses = _cache.get(route.getUID());
         if (doghouses == null) {
@@ -341,7 +340,8 @@ public final class DoghouseViewModel {
         }
     }
 
-    void addDoghouse(@NonNull final Route route) {
+    void addDoghouse(@NonNull
+    final Route route) {
         List<Doghouse> doghouses = getDoghousesForRoute(route);
         if (doghouses != null) {
             Doghouse dh = buildDoghouse(route.getNumPoints() - 2, route);
@@ -491,7 +491,11 @@ public final class DoghouseViewModel {
             return null;
         }
 
-        Doghouse dh = new Doghouse(index + 1, source, target);
+        //Per SOMPE customer doghouse turnpoint ID should start at 2 for the first doghouse
+        ///a flying route with doghouses the first point of STTO point is known as the point 1
+        // which the doghouse should be labeled for the point of the route being navigated to matches XPLAN Functionality - Scott Auman
+
+        Doghouse dh = new Doghouse(index + 2, source, target);
         dh.setMetaString(Doghouse.META_ROUTE_UID, route.getUID());
         dh.setMetaString(Doghouse.META_ROUTE_LEG, Integer.toString(index));
 
@@ -658,9 +662,11 @@ public final class DoghouseViewModel {
         }
     }
 
-    private void updateRelativeLocation(int index, Doghouse doghouse, Route route) {
+    private void updateRelativeLocation(int index, Doghouse doghouse,
+            Route route) {
         final Doghouse.DoghouseLocation pref = Doghouse.DoghouseLocation
-                .fromConstant(_prefs.getInt(DoghouseReceiver.RELATIVE_LOCATION, 1));
+                .fromConstant(
+                        _prefs.getInt(DoghouseReceiver.RELATIVE_LOCATION, 1));
         Doghouse.DoghouseLocation loc = pref;
         if (pref == Doghouse.DoghouseLocation.OUTSIDE_OF_TURN) {
             byte[] turns = computeTurns(route);

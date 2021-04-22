@@ -245,6 +245,7 @@ namespace TAK {
             } // Tessellate_linestring
 
             ENGINE_API Util::TAKErr Tessellate_polygon(VertexDataPtr &value, std::size_t *dstCount, const VertexData &src, const std::size_t count, const double threshold, Algorithm &algorithm, ReadVertexFn vertRead, WriteVertexFn vertWrite) NOTHROWS;
+            ENGINE_API Util::TAKErr Tessellate_polygon(VertexDataPtr &value, std::size_t *dstCount, const VertexData &src, const int *counts, const int *startIndices, const int numPolygons, const double threshold, Algorithm &algorithm, ReadVertexFn vertRead, WriteVertexFn vertWrite) NOTHROWS;
 
             template<class T>
             Util::TAKErr Tessellate_polygon(VertexDataPtr &value, std::size_t *dstCount, const VertexData &src, const std::size_t count, const double threshold, Algorithm &algorithm) NOTHROWS
@@ -263,6 +264,25 @@ namespace TAK {
                 }
 
                 return Tessellate_polygon(value, dstCount, src, count, threshold, algorithm, readV, writeV);
+            }
+
+            template<class T>
+            Util::TAKErr Tessellate_polygon(VertexDataPtr &value, std::size_t *dstCount, const VertexData &src, const int *counts, const int *startIndices, const int numPolygons, const double threshold, Algorithm &algorithm) NOTHROWS
+            {
+                if(sizeof(T)*src.size > src.stride)
+                    return Util::TE_InvalidArg;
+
+                ReadVertexFn readV;
+                WriteVertexFn writeV;
+                if (src.stride > sizeof(T)*src.size) {
+                    readV = readVertexImpl_stride<T>;
+                    writeV = writeVertexImpl_stride<T>;
+                } else {
+                    readV = readVertexImpl_nostride<T>;
+                    writeV = writeVertexImpl_nostride<T>;
+                }
+
+                return Tessellate_polygon(value, dstCount, src, counts, startIndices, numPolygons, threshold, algorithm, readV, writeV);
             }
         }
     }

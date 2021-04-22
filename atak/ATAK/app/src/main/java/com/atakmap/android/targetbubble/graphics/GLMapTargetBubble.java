@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 
 import android.graphics.Color;
+import android.opengl.GLES30;
 import android.util.Pair;
 
 import com.atakmap.android.maps.graphics.GLTriangle;
@@ -13,11 +14,13 @@ import com.atakmap.android.targetbubble.MapTargetBubble;
 import com.atakmap.android.targetbubble.MapTargetBubble.OnCrosshairColorChangedListener;
 import com.atakmap.android.targetbubble.MapTargetBubble.OnLocationChangedListener;
 import com.atakmap.android.targetbubble.MapTargetBubble.OnScaleChangedListener;
+import com.atakmap.annotations.IncubatingApi;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.Globe;
 import com.atakmap.map.LegacyAdapters;
 import com.atakmap.map.MapControl;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.MapRenderer2;
 import com.atakmap.map.layer.Layer;
 import com.atakmap.map.layer.Layer2;
 import com.atakmap.map.layer.feature.geometry.Polygon;
@@ -115,10 +118,16 @@ public class GLMapTargetBubble implements OnLocationChangedListener,
         this.initialized = false;
     }
 
+    @IncubatingApi(since = "4.3")
+    public MapRenderer2 getRenderer() {
+        return this.renderer;
+    }
+
     // GLMapView interface, for backwards API compatibility
-    public final <T extends MapControl> boolean visitControl(Layer2 layer, Visitor<T> visitor, Class<T> ctrlClazz) {
+    public final <T extends MapControl> boolean visitControl(Layer2 layer,
+            Visitor<T> visitor, Class<T> ctrlClazz) {
         final GLMapView r = this.renderer;
-        if(r == null)
+        if (r == null)
             return false;
         return r.visitControl(layer, visitor, ctrlClazz);
     }
@@ -173,6 +182,8 @@ public class GLMapTargetBubble implements OnLocationChangedListener,
             this.initialized = true;
         }
 
+        view.scratch.depth.save();
+        GLES30.glDisable(GLES30.GL_DEPTH_TEST);
         if (_circle != null) {
             GLES20FixedPipeline
                     .glClear(GLES20FixedPipeline.GL_STENCIL_BUFFER_BIT);
@@ -221,6 +232,9 @@ public class GLMapTargetBubble implements OnLocationChangedListener,
         focusx = this.renderer.focusx;
         focusy = this.renderer.focusy;
         _top = this.renderer._top;
+
+        view.scratch.depth.restore();
+        GLES30.glClear(GLES30.GL_STENCIL_BUFFER_BIT);
     }
 
     @Override
@@ -292,7 +306,7 @@ public class GLMapTargetBubble implements OnLocationChangedListener,
                     renderer.getRenderSurface().getDpi(),
                     subject.getMapScale());
             renderer.lookAt(new GeoPoint(subject.getLatitude(),
-                            subject.getLongitude()),
+                    subject.getLongitude()),
                     resolution, 0d, 0d, false);
         }
     }
@@ -311,7 +325,8 @@ public class GLMapTargetBubble implements OnLocationChangedListener,
                     parent._left,
                     parent._bottom,
                     parent._right,
-                    parent._top);
+                    parent._top,
+                    true);
             this.parent = parent;
             setTargeting(subject.isCoordExtractionBubble());
             setFocusPointOffset(parent.getFocusPointOffsetX(),

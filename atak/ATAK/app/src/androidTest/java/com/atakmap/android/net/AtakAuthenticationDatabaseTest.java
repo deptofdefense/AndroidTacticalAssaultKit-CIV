@@ -21,7 +21,7 @@ import static org.junit.Assert.assertNull;
 public class AtakAuthenticationDatabaseTest extends ATAKInstrumentedTest {
 
     @Test
-    public void storeAndRetreive() {
+    public void storeAndRetrieve() {
         Context appContext = InstrumentationRegistry.getTargetContext();
 
         AtakAuthenticationCredentials aac = AtakAuthenticationDatabase
@@ -62,8 +62,7 @@ public class AtakAuthenticationDatabaseTest extends ATAKInstrumentedTest {
                 .getCredentials(
                         AtakAuthenticationCredentials.TYPE_APK_DOWNLOADER,
                         "com.atakmap.app.test1");
-        assertFalse(aac1.password.equals("core"));
-        assertFalse(aac1.username.equals("apple"));
+        assertNull(aac1);
 
         AtakAuthenticationDatabase.saveCredentials(
                 AtakAuthenticationCredentials.TYPE_APK_DOWNLOADER,
@@ -73,7 +72,7 @@ public class AtakAuthenticationDatabaseTest extends ATAKInstrumentedTest {
         AtakAuthenticationCredentials aac2 = AtakAuthenticationDatabase
                 .getCredentials(
                         AtakAuthenticationCredentials.TYPE_APK_DOWNLOADER,
-                        "com.atakmap.app.test1");
+                        "com.atakmap.app.test");
         assertFalse(aac2.password.equals("core"));
         assertFalse(aac2.username.equals("apple"));
 

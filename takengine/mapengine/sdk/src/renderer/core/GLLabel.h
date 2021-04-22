@@ -29,7 +29,12 @@ namespace TAK
                 // Vertical Alignment for labels in relation to their geometry and anchor
                 enum VerticalAlignment
                 {
-                    TEVA_Top, TEVA_Middle, TEVA_Bottom
+                    TEVA_Top, TEVA_Middle, TEVA_Bottom };
+
+                // Priority for labels, determines render order
+                enum Priority
+                {
+                    TEP_High, TEP_Standard, TEP_Low
                 };
 
                 class ENGINE_API GLLabel
@@ -40,25 +45,32 @@ namespace TAK
                     GLLabel(const GLLabel&);
                     GLLabel(TAK::Engine::Feature::Geometry2Ptr_const&& geometry, TAK::Engine::Port::String text,
                             Math::Point2<double> desired_offset, double max_draw_resolution,
-                            TextAlignment alignment = TextAlignment::TETA_Center,
-                            VerticalAlignment vertical_alignment = VerticalAlignment::TEVA_Top, int color = 0xFFFFFFFF,
-                            int fill_color = 0x00000000, bool fill = false,
-                            TAK::Engine::Feature::AltitudeMode altitude_mode = TAK::Engine::Feature::AltitudeMode::TEAM_ClampToGround);
+                            TextAlignment alignment = TextAlignment::TETA_Center, VerticalAlignment vertical_alignment = VerticalAlignment::TEVA_Top, 
+                            int color = 0xFFFFFFFF, int fill_color = 0x00000000, bool fill = false,
+                            TAK::Engine::Feature::AltitudeMode altitude_mode = TAK::Engine::Feature::AltitudeMode::TEAM_ClampToGround,
+                            Priority priority = Priority::TEP_Standard);
+                    GLLabel(TAK::Engine::Feature::Geometry2Ptr_const&& geometry, TAK::Engine::Port::String text,
+                            Math::Point2<double> desired_offset, double max_draw_resolution,
+                            TextAlignment alignment, VerticalAlignment vertical_alignment, 
+                            int color, int fill_color, bool fill,
+                            TAK::Engine::Feature::AltitudeMode altitude_mode, 
+                            float rotation, bool rotationAbsolute,
+                            Priority priority);
                     GLLabel(const TextFormatParams &fmt,
                             TAK::Engine::Feature::Geometry2Ptr_const&& geometry, TAK::Engine::Port::String text,
                             Math::Point2<double> desired_offset, double max_draw_resolution,
-                            TextAlignment alignment,
-                            VerticalAlignment vertical_alignment, int color,
-                            int fill_color, bool fill,
-                            TAK::Engine::Feature::AltitudeMode altitude_mode);
-                    GLLabel(const TextFormatParams &fmt,
-                            TAK::Engine::Feature::Geometry2Ptr_const&& geometry, TAK::Engine::Port::String text,
-                            Math::Point2<double> desired_offset, double max_draw_resolution,
-                            TextAlignment alignment,
-                            VerticalAlignment vertical_alignment, int color,
-                            int fill_color, bool fill,
+                            TextAlignment alignment, VerticalAlignment vertical_alignment, 
+                            int color, int fill_color, bool fill,
                             TAK::Engine::Feature::AltitudeMode altitude_mode,
-                            float rotation, bool rotationAbsolute);
+                            Priority priority);
+                    GLLabel(const TextFormatParams &fmt,
+                            TAK::Engine::Feature::Geometry2Ptr_const&& geometry, TAK::Engine::Port::String text,
+                            Math::Point2<double> desired_offset, double max_draw_resolution,
+                            TextAlignment alignment, VerticalAlignment vertical_alignment, 
+                            int color, int fill_color, bool fill,
+                            TAK::Engine::Feature::AltitudeMode altitude_mode,
+                            float rotation, bool rotationAbsolute,
+                            Priority priority = Priority::TEP_Standard);
                     ~GLLabel() = default;
                     GLLabel& operator=(GLLabel&&) NOTHROWS;
                     void setGeometry(const TAK::Engine::Feature::Geometry2& geometry) NOTHROWS;
@@ -75,12 +87,14 @@ namespace TAK
                     void setColor(const int color) NOTHROWS;
                     void setBackColor(const int color) NOTHROWS;
                     void setFill(const bool fill) NOTHROWS;
+                    void setRotation(const float rotation, const bool absolute_rotation) NOTHROWS;
+                    void setPriority(const Priority priority) NOTHROWS;
                     bool shouldRenderAtResolution(const double draw_resolution) const NOTHROWS;
-                    void validateProjectedLocation(const TAK::Engine::Renderer::Core::GLMapView2& view) NOTHROWS;
+                    void validateProjectedLocation(const TAK::Engine::Renderer::Core::GLGlobeBase& view) NOTHROWS;
                 private:
-                    void place(const GLMapView2& view, GLText2& gl_text, std::vector<atakmap::math::Rectangle<double>>& label_rects) NOTHROWS;
-                    void draw(const GLMapView2& view, GLText2& gl_text) NOTHROWS;
-                    void batch(const GLMapView2& view, GLText2& gl_text, GLRenderBatch2& batch) NOTHROWS;
+                    void place(const GLGlobeBase& view, GLText2& gl_text, std::vector<atakmap::math::Rectangle<double>>& label_rects) NOTHROWS;
+                    void draw(const GLGlobeBase& view, GLText2& gl_text) NOTHROWS;
+                    void batch(const GLGlobeBase& view, GLText2& gl_text, GLRenderBatch2& batch) NOTHROWS;
                     atakmap::renderer::GLNinePatch* getSmallNinePatch(TAK::Engine::Core::RenderContext &surface) NOTHROWS;
                 public:
                     atakmap::math::Rectangle<double> labelRect;
@@ -97,6 +111,7 @@ namespace TAK
                     double max_draw_resolution_;
                     TextAlignment alignment_;
                     VerticalAlignment vertical_alignment_;
+                    Priority priority_;
                     float color_r_;
                     float color_g_;
                     float color_b_;

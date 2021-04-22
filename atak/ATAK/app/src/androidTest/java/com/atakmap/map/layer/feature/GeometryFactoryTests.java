@@ -701,7 +701,10 @@ public class GeometryFactoryTests extends ATAKInstrumentedTest {
         lineString.addPoint(100, 200, 300);
         lineString.addPoint(500, 200, 300);
 
-        final Geometry result = GeometryFactory.extrude(lineString, new double[] { 50d, -50d},
+        final Geometry result = GeometryFactory.extrude(lineString,
+                new double[] {
+                        50d, -50d
+                },
                 GeometryFactory.ExtrusionHints.TEEH_None);
 
         assertNotNull(result);

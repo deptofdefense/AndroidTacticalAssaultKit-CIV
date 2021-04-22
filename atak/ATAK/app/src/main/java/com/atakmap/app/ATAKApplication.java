@@ -77,12 +77,12 @@ public class ATAKApplication extends Application {
 
         Thread.setDefaultUncaughtExceptionHandler(new CustomExceptionHandler());
 
-        try { 
+        try {
             com.atakmap.coremap.loader.NativeLoader
-                .loadLibrary("jnicrash");
+                    .loadLibrary("jnicrash");
 
             initializeJNICrash(IOProviderFactory.isDefault());
-        } catch (UnsatisfiedLinkError ignored) { 
+        } catch (UnsatisfiedLinkError ignored) {
             // the rk3399 is unable to load the jni crash libraries.
             // and I have no further information from the playstore ATAK-14232
         }

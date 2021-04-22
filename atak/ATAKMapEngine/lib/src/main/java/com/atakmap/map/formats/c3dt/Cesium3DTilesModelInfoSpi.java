@@ -58,7 +58,8 @@ public final class Cesium3DTilesModelInfoSpi implements ModelInfoSpi {
 
         // fallback on File test
         File f = new File(s);
-        if(FileSystemUtils.checkExtension(f, "zip")) {
+        if(FileSystemUtils.checkExtension(f, "zip") ||
+                FileSystemUtils.checkExtension(f, "3tz")) {
             try {
                 f = new ZipVirtualFile(f);
             } catch(Throwable ignored) {}
@@ -75,7 +76,8 @@ public final class Cesium3DTilesModelInfoSpi implements ModelInfoSpi {
     @Override
     public Set<ModelInfo> create(String s) {
         File f = new File(s);
-        if(FileSystemUtils.checkExtension(f, "zip")) {
+        if(FileSystemUtils.checkExtension(f, "zip") ||
+                FileSystemUtils.checkExtension(f, "3tz")) {
             try {
                 f = new ZipVirtualFile(f);
             } catch(Throwable ignored) {}

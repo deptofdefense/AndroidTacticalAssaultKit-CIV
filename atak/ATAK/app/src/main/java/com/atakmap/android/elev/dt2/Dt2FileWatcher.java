@@ -217,6 +217,39 @@ public class Dt2FileWatcher extends Thread {
     }
 
     /**
+     * Get the file path relative to the "DTED" directory for a given
+     * latitude and longitude
+     * i.e. getRelativePath(2, 30, -73) = "w073/n30.dt2"
+     * @param level DTED resolution level
+     * @param lat Latitude in degrees
+     * @param lng Longitude in degrees
+     * @return Relative file path
+     */
+    public static String getRelativePath(int level, double lat, double lng) {
+        StringBuilder p = new StringBuilder();
+
+        int lngIndex = (int) Math.abs(Math.floor(lng));
+        p.append(lng < 0 ? "w" : "e");
+        if (lngIndex < 10)
+            p.append("00");
+        else if (lngIndex < 100)
+            p.append("0");
+        p.append(lngIndex);
+
+        p.append(File.separator);
+
+        int latIndex = (int) Math.abs(Math.floor(lat));
+        p.append(lat < 0 ? "s" : "n");
+        if (latIndex < 10)
+            p.append("0");
+        p.append(latIndex);
+
+        p.append(".dt").append(level);
+
+        return p.toString();
+    }
+
+    /**
      * Get a relative path given a file (excludes /atak/ directory)
      * @param file File
      * @return Path relative to /atak (i.e. "/atak/DTED/w039" -> "DTED/w039")
@@ -351,7 +384,8 @@ public class Dt2FileWatcher extends Thread {
                         _totalFiles--;
                         Dt2File d = new Dt2File(f);
                         _coverages[d.level].set(
-                                getCoverageIndex(d.latitude, d.longitude), false);
+                                getCoverageIndex(d.latitude, d.longitude),
+                                false);
                     } else
                         ret = false;
                 }

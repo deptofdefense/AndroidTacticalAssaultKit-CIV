@@ -1,11 +1,7 @@
 package com.atakmap.opengl;
 
-import com.atakmap.coremap.maps.coords.GeoCalculations;
-import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.coremap.log.Log;
 import com.atakmap.interop.DataType;
-import com.atakmap.lang.Unsafe;
-import com.atakmap.math.MathUtils;
-import com.atakmap.math.PointD;
 
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
@@ -67,5 +63,21 @@ public final class Tessellate {
             throw new IllegalStateException();
         }
     }
+    public static DoubleBuffer polygon(DoubleBuffer src, int stride, int size, int[] counts, int[] startIndices, int numPolygons, double threshold, boolean wgs84) {
+        // TODO: check that sizes.length and counts.length equal numPolygons
+        final Buffer retval = polygonImpl(src, stride, size, counts, startIndices, numPolygons, threshold, wgs84);
+        if (retval == null)
+            return null;
+        if (retval instanceof DoubleBuffer) {
+            return (DoubleBuffer) retval;
+        } else if (retval instanceof ByteBuffer) {
+            ((ByteBuffer) retval).order(ByteOrder.nativeOrder());
+            return ((ByteBuffer) retval).asDoubleBuffer();
+        } else {
+            throw new IllegalStateException();
+        }
+
+    }
     static native Buffer polygonImpl(DoubleBuffer src, int stride, int size, int count, double threshold, boolean wgs84);
+    static native Buffer polygonImpl(DoubleBuffer src, int stride, int sizes, int[] counts, int[] startIndices, int num, double threshold, boolean wgs84);
 }

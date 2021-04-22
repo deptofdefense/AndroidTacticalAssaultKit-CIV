@@ -7,6 +7,7 @@ import com.atakmap.coremap.maps.conversion.EGM96;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.layer.feature.Feature.AltitudeMode;
 import com.atakmap.map.opengl.GLMapView;
 
 public abstract class GLPointMapItem2 extends AbstractGLMapItem2 implements
@@ -17,6 +18,7 @@ public abstract class GLPointMapItem2 extends AbstractGLMapItem2 implements
     protected double longitude;
     protected double altitude;
     protected double altHae;
+    protected AltitudeMode altMode;
     protected double localTerrainValue;
     protected int terrainVersion = 0;
 
@@ -43,7 +45,7 @@ public abstract class GLPointMapItem2 extends AbstractGLMapItem2 implements
     }
 
     protected final double validateLocalElevation(GLMapView ortho) {
-        if (ortho.drawTilt > 0d) {
+        {
             final int renderTerrainVersion = ortho.getTerrainVersion();
             if (this.terrainVersion != renderTerrainVersion) {
                 this.localTerrainValue = ortho
@@ -74,6 +76,7 @@ public abstract class GLPointMapItem2 extends AbstractGLMapItem2 implements
         final GeoPoint p = item.getPoint();
         if (!p.isValid())
             return;
+        final AltitudeMode altitudeMode = item.getAltitudeMode();
         this.context.queueEvent(new Runnable() {
             @Override
             public void run() {
@@ -87,6 +90,7 @@ public abstract class GLPointMapItem2 extends AbstractGLMapItem2 implements
                     altitude = Double.NaN;
                     altHae = GeoPoint.UNKNOWN;
                 }
+                altMode = altitudeMode;
                 // invalidate cached terrain value
                 terrainVersion = ~terrainVersion;
                 synchronized (bounds) {

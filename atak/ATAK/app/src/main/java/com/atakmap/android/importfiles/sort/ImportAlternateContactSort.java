@@ -62,7 +62,7 @@ public class ImportAlternateContactSort extends ImportResolver {
         if (!super.match(file))
             return false;
 
-        try(InputStream is = IOProviderFactory.getInputStream(file)) {
+        try (InputStream is = IOProviderFactory.getInputStream(file)) {
             return isContact(is, _charBuffer);
         } catch (IOException e) {
             Log.e(TAG,
@@ -152,7 +152,7 @@ public class ImportAlternateContactSort extends ImportResolver {
                 .getDefaultSharedPreferences(MapView.getMapView().getContext());
 
         try (Reader r = IOProviderFactory.getFileReader(file);
-             BufferedReader br = new BufferedReader(r)) {
+                BufferedReader br = new BufferedReader(r)) {
             String line;
             String[] parse;
             while ((line = br.readLine()) != null) {

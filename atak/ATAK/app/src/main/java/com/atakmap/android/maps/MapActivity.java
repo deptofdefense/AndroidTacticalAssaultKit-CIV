@@ -16,6 +16,7 @@ import com.atakmap.android.maps.assets.MapAssets;
 import com.atakmap.android.maps.graphics.GLMapComponent;
 import com.atakmap.android.metrics.activity.MetricFragmentActivity;
 import com.atakmap.android.network.ContentResolverURIStreamHandler;
+import com.atakmap.android.network.FileSystemUriStreamHandler;
 import com.atakmap.android.network.URIStreamHandlerFactory;
 import com.atakmap.app.BuildConfig;
 import com.atakmap.coremap.log.Log;
@@ -60,7 +61,7 @@ public abstract class MapActivity extends MetricFragmentActivity {
         URIStreamHandlerFactory.registerHandler("content", defaultHandler);
         URIStreamHandlerFactory.registerHandler("android.resource",
                 defaultHandler);
-        URIStreamHandlerFactory.registerHandler("file", defaultHandler);
+        URIStreamHandlerFactory.registerHandler("file", FileSystemUriStreamHandler.INSTANCE);
 
     }
 

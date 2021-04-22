@@ -12,17 +12,20 @@ import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.util.Pair;
 
 import com.atakmap.android.cot.detail.CotDetailManager;
 import com.atakmap.android.icons.UserIcon;
 import com.atakmap.android.imagecapture.CanvasHelper;
 import com.atakmap.android.imagecapture.Capturable;
 import com.atakmap.android.imagecapture.CapturePP;
+import com.atakmap.android.importexport.FormatNotSupportedException;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.PointMapItem;
+import com.atakmap.android.maps.graphics.GLCapture;
 import com.atakmap.android.model.opengl.GLModelCaptureCache;
 import com.atakmap.android.rubbersheet.data.ModelProjection;
 import com.atakmap.android.rubbersheet.data.RubberModelData;
@@ -37,6 +40,7 @@ import com.atakmap.coremap.cot.event.CotDetail;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.cot.event.CotPoint;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -48,9 +52,25 @@ import com.atakmap.map.elevation.ElevationManager;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.model.Model;
 import com.atakmap.map.layer.model.ModelInfo;
+import com.atakmap.spatial.file.export.KMZFolder;
+import com.atakmap.spatial.file.export.OGRFeatureExportWrapper;
+import com.atakmap.spatial.kml.KMLUtil;
+import com.ekito.simpleKML.model.Coordinate;
+import com.ekito.simpleKML.model.Feature;
+import com.ekito.simpleKML.model.Folder;
+import com.ekito.simpleKML.model.Geometry;
+import com.ekito.simpleKML.model.Icon;
+import com.ekito.simpleKML.model.IconStyle;
+import com.ekito.simpleKML.model.Placemark;
+import com.ekito.simpleKML.model.Point;
+import com.ekito.simpleKML.model.Style;
+import com.ekito.simpleKML.model.StyleSelector;
+
+import org.gdal.ogr.ogr;
 
 import java.io.File;
-import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -474,7 +494,7 @@ public class VehicleModel extends RubberModel implements Capturable,
                     PointF src = points.get(i);
                     double a = CanvasHelper.angleTo(pCen, src);
                     double d = CanvasHelper.length(pCen, src);
-                    a += heading;
+                    a += heading + 180;
                     outline[i] = cap.forward(DistanceCalculations
                             .computeDestinationPoint(center, a, d));
                 }
@@ -554,16 +574,21 @@ public class VehicleModel extends RubberModel implements Capturable,
     /**
      * Get or create bitmap display of the vehicle
      * If a cached image of the bitmap does not exist, it is created
+     * @param size Image dimensions of the bitmap
      * @return Bitmap of the vehicle
      */
-    private Bitmap getBitmap() {
+    private Bitmap getBitmap(int size) {
         VehicleModelCaptureRequest req = new VehicleModelCaptureRequest(_info);
-        req.setOutputSize(MAX_RENDER_SIZE, true);
+        req.setOutputSize(size, true);
         req.setLightingEnabled(true);
 
         GLModelCaptureCache cache = new GLModelCaptureCache(
-                _info.category + "/" + _info.name);
+                _info.category + "/" + _info.name + "_" + size);
         return cache.getBitmap(req);
+    }
+
+    private Bitmap getBitmap() {
+        return getBitmap(MAX_RENDER_SIZE);
     }
 
     private List<PointF> getOutline() {
@@ -591,5 +616,174 @@ public class VehicleModel extends RubberModel implements Capturable,
         }
 
         return _info.getOutline(null);
+    }
+
+    @Override
+    protected Folder toKml() {
+        Marker center = getCenterMarker();
+        if (center == null)
+            return null;
+        try {
+            return (Folder) center.toObjectOf(Folder.class, null);
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
+
+    @Override
+    protected KMZFolder toKmz() {
+        KMZFolder folder = new KMZFolder();
+        folder.setName(_info.category);
+
+        Style style = new Style();
+
+        List<StyleSelector> styles = new ArrayList<>();
+        styles.add(style);
+        folder.setStyleSelector(styles);
+        List<Feature> folderFeatures = new ArrayList<>();
+        folder.setFeatureList(folderFeatures);
+
+        // Include vehicle icon PNG
+        Bitmap bmp = getBitmap(32);
+        if (bmp != null) {
+            IconStyle istyle = new IconStyle();
+            style.setIconStyle(istyle);
+
+            Icon icon = new Icon();
+            istyle.setIcon(icon);
+
+            // GRG sort of image overlay export
+            /*GeoPointMetaData[] points = getGeoPoints();
+            LatLonQuad quad = new LatLonQuad();
+            Coordinates coords = new Coordinates(KMLUtil.convertKmlCoords(
+                    new GeoPointMetaData[]{
+                            points[2], points[3], points[0], points[1]
+                    }, true, true, getHeight()));
+            quad.setCoordinates(coords);
+            
+            GroundOverlay overlay = new GroundOverlay();
+            overlay.setName(getTitle());
+            overlay.setColor(Integer.toHexString(getFillColor()));
+            overlay.setIcon(icon);
+            overlay.setLatLonQuad(quad);
+            overlay.setAltitudeMode("absolute");
+            overlay.setAltitude(getCenterPoint().getAltitude());
+            folderFeatures.add(overlay);*/
+
+            String subPath = _info.category + "/" + _info.name + "_32.png";
+            File f = new File(GLModelCaptureCache.RENDER_CACHE_DIR, subPath);
+            try {
+                GLCapture.compress(bmp, 100, Bitmap.CompressFormat.PNG, f,
+                        true);
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to compress bitmap: " + f, e);
+            }
+            if (FileSystemUtils.isFile(f)) {
+                Pair<String, String> pair = new Pair<>(
+                        f.getAbsolutePath(), subPath);
+                List<Pair<String, String>> files = folder.getFiles();
+                if (!files.contains(pair))
+                    files.add(pair);
+                icon.setHref(subPath);
+            }
+        }
+
+        String styleId = KMLUtil.hash(style);
+        style.setId(styleId);
+
+        Placemark pointPlacemark = new Placemark();
+        pointPlacemark.setId(getUID());
+        pointPlacemark.setName(getTitle());
+        pointPlacemark.setStyleUrl("#" + styleId);
+        pointPlacemark.setVisibility(getVisible() ? 1 : 0);
+
+        String altitudeMode = "absolute";
+        Marker centerMarker = getCenterMarker();
+        if (centerMarker != null) {
+            String desc = Marker.getKMLDescription(centerMarker, getTitle(),
+                    null);
+            if (!FileSystemUtils.isEmpty(desc))
+                pointPlacemark.setDescription(desc);
+            altitudeMode = KMLUtil.convertAltitudeMode(centerMarker.getAltitudeMode());
+        }
+
+        Coordinate coord = KMLUtil.convertKmlCoord(getCenter(), false);
+        if (coord == null) {
+            Log.w(TAG, "No marker location set");
+            return null;
+        }
+
+        Point centerPoint = new Point();
+        centerPoint.setCoordinates(coord);
+        centerPoint.setAltitudeMode(altitudeMode);
+
+        List<Geometry> geometryList = new ArrayList<>();
+        geometryList.add(centerPoint);
+        pointPlacemark.setGeometryList(geometryList);
+        folderFeatures.add(pointPlacemark);
+
+        return folder;
+    }
+
+    @Override
+    protected OGRFeatureExportWrapper toOgrGeometry()
+            throws FormatNotSupportedException {
+        org.gdal.ogr.Geometry outlineGeom = new org.gdal.ogr.Geometry(
+                org.gdal.ogr.ogrConstants.wkbLineString);
+
+        // Get the outline
+        List<PointF> outline = getOutline();
+
+        if (FileSystemUtils.isEmpty(outline))
+            throw new FormatNotSupportedException(
+                    "Vehicle outline missing points");
+
+        double unwrap = 0;
+        MapView mv = MapView.getMapView();
+        if (mv != null && mv.isContinuousScrollEnabled()
+                && GeoCalculations.crossesIDL(getPoints()))
+            unwrap = 360;
+
+        // Convert to geopoints
+        GeoPoint center = getCenterPoint();
+        double angle = getHeading();
+        GeoPoint first = null;
+        for (PointF p : outline) {
+            PointF np = new PointF(p.x, p.y);
+            GeoPoint gp = DistanceCalculations.computeDestinationPoint(center,
+                    angle, np.y);
+            gp = DistanceCalculations.computeDestinationPoint(gp,
+                    angle + 90, np.x);
+            OGRFeatureExportWrapper.addPoint(outlineGeom, gp, unwrap);
+            if (first == null)
+                first = gp;
+        }
+
+        // Include the first point to close the shape
+        if (first != null)
+            OGRFeatureExportWrapper.addPoint(outlineGeom, first, unwrap);
+
+        // Center point
+        org.gdal.ogr.Geometry centerGeom = new org.gdal.ogr.Geometry(
+                org.gdal.ogr.ogrConstants.wkbPoint);
+        centerGeom.SetPoint(0, center.getLongitude(), center.getLatitude());
+
+        String name = getTitle();
+        String groupName = name;
+        if (getGroup() != null)
+            groupName = getGroup().getFriendlyName();
+
+        // Create the export wrapper
+        OGRFeatureExportWrapper ret = new OGRFeatureExportWrapper(groupName);
+
+        // Add vehicle outline
+        ret.addGeometries(ogr.wkbLineString, Collections.singletonList(
+                new OGRFeatureExportWrapper.NamedGeometry(outlineGeom, name)));
+
+        // Add center point
+        ret.addGeometries(ogr.wkbPoint, Collections.singletonList(
+                new OGRFeatureExportWrapper.NamedGeometry(centerGeom, name)));
+
+        return ret;
     }
 }

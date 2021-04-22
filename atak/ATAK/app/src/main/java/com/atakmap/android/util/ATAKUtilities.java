@@ -4,6 +4,7 @@ package com.atakmap.android.util;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -16,14 +17,19 @@ import android.graphics.drawable.Drawable;
 
 import com.atakmap.android.data.URIContentHandler;
 import com.atakmap.android.data.URIContentManager;
+import com.atakmap.android.editableShapes.EditablePolyline;
 import com.atakmap.android.filesystem.ResourceFile;
+import com.atakmap.android.hierarchy.filters.FOVFilter;
 import com.atakmap.android.image.ImageDropDownReceiver;
 import com.atakmap.android.importexport.ImportExportMapComponent;
 import com.atakmap.android.importfiles.sort.ImportResolver;
 import com.atakmap.android.importfiles.task.ImportFilesTask;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.maps.conversion.GeomagneticField;
 import android.net.Uri;
+import android.os.Environment;
+import android.preference.PreferenceManager;
 import android.util.Base64;
 import android.util.Pair;
 import android.util.SparseArray;
@@ -56,8 +62,13 @@ import com.atakmap.coremap.maps.coords.MutableUTMPoint;
 import com.atakmap.coremap.maps.coords.UTMPoint;
 import com.atakmap.coremap.maps.coords.Vector2D;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
-import com.atakmap.map.AtakMapController;
+import com.atakmap.map.MapRenderer2;
+import com.atakmap.map.MapRenderer3;
+import com.atakmap.map.MapSceneModel;
 import com.atakmap.map.elevation.ElevationManager;
+import com.atakmap.map.projection.MapProjectionDisplayModel;
+import com.atakmap.math.MathUtils;
+import com.atakmap.math.PointD;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -247,21 +258,63 @@ public class ATAKUtilities {
     public static void scaleToFit(MapView _mapView, MapItem[] items,
             int widthPad,
             int heightPad) {
+
+        // Need to compute the max altitude for a proper perspective fit
+        double maxAlt = -Double.MAX_VALUE;
         ArrayList<GeoPoint> pointList = new ArrayList<>(items.length);
         for (MapItem i : items) {
+            double alt = Double.NaN;
+
+            // Rectangles, circles, polylines, etc.
             if (i instanceof Shape) {
-                Collections.addAll(pointList,
-                        ((Shape) i).getPoints());
-            } else if (i instanceof PointMapItem) {
-                pointList.add(((PointMapItem) i).getPoint());
-            } else if (i instanceof AnchoredMapItem) {
-                pointList.add(((AnchoredMapItem) i).getAnchorItem().getPoint());
+                GeoPoint[] points = ((Shape) i).getPoints();
+                Collections.addAll(pointList, points);
+                if (i instanceof EditablePolyline) {
+                    // Max altitude has been pre-computed
+                    alt = ((EditablePolyline) i).getMaxAltitude().get()
+                            .getAltitude();
+                } else {
+                    // Compute max point altitude
+                    alt = -Double.MAX_VALUE;
+                    for (GeoPoint p : points) {
+                        if (p.isAltitudeValid())
+                            alt = Math.max(alt, p.getAltitude());
+                    }
+                }
+
+                // Include shape center/anchor altitude
+                if (i instanceof AnchoredMapItem) {
+                    PointMapItem pmi = ((AnchoredMapItem) i).getAnchorItem();
+                    if (pmi != null) {
+                        GeoPoint p = pmi.getPoint();
+                        if (p.isAltitudeValid())
+                            alt = Math.max(alt, p.getAltitude());
+                    }
+                }
             }
+
+            // Anchored map items that aren't shapes - redirect to anchor
+            else if (i instanceof AnchoredMapItem)
+                i = ((AnchoredMapItem) i).getAnchorItem();
+
+            // Markers
+            if (i instanceof PointMapItem) {
+                GeoPoint p = ((PointMapItem) i).getPoint();
+                pointList.add(p);
+                alt = p.getAltitude();
+            }
+
+            // Include the height in the max altitude
+            double height = i.getHeight();
+            if (!Double.isNaN(alt) && !Double.isNaN(height))
+                alt += height;
+
+            // Add to max altitude if valid
+            if (GeoPoint.isAltitudeValid(alt))
+                maxAlt = Math.max(maxAlt, alt);
         }
-        scaleToFit(_mapView,
-                pointList.toArray(new GeoPoint[0]),
-                widthPad,
-                heightPad);
+        scaleToFit(_mapView, pointList.toArray(new GeoPoint[0]), maxAlt,
+                widthPad, heightPad);
     }
 
     /**
@@ -275,23 +328,36 @@ public class ATAKUtilities {
             PointMapItem friendly) {
         //not quite sure why this method does not just make use of one of the other myriad of methods.
         if (_mapView != null) {
-            AtakMapController ctrl = _mapView.getMapController();
-
             GeoPoint[] points = new GeoPoint[2];
             points[0] = target.getPoint();
             points[1] = friendly.getPoint();
 
             GeoPoint center = GeoCalculations.centerOfExtremes(points, 0,
                     points.length);
-            ctrl.panTo(center, true);
+            if (center == null)
+                return;
 
-            PointF tvp = _mapView.forward(points[0]);
-            PointF fvp = _mapView.forward(points[1]);
+            MapSceneModel sm = _mapView.getRenderer3().getMapSceneModel(false,
+                    MapRenderer2.DisplayOrigin.UpperLeft);
+            sm.set(_mapView.getDisplayDpi(),
+                    sm.width,
+                    sm.height,
+                    sm.mapProjection,
+                    center,
+                    sm.focusx,
+                    sm.focusy,
+                    sm.camera.azimuth,
+                    0d,
+                    sm.gsd,
+                    true);
 
-            double viewWidth = 2 * _mapView.getWidth() / (double) 3;
+            PointF tvp = sm.forward(points[0], (PointF) null);
+            PointF fvp = sm.forward(points[1], (PointF) null);
+
+            double viewWidth = 2 * sm.width / (double) 3;
             double padding = viewWidth / 4;
             viewWidth -= padding;
-            double viewHeight = _mapView.getHeight() - padding;
+            double viewHeight = sm.height - padding;
             double modelWidth = Math.abs(tvp.x - fvp.x);
             double modelHeight = Math.abs(tvp.y - fvp.y);
 
@@ -300,10 +366,13 @@ public class ATAKUtilities {
                 zoomFactor = viewHeight / modelHeight;
             }
 
-            if (center != null) {
-                PointF p = _mapView.forward(center);
-                ctrl.zoomBy(zoomFactor, p.x, p.y, true);
-            }
+            _mapView.getMapController().dispatchOnPanRequested();
+            _mapView.getRenderer3().lookAt(
+                    center,
+                    sm.gsd / zoomFactor,
+                    sm.camera.azimuth,
+                    90d + sm.camera.elevation,
+                    true);
         }
     }
 
@@ -313,17 +382,13 @@ public class ATAKUtilities {
      *
      * @param mv the mapview to use when scaling to fit.
      * @param points the  array of geopoints to use
+     * @param altitude Altitude to zoom to (perspective mode only; NaN to ignore)
      * @param widthPad the padding to be used for the width around the best fit.
      * @param heightPad the padding to be used for the height of the bet fit.
      * @return true if the scale process was successful.
      */
     public static boolean scaleToFit(MapView mv, GeoPoint[] points,
-            int widthPad, int heightPad) {
-        return scaleToFit(mv, points, widthPad, heightPad, false);
-    }
-
-    public static boolean scaleToFit(MapView mv, GeoPoint[] points,
-            int widthPad, int heightPad, boolean terrainAdj) {
+            double altitude, int widthPad, int heightPad) {
         if (points.length == 0) {
             Log.d(TAG, "Points are empty");
             return false;
@@ -348,16 +413,31 @@ public class ATAKUtilities {
         if (crossesIDL)
             minLng = west.getLongitude() - 360;
         GeoBounds bounds = new GeoBounds(minLat, minLng, maxLat, maxLng);
-        return scaleToFit(mv, bounds, widthPad, heightPad, terrainAdj);
+
+        // Get highest altitude so everything is in frame
+        if (!GeoPoint.isAltitudeValid(altitude)) {
+            double maxAlt = -Double.MAX_VALUE;
+            for (GeoPoint p : points) {
+                if (p.isAltitudeValid())
+                    maxAlt = Math.max(maxAlt, p.getAltitude());
+            }
+        }
+
+        return scaleToFit(mv, bounds, altitude, widthPad, heightPad);
+    }
+
+    public static boolean scaleToFit(MapView mv, GeoPoint[] points,
+            int width, int height) {
+        return scaleToFit(mv, points, Double.NaN, width, height);
     }
 
     public static boolean scaleToFit(MapView mv, GeoBounds bounds,
             int widthPad, int heightPad) {
-        return scaleToFit(mv, bounds, widthPad, heightPad, false);
+        return scaleToFit(mv, bounds, Double.NaN, widthPad, heightPad);
     }
 
     public static boolean scaleToFit(MapView mv, GeoBounds bounds,
-            int widthPad, int heightPad, boolean terrainAdj) {
+            double altitude, int widthPad, int heightPad) {
         double minLat = bounds.getSouth();
         double maxLat = bounds.getNorth();
         double minLng = bounds.getWest();
@@ -365,6 +445,9 @@ public class ATAKUtilities {
         GeoPoint center = bounds.getCenter(null);
         double cLat = center.getLatitude();
         double cLng = center.getLongitude();
+
+        MapSceneModel scaleToModel = mv.getRenderer3().getMapSceneModel(false,
+                MapRenderer2.DisplayOrigin.UpperLeft);
 
         // IDL corrections
         if (bounds.crossesIDL()) {
@@ -380,54 +463,302 @@ public class ATAKUtilities {
         if (minLng < -180 || maxLng > 180)
             unwrap = mv.getLongitude() > 0 ? 360 : -360;
 
-        final AtakMapController ctrl = mv.getMapController();
+        if (!GeoPoint.isAltitudeValid(altitude))
+            altitude = ElevationManager.getElevation(
+                    cLat, GeoCalculations.wrapLongitude(cLng), null);
         final GeoPoint panTo = new GeoPoint(
                 cLat, GeoCalculations.wrapLongitude(cLng),
-                ElevationManager.getElevation(
-                        cLat, GeoCalculations.wrapLongitude(cLng), null));
+                Double.isNaN(altitude) ? 0d : altitude);
 
-        // XXX - this looks really wrong, preserving legacy for now
-        if (mv.getProjection().getSpatialReferenceID() == 4326) {
-            PointF cp = mv.forward(panTo, unwrap);
-            ctrl.panBy(cp.x - ctrl.getFocusX(), cp.y - ctrl.getFocusY(), true);
+        // pan to the point -- whether or not the location is wrapped or
+        // unwrapped, repositioning the map at the unwrapped location
+        // should preserve any necessary IDL wrapping by the view
+        scaleToModel.set(
+                scaleToModel.dpi,
+                scaleToModel.width, scaleToModel.height,
+                scaleToModel.mapProjection,
+                panTo,
+                scaleToModel.focusx, scaleToModel.focusy,
+                scaleToModel.camera.azimuth,
+                90d + scaleToModel.camera.elevation,
+                scaleToModel.gsd,
+                true);
+
+        // the perspective camera has additional effective zoom based on the
+        // AGL -- we will need to adjust the scale factor to account for this.
+        double zoomFactor = 1d;
+        if (!scaleToModel.camera.perspective) {
+            double spread = 0.0;
+            if (Double.compare(minLat, maxLat) == 0
+                    || Double.compare(minLng, maxLng) == 0)
+                spread = 0.0001d;
+
+            if (minLng < -180 || maxLng > 180)
+                unwrap = mv.getLongitude() > 0 ? 360 : -360;
+
+            PointF northWest = mv.forward(new GeoPoint(maxLat + spread,
+                    minLng - spread), unwrap);
+            PointF southEast = mv.forward(new GeoPoint(minLat - spread,
+                    maxLng + spread), unwrap);
+
+            double padding = widthPad / 4d;
+            widthPad -= padding;
+            heightPad -= padding;
+
+            double modelWidth = Math.abs(northWest.x - southEast.x);
+            double modelHeight = Math.abs(northWest.y - southEast.y);
+
+            zoomFactor = widthPad / modelWidth;
+            if (zoomFactor * modelHeight > heightPad)
+                zoomFactor = heightPad / modelHeight;
         } else {
-            // pan to the point -- whether or not the location is wrapped or
-            // unwrapped, repositioning the map at the unwrapped location
-            // should preserve any necessary IDL wrapping by the view
-            ctrl.panTo(panTo, true);
+            // NOTE: we cannot rely on screen space ratio to compute zoom with
+            // the perspective camera on the surface plane due to perspective
+            // skew. Screenspace ratios may only be used to compute zoom for
+            // planes that are tangent to the camera line of sight. We will
+            // first compute the minimum view required to contain the entire
+            // bounding sphere. Then the bounding box will be computed in
+            // screenspace. A plane will be constructed at the `z` of the
+            // screenspace bounding box closest to the camera. World space
+            // vectors on that plane corresponding to the screen positions will
+            // be computed to determine final screenspace to world space
+            // ratios.
+
+            // compute bounding sphere, set a reasonable minimum limit
+            final double radius = MathUtils.max(
+                    GeoCalculations.distanceTo(
+                            new GeoPoint(maxLat, (minLng + maxLng) / 2d),
+                            new GeoPoint(maxLat, (minLng + maxLng) / 2d)) / 2d,
+                    GeoCalculations.distanceTo(
+                            new GeoPoint((minLat + maxLat) / 2d, minLng),
+                            new GeoPoint((minLat + maxLat) / 2d, maxLng)) / 2d,
+                    GeoCalculations.distanceTo(new GeoPoint(maxLat, minLng),
+                            new GeoPoint(minLat, maxLng)) / 2d,
+                    10d // minimum of 10m radius for zoom purposes
+            );
+
+            double padding = widthPad / 4d;
+            widthPad -= padding;
+            heightPad -= padding;
+
+            // compute the dimension, in pixels, to capture the object radius
+            final double pixelsAtD = Math.min(heightPad, widthPad);
+            // compute the local GSD of the object
+            final double gsdAtD = radius / (pixelsAtD / 2d);
+
+            // compute camera range to centroid at target GSD. Adjust by altitude to account for AGL relative scaling.
+            final double camRange = MapSceneModel.range(gsdAtD,
+                    scaleToModel.camera.fov, scaleToModel.height)
+                    + panTo.getAltitude();
+            // compute GSD based on AGL adjusted range
+            final double gsd = MapSceneModel.gsd(camRange,
+                    scaleToModel.camera.fov, scaleToModel.height);
+
+            // create a model such that the major-radius adheres to the minor dimension
+            scaleToModel.set(
+                    scaleToModel.dpi,
+                    scaleToModel.width, scaleToModel.height,
+                    scaleToModel.mapProjection,
+                    scaleToModel.mapProjection
+                            .inverse(scaleToModel.camera.target, null),
+                    scaleToModel.focusx, scaleToModel.focusy,
+                    scaleToModel.camera.azimuth,
+                    90d + scaleToModel.camera.elevation,
+                    gsd,
+                    true);
+
+            // XXX - there are some issues with very close zoom on small
+            //       objects and `panTo` locations with negative altitude. The
+            //       code below is observed to generally improve experience
+            //       with very small objects (e.g. vehicle models) and also
+            //       mitigates the aforementioned issue with negative
+            //       altitudes. If the below condition is removed, issues
+            //       related to negative altitudes will need to be resolved as
+            //       well
+
+            // for larger objects, try to closely fit the AABB against the
+            // padded dimensions. small objects will zoom in too far.
+            if (radius > 10d) {
+                // since the AABB of the content should now be in view, obtain the
+                // screenspace coordinates for the extents to do a final zoom
+                double spread = 0.0;
+                if (Double.compare(minLat, maxLat) == 0
+                        || Double.compare(minLng, maxLng) == 0)
+                    spread = 0.0001d;
+
+                // shift longitude for IDL for flat projection
+                if (scaleToModel.mapProjection
+                        .getSpatialReferenceID() == 4326) {
+                    if (Math.abs(panTo.getLongitude() - minLng) > 180d)
+                        minLng += (panTo.getLongitude() < 0d) ? -360d : 360d;
+                    if (Math.abs(panTo.getLongitude() - maxLng) > 180d)
+                        maxLng += (panTo.getLongitude() < 0d) ? -360d : 360d;
+                }
+
+                PointD northWest = new PointD(0d, 0d, 0d);
+                scaleToModel.forward(
+                        new GeoPoint(maxLat + spread, minLng - spread,
+                                ElevationManager.getElevation(maxLat + spread,
+                                        minLng - spread, null)),
+                        northWest);
+                PointD northEast = new PointD(0d, 0d, 0d);
+                scaleToModel.forward(
+                        new GeoPoint(maxLat + spread, minLng + spread,
+                                ElevationManager.getElevation(maxLat + spread,
+                                        minLng + spread, null)),
+                        northEast);
+                PointD southEast = new PointD(0d, 0d, 0d);
+                scaleToModel.forward(
+                        new GeoPoint(minLat - spread, minLng + spread,
+                                ElevationManager.getElevation(maxLat - spread,
+                                        minLng + spread, null)),
+                        southEast);
+                PointD southWest = new PointD(0d, 0d, 0d);
+                scaleToModel.forward(
+                        new GeoPoint(minLat - spread, maxLng - spread,
+                                ElevationManager.getElevation(minLat - spread,
+                                        maxLng - spread, null)),
+                        southWest);
+
+                // establish the plane that the camera will zoom relative to
+                final double zoomPlaneZ = MathUtils.min(northWest.z,
+                        northEast.z, southEast.z, southWest.z);
+
+                PointD ss_ul = new PointD(
+                        MathUtils.min(northWest.x, northEast.x, southEast.x,
+                                southWest.x),
+                        MathUtils.min(northWest.y, northEast.y, southEast.y,
+                                southWest.y),
+                        zoomPlaneZ);
+                PointD ss_ll = new PointD(
+                        MathUtils.min(northWest.x, northEast.x, southEast.x,
+                                southWest.x),
+                        MathUtils.max(northWest.y, northEast.y, southEast.y,
+                                southWest.y),
+                        zoomPlaneZ);
+                PointD ss_lr = new PointD(
+                        MathUtils.max(northWest.x, northEast.x, southEast.x,
+                                southWest.x),
+                        MathUtils.max(northWest.y, northEast.y, southEast.y,
+                                southWest.y),
+                        zoomPlaneZ);
+
+                // transform screenspace corners into WCS
+                PointD wcs_ul = new PointD(0d, 0d, 0d);
+                PointD wcs_ll = new PointD(0d, 0d, 0d);
+                PointD wcs_lr = new PointD(0d, 0d, 0d);
+                PointD wcs_c = new PointD(0d, 0d, 0d);
+
+                scaleToModel.inverse.transform(ss_ul, wcs_ul);
+                scaleToModel.inverse.transform(ss_ll, wcs_ll);
+                scaleToModel.inverse.transform(ss_lr, wcs_lr);
+
+                // compute target point on plane
+                scaleToModel.inverse.transform(new PointD(scaleToModel.focusx,
+                        scaleToModel.focusy, zoomPlaneZ), wcs_c);
+
+                // compute vertical and horizontal axes on zoom-to plane in WCS
+                final double verticalAxis = wcs_distance(wcs_ul, wcs_ll,
+                        scaleToModel.displayModel);
+                final double horizontalAxis = wcs_distance(wcs_lr, wcs_ll,
+                        scaleToModel.displayModel);
+
+                // compute vertical and horizontal GSDs on zoom plane
+                final double gsdVertical = verticalAxis / heightPad;
+                final double gsdHorizontal = horizontalAxis / widthPad;
+                final double vpixelsHgsd = verticalAxis / gsdHorizontal;
+                final double hpixelsVgsd = horizontalAxis / gsdVertical;
+
+                // select GSD that will most closely correspond to padded width or
+                // height
+                final double gsdAtZoomPlane;
+                if (vpixelsHgsd > heightPad)
+                    gsdAtZoomPlane = gsdVertical;
+                else if (hpixelsVgsd > widthPad)
+                    gsdAtZoomPlane = gsdHorizontal;
+                else
+                    gsdAtZoomPlane = Math.min(gsdVertical, gsdHorizontal);
+
+                // compute the camera range from the zoom plane
+                final double rangeAtZoomPlane = MapSceneModel.range(
+                        gsdAtZoomPlane, scaleToModel.camera.fov,
+                        scaleToModel.height);
+
+                // compute camera location
+                double dx = (scaleToModel.camera.location.x - wcs_c.x)
+                        * scaleToModel.displayModel.projectionXToNominalMeters;
+                double dy = (scaleToModel.camera.location.y - wcs_c.y)
+                        * scaleToModel.displayModel.projectionYToNominalMeters;
+                double dz = (scaleToModel.camera.location.z - wcs_c.z)
+                        * scaleToModel.displayModel.projectionZToNominalMeters;
+                final double m = MathUtils.distance(dx, dy, dz, 0d, 0d, 0d);
+                dx /= m;
+                dy /= m;
+                dz /= m;
+
+                PointD camera = new PointD(
+                        wcs_c.x + (dx * rangeAtZoomPlane)
+                                / scaleToModel.displayModel.projectionXToNominalMeters,
+                        wcs_c.y + (dy * rangeAtZoomPlane)
+                                / scaleToModel.displayModel.projectionYToNominalMeters,
+                        wcs_c.z + (dz * rangeAtZoomPlane)
+                                / scaleToModel.displayModel.projectionZToNominalMeters);
+
+                final double rangeToTarget = wcs_distance(camera,
+                        scaleToModel.camera.target, scaleToModel.displayModel);
+
+                scaleToModel.set(
+                        scaleToModel.dpi,
+                        scaleToModel.width, scaleToModel.height,
+                        scaleToModel.mapProjection,
+                        panTo,
+                        scaleToModel.focusx, scaleToModel.focusy,
+                        scaleToModel.camera.azimuth,
+                        90d + scaleToModel.camera.elevation,
+                        MapSceneModel.gsd(rangeToTarget + panTo.getAltitude(),
+                                scaleToModel.camera.fov, scaleToModel.height),
+                        true);
+            }
+            // zoom is already adjusted
         }
-
-        double spread = 0.0;
-        if (Double.compare(minLat, maxLat) == 0
-                || Double.compare(minLng, maxLng) == 0)
-            spread = 0.0001d;
-
-        if (minLng < -180 || maxLng > 180)
-            unwrap = mv.getLongitude() > 0 ? 360 : -360;
-
-        PointF northWest = mv.forward(new GeoPoint(maxLat + spread,
-                minLng - spread), unwrap);
-        PointF southEast = mv.forward(new GeoPoint(minLat - spread,
-                maxLng + spread), unwrap);
-
-        double padding = widthPad / 4d;
-        widthPad -= padding;
-        heightPad -= padding;
-
-        double modelWidth = Math.abs(northWest.x - southEast.x);
-        double modelHeight = Math.abs(northWest.y - southEast.y);
-
-        double zoomFactor = widthPad / modelWidth;
-        if (zoomFactor * modelHeight > heightPad)
-            zoomFactor = heightPad / modelHeight;
 
         // Clamp tilt to max at new zoom level
         double maxTilt = mv.getMaxMapTilt(mv.getMapScale() * zoomFactor);
-        if (mv.getMapTilt() > maxTilt)
-            ctrl.tiltTo(maxTilt, true);
+        if (mv.getMapTilt() > maxTilt) {
+            scaleToModel.set(
+                    scaleToModel.dpi,
+                    scaleToModel.width, scaleToModel.height,
+                    scaleToModel.mapProjection,
+                    scaleToModel.mapProjection
+                            .inverse(scaleToModel.camera.target, null),
+                    scaleToModel.focusx, scaleToModel.focusy,
+                    scaleToModel.camera.azimuth,
+                    maxTilt,
+                    scaleToModel.gsd,
+                    true);
+        }
 
         // Zoom to area
-        ctrl.zoomBy(zoomFactor, ctrl.getFocusX(), ctrl.getFocusY(), true);
+        scaleToModel.set(
+                scaleToModel.dpi,
+                scaleToModel.width, scaleToModel.height,
+                scaleToModel.mapProjection,
+                scaleToModel.mapProjection.inverse(scaleToModel.camera.target,
+                        null),
+                scaleToModel.focusx, scaleToModel.focusy,
+                scaleToModel.camera.azimuth,
+                90d + scaleToModel.camera.elevation,
+                scaleToModel.gsd / zoomFactor,
+                true);
+
+        mv.getRenderer3().lookAt(
+                scaleToModel.mapProjection.inverse(scaleToModel.camera.target,
+                        null),
+                scaleToModel.gsd,
+                scaleToModel.camera.azimuth,
+                90d + scaleToModel.camera.elevation,
+                MapRenderer3.CameraCollision.Ignore,
+                true);
 
         return true;
     }
@@ -457,6 +788,69 @@ public class ATAKUtilities {
             bounds.setWrap180(mv.isContinuousScrollEnabled());
             scaleToFit(mv, bounds, mv.getWidth(), mv.getHeight());
         }
+    }
+
+    /**
+     * @deprecated "terrainAdj" parameter no longer supported
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.3", forRemoval = true, removeAt = "4.6")
+    public static boolean scaleToFit(MapView mv, GeoBounds bounds,
+            int widthPad, int heightPad, boolean terrainAdj) {
+        return scaleToFit(mv, bounds, widthPad, heightPad);
+    }
+
+    /**
+     * @deprecated "terrainAdj" parameter no longer supported
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.3", forRemoval = true, removeAt = "4.6")
+    public static boolean scaleToFit(MapView mv, GeoPoint[] points,
+            int widthPad, int heightPad, boolean terrainAdj) {
+        return scaleToFit(mv, points, widthPad, heightPad);
+    }
+
+    /**
+     * Computes the maximum GSD that should be specified when focusing on a
+     * point. This ensures an appropriate minimum camera offset. In general,
+     * this method is only recommended for points that are elevated above the
+     * terrain surface.
+     *
+     * <P>NOTE: this is NOT a recommended focus distance.
+     *
+     * @param location          The focus location
+     * @param localElevation    The local elevation at the point location
+     * @param vfov              The vertical FOV of the camera
+     * @param heightPx          The height of the display viewport, in pixels
+     *
+     * @return  The maximum recommended GSD that should be associated when
+     *          requesting the camera to focus on the specified point, when
+     *          taking into consideration the local elevation.
+     */
+    public static double getMaximumFocusResolution(GeoPoint location,
+            double localElevation, double vfov, int heightPx) {
+        final double alt = location.getAltitude();
+        // if the point is at or below the terrain surface, any GSD selected
+        // will be acceptable
+        if (Double.isNaN(alt))
+            return 0d;
+        if (location.getAltitudeReference() == GeoPoint.AltitudeReference.AGL
+                && alt <= 0d)
+            return 0d;
+        if (alt <= localElevation)
+            return 0d;
+
+        final double minOffset = 25d;
+        return MapSceneModel.gsd(alt + minOffset, vfov, heightPx);
+    }
+
+    public static double getMaximumFocusResolution(GeoPoint location) {
+        final MapSceneModel sm = MapView.getMapView().getRenderer3()
+                .getMapSceneModel(false, MapRenderer2.DisplayOrigin.UpperLeft);
+        return getMaximumFocusResolution(location,
+                ElevationManager.getElevation(location.getLatitude(),
+                        location.getLongitude(), null),
+                sm.camera.fov, sm.height);
     }
 
     /**
@@ -580,20 +974,20 @@ public class ATAKUtilities {
      */
     public static boolean pointInsidePolygon(GeoPoint point,
             GeoPoint[] polygon) {
-        Vector2D vPoint = geo2Vector(point);
+        Vector2D vPoint = FOVFilter.geo2Vector(point);
         Vector2D[] vPolygon = new Vector2D[polygon.length];
         for (int i = 0; i < polygon.length; i++)
-            vPolygon[i] = geo2Vector(polygon[i]);
+            vPolygon[i] = FOVFilter.geo2Vector(polygon[i]);
         return Vector2D.polygonContainsPoint(vPoint, vPolygon);
     }
 
     public static boolean segmentInsidePolygon(GeoPoint point0,
             GeoPoint point1, GeoPoint[] polygon) {
-        Vector2D vPoint0 = geo2Vector(point0);
-        Vector2D vPoint1 = geo2Vector(point1);
+        Vector2D vPoint0 = FOVFilter.geo2Vector(point0);
+        Vector2D vPoint1 = FOVFilter.geo2Vector(point1);
         Vector2D[] vPolygon = new Vector2D[polygon.length];
         for (int i = 0; i < polygon.length; i++)
-            vPolygon[i] = geo2Vector(polygon[i]);
+            vPolygon[i] = FOVFilter.geo2Vector(polygon[i]);
         return Vector2D.segmentIntersectsOrContainedByPolygon(vPoint0, vPoint1,
                 vPolygon);
     }
@@ -603,10 +997,10 @@ public class ATAKUtilities {
             GeoPoint[] polygon) {
         Vector2D[] vSegments = new Vector2D[segments.length];
         for (int i = 0; i < segments.length; i++)
-            vSegments[i] = geo2Vector(segments[i]);
+            vSegments[i] = FOVFilter.geo2Vector(segments[i]);
         Vector2D[] vPolygon = new Vector2D[polygon.length];
         for (int i = 0; i < polygon.length; i++)
-            vPolygon[i] = geo2Vector(polygon[i]);
+            vPolygon[i] = FOVFilter.geo2Vector(polygon[i]);
         return Vector2D.segmentArrayIntersectsOrContainedByPolygon(vSegments,
                 vPolygon);
     }
@@ -618,10 +1012,10 @@ public class ATAKUtilities {
         UTMPoint z = UTMPoint.fromGeoPoint(polygon[0]);
         String zone = z.getZoneDescriptor();
         for (int i = 0; i < segments.length; i++)
-            vSegments[i] = geo2Vector(segments[i]);
+            vSegments[i] = FOVFilter.geo2Vector(segments[i]);
         Vector2D[] vPolygon = new Vector2D[polygon.length];
         for (int i = 0; i < polygon.length; i++)
-            vPolygon[i] = geo2Vector(polygon[i]);
+            vPolygon[i] = FOVFilter.geo2Vector(polygon[i]);
         ArrayList<Vector2D> vIntersections = Vector2D
                 .segmentArrayIntersectionsWithPolygon(
                         vSegments, vPolygon);
@@ -662,10 +1056,16 @@ public class ATAKUtilities {
     }
 
     /**
-     * Turn a geopoint into a vector2d.
+     * Turn a geopoint into a UTM-based vector2d.
      * @param p the geopoint to use
      * @return the vector2D representation.
+     *
+     * @deprecated UTM-based vectors can't handle intersection/contains
+     * checks across different UTM zones.
+     * Use {@link FOVFilter#geo2Vector(GeoPoint)} instead
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.3", forRemoval = true, removeAt = "4.6")
     public static Vector2D geo2Vector(GeoPoint p) {
         UTMPoint uP = UTMPoint.fromGeoPoint(p);
         double alt = !p.isAltitudeValid() ? 0d
@@ -886,7 +1286,7 @@ public class ATAKUtilities {
      * Parses all the support uri formats
      *
      * @param context the context to use
-     * @param icon  The ImageView to display the icon
+     * @param view  The ImageView to display the icon
      * @param mi    The Map Item to load the icon from
      */
     public static void SetIcon(final Context context, final ImageView view,
@@ -1228,7 +1628,7 @@ public class ATAKUtilities {
     public static Bitmap setIconFromFile(ImageView icon, File iconFile) {
         Bitmap bitmap = null;
         if (IOProviderFactory.exists(iconFile)) {
-            try(InputStream is = IOProviderFactory.getInputStream(iconFile)) {
+            try (InputStream is = IOProviderFactory.getInputStream(iconFile)) {
                 BitmapFactory.decodeStream(is);
             } catch (IOException ioe) {
                 return null;
@@ -1388,5 +1788,39 @@ public class ATAKUtilities {
                 ? new BitmapDrawable(ctx.getResources(),
                         getUriBitmap(mime.ICON_URI))
                 : null;
+    }
+
+    /**
+     * Returns the appropriate starting directory for file dialogs. If the "defaultDirectory" shared
+     * preference exists, it will use the value. Otherwise, the "lastDirectory" shared preference
+     * value will be used.
+     *
+     * @param sharedPrefContext The context of the shared preferences to use
+     * @return the "defaultDirectory" shared preference, if exists, it will use the value.
+     * Otherwise, the "lastDirectory" shared preference value will be used.
+     */
+    public static String getStartDirectory(Context sharedPrefContext) {
+        SharedPreferences Prefs = PreferenceManager
+                .getDefaultSharedPreferences(sharedPrefContext);
+        String defaultDirectory = Prefs.getString("defaultDirectory", "");
+        final String lastDirectory = Prefs.getString("lastDirectory",
+                Environment.getExternalStorageDirectory().getPath());
+        if (defaultDirectory.isEmpty()
+                || !IOProviderFactory.exists(new File(defaultDirectory))) {
+            return lastDirectory;
+        } else {
+            return defaultDirectory;
+        }
+    }
+
+    private static double wcs_distance(PointD a, PointD b,
+            MapProjectionDisplayModel displayModel) {
+        return MathUtils.distance(
+                a.x * displayModel.projectionXToNominalMeters,
+                a.y * displayModel.projectionYToNominalMeters,
+                a.z * displayModel.projectionZToNominalMeters,
+                b.x * displayModel.projectionXToNominalMeters,
+                b.y * displayModel.projectionYToNominalMeters,
+                b.z * displayModel.projectionZToNominalMeters);
     }
 }

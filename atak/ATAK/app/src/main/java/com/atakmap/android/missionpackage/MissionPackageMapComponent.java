@@ -29,6 +29,7 @@ import com.atakmap.android.missionpackage.export.MissionPackageExportMarshal;
 import com.atakmap.android.missionpackage.file.MissionPackageFileIO;
 import com.atakmap.android.missionpackage.file.MissionPackageManifest;
 import com.atakmap.android.missionpackage.http.datamodel.MissionPackageQueryResult;
+import com.atakmap.android.missionpackage.lasso.LassoContentProvider;
 import com.atakmap.android.missionpackage.ui.MissionPackageMapOverlay;
 import com.atakmap.android.missionpackage.ui.MissionPackagePreferenceFragment;
 import com.atakmap.android.widgets.AbstractWidgetMapComponent;
@@ -102,6 +103,7 @@ public class MissionPackageMapComponent extends AbstractWidgetMapComponent
     //private BroadcastReceiver compCreatedRec;
 
     private MissionPackageConnectorHandler _connectorHandler;
+    private LassoContentProvider _lassoProvider;
 
     public static MissionPackageMapComponent getInstance() {
         return _self;
@@ -347,6 +349,8 @@ public class MissionPackageMapComponent extends AbstractWidgetMapComponent
         // thread...
         new DefaultHttpClient(new BasicHttpParams());
 
+        // Lasso content provider
+        _lassoProvider = new LassoContentProvider(mapView);
     }
 
     private void finishStartup() {
@@ -475,6 +479,9 @@ public class MissionPackageMapComponent extends AbstractWidgetMapComponent
     protected void onDestroyWidgets(Context context, MapView view) {
         disable(false);
         _fileIO.disableFileWatching();
+
+        if (_lassoProvider != null)
+            _lassoProvider.dispose();
 
         AtakBroadcast.getInstance().unregisterReceiver(toolreceiver);
         //AtakBroadcast.getInstance().unregisterReceiver(compCreatedRec);

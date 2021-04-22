@@ -11,14 +11,21 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import com.atakmap.android.maps.MapItem;
 
+import com.atakmap.annotations.IncubatingApi;
 import com.atakmap.coremap.maps.coords.GeoPoint.AltitudeReference;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
 import com.atakmap.lang.Unsafe;
+import com.atakmap.map.MapControl;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.MapRenderer3;
+import com.atakmap.map.layer.control.SurfaceRendererControl;
+import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.math.PointD;
+import com.atakmap.util.ConfigOptions;
+import com.atakmap.util.Visitor;
 
 public abstract class AbstractGLMapItem2 implements GLMapItem2,
         MapItem.OnVisibleChangedListener, MapItem.OnZOrderChangedListener {
@@ -187,6 +194,30 @@ public abstract class AbstractGLMapItem2 implements GLMapItem2,
             context.queueEvent(r);
     }
 
+    protected final void markSurfaceDirty(final boolean realtime) {
+        final SurfaceRendererControl[] ctrl = new SurfaceRendererControl[1];
+        if (context instanceof MapRenderer3) {
+            ctrl[0] = ((MapRenderer3) context)
+                    .getControl(SurfaceRendererControl.class);
+        } else {
+            context.visitControl(null, new Visitor<SurfaceRendererControl>() {
+                @Override
+                public void visit(SurfaceRendererControl object) {
+                    ctrl[0] = object;
+                }
+            }, SurfaceRendererControl.class);
+        }
+        if (ctrl[0] != null) {
+            if (realtime)
+                ctrl[0].markDirty(
+                        new Envelope(bounds.getWest(), bounds.getSouth(), 0d,
+                                bounds.getEast(), bounds.getNorth(), 0d),
+                        realtime);
+            else
+                ctrl[0].markDirty();
+        }
+    }
+
     /**
      * Transforms the specified coordinate, applying any elevation adjustments
      * (e.g. exaggeration/offset) that is used by the renderer. The value is
@@ -206,9 +237,7 @@ public abstract class AbstractGLMapItem2 implements GLMapItem2,
         final double lng = gp.getLongitude();
 
         // Z/altitude
-        double terrain = 0d;
-        if (ortho.drawTilt > 0d)
-            terrain = ortho.getTerrainMeshElevation(lat, lng);
+        double terrain = ortho.getTerrainMeshElevation(lat, lng);
 
         forward(ortho, gp, point, unwrap, terrain);
     }
@@ -243,8 +272,8 @@ public abstract class AbstractGLMapItem2 implements GLMapItem2,
                 || unwrap < 0 && lng > 0 ? unwrap : 0);
         ortho.scratch.geo.set(lat, lon, 0d);
 
-        // Z/altitude
-        if (ortho.drawTilt > 0d) {
+        // Z/altitude -- always needs to be populated with perspective camera
+        if (ortho.scene.camera.perspective || ortho.drawTilt > 0d) {
             double adjustedAlt = alt;
             if (altValid) {
                 switch (altRef) {
@@ -271,6 +300,8 @@ public abstract class AbstractGLMapItem2 implements GLMapItem2,
                     * ortho.elevationScaleFactor;
 
             ortho.scratch.geo.set(lat, lng, adjustedAlt);
+        } else {
+            ortho.scratch.geo.set(terrain);
         }
 
         ortho.scene.forward(ortho.scratch.geo, point);

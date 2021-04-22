@@ -141,6 +141,7 @@ public class Dt2MosaicDatabase implements MosaicDatabase2 {
         Dt2ElevationData.DtedFormat cellFormat;
         Dt2ElevationData.DtedFormat[] formats;
         private final BitSet[] coverages;
+        private final int lngSpan;
 
         CursorImpl(final File baseDir,
                 final Dt2ElevationData.DtedFormat[] formats,
@@ -153,6 +154,7 @@ public class Dt2MosaicDatabase implements MosaicDatabase2 {
             this.minCellLng = (int) Math.floor(mbb.minX);
             this.minCellLat = (int) Math.floor(mbb.minY);
             this.maxCellLng = (int) Math.floor(mbb.maxX);
+            this.lngSpan = (this.maxCellLng - this.minCellLng) + 1;
 
             this.idx = -1;
             this.limit = (this.maxCellLat - this.minCellLat + 1)
@@ -161,7 +163,11 @@ public class Dt2MosaicDatabase implements MosaicDatabase2 {
 
             this.cell = null;
             this.cellFormat = null;
-            this.coverages = Dt2FileWatcher.getInstance().getCoverages();
+            final Dt2FileWatcher w = Dt2FileWatcher.getInstance();
+            if (w != null)
+                this.coverages = w.getCoverages();
+            else
+                this.coverages = null;
         }
 
         @Override
@@ -172,21 +178,29 @@ public class Dt2MosaicDatabase implements MosaicDatabase2 {
                 if (this.idx >= this.limit)
                     break;
 
-                int lat = (int) ((this.getMinLat() + this.getMaxLat()) / 2d);
-                int lng = (int) ((this.getMinLon() + this.getMaxLon()) / 2d);
+                int lat = (int) Math.floor(getMinLat());
+                int lng = (int) Math.floor(getMinLon());
                 int cvIdx = Dt2FileWatcher.getCoverageIndex(lat, lng);
 
-                for (int i = (this.idx % this.numFormats); i < this.numFormats; i++) {
+                for (int i = (this.idx
+                        % this.numFormats); i < this.numFormats; i++) {
                     Dt2ElevationData.DtedFormat fmt = this.formats[i];
                     int level = fmt.ordinal();
-                    BitSet coverage = this.coverages[level];
-                    if (cvIdx < 0 || cvIdx >= coverage.length()
-                            || !coverage.get(cvIdx)) {
-                        this.idx++;
+                    if (coverages != null) {
+                        BitSet coverage = this.coverages[level];
+                        if (cvIdx < 0 || cvIdx >= coverage.length()
+                                || !coverage.get(cvIdx)) {
+                            this.idx++;
+                            continue;
+                        }
+                    }
+                    final File f = new File(this.baseDir,
+                            Dt2FileWatcher.getRelativePath(level, lat, lng));
+                    if (coverages == null && !f.exists()) {
+                        idx++;
                         continue;
                     }
-                    String fName = Dt2ElevationModel._makeFileName(lat, lng);
-                    this.cell = new File(this.baseDir, fName + fmt.extension);
+                    this.cell = f;
                     this.cellFormat = fmt;
                     break;
                 }
@@ -227,14 +241,12 @@ public class Dt2MosaicDatabase implements MosaicDatabase2 {
 
         @Override
         public double getMinLat() {
-            return this.maxCellLat - ((this.idx / this.numFormats) /
-                    (this.maxCellLng - this.minCellLng + 1));
+            return this.maxCellLat - ((this.idx / this.numFormats) / lngSpan);
         }
 
         @Override
         public double getMinLon() {
-            return this.minCellLng + ((this.idx / this.numFormats) %
-                    (this.maxCellLng - this.minCellLng + 1));
+            return this.minCellLng + ((this.idx / this.numFormats) % lngSpan);
         }
 
         @Override

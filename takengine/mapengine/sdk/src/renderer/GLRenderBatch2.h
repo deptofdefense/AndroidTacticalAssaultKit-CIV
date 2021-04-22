@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "port/Platform.h"
+#include "renderer/GL.h"
 #include "util/Error.h"
 #include "util/MemBuffer2.h"
 #include "util/Memory.h"

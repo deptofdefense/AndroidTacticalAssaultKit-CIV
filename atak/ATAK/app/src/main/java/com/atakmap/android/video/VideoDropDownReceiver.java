@@ -755,7 +755,8 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
                                     try {
                                         overlays.addView(vvl.v, vvl.rlp);
                                         activeLayers.add(vvl);
-                                        vvl.init(processor, metadataDecoder, vmd.connectionEntry);
+                                        vvl.init(processor, metadataDecoder,
+                                                vmd.connectionEntry);
                                     } catch (Exception e) {
                                         Log.e(TAG, "error adding: " + layer, e);
                                     }
@@ -1270,7 +1271,7 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
             if (!IOProviderFactory.createNewFile(file)) {
                 toast("Snapshot already exists", Toast.LENGTH_SHORT);
             } else {
-                try(OutputStream ostream = IOProviderFactory
+                try (OutputStream ostream = IOProviderFactory
                         .getOutputStream(file)) {
                     bitmap.compress(Bitmap.CompressFormat.JPEG, 100, ostream);
                 }
@@ -1355,7 +1356,8 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
             }
 
         } else {
-            IoUtils.close(recordingStream, TAG, "error closing out the recording stream");
+            IoUtils.close(recordingStream, TAG,
+                    "error closing out the recording stream");
             recordingStream = null;
         }
 
@@ -1438,7 +1440,7 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
 
         int clampSH = sourceHeight == 0 ? 1 : sourceHeight;
         int clampSW = sourceWidth == 0 ? 1 : sourceWidth;
-        float ar = (float)sourceWidth / (float)clampSH;
+        float ar = (float) sourceWidth / (float) clampSH;
         float destAR = surfaceW / surfaceH;
         float w;
         float h;
@@ -1450,8 +1452,10 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
             h = w / ar;
         }
 
-        int scaleW = (int)Math.floor((double)((float)sourceWidth * currentScale));
-        int scaleH = (int)Math.floor((double)((float)sourceHeight * currentScale));
+        int scaleW = (int) Math
+                .floor((double) ((float) sourceWidth * currentScale));
+        int scaleH = (int) Math
+                .floor((double) ((float) sourceHeight * currentScale));
         int scaleDw = scaleW - sourceWidth;
         int scaleDh = scaleH - sourceHeight;
         float clampedPanX = MathUtils.clamp(currentPanX,
@@ -1521,8 +1525,10 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
         currentPanX -= x;
         currentPanY += y;
 
-        currentPanY = Math.max(Math.min(currentPanY, glView.getWidth()), -glView.getWidth());
-        currentPanX = Math.max(Math.min(currentPanX, glView.getHeight()), -glView.getHeight());
+        currentPanY = Math.max(Math.min(currentPanY, glView.getWidth()),
+                -glView.getWidth());
+        currentPanX = Math.max(Math.min(currentPanX, glView.getHeight()),
+                -glView.getHeight());
 
         updateViewMatrix();
     }
@@ -1567,7 +1573,7 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
 
         @Override
         public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX,
-                                float distanceY) {
+                float distanceY) {
             setPan(distanceX, distanceY);
             return true;
         }

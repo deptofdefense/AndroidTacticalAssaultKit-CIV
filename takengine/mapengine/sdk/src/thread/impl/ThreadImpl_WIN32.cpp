@@ -211,8 +211,7 @@ TAKErr Windows32CondVarImpl::wait(MutexImpl &mutex, const int64_t milliseconds) 
     , static_cast<DWORD>(milliseconds ? milliseconds : INFINITE));
 
     if (ret == 0){
-        printf("Sleep timed out or failed\n ");
-        return TAKErr::TE_Err;
+        return (GetLastError() == ERROR_TIMEOUT) ? TAKErr::TE_TimedOut : TAKErr::TE_Err;
     }
     return TAKErr::TE_Ok;
 }

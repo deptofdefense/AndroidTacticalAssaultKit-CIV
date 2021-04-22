@@ -5,11 +5,11 @@ import com.atakmap.math.PointD;
 
 public final class Ellipsoid extends NativeGeometryModel {
 
-    protected PointD location;
+    public final PointD location;
     public final double radiusX;
     public final double radiusY;
     public final double radiusZ;
-    
+
     public Ellipsoid(PointD location, double radiusX, double radiusY, double radiusZ) {
         this(Ellipsoid_create(location.x, location.y, location.z,
                               radiusX, radiusY, radiusZ),

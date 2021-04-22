@@ -84,14 +84,16 @@ class MigrationShim {
                             }
 
                             //Log.d(TAG, "debug.remove writing: " + dbFile);
-                            try (OutputStream os = new FileOutputStream(dbFile)) {
+                            try (OutputStream os = new FileOutputStream(
+                                    dbFile)) {
                                 FileSystemUtils.copy(is, os);
                             }
                         } else if (currentEntry.startsWith("files")) {
 
                             final String fileName = currentEntry.substring(6);
                             final String gdalDataPath = activity.getFilesDir()
-                                    .getAbsolutePath() + File.separator + "GDAL";
+                                    .getAbsolutePath() + File.separator
+                                    + "GDAL";
 
                             try {
                                 activity.getFilesDir().getParentFile().mkdirs();
@@ -104,7 +106,13 @@ class MigrationShim {
                                 //Log.d(TAG, "debug.remove could not create: " + fileName);
                             } else {
                                 //Log.d(TAG, "debug.remove writing: " + fileName);
-                                FileSystemUtils.copy(is, new FileOutputStream(f));
+
+                                /**
+                                 * Fortify flags this as Path Manipulation: Zip Entry Overwrite
+                                 * This is intended to overwrite files during the upgrade process.
+                                 */
+                                FileSystemUtils.copy(is,
+                                        new FileOutputStream(f));
                             }
                         } else if (currentEntry.startsWith("shared_prefs")) {
                             // process the preferences

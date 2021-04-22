@@ -264,13 +264,14 @@ public abstract class GenericDetailsView extends RelativeLayout implements
         new RangeEntryDialog(dropDown.getMapView())
                 .allowSignedValues(true)
                 .show(titleId, heightM,
-                heightUnit, new RangeEntryDialog.Callback() {
-                    @Override
-                    public void onSetValue(double valueM, Span unit) {
-                        heightSelected(valueM, unit, SpanUtilities.convert(
-                                valueM, Span.METER, unit));
-                    }
-                }, acceptableValues);
+                        heightUnit, new RangeEntryDialog.Callback() {
+                            @Override
+                            public void onSetValue(double valueM, Span unit) {
+                                heightSelected(valueM, unit,
+                                        SpanUtilities.convert(
+                                                valueM, Span.METER, unit));
+                            }
+                        }, acceptableValues);
     }
 
     /**

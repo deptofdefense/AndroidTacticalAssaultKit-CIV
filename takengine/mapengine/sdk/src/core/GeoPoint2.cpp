@@ -345,3 +345,9 @@ TAKErr TAK::Engine::Core::GeoPoint2_lobIntersection(GeoPoint2 &intersection, con
 
     return TE_Ok;
 }
+
+ENGINE_API double TAK::Engine::Core::GeoPoint2_distanceToHorizon(const double altitudeMsl) NOTHROWS
+{
+    // https://en.wikipedia.org/wiki/Horizon#Distance_to_the_horizon
+    return sqrt((2.0*Ellipsoid2::WGS84.semiMajorAxis*altitudeMsl) + (altitudeMsl*altitudeMsl));
+}

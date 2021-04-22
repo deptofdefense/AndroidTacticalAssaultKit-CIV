@@ -130,8 +130,9 @@ public class CopyAndSendTask extends MissionPackageBaseTask {
         }
 
         // now copy to deploy directory
-        try(InputStream is = IOProviderFactory.getInputStream(source);
-            OutputStream os = IOProviderFactory.getOutputStream(_destination)) {
+        try (InputStream is = IOProviderFactory.getInputStream(source);
+                OutputStream os = IOProviderFactory
+                        .getOutputStream(_destination)) {
             FileSystemUtils.copyStream(is, os);
         } catch (Exception e) {
             Log.w(TAG, "Failed to deploy (1) to: " + _destination, e);

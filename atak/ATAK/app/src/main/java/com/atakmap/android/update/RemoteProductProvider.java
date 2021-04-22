@@ -260,7 +260,8 @@ public class RemoteProductProvider extends BaseProductProvider {
         final File oldInf = new File(dest, "product.inf");
         final File newInf = new File(dest, "product.orig");
 
-        if (!FileSystemUtils.renameTo(oldInf, newInf, new DefaultIOProvider())) {
+        if (!FileSystemUtils.renameTo(oldInf, newInf,
+                new DefaultIOProvider())) {
             Log.w(TAG, "Cannot rename file: " + oldInf);
             return;
         }
@@ -279,7 +280,8 @@ public class RemoteProductProvider extends BaseProductProvider {
                 Log.d(TAG,
                         "repository information has changed, hashcodes do not match");
                 final File tmp = FileSystemUtils.moveToTemp(MapView
-                        .getMapView().getContext(), infz, true, new DefaultIOProvider());
+                        .getMapView().getContext(), infz, true,
+                        new DefaultIOProvider());
 
                 dest.delete();
                 if (!dest.mkdirs()) {
@@ -288,7 +290,8 @@ public class RemoteProductProvider extends BaseProductProvider {
                                     + dest.getAbsolutePath());
                 }
 
-                if (!FileSystemUtils.renameTo(tmp, infz, new DefaultIOProvider())) {
+                if (!FileSystemUtils.renameTo(tmp, infz,
+                        new DefaultIOProvider())) {
                     Log.w(TAG, "Cannot rename file: " + oldInf);
                 }
             } else {
@@ -422,7 +425,8 @@ public class RemoteProductProvider extends BaseProductProvider {
     public ProductRepository parseRepo(String repoType, File repoIndex) {
         ProductRepository repo = null;
         try {
-            repo = ProductRepository.parseRepo(_context, repoIndex.getAbsolutePath(),
+            repo = ProductRepository.parseRepo(_context,
+                    repoIndex.getAbsolutePath(),
                     repoType, new BufferedReader(new FileReader(repoIndex)));
         } catch (IOException e) {
             Log.w(TAG, "Failed parse: " + repoIndex.getAbsolutePath(), e);

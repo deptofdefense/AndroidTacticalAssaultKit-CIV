@@ -15,11 +15,15 @@ import com.atakmap.android.maps.MetaMapPoint;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.PointMapItem.OnPointChangedListener;
 import com.atakmap.android.maps.Shape;
+import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.map.AtakMapController;
+import com.atakmap.map.Globe;
+import com.atakmap.map.MapRenderer2;
+import com.atakmap.map.MapSceneModel;
 import com.atakmap.math.Rectangle;
 
 public class FocusBroadcastReceiver extends BroadcastReceiver {
@@ -205,59 +209,54 @@ public class FocusBroadcastReceiver extends BroadcastReceiver {
             GeoPoint panTo = _focusPoint.getPoint();
             panTo = _mapView.getRenderElevationAdjustedPoint(panTo,
                     pointItem.getHeight());
+
+            //do not notify/unlock if this is the currently locked item
+            boolean bNotify = !isFocusItemLocked();
+
+            final MapSceneModel sm = _mapView.getRenderer3().getMapSceneModel(
+                    false, MapRenderer2.DisplayOrigin.UpperLeft);
+
+            double tilt = 90d + sm.camera.elevation;
             // if the map is tilted and the point is in view, do a relative
             // pan/zoom
             PointF focusXY = _mapView.forward(panTo);
             if (_mapView.getMapTilt() > 0d &&
-                    Rectangle.contains(0, 0,
+                    !Rectangle.contains(0, 0,
                             _mapView.getWidth(), _mapView.getHeight(),
                             focusXY.x, focusXY.y)) {
 
-                // XXX - can this be combined into a single animation?
-                ctrl.panBy(focusXY.x - ctrl.getFocusX(),
-                        focusXY.y - ctrl.getFocusY(),
-                        false);
-
-                // pan/zoom
-                if (useTightZoom) {
-                    double scale = _mapView.getMapScale();
-                    if (scale < FOCUS_MAP_SCALE_VALUE)
-                        scale = FOCUS_MAP_SCALE_VALUE;
-                    final double minItemGsd = pointItem.getMetaDouble(
-                            "minMapGsd",
-                            Double.NaN);
-                    if (!Double.isNaN(minItemGsd)
-                            && _mapView.mapResolutionAsMapScale(minItemGsd)
-                                    * 2d > scale)
-                        scale = _mapView.mapResolutionAsMapScale(minItemGsd)
-                                * 2d;
-                    ctrl.zoomTo(scale, true);
-                }
-            } else {
                 // clear the tilt
-                ctrl.tiltTo(0d, false);
-
-                //do not notify/unlock if this is the currently locked item
-                boolean bNotify = !isFocusItemLocked();
-
-                // pan/zoom
-                if (useTightZoom) {
-                    double scale = _mapView.getMapScale();
-                    if (scale < FOCUS_MAP_SCALE_VALUE)
-                        scale = FOCUS_MAP_SCALE_VALUE;
-                    final double minItemGsd = pointItem.getMetaDouble(
-                            "minMapGsd",
-                            Double.NaN);
-                    if (!Double.isNaN(minItemGsd)
-                            && _mapView.mapResolutionAsMapScale(minItemGsd)
-                                    * 2d > scale)
-                        scale = _mapView.mapResolutionAsMapScale(minItemGsd)
-                                * 2d;
-                    ctrl.panZoomTo(panTo, scale, true, bNotify);
-                } else {
-                    ctrl.panTo(panTo, true, bNotify);
-                }
+                tilt = 0d;
             }
+
+            // pan/zoom
+            double gsd = sm.gsd;
+            if (useTightZoom) {
+                if (Globe.getMapScale(_mapView.getDisplayDpi(),
+                        gsd) < FOCUS_MAP_SCALE_VALUE)
+                    gsd = Globe.getMapResolution(_mapView.getDisplayDpi(),
+                            FOCUS_MAP_SCALE_VALUE);
+                final double minItemGsd = pointItem.getMetaDouble(
+                        "minMapGsd",
+                        Double.NaN);
+                if (!Double.isNaN(minItemGsd) && minItemGsd / 2d < gsd)
+                    gsd = minItemGsd / 2d;
+            }
+
+            // ensure we have adequate camera range
+            final double maxGsd = ATAKUtilities
+                    .getMaximumFocusResolution(panTo);
+            if (gsd < maxGsd)
+                gsd = maxGsd;
+
+            if (bNotify)
+                ctrl.dispatchOnPanRequested();
+            _mapView.getRenderer3().lookAt(
+                    panTo,
+                    gsd,
+                    sm.camera.azimuth,
+                    tilt,
+                    true);
         }
     }
 

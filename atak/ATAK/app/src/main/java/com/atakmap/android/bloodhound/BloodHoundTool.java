@@ -1056,7 +1056,7 @@ public class BloodHoundTool extends ButtonTool implements
                     }
                 });
 
-        try { 
+        try {
 
             if (_startItem.getType().equals("b-m-p-s-p-i"))
                 _startItem.addOnVisibleChangedListener(linkListener);
@@ -1066,19 +1066,19 @@ public class BloodHoundTool extends ButtonTool implements
                 ((Marker) _startItem)
                         .addOnTrackChangedListener(_trackChangedListener);
             _linkGroup.addItem(linkListener.line);
-    
+
             _startItem.addOnPointChangedListener(_pointChangedListener);
             _endItem.addOnPointChangedListener(_pointChangedListener);
             _updateLinkInfo();
-    
+
             _startItem.addOnGroupChangedListener(linkListener);
             _endItem.addOnGroupChangedListener(linkListener);
-    
+
             _startItem.setMetaBoolean("pairingline_on", true);
             _endItem.setMetaBoolean("pairingline_on", true);
-    
+
             _link = linkListener;
-        } catch (Exception ignored) { 
+        } catch (Exception ignored) {
             // ATAK-14272 NullPointerException Bloodhound Tool - since this logic in thread unsafe
             // but it is lower risk during this sprint than syncronizing modifications to the startItem
             // and endItem
@@ -1426,16 +1426,19 @@ public class BloodHoundTool extends ButtonTool implements
                 int currentColor = currentColor();
 
                 _bloodHoundHUD.setColor(currentColor);
-                if (getlink() != null) {
-                    getlink().setColor(currentColor);
+
+                final BloodHoundToolLink link = getlink();
+                if (link != null) {
+                    link.setColor(currentColor);
                 }
             } else {
                 // TODO: What is this metadata used for?
-                getStartItem().removeMetaData("bloodhoundEta");
+                startPoint.removeMetaData("bloodhoundEta");
                 timerTask.setEta(Double.NaN);
                 _bloodHoundHUD.setColor(outerColor);
-                if (getlink() != null) {
-                    getlink().setColor(outerColor);
+                final BloodHoundToolLink link = getlink();
+                if (link != null) {
+                    link.setColor(outerColor);
                 }
             }
 
@@ -1483,6 +1486,11 @@ public class BloodHoundTool extends ButtonTool implements
         } else {
             return outerColor;
         }
+    }
+
+    public void dismissTimer() {
+        if (timerTask != null)
+            timerTask.setDismissed(true);
     }
 
     /** A task that is run to flash the color on the bloodhound link when a certain distance

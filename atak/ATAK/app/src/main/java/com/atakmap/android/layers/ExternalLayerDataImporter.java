@@ -2,17 +2,25 @@
 package com.atakmap.android.layers;
 
 import android.content.Context;
+import android.content.res.XmlResourceParser;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Xml;
 
+import com.atakmap.android.gdal.layers.KmzLayerInfoSpi;
 import com.atakmap.android.importexport.ImportReceiver;
 import com.atakmap.android.importexport.Importer;
 import com.atakmap.android.importexport.ImporterManager;
+import com.atakmap.coremap.io.IOProviderFactory;
+import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.comms.CommsMapComponent.ImportResult;
+import com.atakmap.io.ZipVirtualFile;
 import com.atakmap.map.layer.raster.LocalRasterDataStore;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.spatial.file.KmlFileSpatialDb;
+
+import org.xmlpull.v1.XmlPullParser;
 
 import java.io.File;
 import java.io.IOException;
@@ -117,12 +125,18 @@ public class ExternalLayerDataImporter implements Importer {
 
         // Import vector parts of the GRG if there are any
         if (success && FileSystemUtils.checkExtension(file, "kmz")) {
-            Importer kmzImporter = ImporterManager.findImporter(
-                    KmlFileSpatialDb.KML_CONTENT_TYPE,
-                    KmlFileSpatialDb.KMZ_FILE_MIME_TYPE);
-            if (kmzImporter != null)
-                kmzImporter.importData(Uri.fromFile(file),
-                        KmlFileSpatialDb.KMZ_FILE_MIME_TYPE, null);
+
+            // XXX - Hack for ATAK-14355
+            // If the GRG is only made up of a ground overlays (no other
+            // vector elements) then don't import as a KMZ
+            if (!isSimpleGRG(file)) {
+                Importer kmzImporter = ImporterManager.findImporter(
+                        KmlFileSpatialDb.KML_CONTENT_TYPE,
+                        KmlFileSpatialDb.KMZ_FILE_MIME_TYPE);
+                if (kmzImporter != null)
+                    kmzImporter.importData(Uri.fromFile(file),
+                            KmlFileSpatialDb.KMZ_FILE_MIME_TYPE, null);
+            }
         }
 
         return success ? ImportResult.SUCCESS : ImportResult.FAILURE;
@@ -153,5 +167,102 @@ public class ExternalLayerDataImporter implements Importer {
         }
 
         return true;
+    }
+
+    /**
+     * Check if a KMZ file is a "simple" GRG, meaning it has no other elements
+     * besides "GroundOverlay"
+     * @param kmzFile KMZ file
+     * @return True if this is a simple GRG
+     */
+    private static boolean isSimpleGRG(File kmzFile) {
+        if (!FileSystemUtils.checkExtension(kmzFile, "kmz"))
+            return false;
+
+        InputStream inputStream = null;
+        XmlPullParser parser = null;
+        try {
+            kmzFile = new ZipVirtualFile(kmzFile);
+
+            ZipVirtualFile docFile = new ZipVirtualFile(kmzFile, "doc.kml");
+
+            // Look for other KML
+            if (!IOProviderFactory.exists(docFile)) {
+                File[] files = IOProviderFactory.listFiles(kmzFile,
+                        KmzLayerInfoSpi.KML_FILTER);
+                if (files != null) {
+                    for (File f : files) {
+                        if (f instanceof ZipVirtualFile) {
+                            docFile = (ZipVirtualFile) f;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            inputStream = docFile.openStream();
+            parser = Xml.newPullParser();
+
+            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
+            parser.setInput(inputStream, null);
+
+            boolean hitGroundOverlay = false;
+            boolean inGroundOverlay = false;
+            int eventType;
+            do {
+                eventType = parser.next();
+                switch (eventType) {
+                    case XmlPullParser.START_TAG:
+                        String tag = parser.getName().toLowerCase(
+                                LocaleUtil.getCurrent());
+
+                        // Top-level metadata elements - ignore
+                        if (tag.equals("kml") || tag.equals("document")
+                                || tag.equals("name"))
+                            break;
+
+                        // Mark that we entered a GroundOverlay tag
+                        if (tag.equals("groundoverlay")) {
+                            hitGroundOverlay = true;
+                            inGroundOverlay = true;
+                        }
+
+                        // Element outside of GroundOverlay - not a simple GRG
+                        else if (!hitGroundOverlay || !inGroundOverlay)
+                            return false;
+
+                        break;
+                    case XmlPullParser.END_TAG:
+                        // Exiting GroundOverlay tag
+                        if (parser.getName()
+                                .toLowerCase(LocaleUtil.getCurrent())
+                                .equals("groundoverlay"))
+                            inGroundOverlay = false;
+                        break;
+                    case XmlPullParser.TEXT:
+                        break;
+                    case XmlPullParser.END_DOCUMENT:
+                        break;
+                    default:
+                        break;
+                }
+            } while (eventType != XmlPullParser.END_DOCUMENT);
+
+            return hitGroundOverlay;
+        } catch (Throwable e) {
+            return false;
+        } finally {
+            if (parser != null) {
+                if (parser instanceof XmlResourceParser)
+                    ((XmlResourceParser) parser).close();
+            }
+            if (inputStream != null) {
+                try {
+                    inputStream.close();
+                } catch (Exception e) {
+                    // Ignore error at this point.
+                }
+            }
+        }
     }
 }

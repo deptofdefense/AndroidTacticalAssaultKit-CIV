@@ -404,7 +404,7 @@ TAKErr getViewTerrainMeshElevation(double* value, const double latitude, const d
     return view->getTerrainMeshElevation(value, latitude, longitude);
 }
 
-void GLMesh::draw(const GLMapView2 &view, const int renderPass) NOTHROWS
+void GLMesh::draw(const GLGlobeBase &view, const int renderPass) NOTHROWS
 {
     RenderState restore = RenderState_getCurrent();
     RenderState state(restore);
@@ -416,11 +416,11 @@ void GLMesh::draw(const GLMapView2 &view, const int renderPass) NOTHROWS
     RenderState_makeCurrent(restore);
 }
 
-void GLMesh::draw(const Core::GLMapView2& view, RenderState& state, const int renderPass) NOTHROWS {
+void GLMesh::draw(const Core::GLGlobeBase& view, RenderState& state, const int renderPass) NOTHROWS {
     ViewState_ viewState{
-        view.scene,
-        view.elevationScaleFactor,
-        view.drawSrid,
+        view.renderPass->scene,
+        1.0/*view.renderPass->elevationScaleFactor*/,
+        view.renderPass->drawSrid,
         view.getTerrainVersion(),
         getViewTerrainMeshElevation,
         &view

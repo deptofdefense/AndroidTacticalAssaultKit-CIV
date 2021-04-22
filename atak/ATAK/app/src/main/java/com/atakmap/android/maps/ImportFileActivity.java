@@ -66,10 +66,10 @@ public class ImportFileActivity extends MetricActivity {
 
             final File fileToImport = new File(sendtoLocation, fileName);
 
-            try(InputStream is = resolver.openInputStream(uri);
-                FileOutputStream fos = new FileOutputStream(fileToImport)) {
-                FileSystemUtils.copy(is,fos);
-            } catch (Exception ignored){
+            try (InputStream is = resolver.openInputStream(uri);
+                    FileOutputStream fos = new FileOutputStream(fileToImport)) {
+                FileSystemUtils.copy(is, fos);
+            } catch (Exception ignored) {
             }
 
             Intent atakFrontIntent = new Intent();

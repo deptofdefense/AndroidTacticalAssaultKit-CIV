@@ -323,26 +323,23 @@ public class GLTileMesh implements Releasable {
 
         GLES20FixedPipeline.glPushMatrix( );
 
-        final int pumps = view.crossesIDL ? 2 : 1;
-        for(int i = 0; i < pumps; i++) {
-            setLCS(view, i % 2 == 0);
+        setLCS(view, (view.currentPass.drawLng*centroid.getLongitude()) >= 0 || view.drawSrid != 4326);
 
-            if (meshIndices != null) {
-                GLTexture.draw(texId,
-                        vertMode,
-                        numIndices,
-                        2, GLES20FixedPipeline.GL_FLOAT, meshTexCoords,
-                        meshVertsSize, GLES20FixedPipeline.GL_FLOAT, meshVerts,
-                        GLES20FixedPipeline.GL_UNSIGNED_SHORT, meshIndices,
-                        r, g, b, a);
-            } else {
-                GLTexture.draw(texId,
-                        vertMode,
-                        numCoords,
-                        2, GLES20FixedPipeline.GL_FLOAT, meshTexCoords,
-                        meshVertsSize, GLES20FixedPipeline.GL_FLOAT, meshVerts,
-                        r, g, b, a);
-            }
+        if (meshIndices != null) {
+            GLTexture.draw(texId,
+                    vertMode,
+                    numIndices,
+                    2, GLES20FixedPipeline.GL_FLOAT, meshTexCoords,
+                    meshVertsSize, GLES20FixedPipeline.GL_FLOAT, meshVerts,
+                    GLES20FixedPipeline.GL_UNSIGNED_SHORT, meshIndices,
+                    r, g, b, a);
+        } else {
+            GLTexture.draw(texId,
+                    vertMode,
+                    numCoords,
+                    2, GLES20FixedPipeline.GL_FLOAT, meshTexCoords,
+                    meshVertsSize, GLES20FixedPipeline.GL_FLOAT, meshVerts,
+                    r, g, b, a);
         }
 
         GLES20FixedPipeline.glPopMatrix();

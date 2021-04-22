@@ -74,10 +74,15 @@ final class GLContentFactory {
             if(b3dm == null || b3dm.gltf == null)
                 return false;
 
-            // pull the projection matrix from the graphics state
-            view.scratch.matrix.set(view.projection);
-            // concatenate the scene transform
-            view.scratch.matrix.concatenate(view.scene.forward);
+            if(view.scene.camera.perspective) {
+                view.scratch.matrix.set(view.scene.camera.projection);
+                view.scratch.matrix.concatenate(view.scene.camera.modelView);
+            } else {
+                // pull the projection matrix from the graphics state
+                view.scratch.matrix.set(view.projection);
+                // concatenate the scene transform
+                view.scratch.matrix.concatenate(view.scene.forward);
+            }
 
             // convert from ECEF to LLA
             if(view.drawSrid == 4326)
@@ -325,12 +330,14 @@ final class GLContentFactory {
             if(pnts == null || vbo == null)
                 return false;
 
-            // pull the projection matrix from the graphics state
-            GLES20FixedPipeline.glGetFloatv(GLES20FixedPipeline.GL_PROJECTION, view.scratch.matrixF, 0);
-            for(int i = 0; i < 16; i++)
-                view.scratch.matrix.set(i%4, i/4, view.scratch.matrixF[i]);
-
-            view.scratch.matrix.concatenate(view.scene.forward);
+            if(view.scene.camera.perspective) {
+                view.scratch.matrix.set(view.scene.camera.projection);
+                view.scratch.matrix.concatenate(view.scene.camera.modelView);
+            } else {
+                // pull the projection matrix from the graphics state
+                view.scratch.matrix.set(view.projection);
+                view.scratch.matrix.concatenate(view.scene.forward);
+            }
 
             // convert from ECEF to LLA
             if(view.drawSrid == 4326)

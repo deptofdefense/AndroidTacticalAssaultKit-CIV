@@ -8,7 +8,7 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
-import com.atakmap.spatial.file.DrwFileDatabase;
+import com.atakmap.spatial.file.FalconViewSpatialDb;
 import com.healthmarketscience.jackcess.Database;
 import com.healthmarketscience.jackcess.DatabaseBuilder;
 import com.healthmarketscience.jackcess.Table;
@@ -30,8 +30,7 @@ public class ImportDRWSort extends ImportInPlaceResolver {
             boolean copyFile, boolean importInPlace) {
         super(".drw", FileSystemUtils.OVERLAYS_DIRECTORY, validateExt,
                 copyFile, importInPlace, context.getString(R.string.drw_file),
-                context.getDrawable(
-                        R.drawable.ic_geojson_file_notification_icon));
+                context.getDrawable(R.drawable.ic_falconview_drw));
     }
 
     @Override
@@ -89,7 +88,7 @@ public class ImportDRWSort extends ImportInPlaceResolver {
 
     @Override
     public Pair<String, String> getContentMIME() {
-        return new Pair<>(DrwFileDatabase.DRW_CONTENT_TYPE,
-                DrwFileDatabase.DRW_FILE_MIME_TYPE);
+        return new Pair<>(FalconViewSpatialDb.DRW,
+                FalconViewSpatialDb.MIME_TYPE);
     }
 }

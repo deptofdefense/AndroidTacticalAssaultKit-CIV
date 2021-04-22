@@ -3,6 +3,7 @@ package com.atakmap.android.gridlines.graphics;
 
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.graphics.AbstractGLMapItem2;
+import com.atakmap.android.maps.graphics.GLSegmentFloatingLabel;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -11,19 +12,28 @@ import com.atakmap.coremap.maps.coords.MutableGeoBounds;
 import com.atakmap.coremap.maps.coords.MutableMGRSPoint;
 import com.atakmap.coremap.maps.coords.Vector2D;
 import com.atakmap.lang.Unsafe;
+import com.atakmap.map.elevation.ElevationManager;
+import com.atakmap.map.layer.control.SurfaceRendererControl;
+import com.atakmap.map.layer.feature.geometry.Envelope;
+import com.atakmap.map.layer.raster.osm.OSMUtils;
 import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.map.opengl.GLAntiAliasedLine;
+import com.atakmap.math.MathUtils;
+import com.atakmap.math.PointD;
+import com.atakmap.math.Rectangle;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLNinePatch;
 import com.atakmap.opengl.GLText;
+import com.atakmap.util.DirectExecutorService;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 
@@ -40,9 +50,10 @@ class GLGridTile {
 
     MGRSPoint mgrsRef;
     GeoPoint sw, nw, ne, se;
-    private Vector2D swv, nwv, sev;
     int subResolution;
-    private GLText glText;
+    private GLSegmentFloatingLabel glTextEasting;
+    private GLSegmentFloatingLabel glTextNorthing;
+    int lastRenderPump;
 
     private void updatePolyBuf() {
         float[] data = new float[_actualPolygon.length * 2];
@@ -61,9 +72,9 @@ class GLGridTile {
 
         // Need to recalculate the northwest, southwest, and southeast
         // points for proper label placement
-        GeoPoint nw = new GeoPoint(southBound, eastBound);
-        GeoPoint sw = new GeoPoint(northBound, eastBound);
-        GeoPoint se = new GeoPoint(northBound, westBound);
+        nw = new GeoPoint(southBound, eastBound);
+        sw = new GeoPoint(northBound, eastBound);
+        se = new GeoPoint(northBound, westBound);
         for (GeoPoint p : _actualPolygon) {
             if (Math.hypot(p.getLongitude() - westBound,
                     p.getLatitude() - northBound) < Math.hypot(
@@ -81,9 +92,6 @@ class GLGridTile {
                             se.getLatitude() - southBound))
                 se = p;
         }
-        this.nwv = new Vector2D(nw.getLongitude(), nw.getLatitude());
-        this.swv = new Vector2D(sw.getLongitude(), sw.getLatitude());
-        this.sev = new Vector2D(se.getLongitude(), se.getLatitude());
 
         ByteBuffer bb = com.atakmap.lang.Unsafe.allocateDirect(data.length
                 * (Float.SIZE / 8));
@@ -128,181 +136,224 @@ class GLGridTile {
     }
 
     void drawOrtho(GLMapSurface surface, GLMapView ortho, float red,
-            float green, float blue) {
+            float green, float blue, int renderPass) {
 
-        if (glText == null) {
-            glText = GLText.getInstance(MapView.getDefaultTextFormat());
-        }
-
-        if (lastDrawVersionS != ortho.drawVersion) {
-            lastDrawVersionS = ortho.drawVersion;
-
-            float left = ortho.getLeft();
-            float right = ortho.getRight();
-            float top = ortho.getTop()
-                    - MapView.getMapView().getActionBarHeight()
-                    - glText.getStringHeight();
-            float bottom = ortho.getBottom();
-
-            float[] indata = {
-                    left, bottom, left, top, right, top
-            };
-            FloatBuffer inbuf = FloatBuffer.wrap(indata);
-            FloatBuffer outbuf = FloatBuffer.allocate(6);
-            ortho.inverse(inbuf, outbuf);
-
-            bottomLeft = new Vector2D(outbuf.get(0), outbuf.get(1));
-            topLeft = new Vector2D(outbuf.get(2), outbuf.get(3));
-            topRight = new Vector2D(outbuf.get(4), outbuf.get(5));
+        final GLMapView.State state = ortho.currentPass;
+        final long s = (((long) state.renderPump << 32L)
+                | ((long) state.drawVersion & 0xFFFFFFFFL));
+        if (MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SPRITES)
+                && lastDrawVersionS != s) {
+            lastDrawVersionS = s;
 
             int smallDim = Math.min(
                     Math.abs(ortho.getTop() - ortho.getBottom()),
                     Math.abs(ortho.getRight() - ortho.getLeft()));
-            screenSpanMeters = ortho.drawMapResolution * smallDim
-                    * Math.cos(ortho.drawLat * Math.PI / 180);
+            screenSpanMeters = state.drawMapResolution * smallDim
+                    * Math.cos(state.drawLat * Math.PI / 180);
         }
 
         boolean drawSelf = true;
-
-        if (screenSpanMeters < subResolution * 5.25 && subResolution >= 100) { //5.25 = Maximum number of grid squares along the small axis of the screen
-            drawSelf = !_drawSubs(surface, ortho, red, green, blue);
-        } else {
-            dumpSubs();
+        this.lastRenderPump = ortho.currentPass.renderPump;
+        if (screenSpanMeters < subResolution * 5.25 && subResolution >= 100
+                && OSMUtils.mapnikTileLeveld(
+                        ortho.currentScene.drawMapResolution, 0d)
+                        - OSMUtils.mapnikTileLeveld(
+                                ortho.currentPass.drawMapResolution, 0d) < 1) { //5.25 = Maximum number of grid squares along the small axis of the screen
+            drawSelf = !_drawSubs(surface, ortho, red, green, blue, renderPass);
         }
 
         if (drawSelf) {
             debugDrawCount++;
 
-            double unwrap = ortho.idlHelper.getUnwrap(getBounds());
-            if (_polyBufProjected == null
-                    || lastDrawVersionM != ortho.drawVersion) {
-                lastDrawVersionM = ortho.drawVersion;
-
-                _setupCorners(ortho);
-
-                if (this.swv == null)
-                    this.swv = new Vector2D(this.sw.getLongitude(),
-                            this.sw.getLatitude());
-                if (this.sev == null)
-                    this.sev = new Vector2D(this.se.getLongitude(),
-                            this.se.getLatitude());
-                if (this.nwv == null)
-                    this.nwv = new Vector2D(this.nw.getLongitude(),
-                            this.nw.getLatitude());
-
-                double swvx = this.swv.x;
-                double sevx = this.sev.x;
-                double nwvx = this.nwv.x;
-
-                if (unwrap > 0 && swvx < 0 || unwrap < 0 && swvx > 0)
-                    swvx += unwrap;
-                if (unwrap > 0 && sevx < 0 || unwrap < 0 && sevx > 0)
-                    sevx += unwrap;
-                if (unwrap > 0 && nwvx < 0 || unwrap < 0 && nwvx > 0)
-                    nwvx += unwrap;
-
-                Vector2D swv = new Vector2D(swvx, this.swv.y);
-                Vector2D sev = new Vector2D(sevx, this.sev.y);
-                Vector2D nwv = new Vector2D(nwvx, this.nwv.y);
-
-                tiEasting = Vector2D.segmentToSegmentIntersection(topLeft,
-                        topRight, swv, nwv);
-                tiNorthing = Vector2D.segmentToSegmentIntersection(topLeft,
-                        topRight, swv, sev);
-                liEasting = Vector2D.segmentToSegmentIntersection(topLeft,
-                        bottomLeft, swv, nwv);
-                liNorthing = Vector2D.segmentToSegmentIntersection(topLeft,
-                        bottomLeft, swv, sev);
+            // draw the lines
+            if (MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SURFACE)) {
+                _antiAliasedLineRenderer.draw(ortho, 0f, 0f, 0f, 1f, 4f);
+                _antiAliasedLineRenderer.draw(ortho, red, green, blue, 1f, 2f);
             }
 
-            _antiAliasedLineRenderer.draw(ortho, 0f, 0f, 0f, 1f, 4f);
-            _antiAliasedLineRenderer.draw(ortho, red, green, blue, 1f, 2f);
+            // XXX - limiting the tilt at which the labels get drawn. Note that
+            //       legacy effectively never displayed labels on tilt anyway,
+            //       so not a regression. It's currently too expensive to run
+            //       the various calculations over every tile and the labels
+            //       never align on the top edge once the horizon is in view
 
-            String text;
+            // draw the labels
+            if (MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SPRITES)
+                    && ortho.drawTilt < 40d) {
+                if (projSrid != ortho.drawSrid) {
+                    swp = ortho.scene.mapProjection.forward(sw, null);
+                    sep = ortho.scene.mapProjection.forward(se, null);
+                    nwp = ortho.scene.mapProjection.forward(nw, null);
+                    projSrid = ortho.drawSrid;
+                }
+                if (lastDrawVersionM != ortho.drawVersion) {
+                    ortho.scene.forward.transform(swp, ortho.scratch.pointD);
+                    swx = (float) ortho.scratch.pointD.x;
+                    swy = (float) ortho.scratch.pointD.y;
+                    ortho.scene.forward.transform(sep, ortho.scratch.pointD);
+                    sex = (float) ortho.scratch.pointD.x;
+                    sey = (float) ortho.scratch.pointD.y;
+                    ortho.scene.forward.transform(nwp, ortho.scratch.pointD);
+                    nwx = (float) ortho.scratch.pointD.x;
+                    nwy = (float) ortho.scratch.pointD.y;
+                    lastDrawVersionM = ortho.drawVersion;
+                }
 
-            if (tiEasting != null || liEasting != null) {
-                text = mgrsRef.getEastingDescriptor();
-                if (subResolution == 10000) {
-                    text = mgrsRef.getGridDescriptor();
+                final float actionBarPad = MapView.getMapView()
+                        .getActionBarHeight();
+                final float l = ortho.currentScene.left;
+                final float r = ortho.currentScene.right;
+                final float t = ortho.currentScene.top - actionBarPad;
+                final float b = ortho.currentScene.bottom;
+
+                // quickly filter out any segments that are contained within the viewport
+                final boolean containsSW = Rectangle.contains(l, b, r, t, swx,
+                        swy);
+                final boolean containsSE = Rectangle.contains(l, b, r, t, sex,
+                        sey);
+                final boolean containsNW = Rectangle.contains(l, b, r, t, nwx,
+                        nwy);
+
+                boolean northing = !containsSW || !containsSE;
+                float wn = 0f;
+                boolean easting = !containsSW || !containsNW;
+                float we = 0f;
+
+                // NOTE: bias is always against top if the segment intersects
+                // both the left and top edges
+
+                if (northing) {
+                    // verify that we intersect the left or top edges
+                    Vector2D lin = Vector2D.segmentToSegmentIntersection(
+                            new Vector2D(swx, swy), new Vector2D(sex, sey),
+                            new Vector2D(l, t), new Vector2D(l, b));
+                    Vector2D tin = Vector2D.segmentToSegmentIntersection(
+                            new Vector2D(swx, swy), new Vector2D(sex, sey),
+                            new Vector2D(l, t), new Vector2D(r, t));
+
+                    northing &= (lin != null || tin != null);
+
+                    if (containsSW != containsSE) {
+                        // only one edge intersects
+                        wn = !containsSW ? 0f : 1f;
+                    } else if (northing) {
+                        // both edges intersect, we will weight towards the
+                        // top-most or end-most endpoint
+                        if (tin != null) {
+                            wn = (swy >= sey) ? 0f : 1f;
+                        } else if (lin != null) {
+                            wn = (swx <= sex) ? 0f : 1f;
+                        }
+                    }
                 }
-                GLText.localize(text);
-                GLES20FixedPipeline.glPushMatrix();
-                GLES20FixedPipeline.glLoadIdentity();
-                if (tiEasting != null) {
-                    ortho.scratch.geo.set(tiEasting.y, tiEasting.x);
-                    AbstractGLMapItem2.forward(ortho, ortho.scratch.geo,
-                            ortho.scratch.pointF, unwrap);
-                    float xoffset = -glText.getStringWidth(text) / 2f;
-                    GLES20FixedPipeline.glTranslatef(xoffset
-                            + ortho.scratch.pointF.x, ortho.scratch.pointF.y,
-                            0f);
-                } else {
-                    ortho.scratch.geo.set(liEasting.y, liEasting.x);
-                    AbstractGLMapItem2.forward(ortho, ortho.scratch.geo,
-                            ortho.scratch.pointF, unwrap);
-                    GLES20FixedPipeline.glTranslatef(ortho.scratch.pointF.x,
-                            ortho.scratch.pointF.y, 0f);
+
+                if (easting) {
+                    Vector2D lie = Vector2D.segmentToSegmentIntersection(
+                            new Vector2D(swx, swy), new Vector2D(nwx, nwy),
+                            new Vector2D(l, t), new Vector2D(l, b));
+                    Vector2D tie = Vector2D.segmentToSegmentIntersection(
+                            new Vector2D(swx, swy), new Vector2D(nwx, nwy),
+                            new Vector2D(l, t), new Vector2D(r, t));
+                    easting &= (lie != null || tie != null);
+                    if (containsSW != containsNW) {
+                        // only one edge intersects
+                        we = !containsSW ? 0f : 1f;
+                    } else if (easting) {
+                        // both edges intersect, we will weight towards the
+                        // top-most or end-most endpoint
+                        if (tie != null) {
+                            we = (swy >= nwy) ? 0f : 1f;
+                        } else if (lie != null) {
+                            we = (swx <= nwx) ? 0f : 1f;
+                        }
+                    }
                 }
-                GLNinePatch smallNinePatch = GLRenderGlobals.get(surface)
-                        .getSmallNinePatch();
-                if (smallNinePatch != null) {
-                    GLES20FixedPipeline.glColor4f(0f, 0f, 0f, 0.6f);
-                    GLES20FixedPipeline.glPushMatrix();
-                    GLES20FixedPipeline.glTranslatef(-4f, -glText.getDescent(),
-                            0f);
-                    smallNinePatch.draw(glText.getStringWidth(text) + 8f,
-                            Math.max(16f, glText.getStringHeight()));
-                    GLES20FixedPipeline.glPopMatrix();
+
+                String text;
+
+                if (easting) {
+                    if (glTextEasting == null) {
+                        glTextEasting = new GLSegmentFloatingLabel();
+                        glTextEasting
+                                .setTextFormat(MapView.getDefaultTextFormat());
+                        glTextEasting.setBackgroundColor(0f, 0f, 0f, 0.6f);
+                        glTextEasting.setRotateToAlign(false);
+                        glTextEasting.setClampToGround(true);
+                        glTextEasting.setSegmentPositionWeight(0f);
+                        glTextEasting.setSegment(new GeoPoint[] {
+                                sw, nw
+                        });
+                        glTextEasting.setInsets(0f, 0f, 0f,
+                                MapView.getMapView().getActionBarHeight());
+                    }
+                    text = mgrsRef.getEastingDescriptor();
+                    if (subResolution == 10000) {
+                        text = mgrsRef.getGridDescriptor();
+                    }
+                    GLText.localize(text);
+                    glTextEasting.setText(text);
+                    glTextEasting.setSegmentPositionWeight(we);
+                    glTextEasting.draw(ortho);
                 }
-                glText.draw(text, red, green, blue, 1f);
-                GLES20FixedPipeline.glPopMatrix();
+                if (northing) {
+                    if (glTextNorthing == null) {
+                        glTextNorthing = new GLSegmentFloatingLabel();
+                        glTextNorthing
+                                .setTextFormat(MapView.getDefaultTextFormat());
+                        glTextNorthing.setBackgroundColor(0f, 0f, 0f, 0.6f);
+                        glTextNorthing.setRotateToAlign(false);
+                        glTextNorthing.setClampToGround(true);
+                        glTextNorthing.setSegmentPositionWeight(0f);
+                        glTextNorthing.setSegment(new GeoPoint[] {
+                                sw, se
+                        });
+                        glTextNorthing.setInsets(0f, 0f, 0f,
+                                MapView.getMapView().getActionBarHeight());
+                    }
+                    text = mgrsRef.getNorthingDescriptor();
+                    if (subResolution == 10000) {
+                        text = mgrsRef.getGridDescriptor();
+                    }
+                    text = GLText.localize(text);
+                    glTextNorthing.setText(text);
+                    glTextNorthing.setSegmentPositionWeight(wn);
+                    glTextNorthing.draw(ortho);
+                }
             }
-
-            if (tiNorthing != null || liNorthing != null) {
-                text = mgrsRef.getNorthingDescriptor();
-                if (subResolution == 10000) {
-                    text = mgrsRef.getGridDescriptor();
-                }
-                text = GLText.localize(text);
-                GLES20FixedPipeline.glPushMatrix();
-                GLES20FixedPipeline.glLoadIdentity();
-                if (tiNorthing != null) {
-                    ortho.scratch.geo.set(tiNorthing.y, tiNorthing.x);
-                    AbstractGLMapItem2.forward(ortho, ortho.scratch.geo,
-                            ortho.scratch.pointF, unwrap);
-                    float xoffset = -glText.getStringWidth(text) / 2f;
-                    GLES20FixedPipeline.glTranslatef(xoffset
-                            + ortho.scratch.pointF.x, ortho.scratch.pointF.y,
-                            0f);
-                } else {
-                    ortho.scratch.geo.set(liNorthing.y, liNorthing.x);
-                    AbstractGLMapItem2.forward(ortho, ortho.scratch.geo,
-                            ortho.scratch.pointF, unwrap);
-                    GLES20FixedPipeline.glTranslatef(ortho.scratch.pointF.x,
-                            ortho.scratch.pointF.y, 0f);
-                }
-                GLNinePatch smallNinePatch = GLRenderGlobals.get(surface)
-                        .getSmallNinePatch();
-                if (smallNinePatch != null) {
-                    GLES20FixedPipeline.glColor4f(0f, 0f, 0f, 0.6f);
-                    GLES20FixedPipeline.glPushMatrix();
-                    GLES20FixedPipeline.glTranslatef(-4f, -glText.getDescent(),
-                            0f);
-                    smallNinePatch.draw(glText.getStringWidth(text) + 8f,
-                            Math.max(16f, glText.getStringHeight()));
-                    GLES20FixedPipeline.glPopMatrix();
-                }
-                glText.draw(text, red, green, blue, 1f);
-                GLES20FixedPipeline.glPopMatrix();
-            }
+        }
+        if (MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SPRITES)
+                && !ortho.multiPartPass) {
+            // multi-pass is complete, cull any out of view
+            dumpSubs(ortho.currentPass.renderPump);
         }
     }
 
-    private void dumpSubs() {
-        _subs = null; // release a hunk of memory
-        if (_loadingSubs != null) {
-            _loadingSubs.cancel(true);
-            _loadingSubs = null;
+    private void dumpSubs(int renderPump) {
+        if (_subs != null) {
+            boolean validSubs = false;
+            // if self was touched during last pump,
+            if (lastRenderPump == renderPump) {
+                // iterate across all child tiles, dumping any that weren't
+                // touched during the current pump
+                for (int i = 0; i < _subs.length; i++) {
+                    if (_subs[i] == null)
+                        continue;
+                    for (int j = 0; j < _subs[i].length; j++) {
+                        if (_subs[i][j] == null)
+                            continue;
+                        validSubs |= _subs[i][j].lastRenderPump == renderPump;
+                        _subs[i][j].dumpSubs(renderPump);
+                    }
+                }
+            }
+            // if there are no valid children left, clear the structure
+            if (!validSubs) {
+                _subs = null;
+                if (_loadingSubs != null) {
+                    _loadingSubs.cancel(true);
+                    _loadingSubs = null;
+                }
+            }
         }
     }
 
@@ -318,21 +369,32 @@ class GLGridTile {
             @Override
             public GLGridTile[][] call() {
                 try {
-                    return _genTileGrid(south, west, north, east, ref, subRes);
+                    return _genTileGrid(south, west, north, east, ref, subRes,
+                            _genGridTileExecutor, _segmentLabelsExecutor);
                 } finally {
+                    final SurfaceRendererControl ctrl = surface.getGLMapView()
+                            .getControl(SurfaceRendererControl.class);
+                    if (ctrl != null) {
+                        // mark the surface as dirty
+                        ctrl.markDirty(
+                                new Envelope(west, south, 0d, east, north, 0d),
+                                false);
+                    }
                     surface.requestRender();
                 }
             }
         };
         FutureTask<GLGridTile[][]> task = new FutureTask<>(
                 loadJob);
-        surface.getBackgroundMathExecutor().execute(task);
+        if (_genGridTileExecutor == null)
+            _genGridTileExecutor = surface.getBackgroundMathExecutor();
+        _genGridTileExecutor.execute(task);
         _loadingSubs = task;
     }
 
     private boolean _drawSubs(GLMapSurface surface, GLMapView ortho, float red,
             float green,
-            float blue) {
+            float blue, int renderPass) {
 
         boolean result = false;
 
@@ -354,9 +416,8 @@ class GLGridTile {
             for (GLGridTile[] _sub : _subs) {
                 for (GLGridTile t : _sub) {
                     if (t.inView(ortho)) {
-                        t.drawOrtho(surface, ortho, red, green, blue);
-                    } else {
-                        t.dumpSubs();
+                        t.drawOrtho(surface, ortho, red, green, blue,
+                                renderPass);
                     }
                 }
             }
@@ -365,23 +426,10 @@ class GLGridTile {
         return result;
     }
 
-    private void _setupCorners(GLMapView map) {
-
-        ByteBuffer bb = com.atakmap.lang.Unsafe
-                .allocateDirect(_actualPolygon.length * 2
-                        * (Float.SIZE / 8));
-        bb.order(ByteOrder.nativeOrder());
-        //        _polyBufProjected = bb.asFloatBuffer();
-        _polyBufProjected = Unsafe.allocateDirect(_polyBuf.limit(),
-                FloatBuffer.class);//bb.asFloatBuffer();
-        _polyBuf.rewind();
-        AbstractGLMapItem2.forward(map, _polyBuf, _polyBufProjected,
-                getBounds());
-    }
-
     private static GLGridTile[][] _genTileGrid(double south, double west,
             double north,
-            double east, MGRSPoint mgrsRef, int subRes) {
+            double east, MGRSPoint mgrsRef, int subRes,
+            Executor genGridTileExecutor, Executor segmentLabelExecutor) {
         ArrayList<GLGridTile[]> grid = new ArrayList<>();
 
         GLGridTile[] row;
@@ -391,7 +439,7 @@ class GLGridTile {
 
         for (int j = 0; j < 10; ++j) {
             row = _genTileRow(new MutableMGRSPoint(currRef), west, east, south,
-                    north, subRes);
+                    north, subRes, genGridTileExecutor, segmentLabelExecutor);
             if (row.length > 0) {
                 grid.add(row);
             }
@@ -404,7 +452,8 @@ class GLGridTile {
 
     private static GLGridTile[] _genTileRow(MutableMGRSPoint currRef,
             double west, double east, double south, double north,
-            int subRes) {
+            int subRes,
+            Executor genGridTileExecutor, Executor segmentLabelExecutor) {
 
         ArrayList<GLGridTile> row = new ArrayList<>();
         double[] ll = {
@@ -447,6 +496,11 @@ class GLGridTile {
                     east);
 
             if (clipped != null) {
+                // fill in on background thread based on actual to reduce per-frame overhead
+                clipped._genGridTileExecutor = genGridTileExecutor;
+                clipped._segmentLabelsExecutor = segmentLabelExecutor;
+                segmentLabelExecutor.execute(new SegmentLabelResolver(clipped));
+
                 row.add(clipped);
             }
         }
@@ -458,19 +512,48 @@ class GLGridTile {
         return new GeoPoint(ll[0], ll[1]);
     }
 
+    static GeoPoint getPointWithElevation(GeoPoint g) {
+        return new GeoPoint(g.getLatitude(), g.getLongitude(), ElevationManager
+                .getElevation(g.getLatitude(), g.getLongitude(), null));
+    }
+
+    /**
+     * Resolves elevations for segment labels
+     */
+    final static class SegmentLabelResolver implements Runnable {
+        final GLGridTile _tile;
+
+        SegmentLabelResolver(GLGridTile tile) {
+            _tile = tile;
+        }
+
+        @Override
+        public void run() {
+            _tile.sw = GLGridTile.getPointWithElevation(_tile.sw);
+            _tile.se = GLGridTile.getPointWithElevation(_tile.se);
+            _tile.ne = GLGridTile.getPointWithElevation(_tile.ne);
+            _tile.nw = GLGridTile.getPointWithElevation(_tile.nw);
+            _tile.projSrid = -1;
+            _tile.labelsEnabled = true;
+        }
+    }
+
     private static double screenSpanMeters;
-    private static int lastDrawVersionS;
-    private static Vector2D bottomLeft;
-    private static Vector2D topLeft;
-    private static Vector2D topRight;
+    private static long lastDrawVersionS = -1;
 
     private int lastDrawVersionM;
-    private Vector2D tiEasting;
-    private Vector2D tiNorthing;
-    private Vector2D liEasting;
-    private Vector2D liNorthing;
+    private PointD swp;
+    private PointD sep;
+    private PointD nwp;
+    private int projSrid = -1;
+    private float swx, swy;
+    private float sex, sey;
+    private float nwx, nwy;
+    private boolean labelsEnabled;
 
     private GLGridTile[][] _subs; // 10x10, except near zone boundaries
     private Future<GLGridTile[][]> _loadingSubs;
     private final GLAntiAliasedLine _antiAliasedLineRenderer = new GLAntiAliasedLine();
+    Executor _genGridTileExecutor;
+    Executor _segmentLabelsExecutor = new DirectExecutorService();
 }

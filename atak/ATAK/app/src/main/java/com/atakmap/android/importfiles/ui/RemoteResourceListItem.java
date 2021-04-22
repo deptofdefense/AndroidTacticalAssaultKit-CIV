@@ -1,3 +1,4 @@
+
 package com.atakmap.android.importfiles.ui;
 
 import android.app.AlertDialog;
@@ -106,8 +107,8 @@ public class RemoteResourceListItem extends AbstractHierarchyListItem2
         String localPath = _resource.getLocalPath();
         int icon = !FileSystemUtils.isEmpty(localPath)
                 && IOProviderFactory.exists(new File(localPath))
-                ? R.drawable.importmgr_status_green
-                : R.drawable.importmgr_status_red;
+                        ? R.drawable.importmgr_status_green
+                        : R.drawable.importmgr_status_red;
         return _context.getDrawable(icon);
     }
 
@@ -124,7 +125,8 @@ public class RemoteResourceListItem extends AbstractHierarchyListItem2
     @Override
     public View getExtraView(View v, ViewGroup parent) {
         ExtraHolder h = v != null && v.getTag() instanceof ExtraHolder
-                ? (ExtraHolder) v.getTag() : null;
+                ? (ExtraHolder) v.getTag()
+                : null;
         if (h == null) {
             h = new ExtraHolder();
             v = LayoutInflater.from(_context).inflate(
@@ -157,8 +159,8 @@ public class RemoteResourceListItem extends AbstractHierarchyListItem2
             String buttonText = _context.getString(
                     download ? R.string.download : R.string.stream);
             String message = _context.getString(download
-                            ? R.string.importmgr_download_remote_resource_to_local_device
-                            : R.string.importmgr_stream_remote_resource_to_local_device,
+                    ? R.string.importmgr_download_remote_resource_to_local_device
+                    : R.string.importmgr_stream_remote_resource_to_local_device,
                     _resource.getName());
             AlertDialog.Builder b = new AlertDialog.Builder(_context);
             b.setTitle(R.string.verify_download);
@@ -192,7 +194,7 @@ public class RemoteResourceListItem extends AbstractHierarchyListItem2
                     .getItem(FileSystemUtils.TMP_DIRECTORY);
             if (event == null || !event.isValid()
                     || !IOProviderFactory.exists(tmp)
-                    && !IOProviderFactory.mkdirs(tmp)) {
+                            && !IOProviderFactory.mkdirs(tmp)) {
                 Log.w(TAG, "Faild to send Remote Resource CoT");
                 Toast.makeText(_context,
                         R.string.importmgr_failed_to_send_resource,
@@ -202,8 +204,7 @@ public class RemoteResourceListItem extends AbstractHierarchyListItem2
 
             File cotFile = new File(tmp, FileSystemUtils
                     .sanitizeFilename(getTitle() + ".cot"));
-            try(OutputStream os = IOProviderFactory.
-                    getOutputStream(cotFile)) {
+            try (OutputStream os = IOProviderFactory.getOutputStream(cotFile)) {
                 FileSystemUtils.write(os, event.toString());
             } catch (Exception e) {
                 Log.e(TAG, "Failed to write remote resource CoT", e);

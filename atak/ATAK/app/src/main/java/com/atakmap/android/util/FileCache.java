@@ -121,7 +121,8 @@ public class FileCache
             // Hack to update the lastModified time.
             //
 
-            try (RandomAccessFile raf = IOProviderFactory.getRandomAccessFile(f, "rw")) {
+            try (RandomAccessFile raf = IOProviderFactory.getRandomAccessFile(f,
+                    "rw")) {
 
                 long length = raf.length();
 

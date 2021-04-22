@@ -4,13 +4,17 @@ import android.graphics.Color;
 
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.map.MapSceneModel;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.projection.ECEFProjection;
+import com.atakmap.math.AABB;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.Matrix;
 import com.atakmap.math.PointD;
 import com.atakmap.math.Rectangle;
+import com.atakmap.math.Sphere;
+import com.atakmap.spatial.GeometryTransformer;
 
 final class GLTile implements ContentSource.OnContentChangedListener {
     final static long FAILED_CONTENT_RETRY_MILLIS = 5 /*mins*/ * 60 /*sec/min*/ * 1000 /*ms/sec*/;
@@ -224,16 +228,6 @@ final class GLTile implements ContentSource.OnContentChangedListener {
     }
 
     private double computeMetersPerPixel(MapRendererState view) {
-        if(view.scene.camera.perspective)
-            return computeMetersPerPixelPerspective(view);
-        else
-            // XXX - cap resolution to 2cm. observing in-view tiles being culled
-            //       when resolution is greater with VRICON datasets. needs
-            //       further debugging
-            return Math.max(computeMetersPerPixelOrtho(view), 0.02d);
-    }
-
-    private double computeMetersPerPixelPerspective(MapRendererState view) {
         // XXX - distance camera to object
         view.scene.mapProjection.forward(centroid, view.scratch.pointD);
         final double centroidWorldX = view.scratch.pointD.x;
@@ -254,157 +248,52 @@ final class GLTile implements ContentSource.OnContentChangedListener {
                 centroidWorldZ * view.scene.displayModel.projectionZToNominalMeters
         );
 
-        double metersPerPixelAtD = (2d * dcam * Math.tan(view.scene.camera.fov / 2d) / ((view.top - view.bottom) / 2d));
+        double metersPerPixelAtD = (dcam * Math.tan(view.scene.camera.fov / 2d) / ((view.top - view.bottom) / 2d));
         // if bounding sphere does not contain camera, compute meters-per-pixel at centroid,
         // else use nominal meters-per-pixel
         if (dcam <= radius) {
-            metersPerPixelAtD = Math.min(view.scene.gsd, metersPerPixelAtD);
+            // XXX - 
+            return 0.01d; // 1cm
         }
         return metersPerPixelAtD;
     }
 
-    private double computeMetersPerPixelOrtho(MapRendererState view) {
-        // compute using perspective method up front
-        double metersPerPixelAtD = computeMetersPerPixelPerspective(view);
+    // XXX - not working as expected
+    private double computeScreenSpaceError(MapRendererState view) {
+        // XXX - distance camera to object
+        view.scene.mapProjection.forward(centroid, view.scratch.pointD);
+        final double centroidWorldX = view.scratch.pointD.x;
+        final double centroidWorldY = view.scratch.pointD.y;
+        final double centroidWorldZ = view.scratch.pointD.z;
 
-        // *** this workaround will be OBE after implementing perspective camera ***
-        // XXX - the camera location for the ortho projection is not
-        //       appropriate for a perspective camera model. as a result, I am
-        //       observing bad meter-per-pixel calculations for meshes that are
-        //       on screen and close to the camera. The observation is a
-        //       resolution "donut" where low resolutions are selected at the
-        //       top and bottom of the screen and high resolutions are selected
-        //       in the center. the workaround employed below projects the AABB
-        //       of the mesh into screen space and checks for intersection with
-        //       the bottom half of the viewport -- if intersection we set the
-        //       resolution to the nominal GSD.
-        //
-        //       I tried a number of novel approaches, including calculated
-        //       depth values, but was unable to find any other workable
-        //       heuristic or metric.
-        //
-        if(metersPerPixelAtD <= view.scene.gsd || (radius/view.scene.gsd) < (Math.max((view.top-view.bottom), (view.right-view.left))/2d))
-            return metersPerPixelAtD;
+        double cameraWorldX = view.scene.camera.location.x;
+        double cameraWorldY = view.scene.camera.location.y;
+        double cameraWorldZ = view.scene.camera.location.z;
 
-        final double viewCenterY = view.bottom+(view.top-view.bottom)/2d;
+        // distance of the camera to the centroid of the tile
+        final double dcam = MathUtils.distance(
+                cameraWorldX * view.scene.displayModel.projectionXToNominalMeters,
+                cameraWorldY * view.scene.displayModel.projectionYToNominalMeters,
+                cameraWorldZ * view.scene.displayModel.projectionZToNominalMeters,
+                centroidWorldX * view.scene.displayModel.projectionXToNominalMeters,
+                centroidWorldY * view.scene.displayModel.projectionYToNominalMeters,
+                centroidWorldZ * view.scene.displayModel.projectionZToNominalMeters
+        );
 
-        double screenMinX;
-        double screenMinY;
-        double screenMaxX;
-        double screenMaxY;
-
-        //if projected location of AABB intersects lower half of screen, use nominal GSD, else use perspective method
-
-        // NOTE: this is pretty slow, especially for scenes with many tiles.
-
-        // UL
-        view.scratch.geo.set(aabb.maxY, aabb.minX, aabb.minZ);
-        view.scene.forward(view.scratch.geo, view.scratch.pointD);
-        screenMinX = view.scratch.pointD.x;
-        screenMinY = view.scratch.pointD.y;
-        screenMaxX = view.scratch.pointD.x;
-        screenMaxY = view.scratch.pointD.y;
-        if(Rectangle.intersects(screenMinX, screenMinY, screenMaxX, screenMaxY, view.left, view.bottom, view.right, viewCenterY)) {
-            metersPerPixelAtD = view.scene.gsd;
-            return metersPerPixelAtD;
-        }
-        view.scratch.geo.set(aabb.maxY, aabb.minX, aabb.maxZ);
-        view.scene.forward(view.scratch.geo, view.scratch.pointD);
-        screenMinX = Math.min(screenMinX, view.scratch.pointD.x);
-        screenMinY = Math.min(screenMinY, view.scratch.pointD.y);
-        screenMaxX = Math.max(screenMaxX, view.scratch.pointD.x);
-        screenMaxY = Math.max(screenMaxY, view.scratch.pointD.y);
-        if(Rectangle.intersects(screenMinX, screenMinY, screenMaxX, screenMaxY, view.left, view.bottom, view.right, viewCenterY)) {
-            metersPerPixelAtD = view.scene.gsd;
-            return metersPerPixelAtD;
-        }
-        // LR
-        view.scratch.geo.set(aabb.minY, aabb.maxX, aabb.minZ);
-        view.scene.forward(view.scratch.geo, view.scratch.pointD);
-        screenMinX = Math.min(screenMinX, view.scratch.pointD.x);
-        screenMinY = Math.min(screenMinY, view.scratch.pointD.y);
-        screenMaxX = Math.max(screenMaxX, view.scratch.pointD.x);
-        screenMaxY = Math.max(screenMaxY, view.scratch.pointD.y);
-        if(Rectangle.intersects(screenMinX, screenMinY, screenMaxX, screenMaxY, view.left, view.bottom, view.right, viewCenterY)) {
-            metersPerPixelAtD = view.scene.gsd;
-            return metersPerPixelAtD;
-        }
-
-        view.scratch.geo.set(aabb.minY, aabb.maxX, aabb.maxZ);
-        view.scene.forward(view.scratch.geo, view.scratch.pointD);
-        screenMinX = Math.min(screenMinX, view.scratch.pointD.x);
-        screenMinY = Math.min(screenMinY, view.scratch.pointD.y);
-        screenMaxX = Math.max(screenMaxX, view.scratch.pointD.x);
-        screenMaxY = Math.max(screenMaxY, view.scratch.pointD.y);
-        if(Rectangle.intersects(screenMinX, screenMinY, screenMaxX, screenMaxY, view.left, view.bottom, view.right, viewCenterY)) {
-            metersPerPixelAtD = view.scene.gsd;
-            return metersPerPixelAtD;
-        }
-
-        // UR
-        view.scratch.geo.set(aabb.maxY, aabb.maxX, aabb.minZ);
-        view.scene.forward(view.scratch.geo, view.scratch.pointD);
-        screenMinX = Math.min(screenMinX, view.scratch.pointD.x);
-        screenMinY = Math.min(screenMinY, view.scratch.pointD.y);
-        screenMaxX = Math.max(screenMaxX, view.scratch.pointD.x);
-        screenMaxY = Math.max(screenMaxY, view.scratch.pointD.y);
-        if(Rectangle.intersects(screenMinX, screenMinY, screenMaxX, screenMaxY, view.left, view.bottom, view.right, viewCenterY)) {
-            metersPerPixelAtD = view.scene.gsd;
-            return metersPerPixelAtD;
-        }
-        view.scratch.geo.set(aabb.maxY, aabb.maxX, aabb.maxZ);
-        view.scene.forward(view.scratch.geo, view.scratch.pointD);
-        screenMinX = Math.min(screenMinX, view.scratch.pointD.x);
-        screenMinY = Math.min(screenMinY, view.scratch.pointD.y);
-        screenMaxX = Math.max(screenMaxX, view.scratch.pointD.x);
-        screenMaxY = Math.max(screenMaxY, view.scratch.pointD.y);
-        if(Rectangle.intersects(screenMinX, screenMinY, screenMaxX, screenMaxY, view.left, view.bottom, view.right, viewCenterY)) {
-            metersPerPixelAtD = view.scene.gsd;
-            return metersPerPixelAtD;
-        }
-        // LL
-        view.scratch.geo.set(aabb.minY, aabb.minX, aabb.minZ);
-        view.scene.forward(view.scratch.geo, view.scratch.pointD);
-        screenMinX = Math.min(screenMinX, view.scratch.pointD.x);
-        screenMinY = Math.min(screenMinY, view.scratch.pointD.y);
-        screenMaxX = Math.max(screenMaxX, view.scratch.pointD.x);
-        screenMaxY = Math.max(screenMaxY, view.scratch.pointD.y);
-        if(Rectangle.intersects(screenMinX, screenMinY, screenMaxX, screenMaxY, view.left, view.bottom, view.right, viewCenterY)) {
-            metersPerPixelAtD = view.scene.gsd;
-            return metersPerPixelAtD;
-        }
-
-        view.scratch.geo.set(aabb.minY, aabb.minX, aabb.maxZ);
-        view.scene.forward(view.scratch.geo, view.scratch.pointD);
-        screenMinX = Math.min(screenMinX, view.scratch.pointD.x);
-        screenMinY = Math.min(screenMinY, view.scratch.pointD.y);
-        screenMaxX = Math.max(screenMaxX, view.scratch.pointD.x);
-        screenMaxY = Math.max(screenMaxY, view.scratch.pointD.y);
-        if(Rectangle.intersects(screenMinX, screenMinY, screenMaxX, screenMaxY, view.left, view.bottom, view.right, viewCenterY)) {
-            metersPerPixelAtD = view.scene.gsd;
-            return metersPerPixelAtD;
-        }
-
-        return metersPerPixelAtD;
+        final double screenResolutionpParam = ((view.top - view.bottom) / 2d) / Math.tan(view.scene.camera.fov / 2d);
+        return screenResolutionpParam * (tile.geometricError /dcam);
     }
 
     static boolean cull(MapRendererState view, GLTile tile) {
-        final double hradius = tile.paddedRadius/view.scene.gsd;
-        final double vradius = (tile.aabb.maxZ-tile.aabb.minZ)/2d/view.scene.gsd;
-        view.scene.forward(tile.centroid, view.scratch.pointD);
-        final double cosTilt = Math.cos(Math.toRadians(90d+view.scene.camera.elevation));
-        final double screenMinX = view.scratch.pointD.x-hradius;
-        final double screenMinY = view.scratch.pointD.y-Math.min((cosTilt*hradius+(1-cosTilt)*vradius), hradius);
-        final double screenMaxX = view.scratch.pointD.x+hradius;
-        final double screenMaxY = view.scratch.pointD.y+Math.min((cosTilt*hradius+(1-cosTilt)*vradius), hradius);
-        return !Rectangle.intersects(view.left,
-                                     view.bottom,
-                                     view.right,
-                                     view.top,
-                                     screenMinX,
-                                     screenMinY,
-                                     screenMaxX,
-                                     screenMaxY);
+        // perform frustum culling. `flat` projection will use AABB; `globe`
+        // projection will use bounding sphere, as it's unlikely that the
+        // AABB will be a tighter volume
+        if(view.drawSrid == 4326) {
+            Envelope aabb = tile.aabb;
+            return !MapSceneModel.intersects(view.scene, aabb.minX, aabb.minY, aabb.minZ, aabb.maxX, aabb.maxY, aabb.maxZ);
+        } else {
+            return !MapSceneModel.intersects(view.scene, tile.centroid.getLatitude(), tile.centroid.getLongitude(), tile.centroid.getAltitude(), tile.radius);
+        }
     }
 
 

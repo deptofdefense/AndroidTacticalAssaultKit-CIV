@@ -103,7 +103,7 @@ Amphibious warfare ship/s_spca---------.png
 Hovercraft/s_spch---------.png
 Line/s_spcl---------.png
 Mine warfare vessel/s_spcm---------.png
-Navy group/s_spcg---------.png
+Navy group/s_spg----------.png
 Patrol/s_spcp---------.png
 Station/s_spcs---------.png
 Surface decoy/s_spcd---------.png
@@ -233,6 +233,7 @@ Radar/s_gpesr--------.png
 #REQ:s_gpex---------.png
 #PRE:s_gpe----------.png
 Flame thrower/s_gpexf--------.png
+Improvided Explosive Device/s_gpexi--------.png
 Land mines/s_gpexm--------.png
 Laser/s_gpexl--------.png
 Nbc equipment/s_gpexn--------.png
@@ -1078,8 +1079,8 @@ Utility/s_gpucvfu------.png
 #PRE:s_gpucv--------.png
 Anti-submarine warfare/s_gpucvrw------.png
 Attack/s_gpucvra------.png
-C2/s_gpucvrc------.png
-Medevac/s_gpucvre------.png
+C2/s_gpucvruc-----.png
+Medevac/s_gpucvrue-----.png
 Mine countermeasure/s_gpucvrm------.png
 Scout/s_gpucvrs------.png
 Utility/s_gpucvru------.png
@@ -1364,7 +1365,7 @@ Electronic warfare/s_gpuumse------.png
 #PRE:s_gpuum--------.png
 Ground station module/s_gpuumrx------.png
 Ground surveillance radar/s_gpuumrg------.png
-Meteorological/s_gpuumro------.png
+Meteorological/s_gpuummo------.png
 Sensor/s_gpuumrs------.png
 
 #REQ:s_gpuuab-------.png

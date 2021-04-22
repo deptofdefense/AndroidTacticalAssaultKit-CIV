@@ -85,7 +85,7 @@ public class DownloadAndCacheBroadcastReceiver extends BroadcastReceiver
                 boolean canceled = status.code == DownloadJob.CANCELLED;
                 if (canceled)
                     downloader.toastStatus("Download of " + status.title
-                                    + " cancelled.",
+                            + " cancelled.",
                             Toast.LENGTH_SHORT);
                 else
                     notification(status.title, errors);

@@ -26,6 +26,7 @@ set (atakjni_COMMON_SRCS
     jelevationsourcemanager.cpp
     jelmgrterrainrenderservice.cpp
     jfeature.cpp
+    jfrustum.cpp
     jgdallibrary.cpp
     jgeometry.cpp
     jgeometryfactory.cpp
@@ -46,6 +47,7 @@ set (atakjni_COMMON_SRCS
     jmesh.cpp
     jmodelbuilder.cpp
     jmodels.cpp
+    jmsaccessdatabasefactory.cpp
     jnativeelevationchunk.cpp
     jnativeelevationsource.cpp
     jnativeelevationsourcecursor.cpp
@@ -235,6 +237,11 @@ elseif (ANDROID)
     set (atakjni_INCS ${atakjni_COMMON_INCS} ${atakjni_ANDROID_INCS})
 endif ()
 
+#
+# Optimization flags
+#
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O3")
 
 link_directories (${atakjni_LDIRS})
 add_library (atakjni SHARED ${atakjni_SRCS})

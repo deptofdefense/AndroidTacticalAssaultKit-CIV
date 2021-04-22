@@ -5,13 +5,16 @@ import android.graphics.Color;
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.graphics.Typeface;
+import android.opengl.GLES30;
 
 import com.atakmap.android.maps.Arrow;
 import com.atakmap.android.maps.Arrow.OnTextChangedListener;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Shape;
 import com.atakmap.android.maps.Shape.OnPointsChangedListener;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.coremap.maps.coords.Vector3D;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.feature.Feature;
@@ -24,32 +27,23 @@ import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.math.MathUtils;
+import com.atakmap.math.Plane;
 import com.atakmap.math.PointD;
+import com.atakmap.math.Rectangle;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLNinePatch;
 import com.atakmap.opengl.GLText;
 
 import java.nio.FloatBuffer;
+import java.util.ConcurrentModificationException;
 
 public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
         OnTextChangedListener {
 
     private final Arrow _subject;
-    private float _textAngle;
-    private float _textWidth;
-    private float _textHeight;
-    private final PointD _textPoint = new PointD(0d, 0d, 0d);
+    private GLSegmentFloatingLabel _label;
     private final FloatBuffer _arrowHead;
 
-    private GLText _glText;
-    private String _text;
-    private String[] _textLines;
-    private final float[] _textColor = new float[] {
-            1.0f, 1.0f, 1.0f, 1.0f
-    };
-    private final GLNinePatch _ninePatch;
-    private static final float div_2 = 1f / 2f;
-    private static final double div_180_pi = 180d / Math.PI;
     private static final double div_pi_4 = Math.PI / 4f;
 
     private final static boolean CLAMP_TO_GROUND_ENABLED = true;
@@ -66,13 +60,16 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
     private static final double threshold = 10000;
 
     private GeoPoint[] _pts;
-    private boolean drawText = true;
-    private long currentDraw = 0;
 
+    private boolean _forceClamp = false;
     private boolean _clampToGround = false;
 
     private final GLBatchLineString impl;
     private final GLBatchLineString ximpl;
+
+    private boolean _ptsAgl;
+    private int _terrainVersion;
+    private int _arrowheadVersion;
 
     public GLArrow2(MapRenderer surface, Arrow arrow) {
         super(surface,
@@ -81,17 +78,27 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
 
         _subject = arrow;
         _arrowHead = Unsafe.allocateDirect(9, FloatBuffer.class);
-        _ninePatch = GLRenderGlobals.get(surface).getMediumNinePatch();
-        updateText(GLText.localize(arrow.getText()), arrow.getTextColor());
+        _label = new GLSegmentFloatingLabel();
+        _label.setText(GLText.localize(arrow.getText()));
+        _label.setTextColor(arrow.getTextColor());
+        try {
+            _forceClamp = subject.getMetaBoolean("forceClampToGround", false);
+        } catch(ConcurrentModificationException ignored) {}
         this.impl = new GLBatchLineString(surface);
         this.impl.setTesselationThreshold(threshold);
         this.ximpl = new GLBatchLineString(surface);
         this.ximpl.setTesselationThreshold(threshold);
+
+        _terrainVersion = -1;
+        _arrowheadVersion = -1;
     }
 
     @Override
     public void startObserving() {
         super.startObserving();
+        try {
+            _forceClamp = subject.getMetaBoolean("forceClampToGround", false);
+        } catch(ConcurrentModificationException ignored) {}
         refreshStyle();
         this.onPointsChanged(_subject);
         _subject.addOnStrokeColorChangedListener(this);
@@ -154,157 +161,29 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
         }));
     }
 
-    private void _buildArrow(GLMapView ortho) {
-
-        if (currentDraw == ortho.drawVersion) {
-            return;
-        }
-        currentDraw = ortho.drawVersion;
-
-        // XXX - LOTS of room for improvement here!
-        GeoPoint[] pts = _pts;
-        int ptLen = pts.length;
-
-        // not enough points supplied - do not attempt to draw
-        if (ptLen < 2)
+    private void _validateArrowhead(GLMapView ortho) {
+        if (_pts.length < 2)
             return;
 
-        float[] points = new float[ptLen * 3 + 9];
+        _arrowheadVersion = ortho.currentPass.drawVersion;
 
-        float xmin = Float.MAX_VALUE;
-        float xmax = Float.MIN_VALUE;
-        float ymin = Float.MAX_VALUE;
-        float ymax = Float.MIN_VALUE;
+        float[] points = new float[6];
+        for (int i = 0; i < 2; i++) {
+            ortho.scratch.geo.set(_pts[_pts.length - (2 - i)]);
 
-        this.bounds.setWrap180(ortho.continuousScrollEnabled);
-        double unwrap = ortho.idlHelper.getUnwrap(this.bounds);
-        for (int x = 0; x < pts.length; x++) {
-            double terrain = 0d;
-            if (ortho.drawTilt > 0d)
-                terrain = ortho.getTerrainMeshElevation(pts[x].getLatitude(),
-                        pts[x].getLongitude());
-            forward(ortho, pts[x], ortho.scratch.pointD, unwrap, terrain,
-                    false);
-            float xpos = (float) ortho.scratch.pointD.x;
-            float ypos = (float) ortho.scratch.pointD.y;
-            float zpos = (float) ortho.scratch.pointD.z;
-            points[3 * x] = xpos;
-            points[3 * x + 1] = ypos;
-            points[3 * x + 2] = zpos;
-            if (xpos < xmin)
-                xmin = xpos;
-            if (xpos > xmax)
-                xmax = xpos;
-            if (ypos < ymin)
-                ymin = ypos;
-            if (ypos > ymax)
-                ymax = ypos;
+            // Note: interpreting NAN HAE as 0AGL
+            final boolean ptAgl = (_pts[i].getAltitudeReference() == GeoPoint.AltitudeReference.AGL ||
+                    Double.isNaN(_pts[i].getAltitude()));
+            if(ptAgl)
+                ortho.scratch.geo.set(getHae(ortho, ortho.scratch.geo));
+
+            ortho.forward(ortho.scratch.geo, ortho.scratch.pointD);
+            points[i * 3] = (float) ortho.scratch.pointD.x;
+            points[i * 3 + 1] = (float) ortho.scratch.pointD.y;
+            points[i * 3 + 2] = (float) ortho.scratch.pointD.z;
         }
-
-        float screenRot = 0f;
-
-        if (_glText == null) {
-            _glText = GLText.getInstance(MapView.getTextFormat(
-                    Typeface.DEFAULT, +2));
-            updateText(_text, _subject.getTextColor());
-        }
-
-        if (xmax - xmin < _textWidth
-                && ymax - ymin < _textWidth
-                || _text.length() == 0) {
-            drawText = false;
-            _textPoint.x = (xmax + xmin) / 2;
-            _textPoint.y = ymin - _textHeight / 2;
-            _textAngle = 0;
-        } else {
-            drawText = true;
-            if (ptLen % 2 == 0) {
-                int idx = 3 * (ptLen / 2 - 1);
-
-                PointD startPoint = new PointD(points[idx], points[idx + 1],
-                        points[idx + 2]);
-                PointD endPoint = new PointD(points[idx + 3], points[idx + 4],
-                        points[idx + 5]);
-
-                float xmid = (int) ((startPoint.x + endPoint.x) / 2);
-                float ymid = (int) ((startPoint.y + endPoint.y) / 2);
-                float zmax = (int) Math.min(startPoint.z, endPoint.z);
-
-                // obtain the bounds of the current view
-                RectF _view = this.getWidgetViewF();
-
-                // find the point that is contained in the image, if both points are outside the 
-                // image, it does not matter.
-
-                if (startPoint.y < _view.top &&
-                        startPoint.x < _view.right &&
-                        startPoint.x > 0 &&
-                        startPoint.y > 0) {
-                    //Log.d("SHB", "start point is inside the view");
-                } else {
-                    //Log.d("SHB", "end point is inside the view");
-                    PointD tmp = startPoint;
-                    startPoint = endPoint;
-                    endPoint = tmp;
-                }
-
-                // determine the intersection point, if both points intersect, center between them
-                // if one point intersects, draw the text to be the midline between the point 
-                // inside the view and the intersection point.
-
-                PointF[] ip = GLMapItem._getIntersectionPoint(_view,
-                        new PointF((float) startPoint.x,
-                                (float) startPoint.y),
-                        new PointF((float) endPoint.x, (float) endPoint.y));
-
-                if (ip[0] != null || ip[1] != null) {
-                    if (ip[0] != null && ip[1] != null) {
-                        xmid = (ip[0].x + ip[1].x) / 2.0f;
-                        ymid = (ip[0].y + ip[1].y) / 2.0f;
-                    } else {
-
-                        if (ip[0] != null) {
-                            //Log.d("SHB", "bottom is clipped");
-                            xmid = (float) (ip[0].x + startPoint.x) / 2.0f;
-                            ymid = (float) (ip[0].y + startPoint.y) / 2.0f;
-                        } else {
-                            //Log.d("SHB", "top is clipped");
-                            xmid = (float) (ip[1].x + startPoint.x) / 2.0f;
-                            ymid = (float) (ip[1].y + startPoint.y) / 2.0f;
-                        }
-                    }
-                }
-
-                _textAngle = (float) (Math.atan2(points[idx + 1]
-                        - points[idx + 4],
-                        points[idx]
-                                - points[idx + 3])
-                        * div_180_pi)
-                        - screenRot;
-
-                _textPoint.x = xmid;
-                _textPoint.y = ymid;
-                _textPoint.z = zmax;
-            } else {
-                // XXX - indexing here is probably broken
-                int idx = 3 * (ptLen - 1) / 2;
-                float xmid = (int) points[idx];
-                float ymid = (int) points[idx + 1];
-                _textAngle = (float) (Math.atan2(points[idx - 2]
-                        - points[idx + 4],
-                        points[idx - 3]
-                                - points[idx + 3])
-                        * div_180_pi)
-                        - screenRot;
-                _textPoint.y = xmid;
-                _textPoint.x = ymid;
-                _textPoint.z = 0d;
-            }
-        }
-        if (_textAngle > 90 || _textAngle < -90)
-            _textAngle += 180;
-        int zx = ptLen * 3 - 3, zy = ptLen * 3 - 2, zz = ptLen * 3 - 1;
-        int yx = ptLen * 3 - 6, yy = ptLen * 3 - 5;
+        int zx = 3, zy = 4, zz = 5;
+        int yx = 0, yy = 1;
 
         // unused commenting out for now
         //int ax = ptLen * 3, ay = ptLen * 3 + 1, az = ptLen * 3 + 2;
@@ -336,12 +215,17 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
       * @return The bounding RectF
       */
     protected RectF getWidgetViewF() {
+        return getWidgetViewF((GLMapView) this.context);
+    }
+
+    static RectF getWidgetViewF(GLMapView ortho) {
         // Could be in half or third display of dropdown, so use the offset;
-        float right = ((GLMapView) this.context).focusx * 2;
+        float right = ortho.currentScene.right;
         // Could be in portrait mode as well, so change the bottom accordingly
-        float top = ((GLMapView) this.context).focusy * 2;
-        return new RectF(0f, top - MapView.getMapView().getActionBarHeight(),
-                right, 0);
+        float top = ortho.currentScene.top;
+        return new RectF(ortho.currentScene.left,
+                top - MapView.getMapView().getActionBarHeight(),
+                right, ortho.currentScene.bottom);
     }
 
     private void _setColor(int color) {
@@ -353,75 +237,115 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
     @Override
     public void onPointsChanged(Shape s) {
         final GeoPoint[] p = s.getPoints();
-        this.context.queueEvent(new Runnable() {
+        runOnGLThread(new Runnable() {
             @Override
             public void run() {
-                _pts = p;
-
-                final int numPts = _pts != null ? _pts.length : 0;
-
-                double dist = 0d;
-                double minEl = 0d;
-                double maxEl = 0d;
-                LineString ls = new LineString(3);
-                for (int i = 0; i < numPts; i++) {
-                    final double lat = _pts[i].getLatitude();
-                    final double lng = _pts[i].getLongitude();
-                    final double hae = !Double.isNaN(_pts[i].getAltitude())
-                            ? _pts[i].getAltitude()
-                            : 0d;
-                    ls.addPoint(lng, lat, hae);
-
-                    if (i > 0) {
-                        final double d = _pts[i].distanceTo(_pts[i - 1]);
-                        if (d > dist)
-                            dist = d;
-                        if (hae < minEl)
-                            minEl = hae;
-                        else if (hae > maxEl)
-                            maxEl = hae;
-                    } else {
-                        minEl = hae;
-                        maxEl = hae;
-                    }
-                }
-                impl.setGeometry(ls);
-                ximpl.setGeometry(ls);
-
-                // XXX - whether the R&B representation is slant or surface
-                //       should really be deferred to the user. Any attempt to
-                //       automatically determine which is appropriate is likely
-                //       to miss the mark in some user interactions
-                if (CLAMP_TO_GROUND_ENABLED) {
-                    final double elANgle = Math
-                            .toDegrees(Math.atan2(maxEl - minEl, dist));
-                    _clampToGround = (dist > minClampDistance) && // distance less than 4km
-                            elANgle < slantMinElAngle;
-                }
-
-                impl.setAltitudeMode(
-                        _clampToGround ? Feature.AltitudeMode.ClampToGround
-                                : Feature.AltitudeMode.Absolute);
-                impl.setTessellationEnabled(_clampToGround);
-
-                ximpl.setAltitudeMode(
-                        _clampToGround ? Feature.AltitudeMode.ClampToGround
-                                : Feature.AltitudeMode.Absolute);
-                ximpl.setTessellationEnabled(_clampToGround);
-
-                MapView mv = MapView.getMapView();
-                if (mv != null) {
-                    Envelope env = impl.getBounds(mv.getProjection()
-                            .getSpatialReferenceID());
-                    if (env != null) {
-                        bounds.setWrap180(mv.isContinuousScrollEnabled());
-                        bounds.set(env.minY, env.minX, env.maxY, env.maxX);
-                        dispatchOnBoundsChanged();
-                    }
-                }
-                currentDraw = 0;
+                pointsChangedImpl((GLMapView)context, p, true);
             }
         });
+    }
+
+    private double getHae(GLMapView ortho, GeoPoint geo) {
+        final boolean ptAgl = (geo.getAltitudeReference() == GeoPoint.AltitudeReference.AGL ||
+                Double.isNaN(geo.getAltitude()));
+        if(!ptAgl)
+            return geo.getAltitude();
+
+        double hae = geo.getAltitude();
+        if(Double.isNaN(hae))
+            hae = 0d;
+        final double terrain = ortho.getTerrainMeshElevation(geo.getLatitude(), geo.getLongitude());
+        if(!Double.isNaN(terrain))
+            hae += terrain;
+        return hae;
+    }
+
+    private void pointsChangedImpl(GLMapView ortho, GeoPoint[] p, boolean updateBounds) {
+        _pts = p;
+        _ptsAgl = false;
+
+        final int numPts = _pts != null ? _pts.length : 0;
+
+        GeoPoint[] labelPoints = new GeoPoint[numPts];
+
+        double dist = 0d;
+        double minEl = 0d;
+        double maxEl = 0d;
+        LineString ls = new LineString(3);
+        for (int i = 0; i < numPts; i++) {
+            // Note: interpreting NAN HAE as 0AGL
+            final boolean ptAgl = (_pts[i].getAltitudeReference() == GeoPoint.AltitudeReference.AGL ||
+                    Double.isNaN(_pts[i].getAltitude()));
+            _ptsAgl |= ptAgl;
+
+            final double lat = _pts[i].getLatitude();
+            final double lng = _pts[i].getLongitude();
+            final double hae = getHae(ortho, _pts[i]);
+            ls.addPoint(lng, lat, hae);
+
+            if(ptAgl)
+                labelPoints[i] = new GeoPoint(lat, lng, hae);
+            else
+                labelPoints[i] = _pts[i];
+
+            if (i > 0) {
+                final double d = _pts[i].distanceTo(_pts[i - 1]);
+                if (d > dist)
+                    dist = d;
+                if (hae < minEl)
+                    minEl = hae;
+                else if (hae > maxEl)
+                    maxEl = hae;
+            } else {
+                minEl = hae;
+                maxEl = hae;
+            }
+        }
+        impl.setGeometry(ls);
+        ximpl.setGeometry(ls);
+
+        // XXX - whether the R&B representation is slant or surface
+        //       should really be deferred to the user. Any attempt to
+        //       automatically determine which is appropriate is likely
+        //       to miss the mark in some user interactions
+        if (CLAMP_TO_GROUND_ENABLED) {
+            final double elANgle = Math
+                    .toDegrees(Math.atan2(maxEl - minEl, dist));
+            _clampToGround = (dist > minClampDistance) && // distance less than 4km
+                    elANgle < slantMinElAngle;
+        }
+
+        _clampToGround |= _forceClamp;
+
+        impl.setAltitudeMode(
+                _clampToGround ? Feature.AltitudeMode.ClampToGround
+                        : Feature.AltitudeMode.Absolute);
+        impl.setTessellationEnabled(_clampToGround);
+
+        ximpl.setAltitudeMode(
+                _clampToGround ? Feature.AltitudeMode.ClampToGround
+                        : Feature.AltitudeMode.Absolute);
+        ximpl.setTessellationEnabled(_clampToGround);
+
+        _label.setSegment(labelPoints);
+        _label.setClampToGround(_clampToGround);
+
+        _terrainVersion = ortho.getTerrainVersion();
+        // invalidate arrowhead
+        _arrowheadVersion = -1;
+
+        if(updateBounds) {
+            MapView mv = MapView.getMapView();
+            if (mv != null) {
+                Envelope env = impl.getBounds(mv.getProjection()
+                        .getSpatialReferenceID());
+                if (env != null) {
+                    bounds.setWrap180(mv.isContinuousScrollEnabled());
+                    bounds.set(env.minY, env.minX, env.maxY, env.maxX);
+                    dispatchOnBoundsChanged();
+                }
+            }
+        }
     }
 
     @Override
@@ -431,23 +355,10 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
         this.context.queueEvent(new Runnable() {
             @Override
             public void run() {
-                updateText(GLText.localize(text), textColor);
-                currentDraw = 0;
+                _label.setText(GLText.localize(text));
+                _label.setTextColor(textColor);
             }
         });
-    }
-
-    private void updateText(String text, int textColor) {
-        _text = text;
-        _textLines = _text.split("\n");
-        if (_glText != null) {
-            _textWidth = _glText.getStringWidth(_text);
-            _textHeight = _glText.getStringHeight(_text);
-        }
-        _textColor[0] = Color.red(textColor) / 255f;
-        _textColor[1] = Color.green(textColor) / 255f;
-        _textColor[2] = Color.blue(textColor) / 255f;
-        _textColor[3] = Color.alpha(textColor) / 255f;
     }
 
     /**
@@ -472,24 +383,32 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
         if ((renderPass & this.renderPass) == 0)
             return;
 
-        if (!MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SURFACE)
-                && _clampToGround)
-            return;
-        else if (renderPass == GLMapView.RENDER_PASS_SURFACE && !_clampToGround)
+        if (_pts == null)
             return;
 
-        if (_pts != null)
-            _buildArrow(ortho);
-        if (_pts != null && _glText != null) {
+        if(_ptsAgl && ortho.getTerrainVersion() != _terrainVersion)
+            pointsChangedImpl(ortho, _pts, false);
+
+        final boolean sprites = MathUtils.hasBits(renderPass,
+                GLMapView.RENDER_PASS_SPRITES);
+        final boolean surface = MathUtils.hasBits(renderPass,
+                GLMapView.RENDER_PASS_SURFACE);
+        final boolean scenes = MathUtils.hasBits(renderPass,
+                GLMapView.RENDER_PASS_SCENES);
+
+        final boolean renderGeom = (surface && _clampToGround)
+                || (sprites && !_clampToGround);
+        final boolean renderLabel = sprites;
+
+        if (renderGeom && _pts != null) {
+            if(_arrowheadVersion != ortho.currentPass.drawVersion)
+                _validateArrowhead(ortho);
 
             GLES20FixedPipeline.glPushMatrix();
             GLES20FixedPipeline.glLoadIdentity();
 
-            final boolean drawSprite = MathUtils.hasBits(renderPass,
-                    GLMapView.RENDER_PASS_SPRITES);
-
             // draw the arrow line
-            if (XRAY_ENABLED && drawSprite) {
+            if (XRAY_ENABLED && sprites) {
                 // if just doing the sprite pass, render the xray. disable
                 // depth test and draw the geometry. we do not want to use
                 // GL_ALWAYS as this will overwrite the depth buffer with
@@ -507,7 +426,7 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
             GLES20FixedPipeline.glVertexPointer(3, GLES20FixedPipeline.GL_FLOAT,
                     0, _arrowHead);
 
-            if (XRAY_ENABLED && drawSprite) {
+            if (XRAY_ENABLED && sprites) {
                 // if just doing the sprite pass, render the xray. disable
                 // depth test and draw the geometry. we do not want to use
                 // GL_ALWAYS as this will overwrite the depth buffer with
@@ -523,33 +442,148 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
             GLES20FixedPipeline
                     .glDisableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
 
-            if (drawText) {
-                GLES20FixedPipeline.glTranslatef((float) _textPoint.x,
-                        (float) _textPoint.y,
-                        0f);
-                GLES20FixedPipeline.glRotatef(_textAngle, 0f, 0f, 1f);
-                GLES20FixedPipeline.glTranslatef(-_textWidth / 2,
-                        -_textHeight / 2 + _glText.getDescent(), 0);
-                GLES20FixedPipeline.glPushMatrix();
-                GLES20FixedPipeline.glTranslatef(-8f,
-                        -_glText.getDescent() - 4f, 0f);
-                GLES20FixedPipeline.glColor4f(0f, 0f, 0f, 0.8f);
-                if (_ninePatch != null)
-                    _ninePatch.draw(_textWidth + 16f, _textHeight + 8f);
-                GLES20FixedPipeline.glPopMatrix();
-                for (int i = 0; i < _textLines.length; i++) {
-                    GLES20FixedPipeline.glPushMatrix();
-                    GLES20FixedPipeline.glTranslatef(0f,
-                            ((_textLines.length - 1) - i)
-                                    * _glText.getCharHeight(),
-                            0f);
-                    _glText.draw(_textLines[i], _textColor[0], _textColor[1],
-                            _textColor[2], _textColor[3]);
-                    GLES20FixedPipeline.glPopMatrix();
-                }
-            }
             GLES20FixedPipeline.glPopMatrix();
+        }
+
+        if (renderLabel) {
+            ortho.scratch.depth.save();
+            if (ortho.drawTilt > 0d) {
+                GLES30.glEnable(GLES30.GL_DEPTH_TEST);
+                GLES30.glDepthFunc(GLES30.GL_LEQUAL);
+                GLES30.glDepthMask(true);
+            }
+            _label.draw(ortho);
+            ortho.scratch.depth.restore();
         }
     }
 
+    /**
+     * Given a line of bearing defined by B-A, finds the closest point on that
+     * LOB to the focus point of the specified scene.
+     * @param ortho
+     * @param a
+     * @param b
+     * @return
+     */
+    static GeoPoint closestSurfacePointToFocus(GLMapView ortho, float xmid,
+            float ymid, GeoPoint a, GeoPoint b) {
+        ortho.scene.mapProjection.inverse(ortho.scene.camera.target,
+                ortho.scratch.geo);
+        if (Double.isNaN(ortho.scratch.geo.getAltitude()))
+            ortho.scratch.geo.set(100d);
+        else
+            ortho.scratch.geo.set(ortho.scratch.geo.getAltitude() + 100d);
+        ortho.scene.mapProjection.forward(ortho.scratch.geo,
+                ortho.scratch.pointD);
+
+        // compute focus as location as screen point at x,y on the plane
+        // passing through the camera focus with the local up as the normal
+        // vector
+        com.atakmap.math.Vector3D normal = new com.atakmap.math.Vector3D(
+                (ortho.scratch.pointD.x - ortho.scene.camera.target.x),
+                (ortho.scratch.pointD.y - ortho.scene.camera.target.y),
+                (ortho.scratch.pointD.z - ortho.scene.camera.target.z));
+        Plane focusPlane = new Plane(normal, ortho.scene.camera.target);
+        GeoPoint focus = GeoPoint.createMutable();
+        if (ortho.scene.inverse(new PointF(xmid, ymid), focus,
+                focusPlane) == null)
+            ortho.scene.mapProjection.inverse(ortho.scene.camera.target, focus);
+
+        if (ortho.drawSrid == 4978) {
+            // compute the interpolation weight for the surface point
+            ortho.scratch.geo.set(focus);
+            final double dpts = GreatCircle.distance(a, b);
+            double dtofocus = GreatCircle.alongTrackDistance(a, b,
+                    ortho.scratch.geo);
+            if (dtofocus < dpts &&
+                    GreatCircle.distance(ortho.scratch.geo, a) < GreatCircle
+                            .distance(ortho.scratch.geo,
+                                    GeoCalculations.pointAtDistance(a, b,
+                                            dtofocus / dpts))) {
+                dtofocus *= -1d;
+            }
+
+            final double weight = MathUtils.clamp(dtofocus / dpts, 0d, 1d);
+
+            return GeoCalculations.pointAtDistance(a, b,
+                    weight);
+        } else {
+            // execute closest-point-on-line as cartesian math
+            ortho.scene.mapProjection.forward(a, ortho.scratch.pointD);
+            final double ax = ortho.scratch.pointD.x
+                    * ortho.scene.displayModel.projectionXToNominalMeters;
+            final double ay = ortho.scratch.pointD.y
+                    * ortho.scene.displayModel.projectionYToNominalMeters;
+            final double az = ortho.scratch.pointD.z
+                    * ortho.scene.displayModel.projectionZToNominalMeters;
+            ortho.scene.mapProjection.forward(b, ortho.scratch.pointD);
+            final double bx = ortho.scratch.pointD.x
+                    * ortho.scene.displayModel.projectionXToNominalMeters;
+            final double by = ortho.scratch.pointD.y
+                    * ortho.scene.displayModel.projectionYToNominalMeters;
+            final double bz = ortho.scratch.pointD.z
+                    * ortho.scene.displayModel.projectionZToNominalMeters;
+
+            ortho.scene.mapProjection.forward(focus, ortho.scratch.pointD);
+            final double dx = ortho.scratch.pointD.x
+                    * ortho.scene.displayModel.projectionXToNominalMeters;
+            final double dy = ortho.scratch.pointD.y
+                    * ortho.scene.displayModel.projectionYToNominalMeters;
+            final double dz = ortho.scratch.pointD.z
+                    * ortho.scene.displayModel.projectionZToNominalMeters;
+
+            double[] p = Vector3D.nearestPointOnSegment(dx, dy, dz, ax, ay, az,
+                    bx, by, bz);
+
+            ortho.scratch.pointD.x = p[0]
+                    / ortho.scene.displayModel.projectionXToNominalMeters;
+            ortho.scratch.pointD.y = p[1]
+                    / ortho.scene.displayModel.projectionYToNominalMeters;
+            ortho.scratch.pointD.z = p[2]
+                    / ortho.scene.displayModel.projectionZToNominalMeters;
+
+            return ortho.scene.mapProjection.inverse(ortho.scratch.pointD,
+                    null);
+        }
+    }
+
+    //https://edwilliams.org/avform.htm
+    final static class GreatCircle {
+        static double distance(GeoPoint a, GeoPoint b) {
+            final double lat1 = Math.toRadians(a.getLatitude());
+            final double lon1 = Math.toRadians(a.getLongitude());
+            final double lat2 = Math.toRadians(b.getLatitude());
+            final double lon2 = Math.toRadians(b.getLongitude());
+            final double sin_dlat = (Math.sin((lat1 - lat2) / 2));
+            final double sin_dlon = (Math.sin((lon1 - lon2) / 2));
+            return 2 * Math.asin(Math.sqrt(sin_dlat * sin_dlat +
+                    Math.cos(lat1) * Math.cos(lat2) * sin_dlon * sin_dlon));
+        }
+
+        static double course(GeoPoint a, GeoPoint b) {
+            final double lat1 = Math.toRadians(a.getLatitude());
+            final double lon1 = Math.toRadians(a.getLongitude());
+            final double lat2 = Math.toRadians(b.getLatitude());
+            final double lon2 = Math.toRadians(b.getLongitude());
+            final double tc1 = Math.atan2(
+                    Math.sin(lon1 - lon2) * Math.cos(lat2),
+                    Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1)
+                            * Math.cos(lat2) * Math.cos(lon1 - lon2));
+            if (tc1 > (Math.PI * 2d))
+                return tc1 - Math.PI * 2d;
+            else if (tc1 < (Math.PI * 2D))
+                return tc1 + Math.PI * 2d;
+            else
+                return tc1;
+        }
+
+        static double alongTrackDistance(GeoPoint sp, GeoPoint ep, GeoPoint p) {
+            final double crs_AB = course(sp, ep);
+            final double crs_AD = course(sp, p);
+            final double dist_AD = distance(sp, p);
+            final double XTD = Math
+                    .asin(Math.sin(dist_AD) * Math.sin(crs_AD - crs_AB));
+            return Math.acos(Math.cos(dist_AD) / Math.cos(XTD));
+        }
+    }
 }

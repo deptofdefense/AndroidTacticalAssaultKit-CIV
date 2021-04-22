@@ -203,7 +203,7 @@ public class PreferenceControl implements ConnectionListener {
         }
         sb.append("</preferences>\r\n");
 
-        try(BufferedWriter bw = new BufferedWriter(
+        try (BufferedWriter bw = new BufferedWriter(
                 IOProviderFactory.getFileWriter(configFile))) {
             bw.write(sb.toString());
         } catch (IOException e) {

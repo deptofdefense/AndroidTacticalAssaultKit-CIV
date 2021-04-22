@@ -1,4 +1,7 @@
 #include "renderer/raster/tilematrix/GLTile.h"
+
+#include "feature/GeometryTransformer.h"
+#include "renderer/core/controls/SurfaceRendererControl.h"
 #include "renderer/raster/tilematrix/GLTilePatch.h"
 #include "renderer/raster/tilematrix/GLZoomLevel.h"
 #include "math/Point2.h"
@@ -34,7 +37,8 @@ GLTile::GLTile(GLTiledLayerCore *core, GLTilePatch *patch, int tileX, int tileY)
       tileZ(patch->getParent()->info.level),
       textureKey(),
       borrowers(),
-      tileVersion(-1) {
+      tileVersion(-1),
+      lastPumpDrawn(-1) {
     Feature::Envelope2 tileBounds;
     TAK::Engine::Raster::TileMatrix::TileMatrix_getTileBounds(&tileBounds, *(core->matrix), tileZ, tileX, tileY);
     projMinX = tileBounds.minX;
@@ -185,8 +189,10 @@ bool GLTile::checkForCachedTexture() {
     return true;
 }
 
-bool GLTile::renderCommon(const TAK::Engine::Renderer::Core::GLMapView2 &view, int renderPass) {
+bool GLTile::renderCommon(const TAK::Engine::Renderer::Core::GLGlobeBase &view, int renderPass) {
     if (!TAK::Engine::Util::MathUtils_hasBits(renderPass, getRenderPass())) return false;
+
+    lastPumpDrawn = view.renderPass->renderPump;
 
     do {
         if (this->state == State::UNRESOLVED) {
@@ -286,7 +292,7 @@ bool GLTile::renderCommon(const TAK::Engine::Renderer::Core::GLMapView2 &view, i
     pointD.y = projMinY;
     pointD.z = 0.0;
     core->proj->inverse(&geo, pointD);
-    view.scene.forward(&pointD, geo);
+    view.renderPass->scene.forward(&pointD, geo);
     *vCoords = static_cast<float>(pointD.x);
     vCoords++;
     *vCoords = static_cast<float>(pointD.y);
@@ -297,7 +303,7 @@ bool GLTile::renderCommon(const TAK::Engine::Renderer::Core::GLMapView2 &view, i
     pointD.y = projMaxY;
     pointD.z = 0.0;
     core->proj->inverse(&geo, pointD);
-    view.scene.forward(&pointD, geo);
+    view.renderPass->scene.forward(&pointD, geo);
     *vCoords = static_cast<float>(pointD.x);
     vCoords++;
     *vCoords = static_cast<float>(pointD.y);
@@ -308,7 +314,7 @@ bool GLTile::renderCommon(const TAK::Engine::Renderer::Core::GLMapView2 &view, i
     pointD.y = projMinY;
     pointD.z = 0.0;
     core->proj->inverse(&geo, pointD);
-    view.scene.forward(&pointD, geo);
+    view.renderPass->scene.forward(&pointD, geo);
     *vCoords = static_cast<float>(pointD.x);
     vCoords++;
     *vCoords = static_cast<float>(pointD.y);
@@ -319,7 +325,7 @@ bool GLTile::renderCommon(const TAK::Engine::Renderer::Core::GLMapView2 &view, i
     pointD.y = projMaxY;
     pointD.z = 0.0;
     core->proj->inverse(&geo, pointD);
-    view.scene.forward(&pointD, geo);
+    view.renderPass->scene.forward(&pointD, geo);
     *vCoords = static_cast<float>(pointD.x);
     vCoords++;
     *vCoords = static_cast<float>(pointD.y);
@@ -330,7 +336,7 @@ bool GLTile::renderCommon(const TAK::Engine::Renderer::Core::GLMapView2 &view, i
     return true;
 }
 
-TAK::Engine::Util::TAKErr GLTile::batch(const TAK::Engine::Renderer::Core::GLMapView2 &view, const int renderPass,
+TAK::Engine::Util::TAKErr GLTile::batch(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const int renderPass,
                                         TAK::Engine::Renderer::GLRenderBatch2 &batch) NOTHROWS {
     if (!renderCommon(view, renderPass)) {
         // XXX - borrowed texture support
@@ -344,7 +350,7 @@ TAK::Engine::Util::TAKErr GLTile::batch(const TAK::Engine::Renderer::Core::GLMap
                 core->g, core->b, core->a);
 }
 
-void GLTile::debugDraw(const TAK::Engine::Renderer::Core::GLMapView2 &view) {
+void GLTile::debugDraw(const TAK::Engine::Renderer::Core::GLGlobeBase &view) {
     float dbg[8];
     TAK::Engine::Core::GeoPoint2 geo;
     Math::Point2<double> pointD;
@@ -353,28 +359,28 @@ void GLTile::debugDraw(const TAK::Engine::Renderer::Core::GLMapView2 &view) {
     pointD.y = projMinY;
     pointD.z = 0.0;
     core->proj->inverse(&geo, pointD);
-    view.forward(&pointF, geo);
+    view.renderPass->scene.forward(&pointF, geo);
     dbg[0] = pointF.x;
     dbg[1] = pointF.y;
     pointD.x = projMinX;
     pointD.y = projMaxY;
     pointD.z = 0.0;
     core->proj->inverse(&geo, pointD);
-    view.forward(&pointF, geo);
+    view.renderPass->scene.forward(&pointF, geo);
     dbg[2] = pointF.x;
     dbg[3] = pointF.y;
     pointD.x = projMaxX;
     pointD.y = projMaxY;
     pointD.z = 0.0;
     core->proj->inverse(&geo, pointD);
-    view.forward(&pointF, geo);
+    view.renderPass->scene.forward(&pointF, geo);
     dbg[4] = pointF.x;
     dbg[5] = pointF.y;
     pointD.x = projMaxX;
     pointD.y = projMinY;
     pointD.z = 0.0;
     core->proj->inverse(&geo, pointD);
-    view.forward(&pointF, geo);
+    view.renderPass->scene.forward(&pointF, geo);
     dbg[6] = pointF.x;
     dbg[7] = pointF.y;
 
@@ -391,7 +397,7 @@ void GLTile::debugDraw(const TAK::Engine::Renderer::Core::GLMapView2 &view) {
     pointD.y = (projMinY + projMaxY) / 2.0;
     pointD.z = 0.0;
     core->proj->inverse(&geo, pointD);
-    view.forward(&pointF, geo);
+    view.renderPass->scene.forward(&pointF, geo);
     fixedPipe->glPushMatrix();
     fixedPipe->glTranslatef(pointF.x + 5, pointF.y + 20, 0.0f);
 
@@ -408,7 +414,7 @@ void GLTile::debugDraw(const TAK::Engine::Renderer::Core::GLMapView2 &view) {
     fixedPipe->glPopMatrix();
 }
 
-void GLTile::draw(const TAK::Engine::Renderer::Core::GLMapView2 &view, const int renderPass) NOTHROWS {
+void GLTile::draw(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const int renderPass) NOTHROWS {
     if (!renderCommon(view, renderPass)) {
         if (TAK::Engine::Util::MathUtils_hasBits(renderPass, getRenderPass())) {
             do {
@@ -513,7 +519,7 @@ std::string GLTile::getTileTextureKey(const GLTiledLayerCore &core, int zoom, in
 }
 
 GLTile::BitmapLoadContext::BitmapLoadContext(bool refreshOnComplete, std::shared_ptr<TAK::Engine::Raster::TileMatrix::TileMatrix> &matrix,
-                                             const TAK::Engine::Renderer::Core::GLMapView2 &view, int tileX, int tileY, int tileZ,
+                                             const TAK::Engine::Renderer::Core::GLGlobeBase &view, int tileX, int tileY, int tileZ,
                                              int tileDrawVersion)
     : vetoed(false),
       refreshOnComplete(refreshOnComplete),
@@ -541,9 +547,17 @@ std::shared_ptr<TAK::Engine::Renderer::Bitmap2> GLTile::BitmapLoadContext::load(
         TAK::Engine::Util::TAKErr err = ctx->matrix->getTile(bitmap, ctx->tileZ, ctx->tileX, ctx->tileY);
 
         // post a refresh
-        if (ctx->refreshOnComplete)
+        if (ctx->refreshOnComplete) {
             ctx->view.getRenderContext().requestRefresh();
-
+            
+            auto ctrl = ctx->view.getSurfaceRendererControl();
+            if (ctrl) {
+                TAK::Engine::Feature::Envelope2 tileBounds;
+                TAK::Engine::Raster::TileMatrix::TileMatrix_getTileBounds(&tileBounds, *ctx->matrix, ctx->tileZ, ctx->tileX, ctx->tileY);
+                TAK::Engine::Feature::GeometryTransformer_transform(&tileBounds, tileBounds, ctx->matrix->getSRID(), 4326);
+                ctrl->markDirty(tileBounds, false);
+            }
+        }
         if (err != TAK::Engine::Util::TE_Ok)
             throw std::exception("Error loading tile bitmap");
     }

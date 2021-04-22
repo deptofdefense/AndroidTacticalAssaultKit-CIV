@@ -30,7 +30,7 @@ final class Tileset {
         tileset.root = Tile.parse(parent, json.optJSONObject("root"));
         tileset.properties = json.optJSONObject("properties");
         // XXX - max screen space error
-        tileset.maxScreenSpaceError = 32d;
+        tileset.maxScreenSpaceError = 16d;
         return tileset;
     }
 }

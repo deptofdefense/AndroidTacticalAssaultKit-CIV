@@ -302,6 +302,20 @@ public abstract class LocalRasterDataStore extends AbstractRasterDataStore imple
         this.removeNoSync(file, false);
         return this.addNoSync(file, null, null, true);
     }
+
+    /**
+     * Update extra metadata for the specified layer.
+     * By default this will perform a standard full update. Sub-classes are
+     * expected to perform a more optimized update.
+     *
+     * @param info Layer descriptor
+     * @return  <code>true</code> if the layers were successfully updated,
+     *          <code>false</code> otherwise
+     * @throws Exception Database error
+     */
+    public boolean updateExtraData(DatasetDescriptor info) throws Exception {
+        return update(info);
+    }
     
     /**
      * Removes all layers from this data store.

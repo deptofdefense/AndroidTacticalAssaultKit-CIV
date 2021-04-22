@@ -18,11 +18,11 @@ namespace TAK {
                 public :
                     ~GLBatchGeometryCollection3() NOTHROWS;
                 public :
-                    virtual void draw(const TAK::Engine::Renderer::Core::GLMapView2 &view, const int render_pass) NOTHROWS override;
+                    virtual void draw(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const int render_pass) NOTHROWS override;
                 public :
                     virtual void release() NOTHROWS override;
                 public :
-                    virtual Util::TAKErr batch(const TAK::Engine::Renderer::Core::GLMapView2 &view, const int render_pass, TAK::Engine::Renderer::GLRenderBatch2 &batch) NOTHROWS override;
+                    virtual Util::TAKErr batch(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const int render_pass, TAK::Engine::Renderer::GLRenderBatch2 &batch) NOTHROWS override;
                 public :
                     virtual Util::TAKErr setStyle(TAK::Engine::Feature::StylePtr_const &&value) NOTHROWS override;
                     virtual Util::TAKErr setStyle(const std::shared_ptr<const atakmap::feature::Style> &value) NOTHROWS override;

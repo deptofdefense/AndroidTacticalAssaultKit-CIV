@@ -9,6 +9,7 @@ import com.atakmap.android.maps.graphics.GLFloatArray;
 import com.atakmap.android.maps.graphics.GLIcon;
 import com.atakmap.android.maps.graphics.GLImageCache;
 import com.atakmap.android.widgets.AngleOverlayShape;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.maps.assets.Icon;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.MapRenderer;
@@ -19,6 +20,11 @@ import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLNinePatch;
 import com.atakmap.opengl.GLText;
 
+/**
+ * @deprecated Use {@link com.atakmap.android.maps.graphics.GLAngleOverlay2}
+ */
+@Deprecated
+@DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
 public class GLAngleOverlay extends GLAutoSizeAngleOverlay {
 
     private GLIcon _icon;
@@ -71,13 +77,18 @@ public class GLAngleOverlay extends GLAutoSizeAngleOverlay {
         return true;
     }
 
-    private static PointD unwrapAndForward(GLMapView ortho, GeoPoint g, PointD xyz) {
-        if(g != ortho.scratch.geo)
+    private static PointD unwrapAndForward(GLMapView ortho, GeoPoint g,
+            PointD xyz) {
+        if (g != ortho.scratch.geo)
             ortho.scratch.geo.set(g);
         // handle IDL crossing
-        if(ortho.drawSrid == 4326 && ortho.currentPass.crossesIDL && ortho.currentPass.drawLng*ortho.scratch.geo.getLongitude() < 0d)
-            ortho.scratch.geo.set(ortho.scratch.geo.getLatitude(), ortho.scratch.geo.getLongitude()+(360d*Math.signum(ortho.drawLng)));
-        if(xyz == null)
+        if (ortho.drawSrid == 4326 && ortho.currentPass.crossesIDL
+                && ortho.currentPass.drawLng
+                        * ortho.scratch.geo.getLongitude() < 0d)
+            ortho.scratch.geo.set(ortho.scratch.geo.getLatitude(),
+                    ortho.scratch.geo.getLongitude()
+                            + (360d * Math.signum(ortho.drawLng)));
+        if (xyz == null)
             xyz = new PointD(0d, 0d, 0d);
         ortho.currentPass.scene.forward(ortho.scratch.geo, xyz);
         return xyz;
@@ -85,7 +96,8 @@ public class GLAngleOverlay extends GLAutoSizeAngleOverlay {
 
     private static PointF unwrapAndForward(GLMapView ortho, GeoPoint g) {
         unwrapAndForward(ortho, g, ortho.scratch.pointD);
-        return new PointF((float)ortho.scratch.pointD.x, (float)ortho.scratch.pointD.y);
+        return new PointF((float) ortho.scratch.pointD.x,
+                (float) ortho.scratch.pointD.y);
     }
 
     @Override

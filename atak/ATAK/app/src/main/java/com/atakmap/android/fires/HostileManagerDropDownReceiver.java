@@ -204,7 +204,7 @@ public class HostileManagerDropDownReceiver extends DropDownReceiver implements
         ArrayList<MapItemHolder> items = new ArrayList<>();
         File inputFile = FileSystemUtils.getItem("Databases/" + FILENAME);
         if (IOProviderFactory.exists(inputFile)) {
-            try(InputStream is = IOProviderFactory.getInputStream(inputFile)) {
+            try (InputStream is = IOProviderFactory.getInputStream(inputFile)) {
                 byte[] temp = new byte[is.available()];
                 int read = is.read(temp);
                 String menuString = new String(temp, 0, read,
@@ -251,21 +251,27 @@ public class HostileManagerDropDownReceiver extends DropDownReceiver implements
 
         if (IOProviderFactory.exists(outputFile))
             FileSystemUtils.delete(outputFile);
-        try(OutputStream os = IOProviderFactory.getOutputStream(outputFile)) {
-            StringBuilder builder = new StringBuilder();
-            synchronized (lock) {
-                for (MapItem item : hostilesListBase) {
-                    if (item != null) {
-                        builder.append(item.getUID())
-                                .append("\t")
-                                .append(item
-                                        .getMetaInteger("textColor",
-                                                HostileListItem.WHITE))
-                                .append("\r\n");
-                    }
+
+        StringBuilder builder = new StringBuilder();
+        synchronized (lock) {
+            if (hostilesListBase.isEmpty()){
+                return;
+            }
+            for (MapItem item : hostilesListBase) {
+                if (item != null) {
+                    builder.append(item.getUID())
+                            .append("\t")
+                            .append(item
+                                    .getMetaInteger("textColor",
+                                            HostileListItem.WHITE))
+                            .append("\r\n");
                 }
             }
-            try(InputStream is = new ByteArrayInputStream(builder.toString().getBytes())) {
+        }
+
+        try (OutputStream os = IOProviderFactory.getOutputStream(outputFile)) {
+            try (InputStream is = new ByteArrayInputStream(
+                    builder.toString().getBytes())) {
                 FileSystemUtils.copy(is, os);
             }
         } catch (IOException e) {

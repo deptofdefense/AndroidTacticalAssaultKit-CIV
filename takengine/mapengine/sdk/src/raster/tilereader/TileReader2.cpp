@@ -27,7 +27,6 @@ namespace {
 
 TileReader2::TileReader2(const char *uri_) NOTHROWS
     : uri(uri_),
-      asynchronousIO(nullptr),
       asyncRequestId(1),
       readLock(Thread::TEMT_Recursive),
       valid(true),
@@ -35,40 +34,7 @@ TileReader2::TileReader2(const char *uri_) NOTHROWS
 {}
 
 TileReader2::~TileReader2()
-{
-    do {
-        TAKErr code(TE_Ok);
-        Thread::Lock lock(readLock);
-
-        if (this->asynchronousIO != nullptr) {
-            // abort all of our pending requests
-            code = this->asynchronousIO->abortRequests(this);
-            TE_CHECKBREAK_CODE(code);
-        }
-
-        // XXX - move onto async IO thread ??? we could get stuck here for
-        //       a while if there is a request being serviced that hasn't
-        //       been canceled
-        // mark as invalid to prevent final possible asynchronous read after
-        // this method returns
-        this->valid = false;
-
-        TE_CHECKBREAK_CODE(code);
-    } while (false);
-
-    asynchronousIO.reset();
-}
-
-void TileReader2::installAsynchronousIO(std::shared_ptr<AsynchronousIO> io)
-{
-    if (this->asynchronousIO != nullptr)
-        return;
-
-    this->asynchronousIO = io;
-    if (!this->asynchronousIO) {
-        this->asynchronousIO = std::make_shared<AsynchronousIO>();
-    }
-}
+{}
 
 TAKErr TileReader2::getUri(Port::String &value) NOTHROWS
 {
@@ -173,86 +139,10 @@ TAKErr TileReader2::read(uint8_t *data, const size_t level, const int64_t tileCo
     return code;
 }
 
-TAKErr TileReader2::asyncRead(const int level, const int64_t tileColumn, const int64_t tileRow,
-                              AsynchronousReadRequestListener *callback) NOTHROWS
+int TileReader2::nextRequestId() NOTHROWS
 {
-    TAKErr code(TE_Ok);
-
-    {
-        int64_t srcX;
-        code = this->getTileSourceX(&srcX, level, tileColumn);
-        TE_CHECKRETURN_CODE(code);
-
-        int64_t srcY;
-        code = this->getTileSourceY(&srcY, level, tileRow);
-        TE_CHECKRETURN_CODE(code);
-
-        int64_t srcW;
-        code = this->getTileSourceWidth(&srcW, level, tileColumn);
-        TE_CHECKRETURN_CODE(code);
-
-        int64_t srcH;
-        code = this->getTileSourceHeight(&srcH, level, tileRow);
-        TE_CHECKRETURN_CODE(code);
-
-        size_t dstW;
-        code = this->getTileWidth(&dstW, level, tileColumn);
-        TE_CHECKRETURN_CODE(code);
-
-        size_t dstH;
-        code = this->getTileHeight(&dstH, level, tileRow);
-        TE_CHECKRETURN_CODE(code);
-
-        Thread::LockPtr lock(nullptr, nullptr);
-        TAK::Engine::Thread::Lock_create(lock, readLock);
-        code = this->asyncRead(
-            new ReadRequest(*this, this->asyncRequestId++, srcX, srcY, srcW, srcH, dstW, dstH, level, tileColumn, tileRow, callback));
-        TE_CHECKRETURN_CODE(code);
-    }
-
-    return code;
-}
-
-TAKErr TileReader2::asyncRead(const int64_t srcX, const int64_t srcY, const int64_t srcW, const int64_t srcH, const size_t dstW,
-                              const size_t dstH, AsynchronousReadRequestListener *callback) NOTHROWS
-{
-    TAKErr code(TE_Ok);
-
-    {
-        Thread::LockPtr lock(nullptr, nullptr);
-        TAK::Engine::Thread::Lock_create(lock, readLock);
-        code = this->asyncRead(new ReadRequest(*this, this->asyncRequestId++, srcX, srcY, srcW, srcH, dstW, dstH, -1, -1, -1, callback));
-        TE_CHECKRETURN_CODE(code);
-    }
-
-    return code;
-}
-
-TAKErr TileReader2::asyncRead(ReadRequest *rr) NOTHROWS
-{
-    TAKErr code(TE_Ok);
-
-    rr->callback->requestCreated(rr->id);
-    code = this->asynchronousIO->runLater(this, rr, ReadRequest_run, ReadRequest_abort, ReadRequest_cleanup);
-    if (code != TE_Ok)
-        delete rr;
-    TE_CHECKRETURN_CODE(code);
-
-    return code;
-}
-
-TAKErr TileReader2::asyncCancel(int id) NOTHROWS
-{
-    TAKErr code(TE_Ok);
-    code = this->asynchronousIO->cancelRequests(this, ReadRequest_cancelcheck, &id);
-    return code;
-}
-
-TAKErr TileReader2::asyncAbort(AsynchronousReadRequestListener &callback) NOTHROWS
-{
-    TAKErr code(TE_Ok);
-    code = this->asynchronousIO->abortRequests(this, ReadRequest_abortcheck, &callback);
-    return code;
+    TAK::Engine::Thread::Lock lock(this->idLock);
+    return asyncRequestId++;
 }
 
 TAKErr TileReader2::cancel() NOTHROWS
@@ -261,13 +151,12 @@ TAKErr TileReader2::cancel() NOTHROWS
     return code;
 }
 
-TAKErr TileReader2::fill(ReadRequest &request) NOTHROWS
+TAKErr TileReader2::fill(uint8_t *buffer, ReadRequest &request) NOTHROWS
 {
     TAKErr code(TE_Ok);
 
     {
-        Thread::LockPtr lock(nullptr, nullptr);
-        TAK::Engine::Thread::Lock_create(lock, readLock);
+        Thread::Lock lock(readLock);
         if (!this->valid)
             request.canceled = true;
 
@@ -277,39 +166,18 @@ TAKErr TileReader2::fill(ReadRequest &request) NOTHROWS
             return request.canceled ? TE_Canceled : code;
         }
 
-        code = this->fillImpl(request);
-    }
-
-    return code;
-}
-
-TAKErr TileReader2::fillImpl(ReadRequest &request) NOTHROWS
-{
-    return this->fillDirect(request);
-}
-
-TAKErr TileReader2::fillDirect(ReadRequest &request) NOTHROWS
-{
-    TAKErr code;
-
-    size_t size;
-    code = this->getTransferSize(&size, request.dstW, request.dstH);
-    TE_CHECKRETURN_CODE(code);
-
-    uint8_t *readBuffer = nullptr;
-    code = asynchronousIO->getReadBuffer(&readBuffer, size);
-    TE_CHECKRETURN_CODE(code);
-
-    code = this->read(readBuffer, request.srcX, request.srcY, request.srcW, request.srcH, request.dstW, request.dstH);
-    if (code == TE_Canceled) // Note: minimizing debugging on cancel
-        return code;
-    TE_CHECKRETURN_CODE(code);
-
-    if (code == TE_Ok) {
-        Bitmap2::DataPtr data(readBuffer, Memory_leaker_const<uint8_t>);
-        Bitmap2::Format format;
-        getFormat(&format);
-        this->dispatchUpdate(request, Bitmap2(std::move(data), request.dstW, request.dstH, format));
+        code = this->read(buffer, request.srcX, request.srcY, request.srcW, request.srcH, request.dstW, request.dstH);
+        // minimize debugging
+        if (code == TE_Ok) {
+            Bitmap2::DataPtr data(buffer, Memory_leaker_const<uint8_t>);
+            Bitmap2::Format format;
+            getFormat(&format);
+            {
+                TAK::Engine::Thread::Lock cb_lock(request.lock);
+                if(request.callback)
+                    request.callback->requestUpdate(request.id, Bitmap2(std::move(data), request.dstW, request.dstH, format));
+            }
+        }
     }
 
     return code;
@@ -483,20 +351,6 @@ TAKErr TileReader2::isCanceled(bool *value, const ReadRequest &request) NOTHROWS
     return code;
 }
 
-TAKErr TileReader2::dispatchUpdate(ReadRequest &request, const Bitmap2 &data) NOTHROWS
-{
-    TAKErr code(TE_Ok);
-    request.callback->requestUpdate(request.id, data);
-    return code;
-}
-
-TAKErr TileReader2::dispatchError(ReadRequest &request, const TAKErr code, const char *msg) NOTHROWS
-{
-    // TAKErr code(TE_Ok);
-    request.callback->requestError(request.id, code, msg);
-    return code;
-}
-
 TAKErr TileReader2::getTransferSize(size_t *value, const size_t width, const size_t height) NOTHROWS
 {
     TAKErr code(TE_Ok);
@@ -576,13 +430,6 @@ TAKErr TileReader2::getControls(Port::Collection<Core::Control *> &ctrls) NOTHRO
     return code;
 }
 
-TAKErr TileReader2::asyncRun(void *opaque, AsyncRunnable runnable, AsyncRunnable cancel, AsyncRunnable cleanup) NOTHROWS
-{
-    TAKErr code(TE_Ok);
-    code = this->asynchronousIO->runLater(this, opaque, runnable, cancel, cleanup);
-    return code;
-}
-
 TAKErr TAK::Engine::Raster::TileReader::TileReader2_getNumResolutionLevels(size_t *value, const int64_t width_, const int64_t height_, const int64_t tileWidth,
                                            const int64_t tileHeight) NOTHROWS
 {
@@ -616,97 +463,151 @@ TileReader2::AsynchronousIO *TAK::Engine::Raster::TileReader::TileReader2_getMas
     return &masterIOThread;
 }
 
-void TileReader2::ReadRequest_run(TileReader2 *reader, void *opaque)
+void TileReader2::ReadRequest_run(uint8_t *readBuffer, ReadRequest &request) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    auto *request = static_cast<ReadRequest *>(opaque);
 
-    Thread::LockPtr lock(nullptr, nullptr);
-    TAK::Engine::Thread::Lock_create(lock, request->lock);
-    if (!request->callback)
-        // Aborted. Just return
-        return;
+    {
+        Thread::Lock lock(request.lock);
+        if (!request.callback)
+            // Aborted. Just return
+            return;
 
-    request->servicing = true;
-    request->callback->requestStarted(request->id);
- 
+        request.servicing = true;
+        request.callback->requestStarted(request.id);
+    }
+
     // int64_t s = SystemClock.elapsedRealtime();
     // result = TileReader.this->fill(ReadRequest.this);
-    code = reader->fill(*request);
+    code = request.owner->fill(readBuffer, request);
     // int64_t e = SystemClock.elapsedRealtime();
     // if(ReadRequest.this->tileColumn != -1)
     // Log.d(TAG, "read request (" + level + "," + tileColumn + "," +
     // tileRow + ") in " + (e-s) + "ms");
 
-    switch (code) {
+    {
+        Thread::Lock lock(request.lock);
+        if (!request.callback)
+            // Aborted. Just return
+            return;
+        AsynchronousReadRequestListener* const cb = request.callback;
+        // request is at terminal state; no further notifications
+        request.callback = nullptr;
+
+        switch (code) {
         case TE_Canceled:
-            request->callback->requestCanceled(request->id);
+            cb->requestCanceled(request.id);
             break;
         case TE_Ok:
-            request->callback->requestCompleted(request->id);
+            cb->requestCompleted(request.id);
             break;
         default:
-            request->callback->requestError(request->id, code, "ReadRequest_run error");
+            cb->requestError(request.id, code, "ReadRequest_run error");
             break;
-    }
+        }
 
-    request->servicing = false;
+        request.servicing = false;
+    }
 }
 
-void TileReader2::ReadRequest_abort(TileReader2 *reader, void *opaque)
+void TileReader2::ReadRequest_abort(ReadRequest &request) NOTHROWS
 {
-    auto *request = static_cast<ReadRequest *>(opaque);
-    Thread::LockPtr lock(nullptr, nullptr);
-    TAK::Engine::Thread::Lock_create(lock, request->lock);
-    if (!request->callback)
+    Thread::Lock lock(request.lock);
+    if (!request.callback)
         // Already aborted
         return;
 
-    request->cancel();
-    request->callback->requestCanceled(request->id);
+    request.cancel();
+    AsynchronousReadRequestListener* const cb = request.callback;
+    // request is canceled; no further notifications
+    request.callback = nullptr;
 
-    request->callback = nullptr;
-}
-
-void TileReader2::ReadRequest_cleanup(TileReader2 *reader, void *opaque)
-{
-    auto *request = static_cast<ReadRequest *>(opaque);
-    delete request;
-}
-
-bool TileReader2::ReadRequest_cancelcheck(TileReader2 *reader, AsyncRunnable action, void *requestOpaque, void *cancelOpaque)
-{
-    if (action == ReadRequest_run) {
-        auto *r = (ReadRequest *)requestOpaque;
-        int *checkId = (int *)cancelOpaque;
-        if (r->id == *checkId) {
-            r->cancel();
-            return true;
-        }
-    }
-    return false;
-}
-
-bool TileReader2::ReadRequest_abortcheck(TileReader2 *reader, AsyncRunnable action, void *requestOpaque, void *abortOpaque)
-{
-    if (action == ReadRequest_run) {
-        auto *r = (ReadRequest *)requestOpaque;
-        auto *checkcb = (AsynchronousReadRequestListener *)abortOpaque;
-        if (r->callback == checkcb) {
-            r->cancel();
-            return true;
-        }
-    }
-    return false;
+    cb->requestCanceled(request.id);
 }
 
 /**************************************************************************/
 // ReadRequest
 
-TileReader2::ReadRequest::ReadRequest(TileReader2 &owner_, const int id_, const int64_t srcX_, const int64_t srcY_, const int64_t srcW_,
+// XXX -
+namespace {
+    std::size_t getTileWidth(TileReader2& reader) NOTHROWS
+    {
+        std::size_t v;
+        if (reader.getTileWidth(&v) != TE_Ok)
+            return 0;
+        return v;
+    }
+    std::size_t getTileHeight(TileReader2& reader) NOTHROWS
+    {
+        std::size_t v;
+        if (reader.getTileHeight(&v) != TE_Ok)
+            return 0;
+        return v;
+    }
+    std::size_t getTileWidth(TileReader2& reader, const std::size_t level, int64_t tileCol) NOTHROWS
+    {
+        std::size_t v;
+        if (reader.getTileWidth(&v, level, tileCol) != TE_Ok)
+            return 0;
+        return v;
+    }
+    std::size_t getTileHeight(TileReader2& reader, const std::size_t level, int64_t tileRow) NOTHROWS
+    {
+        std::size_t v;
+        if (reader.getTileHeight(&v, level, tileRow) != TE_Ok)
+            return 0;
+        return v;
+    }
+    int64_t getTileSourceX(TileReader2& reader, const std::size_t level, int64_t tileCol) NOTHROWS
+    {
+        int64_t v;
+        if (reader.getTileSourceX(&v, level, tileCol) != TE_Ok)
+            return 0;
+        return v;
+    }
+    int64_t getTileSourceY(TileReader2& reader, const std::size_t level, int64_t tileRow) NOTHROWS
+    {
+        int64_t v;
+        if (reader.getTileSourceY(&v, level, tileRow) != TE_Ok)
+            return 0;
+        return v;
+    }
+    int64_t getTileSourceWidth(TileReader2& reader, const std::size_t level, int64_t tileCol) NOTHROWS
+    {
+        int64_t v;
+        if (reader.getTileSourceWidth(&v, level, tileCol) != TE_Ok)
+            return 0;
+        return v;
+    }
+    int64_t getTileSourceHeight(TileReader2& reader, const std::size_t level, int64_t tileRow) NOTHROWS
+    {
+        int64_t v;
+        if (reader.getTileSourceHeight(&v, level, tileRow) != TE_Ok)
+            return 0;
+        return v;
+    }
+}
+
+TileReader2::ReadRequest::ReadRequest(const std::shared_ptr<TileReader2> &owner, const int64_t srcX, const int64_t srcY, const int64_t srcW, const int64_t srcH,
+            const size_t dstW, const size_t dstH, const int level, const int64_t tileColumn, const int64_t tileRow,
+            AsynchronousReadRequestListener *callback) NOTHROWS :
+    ReadRequest(owner, owner->nextRequestId(), srcX, srcY, srcW, srcH, dstW, dstH, level, tileColumn, tileRow, callback, true)
+{}
+TileReader2::ReadRequest::ReadRequest(const std::shared_ptr<TileReader2> &owner, const int level, const int64_t tileColumn, const int64_t tileRow,
+            AsynchronousReadRequestListener *callback) NOTHROWS :
+    ReadRequest(owner,
+                ::getTileSourceX(*owner, level, tileColumn), ::getTileSourceY(*owner, level, tileRow),
+                ::getTileSourceWidth(*owner, level, tileColumn), ::getTileSourceHeight(*owner, level, tileRow),
+                ::getTileWidth(*owner, level, tileColumn), ::getTileHeight(*owner, level, tileRow),
+                level,
+                tileColumn,
+                tileRow,
+                callback)
+{}
+TileReader2::ReadRequest::ReadRequest(const std::shared_ptr<TileReader2> &owner_, const int id_, const int64_t srcX_, const int64_t srcY_, const int64_t srcW_,
                                       const int64_t srcH_, const size_t dstW_, const size_t dstH_, const int level_,
                                       const int64_t tileColumn_, const int64_t tileRow_,
-                                      AsynchronousReadRequestListener *callback_) NOTHROWS : owner(owner_),
+                                      AsynchronousReadRequestListener *callback_, bool) NOTHROWS : owner(owner_),
                                                                                              id(id_),
                                                                                              canceled(false),
                                                                                              servicing(false),
@@ -725,9 +626,17 @@ TileReader2::ReadRequest::ReadRequest(TileReader2 &owner_, const int id_, const 
 
 void TileReader2::ReadRequest::cancel() NOTHROWS
 {
+    TAK::Engine::Thread::Lock l(lock);
+    if (this->canceled)
+        return;
     this->canceled = true;
+    AsynchronousReadRequestListener* const cb = this->callback;
+    // request is canceled; no further notifications
+    this->callback = nullptr;
+    if (cb)
+        cb->requestCanceled(this->id);
     if (this->servicing)
-        this->owner.cancel();
+        this->owner->cancel();
 }
 
 /*****************************************************************************/
@@ -735,19 +644,13 @@ void TileReader2::ReadRequest::cancel() NOTHROWS
 
 TileReader2::AsynchronousReadRequestListener::~AsynchronousReadRequestListener() NOTHROWS {}
 
+TileReader2::ReadRequestPrioritizer::~ReadRequestPrioritizer() NOTHROWS {}
+
 /*****************************************************************************/
 // AsynchronousIO
 
-TileReader2::AsynchronousIO::AsynchronousIO() NOTHROWS : tasks(),
-                                                         currentTask(nullptr),
-                                                         syncOn(Thread::TEMT_Recursive),
-                                                         cv(),
-                                                         thread(nullptr, nullptr),
-                                                         dead(true),
-                                                         started(false),
-                                                         maxIdle(0LL),
-                                                         readBuffer(nullptr),
-                                                         readBufferLength(0)
+TileReader2::AsynchronousIO::AsynchronousIO() NOTHROWS : 
+    AsynchronousIO(0LL)
 {}
 
 TileReader2::AsynchronousIO::AsynchronousIO(const int64_t maxIdle_) NOTHROWS : tasks(),
@@ -757,27 +660,12 @@ TileReader2::AsynchronousIO::AsynchronousIO(const int64_t maxIdle_) NOTHROWS : t
                                                                                thread(nullptr, nullptr),
                                                                                dead(true),
                                                                                started(false),
-                                                                               maxIdle(maxIdle_),
-                                                                               readBuffer(nullptr),
-                                                                               readBufferLength(0)
+                                                                               maxIdle(maxIdle_)
 {}
 
 TileReader2::AsynchronousIO::~AsynchronousIO() NOTHROWS
 {
-    delete[] readBuffer;
-}
-
-TAKErr TileReader2::AsynchronousIO::getReadBuffer(uint8_t **value, const size_t size) NOTHROWS
-{
-    TAKErr code(TE_Ok);
-    if (this->readBufferLength < size) {
-        if (this->readBuffer)
-            delete[] this->readBuffer;
-        this->readBuffer = new uint8_t[size];
-        this->readBufferLength = size;
-    }
-    *value = this->readBuffer;
-    return code;
+    release();
 }
 
 TAKErr TileReader2::AsynchronousIO::release() NOTHROWS
@@ -788,7 +676,7 @@ TAKErr TileReader2::AsynchronousIO::release() NOTHROWS
         TAK::Engine::Thread::Lock_create(lock, syncOn);
         code = this->abortRequests(nullptr);
         this->dead = true;
-        this->cv.signal(*lock.get());
+        this->cv.broadcast(*lock.get());
     }
     return code;
 }
@@ -797,99 +685,32 @@ TAKErr TileReader2::AsynchronousIO::abortRequests(TileReader2 *reader) NOTHROWS
 {
     TAKErr code(TE_Ok);
     {
-        Thread::LockPtr lock(nullptr, nullptr);
-        TAK::Engine::Thread::Lock_create(lock, syncOn);
+        Thread::Lock lock(syncOn);
 
-        auto iter = this->tasks.begin();
-        Task t;
-        while (iter != this->tasks.end()) {
-            t = *iter;
-            if (reader == nullptr || t.reader == reader) {
-                if (t.abort)
-                    t.abort(t.reader, t.opaque);
-                if (t.cleanup)
-                    t.cleanup(t.reader, t.opaque);
-                iter = this->tasks.erase(iter);
-            } else {
-                iter++;
-            }
+        auto requests = this->tasks.find(reader);
+        if (requests != this->tasks.end()) {
+            requests->second.clear();
+            for (auto request : requests->second)
+                ReadRequest_abort(*request);
+            this->tasks.erase(requests);
         }
 
-        if (currentTask && (!reader || currentTask->reader == reader)) {
+        if (currentTask && (!reader || currentTask->owner.get() == reader)) {
             // leave currentTask alone; it belongs to the io thread and that will clean it up
-            if (currentTask->abort)
-                currentTask->abort(currentTask->reader, currentTask->opaque);
+            ReadRequest_abort(*currentTask);
             code = TE_Ok;
         }
     }
     return code;
 }
 
-TAKErr TileReader2::AsynchronousIO::abortRequests(TileReader2 *reader, AsyncCancelCheck check, void *opaque) NOTHROWS
+TAKErr TileReader2::AsynchronousIO::asyncRead(const std::shared_ptr<ReadRequest> &rr) NOTHROWS
 {
     TAKErr code(TE_Ok);
+
+    rr->callback->requestCreated(rr->id);
     {
-        Thread::LockPtr lock(nullptr, nullptr);
-        TAK::Engine::Thread::Lock_create(lock, syncOn);
-
-        auto iter = this->tasks.begin();
-        Task t;
-        while (iter != this->tasks.end()) {
-            t = *iter;
-            if ((reader == nullptr || t.reader == reader) && check(t.reader, t.action, t.opaque, opaque)) {
-                if (t.abort)
-                    t.abort(t.reader, t.opaque);
-                if (t.cleanup)
-                    t.cleanup(t.reader, t.opaque);
-                iter = this->tasks.erase(iter);
-                code = TE_Ok;
-            } else {
-                iter++;
-            }
-        }
-
-        if (currentTask && (!reader || currentTask->reader == reader) &&
-            check(currentTask->reader, currentTask->action, currentTask->opaque, opaque)) {
-            // leave currentTask alone; it belongs to the io thread and that will clean it up
-            if (currentTask->abort)
-                currentTask->abort(currentTask->reader, currentTask->opaque);
-            code = TE_Ok;
-        }
-    }
-    return code;
-}
-
-Util::TAKErr TileReader2::AsynchronousIO::cancelRequests(TileReader2 *reader, AsyncCancelCheck check, void *opaque) NOTHROWS
-{
-    Thread::LockPtr lock(nullptr, nullptr);
-    TAK::Engine::Thread::Lock_create(lock, syncOn);
-    TAKErr code(TE_InvalidArg);
-
-    auto iter = this->tasks.begin();
-    Task t;
-    while (iter != this->tasks.end()) {
-        t = *iter;
-        if (reader == nullptr || t.reader == reader) {
-            if (check(t.reader, t.action, t.opaque, opaque)) {
-                code = TE_Ok;
-            }
-        }
-        iter++;
-    }
-    if (currentTask && (!reader || currentTask->reader == reader) &&
-        check(currentTask->reader, currentTask->action, currentTask->opaque, opaque))
-        code = TE_Ok;
-
-    return code;
-}
-
-TAKErr TileReader2::AsynchronousIO::runLater(TileReader2 *reader, void *opaque, AsyncRunnable action, AsyncRunnable abort,
-                                             AsyncRunnable cleanup) NOTHROWS
-{
-    TAKErr code(TE_Ok);
-    {
-        Thread::LockPtr lock(nullptr, nullptr);
-        TAK::Engine::Thread::Lock_create(lock, syncOn);
+        Thread::Lock lock(syncOn);
 
         this->dead = false;
         if (!this->started) {
@@ -898,7 +719,7 @@ TAKErr TileReader2::AsynchronousIO::runLater(TileReader2 *reader, void *opaque, 
             param.name = "tilereader-async-io-thread";
             param.priority = Thread::TETP_Lowest;
 
-            code = Thread_start(this->thread, threadRun, this, param);
+            code = TAK::Engine::Thread::ThreadPool_create(this->thread, 5, threadRun, this);
 
             if (code == TE_Ok) {
                 this->started = true;
@@ -907,29 +728,79 @@ TAKErr TileReader2::AsynchronousIO::runLater(TileReader2 *reader, void *opaque, 
             }
         }
         if (this->started) {
-            this->tasks.push_back(Task(reader, opaque, action, abort, cleanup));
-            this->cv.signal(*lock.get());
+            std::vector<std::shared_ptr<ReadRequest>> &requests = this->tasks[rr->owner.get()];
+            requests.push_back(rr);
+            struct Cmp
+            {
+                ReadRequestPrioritizer* cmp{ nullptr };
+                bool operator()(const std::shared_ptr<ReadRequest>& a, const std::shared_ptr<ReadRequest>& b) NOTHROWS
+                {
+                    // REMEMBER: requests are pulled of the _tail_ of the queue
+
+                    // canceled requests bubble to the top
+                    if (a->canceled && b->canceled)
+                        return a->id > b->id;
+                    else if (a->canceled)
+                        return false;
+                    else if (b->canceled)
+                        return true;
+
+                    // if a prioritizer is defined, use it
+                    if (cmp) {
+                        const bool a_b = cmp->compare(*a, *b);
+                        const bool b_a = cmp->compare(*b, *a);
+                        // if not equal, return priorization
+                        if (a_b != b_a)
+                            return a_b;
+                    }
+
+                    // prioritize high resolution tiles over low resolution tiles
+                    if(a->level < b->level)
+                        return false;
+                    else if(a->level > b->level)
+                        return true;
+                    else
+                        return a->id<b->id; // LIFO on read requests
+                }
+            };
+            Cmp cmp;
+            auto prioritizer = this->requestPrioritizers.find(rr->owner.get());
+            if (prioritizer != this->requestPrioritizers.end())
+                cmp.cmp = prioritizer->second.get();
+            std::sort(requests.begin(), requests.end(), cmp);
+
+            this->cv.signal(lock);
         }
     }
     return code;
 }
 
+void TileReader2::AsynchronousIO::setReadRequestPrioritizer(const TileReader2& reader, ReadRequestPrioritizerPtr&& prioritizer) NOTHROWS
+{
+    Thread::Lock lock(syncOn);
+    if (!prioritizer) {
+        this->requestPrioritizers.erase(&reader);
+    } else {
+        this->requestPrioritizers.insert(std::make_pair(&reader, std::move(prioritizer)));
+    }
+}
+
 TAKErr TileReader2::AsynchronousIO::runImpl() NOTHROWS
 {
     TAKErr code(TE_Ok);
-    Task task;
+    struct {
+        array_ptr<uint8_t> data;
+        std::size_t length{ 0u };
+    } readBuffer;
+
     while (true) {
+        std::shared_ptr<ReadRequest> task;
         // synchronized (this->syncOn)
         {
-            Thread::LockPtr lock(nullptr, nullptr);
-            TAK::Engine::Thread::Lock_create(lock, syncOn);
+            Thread::Lock lock(syncOn);
 
             // Clear executing reference
-            currentTask = nullptr;
-            if (task.cleanup) {
-                task.cleanup(task.reader, task.opaque);
-                task = Task();
-            }
+            currentTask.reset();
 
             if (this->dead) {
                 this->started = false;
@@ -938,12 +809,8 @@ TAKErr TileReader2::AsynchronousIO::runImpl() NOTHROWS
 
             if (this->tasks.size() < 1) {
                 auto start = std::chrono::high_resolution_clock::now();
-                if (this->readBuffer)
-                    delete[] this->readBuffer;
-                this->readBuffer = nullptr;
-                this->readBufferLength = 0;
 
-                code = this->cv.wait(*lock.get(), this->maxIdle);
+                code = this->cv.wait(lock, this->maxIdle);
                 TE_CHECKBREAK_CODE(code);
 
                 auto end = std::chrono::high_resolution_clock::now();
@@ -955,12 +822,32 @@ TAKErr TileReader2::AsynchronousIO::runImpl() NOTHROWS
                 continue;
             }
 
-            task = this->tasks.front();
-            this->tasks.pop_front();
-            currentTask = &task;
+            std::vector<std::shared_ptr<ReadRequest>>* requests = &this->tasks.begin()->second;
+            for (auto it = this->tasks.begin(); it != this->tasks.end(); it++) {
+                if (it->second.back()->id < requests->back()->id)
+                    requests = &it->second;
+            }
+
+            task = requests->back();
+            requests->pop_back();
+            if (requests->empty())
+                this->tasks.erase(task->owner.get());
+            currentTask = task;
         }
 
-        task.action(task.reader, task.opaque);
+        do {
+            std::size_t req;
+            if (task->owner->getTransferSize(&req, task->dstW, task->dstH) != TE_Ok)
+                break;
+            if (readBuffer.length < req) {
+                readBuffer.length = 0u;
+                readBuffer.data.reset(new(std::nothrow) uint8_t[req]);
+                if (!readBuffer.data.get())
+                    break;
+                readBuffer.length = req;
+            }
+            ReadRequest_run(readBuffer.data.get(), *task);
+        } while (false);
     }
     return code;
 }

@@ -5,12 +5,16 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeSet;
 
+import android.graphics.Color;
 import android.util.Pair;
 
+import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.lang.Objects;
 import com.atakmap.map.MapRenderer;
@@ -50,7 +54,8 @@ public class GLDatasetRasterLayer2 extends GLAbstractDataStoreRasterLayer2 imple
             return null;
         }
     };
-    
+
+    /** sorts low GSD to head */
     private final static Comparator<DatasetDescriptor> MULTIPLEX_DATASET_COMP = new Comparator<DatasetDescriptor>() {
         @Override
         public int compare(DatasetDescriptor lhs, DatasetDescriptor rhs) {
@@ -122,8 +127,21 @@ public class GLDatasetRasterLayer2 extends GLAbstractDataStoreRasterLayer2 imple
         // apply alpha value on GLMapLayer2
         ColorControl ctrl = renderer.getControl(ColorControl.class);
         if(ctrl != null) {
-            int alpha = (int)(this.subject.getTransparency(renderer.getInfo().getName())*255f);
-            ctrl.setColor((alpha<<24)|0x00FFFFFF);
+            // Also handle color modulation here (specified by KML)
+            DatasetDescriptor desc = renderer.getInfo();
+            String colorStr = desc.getExtraData("color");
+            int color = Color.WHITE;
+            if (!FileSystemUtils.isEmpty(colorStr)) {
+                try {
+                    color = Integer.parseInt(colorStr);
+                } catch (Exception ignored) {
+                }
+            }
+            // User-specified alpha
+            int alpha = (int)(this.subject.getTransparency(desc.getName())*255f);
+            color = (alpha << 24) | (color & 0xFFFFFF);
+            if (color != ctrl.getColor())
+                ctrl.setColor(color);
         }
     }
 
@@ -158,6 +176,7 @@ public class GLDatasetRasterLayer2 extends GLAbstractDataStoreRasterLayer2 imple
     
     @Override
     protected void query(ViewState state, LinkedList<DatasetDescriptor> retval) {
+        Envelope[] aois;
         if (state.continuousScrollEnabled) {
 
             // Based on Google Earth's KML export format, raster datasets which
@@ -166,60 +185,45 @@ public class GLDatasetRasterLayer2 extends GLAbstractDataStoreRasterLayer2 imple
             // In order to ensure we query all visible datasets we'll need to
             // scan both the current unwrapped view state and the unwrapped
             // view state for the other hemisphere
-            ViewState hemi = this.newViewStateInstance();
-            LinkedList<DatasetDescriptor> sub = new LinkedList<DatasetDescriptor>();
-            Collection<DatasetDescriptor> results = new TreeSet<DatasetDescriptor>(MULTIPLEX_DATASET_COMP);
+            aois = new Envelope[2];
 
             // Scan current hemisphere
+            aois[0] = new Envelope(state.westBound, state.southBound, 0d, state.eastBound, state.northBound, 0d);
             boolean westHemi = state.drawLng < 0;
-            hemi.copy(state);
             if (state.crossesIDL) {
                 if (westHemi) {
-                    hemi.westBound = state.eastBound - 360;
-                    hemi.eastBound = state.westBound;
+                    aois[0].minX = state.eastBound - 360;
+                    aois[0].maxX = state.westBound;
                 } else {
-                    hemi.eastBound = state.westBound + 360;
-                    hemi.westBound = state.eastBound;
+                    aois[0].maxX = state.westBound + 360;
+                    aois[0].minX = state.eastBound;
                 }
             }
-            hemi.upperLeft.set(hemi.northBound, hemi.westBound);
-            hemi.upperRight.set(hemi.northBound, hemi.eastBound);
-            hemi.lowerRight.set(hemi.southBound, hemi.eastBound);
-            hemi.lowerLeft.set(hemi.southBound, hemi.westBound);
-            queryImpl(hemi, sub);
-            results.addAll(sub);
 
             // Scan opposing hemisphere
-            sub.clear();
-            hemi.copy(state);
+            aois[1] = new Envelope(state.westBound, state.southBound, 0d, state.eastBound, state.northBound, 0d);
             if (state.crossesIDL) {
                 if (westHemi) {
-                    hemi.eastBound = state.westBound + 360;
-                    hemi.westBound = state.eastBound;
+                    aois[1].maxX = state.westBound + 360;
+                    aois[1].minX = state.eastBound;
                 } else {
-                    hemi.westBound = state.eastBound - 360;
-                    hemi.eastBound = state.westBound;
+                    aois[1].minX = state.eastBound - 360;
+                    aois[1].maxX = state.westBound;
                 }
             } else {
                 if (westHemi) {
-                    hemi.eastBound += 360;
-                    hemi.westBound += 360;
+                    aois[1].maxX += 360;
+                    aois[1].minX += 360;
                 } else {
-                    hemi.eastBound -= 360;
-                    hemi.westBound -= 360;
+                    aois[1].maxX -= 360;
+                    aois[1].minX -= 360;
                 }
             }
-            hemi.upperLeft.set(hemi.northBound, hemi.westBound);
-            hemi.upperRight.set(hemi.northBound, hemi.eastBound);
-            hemi.lowerRight.set(hemi.southBound, hemi.eastBound);
-            hemi.lowerLeft.set(hemi.southBound, hemi.westBound);
-            queryImpl(hemi, sub);
-            results.addAll(sub);
-
-            retval.addAll(results);
         } else {
-            queryImpl(state, retval);
+            aois = new Envelope[] {new Envelope(state.westBound, state.southBound, 0d, state.eastBound, state.northBound, 0d)};
         }
+
+        queryImpl(state, aois, retval);
         
         Set<android.util.Pair<String, String>> attrs = new HashSet<android.util.Pair<String, String>>();
         for(DatasetDescriptor desc : retval) {
@@ -230,7 +234,7 @@ public class GLDatasetRasterLayer2 extends GLAbstractDataStoreRasterLayer2 imple
         this.attributionControl.setAttributions(attrs);
     }
 
-    private void queryImpl(ViewState state, LinkedList<DatasetDescriptor> retval) {
+    private void queryImpl(ViewState state, Envelope[] aois, LinkedList<DatasetDescriptor> retval) {
         boolean selectionIsStickyAuto = false;
         final int limit = ((DatasetRasterLayer2)this.subject).getDatasetLimit();
         String selection = (!subject.isAutoSelect() || (limit > 0)) ? ((State)state).selection : null;
@@ -248,10 +252,6 @@ public class GLDatasetRasterLayer2 extends GLAbstractDataStoreRasterLayer2 imple
             boolean inBounds = false;
             String autoSelect = null;
             Envelope mbb;
-            GeoBounds viewBnds = new GeoBounds(state.northBound,
-                                               state.westBound,
-                                               state.southBound,
-                                               state.eastBound);
 
             for(DatasetDescriptor info : ((State)state).renderables) {
                 if(Double.isNaN(maxRes) || info.getMaxResolution(null) < maxRes) {
@@ -262,7 +262,8 @@ public class GLDatasetRasterLayer2 extends GLAbstractDataStoreRasterLayer2 imple
                     minRes = info.getMinResolution(null);
                 }
                 mbb = info.getMinimumBoundingBox();
-                inBounds |= viewBnds.intersects(mbb.maxY, mbb.minX, mbb.minY, mbb.maxX);
+                for(Envelope viewBnds : aois)
+                    inBounds |= Rectangle.intersects(viewBnds.minX, viewBnds.minY, viewBnds.maxX, viewBnds.maxY, mbb.maxY, mbb.minX, mbb.minY, mbb.maxX);
             }
 
             if(inBounds && maxRes <= state.drawMapResolution && minRes >= state.drawMapResolution) {
@@ -282,19 +283,24 @@ public class GLDatasetRasterLayer2 extends GLAbstractDataStoreRasterLayer2 imple
             
         if(this.checkQueryThreadAbort())
             return;
-        
-        this.queryImpl(select, (State)state, retval, true);
+
+        SortedSet<DatasetDescriptor> results = new TreeSet<>(MULTIPLEX_DATASET_COMP);
+
+        this.queryImpl(select, (State)state, aois, results, true);
         
         // if we are in autoselect mode and there is a limit on the selection,
         // re-query using the selected datasets
-        if(select == null && (limit > 0 && retval.size() > 0)) {
-            select = new HashSet<String>();
+        if(select == null && (limit > 0 && results.size() > limit)) {
+            select = new HashSet<>();
             for(DatasetDescriptor info : retval)
                 select.add(info.getName());
-            retval.clear();
-            this.queryImpl(select, (State)state, retval, false);
+            results.clear();
+            this.queryImpl(select, (State)state, aois, results, false);
         }
-        
+
+        // query results, ordered low-to-high resolution
+        retval.clear();
+        retval.addAll(results);
 
         //System.out.println("[" + this.subject.getName() + "] selection=" + ((State)state).selection + " RESULTS: " + retval.size());
         //for(DatasetDescriptor d : retval)
@@ -310,11 +316,9 @@ public class GLDatasetRasterLayer2 extends GLAbstractDataStoreRasterLayer2 imple
         }
     }
     
-    private void queryImpl(Collection<String> selection, State state, LinkedList<DatasetDescriptor> retval, boolean notify) {
+    private void queryImpl(Collection<String> selection, State state, Envelope[] aois, SortedSet<DatasetDescriptor> retval, boolean notify) {
         final RasterDataStore dataStore = this.subject.getDataStore();
-        
-        String autoSelect = null;
-        int srid = -1;
+        final int limit = ((DatasetRasterLayer2) this.subject).getDatasetLimit();
 
         if(this.checkQueryThreadAbort())
             return;
@@ -326,78 +330,78 @@ public class GLDatasetRasterLayer2 extends GLAbstractDataStoreRasterLayer2 imple
         state.queryParams.names = selection;
         this.subject.filterQueryParams(state.queryParams);
 
-        RasterDataStore.DatasetDescriptorCursor result = null;
-        DatasetDescriptor layerInfo;
-        boolean first = true;
-        Envelope bnds = null;
-        try {
-            result = dataStore.queryDatasets(state.queryParams);
-            
-            Set<String> datasets = new HashSet<String>();
-            final int limit = ((DatasetRasterLayer2)this.subject).getDatasetLimit();
-            while(result.moveToNext()) {
-                if(this.checkQueryThreadAbort())
-                    break;
+        RasterDataStore.DatasetDescriptorCursor result;
+        for(Envelope aoi : aois) {
+            // prepare the
+            state.northBound = aoi.maxY;
+            state.westBound = aoi.minX;
+            state.southBound = aoi.minY;
+            state.eastBound = aoi.maxX;
 
-                layerInfo = result.get();
-                if(!this.subject.isVisible(layerInfo.getName()))
-                    continue;
-                Envelope mbb = layerInfo.getMinimumBoundingBox();
-                if(first) {
-                    // auto-select is dataset with maximum GSD
-                    autoSelect = layerInfo.getName();
-                    srid = layerInfo.getSpatialReferenceID();
-                    first = false;
-                    bnds = mbb;
-                } else {
-                    if(mbb.minX < bnds.minX)
-                        bnds.minX = mbb.minX;
-                    if(mbb.minY < bnds.minY)
-                        bnds.minY = mbb.minY;
-                    if(mbb.maxX > bnds.maxX)
-                        bnds.maxX = mbb.maxX;
-                    if(mbb.maxY > bnds.maxY)
-                        bnds.maxY = mbb.maxY;
-                }
-                retval.addFirst(layerInfo);
-                datasets.add(layerInfo.getName());
-                if(selection == null && datasets.size() == limit)
-                    break;
+            state.upperLeft.set(state.northBound, state.westBound);
+            state.upperRight.set(state.northBound, state.eastBound);
+            state.lowerRight.set(state.southBound, state.eastBound);
+            state.lowerLeft.set(state.southBound, state.westBound);
+
+            if(state.queryParams.spatialFilter instanceof RasterDataStore.DatasetQueryParameters.RegionSpatialFilter) {
+                RasterDataStore.DatasetQueryParameters.RegionSpatialFilter roi = (RasterDataStore.DatasetQueryParameters.RegionSpatialFilter)state.queryParams.spatialFilter;
+                roi.upperLeft = state.upperLeft;
+                roi.lowerRight = state.lowerRight;
+            } else {
+                state.queryParams.spatialFilter = new RasterDataStore.DatasetQueryParameters.RegionSpatialFilter(state.upperLeft, state.lowerRight);
             }
-            
-            //System.out.println(this.subject.getName() + " num results=" + retval.size() + " " + retval);
-            //System.out.println("layer min res=" + minRes + " drawRes=" + state.drawMapResolution);
-        } finally {
-            if(result != null)
-                result.close();
+
+            result = null;
+            try {
+                result = dataStore.queryDatasets(state.queryParams);
+
+                Set<String> datasets = new HashSet<String>();
+                int aoiResults = 0;
+                while (result.moveToNext()) {
+                    if (this.checkQueryThreadAbort())
+                        break;
+
+                    final DatasetDescriptor layerInfo = result.get();
+                    if (!this.subject.isVisible(layerInfo.getName()))
+                        continue;
+                    retval.add(layerInfo);
+                    datasets.add(layerInfo.getName());
+                    aoiResults++;
+                    // only select the first `limit` results for each AOI when
+                    // doing autoselect. We'll eliminate the excess from the
+                    // multiplexed result after all AOIs are visited
+                    if (selection == null && aoiResults == limit)
+                        break;
+                }
+
+                //System.out.println(this.subject.getName() + " num results=" + retval.size() + " " + retval);
+                //System.out.println("layer min res=" + minRes + " drawRes=" + state.drawMapResolution);
+            } finally {
+                if (result != null)
+                    result.close();
+            }
+        }
+
+        // if there's a limit, eliminate overflow from multiple AOI queries
+        if(limit > 0 && aois.length > 1) {
+            Iterator iter = retval.iterator();
+            while (retval.size() > limit) {
+                if(!iter.hasNext())
+                    break;
+                iter.next();
+                iter.remove();
+            }
         }
         
         if(this.checkQueryThreadAbort())
             return;
-        
+
+        // post autoselect notification
         if(notify) {
+            final String autoSelect = retval.isEmpty() ? null : retval.last().getName();
             if(!Objects.equals(this.autoSelectValue, autoSelect)) {
                 this.autoSelectValue = autoSelect;
                 ((DatasetRasterLayer2)this.subject).setAutoSelectValue(this.autoSelectValue);
-            }
-            
-            if(srid != state.drawSrid &&
-                    bnds != null &&
-                    Rectangle.contains(bnds.minX,
-                                       bnds.minY,
-                                       bnds.maxX,
-                                       bnds.maxY,
-                                       state.westBound,
-                                       state.southBound,
-                                       state.eastBound,
-                                       state.northBound)) {
-
-                Projection preferred = this.preferredProjection;
-                if(preferred == null || preferred.getSpatialReferenceID() != srid)
-                    preferred = ProjectionFactory.getProjection(srid);
-                this.preferredProjection = preferred;
-                if(preferred != null)
-                    this.subject.setPreferredProjection(preferred);
             }
         }
     }

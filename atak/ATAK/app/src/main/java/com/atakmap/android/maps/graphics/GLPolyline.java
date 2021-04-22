@@ -12,7 +12,7 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapTextFormat;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Polyline;
-import com.atakmap.android.maps.Polyline.OnBasicLineStyleChangedListener;
+import com.atakmap.android.maps.Shape.OnBasicLineStyleChangedListener;
 import com.atakmap.android.maps.Polyline.OnLabelsChangedListener;
 import com.atakmap.android.maps.Shape;
 import com.atakmap.android.maps.hittest.PartitionRect;
@@ -24,6 +24,7 @@ import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.Vector2D;
 import com.atakmap.lang.Unsafe;
+import com.atakmap.map.Globe;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.MapRenderer2;
 import com.atakmap.map.layer.feature.Feature.AltitudeMode;
@@ -42,6 +43,9 @@ import com.atakmap.map.opengl.GLAntiMeridianHelper;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.math.MathUtils;
+import com.atakmap.math.Matrix;
+import com.atakmap.math.PointD;
+import com.atakmap.math.Rectangle;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLNinePatch;
 import com.atakmap.opengl.GLText;
@@ -51,6 +55,7 @@ import org.apache.commons.lang.StringUtils;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -96,6 +101,7 @@ public class GLPolyline extends GLShape2 implements
     private GeoPoint centerPoint;
     private GLText _cplabel;
     protected long currentDraw = 0;
+    private int labelsVersion = -1;
     protected boolean recompute = true;
 
     private Map<String, Object> segmentLabels = null;
@@ -110,9 +116,13 @@ public class GLPolyline extends GLShape2 implements
     protected boolean needsProjectVertices;
 
     // Height extrusion
+    /** extrusion vertices, LLA */
     private DoubleBuffer _3dPointsPreForward;
+    /** extrusion vertices, map projection; relative-to-center */
     private FloatBuffer _3dPoints;
+    /** extrused outline vertices, LLA */
     private DoubleBuffer _outlinePointsPreForward;
+    /** extruded outline vertices, map projection; relative-to-center */
     private FloatBuffer _outlinePoints;
     private boolean _shouldReextrude;
     private double _height = Double.NaN;
@@ -121,10 +131,40 @@ public class GLPolyline extends GLShape2 implements
     private int _extrudeMode;
     private boolean _extrudeCrossesIDL;
     private int _extrudePrimaryHemi;
+    private GeoPoint _extrusionCentroid = GeoPoint.createMutable();
+    private PointD _extrusionCentroidProj = new PointD(0d, 0d, 0d);
+    private int _extrusionCentroidSrid = -1;
+    private int _extrusionTerrainVersion = -1;
 
     // Hit testing
     protected RectF _screenRect = new RectF();
     protected List<PartitionRect> _partitionRects = new ArrayList<>();
+
+    static class SegmentLabel {
+        public String[] text;
+        float text_r = 1f;
+        float text_g = 1f;
+        float text_b = 1f;
+        float text_a = 1f;
+        GeoPoint lla;
+        float textOffx;
+        float textOffy;
+        float textWidth;
+        float textHeight;
+        float textAngle;
+        GLText renderer;
+        GLNinePatch patch;
+        float patch_r = 0f;
+        float patch_g = 0f;
+        float patch_b = 0f;
+        float patch_a = 0.8f;
+        float patchOffx;
+        float patchOffy;
+        float patchWidth;
+        float patchHeight;
+    }
+
+    private List<SegmentLabel> _labels = new ArrayList<>();
 
     public GLPolyline(MapRenderer surface, Polyline subject) {
         super(surface, subject, GLMapView.RENDER_PASS_SPRITES
@@ -161,6 +201,7 @@ public class GLPolyline extends GLShape2 implements
         super.startObserving();
         onPointsChanged(_subject);
         onLabelsChanged(_subject);
+        altitudeMode = _subject.getAltitudeMode();
         refreshStyle();
         _subject.addOnPointsChangedListener(this);
         _subject.addOnBasicLineStyleChangedListener(this);
@@ -270,9 +311,15 @@ public class GLPolyline extends GLShape2 implements
         else if (basicStyle == Polyline.BASIC_LINE_STYLE_DOTTED)
             s = new PatternStrokeStyle(0x03, 8, this.strokeColor,
                     this.strokeWeight);
-        else
+        else if (basicStyle == Polyline.BASIC_LINE_STYLE_OUTLINED) {
+            BasicStrokeStyle bg = new BasicStrokeStyle(
+                    0xFF000000 & this.strokeColor, this.strokeWeight + 2f);
+            s = new CompositeStyle(new Style[] {
+                    bg, new BasicStrokeStyle(this.strokeColor, this.strokeWeight)
+            });
+        } else {
             s = new BasicStrokeStyle(this.strokeColor, this.strokeWeight);
-
+        }
         int numStyles = 0;
         if (fill)
             numStyles++;
@@ -315,6 +362,7 @@ public class GLPolyline extends GLShape2 implements
             @Override
             public void run() {
                 impl.setStyle(fs);
+                markSurfaceDirty(true);
             }
         });
     }
@@ -383,6 +431,7 @@ public class GLPolyline extends GLShape2 implements
 
         // force a redraw
         currentDraw = 0;
+        labelsVersion = 0;
 
         // Need to update the height extrusion
         if (_hasHeight)
@@ -404,46 +453,53 @@ public class GLPolyline extends GLShape2 implements
                     if (env != null) {
                         bounds.setWrap180(mv.isContinuousScrollEnabled());
                         bounds.set(env.minY, env.minX, env.maxY, env.maxX);
+                        // XXX - naive implementation, will need to handle IDL better
+                        bounds.getCenter(_extrusionCentroid);
+
                         dispatchOnBoundsChanged();
                     }
+                    _extrusionCentroidSrid = -1;
                 }
             }
         });
     }
 
     @Override
-    public void onBasicLineStyleChanged(Polyline polyline) {
+    public void onBasicLineStyleChanged(Shape polyline) {
         final int style = polyline.getBasicLineStyle();
-        if (context.isRenderThread()) {
-            basicLineStyle = style;
-            refreshStyle();
-        } else
-            context.queueEvent(new Runnable() {
-                @Override
-                public void run() {
-                    basicLineStyle = style;
-                    refreshStyle();
-                }
-            });
-
-        this.recompute = true;
+        runOnGLThread(new Runnable() {
+            @Override
+            public void run() {
+                basicLineStyle = style;
+                refreshStyle();
+                recompute = true;
+            }
+        });
     }
 
     @Override
     public void onLabelsChanged(Polyline polyline) {
-        this.segmentLabels = polyline.getLabels();
-        // specifically for the center label logic
-        centerLabelText = null;
-        if (segmentLabels != null) {
-            Map<String, Object> labelBundle = null;
-            for (Map.Entry e : segmentLabels.entrySet()) {
-                labelBundle = (Map<String, Object>) e.getValue();
-
+        final Map<String, Object> labels = polyline.getLabels();
+        runOnGLThread(new Runnable() {
+            @Override
+            public void run() {
+                // specifically for the center label logic
+                centerLabelText = null;
+                segmentLabels = labels;
+                if (segmentLabels != null) {
+                    Map<String, Object> labelBundle = null;
+                    for (Map.Entry<String, Object> e : segmentLabels
+                            .entrySet()) {
+                        Object v = e.getValue();
+                        if (v instanceof Map)
+                            labelBundle = (Map<String, Object>) e.getValue();
+                    }
+                    if (labelBundle != null)
+                        centerLabelText = (String) labelBundle.get("text");
+                }
+                labelsVersion = -1;
             }
-            if (labelBundle != null)
-                centerLabelText = (String) labelBundle.get("text");
-
-        }
+        });
     }
 
     @Override
@@ -558,7 +614,11 @@ public class GLPolyline extends GLShape2 implements
             boolean renderOutline = MathUtils.hasBits(_heightStyle,
                     Polyline.HEIGHT_STYLE_OUTLINE) || simpleOutline;
 
+            // if terrain is modified
+            final int terrainVersion = ortho.getTerrainVersion();
+            _shouldReextrude |= (_extrusionTerrainVersion != terrainVersion);
             if (_shouldReextrude) {
+                _extrusionTerrainVersion = terrainVersion;
                 updatePointsImpl(centerPoint, origPoints);
 
                 // Find min/max altitude
@@ -592,6 +652,17 @@ public class GLPolyline extends GLShape2 implements
 
                 // Update point buffer with terrain elevations if we're clamped
                 if (clampToGround) {
+                    // XXX - Dirty hack for ATAK-14494
+                    // Use the lowest valid altitude value as the base of the
+                    // extrusion
+                    if (ortho.currentPass.drawTilt > 0) {
+                        Arrays.fill(alts, GeoPoint.MIN_ACCEPTABLE_ALTITUDE);
+                        if (extrudeMode == Polyline.HEIGHT_EXTRUDE_PER_POINT)
+                            height += baseAltitude
+                                    - GeoPoint.MIN_ACCEPTABLE_ALTITUDE;
+                    }
+
+                    // Store terrain elevation in point buffer
                     int p = 0;
                     for (double alt : alts) {
                         _points.put(p + 2, alt);
@@ -606,7 +677,9 @@ public class GLPolyline extends GLShape2 implements
                     for (int i = 0; i < alts.length; i++)
                         heights[i] = (baseAltitude + height) - alts[i];
                 } else
-                    heights = new double[] { height };
+                    heights = new double[] {
+                            height
+                    };
 
                 if (renderPolygon) {
                     _3dPointsPreForward = GLExtrude.extrudeRelative(
@@ -615,10 +688,14 @@ public class GLPolyline extends GLShape2 implements
                             _3dPointsPreForward.limit(), FloatBuffer.class);
                     _3dPointsPreForward.rewind();
 
-                    final int idlInfo = GLAntiMeridianHelper.normalizeHemisphere(3, _3dPointsPreForward, _3dPointsPreForward);
+                    final int idlInfo = GLAntiMeridianHelper
+                            .normalizeHemisphere(3, _3dPointsPreForward,
+                                    _3dPointsPreForward);
                     _3dPointsPreForward.flip();
-                    _extrudePrimaryHemi = (idlInfo&GLAntiMeridianHelper.MASK_PRIMARY_HEMISPHERE);
-                    _extrudeCrossesIDL = (idlInfo&GLAntiMeridianHelper.MASK_IDL_CROSS) != 0;
+                    _extrudePrimaryHemi = (idlInfo
+                            & GLAntiMeridianHelper.MASK_PRIMARY_HEMISPHERE);
+                    _extrudeCrossesIDL = (idlInfo
+                            & GLAntiMeridianHelper.MASK_IDL_CROSS) != 0;
                 }
 
                 if (renderOutline) {
@@ -630,17 +707,45 @@ public class GLPolyline extends GLShape2 implements
                             FloatBuffer.class);
                     _outlinePointsPreForward.rewind();
 
-                    final int idlInfo = GLAntiMeridianHelper.normalizeHemisphere(3, _outlinePointsPreForward, _outlinePointsPreForward);
+                    final int idlInfo = GLAntiMeridianHelper
+                            .normalizeHemisphere(3, _outlinePointsPreForward,
+                                    _outlinePointsPreForward);
                     _outlinePointsPreForward.flip();
-                    _extrudePrimaryHemi = (idlInfo&GLAntiMeridianHelper.MASK_PRIMARY_HEMISPHERE);
-                    _extrudeCrossesIDL = (idlInfo&GLAntiMeridianHelper.MASK_IDL_CROSS) != 0;
+                    _extrudePrimaryHemi = (idlInfo
+                            & GLAntiMeridianHelper.MASK_PRIMARY_HEMISPHERE);
+                    _extrudeCrossesIDL = (idlInfo
+                            & GLAntiMeridianHelper.MASK_IDL_CROSS) != 0;
                 }
 
                 _shouldReextrude = false;
             }
 
+            // extrusion vertices (fill+outline) need to be rebuilt when projection changes
+            final boolean rebuildExtrusionVertices = (_extrusionCentroidSrid != ortho.currentPass.drawSrid);
+            if (rebuildExtrusionVertices) {
+                ortho.currentPass.scene.mapProjection
+                        .forward(_extrusionCentroid, _extrusionCentroidProj);
+                _extrusionCentroidSrid = ortho.currentPass.drawSrid;
+            }
+
+            // set up model-view matrix
+            GLES20FixedPipeline.glMatrixMode(GLES20FixedPipeline.GL_MODELVIEW);
             GLES20FixedPipeline.glPushMatrix();
-            GLES20FixedPipeline.glLoadIdentity();
+
+            ortho.scratch.matrix.set(ortho.currentPass.scene.forward);
+            // apply hemisphere shift if necessary
+            final double unwrap = GLAntiMeridianHelper.getUnwrap(ortho,
+                    _extrudeCrossesIDL, _extrudePrimaryHemi);
+            ortho.scratch.matrix.translate(unwrap, 0d, 0d);
+            // translate relative-to-center for extrusion geometry
+            ortho.scratch.matrix.translate(_extrusionCentroidProj.x,
+                    _extrusionCentroidProj.y, _extrusionCentroidProj.z);
+            // upload model-view transform
+            ortho.scratch.matrix.get(ortho.scratch.matrixD,
+                    Matrix.MatrixOrder.COLUMN_MAJOR);
+            for (int i = 0; i < 16; i++)
+                ortho.scratch.matrixF[i] = (float) ortho.scratch.matrixD[i];
+            GLES20FixedPipeline.glLoadMatrixf(ortho.scratch.matrixF, 0);
 
             GLES20FixedPipeline
                     .glEnableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
@@ -655,6 +760,26 @@ public class GLPolyline extends GLShape2 implements
             float a = fill ? Color.alpha(color) / 255.0f : 0.5f;
 
             if (renderPolygon) {
+                // validate the render vertices
+                if (rebuildExtrusionVertices) {
+                    _3dPoints.clear();
+                    for (int i = 0; i < _3dPointsPreForward.limit() / 3; i++) {
+                        final double lng = _3dPointsPreForward.get(i * 3);
+                        final double lat = _3dPointsPreForward.get(i * 3 + 1);
+                        final double alt = _3dPointsPreForward.get(i * 3 + 2);
+                        ortho.scratch.geo.set(lat, lng, alt);
+                        ortho.currentPass.scene.mapProjection.forward(
+                                ortho.scratch.geo, ortho.scratch.pointD);
+                        _3dPoints.put((float) (ortho.scratch.pointD.x
+                                - _extrusionCentroidProj.x));
+                        _3dPoints.put((float) (ortho.scratch.pointD.y
+                                - _extrusionCentroidProj.y));
+                        _3dPoints.put((float) (ortho.scratch.pointD.z
+                                - _extrusionCentroidProj.z));
+                    }
+                    _3dPoints.flip();
+                }
+
                 GLES20FixedPipeline.glColor4f(r, g, b, a);
 
                 GLES30.glEnable(GLES30.GL_POLYGON_OFFSET_FILL);
@@ -663,23 +788,6 @@ public class GLPolyline extends GLShape2 implements
                 GLES20FixedPipeline.glVertexPointer(3,
                         GLES20FixedPipeline.GL_FLOAT, 0, _3dPoints);
 
-                final double unwrap = GLAntiMeridianHelper.getUnwrap(ortho, _extrudeCrossesIDL, _extrudePrimaryHemi);
-                if(unwrap == 0d) {
-                    ortho.forward(_3dPointsPreForward, 3, _3dPoints, 3);
-                } else {
-                    _3dPoints.clear();
-                    for(int i = 0; i < _3dPointsPreForward.limit()/3; i++) {
-                        final double lng = _3dPointsPreForward.get(i*3) + unwrap;
-                        final double lat = _3dPointsPreForward.get(i*3+1);
-                        final double alt = _3dPointsPreForward.get(i*3+2);
-                        ortho.scratch.geo.set(lat, lng, alt);
-                        ortho.currentPass.scene.forward(ortho.scratch.geo, ortho.scratch.pointD);
-                        _3dPoints.put((float)ortho.scratch.pointD.x);
-                        _3dPoints.put((float)ortho.scratch.pointD.y);
-                        _3dPoints.put((float)ortho.scratch.pointD.z);
-                    }
-                    _3dPoints.flip();
-                }
                 int pCount = _3dPoints.limit() / 3;
 
                 // Simple order independent transparency, only apply when needed
@@ -708,25 +816,32 @@ public class GLPolyline extends GLShape2 implements
             }
 
             // Outline around height polygon (only when map is tilted)
-            if (renderOutline && ortho.drawTilt > 0) {
-                final double unwrap = GLAntiMeridianHelper.getUnwrap(ortho, _extrudeCrossesIDL, _extrudePrimaryHemi);
-                if(unwrap == 0d) {
-                    ortho.forward(_outlinePointsPreForward, 3, _outlinePoints, 3);
-                } else {
+            if (renderOutline) {
+                // validate the render vertices
+                if (rebuildExtrusionVertices) {
                     _outlinePoints.clear();
-                    for(int i = 0; i < _outlinePointsPreForward.limit()/3; i++) {
-                        final double lng = _outlinePointsPreForward.get(i*3) + unwrap;
-                        final double lat = _outlinePointsPreForward.get(i*3+1);
-                        final double alt = _outlinePointsPreForward.get(i*3+2);
+                    for (int i = 0; i < _outlinePointsPreForward.limit()
+                            / 3; i++) {
+                        final double lng = _outlinePointsPreForward.get(i * 3);
+                        final double lat = _outlinePointsPreForward
+                                .get(i * 3 + 1);
+                        final double alt = _outlinePointsPreForward
+                                .get(i * 3 + 2);
                         ortho.scratch.geo.set(lat, lng, alt);
-                        ortho.currentPass.scene.forward(ortho.scratch.geo, ortho.scratch.pointD);
-                        _outlinePoints.put((float)ortho.scratch.pointD.x);
-                        _outlinePoints.put((float)ortho.scratch.pointD.y);
-                        _outlinePoints.put((float)ortho.scratch.pointD.z);
+                        ortho.currentPass.scene.mapProjection.forward(
+                                ortho.scratch.geo, ortho.scratch.pointD);
+                        _outlinePoints.put((float) (ortho.scratch.pointD.x
+                                - _extrusionCentroidProj.x));
+                        _outlinePoints.put((float) (ortho.scratch.pointD.y
+                                - _extrusionCentroidProj.y));
+                        _outlinePoints.put((float) (ortho.scratch.pointD.z
+                                - _extrusionCentroidProj.z));
                     }
                     _outlinePoints.flip();
                 }
-                GLES20FixedPipeline.glLineWidth(this.strokeWeight);
+
+                GLES20FixedPipeline.glLineWidth(this.strokeWeight
+                        / ortho.currentPass.relativeScaleHint);
                 GLES20FixedPipeline.glVertexPointer(3, GLES30.GL_FLOAT, 0,
                         _outlinePoints);
                 GLES20FixedPipeline.glColor4f(r * .9f, g * .9f, b * .9f, 1.0f);
@@ -741,68 +856,79 @@ public class GLPolyline extends GLShape2 implements
         }
 
         // Altitude mode toggle
-        if (sprites && altitudeMode == AltitudeMode.ClampToGround
-                || surface && altitudeMode != AltitudeMode.ClampToGround)
-            return;
+        final boolean drawGeom = !(sprites
+                && altitudeMode == AltitudeMode.ClampToGround
+                || surface && altitudeMode != AltitudeMode.ClampToGround);
 
-        if (currentDraw != ortho.drawVersion)
-            recompute = true;
-        currentDraw = ortho.drawVersion;
+        if (drawGeom) {
+            if (currentDraw != ortho.drawVersion)
+                recompute = true;
+            currentDraw = ortho.drawVersion;
 
-        if (this.needsProjectVertices)
-            _projectVerts(ortho);
+            if (this.needsProjectVertices)
+                _projectVerts(ortho);
 
-        if (stroke || (fill && _closed)) {
+            if (stroke || (fill && _closed)) {
 
-            GLES20FixedPipeline.glPushMatrix();
-            GLES20FixedPipeline.glLoadIdentity();
+                GLES20FixedPipeline.glPushMatrix();
+                GLES20FixedPipeline.glLoadIdentity();
 
-            this.impl.draw(ortho);
+                this.impl.draw(ortho);
 
-            GLES20FixedPipeline.glPopMatrix();
-
-            // TODO look at GLArrow2 to see how the text is being drawin on the line.
-            drawLabels(ortho);
+                GLES20FixedPipeline.glPopMatrix();
+            }
+            this.recompute = false;
         }
-        this.recompute = false;
+        if (sprites)
+            drawLabels(ortho);
     }
 
-    protected void drawLabels(GLMapView ortho) {
+    private void validateLabels(GLMapView ortho) {
+        if (labelsVersion == ortho.currentScene.drawVersion)
+            return;
+        labelsVersion = ortho.currentScene.drawVersion;
+        _labels.clear();
 
         boolean drawCenterLabel = _subject.hasMetaValue("minRenderScale")
-                && ortho.drawMapScale >= _subject.getMetaDouble(
-                        "minRenderScale", DEFAULT_MIN_RENDER_SCALE);
+                && Globe.getMapScale(ortho.getSurface().getDpi(),
+                        ortho.currentScene.drawMapResolution) >= _subject
+                                .getMetaDouble(
+                                        "minRenderScale",
+                                        DEFAULT_MIN_RENDER_SCALE);
 
         double minRes = _subject.getMetaDouble("minLabelRenderResolution",
                 Polyline.DEFAULT_MIN_LABEL_RENDER_RESOLUTION);
         double maxRes = _subject.getMetaDouble("maxLabelRenderResolution",
                 Polyline.DEFAULT_MAX_LABEL_RENDER_RESOLUTION);
 
-        drawCenterLabel |= ortho.drawMapResolution > minRes
-                && ortho.drawMapResolution < maxRes;
+        drawCenterLabel |= ortho.currentScene.drawMapResolution > minRes
+                && ortho.currentScene.drawMapResolution < maxRes;
 
         try {
             if (drawCenterLabel && _subject.hasMetaValue("centerPointLabel")) {
+                SegmentLabel lbl = new SegmentLabel();
                 if (_cplabel == null) {
                     MapTextFormat textFormat = new MapTextFormat(_labelTypeface,
                             _labelTextSize);
                     _cplabel = GLText.getInstance(textFormat);
                 }
-                String _text = _subject.getMetaString(
+                lbl.renderer = _cplabel;
+                final String _text = _subject.getMetaString(
                         "centerPointLabel", "");
-                float _textWidth = _cplabel.getStringWidth(_text);
-                float _textHeight = _cplabel.getStringHeight();
-                ortho.forward(centerPoint, ortho.scratch.pointF);
-                float xpos = ortho.scratch.pointF.x
-                        - (_textWidth / 2.0f);
-                float ypos = ortho.scratch.pointF.y;
-                GLES20FixedPipeline.glPushMatrix();
-                GLES20FixedPipeline.glTranslatef(xpos, ypos, 0f);
-                drawLabelNoMarquee(_textWidth, _textHeight, _text,
-                        _cplabel);
-                GLES20FixedPipeline.glPopMatrix();
+                lbl.text = _text.split("\n");
+                lbl.textWidth = _cplabel.getStringWidth(_text);
+                lbl.textHeight = _cplabel.getStringHeight(_text);
+                lbl.lla = new GeoPoint(centerPoint);
+
+                lbl.textOffx = -(lbl.textWidth / 2.0f);
+                lbl.patch = GLRenderGlobals.get(ortho).getSmallNinePatch();
+                lbl.patchOffx = -4f;
+                lbl.patchOffy = -lbl.renderer.getDescent();
+                lbl.patchWidth = lbl.textWidth + 8f;
+                lbl.patchHeight = lbl.textHeight;
+                _labels.add(lbl);
             }
-            drawSegmentLabels(ortho);
+            validateSegmentLabels(ortho);
             if (numPoints > 1 && _subject.hasMetaValue("labels_on")) {
                 String lineLabel = _subject.getLineLabel();
                 if (!FileSystemUtils.isEquals(_lineLabel, lineLabel)) {
@@ -817,7 +943,7 @@ public class GLPolyline extends GLShape2 implements
                     _lineLabelHeight = _label.getStringHeight(lineLabel);
                 }
                 if (!StringUtils.isBlank(_lineLabel))
-                    drawFloatingLabel(ortho);
+                    validateFloatingLabel(ortho);
             }
         } catch (Exception cme) {
             // catch and ignore - without adding performance penalty to the whole
@@ -827,166 +953,467 @@ public class GLPolyline extends GLShape2 implements
         }
     }
 
-    private void drawLabelNoMarquee(float textWidth,
-            float textHeight, String _text, GLText label) {
-        if (_text.length() == 0)
-            return;
-        GLNinePatch smallNinePatch = GLRenderGlobals.get(this.context)
-                .getSmallNinePatch();
-        if (smallNinePatch != null) {
-            GLES20FixedPipeline.glColor4f(0f, 0f, 0f, 0.6f);
+    protected void drawLabels(GLMapView ortho) {
+        validateLabels(ortho);
+
+        for (SegmentLabel lbl : _labels) {
+            if (lbl.text.length == 0)
+                continue;
+
+            ortho.forward(lbl.lla, ortho.scratch.pointD);
             GLES20FixedPipeline.glPushMatrix();
-            GLES20FixedPipeline.glTranslatef(-4f, -label.getDescent(), 0f);
-            smallNinePatch.draw(textWidth + 8f, textHeight);
+            float xpos = (float) ortho.scratch.pointD.x;
+            float ypos = (float) ortho.scratch.pointD.y;
+            float zpos = (float) ortho.scratch.pointD.z;
+
+            if (altitudeMode == AltitudeMode.ClampToGround
+                    && ortho.currentPass.drawTilt > 0d)
+                ypos += lbl.textHeight;
+
+            GLES20FixedPipeline.glTranslatef(xpos, ypos, zpos);
+            GLES20FixedPipeline.glRotatef(lbl.textAngle, 0f, 0f, 1f);
+            GLES20FixedPipeline.glTranslatef(lbl.textOffx, lbl.textOffy, 0f);
+
+            if (lbl.patch != null) {
+                GLES20FixedPipeline.glColor4f(lbl.patch_r, lbl.patch_g,
+                        lbl.patch_b, lbl.patch_a);
+                GLES20FixedPipeline.glPushMatrix();
+                GLES20FixedPipeline.glTranslatef(lbl.patchOffx, lbl.patchOffy,
+                        0f);
+                lbl.patch.draw(lbl.patchWidth, lbl.patchHeight);
+                GLES20FixedPipeline.glPopMatrix();
+            }
+            for (int j = 0; j < lbl.text.length; j++) {
+                if (lbl.text[j].length() == 0)
+                    continue;
+                GLES20FixedPipeline.glPushMatrix();
+                GLES20FixedPipeline.glTranslatef(0f,
+                        ((lbl.text.length - 1) - j)
+                                * lbl.renderer.getCharHeight(),
+                        0f);
+                lbl.renderer.draw(GLText.localize(lbl.text[j]), lbl.text_r,
+                        lbl.text_g, lbl.text_b, lbl.text_a);
+                GLES20FixedPipeline.glPopMatrix();
+            }
+
             GLES20FixedPipeline.glPopMatrix();
         }
-        label.draw(GLText.localize(_text), 1, 1, 1, 1);
     }
 
-    private void drawFloatingLabel(GLMapView ortho) {
-        _projectVerts(ortho);
+    /**
+     * Clips the specified segment against the specified region
+     * @param sx    The segment start point, x component
+     * @param sy    The segment start point, y component
+     * @param ex    The segment end point, x component
+     * @param ey    The segment end point, y component
+     * @param minX  The minimum x component of the clip region
+     * @param minY  The minimum y component of the clip region
+     * @param maxX  The maximum x component of the clip region
+     * @param maxY  The maximum y component of the clip region
+     * @param seg   Returns the clipped segment, must be able to store at least 4 elements
+     * @return  <code>0</code> if the segment was completely contained, <code>1</code> if a clipped segment was generated, <code>-1</code> if the segment was completely outside the region
+     */
+    private static int clip(float sx, float sy, float ex, float ey, float minX,
+            float minY, float maxX, float maxY, float[] seg) {
+        if (!Rectangle.intersects(Math.min(sx, ex), Math.min(sy, ey),
+                Math.max(sx, ex), Math.max(sy, ey), minX, minY, maxX, maxY))
+            return -1;
 
-        // _ensureVerts over-allocates, but doesn't set the limit, this causes sutherland to emit an
-        // extra <0, 0>, which results in a "floating" floating-label.
-        // The following line is dependent on the behavior of _ensureVerts and _projectVerts.
-        _verts2.limit(_verts2.capacity() - _verts2Size);
-        List<List<Vector2D>> polys = Vector2D
-                .clipPolylineCohenSutherland(new RectF(ortho._left, ortho._top,
-                        ortho._right, ortho._bottom), _verts2, _verts2Size);
-        double[] segLengths = new double[numPoints + (_closed ? 1 : 0)];
+        if (Rectangle.contains(minX, minY, maxX, maxY, Math.min(sx, ex),
+                Math.min(sy, ey), Math.max(sx, ex), Math.max(sy, ey))) {
+            seg[0] = sx;
+            seg[1] = sy;
+            seg[2] = ex;
+            seg[3] = ey;
+            return 0;
+        } else {
+            // NOTE: top corresponds to miny, bottom corresponds to maxy
+            final int left = 0x01;
+            final int right = 0x02;
+            final int bottom = 0x04;
+            final int top = 0x08;
+
+            int s_isect = 0;
+            if (sx < minX)
+                s_isect |= left;
+            if (sx > maxX)
+                s_isect |= right;
+            if (sy < minY)
+                s_isect |= top;
+            if (sy > maxY)
+                s_isect |= bottom;
+
+            int e_isect = 0;
+            if (ex < minX)
+                e_isect |= left;
+            if (ex > maxX)
+                e_isect |= right;
+            if (ey < minY)
+                e_isect |= top;
+            if (ey > maxY)
+                e_isect |= bottom;
+
+            final float dx = (ex - sx);
+            final float dy = (ey - sy);
+
+            if (s_isect != 0) {
+                if (MathUtils.hasBits(s_isect, bottom)) {
+                    sx = sx + (ex - sx) * (maxY - sy) / dy;
+                    sy = maxY;
+                }
+                if (MathUtils.hasBits(s_isect, top)) {
+                    sx = sx + (ex - sx) * (minY - sy) / dy;
+                    sy = minY;
+                }
+                if (MathUtils.hasBits(s_isect, right)) {
+                    sx = maxX;
+                    sy = sy + (ey - sy) * (maxX - sx) / dx;
+                }
+                if (MathUtils.hasBits(s_isect, left)) {
+                    sx = minX;
+                    sy = sy + (ey - sy) * (minX - sx) / dx;
+                }
+            }
+            if (e_isect != 0) {
+                if (MathUtils.hasBits(e_isect, bottom)) {
+                    ex = sx + (ex - sx) * (maxY - sy) / dy;
+                    ey = maxY;
+                }
+                if (MathUtils.hasBits(e_isect, top)) {
+                    ex = sx + (ex - sx) * (minY - sy) / dy;
+                    ey = minY;
+                }
+                if (MathUtils.hasBits(e_isect, right)) {
+                    ex = maxX;
+                    ey = sy + (ey - sy) * (maxX - sx) / dx;
+                }
+                if (MathUtils.hasBits(e_isect, left)) {
+                    ex = minX;
+                    ey = sy + (ey - sy) * (minX - sx) / dx;
+                }
+            }
+
+            seg[0] = sx;
+            seg[1] = sy;
+            seg[2] = ex;
+            seg[3] = ey;
+            return 1;
+        }
+    }
+
+    private void getRenderPoint(GLMapView ortho, int idx, GeoPoint geo) {
+        if (idx < 0 || _points == null || idx >= _points.limit() / _pointsSize)
+            return;
+        final double lat = _points.get(idx * _pointsSize + 1);
+        final double lng = _points.get(idx * _pointsSize);
+        geo.set(lat, lng);
+
+        // source altitude is populated for absolute or relative IF 3 elements specified
+        final double alt = (_pointsSize == 3
+                && altitudeMode != AltitudeMode.ClampToGround)
+                        ? _points.get(idx * _pointsSize + 2)
+                        : 0d;
+        // terrain is populated for clamp-to-ground or relative
+        final double terrain = (altitudeMode != AltitudeMode.Absolute)
+                ? ortho.getTerrainMeshElevation(lat, lng)
+                : 0d;
+
+        geo.set(alt + terrain);
+    }
+
+    private void validateFloatingLabel(GLMapView ortho) {
+        if (_label == null) {
+            MapTextFormat textFormat = new MapTextFormat(_labelTypeface,
+                    _labelTextSize);
+            _label = GLText
+                    .getInstance(textFormat);
+        }
+
+        float[] clippedSegment = new float[4];
+        double stripLength = 0d;
+        double[] segmentLengths = new double[(_points.limit() / _pointsSize)
+                - 1];
         double xmin = Double.MAX_VALUE, ymin = Double.MAX_VALUE,
                 xmax = Double.MIN_VALUE, ymax = Double.MIN_VALUE;
-        GLNinePatch ninePatch = GLRenderGlobals.get(this.context)
-                .getMediumNinePatch();
+
+        GeoPoint startGeo = GeoPoint.createMutable();
+        GeoPoint endGeo = GeoPoint.createMutable();
+
+        getRenderPoint(ortho, 0, endGeo);
+
         PointF start = new PointF(0, 0);
         PointF end = new PointF(0, 0);
-        for (int i = 0; i < polys.size(); i++) {
-            if (polys.get(i).size() > 1) {
-                double totalLength = 0;
-                Vector2D ps = polys.get(i).get(0);
-                xmax = xmin = ps.x;
-                ymax = ymin = ps.y;
-                for (int j = 1; j < polys.get(i).size(); j++) {
-                    Vector2D pd = polys.get(i).get(j);
-                    if (pd.x > xmax) {
-                        xmax = pd.x;
-                    }
-                    if (pd.x < xmin) {
-                        xmin = pd.x;
-                    }
-                    if (pd.y > ymax) {
-                        ymax = pd.y;
-                    }
-                    if (pd.y < ymin) {
-                        ymin = pd.y;
-                    }
-                    totalLength += pd.distance(ps);
-                    segLengths[j] = totalLength;
-                    ps = pd;
-                }
-                if (_label == null) {
-                    MapTextFormat textFormat = new MapTextFormat(_labelTypeface,
-                            _labelTextSize);
-                    _label = GLText
-                            .getInstance(textFormat);
-                }
+        ortho.currentScene.scene.forward(endGeo, end);
 
-                if (Math.max(xmax - xmin, ymax - ymin) >= _lineLabelWidth) {
-                    double halfLength = totalLength * 0.5;
-                    int seg = -1;
-                    for (int j = 0; j < segLengths.length; j++) {
-                        if (segLengths[j] > halfLength) {
-                            seg = j - 1;
+        int stripStartIdx = -1;
+        for (int i = 0; i < (_points.limit() / _pointsSize) - 1; i++) {
+            startGeo.set(endGeo);
+            getRenderPoint(ortho, i + 1, endGeo);
+
+            ortho.currentScene.scene.forward(startGeo, ortho.scratch.pointF);
+            final float x0 = ortho.scratch.pointF.x;
+            final float y0 = ortho.scratch.pointF.y;
+            ortho.currentScene.scene.forward(endGeo, ortho.scratch.pointF);
+            final float x1 = ortho.scratch.pointF.x;
+            final float y1 = ortho.scratch.pointF.y;
+
+            // clip the segment
+            final int result = clip(
+                    x0, y0,
+                    x1, y1,
+                    ortho.currentScene.left,
+                    ortho.currentScene.bottom,
+                    ortho.currentScene.right,
+                    ortho.currentScene.top,
+                    clippedSegment);
+            if (result != 0) {
+                // check emit
+                if (stripStartIdx != -1 &&
+                        (Math.max(xmax - xmin,
+                                ymax - ymin) >= _lineLabelWidth)) {
+
+                    // locate the segment that contains the midpoint of the current strip
+                    final double halfLength = stripLength * 0.5;
+                    double t = 0d;
+                    int containingSegIdx = -1;
+                    for (int j = 0; j < (i - 1) - stripStartIdx; j++) {
+                        t += segmentLengths[j];
+                        if (t > halfLength) {
+                            containingSegIdx = j + stripStartIdx;
                             break;
                         }
                     }
-                    double segPercent = (halfLength - segLengths[seg])
-                            / (segLengths[seg + 1] - segLengths[seg]);
-                    Vector2D segOffset = polys.get(i).get(seg + 1)
-                            .subtract(polys.get(i).get(seg)).scale(segPercent);
-                    Vector2D center = polys.get(i).get(seg).add(segOffset);
-                    segOffset = segOffset.normalize();
+                    if (containingSegIdx >= 0) {
+                        final double segStart = t
+                                - segmentLengths[containingSegIdx
+                                        - stripStartIdx];
+                        final double segPercent = (halfLength - segStart)
+                                / segmentLengths[containingSegIdx
+                                        - stripStartIdx];
 
-                    boolean behindGlobe = false;
-                    if (ortho
-                            .getDisplayMode() == MapRenderer2.DisplayMode.Globe) {
+                        getRenderPoint(ortho, containingSegIdx,
+                                ortho.scratch.geo);
+                        ortho.currentScene.scene.forward(ortho.scratch.geo,
+                                ortho.scratch.pointF);
+                        final float segStartX = ortho.scratch.pointF.x;
+                        final float segStartY = ortho.scratch.pointF.y;
+                        getRenderPoint(ortho, containingSegIdx + 1,
+                                ortho.scratch.geo);
+                        ortho.currentScene.scene.forward(ortho.scratch.geo,
+                                ortho.scratch.pointF);
+                        final float segEndX = ortho.scratch.pointF.x;
+                        final float segEndY = ortho.scratch.pointF.y;
 
-                        // find the middle segment that lines up with label center
-                        int middle = this.findMiddleVisibleSegment(ortho);
-                        if (middle >= 0 && middle < origPoints.length - 1) {
-                            GeoPoint a = origPoints[middle];
-                            GeoPoint b = origPoints[middle + 1];
+                        float[] seg = new float[4];
+                        clip(
+                                segStartX,
+                                segStartY,
+                                segEndX,
+                                segEndY,
+                                ortho.currentScene.left,
+                                ortho.currentScene.bottom,
+                                ortho.currentScene.right,
+                                ortho.currentScene.top,
+                                seg);
 
-                            // interpolate the middle
-                            ortho.scratch.geo.set(
-                                    (a.getLatitude() + b.getLatitude()) * 0.5,
-                                    (a.getLongitude() + b.getLongitude()) * 0.5,
-                                    (a.getAltitude() + b.getAltitude()) * 0.5);
+                        final float px = seg[0]
+                                + (seg[2] - seg[0]) * (float) segPercent;
+                        final float py = seg[1]
+                                + (seg[3] - seg[1]) * (float) segPercent;
 
-                            ortho.scene.forward(ortho.scratch.geo,
-                                    ortho.scratch.pointD);
+                        final double segNormalX = (seg[2] - seg[0])
+                                / segmentLengths[containingSegIdx
+                                        - stripStartIdx];
+                        final double segNormalY = (seg[3] - seg[1])
+                                / segmentLengths[containingSegIdx
+                                        - stripStartIdx];
 
-                            // beyond the far depth range means behind globe
-                            behindGlobe = (ortho.scratch.pointD.z > 1.0);
-                        }
-                    }
+                        start.x = (float) (px - segNormalX);
+                        start.y = (float) (py - segNormalY);
+                        end.x = (float) (px + segNormalX);
+                        end.y = (float) (py + segNormalY);
 
-                    if (!behindGlobe) {
-                        start.x = (float) (center.x - segOffset.x);
-                        start.y = (float) (center.y - segOffset.y);
-                        end.x = (float) (center.x + segOffset.x);
-                        end.y = (float) (center.y + segOffset.y);
-                        buildLabel(ortho, start, end);
+                        SegmentLabel lbl = buildTextLabel(ortho,
+                                origPoints[containingSegIdx],
+                                origPoints[containingSegIdx + 1], start, end,
+                                _label, _lineLabel);
 
-                        GLES20FixedPipeline.glPushMatrix();
-                        GLES20FixedPipeline.glTranslatef(_textPoint[0],
-                                _textPoint[1], 0f);
-                        GLES20FixedPipeline.glRotatef(_textAngle, 0f, 0f, 1f);
-                        GLES20FixedPipeline.glTranslatef(-_lineLabelWidth / 2,
-                                -_lineLabelHeight / 2 + _label.getDescent(), 0);
-                        GLES20FixedPipeline.glPushMatrix();
-                        GLES20FixedPipeline.glTranslatef(-8f,
-                                -_label.getDescent() - 4f, 0f);
-                        GLES20FixedPipeline.glColor4f(0f, 0f, 0f, 0.8f);
-                        if (ninePatch != null)
-                            ninePatch.draw(_lineLabelWidth + 16f,
-                                    _lineLabelHeight + 8f);
-                        GLES20FixedPipeline.glPopMatrix();
-                        for (int j = 0; j < _lineLabelArr.length; j++) {
-                            GLES20FixedPipeline.glPushMatrix();
-                            GLES20FixedPipeline.glTranslatef(0f,
-                                    ((_lineLabelArr.length - 1) - j)
-                                            * _label.getCharHeight(),
-                                    0f);
-                            _label.draw(_lineLabelArr[j], 1, 1, 1, 1);
-                            GLES20FixedPipeline.glPopMatrix();
-                        }
-                        GLES20FixedPipeline.glPopMatrix();
+                        // recompute LLA
+                        final double weight = MathUtils.distance(_textPoint[0],
+                                _textPoint[1], segStartX, segStartY)
+                                / MathUtils.distance(segStartX, segStartY,
+                                        segEndX, segEndY);
+                        lbl.lla = GeoCalculations.pointAtDistance(
+                                origPoints[containingSegIdx],
+                                origPoints[containingSegIdx + 1],
+                                weight);
+                        if (altitudeMode == AltitudeMode.ClampToGround)
+                            lbl.lla = new GeoPoint(lbl.lla.getLatitude(),
+                                    lbl.lla.getLongitude(),
+                                    ortho.getTerrainMeshElevation(
+                                            lbl.lla.getLatitude(),
+                                            lbl.lla.getLongitude()));
+
+                        // set text and patch Y offsets that deviate from defaults
+                        lbl.textOffy = -_lineLabelHeight / 2
+                                + _label.getDescent();
+                        lbl.patchOffy = -_label.getDescent() - 4f;
+
+                        _labels.add(lbl);
                     }
                 }
+
+                stripStartIdx = -1;
+            }
+            // segment was completely outside region
+            if (result < 0)
+                continue;
+
+            // start a new strip if necessary
+            if (stripStartIdx == -1) {
+                // reset
+                xmin = clippedSegment[0];
+                ymin = clippedSegment[1];
+                xmax = clippedSegment[0];
+                ymax = clippedSegment[1];
+                stripLength = 0d;
+                stripStartIdx = i;
+            }
+
+            // update bounds for current strip
+            for (int j = 0; j < 2; j++) {
+                final float x = clippedSegment[j * 2];
+                final float y = clippedSegment[j * 2 + 1];
+                if (x > xmax)
+                    xmax = x;
+                if (x < xmin)
+                    xmin = x;
+                if (y > ymax)
+                    ymax = y;
+                if (y < ymin)
+                    ymin = y;
+            }
+            // record the segment length
+            segmentLengths[i - stripStartIdx] = MathUtils.distance(
+                    clippedSegment[0], clippedSegment[1], clippedSegment[2],
+                    clippedSegment[3]);
+            // update total strip length
+            stripLength += segmentLengths[i - stripStartIdx];
+        }
+
+        // check emit
+        if (stripStartIdx != -1 &&
+                (Math.max(xmax - xmin, ymax - ymin) >= _lineLabelWidth)) {
+
+            // locate the segment that contains the midpoint of the current strip
+            final double halfLength = stripLength * 0.5;
+            double t = 0d;
+            int containingSegIdx = -1;
+            for (int j = 0; j < ((_points.limit() / _pointsSize) - 1)
+                    - stripStartIdx; j++) {
+                t += segmentLengths[j];
+                if (t > halfLength) {
+                    containingSegIdx = j + stripStartIdx;
+                    break;
+                }
+            }
+            if (containingSegIdx >= 0) {
+                final double segStart = t
+                        - segmentLengths[containingSegIdx - stripStartIdx];
+                final double segPercent = (halfLength - segStart)
+                        / segmentLengths[containingSegIdx - stripStartIdx];
+
+                getRenderPoint(ortho, containingSegIdx, ortho.scratch.geo);
+                ortho.currentScene.scene.forward(ortho.scratch.geo,
+                        ortho.scratch.pointF);
+                final float segStartX = ortho.scratch.pointF.x;
+                final float segStartY = ortho.scratch.pointF.y;
+                getRenderPoint(ortho, containingSegIdx + 1, ortho.scratch.geo);
+                ortho.currentScene.scene.forward(ortho.scratch.geo,
+                        ortho.scratch.pointF);
+                final float segEndX = ortho.scratch.pointF.x;
+                final float segEndY = ortho.scratch.pointF.y;
+
+                float[] seg = new float[4];
+                clip(
+                        segStartX,
+                        segStartY,
+                        segEndX,
+                        segEndY,
+                        ortho.currentScene.left,
+                        ortho.currentScene.bottom,
+                        ortho.currentScene.right,
+                        ortho.currentScene.top,
+                        seg);
+
+                final float px = seg[0]
+                        + (seg[2] - seg[0]) * (float) segPercent;
+                final float py = seg[1]
+                        + (seg[3] - seg[1]) * (float) segPercent;
+
+                final double segNormalX = (seg[2] - seg[0])
+                        / segmentLengths[containingSegIdx - stripStartIdx];
+                final double segNormalY = (seg[3] - seg[1])
+                        / segmentLengths[containingSegIdx - stripStartIdx];
+
+                start.x = (float) (px - segNormalX);
+                start.y = (float) (py - segNormalY);
+                end.x = (float) (px + segNormalX);
+                end.y = (float) (py + segNormalY);
+
+                SegmentLabel lbl = buildTextLabel(ortho,
+                        origPoints[containingSegIdx],
+                        origPoints[containingSegIdx + 1], start, end, _label,
+                        _lineLabel);
+
+                // recompute LLA
+                final double weight = MathUtils.distance(_textPoint[0],
+                        _textPoint[1], segStartX, segStartY)
+                        / MathUtils.distance(segStartX, segStartY, segEndX,
+                                segEndY);
+                lbl.lla = GeoCalculations.pointAtDistance(
+                        origPoints[containingSegIdx],
+                        origPoints[containingSegIdx + 1],
+                        weight);
+                if (altitudeMode == AltitudeMode.ClampToGround)
+                    lbl.lla = new GeoPoint(lbl.lla.getLatitude(),
+                            lbl.lla.getLongitude(),
+                            ortho.getTerrainMeshElevation(
+                                    lbl.lla.getLatitude(),
+                                    lbl.lla.getLongitude()));
+                // set text and patch Y offsets that deviate from defaults
+                lbl.textOffy = -_lineLabelHeight / 2 + _label.getDescent();
+                lbl.patchOffy = -_label.getDescent() - 4f;
+
+                _labels.add(lbl);
             }
         }
     }
 
-    private void drawSegmentLabels(GLMapView ortho) {
+    private void validateSegmentLabels(GLMapView ortho) {
+        if (_label == null) {
+            MapTextFormat textFormat = new MapTextFormat(_labelTypeface,
+                    _labelTextSize);
+            _label = GLText
+                    .getInstance(textFormat);
+        }
 
         // check for show middle label flag. This will signal to draw the label in the middle
         // visible line segment
         if (_subject.hasMetaValue("centerLabel")) {
-            showCenterLabel(ortho);
+            validateCenterLabel(ortho);
             return;
         }
 
-        if (segmentLabels == null) {
-        } else {
-            _projectVerts(ortho);
-
+        if (segmentLabels != null) {
             Map<String, Object> labelBundle;
             int segment = 0;
             String text = "";
+            GeoPoint curPoint = GeoPoint.createMutable();
+            GeoPoint lastPoint = GeoPoint.createMutable();
             PointF startPoint = new PointF();
             PointF endPoint = new PointF();
-            final double mapGSD = ortho.drawMapResolution;
+            final double mapGSD = ortho.currentScene.drawMapResolution;
             double minGSD;
             for (Map.Entry e : segmentLabels.entrySet()) {
                 labelBundle = (Map<String, Object>) e.getValue();
@@ -1006,20 +1433,11 @@ public class GLPolyline extends GLShape2 implements
                 if (text == null || text.length() == 0)
                     continue;
 
-                final int stride = (4 * _verts2Size);
-                startPoint.x = Unsafe.getFloat(_verts2Ptr + segment * stride);
-                startPoint.y = Unsafe
-                        .getFloat(_verts2Ptr + segment * stride + 4);
-                endPoint.x = Unsafe.getFloat(_verts2Ptr + segment * stride + 8);
-                endPoint.y = Unsafe
-                        .getFloat(_verts2Ptr + segment * stride + 12);
+                getRenderPoint(ortho, segment, lastPoint);
+                getRenderPoint(ortho, segment + 1, curPoint);
 
-                // now set up the GL label
-                if (_label == null) {
-                    MapTextFormat textFormat = new MapTextFormat(_labelTypeface,
-                            _labelTextSize);
-                    _label = GLText.getInstance(textFormat);
-                }
+                ortho.currentScene.scene.forward(lastPoint, startPoint);
+                ortho.currentScene.scene.forward(curPoint, endPoint);
 
                 // only draw the text if the label fits within the distance between the end points
                 // of the segment. This number is multiplied by 2.5 because circles are polylines
@@ -1035,45 +1453,66 @@ public class GLPolyline extends GLShape2 implements
                         && (Math.abs(startPoint.y - endPoint.y) * 2.5) < _label
                                 .getStringWidth(text)) {
 
-                } else {
-                    drawTextLabel(ortho, startPoint, endPoint, _label, text);
+                    continue;
                 }
 
+                _labels.add(buildTextLabel(ortho, origPoints[segment],
+                        origPoints[segment + 1], startPoint, endPoint, _label,
+                        text));
             }
         }
     }
 
-    private void drawTextLabel(GLMapView ortho, PointF startVert,
-            PointF endVert, GLText theLabel, String text) {
-
-        text = GLText.localize(text);
+    private SegmentLabel buildTextLabel(
+            GLMapView ortho,
+            GeoPoint startGeo,
+            GeoPoint endGeo,
+            PointF startVert,
+            PointF endVert,
+            GLText theLabel,
+            String text) {
 
         buildLabel(ortho, startVert, endVert);
         GLNinePatch _ninePatch = GLRenderGlobals.get(this.context)
                 .getMediumNinePatch();
 
-        final float labelWidth = _label.getStringWidth(text);
-        final float labelHeight = _label.getStringHeight();
+        SegmentLabel lbl = new SegmentLabel();
+        lbl.renderer = theLabel;
+        lbl.text = text.split("\n");
+        lbl.textWidth = _label.getStringWidth(text);
+        lbl.textHeight = _label.getStringHeight(text);
 
-        GLES20FixedPipeline.glPushMatrix();
+        final double weight = MathUtils.distance(_textPoint[0], _textPoint[1],
+                startVert.x, startVert.y)
+                / MathUtils.distance(endVert.x, endVert.y, startVert.x,
+                        startVert.y);
+        lbl.lla = GeoCalculations.pointAtDistance(startGeo, endGeo, weight);
 
-        GLES20FixedPipeline.glTranslatef(_textPoint[0], _textPoint[1], 0);
-        GLES20FixedPipeline.glRotatef(_textAngle, 0f, 0f, 1f);
-        GLES20FixedPipeline.glTranslatef(-labelWidth / 2, -labelHeight / 2 + 4,
-                0);
-        GLES20FixedPipeline.glPushMatrix();
-        float outlineOffset = -((GLText.getLineCount(text) - 1) * _label
+        if (altitudeMode == AltitudeMode.ClampToGround)
+            lbl.lla = new GeoPoint(lbl.lla.getLatitude(),
+                    lbl.lla.getLongitude(),
+                    ortho.getTerrainMeshElevation(
+                            lbl.lla.getLatitude(),
+                            lbl.lla.getLongitude()));
+
+        lbl.textAngle = _textAngle;
+        lbl.textOffx = -lbl.textWidth / 2;
+        lbl.textOffy = -lbl.textHeight / 2 + 4;
+        lbl.patch = _ninePatch;
+
+        float outlineOffset = -((GLText.getLineCount(text) - 1) * lbl.renderer
                 .getBaselineSpacing())
                 - 4;
-        GLES20FixedPipeline.glTranslatef(-8f, outlineOffset - 4f, 0f);
-        GLES20FixedPipeline.glColor4f(0f, 0f, 0f, 0.8f);
-        if (_ninePatch != null) {
-            _ninePatch.draw(labelWidth + 16f, labelHeight + 8f);
-        }
-        GLES20FixedPipeline.glPopMatrix();
-        GLES20FixedPipeline.glColor4f(1, 1, 1, 1);
-        _label.draw(text, 1, 1, 1, 1);
-        GLES20FixedPipeline.glPopMatrix();
+        lbl.patchOffx = -8f;
+        lbl.patchOffy = outlineOffset - 4f;
+        lbl.patch_r = 0f;
+        lbl.patch_g = 0f;
+        lbl.patch_b = 0f;
+        lbl.patch_a = 0.8f;
+        lbl.patchWidth = lbl.textWidth + 16f;
+        lbl.patchHeight = lbl.textHeight + 8f;
+
+        return lbl;
     }
 
     /**
@@ -1141,7 +1580,7 @@ public class GLPolyline extends GLShape2 implements
      * 
      * @param ortho
      */
-    private void showCenterLabel(GLMapView ortho) {
+    private void validateCenterLabel(GLMapView ortho) {
         // get the text to display, or return if there is none
 
         final String clt = centerLabelText;
@@ -1165,13 +1604,13 @@ public class GLPolyline extends GLShape2 implements
         PointF startPoint = new PointF();
         PointF endPoint = new PointF();
 
-        _projectVerts(ortho);
+        GeoPoint lastPoint = GeoPoint.createMutable();
+        GeoPoint curPoint = GeoPoint.createMutable();
+        getRenderPoint(ortho, middle, lastPoint);
+        getRenderPoint(ortho, middle + 1, curPoint);
 
-        final int stride = (4 * _verts2Size);
-        startPoint.x = Unsafe.getFloat(_verts2Ptr + middle * stride);
-        startPoint.y = Unsafe.getFloat(_verts2Ptr + middle * stride + 4);
-        endPoint.x = Unsafe.getFloat(_verts2Ptr + middle * stride + 8);
-        endPoint.y = Unsafe.getFloat(_verts2Ptr + middle * stride + 12);
+        ortho.currentScene.scene.forward(lastPoint, startPoint);
+        ortho.currentScene.scene.forward(curPoint, endPoint);
 
         final float centerLabelWidth = _label.getStringWidth(clt);
 
@@ -1180,9 +1619,11 @@ public class GLPolyline extends GLShape2 implements
                 && (Math.abs(startPoint.y - endPoint.y)
                         * 8.0) < centerLabelWidth) {
 
-        } else {
-            drawTextLabel(ortho, startPoint, endPoint, _label, clt);
+            return;
         }
+
+        _labels.add(buildTextLabel(ortho, origPoints[middle],
+                origPoints[middle + 1], startPoint, endPoint, _label, clt));
     }
 
     private boolean segContained(final PointF endPt1, final PointF endPt2,
@@ -1429,7 +1870,8 @@ public class GLPolyline extends GLShape2 implements
                         Math.max(partition.bottom, y));
             }
 
-            if (partIdx == Polyline.PARTITION_SIZE || i == maxIdx - _verts2Size) {
+            if (partIdx == Polyline.PARTITION_SIZE
+                    || i == maxIdx - _verts2Size) {
                 if (partCount >= _partitionRects.size())
                     _partitionRects.add(partition);
                 partition.endIndex = idx;

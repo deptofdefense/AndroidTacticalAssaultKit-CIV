@@ -75,7 +75,7 @@ public final class FileUtils {
             try {
                 final AutoDeleteFile retval = new AutoDeleteFile(
                         File.createTempFile("tmp", "", directory));
-                if(!retval.file.delete() || !retval.file.mkdir())
+                if (!retval.file.delete() || !retval.file.mkdir())
                     throw new IOException("Failed to create temp dir");
                 return retval;
             } catch (IOException e) {
@@ -93,33 +93,36 @@ public final class FileUtils {
      * @param actual    The actual file tree structure
      * @throws IOException
      */
-    public static void assertRelativeTreeEquals(File expected, File actual) throws IOException{
+    public static void assertRelativeTreeEquals(File expected, File actual)
+            throws IOException {
         assertEquals(expected.exists(), actual.exists());
-        if(!expected.exists())
+        if (!expected.exists())
             return;
 
         assertTrue(expected.isFile() || expected.isDirectory());
 
-        if(expected.isFile()) {
+        if (expected.isFile()) {
             assertTrue(actual.isFile());
 
             assertEquals(expected.length(), actual.length());
 
-            try(InputStream is1 = new BufferedInputStream(openStream(expected), 8192);
-                InputStream is2 = new BufferedInputStream(openStream(actual), 8192)) {
+            try (InputStream is1 = new BufferedInputStream(openStream(expected),
+                    8192);
+                    InputStream is2 = new BufferedInputStream(
+                            openStream(actual), 8192)) {
 
                 do {
                     final int a = is1.read();
                     final int b = is2.read();
-                    if(a < 0) {
+                    if (a < 0) {
                         assertTrue(b < 0);
                         break;
                     } else {
                         assertEquals(a, b);
                     }
-                } while(true);
+                } while (true);
             }
-        } else if(expected.isDirectory()) {
+        } else if (expected.isDirectory()) {
             assertTrue(actual.isDirectory());
 
             Map<String, File> expectedChildren = new HashMap<>();
@@ -129,8 +132,9 @@ public final class FileUtils {
 
             assertEquals(expectedChildren.size(), actualChildren.size());
 
-            assertTrue(Collections2.equals(expectedChildren.keySet(), actualChildren.keySet()));
-            for(File ec : expectedChildren.values()) {
+            assertTrue(Collections2.equals(expectedChildren.keySet(),
+                    actualChildren.keySet()));
+            for (File ec : expectedChildren.values()) {
                 File ac = actualChildren.get(ec.getName());
                 assertNotNull(ac);
                 assertRelativeTreeEquals(ec, ac);
@@ -140,17 +144,18 @@ public final class FileUtils {
         }
     }
 
-    private static InputStream openStream(File f) throws IOException{
-        if(f instanceof ZipVirtualFile)
-            return ((ZipVirtualFile)f).openStream();
+    private static InputStream openStream(File f) throws IOException {
+        if (f instanceof ZipVirtualFile)
+            return ((ZipVirtualFile) f).openStream();
         else
             return new FileInputStream(f);
     }
+
     private static void getChildren(File dir, Map<String, File> children) {
         File[] c = dir.listFiles();
-        if(c == null)
+        if (c == null)
             return;
-        for(File f : c)
+        for (File f : c)
             children.put(f.getName(), f);
     }
 }

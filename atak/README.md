@@ -37,6 +37,17 @@ The local.properties file should have the following line:
 sdk.dir=/path/to/android/sdk
 
 
+
+
+
+Code Style
+====
+
+* Android Studio does suggest replacing Anonymous Inner classes with Lambdas - please do not do this.   
+* There is a code formatting that is provided with the repository and is discussed under the Formatting section.
+
+
+
 Requirements for Development
 ====
 
