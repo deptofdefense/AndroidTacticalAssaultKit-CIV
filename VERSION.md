@@ -1,5 +1,21 @@
 # Version History
 
+## 4.3.0.0
+
+* Lasso tool to create imagery download regions
+* Lasso tool to select content for Data Packages
+* Automatic label deconfliction/declutter
+* Map can be tilted to 90 degrees
+* Quick Pic metadata overlay from tool menu
+* Display height and/or area of markers and shapes in the coordinate widget when an item is selected
+* Android 11 support
+  * Allow ATAK to access GPS while in the background
+  * Address battery usage
+  * Allow access to external SD cards
+* Improved KML/KMZ imports
+  * Improve handling of KML network links, including nested network links
+  * KMZs containing both image overlays and placemarks/shapes only need to be imported once to ingest all contents
+
 ## 4.2.1.10
 
 * Better KML consistency with Google Earth for line style
