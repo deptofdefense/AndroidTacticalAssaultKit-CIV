@@ -9,6 +9,8 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.webkit.MimeTypeMap;
 import android.widget.Toast;
+
+import com.atakmap.android.util.FileProviderHelper;
 import com.atakmap.app.R;
 import com.atakmap.comms.http.HttpUtil;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -39,6 +41,42 @@ public class MIMETypeMapper implements ContentTypeMapper {
             mimeType = HttpUtil.MIME_XML;
 
         return mimeType;
+    }
+
+    /**
+     * Get an activity intent for opening a file
+     *
+     * @param context Application context
+     * @param file File to open
+     * @return Activity intent
+     */
+    public static Intent getOpenIntent(Context context, File file) {
+        // Make sure file exists
+        if (!FileSystemUtils.isFile(file))
+            return null;
+
+        // Need valid MIME type
+        String mime = MIMETypeMapper.GetContentType(file);
+        if (FileSystemUtils.isEmpty(mime))
+            return null;
+
+        try {
+            // Build out intent
+            Intent intent = new Intent();
+            intent.setAction(android.content.Intent.ACTION_VIEW);
+            FileProviderHelper.setDataAndType(context, intent, file, mime);
+
+            // Try to resolve an activity
+            ResolveInfo resolveInfo = context.getPackageManager()
+                    .resolveActivity(
+                            intent, PackageManager.MATCH_DEFAULT_ONLY);
+            if (resolveInfo == null)
+                return null;
+            return intent;
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to get activity intent for " + file, e);
+            return null;
+        }
     }
 
     /**
@@ -83,16 +121,8 @@ public class MIMETypeMapper implements ContentTypeMapper {
                 mime));
 
         // build out intent
-        Intent intent = new Intent();
-        intent.setAction(android.content.Intent.ACTION_VIEW);
-        com.atakmap.android.util.FileProviderHelper.setDataAndType(context,
-                intent, file, mime);
-
-        // try to resolve an activity
-        ResolveInfo resolveInfo = context.getPackageManager().resolveActivity(
-                intent,
-                PackageManager.MATCH_DEFAULT_ONLY);
-        if (resolveInfo == null) {
+        Intent intent = getOpenIntent(context, file);
+        if (intent == null) {
             // failed to resolve an activity
             Log.w(TAG, "Failed to resolve Activity for MIME type: %s" + mime);
 

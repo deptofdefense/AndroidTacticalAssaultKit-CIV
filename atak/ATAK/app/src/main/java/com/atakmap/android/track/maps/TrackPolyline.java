@@ -24,6 +24,7 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.maps.assets.Icon;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.map.layer.feature.Feature;
 
 /**
  * Polyline used for displaying tracks
@@ -71,6 +72,7 @@ public class TrackPolyline extends Polyline implements
 
         setZOrder(-2);
         setBasicLineStyle(BASIC_LINE_STYLE_ARROWS);
+        setAltitudeMode(Feature.AltitudeMode.Absolute);
         addOnGroupChangedListener(this);
     }
 

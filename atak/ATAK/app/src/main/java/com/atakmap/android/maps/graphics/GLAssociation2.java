@@ -18,8 +18,12 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.map.MapControl;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.MapRenderer3;
+import com.atakmap.map.layer.control.SurfaceRendererControl;
 import com.atakmap.map.layer.feature.Feature;
+import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.feature.geometry.LineString;
 import com.atakmap.map.layer.feature.geometry.opengl.GLBatchLineString;
 import com.atakmap.map.layer.feature.style.BasicStrokeStyle;
@@ -32,6 +36,7 @@ import com.atakmap.math.MathUtils;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLNinePatch;
 import com.atakmap.opengl.GLText;
+import com.atakmap.util.Visitor;
 
 public class GLAssociation2 extends AbstractGLMapItem2 implements
         OnStyleChangedListener,
@@ -58,6 +63,8 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
     private byte pattern = (byte) 0xFF;
     private float strokeWidth = 1f;
 
+    private SurfaceRendererControl _surfaceCtrl;
+
     private float _textAngle;
     private float _textWidth;
     private float _textHeight;
@@ -70,6 +77,17 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
                 | GLMapView.RENDER_PASS_SURFACE);
 
         impl = new GLBatchLineString(surface);
+
+        if (surface instanceof MapRenderer3)
+            _surfaceCtrl = ((MapRenderer3) surface)
+                    .getControl(SurfaceRendererControl.class);
+        else
+            surface.visitControl(null, new Visitor<SurfaceRendererControl>() {
+                @Override
+                public void visit(SurfaceRendererControl object) {
+                    _surfaceCtrl = object;
+                }
+            }, SurfaceRendererControl.class);
 
         _link = subject.getLink();
         _clampToGround = subject.getClampToGround();
@@ -131,22 +149,38 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
     }
 
     private void refreshStyle() {
-        Style update = null;
+        final Style[] update = {
+                null
+        };
         if ((pattern & 0xFF) != 0xFF) {
-            update = new PatternStrokeStyle(pattern & 0xFF, 8, this.color,
+            update[0] = new PatternStrokeStyle(pattern & 0xFF, 8, this.color,
                     strokeWidth);
         } else {
-            update = new BasicStrokeStyle(color, strokeWidth);
+            update[0] = new BasicStrokeStyle(color, strokeWidth);
             if (outline) {
                 BasicStrokeStyle bg = new BasicStrokeStyle(
                         0xFF000000 & this.color, strokeWidth + 2f);
-                update = new CompositeStyle(new Style[] {
-                        bg, update
+                update[0] = new CompositeStyle(new Style[] {
+                        bg, update[0]
                 });
             }
         }
-        impl.setStyle(update);
-        context.requestRefresh();
+        context.queueEvent(new Runnable() {
+            @Override
+            public void run() {
+                impl.setStyle(update[0]);
+                if (_surfaceCtrl != null &&
+                        _points != null &&
+                        _points[0] != null &&
+                        _points[1] != null) {
+
+                    Envelope.Builder eb = new Envelope.Builder();
+                    eb.add(_points[0].getLongitude(), _points[0].getLatitude());
+                    eb.add(_points[1].getLongitude(), _points[1].getLatitude());
+                    _surfaceCtrl.markDirty(eb.build(), true);
+                }
+            }
+        });
     }
 
     @Override
@@ -326,7 +360,7 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
                     double E = Math.max(lon0, lon1); // E
 
                     // if both are unwrapped, wrap
-                    if(Math.abs(W) > 180d && Math.abs(E) > 180d) {
+                    if (Math.abs(W) > 180d && Math.abs(E) > 180d) {
                         final double ew = GeoCalculations.wrapLongitude(E);
                         final double ww = GeoCalculations.wrapLongitude(W);
                         E = Math.max(ew, ww);

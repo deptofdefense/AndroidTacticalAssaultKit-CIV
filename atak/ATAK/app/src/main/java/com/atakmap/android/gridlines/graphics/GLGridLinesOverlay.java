@@ -5,16 +5,26 @@ import android.graphics.Color;
 import android.util.Pair;
 
 import com.atakmap.android.gridlines.GridLinesOverlay;
+import com.atakmap.coremap.concurrent.NamedThreadFactory;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.MapRenderer3;
 import com.atakmap.map.layer.Layer;
+import com.atakmap.map.layer.control.SurfaceRendererControl;
+import com.atakmap.map.layer.opengl.GLAbstractLayer2;
 import com.atakmap.map.layer.opengl.GLLayer;
 import com.atakmap.map.layer.opengl.GLLayer2;
+import com.atakmap.map.layer.opengl.GLLayer3;
 import com.atakmap.map.layer.opengl.GLLayerFactory;
 import com.atakmap.map.layer.opengl.GLLayerSpi2;
 import com.atakmap.map.opengl.GLMapView;
+import com.atakmap.math.MathUtils;
 import com.atakmap.opengl.GLES20FixedPipeline;
+import com.atakmap.util.Visitor;
 
-public class GLGridLinesOverlay implements GLLayer,
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+
+public class GLGridLinesOverlay extends GLAbstractLayer2 implements
         GridLinesOverlay.OnGridLinesColorChangedListener,
         GridLinesOverlay.OnGridLinesTypeChangedListener {
 
@@ -23,7 +33,8 @@ public class GLGridLinesOverlay implements GLLayer,
     private String _type;
     private float _red, _green, _blue;
     private final GridLinesOverlay subject;
-    private final MapRenderer renderContext;
+    private Executor _genGridTileExecutor;
+    private Executor _segmentLabelsExecutor;
 
     public final static GLLayerSpi2 SPI2 = new GLLayerSpi2() {
         @Override
@@ -40,17 +51,17 @@ public class GLGridLinesOverlay implements GLLayer,
             final MapRenderer surface = arg.first;
             final Layer layer = arg.second;
             if (layer instanceof GridLinesOverlay)
-                return GLLayerFactory.adapt(new GLGridLinesOverlay(surface,
-                        (GridLinesOverlay) layer));
+                return new GLGridLinesOverlay(surface,
+                        (GridLinesOverlay) layer);
             return null;
         }
     };
 
     private GLGridLinesOverlay(MapRenderer surface, GridLinesOverlay subject) {
-        this.renderContext = surface;
+        super(surface, subject,
+                GLMapView.RENDER_PASS_SURFACE | GLMapView.RENDER_PASS_SPRITES);
+
         this.subject = subject;
-        subject.addGridLinesColorChangedListener(this);
-        subject.addGridLinesTypeChangedListener(this);
 
         final int color = this.subject.getColor();
 
@@ -81,17 +92,41 @@ public class GLGridLinesOverlay implements GLLayer,
                 }
             }
         });
+        final SurfaceRendererControl[] ctrl = new SurfaceRendererControl[1];
+        if (renderContext instanceof MapRenderer3)
+            ctrl[0] = ((MapRenderer3) renderContext)
+                    .getControl(SurfaceRendererControl.class);
+        else
+            renderContext.visitControl(null,
+                    new Visitor<SurfaceRendererControl>() {
+                        @Override
+                        public void visit(SurfaceRendererControl object) {
+                            ctrl[0] = object;
+                        }
+                    }, SurfaceRendererControl.class);
+        if (ctrl[0] != null)
+            ctrl[0].markDirty();
     }
 
     @Override
-    public Layer getSubject() {
-        return this.subject;
+    protected void init() {
+        super.init();
+
+        _genGridTileExecutor = Executors.newFixedThreadPool(1,
+                new NamedThreadFactory("GLGridLinesOverlay-tile"));
+        _segmentLabelsExecutor = Executors.newFixedThreadPool(1,
+                new NamedThreadFactory("GLGridLinesOverlay"));
     }
 
     @Override
-    public void draw(GLMapView _orthoMap) {
+    protected void drawImpl(GLMapView view, int renderPass) {
+        if ((renderPass & getRenderPass()) == 0)
+            return;
+
         if (_zoneLines == null) {
             _zoneLines = new GLZonesOverlay();
+            _zoneLines._genGridTileExecutor = _genGridTileExecutor;
+            _zoneLines._segmentLabelsExecutor = _segmentLabelsExecutor;
             _zoneLines.setColor(_red, _green, _blue);
             _zoneLines.setType(_type);
         }
@@ -106,16 +141,19 @@ public class GLGridLinesOverlay implements GLLayer,
 
         String MGRS_ZONE_TYPE = "MGRS";
         if (_type.equals(MGRS_ZONE_TYPE)) {
-            _zoneLines.draw(_orthoMap);
+            _zoneLines.draw(view, renderPass);
         } else {
-            _latlngLines.draw(_orthoMap);
+            _latlngLines.draw(view, renderPass);
         }
 
         GLES20FixedPipeline.glPopMatrix();
+
     }
 
     @Override
     public void release() {
+        super.release();
+
         if (_zoneLines != null)
             _zoneLines.release();
         _zoneLines = null;
@@ -123,6 +161,11 @@ public class GLGridLinesOverlay implements GLLayer,
             _latlngLines.release();
             _latlngLines = null;
         }
+    }
+
+    @Override
+    public int getRenderPass() {
+        return GLMapView.RENDER_PASS_SURFACE | GLMapView.RENDER_PASS_SPRITES;
     }
 
     @Override
@@ -139,5 +182,35 @@ public class GLGridLinesOverlay implements GLLayer,
                 }
             }
         });
+        final SurfaceRendererControl[] ctrl = new SurfaceRendererControl[1];
+        if (renderContext instanceof MapRenderer3)
+            ctrl[0] = ((MapRenderer3) renderContext)
+                    .getControl(SurfaceRendererControl.class);
+        else
+            renderContext.visitControl(null,
+                    new Visitor<SurfaceRendererControl>() {
+                        @Override
+                        public void visit(SurfaceRendererControl object) {
+                            ctrl[0] = object;
+                        }
+                    }, SurfaceRendererControl.class);
+        if (ctrl[0] != null)
+            ctrl[0].markDirty();
+    }
+
+    @Override
+    public void start() {
+        super.start();
+
+        subject.addGridLinesColorChangedListener(this);
+        subject.addGridLinesTypeChangedListener(this);
+    }
+
+    @Override
+    public void stop() {
+        super.stop();
+
+        subject.removeGridLinesColorChangedListener(this);
+        subject.removeGridLinesTypeChangedListener(this);
     }
 }

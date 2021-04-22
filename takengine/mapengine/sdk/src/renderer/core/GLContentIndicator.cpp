@@ -118,7 +118,7 @@ void GLContentIndicator::setDisplayThresholds(const double minGsd, const double 
     min_resolution_ = minGsd;
     max_resolution_ = maxGsd;
 }
-void GLContentIndicator::draw(const GLMapView2& view, const int renderPass) NOTHROWS
+void GLContentIndicator::draw(const GLGlobeBase& view, const int renderPass) NOTHROWS
 {
     // XXX - disable draw when sufficient zoomed out, retain AABB to compute screen coverage
     if (bounds_.get() && ((clamp_to_ground_ && (renderPass&GLMapView2::Surface)) || (!clamp_to_ground_ && (renderPass&GLMapView2::Sprites)))) {
@@ -138,7 +138,7 @@ void GLContentIndicator::draw(const GLMapView2& view, const int renderPass) NOTH
 
         TAK::Engine::Math::Point2<double> scratchPoint;
 
-        view.scene.forwardTransform.transform(&scratchPoint, static_cast<GLBatchPoint3 &>(*icon_).posProjected);
+        view.renderPass->scene.forwardTransform.transform(&scratchPoint, static_cast<GLBatchPoint3 &>(*icon_).posProjected);
         auto xpos = (float)scratchPoint.x;
         auto ypos = (float)scratchPoint.y;
         auto zpos = (float)scratchPoint.z;

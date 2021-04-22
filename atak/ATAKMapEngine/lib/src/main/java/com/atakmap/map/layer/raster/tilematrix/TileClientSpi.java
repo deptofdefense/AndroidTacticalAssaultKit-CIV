@@ -6,15 +6,16 @@ public interface TileClientSpi {
 
         public long dnsLookupTimeout;
         public long connectTimeout;
+        public boolean proxy;
 
         public Options() {
-            dnsLookupTimeout = defaults.dnsLookupTimeout;
-            connectTimeout = defaults.connectTimeout;
+            this(defaults.dnsLookupTimeout, defaults.connectTimeout);
         }
         
         private Options(long dnsLookupTimeout, long connectTimeout) {
             this.dnsLookupTimeout = dnsLookupTimeout;
             this.connectTimeout = connectTimeout;
+            this.proxy = true;
         }
     }
 

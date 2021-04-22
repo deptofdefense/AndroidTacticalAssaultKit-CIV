@@ -17,6 +17,7 @@ import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.map.layer.feature.Feature.AltitudeMode;
 import com.atakmap.spatial.file.export.KMZFolder;
 import com.atakmap.util.zip.IoUtils;
 import com.atakmap.util.zip.ZipEntry;
@@ -277,7 +278,8 @@ public class KMLUtil {
                         // New network link
                         if (tag.equals("NetworkLink")) {
                             nl = new NetworkLink();
-                            for (int i = 0; i < parser.getAttributeCount(); i++) {
+                            for (int i = 0; i < parser
+                                    .getAttributeCount(); i++) {
                                 String attr = parser.getAttributeName(i);
                                 String value = parser.getAttributeValue(i);
                                 if (attr.equals("id"))
@@ -296,7 +298,8 @@ public class KMLUtil {
                                 nl.setName(getValue(parser, null));
                                 break;
                             case "visibility":
-                                nl.setVisibility(getValue(parser, "1").equals("1"));
+                                nl.setVisibility(
+                                        getValue(parser, "1").equals("1"));
                                 break;
                             case "open":
                                 nl.setOpen(getValue(parser, "1").equals("1"));
@@ -1187,6 +1190,23 @@ public class KMLUtil {
     }
 
     /**
+     * Convert altitude mode enum to KML-compatible string
+     * @param altitudeMode Altitude mode
+     * @return Altitude mode string
+     */
+    public static String convertAltitudeMode(AltitudeMode altitudeMode) {
+        switch (altitudeMode) {
+            case Absolute:
+                return "absolute";
+            case Relative:
+                return "relativeToGround";
+            case ClampToGround:
+                return "clampToGround";
+        }
+        return null;
+    }
+
+    /**
      * Creates a CDATA section containing a list.
      * 
      * @param type
@@ -1255,12 +1275,12 @@ public class KMLUtil {
                         ++i;
                     } while (i < tempNameArr.length - 2);
 
-                    try(InputStream is = zip.getInputStream(ze)) {
+                    try (InputStream is = zip.getInputStream(ze)) {
                         tempFile = IOProviderFactory.createTempFile(tempName,
                                 ".kml",
                                 tmpDir);
-                        try(OutputStream os = IOProviderFactory
-                                .getOutputStream(tempFile)){
+                        try (OutputStream os = IOProviderFactory
+                                .getOutputStream(tempFile)) {
                             FileSystemUtils.copy(is, os);
                         }
                     } finally {

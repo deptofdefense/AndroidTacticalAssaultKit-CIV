@@ -19,7 +19,7 @@ public final class NativePeerManager {
 
     private final static String TAG = "NativePeerManager";
     
-    private static boolean trackInfo = true;
+    private static boolean trackInfo = false;
 
     private static final int INFO_TOTAL_ALLOCS_IDX = 0;
     private static final int INFO_LIVE_ALLOCS_IDX = 1;

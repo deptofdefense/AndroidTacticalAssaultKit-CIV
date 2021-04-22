@@ -51,7 +51,7 @@ namespace TAK {
                     GLC3DTRenderer(TAK::Engine::Core::RenderContext& ctx, const TAK::Engine::Model::SceneInfo& info, const char* cacheDir) NOTHROWS;
                     virtual ~GLC3DTRenderer() NOTHROWS;
                 public: // GLMapRenderable2
-                    virtual void draw(const TAK::Engine::Renderer::Core::GLMapView2& view, const int renderPass) NOTHROWS;
+                    virtual void draw(const TAK::Engine::Renderer::Core::GLGlobeBase& view, const int renderPass) NOTHROWS;
                     virtual void release() NOTHROWS;
                     virtual int getRenderPass() NOTHROWS;
                     virtual void start() NOTHROWS;

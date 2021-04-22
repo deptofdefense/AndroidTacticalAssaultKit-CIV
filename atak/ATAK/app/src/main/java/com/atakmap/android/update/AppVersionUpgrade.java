@@ -261,8 +261,9 @@ public class AppVersionUpgrade {
             Log.d(TAG, "shuffle bluetooth success");
         }
 
-        File legacyDir = FileSystemUtils.getItem(FileSystemUtils.TOOL_DATA_DIRECTORY
-                + File.separatorChar + "missionpackage");
+        File legacyDir = FileSystemUtils
+                .getItem(FileSystemUtils.TOOL_DATA_DIRECTORY
+                        + File.separatorChar + "missionpackage");
 
         File[] legacyFiles = IOProviderFactory.listFiles(legacyDir);
         if (legacyFiles != null) {

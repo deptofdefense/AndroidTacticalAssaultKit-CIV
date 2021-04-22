@@ -15,7 +15,7 @@ namespace TAKEngineJNI {
                     ManagedGLMapRenderable2(JNIEnv &env, jobject impl, const bool requiresSync = true) NOTHROWS;
                     ~ManagedGLMapRenderable2() NOTHROWS;
                 public:
-                    virtual void draw(const TAK::Engine::Renderer::Core::GLMapView2& view, const int renderPass) NOTHROWS;
+                    virtual void draw(const TAK::Engine::Renderer::Core::GLGlobeBase& view, const int renderPass) NOTHROWS;
                     virtual void release() NOTHROWS;
                     virtual int getRenderPass() NOTHROWS;
                     virtual void start() NOTHROWS;

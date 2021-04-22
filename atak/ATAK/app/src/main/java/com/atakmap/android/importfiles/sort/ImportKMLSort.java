@@ -45,7 +45,7 @@ public class ImportKMLSort extends ImportInPlaceResolver {
             return false;
 
         // it is a .kml, now lets see if it contains reasonable xml
-        try(FileInputStream fis = IOProviderFactory.getInputStream(file)) {
+        try (FileInputStream fis = IOProviderFactory.getInputStream(file)) {
             return isKml(fis);
         } catch (IOException e) {
             Log.e(TAG, "Error checking if KML: " + file.getAbsolutePath(), e);

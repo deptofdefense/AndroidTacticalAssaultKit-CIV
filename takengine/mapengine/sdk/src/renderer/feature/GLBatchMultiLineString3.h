@@ -7,7 +7,7 @@ namespace TAK {
     namespace Engine {
         namespace Renderer {
             namespace Feature {
-                class GLBatchMultiLineString3 : public GLBatchGeometryCollection3
+                class ENGINE_API GLBatchMultiLineString3 : public GLBatchGeometryCollection3
                 {
                 public:
                     GLBatchMultiLineString3(TAK::Engine::Core::RenderContext &surface) NOTHROWS;

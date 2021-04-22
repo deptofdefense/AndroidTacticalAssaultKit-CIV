@@ -123,8 +123,8 @@ public class ImportFileBrowser extends LinearLayout {
         sdcardButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View arg0) {
-                final String android_storage =
-                        RemovableStorageHelper.getRemovableStorageDirectory()[0];
+                final String android_storage = RemovableStorageHelper
+                        .getRemovableStorageDirectory()[0];
 
                 if (android_storage != null)
                     setCurrentPath(new File(android_storage));

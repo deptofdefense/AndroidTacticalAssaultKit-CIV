@@ -24,7 +24,8 @@ GLTilePatch::GLTilePatch(GLTiledLayerCore *core, GLZoomLevel *parent, int gridOf
       gridOffsetX(gridOffsetX),
       gridOffsetY(gridOffsetY),
       gridColumns(gridColumns),
-      gridRows(gridRows) {
+      gridRows(gridRows),
+      lastPumpDrawn(-1) {
     tiles_ = new std::shared_ptr<GLTile> [num_tiles_];
 
     double lodProjTileWidth = parent->info.pixelSizeX * parent->info.tileWidth;
@@ -66,11 +67,11 @@ GLTilePatch::GLTilePatch(GLTiledLayerCore *core, GLZoomLevel *parent, int gridOf
 }
 
 GLTilePatch::~GLTilePatch() {
-    release(false);
+    release(false, -1);
     delete[] tiles_;
 }
 
-TAK::Engine::Util::TAKErr GLTilePatch::batch(const TAK::Engine::Renderer::Core::GLMapView2 &view, const int renderPass,
+TAK::Engine::Util::TAKErr GLTilePatch::batch(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const int renderPass,
                                              TAK::Engine::Renderer::GLRenderBatch2 &batch) NOTHROWS {
     if (!TAK::Engine::Util::MathUtils_hasBits(renderPass, getRenderPass())) return TAK::Engine::Util::TAKErr::TE_Ok;
 
@@ -78,15 +79,17 @@ TAK::Engine::Util::TAKErr GLTilePatch::batch(const TAK::Engine::Renderer::Core::
     double lodProjTileHeight = parent_->info.pixelSizeY * parent_->info.tileHeight;
 
     // compute patch geo intersect with view
-    if (!atakmap::math::Rectangle<double>::intersects(patchMinLng, patchMinLat, patchMaxLng, patchMaxLat, view.westBound, view.southBound,
-                                                      view.eastBound, view.northBound)) {
+    if (!atakmap::math::Rectangle<double>::intersects(patchMinLng, patchMinLat, patchMaxLng, patchMaxLat, view.renderPass->westBound, view.renderPass->southBound,
+                                                      view.renderPass->eastBound, view.renderPass->northBound)) {
         return TAK::Engine::Util::TAKErr::TE_Ok;
     }
 
-    double isectMinLat = atakmap::math::max(patchMinLat, view.southBound);
-    double isectMinLng = atakmap::math::max(patchMinLng, view.westBound);
-    double isectMaxLat = atakmap::math::min(patchMinLat, view.northBound);
-    double isectMaxLng = atakmap::math::min(patchMinLng, view.eastBound);
+    lastPumpDrawn = view.renderPass->renderPump;
+
+    double isectMinLat = atakmap::math::max(patchMinLat, view.renderPass->southBound);
+    double isectMinLng = atakmap::math::max(patchMinLng, view.renderPass->westBound);
+    double isectMaxLat = atakmap::math::min(patchMinLat, view.renderPass->northBound);
+    double isectMaxLng = atakmap::math::min(patchMinLng, view.renderPass->eastBound);
 
     TAK::Engine::Math::Point2<double> scratchD(0, 0, 0);
     TAK::Engine::Core::GeoPoint2 scratchG;
@@ -122,38 +125,28 @@ TAK::Engine::Util::TAKErr GLTilePatch::batch(const TAK::Engine::Renderer::Core::
         }
     }
 
-    // release any tiles that do not intersect the AOI and are not being
-    // borrowed from
-    for (int row = gridOffsetY; row < (gridOffsetY + gridRows); row++) {
-        if (row >= minTileDrawRow && row <= maxTileDrawRow) continue;
-        for (int col = gridOffsetX; col < (gridOffsetX + gridColumns); col++) {
-            if (row >= minTileDrawCol && col <= maxTileDrawCol) continue;
-
-            int idx = ((row - gridOffsetY) * gridColumns) + (col - gridOffsetX);
-            if (tiles_[idx].get() != nullptr && !tiles_[idx]->hasBorrowers()) tiles_[idx]->release();
-        }
-    }
     return TAK::Engine::Util::TAKErr::TE_Ok;
 }
 
-void GLTilePatch::draw(const TAK::Engine::Renderer::Core::GLMapView2 &view, const int renderPass) NOTHROWS {
+void GLTilePatch::draw(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const int renderPass) NOTHROWS {
     if (!TAK::Engine::Util::MathUtils_hasBits(renderPass, getRenderPass())) return;
 
     double lodProjTileWidth = parent_->info.pixelSizeX * parent_->info.tileWidth;
     double lodProjTileHeight = parent_->info.pixelSizeY * parent_->info.tileHeight;
 
     // compute patch geo intersect with view
-    if (!atakmap::math::Rectangle<double>::intersects(patchMinLng, patchMinLat, patchMaxLng, patchMaxLat, view.westBound, view.southBound,
-                                                      view.eastBound, view.northBound)) {
+    if (!atakmap::math::Rectangle<double>::intersects(patchMinLng, patchMinLat, patchMaxLng, patchMaxLat, view.renderPass->westBound, view.renderPass->southBound,
+                                                      view.renderPass->eastBound, view.renderPass->northBound)) {
         return;
     }
 
+    lastPumpDrawn = view.renderPass->renderPump;
     if (core_->debugDraw) debugDraw(view);
 
-    double isectMinLat = atakmap::math::max(patchMinLat, view.southBound);
-    double isectMinLng = atakmap::math::max(patchMinLng, view.westBound);
-    double isectMaxLat = atakmap::math::min(patchMaxLat, view.northBound);
-    double isectMaxLng = atakmap::math::min(patchMaxLng, view.eastBound);
+    double isectMinLat = atakmap::math::max(patchMinLat, view.renderPass->southBound);
+    double isectMinLng = atakmap::math::max(patchMinLng, view.renderPass->westBound);
+    double isectMaxLat = atakmap::math::min(patchMaxLat, view.renderPass->northBound);
+    double isectMaxLng = atakmap::math::min(patchMaxLng, view.renderPass->eastBound);
 
     TAK::Engine::Math::Point2<double> scratchD(0, 0, 0);
     TAK::Engine::Core::GeoPoint2 scratchG;
@@ -188,39 +181,27 @@ void GLTilePatch::draw(const TAK::Engine::Renderer::Core::GLMapView2 &view, cons
             tiles_[idx]->draw(view, renderPass);
         }
     }
-
-    // release any tiles that do not intersect the AOI and are not being
-    // borrowed from
-    for (int row = gridOffsetY; row < (gridOffsetY + gridRows); row++) {
-        if (row >= minTileDrawRow && row <= maxTileDrawRow) continue;
-        for (int col = gridOffsetX; col < (gridOffsetX + gridColumns); col++) {
-            if (row >= minTileDrawCol && col <= maxTileDrawCol) continue;
-
-            int idx = ((row - gridOffsetY) * gridColumns) + (col - gridOffsetX);
-            if (tiles_[idx].get() != nullptr && !tiles_[idx]->hasBorrowers()) tiles_[idx]->release();
-        }
-    }
 }
 
-void GLTilePatch::debugDraw(const TAK::Engine::Renderer::Core::GLMapView2 &view) {
+void GLTilePatch::debugDraw(const TAK::Engine::Renderer::Core::GLGlobeBase &view) {
     float dbg[8];
     TAK::Engine::Math::Point2<float> scratchF(0, 0, 0);
     TAK::Engine::Core::GeoPoint2 scratchG;
 
     scratchG = TAK::Engine::Core::GeoPoint2(patchMinLat, patchMinLng);
-    view.forward(&scratchF, scratchG);
+    view.renderPass->scene.forward(&scratchF, scratchG);
     dbg[0] = scratchF.x;
     dbg[1] = scratchF.y;
     scratchG = TAK::Engine::Core::GeoPoint2(patchMaxLat, patchMinLng);
-    view.forward(&scratchF, scratchG);
+    view.renderPass->scene.forward(&scratchF, scratchG);
     dbg[2] = scratchF.x;
     dbg[3] = scratchF.y;
     scratchG = TAK::Engine::Core::GeoPoint2(patchMaxLat, patchMaxLng);
-    view.forward(&scratchF, scratchG);
+    view.renderPass->scene.forward(&scratchF, scratchG);
     dbg[4] = scratchF.x;
     dbg[5] = scratchF.y;
     scratchG = TAK::Engine::Core::GeoPoint2(patchMinLat, patchMaxLng);
-    view.forward(&scratchF, scratchG);
+    view.renderPass->scene.forward(&scratchF, scratchG);
     dbg[6] = scratchF.x;
     dbg[7] = scratchF.y;
 
@@ -234,7 +215,7 @@ void GLTilePatch::debugDraw(const TAK::Engine::Renderer::Core::GLMapView2 &view)
     fixedPipe->glDisableClientState(atakmap::renderer::GLES20FixedPipeline::CS_GL_VERTEX_ARRAY);
 
     scratchG = TAK::Engine::Core::GeoPoint2(patchMaxLat, patchMinLng);
-    view.forward(&scratchF, scratchG);
+    view.renderPass->scene.forward(&scratchF, scratchG);
     fixedPipe->glPushMatrix();
     fixedPipe->glTranslatef(scratchF.x + 5, scratchF.y - 40, 0.0f);
 
@@ -248,10 +229,10 @@ void GLTilePatch::debugDraw(const TAK::Engine::Renderer::Core::GLMapView2 &view)
     fixedPipe->glPopMatrix();
 }
 
-bool GLTilePatch::release(bool unusedOnly) {
+bool GLTilePatch::release(bool unusedOnly, int renderPump) {
     bool cleared = true;
     for (int i = 0; i < num_tiles_; i++) {
-        if (tiles_[i].get() != nullptr && (!unusedOnly || !tiles_[i]->hasBorrowers())) {
+        if (tiles_[i].get() != nullptr && (!unusedOnly || !tiles_[i]->hasBorrowers()) && renderPump != tiles_[i]->lastPumpDrawn) {
             tiles_[i]->release();
             tiles_[i].reset();
         } else if (tiles_[i].get() != nullptr) {
@@ -261,9 +242,9 @@ bool GLTilePatch::release(bool unusedOnly) {
     return cleared;
 }
 
-void GLTilePatch::release() NOTHROWS { release(false); }
+void GLTilePatch::release() NOTHROWS { release(false, -1); }
 
-int GLTilePatch::getRenderPass() NOTHROWS { return Core::GLMapView2::Surface; }
+int GLTilePatch::getRenderPass() NOTHROWS { return Core::GLGlobeBase::Surface; }
 
 void GLTilePatch::start() NOTHROWS {}
 void GLTilePatch::stop() NOTHROWS {}

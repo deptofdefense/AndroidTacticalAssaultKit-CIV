@@ -14,6 +14,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.graphics.AbstractGLMapItem2;
 import com.atakmap.android.maps.graphics.GLMapItem2;
 import com.atakmap.android.maps.graphics.GLMapItemSpi3;
+import com.atakmap.android.maps.graphics.GLSegmentFloatingLabel;
 import com.atakmap.android.maps.graphics.GLText2;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.widgets.FahArrowWidget;
@@ -28,11 +29,21 @@ import com.atakmap.coremap.conversions.AngleUtilities;
 
 import com.atakmap.coremap.maps.coords.DirectionType;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
-import com.atakmap.coremap.maps.coords.Vector2D;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.LegacyAdapters;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.layer.control.SurfaceRendererControl;
+import com.atakmap.map.layer.feature.Feature;
+import com.atakmap.map.layer.feature.geometry.Envelope;
+import com.atakmap.map.layer.feature.geometry.LineString;
+import com.atakmap.map.layer.feature.geometry.Polygon;
+import com.atakmap.map.layer.feature.geometry.opengl.GLBatchPolygon;
+import com.atakmap.map.layer.feature.style.BasicFillStyle;
+import com.atakmap.map.layer.feature.style.BasicStrokeStyle;
+import com.atakmap.map.layer.feature.style.CompositeStyle;
+import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.math.MathUtils;
@@ -42,10 +53,10 @@ import com.atakmap.opengl.GLNinePatch;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 
 import com.atakmap.coremap.locale.LocaleUtil;
+import com.atakmap.util.Releasable;
 
 /**
  * A GLMapWidget class that will display an arrow representing the Final Attack Heading towards a
@@ -61,7 +72,8 @@ public class GLFahArrowWidget extends GLShapeWidget implements
         OnFahWidthChangedListener, OnFahAngleChangedListener,
         OnTouchableChangedListener, OnTargetPointChangedListener,
         OnFahLegChangedListener,
-        OnDesignatorPointChangedListener {
+        OnDesignatorPointChangedListener,
+        Releasable {
 
     public final static GLMapItemSpi3 GLITEM_SPI = new GLMapItemSpi3() {
         @Override
@@ -93,9 +105,16 @@ public class GLFahArrowWidget extends GLShapeWidget implements
                                                 .getFAH());
                     }
 
+                    final boolean surface = MathUtils.hasBits(pass,
+                            GLMapView.RENDER_PASS_SURFACE);
+                    final boolean sprites = MathUtils.hasBits(pass,
+                            GLMapView.RENDER_PASS_SPRITES);
+                    if (surface && !bounds.intersects(ortho.northBound,
+                            ortho.westBound, ortho.eastBound, ortho.southBound))
+                        return;
+
                     // draw the widget onto the map surface
-                    if (MathUtils.hasBits(pass,
-                            GLMapView.RENDER_PASS_SURFACE)) {
+                    if (surface) {
                         // duplicate GLWidgetsLayer translation
                         GLES20FixedPipeline.glPushMatrix();
                         GLES20FixedPipeline.glTranslatef(0,
@@ -103,15 +122,16 @@ public class GLFahArrowWidget extends GLShapeWidget implements
                                         .getRenderSurface()
                                         .getHeight() - 1,
                                 0f);
-                        this.impl.drawWidgetImpl();
+                        this.impl.drawWidgetSurface();
                         GLES20FixedPipeline.glPopMatrix();
                     }
 
                     // update the touch point
-                    if (MathUtils.hasBits(pass,
-                            GLMapView.RENDER_PASS_SPRITES)) {
+                    if (sprites) {
                         if (this.impl._visible && this.impl._target != null)
                             this.impl._setHitPoint();
+
+                        impl.drawWidgetSprites();
                     }
                 }
 
@@ -122,6 +142,7 @@ public class GLFahArrowWidget extends GLShapeWidget implements
                                 .stopObserving(
                                         ((FahArrowWidget.Item) this.subject)
                                                 .getFAH());
+                        this.impl.release();
                         this.impl = null;
                     }
                 }
@@ -136,6 +157,22 @@ public class GLFahArrowWidget extends GLShapeWidget implements
     private static final int _CONE_COLOR = Color.argb(128, 255, 255, 255);
     private static final int _CONE_COLOR_ALT = Color.argb(128, 255, 0, 0);
 
+    private final static Style _CONE_STYLE = new CompositeStyle(new Style[] {
+            new BasicFillStyle(_CONE_COLOR),
+            new BasicStrokeStyle(_STROKE_COLOR, 1f),
+    });
+    private final static Style _CONE_STYLE_ALT = new CompositeStyle(
+            new Style[] {
+                    new BasicFillStyle(_CONE_COLOR_ALT),
+                    new BasicStrokeStyle(_STROKE_COLOR, 1f),
+            });
+    private final static Style _ARROW_STYLE = new CompositeStyle(new Style[] {
+            new BasicFillStyle(_ARROW_COLOR),
+            new BasicStrokeStyle(_STROKE_COLOR, 1f),
+    });
+
+    private static final boolean RENDER_TOUCH_POINT_SPRITE = false;
+
     // arrays to hold the values for the arrow GL object
     private byte[] _arrowLineIndicesB;
     private byte[] _arrowIndicesB;
@@ -146,31 +183,21 @@ public class GLFahArrowWidget extends GLShapeWidget implements
     private ByteBuffer _arrowIndices;
     private ByteBuffer _arrowVerts;
 
+    private GeoPoint _arrowStart = null;
+
     // The buffers for the associated cone GL Object
-    private FloatBuffer _coneVertsFront;
-    private FloatBuffer _coneVertsBack;
-
-    private ByteBuffer _coneIndicesFront;
-    private ByteBuffer _coneIndicesBack;
-    private ByteBuffer _coneLineIndicesFront;
-    private ByteBuffer _coneLineIndicesBack;
-
-    // The arrays that hold the lat & longs of the cone
-    // the _coneCirclePoints updates every time the target/designator move
-    // and creates an array of points in a circle from the specified x2.5 range
-    // _conePoints then grabs those associated values when the cone is moving
-    // to avoid geoprojection computations while the user is adjusting the FAH
-    private DoubleBuffer _conePointsFront;
-    private DoubleBuffer _conePointsBack;
     private double[] _coneCirclePoints;
+
+    private GLBatchPolygon _coneFront;
+    private GLBatchPolygon _coneBack;
 
     // The GL texts for the widget
     private GLText2 _arrowText;
-    private GLText2 _coneText0, _coneText1, _coneText2, _coneText3;
-    private GLText2[] _textArray;
-    private RectF _view;
-    private PointF _targetF;
+    private GLSegmentFloatingLabel _coneText0, _coneText1, _coneText2,
+            _coneText3;
+    private GLSegmentFloatingLabel[] _textArray;
     private GeoPoint _hitPoint;
+    private GeoPoint _hitPointInner;
 
     // Animated float value that interpolates the angle between movements, value
     // is MAGNETIC heading
@@ -200,6 +227,8 @@ public class GLFahArrowWidget extends GLShapeWidget implements
     private boolean _visible = true;
     private boolean _oneShotAnimate = true;
 
+    private boolean _touchable;
+
     /**
      * the rotation that should be applied when RENDERING the arrow and cone,
      * defined as TRUE rotation.
@@ -209,6 +238,8 @@ public class GLFahArrowWidget extends GLShapeWidget implements
     private boolean _coneInvalid;
 
     private PointD _arrowCenterUnscaled;
+
+    private SurfaceRendererControl _surfaceCtrl;
 
     // A static class to define what need buffers need to be updated when a value
     // in the MapWidget subject is changed.
@@ -233,6 +264,9 @@ public class GLFahArrowWidget extends GLShapeWidget implements
         _textArray = null;
 
         _coneInvalid = true;
+
+        _touchable = subject.isTouchable();
+        _surfaceCtrl = orthoView.getControl(SurfaceRendererControl.class);
     }
 
     private void validateTextArray() {
@@ -241,24 +275,25 @@ public class GLFahArrowWidget extends GLShapeWidget implements
             _arrowText = new GLText2(mtf, String.format(
                     LocaleUtil.getCurrent(), "%03.0f",
                     359f));
-            _coneText0 = new GLText2(mtf, String.format(
-                    LocaleUtil.getCurrent(), "%03.0f",
-                    359f));
-            _coneText1 = new GLText2(mtf, String.format(
-                    LocaleUtil.getCurrent(), "%03.0f",
-                    359f));
-            _coneText2 = new GLText2(mtf, String.format(
-                    LocaleUtil.getCurrent(), "%03.0f",
-                    359f));
-            _coneText3 = new GLText2(mtf, String.format(
-                    LocaleUtil.getCurrent(), "%03.0f",
-                    359f));
 
             // Build the arrow's vertices, and indices just once
 
-            _textArray = new GLText2[] {
-                    _coneText0, _coneText1, _coneText2, _coneText3
-            };
+            _textArray = new GLSegmentFloatingLabel[4];
+            for (int i = 0; i < _textArray.length; i++) {
+                _textArray[i] = new GLSegmentFloatingLabel();
+                _textArray[i].setTextFormat(Typeface.DEFAULT, +2);
+                _textArray[i].setText(String.format(
+                        LocaleUtil.getCurrent(), "%03.0f",
+                        359f));
+                _textArray[i].setBackgroundColor(0f, 0f, 0f, 0.6f);
+                _textArray[i].setClampToGround(true);
+                _textArray[i].setSegmentPositionWeight(1f);
+                _textArray[i].setRotateToAlign(false);
+            }
+            _coneText0 = _textArray[0];
+            _coneText1 = _textArray[1];
+            _coneText2 = _textArray[2];
+            _coneText3 = _textArray[3];
         }
     }
 
@@ -317,7 +352,9 @@ public class GLFahArrowWidget extends GLShapeWidget implements
 
     @Override
     public void drawWidget() {
-        if (this.drawWidgetImpl()) {
+        if (this.drawWidgetSurface()) {
+            drawWidgetSprites();
+
             // Set the hit point of this widget to be the touch circle
             // Draw the touch circle at the end of the arrow and above everything else
             _setHitPoint();
@@ -327,12 +364,9 @@ public class GLFahArrowWidget extends GLShapeWidget implements
         }
     }
 
-    private boolean drawWidgetImpl() {
+    private boolean drawWidgetSurface() {
         if (!_visible)
             return false;
-
-        // clear the hit point
-        _hitPoint = null;
 
         if (_target == null)
             return false;
@@ -366,13 +400,45 @@ public class GLFahArrowWidget extends GLShapeWidget implements
         // Get rid of the screen height imposed by the GLMapWidget class
         GLES20FixedPipeline.glTranslatef(0,
                 -(getSurface().getHeight() + 1), 0f);
+
         // Draw the cone with the basic map parameters set for the GL Pipeline
         _drawCone();
-        // Adjust when drawing the arrow to center on the target's position
-        GLES20FixedPipeline.glTranslatef(xPos, yPos, 0f);
-        _drawArrow(orthoView);
-        _computeHitPoint(_headingAnimation.get());
+        // when the map is tilted, draw the arrow on the surface
+        if (orthoView.currentScene.drawTilt > 0d) {
+            _drawArrow(orthoView, true);
+            if (!RENDER_TOUCH_POINT_SPRITE)
+                _drawTouchPointSurface(orthoView);
+        }
         GLES20FixedPipeline.glPopMatrix();
+
+        return true;
+    }
+
+    private boolean drawWidgetSprites() {
+        if (!_visible)
+            return false;
+
+        if (_target == null)
+            return false;
+
+        // when the map is not tilted, draw the arrow as a sprite for cleaner
+        // graphics
+        if (orthoView.currentScene.drawTilt == 0d)
+            _drawArrow(orthoView, false);
+        if (orthoView.currentScene.drawTilt == 0d || RENDER_TOUCH_POINT_SPRITE)
+            _drawTouchPointSprite(orthoView);
+
+        drawArrowText();
+
+        this.validateTextArray();
+
+        drawTextAngle(0);
+        drawTextAngle(1);
+
+        if (_subject.drawReverse()) {
+            drawTextAngle(2);
+            drawTextAngle(3);
+        }
 
         return true;
     }
@@ -394,6 +460,18 @@ public class GLFahArrowWidget extends GLShapeWidget implements
     }
 
     @Override
+    public void release() {
+        if (_coneFront != null) {
+            _coneFront.release();
+            _coneFront = null;
+        }
+        if (_coneBack != null) {
+            _coneBack.release();
+            _coneBack = null;
+        }
+    }
+
+    @Override
     public void onFahAngleChanged(FahArrowWidget arrow) {
         _update(arrow, Update.FAH_ANGLE);
     }
@@ -408,6 +486,8 @@ public class GLFahArrowWidget extends GLShapeWidget implements
         // _update(arrow, Update.VISIBLE);
 
         super.onVisibleChanged(arrow);
+
+        markSurfaceDirty(true);
     }
 
     @Override
@@ -426,11 +506,13 @@ public class GLFahArrowWidget extends GLShapeWidget implements
         getSurface().queueEvent(new Runnable() {
             @Override
             public void run() {
-                if (touchable) {
+                _touchable = touchable;
+                if (_touchable) {
                     _headingTouch.setAlpha(0.6f);
                 } else {
                     _headingTouch.setAlpha(0f);
                 }
+                markSurfaceDirty(false);
             }
         });
     }
@@ -445,64 +527,59 @@ public class GLFahArrowWidget extends GLShapeWidget implements
         _update(arrow, Update.DESIGNATOR_POINT);
     }
 
-    private void _drawArrow(GLMapView view) {
-
-        // Change the arrays to Byte Buffers that can be read in by the GL Pipeline
-
-        // Convert the vertices
-        if (_arrowVerts == null) {
-            _arrowVerts = com.atakmap.lang.Unsafe
-                    .allocateDirect(_arrowVertsB.length * 4);
-            _arrowVerts.order(ByteOrder.nativeOrder());
-        } else {
-            _arrowVerts.clear();
-        }
-        FloatBuffer fb = _arrowVerts.asFloatBuffer();
-        fb.put(_arrowVertsB);
-        fb.rewind();
-        // Convert the indices that define the fill pattern
-        if (_arrowIndices == null) {
-            _arrowIndices = com.atakmap.lang.Unsafe
-                    .allocateDirect(_arrowIndicesB.length);
-        } else {
-            _arrowIndices.clear();
-        }
-        _arrowIndices.put(_arrowIndicesB);
-        _arrowIndices.rewind();
-        // Convert the line indices that define the stroke sequence
-        if (_arrowLineIndices == null) {
-            _arrowLineIndices = com.atakmap.lang.Unsafe
-                    .allocateDirect(_arrowLineIndicesB.length);
-        } else {
-            _arrowLineIndices.clear();
-        }
-        _arrowLineIndices.put(_arrowLineIndicesB);
-        _arrowLineIndices.rewind();
+    private void _drawArrow(GLMapView view, boolean surface) {
+        final float headingM = _headingAnimation.get();
+        double heading = ATAKUtilities.convertFromMagneticToTrue(_target,
+                headingM);
+        final double distance = view.currentScene.drawMapResolution
+                * (200 + _radius);
+        final double back = ((heading) > 180d) ? heading - 180d
+                : heading + 180d;
+        // get image space coordinate approximately 100px from '_target'
+        _arrowStart = GeoCalculations.pointAtDistance(_target, heading,
+                distance);
+        _hitPointInner = GeoCalculations.pointAtDistance(_target, back,
+                view.currentScene.drawMapResolution * _radius);
+        _hitPoint = GeoCalculations.pointAtDistance(_target, back, distance);
 
         // compute the IMAGE SPACE rotation to be applied. '_renderRotation' is
         // the magnetic heading angle in GEODETIC SPACE.
 
         // get image space coordinate for '_target'
-        view.forward(_target, view.scratch.pointF);
-        final float sx = view.scratch.pointF.x;
-        final float sy = view.scratch.pointF.y;
+        view.forward(surface ? _target : adjustedGeoPoint(view, _target),
+                view.scratch.pointD);
+        final float sx = (float) view.scratch.pointD.x;
+        final float sy = (float) view.scratch.pointD.y;
+        final float sz = surface ? 0f : (float) view.scratch.pointD.z;
 
-        // get image space coordinate approximately 100px from '_target'
-        view.forward(DistanceCalculations.metersFromAtBearing(_target,
-                view.drawMapResolution * 100, _renderRotation),
+        view.forward(surface ? _hitPoint : adjustedGeoPoint(view, _hitPoint),
                 view.scratch.pointF);
         final float ex = view.scratch.pointF.x;
         final float ey = view.scratch.pointF.y;
 
+        view.forward(
+                surface ? _hitPointInner
+                        : adjustedGeoPoint(view, _hitPointInner),
+                view.scratch.pointF);
+        final float ix = view.scratch.pointF.x;
+        final float iy = view.scratch.pointF.y;
+
         // compute relative rotation
-        final float theta = (float) Math.toDegrees(Math.atan2((ey - sy),
-                (ex - sx)));
+        final float theta = (float) Math.toDegrees(Math.atan2((sy - ey),
+                (sx - ex)));
+
+        final float innerRadius = surface
+                ? (float) MathUtils.distance(sx, sy, ix, iy)
+                : _radius * 1.05f;
 
         // Rotate the matrix and position it to draw the arrrow
         GLES20FixedPipeline.glPushMatrix();
+        GLES20FixedPipeline.glTranslatef(sx, sy, sz);
         GLES20FixedPipeline.glRotatef(theta + 180f, 0, 0, 1f);
-        GLES20FixedPipeline.glTranslatef(_radius * 1.05f + 0, 0, 0);
-        GLES20FixedPipeline.glScalef(200f, 200f, 1f);
+        GLES20FixedPipeline.glTranslatef(innerRadius, 0, 0);
+        final float scale = (float) MathUtils.distance(ex, ey, sx, sy)
+                - innerRadius;
+        GLES20FixedPipeline.glScalef(scale, scale, 1f);
 
         // Fill in the FAH Arrow
         _setColor(_ARROW_COLOR);
@@ -526,51 +603,45 @@ public class GLFahArrowWidget extends GLShapeWidget implements
 
         // Pop that Matrix math off to prep for the text display
         GLES20FixedPipeline.glPopMatrix();
+    }
 
-        // Rotate and move the matrix about half way up the arrow
-        GLES20FixedPipeline.glPushMatrix();
-        GLES20FixedPipeline.glRotatef(theta + 180, 0, 0, 1f);
-        GLES20FixedPipeline.glTranslatef(_radius * 1.05f + 200f / 2f, 0, 0);
-        GLES20FixedPipeline.glRotatef(-theta + 180, 0, 0,
-                1f);
+    private void _drawTouchPointSprite(GLMapView view) {
+        // Draw the touch circle at the end of the arrow and above everything else
+        if (_touchable) {
+            view.forward(adjustedGeoPoint(view, _hitPoint),
+                    view.scratch.pointD);
 
-        // Now that we have the point - remove the rotation of the screen so that the text
-        // always displays horizontally
-        // GLES20FixedPipeline.glRotatef(-(float)orthoView.drawRotation, 0f, 0f, 1f);
-
-        // Grab the black text backdrop texture
-        GLNinePatch smallNinePatch = GLRenderGlobals.get(getSurface())
-                .getSmallNinePatch();
-        if (smallNinePatch != null) {
-            GLES20FixedPipeline.glColor4f(0f, 0f, 0f, 0.6f);
             GLES20FixedPipeline.glPushMatrix();
-            GLES20FixedPipeline.glTranslatef(
-                    -(_arrowText.getWidth() / 2f + 8f),
-                    -_arrowText.getHeight() / 2f, 0f);
-            smallNinePatch.draw(_arrowText.getWidth() + 16f,
-                    _arrowText.getHeight());
+            GLES20FixedPipeline.glTranslatef((float) view.scratch.pointD.x,
+                    (float) view.scratch.pointD.y,
+                    (float) view.scratch.pointD.z);
+            _headingTouch.draw();
             GLES20FixedPipeline.glPopMatrix();
         }
+    }
 
-        // Shift the matrix over to center the text at the location
-        GLES20FixedPipeline.glTranslatef(-_arrowText.getWidth() / 2f,
-                -_arrowText.getHeight() / 4f,
-                0f);
-
-        // Draw the text over the black backdrop
-        _setColor(_TEXT_COLOR);
-        _arrowText.setText(_getFahText());
-        _arrowText.draw(_TEXT_COLOR);
-        // Popping this matrix brings us back to the screen rotation
-        GLES20FixedPipeline.glPopMatrix();
-
+    private void _drawTouchPointSurface(GLMapView view) {
         // Draw the touch circle at the end of the arrow and above everything else
-        GLES20FixedPipeline.glPushMatrix();
-        GLES20FixedPipeline.glRotatef(theta, 0, 0, 1f);
-        GLES20FixedPipeline.glTranslatef(-210f - _radius, 0, 0);
-        GLES20FixedPipeline.glRotatef(-theta, 0, 0, 1f);
-        _headingTouch.draw();
-        GLES20FixedPipeline.glPopMatrix();
+        if (_touchable) {
+            view.forward(_hitPoint, view.scratch.pointD);
+
+            final float relativeScale = (float) (view.currentScene.drawMapResolution
+                    / view.currentPass.drawMapResolution)
+                    / (3f - view.currentPass.relativeScaleHint);
+            GLES20FixedPipeline.glPushMatrix();
+            GLES20FixedPipeline.glTranslatef((float) view.scratch.pointD.x,
+                    (float) view.scratch.pointD.y,
+                    (float) view.scratch.pointD.z);
+            GLES20FixedPipeline.glScalef(relativeScale, relativeScale, 1f);
+            _headingTouch.draw();
+            GLES20FixedPipeline.glPopMatrix();
+
+            // XXX - some alternative should be found to avoid animating the
+            //       surface -- render as sprite?
+
+            // mark surface dirty for the heading touch point animation
+            markSurfaceDirty(false);
+        }
     }
 
     private String _getFahText() {
@@ -612,80 +683,71 @@ public class GLFahArrowWidget extends GLShapeWidget implements
         if (_textArray == null) {
             return;
         }
-        GLText2 text = _textArray[index];
-        if (text == null || _view == null || _targetF == null) {
+        GLSegmentFloatingLabel text = _textArray[index];
+        if (text == null) {
             return;
         }
 
-        PointF vertF;
-        if (index == 0 || index == 1) {
-            int vertIndex = 2;
-            if (index == 1) {
-                vertIndex = _coneVertsFront.limit() - 2;
-            }
-            vertF = new PointF(_coneVertsFront.get(vertIndex),
-                    _coneVertsFront.get(vertIndex + 1));
-        } else {
-            int vertIndex = 2;
-            if (index == 3) {
-                vertIndex = _coneVertsBack.limit() - 2;
-            }
-            vertF = new PointF(_coneVertsBack.get(vertIndex),
-                    _coneVertsBack.get(vertIndex + 1));
-        }
+        text.update(orthoView);
+        text.getTextPoint(orthoView.scratch.pointD);
+        final double ax = orthoView.scratch.pointD.x;
+        final double ay = orthoView.scratch.pointD.y;
+        orthoView.scratch.geo.set(_target);
+        orthoView.scratch.geo.set(orthoView.getTerrainMeshElevation(
+                _target.getLatitude(), _target.getLongitude()));
+        orthoView.scene.forward(orthoView.scratch.geo,
+                orthoView.scratch.pointD);
+        final double bx = orthoView.scratch.pointD.x;
+        final double by = orthoView.scratch.pointD.y;
+        if (MathUtils.distance(ax, ay, bx, by) < 320d)
+            return;
 
-        float[] tarray = _getTextPoint(text, _targetF, vertF);
-        PointF textF = new PointF(tarray[0], tarray[1]);
-        float dF = tarray[2];
+        // Draw the text over the black backdrop
+        _setColor(_TEXT_COLOR);
+        text.setText(_getConeText(index));
+        text.setTextColor(_TEXT_COLOR);
+        text.draw(orthoView);
+    }
 
-        // If those points are outside of the current view of the map
-        // then we need to slide them down or up so the are still in the
-        // field of view for the user
-        if (_view.left > textF.x || textF.x > _view.right
-                || _view.bottom > textF.y
-                || textF.y > _view.top) {
-            // If not contained then we need to put it at the edge
-            PointF intersect = _getIntersectionPoint(_view, _targetF, vertF);
-            if (intersect != null && !Float.isNaN(intersect.x)
-                    && !Float.isNaN(intersect.y)) {
-                tarray = _getTextPoint(text, _targetF, intersect);
-                textF = new PointF(tarray[0], tarray[1]);
-                dF = tarray[2];
-            } else {
-                textF = new PointF(Float.NaN, Float.NaN);
-            }
-        }
+    private void drawArrowText() {
+        orthoView.forward(adjustedGeoPoint(
+                orthoView,
+                GeoCalculations.midPointWGS84(_hitPointInner, _hitPoint)),
+                orthoView.scratch.pointD);
+
+        GLES20FixedPipeline.glPushMatrix();
+        GLES20FixedPipeline.glTranslatef(
+                (float) orthoView.scratch.pointD.x,
+                (float) orthoView.scratch.pointD.y +
+                        GLSegmentFloatingLabel.getSurfaceLabelOffset(
+                                orthoView, _arrowText.getHeight()),
+                (float) orthoView.scratch.pointD.z);
 
         // Grab the black text backdrop texture
         GLNinePatch smallNinePatch = GLRenderGlobals.get(getSurface())
                 .getSmallNinePatch();
         if (smallNinePatch != null) {
-            // Check to see if we should draw the text
-            if (text != null && !Float.isNaN(textF.x) && !Float.isNaN(textF.y)
-                    && dF > 320f) {
-
-                GLES20FixedPipeline.glPushMatrix();
-                GLES20FixedPipeline.glTranslatef(textF.x, textF.y, 0f);
-
-                GLES20FixedPipeline.glColor4f(0f, 0f, 0f, 0.6f);
-                GLES20FixedPipeline.glPushMatrix();
-                GLES20FixedPipeline.glTranslatef(-(text.getWidth() / 2f + 8f),
-                        -text.getHeight() / 2f, 0f);
-                smallNinePatch.draw(text.getWidth() + 16f, text.getHeight());
-                GLES20FixedPipeline.glPopMatrix();
-
-                // Shift the matrix over to center the text at the location
-                GLES20FixedPipeline.glTranslatef(-text.getWidth() / 2f,
-                        -text.getHeight() / 4f, 0f);
-
-                // Draw the text over the black backdrop
-                _setColor(_TEXT_COLOR);
-                text.setText(_getConeText(index));
-                text.draw(_TEXT_COLOR);
-
-                GLES20FixedPipeline.glPopMatrix();
-            }
+            GLES20FixedPipeline.glColor4f(0f, 0f, 0f, 0.6f);
+            GLES20FixedPipeline.glPushMatrix();
+            GLES20FixedPipeline.glTranslatef(
+                    -(_arrowText.getWidth() / 2f + 8f),
+                    -_arrowText.getHeight() / 2f, 0f);
+            smallNinePatch.draw(_arrowText.getWidth() + 16f,
+                    _arrowText.getHeight());
+            GLES20FixedPipeline.glPopMatrix();
         }
+
+        // Shift the matrix over to center the text at the location
+        GLES20FixedPipeline.glTranslatef(-_arrowText.getWidth() / 2f,
+                -_arrowText.getHeight() / 4f,
+                0f);
+
+        // Draw the text over the black backdrop
+        _setColor(_TEXT_COLOR);
+        _arrowText.setText(_getFahText());
+        _arrowText.draw(_TEXT_COLOR);
+
+        GLES20FixedPipeline.glPopMatrix();
     }
 
     /**
@@ -706,213 +768,30 @@ public class GLFahArrowWidget extends GLShapeWidget implements
     }
 
     private void _drawCone() {
-        // Project the double array of geopoints to the mapview's x and y floats
-        _projectPoints();
+        // XXX - refactor style selection into applicable callbacks
 
-        GLES20FixedPipeline.glPushMatrix();
-
-        //fill the wedge with either white or red depending on the offset
+        final Style coneStyle;
         if ((_designator != null && !_fakeDesignator) &&
                 (coneBetween(350, 10) || coneBetween(170, 190))) {
-            _setColor(_CONE_COLOR_ALT);
+            coneStyle = _CONE_STYLE_ALT;
         } else {
-            _setColor(_CONE_COLOR);
+            coneStyle = _CONE_STYLE;
         }
-        GLES20FixedPipeline
-                .glEnableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
-        GLES20FixedPipeline.glVertexPointer(2, GLES20FixedPipeline.GL_FLOAT, 0,
-                _coneVertsFront);
-        GLES20FixedPipeline.glDrawElements(GLES20FixedPipeline.GL_TRIANGLES,
-                _coneIndicesFront.limit(),
-                GLES20FixedPipeline.GL_UNSIGNED_BYTE,
-                _coneIndicesFront);
-
-        // Stroke around the edge in black
-        _setColor(_STROKE_COLOR);
-        GLES20FixedPipeline.glLineWidth(1f);
-        GLES20FixedPipeline
-                .glDrawElements(GLES20FixedPipeline.GL_LINE_LOOP,
-                        _coneLineIndicesFront.limit(),
-                        GLES20FixedPipeline.GL_UNSIGNED_BYTE,
-                        _coneLineIndicesFront);
-        if (_subject.drawReverse()) {
-            GLES20FixedPipeline.glVertexPointer(2,
-                    GLES20FixedPipeline.GL_FLOAT, 0,
-                    _coneVertsBack);
-            if ((_designator != null && !_fakeDesignator) &&
-                    (coneBetween(350, 10) || coneBetween(170, 190))) {
-                _setColor(_CONE_COLOR_ALT);
-            } else {
-                _setColor(_CONE_COLOR);
-            }
-            GLES20FixedPipeline
-                    .glDrawElements(GLES20FixedPipeline.GL_TRIANGLES,
-                            _coneIndicesBack.limit(),
-                            GLES20FixedPipeline.GL_UNSIGNED_BYTE,
-                            _coneIndicesBack);
-            _setColor(_STROKE_COLOR);
-            GLES20FixedPipeline
-                    .glDrawElements(GLES20FixedPipeline.GL_LINE_LOOP,
-                            _coneLineIndicesBack.limit(),
-                            GLES20FixedPipeline.GL_UNSIGNED_BYTE,
-                            _coneLineIndicesBack);
-        }
-
-        // Exit the drawing state
-        GLES20FixedPipeline
-                .glDisableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
-        GLES20FixedPipeline.glPopMatrix();
-
-        // Get the bounding view available
-        _view = this.getWidgetViewF();
-
-        // XXX - use Unsafe
-
-        // Get the target, and side vertices of the cone
-        _targetF = new PointF(_coneVertsFront.get(0),
-                _coneVertsFront.get(1));
-
-        GLES20FixedPipeline.glPushMatrix();
-
-        drawTextAngle(0);
-        drawTextAngle(1);
+        _coneFront.setStyle(coneStyle);
+        _coneFront.draw(orthoView);
 
         if (_subject.drawReverse()) {
-            drawTextAngle(2);
-            drawTextAngle(3);
+            _coneBack.setStyle(coneStyle);
+            _coneBack.draw(orthoView);
         }
-
-        // Popping this matrix brings us back to the screen rotation
-        GLES20FixedPipeline.glPopMatrix();
-    }
-
-    /**
-     * Returns the text point for the offset and the distance from target.
-     *
-     * @param text The GLText to get the width & height from
-     * @param c The Center point
-     * @param v The Vertex point
-     * @return The float array with [x, y, distance]
-     */
-    private float[] _getTextPoint(GLText2 text, PointF c, PointF v) {
-        float nx = 0f;
-        float ny = 0f;
-        // Get the slope to the center point
-        float dx = (c.x - v.x);
-        float dy = (c.y - v.y);
-        float d = (float) Math.sqrt(dx * dx + dy * dy);
-        if (dx != 0 && dy != 0) {
-            nx = dx / d;
-            ny = dy / d;
-        }
-        // Get half the diagonal of the text box
-        float w = text.getWidth();
-        float h = text.getHeight();
-        float dT = (float) Math.sqrt(w * w + h * h) / 2;
-
-        return new float[] {
-                v.x + dT * nx, v.y + dT * ny, d, Math.copySign(1, -dx),
-                Math.copySign(1, -dy)
-        };
-    }
-
-    private PointF _getIntersectionPoint(RectF r, PointF cF, PointF vF) {
-
-        if (r.left < cF.x && cF.x < r.right && r.bottom < cF.y && cF.y < r.top
-                &&
-                r.left < vF.x && vF.x < r.right && r.bottom < vF.y
-                && vF.y < r.top) {
-            return null;
-        }
-
-        PointF ret = null;// new PointF(0f, 0f);
-        Vector2D[] rets = new Vector2D[4];
-        Vector2D c = new Vector2D(cF.x, cF.y);
-        Vector2D v = new Vector2D(vF.x, vF.y);
-
-        Vector2D topLeft = new Vector2D(r.left, r.top);
-        Vector2D topRight = new Vector2D(r.right, r.top);
-        Vector2D botRight = new Vector2D(r.right, r.bottom);
-        Vector2D botLeft = new Vector2D(r.left, r.bottom);
-
-        // Start at top line and go clockwise
-
-        rets[0] = Vector2D
-                .segmentToSegmentIntersection(topLeft, topRight, c, v);
-        rets[1] = Vector2D.segmentToSegmentIntersection(topRight, botRight, c,
-                v);
-        rets[2] = Vector2D
-                .segmentToSegmentIntersection(botRight, botLeft, c, v);
-        rets[3] = Vector2D.segmentToSegmentIntersection(botLeft, topLeft, c, v);
-
-        float farthest = Float.MIN_VALUE;
-
-        // Check the returned values - we want the farthest from the target
-        for (int i = 0; i < 4; i++) {
-            // Check to see if it intersected
-            if (rets[i] != null) {
-                float distance = (float) c.distance(rets[i]);
-                // If new farthest then set as new return point
-                if (distance > farthest) {
-                    farthest = distance;
-                    if (ret == null) {
-                        ret = new PointF(0f, 0f);
-                    }
-                    ret.set((float) rets[i].x, (float) rets[i].y);
-                }
-            }
-        }
-
-        return ret;
-    }
-
-    /**
-     * Sets the hit point of this widget as the center of the touch circle, usually this would be
-     * the center point of the widget. But this widget centers around the target.
-     * @param headingM the heading in magnetic.
-     */
-    private void _computeHitPoint(float headingM) {
-        // Converting from the OpenGL 2D space to Android 2D touch space
-        // main difference is that the map's OpenGL space has y = 0 at the bottom of the screen,
-        // android starts y = 0 at the top of the screen - so the hit point has to be flipped along
-        // the y-axis
-
-        final double distance = DistanceCalculations.computeDirection(
-                _designator,
-                _target)[0];
-
-        final float heading = (float) ATAKUtilities.convertFromMagneticToTrue(
-                _target, headingM);
-
-        // Get the back azimuth of the heading
-        double back = ((heading) > 180d) ? heading - 180d : heading + 180d;
-
-        // Find the end point of where the arrow should be given this heading
-        GeoPoint end = DistanceCalculations.computeDestinationPoint(_target,
-                back, distance);
-
-        final GLMapView view = getSurface().getGLMapView();
-
-        PointF endF = view.forward(adjustedGeoPoint(view, end));
-        PointF targetF = view.forward(adjustedGeoPoint(view, _target));
-
-        // Gives the adjusted angle from the x axis if we use Math.atan2(y,x) - so we need to adjust
-        // it again by -90
-        float adjusted = (float) Math.atan2(endF.x - targetF.x, endF.y
-                - targetF.y);
-
-        // Adjust from the target point and set as the location
-        targetF.x += 310f * Math.sin(adjusted);
-        targetF.y += 310f * Math.cos(adjusted);
-
-        _hitPoint = view.inverse(targetF);
     }
 
     private void _setHitPoint() {
         if (_hitPoint != null) {
             final GLMapView view = getSurface().getGLMapView();
 
-            PointF hitPointF = view.forward(adjustedGeoPoint(view, _hitPoint));
+            PointF hitPointF = view.currentScene.scene
+                    .forward(adjustedGeoPoint(view, _hitPoint), (PointF) null);
             hitPointF.y = getSurface().getHeight() + 1 - hitPointF.y;
             _subject.setPoint(hitPointF.x, hitPointF.y);
 
@@ -926,7 +805,44 @@ public class GLFahArrowWidget extends GLShapeWidget implements
                         point.getLongitude()));
     }
 
-    private void _update(FahArrowWidget arrow, Update u) {
+    private void markSurfaceDirty(boolean streaming) {
+        if (_surfaceCtrl == null)
+            return;
+
+        final GeoPoint tgt = _target;
+        if (_target == null)
+            return;
+
+        final double distance = _subject.getAppropriateDistance();
+
+        final GeoPoint north = GeoCalculations.pointAtDistance(tgt, 0d,
+                distance);
+        final GeoPoint south = GeoCalculations.pointAtDistance(tgt, 180d,
+                distance);
+        final GeoPoint east = GeoCalculations.pointAtDistance(tgt, 90d,
+                distance);
+        final GeoPoint west = GeoCalculations.pointAtDistance(tgt, 270d,
+                distance);
+
+        // check for IDL crossing
+        if ((east.getLongitude() < tgt.getLongitude())
+                || (west.getLongitude() > tgt.getLongitude())) {
+            _surfaceCtrl.markDirty(new Envelope(west.getLongitude(),
+                    south.getLatitude(), 0d, 180d, north.getLatitude(), 0d),
+                    streaming);
+            _surfaceCtrl.markDirty(
+                    new Envelope(-180d, south.getLatitude(), 0d,
+                            east.getLongitude(), north.getLatitude(), 0d),
+                    streaming);
+        } else {
+            _surfaceCtrl.markDirty(
+                    new Envelope(west.getLongitude(), south.getLatitude(), 0d,
+                            east.getLongitude(), north.getLatitude(), 0d),
+                    streaming);
+        }
+    }
+
+    private void _update(final FahArrowWidget arrow, Update u) {
 
         switch (u) {
             case FAH_ANGLE:
@@ -943,6 +859,8 @@ public class GLFahArrowWidget extends GLShapeWidget implements
                         if (_target != null && _designator != null) {
                             _coneInvalid = true;
                         }
+
+                        markSurfaceDirty(true);
                     }
                 });
                 break;
@@ -960,6 +878,8 @@ public class GLFahArrowWidget extends GLShapeWidget implements
                         if (_target != null && _designator != null) {
                             _coneInvalid = true;
                         }
+
+                        markSurfaceDirty(true);
                     }
                 });
                 break;
@@ -976,6 +896,8 @@ public class GLFahArrowWidget extends GLShapeWidget implements
                         if (_target != null && _designator != null) {
                             _coneInvalid = true;
                         }
+
+                        markSurfaceDirty(true);
                     }
                 });
                 break;
@@ -1011,6 +933,8 @@ public class GLFahArrowWidget extends GLShapeWidget implements
 
                                 _coneInvalid = true;
                             }
+
+                            markSurfaceDirty(true);
                         }
                     });
                 }
@@ -1058,6 +982,8 @@ public class GLFahArrowWidget extends GLShapeWidget implements
                                     _savedRange = newRange;
                                     _buildConeCircle();
                                 }
+
+                                markSurfaceDirty(true);
 
                                 // Always move the cone when the designator moves
                                 _coneInvalid = true;
@@ -1113,6 +1039,38 @@ public class GLFahArrowWidget extends GLShapeWidget implements
         _arrowVertsB = vertices;
         _arrowIndicesB = indices;
         _arrowLineIndicesB = lineIndices;
+
+        // Change the arrays to Byte Buffers that can be read in by the GL Pipeline
+
+        // Convert the vertices
+        if (_arrowVerts == null) {
+            _arrowVerts = com.atakmap.lang.Unsafe
+                    .allocateDirect(_arrowVertsB.length * 4);
+            _arrowVerts.order(ByteOrder.nativeOrder());
+        } else {
+            _arrowVerts.clear();
+        }
+        FloatBuffer fb = _arrowVerts.asFloatBuffer();
+        fb.put(_arrowVertsB);
+        fb.rewind();
+        // Convert the indices that define the fill pattern
+        if (_arrowIndices == null) {
+            _arrowIndices = com.atakmap.lang.Unsafe
+                    .allocateDirect(_arrowIndicesB.length);
+        } else {
+            _arrowIndices.clear();
+        }
+        _arrowIndices.put(_arrowIndicesB);
+        _arrowIndices.rewind();
+        // Convert the line indices that define the stroke sequence
+        if (_arrowLineIndices == null) {
+            _arrowLineIndices = com.atakmap.lang.Unsafe
+                    .allocateDirect(_arrowLineIndicesB.length);
+        } else {
+            _arrowLineIndices.clear();
+        }
+        _arrowLineIndices.put(_arrowLineIndicesB);
+        _arrowLineIndices.rewind();
     }
 
     /**
@@ -1171,61 +1129,8 @@ public class GLFahArrowWidget extends GLShapeWidget implements
         if (coneVertsNum <= 0)
             coneVertsNum = 2;
 
-        // Vertices will go target, left-side of cone, right-side of cone, back to target
-        // Allocate the buffers for the wedge vertices number
-        final int conePointCapacity = ((coneVertsNum + 1) * 2);
-        if (_conePointsFront == null
-                || _conePointsFront.capacity() < conePointCapacity) {
-            ByteBuffer buf = com.atakmap.lang.Unsafe
-                    .allocateDirect(conePointCapacity * 8);
-            buf.order(ByteOrder.nativeOrder());
-            _conePointsFront = buf.asDoubleBuffer();
-        } else {
-            _conePointsFront.clear();
-        }
-        if (_conePointsBack == null
-                || _conePointsBack.capacity() < conePointCapacity) {
-            ByteBuffer buf = com.atakmap.lang.Unsafe
-                    .allocateDirect(conePointCapacity * 8);
-            buf.order(ByteOrder.nativeOrder());
-            _conePointsBack = buf.asDoubleBuffer();
-        } else {
-            _conePointsBack.clear();
-        }
-        if (_coneVertsFront == null
-                || _coneVertsFront.capacity() < conePointCapacity) {
-            ByteBuffer bbF = com.atakmap.lang.Unsafe
-                    .allocateDirect(conePointCapacity * 4);
-            bbF.order(ByteOrder.nativeOrder());
-            _coneVertsFront = bbF.asFloatBuffer();
-        } else {
-            _coneVertsFront.clear();
-            _coneVertsFront.limit(conePointCapacity);
-        }
-        if (_coneVertsBack == null
-                || _coneVertsBack.capacity() < conePointCapacity) {
-            ByteBuffer bbB = com.atakmap.lang.Unsafe
-                    .allocateDirect(conePointCapacity * 4);
-            bbB.order(ByteOrder.nativeOrder());
-            _coneVertsBack = bbB.asFloatBuffer();
-        } else {
-            _coneVertsBack.clear();
-            _coneVertsBack.limit(conePointCapacity);
-        }
-        _coneIndicesFront = allocOrLimit(_coneIndicesFront,
-                ((coneVertsNum - 1) * 3 * 2));
-        _coneIndicesBack = allocOrLimit(_coneIndicesBack,
-                ((coneVertsNum - 1) * 3 * 2));
-        _coneLineIndicesFront = allocOrLimit(_coneLineIndicesFront,
-                ((coneVertsNum + 1) * 2));
-        _coneLineIndicesBack = allocOrLimit(_coneLineIndicesBack,
-                ((coneVertsNum + 1) * 2));
-
-        // Initialize with the first point
-        _coneLineIndicesFront.put((byte) 0);
-
-        Unsafe.put(_conePointsFront, _target.getLongitude(),
-                _target.getLatitude());
+        LineString frontCone = new LineString(2);
+        frontCone.addPoint(_target.getLongitude(), _target.getLatitude());
 
         // Convert the start heading to an index between 0 to 1440 that represents
         // the heading values between 0 to 359.5, add one to the start index so that it
@@ -1237,6 +1142,7 @@ public class GLFahArrowWidget extends GLShapeWidget implements
         // XXX - TWO LOOPS ?!?!?!
 
         // Loop the wedge's vertices and build the outer point of the wedge
+
         for (int i = 0; i < coneVertsNum; i++) {
             // Update the index
             w = startIndex + i * 2;
@@ -1248,31 +1154,29 @@ public class GLFahArrowWidget extends GLShapeWidget implements
             w %= 720;
 
             // Grab the points of the cone from the circle of the same radius
-            Unsafe.put(_conePointsFront, _coneCirclePoints[w],
-                    _coneCirclePoints[w + 1]);
-
-            // Update the Buffers with the values
-            // Indices gives the fill and lineIndices gives the order of the outline
-            if (i != coneVertsNum - 1) {
-                byte[] triangleIndices = new byte[] {
-                        0, (byte) (i + 1), (byte) (i + 2)
-                };
-                _coneIndicesFront.put(triangleIndices);
-            }
-            _coneLineIndicesFront.put((byte) (i + 1));
+            frontCone.addPoint(_coneCirclePoints[w], _coneCirclePoints[w + 1]);
         }
-        // set the buffer limit and reset the position
-        _conePointsFront.flip();
-        _coneIndicesFront.flip();
-        _coneLineIndicesFront.flip();
+        // complete the ring
+        frontCone.addPoint(_target.getLongitude(), _target.getLatitude());
+
+        _coneText0.setSegment(new GeoPoint[] {
+                _target, new GeoPoint(frontCone.getY(1), frontCone.getX(1))
+        });
+        _coneText1.setSegment(new GeoPoint[] {
+                _target,
+                new GeoPoint(frontCone.getY(frontCone.getNumPoints() - 2),
+                        frontCone.getX(frontCone.getNumPoints() - 2))
+        });
+
+        if (_coneFront == null) {
+            _coneFront = new GLBatchPolygon(orthoView);
+            _coneFront.setAltitudeMode(Feature.AltitudeMode.ClampToGround);
+        }
+        _coneFront.setGeometry(new Polygon(frontCone));
 
         // cone back
-        _coneLineIndicesBack.put((byte) 0);
-
-        Unsafe.put(_conePointsBack, _target.getLongitude(),
-                _target.getLatitude());
-        //_conePointsBack[0] = _target.getLongitude();
-        //_conePointsBack[1] = _target.getLatitude();
+        LineString backCone = new LineString(2);
+        backCone.addPoint(_target.getLongitude(), _target.getLatitude());
 
         startIndex += 360;
         for (int i = 0; i < coneVertsNum; i++) {
@@ -1286,27 +1190,29 @@ public class GLFahArrowWidget extends GLShapeWidget implements
             w %= 720;
 
             // Grab the points of the cone from the circle of the same radius
-            Unsafe.put(_conePointsBack, _coneCirclePoints[w],
-                    _coneCirclePoints[w + 1]);
-            //_conePointsBack[(i + 1) * 2] = _coneCirclePoints[w];
-            //_conePointsBack[(i + 1) * 2 + 1] = _coneCirclePoints[w + 1];
-
-            // Update the Buffers with the values
-            // Indices gives the fill and lineIndices gives the order of the outline
-            if (i != coneVertsNum - 1) {
-                byte[] triangleIndices = new byte[] {
-                        0, (byte) (i + 1), (byte) (i + 2)
-                };
-                _coneIndicesBack.put(triangleIndices);
-            }
-            _coneLineIndicesBack.put((byte) (i + 1));
+            backCone.addPoint(_coneCirclePoints[w], _coneCirclePoints[w + 1]);
         }
-        // set the buffer limit and reset the position
-        _conePointsBack.flip();
-        _coneIndicesBack.flip();
-        _coneLineIndicesBack.flip();
+        // complete the ring
+        backCone.addPoint(_target.getLongitude(), _target.getLatitude());
+
+        _coneText2.setSegment(new GeoPoint[] {
+                _target, new GeoPoint(backCone.getY(1), backCone.getX(1))
+        });
+        _coneText3.setSegment(new GeoPoint[] {
+                _target,
+                new GeoPoint(backCone.getY(backCone.getNumPoints() - 2),
+                        backCone.getX(backCone.getNumPoints() - 2))
+        });
+
+        if (_coneBack == null) {
+            _coneBack = new GLBatchPolygon(orthoView);
+            _coneBack.setAltitudeMode(Feature.AltitudeMode.ClampToGround);
+        }
+        _coneBack.setGeometry(new Polygon(backCone));
 
         _coneInvalid = false;
+
+        markSurfaceDirty(false);
     }
 
     private static ByteBuffer allocOrLimit(ByteBuffer buf, int capacity) {
@@ -1337,15 +1243,6 @@ public class GLFahArrowWidget extends GLShapeWidget implements
         GLES20FixedPipeline.glColor4f(Color.red(color) / 255f,
                 Color.green(color) / 255f,
                 Color.blue(color) / 255f, alpha / 255f);
-    }
-
-    /**
-     * Helper function to add a GeoPoint to a FloatBuffer as a projected float point.
-     *
-     */
-    private void _projectPoints() {
-        this.orthoView.forward(_conePointsFront, _coneVertsFront);
-        this.orthoView.forward(_conePointsBack, _coneVertsBack);
     }
 
     // **************************************** Private Classes

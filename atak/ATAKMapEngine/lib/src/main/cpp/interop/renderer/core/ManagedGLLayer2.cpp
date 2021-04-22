@@ -53,7 +53,7 @@ ManagedGLLayer2::ManagedGLLayer2(JNIEnv &env_, jobject impl_) NOTHROWS :
 }
 ManagedGLLayer2::~ManagedGLLayer2() NOTHROWS
 {}
-void ManagedGLLayer2::draw(const TAK::Engine::Renderer::Core::GLMapView2& cview, const int crenderPass) NOTHROWS
+void ManagedGLLayer2::draw(const TAK::Engine::Renderer::Core::GLGlobeBase& cview, const int crenderPass) NOTHROWS
 {
     if(gllayer3) {
         renderable.draw(cview, crenderPass);

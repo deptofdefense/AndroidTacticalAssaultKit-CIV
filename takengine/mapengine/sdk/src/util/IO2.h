@@ -167,12 +167,21 @@ namespace TAK {
              */
 			ENGINE_API TAKErr File_getRuntimePath(Port::String &path) NOTHROWS;
 
+
+            /** @deprecated use IO_getFirstExt if you want to get the first extension in a virtual file path or IO_getExt */
+            ENGINE_API TAKErr IO_getExt(Port::String &ext, const char **extPos, const char *path) NOTHROWS;
+
             /**
              * Find the first file extension in path. This can be in the middle of a path
              * directory (i.e. virtual paths), so to ensure its the ext of the final file
              * get the file name first or repeat calls.
              */
-            ENGINE_API TAKErr IO_getExt(Port::String &ext, const char **extPos, const char *path) NOTHROWS;
+            ENGINE_API TAKErr IO_getFirstExt(Port::String &ext, const char **extPos, const char *path) NOTHROWS;
+            
+            /**
+             * Find the final file extension in path.
+             */
+            ENGINE_API TAKErr IO_getExt(Port::String &ext, const char *path) NOTHROWS;
 
             ENGINE_API TAKErr IO_correctPathSeps(Port::String &result, const char *path) NOTHROWS;
 

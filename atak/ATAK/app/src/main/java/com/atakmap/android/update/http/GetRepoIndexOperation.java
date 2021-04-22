@@ -353,8 +353,8 @@ public final class GetRepoIndexOperation extends HTTPOperation {
             }
 
             // Now verify we got download correctly
-                if (!contentFile.exists()) {
-                    contentFile.delete();
+            if (!contentFile.exists()) {
+                contentFile.delete();
                 throw new ConnectionException("Failed to download data");
             }
 

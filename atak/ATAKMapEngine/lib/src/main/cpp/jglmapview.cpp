@@ -3,14 +3,21 @@
 #include <core/MapSceneModel2.h>
 #include <elevation/ElevationManager.h>
 #include <math/Rectangle.h>
+#include <port/STLListAdapter.h>
+#include <port/STLVectorAdapter.h>
 #include <raster/osm/OSMUtils.h>
+#include <renderer/core/GLGlobeBase.h>
+#include <renderer/core/GLGlobeSurfaceRenderer.h>
+#include <renderer/core/GLGlobe.h>
 #include <renderer/core/GLMapView2.h>
 #include <util/Logging2.h>
 
 #include "common.h"
 #include "interop/JNIFloatArray.h"
+#include "interop/JNIStringUTF.h"
 #include "interop/Pointer.h"
 #include "interop/core/Interop.h"
+#include "interop/feature/Interop.h"
 #include "interop/java/JNICollection.h"
 #include "interop/java/JNILocalRef.h"
 #include "interop/renderer/core/Interop.h"
@@ -27,51 +34,60 @@ using namespace TAKEngineJNI::Interop;
 
 namespace
 {
+    typedef std::unique_ptr<GLGlobeBase, void(*)(const GLGlobeBase *)> GLGlobeBasePtr;
+
     struct
     {
         jclass id;
-        jfieldID drawMapScale;
-        jfieldID drawMapResolution;
-        jfieldID drawLat;
-        jfieldID drawLng;
-        jfieldID drawRotation;
-        jfieldID drawTilt;
         jfieldID animationFactor;
-        jfieldID drawVersion;
-        jfieldID targeting;
-        jfieldID westBound;
-        jfieldID southBound;
-        jfieldID northBound;
-        jfieldID eastBound;
         jfieldID eastBoundUnwrapped;
         jfieldID westBoundUnwrapped;
-        jfieldID crossesIDL;
         jfieldID idlHelper;
-        jfieldID _left;
-        jfieldID _right;
-        jfieldID _top;
-        jfieldID _bottom;
-        jfieldID drawSrid;
-        jfieldID focusx;
-        jfieldID focusy;
-        jfieldID upperLeft;
-        jfieldID upperRight;
-        jfieldID lowerRight;
-        jfieldID lowerLeft;
         jfieldID settled;
-        jfieldID renderPump;
         jfieldID rigorousRegistrationResolutionEnabled;
         jfieldID animationLastTick;
         jfieldID animationDelta;
         jfieldID sceneModelVersion;
-        jfieldID scene;
         jfieldID oscene;
-        jfieldID sceneModelForwardMatrix;
         jfieldID hardwareTransformResolutionThreshold;
         jfieldID elevationScaleFactor;
         jfieldID terrainBlendEnabled;
         jfieldID terrainBlendFactor;
         jfieldID continuousScrollEnabled;
+        jfieldID currentPass;
+        jfieldID currentScene;
+
+        struct
+        {
+            jclass id;
+            jfieldID drawMapResolution;
+            jfieldID drawLat;
+            jfieldID drawLng;
+            jfieldID drawRotation;
+            jfieldID drawTilt;
+            jfieldID drawVersion;
+            jfieldID targeting;
+            jfieldID westBound;
+            jfieldID southBound;
+            jfieldID northBound;
+            jfieldID eastBound;
+            jfieldID crossesIDL;
+            jfieldID left;
+            jfieldID right;
+            jfieldID top;
+            jfieldID bottom;
+            jfieldID drawSrid;
+            jfieldID focusx;
+            jfieldID focusy;
+            jfieldID upperLeft;
+            jfieldID upperRight;
+            jfieldID lowerRight;
+            jfieldID lowerLeft;
+            jfieldID renderPump;
+            jfieldID scene;
+            jfieldID sceneModelForwardMatrix;
+            jfieldID relativeScaleHint;
+        } State_class;
     } GLMapView_class;
 
     bool checkInit(JNIEnv &env) NOTHROWS;
@@ -88,7 +104,7 @@ namespace
 }
 
 JNIEXPORT jobject JNICALL Java_com_atakmap_map_opengl_GLMapView_create
-  (JNIEnv *env, jclass clazz, jlong ctxPtr, jlong viewPtr, jint left, jint bottom, jint right, jint top)
+  (JNIEnv *env, jclass clazz, jlong ctxPtr, jlong viewPtr, jint left, jint bottom, jint right, jint top, jboolean orthoOnly)
 {
     RenderContext *cctx = JLONG_TO_INTPTR(RenderContext, ctxPtr);
     if(!cctx) {
@@ -100,18 +116,22 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_opengl_GLMapView_create
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return NULL;
     }
-    GLMapView2Ptr retval(new GLMapView2(*cctx, *cview, left, bottom, right, top), Memory_deleter_const<GLMapView2>);
+    GLGlobeBasePtr retval(nullptr, nullptr);
+    if(!orthoOnly)
+        retval = GLGlobeBasePtr(new GLGlobe(*cctx, *cview, left, bottom, right, top), Memory_deleter_const<GLGlobeBase, GLGlobe>);
+    else
+        retval = GLGlobeBasePtr(new GLMapView2(*cctx, *cview, left, bottom, right, top), Memory_deleter_const<GLGlobeBase, GLMapView2>);
     return NewPointer(env, std::move(retval));
 }
 JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_destruct
   (JNIEnv *env, jclass clazz, jobject mpointer)
 {
-    Pointer_destruct<GLMapView2>(env, mpointer);
+    Pointer_destruct<GLGlobeBase>(env, mpointer);
 }
 JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_render
   (JNIEnv *env, jclass clazz, jlong ptr)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
+    GLGlobeBase *cview = JLONG_TO_INTPTR(GLGlobeBase, ptr);
     if(!cview) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return;
@@ -121,7 +141,7 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_render
 JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_release
   (JNIEnv *env, jclass clazz, jlong ptr)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
+    GLGlobeBase *cview = JLONG_TO_INTPTR(GLGlobeBase, ptr);
     if(!cview) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return;
@@ -131,7 +151,7 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_release
 JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_setBaseMap
   (JNIEnv *env, jclass clazz, jlong ptr, jobject mbasemap)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
+    GLGlobeBase *cview = JLONG_TO_INTPTR(GLGlobeBase, ptr);
     if(!cview) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return;
@@ -142,9 +162,9 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_setBaseMap
     cview->setBaseMap(std::move(cbasemap));
 }
 JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_sync
-  (JNIEnv *env, jclass clazz, jlong ptr, jobject mview)
+  (JNIEnv *env, jclass clazz, jlong ptr, jobject mview, jboolean current)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
+    GLGlobeBase *cview = JLONG_TO_INTPTR(GLGlobeBase, ptr);
     if(!cview) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return;
@@ -153,70 +173,75 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_sync
     if(!checkInit(*env))
         return;
 
+    Java::JNILocalRef mstate(*env, env->GetObjectField(mview, current ? GLMapView_class.currentPass : GLMapView_class.currentScene));
+    const GLGlobeBase::State *cstate = current ? cview->renderPass : &cview->renderPasses[0u];
+
 #define SET_FIELD(sm, fid) \
     env->sm(mview, GLMapView_class.fid, cview->fid)
+#define SET_STATE_FIELD(sm, fid) \
+    env->sm(mstate, GLMapView_class.State_class.fid, cstate->fid)
 
-    SET_FIELD(SetDoubleField, drawMapScale);
-    SET_FIELD(SetDoubleField, drawMapResolution);
-    SET_FIELD(SetDoubleField, drawLat);
-    SET_FIELD(SetDoubleField, drawLng);
-    SET_FIELD(SetDoubleField, drawRotation);
-    SET_FIELD(SetDoubleField, drawTilt);
+    SET_STATE_FIELD(SetDoubleField, drawMapResolution);
+    SET_STATE_FIELD(SetDoubleField, drawLat);
+    SET_STATE_FIELD(SetDoubleField, drawLng);
+    SET_STATE_FIELD(SetDoubleField, drawRotation);
+    SET_STATE_FIELD(SetDoubleField, drawTilt);
     SET_FIELD(SetDoubleField, animationFactor);
-    SET_FIELD(SetIntField, drawVersion);
+    SET_STATE_FIELD(SetIntField, drawVersion);
     //env->SetBooleanField(mview, GLMapView_class.targeting, (cview->targeting ? JNI_TRUE : JNI_FALSE));
-    SET_FIELD(SetDoubleField, westBound);
-    SET_FIELD(SetDoubleField, southBound);
-    SET_FIELD(SetDoubleField, northBound);
-    SET_FIELD(SetDoubleField, eastBound);
+    SET_STATE_FIELD(SetDoubleField, westBound);
+    SET_STATE_FIELD(SetDoubleField, southBound);
+    SET_STATE_FIELD(SetDoubleField, northBound);
+    SET_STATE_FIELD(SetDoubleField, eastBound);
     // Note: no SDK field, must be handled downstream
     //SET_FIELD(SetDoubleField, eastBoundUnwrapped);
     //SET_FIELD(SetDoubleField, westBoundUnwrapped);
     //env->SetBooleanField(mview, GLMapView_class.crossesIDL, (cview->crossesIDL ? JNI_TRUE : JNI_FALSE));
     // XXX - TODO
     //SET_FIELD(GLMapView_class, idlHelper, "Lcom/atakmap/map/opengl/GLAntiMeridianHelper;");
-    // Note: field name mismatch
-    env->SetIntField(mview, GLMapView_class._left, cview->left);
-    env->SetIntField(mview, GLMapView_class._right, cview->right);
-    env->SetIntField(mview, GLMapView_class._top, cview->top);
-    env->SetIntField(mview, GLMapView_class._bottom, cview->bottom);
-    SET_FIELD(SetIntField, drawSrid);
-    SET_FIELD(SetFloatField, focusx);
-    SET_FIELD(SetFloatField, focusy);
-    Java::JNILocalRef mupperLeft(*env, env->GetObjectField(mview, GLMapView_class.upperLeft));
-    Core::Interop_copy(mupperLeft, env, cview->upperLeft);
-    Java::JNILocalRef mupperRight(*env, env->GetObjectField(mview, GLMapView_class.upperRight));
-    Core::Interop_copy(mupperRight, env, cview->upperRight);
-    Java::JNILocalRef mlowerRight(*env, env->GetObjectField(mview, GLMapView_class.lowerRight));
-    Core::Interop_copy(mlowerRight, env, cview->lowerRight);
-    Java::JNILocalRef mlowerLeft(*env, env->GetObjectField(mview, GLMapView_class.lowerLeft));
-    Core::Interop_copy(mlowerLeft, env, cview->lowerLeft);
+    SET_STATE_FIELD(SetIntField, left);
+    SET_STATE_FIELD(SetIntField, right);
+    SET_STATE_FIELD(SetIntField, top);
+    SET_STATE_FIELD(SetIntField, bottom);
+    SET_STATE_FIELD(SetIntField, drawSrid);
+    SET_STATE_FIELD(SetFloatField, focusx);
+    SET_STATE_FIELD(SetFloatField, focusy);
+    Java::JNILocalRef mupperLeft(*env, env->GetObjectField(mstate, GLMapView_class.State_class.upperLeft));
+    Core::Interop_copy(mupperLeft, env, cstate->upperLeft);
+    Java::JNILocalRef mupperRight(*env, env->GetObjectField(mstate, GLMapView_class.State_class.upperRight));
+    Core::Interop_copy(mupperRight, env, cstate->upperRight);
+    Java::JNILocalRef mlowerRight(*env, env->GetObjectField(mstate, GLMapView_class.State_class.lowerRight));
+    Core::Interop_copy(mlowerRight, env, cstate->lowerRight);
+    Java::JNILocalRef mlowerLeft(*env, env->GetObjectField(mstate, GLMapView_class.State_class.lowerLeft));
+    Core::Interop_copy(mlowerLeft, env, cstate->lowerLeft);
     //env->SetBooleanField(mview, GLMapView_class.settled, (cview->settled ? JNI_TRUE : JNI_FALSE));
-    SET_FIELD(SetIntField, renderPump);
+    SET_STATE_FIELD(SetIntField, renderPump);
     // XXX - no field in SDK
     //SET_FIELD(SetBooleanField, rigorousRegistrationResolutionEnabled);
     SET_FIELD(SetLongField, animationLastTick);
     SET_FIELD(SetLongField, animationDelta);
     SET_FIELD(SetIntField, sceneModelVersion);
-    Java::JNILocalRef mscene(*env, env->GetObjectField(mview, GLMapView_class.scene));
-    Core::Interop_marshal(mscene, *env, cview->scene);
-    env->SetObjectField(mview, GLMapView_class.scene, mscene);
+    Java::JNILocalRef mscene(*env, env->GetObjectField(mstate, GLMapView_class.State_class.scene));
+    Core::Interop_marshal(mscene.get(), *env, cstate->scene);
+
     // XXX - no field in SDK
     //SET_FIELD(GLMapView_class, oscene, "Lcom/atakmap/map/MapSceneModel;");
-    Java::JNILocalRef msceneModelForwardMatrix(*env, env->GetObjectField(mview, GLMapView_class.sceneModelForwardMatrix));
-    JNIFloatArray_copy((jfloatArray)msceneModelForwardMatrix.get(), 0u, *env, reinterpret_cast<const jfloat *>(&cview->sceneModelForwardMatrix[0u]), 16u);
-    SET_FIELD(SetDoubleField, hardwareTransformResolutionThreshold);
+    Java::JNILocalRef msceneModelForwardMatrix(*env, env->GetObjectField(mstate, GLMapView_class.State_class.sceneModelForwardMatrix));
+    JNIFloatArray_copy((jfloatArray)msceneModelForwardMatrix.get(), 0u, *env, reinterpret_cast<const jfloat *>(&cstate->sceneModelForwardMatrix[0u]), 16u);
     SET_FIELD(SetDoubleField, elevationScaleFactor);
     // XXX - no field in SDK
     //SET_FIELD(SetBooleanField, terrainBlendEnabled);
     //SET_FIELD(SetDoubleField, terrainBlendFactor);
     //env->SetBooleanField(mview, GLMapView_class.continuousScrollEnabled, (cview->continuousScrollEnabled ? JNI_TRUE : JNI_FALSE));
+
+    const float relativeScale = ((float)(cstate->right-cstate->left) / cstate->viewport.width);
+    env->SetFloatField(mstate, GLMapView_class.State_class.relativeScaleHint, relativeScale);
 #undef SET_FIELD
 }
 JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_start
   (JNIEnv *env, jclass clazz, jlong ptr)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
+    GLGlobeBase *cview = JLONG_TO_INTPTR(GLGlobeBase, ptr);
     if(!cview) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return;
@@ -226,7 +251,7 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_start
 JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_stop
   (JNIEnv *env, jclass clazz, jlong ptr)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
+    GLGlobeBase *cview = JLONG_TO_INTPTR(GLGlobeBase, ptr);
     if(!cview) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return;
@@ -242,29 +267,170 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_intern
         return;
     }
 
-    std::shared_ptr<GLMapView2> cview;
+    std::shared_ptr<GLGlobeBase> cview;
     code = Renderer::Core::Interop_marshal(cview, *env, mview);
     if(ATAKMapEngineJNI_checkOrThrow(env, code))
         return;
 }
-JNIEXPORT jdouble JNICALL Java_com_atakmap_map_opengl_GLMapView_getTerrainMeshElevation
-  (JNIEnv *env, jclass clazz, jlong ptr, jdouble lat, jdouble lng)
+JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_markDirty__J
+  (JNIEnv *env, jclass clazz, jlong ptr)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
-    if(!cview) {
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return;
+    }
+    GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
+    cview->getSurfaceRenderer().markDirty();
+}
+JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_markDirty__JDDDDZ
+  (JNIEnv *env, jclass clazz, jlong ptr, jdouble minX, jdouble minY, jdouble maxX, jdouble maxY, jboolean streaming)
+{
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return;
+    }
+    GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
+    cview->getSurfaceRenderer().markDirty(TAK::Engine::Feature::Envelope2(minX, minY, 0.0, maxX, maxY, 0.0), streaming);
+}
+JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_enableDrawMode
+  (JNIEnv *env, jclass clazz, jlong ptr, jint tedm)
+{
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return;
+    }
+    GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
+    cview->enableDrawMode((TAK::Engine::Model::DrawMode)tedm);
+}
+JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_disableDrawMode
+  (JNIEnv *env, jclass clazz, jlong ptr, jint tedm)
+{
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return;
+    }
+    GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
+    cview->disableDrawMode((TAK::Engine::Model::DrawMode)tedm);
+}
+JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_GLMapView_isDrawModeEnabled
+  (JNIEnv *env, jclass clazz, jlong ptr, jint tedm)
+{
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return false;
+    }
+    GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
+    return cview->isDrawModeEnabled((TAK::Engine::Model::DrawMode)tedm);
+}
+JNIEXPORT jint JNICALL Java_com_atakmap_map_opengl_GLMapView_getDrawModeColor
+  (JNIEnv *env, jclass clazz, jlong ptr, jint tedm)
+{
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return -1;
+    }
+    GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
+    return cview->getColor((TAK::Engine::Model::DrawMode)tedm);
+}
+JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_setDrawModeColor
+  (JNIEnv *env, jclass clazz, jlong ptr, jint tedm, jint color)
+{
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return;
+    }
+    GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
+    return cview->setColor((TAK::Engine::Model::DrawMode)tedm, color, TAK::Engine::Renderer::Core::ColorControl::Modulate);
+}
+JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_getSurfaceBounds
+  (JNIEnv *env, jclass clazz, jlong ptr, jobject msurfaceBounds)
+{
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return;
+    }
+    GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
+
+    struct BoundsWrapper : public TAK::Engine::Port::Collection<TAK::Engine::Feature::Envelope2>
+    {
+    public :
+        JNIEnv *env;
+        jobject mimpl;
+    public :
+        virtual TAKErr add(TAK::Engine::Feature::Envelope2 elem) NOTHROWS override
+        {
+            Java::JNILocalRef mmbb(*env, NULL);
+            Feature::Interop_marshal(mmbb, *env, elem);
+            return Java::JNICollection_add(*env, mimpl, mmbb);
+        }
+        virtual TAKErr remove(TAK::Engine::Feature::Envelope2 &elem) NOTHROWS override
+        {
+            return TE_Unsupported;
+        }
+        virtual TAKErr contains(bool *value, TAK::Engine::Feature::Envelope2 &elem) NOTHROWS override
+        {
+            return TE_Unsupported;
+        }
+        virtual TAKErr clear() NOTHROWS
+        {
+            Java::JNILocalRef mmbb(*env, NULL);
+            return Java::JNICollection_clear(*env, mimpl);
+        }
+        virtual std::size_t size() NOTHROWS override
+        {
+            return 0u;
+        }
+        virtual bool empty() NOTHROWS
+        {
+            return true;
+        }
+        virtual TAKErr iterator(IteratorPtr &iterator) NOTHROWS
+        {
+            return TE_Unsupported;
+        }
+    };
+    BoundsWrapper csurfaceBounds;
+    csurfaceBounds.env = env;
+    csurfaceBounds.mimpl = msurfaceBounds;
+    cview->getSurfaceBounds(csurfaceBounds);
+}
+JNIEXPORT jdouble JNICALL Java_com_atakmap_map_opengl_GLMapView_getTerrainMeshElevation
+  (JNIEnv *env, jclass clazz, jlong ptr, jdouble lat, jdouble lng, jint type)
+{
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return NAN;
     }
     double retval;
-    if(cview->getTerrainMeshElevation(&retval, lat, lng) != TE_Ok)
+    if(type == com_atakmap_map_opengl_GLMapView_IMPL_IFACE) {
+        retval = 0.0;
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V1) {
+        GLMapView2 *cview = static_cast<GLMapView2 *>(cglobe);
+        if (cview->getTerrainMeshElevation(&retval, lat, lng) != TE_Ok)
+            return NAN;
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V2) {
+        GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
+        if (cview->getTerrainMeshElevation(&retval, lat, lng) != TE_Ok)
+            return NAN;
+    } else {
         return NAN;
+    }
     return retval;
 }
 JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_GLMapView_intersectWithTerrain2
-  (JNIEnv *env, jclass clazz, jlong viewptr, jlong sceneptr, jfloat x, jfloat y, jobject mresult)
+  (JNIEnv *env, jclass clazz, jlong viewptr, jlong sceneptr, jfloat x, jfloat y, jobject mresult, jint type)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, viewptr);
-    if(!cview) {
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, viewptr);
+    if(!cglobe) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return false;
     }
@@ -274,16 +440,27 @@ JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_GLMapView_intersectWithTe
         return false;
     }
     GeoPoint2 cresult;
-    if(cview->intersectWithTerrain2(&cresult, *cscene, x, y) != TE_Ok)
+    if(type == com_atakmap_map_opengl_GLMapView_IMPL_IFACE) {
         return false;
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V1) {
+        GLMapView2 *cview = static_cast<GLMapView2 *>(cglobe);
+        if(cview->intersectWithTerrain2(&cresult, *cscene, x, y) != TE_Ok)
+            return false;
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V2) {
+        GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
+        if(cview->intersectWithTerrain2(&cresult, *cscene, x, y) != TE_Ok)
+            return false;
+    } else {
+        return false;
+    }
     return (Core::Interop_copy(mresult, env, cresult) == TE_Ok);
 }
 JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_getTerrainTiles
-  (JNIEnv *env, jclass clazz, jlong ptr, jobject mtiles)
+  (JNIEnv *env, jclass clazz, jlong ptr, jobject mtiles, jint type)
 {
     TAKErr code(TE_Ok);
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
-    if(!cview) {
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return;
     }
@@ -293,7 +470,17 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_getTerrainTiles
     }
 
     std::vector<std::shared_ptr<const TerrainTile>> ctiles;
-    code = cview->visitTerrainTiles(collectTiles, &ctiles);
+    if(type == com_atakmap_map_opengl_GLMapView_IMPL_IFACE) {
+        return;
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V1) {
+        GLMapView2 *cview = static_cast<GLMapView2 *>(cglobe);
+        code = cview->visitTerrainTiles(collectTiles, &ctiles);
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V2) {
+        GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
+        code = cview->visitTerrainTiles(collectTiles, &ctiles);
+    } else {
+        return;
+    }
     if(ATAKMapEngineJNI_checkOrThrow(env, code))
         return;
     for(std::size_t i = 0u; i < ctiles.size(); i++) {
@@ -305,34 +492,51 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_getTerrainTiles
         return;
 }
 JNIEXPORT jint JNICALL Java_com_atakmap_map_opengl_GLMapView_getTerrainVersion
-  (JNIEnv *env, jclass clazz, jlong ptr)
+  (JNIEnv *env, jclass clazz, jlong ptr, jint type)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
-    if(!cview) {
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return -1;
     }
-    return cview->getTerrainVersion();
+
+    if(type == com_atakmap_map_opengl_GLMapView_IMPL_IFACE) {
+        return -1;
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V1) {
+        GLMapView2 *cview = static_cast<GLMapView2 *>(cglobe);
+        return cview->getTerrainVersion();
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V2) {
+        GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
+        return cview->getTerrainVersion();
+    } else {
+        return -1;
+    }
 }
 JNIEXPORT jobject JNICALL Java_com_atakmap_map_opengl_GLMapView_getTerrainRenderService
-  (JNIEnv *env, jclass clazz, jlong ptr)
+  (JNIEnv *env, jclass clazz, jlong ptr, jint type)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
-    if(!cview) {
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return NULL;
     }
-    return NewPointer<TAK::Engine::Renderer::Elevation::TerrainRenderService>(env, &cview->getTerrainRenderService(), true);
+    if(type == com_atakmap_map_opengl_GLMapView_IMPL_IFACE) {
+        return NULL;
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V1) {
+        GLMapView2 *cview = static_cast<GLMapView2 *>(cglobe);
+        return NewPointer<TAK::Engine::Renderer::Elevation::TerrainRenderService>(env, &cview->getTerrainRenderService(), true);
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V2) {
+        GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
+        return NewPointer<TAK::Engine::Renderer::Elevation::TerrainRenderService>(env, &cview->getTerrainRenderService(), true);
+    } else {
+        return NULL;
+    }
 }
 JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_forwardD
   (JNIEnv *env, jclass clazz, jlong ptr, jlong srcBufPtr, jint srcSize, jlong dstBufPtr, jint dstSize, jint count)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
-    if(!cview) {
-        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
-        return;
-    }
-    if(!dstBufPtr || !srcBufPtr) {
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return;
     }
@@ -340,17 +544,13 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_forwardD
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return;
     }
-    cview->forward(JLONG_TO_INTPTR(float, dstBufPtr), dstSize, JLONG_TO_INTPTR(double, srcBufPtr), srcSize, count);
+    GLMapView2_forward(JLONG_TO_INTPTR(float, dstBufPtr), *cglobe, dstSize, JLONG_TO_INTPTR(double, srcBufPtr), srcSize, count);
 }
 JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_forwardF
   (JNIEnv *env, jclass clazz, jlong ptr, jlong srcBufPtr, jint srcSize, jlong dstBufPtr, jint dstSize, jint count)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
-    if(!cview) {
-        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
-        return;
-    }
-    if(!dstBufPtr || !srcBufPtr) {
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return;
     }
@@ -358,22 +558,22 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_forwardF
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return;
     }
-    cview->forward(JLONG_TO_INTPTR(float, dstBufPtr), dstSize, JLONG_TO_INTPTR(float, srcBufPtr), srcSize, count);
+    GLMapView2_forward(JLONG_TO_INTPTR(float, dstBufPtr), *cglobe, dstSize, JLONG_TO_INTPTR(float, srcBufPtr), srcSize, count);
 }
 
 JNIEXPORT jdouble JNICALL Java_com_atakmap_map_opengl_GLMapView_estimateResolutionFromViewAABB
   (JNIEnv *env, jclass clazz, jlong ptr, jdouble ullat, jdouble ullng, jdouble lrlat, jdouble lrlng, jobject mclosest)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
+    GLGlobeBase *cview = JLONG_TO_INTPTR(GLGlobeBase, ptr);
     if(!cview) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return NAN;
     }
     MapSceneModel2 cmodel(cview->renderPasses[0u].scene);
-    cmodel.camera.target.y = cview->drawLat;
-    cmodel.camera.target.x = cview->drawLng;
-    cmodel.width = (cview->right-cview->left);
-    cmodel.height = (cview->top-cview->bottom);
+    cmodel.camera.target.y = cview->renderPasses[0].drawLat;
+    cmodel.camera.target.x = cview->renderPasses[0].drawLng;
+    cmodel.width = (cview->renderPasses[0].right-cview->renderPasses[0].left);
+    cmodel.height = (cview->renderPasses[0].top-cview->renderPasses[0].bottom);
     return Java_com_atakmap_map_opengl_GLMapView_estimateResolutionFromModelAABB(env, clazz, INTPTR_TO_JLONG(&cmodel), ullat, ullng, lrlat, lrlng, mclosest);
 }
 JNIEXPORT jdouble JNICALL Java_com_atakmap_map_opengl_GLMapView_estimateResolutionFromModelAABB
@@ -413,7 +613,7 @@ JNIEXPORT jdouble JNICALL Java_com_atakmap_map_opengl_GLMapView_estimateResoluti
 JNIEXPORT jdouble JNICALL Java_com_atakmap_map_opengl_GLMapView_estimateResolutionFromViewSphere
   (JNIEnv *env, jclass clazz, jlong ptr, jdouble centerX, jdouble centerY, jdouble centerZ, jdouble radius, jobject mclosest)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
+    GLGlobeBase *cview = JLONG_TO_INTPTR(GLGlobeBase, ptr);
     if(!cview) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return NAN;
@@ -479,21 +679,30 @@ JNIEXPORT jdouble JNICALL Java_com_atakmap_map_opengl_GLMapView_estimateResoluti
     }
 }
 JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_set_1terrainBlendFactor
-  (JNIEnv *env, jclass clazz, jlong ptr, jfloat v)
+  (JNIEnv *env, jclass clazz, jlong ptr, jfloat v, jint type)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
-    if(!cview) {
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return;
     }
-
-    cview->terrainBlendFactor = v;
+    if(type == com_atakmap_map_opengl_GLMapView_IMPL_IFACE) {
+        // no-op
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V1) {
+        GLMapView2 *cview = static_cast<GLMapView2 *>(cglobe);
+        cview->terrainBlendFactor = v;
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V2) {
+        GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
+        cview->terrainBlendFactor = v;
+    } else {
+        // no-op
+    }
 }
 JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_set_1targeting
   (JNIEnv *env, jclass clazz, jlong ptr, jboolean v)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
-    if(!cview) {
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return;
     }
@@ -501,26 +710,25 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_set_1targeting
     if(!checkInit(*env))
         return;
 
-    cview->targeting = v;
+    cglobe->targeting = v;
 }
 JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_GLMapView_get_1targeting
-  (JNIEnv *env, jclass clazz, jlong ptr)
+  (JNIEnv *env, jclass clazz, jlong ptr, jboolean current)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
-    if(!cview) {
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return false;
     }
-
     if(!checkInit(*env))
         return false;
 
-    return cview->targeting;
+    return current ? cglobe->renderPass->targeting : cglobe->renderPasses[0u].targeting;
 }
 JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_GLMapView_get_1crossesIDL
-  (JNIEnv *env, jclass clazz, jlong ptr)
+  (JNIEnv *env, jclass clazz, jlong ptr, jboolean current)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
+    GLGlobeBase *cview = JLONG_TO_INTPTR(GLGlobeBase, ptr);
     if(!cview) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return false;
@@ -529,12 +737,12 @@ JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_GLMapView_get_1crossesIDL
     if(!checkInit(*env))
         return false;
 
-    return cview->crossesIDL;
+    return current ? cview->renderPass->crossesIDL : cview->renderPasses[0u].crossesIDL;
 }
 JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_GLMapView_get_1settled
   (JNIEnv *env, jclass clazz, jlong ptr)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
+    GLGlobeBase *cview = JLONG_TO_INTPTR(GLGlobeBase, ptr);
     if(!cview) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return false;
@@ -548,7 +756,7 @@ JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_GLMapView_get_1settled
 JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_GLMapView_get_1rigorousRegistrationResolutionEnabled
   (JNIEnv *env, jclass clazz, jlong ptr)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
+    GLGlobeBase *cview = JLONG_TO_INTPTR(GLGlobeBase, ptr);
     if(!cview) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return false;
@@ -562,12 +770,11 @@ JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_GLMapView_get_1rigorousRe
 JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_GLMapView_get_1terrainBlendEnabled
   (JNIEnv *env, jclass clazz, jlong ptr)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
-    if(!cview) {
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return false;
     }
-
     if(!checkInit(*env))
         return false;
 
@@ -578,7 +785,7 @@ JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_GLMapView_get_1terrainBle
 JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_GLMapView_get_1continuousScrollEnabled
   (JNIEnv *env, jclass clazz, jlong ptr)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
+    GLGlobeBase *cview = JLONG_TO_INTPTR(GLGlobeBase, ptr);
     if(!cview) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return false;
@@ -589,77 +796,117 @@ JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_GLMapView_get_1continuous
 
     return cview->continuousScrollEnabled;
 }
-JNIEXPORT jint JNICALL Java_com_atakmap_map_opengl_GLMapView_getDisplayMode
+JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_GLMapView_get_1multiPartPass
   (JNIEnv *env, jclass clazz, jlong ptr)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
-    if(!cview) {
-        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
-        return -1;
-    }
-    return cview->view.getProjection();
-}
-JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_setDisplayMode
-  (JNIEnv *env, jclass clazz, jlong ptr, jint srid)
-{
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
-    if(!cview) {
-        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
-        return;
-    }
-    cview->view.setProjection(srid);
-}
-JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_GLMapView_lookAt
-  (JNIEnv *env, jclass clazz, jlong ptr, jdouble lat, jdouble lng, jdouble alt, jdouble res, jdouble rot, jdouble tilt, jboolean animate)
-{
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
+    GLGlobeBase *cview = JLONG_TO_INTPTR(GLGlobeBase, ptr);
     if(!cview) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return false;
     }
 
-    // perform collision detection
-    if (cview->scene.camera.mode == MapCamera2::Perspective) {
-        atakmap::math::Point<float> focusxy;
-        cview->view.getController()->getFocusPoint(&focusxy);
-        MapSceneModel2 newModel(cview->view.getDisplayDpi(),
-                                cview->view.getWidth(), cview->view.getHeight(),
-                                cview->view.getProjection(),
-                                GeoPoint2(lat, lng),
-                                focusxy.x, focusxy.y,
-                                rot, tilt, res);
-        GeoPoint2 cameraLocation;
-        newModel.projection->inverse(&cameraLocation, newModel.camera.location);
-        double localEl = 0.0;
-        cview->getTerrainMeshElevation(&localEl, cameraLocation.latitude, cameraLocation.longitude);
-        if (cameraLocation.altitude - 2.0 < localEl) {
-            double eladj = (localEl + 2.0) - cameraLocation.altitude;
-            GeoPoint2 adjCamLoc(cameraLocation.latitude, cameraLocation.longitude, localEl + 2.0, AltitudeReference::HAE);
-            GeoPoint2 adjTgtLoc(lat, lng, eladj, AltitudeReference::HAE);
-            Point2<double> camAdjxyz;
-            newModel.projection->forward(&camAdjxyz, adjCamLoc);
-            Point2<double> tgtAdjxyz;
-            newModel.projection->forward(&tgtAdjxyz, adjTgtLoc);
+    if(!checkInit(*env))
+        return false;
 
-            Point2<double> adjTgtSurface;
-            if(newModel.displayModel->earth->intersect(&adjTgtSurface, Ray2<double>(camAdjxyz, Vector4<double>(tgtAdjxyz.x-camAdjxyz.x, tgtAdjxyz.y-camAdjxyz.y, tgtAdjxyz.z-camAdjxyz.z)))) {
-                GeoPoint2 newFocus;
-                newModel.projection->inverse(&newFocus, adjTgtSurface);
-                lat = newFocus.latitude;
-                lng = newFocus.longitude;
-
-                double od;
-                Vector2_length(&od, Point2<double>(newModel.camera.target.x-newModel.camera.location.x, newModel.camera.target.y-newModel.camera.location.y, newModel.camera.target.z-newModel.camera.location.z));
-                double nd;
-                Vector2_length(&nd, Point2<double>(adjTgtSurface.x-camAdjxyz.x, adjTgtSurface.y-camAdjxyz.y, adjTgtSurface.z-camAdjxyz.z));
-                res *= nd / od;
-            }
-        }
+    return cview->multiPartPass;
+}
+JNIEXPORT jint JNICALL Java_com_atakmap_map_opengl_GLMapView_getDisplayMode
+  (JNIEnv *env, jclass clazz, jlong ptr)
+{
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return false;
     }
-
-    const double mapScale = atakmap::core::AtakMapView_getMapScale(cview->view.getDisplayDpi(), res);
-    cview->view.updateView(atakmap::core::GeoPoint(lat, lng, alt, atakmap::core::AltitudeReference::HAE), mapScale, rot, tilt, NAN, NAN, animate);
-    return true;
+    switch(cglobe->getDisplayMode()) {
+        case MapRenderer::Flat :
+            return 4326;
+        case MapRenderer::Globe :
+            return 4978;
+        default :
+            return -1;
+    }
+}
+JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_setDisplayMode
+  (JNIEnv *env, jclass clazz, jlong ptr, jint srid, jint type)
+{
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return;
+    }
+    if(type == com_atakmap_map_opengl_GLMapView_IMPL_IFACE) {
+        switch(srid) {
+            case 4326 :
+                cglobe->setDisplayMode(MapRenderer::Flat);
+                break;
+            case 4978 :
+                cglobe->setDisplayMode(MapRenderer::Globe);
+                break;
+            default :
+                break;
+        }
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V1) {
+        GLMapView2 *cview = static_cast<GLMapView2 *>(cglobe);
+        cview->view.setProjection(srid);
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V2) {
+        GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
+        cview->view.setProjection(srid);
+    } else {
+        // no-op
+    }
+}
+JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_GLMapView_lookAt
+  (JNIEnv *env, jclass clazz, jlong ptr, jdouble lat, jdouble lng, jdouble alt, jdouble res, jdouble rot, jdouble tilt, jdouble collision, jint mcollide, jboolean animate, jint type)
+{
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return false;
+    }
+    MapRenderer::CameraCollision ccollide;
+    switch(mcollide) {
+        case com_atakmap_map_opengl_GLMapView_CAMERA_COLLISION_ABORT :
+            ccollide = MapRenderer::Abort;
+            break;
+        case com_atakmap_map_opengl_GLMapView_CAMERA_COLLISION_ADJUST_CAMERA :
+            ccollide = MapRenderer::AdjustCamera;
+            break;
+        case com_atakmap_map_opengl_GLMapView_CAMERA_COLLISION_ADJUST_FOCUS :
+            ccollide = MapRenderer::AdjustFocus;
+            break;
+        case com_atakmap_map_opengl_GLMapView_CAMERA_COLLISION_IGNORE :
+            ccollide = MapRenderer::Ignore;
+            break;
+        default :
+            return false;
+    }
+    if(type == com_atakmap_map_opengl_GLMapView_IMPL_IFACE) {
+        return cglobe->lookAt(
+            TAK::Engine::Core::GeoPoint2(lat, lng, alt, TAK::Engine::Core::AltitudeReference::HAE),
+            res,
+            rot,
+            tilt,
+            ccollide,
+            animate) == TE_Ok;
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V1) {
+        GLMapView2 *cview = static_cast<GLMapView2 *>(cglobe);
+        const double mapScale = atakmap::core::AtakMapView_getMapScale(cview->view.getDisplayDpi(), res);
+        cview->view.updateView(atakmap::core::GeoPoint(lat, lng, alt, atakmap::core::AltitudeReference::HAE), mapScale, rot, tilt, NAN, NAN, animate);
+        return true;
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V2) {
+        GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
+        return GLGlobe_lookAt(*cview,
+            TAK::Engine::Core::GeoPoint2(lat, lng, alt, TAK::Engine::Core::AltitudeReference::HAE),
+            res,
+            rot,
+            tilt,
+            collision,
+            ccollide,
+            animate) == TE_Ok;
+    } else {
+        return false;
+    }
 }
 
 /*
@@ -668,10 +915,10 @@ JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_GLMapView_lookAt
  * Signature: (JZZ)Lcom/atakmap/map/MapSceneModel;
  */
 JNIEXPORT jobject JNICALL Java_com_atakmap_map_opengl_GLMapView_getMapSceneModel
-  (JNIEnv *env, jclass clazz, jlong ptr, jboolean instant, jboolean llOrigin)
+  (JNIEnv *env, jclass clazz, jlong ptr, jboolean instant, jboolean llOrigin, jint type)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
-    if(!cview) {
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return NULL;
     }
@@ -679,8 +926,8 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_opengl_GLMapView_getMapSceneModel
     if(instant) {
         MapSceneModel2Ptr retval(NULL, NULL);
         {
-            ReadLock rlock(cview->renderPassMutex);
-            retval = MapSceneModel2Ptr(new MapSceneModel2(cview->renderPasses[0].scene),
+            ReadLock rlock(cglobe->renderPasses0Mutex);
+            retval = MapSceneModel2Ptr(new MapSceneModel2(cglobe->renderPasses[0].scene),
                                        Memory_deleter_const<MapSceneModel2>);
         }
         if(!llOrigin) {
@@ -701,37 +948,71 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_opengl_GLMapView_getMapSceneModel
 
         return NewPointer(env, std::move(retval));
     } else {
-        atakmap::math::Point<float> focus;
-        cview->view.getController()->getFocusPoint(&focus);
-        atakmap::core::GeoPoint geolegacy;
-        cview->view.getPoint(&geolegacy);
-        GeoPoint2 geo;
-        GeoPoint_adapt(&geo, geolegacy);
-        MapSceneModel2Ptr retval(new MapSceneModel2(cview->view.getDisplayDpi(),
-                                                    cview->view.getWidth(),
-                                                    cview->view.getHeight(),
-                                                    cview->view.getProjection(),
-                                                    geo,
-                                                    focus.x, focus.y,
-                                                    cview->view.getMapRotation(),
-                                                    cview->view.getMapTilt(),
-                                                    cview->view.getMapResolution()),
-                                 Memory_deleter_const<MapSceneModel2>);
-        if(llOrigin) {
-            // flip forward/inverse matrices
-            retval->inverseTransform.translate(0.0, retval->height, 0.0);
-            retval->inverseTransform.scale(1.0, -1.0, 1.0);
-
-
-            retval->forwardTransform.preConcatenate(Matrix2(1.0, 0.0, 0.0, 0.0,
-                                                            0.0, -1.0, 0.0, 0.0,
-                                                            0.0, 0.0, 1.0, 0.0,
-                                                            0.0, 0.0, 0.0, 1.0));
-            retval->forwardTransform.preConcatenate(Matrix2(1.0, 0.0, 0.0, 0.0,
-                                                            0.0, 1.0, 0.0, retval->height,
-                                                            0.0, 0.0, 1.0, 0.0,
-                                                            0.0, 0.0, 0.0, 1.0));
+        double dpi;
+        std::size_t width;
+        std::size_t height;
+        int srid;
+        GeoPoint2 focus;
+        float focusx, focusy;
+        double rotation;
+        double tilt;
+        double resolution;
+        MapCamera2::Mode mode;
+        if(type == com_atakmap_map_opengl_GLMapView_IMPL_IFACE) {
+            // XXX -
+            return NULL;
+        } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V1) {
+            GLMapView2 *cview = static_cast<GLMapView2 *>(cglobe);
+            atakmap::math::Point<float> focusxy;
+            cview->view.getController()->getFocusPoint(&focusxy);
+            atakmap::core::GeoPoint geolegacy;
+            cview->view.getPoint(&geolegacy);
+            GeoPoint_adapt(&focus, geolegacy);
+            dpi = cview->view.getDisplayDpi();
+            width = (std::size_t)cview->view.getWidth();
+            height = (std::size_t)cview->view.getHeight();
+            srid = cview->view.getProjection();
+            focusx = focusxy.x;
+            focusy = focusxy.y;
+            rotation = cview->view.getMapRotation();
+            tilt = cview->view.getMapTilt();
+            resolution = cview->view.getMapResolution();
+            mode = MapCamera2::Scale;
+        } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V2) {
+            GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
+            atakmap::math::Point<float> focusxy;
+            cview->view.getController()->getFocusPoint(&focusxy);
+            atakmap::core::GeoPoint geolegacy;
+            cview->view.getPoint(&geolegacy);
+            GeoPoint_adapt(&focus, geolegacy);
+            dpi = cview->view.getDisplayDpi();
+            width = (std::size_t)cview->view.getWidth();
+            height = (std::size_t)cview->view.getHeight();
+            srid = cview->view.getProjection();
+            focusx = focusxy.x;
+            focusy = focusxy.y;
+            rotation = cview->view.getMapRotation();
+            tilt = cview->view.getMapTilt();
+            resolution = cview->view.getMapResolution();
+            mode = MapCamera2::Perspective;
+        } else {
+            return NULL;
         }
+
+        MapSceneModel2Ptr retval(new MapSceneModel2(dpi,
+                                                    width,
+                                                    height,
+                                                    srid,
+                                                    focus,
+                                                    focusx, focusy,
+                                                    rotation,
+                                                    tilt,
+                                                    resolution,
+                                                    mode),
+                                 Memory_deleter_const<MapSceneModel2>);
+        // flip forward/inverse matrices
+        if(llOrigin)
+            GLGlobeBase_glScene(*retval);
 
         return NewPointer(env, std::move(retval));
     }
@@ -740,115 +1021,169 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_opengl_GLMapView_getMapSceneModel
 JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_GLMapView_isAnimating
   (JNIEnv *env, jclass clazz, jlong ptr)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
-    if(!cview) {
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return false;
     }
 
-    return cview->view.isAnimating();
+    return !cglobe->settled;
 }
 JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_setFocusPointOffset
-  (JNIEnv *env, jclass clazz, jlong ptr, jfloat x, jfloat y)
+  (JNIEnv *env, jclass clazz, jlong ptr, jfloat x, jfloat y, jint type)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
-    if(!cview) {
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return;
     }
-
-    cview->view.setFocusPointOffset(x, -1.0f*y);
+    if(type == com_atakmap_map_opengl_GLMapView_IMPL_IFACE) {
+        // no-op
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V1) {
+        GLMapView2 *cview = static_cast<GLMapView2 *>(cglobe);
+        cview->view.setFocusPointOffset(x, -1.0f*y);
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V2) {
+        GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
+        cview->view.setFocusPointOffset(x, -1.0f*y);
+    } else {
+        // no-op
+    }
 }
 JNIEXPORT jfloat JNICALL Java_com_atakmap_map_opengl_GLMapView_getFocusPointOffsetX
-  (JNIEnv *env, jclass clazz, jlong ptr)
+  (JNIEnv *env, jclass clazz, jlong ptr, jint type)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
-    if(!cview) {
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return 0.0f;
     }
-    atakmap::math::Point<float> focus;
-    cview->view.getController()->getFocusPoint(&focus);
-    return focus.x-(cview->view.getWidth()/2.0f);
+    if(type == com_atakmap_map_opengl_GLMapView_IMPL_IFACE) {
+        return 0.0f;
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V1) {
+        GLMapView2 *cview = static_cast<GLMapView2 *>(cglobe);
+        atakmap::math::Point<float> focus;
+        cview->view.getController()->getFocusPoint(&focus);
+        return focus.x-(cview->view.getWidth()/2.0f);
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V2) {
+        GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
+        atakmap::math::Point<float> focus;
+        cview->view.getController()->getFocusPoint(&focus);
+        return focus.x-(cview->view.getWidth()/2.0f);
+    } else {
+        return 0.0f;
+    }
 }
 JNIEXPORT jfloat JNICALL Java_com_atakmap_map_opengl_GLMapView_getFocusPointOffsetY
-  (JNIEnv *env, jclass clazz, jlong ptr)
+  (JNIEnv *env, jclass clazz, jlong ptr, jint type)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
-    if(!cview) {
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return 0.0f;
     }
-    atakmap::math::Point<float> focus;
-    cview->view.getController()->getFocusPoint(&focus);
-    return (cview->view.getHeight()/2.0f) - focus.y;
+    if(type == com_atakmap_map_opengl_GLMapView_IMPL_IFACE) {
+        return 0.0f;
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V1) {
+        GLMapView2 *cview = static_cast<GLMapView2 *>(cglobe);
+        atakmap::math::Point<float> focus;
+        cview->view.getController()->getFocusPoint(&focus);
+        return (cview->view.getHeight()/2.0f) - focus.y;
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V2) {
+        GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
+        atakmap::math::Point<float> focus;
+        cview->view.getController()->getFocusPoint(&focus);
+        return (cview->view.getHeight()/2.0f) - focus.y;
+    } else {
+        return 0.0f;
+    }
 }
 JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_setSize
-  (JNIEnv *env, jclass clazz, jlong ptr, jint width, jint height)
+  (JNIEnv *env, jclass clazz, jlong ptr, jint width, jint height, jint type)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
-    if(!cview) {
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return;
     }
-    cview->view.setSize(width, height);
+    if(type == com_atakmap_map_opengl_GLMapView_IMPL_IFACE) {
+        cglobe->setSurfaceSize(width, height);
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V1) {
+        GLMapView2 *cview = static_cast<GLMapView2 *>(cglobe);
+        cview->view.setSize(width, height);
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V2) {
+        GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
+        cview->view.setSize(width, height);
+    } else {
+        // no-op
+    }
 }
 JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_setDisplayDpi
-  (JNIEnv *env, jclass clazz, jlong ptr, jdouble dpi)
+  (JNIEnv *env, jclass clazz, jlong ptr, jdouble dpi, jint type)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
-    if(!cview) {
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return;
     }
-    cview->view.setDisplayDpi(dpi);
+    if(type == com_atakmap_map_opengl_GLMapView_IMPL_IFACE) {
+        cglobe->displayDpi = dpi;
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V1) {
+        GLMapView2 *cview = static_cast<GLMapView2 *>(cglobe);
+        cview->view.setDisplayDpi(dpi);
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V2) {
+        GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
+        cview->view.setDisplayDpi(dpi);
+    } else {
+        // no-op
+    }
 }
 JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_GLMapView_inverse
-  (JNIEnv *env, jclass clazz, jlong ptr, jdouble x, jdouble y, jdouble z, jint mode, jobject mlla)
+  (JNIEnv *env, jclass clazz, jlong ptr, jdouble x, jdouble y, jdouble z, jint mmode, jobject mlla)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
-    if(!cview) {
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return false;
     }
 
     MapSceneModel2 scene;
     {
-        ReadLock lock(cview->renderPassMutex);
-        scene = cview->renderPasses[0u].scene;
+        ReadLock lock(cglobe->renderPasses0Mutex);
+        scene = cglobe->renderPasses[0u].scene;
     }
 
     Point2<double> xyz(x, y, z);
     GeoPoint2 clla;
-    switch(mode) {
+    MapRenderer::InverseResult result;
+    MapRenderer::InverseMode cmode;
+    unsigned int hints = 0u;
+    switch(mmode) {
         case com_atakmap_map_opengl_GLMapView_INVERSE_MODE_ABSOLUTE :
-            // inverse xyz into map projection space
-            if(scene.inverseTransform.transform(&xyz, xyz) != TE_Ok)
-                return false;
-            // convert map projection coordinate to LLA
-            if(scene.projection->inverse(&clla, xyz) != TE_Ok)
-                return false;
+            cmode = MapRenderer::InverseMode::Transform;
+            hints |= MapRenderer::IgnoreTerrainMesh|MapRenderer::IgnoreSurfaceMesh;
             break;
         case com_atakmap_map_opengl_GLMapView_INVERSE_MODE_MODEL :
-            if(scene.inverse(&clla, Point2<float>(x, y)) != TE_Ok)
-                return false;
+            cmode = MapRenderer::InverseMode::RayCast;
+            hints |= MapRenderer::IgnoreTerrainMesh|MapRenderer::IgnoreSurfaceMesh;
             break;
         case com_atakmap_map_opengl_GLMapView_INVERSE_MODE_TERRAIN :
-            if(cview->intersectWithTerrain2(&clla, scene, x, y) != TE_Ok)
-                return false;
+            cmode = MapRenderer::InverseMode::RayCast;
             break;
         default :
             return false;
     }
-
+    if(cglobe->inverse(&result, &clla, cmode, hints, xyz, MapRenderer::LowerLeft) != TE_Ok)
+        return false;
+    if(result == MapRenderer::None)
+        return false;
     Core::Interop_copy(mlla, env, clla);
     return true;
 }
 JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_setElevationExaggerationFactor
-  (JNIEnv *env, jclass clazz, jlong ptr, jdouble factor)
+  (JNIEnv *env, jclass clazz, jlong ptr, jdouble factor, jint type)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
-    if(!cview) {
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return;
     }
@@ -856,17 +1191,132 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_setElevationExagger
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return;
     }
-    cview->view.setElevationExaggerationFactor(factor);
+    if(type == com_atakmap_map_opengl_GLMapView_IMPL_IFACE) {
+        cglobe->elevationScaleFactor = factor;
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V1) {
+        GLMapView2 *cview = static_cast<GLMapView2 *>(cglobe);
+        cview->view.setElevationExaggerationFactor(factor);
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V2) {
+        GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
+        cview->view.setElevationExaggerationFactor(factor);
+    } else {
+        // no-op
+    }
 }
 JNIEXPORT jdouble JNICALL Java_com_atakmap_map_opengl_GLMapView_getElevationExaggerationFactor
   (JNIEnv *env, jclass clazz, jlong ptr)
 {
-    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
-    if(!cview) {
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return 1.0;
     }
-    return cview->view.getElevationExaggerationFactor();
+    return cglobe->elevationScaleFactor;
+}
+JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_GLMapView_isRenderDiagnosticsEnabled
+  (JNIEnv *env, jclass clazz, jlong ptr, jint type)
+{
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return false;
+    }
+    if(type == com_atakmap_map_opengl_GLMapView_IMPL_IFACE) {
+        // no-op
+        return false;
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V1) {
+        GLMapView2 *cview = static_cast<GLMapView2 *>(cglobe);
+        return cview->isRenderDiagnosticsEnabled();
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V2) {
+        GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
+        return cview->isRenderDiagnosticsEnabled();
+    } else {
+        // no-op
+        return false;
+    }
+}
+JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_setRenderDiagnosticsEnabled
+  (JNIEnv *env, jclass clazz, jlong ptr, jboolean enabled, jint type)
+{
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return;
+    }
+    if(type == com_atakmap_map_opengl_GLMapView_IMPL_IFACE) {
+        // no-op
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V1) {
+        GLMapView2 *cview = static_cast<GLMapView2 *>(cglobe);
+        cview->setRenderDiagnosticsEnabled(enabled);
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V2) {
+        GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
+        cview->setRenderDiagnosticsEnabled(enabled);
+    } else {
+        // no-op
+    }
+}
+JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_setAtmosphereEnabled
+  (JNIEnv *env, jclass clazz, jlong ptr, jboolean enabled, jint type)
+{
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return;
+    }
+    if(type == com_atakmap_map_opengl_GLMapView_IMPL_IFACE) {
+        // no-op
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V1) {
+        // no-op
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V2) {
+        GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
+        cview->setAtmosphereEnabled(enabled);
+    } else {
+        // no-op
+    }
+}
+JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_GLMapView_isAtmosphereEnabled
+  (JNIEnv *env, jclass clazz, jlong ptr, jint type)
+{
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return false;
+    }
+    if(type == com_atakmap_map_opengl_GLMapView_IMPL_IFACE) {
+        // no-op
+        return false;
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V1) {
+        // no-op
+        return false;
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V2) {
+        GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
+        return cview->isAtmosphereEnabled();
+    } else {
+        // no-op
+        return false;
+    }
+}
+JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_addRenderDiagnostic
+  (JNIEnv *env, jclass clazz, jlong ptr, jstring mmsg, jint type)
+{
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return;
+    }
+    if(type == com_atakmap_map_opengl_GLMapView_IMPL_IFACE) {
+        // no-op
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V1) {
+        GLMapView2 *cview = static_cast<GLMapView2 *>(cglobe);
+        JNIStringUTF cmsg(*env, mmsg);
+        cview->addRenderDiagnosticMessage(cmsg);
+    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V2) {
+        GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
+        JNIStringUTF cmsg(*env, mmsg);
+        cview->addRenderDiagnosticMessage(cmsg);
+    } else {
+        // no-op
+    }
 }
 
 namespace
@@ -880,50 +1330,52 @@ namespace
     {
 #define SET_FIELD_DEFINITION(c, m, sig) \
     c.m = env.GetFieldID(c.id, #m, sig)
-
         GLMapView_class.id = ATAKMapEngineJNI_findClass(&env, "com/atakmap/map/opengl/GLMapView");
-        SET_FIELD_DEFINITION(GLMapView_class, drawMapScale, "D");
-        SET_FIELD_DEFINITION(GLMapView_class, drawMapResolution, "D");
-        SET_FIELD_DEFINITION(GLMapView_class, drawLat, "D");
-        SET_FIELD_DEFINITION(GLMapView_class, drawLng, "D");
-        SET_FIELD_DEFINITION(GLMapView_class, drawRotation, "D");
-        SET_FIELD_DEFINITION(GLMapView_class, drawTilt, "D");
+        GLMapView_class.State_class.id = ATAKMapEngineJNI_findClass(&env, "com/atakmap/map/opengl/GLMapView$State");
+        SET_FIELD_DEFINITION(GLMapView_class.State_class, drawMapResolution, "D");
+        SET_FIELD_DEFINITION(GLMapView_class.State_class, drawLat, "D");
+        SET_FIELD_DEFINITION(GLMapView_class.State_class, drawLng, "D");
+        SET_FIELD_DEFINITION(GLMapView_class.State_class, drawRotation, "D");
+        SET_FIELD_DEFINITION(GLMapView_class.State_class, drawTilt, "D");
         SET_FIELD_DEFINITION(GLMapView_class, animationFactor, "D");
-        SET_FIELD_DEFINITION(GLMapView_class, drawVersion, "I");
-        SET_FIELD_DEFINITION(GLMapView_class, targeting, "Z");
-        SET_FIELD_DEFINITION(GLMapView_class, westBound, "D");
-        SET_FIELD_DEFINITION(GLMapView_class, southBound, "D");
-        SET_FIELD_DEFINITION(GLMapView_class, northBound, "D");
-        SET_FIELD_DEFINITION(GLMapView_class, eastBound, "D");
+        SET_FIELD_DEFINITION(GLMapView_class.State_class, drawVersion, "I");
+        SET_FIELD_DEFINITION(GLMapView_class.State_class, targeting, "Z");
+        SET_FIELD_DEFINITION(GLMapView_class.State_class, westBound, "D");
+        SET_FIELD_DEFINITION(GLMapView_class.State_class, southBound, "D");
+        SET_FIELD_DEFINITION(GLMapView_class.State_class, northBound, "D");
+        SET_FIELD_DEFINITION(GLMapView_class.State_class, eastBound, "D");
         SET_FIELD_DEFINITION(GLMapView_class, eastBoundUnwrapped, "D");
         SET_FIELD_DEFINITION(GLMapView_class, westBoundUnwrapped, "D");
-        SET_FIELD_DEFINITION(GLMapView_class, crossesIDL, "Z");
+        SET_FIELD_DEFINITION(GLMapView_class.State_class, crossesIDL, "Z");
         SET_FIELD_DEFINITION(GLMapView_class, idlHelper, "Lcom/atakmap/map/opengl/GLAntiMeridianHelper;");
-        SET_FIELD_DEFINITION(GLMapView_class, _left, "I");
-        SET_FIELD_DEFINITION(GLMapView_class, _right, "I");
-        SET_FIELD_DEFINITION(GLMapView_class, _top, "I");
-        SET_FIELD_DEFINITION(GLMapView_class, _bottom, "I");
-        SET_FIELD_DEFINITION(GLMapView_class, drawSrid, "I");
-        SET_FIELD_DEFINITION(GLMapView_class, focusx, "F");
-        SET_FIELD_DEFINITION(GLMapView_class, focusy, "F");
-        SET_FIELD_DEFINITION(GLMapView_class, upperLeft, "Lcom/atakmap/coremap/maps/coords/GeoPoint;");
-        SET_FIELD_DEFINITION(GLMapView_class, upperRight, "Lcom/atakmap/coremap/maps/coords/GeoPoint;");
-        SET_FIELD_DEFINITION(GLMapView_class, lowerRight, "Lcom/atakmap/coremap/maps/coords/GeoPoint;");
-        SET_FIELD_DEFINITION(GLMapView_class, lowerLeft, "Lcom/atakmap/coremap/maps/coords/GeoPoint;");
+        SET_FIELD_DEFINITION(GLMapView_class.State_class, left, "I");
+        SET_FIELD_DEFINITION(GLMapView_class.State_class, right, "I");
+        SET_FIELD_DEFINITION(GLMapView_class.State_class, top, "I");
+        SET_FIELD_DEFINITION(GLMapView_class.State_class, bottom, "I");
+        SET_FIELD_DEFINITION(GLMapView_class.State_class, drawSrid, "I");
+        SET_FIELD_DEFINITION(GLMapView_class.State_class, focusx, "F");
+        SET_FIELD_DEFINITION(GLMapView_class.State_class, focusy, "F");
+        SET_FIELD_DEFINITION(GLMapView_class.State_class, upperLeft, "Lcom/atakmap/coremap/maps/coords/GeoPoint;");
+        SET_FIELD_DEFINITION(GLMapView_class.State_class, upperRight, "Lcom/atakmap/coremap/maps/coords/GeoPoint;");
+        SET_FIELD_DEFINITION(GLMapView_class.State_class, lowerRight, "Lcom/atakmap/coremap/maps/coords/GeoPoint;");
+        SET_FIELD_DEFINITION(GLMapView_class.State_class, lowerLeft, "Lcom/atakmap/coremap/maps/coords/GeoPoint;");
         SET_FIELD_DEFINITION(GLMapView_class, settled, "Z");
-        SET_FIELD_DEFINITION(GLMapView_class, renderPump, "I");
+        SET_FIELD_DEFINITION(GLMapView_class.State_class, renderPump, "I");
         SET_FIELD_DEFINITION(GLMapView_class, rigorousRegistrationResolutionEnabled, "Z");
         SET_FIELD_DEFINITION(GLMapView_class, animationLastTick, "J");
         SET_FIELD_DEFINITION(GLMapView_class, animationDelta, "J");
         SET_FIELD_DEFINITION(GLMapView_class, sceneModelVersion, "I");
-        SET_FIELD_DEFINITION(GLMapView_class, scene, "Lcom/atakmap/map/MapSceneModel;");
+        SET_FIELD_DEFINITION(GLMapView_class.State_class, scene, "Lcom/atakmap/map/MapSceneModel;");
         SET_FIELD_DEFINITION(GLMapView_class, oscene, "Lcom/atakmap/map/MapSceneModel;");
-        SET_FIELD_DEFINITION(GLMapView_class, sceneModelForwardMatrix, "[F");
+        SET_FIELD_DEFINITION(GLMapView_class.State_class, sceneModelForwardMatrix, "[F");
         SET_FIELD_DEFINITION(GLMapView_class, hardwareTransformResolutionThreshold, "D");
         SET_FIELD_DEFINITION(GLMapView_class, elevationScaleFactor, "D");
         SET_FIELD_DEFINITION(GLMapView_class, terrainBlendEnabled, "Z");
         SET_FIELD_DEFINITION(GLMapView_class, terrainBlendFactor, "D");
         SET_FIELD_DEFINITION(GLMapView_class, continuousScrollEnabled, "Z");
+        SET_FIELD_DEFINITION(GLMapView_class, currentPass, "Lcom/atakmap/map/opengl/GLMapView$State;");
+        SET_FIELD_DEFINITION(GLMapView_class, currentScene, "Lcom/atakmap/map/opengl/GLMapView$State;");
+        SET_FIELD_DEFINITION(GLMapView_class.State_class, relativeScaleHint, "F");
 #undef SET_FIELD_DEFINITION
 
         return true;

@@ -7,6 +7,7 @@ import java.util.concurrent.Executors;
 
 import android.content.Context;
 import android.opengl.GLSurfaceView;
+import android.os.SystemClock;
 import android.util.DisplayMetrics;
 import android.view.WindowManager;
 
@@ -316,13 +317,18 @@ public class GLMapSurface extends GLSurfaceView implements RenderContext, Render
                 }
             }
         });
-        
+
+        // establish a limit to wait for the release to be signaled to prevent
+        // potential infinite loop if the GL thread has already exited
+        final long releaseLimit = SystemClock.uptimeMillis()+500L;
         synchronized(released) {
             while(!released[0]) {
                 this.requestRender();
                 try {
                     released.wait(100);
                 } catch(InterruptedException ignored) {}
+                if(SystemClock.uptimeMillis() > releaseLimit)
+                    break;
             }
         }
     }

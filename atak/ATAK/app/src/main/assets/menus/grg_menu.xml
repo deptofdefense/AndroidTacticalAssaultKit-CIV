@@ -2,7 +2,7 @@
 <menu
     buttonBg='bgs/button.xml'
     buttonRadius='65'
-    buttonSpan='120'
+    buttonSpan='72'
     buttonWidth='90' >
 
     <button angle='-90'
@@ -14,4 +14,11 @@
     
     <button icon='icons/transparency.png'
         onClick='actions/grg_transparency.xml'/>
+
+    <button icon='icons/brightness.png'
+        onClick='actions/grg_brightness.xml'/>
+
+    <button icon='icons/color_wheel.png'
+        onClick='actions/grg_color.xml'/>
+
 </menu>

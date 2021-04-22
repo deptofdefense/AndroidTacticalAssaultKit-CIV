@@ -5,6 +5,7 @@
 #include "renderer/GL.h"
 
 #include <math/Matrix2.h>
+#include <math/Mesh.h>
 #include <math/Point2.h>
 #include <math/Triangle.h>
 #include <math/Ray2.h>
@@ -53,8 +54,7 @@ namespace
     TAKErr MeshTransform_progress(void *opaque, const int current, const int max) NOTHROWS;
     TAKErr MeshTrasnform_error(void *opaque, const char *msg) NOTHROWS;
 }
-
-JNIEXPORT jboolean JNICALL Java_com_atakmap_map_layer_model_Models_intersect
+JNIEXPORT jboolean JNICALL Java_com_atakmap_map_layer_model_Models_intersect__IIIJIIJDDDDDD_3DLcom_atakmap_math_PointD_2
   (JNIEnv *env,
    jclass clazz,
    jint mode,
@@ -71,13 +71,15 @@ JNIEXPORT jboolean JNICALL Java_com_atakmap_map_layer_model_Models_intersect
 {
     const uint8_t *modelBlob = JLONG_TO_INTPTR(const uint8_t, jmodelBlob);
 
-    std::unique_ptr<Matrix2> localFrame;
+    Matrix2 localFrame;
+    Matrix2 *pLocalFrame = nullptr;
     if(jlocalFrameMx) {
         jdouble *mx = env->GetDoubleArrayElements(jlocalFrameMx, NULL);
-        localFrame.reset(new Matrix2(mx[0], mx[1], mx[2], mx[3],
-                                     mx[4], mx[5], mx[6], mx[7],
-                                     mx[8], mx[9], mx[10], mx[11],
-                                     mx[12], mx[13], mx[14], mx[15]));
+        localFrame = Matrix2(mx[0], mx[1], mx[2], mx[3],
+                             mx[4], mx[5], mx[6], mx[7],
+                             mx[8], mx[9], mx[10], mx[11],
+                             mx[12], mx[13], mx[14], mx[15]);
+        pLocalFrame = &localFrame;
         env->ReleaseDoubleArrayElements(jlocalFrameMx, mx, JNI_ABORT);
     }
 
@@ -86,7 +88,7 @@ JNIEXPORT jboolean JNICALL Java_com_atakmap_map_layer_model_Models_intersect
     switch(verticesType) {
 #define IDX_CASE(itl, vt, it) \
     case itl : \
-    if(!intersect<vt, it>(&result, mode, faceCount, modelBlob, posStride, JLONG_TO_INTPTR(it, jindicesPtr), rox, roy, roz, rdx, rdy, rdz, localFrame.get())) return false; \
+    if(!intersect<vt, it>(&result, mode, faceCount, modelBlob, posStride, JLONG_TO_INTPTR(it, jindicesPtr), rox, roy, roz, rdx, rdy, rdz, pLocalFrame)) return false; \
     break;
 
 #define IDX_SWITCH(vt) \
@@ -114,6 +116,39 @@ JNIEXPORT jboolean JNICALL Java_com_atakmap_map_layer_model_Models_intersect
     
     return true;
 }
+JNIEXPORT jboolean JNICALL Java_com_atakmap_map_layer_model_Models_intersect__JDDDDDD_3DLcom_atakmap_math_PointD_2
+  (JNIEnv *env, jclass clazz,
+   jlong meshPtr,
+   jdouble rox, jdouble roy, jdouble roz,
+   jdouble rdx, jdouble rdy, jdouble rdz,
+   jdoubleArray jlocalFrameMx,
+   jobject jresult)
+{
+    const TAK::Engine::Model::Mesh *mesh = JLONG_TO_INTPTR(TAK::Engine::Model::Mesh, meshPtr);
+    if(!mesh)
+        return false;
+    Matrix2 localFrame;
+    Matrix2 *pLocalFrame = nullptr;
+    if(jlocalFrameMx) {
+        jdouble *mx = env->GetDoubleArrayElements(jlocalFrameMx, NULL);
+        localFrame = Matrix2(mx[0], mx[1], mx[2], mx[3],
+                             mx[4], mx[5], mx[6], mx[7],
+                             mx[8], mx[9], mx[10], mx[11],
+                             mx[12], mx[13], mx[14], mx[15]);
+        pLocalFrame = &localFrame;
+        env->ReleaseDoubleArrayElements(jlocalFrameMx, mx, JNI_ABORT);
+    }
+    TAK::Engine::Math::Mesh gmesh(std::move(TAK::Engine::Model::MeshPtr_const(mesh, Memory_leaker_const<TAK::Engine::Model::Mesh>)), pLocalFrame);
+    Point2<double> result;
+    if(!gmesh.intersect(&result, Ray2<double>(Point2<double>(rox, roy, roz), Vector4<double>(rdx, rdy, rdz))))
+        return false;
+
+    env->SetDoubleField(jresult, pointD_x, result.x);
+    env->SetDoubleField(jresult, pointD_y, result.y);
+    env->SetDoubleField(jresult, pointD_z, result.z);
+
+    return true;
+}
 
 JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_model_Models_transform__Lcom_atakmap_interop_Pointer_2IIIIIIIIIIIIIZ
   (JNIEnv *env, jclass clazz, jobject jpointer,
@@ -124,7 +159,7 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_model_Models_transform__Lco
    jint colorDataType, jint colorOff, jint colorStride,
    jboolean interleaved)
 {
-    const Mesh &src = *Pointer_get<Mesh>(env, jpointer);
+    const auto &src = *Pointer_get<TAK::Engine::Model::Mesh>(env, jpointer);
     VertexDataLayout dstLayout;
     dstLayout.attributes = attributes;
     dstLayout.position.type = (DataType)posDataType;
@@ -152,7 +187,7 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_model_Models_transform__Lco
 JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_model_Models_transform__Lcom_atakmap_interop_Pointer_2I_3DIZ_3DLcom_atakmap_interop_ProgressCallback_2
   (JNIEnv *env, jclass clazz, jobject jpointer, jint srcSrid, jdoubleArray jsrcMx, jint dstSrid, jboolean dstMxDefined, jdoubleArray jdstMx, jobject jcallback)
 {
-    const Mesh &src = *Pointer_get<Mesh>(env, jpointer);
+    const auto &src = *Pointer_get<TAK::Engine::Model::Mesh>(env, jpointer);
     std::unique_ptr<MeshTransformOptions> srcOpts;
     if(jsrcMx) {
         jdouble *mx = env->GetDoubleArrayElements(jsrcMx, NULL);
@@ -268,7 +303,7 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_model_Models_adapt
                                            numIndices,
                                            JLONG_TO_INTPTR(const void, indicesPtr),
                                            indexOffset),
-                          Memory_deleter_const<Mesh, ManagedModel>);
+                          Memory_deleter_const<TAK::Engine::Model::Mesh, ManagedModel>);
     } else {
         retval = MeshPtr(new ManagedModel(env,
                                            jmodel,
@@ -283,7 +318,7 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_model_Models_adapt
                                            (DrawMode)drawMode,
                                            aabb,
                                            layout),
-                          Memory_deleter_const<Mesh, ManagedModel>);
+                          Memory_deleter_const<TAK::Engine::Model::Mesh, ManagedModel>);
     }
 
     return NewPointer(env, std::move(retval));

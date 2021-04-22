@@ -690,6 +690,7 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
                 .addTextChangedListener(new AfterTextChangedWatcher() {
                     @Override
                     public void afterTextChanged(Editable s) {
+
                         boolean changeSeek = false;
                         if (s.length() > 0) {
                             try {
@@ -705,7 +706,11 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
                             intensityPercentageET.setSelection(
                                     intensityPercentageET.getText()
                                             .length());
-                            if (showingViewshed && changeSeek) {
+
+                            final MapItem sMarker = selectedMarker;
+
+                            if (sMarker != null && showingViewshed
+                                    && changeSeek) {
                                 //broadcast intent to update the viewshed
                                 int intensity = intensitySeek.getProgress();
                                 if (intensity == 0)
@@ -713,7 +718,7 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
                                 Intent i = new Intent(
                                         ViewShedReceiver.UPDATE_VIEWSHED_INTENSITY);
                                 i.putExtra(ViewShedReceiver.VIEWSHED_UID,
-                                        selectedMarker.getUID());
+                                        sMarker.getUID());
                                 i.putExtra(ViewShedReceiver.EXTRA_ELEV_OPACITY,
                                         intensity);
                                 AtakBroadcast.getInstance().sendBroadcast(i);

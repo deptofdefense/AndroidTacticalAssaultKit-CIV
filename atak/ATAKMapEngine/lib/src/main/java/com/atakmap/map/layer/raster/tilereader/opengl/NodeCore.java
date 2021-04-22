@@ -4,28 +4,28 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.Interop;
 import com.atakmap.map.RenderContext;
+import com.atakmap.map.layer.control.SurfaceRendererControl;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
 import com.atakmap.map.layer.raster.DatasetProjection2;
 import com.atakmap.map.layer.raster.ImageInfo;
+import com.atakmap.map.layer.raster.controls.TileCacheControl;
+import com.atakmap.map.layer.raster.controls.TileClientControl;
 import com.atakmap.map.layer.raster.tilereader.TileReader;
 import com.atakmap.map.layer.raster.tilereader.TileReaderFactory;
+import com.atakmap.map.opengl.GLDiagnostics;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.Matrix;
 import com.atakmap.math.PointD;
+import com.atakmap.math.PointI;
 import com.atakmap.math.RectD;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLTextureCache;
 import com.atakmap.opengl.Shader;
-import com.atakmap.util.ConfigOptions;
-import com.atakmap.util.Disposable;
-import com.atakmap.util.ReferenceCount;
-import com.atakmap.util.Releasable;
+import com.atakmap.util.*;
 
-import java.util.IdentityHashMap;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.*;
 
-class NodeCore implements Disposable {
+class NodeCore implements Disposable, TileCacheControl.OnTileUpdateListener {
     private final static double POLE_LATITUDE_LIMIT_EPISLON = 0.00001d;
     private final static Interop<Matrix> Matrix_interop = Interop.findInterop(Matrix.class);
 
@@ -107,6 +107,7 @@ class NodeCore implements Disposable {
 
     boolean adaptiveLodCulling = false;
 
+    Matrix xproj;
     Matrix mvp;
     long mvpPtr;
 
@@ -119,6 +120,19 @@ class NodeCore implements Disposable {
     boolean suspended;
     int stateMask;
 
+    RenderContext context;
+
+    GLDiagnostics diagnostics = new GLDiagnostics();
+    boolean diagnosticsEnabled = false;
+
+    SurfaceRendererControl surfaceControl;
+
+    TileCacheControl cacheControl;
+    TileClientControl clientControl;
+
+    private Set<PointI> updatedTilesWrite = new HashSet<>();
+    Set<PointI> updatedTiles = new HashSet<>();
+
     NodeCore(RenderContext ctx,
              String type,
              GLQuadTileNode2.Initializer init,
@@ -130,6 +144,7 @@ class NodeCore implements Disposable {
         if (result.reader == null || result.imprecise == null)
             throw new NullPointerException();
 
+        this.context = ctx;
         this.type = type;
         this.init = init;
         this.initResult = result;
@@ -216,7 +231,7 @@ class NodeCore implements Disposable {
         this.frameBufferHandle = new int[1];
         this.depthBufferHandle = new int[1];
 
-        this.minFilter = GLES20FixedPipeline.GL_NEAREST;
+        this.minFilter = GLES20FixedPipeline.GL_LINEAR;
         this.magFilter = GLES20FixedPipeline.GL_LINEAR;
 
         if(this.imprecise != null)
@@ -231,6 +246,7 @@ class NodeCore implements Disposable {
 
         this.disposed = false;
 
+        this.xproj = Matrix.getIdentity();
         this.mvp = Matrix.getIdentity();
         this.mvpPtr = Matrix_interop.getPointer(this.mvp);
 
@@ -243,6 +259,11 @@ class NodeCore implements Disposable {
                 this.requestPrioritizer = new TileReadRequestPrioritizer(this.options.progressiveLoad);
                 this.asyncio.setReadRequestPrioritizer(this.tileReader, this.requestPrioritizer);
             }
+
+            this.cacheControl = this.tileReader.getControl(TileCacheControl.class);
+            if(this.cacheControl != null)
+                this.cacheControl.setOnTileUpdateListener(this);
+            this.clientControl = this.tileReader.getControl(TileClientControl.class);
         }
 
         synchronized(resourcesReferences) {
@@ -262,6 +283,23 @@ class NodeCore implements Disposable {
     }
 
     @Override
+    public void onTileUpdated(int level, int x, int y) {
+        synchronized(updatedTilesWrite) {
+            updatedTilesWrite.add(new PointI(x, y, level));
+        }
+        if(this.surfaceControl != null)
+            this.surfaceControl.markDirty();
+    }
+
+    void refreshUpdateList() {
+        synchronized(updatedTilesWrite) {
+            updatedTiles.clear();
+            updatedTiles.addAll(updatedTilesWrite);
+            updatedTilesWrite.clear();
+        }
+    }
+
+    @Override
     public synchronized void dispose() {
         if(this.disposed)
             return;
@@ -271,6 +309,8 @@ class NodeCore implements Disposable {
             if(!this.resourcesRef.isReferenced())
                 resourcesReferences.values().remove(this.resourcesRef);
         }
+        if(this.cacheControl != null)
+            this.cacheControl.setOnTileUpdateListener(null);
 
         this.disposed = true;
     }

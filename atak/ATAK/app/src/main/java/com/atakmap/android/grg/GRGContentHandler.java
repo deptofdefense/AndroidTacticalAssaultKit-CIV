@@ -29,6 +29,7 @@ public class GRGContentHandler extends FileOverlayContentHandler
         super(mv, file, desc.getMinimumBoundingBox());
         _desc = desc;
         _layer = layer;
+        _layer.initDataset(desc);
     }
 
     void setUID(String uid) {

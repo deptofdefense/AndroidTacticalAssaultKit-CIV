@@ -375,10 +375,10 @@ public class ImageryCapturePP extends CapturePP {
                 + "</gx:LatLonQuad>"
                 + "</GroundOverlay>"
                 + "</kml>";
-        try(OutputStream os = IOProviderFactory.getOutputStream(docKml);
-            OutputStreamWriter osw = new OutputStreamWriter(
-                os,FileSystemUtils.UTF8_CHARSET.name());
-            PrintWriter out = new PrintWriter(osw)) {
+        try (OutputStream os = IOProviderFactory.getOutputStream(docKml);
+                OutputStreamWriter osw = new OutputStreamWriter(
+                        os, FileSystemUtils.UTF8_CHARSET.name());
+                PrintWriter out = new PrintWriter(osw)) {
             out.println(docSkel);
         } catch (IOException ioe) {
             Log.d(TAG, "error occurred writing the doc.xml file", ioe);

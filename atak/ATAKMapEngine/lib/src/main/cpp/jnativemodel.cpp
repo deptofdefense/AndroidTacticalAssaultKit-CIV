@@ -325,6 +325,18 @@ JNIEXPORT jint JNICALL Java_com_atakmap_map_layer_model_NativeMesh_getTEDM_1Tria
     return TEDM_TriangleStrip;
 }
 
+JNIEXPORT jint JNICALL Java_com_atakmap_map_layer_model_NativeMesh_getTEDM_1Lines
+  (JNIEnv *env, jclass clazz)
+{
+    return TEDM_Lines;
+}
+
+JNIEXPORT jint JNICALL Java_com_atakmap_map_layer_model_NativeMesh_getTEDM_1LineStrip
+  (JNIEnv *env, jclass clazz)
+{
+    return TEDM_LineStrip;
+}
+
 JNIEXPORT jint JNICALL Java_com_atakmap_map_layer_model_NativeMesh_getTEVA_1Position
   (JNIEnv *env, jclass clazz)
 {

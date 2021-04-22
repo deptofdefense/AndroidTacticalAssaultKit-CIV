@@ -19,7 +19,7 @@ public class ScaleWidget extends ShapeWidget implements
 
     private final MapView _mapView;
     private final MapTextFormat _mapTextFormat;
-    private final float _xdpi;
+    protected float _xdpi;
 
     private String _text = "";
     private float _maxWidth = 0;

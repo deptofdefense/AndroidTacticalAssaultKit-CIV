@@ -16,7 +16,7 @@ namespace
 {
     TAKErr createDefaultLineStringStyleImpl(TAK::Engine::Port::String &value, const int strokeColor, const float strokeWidth) NOTHROWS;
     TAKErr createDefaultPointStyleImpl(TAK::Engine::Port::String &value, const int strokeColor) NOTHROWS;
-    TAKErr createDefaultPolygonStyleImpl(TAK::Engine::Port::String &value, const int strokeColor, const float strokeWidth) NOTHROWS;
+    TAKErr createDefaultPolygonStyleImpl(TAK::Engine::Port::String &value, const int strokeColor) NOTHROWS;
 }
 
 DefaultDriverDefinition2::DefaultDriverDefinition2(const char* driverName_,
@@ -105,7 +105,7 @@ TAKErr DefaultDriverDefinition2::createDefaultPointStyle(TAK::Engine::Port::Stri
 
 TAKErr DefaultDriverDefinition2::createDefaultPolygonStyle(TAK::Engine::Port::String &value) const NOTHROWS
 {
-    return createDefaultPolygonStyleImpl(value, strokeColor, strokeWidth);
+    return createDefaultPolygonStyleImpl(value, strokeColor);
 }
 
 const char* DefaultDriverDefinition2::getDefaultLineStringStyle() const NOTHROWS
@@ -140,7 +140,7 @@ const char* DefaultDriverDefinition2::getDefaultPolygonStyle() const NOTHROWS
     {
         TAKErr code = createDefaultPolygonStyle(polygonStyle);
         if (code != TE_Ok)
-            createDefaultPolygonStyleImpl(polygonStyle, strokeColor, strokeWidth);
+            createDefaultPolygonStyleImpl(polygonStyle, strokeColor);
     }
 
     return polygonStyle;
@@ -206,8 +206,8 @@ namespace
         }
     }
 
-    TAKErr createDefaultPolygonStyleImpl(TAK::Engine::Port::String &value, const int strokeColor, const float strokeWidth) NOTHROWS
+    TAKErr createDefaultPolygonStyleImpl(TAK::Engine::Port::String &value, const int strokeColor) NOTHROWS
     {
-        return atakmap::feature::BasicStrokeStyle(strokeColor, strokeWidth).toOGR(value);
+        return atakmap::feature::BasicFillStyle(strokeColor).toOGR(value);
     }
 }

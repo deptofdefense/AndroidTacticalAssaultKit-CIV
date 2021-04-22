@@ -1,7 +1,7 @@
 #include "renderer/raster/tilereader/GLTileMesh.h"
 #include "renderer/GLTexture2.h"
 #include "renderer/GLES20FixedPipeline.h"
-#include "renderer/map/GLMapView.h"
+#include "renderer/core/GLMapView2.h"
 #include "math/Utils.h"
 #include "util/MathUtils.h"
 #include "util/ConfigOptions.h"
@@ -214,10 +214,10 @@ void GLTileMesh::validateMesh()
     mesh_dirty_ = false;
 }
 
-void GLTileMesh::setLCS(const TAK::Engine::Renderer::Core::GLMapView2 &view, bool primary) {
+void GLTileMesh::setLCS(const TAK::Engine::Renderer::Core::GLGlobeBase &view, bool primary) {
     Math::Matrix2 scratchM;
     scratchM.setToIdentity();
-    scratchM.concatenate(view.scene.forwardTransform);
+    scratchM.concatenate(view.renderPass->scene.forwardTransform);
 
     Math::Point2<double> pointD;
     TAK::Engine::Core::GeoPoint2 geo;
@@ -227,7 +227,7 @@ void GLTileMesh::setLCS(const TAK::Engine::Renderer::Core::GLMapView2 &view, boo
             geo = TAK::Engine::Core::GeoPoint2(centroid_.latitude, centroid_.longitude - 360.0, 0.0, TAK::Engine::Core::AltitudeReference::HAE);
         else
             geo = TAK::Engine::Core::GeoPoint2(centroid_.latitude, centroid_.longitude + 360.0, 0.0, TAK::Engine::Core::AltitudeReference::HAE);
-        view.scene.projection->forward(&pointD, geo);
+        view.renderPass->scene.projection->forward(&pointD, geo);
 
         scratchM.translate(pointD.x, pointD.y, pointD.z);
     } else {
@@ -243,15 +243,15 @@ void GLTileMesh::setLCS(const TAK::Engine::Renderer::Core::GLMapView2 &view, boo
     fixedPipe->glLoadMatrixf(scratchF);
 }
 
-void GLTileMesh::drawMesh(const TAK::Engine::Renderer::Core::GLMapView2 &view, int texId, float r, float g, float b, float a) {
+void GLTileMesh::drawMesh(const TAK::Engine::Renderer::Core::GLGlobeBase &view, int texId, float r, float g, float b, float a) {
     validateMesh();
 
     Math::Point2<double> pointD;
     TAK::Engine::Core::GeoPoint2 geo;
 
-    if (mesh_verts_draw_version_ != view.drawSrid) {
+    if (mesh_verts_draw_version_ != view.renderPass->drawSrid) {
         if (use_lcs_) {
-            view.scene.projection->forward(&centroid_proj_, centroid_);
+            view.renderPass->scene.projection->forward(&centroid_proj_, centroid_);
         } else {
             centroid_proj_.x = 0;
             centroid_proj_.y = 0;
@@ -267,7 +267,7 @@ void GLTileMesh::drawMesh(const TAK::Engine::Renderer::Core::GLMapView2 &view, i
             meshCoordsPtr++;
             geo = TAK::Engine::Core::GeoPoint2(lat, lon, 0.0, TAK::Engine::Core::AltitudeReference::HAE);
 
-            view.scene.projection->forward(&pointD, geo);
+            view.renderPass->scene.projection->forward(&pointD, geo);
             *meshVertsPtr = (float)(pointD.x - centroid_proj_.x);
             meshVertsPtr++;
             *meshVertsPtr = (float)(pointD.y - centroid_proj_.y);
@@ -276,13 +276,13 @@ void GLTileMesh::drawMesh(const TAK::Engine::Renderer::Core::GLMapView2 &view, i
             meshVertsPtr++;
         }
 
-        mesh_verts_draw_version_ = view.drawSrid;
+        mesh_verts_draw_version_ = view.renderPass->drawSrid;
     }
 
     atakmap::renderer::GLES20FixedPipeline *fixedPipe = atakmap::renderer::GLES20FixedPipeline::getInstance();
     fixedPipe->glPushMatrix();
 
-    const int pumps = view.crossesIDL ? 2 : 1;
+    const int pumps = view.renderPass->crossesIDL ? 2 : 1;
     for (int i = 0; i < pumps; i++) {
         setLCS(view, i % 2 == 0);
 
@@ -331,10 +331,10 @@ int GLTileMesh::estimateSubdivisions(double ulLat, double ulLng, double lrLat, d
     const int maxGridSize = getConfigOption("glquadtilenode2.maximum-grid-size", 32);
 
     const int subsX = Util::MathUtils_clamp(
-        Util::MathUtils_nextPowerOf2((int)ceil((ulLat - lrLat) / atakmap::renderer::map::GLMapView::recommendedGridSampleDistance)),
+        Util::MathUtils_nextPowerOf2((int)ceil((ulLat - lrLat) / TAK::Engine::Renderer::Core::GLMapView2::getRecommendedGridSampleDistance())),
                                         minGridSize, maxGridSize);
     const int subsY = Util::MathUtils_clamp(
-        Util::MathUtils_nextPowerOf2((int)ceil((lrLng - ulLng) / atakmap::renderer::map::GLMapView::recommendedGridSampleDistance)),
+        Util::MathUtils_nextPowerOf2((int)ceil((lrLng - ulLng) / TAK::Engine::Renderer::Core::GLMapView2::getRecommendedGridSampleDistance())),
                                         minGridSize, maxGridSize);
 
     return atakmap::math::max(subsX, subsY);
@@ -386,10 +386,10 @@ int GLTileMesh::estimateSubdivisions(double x, double y, double width, double he
     const int maxGridSize = getConfigOption("glquadtilenode2.maximum-grid-size", 32);
 
     const int subsX = Util::MathUtils_clamp(
-        Util::MathUtils_nextPowerOf2((int)ceil((maxLat - minLat) / atakmap::renderer::map::GLMapView::recommendedGridSampleDistance)),
+        Util::MathUtils_nextPowerOf2((int)ceil((maxLat - minLat) / TAK::Engine::Renderer::Core::GLMapView2::getRecommendedGridSampleDistance())),
         minGridSize, maxGridSize);
     const int subsY = Util::MathUtils_clamp(
-        Util::MathUtils_nextPowerOf2((int)ceil((maxLng - minLng) / atakmap::renderer::map::GLMapView::recommendedGridSampleDistance)),
+        Util::MathUtils_nextPowerOf2((int)ceil((maxLng - minLng) / TAK::Engine::Renderer::Core::GLMapView2::getRecommendedGridSampleDistance())),
         minGridSize, maxGridSize);
 
     return atakmap::math::max(subsX, subsY);

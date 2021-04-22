@@ -168,10 +168,11 @@ public class WebViewer {
                         final WebView view, String url) {
                     if (url.contains("file:///")) {
                         try {
-                            try(InputStream is = IOProviderFactory.getInputStream(new File(
-                                                new URL(url).toURI()))) {
+                            try (InputStream is = IOProviderFactory
+                                    .getInputStream(new File(
+                                            new URL(url).toURI()))) {
                                 return new WebResourceResponse(getMimeType(url),
-                                        "UTF-8",is);
+                                        "UTF-8", is);
                             } catch (URISyntaxException e) {
                                 Log.e(TAG, "error encountered", e);
                             }

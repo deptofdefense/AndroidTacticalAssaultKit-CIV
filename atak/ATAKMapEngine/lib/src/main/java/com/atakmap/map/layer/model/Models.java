@@ -271,6 +271,19 @@ public final class Models {
                 if (m == null)
                     return null;
 
+                if(m instanceof NativeMesh) {
+                    PointD isect = new PointD(0d, 0d, 0d);
+                    double[] mx = null;
+                    if(localFrame != null) {
+                        mx = new double[16];
+                        localFrame.get(mx);
+                    }
+                    return Models.intersect(((NativeMesh)m).pointer.raw,
+                                            ray.origin.x, ray.origin.y, ray.origin.z,
+                                            ray.direction.X, ray.direction.Y, ray.direction.Z,
+                                            mx,
+                                            isect) ? isect : null;
+                }
                 // if 'true' both the ray and the intersect point are in the
                 // LCS, if 'false', both are in the WCS
                 boolean isectIsLocal = false;
@@ -515,6 +528,11 @@ public final class Models {
                                             int stride,
                                             int indicesType,
                                             long indicesPtr,
+                                            double rox, double roy, double roz,
+                                            double rdx, double rdy, double rdz,
+                                            double[] localFrame,
+                                            PointD result);
+    private static native boolean intersect(long meshPtr,
                                             double rox, double roy, double roz,
                                             double rdx, double rdy, double rdz,
                                             double[] localFrame,

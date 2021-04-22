@@ -336,6 +336,17 @@ public abstract class DatasetDescriptor {
     }
 
     /**
+     * Set extra data associated with a specific key. Extra data is not
+     * automatically persisted to the database here.
+     *
+     * @param key Data key
+     * @param value Data string
+     */
+    public void setExtraData(String key, String value) {
+        this.extraData.put(key, value);
+    }
+
+    /**
      * Returns the ID assigned by the data store that the dataset descriptor
      * resides in. 
      * 

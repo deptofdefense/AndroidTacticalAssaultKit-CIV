@@ -193,7 +193,7 @@ public class ImportDTEDZSort extends ImportInPlaceResolver {
         Notification.Builder builder = NotificationUtil.getInstance()
                 .getNotificationBuilder(notificationId);
 
-        try(InputStream is = IOProviderFactory.getInputStream(dtedFile)) {
+        try (InputStream is = IOProviderFactory.getInputStream(dtedFile)) {
             // create output directory is not exists
             File folder = FileSystemUtils
                     .getItem(FileSystemUtils.DTED_DIRECTORY);
@@ -267,7 +267,7 @@ public class ImportDTEDZSort extends ImportInPlaceResolver {
                         Log.d(TAG, "could not make: " + newFile.getParent());
                     }
 
-                    try(FileOutputStream fos = IOProviderFactory
+                    try (FileOutputStream fos = IOProviderFactory
                             .getOutputStream(newFile)) {
 
                         int len;

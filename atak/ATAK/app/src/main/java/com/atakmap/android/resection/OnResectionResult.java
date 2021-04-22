@@ -9,6 +9,7 @@
  *  legend must also reproduce the markings. Any person who has been provided
  *  access to this software must be aware of the above restrictions.
  */
+
 package com.atakmap.android.resection;
 
 /**

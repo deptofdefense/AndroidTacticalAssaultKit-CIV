@@ -4,7 +4,7 @@
 #include "renderer/raster/tilematrix/GLTiledLayerCore.h"
 #include "renderer/raster/tilematrix/GLZoomLevel.h"
 #include "raster/tilematrix/TileMatrix.h"
-#include "renderer/core/GLMapView2.h"
+#include "renderer/core/GLGlobeBase.h"
 #include "renderer/core/GLMapBatchable2.h"
 #include "renderer/core/GLMapRenderable2.h"
 
@@ -38,6 +38,8 @@ namespace TAK {
                         double patchMinLng;
                         double patchMaxLat;
                         double patchMaxLng;
+
+                        int lastPumpDrawn;
     
 
                       public:
@@ -78,11 +80,11 @@ namespace TAK {
 
                         /*********************************************************************/
                         // GLMapBatchable2
-                        Util::TAKErr batch(const Renderer::Core::GLMapView2 &view, const int renderPass, TAK::Engine::Renderer::GLRenderBatch2 &batch) NOTHROWS override;
+                        Util::TAKErr batch(const Renderer::Core::GLGlobeBase &view, const int renderPass, TAK::Engine::Renderer::GLRenderBatch2 &batch) NOTHROWS override;
 
                         /*********************************************************************/
                         // GLMapRenderable2
-                        void draw(const Renderer::Core::GLMapView2 &view, const int renderPass) NOTHROWS override;
+                        void draw(const Renderer::Core::GLGlobeBase &view, const int renderPass) NOTHROWS override;
                         void release() NOTHROWS override;
                         int getRenderPass() NOTHROWS override;
                         void start() NOTHROWS override;
@@ -91,8 +93,8 @@ namespace TAK {
                         /*********************************************************************/
                         // Our own public methods
 
-                        void debugDraw(const Renderer::Core::GLMapView2 &view);
-                        bool release(bool unusedOnly);
+                        void debugDraw(const Renderer::Core::GLGlobeBase &view);
+                        bool release(bool unusedOnly, int renderPump);
 
                         void getTiles(std::set<std::shared_ptr<GLTile>> *tiles, double minX, double minY, double maxX, double maxY);
                         const GLZoomLevel *getParent();

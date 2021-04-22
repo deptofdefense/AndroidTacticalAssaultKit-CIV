@@ -324,6 +324,7 @@ public class DrawingCircle extends Shape implements
                 c.setZOrder(zOrder += zInc);
                 c.setStrokeColor(strokeColor);
                 c.setStrokeWeight(getStrokeWeight());
+                c.setBasicLineStyle(getBasicLineStyle());
                 c.setStyle(getStyle());
                 c.setMetaBoolean("addToObjList", false);
                 c.setClickable(false);
@@ -386,7 +387,6 @@ public class DrawingCircle extends Shape implements
         if (MENU_METADATA.contains(key))
             refresh();
     }
-
 
     /**
      * Set the center point of this circle
@@ -624,6 +624,13 @@ public class DrawingCircle extends Shape implements
         super.setStrokeWeight(weight);
         refresh();
     }
+
+    @Override
+    public void setBasicLineStyle(int basicLineStyle) {
+        super.setBasicLineStyle(basicLineStyle);
+        refresh();
+    }
+
 
     /**
      * Redirect hit detection to the rings
@@ -1132,5 +1139,11 @@ public class DrawingCircle extends Shape implements
         folder.addGeometries(org.gdal.ogr.ogrConstants.wkbLineString,
                 geometries);
         return folder;
+    }
+
+    @Override
+    public double getArea() {
+        return getRadius() * getRadius() * Math.PI;
+
     }
 }

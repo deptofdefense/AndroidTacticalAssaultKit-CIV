@@ -14,7 +14,7 @@ namespace TAK {
             namespace Core {
                 ENGINE_API Util::TAKErr GLLayerFactory2_registerSpi(const std::shared_ptr<GLLayerSpi2> &spi, const int priority) NOTHROWS;
                 ENGINE_API Util::TAKErr GLLayerFactory2_unregisterSpi(const GLLayerSpi2 &spi) NOTHROWS;
-                ENGINE_API Util::TAKErr GLLayerFactory2_create(GLLayer2Ptr &value, GLMapView2 &view, TAK::Engine::Core::Layer2 &subject) NOTHROWS;
+                ENGINE_API Util::TAKErr GLLayerFactory2_create(GLLayer2Ptr &value, GLGlobeBase &view, TAK::Engine::Core::Layer2 &subject) NOTHROWS;
 
                 /**
                  * Utility function to create a 'GLLayer2' given a subject and

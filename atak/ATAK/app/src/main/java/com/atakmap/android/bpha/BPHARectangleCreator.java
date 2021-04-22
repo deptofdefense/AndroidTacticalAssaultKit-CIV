@@ -31,21 +31,20 @@ public class BPHARectangleCreator {
         if (rows == 0 || columns == 0)
             return null;
 
-        final String[] mgrs = CoordinateFormatUtilities.formatToStrings(point.get(),
+        final String[] mgrs = CoordinateFormatUtilities.formatToStrings(
+                point.get(),
                 CoordinateFormat.MGRS);
-
 
         final int easting = nearest100(pad5(mgrs[2]));
         final int northing = nearest100(pad5(mgrs[3]));
 
-        mgrs[2] = ""+easting;
-        mgrs[3] = ""+northing;
+        mgrs[2] = "" + easting;
+        mgrs[3] = "" + northing;
 
         GeoPoint gp = CoordinateFormatUtilities.convert(mgrs,
                 CoordinateFormat.MGRS);
         if (gp == null)
             return null;
-
 
         MapGroup group = getGroup();
         MapGroup childGroup = group.addGroup(_createTitle());
@@ -54,29 +53,30 @@ public class BPHARectangleCreator {
 
         point = GeoPointMetaData.wrap(gp);
 
-
         int eastingOffset = 500 * columns;
         int northingOffset = 500 * rows;
 
-
-        String[] scratch = new String[] { mgrs[0], mgrs[1], mgrs[2], mgrs[3]};
-
+        String[] scratch = new String[] {
+                mgrs[0], mgrs[1], mgrs[2], mgrs[3]
+        };
 
         // first point upper left
-        scratch[2] = ""+ (easting - eastingOffset);
-        scratch[3] = ""+ (northing + northingOffset);
-        GeoPoint firstPoint = CoordinateFormatUtilities.convert(scratch, CoordinateFormat.MGRS);
+        scratch[2] = "" + (easting - eastingOffset);
+        scratch[3] = "" + (northing + northingOffset);
+        GeoPoint firstPoint = CoordinateFormatUtilities.convert(scratch,
+                CoordinateFormat.MGRS);
 
         // second point upper right
-        scratch[2] = ""+ (easting + eastingOffset);
-        scratch[3] = ""+ (northing + northingOffset);
-        GeoPoint secondPoint = CoordinateFormatUtilities.convert(scratch, CoordinateFormat.MGRS);
+        scratch[2] = "" + (easting + eastingOffset);
+        scratch[3] = "" + (northing + northingOffset);
+        GeoPoint secondPoint = CoordinateFormatUtilities.convert(scratch,
+                CoordinateFormat.MGRS);
 
         // third point lower right
-        scratch[2] = ""+ (easting + eastingOffset);
-        scratch[3] = ""+ (northing - northingOffset);
-        GeoPoint thirdPoint = CoordinateFormatUtilities.convert(scratch, CoordinateFormat.MGRS);
-
+        scratch[2] = "" + (easting + eastingOffset);
+        scratch[3] = "" + (northing - northingOffset);
+        GeoPoint thirdPoint = CoordinateFormatUtilities.convert(scratch,
+                CoordinateFormat.MGRS);
 
         builder.setFirstPoint(GeoPointMetaData.wrap(firstPoint));
         builder.setSecondPoint(GeoPointMetaData.wrap(secondPoint));
@@ -97,10 +97,6 @@ public class BPHARectangleCreator {
                 BPHARectangleCreator.class);
         return r;
     }
-
-
-
-
 
     private static List<MapItem> getAllBPHAs() {
         List<MapItem> items = new ArrayList<>();
@@ -160,7 +156,6 @@ public class BPHARectangleCreator {
         return group;
     }
 
-
     /**
      * Pads out the MGRS easting or westing so that it is only 5 digits of precision.
      * @param s the input mgrs.
@@ -170,7 +165,7 @@ public class BPHARectangleCreator {
         final int len = s.length();
         for (int i = len; i < 6; ++i)
             s = s + "0";
-        return Integer.parseInt(s.substring(0,5));
+        return Integer.parseInt(s.substring(0, 5));
     }
 
     /**
@@ -179,7 +174,7 @@ public class BPHARectangleCreator {
      * @return the rounded value
      */
     private static int nearest100(int val) {
-        return (int) (Math.ceil(val/100.0))*100;
+        return (int) (Math.ceil(val / 100.0)) * 100;
     }
 
 }

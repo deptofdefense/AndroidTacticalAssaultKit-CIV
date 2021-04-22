@@ -431,7 +431,7 @@ public class ImageAdapter2 extends BaseAdapter {
                         synchronized (lock) {
                             BitmapFactory.Options opts = new BitmapFactory.Options();
                             opts.inJustDecodeBounds = true;
-                            try(InputStream is = IOProviderFactory
+                            try (InputStream is = IOProviderFactory
                                     .getInputStream(new File(bmpFile
                                             .getAbsolutePath()))) {
                                 BitmapFactory.decodeStream(is,
@@ -569,9 +569,9 @@ public class ImageAdapter2 extends BaseAdapter {
 
     private File _readLink(File linkFile) {
         File link = null;
-        try(InputStream is = IOProviderFactory.getInputStream(linkFile);
-            InputStreamReader isr = new InputStreamReader(is);
-            BufferedReader br = new BufferedReader(isr)) {
+        try (InputStream is = IOProviderFactory.getInputStream(linkFile);
+                InputStreamReader isr = new InputStreamReader(is);
+                BufferedReader br = new BufferedReader(isr)) {
             String line = br.readLine();
             link = new File(
                     FileSystemUtils.sanitizeWithSpacesAndSlashes(line));

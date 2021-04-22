@@ -63,9 +63,9 @@ namespace TAK {
 					}
 				};
 
-				template <typename T>
-				struct Resolver<std::unique_ptr<T>> {
-					static TAKErr resolve(std::unique_ptr<T>& r, std::unique_ptr<T>& v) NOTHROWS {
+				template <typename T, typename D>
+				struct Resolver<std::unique_ptr<T, D>> {
+					static TAKErr resolve(std::unique_ptr<T, D>& r, std::unique_ptr<T, D>& v) NOTHROWS {
 						r = std::move(v);
 						return TE_Ok;
 					}
@@ -241,7 +241,9 @@ namespace TAK {
 				struct Capture<Func, C0, C1> {
 					CAP_ST();
 					CAP_IT(0); CAP_IT(1);
-					Capture(Func func, C0 c0, C1 c1) : func(func), c0(c0), c1(c1) { }
+
+					template <typename C0F, typename C1F>
+					Capture(Func func, C0F&& c0, C1F&& c1) : func(func), c0(std::forward<C0F>(c0)), c1(std::forward<C1F>(c1)) { }
 					TAKErr invoke(ResultType& r) NOTHROWS {
 						CAP_ID(0); CAP_ID(1);
 						return Invoker<Func>::invoke(func, r, a0, a1);
@@ -259,7 +261,7 @@ namespace TAK {
 						: func(func), c0(std::forward<C0F>(c0)), c1(std::forward<C1F>(c1)), c2(std::forward<C2F>(c2)) { }
 					TAKErr invoke(ResultType& r) NOTHROWS {
 						CAP_ID(0); CAP_ID(1); CAP_ID(2);
-						return func(r, a0, a1, a2);
+						return Invoker<Func>::invoke(func, r, a0, a1, a2);
 					}
 				};
 				
@@ -273,7 +275,7 @@ namespace TAK {
 					c3(std::forward<C3F>(c3)) { }
 					TAKErr invoke(ResultType& r) NOTHROWS {
 						CAP_ID(0); CAP_ID(1); CAP_ID(2); CAP_ID(3);
-						return func(r, a0, a1, a2, a3);
+						return Invoker<Func>::invoke(func, r, a0, a1, a2, a3);
 					}
 				};
 				

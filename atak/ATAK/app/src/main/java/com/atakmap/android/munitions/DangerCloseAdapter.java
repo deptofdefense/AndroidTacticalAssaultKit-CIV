@@ -74,7 +74,6 @@ public class DangerCloseAdapter extends BaseAdapter
 
     private static final int ORDNANCE_LAST_ID = 219; //the is the ID of the last weapon in ordnance_table.xml
 
-
     /**
      * Allows for a plugin developer to customize or tweak the the display of of an item.
      */
@@ -85,7 +84,7 @@ public class DangerCloseAdapter extends BaseAdapter
          * saved in the view holder.  If you pass a new view back, please keep this in mind and
          * appropriately cache your views to the original view in the view holder.
          *
-         * @param viewHolder the view holder to make accessing the components of the view easier
+         * @param viewHolder the view holder as an opaque object to key into any view management done by the plugin
          * @param v the view as constructed using the standard mechanics within ATAK
          * @param targetUID the target currently associated with the adapter.   This uid may or
          *                  may not be valid when looked up using MapView.getMapItem().
@@ -93,7 +92,6 @@ public class DangerCloseAdapter extends BaseAdapter
          */
         public View adapt(ViewHolder viewHolder, View v, String targetUID);
     }
-
 
     private final Context _context;
     private final MapView _mapView;
@@ -316,7 +314,8 @@ public class DangerCloseAdapter extends BaseAdapter
             if (customViewAdapter != null)
                 customViewAdapter.adapt(holder, convertView, target);
         } catch (Exception e) {
-            Log.e(TAG, "error using the registered customViewAdapter" + customViewAdapter.getClass(), e);
+            Log.e(TAG, "error using the registered customViewAdapter"
+                    + customViewAdapter.getClass(), e);
         }
 
         return convertView;
@@ -890,7 +889,7 @@ public class DangerCloseAdapter extends BaseAdapter
             if (IOProviderFactory.exists(f)) {
 
                 try (Reader r = IOProviderFactory.getFileReader(f);
-                     BufferedReader reader = new BufferedReader(r)) {
+                        BufferedReader reader = new BufferedReader(r)) {
                     String line;
                     while ((line = reader.readLine()) != null) {
                         line = line.replace("\n", "");

@@ -252,9 +252,7 @@ public class VehicleDetailsView extends GenericDetailsView implements
                                 _centerButton.setText(coordView
                                         .getFormattedString());
 
-                                dropDown.getMapView()
-                                        .getMapController()
-                                        .panTo(_shape.getCenter().get(), true);
+                                ATAKUtilities.scaleToFit(_shape);
                             }
                             ad.dismiss();
                         }

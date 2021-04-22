@@ -113,7 +113,7 @@ public abstract class SpatialDbContentSource implements Importer {
      * @return The group name for the content.
      */
     public final String getGroupName() {
-        return this.groupName.toUpperCase(LocaleUtil.getCurrent());
+        return this.groupName;
     }
 
     /**

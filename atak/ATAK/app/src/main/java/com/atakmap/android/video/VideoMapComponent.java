@@ -51,23 +51,28 @@ public class VideoMapComponent extends DropDownMapComponent {
         NativeLoader.loadLibrary("pgscmobilevid");
     }
 
-    static {
-        try {
-            /* Initialize Gv2F **/
-            MediaProcessor.PGSCMediaInit(new byte[0], 0, 0);
-
-        } catch (MediaException e) {
-            Log.e(TAG,
-                    "Error when initializing native components for video player",
-                    e);
-            throw new RuntimeException(e);
-        }
-
-    }
+    static boolean initDone = false;
 
     @Override
     public void onCreate(Context context, Intent intent, MapView view) {
         super.onCreate(context, intent, view);
+
+        if (!initDone) {
+            try {
+                /* Initialize Gv2F **/
+                MediaProcessor.PGSCMediaInit(context.getApplicationContext());
+
+            } catch (MediaException e) {
+                Log.e(TAG,
+                        "Error when initializing native components for video player {"
+                                + context.getApplicationContext()
+                                        .getPackageName()
+                                + "}",
+                        e);
+                throw new RuntimeException(e);
+            }
+            initDone = true;
+        }
 
         manager = new VideoManager(view);
         manager.init();

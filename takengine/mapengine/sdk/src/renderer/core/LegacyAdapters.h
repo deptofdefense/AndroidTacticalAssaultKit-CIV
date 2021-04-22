@@ -14,9 +14,6 @@ namespace TAK {
     namespace Engine {
         namespace Renderer {
             namespace Core {
-                Util::TAKErr LegacyAdapters_adapt(GLMapRenderable2Ptr &value, atakmap::renderer::map::GLMapRenderablePtr &&legacy) NOTHROWS;
-                Util::TAKErr LegacyAdapters_adapt(GLLayer2Ptr &value, atakmap::renderer::map::layer::GLLayerPtr &&legacy) NOTHROWS;
-                Util::TAKErr LegacyAdapters_adapt(GLLayerSpi2Ptr &value, atakmap::renderer::map::layer::GLLayerSpiPtr &&legacy) NOTHROWS;
             }
         }
     }

@@ -5,6 +5,8 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.util.Base64;
 
+import com.atakmap.annotations.DeprecatedApi;
+import com.atakmap.annotations.ModifierApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProvider;
 import com.atakmap.coremap.io.IOProviderFactory;
@@ -42,7 +44,14 @@ public class AtakAuthenticationDatabase {
      * Returns an adapter class used to access the authdb native library.
      *
      * @return AtakAuthenticationDatabaseAdapter
+     *
+     * use the AtakAuthenticationDatabase directly.
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.3", forRemoval = false)
+    @ModifierApi(since = "4.3", target = "4.6", modifiers = {
+            "final"
+    })
     public static synchronized AtakAuthenticationDatabaseAdapter getAdapter() {
         if (authenticationDatabaseAdapter == null) {
             authenticationDatabaseAdapter = new AtakAuthenticationDatabaseAdapter();
@@ -166,7 +175,7 @@ public class AtakAuthenticationDatabase {
     public static void dispose() {
         synchronized (getAdapter().lock) {
             if (!initialized) {
-                Log.e(TAG, "Calling dispose prior to initialization!");
+                Log.e(TAG, "calling dispose prior to initialization or after a clear content");
             }
 
             getAdapter().dispose();
@@ -180,7 +189,8 @@ public class AtakAuthenticationDatabase {
      */
     public static void clear() {
         synchronized (getAdapter().lock) {
-            IOProviderFactory.delete(databaseFile, IOProvider.SECURE_DELETE);
+            getAdapter().clear(databaseFile);
+            initialized = false;
         }
     }
 
@@ -197,7 +207,7 @@ public class AtakAuthenticationDatabase {
     public static AtakAuthenticationCredentials[] getDistinctSitesAndTypes() {
         synchronized (getAdapter().lock) {
             if (!initialized) {
-                Log.e(TAG, "Calling getDistinctSitesAndTypes prior to initialization!");
+                Log.e(TAG, "calling getDistinctSitesAndTypes prior to initialization or after a clear content");
                 return null;
             }
 
@@ -210,18 +220,17 @@ public class AtakAuthenticationDatabase {
      *
      * @param type Credential type per TYPE_ constants in AtakAuthenticationCredentials
      * @param site FQDN or IP associated with credentials
-     * @return AtakAuthenticationCredentials for the type and site
+     * @return AtakAuthenticationCredentials for the type and site or null if no credentials exist
      */
     public static AtakAuthenticationCredentials getCredentials(
             String type,
             String site) {
         synchronized (getAdapter().lock) {
             if (!initialized) {
-                Log.e(TAG, "Calling getCredentials prior to initialization!");
+                Log.e(TAG, "calling getCredentials prior to initialization or after a clear content");
                 return null;
             }
 
-            //Log.i(TAG, "getCredentials = " + type);
             return getAdapter().getCredentialsForType(type, site);
         }
     }
@@ -230,7 +239,7 @@ public class AtakAuthenticationDatabase {
      * Returns the default credentials for the given type.
      *
      * @param type Credential type per TYPE_ constants in AtakAuthenticationCredentials
-     * @return AtakAuthenticationCredentials
+     * @return AtakAuthenticationCredentials or null if no credentials exist
      */
     public static AtakAuthenticationCredentials getCredentials(
             String type) {
@@ -246,6 +255,8 @@ public class AtakAuthenticationDatabase {
      * @param site FQDN or IP to associate credentials with
      * @param username the username to save
      * @param password the password to save
+     * @param expires when this credential expires as a time in milliseconds since the current
+     *                 system time wehn the save command is invoked.
      */
     public static void saveCredentials(
             String type,
@@ -253,11 +264,10 @@ public class AtakAuthenticationDatabase {
             String username,
             String password,
             long expires) {
-        //Log.i(TAG, "saveCredentials = " + type);
 
         synchronized (getAdapter().lock) {
             if (!initialized) {
-                Log.e(TAG, "Calling saveCredentials prior to initialization!");
+                Log.e(TAG, "calling saveCredentials prior to initialization or after a clear content");
                 return;
             }
 
@@ -272,6 +282,8 @@ public class AtakAuthenticationDatabase {
      * @param site FQDN or IP to associate credentials with
      * @param username the username to save
      * @param password the password to save
+     * @param expires  if true the expiration time is set to 30 days from the current system time
+     *                 from the time this method is called.
      */
     public static void saveCredentials(
             String type,
@@ -279,11 +291,10 @@ public class AtakAuthenticationDatabase {
             String username,
             String password,
             boolean expires) {
-        //Log.i(TAG, "saveCredentials = " + type);
 
         synchronized (getAdapter().lock) {
             if (!initialized) {
-                Log.e(TAG, "Calling saveCredentials prior to initialization!");
+                Log.e(TAG, "calling saveCredentials prior to initialization or after a clear content");
                 return;
             }
 
@@ -297,6 +308,8 @@ public class AtakAuthenticationDatabase {
      * @param type Credential type per TYPE_ constants in AtakAuthenticationCredentials
      * @param username the username associated with the credential
      * @param password the password associated with the credential
+     * @param expires when this credential expires as a time in milliseconds since the current
+     *                 system time wehn the save command is invoked.
      */
     public static void saveCredentials(
             String type,
@@ -314,6 +327,8 @@ public class AtakAuthenticationDatabase {
      * @param type Credential type per TYPE_ constants in AtakAuthenticationCredentials
      * @param username the username associated with the credential
      * @param password the password associated with the credential
+     * @param expires  if true the expiration time is set to 30 days from the current system time
+     *                 from the time this method is called.
      */
     public static void saveCredentials(
             String type,
@@ -336,7 +351,7 @@ public class AtakAuthenticationDatabase {
             String site) {
         synchronized (getAdapter().lock) {
             if (!initialized) {
-                Log.e(TAG, "Calling invalidate prior to initialization!");
+                Log.e(TAG, "calling invalidate prior to initialization or after a clear content");
                 return;
             }
 

@@ -485,7 +485,7 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
                 fos.write(arr);
             }
 
-            FileSystemUtils.copyFile(orig.file, copy.file, (byte[])null);
+            FileSystemUtils.copyFile(orig.file, copy.file, (byte[]) null);
             fail();
         }
     }
@@ -519,29 +519,37 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
 
     @Test
     public void FileSystemUtils_unzip() throws IOException {
-        try(FileUtils.AutoDeleteFile src = FileUtils.AutoDeleteFile.createTempDir();
-            FileUtils.AutoDeleteFile zip = FileUtils.AutoDeleteFile.createTempFile(".zip");
-            FileUtils.AutoDeleteFile dst = FileUtils.AutoDeleteFile.createTempDir()) {
+        try (FileUtils.AutoDeleteFile src = FileUtils.AutoDeleteFile
+                .createTempDir();
+                FileUtils.AutoDeleteFile zip = FileUtils.AutoDeleteFile
+                        .createTempFile(".zip");
+                FileUtils.AutoDeleteFile dst = FileUtils.AutoDeleteFile
+                        .createTempDir()) {
 
             // stage some content to create a zip file
-            try(FileOutputStream fos = new FileOutputStream(new File(src.file, "dat256.dat"))) {
-                fos.write(RandomUtils.randomByteArray(256*1024));
+            try (FileOutputStream fos = new FileOutputStream(
+                    new File(src.file, "dat256.dat"))) {
+                fos.write(RandomUtils.randomByteArray(256 * 1024));
             }
-            try(FileOutputStream fos = new FileOutputStream(new File(src.file, "dat512.dat"))) {
-                fos.write(RandomUtils.randomByteArray(512*1024));
+            try (FileOutputStream fos = new FileOutputStream(
+                    new File(src.file, "dat512.dat"))) {
+                fos.write(RandomUtils.randomByteArray(512 * 1024));
             }
-            try(FileOutputStream fos = new FileOutputStream(new File(src.file, "dat1024.dat"))) {
-                fos.write(RandomUtils.randomByteArray(1024*1024));
+            try (FileOutputStream fos = new FileOutputStream(
+                    new File(src.file, "dat1024.dat"))) {
+                fos.write(RandomUtils.randomByteArray(1024 * 1024));
             }
             // zip the contents
             FileSystemUtils.delete(zip.file);
             FileSystemUtils.zipDirectory(src.file, zip.file);
 
             // unzip to new directory
-            FileSystemUtils.unzip(new ZipVirtualFile(zip.file), dst.file, false);
+            FileSystemUtils.unzip(new ZipVirtualFile(zip.file), dst.file,
+                    false);
 
             // compare the zip with the output
-            FileUtils.assertRelativeTreeEquals(new ZipVirtualFile(zip.file), dst.file);
+            FileUtils.assertRelativeTreeEquals(new ZipVirtualFile(zip.file),
+                    dst.file);
             // compare the source with the output
             FileUtils.assertRelativeTreeEquals(src.file, dst.file);
         }

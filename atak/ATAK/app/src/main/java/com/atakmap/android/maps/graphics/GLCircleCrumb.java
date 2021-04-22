@@ -52,7 +52,7 @@ public class GLCircleCrumb extends GLPointMapItem2 implements
                 icon.getAnchorX(), icon.getAnchorY());
         GLImageCache.Entry iconEntry = GLRenderGlobals.get(context)
                 .getImageCache().fetchAndRetain(
-                        this.icon.getImageUri(0), true);
+                        this.icon.getImageUri(Icon.STATE_DEFAULT), true);
         this._icon.updateCacheEntry(iconEntry);
 
         FloatBuffer fb = _verts.asFloatBuffer();

@@ -160,10 +160,8 @@ public class KMZExportMarshal extends KMLExportMarshal {
         }
 
         //TODO sits at 94% during serialization to KMZ/zip. Could serialize during marshall above
-        ZipOutputStream zos = null;
         File kmz = getFile();
-        try(FileOutputStream fos = IOProviderFactory.getOutputStream(kmz)) {
-            zos = new ZipOutputStream(new BufferedOutputStream(fos));
+        try (ZipOutputStream zos = FileSystemUtils.getZipOutputStream(kmz)) {
 
             //and doc.kml
             addFile(zos, "doc.kml", kml);
@@ -184,8 +182,6 @@ public class KMZExportMarshal extends KMLExportMarshal {
         } catch (Exception e) {
             Log.e(TAG, "Failed to create KMZ file", e);
             throw new IOException(e);
-        } finally {
-            IoUtils.close(zos,TAG,"Failed to close KMZ: " + kmz.getAbsolutePath());
         }
     }
 
@@ -218,7 +214,7 @@ public class KMZExportMarshal extends KMLExportMarshal {
     }
 
     private void addFile(ZipOutputStream zos, Pair<String, String> file) {
-        try(InputStream in = getInputStream(context, file.first)) {
+        try (InputStream in = getInputStream(context, file.first)) {
             // create new zip entry
             ZipEntry entry = new ZipEntry(file.second);
             zos.putNextEntry(entry);
@@ -235,7 +231,8 @@ public class KMZExportMarshal extends KMLExportMarshal {
             if (zos != null) {
                 try {
                     zos.closeEntry();
-                } catch (IOException e) { }
+                } catch (IOException e) {
+                }
             }
         }
     }

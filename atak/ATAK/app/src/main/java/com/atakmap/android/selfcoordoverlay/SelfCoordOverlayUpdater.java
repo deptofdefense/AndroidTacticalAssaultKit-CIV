@@ -664,16 +664,20 @@ public class SelfCoordOverlayUpdater extends CotStreamListener implements
                         final MapItem mi = MapMenuReceiver.getCurrentItem();
                         if (mi != null && !mi.getUID().equals(_self.getUID())) {
                             // Hide radial, coordinate info, and un-focus
-                            AtakBroadcast.getInstance().sendBroadcast(new Intent(
-                                    MapMenuReceiver.HIDE_MENU));
-                            AtakBroadcast.getInstance().sendBroadcast(new Intent(
-                                    "com.atakmap.android.maps.HIDE_DETAILS"));
+                            AtakBroadcast.getInstance()
+                                    .sendBroadcast(new Intent(
+                                            MapMenuReceiver.HIDE_MENU));
+                            AtakBroadcast.getInstance()
+                                    .sendBroadcast(new Intent(
+                                            "com.atakmap.android.maps.HIDE_DETAILS"));
                             AtakBroadcast.getInstance().sendBroadcast(
-                                    new Intent("com.atakmap.android.maps.UNFOCUS"));
+                                    new Intent(
+                                            "com.atakmap.android.maps.UNFOCUS"));
                         }
                         // Pan to the self marker without triggering the receiver used
                         // to reset self lock-on
-                        _mapView.getMapController().panTo(_self.getPoint(), true,
+                        _mapView.getMapController().panTo(_self.getPoint(),
+                                true,
                                 false);
                     }
                     break;
@@ -682,7 +686,12 @@ public class SelfCoordOverlayUpdater extends CotStreamListener implements
 
         // User tapped network icon - bring up settings
         else if (widget == _connectedButtonWidget) {
-            SettingsActivity.start(NetworkConnectionPreferenceFragment.class);
+            if (connectedButtonWidgetCallback != null) {
+                connectedButtonWidgetCallback.onConnectedButtonWidgetClick();
+            } else {
+                SettingsActivity
+                        .start(NetworkConnectionPreferenceFragment.class);
+            }
         }
     }
 
@@ -799,5 +808,21 @@ public class SelfCoordOverlayUpdater extends CotStreamListener implements
         _prefs.edit()
                 .putString("coord_display_pref", _coordMode.getDisplayName())
                 .apply();
+    }
+
+    public interface ConnectedButtonWidgetCallback {
+        void onConnectedButtonWidgetClick();
+    }
+
+    private static ConnectedButtonWidgetCallback connectedButtonWidgetCallback = null;
+
+    /**
+     * Sets a callback that will fire when the connectedButtonWidget is clicked. Allows callers
+     * to implement custom onMapWidgetClick behavior for the connectedButtonWidget.
+     * @param callback the callback to use
+     */
+    public static void setConnectedButtonWidgetCallback(
+            ConnectedButtonWidgetCallback callback) {
+        connectedButtonWidgetCallback = callback;
     }
 }

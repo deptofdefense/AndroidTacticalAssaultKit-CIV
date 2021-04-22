@@ -2,7 +2,10 @@
 package com.atakmap.android.maps;
 
 import android.graphics.Point;
+import android.graphics.PointF;
 import android.os.Bundle;
+
+import com.atakmap.annotations.DeprecatedApi;
 
 /**
  * Notification of a specific action that occurred in the mapping engine.
@@ -14,7 +17,7 @@ public class MapEvent {
     private float _scaleFactor = 1f;
     private MapGroup _group;
     private MapItem _item;
-    private Point _point;
+    private PointF _point;
     private final String _type;
     /**
      * This is used for logging, but could be in used in conjunction or to replace "from" in the bundle
@@ -184,7 +187,7 @@ public class MapEvent {
         _item = e._item;
         _scaleFactor = e._scaleFactor;
         if (e._point != null) {
-            _point = new Point(e._point);
+            _point = new PointF(e._point.x, e._point.y);
         }
         if (e._extras != null) {
             _extras = new Bundle(e._extras);
@@ -216,12 +219,26 @@ public class MapEvent {
     /**
      * Return the screen point associated with the event.
      * @return the screen point or null if no screen point is associated.
+     * @deprecated use {@link #getPointF()}
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.3", forRemoval = true, removeAt = "4.6")
     public Point getPoint() {
         // Prevent guaranteed NPE when _point is null
         if (_point == null)
             return null;
-        return new Point(_point);
+        return new Point((int) _point.x, (int) _point.y);
+    }
+
+    /**
+     * Return the screen point associated with the event.
+     * @return the screen point or null if no screen point is associated.
+     */
+    public PointF getPointF() {
+        // Prevent guaranteed NPE when _point is null
+        if (_point == null)
+            return null;
+        return new PointF(_point.x, _point.y);
     }
 
     public float getScaleFactor() {
@@ -261,8 +278,16 @@ public class MapEvent {
             return this;
         }
 
+        /** @deprecated use {@link #setPoint(PointF)}*/
+        @Deprecated
+        @DeprecatedApi(since = "4.3", forRemoval = true, removeAt = "4.6")
         public Builder setPoint(Point p) {
-            _e._point = new Point(p);
+            _e._point = new PointF(p.x, p.y);
+            return this;
+        }
+
+        public Builder setPoint(PointF p) {
+            _e._point = new PointF(p.x, p.y);
             return this;
         }
 

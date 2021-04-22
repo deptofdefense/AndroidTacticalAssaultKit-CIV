@@ -48,9 +48,9 @@ namespace TAK {
                     virtual Util::TAKErr resetQueryContext(QueryContext &pendingData) NOTHROWS;
                     virtual Util::TAKErr updateRenderableLists(QueryContext &pendingData) NOTHROWS;
                     virtual Util::TAKErr getBackgroundThreadName(Port::String &value) NOTHROWS;
-                    virtual Util::TAKErr query(QueryContext &result, const ViewState &state) NOTHROWS;
+                    virtual Util::TAKErr query(QueryContext &result, const TAK::Engine::Renderer::Core::GLMapView2::State &state) NOTHROWS;
                 private:
-                    Util::TAKErr queryImpl(QueryContext &result, const ViewState &state) NOTHROWS;
+                    Util::TAKErr queryImpl(QueryContext &result, const TAK::Engine::Renderer::Core::GLMapView2::State &state) NOTHROWS;
                 public: // FeatureDataStore2.OnDataStoreContentChangedListener
                     virtual void onDataStoreContentChanged(TAK::Engine::Feature::FeatureDataStore2 &data_store) NOTHROWS;
 

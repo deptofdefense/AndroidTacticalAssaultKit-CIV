@@ -37,6 +37,9 @@ public class Context {
     public File getCacheDir() {
         return rt.cacheDir;
     }
+    public File[] getExternalCacheDirs() {
+        return new File[] {getCacheDir()};
+    }
     public PackageManager getPackageManager() {
         return new PackageManager(getPackageName(), rt.filesDir);
     }

@@ -269,7 +269,7 @@ namespace
             err = pthread_cond_wait(impl.get(), mutexImpl);
         }
         if (err)
-            return TE_Err;
+            return (err == ETIMEDOUT) ? TE_TimedOut : TE_Err;
         return TE_Ok;
     }
 

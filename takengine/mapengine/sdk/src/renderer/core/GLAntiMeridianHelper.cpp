@@ -3,6 +3,7 @@
 
 #include <algorithm>
 
+#include "renderer/core/GLGlobe.h"
 #include "renderer/core/GLMapView2.h"
 
 using namespace TAK::Engine::Renderer::Core;
@@ -11,6 +12,20 @@ using namespace TAK::Engine::Core;
 using namespace TAK::Engine::Feature;
 using namespace TAK::Engine::Util;
 
+namespace
+{
+    struct UpdateResult
+    {
+        bool wrap;
+        Envelope2 east;
+        Envelope2 west;
+        GLAntiMeridianHelper::Hemisphere primaryHemisphere;
+    };
+
+    template<class T>
+    void updateImpl(UpdateResult *value, const T &view) NOTHROWS;
+}
+
 GLAntiMeridianHelper::GLAntiMeridianHelper() :
     primaryHemisphere(GLAntiMeridianHelper::East),
     eastHemisphere(0, 0, NAN, 0, 0, NAN),
@@ -18,32 +33,29 @@ GLAntiMeridianHelper::GLAntiMeridianHelper() :
     wrap(false)
 {}
 
-void GLAntiMeridianHelper::update(TAK::Engine::Renderer::Core::GLMapView2& view) NOTHROWS {
-    //TODO ADD THIS WHEN WE SWAP OVER TO MAPVIEW2
-    //this->wrap = view.crossesIDL;
-
-    this->primaryHemisphere = (view.drawLng < 0) ? GLAntiMeridianHelper::West : GLAntiMeridianHelper::East;
-
-    if (this->wrap) {
-        // eastern hemi
-        
-        this->eastHemisphere = Envelope2(std::min(view.westBound, 180.0), std::min(view.southBound, view.northBound), NAN, std::max(view.southBound, view.northBound), std::max(view.westBound, 180.0), NAN);
-        //this->eastHemisphere.set(view.northBound, view.westBound,
-        //    view.southBound, 180);
-        // western hemi
-        this->westHemisphere = Envelope2(std::min(view.westBound, -180.0), std::min(view.southBound, view.northBound), NAN, std::max(view.southBound, view.northBound), std::max(view.westBound, -180.0), NAN);
-        //this->westHemisphere.set(view.northBound, -180,
-        //   view.southBound, view.eastBound);
-    } else {
-        // eastern hemi
-        this->eastHemisphere = Envelope2(std::min(view.westBound, view.eastBound), std::min(view.southBound, view.northBound), NAN, std::max(view.southBound, view.northBound), std::max(view.westBound, view.eastBound), NAN);
-        //this->eastHemisphere.set(view.northBound, view.westBound,
-        //    view.southBound, view.eastBound);
-        // western hemi
-        this->westHemisphere = Envelope2(std::min(view.westBound, view.eastBound), std::min(view.southBound, view.northBound), NAN, std::max(view.southBound, view.northBound), std::max(view.westBound, view.eastBound), NAN);
-        //this->westHemisphere.set(view.northBound, view.westBound,
-        //    view.southBound, view.eastBound);
-    }
+void GLAntiMeridianHelper::update(const GLMapView2& view) NOTHROWS
+{
+    UpdateResult result;
+    result.wrap = this->wrap;
+    result.primaryHemisphere = this->primaryHemisphere;
+    result.west = this->westHemisphere;
+    result.east = this->eastHemisphere;
+    updateImpl(&result, *view.renderPass);
+    this->primaryHemisphere = result.primaryHemisphere;
+    this->eastHemisphere = result.east;
+    this->westHemisphere = result.west;
+}
+void GLAntiMeridianHelper::update(const GLGlobe &view) NOTHROWS
+{
+    UpdateResult result;
+    result.wrap = this->wrap;
+    result.primaryHemisphere = this->primaryHemisphere;
+    result.west = this->westHemisphere;
+    result.east = this->eastHemisphere;
+    updateImpl(&result, *view.renderPass);
+    this->primaryHemisphere = result.primaryHemisphere;
+    this->eastHemisphere = result.east;
+    this->westHemisphere = result.west;
 }
 
 GLAntiMeridianHelper::Hemisphere GLAntiMeridianHelper::getPrimaryHemisphere() const NOTHROWS
@@ -117,4 +129,25 @@ TAKErr GLAntiMeridianHelper::wrapLongitude(double *value, const double longitude
     }
 
     return wrapLongitude(value, hemisphere, longitude);
+}
+
+namespace
+{
+    template<class T>
+    void updateImpl(UpdateResult *value, const T &view) NOTHROWS
+    {
+        value->primaryHemisphere = (view.drawLng < 0) ? GLAntiMeridianHelper::West : GLAntiMeridianHelper::East;
+
+        if (value->wrap) {
+            // eastern hemi
+            value->east = Envelope2(std::min(view.westBound, 180.0), std::min(view.southBound, view.northBound), NAN, std::max(view.southBound, view.northBound), std::max(view.westBound, 180.0), NAN);
+            // western hemi
+            value->west = Envelope2(std::min(view.westBound, -180.0), std::min(view.southBound, view.northBound), NAN, std::max(view.southBound, view.northBound), std::max(view.westBound, -180.0), NAN);
+        } else {
+            // eastern hemi
+            value->east = Envelope2(std::min(view.westBound, view.eastBound), std::min(view.southBound, view.northBound), NAN, std::max(view.southBound, view.northBound), std::max(view.westBound, view.eastBound), NAN);
+            // western hemi
+            value->west = Envelope2(std::min(view.westBound, view.eastBound), std::min(view.southBound, view.northBound), NAN, std::max(view.southBound, view.northBound), std::max(view.westBound, view.eastBound), NAN);
+        }
+    }
 }

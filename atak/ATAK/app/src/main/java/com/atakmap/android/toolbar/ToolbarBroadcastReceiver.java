@@ -23,7 +23,7 @@ public class ToolbarBroadcastReceiver extends BroadcastReceiver {
 
     public static final String TAG = "ToolbarBroadcastReceiver";
 
-    private MapView _mapView;
+    protected MapView _mapView;
 
     private ToolManagerBroadcastReceiver toolManager;
 
@@ -52,7 +52,7 @@ public class ToolbarBroadcastReceiver extends BroadcastReceiver {
 
     synchronized public static ToolbarBroadcastReceiver getInstance() {
         if (_instance == null) {
-            _instance = new ToolbarBroadcastReceiver();
+            _instance = ToolbarBroadcastReceiverCompat.createInstance();
         }
         return _instance;
     }
@@ -210,7 +210,7 @@ public class ToolbarBroadcastReceiver extends BroadcastReceiver {
         }
     }
 
-    private void setToolbar(final String toolbarIdentifier) {
+    protected void setToolbar(final String toolbarIdentifier) {
 
         if (toolbars.get(toolbarIdentifier) != null
                 && toolbars.get(toolbarIdentifier).hasToolbar()) {
@@ -247,7 +247,7 @@ public class ToolbarBroadcastReceiver extends BroadcastReceiver {
         }
     }
 
-    private IToolbarExtension getActiveToolbar() {
+    protected IToolbarExtension getActiveToolbar() {
         if (activeToolbar == null || activeToolbar.contentEquals("")) {
             return null;
         } else {
@@ -266,9 +266,9 @@ public class ToolbarBroadcastReceiver extends BroadcastReceiver {
     public static final String UNSET_TOOLBAR = "com.atakmap.android.maps.toolbar.UNSET_TOOLBAR";
     public static final String OPEN_TOOLBAR = "com.atakmap.android.maps.toolbar.OPEN_TOOLBAR";
 
-    private final HashMap<String, IToolbarExtension> toolbars = new HashMap<>();
+    protected final HashMap<String, IToolbarExtension> toolbars = new HashMap<>();
 
-    private String activeToolbar = "";
+    protected String activeToolbar = "";
 
     private static ToolbarBroadcastReceiver _instance = null;
 

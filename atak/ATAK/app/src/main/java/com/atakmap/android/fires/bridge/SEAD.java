@@ -1,3 +1,4 @@
+
 package com.atakmap.android.fires.bridge;
 
 import com.atakmap.android.maps.MapItem;
@@ -15,12 +16,12 @@ public abstract class SEAD {
         impl = concreteImpl;
     }
 
-
     public synchronized static String toCSV(GeoPoint p, MapItem item) {
-            impl.set_location(p.getLatitude() + " " + p.getLongitude(), CoordinateFormatUtilities.formatToString(p,
-                    CoordinateFormat.MGRS));
-            impl.set_markerUID(item.getUID());
-            return impl.toCSV();
+        impl.set_location(p.getLatitude() + " " + p.getLongitude(),
+                CoordinateFormatUtilities.formatToString(p,
+                        CoordinateFormat.MGRS));
+        impl.set_markerUID(item.getUID());
+        return impl.toCSV();
     }
 
     public abstract void set_location(String location, String mgrsLocation);

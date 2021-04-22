@@ -14,12 +14,14 @@ import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.routes.elevation.AnalysisPanelPresenter;
+import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.coremap.maps.assets.Icon;
 import com.atakmap.coremap.maps.conversion.EGM96;
 
 import com.atakmap.coremap.maps.coords.GeoPoint.AltitudeReference;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.map.Globe;
 import com.atakmap.map.elevation.ElevationManager;
 import com.atakmap.math.MathUtils;
 
@@ -121,8 +123,15 @@ public class SeekerMarker implements OnSharedPreferenceChangeListener {
             make(p);
         _marker.setPoint(p);
         if (bCenterMap && !_suppressAutoCentering) {
+            double zoomScale = _mapView.getMapScale();
+            final double maxGsd = ATAKUtilities.getMaximumFocusResolution(p);
+            final double gsd = Globe.getMapResolution(_mapView.getDisplayDpi(),
+                    zoomScale);
+            if (gsd < maxGsd) {
+                zoomScale = Globe.getMapScale(_mapView.getDisplayDpi(), maxGsd);
+            }
             _mapView.getMapController().panZoomTo(p,
-                    _mapView.getMapScale(), true);
+                    zoomScale, true);
         }
 
         if (showViewshed && p.isAltitudeValid()) {

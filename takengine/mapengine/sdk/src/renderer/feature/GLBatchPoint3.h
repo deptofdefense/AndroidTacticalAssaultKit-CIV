@@ -22,7 +22,7 @@ namespace TAK {
                 class GLBatchGeometryRenderer3;
                 class GLBatchPointBuffer;
 
-                class GLBatchPoint3 : public GLBatchGeometry3
+                class ENGINE_API GLBatchPoint3 : public GLBatchGeometry3
                 {
                 public:
                     struct IconLoaderEntry {
@@ -49,7 +49,7 @@ namespace TAK {
                 public:
                     virtual Util::TAKErr init(const int64_t feature_id, const char *name_val, TAK::Engine::Feature::GeometryPtr_const &&geom, const TAK::Engine::Feature::AltitudeMode altitude_mode, const double extrude_val, const std::shared_ptr<const atakmap::feature::Style> &style) NOTHROWS override;
                     virtual Util::TAKErr init(const int64_t feature_id, const char *name_val, BlobPtr &&geomBlob, const TAK::Engine::Feature::AltitudeMode altitude_mode, const double extrude_val, const int type, const int lod_val, const std::shared_ptr<const atakmap::feature::Style> &style) NOTHROWS override;
-                    virtual void draw(const TAK::Engine::Renderer::Core::GLMapView2 &ortho, const int render_pass) NOTHROWS override;
+                    virtual void draw(const TAK::Engine::Renderer::Core::GLGlobeBase &ortho, const int render_pass) NOTHROWS override;
                     virtual void release() NOTHROWS override;
                 protected:
                     virtual Util::TAKErr setGeometryImpl(BlobPtr &&blob, const int type) NOTHROWS override;
@@ -74,10 +74,10 @@ namespace TAK {
                     // determine if the point is non-batchable base on attributes alone without the need of testing on the renderer
                     bool hasBatchProhibitiveAttributes() const NOTHROWS;
 
-                    virtual Util::TAKErr batch(const TAK::Engine::Renderer::Core::GLMapView2 &view, const int renderpass, TAK::Engine::Renderer::GLRenderBatch2 &batch) NOTHROWS override;
-                    virtual Util::TAKErr batchLabels(const TAK::Engine::Renderer::Core::GLMapView2 &view, const int render_pass, GLRenderBatch2 & batch);
+                    virtual Util::TAKErr batch(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const int renderpass, TAK::Engine::Renderer::GLRenderBatch2 &batch) NOTHROWS override;
+                    virtual Util::TAKErr batchLabels(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const int render_pass, GLRenderBatch2 & batch);
                 private :
-                    bool validateProjectedLocation(const TAK::Engine::Renderer::Core::GLMapView2 &view) NOTHROWS;
+                    bool validateProjectedLocation(const TAK::Engine::Renderer::Core::GLGlobeBase &view) NOTHROWS;
                 public :
                     /// <summary>
                     ///*********************************************************************** </summary>

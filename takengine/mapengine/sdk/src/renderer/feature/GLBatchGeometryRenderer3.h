@@ -2,8 +2,9 @@
 #define TAK_ENGINE_RENDERER_FEATURE_GLBATCHGEOMETRYRENDERER3_H_INCLUDED
 
 #include "renderer/Shader.h"
+#include "renderer/core/GLDirtyRegion.h"
 #include "renderer/core/GLMapRenderable2.h"
-#include "renderer/core/GLMapView2.h"
+#include "renderer/core/GLGlobeBase.h"
 #include "renderer/feature/GLBatchPoint3.h"
 #include "renderer/feature/GLBatchPolygon3.h"
 #include "renderer/feature/GLBatchLineString3.h"
@@ -127,6 +128,8 @@ namespace TAK {
 
                     std::unique_ptr<TAK::Engine::Renderer::GLRenderBatch2> batch;
 
+                    Core::GLDirtyRegion surfaceCoverage;
+
                     struct
                     {
                         Renderer::Shader2 base;
@@ -178,11 +181,11 @@ namespace TAK {
                     Util::TAKErr setBatch(Port::Collection<GLBatchGeometry3 *> &geoms) NOTHROWS;
                     Util::TAKErr setBatch(Port::Collection<SharedGLBatchGeometryPtr> &value) NOTHROWS;
 
-                    virtual void draw(const TAK::Engine::Renderer::Core::GLMapView2 &view, const int renderPass) NOTHROWS;
+                    virtual void draw(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const int renderPass) NOTHROWS;
 
                 private:
-                    virtual void drawSurface(const TAK::Engine::Renderer::Core::GLMapView2 &view) NOTHROWS;
-                    virtual void drawSprites(const TAK::Engine::Renderer::Core::GLMapView2 &view) NOTHROWS;
+                    virtual void drawSurface(const TAK::Engine::Renderer::Core::GLGlobeBase &view) NOTHROWS;
+                    virtual void drawSprites(const TAK::Engine::Renderer::Core::GLGlobeBase &view) NOTHROWS;
 
                     Util::TAKErr fillBatchLists(Port::Iterator2<SharedGLBatchGeometryPtr> &geoms) NOTHROWS;
                     Util::TAKErr fillBatchLists(Port::Iterator2<GLBatchGeometry3 *> &geoms) NOTHROWS;
@@ -191,16 +194,16 @@ namespace TAK {
 
                     Util::TAKErr extrudePoints() NOTHROWS;
 
-                    Util::TAKErr batchDrawLollipops(const TAK::Engine::Renderer::Core::GLMapView2 &view) NOTHROWS;
-                    Util::TAKErr buildLineBuffers(std::vector<LinesBuffer> &bufs, const TAK::Engine::Renderer::Core::GLMapView2 &view, const BatchState &ctx, const std::list<GLBatchLineString3 *> &lines) NOTHROWS;
-                    Util::TAKErr drawLineBuffers(const TAK::Engine::Renderer::Core::GLMapView2 &view, const BatchState &ctx, const std::vector<LinesBuffer> &bufs) NOTHROWS;
+                    Util::TAKErr batchDrawLollipops(const TAK::Engine::Renderer::Core::GLGlobeBase &view) NOTHROWS;
+                    Util::TAKErr buildLineBuffers(std::vector<LinesBuffer> &bufs, const TAK::Engine::Renderer::Core::GLGlobeBase &view, const BatchState &ctx, const std::list<GLBatchLineString3 *> &lines) NOTHROWS;
+                    Util::TAKErr drawLineBuffers(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const BatchState &ctx, const std::vector<LinesBuffer> &bufs) NOTHROWS;
 
-                    Util::TAKErr buildPointsBuffers(std::vector<PointsBuffer> &bufs, const TAK::Engine::Renderer::Core::GLMapView2 &view, const BatchState &ctx, const std::vector<GLBatchPoint3 *> &lines) NOTHROWS;
-                    Util::TAKErr batchDrawPoints(const TAK::Engine::Renderer::Core::GLMapView2 &view, const BatchState &ctx) NOTHROWS;
+                    Util::TAKErr buildPointsBuffers(std::vector<PointsBuffer> &bufs, const TAK::Engine::Renderer::Core::GLGlobeBase &view, const BatchState &ctx, const std::vector<GLBatchPoint3 *> &lines) NOTHROWS;
+                    Util::TAKErr batchDrawPoints(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const BatchState &ctx) NOTHROWS;
 
-                    Util::TAKErr drawPoints(const TAK::Engine::Renderer::Core::GLMapView2 &view) NOTHROWS;
+                    Util::TAKErr drawPoints(const TAK::Engine::Renderer::Core::GLGlobeBase &view) NOTHROWS;
 
-                    Util::TAKErr renderPointsBuffers(const TAK::Engine::Renderer::Core::GLMapView2 &view, GLBatchPointBuffer & batch_point_buffer) NOTHROWS;
+                    Util::TAKErr renderPointsBuffers(const TAK::Engine::Renderer::Core::GLGlobeBase &view, GLBatchPointBuffer & batch_point_buffer) NOTHROWS;
 
                 public:
                     virtual int getRenderPass() NOTHROWS;

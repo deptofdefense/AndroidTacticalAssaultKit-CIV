@@ -14,6 +14,7 @@ namespace TAK
         {
             namespace Core
             {
+                class GLGlobe;
                 class GLMapView2;
                 /**
                 * <P>This class is NOT thread-safe.
@@ -36,7 +37,8 @@ namespace TAK
 
                 public:
                     GLAntiMeridianHelper();
-                    void update(TAK::Engine::Renderer::Core::GLMapView2& view) NOTHROWS;
+                    void update(const TAK::Engine::Renderer::Core::GLMapView2& view) NOTHROWS;
+                    void update(const TAK::Engine::Renderer::Core::GLGlobe& view) NOTHROWS;
                     GLAntiMeridianHelper::Hemisphere getPrimaryHemisphere() const NOTHROWS;
                     Util::TAKErr getBounds(TAK::Engine::Feature::Envelope2 *value, const GLAntiMeridianHelper::Hemisphere hemi) const NOTHROWS;
                     void getBounds(TAK::Engine::Feature::Envelope2 *westHemi, TAK::Engine::Feature::Envelope2 *eastHemi) const NOTHROWS;

@@ -5,16 +5,21 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 
 /**
  * Parameters for tile capture
+ *
+ * These parameters are passed to
+ * {@link TileCapture#capture(TileCaptureParams, TileCapture.Callback)}
  */
 public class TileCaptureParams {
 
     // Points along which to capture tiles
+    // For quadrilateral capture, specify each of the 4 corners in clockwise
+    // rotation starting from the north-west corner
     public GeoPoint[] points;
 
     // True if the points form a closed shape - false if they form a line
     public boolean closedPoints;
 
-    // Map level
+    // Tile resolution level (-1 = calculate based on map resolution)
     public int level = -1;
 
     // Map resolution

@@ -21,7 +21,7 @@ public class Resources {
         String resource = "/resources/" + type + "/" + name;
         for(int i = 0; i < resources.size(); i++) {
             if(resource.equals(resources.get(i)))
-                return i;
+                return i+1;
         }
         resources.add(resource);
         return resources.size();

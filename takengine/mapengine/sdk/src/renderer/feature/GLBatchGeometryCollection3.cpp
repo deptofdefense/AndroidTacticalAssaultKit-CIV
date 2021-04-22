@@ -39,7 +39,7 @@ GLBatchGeometryCollection3::~GLBatchGeometryCollection3() NOTHROWS
 {}
 
 //public void draw(GLMapView view) {
-void GLBatchGeometryCollection3::draw(const GLMapView2 &view, const int render_pass) NOTHROWS
+void GLBatchGeometryCollection3::draw(const GLGlobeBase &view, const int render_pass) NOTHROWS
 {
     std::set<GLBatchGeometry3 *>::iterator child;
     for (child = this->children.begin(); child != this->children.end(); child++)
@@ -55,7 +55,7 @@ void GLBatchGeometryCollection3::release() NOTHROWS
 }
 
 //public void batch(GLMapView view, GLRenderBatch batch) {
-TAKErr GLBatchGeometryCollection3::batch(const GLMapView2 &view, const int render_pass, GLRenderBatch2 &batch) NOTHROWS
+TAKErr GLBatchGeometryCollection3::batch(const GLGlobeBase &view, const int render_pass, GLRenderBatch2 &batch) NOTHROWS
 {
     TAKErr code(TE_Ok);
 

@@ -395,11 +395,6 @@ public class LocalRangeFinderInput implements Runnable, RangeFinderAction,
             rb.setMetaBoolean("nonremovable", true);
             rb.setMetaBoolean("addToObjList", false);
 
-            rb.setBearingUnits(Angle.DEGREE);
-            rb.setNorthReference(NorthReference.MAGNETIC);
-            //rb.setBearingUnits(_bearingUnits);
-            //rb.setNorthReference(_northReference);
-
             final MapGroup _linkGroup = mapView.getRootGroup().findMapGroup(
                     "Range & Bearing");
             _linkGroup.addItem(rb);

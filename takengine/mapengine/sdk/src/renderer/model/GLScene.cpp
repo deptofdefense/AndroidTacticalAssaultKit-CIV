@@ -128,7 +128,7 @@ int GLScene::getRenderPass() NOTHROWS
 {
     return GLMapView2::Sprites | GLMapView2::XRay | indicator.getRenderPass();
 }
-void GLScene::draw(const GLMapView2 &view, const int renderPass) NOTHROWS
+void GLScene::draw(const GLGlobeBase &view, const int renderPass) NOTHROWS
 {
     // init tile grid, if necessary
     SceneInfo locationUpdate;
@@ -138,7 +138,7 @@ void GLScene::draw(const GLMapView2 &view, const int renderPass) NOTHROWS
         if(!this->scene_.get()) {
             // kick off initialization if zoomed in sufficiently
             if (!this->initializer.get() &&
-                (info_.minDisplayResolution && view.drawMapResolution < info_.minDisplayResolution)) {
+                (info_.minDisplayResolution && view.renderPass->drawMapResolution < info_.minDisplayResolution)) {
 
                 this->cancelInitialize = false;
                 

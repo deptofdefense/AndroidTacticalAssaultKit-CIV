@@ -50,7 +50,7 @@ namespace TAK {
                      *                      MUST be different if the instances
                      *                      are not equal.
                      */
-                    virtual Util::TAKErr lock(Port::Collection<std::shared_ptr<const TerrainTile>> &value, const TAK::Engine::Core::MapSceneModel2 &view, const int srid, const int sceneVersion) NOTHROWS = 0;
+                    virtual Util::TAKErr lock(Port::Collection<std::shared_ptr<const TerrainTile>> &value, const TAK::Engine::Core::MapSceneModel2 &view, const int srid, const int sceneVersion, const bool derive = false) NOTHROWS = 0;
                     /**
                      * Unlocks the tiles returned by a previous call to `lock`
                      */

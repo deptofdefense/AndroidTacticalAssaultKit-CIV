@@ -15,7 +15,7 @@
 * Improved KML/KMZ imports
   * Improve handling of KML network links, including nested network links
   * KMZs containing both image overlays and placemarks/shapes only need to be imported once to ingest all contents
-
+  
 ## 4.2.1.10
 
 * Better KML consistency with Google Earth for line style

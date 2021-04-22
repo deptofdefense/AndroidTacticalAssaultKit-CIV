@@ -19,12 +19,14 @@ import com.atakmap.android.maps.graphics.GLBitmapLoader;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.AtakMapView;
+import com.atakmap.map.layer.control.SurfaceRendererControl;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.raster.tilematrix.TileMatrix;
 import com.atakmap.map.layer.raster.tilereader.opengl.GLTileMesh;
 import com.atakmap.map.opengl.GLMapBatchable2;
 import com.atakmap.map.opengl.GLMapRenderable2;
 import com.atakmap.map.opengl.GLMapView;
+import com.atakmap.map.projection.EquirectangularMapProjection;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.Matrix;
 import com.atakmap.math.PointD;
@@ -35,6 +37,7 @@ import com.atakmap.opengl.GLResolvable;
 import com.atakmap.opengl.GLText;
 import com.atakmap.opengl.GLTexture;
 import com.atakmap.opengl.GLTextureCache;
+import com.atakmap.spatial.GeometryTransformer;
 import com.atakmap.util.Disposable;
 
 /**
@@ -77,6 +80,8 @@ public class GLTile implements GLMapRenderable2, GLMapBatchable2, GLResolvable {
     private final Set<GLTile> borrowers;
     private Set<BorrowRecord> borrowRecords;
     private int tileVersion;
+
+    int lastPumpDrawn;
 
     /**
      * Creates a new tile renderer.
@@ -147,6 +152,8 @@ public class GLTile implements GLMapRenderable2, GLMapBatchable2, GLResolvable {
         this.borrowRecords = new HashSet<BorrowRecord>();
         
         this.tileVersion = -1;
+
+        this.lastPumpDrawn = -1;
     }
 
     /**
@@ -286,6 +293,8 @@ public class GLTile implements GLMapRenderable2, GLMapBatchable2, GLResolvable {
         if(!MathUtils.hasBits(renderPass, this.getRenderPass()))
             return false;
 
+        this.lastPumpDrawn = view.currentPass.renderPump;
+
         do {
             if(this.state == State.UNRESOLVED) {
                 // check cache
@@ -308,6 +317,10 @@ public class GLTile implements GLMapRenderable2, GLMapBatchable2, GLResolvable {
                         view.requestRefresh();
                         if(thrown != null)
                             throw thrown;
+                        SurfaceRendererControl ctrl = view.getControl(SurfaceRendererControl.class);
+                        if(ctrl != null) {
+                            ctrl.markDirty(GeometryTransformer.transform(new Envelope(projMinX, projMinY, 0, projMaxX, projMaxY, 0), core.proj, EquirectangularMapProjection.INSTANCE), false);
+                        }
                         return result;
                     }
                 };

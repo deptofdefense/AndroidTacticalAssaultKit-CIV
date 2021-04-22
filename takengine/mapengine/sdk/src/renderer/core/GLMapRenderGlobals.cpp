@@ -4,6 +4,7 @@
 #endif
 #include <util/NonCopyable.h>
 
+#include "core/AtakMapView.h"
 #include "thread/Lock.h"
 #include "thread/Mutex.h"
 #include "util/ConfigOptions.h"
@@ -48,7 +49,8 @@ namespace
 
     std::size_t maxTextureUnits(0);
     std::size_t textureUnitLimit;
-}
+    float relativeDisplayDensity(1.0f);
+    }
 
 TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_getTextureAtlas(GLTextureAtlas **value, const RenderContext &ctx) NOTHROWS
 {
@@ -134,6 +136,14 @@ std::size_t TAK::Engine::Renderer::Core::GLMapRenderGlobals_getNominalIconSize()
 #else
     return 32u;
 #endif
+}
+
+float TAK::Engine::Renderer::Core::GLMapRenderGlobals_getRelativeDisplayDensity() NOTHROWS { return relativeDisplayDensity; }
+
+TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_setRelativeDisplayDensity(float density_value) NOTHROWS {
+    if (density_value <= 0.0f) return TE_InvalidArg;
+    relativeDisplayDensity = density_value;
+    return TE_Ok;
 }
 
 TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_getBitmapLoader(TAK::Engine::Renderer::AsyncBitmapLoader2 **value, const RenderContext &ctx) NOTHROWS

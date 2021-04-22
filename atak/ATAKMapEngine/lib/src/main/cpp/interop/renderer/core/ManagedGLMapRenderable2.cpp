@@ -51,7 +51,7 @@ ManagedGLMapRenderable2::~ManagedGLMapRenderable2() NOTHROWS
         impl = NULL;
     }
 }
-void ManagedGLMapRenderable2::draw(const TAK::Engine::Renderer::Core::GLMapView2& cview, const int crenderPass) NOTHROWS
+void ManagedGLMapRenderable2::draw(const TAK::Engine::Renderer::Core::GLGlobeBase& cview, const int crenderPass) NOTHROWS
 {
     LocalJNIEnv env;
     if(env->ExceptionCheck())

@@ -149,6 +149,14 @@ public class MetricReportMapComponent extends AbstractMapComponent
         this.pluginContext = context;
         this.view = view;
 
+        //do not record these fields
+        bundleFilter = new ArrayList<>();
+        bundleFilter.add("username");
+        bundleFilter.add("password");
+        bundleFilter.add("caPassword");
+        bundleFilter.add("clientPassword");
+
+
         //Realtime metrics sent only to TAK Server
         metricDispatcher = new CotDispatcher();
         metricDispatcher.setDispatchFlags(
@@ -209,10 +217,7 @@ public class MetricReportMapComponent extends AbstractMapComponent
         Log.d(TAG, "starting metrics collection");
 
         startTime = SystemClock.elapsedRealtime();
-        //do not record these fields
-        bundleFilter = new ArrayList<>();
-        bundleFilter.add("username");
-        bundleFilter.add("password");
+
 
         // this is for all of the apps on the device not just this app
         startUsageDataRx = android.net.TrafficStats.getTotalRxBytes();
@@ -357,8 +362,8 @@ public class MetricReportMapComponent extends AbstractMapComponent
             f = new File(f, FileSystemUtils.sanitizeWithSpacesAndSlashes(
                     name + "-" + String.format(LocaleUtil.US, "%03d", roll)
                             + EXT_COTDUMP));
-            try(OutputStream os = IOProviderFactory.getOutputStream(f)) {
-                FileSystemUtils.write(os,child.toString());
+            try (OutputStream os = IOProviderFactory.getOutputStream(f)) {
+                FileSystemUtils.write(os, child.toString());
             } catch (IOException ioe) {
                 Log.e(TAG, "unable to write file: " + f, ioe);
             }
@@ -383,7 +388,7 @@ public class MetricReportMapComponent extends AbstractMapComponent
 
         f = new File(f, type + "-" + System.currentTimeMillis()
                 + EXT_COTDUMP);
-        try(OutputStream os = IOProviderFactory.getOutputStream(f)) {
+        try (OutputStream os = IOProviderFactory.getOutputStream(f)) {
             FileSystemUtils.write(os, ce.toString());
         } catch (IOException ioe) {
             Log.e(TAG, "unable to write file: " + f, ioe);

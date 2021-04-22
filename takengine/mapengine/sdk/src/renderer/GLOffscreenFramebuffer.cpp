@@ -60,8 +60,6 @@ TAKErr TAK::Engine::Renderer::GLOffscreenFramebuffer_create(GLOffscreenFramebuff
     result->textureWidth = MathUtils_isPowerOf2(width) ? width : 1 << MathUtils_nextPowerOf2(width);
     result->textureHeight = MathUtils_isPowerOf2(height) ? height : 1 << MathUtils_nextPowerOf2(height);
 
-    GLuint fbo[3];
-
     if (options.colorFormat != GL_NONE)
         result->colorTexture = createTexture(result->textureWidth, result->textureHeight, options.colorFormat, options.colorInternalFormat, options.colorType, true);
     if (options.depthFormat != GL_NONE)
@@ -75,16 +73,18 @@ TAKErr TAK::Engine::Renderer::GLOffscreenFramebuffer_create(GLOffscreenFramebuff
         while (glGetError() != GL_NO_ERROR)
             ;
 
-        glGenFramebuffers(1, fbo);
-        result->handle = fbo[0];
+        glGenFramebuffers(1, &result->handle);
 
-        if (options.depthFormat == GL_NONE) {
-            glGenRenderbuffers(1, fbo + 1);
-            glBindRenderbuffer(GL_RENDERBUFFER, fbo[1]);
+        // depth buffer is desired, but no texture; use render buffer
+        if ((options.bufferMask&GL_DEPTH_BUFFER_BIT) && options.depthFormat == GL_NONE) {
+            glGenRenderbuffers(1, result->renderBuffers + result->numRenderBuffers);
+            glBindRenderbuffer(GL_RENDERBUFFER, result->renderBuffers[result->numRenderBuffers]);
             glRenderbufferStorage(GL_RENDERBUFFER,
                 GL_DEPTH_COMPONENT24,
                 result->textureWidth, result->textureHeight);
             glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+            result->numRenderBuffers++;
         }
 
         // bind the FBO and set all texture attachments
@@ -123,9 +123,8 @@ TAKErr TAK::Engine::Renderer::GLOffscreenFramebuffer_create(GLOffscreenFramebuff
             glFramebufferTexture2D(GL_FRAMEBUFFER,
                 depthAttachment,
                 GL_TEXTURE_2D, result->depthTexture, 0);
-        }
-        else {
-            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, fbo[0]);
+        } else if(options.bufferMask&GL_DEPTH_BUFFER_BIT) {
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, result->renderBuffers[0]);
         }
         if (glGetError() != GL_NO_ERROR)
             break;
@@ -145,9 +144,10 @@ TAKErr TAK::Engine::Renderer::GLOffscreenFramebuffer_create(GLOffscreenFramebuff
         return TE_Ok;
     } while (false);
 
+    GLOffscreenFramebuffer_release(*result);
     return TE_Err;
 }
-TAKErr TAK::Engine::Renderer::GLOffscreenFramebuffer_release(GLOffscreenFramebuffer& offscreen)
+TAKErr TAK::Engine::Renderer::GLOffscreenFramebuffer_release(GLOffscreenFramebuffer& offscreen) NOTHROWS
 {
     GLuint textures[] = { offscreen.colorTexture, offscreen.depthTexture, offscreen.stencilTexture };
     glDeleteTextures(3, textures);
@@ -158,6 +158,9 @@ TAKErr TAK::Engine::Renderer::GLOffscreenFramebuffer_release(GLOffscreenFramebuf
     glDeleteFramebuffers(1, &offscreen.handle);
     offscreen.handle = GL_NONE;
 
+    glDeleteRenderbuffers(offscreen.numRenderBuffers, offscreen.renderBuffers);
+    offscreen.numRenderBuffers = 0u;
+
     return TE_Ok;
 }
 GLOffscreenFramebuffer::~GLOffscreenFramebuffer() NOTHROWS
@@ -166,7 +169,9 @@ GLOffscreenFramebuffer::~GLOffscreenFramebuffer() NOTHROWS
         GLOffscreenFramebuffer_release(*this);
 }
 
-void GLOffscreenFramebuffer::bind() {
+void GLOffscreenFramebuffer::bind(const bool clear) NOTHROWS
+{
     glBindFramebuffer(GL_FRAMEBUFFER, handle);
+    if(clear)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }

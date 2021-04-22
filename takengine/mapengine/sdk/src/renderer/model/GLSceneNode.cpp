@@ -60,9 +60,9 @@ namespace
         return targetLod;
     }
 
-    int selectLodIndex(const GLMapView2 &view, const SceneNode &node, const SceneInfo &info, const Envelope2 &mbb, const bool checkPrefetch) NOTHROWS
+    int selectLodIndex(const GLGlobeBase &view, const SceneNode &node, const SceneInfo &info, const Envelope2 &mbb, const bool checkPrefetch) NOTHROWS
     {
-        return selectLodIndex(view.scene, view.drawMapResolution, node, info, mbb, checkPrefetch);
+        return selectLodIndex(view.renderPass->scene, view.renderPass->drawMapResolution, node, info, mbb, checkPrefetch);
     }
 
     void utm2lla(SceneInfo &info, const Envelope2 &aabbLCS) NOTHROWS
@@ -204,7 +204,7 @@ class GLSceneNode::LODMeshes
 {
 public :
     void release() NOTHROWS;
-    void draw(const GLMapView2 &view, RenderState &state, const int renderPass, const ColorControl::Mode colorMode, const unsigned int color) NOTHROWS;
+    void draw(const GLGlobeBase &view, RenderState &state, const int renderPass, const ColorControl::Mode colorMode, const unsigned int color) NOTHROWS;
     bool isMaterialResolved() NOTHROWS;
     void setData(std::vector<std::unique_ptr<GLMesh>> &mesh_data) NOTHROWS;
 public :
@@ -358,7 +358,7 @@ TAKErr GLSceneNode::asyncLoad(GLSceneNode::LoadContext &loadContext, bool *cance
 
     return code;
 }
-bool GLSceneNode::isLoaded(const GLMapView2 &view) const NOTHROWS
+bool GLSceneNode::isLoaded(const GLGlobeBase &view) const NOTHROWS
 {
     if(lodMeshes.empty())
         return false;
@@ -371,9 +371,9 @@ bool GLSceneNode::isLoaded(const GLMapView2 &view) const NOTHROWS
     // if LOD not populated, fetch. always need to fetch minimum LOD
     return (lodMeshes[subject->getNumLODs()-1u].get() && lodMeshes[clampedLod].get());
 }
-TAKErr GLSceneNode::prepareLoadContext(GLSceneNode::LoadContext* value, const GLMapView2& view) const NOTHROWS
+TAKErr GLSceneNode::prepareLoadContext(GLSceneNode::LoadContext* value, const GLGlobeBase& view) const NOTHROWS
 {
-    return prepareLoadContext(value, view.scene, view.drawMapResolution);
+    return prepareLoadContext(value, view.renderPass->scene, view.renderPass->drawMapResolution);
 }
 
 TAKErr GLSceneNode::prepareLoadContext(GLSceneNode::LoadContext* value, const TAK::Engine::Core::MapSceneModel2& scene, double drawMapResolution) const NOTHROWS {
@@ -415,9 +415,9 @@ TAKErr GLSceneNode::prepareLoadContext(GLSceneNode::LoadContext* value, const TA
 
     return TE_Ok;
 }
-GLSceneNode::RenderVisibility GLSceneNode::isRenderable(const GLMapView2 &view) const NOTHROWS
+GLSceneNode::RenderVisibility GLSceneNode::isRenderable(const GLGlobeBase &view) const NOTHROWS
 {
-    if(view.drawMapResolution > (info.minDisplayResolution*2.0))
+    if(view.renderPass->drawMapResolution > (info.minDisplayResolution*2.0))
         return RenderVisibility::None;
 
     const int lodIdx = selectLodIndex(view, *subject, info, mbb, false);
@@ -431,7 +431,7 @@ GLSceneNode::RenderVisibility GLSceneNode::isRenderable(const GLMapView2 &view) 
     }
 
     bool intersects;
-    if (MapSceneModel2_intersects(&intersects, view.scene, mbb.minX, mbb.minY, mbb.minZ+zOff, mbb.maxX, mbb.maxY, mbb.maxZ+zOff) != TE_Ok)
+    if (MapSceneModel2_intersects(&intersects, view.renderPass->scene, mbb.minX, mbb.minY, mbb.minZ+zOff, mbb.maxX, mbb.maxY, mbb.maxZ+zOff) != TE_Ok)
         return RenderVisibility::None; // no failover here....
     if(intersects)
         return RenderVisibility::Draw;
@@ -440,7 +440,7 @@ GLSceneNode::RenderVisibility GLSceneNode::isRenderable(const GLMapView2 &view) 
     const double wy = (mbb.maxY-mbb.minY);
     const double wz = (mbb.maxZ-mbb.minZ);
 
-    if (MapSceneModel2_intersects(&intersects, view.scene, mbb.minX - wx, mbb.minY - wy, mbb.minZ - wz + zOff, mbb.maxX + wx, mbb.maxY + wy, mbb.maxZ + wz + zOff) != TE_Ok)
+    if (MapSceneModel2_intersects(&intersects, view.renderPass->scene, mbb.minX - wx, mbb.minY - wy, mbb.minZ - wz + zOff, mbb.maxX + wx, mbb.maxY + wy, mbb.maxZ + wz + zOff) != TE_Ok)
         return RenderVisibility::None;
     return intersects ? RenderVisibility::Prefetch : RenderVisibility::None;
 }
@@ -696,7 +696,7 @@ TAKErr GLSceneNode::refreshAABB(const Envelope2 &aabb_mesh_local) NOTHROWS
 
     return code;
 }
-void GLSceneNode::draw(const GLMapView2 &view, const int renderPass) NOTHROWS
+void GLSceneNode::draw(const GLGlobeBase &view, const int renderPass) NOTHROWS
 {
     RenderState restore = RenderState_getCurrent();
     RenderState state(restore);
@@ -707,7 +707,7 @@ void GLSceneNode::draw(const GLMapView2 &view, const int renderPass) NOTHROWS
     }
     RenderState_makeCurrent(restore);
 }
-void GLSceneNode::draw(const GLMapView2 &view, RenderState &state, const int renderPass) NOTHROWS
+void GLSceneNode::draw(const GLGlobeBase &view, RenderState &state, const int renderPass) NOTHROWS
 {
     // choose LOD for view
     const int lodIdx = selectLodIndex(view, *subject, info, mbb, false);
@@ -817,7 +817,7 @@ void GLSceneNode::release() NOTHROWS
 }
 int GLSceneNode::getRenderPass() NOTHROWS
 {
-    return GLMapView2::Sprites;
+    return GLGlobeBase::Sprites;
 }
 void GLSceneNode::start() NOTHROWS
 {
@@ -852,7 +852,7 @@ void GLSceneNode::LODMeshes::release() NOTHROWS
     // release material manager
     matmgr.reset();
 }
-void GLSceneNode::LODMeshes::draw(const GLMapView2 &view, RenderState &state, const int renderPass, const ColorControl::Mode mode, const unsigned int color) NOTHROWS
+void GLSceneNode::LODMeshes::draw(const GLGlobeBase &view, RenderState &state, const int renderPass, const ColorControl::Mode mode, const unsigned int color) NOTHROWS
 {
     for (std::size_t i = 0u; i < data.size(); i++) {
         data[i]->setColor(mode, color);

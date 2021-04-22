@@ -41,6 +41,7 @@ import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 
@@ -370,18 +371,22 @@ public class RubberSheetMapOverlay extends AbstractMapOverlay2 implements
         if (!sheets.isEmpty()) {
             Envelope.Builder eb = new Envelope.Builder();
             MutableGeoBounds m = new MutableGeoBounds(0, 0, 0, 0);
+            double maxAlt = -Double.MAX_VALUE;
             for (AbstractSheet s : sheets) {
                 if (s.getGroup() == null)
                     _group.add(s);
                 s.getBounds(m);
+                GeoPoint p = s.getCenterPoint();
+                if (p.isAltitudeValid())
+                    maxAlt = Math.max(maxAlt, p.getAltitude() + s.getHeight());
                 eb.add(m.getEast(), m.getNorth());
                 eb.add(m.getWest(), m.getSouth());
             }
             Envelope e = eb.build();
             m.set(e.minY, e.minX, e.maxY, e.maxX);
             if (!task.isBackground())
-                ATAKUtilities.scaleToFit(_mapView, m,
-                        _mapView.getWidth(), _mapView.getHeight(), true);
+                ATAKUtilities.scaleToFit(_mapView, m, maxAlt,
+                        _mapView.getWidth(), _mapView.getHeight());
         } else {
             Toast.makeText(_context, task.getFailMessage(),
                     Toast.LENGTH_LONG).show();

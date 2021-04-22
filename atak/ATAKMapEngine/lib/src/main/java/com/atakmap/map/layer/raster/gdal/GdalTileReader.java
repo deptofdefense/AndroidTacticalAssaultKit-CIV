@@ -27,6 +27,9 @@ public class GdalTileReader extends TileReader {
 
         @Override
         public TileReader create(String uri, TileReaderFactory.Options opts) {
+            if(uri.charAt(0) != '/')
+                return null;
+
             // XXX - short circuit is here as moving it further up would
             //       involve unwinding the use of GLGdalMapLayer2 which needs
             //       to be fully traced for potential issues. This achieves
@@ -136,6 +139,9 @@ public class GdalTileReader extends TileReader {
             AsynchronousIO asynchronousIO) {
 
         super(uri, cacheUri, MAX_UNCACHED_READ_LEVEL, asynchronousIO);
+
+        if(tileWidth <= 0 || tileHeight <= 0)
+            throw new IllegalArgumentException();
         
         this.dataset = dataset;
         this.width = this.dataset.GetRasterXSize();

@@ -104,9 +104,7 @@ public abstract class ExportFileTask extends ProgressTask {
             return null;
         }
 
-        try(FileOutputStream fos = IOProviderFactory.getOutputStream(dest);
-            BufferedOutputStream bfos = new BufferedOutputStream(fos);
-            ZipOutputStream zos = new ZipOutputStream(bfos)) {
+        try (ZipOutputStream zos = FileSystemUtils.getZipOutputStream(dest)) {
             byte[] buf = new byte[FileSystemUtils.BUF_SIZE];
 
             // Progress on the entire task
@@ -170,7 +168,7 @@ public abstract class ExportFileTask extends ProgressTask {
     protected static void appendStream(File file, OutputStream os, byte[] buf,
             FileProgressCallback cb) {
         long totalProg = IOProviderFactory.length(file);
-        try(InputStream fis = IOProviderFactory.getInputStream(file)) {
+        try (InputStream fis = IOProviderFactory.getInputStream(file)) {
             int len;
             long prog = 0;
             while ((len = fis.read(buf)) > 0) {
@@ -188,9 +186,9 @@ public abstract class ExportFileTask extends ProgressTask {
 
     protected static boolean writeToFile(File file, String... lines) {
         try (OutputStream os = IOProviderFactory.getOutputStream(file);
-             OutputStreamWriter osw = new OutputStreamWriter(
-                os,FileSystemUtils.UTF8_CHARSET.name());
-             PrintWriter pw = new PrintWriter(osw)) {
+                OutputStreamWriter osw = new OutputStreamWriter(
+                        os, FileSystemUtils.UTF8_CHARSET.name());
+                PrintWriter pw = new PrintWriter(osw)) {
             for (String s : lines)
                 pw.println(s);
             return true;
@@ -218,9 +216,9 @@ public abstract class ExportFileTask extends ProgressTask {
                 if (!IOProviderFactory.exists(zf))
                     return;
 
-                try(InputStream inputStream = zf.openStream();
-                    OutputStream os = IOProviderFactory
-                            .getOutputStream(outFile)) {
+                try (InputStream inputStream = zf.openStream();
+                        OutputStream os = IOProviderFactory
+                                .getOutputStream(outFile)) {
                     FileSystemUtils.copy(inputStream, os);
                 }
             }

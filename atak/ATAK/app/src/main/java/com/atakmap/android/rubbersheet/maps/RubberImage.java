@@ -127,6 +127,10 @@ public class RubberImage extends AbstractSheet {
             float top = (mHeight - height) / 2;
             float bottom = top + height;
 
+            // XXX - this logic could probably be effected by creating a scene
+            //       model that is derived from current, without rotation, then
+            //       performing raycast over available terrain tiles
+
             mv.getMapController().rotateTo(0, false);
             data.points = new GeoPoint[] {
                     mv.inverse(left, top, AtakMapView.InverseMode.RayCast)

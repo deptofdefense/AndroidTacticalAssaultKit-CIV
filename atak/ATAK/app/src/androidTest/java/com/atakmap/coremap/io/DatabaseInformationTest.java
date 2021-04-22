@@ -35,8 +35,6 @@ public class DatabaseInformationTest {
         assertEquals(options, info.options);
     }
 
-
-
     @Test
     public void memoryUri() {
         final Uri uri = Uri.parse("memory://");

@@ -8,13 +8,17 @@ import com.atakmap.coremap.maps.coords.MGRSPoint;
 import com.atakmap.coremap.maps.coords.MutableMGRSPoint;
 import com.atakmap.coremap.maps.coords.UTMPoint;
 import com.atakmap.coremap.maps.coords.Vector2D;
+import com.atakmap.map.Globe;
 import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
+import com.atakmap.math.MathUtils;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLText;
+import com.atakmap.util.DirectExecutorService;
 
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 
@@ -36,18 +40,29 @@ class GLZoneRegion {
     }
 
     public void draw(final GLMapSurface surface, GLMapView ortho, float red,
-            float green, float blue) {
-        boolean drawLabel = true;
+            float green, float blue, int renderPass) {
+
+        // XXX - ideally we would only render label during sprites pass, but
+        //       that would require occlusion detection so we can turn off
+        //       depth test if the anchor point is visible
+
+        boolean drawLabel = MathUtils.hasBits(renderPass,
+                GLMapView.RENDER_PASS_SURFACE);
 
         // only draw if close enough
-        final double mapScaleReciprocal = (1.0d / ortho.drawMapScale);
+        final double mapScaleReciprocal = (1.0d /
+                Globe.getMapScale(ortho.currentScene.scene.dpi,
+                        ortho.currentScene.drawMapResolution));
         if (mapScaleReciprocal < (2100000 * 2 * Math.PI)) {
-            if (_grid == null && _pendingGrid == null) {
+            if (MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SURFACE)
+                    && _grid == null && _pendingGrid == null) {
                 Callable<GLGridTile[][]> loadJob = new Callable<GLGridTile[][]>() {
                     @Override
                     public GLGridTile[][] call() {
                         try {
-                            return _genTileGrid(_south, _west, _north, _east);
+                            return _genTileGrid(_south, _west, _north, _east,
+                                    _genGridTileExecutor,
+                                    _segmentLabelsExecutor);
                         } finally {
                             surface.requestRender();
                         }
@@ -55,7 +70,9 @@ class GLZoneRegion {
                 };
                 FutureTask<GLGridTile[][]> task = new FutureTask<>(
                         loadJob);
-                surface.getBackgroundExecutor().execute(task);
+                if (_genGridTileExecutor == null)
+                    _genGridTileExecutor = surface.getBackgroundExecutor();
+                _genGridTileExecutor.execute(task);
                 _pendingGrid = task;
             }
 
@@ -76,7 +93,8 @@ class GLZoneRegion {
                 for (GLGridTile[] a_grid : _grid) {
                     for (GLGridTile t : a_grid) {
                         if (t.inView(ortho)) {
-                            t.drawOrtho(surface, ortho, red, green, blue);
+                            t.drawOrtho(surface, ortho, red, green, blue,
+                                    renderPass);
                         }
                     }
                 }
@@ -98,21 +116,27 @@ class GLZoneRegion {
             }
 
             // draw labels only if too far out
-            GLES20FixedPipeline.glPushMatrix();
-            ortho.forward(new GeoPoint((_south + _north) / 2d,
-                    (_west + _east) / 2d), ortho.scratch.pointF);
-            float xoffset = ortho.scratch.pointF.x
-                    - _glText.getStringWidth(_text) / 2;
-            float yoffset = ortho.scratch.pointF.y - _glText.getStringHeight()
-                    / 2;
-            GLES20FixedPipeline.glTranslatef(xoffset, yoffset, 0f);
-            _glText.draw(_text, red, green, blue, 1.0f);
-            GLES20FixedPipeline.glPopMatrix();
+            ortho.scratch.geo.set((_south + _north) / 2d,
+                    (_west + _east) / 2d);
+            ortho.forward(ortho.scratch.geo, ortho.scratch.pointD);
+            if (ortho.scratch.pointD.z < 1f) {
+                float xoffset = (float) ortho.scratch.pointD.x
+                        - _glText.getStringWidth(_text) / 2;
+                float yoffset = (float) ortho.scratch.pointD.y
+                        - _glText.getStringHeight()
+                                / 2;
+                GLES20FixedPipeline.glPushMatrix();
+                GLES20FixedPipeline.glTranslatef(xoffset, yoffset,
+                        (float) ortho.scratch.pointD.z);
+                _glText.draw(_text, red, green, blue, 1.0f);
+                GLES20FixedPipeline.glPopMatrix();
+            }
         }
     }
 
     private static GLGridTile[][] _genTileGrid(double south, double west,
-            double north, double east) {
+            double north, double east,
+            Executor genTileGridExecutor, Executor segmentLabelsExecutor) {
         //Log.d(TAG, "S: " + south + " W: " + west + " N: " + north + " E: "
         //        + east);
         ArrayList<GLGridTile[]> grid = new ArrayList<>();
@@ -141,7 +165,7 @@ class GLZoneRegion {
 
         while (lat < north) {
             row = _genTileRow(new MutableMGRSPoint(minRef), west, east, south,
-                    north);
+                    north, genTileGridExecutor, segmentLabelsExecutor);
             if (row.length == 0) {
                 break;
             }
@@ -192,7 +216,8 @@ class GLZoneRegion {
     }
 
     private static GLGridTile[] _genTileRow(MutableMGRSPoint currRef,
-            double west, double east, double south, double north) {
+            double west, double east, double south, double north,
+            Executor genGridTileExecutor, Executor segmentLabelExecutor) {
 
         double lng = west;
 
@@ -237,6 +262,12 @@ class GLZoneRegion {
             GLGridTile clipped = _clipTile(t, south, west, north, east);
 
             if (clipped != null) {
+                // fill in on background thread based on actual to reduce per-frame overhead
+                clipped._genGridTileExecutor = genGridTileExecutor;
+                clipped._segmentLabelsExecutor = segmentLabelExecutor;
+                segmentLabelExecutor
+                        .execute(new GLGridTile.SegmentLabelResolver(clipped));
+
                 row.add(clipped);
             }
         }
@@ -253,12 +284,14 @@ class GLZoneRegion {
     private final String _text;
     private GLGridTile[][] _grid;
     private Future<GLGridTile[][]> _pendingGrid;
-    private final double _south;
-    private final double _west;
-    private final double _north;
-    private final double _east;
+    final double _south;
+    final double _west;
+    final double _north;
+    final double _east;
     int gridX, gridY;
     boolean mark;
     GLZoneRegion next;
     GLZoneRegion prev;
+    Executor _genGridTileExecutor;
+    Executor _segmentLabelsExecutor = new DirectExecutorService();
 }

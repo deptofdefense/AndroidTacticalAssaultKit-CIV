@@ -1,3 +1,4 @@
+
 package com.atakmap.android.model.opengl;
 
 import android.graphics.Bitmap;
@@ -19,7 +20,7 @@ public class GLModelCaptureCache {
 
     // Temporary storage for render captures, so we can read from a file
     // instead of capturing every time
-    private static final File RENDER_CACHE_DIR = FileSystemUtils.getItem(
+    public static final File RENDER_CACHE_DIR = FileSystemUtils.getItem(
             FileSystemUtils.TMP_DIRECTORY + "/model_captures");
 
     private final String _subPath;

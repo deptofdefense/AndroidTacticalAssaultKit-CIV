@@ -546,12 +546,6 @@ public class IOProviderFactoryTest extends ATAKInstrumentedTest {
         }
     }
 
-
-
-
-
-
-
     final static class ProviderRegistration implements AutoCloseable {
         final IOProvider provider;
 

@@ -14,6 +14,7 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.app.R;
+import com.atakmap.coremap.conversions.AreaUtilities;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.cot.event.CotPoint;
 import com.atakmap.coremap.log.Log;
@@ -372,4 +373,10 @@ public class DrawingShape extends EditablePolyline implements ParentMapItem {
 
         return cotEvent;
     }
+
+    @Override
+    public double getArea() {
+        return AreaUtilities.calcShapeArea(getPoints());
+    }
+
 }

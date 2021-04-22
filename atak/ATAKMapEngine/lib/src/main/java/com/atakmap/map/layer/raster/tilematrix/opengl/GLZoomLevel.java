@@ -47,6 +47,8 @@ public class GLZoomLevel implements GLMapRenderable2, GLMapBatchable2 {
      * tiles at this zoom level.
      */
     public int tileMeshSubdivisions;
+
+    private int lastPumpDrawn;
     
     public GLZoomLevel(GLZoomLevel prev, GLTiledLayerCore core, TileMatrix.ZoomLevel lod) {
         this.previous = prev;
@@ -74,6 +76,8 @@ public class GLZoomLevel implements GLMapRenderable2, GLMapBatchable2 {
         final int nty = maxTile.y - minTile.y + 1;
         
         this.tileMeshSubdivisions = (int)Math.ceil((double)GLTileMesh.estimateSubdivisions(this.core.fullExtentMaxLat, this.core.fullExtentMinLng, this.core.fullExtentMinLat, this.core.fullExtentMinLng) / (double)Math.max(ntx, nty));
+
+        this.lastPumpDrawn = -1;
     }
 
     @Override
@@ -89,7 +93,9 @@ public class GLZoomLevel implements GLMapRenderable2, GLMapBatchable2 {
 
             return;
         }
-        
+
+        this.lastPumpDrawn = view.currentPass.renderPump;
+
         final double isectMinLat = Math.max(core.fullExtentMinLat, view.southBound);
         final double isectMinLng = Math.max(core.fullExtentMinLng, view.westBound);
         final double isectMaxLat = Math.min(core.fullExtentMinLat, view.northBound);
@@ -120,8 +126,6 @@ public class GLZoomLevel implements GLMapRenderable2, GLMapBatchable2 {
                                                       projIsectMinY);
         maxPatch.x /= patchCols;
         maxPatch.y /= patchRows;
-                
-        Map<Integer, GLTilePatch> releasable = new HashMap<Integer, GLTilePatch>(patches);
 
         for(int patchY = minPatch.y; patchY <= maxPatch.y; patchY++) {
             if(patchY < patchesGridOffsetY || patchY >= (patchesGridOffsetY+numPatchesY))
@@ -145,33 +149,29 @@ public class GLZoomLevel implements GLMapRenderable2, GLMapBatchable2 {
                 patch.batch(view, batch, renderPass);
             }
         }
-        
-        // release any patches not in view
-        for(Map.Entry<Integer, GLTilePatch> entry : releasable.entrySet()) {
-            if(entry.getValue().release(false))
-                patches.remove(entry.getKey());
-        }
     }
 
     @Override
     public void draw(GLMapView view, int renderPass) {
-        if(!MathUtils.hasBits(renderPass, this.getRenderPass()))
+        if (!MathUtils.hasBits(renderPass, this.getRenderPass()))
             return;
 
         // compute patch geo intersect with view
-        if(!Rectangle.intersects(core.fullExtentMinLng, core.fullExtentMinLat,
-                                 core.fullExtentMaxLng, core.fullExtentMaxLat,
-                                 view.westBound, view.southBound,
-                                 view.eastBound, view.northBound)) {
+        if (!Rectangle.intersects(core.fullExtentMinLng, core.fullExtentMinLat,
+                core.fullExtentMaxLng, core.fullExtentMaxLat,
+                view.westBound, view.southBound,
+                view.eastBound, view.northBound)) {
 
             return;
         }
-        
+
+        this.lastPumpDrawn = view.currentPass.renderPump;
+
         final double isectMinLat = Math.max(core.fullExtentMinLat, view.southBound);
         final double isectMinLng = Math.max(core.fullExtentMinLng, view.westBound);
         final double isectMaxLat = Math.min(core.fullExtentMaxLat, view.northBound);
         final double isectMaxLng = Math.min(core.fullExtentMaxLng, view.eastBound);
-        
+
         // transform patch intersect to proj
         view.scratch.geo.set(isectMinLat, isectMinLng);
         core.proj.forward(view.scratch.geo, view.scratch.pointD);
@@ -184,55 +184,45 @@ public class GLZoomLevel implements GLMapRenderable2, GLMapBatchable2 {
 
         // calculate tiles in view
         Point minPatch = TileMatrix.Util.getTileIndex(core.matrix.getOriginX(),
-                                                      core.matrix.getOriginY(),
-                                                      info,
-                                                      projIsectMinX,
-                                                      projIsectMaxY);
+                core.matrix.getOriginY(),
+                info,
+                projIsectMinX,
+                projIsectMaxY);
         minPatch.x /= patchCols;
         minPatch.y /= patchRows;
         Point maxPatch = TileMatrix.Util.getTileIndex(core.matrix.getOriginX(),
-                                                      core.matrix.getOriginY(),
-                                                      info,
-                                                      projIsectMaxX,
-                                                      projIsectMinY);
+                core.matrix.getOriginY(),
+                info,
+                projIsectMaxX,
+                projIsectMinY);
         maxPatch.x /= patchCols;
         maxPatch.y /= patchRows;
 
-        Map<Integer, GLTilePatch> releasable = new HashMap<Integer, GLTilePatch>(patches);
-
-        for(int patchY = minPatch.y; patchY <= maxPatch.y; patchY++) {
-            if(patchY < patchesGridOffsetY || patchY >= (patchesGridOffsetY+numPatchesY))
+        for (int patchY = minPatch.y; patchY <= maxPatch.y; patchY++) {
+            if (patchY < patchesGridOffsetY || patchY >= (patchesGridOffsetY + numPatchesY))
                 continue;
-            for(int patchX = minPatch.x; patchX <= maxPatch.x; patchX++) {
-                if(patchX < patchesGridOffsetX || patchX >= (patchesGridOffsetX+numPatchesX))
+            for (int patchX = minPatch.x; patchX <= maxPatch.x; patchX++) {
+                if (patchX < patchesGridOffsetX || patchX >= (patchesGridOffsetX + numPatchesX))
                     continue;
-                
-                int idx = ((patchY-patchesGridOffsetY)*numPatchesX) + (patchX-patchesGridOffsetX); 
+
+                int idx = ((patchY - patchesGridOffsetY) * numPatchesX) + (patchX - patchesGridOffsetX);
                 GLTilePatch patch = this.patches.get(idx);
-                if(patch == null) {
+                if (patch == null) {
                     // XXX - should clamp number of patches against full extent?
                     patch = new GLTilePatch(core,
                             this,
-                            patchX*patchCols,
-                            patchY*patchRows,
+                            patchX * patchCols,
+                            patchY * patchRows,
                             patchCols, patchRows);
                     patches.put(idx, patch);
-                } else {
-                    releasable.remove(idx);
                 }
 
                 patch.draw(view, renderPass);
             }
         }
-        
-        // release any patches not in view
-        for(Map.Entry<Integer, GLTilePatch> entry : releasable.entrySet()) {
-            if(entry.getValue().release(false))
-                patches.remove(entry.getKey());
-        }
     }
 
-    boolean release(boolean unusedOnly) {
+    boolean release(boolean unusedOnly, int renderPump) {
         if(!unusedOnly) {
             for(GLTilePatch patch : this.patches.values()) {
                 patch.release();
@@ -243,7 +233,7 @@ public class GLZoomLevel implements GLMapRenderable2, GLMapBatchable2 {
             Iterator<GLTilePatch> iter = this.patches.values().iterator();
             while(iter.hasNext()) {
                 GLTilePatch patch = iter.next();
-                if(patch.release(unusedOnly))
+                if(patch.release(unusedOnly, renderPump))
                     iter.remove();
             }
             return patches.isEmpty();
@@ -252,7 +242,7 @@ public class GLZoomLevel implements GLMapRenderable2, GLMapBatchable2 {
 
     @Override
     public void release() {
-        this.release(false);
+        this.release(false, -1);
     }
 
     @Override
@@ -265,7 +255,7 @@ public class GLZoomLevel implements GLMapRenderable2, GLMapBatchable2 {
      * live tiles intersecting the region or have tiles whose textures are
      * cached intersecting the region.
      * 
-     * @param patches
+     * @param tiles
      * @param minX
      * @param minY
      * @param maxX

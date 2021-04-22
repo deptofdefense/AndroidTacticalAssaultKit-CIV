@@ -110,8 +110,8 @@ public class TrafficRecorder implements Runnable {
         long filelength = 0;
 
         try (FileOutputStream fos = IOProviderFactory.getOutputStream(file);
-             OutputStream os = IOProviderFactory.getOutputStream(index);
-             PrintWriter idxos = new PrintWriter(os)) {
+                OutputStream os = IOProviderFactory.getOutputStream(index);
+                PrintWriter idxos = new PrintWriter(os)) {
 
             while (!cancelled) {
                 socket.receive(packet);

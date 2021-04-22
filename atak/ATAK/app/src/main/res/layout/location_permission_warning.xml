@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+     <ScrollView
+        android:layout_width="wrap_content"
+        android:layout_weight="1"
+        android:layout_height="0dp"
+        android:fadeScrollbars="false" >
+
+          <LinearLayout
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:orientation="vertical">
+               <TextView
+                   android:layout_width="match_parent"
+                   android:layout_height="wrap_content"
+                   android:text="@string/location_perm_warning_1"
+                   android:textColor="@color/white"
+                   android:padding="6dp"
+                   android:textSize="14sp"/>
+
+
+               <TextView
+                   android:layout_width="match_parent"
+                   android:layout_height="wrap_content"
+                   android:text="@string/location_perm_warning_2"
+                   android:textStyle="bold"
+                   android:textColor="@color/red"
+                   android:padding="6dp"
+                   android:textSize="14sp"/>
+
+
+               <TextView
+                   android:layout_width="match_parent"
+                   android:layout_height="wrap_content"
+                   android:textStyle="bold"
+                   android:text="@string/location_perm_warning_chance1"
+                   android:textColor="@color/white"
+                   android:textSize="16sp"/>
+
+               <ImageView
+                   android:layout_width="match_parent"
+                   android:layout_height="wrap_content"
+                   android:src="@drawable/location_setting_chance1"
+                   android:padding="5dp"
+                   android:textSize="16sp"/>
+
+               <TextView
+                   android:layout_width="match_parent"
+                   android:layout_height="wrap_content"
+                   android:textStyle="bold"
+                   android:text="@string/location_perm_warning_chance2"
+                   android:textColor="@color/white"
+                   android:textSize="16sp"/>
+
+
+               <ImageView
+                   android:layout_width="match_parent"
+                   android:layout_height="wrap_content"
+                   android:src="@drawable/location_setting_chance2"
+                   android:padding="5dp"
+                   android:textSize="16sp"/>
+
+               <TextView
+                   android:layout_width="match_parent"
+                   android:layout_height="wrap_content"
+                   android:text="@string/select_with_colon"
+                   android:textColor="@color/white"
+                   android:textSize="16sp"/>
+
+               <ImageView
+                   android:layout_width="match_parent"
+                   android:layout_height="wrap_content"
+                   android:src="@drawable/location_permission_step3"
+                   android:padding="5dp"
+                   android:textSize="16sp"/>
+          </LinearLayout>
+
+     </ScrollView>
+</LinearLayout>

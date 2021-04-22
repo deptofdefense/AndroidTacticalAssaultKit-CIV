@@ -171,6 +171,8 @@ namespace TAK {
 			 */
 			class Worker {
 			public:
+				ENGINE_API Worker() NOTHROWS;
+
 				ENGINE_API virtual ~Worker() NOTHROWS;
 
 				/**
@@ -179,6 +181,10 @@ namespace TAK {
 				 * @param work the work to be scheduled
 				 */
 				ENGINE_API virtual TAKErr scheduleWork(std::shared_ptr<Work> work) NOTHROWS = 0;
+
+			private:
+				friend ENGINE_API uint64_t Worker_getWorkerId(const Worker& worker) NOTHROWS;
+				uint64_t worker_id_;
 			};
 
 			/**
@@ -204,6 +210,30 @@ namespace TAK {
 				ENGINE_API virtual TAKErr interrupt() NOTHROWS = 0;
 			};
 
+			/**
+			 * Get the ID of the worker (0 is not a valid ID)
+			 */
+			ENGINE_API uint64_t Worker_getWorkerId(const Worker& worker) NOTHROWS;
+
+			/**
+			 * Get the worker ID of the current executing worker (0 is not a valid ID).
+			 */
+			ENGINE_API uint64_t Worker_getCurrentWorkerId() NOTHROWS;
+
+			/**
+			 *
+			 */
+			ENGINE_API TAKErr Worker_allocWorkerLocalStorageSlot(size_t* result) NOTHROWS;
+
+			/**
+			 *
+			 */
+			ENGINE_API TAKErr Worker_getWorkerLocalStorage(void** ptr, size_t slot) NOTHROWS;
+
+			/**
+			 *
+			 */
+			ENGINE_API TAKErr Worker_setWorkerLocalStorage(size_t slot, void* ptr) NOTHROWS;
 
 			/**
 			 * Create a worker backed by a single thread

@@ -156,8 +156,8 @@ public final class QueryUserTracksOperation extends HTTPOperation {
             Log.d(TAG,
                     "processing response into file: " + temp.getAbsolutePath());
 
-            try(OutputStream fos = IOProviderFactory.getOutputStream(temp);
-                InputStream in = resEntity.getContent()) {
+            try (OutputStream fos = IOProviderFactory.getOutputStream(temp);
+                    InputStream in = resEntity.getContent()) {
                 // stream in content, keep user notified on progress
                 builder.setProgress(100, 1, false);
                 if (notifyManager != null) {

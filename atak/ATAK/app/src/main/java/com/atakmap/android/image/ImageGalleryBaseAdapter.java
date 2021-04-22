@@ -477,7 +477,7 @@ public abstract class ImageGalleryBaseAdapter
                 raf.setLength(length + 1);
                 raf.setLength(length);
             } finally {
-                IoUtils.close(raf,TAG,"failed to close the file");
+                IoUtils.close(raf, TAG, "failed to close the file");
             }
         }
     }

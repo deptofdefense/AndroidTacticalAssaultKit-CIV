@@ -39,7 +39,7 @@ namespace TAK {
                     void start() NOTHROWS;
                     void stop() NOTHROWS;
                     int getRenderPass() NOTHROWS;
-                    void draw(const Core::GLMapView2 &view, const int renderPass) NOTHROWS;
+                    void draw(const Core::GLGlobeBase &view, const int renderPass) NOTHROWS;
                     void release() NOTHROWS;
                 public :
                     Util::TAKErr getControl(void **ctrl, const char *type) NOTHROWS;

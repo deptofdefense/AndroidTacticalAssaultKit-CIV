@@ -43,6 +43,7 @@ namespace
         jclass id;
         jfieldID pointer;
         jmethodID ctor;
+        jmethodID init;
     } MapSceneModel_class;
     struct
     {
@@ -178,6 +179,22 @@ TAKErr TAKEngineJNI::Interop::Core::Interop_marshal(Java::JNILocalRef &value, JN
     MapSceneModel2Ptr retval(new MapSceneModel2(cmodel), Memory_deleter_const<MapSceneModel2>);
     Java::JNILocalRef mpointer(env, NewPointer(&env, std::move(retval)));
     value = Java::JNILocalRef(env, env.NewObject(MapSceneModel_class.id, MapSceneModel_class.ctor, mpointer.release(), NULL));
+    return TE_Ok;
+}
+TAKErr TAKEngineJNI::Interop::Core::Interop_marshal(jobject value, JNIEnv &env, const MapSceneModel2 &cmodel) NOTHROWS
+{
+    if(!value)
+        return TE_InvalidArg;
+    if(!checkInit(env))
+        return TE_IllegalState;
+    Java::JNILocalRef mpointer(env, env.GetObjectField(value, MapSceneModel_class.pointer));
+    if(!mpointer)
+        return TE_IllegalState;
+    MapSceneModel2 *cref = Pointer_get<MapSceneModel2>(env, mpointer);
+    if(!cref)
+        return TE_IllegalState;
+    *cref = cmodel;
+    env.CallVoidMethod(value, MapSceneModel_class.init);
     return TE_Ok;
 }
 TAKErr TAKEngineJNI::Interop::Core::Interop_marshal(std::shared_ptr<TAK::Engine::Core::MapSceneModel2> &value, JNIEnv &env, jobject mmodel) NOTHROWS
@@ -334,6 +351,7 @@ namespace
         MapSceneModel_class.id = ATAKMapEngineJNI_findClass(&env, "com/atakmap/map/MapSceneModel");
         MapSceneModel_class.pointer = env.GetFieldID(MapSceneModel_class.id, "pointer", "Lcom/atakmap/interop/Pointer;");
         MapSceneModel_class.ctor = env.GetMethodID(MapSceneModel_class.id, "<init>", "(Lcom/atakmap/interop/Pointer;Ljava/lang/Object;)V");
+        MapSceneModel_class.init = env.GetMethodID(MapSceneModel_class.id, "init", "()V");
 
         NativeLayer_class.id = ATAKMapEngineJNI_findClass(&env, "com/atakmap/map/layer/NativeLayer");
         NativeLayer_class.pointer = env.GetFieldID(NativeLayer_class.id, "pointer", "Lcom/atakmap/interop/Pointer;");

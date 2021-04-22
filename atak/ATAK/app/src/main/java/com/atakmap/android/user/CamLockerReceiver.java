@@ -5,7 +5,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.PointF;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.widget.Toast;
@@ -28,6 +27,11 @@ import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.AtakMapController;
+import com.atakmap.map.CameraController;
+import com.atakmap.map.MapRenderer2;
+import com.atakmap.map.MapRenderer3;
+import com.atakmap.map.MapSceneModel;
+import com.atakmap.map.elevation.ElevationManager;
 
 public class CamLockerReceiver extends BroadcastReceiver implements
         MapEventDispatcher.MapEventDispatchListener,
@@ -37,10 +41,9 @@ public class CamLockerReceiver extends BroadcastReceiver implements
 
     public static final String TAG = "CamLockerReceiver";
 
-    private final static double BOTTOM_20_PERCENT = 3.7d / 5d; // a little shy of 20 % because we don't want the
-    // offscreen indicators to be obstructed.
+    private final static double BOTTOM_LANDSCAPE_PERCENT = .85d;
+    private final static double BOTTOM_PORTRAIT_PERCENT = .90d;
 
-    private final static double BOTTOM_40_PERCENT = 6d / 10d;
     public static final String TOGGLE_LOCK = "com.atakmap.android.maps.TOGGLE_LOCK";
     public static final String TOGGLE_LOCK_LONG_CLICK = "com.atakmap.android.maps.TOGGLE_LOCK_LONG_CLICK";
     public static final String LOCK_CAM = "com.atakmap.android.map.action.LOCK_CAM";
@@ -297,41 +300,64 @@ public class CamLockerReceiver extends BroadcastReceiver implements
             return;
         }
         if (!suppressSnapback()) {
-
-            GeoPoint restingPoint;
-            if (!disableFloatToBottom && trackupMode
-                    && _mapView.getSelfMarker().getUID()
-                            .compareTo(
-                                    item.getUID()) == 0
-                    && item.getMetaBoolean("driving", false)) {
-
-                // adjust the point to the bottom 20% of the screen
-                final PointF tgtPt = _mapView.forward(item.getPoint());
-
-                if (_mapView.isPortrait())
-                    tgtPt.y -= (ctrl.getFocusPoint().y - (_mapView
-                            .getDefaultActionBarHeight() / 2f))
-                            * BOTTOM_40_PERCENT;
-                else
-                    tgtPt.y -= (ctrl.getFocusPoint().y - (_mapView
-                            .getDefaultActionBarHeight() / 2f))
-                            * BOTTOM_20_PERCENT;
-
-                restingPoint = _mapView.inverse(tgtPt.x, tgtPt.y,
-                        MapView.InverseMode.RayCast).get();
-            } else {
-                // the resting point is the center of the screen
-                restingPoint = item.getPoint();
-            }
-
-            final GeoPoint center = _mapView.getPoint().get();
+            MapSceneModel sm = _mapView.getRenderer3().getMapSceneModel(false,
+                    MapRenderer2.DisplayOrigin.UpperLeft);
+            GeoPoint focuslla = GeoPoint.createMutable();
+            float focusx = sm.focusx;
+            float focusy = sm.focusy;
             if (forceCenter) {
-                ctrl.panTo(center, false, false);
-                touch.setFreeForm3DPoint(center);
+                sm.mapProjection.inverse(sm.camera.target, focuslla);
             } else {
-                ctrl.panTo(restingPoint, true, false);
-                touch.setFreeForm3DPoint(restingPoint);
+                focuslla.set(item.getPoint());
+                if (!disableFloatToBottom && trackupMode
+                        && _mapView.getSelfMarker().getUID()
+                                .compareTo(
+                                        item.getUID()) == 0
+                        && item.getMetaBoolean("driving", false)) {
+
+                    // XXX - If marker altitude is below terrain, this will
+                    //       have the effect of shifting the marker "up" the
+                    //       screen. Checking for the local elevation and
+                    //       adjusting the item altitude does effectively
+                    //       position the point at the desired offset HOWEVER
+                    //       other code that may be manipulating camera (e.g.
+                    //       `LocationMapComponent` performing trackup
+                    //       rotation) will not know about the adjusted
+                    //       location. This will cause the map to jitter
+                    //       between updates operating at the point at true
+                    //       altitude and the point at adjusted altitude. For
+                    //       that reason, I am leaving this workaround disabled
+                    //       for the time being.
+                    if (false) {
+                        double localEl = ElevationManager.getElevation(
+                                focuslla.getLatitude(), focuslla.getLongitude(),
+                                null);
+                        if (Double.isNaN(localEl))
+                            localEl = 0d;
+                        if (focuslla.getAltitude() < localEl)
+                            focuslla.set(localEl);
+                    }
+
+
+                    if (_mapView.isPortrait())
+                        focusy = sm.height * (float) BOTTOM_PORTRAIT_PERCENT;
+                    else
+                        focusy = sm.height * (float) BOTTOM_LANDSCAPE_PERCENT;
+                }
             }
+
+            // no notification
+            CameraController.Interactive.panTo(
+                    _mapView.getRenderer3(),
+                    focuslla,
+                    focusx,
+                    focusy,
+                    MapRenderer3.CameraCollision.AdjustCamera,
+                    !forceCenter);
+
+            // during pinch zoom, the self marker should not attempt to center when driving.
+            touch.setFreeForm3DPoint(null);
+            //touch.setFreeForm3DPoint(focuslla);
         }
     }
 

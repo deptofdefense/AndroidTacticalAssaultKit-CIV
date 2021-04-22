@@ -1,7 +1,9 @@
 
 package com.atakmap.comms.app;
 
+import com.atakmap.android.maps.MapView;
 import com.atakmap.android.metrics.activity.MetricActivity;
+import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.comms.NetConnectString;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -25,6 +27,7 @@ import com.atakmap.android.gui.ImportFileBrowserDialog;
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.app.R;
 import com.atakmap.comms.CotServiceRemote;
+import com.atakmap.comms.NetworkUtils;
 import com.atakmap.comms.TAKServer;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
@@ -82,7 +85,12 @@ public class AddNetInfoActivity extends MetricActivity {
         final String addressText = getAddress();
 
         if (FileSystemUtils.isEmpty(addressText)) {
-            String message = "Address is invalid";
+            String message = getString(R.string.address_blank_error);
+            showErrorDialog(message);
+            return null;
+        } else if (!NetworkUtils.isValid(addressText)) {
+            String message = String.format(
+                    getString(R.string.address_invalid_error), addressText);
             showErrorDialog(message);
             return null;
         }
@@ -643,9 +651,9 @@ public class AddNetInfoActivity extends MetricActivity {
                         .sanitizeWithSpacesAndSlashes(FileSystemUtils.getRoot()
                                 + "/cert/" + description + "_clientCert.p12");
 
-                try(FileOutputStream fos = IOProviderFactory
+                try (FileOutputStream fos = IOProviderFactory
                         .getOutputStream(new File(absolutePath));
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 
                     if (clientCertificate != null) {
                         baos.write(clientCertificate);
@@ -710,13 +718,18 @@ public class AddNetInfoActivity extends MetricActivity {
 
         File certDir = FileSystemUtils.getItem(atakSubdir);
 
-        final String directory;
-
-        if (certDir != null && IOProviderFactory.exists(certDir)
-                && IOProviderFactory.isDirectory(certDir))
-            directory = certDir.getAbsolutePath();
-        else
-            directory = Environment.getExternalStorageDirectory().getPath();
+        String directory;
+        if (IOProviderFactory.isDefault()) {
+            if (certDir != null && IOProviderFactory.exists(certDir)
+                    && IOProviderFactory.isDirectory(certDir)) {
+                directory = certDir.getAbsolutePath();
+            } else {
+                directory = Environment.getExternalStorageDirectory().getPath();
+            }
+        } else {
+            directory = ATAKUtilities
+                    .getStartDirectory(MapView.getMapView().getContext());
+        }
 
         ImportFileBrowserDialog.show(getString(R.string.select_space) +
                 title + getString(R.string.to_import),

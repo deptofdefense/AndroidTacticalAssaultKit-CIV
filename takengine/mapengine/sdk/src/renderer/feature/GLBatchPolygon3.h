@@ -5,7 +5,6 @@
 
 #include "feature/Polygon.h"
 #include "renderer/GLRenderBatch.h"
-#include "renderer/map/GLMapView.h"
 #include "renderer/feature/GLBatchLineString3.h"
 
 namespace TAK
@@ -16,7 +15,7 @@ namespace TAK
         {
             namespace Feature
             {
-                class GLBatchPolygon3 :
+                class ENGINE_API GLBatchPolygon3 :
                     public GLBatchLineString3
                 {
                 public:
@@ -45,16 +44,16 @@ namespace TAK
                     virtual Util::TAKErr setGeometryImpl(BlobPtr &&blob, const int type) NOTHROWS override;
 
                 public:
-                    virtual Util::TAKErr draw(const TAK::Engine::Renderer::Core::GLMapView2 &view, const int render_pass, const int vertices_type) NOTHROWS override;
+                    virtual Util::TAKErr draw(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const int render_pass, const int vertices_type) NOTHROWS override;
                 private:
-                    Util::TAKErr drawFillTriangulate(const TAK::Engine::Renderer::Core::GLMapView2 &view, const float *v, const int size) NOTHROWS;
+                    Util::TAKErr drawFillTriangulate(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const float *v, const int size) NOTHROWS;
 
-                    Util::TAKErr drawFillConvex(const TAK::Engine::Renderer::Core::GLMapView2 &view, const float *v, const int size) NOTHROWS;
+                    Util::TAKErr drawFillConvex(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const float *v, const int size) NOTHROWS;
 
-                    Util::TAKErr drawFillStencil(const TAK::Engine::Renderer::Core::GLMapView2 &view, const float *v, const int size) NOTHROWS;
+                    Util::TAKErr drawFillStencil(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const float *v, const int size) NOTHROWS;
 
                 protected:
-                    virtual Util::TAKErr batchImpl(const TAK::Engine::Renderer::Core::GLMapView2 &view, const int render_pass, TAK::Engine::Renderer::GLRenderBatch2 &batch, const int vertices_type, const float *v) NOTHROWS override;
+                    virtual Util::TAKErr batchImpl(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const int render_pass, TAK::Engine::Renderer::GLRenderBatch2 &batch, const int vertices_type, const float *v) NOTHROWS override;
                 };
 
                 typedef std::unique_ptr<GLBatchPolygon3, void(*)(const GLBatchGeometry3 *)> GLBatchPolygon3Ptr;

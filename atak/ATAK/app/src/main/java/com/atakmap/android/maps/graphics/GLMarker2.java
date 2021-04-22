@@ -19,10 +19,12 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.maps.assets.Icon;
 
+import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.AtakMapView;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.RenderContext;
+import com.atakmap.map.layer.feature.Feature.AltitudeMode;
 import com.atakmap.map.opengl.GLMapBatchable2;
 import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
@@ -424,9 +426,10 @@ public class GLMarker2 extends GLPointMapItem2 implements
         float[] pos = getDrawPosition(ortho);
         float xpos = pos[0], ypos = pos[1], zpos = pos[2];
 
-        // if tilted, draw a line segment from the center of the point into the
-        // earth's surface
-        if (ortho.drawTilt > 0d) {
+        // draw a line segment from the center of the point into the earth's
+        // surface
+        if ((ortho.drawTilt > 0d || ortho.scene.camera.perspective)
+                && zpos < 1f) {
             final double terrain = validateLocalElevation(ortho);
             double anchorEl = Math.min(terrain, 0d);
             ortho.scratch.geo.set(
@@ -593,6 +596,9 @@ public class GLMarker2 extends GLPointMapItem2 implements
                     offtx = scale
                             * ((_icon.getWidth() / 2f) - _icon.getAnchorX());
                 }
+            } else if (ortho.drawTilt > 0d) {
+                offy = (offy * -1f) + _textHeight
+                        + _glText.getDescent();
             } else {
                 offy = _glText.getDescent() + _textHeight / 2f;
             }
@@ -617,18 +623,22 @@ public class GLMarker2 extends GLPointMapItem2 implements
         ortho.scratch.geo.set(this.latitude,
                 ortho.idlHelper.wrapLongitude(this.longitude));
 
+        // Altitude mode calculation
+        double alt = altHae;
+        double terrain = validateLocalElevation(ortho);
+        if (!GeoPoint.isAltitudeValid(alt) || altMode == AltitudeMode.ClampToGround)
+            alt = terrain;
+        else if (altMode == AltitudeMode.Relative)
+            alt += terrain;
+
         // Offset the height if the marker has a "height" meta value, which it should have if
         // a shape was extruded in GLPolyline
         double height = this.subject.getHeight();
-        if (!Double.isNaN(height)) {
-            if (!Double.isNaN(altHae))
-                height += altHae;
-            ortho.scratch.geo.set(height);
-        } else if (ortho.drawTilt > 0d)
-            ortho.scratch.geo.set(altHae);
+        if (!Double.isNaN(height))
+            alt += height;
 
-        forward(ortho, ortho.scratch.geo, ortho.scratch.pointD, 0d,
-                validateLocalElevation(ortho));
+        ortho.scratch.geo.set(alt);
+        forward(ortho, ortho.scratch.geo, ortho.scratch.pointD, 0d, terrain);
         float[] pos = {
                 (float) ortho.scratch.pointD.x,
                 (float) ortho.scratch.pointD.y,
@@ -853,9 +863,10 @@ public class GLMarker2 extends GLPointMapItem2 implements
         float[] pos = getDrawPosition(view);
         float xpos = pos[0], ypos = pos[1], zpos = pos[2];
 
-        // if tilted, draw a line segment from the center of the point into the
-        // earth's surface
-        if (view.drawTilt > 0d) {
+        // draw a line segment from the center of the point into the earth's
+        // surface
+        if ((view.drawTilt > 0d || view.scene.camera.perspective)
+                && zpos < 1f) {
             final double terrain = validateLocalElevation(view);
             double anchorEl = Math.min(terrain, 0d);
             view.scratch.geo.set(
@@ -956,6 +967,9 @@ public class GLMarker2 extends GLPointMapItem2 implements
                                 * ((_icon.getWidth() / 2f)
                                         - _icon.getAnchorX());
                     }
+                } else if (view.drawTilt > 0d) {
+                    offy = (offy * -1f) + _textHeight
+                            + _glText.getDescent();
                 } else {
                     offy = _glText.getDescent() + _textHeight / 2f;
                 }

@@ -230,7 +230,8 @@ public class RemoteResource implements Parcelable {
     }
 
     public void setRefreshSeconds(Float refreshSeconds) {
-        setRefreshSeconds(refreshSeconds != null ? refreshSeconds.longValue() : 0L);
+        setRefreshSeconds(
+                refreshSeconds != null ? refreshSeconds.longValue() : 0L);
     }
 
     public long getLastRefreshed() {

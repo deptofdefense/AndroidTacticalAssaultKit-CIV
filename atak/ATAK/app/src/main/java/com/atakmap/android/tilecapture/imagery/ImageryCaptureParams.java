@@ -7,6 +7,9 @@ import java.io.File;
 
 /**
  * Parameters for imagery capture of multiple tiles
+ *
+ * See the {@link TileCaptureParams} super-class for info on
+ * each attribute
  */
 public class ImageryCaptureParams extends TileCaptureParams {
 

@@ -69,6 +69,8 @@ import com.atakmap.coremap.maps.coords.GeoPoint.AltitudeReference;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.map.AtakMapController;
+import com.atakmap.map.CameraController;
+import com.atakmap.map.MapRenderer3;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -1133,9 +1135,11 @@ public class LocationMapComponent extends AbstractMapComponent implements
                                                     final Intent intent = new Intent(
                                                             Settings.ACTION_LOCATION_SOURCE_SETTINGS);
                                                     _mapView.getContext()
-                                                            .startActivity(intent);
+                                                            .startActivity(
+                                                                    intent);
                                                 } catch (ActivityNotFoundException ane) {
-                                                    Log.d(TAG, "no Settings.ACTION_LOCATION_SOURCE_SETTINGS activity found on this device");
+                                                    Log.d(TAG,
+                                                            "no Settings.ACTION_LOCATION_SOURCE_SETTINGS activity found on this device");
                                                 }
                                             }
                                         }, false);
@@ -2036,11 +2040,12 @@ public class LocationMapComponent extends AbstractMapComponent implements
                         || orientationMethod == MapMode.MAGNETIC_UP) {
 
                     if (_locationMarker.getMetaBoolean("camLocked", false)) {
-                        PointF p = _mapView.forward(_locationMarker.getPoint()
-                                .getLatitude(),
-                                _locationMarker.getPoint().getLongitude());
-                        double delta = lastHeading - _mapView.getMapRotation();
-                        ctrl.rotateBy(delta, (int) p.x, (int) p.y, true);
+                        PointF p = _mapView.forward(_locationMarker.getPoint());
+                        CameraController.Interactive.rotateTo(
+                                _mapView.getRenderer3(), lastHeading,
+                                _locationMarker.getPoint(), p.x, p.y,
+                                MapRenderer3.CameraCollision.AdjustCamera,
+                                true);
                     } else {
                         ctrl.rotateTo(lastHeading, true);
                     }

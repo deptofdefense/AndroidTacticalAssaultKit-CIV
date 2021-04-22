@@ -663,12 +663,14 @@ public class ImageDropDownReceiver
                 AlertDialog.Builder b = new AlertDialog.Builder(_context);
                 b.setTitle(R.string.image_overlay_hud);
                 b.setMessage(R.string.image_overlay_warning);
-                b.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        promptMarkupImage();
-                    }
-                });
+                b.setPositiveButton(R.string.yes,
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog,
+                                    int which) {
+                                promptMarkupImage();
+                            }
+                        });
                 b.setNegativeButton(R.string.cancel, null);
                 b.show();
             }
@@ -741,8 +743,6 @@ public class ImageDropDownReceiver
             }
         });
 
-
-
         if (_uid != null) {
             setSelected(_uid);
         }
@@ -811,8 +811,8 @@ public class ImageDropDownReceiver
         i.putExtra("coordinateSystem", "MGRS");
         i.putExtra("altitudeReference", prefs.get("alt_display_pref",
                 "MSL"));
-        i.putExtra("altitudeUnit", prefs.getAltitudeUnits()
-                == Span.METER ? "M" : "FT");
+        i.putExtra("altitudeUnit",
+                prefs.getAltitudeUnits() == Span.METER ? "M" : "FT");
         i.putExtra("northReference", "M");
         promptEditImage(i);
     }
@@ -1192,12 +1192,10 @@ public class ImageDropDownReceiver
         if (ImageContainer.JPEG_FilenameFilter.accept(dir, name)) {
             // Update EXIF image description
             TiffImageMetadata exif = ExifHelper.getExifMetadata(imageFile);
-            if (exif != null) {
-                TiffOutputSet tos = ExifHelper.getExifOutput(exif);
-                if (ExifHelper.updateField(tos,
-                        TiffConstants.TIFF_TAG_IMAGE_DESCRIPTION, newDesc))
-                    ExifHelper.saveExifOutput(tos, imageFile);
-            }
+            TiffOutputSet tos = ExifHelper.getExifOutput(exif);
+            if (ExifHelper.updateField(tos,
+                    TiffConstants.TIFF_TAG_IMAGE_DESCRIPTION, newDesc))
+                ExifHelper.saveExifOutput(tos, imageFile);
         } else if (ImageContainer.NITF_FilenameFilter.accept(dir, name)) {
             // Update NITF file title
             Dataset nitf = GdalLibrary.openDatasetFromFile(imageFile);
@@ -1210,6 +1208,13 @@ public class ImageDropDownReceiver
         }
         HashtagManager.getInstance().updateContent(content,
                 HashtagUtils.extractTags(newDesc));
+        _mapView.post(new Runnable() {
+            @Override
+            public void run() {
+                if (ic != null)
+                    ic.refreshView();
+            }
+        });
     }
 
     //==================================

@@ -14,7 +14,7 @@ namespace TAK
         {
             namespace Feature
             {
-                class GLBatchLineString3 : public GLBatchGeometry3
+                class ENGINE_API GLBatchLineString3 : public GLBatchGeometry3
                 {
                 public :
                     struct Stroke
@@ -102,26 +102,26 @@ namespace TAK
                     virtual Util::TAKErr setGeometryImpl(const atakmap::feature::Geometry &geom) NOTHROWS override;
 
                 public:
-                    virtual Util::TAKErr projectVertices(const float **result, const TAK::Engine::Renderer::Core::GLMapView2 &view, const int vertices_type) NOTHROWS;
+                    virtual Util::TAKErr projectVertices(const float **result, const TAK::Engine::Renderer::Core::GLGlobeBase &view, const int vertices_type) NOTHROWS;
 
                 public:
-                    virtual void draw(const TAK::Engine::Renderer::Core::GLMapView2 &view, const int render_pass) NOTHROWS override;
+                    virtual void draw(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const int render_pass) NOTHROWS override;
 
                     /// <summary>
                     /// Draws the linestring using vertices in the projected map space.
                     /// </summary>
                     /// <param name="view"> </param>
-                    virtual Util::TAKErr draw(const TAK::Engine::Renderer::Core::GLMapView2 &view, const int render_pass, const int vertices_type) NOTHROWS;
+                    virtual Util::TAKErr draw(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const int render_pass, const int vertices_type) NOTHROWS;
 
                 protected:
-                    virtual Util::TAKErr drawImpl(const TAK::Engine::Renderer::Core::GLMapView2 &view, const int render_pass, const float *v, const int size) NOTHROWS;
+                    virtual Util::TAKErr drawImpl(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const int render_pass, const float *v, const int size) NOTHROWS;
 
                 public:
                     virtual void release() NOTHROWS override;
 
-                    virtual Util::TAKErr batch(const TAK::Engine::Renderer::Core::GLMapView2 &view, const int render_pass, TAK::Engine::Renderer::GLRenderBatch2 &batch) NOTHROWS override;
+                    virtual Util::TAKErr batch(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const int render_pass, TAK::Engine::Renderer::GLRenderBatch2 &batch) NOTHROWS override;
 
-                    virtual Util::TAKErr batch(const TAK::Engine::Renderer::Core::GLMapView2 &view, const int render_pass, TAK::Engine::Renderer::GLRenderBatch2 &batch, const int vertices_type) NOTHROWS;
+                    virtual Util::TAKErr batch(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const int render_pass, TAK::Engine::Renderer::GLRenderBatch2 &batch, const int vertices_type) NOTHROWS;
 
                     /// <summary>
                     /// Adds the linestring to the batch using the specified pre-projected
@@ -132,7 +132,7 @@ namespace TAK
                     /// <param name="vertices_type"> </param>
                     /// <param name="v"> </param>
                 protected:
-                    virtual Util::TAKErr batchImpl(const TAK::Engine::Renderer::Core::GLMapView2 &view, const int render_pass, TAK::Engine::Renderer::GLRenderBatch2 &batch, const int vertices_type, const float *v) NOTHROWS;
+                    virtual Util::TAKErr batchImpl(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const int render_pass, TAK::Engine::Renderer::GLRenderBatch2 &batch, const int vertices_type, const float *v) NOTHROWS;
                 protected :
                     virtual Util::TAKErr pushStyle(const atakmap::feature::Style& style) NOTHROWS;
                 };

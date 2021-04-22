@@ -251,13 +251,6 @@ public class RubberModel extends AbstractSheet implements ModelLoader.Callback {
         if (!isTouchable())
             return false;
 
-        // Bounds check (2D only)
-        if (view.getMapTilt() == 0) {
-            GeoBounds hitBox = view.createHitbox(point, getHitRadius(view));
-            if (!hitBox.intersects(_bounds))
-                return false;
-        }
-
         Marker center = getCenterMarker();
         if (center != null && center.testOrthoHit(x, y, point, view))
             return true;

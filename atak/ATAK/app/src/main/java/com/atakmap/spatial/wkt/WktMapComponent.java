@@ -36,13 +36,15 @@ import com.atakmap.map.layer.feature.FeatureLayer;
 import com.atakmap.map.layer.feature.PersistentDataSourceFeatureDataStore;
 import com.atakmap.map.layer.feature.PersistentDataSourceFeatureDataStore2;
 import com.atakmap.map.layer.feature.ogr.OgrFeatureDataSource;
-import com.atakmap.spatial.file.DrwFileDatabase;
+import com.atakmap.spatial.file.FalconViewContentResolver;
+import com.atakmap.spatial.file.FalconViewSpatialDb;
 import com.atakmap.spatial.file.FileDatabase;
+import com.atakmap.spatial.file.GMLContentResolver;
+import com.atakmap.spatial.file.GMLSpatialDb;
 import com.atakmap.spatial.file.GpxContentResolver;
 import com.atakmap.spatial.file.GpxFileSpatialDb;
 import com.atakmap.spatial.file.KmlContentResolver;
 import com.atakmap.spatial.file.KmlFileSpatialDb;
-import com.atakmap.spatial.file.LptFileDatabase;
 import com.atakmap.spatial.file.ShapefileContentResolver;
 import com.atakmap.spatial.file.ShapefileMarshal;
 import com.atakmap.spatial.file.ShapefileSpatialDb;
@@ -95,6 +97,8 @@ public class WktMapComponent extends AbstractMapComponent {
     private void initComponents(Context context, MapView view) {
         FeatureDataSourceContentFactory
                 .register(ShapefileSpatialDb.ZIPPED_SHP_DATA_SOURCE);
+        FeatureDataSourceContentFactory
+                .register(GMLSpatialDb.ZIPPED_GML_DATA_SOURCE);
 
         this.mapView = view;
 
@@ -262,25 +266,29 @@ public class WktMapComponent extends AbstractMapComponent {
         FeatureDataStoreDeepMapItemQuery query = new FeatureDataStoreDeepMapItemQuery(
                 this.layer);
 
-        SpatialDbContentSource contentSource;
+        // KML files
+        addContentSource(context, new KmlFileSpatialDb(this.spatialDb),
+                new KmlContentResolver(view, this.spatialDb), query);
 
-        contentSource = new KmlFileSpatialDb(this.spatialDb);
-        contentSource.setContentResolver(new KmlContentResolver(view,
-                this.spatialDb));
-        this.contentSources.put(contentSource.getType(),
-                new ContentSource(context, contentSource, query));
+        // SHP files
+        addContentSource(context, new ShapefileSpatialDb(this.spatialDb),
+                new ShapefileContentResolver(view, this.spatialDb), query);
 
-        contentSource = new ShapefileSpatialDb(this.spatialDb);
-        contentSource.setContentResolver(new ShapefileContentResolver(view,
-                this.spatialDb));
-        this.contentSources.put(contentSource.getType(),
-                new ContentSource(context, contentSource, query));
+        // GPX files
+        addContentSource(context, new GpxFileSpatialDb(this.spatialDb),
+                new GpxContentResolver(view, this.spatialDb), query);
 
-        contentSource = new GpxFileSpatialDb(this.spatialDb);
-        contentSource.setContentResolver(new GpxContentResolver(view,
-                this.spatialDb));
-        this.contentSources.put(contentSource.getType(),
-                new ContentSource(context, contentSource, query));
+        // GML files
+        addContentSource(context, new GMLSpatialDb(this.spatialDb),
+                new GMLContentResolver(view, this.spatialDb), query);
+
+        // FalconView files
+        FalconViewContentResolver fvResolver = new FalconViewContentResolver(
+                view, this.spatialDb);
+        addContentSource(context, new FalconViewSpatialDb(this.spatialDb,
+                FalconViewSpatialDb.LPT), fvResolver, query);
+        addContentSource(context, new FalconViewSpatialDb(this.spatialDb,
+                FalconViewSpatialDb.DRW), fvResolver, query);
 
         // add the overlays
         for (ContentSource entry : this.contentSources
@@ -307,6 +315,14 @@ public class WktMapComponent extends AbstractMapComponent {
                 detailsDropdownReceiver, i);
         // start background initialization
         this.backgroundInit(this.spatialDb);
+    }
+
+    private void addContentSource(Context context, SpatialDbContentSource src,
+            SpatialDbContentResolver res,
+            FeatureDataStoreDeepMapItemQuery query) {
+        src.setContentResolver(res);
+        this.contentSources.put(src.getType(),
+                new ContentSource(context, src, query));
     }
 
     private void backgroundInit(final DataSourceFeatureDataStore fdb) {
@@ -344,16 +360,6 @@ public class WktMapComponent extends AbstractMapComponent {
                                     MapView.RenderStack.VECTOR_OVERLAYS,
                                     0,
                                     layer);
-                        //TODO do we need a FileDatabaseImporter wrapper like WktImporter?
-
-                        final Context appCtx = mapView.getContext();
-                        FileDatabase db = new LptFileDatabase(appCtx, mapView);
-                        ImporterManager.registerImporter(db);
-                        fileDatabases.add(db);
-
-                        db = new DrwFileDatabase(appCtx, mapView);
-                        ImporterManager.registerImporter(db);
-                        fileDatabases.add(db);
 
                         // TODO: add this back when GeoJson actually parses the files
                         //db = new GeoJsonFileDatabase(appCtx, mapView);

@@ -1,3 +1,4 @@
+
 package com.atakmap.android.layers;
 
 import android.content.BroadcastReceiver;
@@ -239,7 +240,7 @@ public class LayerDownloader extends BroadcastReceiver {
     public GeoBounds getBounds() {
         if (_bounds == null)
             _bounds = GeoBounds.createFromPoints(getPoints(),
-                _mapView.isContinuousScrollEnabled());
+                    _mapView.isContinuousScrollEnabled());
         return _bounds;
     }
 
@@ -267,7 +268,8 @@ public class LayerDownloader extends BroadcastReceiver {
             return _lrPoint;
         GeoBounds b = getBounds();
         if (b.crossesIDL())
-            _lrPoint = new GeoPoint(_bounds.getSouth(), _bounds.getWest() + 360);
+            _lrPoint = new GeoPoint(_bounds.getSouth(),
+                    _bounds.getWest() + 360);
         else
             _lrPoint = new GeoPoint(_bounds.getSouth(), _bounds.getEast());
         return _lrPoint;
@@ -306,7 +308,7 @@ public class LayerDownloader extends BroadcastReceiver {
 
         boolean closed = _shape instanceof DrawingRectangle
                 || MathUtils.hasBits(_shape.getStyle(),
-                Polyline.STYLE_CLOSED_MASK)
+                        Polyline.STYLE_CLOSED_MASK)
                 || points[0].equals(points[points.length - 1]);
 
         // Extrude route by a certain meter distance
@@ -487,9 +489,11 @@ public class LayerDownloader extends BroadcastReceiver {
             if (intent.hasExtra(DownloadAndCacheService.PROGRESS_BAR_SET_MAX)) {
                 _callback.onMaxProgressUpdate(title, intent.getIntExtra(
                         DownloadAndCacheService.PROGRESS_BAR_SET_MAX, 0));
-            } else if (intent.hasExtra(DownloadAndCacheService.PROGRESS_BAR_ADJUST_SECONDARY)) {
+            } else if (intent.hasExtra(
+                    DownloadAndCacheService.PROGRESS_BAR_ADJUST_SECONDARY)) {
                 _callback.onLevelProgressUpdate(title, intent.getIntExtra(
-                        DownloadAndCacheService.PROGRESS_BAR_ADJUST_SECONDARY, 0));
+                        DownloadAndCacheService.PROGRESS_BAR_ADJUST_SECONDARY,
+                        0));
             }
         }
     }

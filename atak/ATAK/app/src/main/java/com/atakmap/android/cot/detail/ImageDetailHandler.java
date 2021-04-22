@@ -110,7 +110,8 @@ class ImageDetailHandler extends CotDetailHandler {
                     uid,
                     _extFromMime(mime));
 
-            try (FileOutputStream fos = IOProviderFactory.getOutputStream(imageFile)) {
+            try (FileOutputStream fos = IOProviderFactory
+                    .getOutputStream(imageFile)) {
                 fos.write(bytes);
             }
         } catch (IOException e) {

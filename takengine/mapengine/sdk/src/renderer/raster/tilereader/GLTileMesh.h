@@ -5,7 +5,7 @@
 #include "math/Matrix2.h"
 #include "math/Point2.h"
 #include "core/GeoPoint2.h"
-#include "renderer/core/GLMapView2.h"
+#include "renderer/core/GLGlobeBase.h"
 
 
 namespace TAK {
@@ -61,7 +61,7 @@ namespace TAK {
                                    atakmap::raster::DatasetProjection *img2lla,
                                    int estimatedSubdivisions);
  
-                    void drawMesh(const Renderer::Core::GLMapView2 &view, int texId, float r, float g, float b, float a);
+                    void drawMesh(const Renderer::Core::GLGlobeBase &view, int texId, float r, float g, float b, float a);
                     void release();
 
                     static int estimateSubdivisions(double ulLat, double ulLng, double lrLat, double lrLng);
@@ -74,7 +74,7 @@ namespace TAK {
                                Math::Point2<double> imgLL, const Math::Matrix2 &img2uv, atakmap::raster::DatasetProjection *img2lla,
                                int estimatedSubdivisions);
                     void validateMesh();
-                    void setLCS(const Renderer::Core::GLMapView2 &view, bool primary);
+                    void setLCS(const Renderer::Core::GLGlobeBase &view, bool primary);
  
                     static int estimateSubdivisions(double x, double y, double width, double height,
                                                     atakmap::raster::DatasetProjection *img2lla);

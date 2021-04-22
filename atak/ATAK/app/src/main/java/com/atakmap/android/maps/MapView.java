@@ -14,6 +14,7 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 
+import com.atakmap.android.devtools.DeveloperTools;
 import com.atakmap.android.elev.dt2.Dt2ElevationModel;
 import com.atakmap.android.items.GLMapItemsDatabaseRenderer;
 import com.atakmap.android.location.LocationMapComponent;
@@ -242,6 +243,10 @@ public class MapView extends AtakMapView {
                 this.setProjection(ECEFProjection.INSTANCE);
             }
         }
+
+        // toggle developer tools per preference
+        prefListener.onSharedPreferenceChanged(preferenceManager,
+                "atakDeveloperTools");
     }
 
     /**
@@ -344,6 +349,20 @@ public class MapView extends AtakMapView {
                         getRenderer().setContinuousRenderEnabled(
                                 sp.getBoolean(key, false));
                         break;
+                    case "atakDeveloperTools":
+                        // install the developer tools on non-release builds
+                        if (!BuildConfig.BUILD_TYPE
+                                .equalsIgnoreCase("release")) {
+                            if (sp.getBoolean(key, false)) {
+                                if (_devtools == null)
+                                    _devtools = new DeveloperTools(
+                                            MapView.this);
+                                overlayManager.addOverlay(_devtools);
+                            } else if (_devtools != null) {
+                                overlayManager.removeOverlay(_devtools);
+                            }
+                        }
+                        break;
                     case "frame_limit":
                         final boolean limitFrameRate = (Short
                                 .parseShort(sp.getString(key, "0")) != 0);
@@ -362,7 +381,6 @@ public class MapView extends AtakMapView {
 
         prefListener.onSharedPreferenceChanged(preferenceManager,
                 "frame_limit");
-
     }
 
     /**
@@ -760,6 +778,8 @@ public class MapView extends AtakMapView {
     private final ConcurrentLinkedQueue<OnKeyListener> _onKeyListener = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<OnGenericMotionListener> _onGenericMotionListener = new ConcurrentLinkedQueue<>();
 
+    private DeveloperTools _devtools;
+
     /**************************************************************************/
 
     // XXX - IMapGroup bridge
@@ -945,7 +965,9 @@ public class MapView extends AtakMapView {
 
         if (Double.isNaN(maximumTilt))
             maximumTilt = ConfigOptions.getOption("atakmapview.maximum-tilt",
-                    75d);
+                    com.atakmap.map.MapSceneModel.isPerspectiveCameraEnabled()
+                            ? 89d
+                            : 75d);
         return maximumTilt;
     }
 
@@ -955,25 +977,7 @@ public class MapView extends AtakMapView {
      * exceeding the current maximum tilt for the system.
      */
     public double getMaxMapTilt(double mapScale) {
-        final double level = (Math.log(156543.034 * Math.cos(0d)
-                / getMapResolution(mapScale)) / Math.log(2));
-
-        final double minTilt = this.getMinMapTilt();
-        final double maxTilt = this.getMaxMapTilt();
-
-        // XXX - derived from https://developers.google.com/android/reference/com/google/android/gms/maps/model/CameraPosition.Builder?hl=fr#tilt(float)
-        if (level < 6d) {
-            return minTilt;
-        } else if (level < 10d) {
-            return 30d;
-        } else if (level < 14d) {
-            return 30d + ((level - 10d) / 4d * 15d / 4d);
-        } else if (level < 15.5d) {
-            return 45d + ((level - 14d)
-                    / 1.5d * (maxTilt - 45) / 1.5d);
-        } else {
-            return maxTilt;
-        }
+        return this.getMaxMapTilt();
     }
 
     @Override

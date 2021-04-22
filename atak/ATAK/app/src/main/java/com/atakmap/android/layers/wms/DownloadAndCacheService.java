@@ -139,23 +139,31 @@ public class DownloadAndCacheService extends IntentService {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent != null)
-            if (intent.getExtras() != null) {
-                if (intent.getExtras().containsKey(CANCEL_DOWNLOAD)) {
-                    if (currentRequest != null)
-                        currentRequest.canceled = true;
-                } else if (intent.getExtras().containsKey(QUEUE_DOWNLOAD)) {
-                    queuedDownloads++;
-                    Log.d(TAG, "tileset added to queue");
-                }
+        if (intent != null) {
+            // Notify download canceled
+            if (intent.hasExtra(CANCEL_DOWNLOAD)) {
+                if (currentRequest != null)
+                    currentRequest.canceled = true;
             }
+
+            // Mark download queued
+            else if (intent.hasExtra(QUEUE_DOWNLOAD)) {
+                queuedDownloads++;
+                Log.d(TAG, "tileset added to queue");
+            }
+        }
 
         return super.onStartCommand(intent, flags, startId);
     }
 
     @Override
     protected void onHandleIntent(Intent intent) {
+        // Download in queue ready
+        if (intent.hasExtra(QUEUE_DOWNLOAD))
+            queueDownload(intent);
+    }
 
+    private void queueDownload(Intent intent) {
         this.upperLeft = intent.getParcelableExtra(UPPERLEFT);
         this.lowerRight = intent.getParcelableExtra(LOWERRIGHT);
         Parcelable[] p = (Parcelable[]) intent.getSerializableExtra(GEOMETRY);
@@ -227,10 +235,7 @@ public class DownloadAndCacheService extends IntentService {
             };
         }
 
-        download(
-                intent.getStringExtra(CACHE_URI),
-                uri,
-                minRes, maxRes);
+        download(intent.getStringExtra(CACHE_URI), uri, minRes, maxRes);
     }
 
     /**

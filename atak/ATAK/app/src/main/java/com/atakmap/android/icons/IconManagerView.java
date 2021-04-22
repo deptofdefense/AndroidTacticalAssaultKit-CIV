@@ -27,6 +27,7 @@ import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.user.icon.Icon2525bPallet;
 import com.atakmap.android.user.icon.SpotMapPallet;
+import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
 import com.atakmap.app.system.ResourceUtil;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -53,8 +54,6 @@ public class IconManagerView extends LinearLayout {
     private ListView _iconsetList;
 
     private SharedPreferences _prefs;
-    private String _lastDirectory = Environment.getExternalStorageDirectory()
-            .getPath();
 
     public IconManagerView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -216,7 +215,9 @@ public class IconManagerView extends LinearLayout {
      */
     protected void importIconSet() {
         ImportFileBrowserDialog.show(
-                getContext().getString(R.string.mapping_dialog), new String[] {
+                getContext().getString(R.string.mapping_dialog),
+                ATAKUtilities.getStartDirectory(_mapView.getContext()),
+                new String[] {
                         "zip"
                 },
                 new ImportFileBrowserDialog.DialogDismissed() {

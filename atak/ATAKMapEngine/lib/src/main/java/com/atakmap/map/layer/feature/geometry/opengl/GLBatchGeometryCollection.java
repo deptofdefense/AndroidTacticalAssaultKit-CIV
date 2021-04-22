@@ -21,6 +21,10 @@ import com.atakmap.opengl.GLRenderBatch2;
 import com.atakmap.util.Collections2;
 
 public class GLBatchGeometryCollection extends GLBatchGeometry {
+    // next four collections are only _mutated_ on the GL thread while holding
+    // the lock on `this`. They may be  _accessed_ on the GL thread without
+    // synchronization; they may be accessed on other threads synchronized on
+    // `this`
     Collection<GLBatchGeometry> points;
     Collection<GLBatchGeometry> lines;
     Collection<GLBatchGeometry> polys;
@@ -68,7 +72,7 @@ public class GLBatchGeometryCollection extends GLBatchGeometry {
     }
     
     @Override
-    public synchronized void draw(GLMapView view) {
+    public void draw(GLMapView view) {
         for(GLBatchGeometry child : collections)
             child.draw(view);
         for(GLBatchGeometry child : polys)
@@ -80,7 +84,7 @@ public class GLBatchGeometryCollection extends GLBatchGeometry {
     }
 
     @Override
-    public synchronized void release() {
+    public void release() {
         for(GLBatchGeometry child : collections)
             child.release();
         for(GLBatchGeometry child : polys)
@@ -124,7 +128,7 @@ public class GLBatchGeometryCollection extends GLBatchGeometry {
     }
 
     @Override
-    public void setAltitudeMode(Feature.AltitudeMode altitudeMode) {
+    public synchronized void setAltitudeMode(Feature.AltitudeMode altitudeMode) {
         for(GLBatchGeometry child : collections)
             child.setAltitudeMode(altitudeMode);
         for(GLBatchGeometry child : polys)
@@ -137,7 +141,7 @@ public class GLBatchGeometryCollection extends GLBatchGeometry {
     }
 
     @Override
-    public void setExtrude(double value) {
+    public synchronized void setExtrude(double value) {
         for(GLBatchGeometry child : collections)
             child.setExtrude(value);
         for(GLBatchGeometry child : polys)
@@ -155,8 +159,9 @@ public class GLBatchGeometryCollection extends GLBatchGeometry {
 
     @Override
     public synchronized void setGeometry(Geometry g, int lod) {
-        GeometryCollection geometry = (GeometryCollection)g;
         this.lod = lod;
+
+        GeometryCollection geometry = (GeometryCollection)g;
 
         Iterator<GLBatchGeometry> pointsIter = points.iterator();
         Iterator<GLBatchGeometry> linesIter = lines.iterator();
@@ -227,30 +232,34 @@ public class GLBatchGeometryCollection extends GLBatchGeometry {
             glchild.subid = idx++;
             if(this.style != null)
                 glchild.setStyle(this.style);
+            glchild.setExtrude(this.extrude);
+            glchild.setAltitudeMode(this.altitudeMode);
         }
         
         while(pointsIter.hasNext()) {
-            pointsIter.next();
+            final GLBatchGeometry geom = pointsIter.next();
+            geom.release();
             pointsIter.remove();
         }
         while(linesIter.hasNext()) {
-            linesIter.next();
+            final GLBatchGeometry geom = linesIter.next();
+            geom.release();
             linesIter.remove();
         }
         while(polysIter.hasNext()) {
-            polysIter.next();
+            final GLBatchGeometry geom = polysIter.next();
+            geom.release();
             polysIter.remove();
         }
         while(collectionsIter.hasNext()) {
-            collectionsIter.next();
+            final GLBatchGeometry geom = collectionsIter.next();
+            geom.release();
             collectionsIter.remove();
         }
     }
 
     @Override
-    public synchronized void setGeometry(final ByteBuffer blob, final int type, int lod) {
-        this.lod = lod;
-
+    protected synchronized void setGeometryImpl(final ByteBuffer blob, final int type) {
         Iterator<GLBatchGeometry> pointsIter = points.iterator();
         Iterator<GLBatchGeometry> linesIter = lines.iterator();
         Iterator<GLBatchGeometry> polysIter = polys.iterator();
@@ -305,36 +314,37 @@ public class GLBatchGeometryCollection extends GLBatchGeometry {
 
             child.init(this.featureId, this.name);
             child.subid = i;
-            child.setGeometryImpl(blob, type);
+            child.setGeometry(blob, type, lod);
             if(this.style != null)
                 child.setStyle(this.style);
+            child.setExtrude(this.extrude);
+            child.setAltitudeMode(this.altitudeMode);
         }
         
         while(pointsIter.hasNext()) {
-            pointsIter.next();
+            final GLBatchGeometry geom = pointsIter.next();
+            geom.release();
             pointsIter.remove();
         }
         while(linesIter.hasNext()) {
-            linesIter.next();
+            final GLBatchGeometry geom = linesIter.next();
+            geom.release();
             linesIter.remove();
         }
         while(polysIter.hasNext()) {
-            polysIter.next();
+            final GLBatchGeometry geom = polysIter.next();
+            geom.release();
             polysIter.remove();
         }
         while(collectionsIter.hasNext()) {
-            collectionsIter.next();
+            final GLBatchGeometry geom = collectionsIter.next();
+            geom.release();
             collectionsIter.remove();
         }
     }
-    
+
     @Override
-    protected final void setGeometryImpl(ByteBuffer blob, int type) {
-        throw new IllegalStateException();
-    }
-    
-    @Override
-    protected final void setGeometryImpl(Geometry geom) {
+    protected void setGeometryImpl(Geometry geom) {
         throw new IllegalStateException();
     }
 }

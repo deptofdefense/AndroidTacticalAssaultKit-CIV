@@ -41,7 +41,7 @@ final class MapRendererState {
     public MapRendererState(MapRendererState other) {
         this(other.ctx);
 
-        this.scene = other.scene;
+        this.scene = new MapSceneModel(other.scene);
         this.top = other.top;
         this.left = other.left;
         this.bottom = other.bottom;

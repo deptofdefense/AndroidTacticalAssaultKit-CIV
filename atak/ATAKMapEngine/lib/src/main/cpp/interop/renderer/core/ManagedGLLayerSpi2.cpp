@@ -41,7 +41,7 @@ ManagedGLLayerSpi2::~ManagedGLLayerSpi2() NOTHROWS
         impl = NULL;
     }
 }
-TAKErr ManagedGLLayerSpi2::create(GLLayer2Ptr &value, GLMapView2 &renderer, Layer2 &subject2) NOTHROWS
+TAKErr ManagedGLLayerSpi2::create(GLLayer2Ptr &value, GLGlobeBase& renderer, Layer2 &subject2) NOTHROWS
 {
     TAKErr code(TE_Ok);
     std::shared_ptr<Layer2> subject2Ptr = std::move(Layer2Ptr(&subject2, Memory_leaker_const<Layer2>));

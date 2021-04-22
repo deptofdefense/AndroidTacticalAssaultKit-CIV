@@ -31,7 +31,7 @@ namespace TAK {
             };
 
             ENGINE_API Util::TAKErr BitmapFactory2_decode(BitmapPtr &result, Util::DataInput2 &input, const BitmapDecodeOptions *opts) NOTHROWS;
-
+            ENGINE_API Util::TAKErr BitmapFactory2_decode(BitmapPtr &result, const uint8_t *data, const std::size_t len, const BitmapDecodeOptions *opts) NOTHROWS;
             ENGINE_API Util::TAKErr BitmapFactory2_decode(BitmapPtr &result, const char *bitmapFilePath, const BitmapDecodeOptions *opts) NOTHROWS;
         }
     }

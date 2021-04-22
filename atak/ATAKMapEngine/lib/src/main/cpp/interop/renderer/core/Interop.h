@@ -5,6 +5,7 @@
 
 #include <jni.h>
 
+#include <renderer/core/GLGlobeBase.h>
 #include <renderer/core/GLLayer2.h>
 #include <renderer/core/GLLayerSpi2.h>
 
@@ -18,8 +19,8 @@ namespace TAKEngineJNI {
                 TAK::Engine::Util::TAKErr Interop_isWrapper(bool *value, JNIEnv &, jobject mlayer) NOTHROWS;
 
                 // GLMapView interop
-                TAK::Engine::Util::TAKErr Interop_marshal(std::shared_ptr<TAK::Engine::Renderer::Core::GLMapView2> &value, JNIEnv &env, jobject mview) NOTHROWS;
-                TAK::Engine::Util::TAKErr Interop_marshal(Java::JNILocalRef &value, JNIEnv &env, const TAK::Engine::Renderer::Core::GLMapView2 &cview) NOTHROWS;
+                TAK::Engine::Util::TAKErr Interop_marshal(std::shared_ptr<TAK::Engine::Renderer::Core::GLGlobeBase> &value, JNIEnv &env, jobject mview) NOTHROWS;
+                TAK::Engine::Util::TAKErr Interop_marshal(Java::JNILocalRef &value, JNIEnv &env, const TAK::Engine::Renderer::Core::GLGlobeBase &cview) NOTHROWS;
 
                 // GLMapView2::RenderPass
                 TAK::Engine::Util::TAKErr Interop_marshal(TAK::Engine::Renderer::Core::GLMapView2::RenderPass *value, const jint mpass) NOTHROWS;

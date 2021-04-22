@@ -1,8 +1,8 @@
+
 package com.atakmap.android.fires.bridge;
 
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.PointMapItem;
-
 
 /**
  * Bridge component in support of the the flavor subsystem.
@@ -18,7 +18,6 @@ public abstract class Entity {
     public static void registerImplementation(Entity concreteImpl) {
         impl = concreteImpl;
     }
-
 
     /**
      * Update the target in the Entity.

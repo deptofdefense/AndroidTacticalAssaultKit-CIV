@@ -797,11 +797,9 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
                 .getDefaultSharedPreferences(
                         mapView.getContext());
 
-        final String _lastDirectory = defaultPrefs.getString("lastDirectory",
-                Environment.getExternalStorageDirectory().getPath());
-
         importView.setTitle(R.string.select_file_to_attach);
-        importView.setStartDirectory(_lastDirectory);
+        importView.setStartDirectory(
+                ATAKUtilities.getStartDirectory(getMapView().getContext()));
         importView.setExtensionTypes(new String[] {
                 "*"
         });
@@ -869,7 +867,8 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
      * @param captured true if the file was captured from the camera; false otherwise.
      * @param useIOProvider true if the file should be attached using the system registered IOProvider; false otherwise.
      */
-    private void attachFile(final File f, boolean captured, boolean useIOProvider) {
+    private void attachFile(final File f, boolean captured,
+            boolean useIOProvider) {
         if (f == null)
             return;
 
@@ -901,13 +900,13 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
                     }
                 }
             });
-            if(!captured)
+            if (!captured)
                 attachTask.setFlags(AttachFileTask.FlagPromptOverwrite
                         | ImportFileTask.FlagCopyFile);
 
             // if use of native IO is required, install a default provider
             // instance on the task
-            if(!useIOProvider)
+            if (!useIOProvider)
                 attachTask.setProvider(new DefaultIOProvider());
 
             attachTask.execute(f);
@@ -1090,10 +1089,12 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
         // restrict the uris that are valid.
         final String sURI = contentURI.toString();
         if (sURI.startsWith("content://com.android.providers.media.documents")
-                || sURI.startsWith("content://com.android.providers.downloads.documents")
+                || sURI.startsWith(
+                        "content://com.android.providers.downloads.documents")
                 || sURI.startsWith("content://media/external")
                 || sURI.startsWith("content://0@media/external/")
-                || sURI.startsWith("content://com.android.externalstorage.documents")) {
+                || sURI.startsWith(
+                        "content://com.android.externalstorage.documents")) {
             // nothing at this point
         } else {
             // Log.d(TAG, "trying to load content from: " + contentURI);
@@ -1286,18 +1287,20 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
             } else
                 return;
 
-            if(!PIC_CAPTURED.equals(intent.getAction())) {
+            if (!PIC_CAPTURED.equals(intent.getAction())) {
                 if (!FileSystemUtils.isEmpty(filePath)) {
                     File importFile = null;
                     try {
-                        importFile = new File(FileSystemUtils.validityScan(filePath));
+                        importFile = new File(
+                                FileSystemUtils.validityScan(filePath));
                     } catch (Exception e) {
                         Log.w(TAG, "Cannot import file", e);
                     }
 
                     if (importFile == null || !importFile.exists()) {
-                        Log.w(TAG, "Skipping missing result: " + resultCode + ", "
-                                + filePath);
+                        Log.w(TAG,
+                                "Skipping missing result: " + resultCode + ", "
+                                        + filePath);
                         toast(R.string.failed_to_import);
                         return;
                     }
@@ -1323,10 +1326,10 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
      */
     public static boolean extractContent(Context ctx, Uri dataUri,
             File outFile) {
-        try(InputStream is = ctx.getContentResolver()
-                    .openInputStream(dataUri)) {
+        try (InputStream is = ctx.getContentResolver()
+                .openInputStream(dataUri)) {
             if (is != null) {
-                try(OutputStream os = IOProviderFactory
+                try (OutputStream os = IOProviderFactory
                         .getOutputStream(outFile)) {
                     FileSystemUtils.copyStream(is, os);
                 }

@@ -31,12 +31,19 @@ public abstract class MissionPackageBaseTask extends
      * Container with progress update
      */
     public static class ProgressDialogUpdate {
+
         final String message;
         final int progress;
+        final int max;
 
-        public ProgressDialogUpdate(int p, String m) {
-            progress = p;
-            message = m;
+        public ProgressDialogUpdate(int progress, int max, String msg) {
+            this.progress = progress;
+            this.max = max;
+            this.message = msg;
+        }
+
+        public ProgressDialogUpdate(int progress, String msg) {
+            this(progress, 100, msg);
         }
     }
 
@@ -119,6 +126,7 @@ public abstract class MissionPackageBaseTask extends
         // set the current progress of the progress dialog UI
         if (_progressDialog != null && progress != null) {
             _progressDialog.setProgress(progress[0].progress);
+            _progressDialog.setMax(progress[0].max);
             if (!FileSystemUtils.isEmpty(progress[0].message))
                 _progressDialog.setMessage(progress[0].message);
         }
@@ -153,10 +161,7 @@ public abstract class MissionPackageBaseTask extends
         // onCancelled()
         cancel(true);
 
-        if (_progressDialog != null) {
-            _progressDialog.dismiss();
-            _progressDialog = null;
-        }
+        dismissProgressDialog();
     }
 
     @Override
@@ -177,6 +182,13 @@ public abstract class MissionPackageBaseTask extends
     public String toString() {
         return this.getClass().getSimpleName() + " - "
                 + (_manifest == null ? "" : _manifest.toString());
+    }
+
+    public void dismissProgressDialog() {
+        if (_progressDialog != null) {
+            _progressDialog.dismiss();
+            _progressDialog = null;
+        }
     }
 
     public Context getContext() {

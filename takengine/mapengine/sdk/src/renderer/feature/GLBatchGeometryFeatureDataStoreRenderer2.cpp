@@ -7,7 +7,7 @@
 #include "port/STLVectorAdapter.h"
 #include "port/StringBuilder.h"
 #include "raster/osm/OSMUtils.h"
-#include "renderer/feature/GLBatchGeometryCollection2.h"
+#include "renderer/feature/GLBatchGeometryCollection3.h"
 #include "renderer/feature/GLBatchLineString3.h"
 #include "renderer/feature/GLBatchMultiLineString3.h"
 #include "renderer/feature/GLBatchMultiPoint3.h"
@@ -199,7 +199,7 @@ TAKErr GLBatchGeometryFeatureDataStoreRenderer2::getBackgroundThreadName(TAK::En
     return TE_Ok;
 }
 
-TAKErr GLBatchGeometryFeatureDataStoreRenderer2::query(QueryContext &ctx, const ViewState &state) NOTHROWS
+TAKErr GLBatchGeometryFeatureDataStoreRenderer2::query(QueryContext &ctx, const GLMapView2::State &state) NOTHROWS
 {
     TAKErr code(TE_Ok);
 
@@ -210,11 +210,11 @@ TAKErr GLBatchGeometryFeatureDataStoreRenderer2::query(QueryContext &ctx, const 
         //       GeometryCollection that is divided across the IDL. Two queries
         //       must be performed, one for each hemisphere.
 
-        ViewState stateE;
-        stateE.copy(state);
+        GLMapView2::State stateE;
+        stateE = state;
         stateE.eastBound = 180;
-        ViewState stateW;
-        stateW.copy(state);
+        GLMapView2::State stateW;
+        stateW = state;
         stateW.westBound = -180;
 
         code = this->queryImpl(ctx, stateE);
@@ -263,7 +263,7 @@ TAKErr GLBatchGeometryFeatureDataStoreRenderer2::query(QueryContext &ctx, const 
     return TE_Ok;
 }
 
-TAKErr GLBatchGeometryFeatureDataStoreRenderer2::queryImpl(QueryContext &ctx, const ViewState &state) NOTHROWS
+TAKErr GLBatchGeometryFeatureDataStoreRenderer2::queryImpl(QueryContext &ctx, const GLMapView2::State &state) NOTHROWS
 {
     TAKErr code;
 
@@ -279,7 +279,7 @@ TAKErr GLBatchGeometryFeatureDataStoreRenderer2::queryImpl(QueryContext &ctx, co
     double simplifyFactor = distance(state.upperLeft.longitude,
         state.upperLeft.latitude, state.lowerRight.longitude,
         state.lowerRight.latitude) /
-        distance(state._left, state._top, state._right, state._bottom) * 2;
+        distance(state.left, state.top, state.right, state.bottom) * 2;
 
     FeatureDataStore2::FeatureQueryParameters params;
     params.visibleOnly = true;

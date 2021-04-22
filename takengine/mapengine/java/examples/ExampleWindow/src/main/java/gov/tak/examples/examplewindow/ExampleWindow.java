@@ -74,8 +74,8 @@ public class ExampleWindow implements KeyListener {
         NativeLoader.init(context);
         EngineLibrary.initialize();
 
-        if(System.getProperty("perspective-camera-enabled", "false").equals("true"))
-            MapSceneModel.setPerspectiveCameraEnabled(true);
+        MapSceneModel.setPerspectiveCameraEnabled(true);
+
         if(System.getProperty("disable-vsync", "false").equals("true"))
             ConfigOptions.setOption("disable-vsync", 1);
         if(System.getProperty("diagnostics", "false").equals("true"))

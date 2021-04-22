@@ -393,15 +393,12 @@ public class MissionPackageHierarchyListItem extends
                         b.setNegativeButton(R.string.cancel, null);
                         b.setPositiveButton(R.string.remove_contents,
                                 new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface d,
-                                            int w) {
-                                        Log.d(TAG,
-                                                "Removing contents: " + _group);
-                                        _group.removeContents();
-                                        delete(true);
-                                    }
-                                });
+                            @Override
+                            public void onClick(DialogInterface d, int w) {
+                                new RemoveContentsTask(_group, _overlay,
+                                        _receiver).execute();
+                            }
+                        });
                         b.show();
                     }
                 });
@@ -512,6 +509,59 @@ public class MissionPackageHierarchyListItem extends
         return Color.RED;
     }
 
+    /**
+     * Asynchronous task for removing a data package and its contents
+     */
+    private static class RemoveContentsTask extends MissionPackageBaseTask {
+
+        private final Context _context;
+        private final MissionPackageListGroup _group;
+        private final MissionPackageMapOverlay _overlay;
+
+        RemoveContentsTask(MissionPackageListGroup group,
+                MissionPackageMapOverlay overlay,
+                MissionPackageReceiver receiver) {
+            super(group.getManifest(), receiver, true, null);
+            _context = getContext();
+            _group = group;
+            _overlay = overlay;
+        }
+
+        @Override
+        public String getProgressDialogMessage() {
+            return _context.getString(R.string.delete_items_busy);
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... voids) {
+            Log.d(TAG, "Removing contents: " + _group);
+            List<MissionPackageListItem> items = _group.getItems();
+            int p = 0;
+            int max = items.size() + 1;
+            for (MissionPackageListItem item : items) {
+                if (isCancelled())
+                    return false;
+                item.removeContent();
+                publishProgress(new ProgressDialogUpdate(++p, max,
+                        _context.getString(R.string.delete_items_busy)));
+            }
+
+            if (isCancelled())
+                return false;
+
+            publishProgress(new ProgressDialogUpdate(p, max,
+                    _context.getString(R.string.deleting_mission_package)));
+            _overlay.remove(_group, false);
+            _overlay.deletePackage(_group, false, true);
+            return true;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean aBoolean) {
+            dismissProgressDialog();
+        }
+    }
+
     private static class SaveAndSelectMapItemTask extends
             MissionPackageBaseTask {
 
@@ -549,11 +599,7 @@ public class MissionPackageHierarchyListItem extends
             Log.d(TAG, "onPostExecute");
 
             // close the progress dialog
-            if (_progressDialog != null) {
-                // no follow on task.. we are all down
-                _progressDialog.dismiss();
-                _progressDialog = null;
-            }
+            dismissProgressDialog();
         }
     }
 }

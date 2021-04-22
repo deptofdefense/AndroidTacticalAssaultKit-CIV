@@ -17,6 +17,7 @@ namespace TAK {
                 ~Allocatable() NOTHROWS;
             public :
                 static void *operator new(std::size_t sz);
+                static void *operator new(std::size_t sz, const std::nothrow_t &tag) noexcept;
                 static void *operator new(std::size_t sz, void *place);
             public :
                 static std::size_t getTotalInstances() NOTHROWS;
@@ -88,6 +89,14 @@ namespace TAK {
                 heapAllocations++;
 #endif
                 return ::operator new(sz);
+            }
+            template<class T>
+            void *Allocatable<T>::operator new(std::size_t sz, const std::nothrow_t &tag) noexcept
+            {
+#ifdef _DEBUG
+                heapAllocations++;
+#endif
+                return ::operator new(sz, tag);
             }
             template<class T>
             void *Allocatable<T>::operator new(std::size_t sz, void *place)

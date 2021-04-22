@@ -9,6 +9,7 @@ import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 import org.simpleframework.xml.Root;
 
+import java.io.File;
 import java.io.StringWriter;
 
 import com.atakmap.coremap.locale.LocaleUtil;
@@ -61,6 +62,15 @@ public class AtakActionBarMenuData extends ActionMenuListData {
 
     public void setOrientation(String o) {
         orientation = o;
+    }
+
+    public File getFile() {
+        File dir = FileSystemUtils.getItem("config" + File.separator
+                + "actionbars");
+        String name = FileSystemUtils.sanitizeWithSpacesAndSlashes(
+                getLabel() + "_" + getOrientation() + ".xml"
+                        .toLowerCase(LocaleUtil.getCurrent()));
+        return new File(dir, name);
     }
 
     @Override

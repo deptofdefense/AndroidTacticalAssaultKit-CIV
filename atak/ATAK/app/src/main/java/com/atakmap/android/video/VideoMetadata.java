@@ -299,6 +299,7 @@ public class VideoMetadata {
                                 frameHAE))
                         .setAltitudeSource(GeoPointMetaData.CALCULATED);
             } else {
+                // alt is not used, the ElevationManager is responsible for setting frameDTED
                 double alt = ElevationManager.getElevation(frameLatitude,
                         frameLongitude, DTM_FILTER, frameDTED);
             }
@@ -338,7 +339,7 @@ public class VideoMetadata {
     }
 
     /**
-     * Clears out the metdata assigned so that it is fresh for a new video
+     * Clears out the metadata assigned so that it is fresh for a new video
      */
     public void dispose() {
         frameLatitude = Double.NaN;
@@ -354,6 +355,8 @@ public class VideoMetadata {
         corner4lat = Double.NaN;
         corner4lon = Double.NaN;
         frameDTED.set(GeoPoint.UNKNOWN_POINT);
+        prevFrameLatitude = Double.NaN;
+        prevFrameLongitude = Double.NaN;
     }
 
 }

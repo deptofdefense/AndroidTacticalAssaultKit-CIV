@@ -488,7 +488,8 @@ public abstract class CotPortListActivity extends MetricActivity {
                                 AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE,
                                 newServer) == null) {
             CertificateEnrollmentClient.getInstance().enroll(this,
-                    description, connectString, cacheCreds, expiration, null, true);
+                    description, connectString, cacheCreds, expiration, null,
+                    true);
         }
     }
 

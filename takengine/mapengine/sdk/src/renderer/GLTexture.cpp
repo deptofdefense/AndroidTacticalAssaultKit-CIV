@@ -28,7 +28,7 @@ namespace atakmap {
         void GLTexture::apply()
         {
             int t;
-            glGetIntegerv(GL_TEXTURE_2D, &t);
+            glGetIntegerv(GL_TEXTURE_BINDING_2D, &t);
             glBindTexture(GL_TEXTURE_2D, id);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);

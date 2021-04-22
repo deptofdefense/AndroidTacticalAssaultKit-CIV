@@ -47,7 +47,6 @@ public class CoTAutoBroadcaster implements
     private final SharedPreferences _prefs;
 
     private final ArrayList<String> _markers;
-    private boolean _markersInvalid;
 
     private final MapView _mapView;
     private static CoTAutoBroadcaster _instance;
@@ -79,7 +78,7 @@ public class CoTAutoBroadcaster implements
         _prefs.registerOnSharedPreferenceChangeListener(this);
         _updateTimeout = Integer.parseInt(_prefs.getString("hostileUpdateDelay",
                 "60")); // default to 60 seconds
-        loadMarkers(false);
+        loadMarkers();
         addMapListener();
         _instance = this;
         startTimer();
@@ -127,22 +126,19 @@ public class CoTAutoBroadcaster implements
      * This  method will load the marker ID's
      * from a list stored in Databases
      */
-    private void loadMarkers(boolean verifyMarkerExists) {
+    private void loadMarkers() {
         //load markers from list
         File inputFile = new File(Environment.getExternalStorageDirectory()
                 .getAbsoluteFile()
                 + "/atak/Databases/" + FILENAME);
         if (IOProviderFactory.exists(inputFile)) {
-            try(InputStream is = IOProviderFactory.getInputStream(inputFile)) {
+            try (InputStream is = IOProviderFactory.getInputStream(inputFile)) {
                 byte[] temp = new byte[is.available()];
                 int read = is.read(temp);
                 String menuString = new String(temp, 0, read,
                         FileSystemUtils.UTF8_CHARSET);
                 String[] lines = menuString.split("\n");
                 for (String line : lines) {
-                    // make sure the marker exists
-                    if (_mapView.getRootGroup().deepFindUID(line) == null)
-                        continue;
                     // mark as autobroadcast
                     synchronized (_markers) {
                         _markers.add(line);
@@ -166,18 +162,22 @@ public class CoTAutoBroadcaster implements
 
         if (IOProviderFactory.exists(outputFile))
             FileSystemUtils.delete(outputFile);
-        try(OutputStream os = IOProviderFactory.getOutputStream(outputFile)) {
-            StringBuilder builder = new StringBuilder();
-            synchronized (_markers) {
-                for (String m : _markers) {
-                    if (m != null) {
-                        builder.append(m);
-                        builder.append("\n");
-                    }
+
+        StringBuilder builder = new StringBuilder();
+        synchronized (_markers) {
+            if (_markers.isEmpty()){
+                return;
+            }
+            for (String m : _markers) {
+                if (m != null) {
+                    builder.append(m);
+                    builder.append("\n");
                 }
             }
+        }
 
-            try(InputStream is = new ByteArrayInputStream(builder.toString()
+        try (OutputStream os = IOProviderFactory.getOutputStream(outputFile)) {
+            try (InputStream is = new ByteArrayInputStream(builder.toString()
                     .getBytes())) {
                 FileSystemUtils.copy(is, os);
             }
@@ -253,11 +253,6 @@ public class CoTAutoBroadcaster implements
      */
     public boolean isBroadcast(final Marker m) {
         synchronized (_markers) {
-            if (_markersInvalid) {
-                _markers.clear();
-                loadMarkers(true);
-                _markersInvalid = false;
-            }
             return _markers.contains(m.getUID());
         }
     }

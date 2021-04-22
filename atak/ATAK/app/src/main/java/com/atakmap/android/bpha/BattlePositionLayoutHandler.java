@@ -62,7 +62,6 @@ public class BattlePositionLayoutHandler implements View.OnClickListener {
         _RowsET = _RootView.findViewById(R.id.rowsET);
         _RowsET.setSelectAllOnFocus(true);
 
-
         _ColumnsET = _RootView.findViewById(R.id.columnsET);
         _ColumnsET.setSelectAllOnFocus(true);
 
@@ -98,7 +97,8 @@ public class BattlePositionLayoutHandler implements View.OnClickListener {
         int row = 2;
         int col = 2;
         try {
-            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(_RootView.getContext());
+            SharedPreferences sp = PreferenceManager
+                    .getDefaultSharedPreferences(_RootView.getContext());
             row = sp.getInt("bpha_custom_row", 2);
             col = sp.getInt("bpha_custom_col", 2);
             _RowsET.setText(String.valueOf(row));
@@ -139,8 +139,11 @@ public class BattlePositionLayoutHandler implements View.OnClickListener {
                         handler.onGridSelected(_BPHA);
                     }
                     try {
-                        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(_RootView.getContext());
-                        sp.edit().putInt("bpha_custom_row", _BPHA.getRows()).apply();
+                        SharedPreferences sp = PreferenceManager
+                                .getDefaultSharedPreferences(
+                                        _RootView.getContext());
+                        sp.edit().putInt("bpha_custom_row", _BPHA.getRows())
+                                .apply();
                     } catch (Exception ignored) {
                     }
                 }
@@ -157,8 +160,11 @@ public class BattlePositionLayoutHandler implements View.OnClickListener {
                         handler.onGridSelected(_BPHA);
                     }
                     try {
-                        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(_RootView.getContext());
-                        sp.edit().putInt("bpha_custom_col", _BPHA.getColumns()).apply();
+                        SharedPreferences sp = PreferenceManager
+                                .getDefaultSharedPreferences(
+                                        _RootView.getContext());
+                        sp.edit().putInt("bpha_custom_col", _BPHA.getColumns())
+                                .apply();
                     } catch (Exception ignored) {
                     }
                 }

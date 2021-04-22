@@ -4,8 +4,9 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.util.Base64;
-
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.R;
+import com.atakmap.annotations.ModifierApi;
 import com.atakmap.comms.NetConnectString;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProvider;
@@ -45,7 +46,14 @@ public class AtakCertificateDatabase {
 
     /**
      * Gets the adapter which is used to access the underlying database
+     * @deprecated
+     * use the AtakCredentialDatabase directly.
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.3", forRemoval = false)
+    @ModifierApi(since = "4.3", target = "4.6", modifiers = {
+            "final"
+    })
     public static synchronized AtakCertificateDatabaseAdapter getAdapter() {
         if (atakCertificateDatabaseAdapter == null) {
             atakCertificateDatabaseAdapter = new AtakCertificateDatabaseAdapter();
@@ -155,7 +163,7 @@ public class AtakCertificateDatabase {
     public static void dispose() {
         synchronized (getAdapter().lock) {
             if (!initialized) {
-                Log.e(TAG, "Calling dispose prior to initialization!");
+                Log.e(TAG, "calling dispose prior to initialization or after a clear content");
             }
 
             getAdapter().dispose();
@@ -169,6 +177,7 @@ public class AtakCertificateDatabase {
     public static void clear() {
         synchronized (getAdapter().lock) {
             getAdapter().clear(databaseFile);
+            initialized = false;
         }
     }
 
@@ -186,7 +195,7 @@ public class AtakCertificateDatabase {
             String type) {
         synchronized (getAdapter().lock) {
             if (!initialized) {
-                Log.e(TAG, "Calling getCertificate prior to initialization!");
+                Log.e(TAG, "calling getCertificate prior to initialization or after a clear content");
                 return null;
             }
 
@@ -207,7 +216,7 @@ public class AtakCertificateDatabase {
             String type, byte[] certificate) {
         synchronized (getAdapter().lock) {
             if (!initialized) {
-                Log.e(TAG, "Calling saveCertificate prior to initialization!");
+                Log.e(TAG, "calling saveCertificate prior to initialization or after a clear content");
                 return;
             }
 
@@ -235,7 +244,7 @@ public class AtakCertificateDatabase {
             String type, String server) {
         synchronized (getAdapter().lock) {
             if (!initialized) {
-                Log.e(TAG, "Calling getCertificate prior to initialization!");
+                Log.e(TAG, "calling getCertificate prior to initialization or after a clear content");
                 return null;
             }
 
@@ -250,13 +259,13 @@ public class AtakCertificateDatabase {
      *            in AtakCertificateDatabaseIFace for the certificate types used in core. Plugins
      *             may specify any unique type
      * @param server host of certificate being saved
-     * @param byte[] containing hte p12 file for the requested certificate
+     * @param certificate containing hte p12 file for the requested certificate
      */
     public static void saveCertificateForServer(
             String type, String server, byte[] certificate) {
         synchronized (getAdapter().lock) {
             if (!initialized) {
-                Log.e(TAG, "Calling saveCertificate prior to initialization!");
+                Log.e(TAG, "calling saveCertificate prior to initialization  or after a clear content");
                 return;
             }
 
@@ -280,7 +289,7 @@ public class AtakCertificateDatabase {
             String type) {
         synchronized (getAdapter().lock) {
             if (!initialized) {
-                Log.e(TAG, "Calling deleteCertificate prior to initialization!");
+                Log.e(TAG, "calling deleteCertificate prior to initialization  or after a clear content");
                 return;
             }
 
@@ -309,7 +318,7 @@ public class AtakCertificateDatabase {
             String type, String server) {
         synchronized (getAdapter().lock) {
             if (!initialized) {
-                Log.e(TAG, "Calling deleteCertificateForServer prior to initialization!");
+                Log.e(TAG, "calling deleteCertificateForServer prior to initialization or after a clear content");
                 return;
             }
 

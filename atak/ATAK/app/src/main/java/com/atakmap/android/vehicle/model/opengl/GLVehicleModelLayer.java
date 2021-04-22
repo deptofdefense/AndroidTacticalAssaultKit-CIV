@@ -259,7 +259,8 @@ public class GLVehicleModelLayer extends GLRubberModelLayer implements
                         VehicleModelCaptureRequest req = vInfo.getIconRequest();
                         req.setCallback(new GLModelCaptureRequest.Callback() {
                             @Override
-                            public void onCaptureFinished(File file, Bitmap bmp) {
+                            public void onCaptureFinished(File file,
+                                    Bitmap bmp) {
                                 renderContext.queueEvent(new Runnable() {
                                     @Override
                                     public void run() {

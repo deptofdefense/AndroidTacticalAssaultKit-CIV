@@ -9,7 +9,7 @@ namespace TAK {
     namespace Engine {
         namespace DB {
 
-            class BindArgument
+            class ENGINE_API BindArgument
             {
             public :
                 typedef union

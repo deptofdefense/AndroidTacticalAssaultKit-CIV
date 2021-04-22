@@ -132,7 +132,7 @@ public class MissionPackageBuilder {
             if (_progress != null)
                 _progress.cancel(e.getMessage());
         } finally {
-            IoUtils.close(_zos,TAG,"Failed to close Mission Package zip: "
+            IoUtils.close(_zos, TAG, "Failed to close Mission Package zip: "
                     + (_contents == null ? "" : _contents.getPath()));
             IoUtils.close(_existing);
             if (tmpCopy != null)
@@ -274,9 +274,9 @@ public class MissionPackageBuilder {
             _zos.putNextEntry(entry);
 
             // stream file into zipstream
-            try(FileInputStream fi = IOProviderFactory.getInputStream(f);
-                BufferedInputStream origin = new BufferedInputStream(fi,
-                    FileSystemUtils.BUF_SIZE)) {
+            try (FileInputStream fi = IOProviderFactory.getInputStream(f);
+                    BufferedInputStream origin = new BufferedInputStream(fi,
+                            FileSystemUtils.BUF_SIZE)) {
                 write(origin, true);
             }
 

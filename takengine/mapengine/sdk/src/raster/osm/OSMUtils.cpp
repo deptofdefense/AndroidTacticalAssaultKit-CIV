@@ -112,7 +112,7 @@ namespace atakmap {
             {
                 if (level >= 32)
                     return 0.0;
-                return 156543.034 * cos(lat) / (1 << level);
+                return 156543.034 * cos(lat*M_PI/180.0) / (1 << level);
             }
 
             int OSMUtils::mapnikTileLevel(double resolution)

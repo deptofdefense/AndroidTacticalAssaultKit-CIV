@@ -153,6 +153,8 @@ class MissionPackageFileHierarchyListItem extends AbstractChildlessListItem
         int i = v.getId();
         if (i == R.id.extract)
             _overlay.promptExtractContent(_group, _fileItem);
+        else if (i == R.id.open)
+            MIMETypeMapper.openFile(_file, _context);
         else if (i == R.id.delete)
             _overlay.promptRemoveContent(_group, _fileItem);
     }
@@ -184,15 +186,20 @@ class MissionPackageFileHierarchyListItem extends AbstractChildlessListItem
                     R.layout.missionpackage_overlay_fileitem, parent, false);
             h.missing = v.findViewById(R.id.not_found);
             h.extract = v.findViewById(R.id.extract);
+            h.open = v.findViewById(R.id.open);
             h.delete = v.findViewById(R.id.delete);
             v.setTag(h);
         }
         boolean showExtras = !(listener instanceof HierarchyListAdapter &&
                 ((HierarchyListAdapter) listener).getSelectHandler() != null);
         boolean showExtract = showExtras && !FileSystemUtils.isFile(_file);
+        boolean showView = MIMETypeMapper.getOpenIntent(_context,
+                _file) != null;
         h.missing.setVisibility(showExtract ? View.VISIBLE : View.GONE);
         h.extract.setVisibility(showExtract ? View.VISIBLE : View.GONE);
+        h.open.setVisibility(showView ? View.VISIBLE : View.GONE);
         h.delete.setVisibility(showExtras ? View.VISIBLE : View.GONE);
+        h.open.setOnClickListener(this);
         h.extract.setOnClickListener(this);
         h.delete.setOnClickListener(this);
         return v;
@@ -200,7 +207,7 @@ class MissionPackageFileHierarchyListItem extends AbstractChildlessListItem
 
     private static class ExtraHolder {
         TextView missing;
-        ImageButton extract, delete;
+        ImageButton extract, open, delete;
     }
 
     @Override

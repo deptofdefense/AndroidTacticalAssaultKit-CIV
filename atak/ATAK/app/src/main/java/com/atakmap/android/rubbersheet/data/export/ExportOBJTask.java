@@ -269,11 +269,16 @@ public class ExportOBJTask extends ExportFileTask implements
         File nFile = new File(path + ".vn");
         File fFile = new File(path + ".f");
         FileOutputStream fos = null;
-        try(PrintWriter ow = new PrintWriter(IOProviderFactory.getOutputStream(new File(path)));
-            PrintWriter vw = new PrintWriter(IOProviderFactory.getFileWriter(vFile));
-            PrintWriter tw = new PrintWriter(IOProviderFactory.getFileWriter(tFile));
-            PrintWriter nw = new PrintWriter(IOProviderFactory.getFileWriter(nFile));
-            PrintWriter fw = new PrintWriter(IOProviderFactory.getFileWriter(fFile))) {
+        try (PrintWriter ow = new PrintWriter(
+                IOProviderFactory.getOutputStream(new File(path)));
+                PrintWriter vw = new PrintWriter(
+                        IOProviderFactory.getFileWriter(vFile));
+                PrintWriter tw = new PrintWriter(
+                        IOProviderFactory.getFileWriter(tFile));
+                PrintWriter nw = new PrintWriter(
+                        IOProviderFactory.getFileWriter(nFile));
+                PrintWriter fw = new PrintWriter(
+                        IOProviderFactory.getFileWriter(fFile))) {
 
             LinkedHashMap<ColorVertex, Integer> vMap = new LinkedHashMap<>();
             LinkedHashMap<TexCoord, Integer> tMap = new LinkedHashMap<>();

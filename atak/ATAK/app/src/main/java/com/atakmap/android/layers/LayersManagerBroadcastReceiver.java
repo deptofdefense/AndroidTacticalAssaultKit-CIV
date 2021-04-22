@@ -76,9 +76,14 @@ import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.AtakMapController;
+import com.atakmap.map.CameraController;
+import com.atakmap.map.Globe;
+import com.atakmap.map.MapControl;
+import com.atakmap.map.MapRenderer2;
 import com.atakmap.map.MapSceneModel;
 import com.atakmap.map.layer.Layer;
 import com.atakmap.map.layer.ProxyLayer;
+import com.atakmap.map.layer.control.SurfaceRendererControl;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.feature.geometry.Geometry;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
@@ -592,6 +597,13 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
 
         final boolean auto = !adapter.isLocked() || forceAuto;
         adapter.setLocked(!auto);
+
+        // the tab is changed, request surface refresh
+        final SurfaceRendererControl object = getMapView().getRenderer3()
+                .getControl(SurfaceRendererControl.class);
+        if (object != null)
+            object.markDirty(new Envelope(-180d, -90d, 0d, 180d, 90d, 0d),
+                    false);
     }
 
     protected View instantiateFavsView(final Context context) {
@@ -640,10 +652,23 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
                                             public void onClick(
                                                     DialogInterface arg0,
                                                     int arg1) {
-                                                double lat = getMapView()
+                                                final MapSceneModel sm = getMapView()
+                                                        .getRenderer3()
+                                                        .getMapSceneModel(false,
+                                                                MapRenderer2.DisplayOrigin.UpperLeft);
+                                                final GeoPoint focus = sm.mapProjection
+                                                        .inverse(
+                                                                sm.camera.target,
+                                                                null);
+                                                double lat = focus
                                                         .getLatitude();
-                                                double lon = getMapView()
+                                                double lon = focus
                                                         .getLongitude();
+                                                double alt = focus
+                                                        .isAltitudeValid()
+                                                                ? focus
+                                                                        .getAltitude()
+                                                                : 0d;
                                                 double scale = getMapView()
                                                         .getMapScale();
                                                 double tilt = getMapView()
@@ -670,7 +695,8 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
                                                     }
                                                     add(input.getText()
                                                             .toString(),
-                                                            lat, lon, scale,
+                                                            lat, lon, alt,
+                                                            scale,
                                                             tilt, rotation,
                                                             layer,
                                                             selection, locked);
@@ -696,15 +722,18 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
         }
 
         Log.d(TAG, "view fav: " + fav.toString());
-        AtakMapController ctrl = getMapView().getMapController();
 
-        GeoPoint p = new GeoPoint(fav.latitude, fav.longitude);
-        ctrl.panTo(p, true);
-        ctrl.zoomTo(fav.zoomLevel, false);
-        if (getMapView().getMapTouchController()
-                .getTiltEnabledState() != MapTouchController.STATE_TILT_DISABLED) {
-            ctrl.tiltTo(fav.tilt, fav.rotation, false);
-        }
+        getMapView().getMapController().dispatchOnPanRequested();
+        final MapRenderer2 renderer = getMapView().getRenderer3();
+        final boolean rotations = getMapView().getMapTouchController()
+                .getTiltEnabledState() != MapTouchController.STATE_TILT_DISABLED;
+        renderer.lookAt(
+                new GeoPoint(fav.latitude, fav.longitude, fav.altitude),
+                Globe.getMapResolution(getMapView().getDisplayDpi(),
+                        fav.zoomLevel),
+                rotations ? fav.rotation : 0d,
+                rotations ? fav.tilt : 0d,
+                true);
 
         // dispatch an Intent to perform the layer selection based on
         // the properties of the favorite
@@ -737,14 +766,14 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
         _favAdapter.writeList();
     }
 
-    protected void add(String name, double lat, double lon, double scale,
-            double tilt, double rotation,
+    protected void add(String name, double lat, double lon, double alt,
+            double scale, double tilt, double rotation,
             String layer, String selection, boolean locked) {
         if (_favAdapter == null)
             return;
 
         _favAdapter.add(name,
-                lat, lon, scale,
+                lat, lon, alt, scale,
                 tilt, rotation,
                 layer,
                 selection, locked);
@@ -902,14 +931,20 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
                 // if there is no 'target point', make sure that the
                 // view will still show the layer once we're zoomed
                 // in
-                MapSceneModel model = new MapSceneModel(mapView,
-                        mapView.getProjection(),
-                        mapView.getCenterPoint().get(),
-                        mapView.getMapController().getFocusX(),
-                        mapView.getMapController().getFocusY(),
-                        mapView.getRotation(), // XXX - getMapRotation(),
-                        mapView.getMapTilt(),
-                        targetScale, mapView.isContinuousScrollEnabled());
+                MapSceneModel model = mapView.getRenderer3().getMapSceneModel(
+                        false, MapRenderer2.DisplayOrigin.UpperLeft);
+                model = new MapSceneModel(mapView.getDisplayDpi(),
+                        model.width,
+                        model.height,
+                        model.mapProjection,
+                        model.mapProjection.inverse(model.camera.target, null),
+                        model.focusx,
+                        model.focusy,
+                        model.camera.azimuth,
+                        90d + model.camera.elevation,
+                        Globe.getMapResolution(mapView.getDisplayDpi(),
+                                targetScale),
+                        mapView.isContinuousScrollEnabled());
 
                 PointF scratch = new PointF();
 

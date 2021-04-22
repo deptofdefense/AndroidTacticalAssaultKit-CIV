@@ -242,7 +242,7 @@ public class AllToolsActivity extends MetricActivity implements
                                 } else {
                                     MissionPackageManifest mf = MissionPackageApi
                                             .CreateTempManifest(name, true,
-                                                    true, null);
+                                                    false, null);
                                     for (AtakActionBarMenuData exported : exportedList) {
                                         File f = FileSystemUtils
                                                 .getItem(("config/actionbars/"
@@ -253,17 +253,6 @@ public class AllToolsActivity extends MetricActivity implements
                                                         + ".xml").toLowerCase(
                                                                 LocaleUtil
                                                                         .getCurrent()));
-                                        try {
-                                            File dir = FileSystemUtils
-                                                    .createTempDir("actionbar",
-                                                            "tmp", null);
-                                            File nf = new File(dir,
-                                                    f.getName());
-                                            FileSystemUtils.copyFile(f, nf);
-                                            f = nf;
-                                        } catch (IOException ignored) {
-                                        }
-
                                         mf.addFile(f, null);
                                         Log.d(TAG, "added: " + f.getName());
                                     }

@@ -23,8 +23,8 @@ public class EGM96Test extends ATAKInstrumentedTest {
         Assert.assertEquals(20.927000, EGM96.getOffset(-42, 76), .001);
         Assert.assertEquals(-37.044998, EGM96.getOffset(42, 76), .001);
         Assert.assertEquals(17.162000, EGM96.getOffset(0, 0), .001);
-        Assert.assertEquals(23.99, EGM96.getOffset( -22.99630, 134.99740), .001);
-        Assert.assertEquals(39.534, EGM96.getOffset( 22.99630, 134.99740), .001);
+        Assert.assertEquals(23.99, EGM96.getOffset(-22.99630, 134.99740), .001);
+        Assert.assertEquals(39.534, EGM96.getOffset(22.99630, 134.99740), .001);
 
         Assert.assertTrue(Double.isNaN(EGM96.getOffset(91, 361)));
     }
@@ -61,7 +61,6 @@ public class EGM96Test extends ATAKInstrumentedTest {
 
         p = new GeoPoint(22.99630, 134.99740, 0);
         Assert.assertEquals(-39.534, EGM96.getMSL(p), 0.001);
-
 
     }
 

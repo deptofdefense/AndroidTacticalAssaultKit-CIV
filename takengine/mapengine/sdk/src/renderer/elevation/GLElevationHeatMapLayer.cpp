@@ -294,12 +294,12 @@ namespace
         return (T(0) < val) - (val < T(0));
     }
 
-    bool intersects(const GLMapView2 &view, const bool handleIdlCrossing, const Frustum2 &frustum, const Envelope2 &aabbWCS) NOTHROWS
+    bool intersects(const GLGlobeBase &view, const bool handleIdlCrossing, const Frustum2 &frustum, const Envelope2 &aabbWCS) NOTHROWS
     {
         typedef TAK::Engine::Math::Point2<double> PointD;
 
         return (frustum.intersects(AABB(PointD(aabbWCS.minX, aabbWCS.minY, aabbWCS.minZ), PointD(aabbWCS.maxX, aabbWCS.maxY, aabbWCS.maxZ))) ||
-            (handleIdlCrossing && view.drawLng * ((aabbWCS.minX + aabbWCS.maxX) / 2.0) < 0 &&
+            (handleIdlCrossing && view.renderPass->drawLng * ((aabbWCS.minX + aabbWCS.maxX) / 2.0) < 0 &&
                 frustum.intersects(
                     AABB(PointD(aabbWCS.minX - (360.0 * sgn((aabbWCS.minX + aabbWCS.maxX) / 2.0)), aabbWCS.minY, aabbWCS.minZ),
                         PointD(aabbWCS.maxX - (360.0 * sgn((aabbWCS.minX + aabbWCS.maxX) / 2.0)), aabbWCS.maxY, aabbWCS.maxZ)))));
@@ -324,7 +324,7 @@ Layer2 &GLElevationHeatMapLayer::getSubject() NOTHROWS
 {
     return subject_;
 }
-void GLElevationHeatMapLayer::draw(const GLMapView2& view, const int renderPass) NOTHROWS
+void GLElevationHeatMapLayer::draw(const GLGlobeBase& view, const int renderPass) NOTHROWS
 {
     if (!(renderPass & getRenderPass()))
         return;
@@ -335,16 +335,16 @@ void GLElevationHeatMapLayer::draw(const GLMapView2& view, const int renderPass)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    if (!view.drawTilt) {
+    if (!view.renderPass->drawTilt) {
         glDisable(GL_DEPTH_TEST);
     }
     std::vector<std::shared_ptr<const TerrainTile>> terrainTiles;
     TAK::Engine::Port::STLVectorAdapter<std::shared_ptr<const TerrainTile>> terrainTiles_a(terrainTiles);
     view.getTerrainRenderService().lock(terrainTiles_a);
 
-    const bool handleIdlCrossing = view.scene.displayModel->earth->getGeomClass() == GeometryModel2::PLANE && view.crossesIDL;
-    Matrix2 m(view.scene.camera.projection);
-    m.concatenate(view.scene.camera.modelView);
+    const bool handleIdlCrossing = view.renderPass->scene.displayModel->earth->getGeomClass() == GeometryModel2::PLANE && view.renderPass->crossesIDL;
+    Matrix2 m(view.renderPass->scene.camera.projection);
+    m.concatenate(view.renderPass->scene.camera.modelView);
     Frustum2 frustum(m);
 
     // pass one: perform culling and establish min/max
@@ -358,7 +358,7 @@ void GLElevationHeatMapLayer::draw(const GLMapView2& view, const int renderPass)
             continue;
         // compute AABB in WCS and check for intersection with the frustum
         TAK::Engine::Feature::Envelope2 aabbWCS(tile->aabb_wgs84);
-        TAK::Engine::Feature::GeometryTransformer_transform(&aabbWCS, aabbWCS, 4326, view.drawSrid);
+        TAK::Engine::Feature::GeometryTransformer_transform(&aabbWCS, aabbWCS, 4326, view.renderPass->drawSrid);
         if (!intersects(view, handleIdlCrossing, frustum, aabbWCS))
             continue;
         visIndices.push_back(i);
@@ -377,10 +377,10 @@ void GLElevationHeatMapLayer::draw(const GLMapView2& view, const int renderPass)
 
     GLMapView2::State pass(*view.renderPass);
     pass.texture = 1;
-    TerrainTileRenderContext ctx = GLTerrainTile_begin(pass, (view.drawSrid == 4978) ? shaders.ecef.base : shaders.flat.base);
+    TerrainTileRenderContext ctx = GLTerrainTile_begin(pass.scene, (view.renderPass->drawSrid == 4978) ? shaders.ecef.base : shaders.flat.base);
 
     ShaderImpl s;
-    if (view.drawSrid == 4978) {
+    if (view.renderPass->drawSrid == 4978) {
         if (ctx.shader.base.handle == shaders.ecef.hi.base.base.handle)
             s = shaders.ecef.hi;
         else if (ctx.shader.base.handle == shaders.ecef.md.base.base.handle)
@@ -407,7 +407,7 @@ void GLElevationHeatMapLayer::draw(const GLMapView2& view, const int renderPass)
     glUniform1f(s.uAlpha, alpha_);
 
     Matrix2 proj;
-    glOrtho(proj, (float)view.left, (float)view.right, (float)view.bottom, (float)view.top, (float)view.scene.camera.near, (float)view.scene.camera.far);
+    glOrtho(proj, (float)view.renderPass->left, (float)view.renderPass->right, (float)view.renderPass->bottom, (float)view.renderPass->top, (float)view.renderPass->scene.camera.near, (float)view.renderPass->scene.camera.far);
 
     for (auto idx : visIndices) {
         auto& tile = terrainTiles[idx];

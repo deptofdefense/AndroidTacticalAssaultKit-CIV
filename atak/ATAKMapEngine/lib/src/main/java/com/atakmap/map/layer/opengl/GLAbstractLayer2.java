@@ -2,6 +2,7 @@ package com.atakmap.map.layer.opengl;
 
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.Layer;
+import com.atakmap.map.layer.control.SurfaceRendererControl;
 import com.atakmap.map.opengl.GLMapView;
 
 public abstract class GLAbstractLayer2 implements GLLayer3, Layer.OnLayerVisibleChangedListener {
@@ -11,6 +12,10 @@ public abstract class GLAbstractLayer2 implements GLLayer3, Layer.OnLayerVisible
     protected boolean visible;
     protected boolean initialized;
     protected int renderPassMask;
+
+    // Used to trigger surface draw updates
+    // Should only be touched on the GL thread
+    private SurfaceRendererControl surfaceControl;
     
     protected GLAbstractLayer2(MapRenderer surface, Layer subject, int renderPassMask) {
         this.renderContext = surface;
@@ -41,6 +46,7 @@ public abstract class GLAbstractLayer2 implements GLLayer3, Layer.OnLayerVisible
     public void draw(GLMapView view, int pass) {
         if(!this.initialized) {
             this.init();
+            this.surfaceControl = view.getControl(SurfaceRendererControl.class);
             this.initialized = true;
         }
         
@@ -72,20 +78,51 @@ public abstract class GLAbstractLayer2 implements GLLayer3, Layer.OnLayerVisible
         return this.renderPassMask;
     }
 
+    /**
+     * Run code on the GL thread
+     * @param r Runnable
+     */
+    protected void runOnGLThread(final Runnable r) {
+        if(this.renderContext.isRenderThread())
+            r.run();
+        else
+            this.renderContext.queueEvent(new Runnable() {
+                @Override
+                public void run() {
+                    r.run();
+                }
+            });
+    }
+
+    /**
+     * Mark the surface as dirty to trigger a draw update
+     */
+    protected void invalidate() {
+        runOnGLThread(new Runnable() {
+            @Override
+            public void run() {
+                invalidateNoSync();
+            }
+        });
+    }
+
+    protected void invalidateNoSync() {
+        if (surfaceControl != null)
+            surfaceControl.markDirty();
+    }
+
     /**************************************************************************/
     // On Layer Visible Changed Listener
 
     @Override
     public void onLayerVisibleChanged(Layer layer) {
         final boolean visible = layer.isVisible();
-        if(this.renderContext.isRenderThread())
-            this.visible = visible;
-        else
-            this.renderContext.queueEvent(new Runnable() {
-                @Override
-                public void run() {
-                    GLAbstractLayer2.this.visible = visible;
-                }
-            });
+        runOnGLThread(new Runnable() {
+            @Override
+            public void run() {
+                GLAbstractLayer2.this.visible = visible;
+                invalidateNoSync();
+            }
+        });
     }
 }

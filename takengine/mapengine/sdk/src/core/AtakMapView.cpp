@@ -292,47 +292,33 @@ double AtakMapView::getMinMapTilt(double resolution) const
 }
 double AtakMapView::getMaxMapTilt(double resolution) const
 {
-#ifndef __ANDROID__
-    const double zoomLevel = log(156543.034*cos(0.0) / resolution) / log(2.0);
-    double maxTilt;
-#ifndef __ANDROID__
-    if (zoomLevel < 6.0) {
-        maxTilt = 0.0;
-    } else if (zoomLevel < 9.0) {
-        maxTilt = 30.0;
-    } else if (zoomLevel < 10.0) {
-        maxTilt = 30.0 + (48.0 - 30.0) * (zoomLevel / 9.0);
-    } else if (zoomLevel < 11.0) {
-        maxTilt = 48.0 + (66.0 - 48.0) * (zoomLevel - 10.0);
-    } else if (zoomLevel < 12.0) {
-        maxTilt = 66.0 + (72.0 - 66.0) * (zoomLevel - 11.0);
-    } else if (zoomLevel < 13.0) {
-        maxTilt = 72 + (80.0 - 72.0) * (zoomLevel - 12.0);
-    } else if (zoomLevel < 14.0) {
-        maxTilt = 80.0 + (82.0 - 80.0) * (zoomLevel - 13.0);
-    } else if (zoomLevel < 15.0) {
-        maxTilt = 82 + (this->max_tilt_ - 82.0) * (zoomLevel - 9.0);
-    } else {
-        maxTilt = this->max_tilt_;
-    }
-#else
-    if (zoomLevel < 6.0) {
-        maxTilt = 0.0;
-    } else if (zoomLevel < 10.0) {
-        maxTilt = 30.0;
-    } else if (zoomLevel < 14.0) {
-        maxTilt = 30.0 + ((zoomLevel - 10.0) / 4.0 * 15.0 / 4.0);
-    } else if (zoomLevel < 15.5) {
-        maxTilt = 45.0 + ((zoomLevel - 14.0) / 1.5 * (this->max_tilt_ - 45.0) / 1.5);
-    } else {
-        maxTilt = this->max_tilt_;
-    }
+    if(MapSceneModel2_getCameraMode() == MapCamera2::Scale) {
+        const double zoomLevel = log(156543.034*cos(0.0) / resolution) / log(2.0);
+        double maxTilt;
+        if (zoomLevel < 6.0) {
+            maxTilt = 0.0;
+        } else if (zoomLevel < 9.0) {
+            maxTilt = 30.0;
+        } else if (zoomLevel < 10.0) {
+            maxTilt = 30.0 + (48.0 - 30.0) * (zoomLevel / 9.0);
+        } else if (zoomLevel < 11.0) {
+            maxTilt = 48.0 + (66.0 - 48.0) * (zoomLevel - 10.0);
+        } else if (zoomLevel < 12.0) {
+            maxTilt = 66.0 + (72.0 - 66.0) * (zoomLevel - 11.0);
+        } else if (zoomLevel < 13.0) {
+            maxTilt = 72 + (80.0 - 72.0) * (zoomLevel - 12.0);
+        } else if (zoomLevel < 14.0) {
+            maxTilt = 80.0 + (82.0 - 80.0) * (zoomLevel - 13.0);
+        } else if (zoomLevel < 15.0) {
+            maxTilt = 82 + (this->max_tilt_ - 82.0) * (zoomLevel - 9.0);
+        } else {
+            maxTilt = this->max_tilt_;
+        }
 
-#endif
-    return std::min(maxTilt, this->max_tilt_);
-#else
-    return this->max_tilt_;
-#endif
+        return std::min(maxTilt, this->max_tilt_);
+    } else {
+        return this->max_tilt_;
+    }
 }
 void AtakMapView::setMaxMapTilt(double value)
 {
@@ -611,7 +597,14 @@ void AtakMapView::updateView(const GeoPoint &c, const double mapScale, const dou
             getMaxLatitude()
 #endif
             );
-    center_.longitude = TAK::Engine::Util::MathUtils_clamp(isnan(c.longitude) ? 0.0 : c.longitude, getMinLongitude(), getMaxLongitude());
+    center_.longitude = c.longitude;
+    if(center_.longitude < -180.0)
+        center_.longitude += 360.0;
+    else if(center_.longitude > 180.0)
+        center_.longitude -= 360.0;
+    center_.altitude = c.altitude;
+    if(isnan(center_.altitude))
+        center_.altitude = 0.0;
     scale_ = TAK::Engine::Util::MathUtils_clamp(isnan(mapScale) ? 0.0 : mapScale, getMinMapScale(), getMaxMapScale());
 
     if (isnan(rot))

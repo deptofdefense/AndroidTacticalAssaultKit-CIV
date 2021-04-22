@@ -480,6 +480,7 @@ public abstract class DropDownReceiver extends BroadcastReceiver {
             final OnStateListener stateListener) {
 
         getMapView().post(new Runnable() {
+
             @Override
             public void run() {
                 _dropDown = new DropDown(fragment, ignoreBackButton,
@@ -617,7 +618,7 @@ public abstract class DropDownReceiver extends BroadcastReceiver {
      * Action to take when a dropdown is already open under the stack.
      */
     protected void dropDownAlreadyExists() {
-        _mapView.post(new Runnable() {
+        getMapView().post(new Runnable() {
             @Override
             public void run() {
                 Toast.makeText(_mapView.getContext(),
@@ -674,9 +675,9 @@ public abstract class DropDownReceiver extends BroadcastReceiver {
     final protected boolean _showDropDown() {
         int side;
         if (_dropDown.getSide() == DropDown.DropDownSide.RIGHT_SIDE) {
-            side = com.atakmap.app.R.id.right_side_panel_container;
+            side = R.id.right_side_panel_container;
         } else {
-            side = com.atakmap.app.R.id.main_map_container;
+            side = R.id.left_side_panel_container;
         }
 
         boolean success = fragmentReplaceTransaction(side,

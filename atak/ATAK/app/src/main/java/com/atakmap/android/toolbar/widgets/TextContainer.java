@@ -45,17 +45,17 @@ public class TextContainer implements MapWidget.OnClickListener, Runnable,
     private final MapView _mapView;
 
     private static final int DEFAULT_COLOR = Color.GREEN;
-    private final MapTextFormat DEFAULT_FORMAT;
+    protected MapTextFormat DEFAULT_FORMAT;
 
-    private final TextWidget _text;
-    private final MarkerIconWidget _widget;
+    protected TextWidget _text;
+    protected final MarkerIconWidget _widget;
     private String _prompt = "";
 
     private final Icon icon_lit;
     private final Icon icon_unlit;
     private final Icon icon_blank;
 
-    private MapTextFormat textFormat = MapView.getDefaultTextFormat();
+    protected MapTextFormat textFormat = MapView.getDefaultTextFormat();
 
     private int color = DEFAULT_COLOR;
 
@@ -64,7 +64,7 @@ public class TextContainer implements MapWidget.OnClickListener, Runnable,
 
     private final View hint_view;
 
-    private TextContainer() {
+    protected TextContainer() {
         _mapView = MapView.getMapView();
 
         DEFAULT_FORMAT = MapView.getTextFormat(Typeface.DEFAULT_BOLD, +4);
@@ -153,7 +153,7 @@ public class TextContainer implements MapWidget.OnClickListener, Runnable,
      */
     synchronized public static TextContainer getInstance() {
         if (_instance == null)
-            _instance = new TextContainer();
+            _instance = TextContainerCompat.createInstance();
         return _instance;
     }
 
@@ -185,12 +185,28 @@ public class TextContainer implements MapWidget.OnClickListener, Runnable,
         this.displayPrompt(prompt, DEFAULT_FORMAT, DEFAULT_COLOR);
     }
 
+    public void displayPrompt(final CharSequence prompt) {
+        this.displayPrompt(prompt, DEFAULT_FORMAT, DEFAULT_COLOR);
+    }
+
     public void displayPrompt(final String prompt,
             final MapTextFormat textFormat) {
         this.displayPrompt(prompt, textFormat, DEFAULT_COLOR);
     }
 
+    public void displayPrompt(final CharSequence prompt,
+            final MapTextFormat textFormat) {
+        this.displayPrompt(prompt, textFormat, DEFAULT_COLOR);
+    }
+
     public void displayPrompt(final String prompt,
+            final MapTextFormat textFormat, final int color) {
+        setTextFormat(textFormat);
+        this.color = color;
+        displayPromptAtTop(prompt, true);
+    }
+
+    public void displayPrompt(final CharSequence prompt,
             final MapTextFormat textFormat, final int color) {
         setTextFormat(textFormat);
         this.color = color;
@@ -325,6 +341,11 @@ public class TextContainer implements MapWidget.OnClickListener, Runnable,
             Thread t = new Thread(this, TAG + "-Blink");
             t.start();
         }
+    }
+
+    protected synchronized void displayPromptAtTop(CharSequence prompt,
+            boolean blink) {
+        this.displayPromptAtTop(prompt == null ? "" : prompt.toString(), blink);
     }
 
     /**

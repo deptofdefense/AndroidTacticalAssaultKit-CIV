@@ -159,7 +159,7 @@ public final class Databases {
     // http://www.sqlite.org/fileformat2.html section 1.2
 
     public static boolean isSQLiteDatabase(String path) {
-        try(InputStream fis = IOProviderFactory
+        try (InputStream fis = IOProviderFactory
                 .getInputStream(new File(path))) {
             byte[] buf = new byte[16];
             if (fis.read(buf) < 16)

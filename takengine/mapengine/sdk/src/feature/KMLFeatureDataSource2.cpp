@@ -501,7 +501,7 @@ TAKErr KMLContent2::open() NOTHROWS {
     TAKErr code = IO_getName(workingStr, file.c_str());
     TE_CHECKRETURN_CODE(code);
 
-    code = IO_getExt(workingStr, nullptr, workingStr.get());
+    code = IO_getExt(workingStr, workingStr.get());
     TE_CHECKRETURN_CODE(code);
 
     int kmz = -1;
@@ -542,7 +542,7 @@ TAKErr KMLContent2::close() NOTHROWS {
 
 TAKErr KMLContent2::performFirstPass() NOTHROWS {
     TAKErr code = this->open();
-    TE_CHECKRETURN_CODE(code);
+    if (code != TE_Ok) return code;
 
     // Do not store parsed object in parent objects (i.e. pure streaming mode)
     parser.enableStore(false);

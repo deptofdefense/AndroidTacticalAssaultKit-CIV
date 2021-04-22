@@ -19,7 +19,8 @@ public class Dt2File {
         char ns = Character.toUpperCase(name.charAt(0));
         int lastIdx = name.indexOf('.');
         if (lastIdx < 0)
-            throw new IllegalArgumentException("no extension found on this file");
+            throw new IllegalArgumentException(
+                    "no extension found on this file");
         this.latitude = MathUtils.parseInt(name.substring(1, lastIdx), 0)
                 * (ns == 'S' ? -1 : 1);
 
@@ -33,6 +34,7 @@ public class Dt2File {
             char ew = Character.toUpperCase(name.charAt(0));
             this.longitude = MathUtils.parseInt(name.substring(1), 0)
                     * (ew == 'W' ? -1 : 1) + (ew == 'W' ? 1 : 0);
+
 
         } else {
             this.longitude = 0;

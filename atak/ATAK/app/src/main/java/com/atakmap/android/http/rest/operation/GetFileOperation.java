@@ -139,7 +139,8 @@ public final class GetFileOperation extends HTTPOperation {
             // Write file
             File temp = new File(fileRequest.getDir(),
                     fileRequest.getFileName());
-            try (FileOutputStream fos = IOProviderFactory.getOutputStream(temp)) {
+            try (FileOutputStream fos = IOProviderFactory
+                    .getOutputStream(temp)) {
                 resEntity.writeTo(fos);
             }
 

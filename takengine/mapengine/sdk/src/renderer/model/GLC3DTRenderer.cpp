@@ -8,7 +8,7 @@
 #include "model/Cesium3DTilesSceneSpi.h"
 #include "math/Plane2.h"
 #include "port/StringBuilder.h"
-#include "renderer/model/GLMesh.h"
+#include "renderer/model/GLBatch.h"
 #include "port/Collection.h"
 #include "renderer/BitmapFactory2.h"
 #include "thread/Mutex.h"
@@ -25,11 +25,7 @@
 
 /*
     TODO-LIST:
-        - load textures before show
-        - unloads
-
         (polish)
-        - cut down on single memory allocations
         - profile and tweak optimal worker counts/config
 */
 
@@ -45,8 +41,9 @@ using namespace TAK::Engine::Model;
 using namespace TAK::Engine::Thread;
 using namespace TAK::Engine::Math;
 
-#define C3DT_RENDERER_DEBUG_OUTPUT   1
-#define APPROX_VIEW_TESTING_IMPL 0
+#define C3DT_RENDERER_DEBUG_OUTPUT   0
+#define C3DT_DEBUG_RESOURCE_RELEASE  0
+
 
 // extern of a helper to avoid double parsing of B3DM data
 namespace TAK {
@@ -65,11 +62,14 @@ namespace {
     constexpr double maxScreenSpaceError = 16.0;
     constexpr size_t loadingDescendantLimit = 20;
     constexpr bool forbidHoles = true;
-    //constexpr int64_t cacheDurationSeconds = 60 * 60 * 24 * 10; // 10 days
-    //constexpr int64_t cacheSizeLimit = 1024 * 1024 * 250; // 250 MB
+    static size_t load_count = 0;
 
     int64_t getConfiguredCacheSizeLimit() NOTHROWS;
     int64_t getConfiguredCacheDurationSeconds() NOTHROWS;
+
+    TAKErr loadBitmapTask(std::shared_ptr<TAK::Engine::Renderer::Bitmap2>& result, TAK::Engine::Port::String& URI, const std::shared_ptr<URIOfflineCache>& cache,
+        int64_t cacheDurationSeconds) NOTHROWS;
+    TAKErr loadMeshBufferBitmap(std::shared_ptr<TAK::Engine::Renderer::Bitmap2>& result, const std::shared_ptr<const Mesh>& mesh, size_t bufferIndex) NOTHROWS;
 
     class GLC3DTContentRenderable : public GLMapRenderable2, 
         public GLDepthSamplerDrawable {
@@ -80,8 +80,9 @@ namespace {
 
     class GLB3DM : public GLC3DTContentRenderable {
     public:
-        GLB3DM(TAK::Engine::Core::RenderContext& ctx, ScenePtr&& scene, const std::shared_ptr<MaterialManager>& parent_mm);
-        void draw(const GLMapView2& view, const int renderPass) NOTHROWS;
+        GLB3DM(std::shared_ptr<GLBatch> batch) NOTHROWS;
+        virtual ~GLB3DM() NOTHROWS;
+        void draw(const GLGlobeBase& view, const int renderPass) NOTHROWS;
         void release() NOTHROWS {}
         int getRenderPass() NOTHROWS { return 0; }
         void start() NOTHROWS {}
@@ -90,8 +91,7 @@ namespace {
         virtual TAKErr gatherDepthSamplerDrawables(std::vector<GLDepthSamplerDrawable*>& result, int levelDepth, const TAK::Engine::Core::MapSceneModel2& sceneModel, float x, float y) NOTHROWS;
         virtual void depthSamplerDraw(GLDepthSampler& sampler, const TAK::Engine::Core::MapSceneModel2& sceneModel) NOTHROWS;
 
-        ScenePtr scene_;
-        std::vector<std::unique_ptr<GLMesh>> meshes_;
+        std::shared_ptr<GLBatch> batch_;
     };
 
     struct UpdateResult {
@@ -131,6 +131,8 @@ namespace {
         double viewportHeight;
     };
 
+    
+
     class GLC3DTTile {
     public:
         enum State {
@@ -144,19 +146,22 @@ namespace {
 
         GLC3DTTile(GLC3DTTileset* tileset, const TAK::Engine::Formats::Cesium3DTiles::C3DTTile& tile, GLC3DTTile* parentGLTile);
 
-        void draw(const GLMapView2& view, const int renderPass, GLContentContext& content_context) NOTHROWS;
-        void drawAABB(const GLMapView2& view);
+        ~GLC3DTTile() NOTHROWS {
+            GLC3DTTile* c = first_child_;
+            while (c != last_child_) {
+                c->~GLC3DTTile();
+                c++;
+            }
+        }
+
+        void draw(const GLGlobeBase& view, const int renderPass, GLContentContext& content_context) NOTHROWS;
+        void drawAABB(const GLGlobeBase& view);
         void startLoad() NOTHROWS;
+        void unload() NOTHROWS;
 
         TAKErr gatherDepthSamplerDrawables(std::vector<GLDepthSamplerDrawable*>& result, int levelDepth, const TAK::Engine::Core::MapSceneModel2& sceneModel, float x, float y) NOTHROWS;
         
         static std::shared_ptr<const Shader> wireframe_shader_;
-
-        // keep to minimum to reduce alloc size, also order by > alignment first
-
-#if APPROX_VIEW_TESTING_IMPL
-        double paddedRadius; // use same trick as java
-#endif
 
         double geometric_error_;
         uint64_t last_state_frame_;
@@ -165,14 +170,21 @@ namespace {
         GLC3DTTile* parent_;
         String content_uri_;
 
-        std::vector<std::unique_ptr<GLC3DTTile>> children_;
+        //std::vector<std::unique_ptr<GLC3DTTile>> children_;
+        //std::vector<GLC3DTTile*> children_;
+        GLC3DTTile* first_child_;
+        GLC3DTTile* last_child_;
         GLContentHolder content_;
 
         Matrix2 transform_;
         C3DTVolume boundingVolume_;
-        C3DTRefine refine_;
+        uint8_t refine_;
         uint8_t last_state_;
         
+        inline size_t childCount() const NOTHROWS {
+            return static_cast<size_t>(last_child_ - first_child_);
+        }
+
         bool isRenderable() const NOTHROWS;
         double calcSSE(const CameraInfo& camera) const NOTHROWS;
 
@@ -180,6 +192,10 @@ namespace {
             if (last_state_frame_ == frame)
                 return static_cast<State>(last_state_);
             return NONE;
+        }
+
+        inline C3DTRefine getRefine() const NOTHROWS {
+            return static_cast<C3DTRefine>(refine_);
         }
 
         inline void setState(State state, uint64_t frame) NOTHROWS {
@@ -202,14 +218,95 @@ namespace {
         }
     };
 
-    std::shared_ptr<const Shader> GLC3DTTile::wireframe_shader_;
+    //
+    // C3DTAllocator
+    //
 
+    class C3DTAllocator {
+    public:
+        static const size_t DEFAULT_BLOCK_SIZE_ = sizeof(GLC3DTTile) * 1000;
+
+        C3DTAllocator()
+            : blocks_(nullptr), large_blocks_(nullptr) {}
+
+        ~C3DTAllocator() {
+            freeBlocks(blocks_);
+            freeBlocks(large_blocks_);
+        }
+
+        GLC3DTTile* allocTiles(size_t count) NOTHROWS {
+
+            if (!count)
+                return nullptr;
+
+            size_t sizeNeeded = sizeof(GLC3DTTile) * count;
+            
+            GLC3DTTile* r = reinterpret_cast<GLC3DTTile*>(allocContig(sizeNeeded));
+            return r;
+        }
+
+    private:
+        struct Block_ {
+            Block_* next;
+            uint8_t* pos;
+            uint8_t* end;
+        };
+
+    private:
+        void* allocContig(size_t sizeNeeded) NOTHROWS {
+            Block_* block = blocks_;
+
+            // need a new block?
+            if (!block || static_cast<size_t>(blocks_->end - blocks_->pos) < sizeNeeded) {
+                if (sizeNeeded > DEFAULT_BLOCK_SIZE_) {
+                    block = allocBlock(sizeNeeded);
+                    block->next = large_blocks_;
+                    large_blocks_ = block;
+                }
+                else {
+                    block = allocBlock(DEFAULT_BLOCK_SIZE_);
+                    block->next = blocks_;
+                    blocks_ = block;
+                }
+            }
+
+            void* r = block->pos;
+            block->pos += sizeNeeded;
+            return r;
+        }
+
+        Block_* allocBlock(size_t size) NOTHROWS {
+            Block_* b = static_cast<Block_*>(malloc(sizeof(Block_) + size));
+            b->pos = reinterpret_cast<uint8_t*>(b) + sizeof(Block_);
+            b->end = b->pos + size;
+            return b;
+        }
+
+        void freeBlocks(Block_* b) NOTHROWS {
+            while (b) {
+                Block_* n = b->next;
+                free(b);
+                b = n;
+            }
+        }
+
+    private:
+        Block_* blocks_;
+        Block_* large_blocks_;
+    };
+
+    //
+    //
+    //
+
+    std::shared_ptr<const Shader> GLC3DTTile::wireframe_shader_;
 
     class GLC3DTTileset : public GLC3DTContentRenderable {
     public:
         GLC3DTTileset(TAK::Engine::Core::RenderContext& ctx, const char* baseURI, std::shared_ptr<GLContentContext::Loader> loader);
+        virtual ~GLC3DTTileset() NOTHROWS;
 
-        void draw(const GLMapView2& view, const int renderPass) NOTHROWS;
+        void draw(const GLGlobeBase& view, const int renderPass) NOTHROWS;
         void release() NOTHROWS {}
         int getRenderPass() NOTHROWS { return 0; }
         void start() NOTHROWS {}
@@ -217,6 +314,8 @@ namespace {
         virtual TAKErr gatherDepthSamplerDrawables(std::vector<GLDepthSamplerDrawable*>& result, int levelDepth, const TAK::Engine::Core::MapSceneModel2& sceneModel, float x, float y) NOTHROWS;
         virtual void setParentTile(const GLC3DTTile* parent) NOTHROWS;
         virtual void setParentRenderer(GLC3DTRenderer* renderer) NOTHROWS;
+
+        C3DTAllocator allocator_; // allocator must come first
 
         // Non-transient state
         GLC3DTRenderer* renderer_;
@@ -230,6 +329,7 @@ namespace {
         MapCamera2 current_camera_;
         std::unique_ptr<UpdateChanges> front_state_;
         std::unique_ptr<UpdateChanges> recycle_state_;
+        Future<bool> update_task_;
 
         // Only touched by the view update worker
         uint64_t pending_view_update_number_;
@@ -246,11 +346,13 @@ namespace {
         bool updateView(const CameraInfo& camera, uint64_t update_number) NOTHROWS;
         UpdateResult updateTileIfVisible(GLC3DTTile& tile, const CameraInfo& camera, bool ancestorMeetsSse, uint64_t update_number) NOTHROWS;
         UpdateResult updateTile(GLC3DTTile& tile, const CameraInfo& camera, bool ancestorMeetsSse, uint64_t update_number) NOTHROWS;
+
         UpdateResult updateChildren(GLC3DTTile& tile, const CameraInfo& camera, bool ancestorMeetsSse, uint64_t update_number) NOTHROWS;
         void markTileNonRendered(GLC3DTTile& tile) NOTHROWS;
         void markChildrenNonRendered(GLC3DTTile& tile) NOTHROWS;
-    };
 
+        void unloadRenderedChildren(GLC3DTTile& tile) NOTHROWS;
+    };
 
     struct TilesetParser {
     
@@ -366,9 +468,14 @@ public:
 
     TAKErr load(TAK::Engine::Util::FutureTask<std::shared_ptr<Bitmap2>>& value, const char* uri) NOTHROWS override;
 
+    TAKErr processB3DM(TAK::Engine::Renderer::Core::GLMapRenderable2Ptr& output, TAK::Engine::Core::RenderContext& ctx, ScenePtr& scene, const String& baseURI, const char* URI, bool isStreaming) NOTHROWS;
+
     std::shared_ptr<MaterialManager> parent_mm;
     std::shared_ptr<URIOfflineCache> cache_;
     int64_t cache_dur_sec_;
+
+    TAK::Engine::Thread::Mutex mutex_;
+    std::unordered_map<std::string, std::weak_ptr<GLBatch::Texture>> resident_textures_;
 };
 
 GLC3DTRenderer::GLC3DTRenderer(TAK::Engine::Core::RenderContext& ctx, const TAK::Engine::Model::SceneInfo& info) NOTHROWS 
@@ -397,10 +504,23 @@ TAKErr rootContentDidLoad(bool&, GLMapRenderable2* input, GLC3DTRenderer* render
     return TE_Ok;
 }
 
-void GLC3DTRenderer::draw(const GLMapView2& view, const int renderPass) NOTHROWS {
+namespace {
+    static size_t render_context_slot_ = 0;
+
+    TAKErr setRenderContextTask(bool&, RenderContext* cxt) {
+        Worker_allocWorkerLocalStorageSlot(&render_context_slot_);
+        Worker_setWorkerLocalStorage(render_context_slot_, cxt);
+        return TE_Ok;
+    }
+}
+
+void GLC3DTRenderer::draw(const GLGlobeBase& view, const int renderPass) NOTHROWS {
 
     if (!(renderPass & this->getRenderPass()))
         return;
+
+    if (!render_context_slot_)
+        Task_begin(GLWorkers_resourceLoad(), setRenderContextTask, &this->content_context_->getRenderContext());
 
     // load content if empty
     if (root_content_->getLoadState() == GLContentHolder::EMPTY) {
@@ -421,14 +541,15 @@ void GLC3DTRenderer::draw(const GLMapView2& view, const int renderPass) NOTHROWS
 
 void GLC3DTRenderer::release() NOTHROWS {
     this->content_context_->cancelAll();
+    this->root_content_->unload();
 }
 
 int GLC3DTRenderer::getRenderPass() NOTHROWS {
-    return GLMapView2::Sprites;
+    return GLGlobeBase::Sprites;
 }
 
 void GLC3DTRenderer::start() NOTHROWS {
-
+    
 }
 
 void GLC3DTRenderer::stop() NOTHROWS {
@@ -447,6 +568,9 @@ TAKErr GLC3DTRenderer::getControl(void** ctrl, const char* type) NOTHROWS {
 
 TAKErr GLC3DTRenderer::hitTest(GeoPoint2* value, const MapSceneModel2& sceneModel, const float screenX, const float screenY) NOTHROWS {
     GeoPoint2 hitGeo;
+#if 1
+    TAKErr code = TE_Unsupported;
+#else
     TAKErr code = TE_Ok;
     TAKErr awaitCode = Task_begin(GLWorkers_glThread(), depthTestTask, this, sceneModel, screenX, screenY)
         .await(hitGeo, code);
@@ -456,7 +580,7 @@ TAKErr GLC3DTRenderer::hitTest(GeoPoint2* value, const MapSceneModel2& sceneMode
 
     if (code == TE_Ok)
         *value = hitGeo;
-
+#endif
     return code;
 }
 
@@ -646,6 +770,15 @@ namespace {
         Worker_createOverrideTasker(this->view_update_worker_, &this->desired_view_update_num_, updateViewWorker());
     }
 
+    GLC3DTTileset::~GLC3DTTileset() NOTHROWS {
+        if (this->update_task_) {
+            this->update_task_.cancel();
+            bool result;
+            TAKErr code;
+            this->update_task_.await(result, code);
+        }
+    }
+
     TAKErr GLC3DTTileset::gatherDepthSamplerDrawables(std::vector<GLDepthSamplerDrawable*>& result, int levelDepth, const TAK::Engine::Core::MapSceneModel2& sceneModel, float x, float y) NOTHROWS {
         if (this->front_state_) {
             for (GLC3DTTile* tile : this->front_state_->visible_list)
@@ -679,6 +812,8 @@ namespace {
 
     TAKErr GLC3DTTileset::receiveUpdateTask(bool& changed, std::unique_ptr<UpdateChanges>& result, GLC3DTTileset* ts) NOTHROWS {
 
+        ts->update_task_.detach();
+
         changed = false;
         if (result) {
             ts->recycle_state_ = std::move(ts->front_state_);
@@ -686,7 +821,7 @@ namespace {
 
             // do loads/unloads
             for (GLC3DTTile* tile : ts->front_state_->unload_list)
-                tile->content_.unload();
+                tile->unload();
             for (GLC3DTTile* tile : ts->front_state_->high_priority_load)
                 tile->startLoad();
             for (GLC3DTTile* tile : ts->front_state_->medium_priority_load)
@@ -727,48 +862,62 @@ namespace {
         this->pending_state_->clear();
         UpdateResult result = this->updateTileIfVisible(*root_tile_, camera, false, update_number);
 
-#if C3DT_RENDERER_DEBUG_OUTPUT
-        const char* lines =
-            "\n"
-            "frame= %d, canceled= %d\n"
-            "first_tile_sse= %f\n"
-            "num_render= %d\n"
-            "num_unload= %d\n"
-            "low_load= %d\n"
-            "med_load= %d\n"
-            "high_load= %d\n"
-            "cam.pos= <%f, %f, %f>\n"
-            "cam.sseDenom= %f\n"
-            ;
-        int canceled = result.canceled ? 1 : 0;
-        double ftsse = pending_state_ && pending_state_->visible_list.size() ? pending_state_->visible_list[0]->calcSSE(camera) : INFINITY;
-        size_t num_rend = pending_state_ ? pending_state_->visible_list.size() : 0;
-        size_t num_unload = pending_state_ ? pending_state_->unload_list.size() : 0;
-        size_t low_load = pending_state_ ? pending_state_->low_priority_load.size() : 0;
-        size_t med_load = pending_state_ ? pending_state_->medium_priority_load.size() : 0;
-        size_t high_load = pending_state_ ? pending_state_->high_priority_load.size() : 0;
-        Logger_log(TELL_Debug, lines,
-            (unsigned int)this->last_completed_frame_num_ + 1,
-            canceled,
-            ftsse,
-            (int)num_rend,
-            (int)num_unload,
-            (int)low_load,
-            (int)med_load,
-            (int)high_load,
-            camera.position.x, camera.position.y, camera.position.z,
-            camera.sseDenom
-        );
-#endif
-
         if (!result.canceled) {
             this->last_completed_frame_num_++;
+
+            for (auto tile : this->pending_state_->visible_list) {
+                // mark for needing load or verified as loaded
+                if (tile->getState(this->last_completed_frame_num_ - 1) != GLC3DTTile::RENDERED) {
+                    this->pending_state_->medium_priority_load.push_back(tile);
+                }
+                tile->setState(GLC3DTTile::RENDERED, this->last_completed_frame_num_);
+            }
+
+            for (auto tile : this->pending_state_->unload_list) {
+                tile->setState(GLC3DTTile::CULLED, this->last_completed_frame_num_);
+            }
+
+#if C3DT_RENDERER_DEBUG_OUTPUT
+            const char* lines =
+                "\n"
+                "frame= %d, canceled= %d\n"
+                "first_tile_sse= %f\n"
+                "num_render= %d\n"
+                "num_unload= %d\n"
+                "low_load= %d\n"
+                "med_load= %d\n"
+                "high_load= %d\n"
+                "pending_load= %d\n"
+                "cam.pos= <%f, %f, %f>\n"
+                "cam.sseDenom= %f\n"
+                ;
+            int canceled = result.canceled ? 1 : 0;
+            double ftsse = pending_state_ && pending_state_->visible_list.size() ? pending_state_->visible_list[0]->calcSSE(camera) : INFINITY;
+            size_t num_rend = pending_state_ ? pending_state_->visible_list.size() : 0;
+            size_t num_unload = pending_state_ ? pending_state_->unload_list.size() : 0;
+            size_t low_load = pending_state_ ? pending_state_->low_priority_load.size() : 0;
+            size_t med_load = pending_state_ ? pending_state_->medium_priority_load.size() : 0;
+            size_t high_load = pending_state_ ? pending_state_->high_priority_load.size() : 0;
+            Logger_log(TELL_Debug, lines,
+                (unsigned int)this->last_completed_frame_num_ + 1,
+                canceled,
+                ftsse,
+                (int)num_rend,
+                (int)num_unload,
+                (int)low_load,
+                (int)med_load,
+                (int)high_load,
+                (int)load_count,
+                camera.position.x, camera.position.y, camera.position.z,
+                camera.sseDenom
+            );
+#endif
         }
 
         return !result.canceled;
     }
 
-    bool testTileVisibility(Frustum2& frustum, const GLC3DTTile& tile) NOTHROWS {
+    bool testTileVisibility(const Frustum2& frustum, const GLC3DTTile& tile) NOTHROWS {
 
         // this is calculated as AABB currently
         C3DTBox box = tile.boundingVolume_.object.region_aux.aux.boundingBox;
@@ -781,14 +930,14 @@ namespace {
                 box.center.z + box.zDirHalfLen.z)
         );
 
-        return frustum.intersects(mbb);
+        return const_cast<TAK::Engine::Math::Frustum2&>(frustum).intersects(mbb);
     }
 
     UpdateResult GLC3DTTileset::updateTileIfVisible(GLC3DTTile& tile, const CameraInfo& camera, bool ancestorMeetsSse, uint64_t update_number) NOTHROWS {
         bool vis = testTileVisibility(const_cast<Frustum2&>(camera.frustum), tile);
-        if (vis)
+        if (vis) {
             return updateTile(tile, camera, ancestorMeetsSse, update_number);
-        else {
+        } else {
             markTileNonRendered(tile);
             markChildrenNonRendered(tile);
         }
@@ -797,6 +946,13 @@ namespace {
 
     TAKErr contentDidLoadTask(bool&, GLMapRenderable2* input, GLC3DTTile* parentTile) {
         // All C3DT content renderables share this common base
+
+        --load_count;
+
+        // nothing to do
+        if (!input)
+            return TE_Ok;
+
         GLC3DTContentRenderable* content = static_cast<GLC3DTContentRenderable*>(input);
 
         // apply once for content whose parent tile has a transform
@@ -826,13 +982,112 @@ namespace {
 
     void GLC3DTTileset::markChildrenNonRendered(GLC3DTTile& tile) NOTHROWS {
         if (tile.getState(this->pending_view_update_number_) == GLC3DTTile::REFINED) {
-            for (auto& child : tile.children_) {
+            size_t numChildren = tile.childCount();
+            for (size_t i = 0; i < numChildren; ++i) {
+                GLC3DTTile& child = tile.first_child_[i];
                 markTileNonRendered(tile);
                 markChildrenNonRendered(tile);
             }
         }
     }
 
+    UpdateResult GLC3DTTileset::updateTile(GLC3DTTile& tile, const CameraInfo& camera, bool ancestorMeetsSse, uint64_t update_number) NOTHROWS {
+
+        // check for cancel
+        if (this->updateIsCanceled(update_number)) {
+            UpdateResult cancelResult;
+            cancelResult.canceled = true;
+            return cancelResult;
+        }
+
+        uint64_t pendingFrameNum = this->last_completed_frame_num_ + 1;
+        GLC3DTTile::State lastTileState = tile.getState(this->last_completed_frame_num_);
+        bool alreadyQueued = false;
+        UpdateResult result;
+
+        // SSE check for this tile
+        double sse = tile.calcSSE(camera);
+        bool sseOK = sse < maxScreenSpaceError;
+
+        // sse is out of range, but tile is NOT renderable means we are forced to use any children, but we should render
+        // this one when we can and follow up with another update
+
+        bool proceed = sseOK;
+
+        if (!sseOK && !tile.isRenderable()) {
+            proceed = true;
+            //TODO-- requires follow up
+        }
+
+        if (proceed) {
+
+            size_t tileIndex = this->pending_state_->visible_list.size();
+            bool addedTile = false;
+            if (tile.hasPossibleContent()) {
+                this->pending_state_->visible_list.push_back(&tile);
+                addedTile = true;
+            }
+
+            UpdateResult childrenResult;
+            size_t numChildren = tile.childCount();
+            for (size_t i = 0; i < numChildren; ++i) {
+                GLC3DTTile& child = tile.first_child_[i];
+                if (testTileVisibility(camera.frustum, child)) {
+                    UpdateResult childResult = updateTile(child, camera, sseOK, update_number);
+                    childrenResult.allRenderable &= childResult.allRenderable;
+                    childrenResult.canceled = childResult.canceled;
+                    childrenResult.notYetRenderableCount += childResult.notYetRenderableCount;
+                    childrenResult.anyRenderedPreviously |= childResult.anyRenderedPreviously;
+                    if (childrenResult.canceled)
+                        break;
+                } else {
+                    childrenResult.allRenderable = false;
+                    if (child.getState(this->last_completed_frame_num_) == GLC3DTTile::RENDERED) {
+                        // this tile is no longer visible-- move towards unloading
+                        this->pending_state_->unload_list.push_back(&child);
+                        unloadRenderedChildren(child);
+                    }
+                }
+            }
+
+            result.allRenderable &= childrenResult.allRenderable;
+            result.canceled = childrenResult.canceled;
+            result.notYetRenderableCount += childrenResult.notYetRenderableCount;
+            result.anyRenderedPreviously |= childrenResult.anyRenderedPreviously;
+            if (!result.canceled) {
+
+                // if refinement is REPLACE and all visible children are renderable,
+                // remove the tile from being rendered
+                if (addedTile &&
+                    tile.getRefine() == C3DTRefine::Replace &&
+                    childrenResult.allRenderable) {
+
+                    // unload it too if previously rendered-- no longer needed
+                    if (lastTileState == GLC3DTTile::RENDERED) {
+                        this->pending_state_->unload_list.push_back(&tile);
+                    }
+
+                    this->pending_state_->visible_list.erase(
+                        this->pending_state_->visible_list.begin() + tileIndex);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    void GLC3DTTileset::unloadRenderedChildren(GLC3DTTile& tile) NOTHROWS {
+        size_t numChildren = tile.childCount();
+        for (size_t i = 0; i < numChildren; ++i) {
+            GLC3DTTile& child = tile.first_child_[i];
+            if (child.getState(this->last_completed_frame_num_) == GLC3DTTile::RENDERED) {
+                this->pending_state_->unload_list.push_back(&child);
+                unloadRenderedChildren(child);
+            }
+        }
+    }
+
+#if 0
     UpdateResult GLC3DTTileset::updateTile(GLC3DTTile& tile, const CameraInfo& camera, bool ancestorMeetsSse, uint64_t update_number) NOTHROWS {
 
         // check for cancel
@@ -864,7 +1119,8 @@ namespace {
         bool loadingChildren = false;
         if (forbidHoles) {
             for (auto& child : tile.children_) {
-                if (!child->isRenderable() && child->hasPossibleContent()) {
+                if (!child->isRenderable() && child->hasPossibleContent()
+                    && testTileVisibility(camera.frustum, *child)) {
                     loadingChildren = true;
                     this->pending_state_->medium_priority_load.push_back(child.get());
                 }
@@ -975,12 +1231,14 @@ namespace {
 
         return childrenResult;
     }
+#endif
 
     UpdateResult GLC3DTTileset::updateChildren(GLC3DTTile& tile, const CameraInfo& camera, bool ancestorMeetsSse, uint64_t update_number) NOTHROWS {
         UpdateResult result;
-        std::vector<std::unique_ptr<GLC3DTTile>>& children = tile.children_;
-        for (size_t i = 0; i < children.size(); ++i) {
-            UpdateResult childResult = updateTileIfVisible(*children[i], camera, ancestorMeetsSse, update_number);
+        size_t numChildren = tile.childCount();
+        for (size_t i = 0; i < numChildren; ++i) {
+            GLC3DTTile& child = tile.first_child_[i];
+            UpdateResult childResult = updateTileIfVisible(child, camera, ancestorMeetsSse, update_number);
             result.allRenderable &= childResult.allRenderable;
             result.anyRenderedPreviously |= childResult.anyRenderedPreviously;
             result.notYetRenderableCount += childResult.notYetRenderableCount;
@@ -988,16 +1246,16 @@ namespace {
         return result;
     }
 
-    void GLC3DTTileset::draw(const GLMapView2& view, const int renderPass) NOTHROWS {
+    void GLC3DTTileset::draw(const GLGlobeBase& view, const int renderPass) NOTHROWS {
 
-        if (current_camera_.location != view.scene.camera.location ||
-            current_camera_.target != view.scene.camera.target) {
+        if (current_camera_.location != view.renderPass->scene.camera.location ||
+            current_camera_.target != view.renderPass->scene.camera.target) {
 
-            current_camera_ = view.scene.camera;
+            current_camera_ = view.renderPass->scene.camera;
 
             // Switch to the next view update
             this->pending_view_update_number_++;
-            Task_begin(this->view_update_worker_, updateViewTask, this, this->pending_view_update_number_, view.scene, std::move(this->recycle_state_))
+            this->update_task_ = Task_begin(this->view_update_worker_, updateViewTask, this, this->pending_view_update_number_, view.renderPass->scene, std::move(this->recycle_state_))
                 .thenOn(GLWorkers_glThread(), receiveUpdateTask, this);
         }
 
@@ -1016,7 +1274,7 @@ namespace {
         parent_(parentGLTile),
         transform_(/*tile.transform*/),
         geometric_error_(tile.geometricError),
-        refine_(tile.refine),
+        refine_(static_cast<uint8_t>(tile.refine)),
         boundingVolume_(tile.boundingVolume),
         content_uri_(tile.content.uri),
         last_state_frame_(0),
@@ -1026,30 +1284,9 @@ namespace {
             transform_ = parentGLTile->transform_;
         transform_.concatenate(tile.transform);
         C3DTVolume_transform(&boundingVolume_, tile.boundingVolume, transform_);
-        children_.reserve(tile.childCount);
-
-#if APPROX_VIEW_TESTING_IMPL
-        // convert all volumes to Regions for approx view testing
-        TAK::Engine::Feature::Envelope2 aabb;
-        C3DTTileset_approximateTileBounds(&aabb, &tile, false);
-        boundingVolume_.object.region.west = aabb.minX * M_PI / 180.0;
-        boundingVolume_.object.region.east = aabb.maxX * M_PI / 180.0;
-        boundingVolume_.object.region.south = aabb.minY * M_PI / 180.0;
-        boundingVolume_.object.region.north = aabb.maxY * M_PI / 180.0;
-        boundingVolume_.object.region.minimumHeight = aabb.minZ;
-        boundingVolume_.object.region.maximumHeight = aabb.maxZ;
-        boundingVolume_.type = C3DTVolume::Region;
-
-        GeoPoint2 centroid((aabb.minY + aabb.maxY) / 2.0, (aabb.minX + aabb.maxX) / 2.0, (aabb.minZ + aabb.maxZ) / 2.0, HAE);
-        double metersDegLat = GeoPoint2_approximateMetersPerDegreeLatitude(centroid.latitude);
-        double metersDegLng = GeoPoint2_approximateMetersPerDegreeLongitude(centroid.latitude);
-
-        Point2<double> diamVector((aabb.maxX - aabb.minX) * metersDegLng, (aabb.maxY - aabb.minY) * metersDegLat, aabb.maxZ - aabb.minZ);
-        double radius = Vector2_length(Vector2_multiply(diamVector, 0.5));
-
-        double pad = std::max(metersDegLat, metersDegLng) / std::min(metersDegLat, metersDegLng);
-        this->paddedRadius = radius * pad;
-#endif
+        
+        first_child_ = tileset->allocator_.allocTiles(tile.childCount);
+        last_child_ = first_child_;
 
         // pre-calculate aux for region
         if (boundingVolume_.type == C3DTVolume::Region) {
@@ -1068,14 +1305,16 @@ namespace {
         }
 
         // ignoring levelDepth-- considering the whole Cesium visible scene as 1 level
-        for (auto& child : children_) {
-            child->gatherDepthSamplerDrawables(result, levelDepth, sceneModel, x, y);
+        size_t numChildren = this->childCount();
+        for (size_t i = 0; i < numChildren; ++i) {
+            GLC3DTTile& child = this->first_child_[i];
+            child.gatherDepthSamplerDrawables(result, levelDepth, sceneModel, x, y);
         }
 
         return TE_Ok;
     }
 
-    void GLC3DTTile::draw(const GLMapView2& view, const int renderPass, GLContentContext& content_context) NOTHROWS {
+    void GLC3DTTile::draw(const GLGlobeBase& view, const int renderPass, GLContentContext& content_context) NOTHROWS {
         GLMapRenderable2* renderable = content_.getMapRenderable();
         if (renderable)
             renderable->draw(view, renderPass);
@@ -1084,7 +1323,7 @@ namespace {
 #endif
     }
 
-    void GLC3DTTile::drawAABB(const GLMapView2& view) {
+    void GLC3DTTile::drawAABB(const GLGlobeBase& view) {
 
         // only for regions right now
         if (boundingVolume_.type != C3DTVolume::RegionAux) {
@@ -1098,7 +1337,7 @@ namespace {
 
         glUseProgram(wireframe_shader_->handle);
 
-        Matrix2 t(view.scene.forwardTransform);
+        Matrix2 t(view.renderPass->scene.forwardTransform);
         t.concatenate(transform_);
 
         double mxd[16];
@@ -1173,7 +1412,8 @@ namespace {
     }
 
     bool GLC3DTTile::isRenderable() const NOTHROWS {
-        return content_uri_.get() && content_.getLoadState() == GLContentHolder::LOADED;
+        return content_uri_.get() && 
+            content_.getLoadState() == GLContentHolder::LOADED;
     }
 
     double GLC3DTTile::calcSSE(const CameraInfo& camera) const NOTHROWS {
@@ -1183,11 +1423,13 @@ namespace {
     }
 
     void GLC3DTTile::startLoad() NOTHROWS {
-        if (content_.getLoadState() == GLContentHolder::EMPTY && this->content_uri_.get()) {
+        GLContentHolder::LoadState loadState = content_.getLoadState();
+        if (loadState == GLContentHolder::EMPTY && this->content_uri_.get()) {
             String fullURI;
             TAKErr code = URI_combine(&fullURI, tileset_->base_uri_, content_uri_);
             if (code != TE_Ok)
                 return;
+            ++load_count;
             content_.load(tileset_->content_context_, fullURI)
                 // GeneralWorkers_immediate() will invoke on the worker it completes on (no scheduling to a queue).
                 // In this case that is the GLThread right after GLContentHolder is updated, and before it has ever had
@@ -1196,52 +1438,48 @@ namespace {
         }
     }
 
-    //
-    // GLB3DM
-    //
-
-    GLB3DM::GLB3DM(TAK::Engine::Core::RenderContext& ctx, ScenePtr&& s, const std::shared_ptr<MaterialManager>& parent_mm)
-    : scene_(std::move(s)) {
-
-        // making a bunch of assumptions because this is known to be B3DM, but has sanity checks
-        SceneNode& node = scene_->getRootNode();
-
-        Collection<std::shared_ptr<SceneNode>>::IteratorPtr iter(nullptr, nullptr);
-        node.getChildren(iter);
-        std::shared_ptr<SceneNode> item;
-        
-        // sanity check
-        if (!iter)
-            return;
-
-        while (iter->get(item) == TE_Ok) {
-            if (item && item->hasMesh()) { // should be the case
-                std::shared_ptr<const Mesh> mesh;
-                item->loadMesh(mesh);
-                MaterialManager::TextureLoaderPtr texLoader(new C3DTTilesetTextureLoader(mesh), Memory_deleter_const<MaterialManager::TextureLoader, C3DTTilesetTextureLoader>);
-                std::shared_ptr<MaterialManager> mm = std::make_shared<MaterialManager>(ctx, std::move(texLoader), *parent_mm);
-                std::unique_ptr<GLMesh> glMesh(new GLMesh(ctx, node.getLocalFrame(), TAK::Engine::Feature::TEAM_Absolute,
-                        mesh, Point2<double>(), mm, 4978));
-                meshes_.push_back(std::move(glMesh));
-            }
-            iter->next();
+    void GLC3DTTile::unload() NOTHROWS {
+        if (content_.getLoadState() != GLContentHolder::EMPTY) {
+            content_.unload();
         }
     }
 
-    void GLB3DM::draw(const GLMapView2& view, const int renderPass) NOTHROWS {
-        for (auto& mesh : meshes_)
-            mesh->draw(view, renderPass);
+    //
+    // GLB3DM
+    //
+    
+    GLB3DM::GLB3DM(std::shared_ptr<GLBatch> batch) NOTHROWS
+    : batch_(batch)
+    { }
+
+    GLB3DM::~GLB3DM() NOTHROWS {
+    }
+
+    void GLB3DM::draw(const GLGlobeBase& view, const int renderPass) NOTHROWS {
+        RenderState state(RenderState_getCurrent());
+        RenderState stored(state);
+
+        float proj[16];
+        atakmap::renderer::GLES20FixedPipeline::getInstance()->readMatrix(atakmap::renderer::GLES20FixedPipeline::MM_GL_PROJECTION, proj);
+        batch_->execute(state, view.renderPass->scene.forwardTransform, proj);
+
+        RenderState_makeCurrent(stored);
     }
 
     TAKErr GLB3DM::gatherDepthSamplerDrawables(std::vector<GLDepthSamplerDrawable*>& result, int levelDepth, const TAK::Engine::Core::MapSceneModel2& sceneModel, float x, float y) NOTHROWS {
-        for (auto& mesh : meshes_)
-            result.push_back(mesh.get());
+        result.push_back(this);
         return TE_Ok;
     }
 
     void GLB3DM::depthSamplerDraw(GLDepthSampler& sampler, const TAK::Engine::Core::MapSceneModel2& sceneModel) NOTHROWS {
-        for (auto& mesh : meshes_)
-            mesh->depthSamplerDraw(sampler, sceneModel);
+        RenderState state(RenderState_getCurrent());
+        RenderState stored(state);
+
+        float proj[16];
+        atakmap::renderer::GLES20FixedPipeline::getInstance()->readMatrix(atakmap::renderer::GLES20FixedPipeline::MM_GL_PROJECTION, proj);
+        batch_->execute(state, sceneModel.forwardTransform, proj, GLBatch::SHADER_OVERRIDE_BIT);
+
+        RenderState_makeCurrent(stored);
     }
 
     //
@@ -1261,14 +1499,18 @@ namespace {
         }
 
         GLC3DTTile* par = parent();
-        std::unique_ptr<GLC3DTTile> glTile(new GLC3DTTile(tileset.get(), tile, par));
+        GLC3DTTile* glTile = nullptr;
+        if (!tileset->root_tile_) {
+            tileset->root_tile_.reset(new GLC3DTTile(tileset.get(), tile, par));
+            glTile = tileset->root_tile_.get();
+        } else if (par) {
+            ::new(static_cast<void*>(par->last_child_)) GLC3DTTile(tileset.get(), tile, par);
+            glTile = par->last_child_;
+            ++par->last_child_;
+        }
 
-        stack.push_back({ glTile.get(), &tile });
-        if (!tileset->root_tile_)
-            tileset->root_tile_ = std::move(glTile);
-
-        if (par)
-            par->children_.push_back(std::move(glTile));
+        if (glTile)
+            stack.push_back({ glTile, &tile });
 
         return TE_Ok;
     }
@@ -1355,12 +1597,408 @@ namespace {
 
         return code;
     }
+
+    TAKErr loadTextureTask(bool& res, const std::shared_ptr<GLBatch::Texture>& tex, const std::shared_ptr<Bitmap2>& bmp) NOTHROWS {
+        GLTexture2 glTex(static_cast<int>(bmp->getWidth()), static_cast<int>(bmp->getHeight()), bmp->getFormat());
+        TAKErr code = glTex.load(*bmp);
+        if (code != TE_Ok)
+            return code;
+        GLTexture2_orphan(&tex->tex_id, glTex);
+        return TE_Ok;
+    }
+
+    TAKErr loadCompressedTextureTask(bool&, const std::shared_ptr<GLBatch::Texture>& tex, 
+        std::unique_ptr<GLCompressedTextureData, void(*)(GLCompressedTextureData*)>& data) NOTHROWS {
+
+        GLTexture2Ptr glTex(nullptr, nullptr);
+        TAKErr code = GLTexture2_createCompressedTexture(glTex, *data);
+        if (code != TE_Ok)
+            return code;
+        GLTexture2_orphan(&tex->tex_id, *glTex);
+        return TE_Ok;
+    }
+
+    TAKErr loadShaderTask(bool&, TAK::Engine::Core::RenderContext* ctx,
+        const std::shared_ptr<GLBatch>& batch, size_t index, const RenderAttributes& attrs) NOTHROWS {
+
+        std::shared_ptr<const Shader> shader;
+        Shader_get(shader, *ctx, attrs);
+        batch->setShader(index, shader);
+        return TE_Ok;
+    }
+
+    TAKErr loadVBOTask(bool&,
+        const std::shared_ptr<GLBatch::Buffer>& buffer,
+        const std::shared_ptr<Scene>& scene,
+        const void* verts,
+        size_t bufSize) {
+
+        return buffer->load(verts, bufSize, true);
+    }
 }
 
 TAKErr GLC3DTRenderer::LoaderImpl::load(TAK::Engine::Util::FutureTask<std::shared_ptr<TAK::Engine::Renderer::Bitmap2>>& value, const char* URI) NOTHROWS {
     TAKErr code = TE_Unsupported;
     value = Task_begin(textureLoadWorker(), loadBitmapTask, String(URI), this->cache_, this->cache_dur_sec_);
     code = TE_Ok;
+    return code;
+}
+
+namespace {
+    GLenum dataTypeToGLType(TAK::Engine::Port::DataType dataType) NOTHROWS {
+        GLenum type = GL_NONE;
+        switch (dataType) {
+        case TEDT_UInt8: type = GL_UNSIGNED_BYTE; break;
+        case TEDT_Int8: type = GL_BYTE; break;
+        case TEDT_UInt16: type = GL_UNSIGNED_SHORT; break;
+        case TEDT_Int16: type = GL_SHORT; break;
+        case TEDT_UInt32: type = GL_UNSIGNED_INT; break;
+        case TEDT_Int32: type = GL_INT; break;
+        case TEDT_Float32: type = GL_FLOAT; break;
+        default: break;
+        }
+        return type;
+    }
+
+    bool handleConfigAttr(VertexStreamConfig& stream, const VertexDataLayout& vdl, const VertexArray& va, VertexAttribute attr) NOTHROWS {
+        if (vdl.attributes & attr) {
+            stream.offset = static_cast<GLsizei>(va.offset);
+            stream.stride = static_cast<GLsizei>(va.stride);
+            stream.type = dataTypeToGLType(va.type);
+            stream.attribute = attr;
+
+            stream.size = 1;
+            switch (attr) {
+            case TEVA_Normal:
+            case TEVA_Position: stream.size = 3; break;
+            case TEVA_Color: stream.size = 4; break;
+            case TEVA_TexCoord0:
+            case TEVA_TexCoord1:
+            case TEVA_TexCoord2:
+            case TEVA_TexCoord3:
+            case TEVA_TexCoord4:
+            case TEVA_TexCoord5:
+            case TEVA_TexCoord6:
+            case TEVA_TexCoord7: stream.size = 2; break;
+            }
+            return true;
+        }
+
+        return false;
+    }
+
+    struct SafeResourceDeleter {
+
+        SafeResourceDeleter(RenderContext& c) NOTHROWS
+            : cxt(c) {}
+
+        static TAKErr releaseTextureTask(bool&, GLuint tex_id) {
+            glDeleteTextures(1, &tex_id);
+            return TE_Ok;
+        }
+
+        static TAKErr releaseBufferTask(bool&, GLuint buf_id) {
+            glDeleteBuffers(1, &buf_id);
+            return TE_Ok;
+        }
+
+        void operator()(GLBatch::Texture* texture) const {
+
+            if (!texture)
+                return;
+
+            if (!cxt.isRenderThread() && texture->tex_id != 0) {
+                Logger_log(TELL_Warning, "GLBatch::Texture delete detected on non-render thread");
+                GLuint tex_id = texture->tex_id;
+                texture->tex_id = 0;
+                Task_begin(GLWorkers_resourceLoad(), releaseTextureTask, tex_id);
+            } 
+            delete texture;
+        }
+
+        void operator()(GLBatch::Buffer* buffer) const {
+
+            if (!buffer)
+                return;
+
+            if (!cxt.isRenderThread() && buffer->is_vbo && buffer->u.vbo_id != 0) {
+                Logger_log(TELL_Warning, "GLBatch::Buffer delete detected on non-render thread");
+                GLuint release_id = buffer->u.vbo_id;
+                buffer->u.vbo_id = 0;
+                buffer->is_vbo = 0;
+                Task_begin(GLWorkers_resourceLoad(), releaseTextureTask, release_id);
+            }
+            delete buffer;
+        }
+
+        RenderContext& cxt;
+    };
+}
+
+TAKErr GLC3DTRenderer::LoaderImpl::processB3DM(TAK::Engine::Renderer::Core::GLMapRenderable2Ptr& output, TAK::Engine::Core::RenderContext& ctx, ScenePtr &scenePtr, const String& baseURI, const char* URI, bool isStreaming) NOTHROWS {
+
+    TAKErr code = TE_Ok;
+
+    // we need to share the scene to the loader workers
+    std::shared_ptr<Scene> scene(scenePtr.release(), scenePtr.get_deleter());
+
+    // making a bunch of assumptions because this is known to be B3DM, but has sanity checks
+    SceneNode& node = scene->getRootNode();
+
+    Collection<std::shared_ptr<SceneNode>>::IteratorPtr iter(nullptr, nullptr);
+    node.getChildren(iter);
+    std::shared_ptr<SceneNode> item;
+
+    GLBatchBuilder batchBuilder;
+    if (node.getLocalFrame())
+        batchBuilder.setLocalFrame(*node.getLocalFrame());
+
+    // sanity check
+    if (!iter)
+        return TE_Err;
+
+    while (iter->get(item) == TE_Ok) {
+        if (item && item->hasMesh()) { // should be the case
+            std::shared_ptr<const Mesh> mesh;
+            item->loadMesh(mesh);
+            
+            GLenum front_face = GL_CCW;
+            
+            if (mesh->getFaceWindingOrder() == TEWO_Clockwise) {
+                front_face = GL_CW;
+            }
+
+            GLenum draw_mode = GL_NONE;
+
+            switch (mesh->getDrawMode()) {
+            case TEDM_Triangles:
+                draw_mode = GL_TRIANGLES;
+                break;
+            case TEDM_TriangleStrip:
+                draw_mode = GL_TRIANGLE_STRIP;
+                break;
+            case TEDM_Points:
+                draw_mode = GL_POINTS;
+                break;
+            default: break;
+            }
+
+            const VertexDataLayout& vdl = mesh->getVertexDataLayout();
+            VertexStreamConfig streams[3];
+            size_t streamIndex2 = 0;
+
+            if (handleConfigAttr(streams[streamIndex2], vdl, vdl.position, TEVA_Position)) ++streamIndex2;
+            if (handleConfigAttr(streams[streamIndex2], vdl, vdl.texCoord0, TEVA_TexCoord0)) ++streamIndex2;
+            if (handleConfigAttr(streams[streamIndex2], vdl, vdl.color, TEVA_Color)) ++streamIndex2;
+
+            if (vdl.interleaved) {
+#if C3DT_DEBUG_RESOURCE_RELEASE
+                GLBatch::BufferPtr buf = std::shared_ptr<GLBatch::Buffer>(new GLBatch::Buffer(), SafeResourceDeleter(ctx));
+#else
+                GLBatch::BufferPtr buf = std::make_shared<GLBatch::Buffer>();
+#endif
+                for (size_t i = 0; i < streamIndex2; ++i)
+                    streams[i].buffer = buf;
+            } else {
+                for (size_t i = 0; i < streamIndex2; ++i)
+#if C3DT_DEBUG_RESOURCE_RELEASE
+                    GLBatch::BufferPtr buf = std::shared_ptr<GLBatch::Buffer>(new GLBatch::Buffer(), SafeResourceDeleter(ctx));
+#else
+                    GLBatch::BufferPtr buf = std::make_shared<GLBatch::Buffer>();
+#endif
+            }
+
+            size_t num_verts = mesh->getNumVertices();
+            size_t num_textures = 0;
+
+            size_t num_mats = mesh->getNumMaterials();
+            for (size_t i = 0; i < num_mats; ++i) {
+                Material mat;
+                if (mesh->getMaterial(&mat, i) == TE_Ok && mat.textureUri) {
+                    num_textures++;
+                }
+            }
+
+            bool indexed = false;
+            size_t num_indices = 0;
+            size_t indexBufferIndex = SIZE_MAX;
+            GLenum indexType = GL_UNSIGNED_SHORT;
+            size_t indexSize = 2;
+
+            // mark buffer count to spin up load tasks for new buffers at the end of this mesh
+            size_t batchBufferIndex = batchBuilder.bufferCount();
+
+            if (mesh->isIndexed()) {
+                num_indices = mesh->getNumIndices();
+#if C3DT_DEBUG_RESOURCE_RELEASE
+                batchBuilder.addBuffer(&indexBufferIndex, std::shared_ptr<GLBatch::Buffer>(new GLBatch::Buffer(), SafeResourceDeleter(ctx)));
+#else
+                batchBuilder.addBuffer(&indexBufferIndex, std::make_shared<GLBatch::Buffer>());
+#endif
+                TAK::Engine::Port::DataType dataType;
+                mesh->getIndexType(&dataType);
+                indexType = dataTypeToGLType(dataType);
+                if (indexType == GL_UNSIGNED_BYTE)
+                    indexSize = 1;
+                indexed = true;
+            }
+
+            batchBuilder.setStreams(streams, streamIndex2);
+            size_t textureIndex = 0;
+
+            for (size_t i = 0; i < num_mats; ++i) {
+                Material mat;
+                if (mesh->getMaterial(&mat, i) == TE_Ok && mat.textureUri) {
+
+                    // only allow supported number of textures for now...
+                    if (textureIndex == GLBatchBuilder::MAX_TEXTURE_SLOTS)
+                        break;
+
+                    String texKey = mat.textureUri;
+                    String relative;
+                    size_t bufferIndex = SIZE_MAX;
+
+                    if (Material_getBufferIndexTextureURI(&bufferIndex, mat.textureUri) == TE_Ok) {
+                        URI_getRelative(&relative, baseURI, URI);
+                        StringBuilder sb;
+                        StringBuilder_combine(sb, relative.get(), "#", mat.textureUri);
+                        texKey = sb.c_str();
+                    } else if (URI_getRelative(&relative, baseURI, texKey) == TE_Ok) {
+                        texKey = relative;
+                    }
+
+                    std::shared_ptr<GLBatch::Texture> tex;
+                    bool doTexLoad = false;
+
+                    {
+                        Lock lock(this->mutex_);
+                        auto it = this->resident_textures_.find(texKey.get());
+
+                        if (it == this->resident_textures_.end()) {
+#if C3DT_DEBUG_RESOURCE_RELEASE
+                            tex = std::shared_ptr<GLBatch::Texture>(new GLBatch::Texture(), SafeResourceDeleter(ctx));
+#else
+                            tex = std::make_shared<GLBatch::Texture>();
+#endif                            
+                            it = this->resident_textures_.insert(std::pair<std::string, std::weak_ptr<GLBatch::Texture>>(
+                            std::string(texKey.get()),
+                            std::weak_ptr<GLBatch::Texture>(tex))).first;
+                            doTexLoad = true;
+                        }
+                        else {
+                            tex = it->second.lock();
+                            if (!tex) {
+#if C3DT_DEBUG_RESOURCE_RELEASE
+                                tex = std::shared_ptr<GLBatch::Texture>(new GLBatch::Texture(), SafeResourceDeleter(ctx));
+#else
+                                tex = std::make_shared<GLBatch::Texture>();
+#endif
+                                it->second = tex;
+                                doTexLoad = true;
+                            }
+                        }
+                    }
+
+                    batchBuilder.setTexture(tex);
+
+                    if (doTexLoad) {
+                        std::shared_ptr<Bitmap2> bitmap;
+
+                        code = TE_Err;
+                        if (bufferIndex != SIZE_MAX) {
+                            loadMeshBufferBitmap(bitmap, mesh, bufferIndex);
+                        } else {
+                            DataInput2Ptr texInput(nullptr, nullptr);
+
+                            if (isStreaming && this->cache_)
+                                code = this->cache_->open(texInput, mat.textureUri, this->cache_dur_sec_);
+                            else
+                                code = URI_open(texInput, mat.textureUri);
+
+                            if (code != TE_Ok)
+                                return code;
+
+                            BitmapPtr bmp(nullptr, nullptr);
+                            code = BitmapFactory2_decode(bmp, *texInput, nullptr);
+                            if (texInput)
+                                texInput->close();
+
+                            if (code != TE_Ok)
+                                return code;
+
+                            bitmap = std::shared_ptr<TAK::Engine::Renderer::Bitmap2>(bmp.release(), bmp.get_deleter());
+                        }
+
+                        if (bitmap) {
+#if 1
+                            // load compressed texture
+                            std::unique_ptr<GLCompressedTextureData, void(*)(GLCompressedTextureData*)> data(nullptr, nullptr);
+                            GLTexture2_createCompressedTextureData(data, *bitmap);
+                            Task_begin(GLWorkers_resourceLoad(), loadCompressedTextureTask,
+                                tex, std::move(data));
+#else
+                            // load texture with bitmap on OpenGL resourceLoad worker
+                            Task_begin(GLWorkers_resourceLoad(), loadTextureTask,
+                                tex, bitmap);
+#endif
+                        }
+                    }
+
+                    ++textureIndex;
+                }
+            }
+
+            if (indexed)
+                batchBuilder.drawElements(draw_mode, num_indices, indexBufferIndex);
+            else
+                batchBuilder.drawArrays(draw_mode, num_verts);
+
+            // draw call adds buffers?
+            for (size_t i = batchBufferIndex; i < batchBuilder.bufferCount(); ++i) {
+
+
+                if (i == indexBufferIndex) {
+                    batchBuilder.bufferAt(i)->load(mesh->getIndices(), 
+                        num_indices * indexSize, false);
+                } else {
+                    const void* verts = nullptr;
+                    mesh->getVertices(&verts, TEVA_Position);
+
+                    size_t bufSize = num_verts * vdl.position.stride;
+
+                    if (vdl.interleaved)
+                        VertexDataLayout_requiredInterleavedDataSize(&bufSize, vdl, num_verts);
+
+                    bool use_vbo = indexed ? num_verts <= 0xFFFFu : num_verts <= (3u * 0xFFFFu);
+                    use_vbo &= vdl.interleaved;
+
+                    if (use_vbo) {
+                        GLBatch::BufferPtr buffer = batchBuilder.bufferAt(i);
+                        Task_begin(GLWorkers_resourceLoad(), loadVBOTask,
+                            buffer, scene, verts, bufSize);
+                    } else {
+                        // safe to call from load thread (NO GL calls invoked)
+                        batchBuilder.bufferAt(i)->load(verts, bufSize, false);
+                    }
+                }                
+            }
+        }
+        iter->next();
+    }
+
+    // Load shader tasks
+    SharedGLBatchPtr batch;
+    batchBuilder.buildShared(batch);
+    for (size_t i = 0; i < batch->shaderCount(); ++i) {
+        RenderAttributes attrs;
+        batchBuilder.shaderRenderAttributes(&attrs, i);
+        Task_begin(GLWorkers_resourceLoad(), loadShaderTask, &ctx, batch, i, attrs);
+    }
+    
+    if (code == TE_Ok) {
+        output = GLMapRenderable2Ptr(new GLB3DM(batch), Memory_deleter_const<GLMapRenderable2, GLB3DM>);
+    }
+
     return code;
 }
 
@@ -1386,20 +2024,28 @@ TAKErr GLC3DTRenderer::LoaderImpl::load(TAK::Engine::Renderer::Core::GLMapRender
     if (code != TE_Ok)
         return code;
 
-    if (type == C3DTFileType_TilesetJSON) {
+    {
         bool tryAgain = false;
         std::unique_ptr<GLC3DTTileset> tileset;
+        ScenePtr scene(nullptr, nullptr);
+        SceneInfoPtr sceneInfo;
         do {
-            TilesetParser args(ctx, URI, this->makeChildContentLoader(ctx));
-            code = C3DTTileset_parse(input.get(), &args, TilesetParser::visitor);
-
-            if (code == TE_Ok)
-                tileset = std::move(args.tileset);
+            if (type == C3DTFileType_TilesetJSON) {
+                TilesetParser args(ctx, URI, this->makeChildContentLoader(ctx));
+                code = C3DTTileset_parse(input.get(), &args, TilesetParser::visitor);
+                if (code == TE_Ok)
+                    tileset = std::move(args.tileset);
+            } else if (type == C3DTFileType_B3DM) {
+                code = C3DT_parseB3DMScene(scene, sceneInfo, input.get(), baseURI, fileURI);
+            } else {
+                code = TE_Unsupported;
+                break;
+            }
 
             if (code != TE_Ok && isStreaming && cache_ && !tryAgain) {
                 // it is possible that the cached file is corrupt-- try to renew it
                 tryAgain = true;
-               
+
                 // force a renew
                 code = cache_->open(input, fileURI, this->cache_dur_sec_, true);
                 if (code != TE_Ok)
@@ -1410,15 +2056,11 @@ TAKErr GLC3DTRenderer::LoaderImpl::load(TAK::Engine::Renderer::Core::GLMapRender
         } while (tryAgain);
 
         if (code == TE_Ok) {
-            output = GLMapRenderable2Ptr(tileset.release(), Memory_deleter_const<GLMapRenderable2, GLC3DTTileset>);
-        }
-    }
-    else if (type == C3DTFileType_B3DM) {
-        ScenePtr scene(nullptr, nullptr);
-        SceneInfoPtr sceneInfo;
-        code = C3DT_parseB3DMScene(scene, sceneInfo, input.get(), baseURI, fileURI);
-        if (code == TE_Ok) {
-            output = GLMapRenderable2Ptr(new GLB3DM(ctx, std::move(scene), this->parent_mm), Memory_deleter_const<GLMapRenderable2, GLB3DM>);
+            if (type == C3DTFileType_TilesetJSON) {
+                output = GLMapRenderable2Ptr(tileset.release(), Memory_deleter_const<GLMapRenderable2, GLC3DTTileset>);
+            } else if (type == C3DTFileType_B3DM) {
+                code = processB3DM(output, ctx, scene, baseURI, URI, isStreaming);
+            }
         }
     }
 

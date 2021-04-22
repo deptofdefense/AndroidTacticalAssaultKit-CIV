@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -24,17 +24,28 @@
 
         <ImageButton
             android:id="@+id/extract"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:padding="2dp"
+            android:layout_width="@dimen/button_small"
+            android:layout_height="@dimen/button_small"
+            android:padding="@dimen/auto_space_big"
             style="@style/darkButton"
             android:src="@drawable/missionpackage_extract"
-            android:visibility="gone"/>
+            android:visibility="gone"
+            tools:visibility="visible"/>
+
+        <ImageButton
+            android:id="@+id/open"
+            android:layout_width="@dimen/button_small"
+            android:layout_height="@dimen/button_small"
+            android:padding="@dimen/auto_space_big"
+            style="@style/darkButton"
+            android:src="@drawable/ic_folder"
+            android:visibility="gone"
+            tools:visibility="visible"/>
 
         <ImageButton
             android:id="@+id/delete"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="@dimen/button_small"
+            android:layout_height="@dimen/button_small"
             android:padding="@dimen/auto_space_big"
             style="@style/darkButton"
             android:src="@drawable/ic_menu_delete"/>

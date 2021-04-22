@@ -53,7 +53,16 @@ public class BundleUtils {
                 Object value = bundle.get(key);
                 String s;
 
-                if (value instanceof int[]) {
+                if (value instanceof Bundle) {
+                    s = "{" + bundleToString((Bundle) value, filter) + "}";
+                } else if (value instanceof Bundle[]) {
+                    final Bundle[] bundles = (Bundle[]) value;
+                    final String[] strBundles = new String[bundles.length];
+                    for (int i = 0; i < bundles.length; ++i) {
+                        strBundles[i] = "{" + bundleToString(bundles[i], filter) + "}";
+                    }
+                    s = Arrays.toString(strBundles);
+                } else if (value instanceof int[]) {
                     s = Arrays.toString((int[]) value);
                 } else if (value instanceof byte[]) {
                     s = Arrays.toString((byte[]) value);
@@ -73,8 +82,6 @@ public class BundleUtils {
                     s = Arrays.toString((CharSequence[]) value);
                 } else if (value instanceof Parcelable[]) {
                     s = Arrays.toString((Parcelable[]) value);
-                } else if (value instanceof Bundle) {
-                    s = bundleToString((Bundle) value);
                 } else if (value instanceof Exception) {
                     StringWriter sw = new StringWriter();
                     PrintWriter pw = new PrintWriter(sw);

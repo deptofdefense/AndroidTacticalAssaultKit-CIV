@@ -127,7 +127,7 @@ public abstract class AtakPreferenceFragment extends PreferenceFragment {
             for (Preference p : pList)
                 processPreference(p);
         } catch (Exception e) {
-            Log.e(TAG, "error processing preferences",e);
+            Log.e(TAG, "error processing preferences", e);
 
         }
     }
@@ -151,7 +151,7 @@ public abstract class AtakPreferenceFragment extends PreferenceFragment {
         if (p instanceof PreferenceCategory) {
 
             try {
-                final PreferenceCategory pc = (PreferenceCategory)p;
+                final PreferenceCategory pc = (PreferenceCategory) p;
                 final int count = pc.getPreferenceCount();
                 final List<Preference> pList = new ArrayList<>();
                 for (int i = 0; i < count; ++i) {
@@ -160,7 +160,7 @@ public abstract class AtakPreferenceFragment extends PreferenceFragment {
                 for (Preference subp : pList)
                     processPreference(subp);
             } catch (Exception e) {
-                Log.e(TAG, "error processing preferences",e);
+                Log.e(TAG, "error processing preferences", e);
             }
 
         }

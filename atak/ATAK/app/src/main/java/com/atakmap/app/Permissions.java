@@ -7,7 +7,6 @@ import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.Manifest;
 
-import com.atakmap.android.gui.AlertDialogHelper;
 import com.atakmap.coremap.log.Log;
 
 import android.app.AlertDialog;
@@ -15,9 +14,9 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
-import android.text.Layout;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 
@@ -26,6 +25,11 @@ public class Permissions {
     private final static String TAG = "Permissions";
 
     final static int REQUEST_ID = 90402;
+
+    final static int LOCATION_REQUEST_ID = 90403;
+
+
+
 
     final static String[] PermissionsList = new String[] {
             Manifest.permission.ACCESS_FINE_LOCATION,
@@ -66,6 +70,7 @@ public class Permissions {
     final static String[] locationPermissionsList = new String[] {
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_LOCATION_EXTRA_COMMANDS,
+            // 29 - protection in place
             Manifest.permission.ACCESS_BACKGROUND_LOCATION,
     };
 
@@ -74,6 +79,8 @@ public class Permissions {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
             return true;
         }
+
+
         int result = 0;
         for (String permission : PermissionsList) {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q
@@ -128,7 +135,7 @@ public class Permissions {
 
     }
 
-    @TargetApi(29)
+    @TargetApi(23)
     private static void showWarning(final Activity a) {
         LayoutInflater li = LayoutInflater.from(a);
         View v = li.inflate(R.layout.background_location, null);
@@ -144,22 +151,25 @@ public class Permissions {
                     public void onClick(DialogInterface dialog, int which) {
 
                         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
+                            View view = LayoutInflater.from(a)
+                                    .inflate(R.layout.location_permission_warning, null);
+
                             AlertDialog.Builder ab = new AlertDialog.Builder(a);
-                            ab.setTitle("Android 11");
-                            ab.setMessage("Android 11 restricts the use of GPS in the background.  "
-                                    + "To continue publish your location for use by your team when ATAK is in the background, you will need to ATAK and enable \'Allow All of the Time\'\n\n"
-                                    + "Please note - ATAK does not collect GPS information while it is not running.");
+                            ab.setTitle(R.string.android_11_warning);
+                            ab.setView(view);
                             ab.setCancelable(false);
                             ab.setPositiveButton(R.string.ok,
                                     new DialogInterface.OnClickListener() {
                                         @Override
-                                        public void onClick(DialogInterface dialog, int which) {
-                                            a.requestPermissions(new String[] { Manifest.permission.ACCESS_BACKGROUND_LOCATION }, REQUEST_ID);
+                                        public void onClick(
+                                                DialogInterface dialog,
+                                                int which) {
+                                            a.requestPermissions(locationPermissionsList, LOCATION_REQUEST_ID);
                                         }
                                     });
                             ab.show();
                         } else {
-                            a.requestPermissions(locationPermissionsList, REQUEST_ID);
+                            a.requestPermissions(locationPermissionsList, LOCATION_REQUEST_ID);
                         }
                     }
                 });
@@ -172,9 +182,23 @@ public class Permissions {
 
     static void displayNeverAskAgainDialog(final Activity a) {
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(a);
-        builder.setMessage(R.string.permission_warning);
+        View view = LayoutInflater.from(a).inflate(R.layout.general_permission_guidance,
+                null);
 
+
+
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            final int result = a.checkSelfPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION);
+            if (result != PackageManager.PERMISSION_GRANTED) {
+                view = LayoutInflater.from(a).inflate(R.layout.location_permission_guidance,
+                        null);
+            }
+        }
+
+        final AlertDialog.Builder builder = new AlertDialog.Builder(a);
+        builder.setTitle("Missing Permissions");
+        builder.setView(view);
         builder.setCancelable(false);
         builder.setPositiveButton(R.string.permit_manually,
                 new DialogInterface.OnClickListener() {
@@ -228,6 +252,7 @@ public class Permissions {
 
         Log.d(TAG, "onRequestPermissionsResult called: " + requestCode);
         switch (requestCode) {
+            case Permissions.LOCATION_REQUEST_ID:
             case Permissions.REQUEST_ID:
                 if (grantResults.length > 0) {
                     boolean b = true;

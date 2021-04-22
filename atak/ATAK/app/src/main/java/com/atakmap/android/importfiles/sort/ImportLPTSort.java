@@ -8,7 +8,7 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
-import com.atakmap.spatial.file.LptFileDatabase;
+import com.atakmap.spatial.file.FalconViewSpatialDb;
 import com.healthmarketscience.jackcess.Database;
 import com.healthmarketscience.jackcess.DatabaseBuilder;
 import com.healthmarketscience.jackcess.Table;
@@ -30,8 +30,7 @@ public class ImportLPTSort extends ImportInPlaceResolver {
             boolean copyFile, boolean importInPlace) {
         super(".lpt", FileSystemUtils.OVERLAYS_DIRECTORY, validateExt,
                 copyFile, importInPlace, context.getString(R.string.lpt_file),
-                context.getDrawable(
-                        R.drawable.ic_geojson_file_notification_icon));
+                context.getDrawable(R.drawable.ic_falconview_lpt));
     }
 
     @Override
@@ -93,7 +92,7 @@ public class ImportLPTSort extends ImportInPlaceResolver {
 
     @Override
     public Pair<String, String> getContentMIME() {
-        return new Pair<>(LptFileDatabase.LPT_CONTENT_TYPE,
-                LptFileDatabase.LPT_FILE_MIME_TYPE);
+        return new Pair<>(FalconViewSpatialDb.LPT,
+                FalconViewSpatialDb.MIME_TYPE);
     }
 }

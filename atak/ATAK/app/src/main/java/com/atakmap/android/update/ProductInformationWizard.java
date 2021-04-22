@@ -188,8 +188,10 @@ public class ProductInformationWizard {
      */
     private void process(final ProductInformation[] products, final int index) {
         Log.d(TAG, "process size: " + products.length + ", index: " + index);
-        if (products.length == 0)
+        if (products.length == 0) {
+            _handler.postProcess();
             return;
+        }
 
         final ProductInformation product = products[index];
 

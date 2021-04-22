@@ -54,7 +54,8 @@ public class MissionPackageContents implements Parcelable {
      * @param bIsCoT true to get CoT, false to get other files
      * @return
      */
-    public synchronized List<MissionPackageContent> getContents(boolean bIsCoT) {
+    public synchronized List<MissionPackageContent> getContents(
+            boolean bIsCoT) {
         List<MissionPackageContent> contents = new ArrayList<>();
         for (MissionPackageContent c : _contents) {
             if (c != null && c.isCoT() == bIsCoT && !c.isIgnore()) {
@@ -81,7 +82,8 @@ public class MissionPackageContents implements Parcelable {
         return _contents.add(content);
     }
 
-    public synchronized void setContents(List<MissionPackageContent> parameters) {
+    public synchronized void setContents(
+            List<MissionPackageContent> parameters) {
         _contents = new ArrayList<>(parameters);
     }
 

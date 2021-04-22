@@ -119,7 +119,7 @@ public class RoutePlannerView extends LinearLayout implements
     private boolean _active = false;
     private RoutePlannerInterface _planner;
     private RouteGenerationHandler _routeGenHandler;
-    protected ColorClickListener colorOnClick =  new ColorClickListener();
+    protected ColorClickListener colorOnClick = new ColorClickListener();
 
     // Undo functionality
     private final Stack<EditAction> _undoStack = new Stack<>();
@@ -511,13 +511,13 @@ public class RoutePlannerView extends LinearLayout implements
                     _route, _context, false);
             b.setPositiveButton(R.string.ok,
                     new DialogInterface.OnClickListener() {
-                @Override
+                        @Override
                         public void onClick(DialogInterface d, int w) {
                             refresh();
                             _route.refresh(_mapView.getMapEventDispatcher(),
                                     null, RoutePlannerView.class);
-                }
-            });
+                        }
+                    });
             AlertDialog ad = b.create();
             ad.show();
         }
@@ -725,8 +725,7 @@ public class RoutePlannerView extends LinearLayout implements
         listenForMapClick(_listeningForMapClick);
     }
 
-
-    protected class ColorClickListener implements OnClickListener{
+    protected class ColorClickListener implements OnClickListener {
         @Override
         public void onClick(View v) {
             AlertDialog.Builder b = new AlertDialog.Builder(_context);

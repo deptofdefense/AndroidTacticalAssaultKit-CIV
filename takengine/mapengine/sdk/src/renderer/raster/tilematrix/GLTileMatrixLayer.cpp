@@ -166,7 +166,7 @@ void GLTileMatrixLayer::init() {
     }
 }
 
-void GLTileMatrixLayer::draw(const TAK::Engine::Renderer::Core::GLMapView2 &view, const int renderPass) NOTHROWS {
+void GLTileMatrixLayer::draw(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const int renderPass) NOTHROWS {
     if (zoomLevels == nullptr) {
         init();
     }
@@ -182,7 +182,7 @@ void GLTileMatrixLayer::draw(const TAK::Engine::Renderer::Core::GLMapView2 &view
     */
     // XXX - fudge select scale???
     const double fudge = 1.667;
-    const double selectRes = view.drawMapResolution * fudge;
+    const double selectRes = view.renderPass->drawMapResolution * fudge;
 
     GLZoomLevel *toDraw = nullptr;
     for (std::size_t i = 0u; i < numZoomLevels; i++) {
@@ -194,9 +194,11 @@ void GLTileMatrixLayer::draw(const TAK::Engine::Renderer::Core::GLMapView2 &view
     if (toDraw != nullptr) toDraw->draw(view, renderPass);
     if (core.debugDraw) debugDraw(view);
 
-    for (int i = static_cast<int>(numZoomLevels - 1); i >= 0; i--) {
-        if (zoomLevels[i] == toDraw) continue;
-        zoomLevels[i]->release(true);
+    if (!view.multiPartPass) {
+        for (int i = static_cast<int>(numZoomLevels - 1); i >= 0; i--) {
+            if (zoomLevels[i] == toDraw) continue;
+            zoomLevels[i]->release(true, view.renderPass->renderPump);
+        }
     }
 }
 
@@ -205,7 +207,7 @@ int GLTileMatrixLayer::getRenderPass() NOTHROWS { return Core::GLMapView2::Surfa
 void GLTileMatrixLayer::start() NOTHROWS {}
 void GLTileMatrixLayer::stop() NOTHROWS {}
 
-void GLTileMatrixLayer::debugDraw(const TAK::Engine::Renderer::Core::GLMapView2 &view) {
+void GLTileMatrixLayer::debugDraw(const TAK::Engine::Renderer::Core::GLGlobeBase &view) {
     float dbg[8];
     Math::Point2<double> pointD;
     Math::Point2<float> pointF;
@@ -215,7 +217,7 @@ void GLTileMatrixLayer::debugDraw(const TAK::Engine::Renderer::Core::GLMapView2 
     pointD.y = core.fullExtent.minY;
     pointD.z = 0;
     core.proj->inverse(&geo, pointD);
-    view.forward(&pointF, geo);
+    view.renderPass->scene.forward(&pointF, geo);
     dbg[0] = pointF.x;
     dbg[1] = pointF.y;
 
@@ -223,7 +225,7 @@ void GLTileMatrixLayer::debugDraw(const TAK::Engine::Renderer::Core::GLMapView2 
     pointD.y = core.fullExtent.maxY;
     pointD.z = 0;
     core.proj->inverse(&geo, pointD);
-    view.forward(&pointF, geo);
+    view.renderPass->scene.forward(&pointF, geo);
     dbg[2] = pointF.x;
     dbg[3] = pointF.y;
 
@@ -231,7 +233,7 @@ void GLTileMatrixLayer::debugDraw(const TAK::Engine::Renderer::Core::GLMapView2 
     pointD.y = core.fullExtent.maxY;
     pointD.z = 0;
     core.proj->inverse(&geo, pointD);
-    view.forward(&pointF, geo);
+    view.renderPass->scene.forward(&pointF, geo);
     dbg[4] = pointF.x;
     dbg[5] = pointF.y;
 
@@ -239,7 +241,7 @@ void GLTileMatrixLayer::debugDraw(const TAK::Engine::Renderer::Core::GLMapView2 
     pointD.y = core.fullExtent.minY;
     pointD.z = 0;
     core.proj->inverse(&geo, pointD);
-    view.forward(&pointF, geo);
+    view.renderPass->scene.forward(&pointF, geo);
     dbg[6] = pointF.x;
     dbg[7] = pointF.y;
 

@@ -1,3 +1,4 @@
+
 package com.atakmap.android.fires.bridge;
 
 import android.graphics.drawable.Drawable;
@@ -10,15 +11,14 @@ import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.coremap.cot.event.CotEvent;
 
-
 /**
  * Bridge component in support of the the flavor subsystem.
  */
-public abstract class CallForFireBroadcastReceiver extends DropDownReceiver implements
+public abstract class CallForFireBroadcastReceiver extends DropDownReceiver
+        implements
         DropDown.OnStateListener {
 
     static private CallForFireBroadcastReceiver impl;
-
 
     /**
      * When a plugin wants to send a 5 Line digitally using a transport method other than CoT
@@ -33,15 +33,14 @@ public abstract class CallForFireBroadcastReceiver extends DropDownReceiver impl
         super(mapView);
     }
 
-
     synchronized public static CallForFireBroadcastReceiver getInstance(
             MapView mapView,
             MapGroup mapGroup) {
         return impl;
     }
 
-
-    public static void registerImplementation(CallForFireBroadcastReceiver concreteImpl) {
+    public static void registerImplementation(
+            CallForFireBroadcastReceiver concreteImpl) {
         impl = concreteImpl;
     }
 
@@ -52,7 +51,7 @@ public abstract class CallForFireBroadcastReceiver extends DropDownReceiver impl
      * @param eflp the External Five Line Processor implementation.
      */
     public abstract void addExternalFiveLineProcessor(final Drawable icon,
-                                                          String txt, final ExternalFiveLineProcessor eflp);
+            String txt, final ExternalFiveLineProcessor eflp);
 
     /**
      * Removes an External Five Line Processor.

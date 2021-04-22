@@ -289,7 +289,8 @@ public class Dt2ElevationModel {
                             + file.getAbsolutePath(),
                     e);
         } finally {
-            IoUtils.close(raf,TAG,"Error closing file: " + file.getAbsolutePath());
+            IoUtils.close(raf, TAG,
+                    "Error closing file: " + file.getAbsolutePath());
         }
         return GeoPoint.UNKNOWN;
     }
@@ -426,41 +427,8 @@ public class Dt2ElevationModel {
                 points.next();
             }
         } finally {
-            IoUtils.close(raf,TAG,"Error closing file: " + file.getAbsolutePath());
+            IoUtils.close(raf, TAG,
+                    "Error closing file: " + file.getAbsolutePath());
         }
-    }
-
-    static String _makeFileName(final double lat, final double lng) {
-        StringBuilder p = new StringBuilder();
-
-        int lngIndex = (int) lng;
-        if (lng >= 0) {
-            p.append("e");
-        } else {
-            p.append("w");
-            lngIndex = -lngIndex + 1;
-        }
-        if (lngIndex < 10)
-            p.append("00");
-        else if (lngIndex < 100)
-            p.append("0");
-        p.append(lngIndex);
-
-        p.append(File.separator);
-
-        int latIndex = (int) lat;
-        if (lat >= 0) {
-            p.append("n");
-        } else {
-            p.append("s");
-            latIndex = -latIndex + 1;
-        }
-
-        if (latIndex < 10)
-            p.append("0");
-
-        p.append(latIndex);
-
-        return p.toString();
     }
 }

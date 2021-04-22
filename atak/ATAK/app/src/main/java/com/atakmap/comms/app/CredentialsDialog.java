@@ -5,8 +5,12 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.text.method.HideReturnsTransformationMethod;
+import android.text.method.PasswordTransformationMethod;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -81,6 +85,27 @@ public class CredentialsDialog {
                 .findViewById(R.id.credentials_password);
         if (passwordString != null && !passwordString.isEmpty())
             passwordET.setText(passwordString);
+
+
+        final CheckBox checkBox = credentialsView
+                .findViewById(R.id.password_checkbox);
+        checkBox.setOnCheckedChangeListener(
+                new CompoundButton.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(CompoundButton compoundButton,
+                                                 boolean isChecked) {
+                        if (isChecked) {
+                            passwordET.setTransformationMethod(
+                                    HideReturnsTransformationMethod
+                                            .getInstance());
+                        } else {
+                            passwordET.setTransformationMethod(
+                                    PasswordTransformationMethod.getInstance());
+                        }
+                        passwordET.setSelection(passwordET.getText().length());
+                    }
+                });
+
 
         credentialsBuilder
                 .setTitle(R.string.enter_credentials)

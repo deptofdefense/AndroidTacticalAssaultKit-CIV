@@ -26,6 +26,7 @@ namespace TAKEngineJNI {
             jobject Interop_wrap(JNIEnv *env, const std::shared_ptr<TAK::Engine::Core::Projection2> &cproj) NOTHROWS;
 
             TAK::Engine::Util::TAKErr Interop_marshal(Java::JNILocalRef &value, JNIEnv &env, const TAK::Engine::Core::MapSceneModel2 &cmodel) NOTHROWS;
+            TAK::Engine::Util::TAKErr Interop_marshal(jobject value, JNIEnv &env, const TAK::Engine::Core::MapSceneModel2 &cmodel) NOTHROWS;
             TAK::Engine::Util::TAKErr Interop_marshal(std::shared_ptr<TAK::Engine::Core::MapSceneModel2> &value, JNIEnv &env, jobject mmodel) NOTHROWS;
 
             // Layer interop

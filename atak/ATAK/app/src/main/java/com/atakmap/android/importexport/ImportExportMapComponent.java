@@ -921,12 +921,14 @@ public class ImportExportMapComponent extends AbstractMapComponent implements
                 return;
             }
             NetworkLinkDownloader downloader = res.isKML()
-                    ? _kmlDownloader : _downloader;
+                    ? _kmlDownloader
+                    : _downloader;
             downloader.addRefreshLink(res);
         }
     }
 
-    public void refreshNetworkLink(String url, String name, long interval, boolean stop) {
+    public void refreshNetworkLink(String url, String name, long interval,
+            boolean stop) {
         RemoteResource res = new RemoteResource();
         res.setUrl(url);
         res.setName(name);

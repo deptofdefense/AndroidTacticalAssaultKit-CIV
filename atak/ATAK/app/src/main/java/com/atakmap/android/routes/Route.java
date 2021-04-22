@@ -1197,6 +1197,7 @@ public class Route extends EditablePolyline {
         boolean lastPointBad = lastPoint == null || !lastPoint.getType()
                 .equals(WAYPOINT_TYPE);
 
+        final ArrayList<MapItem> pointsToRefresh = new ArrayList<>(4);
         if (!createIfMissing) {
             PointMapItem[] cps = getContactPoints();
             if (firstPointBad) {
@@ -1225,8 +1226,7 @@ public class Route extends EditablePolyline {
                 if (addWaypointsToGroup)
                     waypointGroup.addItem(addMarker);
 
-                addMarker.refresh(mapView.getMapEventDispatcher(), null,
-                        this.getClass());
+                pointsToRefresh.add(addMarker);
             }
             if (lastPointBad) {
                 GeoPointMetaData lastGeoPoint = getPoint(last);
@@ -1243,8 +1243,7 @@ public class Route extends EditablePolyline {
                 if (addWaypointsToGroup)
                     waypointGroup.addItem(addMarker);
 
-                addMarker.refresh(mapView.getMapEventDispatcher(), null,
-                        this.getClass());
+                pointsToRefresh.add(addMarker);
             }
         }
 
@@ -1254,8 +1253,7 @@ public class Route extends EditablePolyline {
             firstPoint.setTouchable(isTouchable());
             if (firstPoint instanceof Marker)
                 firstPoint.setTitle(firstCPName);
-            firstPoint.refresh(mapView.getMapEventDispatcher(), null,
-                    this.getClass());
+            pointsToRefresh.add(firstPoint);
         }
 
         if (lastPoint != null && isAutomaticName(lastPoint.getMetaString(
@@ -1264,12 +1262,28 @@ public class Route extends EditablePolyline {
             lastPoint.setTouchable(isTouchable());
             if (lastPoint instanceof Marker)
                 lastPoint.setTitle(lastCPName);
-            lastPoint.refresh(mapView.getMapEventDispatcher(), null,
-                    this.getClass());
+            pointsToRefresh.add(lastPoint);
         }
 
         if (validateWaypointNames())
             onRoutePointsChanged();
+
+        // if either end point needs refresh, post to the main dispatch thread
+        // for invocation on the next pump. execution in the current stack may
+        // deadlock if a point is shared between two routes and they are being
+        // imported by separate mechanisms (e.g. one from statesaver and the
+        // other from mission package)
+        if (!pointsToRefresh.isEmpty())
+            mapView.post(new Runnable() {
+                @Override
+                public void run() {
+                    for (MapItem item : pointsToRefresh) {
+                        item.refresh(mapView.getMapEventDispatcher(), null,
+                                Route.this.getClass());
+                    }
+                }
+            });
+
     }
 
     synchronized void fixSPandVDO() {

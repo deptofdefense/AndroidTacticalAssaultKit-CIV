@@ -1102,7 +1102,7 @@ public class ChatDatabase {
             }
             writer.flush();
         } finally {
-            IoUtils.close(writer,TAG,"failed to close the writer");
+            IoUtils.close(writer, TAG, "failed to close the writer");
         }
     }
 }

@@ -261,7 +261,10 @@ public class MissionPackageReceiver extends BroadcastReceiver implements
             // show dropdown
             // and then expand and scroll to the proper package in the list
             showMissionPackageView(missionPackageUID);
-        } else if (MISSIONPACKAGE_MAPSELECT.equals(action)) {
+        }
+
+        // Content selected via map selection tool
+        else if (MISSIONPACKAGE_MAPSELECT.equals(action)) {
             if (extras == null)
                 return;
 
@@ -317,7 +320,10 @@ public class MissionPackageReceiver extends BroadcastReceiver implements
                         .isIncludeAttachments(),
                         uids.toArray(new String[0]));
             }
-        } else if (MISSIONPACKAGE_SAVE.equals(action)) {
+        }
+
+        // Compress data package to ZIP and optionally send
+        else if (MISSIONPACKAGE_SAVE.equals(action)) {
             if (extras == null)
                 return;
 
@@ -1163,7 +1169,6 @@ public class MissionPackageReceiver extends BroadcastReceiver implements
     @Override
     public void fileUpdateCallback(File file, OPERATION op,
             long newestFileTime) {
-
 
         File fileToSkip = null;
 

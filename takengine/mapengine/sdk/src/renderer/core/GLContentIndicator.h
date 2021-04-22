@@ -60,7 +60,7 @@ namespace TAK {
                      */
                     void setDisplayThresholds(const double minGsd, const double maxGsd) NOTHROWS;
                 public : // GLMapRenderable2
-                    void draw(const GLMapView2 &view, const int renderPass) NOTHROWS override;
+                    void draw(const GLGlobeBase &view, const int renderPass) NOTHROWS override;
                     void release() NOTHROWS override;
                     int getRenderPass() NOTHROWS override;
                     void start() NOTHROWS override;

@@ -6,6 +6,7 @@ import com.atakmap.android.maps.graphics.GLImageCache;
 import com.atakmap.android.maps.graphics.GLPolyline;
 import com.atakmap.app.DeveloperOptions;
 import com.atakmap.app.R;
+import com.atakmap.map.Globe;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
@@ -53,8 +54,10 @@ class GLEditablePolyline extends GLPolyline implements
 
         super.draw(ortho, renderPass);
         int dragIndex = -1;
-        if (_editable && _verts2 != null
-                && (_subject.shouldDisplayVertices(ortho.drawMapScale)
+        if (_editable && _verts2 != null && currentDraw == ortho.drawVersion
+                && (_subject.shouldDisplayVertices(
+                        Globe.getMapResolution(ortho.getSurface().getDpi(),
+                                ortho.currentScene.drawMapResolution))
                         || _subject.hasMetaValue("dragInProgress")
                                 && (dragIndex = _subject.getMetaInteger(
                                         "hit_index", -1)) > -1)) {
@@ -91,8 +94,10 @@ class GLEditablePolyline extends GLPolyline implements
                         GLES20FixedPipeline.GL_TEXTURE_2D,
                         _vertexIconEntry.getTextureId());
                 // // HACK; don't actually need texture coords since these are points
-                GLES20FixedPipeline.glPointSize(Math
-                        .round(32 * MapView.DENSITY));
+                GLES20FixedPipeline.glPointSize(Math.max(Math
+                        .round(32 * MapView.DENSITY
+                                / (ortho.currentPass.relativeScaleHint / 2f)),
+                        1));
 
                 // Set up points at which to draw vertexes
                 GLES20FixedPipeline.glVertexPointer(_verts2Size,
@@ -126,7 +131,17 @@ class GLEditablePolyline extends GLPolyline implements
 
     @Override
     public void onEditableChanged(EditablePolyline polyline) {
-        _editable = polyline.getEditable();
+        context.queueEvent(new Runnable() {
+            @Override
+            public void run() {
+                _editable = polyline.getEditable();
+                markSurfaceDirty(true);
+            }
+        });
+
+
+
+
     }
 
     @Override

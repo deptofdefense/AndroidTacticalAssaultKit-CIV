@@ -473,6 +473,9 @@ namespace TAK {
                 SpatialCalculator2 &calc;
                 bool success;
             };
+
+            ENGINE_API Envelope2 SpatialCalculator_union(const Envelope2 &a, const Envelope2 &b) NOTHROWS;
+            ENGINE_API bool SpatialCalculator_intersects(const Envelope2 &a, const Envelope2 &b) NOTHROWS;
         }
     }
 }

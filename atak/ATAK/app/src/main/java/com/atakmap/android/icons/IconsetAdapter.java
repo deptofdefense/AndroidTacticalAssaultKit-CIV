@@ -402,10 +402,8 @@ public class IconsetAdapter extends BaseAdapter {
                 return false;
             }
 
-            ZipOutputStream zos = null;
-            try(FileOutputStream fos = IOProviderFactory.getOutputStream(zip);
-                BufferedOutputStream bos = new BufferedOutputStream(fos)) {
-                zos = new ZipOutputStream(bos);
+            try (ZipOutputStream zos = FileSystemUtils
+                    .getZipOutputStream(zip)) {
 
                 //add iconset.xml
                 addFile(zos, null, ImportUserIconSetSort.ICONSET_XML,
@@ -437,9 +435,6 @@ public class IconsetAdapter extends BaseAdapter {
                         _context.getString(R.string.iconset_export_fail)
                                 + iconset.getName());
                 return false;
-            } finally {
-                IoUtils.close(zos,TAG,"Failed to close iconset: "
-                        + zip.getAbsolutePath());
             }
         }
     }

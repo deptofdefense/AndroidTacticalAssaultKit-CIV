@@ -1,3 +1,4 @@
+
 package com.atakmap.android.fires.bridge;
 
 import android.graphics.drawable.Drawable;
@@ -21,9 +22,7 @@ public abstract class NineLineBroadcastReceiver extends DropDownReceiver
 
     final static public String NINE_LINE = "com.atakmap.baokit.NINE_LINE";
 
-
     static private NineLineBroadcastReceiver impl;
-
 
     /**
      * When a plugin wants to send a 9 Line digitally using a transport method other than CoT
@@ -39,19 +38,16 @@ public abstract class NineLineBroadcastReceiver extends DropDownReceiver
         super(mapView);
     }
 
-
     synchronized public static NineLineBroadcastReceiver getInstance(
             MapView mapView,
             MapGroup mapGroup) {
         return impl;
     }
 
-
-    public static void registerImplementation(NineLineBroadcastReceiver concreteImpl) {
+    public static void registerImplementation(
+            NineLineBroadcastReceiver concreteImpl) {
         impl = concreteImpl;
     }
-
-
 
     /**
      * Removes an External Nine Line Processor.
@@ -68,5 +64,5 @@ public abstract class NineLineBroadcastReceiver extends DropDownReceiver
      * @param enlp the External Nine Line Processor implementation.
      */
     public abstract void addExternalNineLineProcessor(final Drawable icon,
-                                                          String txt, final ExternalNineLineProcessor enlp);
+            String txt, final ExternalNineLineProcessor enlp);
 }

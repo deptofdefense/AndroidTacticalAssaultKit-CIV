@@ -59,9 +59,7 @@ class BrightnessOverlay implements GLMapRenderable,
                                     .getDefaultSharedPreferences(_context)
                                     .getBoolean(
                                             //determines the layer enum type to set, higher layer covers more map items on screen
-                                            _context.getResources()
-                                                    .getString(
-                                                            R.string.dim_brightness_pref_key),
+                                            "dim_map_with_brightness_key",
                                             false) ? MapView.RenderStack.WIDGETS
                                                     : //high layer
                     MapView.RenderStack.RASTER_OVERLAYS, //mid layer
@@ -161,8 +159,7 @@ class BrightnessOverlay implements GLMapRenderable,
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
             String key) {
-        if (key.equals(_context.getResources().getString(
-                R.string.dim_brightness_pref_key))) {
+        if (key.equals("dim_map_with_brightness_key")) {
             //remove and reattach the renderer!
             if (BrightnessOverlay.this.renderer != null) {
                 scheduleDismissOnGLThread();

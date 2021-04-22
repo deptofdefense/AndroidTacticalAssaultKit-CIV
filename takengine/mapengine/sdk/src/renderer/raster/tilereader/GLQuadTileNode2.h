@@ -10,10 +10,11 @@
 #include "renderer/GLTexture2.h"
 #include "renderer/GLTextureCache2.h"
 #include "renderer/core/GLMapRenderable2.h"
-#include "renderer/core/GLMapView2.h"
+#include "renderer/core/GLGlobeBase.h"
 #include "renderer/core/GLResolvable.h"
 #include "renderer/core/GLResolvableMapRenderable2.h"
 #include "thread/Mutex.h"
+#include <list>
 #include <vector>
 
 namespace TAK {
@@ -24,6 +25,8 @@ namespace TileReader {
 
 class GLQuadTileNode2;
 typedef std::unique_ptr<GLQuadTileNode2, void (*)(const GLQuadTileNode2 *)> GLQuadTileNode2Ptr;
+
+class TileReadRequestPrioritizer;
 
 class ENGINE_API GLQuadTileNode2 : public Core::GLResolvableMapRenderable2,
                                    public TAK::Engine::Raster::TileReader::TileReader2::AsynchronousReadRequestListener,
@@ -39,7 +42,7 @@ class ENGINE_API GLQuadTileNode2 : public Core::GLResolvableMapRenderable2,
          * must be populated; precise is optional. Return TE_Ok for success,
          * any other value for error.
          */
-        virtual Util::TAKErr init(TAK::Engine::Raster::TileReader::TileReader2Ptr &reader,
+        virtual Util::TAKErr init(std::shared_ptr<TAK::Engine::Raster::TileReader::TileReader2> &reader,
                                   TAK::Engine::Raster::DatasetProjection2Ptr &imprecise,
                                   TAK::Engine::Raster::DatasetProjection2Ptr &precise, const TAK::Engine::Raster::ImageInfo *info,
                                   TAK::Engine::Raster::TileReader::TileReaderFactory2Options &readerOpts) const = 0;
@@ -75,14 +78,14 @@ class ENGINE_API GLQuadTileNode2 : public Core::GLResolvableMapRenderable2,
     class NodeCore
     {
        public:
-        TAK::Engine::Raster::TileReader::TileReader2Ptr tileReader;
+        std::shared_ptr<TAK::Engine::Raster::TileReader::TileReader2> tileReader;
+        std::shared_ptr<TAK::Engine::Raster::TileReader::TileReader2::AsynchronousIO> asyncio;
         /** Projects between the image coordinate space and WGS84. */
         TAK::Engine::Raster::DatasetProjection2Ptr imprecise;
         /** Projects between the image coordinate space and WGS84. */
         TAK::Engine::Raster::DatasetProjection2Ptr precise;
 
-        const int srid;
-        const std::string type;
+        const TAK::Engine::Raster::ImageInfo imageInfo;
         Options options;
         
         
@@ -138,15 +141,18 @@ class ENGINE_API GLQuadTileNode2 : public Core::GLResolvableMapRenderable2,
         int tilesThisFrame;
 
         Thread::Mutex infoLock;
-        TAK::Engine::Raster::ImageInfoPtr imageInfo;
 
+        std::unique_ptr<TileReadRequestPrioritizer> readRequestPrioritizer;
+        Util::TAKErr status;
+
+        TAK::Engine::Renderer::Core::Controls::SurfaceRendererControl *surfaceRenderer;
        private:
-        NodeCore(TAK::Engine::Core::RenderContext *context, const char *type, const Initializer &init, TAK::Engine::Raster::TileReader::TileReader2Ptr &reader,
-                 TAK::Engine::Raster::DatasetProjection2Ptr &imprecise, TAK::Engine::Raster::DatasetProjection2Ptr &precise, int srid,
-                 const Options &opts);
-
-        Util::TAKErr initCore(double gsdHint);
-
+        NodeCore(TAK::Engine::Core::RenderContext *context, const TAK::Engine::Raster::ImageInfo &info, const Initializer &init, const std::shared_ptr<TAK::Engine::Raster::TileReader::TileReader2> &reader,
+                 const std::shared_ptr<TAK::Engine::Raster::TileReader::TileReader2::AsynchronousIO> &asyncio,
+                 TAK::Engine::Raster::DatasetProjection2Ptr &imprecise, TAK::Engine::Raster::DatasetProjection2Ptr &precise,
+                 const Options &opts) NOTHROWS;
+       public :
+        ~NodeCore() NOTHROWS;
        public:
         static Util::TAKErr create(NodeCore **v, TAK::Engine::Core::RenderContext *context, const TAK::Engine::Raster::ImageInfo *info,
                                    TAK::Engine::Raster::TileReader::TileReaderFactory2Options &readerOpts, const Options &opts,
@@ -187,15 +193,15 @@ class ENGINE_API GLQuadTileNode2 : public Core::GLResolvableMapRenderable2,
     Util::TAKErr getLoadingTexture(GLTexture2 **ret, float *texCoords, std::size_t texGridWidth, std::size_t texGridHeight);
     Util::TAKErr validateTexture();
     Util::TAKErr validateTexVerts();
-    Util::TAKErr validateVertexCoords(const Core::GLMapView2 &view);
+    Util::TAKErr validateVertexCoords(const Core::GLGlobeBase &view);
     bool shouldResolve();
     bool useCachedTexture();
     void resolveTexture();
-    void drawTexture(const Core::GLMapView2 &view, GLTexture2 *tex, float *texCoords);
+    void drawTexture(const Core::GLGlobeBase &view, GLTexture2 *tex, float *texCoords);
     const char *getTextureKey();
     void invalidateVertexCoords();
     void expandTexGrid();
-    void drawImpl(const Core::GLMapView2 &view);
+    void drawImpl(const Core::GLGlobeBase &view);
 
    private:
     Util::TAKErr super_set(int64_t tileColumn, int64_t tileRow, size_t level);
@@ -204,36 +210,12 @@ class ENGINE_API GLQuadTileNode2 : public Core::GLResolvableMapRenderable2,
     bool super_shouldResolve();
     void resetFadeTimer();
     Util::TAKErr super_resolveTexture();
-    void draw(const Core::GLMapView2 &view, size_t level, int64_t srcX, int64_t srcY, int64_t srcW, int64_t srcH, int64_t poiX, int64_t poiY, bool cull);
-    void setLCS(const Core::GLMapView2 &view);
-    void super_drawTexture(const Core::GLMapView2 &view, GLTexture2 *tex, float *texCoords);
+    void draw(const Core::GLGlobeBase &view, const size_t level, int64_t srcX, int64_t srcY, int64_t srcW, int64_t srcH, int64_t poiX, int64_t poiY);
+    void setLCS(const Core::GLGlobeBase &view);
+    void super_drawTexture(const Core::GLGlobeBase &view, GLTexture2 *tex, float *texCoords);
     void super_invalidateVertexCoords();
-    void super_draw(const Core::GLMapView2 &view);
-    void debugDraw(const Core::GLMapView2 &view);
-    /**
-     * Adopts the specified child
-     *
-     * @param idx The {@link #children} index to adopt the child at
-     * @param child The child to adopt
-     */
-    Util::TAKErr adopt(int idx, GLQuadTileNode2Ptr child);
-    /**
-     * Orphans the specified children.
-     *
-     * @param orphans set to receive the orphaned children - may not be null
-     * @param upperLeft <code>true</code> to orphan the upper-left child
-     * @param upperRight <code>true</code> to orphan the upper-right child
-     * @param lowerLeft <code>true</code> to orphan the lower-left child
-     * @param lowerRight <code>true</code> to orphan the lower-right child
-     */
-    Util::TAKErr orphan(std::vector<GLQuadTileNode2Ptr> *orphans, int64_t drawVersion, bool upperLeft, bool upperRight, bool lowerLeft,
-                        bool lowerRight);
-    static bool orphanSort(const GLQuadTileNode2Ptr &n1, const GLQuadTileNode2Ptr &n2);
-
-    /**
-     * Abandons all of the children
-     */
-    void abandon();
+    void super_draw(const Core::GLGlobeBase &view);
+    void debugDraw(const Core::GLGlobeBase &view);
 
     State getStateImpl();
     int recurseState();
@@ -243,6 +225,8 @@ class ENGINE_API GLQuadTileNode2 : public Core::GLResolvableMapRenderable2,
     bool checkRequest(int id);
     std::string toString(bool l);
 
+    void cull(const int drawPump) NOTHROWS;
+
     // IO Callback support - render thread runnables
     struct IOCallbackOpaque;
     static void rendererIORunnable(void *opaque) NOTHROWS;
@@ -251,7 +235,7 @@ class ENGINE_API GLQuadTileNode2 : public Core::GLResolvableMapRenderable2,
 
    public:
     // GLMapRenderable2
-    virtual void draw(const Core::GLMapView2 &view, const int renderPass) NOTHROWS;
+    virtual void draw(const Core::GLGlobeBase &view, const int renderPass) NOTHROWS;
     virtual void release() NOTHROWS;
     virtual int getRenderPass() NOTHROWS;
     virtual void start() NOTHROWS;
@@ -291,11 +275,7 @@ class ENGINE_API GLQuadTileNode2 : public Core::GLResolvableMapRenderable2,
      * The id of the async read request currently outstanding. Valid access to the request is only guaranteed on
      * the render thread and only when currentRequestIdValid
      */
-    int current_request_id_;
-    size_t current_request_level_;
-    int64_t current_request_row_;
-    int64_t current_request_col_;
-    bool current_request_id_valid_;
+    std::shared_ptr<TAK::Engine::Raster::TileReader::TileReader2::ReadRequest> current_request_;
     GLTexture2Ptr texture_;
     int64_t tile_row_;
     int64_t tile_column_;
@@ -351,6 +331,7 @@ class ENGINE_API GLQuadTileNode2 : public Core::GLResolvableMapRenderable2,
     std::vector<IOCallbackOpaque *> queued_callbacks_;
     TAK::Engine::Core::GeoPoint2 centroid_;
     TAK::Engine::Math::Point2<double> centroid_proj_;
+    std::list<std::shared_ptr<TAK::Engine::Raster::TileReader::TileReader2::ReadRequest>> read_requests_;
 
     double min_lat_;
     double min_lng_;
@@ -381,7 +362,7 @@ class ENGINE_API GLQuadTileNode2 : public Core::GLResolvableMapRenderable2,
     bool should_borrow_texture_;
 
    private:
-    int64_t last_touch_;
+    int64_t last_touch2_;
     int64_t fade_timer_;
     int64_t read_request_start_;
     int64_t read_request_complete_;
@@ -392,8 +373,6 @@ class ENGINE_API GLQuadTileNode2 : public Core::GLResolvableMapRenderable2,
     size_t debug_draw_indices_capacity_;
     // Num elements actually meaningful
     size_t debug_draw_indices_count_;
-
-    bool is_overdraw_;
 
    protected:
     /**

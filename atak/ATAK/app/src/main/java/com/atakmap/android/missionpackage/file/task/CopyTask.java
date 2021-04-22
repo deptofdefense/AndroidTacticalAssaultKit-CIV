@@ -72,8 +72,9 @@ public class CopyTask extends MissionPackageBaseTask {
 
         // now copy to deploy directory
 
-        try(FileInputStream fis = IOProviderFactory.getInputStream(source);
-            FileOutputStream fos = IOProviderFactory.getOutputStream(_destination)) {
+        try (FileInputStream fis = IOProviderFactory.getInputStream(source);
+                FileOutputStream fos = IOProviderFactory
+                        .getOutputStream(_destination)) {
             FileSystemUtils.copyStream(fis, fos);
         } catch (Exception e) {
             Log.w(TAG, "Failed to deploy (1) to: " + _destination, e);

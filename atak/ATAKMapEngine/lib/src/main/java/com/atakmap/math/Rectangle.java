@@ -39,11 +39,17 @@ public class Rectangle {
      *          <code>false</code> otherwise.
      */
     public static boolean intersects(double aX1, double aY1, double aX2, double aY2, double bX1, double bY1, double bX2, double bY2) {
-        return aX1 <= bX2 &&
-               aY1 <= bY2 &&
-                aX2 >= bX1 &&
-                aY2 >= bY1;
-        //return !((bX2 < aX1) || (bX1 > aX2) || (bY2 < aY1) || (bY1 > aY2));
+        return intersects(aX1, aY1, aX2, aY2, bX1, bY1, bX2, bY2, true);
+    }
+    public static boolean intersects(double aX1, double aY1, double aX2, double aY2, double bX1, double bY1, double bX2, double bY2, boolean edgeIsect) {
+        final boolean strictIsect = aX1 < bX2 &&
+                                    aY1 < bY2 &&
+                                    aX2 > bX1 &&
+                                    aY2 > bY1;
+        if(strictIsect || !edgeIsect)
+            return strictIsect;
+
+        return (aX1 == bX2) || (aY1 == bY2) || (aX2 == bX1) || (aY2 == bY1);
     }
     
     public static boolean contains(double rX1, double rY1, double rX2, double rY2, double x, double y) {

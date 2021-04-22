@@ -10,11 +10,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 import android.graphics.Color;
 import android.graphics.PointF;
@@ -46,6 +43,7 @@ import com.atakmap.map.opengl.GLAntiAliasedLine;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLRenderBatch2;
 import com.atakmap.opengl.GLTextureAtlas;
+import com.atakmap.opengl.Shader;
 import com.atakmap.util.ConfigOptions;
 
 public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable2 {
@@ -90,59 +88,58 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         "in int a_factor;\n" +
         "in float a_halfStrokeWidth;\n" +
         "out vec4 v_color;\n" +
+        "flat out float f_dist;\n" +
+        "out float v_mix;\n" +
         "flat out int f_pattern;\n" +
-        "out vec2 v_offset;\n" +
+        "out vec2 v_normal;\n" +
         "flat out float f_halfStrokeWidth;\n" +
         "flat out int f_factor;\n" +
-        "flat out vec2 f_origin;\n" +
-        "flat out vec2 f_normal;\n" +
         "void main(void) {\n" +
         "  gl_Position = u_mvp * vec4(a_vertexCoord0.xyz, 1.0);\n" +
         "  vec4 next_gl_Position = u_mvp * vec4(a_vertexCoord1.xyz, 1.0);\n" +
         "  vec4 p0 = (gl_Position / gl_Position.w)*vec4(u_viewportSize, 1.0, 1.0);\n" +
         "  vec4 p1 = (next_gl_Position / next_gl_Position.w)*vec4(u_viewportSize, 1.0, 1.0);\n" +
+        "  v_mix = a_dir;\n" +
         "  float dist = distance(p0.xy, p1.xy);\n" +
         "  float dx = p1.x - p0.x;\n" +
         "  float dy = p1.y - p0.y;\n" +
         "  float normalDir = (2.0*a_normal) - 1.0;\n" +
         "  float adjX = normalDir*(dx/dist)*((a_halfStrokeWidth+c_smoothBuffer)/u_viewportSize.y);\n" +
         "  float adjY = normalDir*(dy/dist)*((a_halfStrokeWidth+c_smoothBuffer)/u_viewportSize.x);\n" +
-        "  gl_Position.x = gl_Position.x - adjY;\n" +
-        "  gl_Position.y = gl_Position.y + adjX;\n" +
+        "  gl_Position.x = gl_Position.x - adjY*gl_Position.w;\n" +
+        "  gl_Position.y = gl_Position.y + adjX*gl_Position.w;\n" +
         "  v_color = a_color;\n" +
-        "  v_offset = vec2(-normalDir*(dy/dist)*(a_halfStrokeWidth+c_smoothBuffer), normalDir*(dx/dist)*(a_halfStrokeWidth+c_smoothBuffer));\n" +
-        "  f_pattern = a_pattern;\n" +
+        "  v_normal = vec2(-normalDir*(dy/dist)*(a_halfStrokeWidth+c_smoothBuffer), normalDir*(dx/dist)*(a_halfStrokeWidth+c_smoothBuffer));\n" +
+        "  f_pattern = 0xFFFF;\n" +
         "  f_factor = a_factor;\n" +
+        "  f_dist = dist;\n" +
         "  f_halfStrokeWidth = a_halfStrokeWidth;\n" +
-        // flip the normal used in the distance calculation here to avoid unnecessary per-fragment overhead
-        "  f_normal = normalize(vec2(p1.xy-p0.xy)) * ((2.0*a_dir) - 1.0);\n" +
-        // select an origin to measure `gl_FragCoord` distance from.
-        "  f_origin = mix(p0.xy, p1.xy, a_dir);\n" +
-        "  f_origin.x = -1.0*mod(f_origin.x, u_viewportSize.x);\n" +
-        "  f_origin.y = -1.0*mod(f_origin.y, u_viewportSize.y);\n" +
         "}";
 
     private final static String LINE_FSH =
         "#version 300 es\n" +
         "precision mediump float;\n" +
+        "uniform mediump vec2 u_viewportSize;\n" +
         "in vec4 v_color;\n" +
+        "in float v_mix;\n" +
         "flat in int f_pattern;\n" +
         "flat in int f_factor;\n" +
-        "flat in vec2 f_origin;\n" +
-        "flat in vec2 f_normal;\n" +
-        "in vec2 v_offset;\n" +
+        "flat in float f_dist;\n" +
+        "in vec2 v_normal;\n" +
         "flat in float f_halfStrokeWidth;\n" +
         "out vec4 v_FragColor;\n" +
         "void main(void) {\n" +
-        // measure the distance of the frag coordinate to the origin
-        "  float d = dot(f_normal, gl_FragCoord.xy-f_origin);\n" +
+        "  float d = (f_dist*v_mix);\n" +
         "  int idist = int(d);\n" +
         "  float b0 = float((f_pattern>>((idist/f_factor)%16))&0x1);\n" +
         "  float b1 = float((f_pattern>>(((idist+1)/f_factor)%16))&0x1);\n" +
         "  float alpha = mix(b0, b1, fract(d));\n" +
-        "  float antiAlias = smoothstep(-1.0, 0.25, f_halfStrokeWidth-length(v_offset));\n" +
+        "  float antiAlias = smoothstep(-1.0, 0.25, f_halfStrokeWidth-length(v_normal));\n" +
         "  v_FragColor = vec4(v_color.rgb, v_color.a*antiAlias*alpha);\n" +
         "}";
+
+
+    private final static int TRIANGLES_VERTEX_SIZE = (12+4); // 16
 
     private static final String TAG = "GLBatchGeometryRenderer";
 
@@ -178,7 +175,6 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
     private final static int PRE_FORWARD_LINES_POINT_RATIO_THRESHOLD = 3;
 
     private final static int MAX_BUFFERED_2D_POINTS = 20000;
-    private final static int MAX_BUFFERED_3D_POINTS = (MAX_BUFFERED_2D_POINTS*2)/3;
     private final static int MAX_VERTS_PER_DRAW_ARRAYS = 5000;
 
     private final static int POINT_BATCHING_THRESHOLD = 500;
@@ -186,17 +182,14 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
     private final static Map<MapRenderer, RenderBuffers> renderBuffers = new IdentityHashMap<MapRenderer, RenderBuffers>();
 
     /*************************************************************************/
-    
-    private LinkedList<GLBatchPolygon> surfacePolys = new LinkedList<>();
-    private LinkedList<GLBatchPolygon> spritePolys = new LinkedList<>();
-    private LinkedList<GLBatchLineString> spriteLines = new LinkedList<GLBatchLineString>();
-    private LinkedList<GLBatchLineString> surfaceLines = new LinkedList<GLBatchLineString>();
-    private LinkedList<GLBatchPoint> batchPoints2 = new LinkedList<GLBatchPoint>();
-    private LinkedList<GLBatchPoint> labels = new LinkedList<GLBatchPoint>();
-    private LinkedList<GLBatchPoint> loadingPoints = new LinkedList<GLBatchPoint>();
 
-    private SortedSet<GLBatchGeometry> sortedPolys = new TreeSet<GLBatchGeometry>(FID_COMPARATOR);
-    private SortedSet<GLBatchGeometry> sortedLines = new TreeSet<GLBatchGeometry>(FID_COMPARATOR);
+    private ArrayList<GLBatchPolygon> surfacePolys = new ArrayList<>();
+    private ArrayList<GLBatchLineString> spritePolys = new ArrayList<>();
+    private ArrayList<GLBatchLineString> spriteLines = new ArrayList<>();
+    private ArrayList<GLBatchLineString> surfaceLines = new ArrayList<>();
+    private ArrayList<GLBatchPoint> batchPoints2 = new ArrayList<>();
+    private ArrayList<GLBatchPoint> labels = new ArrayList<>();
+    private ArrayList<GLBatchPoint> loadingPoints = new ArrayList<>();
 
     private SortInfo sortInfo = new SortInfo();
 
@@ -219,15 +212,22 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
 
     private GLMapView glmv;
     GLAntiAliasedLine _lineRenderer;
-    private int batchSrid = -1;
-    private PointD batchCentroidProj = new PointD(0d, 0d, 0d);
-    private GeoPoint batchCentroid = GeoPoint.createMutable();
+    private int batchSpritesSrid = -1;
+    private int batchSurfaceSrid = -1;
+    private PointD batchSpritesCentroidProj = new PointD(0d, 0d, 0d);
+    private PointD batchSurfaceCentroidProj = new PointD(0d, 0d, 0d);
+    private GeoPoint batchSpritesCentroid = GeoPoint.createMutable();
+    private GeoPoint batchSurfaceCentroid = GeoPoint.createMutable();
     private int rebuildBatchBuffers = -1;
     private int batchTerrainVersion = -1;
-    private Matrix localFrame = Matrix.getIdentity();
-    private Collection<LinesBuffer> surfaceLineBuffers = new ArrayList<>();
-    private Collection<LinesBuffer> spriteLineBuffers = new ArrayList<>();
+    private Matrix spritesLocalFrame = Matrix.getIdentity();
+    private Matrix surfaceLocalFrame = Matrix.getIdentity();
+    private Collection<PrimitiveBuffer> surfaceLineBuffers = new ArrayList<>();
+    private Collection<PrimitiveBuffer> spriteLineBuffers0 = new ArrayList<>();
+    private Collection<PrimitiveBuffer> spriteLineBuffers1 = new ArrayList<>();
+    private Collection<PrimitiveBuffer> spriteTriangleBuffers = new ArrayList<>();
     private LineShader lineShader = null;
+    private Shader triangleShader = null;
 
     public GLBatchGeometryRenderer() {
         this(null);
@@ -338,9 +338,6 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
     }
 
     public void setBatch(Collection<GLBatchGeometry> geoms) {
-        sortedPolys.clear();
-        sortedLines.clear();
-
         surfacePolys.clear();
         spritePolys.clear();
         spriteLines.clear();
@@ -358,27 +355,15 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         else if(sortInfo.order == SortInfo.DEPTH)
             Collections.sort(this.batchPoints2, new DepthComparator(sortInfo.centerLat, sortInfo.measureFromLat, sortInfo.measureFromLng));
 
-        for(GLBatchGeometry geom : this.sortedLines) {
-            final GLBatchLineString line = (GLBatchLineString)geom;
-            if(line.altitudeMode == Feature.AltitudeMode.ClampToGround)
-                surfaceLines.add(line);
-            else
-                spriteLines.add(line);
-        }
-        this.sortedLines.clear();
-        
-        for(GLBatchGeometry geom : this.sortedPolys) {
-            final GLBatchPolygon poly = (GLBatchPolygon)geom;
-            if (poly.altitudeMode == Feature.AltitudeMode.ClampToGround)
-                surfacePolys.add(poly);
-            else
-                spritePolys.add(poly);
-        }
-        this.sortedPolys.clear();
+        Collections.sort(surfaceLines, FID_COMPARATOR);
+        Collections.sort(spriteLines, FID_COMPARATOR);
+        Collections.sort(surfacePolys, FID_COMPARATOR);
+        Collections.sort(spritePolys, FID_COMPARATOR);
 
-        batchSrid = -1;
+        batchSpritesSrid = -1;
+        batchSurfaceSrid = -1;
     }
-    
+
     private void fillBatchLists(Collection<GLBatchGeometry> geoms) {
         for(GLBatchGeometry g : geoms) {
             switch(g.zOrder) {
@@ -394,8 +379,12 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
                     break;
                 }
                 case 2: {
-                    if(((GLBatchPolygon)g).fillColorA > 0.0f) {
-                        sortedPolys.add(g);
+                    if(((GLBatchPolygon)g).drawFill) {
+                        final GLBatchPolygon poly = (GLBatchPolygon)g;
+                        if(poly.altitudeMode == Feature.AltitudeMode.ClampToGround)
+                            surfacePolys.add(poly);
+                        else
+                            spritePolys.add(poly);
                         break;
                     } else if(!((GLBatchPolygon)g).drawStroke) {
                         break;
@@ -403,8 +392,13 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
                     // if the polygon isn't filled, treat it just like a line
                 }
                 case 1: {
-                    //if(((GLBatchLineString)g).strokeColorA > 0.0f)
-                        sortedLines.add(g);
+                    final GLBatchLineString line = (GLBatchLineString)g;
+                    if(line.altitudeMode == Feature.AltitudeMode.ClampToGround)
+                        surfaceLines.add(line);
+                    else if(line.hasFill() && line.isExtruded())
+                        spritePolys.add(line);
+                    else
+                        spriteLines.add(line);
                     break;
                 }
                 case 10 :
@@ -446,21 +440,37 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
             this.textureAtlasIndicesBuffer = buffers.textureAtlasIndicesBuffer;            
         }
 
+        final boolean surface = MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SURFACE);
+        final boolean sprites = MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SPRITES);
+
         // match batches as dirty
-        if (batchSrid != view.drawSrid) {
+        if (surface && batchSurfaceSrid != view.drawSrid) {
             // reset relative to center
-            batchCentroid.set(view.drawLat, view.drawLng);
-            view.scene.mapProjection.forward(batchCentroid, batchCentroidProj);
-            batchSrid = view.drawSrid;
+            batchSurfaceCentroid.set(view.currentScene.drawLat, view.currentScene.drawLng);
+            view.scene.mapProjection.forward(batchSurfaceCentroid, batchSurfaceCentroidProj);
+            batchSurfaceSrid = view.drawSrid;
 
-            localFrame.setToTranslation(batchCentroidProj.x, batchCentroidProj.y, batchCentroidProj.z);
+            surfaceLocalFrame.setToTranslation(batchSurfaceCentroidProj.x, batchSurfaceCentroidProj.y, batchSurfaceCentroidProj.z);
 
             // mark batches dirty
-            rebuildBatchBuffers = 0xFFFFFFFF;
+            rebuildBatchBuffers |= GLMapView.RENDER_PASS_SURFACE;
             batchTerrainVersion = view.getTerrainVersion();
-        } else if (batchTerrainVersion != view.getTerrainVersion()) {
+        }
+        if (sprites && batchSpritesSrid != view.drawSrid) {
+            // reset relative to center
+            batchSpritesCentroid.set(view.currentScene.drawLat, view.currentScene.drawLng);
+            view.scene.mapProjection.forward(batchSpritesCentroid, batchSpritesCentroidProj);
+            batchSpritesSrid = view.drawSrid;
+
+            spritesLocalFrame.setToTranslation(batchSpritesCentroidProj.x, batchSpritesCentroidProj.y, batchSpritesCentroidProj.z);
+
             // mark batches dirty
-            rebuildBatchBuffers = 0xFFFFFFFF;
+            rebuildBatchBuffers |= GLMapView.RENDER_PASS_SPRITES;
+            batchTerrainVersion = view.getTerrainVersion();
+        }
+        if (batchTerrainVersion != view.getTerrainVersion()) {
+            // mark batches dirty
+            rebuildBatchBuffers |= GLMapView.RENDER_PASS_SPRITES;
             batchTerrainVersion = view.getTerrainVersion();
         }
 
@@ -488,15 +498,15 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         // lines
         if (!this.surfaceLines.isEmpty()) {
             if (MathUtils.hasBits(rebuildBatchBuffers, GLMapView.RENDER_PASS_SURFACE)) {
-                for (LinesBuffer lb : surfaceLineBuffers)
+                for (PrimitiveBuffer lb : surfaceLineBuffers)
                     GLES30.glDeleteBuffers(1, lb.vbo, 0);
                 surfaceLineBuffers.clear();
-                this.buildLineBuffers(surfaceLineBuffers, view, surfaceLines);
+                this.buildLineBuffers(surfaceLineBuffers, view, surfaceLines, batchSurfaceCentroidProj, true);
             }
 
-            this.drawLineBuffers(view, surfaceLineBuffers);
+            this.drawLineBuffers(view, surfaceLineBuffers, batchSurfaceCentroidProj);
         } else if(!surfaceLineBuffers.isEmpty()) {
-            for (LinesBuffer lb : surfaceLineBuffers)
+            for (PrimitiveBuffer lb : surfaceLineBuffers)
                 GLES30.glDeleteBuffers(1, lb.vbo, 0);
             surfaceLineBuffers.clear();
         }
@@ -511,26 +521,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
 
         GLES20FixedPipeline.glPushMatrix();
 
-        // XXX - batch currently only supports 2D vertices
-
-        final boolean hardwareTransforms = (view.drawMapResolution > view.hardwareTransformResolutionThreshold/4d);
-
-        int vertType;
-//        if(!hardwareTransforms) {
-//            // XXX - force all polygons projected as pixels as stroking does
-//            //       not work properly. since vertices are in projected
-//            //       coordinate space units, width also needs to be
-//            //       specified as such. attempts to compute some nominal
-//            //       scale factor produces reasonable results at lower map
-//            //       resolutions but cause width to converge to zero (32-bit
-//            //       precision?) at higher resolutions
-//            vertType = GLGeometry.VERTICES_PIXEL;
-//        } else {
-//            vertType = GLGeometry.VERTICES_PROJECTED;
-//
-//            GLES20FixedPipeline.glLoadMatrixf(view.sceneModelForwardMatrix, 0);
-//        }
-        vertType = GLGeometry.VERTICES_PIXEL;
+        final int vertType = GLGeometry.VERTICES_PIXEL;
 
         int hints = GLRenderBatch2.HINT_UNTEXTURED;
         if(!(vertType == GLGeometry.VERTICES_PROJECTED && view.scene.mapProjection.is3D()))
@@ -646,35 +637,53 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
             this.batch.end();
         }
 
-        // polygons
-        renderLines(view, spritePolys, GLMapView.RENDER_PASS_SPRITES);
-
         // lines
         if (!this.spriteLines.isEmpty()) {
-            List<GLBatchLineString> extrudeLines = new ArrayList<>();
-            List<GLBatchLineString> bufferLines = new ArrayList<>();
-            for (GLBatchLineString line : spriteLines) {
-                if (line.isExtruded() && view.drawTilt > 0d)
-                    extrudeLines.add(line);
-                else
-                    bufferLines.add(line);
+            // 3D lines
+            if (MathUtils.hasBits(rebuildBatchBuffers, GLMapView.RENDER_PASS_SPRITES)) {
+                for (PrimitiveBuffer lb : spriteLineBuffers0)
+                    GLES30.glDeleteBuffers(1, lb.vbo, 0);
+                spriteLineBuffers0.clear();
+                this.buildLineBuffers(spriteLineBuffers0, view, spriteLines, batchSpritesCentroidProj, true);
             }
 
+            this.drawLineBuffers(view, spriteLineBuffers0, batchSpritesCentroidProj);
+        } else if(!spriteLineBuffers0.isEmpty()) {
+            for (PrimitiveBuffer lb : spriteLineBuffers0)
+                GLES30.glDeleteBuffers(1, lb.vbo, 0);
+            spriteLineBuffers0.clear();
+        }
+        
+        // polygons
+        if (!this.spritePolys.isEmpty()) {
             // 2D lines
             if (MathUtils.hasBits(rebuildBatchBuffers, GLMapView.RENDER_PASS_SPRITES)) {
-                for (LinesBuffer lb : spriteLineBuffers)
+                for (PrimitiveBuffer lb : spriteTriangleBuffers)
                     GLES30.glDeleteBuffers(1, lb.vbo, 0);
-                spriteLineBuffers.clear();
-                this.buildLineBuffers(spriteLineBuffers, view, bufferLines);
+                spriteTriangleBuffers.clear();
+                this.buildTriangleBuffers(spriteTriangleBuffers, view, spritePolys, batchSpritesCentroidProj, true);
+                for (PrimitiveBuffer lb : spriteLineBuffers1)
+                    GLES30.glDeleteBuffers(1, lb.vbo, 0);
+                spriteLineBuffers1.clear();
+                this.buildLineBuffers(spriteLineBuffers1, view, spritePolys, batchSpritesCentroidProj, false);
             }
-            this.drawLineBuffers(view, spriteLineBuffers);
 
-            // Extruded lines
-            renderLines(view, extrudeLines, GLMapView.RENDER_PASS_SPRITES);
-        } else if(!spriteLineBuffers.isEmpty()) {
-            for (LinesBuffer lb : spriteLineBuffers)
+            // draw the polygons, applying polygon offset to support outlines
+            GLES30.glEnable(GLES30.GL_POLYGON_OFFSET_FILL);
+            GLES30.glPolygonOffset(1.0f, 1.0f);
+            this.drawTrianglesBuffers(view, spriteTriangleBuffers, batchSpritesCentroidProj);
+            GLES30.glPolygonOffset(0.0f, 0.0f);
+            GLES30.glDisable(GLES30.GL_POLYGON_OFFSET_FILL);
+
+            // draw outlines
+            this.drawLineBuffers(view, spriteLineBuffers1, batchSpritesCentroidProj);
+        } else if(!spriteTriangleBuffers.isEmpty()) {
+            for (PrimitiveBuffer lb : spriteTriangleBuffers)
                 GLES30.glDeleteBuffers(1, lb.vbo, 0);
-            spriteLineBuffers.clear();
+            spriteTriangleBuffers.clear();
+                for (PrimitiveBuffer lb : spriteLineBuffers1)
+                    GLES30.glDeleteBuffers(1, lb.vbo, 0);
+                spriteLineBuffers1.clear();
         }
     }
     
@@ -686,7 +695,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         return GLMapView.RENDER_PASS_SPRITES|GLMapView.RENDER_PASS_SURFACE;
     }
 
-    private static void bls3_vertex(ByteBuffer vbuf, GLBatchLineString.RenderState state, PointD v1, PointD v2, int n, int dir) {
+    private static void bls3_vertex(ByteBuffer vbuf, GLBatchLineString.RenderState state, float relativeScale, PointD v1, PointD v2, int n, int dir) {
         vbuf.putFloat((float)v1.x);
         vbuf.putFloat((float)v1.y);
         vbuf.putFloat((float)v1.z);
@@ -698,21 +707,40 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         vbuf.put((byte)(state.strokeColor&0xFF));
         vbuf.put((byte)((state.strokeColor>>24)&0xFF));
         vbuf.put((byte)n);
-        vbuf.put((byte)Math.min(state.strokeWidth/2.0f, 255.0f));
+        vbuf.put((byte)Math.min(state.strokeWidth/relativeScale/2.0f, 255.0f));
         vbuf.put((byte)dir);
         vbuf.put((byte)MathUtils.clamp(state.factor, 1, 255));
-        vbuf.putInt(state.pattern);
+        vbuf.putInt(state.pattern&0xFFFF);
     }
 
-    void buildLineBuffers(Collection<LinesBuffer> linesBuf, GLMapView view, Collection<GLBatchLineString> lines) {
-        // pointer to head of buffer; remains unmodified
-        ByteBuffer buf = this.buffers.buffer.duplicate();
-        buf.clear();
+    void buildLineBuffers(Collection<PrimitiveBuffer> linesBuf, GLMapView view, Collection<? extends GLBatchLineString> lines, PointD centroidProj, boolean requiresProject) {
+        final int transferSize = 512*1024; // 512kb
 
         // streaming vertex buffer
-        ByteBuffer vbuf = this.buffers.buffer.duplicate();
+        ByteBuffer vbuf;
+
+        // NOTE: the primitives are actually triangles as we are emulating line
+        // drawing with quads to apply antialiasing and pattern effects
+
+        PrimitiveBuffer b = new PrimitiveBuffer(GLES30.GL_TRIANGLES);
+        GLES30.glGenBuffers(1, b.vbo, 0);
+        if (b.vbo[0] == GLES30.GL_NONE) {
+            // out of memory
+            return;
+        } else {
+            GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, b.vbo[0]);
+            GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, transferSize, null, GLES30.GL_STATIC_DRAW);
+            vbuf = (ByteBuffer)GLES30.glMapBufferRange(GLES30.GL_ARRAY_BUFFER, 0, transferSize, GLES30.GL_MAP_WRITE_BIT|GLES30.GL_MAP_INVALIDATE_BUFFER_BIT);
+        }
+        if(vbuf == null)
+            return;
+        vbuf.mark();
         vbuf.order(ByteOrder.nativeOrder());
-        vbuf.clear();
+
+        PointD p0 = new PointD(0d, 0d, 0d);
+        PointD p1 = new PointD(0d, 0d, 0d);
+
+        final float relativeScale = view.currentPass.relativeScaleHint / GLRenderGlobals.getRelativeScaling();
 
         GLBatchLineString.RenderState[] defaultrs = { GLBatchLineString.DEFAULT_RS };
         for (GLBatchLineString line : lines) {
@@ -720,72 +748,91 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
                 continue;
 
             // project the line vertices, applying the batch centroid
-            line.projectedVerticesSrid = -1;
-            line.centroidProj.x = batchCentroidProj.x;
-            line.centroidProj.y = batchCentroidProj.y;
-            line.centroidProj.z = batchCentroidProj.z;
-            line.projectVertices(view, GLGeometry.VERTICES_PROJECTED);
-            line.projectedVerticesSrid = -1;
-
-            PointD p0 = new PointD(0d, 0d, 0d);
-            PointD p1 = new PointD(0d, 0d, 0d);
+            if(requiresProject) {
+                line.projectedVerticesSrid = -1;
+                line.centroidProj.x = centroidProj.x;
+                line.centroidProj.y = centroidProj.y;
+                line.centroidProj.z = centroidProj.z;
+                line.projectVertices(view, GLGeometry.VERTICES_BATCH);
+                line.projectedVerticesSrid = -1;
+            }
 
             GLBatchLineString.RenderState[] rs = line.renderStates;
             if(rs == null)
                 rs = defaultrs;
             for (int i = 0; i < rs.length; i++) {
-                for (int j = 0; j < (line.numRenderPoints-1); j++) {
+                // skip if invisible
+                if(rs[i].outlineColorA == 0f && rs[i].strokeColorA == 0f)
+                    continue;
+
+                final int numSegs;
+                final int step;
+                if(line.renderPointsDrawMode == GLES30.GL_LINES) {
+                    numSegs = line.numRenderPoints/2;
+                    step = 2;
+                } else {
+                    numSegs = line.numRenderPoints-1;
+                    step = 1;
+                }
+                for (int j = 0; j < numSegs; j++) {
                     if (vbuf.remaining() < (6 * LINES_VERTEX_SIZE)) {
-                        LinesBuffer b = new LinesBuffer();
+                        b.count = vbuf.position() / LINES_VERTEX_SIZE;
+                        GLES30.glUnmapBuffer(GLES30.GL_ARRAY_BUFFER);
+                        vbuf = null;
+                        linesBuf.add(b);
+
+                        b = new PrimitiveBuffer(GLES30.GL_TRIANGLES);
                         GLES30.glGenBuffers(1, b.vbo, 0);
                         if (b.vbo[0] == GLES30.GL_NONE) {
-                            Log.e(TAG, "Failed to allocate VBO, lines will not be drawn");
+                            // out of memory
+                            return;
                         } else {
                             GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, b.vbo[0]);
-                            GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, vbuf.position(), buf, GLES30.GL_STATIC_DRAW);
-                            GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, GLES30.GL_NONE);
-                            b.count = vbuf.position() / LINES_VERTEX_SIZE;
-                            linesBuf.add(b);
+                            GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, transferSize, null, GLES30.GL_STATIC_DRAW);
+                            vbuf = (ByteBuffer)GLES30.glMapBufferRange(GLES30.GL_ARRAY_BUFFER, 0, transferSize, GLES30.GL_MAP_WRITE_BIT|GLES30.GL_MAP_INVALIDATE_BUFFER_BIT);
                         }
-                        vbuf.clear();
+                        if(vbuf == null)
+                            return;
+                        vbuf.mark();
+                        vbuf.order(ByteOrder.nativeOrder());
                     }
 
-                    p0.x = line.vertices.get(j * 3);
-                    p0.y = line.vertices.get(j * 3+1);
-                    p0.z = line.vertices.get(j * 3+2);
-                    p1.x = line.vertices.get((j+1) * 3);
-                    p1.y = line.vertices.get((j+1) * 3+1);
-                    p1.z = line.vertices.get((j+1) * 3+2);
+                    final int aidx = (j*step);
+                    final int bidx = aidx+1;
+                    p0.x = line.vertices.get(aidx * 3);
+                    p0.y = line.vertices.get(aidx * 3+1);
+                    p0.z = line.vertices.get(aidx * 3+2);
+                    p1.x = line.vertices.get(bidx * 3);
+                    p1.y = line.vertices.get(bidx * 3+1);
+                    p1.z = line.vertices.get(bidx * 3+2);
 
-                    bls3_vertex(vbuf, rs[i], p0, p1, 0xFF, 0xFF);
-                    bls3_vertex(vbuf, rs[i], p1, p0, 0xFF, 0x00);
-                    bls3_vertex(vbuf, rs[i], p0, p1, 0x00, 0xFF);
+                    bls3_vertex(vbuf, rs[i], relativeScale, p0, p1, 0xFF, 0xFF);
+                    bls3_vertex(vbuf, rs[i], relativeScale, p1, p0, 0xFF, 0x00);
+                    bls3_vertex(vbuf, rs[i], relativeScale, p0, p1, 0x00, 0xFF);
 
-                    bls3_vertex(vbuf, rs[i], p0, p1, 0xFF, 0xFF);
-                    bls3_vertex(vbuf, rs[i], p1, p0, 0xFF, 0x00);
-                    bls3_vertex(vbuf, rs[i], p1, p0, 0x00, 0x00);
+                    bls3_vertex(vbuf, rs[i], relativeScale, p0, p1, 0xFF, 0xFF);
+                    bls3_vertex(vbuf, rs[i], relativeScale, p1, p0, 0xFF, 0x00);
+                    bls3_vertex(vbuf, rs[i], relativeScale, p1, p0, 0x00, 0x00);
                 }
             }
         }
 
         // flush the remaining record
         if (vbuf.position() > 0) {
-            LinesBuffer b = new LinesBuffer();
-            GLES30.glGenBuffers(1, b.vbo, 0);
-            if (b.vbo[0] == GLES30.GL_NONE) {
-                Log.e(TAG, "Failed to allocate VBO, lines will not be drawn");
-            } else {
-                GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, b.vbo[0]);
-                GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, vbuf.position(), buf, GLES30.GL_STATIC_DRAW);
-                GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, GLES30.GL_NONE);
-                b.count = vbuf.position() / LINES_VERTEX_SIZE;
-                linesBuf.add(b);
-            }
-            vbuf.clear();
+            b.count = vbuf.position() / LINES_VERTEX_SIZE;
+            GLES30.glUnmapBuffer(GLES30.GL_ARRAY_BUFFER);
+            vbuf = null;
+            linesBuf.add(b);
+            GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, GLES30.GL_NONE);
+        } else {
+            GLES30.glUnmapBuffer(GLES30.GL_ARRAY_BUFFER);
+            GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, GLES30.GL_NONE);
+            GLES30.glDeleteBuffers(1, b.vbo, 0);
         }
+
     }
 
-    void drawLineBuffers(GLMapView view, Collection<LinesBuffer> buf) {
+    void drawLineBuffers(GLMapView view, Collection<PrimitiveBuffer> buf, PointD centroidProj) {
         if (this.lineShader == null) {
             this.lineShader = new LineShader();
             final int vertShader = GLES20FixedPipeline.loadShader(GLES30.GL_VERTEX_SHADER, LINE_VSH);
@@ -818,7 +865,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
                 view.scratch.matrix.set(i%4, i/4, view.scratch.matrixF[i]);
             // model-view
             view.scratch.matrix.concatenate(view.scene.forward);
-            view.scratch.matrix.translate(batchCentroidProj.x, batchCentroidProj.y, batchCentroidProj.z);
+            view.scratch.matrix.translate(centroidProj.x, centroidProj.y, centroidProj.z);
             for (int i = 0; i < 16; i++) {
                 double v;
                 v = view.scratch.matrix.get(i % 4, i / 4);
@@ -845,7 +892,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         GLES30.glEnable(GLES30.GL_BLEND);
         GLES30.glBlendFunc(GLES30.GL_SRC_ALPHA, GLES30.GL_ONE_MINUS_SRC_ALPHA);
 
-        for (LinesBuffer it : buf) {
+        for (PrimitiveBuffer it : buf) {
             GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, it.vbo[0]);
             GLES30.glVertexAttribPointer(lineShader.a_vertexCoord0, 3, GLES30.GL_FLOAT, false, LINES_VERTEX_SIZE, 0);
             GLES30.glVertexAttribPointer(lineShader.a_vertexCoord1, 3, GLES30.GL_FLOAT, false, LINES_VERTEX_SIZE, 12);
@@ -855,8 +902,8 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
             GLES30.glVertexAttribPointer(lineShader.a_dir, 1, GLES30.GL_UNSIGNED_BYTE, true, LINES_VERTEX_SIZE, 30);
             // pattern
             GLES30.glVertexAttribPointer(lineShader.a_factor, 1, GLES30.GL_UNSIGNED_BYTE, false, LINES_VERTEX_SIZE, 31);
-            GLES30.glVertexAttribPointer(lineShader.a_pattern, 1, GLES30.GL_UNSIGNED_INT, false, LINES_VERTEX_SIZE, 32);
-            GLES30.glDrawArrays(GLES30.GL_TRIANGLES, 0, it.count);
+            GLES30.glVertexAttribPointer(lineShader.a_pattern, 1, GLES30.GL_INT, false, LINES_VERTEX_SIZE, 32);
+            GLES30.glDrawArrays(it.mode, 0, it.count);
         }
         GLES30.glDisable(GLES30.GL_BLEND);
 
@@ -873,6 +920,163 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         GLES30.glUseProgram(GLES30.GL_NONE);
     }
 
+    void buildTriangleBuffers(Collection<PrimitiveBuffer> polysBuf, GLMapView view, Collection<? extends GLBatchLineString> polys, PointD centroidProj, boolean requiresProject) {
+        final int transferSize = 512*1024; // 512kb
+
+        // streaming vertex buffer
+        ByteBuffer vbuf;
+
+        // NOTE: the primitives are actually triangles as we are emulating line
+        // drawing with quads to apply antialiasing and pattern effects
+
+        PrimitiveBuffer b = new PrimitiveBuffer(GLES30.GL_TRIANGLES);
+        GLES30.glGenBuffers(1, b.vbo, 0);
+        if (b.vbo[0] == GLES30.GL_NONE) {
+            // out of memory
+            return;
+        } else {
+            GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, b.vbo[0]);
+            GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, transferSize, null, GLES30.GL_STATIC_DRAW);
+            vbuf = (ByteBuffer)GLES30.glMapBufferRange(GLES30.GL_ARRAY_BUFFER, 0, transferSize, GLES30.GL_MAP_WRITE_BIT|GLES30.GL_MAP_INVALIDATE_BUFFER_BIT);
+        }
+        if(vbuf == null)
+            return;
+        vbuf.mark();
+        vbuf.order(ByteOrder.nativeOrder());
+
+        if(false)
+        Log.i(TAG, "buildTrianglesBuffers " + polys + " polys");
+
+        GLBatchLineString.RenderState[] defaultrs = { GLBatchLineString.DEFAULT_RS };
+        for (GLBatchLineString poly : polys) {
+            if (poly.numPoints < 2)
+                continue;
+
+            if(!poly.hasFill())
+                continue;
+
+            // project the line vertices, applying the batch centroid
+            if(requiresProject) {
+                poly.projectedVerticesSrid = -1;
+                poly.centroidProj.x = centroidProj.x;
+                poly.centroidProj.y = centroidProj.y;
+                poly.centroidProj.z = centroidProj.z;
+                poly.projectVertices(view, GLGeometry.VERTICES_BATCH);
+                poly.projectedVerticesSrid = -1;
+            }
+
+            if(poly.polyVertices == null)
+                continue;
+
+            GLBatchLineString.RenderState[] rs = poly.renderStates;
+            if(rs == null)
+                rs = defaultrs;
+            for (int i = 0; i < rs.length; i++) {
+                if(false)
+                Log.i(TAG, "Push RS " +
+                        "stroke={" + Integer.toString(rs[i].strokeColor, 16) + "}" +
+                        "outline={" + Integer.toString(rs[i].outlineColor, 16) + "}" +
+                        "fill={" + Integer.toString(rs[i].fillColor, 16) + "}");
+                // skip if invisible
+                if(rs[i].fillColorA == 0f)
+                    continue;
+
+
+                for (int j = 0; j < poly.polyVertices.limit()/3; j++) {
+                    if (vbuf.remaining() < (3 * TRIANGLES_VERTEX_SIZE)) {
+                        b.count = vbuf.position() / TRIANGLES_VERTEX_SIZE;
+                        GLES30.glUnmapBuffer(GLES30.GL_ARRAY_BUFFER);
+                        vbuf = null;
+                        polysBuf.add(b);
+
+                        b = new PrimitiveBuffer(GLES30.GL_TRIANGLES);
+                        GLES30.glGenBuffers(1, b.vbo, 0);
+                        if (b.vbo[0] == GLES30.GL_NONE) {
+                            // out of memory
+                            return;
+                        } else {
+                            GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, b.vbo[0]);
+                            GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, transferSize, null, GLES30.GL_STATIC_DRAW);
+                            vbuf = (ByteBuffer)GLES30.glMapBufferRange(GLES30.GL_ARRAY_BUFFER, 0, transferSize, GLES30.GL_MAP_WRITE_BIT|GLES30.GL_MAP_INVALIDATE_BUFFER_BIT);
+                        }
+                        if(vbuf == null)
+                            return;
+                        vbuf.mark();
+                        vbuf.order(ByteOrder.nativeOrder());
+                    }
+
+                    vbuf.putFloat(poly.polyVertices.get(j*3));
+                    vbuf.putFloat(poly.polyVertices.get(j*3+1));
+                    vbuf.putFloat(poly.polyVertices.get(j*3+2));
+                    vbuf.put((byte)((rs[i].fillColor>>16)&0xFF));
+                    vbuf.put((byte)((rs[i].fillColor>>8)&0xFF));
+                    vbuf.put((byte)(rs[i].fillColor&0xFF));
+                    vbuf.put((byte)((rs[i].fillColor>>24)&0xFF));
+                }
+            }
+        }
+
+        // flush the remaining record
+        if (vbuf.position() > 0) {
+            b.count = vbuf.position() / TRIANGLES_VERTEX_SIZE;
+            GLES30.glUnmapBuffer(GLES30.GL_ARRAY_BUFFER);
+            vbuf = null;
+            polysBuf.add(b);
+            GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, GLES30.GL_NONE);
+        } else {
+            GLES30.glUnmapBuffer(GLES30.GL_ARRAY_BUFFER);
+            GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, GLES30.GL_NONE);
+            GLES30.glDeleteBuffers(1, b.vbo, 0);
+        }
+    }
+
+    void drawTrianglesBuffers(GLMapView view, Collection<PrimitiveBuffer> buf, PointD centroidProj) {
+        if (triangleShader == null)
+            triangleShader = Shader.get(view.getRenderContext());
+
+        GLES30.glUseProgram(triangleShader.handle);
+
+        // MVP
+        {
+            // projection
+            GLES20FixedPipeline.glGetFloatv(GLES20FixedPipeline.GL_PROJECTION, view.scratch.matrixF, 0);
+            for(int i = 0; i < 16; i++)
+                view.scratch.matrix.set(i%4, i/4, view.scratch.matrixF[i]);
+            // model-view
+            view.scratch.matrix.concatenate(view.scene.forward);
+            view.scratch.matrix.translate(centroidProj.x, centroidProj.y, centroidProj.z);
+            for (int i = 0; i < 16; i++) {
+                double v;
+                v = view.scratch.matrix.get(i % 4, i / 4);
+                view.scratch.matrixF[i] = (float)v;
+            }
+            GLES30.glUniformMatrix4fv(triangleShader.uMVP, 1, false, view.scratch.matrixF, 0);
+        }
+
+        GLES30.glUniform4f(triangleShader.uColor, 1f, 1f, 1f, 1f);
+        GLES30.glUniform1ui(triangleShader.uTexture, 0);
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, GLRenderGlobals.get(view).getWhitePixel().getTexId());
+
+        GLES30.glEnableVertexAttribArray(triangleShader.aVertexCoords);
+        GLES30.glEnableVertexAttribArray(triangleShader.aColors);
+
+        GLES30.glEnable(GLES30.GL_BLEND);
+        GLES30.glBlendFunc(GLES30.GL_SRC_ALPHA, GLES30.GL_ONE_MINUS_SRC_ALPHA);
+
+        for (PrimitiveBuffer it : buf) {
+            GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, it.vbo[0]);
+            GLES30.glVertexAttribPointer(triangleShader.aVertexCoords, 3, GLES30.GL_FLOAT, false, TRIANGLES_VERTEX_SIZE, 0);
+            GLES30.glVertexAttribPointer(triangleShader.aColors, 4, GLES30.GL_UNSIGNED_BYTE, true, TRIANGLES_VERTEX_SIZE, 12);
+            GLES30.glDrawArrays(it.mode, 0, it.count);
+        }
+        GLES30.glDisable(GLES30.GL_BLEND);
+
+        GLES30.glDisableVertexAttribArray(triangleShader.aVertexCoords);
+        GLES30.glDisableVertexAttribArray(triangleShader.aColors);
+
+        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, GLES30.GL_NONE);
+        GLES30.glUseProgram(GLES30.GL_NONE);
+    }
 
     private void batchDrawPoints(GLMapView view) {
         this.state.color = 0xFFFFFFFF;
@@ -1114,12 +1318,18 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
             this.buffers = null;
         }
 
-        for (LinesBuffer it : surfaceLineBuffers)
+        for (PrimitiveBuffer it : surfaceLineBuffers)
             GLES30.glDeleteBuffers(1, it.vbo, 0);
         surfaceLineBuffers.clear();
-        for (LinesBuffer it : spriteLineBuffers)
+        for (PrimitiveBuffer it : spriteLineBuffers0)
             GLES30.glDeleteBuffers(1, it.vbo, 0);
-        spriteLineBuffers.clear();
+        spriteLineBuffers0.clear();
+        for (PrimitiveBuffer it : spriteLineBuffers1)
+            GLES30.glDeleteBuffers(1, it.vbo, 0);
+        spriteLineBuffers1.clear();
+        for (PrimitiveBuffer it : spriteTriangleBuffers)
+            GLES30.glDeleteBuffers(1, it.vbo, 0);
+        spriteTriangleBuffers.clear();
     }
     
     /**************************************************************************/
@@ -1131,7 +1341,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
      * @return List of hit FIDs
      */
     private static List<Long> hitTestGeometry(
-            LinkedList<? extends GLBatchGeometry> list,
+            ArrayList<? extends GLBatchGeometry> list,
             HitTestQueryParams params) {
         List<Long> fids = new ArrayList<>();
 
@@ -1139,9 +1349,8 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         if (params.count >= params.limit)
             return fids;
 
-        Iterator<? extends GLBatchGeometry> iter = list.descendingIterator();
-        while (iter.hasNext()) {
-            GLBatchGeometry item = iter.next();
+        for (int i = list.size()-1; i >= 0; i--) {
+            GLBatchGeometry item = list.get(i);
 
             boolean hit = false;
 
@@ -1524,9 +1733,14 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         }
     }
 
-    final static class LinesBuffer {
+    final static class PrimitiveBuffer {
         int[] vbo = {GLES30.GL_NONE};
         int count = 0;
+        final int mode;
+
+        PrimitiveBuffer(int mode) {
+            this.mode = mode;
+        }
     }
 
     final static class LineShader {

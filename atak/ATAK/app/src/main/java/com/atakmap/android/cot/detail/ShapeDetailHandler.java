@@ -163,7 +163,7 @@ public class ShapeDetailHandler extends CotDetailHandler {
             if (Double.isNaN(lat) || Double.isInfinite(lat) ||
                     Double.isNaN(lng) || Double.isInfinite(lng))
                 return;
-            
+
             String altString = v.getAttribute("hae");
             GeoPoint point;
             if (altString != null) {

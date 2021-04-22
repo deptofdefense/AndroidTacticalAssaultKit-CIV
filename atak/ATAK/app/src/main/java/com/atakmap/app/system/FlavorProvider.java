@@ -48,7 +48,6 @@ public interface FlavorProvider {
      */
     void deployWMSPointers();
 
-
     /**
      * Load components
      */

@@ -2070,7 +2070,6 @@ TAKErr PersistentDataSourceFeatureDataStore2::updateImpl(const char *cfile, cons
                 staleDbIter->second->database->markForDelete();
                 this->shared_dbs_.erase(staleDbIter->second->database);
                 this->fsid_to_feature_db_.erase(staleFsid);
-                staleFsids.remove(staleFsid);
             }
         }
         this->setContentChanged();

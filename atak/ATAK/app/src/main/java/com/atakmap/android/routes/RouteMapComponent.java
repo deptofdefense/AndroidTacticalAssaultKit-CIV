@@ -204,7 +204,6 @@ public class RouteMapComponent extends AbstractWidgetMapComponent implements
         AtakBroadcast.getInstance().unregisterReceiver(_routeReceiver);
         AtakBroadcast.getInstance().unregisterReceiver(_routeToolbarReceiver);
 
-
         ClearContentRegistry.getInstance().unregisterListener(dataMgmtReceiver);
 
         _editablePolylineReceiver.dispose();
@@ -214,17 +213,16 @@ public class RouteMapComponent extends AbstractWidgetMapComponent implements
         _goTo.dispose();
     }
 
-    protected final ClearContentRegistry.ClearContentListener dataMgmtReceiver =
-            new  ClearContentRegistry.ClearContentListener() {
-                @Override
-                public void onClearContent(boolean clearmaps) {
+    protected final ClearContentRegistry.ClearContentListener dataMgmtReceiver = new ClearContentRegistry.ClearContentListener() {
+        @Override
+        public void onClearContent(boolean clearmaps) {
 
-                    // Delete the serialization file for the route around region manager.
-                    FileSystemUtils
-                            .delete(RouteAroundRegionViewModel.SERIALIZATION_FILE);
+            // Delete the serialization file for the route around region manager.
+            FileSystemUtils
+                    .delete(RouteAroundRegionViewModel.SERIALIZATION_FILE);
 
-                }
-            };
+        }
+    };
 
     public RouteMapReceiver getRouteMapReceiver() {
         return _routeReceiver;

@@ -26,6 +26,8 @@ using namespace TAK::Engine::Util;
 using namespace atakmap::renderer;
 
 #define ONE_EIGHTY_OVER_PI 57.295779513082320876798154814105
+#define LABEL_PADDING_X 10
+#define LABEL_PADDING_Y 5
 
 atakmap::renderer::GLNinePatch* GLLabel::small_nine_patch_ = nullptr;
 
@@ -125,7 +127,8 @@ GLLabel::GLLabel()
       always_render_(false),
       max_draw_resolution_(0.0),
       alignment_(TextAlignment::TETA_Center),
-      vertical_alignment_(VerticalAlignment::TEVA_Top),   
+      vertical_alignment_(VerticalAlignment::TEVA_Top),
+      priority_(Priority::TEP_Standard),
       color_r_(1),
       color_g_(1),
       color_b_(1),
@@ -155,6 +158,7 @@ GLLabel::GLLabel(const GLLabel& rhs) : GLLabel() {
     always_render_ = rhs.always_render_;
     alignment_ = rhs.alignment_;
     vertical_alignment_ = rhs.vertical_alignment_;
+    priority_ = rhs.priority_;
     rotation_ = rhs.rotation_;
     labelRect = rhs.labelRect;
     canDraw = rhs.canDraw;
@@ -181,6 +185,7 @@ GLLabel::GLLabel(GLLabel&& rhs) NOTHROWS : GLLabel() {
     always_render_ = rhs.always_render_;
     alignment_ = rhs.alignment_;
     vertical_alignment_ = rhs.vertical_alignment_;
+    priority_ = rhs.priority_;
     rotation_ = rhs.rotation_;
     labelRect = rhs.labelRect;
     canDraw = rhs.canDraw;
@@ -199,16 +204,17 @@ GLLabel::GLLabel(GLLabel&& rhs) NOTHROWS : GLLabel() {
 
 GLLabel::GLLabel(Feature::Geometry2Ptr_const&& geometry, TAK::Engine::Port::String text, Point2<double> desired_offset,
                  double max_draw_resolution, TextAlignment alignment, VerticalAlignment vertical_alignment, int color, int backColor,
-                 bool fill, TAK::Engine::Feature::AltitudeMode altitude_mode)
+                 bool fill, TAK::Engine::Feature::AltitudeMode altitude_mode, Priority priority)
     : canDraw(false),
       geometry_(std::move(geometry)),
       altitude_mode_(altitude_mode),
       text_(text.get() != nullptr ? text.get() : ""),
       desired_offset_(desired_offset),
+      visible_(true),
       max_draw_resolution_(max_draw_resolution),
       alignment_(alignment),
       vertical_alignment_(vertical_alignment),
-      visible_(true),
+      priority_(priority),
       always_render_(false),
       color_r_(1),
       color_g_(1),
@@ -232,14 +238,26 @@ GLLabel::GLLabel(Feature::Geometry2Ptr_const&& geometry, TAK::Engine::Port::Stri
     setBackColor(backColor);
 }
 
+
+GLLabel::GLLabel(Feature::Geometry2Ptr_const&& geometry, TAK::Engine::Port::String text, Point2<double> desired_offset,
+                 double max_draw_resolution, TextAlignment alignment, VerticalAlignment vertical_alignment, int color, int fill_color,
+                 bool fill, TAK::Engine::Feature::AltitudeMode altitude_mode, float rotation, bool absolute_rotation, Priority priority)
+    : GLLabel(std::move(geometry), text, desired_offset, max_draw_resolution, alignment, vertical_alignment, color, fill_color, fill, altitude_mode, priority)
+{
+    rotation_.angle_ = rotation;
+    rotation_.absolute_ = absolute_rotation;
+    rotation_.explicit_ = true;
+}
+
 GLLabel::GLLabel(const TextFormatParams &fmt,
                  TAK::Engine::Feature::Geometry2Ptr_const&& geometry, TAK::Engine::Port::String text,
                  Math::Point2<double> desired_offset, double max_draw_resolution,
                  TextAlignment alignment,
                  VerticalAlignment vertical_alignment, int color,
                  int fill_color, bool fill,
-                 TAK::Engine::Feature::AltitudeMode altitude_mode) :
-    GLLabel(std::move(geometry), text, desired_offset, max_draw_resolution, alignment, vertical_alignment, color, fill_color, fill, altitude_mode)
+                 TAK::Engine::Feature::AltitudeMode altitude_mode,
+                 Priority priority) :
+    GLLabel(std::move(geometry), text, desired_offset, max_draw_resolution, alignment, vertical_alignment, color, fill_color, fill, altitude_mode, priority)
 {
     gltext_ = GLText2_intern(fmt);
     rotation_.angle_ = 0.0f;
@@ -254,8 +272,9 @@ GLLabel::GLLabel(const TextFormatParams &fmt,
                  VerticalAlignment vertical_alignment, int color,
                  int fill_color, bool fill,
                  TAK::Engine::Feature::AltitudeMode altitude_mode,
-                 float rotation, bool rotationAbsolute) :
-    GLLabel(std::move(geometry), text, desired_offset, max_draw_resolution, alignment, vertical_alignment, color, fill_color, fill, altitude_mode)
+                 float rotation, bool rotationAbsolute,
+                 Priority priority) :
+    GLLabel(std::move(geometry), text, desired_offset, max_draw_resolution, alignment, vertical_alignment, color, fill_color, fill, altitude_mode, priority)
 {
     gltext_ = GLText2_intern(fmt);
     rotation_.angle_ = rotation;
@@ -274,6 +293,7 @@ GLLabel& GLLabel::operator=(GLLabel&& rhs) NOTHROWS {
         always_render_ = rhs.always_render_;
         alignment_ = rhs.alignment_;
         vertical_alignment_ = rhs.vertical_alignment_;
+        priority_ = rhs.priority_;
         rotation_ = rhs.rotation_;
         labelRect = rhs.labelRect;
         canDraw = rhs.canDraw;
@@ -347,14 +367,22 @@ void GLLabel::setBackColor(const int color) NOTHROWS {
 
 void GLLabel::setFill(const bool fill) NOTHROWS { fill_ = fill; }
 
+void GLLabel::setRotation(const float rotation, const bool absolute_rotation) NOTHROWS {
+    rotation_.angle_ = rotation;
+    rotation_.absolute_ = absolute_rotation;
+    rotation_.explicit_ = true;
+}
+
+void GLLabel::setPriority(const Priority priority) NOTHROWS { priority_ = priority; }
+
 bool GLLabel::shouldRenderAtResolution(const double draw_resolution) const NOTHROWS {
     if (!visible_) return false;
     if (max_draw_resolution_ != 0.0 && draw_resolution >= max_draw_resolution_ && !always_render_) return false;
     return true;
 }
 
-void GLLabel::place(const GLMapView2& view, GLText2& gl_text, std::vector<atakmap::math::Rectangle<double>>& label_rects) NOTHROWS {
-    view.scene.forwardTransform.transform(&transformed_anchor_, pos_projected_);
+void GLLabel::place(const GLGlobeBase& view, GLText2& gl_text, std::vector<atakmap::math::Rectangle<double>>& label_rects) NOTHROWS {
+    view.renderPass->scene.forwardTransform.transform(&transformed_anchor_, pos_projected_);
 
     const auto xpos = static_cast<float>(transformed_anchor_.x);
     const auto ypos = static_cast<float>(transformed_anchor_.y);
@@ -369,11 +397,11 @@ void GLLabel::place(const GLMapView2& view, GLText2& gl_text, std::vector<atakma
         const char* text = text_.c_str();
         float offy = 0;
         float offtx = 0;
-        float textWidth = std::min(gl_text.getTextFormat().getStringWidth(text), (float)(view.right - 20));
+        float textWidth = std::min(gl_text.getTextFormat().getStringWidth(text), (float)(view.renderPass->right - 20));
         float textHeight = gl_text.getTextFormat().getStringHeight(text);
 
         if (!std::isnan(projected_size_)) {
-            double availableWidth = projected_size_ / view.drawMapResolution;
+            double availableWidth = projected_size_ / view.renderPass->drawMapResolution;
             if (availableWidth < textWidth) {
                 canDraw = false;
                 return;
@@ -383,8 +411,8 @@ void GLLabel::place(const GLMapView2& view, GLText2& gl_text, std::vector<atakma
         offtx = (float)desired_offset_.x;
         offy = (float)desired_offset_.y;
 
-        if (offy != 0.0 && view.drawTilt > 0.0) {
-            offy *= (float)(1.0f + view.drawTilt / 100.0f);
+        if (offy != 0.0 && view.renderPass->drawTilt > 0.0) {
+            offy *= (float)(1.0f + view.renderPass->drawTilt / 100.0f);
         }
 
         switch (vertical_alignment_) {
@@ -406,37 +434,57 @@ void GLLabel::place(const GLMapView2& view, GLText2& gl_text, std::vector<atakma
 
     bool overlaps = false;
     bool rePlaced = false;
-    for (auto it = label_rects.begin(); it != label_rects.end(); it++) {
+    int replace_idx = -1;
+    int itr_idx = 0;
+    for (auto itr = label_rects.begin(); itr != label_rects.end(); itr++) {
         overlaps = atakmap::math::Rectangle<double>::intersects(
-            labelRect.x + 1.0, labelRect.y + textDescent, labelRect.x + labelRect.width - 2.0,
-            labelRect.y + labelRect.height - (2.0 * textDescent), it->x + 1.0, it->y + textDescent, it->x + it->width - 2.0,
-            it->y + it->height - (2.0 * textDescent));
+            labelRect.x, labelRect.y + textDescent, 
+            labelRect.x + labelRect.width + LABEL_PADDING_X,
+            labelRect.y + labelRect.height - (2.0 * textDescent) + LABEL_PADDING_Y, 
+            itr->x, itr->y + textDescent, 
+            itr->x + itr->width + LABEL_PADDING_X,
+            itr->y + itr->height - (2.0 * textDescent) + LABEL_PADDING_Y);
 
         if (overlaps && !rePlaced) {
+            replace_idx = itr_idx;
             rePlaced = true;
-            double leftShift = abs((labelRect.x + labelRect.width) - it->x);
-            double rightShift = abs(labelRect.x - (it->x + it->width));
+            double leftShift = abs((labelRect.x + labelRect.width) - itr->x);
+            double rightShift = abs(labelRect.x - (itr->x + itr->width));
             if (rightShift < leftShift && rightShift < (labelRect.width / 2.0f)) {
                 // shift right of compared label rect
-                labelRect.x = it->x + it->width;
+                labelRect.x = itr->x + itr->width + LABEL_PADDING_X;
             } else if (leftShift < (labelRect.width / 2.0f)) {
                 // shift left of compared label rect
-                labelRect.x = it->x - labelRect.width;
+                labelRect.x = itr->x - labelRect.width - LABEL_PADDING_X;
             } else {
                 break;
             }
             overlaps = atakmap::math::Rectangle<double>::intersects(
-                labelRect.x + 1.0, labelRect.y + textDescent, labelRect.x + labelRect.width - 2.0,
-                labelRect.y + labelRect.height - (2.0 * textDescent), it->x + 1.0, it->y + textDescent, it->x + it->width - 2.0,
-                it->y + it->height - (2.0 * textDescent));
+                labelRect.x, labelRect.y + textDescent, labelRect.x + labelRect.width,
+                labelRect.y + labelRect.height - (2.0 * textDescent), itr->x + 1.0, itr->y + textDescent, itr->x + itr->width,
+                itr->y + itr->height - (2.0 * textDescent));
         }
+
+        itr_idx++;
         if (overlaps) break;
+    }
+
+    if (!overlaps && rePlaced) {
+        for (auto reverse_itr = (label_rects.rbegin() + replace_idx); reverse_itr != label_rects.rbegin(); --reverse_itr) {
+            overlaps = atakmap::math::Rectangle<double>::intersects(
+                labelRect.x, labelRect.y + textDescent, labelRect.x + labelRect.width + LABEL_PADDING_Y,
+                labelRect.y + labelRect.height - (2.0 * textDescent) + LABEL_PADDING_X, reverse_itr->x, reverse_itr->y + textDescent,
+                reverse_itr->x + reverse_itr->width + LABEL_PADDING_X,
+                reverse_itr->y + reverse_itr->height - (2.0 * textDescent) + LABEL_PADDING_Y);
+
+            if (overlaps) break;
+        }
     }
 
     canDraw = !overlaps;
 }
 
-void GLLabel::draw(const GLMapView2& view, GLText2& gl_text) NOTHROWS {
+void GLLabel::draw(const GLGlobeBase& view, GLText2& gl_text) NOTHROWS {
     if (!text_.empty()) {
         const char* text = text_.c_str();
 
@@ -449,7 +497,7 @@ void GLLabel::draw(const GLMapView2& view, GLText2& gl_text) NOTHROWS {
             GLES20FixedPipeline::getInstance()->glTranslatef(xpos, ypos, zpos);
             float rotate = rotation_.angle_;
             if (this->rotation_.absolute_) {
-                rotate = (float)fmod(rotate + view.drawRotation, 360.0);
+                rotate = (float)fmod(rotate + view.renderPass->drawRotation, 360.0);
             }
             GLES20FixedPipeline::getInstance()->glRotatef(rotate, 0.0f, 0.0f, 1.0f);
             GLES20FixedPipeline::getInstance()->glTranslatef((float)labelRect.x - xpos, (float)labelRect.y - ypos, 0.0f - zpos);
@@ -463,7 +511,7 @@ void GLLabel::draw(const GLMapView2& view, GLText2& gl_text) NOTHROWS {
     }
 }
 
-void GLLabel::batch(const GLMapView2& view, GLText2& gl_text, GLRenderBatch2& batch) NOTHROWS {
+void GLLabel::batch(const GLGlobeBase& view, GLText2& gl_text, GLRenderBatch2& batch) NOTHROWS {
     if (!text_.empty()) {
         const char* text = text_.c_str();
 #if 0
@@ -478,7 +526,7 @@ void GLLabel::batch(const GLMapView2& view, GLText2& gl_text, GLRenderBatch2& ba
 
         double rotate = rotation_.angle_;
         if (this->rotation_.absolute_) {
-            rotate = fmod(rotate + view.drawRotation, 360.0);
+            rotate = fmod(rotate + view.renderPass->drawRotation, 360.0);
         }
 
         size_t lineCount = gl_text.getLineCount(text);
@@ -691,7 +739,7 @@ atakmap::renderer::GLNinePatch* GLLabel::getSmallNinePatch(TAK::Engine::Core::Re
     return small_nine_patch_;
 }
 
-void GLLabel::validateProjectedLocation(const GLMapView2& view) NOTHROWS {
+void GLLabel::validateProjectedLocation(const GLGlobeBase& view) NOTHROWS {
     if (!mark_dirty_ && draw_version_ == view.drawVersion) return;
     if (geometry_.get() == nullptr) return;
 
@@ -726,14 +774,14 @@ void GLLabel::validateProjectedLocation(const GLMapView2& view) NOTHROWS {
                     TAK::Engine::Core::GeoPoint2 ep(y2, x2);
                     try {
                         auto startPoint = TAK::Engine::Math::Point2<float>();
-                        view.forward(&startPoint, sp);
+                        view.renderPass->scene.forward(&startPoint, sp);
                         auto endPoint = TAK::Engine::Math::Point2<float>();
-                        view.forward(&endPoint, ep);
+                        view.renderPass->scene.forward(&endPoint, ep);
 
-                        if (FindIntersection(startPoint, endPoint, (float)view.left, (float)view.bottom, (float)view.right,
-                                             (float)view.top)) {
-                            view.inverse(&sp, startPoint);
-                            view.inverse(&ep, endPoint);
+                        if (FindIntersection(startPoint, endPoint, (float)view.renderPass->left, (float)view.renderPass->bottom, (float)view.renderPass->right,
+                                             (float)view.renderPass->top)) {
+                            view.renderPass->scene.inverse(&sp, startPoint);
+                            view.renderPass->scene.inverse(&ep, endPoint);
                             x1 = sp.longitude;
                             x2 = ep.longitude;
                             y1 = sp.latitude;
@@ -781,7 +829,7 @@ void GLLabel::validateProjectedLocation(const GLMapView2& view) NOTHROWS {
     // Z/altitude
     bool belowTerrain = false;
     double posEl = 0.0;
-    if (view.drawTilt > 0.0) {
+    if (view.renderPass->drawTilt > 0.0) {
         // XXX - altitude
         double alt = scratchGeo.altitude;
         double terrain;
@@ -801,12 +849,12 @@ void GLLabel::validateProjectedLocation(const GLMapView2& view) NOTHROWS {
         double adjustedAlt = alt * view.elevationScaleFactor;
 
         // move up ~5 pixels from surface
-        adjustedAlt += view.drawMapResolution * 25.0;
+        adjustedAlt += view.renderPass->drawMapResolution * 25.0;
 
         scratchGeo.altitude = adjustedAlt;
         scratchGeo.altitudeRef = AltitudeReference::HAE;
         posEl = std::isnan(adjustedAlt) ? 0.0 : adjustedAlt;
     }
 
-    view.scene.projection->forward(&pos_projected_, scratchGeo);
+    view.renderPass->scene.projection->forward(&pos_projected_, scratchGeo);
 }

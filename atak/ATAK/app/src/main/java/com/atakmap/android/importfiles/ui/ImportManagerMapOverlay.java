@@ -180,7 +180,7 @@ public class ImportManagerMapOverlay extends AbstractMapOverlay2
                 if (res.getParent() != null)
                     continue;
                 RemoteResourceListItem item = new RemoteResourceListItem(_view,
-                                ImportManagerMapOverlay.this, res);
+                        ImportManagerMapOverlay.this, res);
                 if (this.filter.accept(item)) {
                     item.syncRefresh(this.listener, this.filter);
                     filtered.add(item);
@@ -383,7 +383,8 @@ public class ImportManagerMapOverlay extends AbstractMapOverlay2
      * @param update True to update existing resources
      * @return True if all resources were added successfully
      */
-    public boolean addResources(List<RemoteResource> resources, boolean update) {
+    public boolean addResources(List<RemoteResource> resources,
+            boolean update) {
         boolean ret = true;
         for (RemoteResource res : resources)
             ret &= addResourceNoRefresh(res, update);
@@ -409,7 +410,8 @@ public class ImportManagerMapOverlay extends AbstractMapOverlay2
         return addResource(resource, true);
     }
 
-    private boolean addResourceNoRefresh(RemoteResource resource, boolean update) {
+    private boolean addResourceNoRefresh(RemoteResource resource,
+            boolean update) {
         if (resource == null) {
             Log.d(TAG, "Tried to add NULL resource.  Ignoring!");
             return false;
@@ -429,7 +431,7 @@ public class ImportManagerMapOverlay extends AbstractMapOverlay2
                             && !FileSystemUtils.isEmpty(res.getLocalPath())
                             && res.getMd5().equals(resource.getMd5())
                             && !res.getLocalPath().equals(
-                            resource.getLocalPath())) {
+                                    resource.getLocalPath())) {
                         deleteResourceContent(res);
                         res.setLocalPath(resource.getLocalPath());
                         Log.w(TAG, "Overwriting " + res.getLocalPath()
@@ -496,7 +498,8 @@ public class ImportManagerMapOverlay extends AbstractMapOverlay2
         File resFile = new File(resource.getLocalPath());
         if (FileSystemUtils.isFile(resFile)) {
             if (FileSystemUtils.checkExtension(resFile, "zip")
-                    && resFile.getParentFile().getName().equals("datapackage")) {
+                    && resFile.getParentFile().getName()
+                            .equals("datapackage")) {
                 MissionPackageFileIO.deletePackage(resFile.getAbsolutePath(),
                         _view.getRootGroup());
                 return;
@@ -512,7 +515,8 @@ public class ImportManagerMapOverlay extends AbstractMapOverlay2
         // clear child resources
         resource.clearChildren();
 
-        URIContentHandler h = URIContentManager.getInstance().getHandler(resFile);
+        URIContentHandler h = URIContentManager.getInstance()
+                .getHandler(resFile);
         if (h != null)
             h.deleteContent();
         else

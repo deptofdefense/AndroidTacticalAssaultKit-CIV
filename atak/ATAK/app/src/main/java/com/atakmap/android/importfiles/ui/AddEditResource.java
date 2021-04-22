@@ -191,7 +191,8 @@ public class AddEditResource {
                 .findViewById(R.id.importmgr_resourceedit_status);
         txtTitle = view
                 .findViewById(R.id.importmgr_resourceedit_title);
-        ImageButton importBtn = view.findViewById(R.id.importmgr_resourceedit_import);
+        ImageButton importBtn = view
+                .findViewById(R.id.importmgr_resourceedit_import);
         importBtn.setVisibility(_isUpdate ? View.GONE : View.VISIBLE);
         importBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -676,6 +677,7 @@ public class AddEditResource {
             public void onFileSelected(File f) {
                 importFile(f);
             }
+
             @Override
             public void onDialogClosed() {
             }

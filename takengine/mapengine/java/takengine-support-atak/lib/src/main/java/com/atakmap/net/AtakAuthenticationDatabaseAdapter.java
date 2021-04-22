@@ -79,6 +79,11 @@ public class AtakAuthenticationDatabaseAdapter implements AtakAuthenticationData
     }
 
     @Override
+    public void saveCredentialsForType(String type, String site, String username, String password, long expires) {
+        saveCredentialsForType(type, site, username, password, true);
+    }
+
+    @Override
     public void saveCredentialsForType(
             String type,
             String username,
@@ -87,6 +92,11 @@ public class AtakAuthenticationDatabaseAdapter implements AtakAuthenticationData
         synchronized (lock) {
             saveCredentialsForType(type, type, username, password, expires);
         }
+    }
+
+    @Override
+    public void saveCredentialsForType(String type, String username, String password, long expires) {
+        saveCredentialsForType(type, username, password, true);
     }
 
     @Override

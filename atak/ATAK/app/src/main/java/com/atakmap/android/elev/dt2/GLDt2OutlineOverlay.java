@@ -11,11 +11,13 @@ import com.atakmap.lang.Unsafe;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.AbstractLayer;
 import com.atakmap.map.layer.Layer;
+import com.atakmap.map.layer.opengl.GLAbstractLayer2;
 import com.atakmap.map.layer.opengl.GLLayer2;
 import com.atakmap.map.layer.opengl.GLLayerSpi2;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLAntiAliasedLine;
 import com.atakmap.map.opengl.GLAntiAliasedLine.ConnectionType;
+import com.atakmap.math.MathUtils;
 import com.atakmap.opengl.GLES20FixedPipeline;
 
 import java.nio.ByteBuffer;
@@ -26,7 +28,8 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 
-public class GLDt2OutlineOverlay implements GLLayer2 {
+public class GLDt2OutlineOverlay extends GLAbstractLayer2
+        implements Dt2FileWatcher.Listener {
 
     private static final float[][] DTED_COLORS = {
             {
@@ -50,7 +53,6 @@ public class GLDt2OutlineOverlay implements GLLayer2 {
     }
 
     private final Instance _subject;
-    private final MapRenderer _renderContext;
     private final Dt2FileWatcher _dtedWatcher;
     private final GLAntiAliasedLine _line;
     private final GeoPoint[] _corners;
@@ -74,7 +76,7 @@ public class GLDt2OutlineOverlay implements GLLayer2 {
     };
 
     private GLDt2OutlineOverlay(MapRenderer surface, Instance subject) {
-        _renderContext = surface;
+        super(surface, subject, GLMapView.RENDER_PASS_SURFACE);
         _subject = subject;
         _dtedWatcher = Dt2FileWatcher.getInstance();
         _line = new GLAntiAliasedLine();
@@ -102,10 +104,14 @@ public class GLDt2OutlineOverlay implements GLLayer2 {
 
     @Override
     public void start() {
+        super.start();
+        _dtedWatcher.addListener(this);
     }
 
     @Override
     public void stop() {
+        super.stop();
+        _dtedWatcher.removeListener(this);
     }
 
     @Override
@@ -114,8 +120,19 @@ public class GLDt2OutlineOverlay implements GLLayer2 {
     }
 
     @Override
-    public void draw(GLMapView ortho) {
-        if (!_subject.isVisible() || ortho.drawMapResolution > 10000)
+    public void onDtedFilesUpdated() {
+        invalidate();
+    }
+
+    @Override
+    public void drawImpl(GLMapView ortho, int renderPass) {
+
+        // Only draw on surface
+        if (!MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SURFACE))
+            return;
+
+        // Don't draw past a certain resolution
+        if (ortho.currentPass.drawMapResolution > 10000)
             return;
 
         // East and west bound correction
@@ -167,9 +184,11 @@ public class GLDt2OutlineOverlay implements GLLayer2 {
         for (int lat = minLat; lat <= maxLat; lat += interval) {
             for (int lng = minLng; lng <= maxLng; lng += interval) {
                 for (int level = coverages.length - 1; level >= 0; level--) {
-                    BitSet bs = coverages[level];
-                    if (bs.get(Dt2FileWatcher.getCoverageIndex(lat, lng))) {
-                        float[] c = DTED_COLORS[level];
+                    final BitSet bs = coverages[level];
+                    final int coverageIndex = Dt2FileWatcher
+                            .getCoverageIndex(lat, lng);
+                    if (coverageIndex < bs.length() && bs.get(coverageIndex)) {
+                        final float[] c = DTED_COLORS[level];
                         GLES20FixedPipeline.glColor4f(c[0], c[1], c[2], 0.3f);
                         drawQuad(ortho, lat, lng, lat + interval,
                                 lng + interval);

@@ -27,7 +27,7 @@ public class FiresPreferenceFragment extends AtakPreferenceFragment {
     private static void setTitle(Preference p, int resource) {
         p.setTitle(resource);
         if (p instanceof EditTextPreference)
-            ((EditTextPreference)p).setDialogTitle(resource);
+            ((EditTextPreference) p).setDialogTitle(resource);
     }
 
     @Override
@@ -37,7 +37,6 @@ public class FiresPreferenceFragment extends AtakPreferenceFragment {
         Preference p = findPreference("fire_prefs_category");
         setTitle(p, ResourceUtil.getResource(R.string.civ_fires_prefs,
                 R.string.fires_prefs));
-
 
         p = findPreference("spiUpdateDelay");
         setTitle(p, ResourceUtil.getResource(R.string.civ_spi_update_delay,

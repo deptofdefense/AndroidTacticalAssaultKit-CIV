@@ -140,7 +140,8 @@ public class VehicleModelInfo implements ModelLoader.Callback {
                             if (bmp != null)
                                 icon.setBitmap(bmp);
                             else
-                                Log.w(TAG, "Failed to generate icon for " + name);
+                                Log.w(TAG,
+                                        "Failed to generate icon for " + name);
                             iconBusy = false;
                         }
                     }
@@ -222,7 +223,8 @@ public class VehicleModelInfo implements ModelLoader.Callback {
             return this.outline;
 
         // Register callback when loading is finished
-        this.outlineCallbacks.add(cb);
+        if (cb != null)
+            this.outlineCallbacks.add(cb);
 
         // Already in the process of loading points
         if (this.loadingOutline)

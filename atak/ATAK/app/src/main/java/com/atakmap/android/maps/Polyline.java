@@ -71,12 +71,7 @@ public class Polyline extends Shape {
      */
     public static final int STYLE_OUTLINE_HALO_MASK = 16;
 
-    /**
-     * Basic line styles.
-     */
-    public static final int BASIC_LINE_STYLE_SOLID = 0;
-    public static final int BASIC_LINE_STYLE_DASHED = 1;
-    public static final int BASIC_LINE_STYLE_DOTTED = 2;
+
 
     /**
      * Height styles (bit masks)
@@ -268,13 +263,12 @@ public class Polyline extends Shape {
      * Starts BasicLineStyle
      */
 
-    private final ConcurrentLinkedQueue<OnBasicLineStyleChangedListener> _onBasicLineStyleChanged = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<OnLabelsChangedListener> _onLabelsChanged = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<OnLabelTextSizeChanged> _onLabelTextSizeChanged = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<OnAltitudeModeChangedListener> _onAltitudeModeChanged = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<OnHeightStyleChangedListener> _onHeightStyleChanged = new ConcurrentLinkedQueue<>();
 
-    private int basicLineStyle = Polyline.BASIC_LINE_STYLE_SOLID;
+
     private int heightStyle = HEIGHT_STYLE_POLYGON | HEIGHT_STYLE_OUTLINE;
     private int extrudeMode = HEIGHT_EXTRUDE_DEFAULT;
 
@@ -282,9 +276,7 @@ public class Polyline extends Shape {
         void onLabelsChanged(Polyline p);
     }
 
-    public interface OnBasicLineStyleChangedListener {
-        void onBasicLineStyleChanged(Polyline p);
-    }
+
 
     public interface OnLabelTextSizeChanged {
         void onLabelTextSizeChanged(Polyline p);
@@ -352,32 +344,6 @@ public class Polyline extends Shape {
     protected void onLabelTextSizeChanged() {
         for (Polyline.OnLabelTextSizeChanged l : _onLabelTextSizeChanged) {
             l.onLabelTextSizeChanged(this);
-        }
-    }
-
-    public void setBasicLineStyle(int basicLineStyle) {
-        this.basicLineStyle = basicLineStyle;
-        onBasicLineStyleChanged();
-    }
-
-    public int getBasicLineStyle() {
-        return basicLineStyle;
-    }
-
-    public void addOnBasicLineStyleChangedListener(
-            OnBasicLineStyleChangedListener listener) {
-        if (!_onBasicLineStyleChanged.contains(listener))
-            _onBasicLineStyleChanged.add(listener);
-    }
-
-    public void removeOnBasicLineStyleChangedListener(
-            OnBasicLineStyleChangedListener listener) {
-        _onBasicLineStyleChanged.remove(listener);
-    }
-
-    protected void onBasicLineStyleChanged() {
-        for (Polyline.OnBasicLineStyleChangedListener l : _onBasicLineStyleChanged) {
-            l.onBasicLineStyleChanged(this);
         }
     }
 
@@ -577,6 +543,26 @@ public class Polyline extends Shape {
     }
 
     @Override
+    public void toggleMetaData(String key, boolean value) {
+        super.toggleMetaData(key, value);
+
+        // TODO 4.4: Better way of listening for metadata changes
+        // Refresh labels
+        if (key.equals("labels_on"))
+            onLabelsChanged();
+    }
+
+    @Override
+    public void setMetaString(String key, String value) {
+        super.setMetaString(key, value);
+
+        // TODO 4.4: Better way of listening for metadata changes
+        // Refresh labels
+        if (key.equals("polylineLabel"))
+            onLabelsChanged();
+    }
+
+    @Override
     public Bundle preDrawCanvas(CapturePP cap) {
         Bundle ret = super.preDrawCanvas(cap);
 
@@ -642,9 +628,9 @@ public class Polyline extends Shape {
     @Override
     public void drawCanvas(CapturePP cap, Bundle data) {
         Paint paint = cap.getPaint();
-        if ((basicLineStyle & BASIC_LINE_STYLE_DASHED) > 0)
+        if ((getBasicLineStyle() & BASIC_LINE_STYLE_DASHED) > 0)
             paint.setPathEffect(cap.getDashed());
-        else if ((basicLineStyle & BASIC_LINE_STYLE_DOTTED) > 0)
+        else if ((getBasicLineStyle() & BASIC_LINE_STYLE_DOTTED) > 0)
             paint.setPathEffect(cap.getDotted());
         super.drawCanvas(cap, data);
 

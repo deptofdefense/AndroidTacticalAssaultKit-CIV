@@ -35,7 +35,7 @@ public class GLExtrude {
      * @param closed True if the shape is closed, false if open
      * @param extrudeHeights The height(s) to extrude to. If a single value is
      *                       passed in, the extrusion will be a fixed height
- *                           relative to the points
+     *                       relative to the points
      * @return The extruded shape.
      */
     public static DoubleBuffer extrudeRelative(double baseAltitude,
@@ -67,6 +67,11 @@ public class GLExtrude {
         return extrudeRelative(baseAltitude, points, closed, extrudeHeight);
     }
 
+    public static DoubleBuffer extrudeRelative(double baseAltitude,
+           DoubleBuffer points, int pointSize, boolean closed, double... extrudeHeights) {
+        return extrudeRelative(baseAltitude, points, pointSize, closed, true, extrudeHeights);
+    }
+
     /**
      * Extrude the given shape using a relative altitude. The base of the shape will be baseAltitude
      * and the top will be baseAltitude + extrudeHeight.
@@ -81,7 +86,7 @@ public class GLExtrude {
      * @return The extruded shape.
      */
     public static DoubleBuffer extrudeRelative(double baseAltitude,
-            DoubleBuffer points, int pointSize, boolean closed,
+            DoubleBuffer points, int pointSize, boolean closed, boolean triangulateTopFace,
             double... extrudeHeights) {
 
         // Make sure extrude heights match the number of points
@@ -128,7 +133,7 @@ public class GLExtrude {
                 if (pSize == 4)
                     heights[h] = polygon.get(3);
 
-                vertices.addAll(extrudePolygon(new Polygon(ls), true, heights));
+                vertices.addAll(extrudePolygon(new Polygon(ls), true, triangulateTopFace, heights));
             }
         } else {
             LineString ls = new LineString(3);
@@ -149,7 +154,7 @@ public class GLExtrude {
             }
 
             Polygon polylinePolygon = new Polygon(ls);
-            vertices.addAll(extrudePolygon(polylinePolygon, closed,
+            vertices.addAll(extrudePolygon(polylinePolygon, closed, triangulateTopFace,
                     extrudeHeights));
         }
         double[] tmp = new double[vertices.size()];
@@ -159,6 +164,7 @@ public class GLExtrude {
         DoubleBuffer extrudedBuffer = Unsafe.allocateDirect(tmp.length,
                 DoubleBuffer.class);
         extrudedBuffer.put(tmp);
+        extrudedBuffer.rewind();
         return extrudedBuffer;
     }
 
@@ -217,9 +223,9 @@ public class GLExtrude {
      * @return List of vertices making up the extruded polygon
      */
     private static List<Double> extrudePolygon(Polygon polygon,
-            boolean closed, double... extrudeHeights) {
+            boolean closed, boolean triangulateTopFace, double... extrudeHeights) {
         ExtrusionHints hint = ExtrusionHints.TEEH_None;
-        if (!closed)
+        if (!closed || !triangulateTopFace)
             hint = ExtrusionHints.TEEH_OmitTopFace;
         Geometry extrudedPolygon;
         if (extrudeHeights.length == 1)
@@ -231,7 +237,7 @@ public class GLExtrude {
         List<Double> newPoints = new ArrayList<>();
         // Triangulate the polygons that were returned from the extrude() call
         for (Geometry g : ((GeometryCollection) extrudedPolygon).getGeometries()) {
-            triangulatePolygon(newPoints, (Polygon) g);
+            triangulatePolygon(newPoints, (Polygon) g, triangulateTopFace);
         }
         return newPoints;
     }
@@ -243,7 +249,7 @@ public class GLExtrude {
      * @param verts The ArrayList of vertices.
      * @param polygon The polygon that will be triangulated.
      */
-    private static void triangulatePolygon(final List<Double> verts, final Polygon polygon) {
+    private static void triangulatePolygon(final List<Double> verts, final Polygon polygon, boolean triangulateTopFace) {
         LineString exterior = polygon.getExteriorRing();
         double[] tmp = new double[exterior.getNumPoints() * 3];
         // Don't add the last vertex since it's really the first vertex again

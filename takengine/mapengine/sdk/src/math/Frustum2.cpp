@@ -143,13 +143,13 @@ Frustum2::Plane::Plane(const Vector4<double> &normal_, double dist_) :
                 return clip;
             }
 
-            void Frustum2::normalize(Plane *dst, const Plane &src)
+            void Frustum2::normalize(Plane *dst, const Plane &src) NOTHROWS
             {
                 double m = 1.0 / src.normal.length();
                 src.normal.multiply(m, &dst->normal);
                 dst->dist = src.dist * m;
             }
-            double Frustum2::distance(const Plane &dst, const Vector4<double> &point)
+            double Frustum2::distance(const Plane &dst, const Vector4<double> &point) NOTHROWS
             {
                 return dst.normal.dot(&point) + dst.dist;
             }

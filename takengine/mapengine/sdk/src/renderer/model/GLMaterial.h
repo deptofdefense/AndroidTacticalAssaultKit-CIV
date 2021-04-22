@@ -38,7 +38,6 @@ namespace TAK {
                     mutable Thread::Mutex mutex;
                     TAK::Engine::Model::Material subject;
                     TAK::Engine::Renderer::GLTexture2Ptr texture;
-                    //RRR TAK::Engine::Renderer::AsyncBitmapLoader2::Task pendingTexture;
 					TAK::Engine::Util::FutureTask<GLTexture2Ptr> futureTexture;
 
                     std::size_t width;

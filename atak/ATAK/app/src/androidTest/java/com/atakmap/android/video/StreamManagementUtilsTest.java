@@ -30,7 +30,6 @@ public class StreamManagementUtilsTest extends ATAKInstrumentedTest {
         assertEquals("239.1.1.1", ce.getAddress());
     }
 
-
     @Test
     public void testUrlEmpty() {
         final ConnectionEntry ce = StreamManagementUtils
@@ -117,8 +116,8 @@ public class StreamManagementUtilsTest extends ATAKInstrumentedTest {
     @Test
     public void testRtsp() {
         ConnectionEntry ce1 = StreamManagementUtils
-                    .createConnectionEntryFromUrl("big buck bunny",
-                "rtsp://3.84.6.190/vod/mp4:BigBuckBunny_115k.mov");
+                .createConnectionEntryFromUrl("big buck bunny",
+                        "rtsp://3.84.6.190/vod/mp4:BigBuckBunny_115k.mov");
 
         ConnectionEntry ce2 = StreamManagementUtils
                 .createConnectionEntryFromUrl("big buck bunny",
@@ -127,16 +126,28 @@ public class StreamManagementUtilsTest extends ATAKInstrumentedTest {
         assertEquals("test missing port", ce1, ce2);
         assertEquals("test port", 554, ce2.getPort());
         assertEquals("test address", "3.84.6.190", ce1.getAddress());
-        assertEquals("test path", "/vod/mp4:BigBuckBunny_115k.mov", ce1.getPath());
-        
+        assertEquals("test path", "/vod/mp4:BigBuckBunny_115k.mov",
+                ce1.getPath());
+
     }
 
     @Test
     public void testHttp() {
         ConnectionEntry ce1 = StreamManagementUtils
-                .createConnectionEntryFromUrl("name", "http://192.168.1.1:8081");
+                .createConnectionEntryFromUrl("name",
+                        "http://192.168.1.1:8081");
         assertEquals("http:address", "192.168.1.1", ce1.getAddress());
         assertEquals("http:port", 8081, ce1.getPort());
         assertEquals("http:path", "", ce1.getPath());
+    }
+
+    @Test
+    public void testHttpWithUsernameAndPassword() {
+        ConnectionEntry ce1 = StreamManagementUtils
+                .createConnectionEntryFromUrl("name",
+                        "http://username:password@192.168.1.1:8081/test.mjpg");
+        assertEquals("http:address", "username:password@192.168.1.1", ce1.getAddress());
+        assertEquals("http:port", 8081, ce1.getPort());
+        assertEquals("http:path", "/test.mjpg", ce1.getPath());
     }
 }

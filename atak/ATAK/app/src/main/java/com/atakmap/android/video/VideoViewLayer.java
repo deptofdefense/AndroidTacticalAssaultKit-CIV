@@ -23,7 +23,6 @@ public class VideoViewLayer {
     final RelativeLayout.LayoutParams rlp;
     final MetadataCallback mcb;
 
-
     MediaMetadataDecoder decoder;
     MediaProcessor processor;
     ConnectionEntry entry;
@@ -51,8 +50,9 @@ public class VideoViewLayer {
      * @param decoder the decoder being used
      * @param entry the connection entry
      */
-    final void init(final MediaProcessor processor, final MediaMetadataDecoder decoder,
-                    final ConnectionEntry entry) {
+    final void init(final MediaProcessor processor,
+            final MediaMetadataDecoder decoder,
+            final ConnectionEntry entry) {
         this.processor = processor;
         this.decoder = decoder;
         this.entry = entry;
@@ -69,21 +69,23 @@ public class VideoViewLayer {
         }
     }
 
-    public void start(ConnectionEntry connectionEntry)  { }
-
+    public void start(ConnectionEntry connectionEntry) {
+    }
 
     /**
      * Called when the video is panned by the user.
      * @param x the new center point x value
      * @param y the new center point y value
      */
-    public void setPan(final int x, final int y) { }
+    public void setPan(final int x, final int y) {
+    }
 
     /**
      * Called when the video is scaled by the user
      * @param scale the new scale value
      */
-    public void setScale(final double scale) { }
+    public void setScale(final double scale) {
+    }
 
     /**
      * Called when the video is panned or scaled by the user
@@ -93,14 +95,16 @@ public class VideoViewLayer {
      *        to cover the entire surface, since this matrix includes aspect
      *        ratio scaling and centering.
      */
-    public void setViewMatrix(Matrix matrix) { }
+    public void setViewMatrix(Matrix matrix) {
+    }
 
     /**
      * Called when the video size has changed
      * @param w New video width
      * @param h New video height
      */
-    public void videoSizeChanged(final int w, final int h) { }
+    public void videoSizeChanged(final int w, final int h) {
+    }
 
     /**
      * The metadata change listener.  This supplies both decoded and raw data
@@ -108,12 +112,10 @@ public class VideoViewLayer {
      * @param items the decoded values as ids and items.
      */
     public void metadataChanged(final KLVData rawData,
-                         final Map<DecodedMetadataItem.MetadataItemIDs, DecodedMetadataItem> items) {
+            final Map<DecodedMetadataItem.MetadataItemIDs, DecodedMetadataItem> items) {
         if (mcb != null)
             mcb.metadataChanged(rawData, items);
     }
-
-
 
     /**
      * Create a video view layer as a set <id, view, layout, metadatacallback>.

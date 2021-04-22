@@ -13,6 +13,42 @@ namespace TAK {
             class ENGINE_API MapRenderer
             {
             public :
+                enum DisplayMode
+                {
+                    Flat,
+                    Globe,
+                };
+                enum DisplayOrigin
+                {
+                    UpperLeft,
+                    LowerLeft,
+                };
+                enum InverseMode
+                {
+                    RayCast,
+                    Transform,
+                };
+                enum InverseResult
+                {
+                    None,
+                    Transformed,
+                    GeometryModel,
+                    SurfaceMesh,
+                    TerrainMesh,
+                };
+                enum InverseHints
+                {
+                    IgnoreTerrainMesh = 0x01,
+                    IgnoreSurfaceMesh = 0x02,
+                };
+                enum CameraCollision
+                {
+                    Ignore,
+                    AdjustCamera,
+                    AdjustFocus,
+                    Abort,
+                };
+            public :
                 class OnControlsChangedListener;
             public :
                 virtual ~MapRenderer() NOTHROWS = 0;

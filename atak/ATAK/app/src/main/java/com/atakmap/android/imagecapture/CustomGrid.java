@@ -512,7 +512,7 @@ public class CustomGrid extends AbstractLayer implements Capturable {
             _yLines = Math.max(0, Math.abs((int) (yDist / _mSpacing)) - 1);
             _pointCount = 5 + _xLines * 2 + _yLines * 2;
             ByteBuffer buf = com.atakmap.lang.Unsafe.allocateDirect(
-                    8 * 2 * _pointCount);
+                    8 * 3 * _pointCount);
             buf.order(ByteOrder.nativeOrder());
             _points = buf.asDoubleBuffer();
             _pointPtr = Unsafe.getBufferPointer(_points);
@@ -613,9 +613,10 @@ public class CustomGrid extends AbstractLayer implements Capturable {
     }
 
     // Should only be called within above function
-    private synchronized void addPoint(GeoPoint p) {
+    private void addPoint(GeoPoint p) {
         _points.put(p.getLongitude());
         _points.put(p.getLatitude());
+        _points.put(0); // To be populated by renderer
     }
 
     /**

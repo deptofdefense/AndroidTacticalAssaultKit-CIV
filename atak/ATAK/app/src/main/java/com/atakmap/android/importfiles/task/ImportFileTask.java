@@ -12,9 +12,11 @@ import android.provider.MediaStore;
 import android.content.DialogInterface;
 import android.widget.TextView;
 
+import com.atakmap.android.gui.TileButtonDialog;
 import com.atakmap.android.image.ImageGalleryReceiver;
 import com.atakmap.android.importfiles.sort.ImportResolver;
 import com.atakmap.android.importfiles.sort.ImportResolver.SortFlags;
+import com.atakmap.android.maps.MapView;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProvider;
@@ -565,7 +567,7 @@ public class ImportFileTask extends
         // duplicate is found, remove it from candidates so the order
         // of the list doesn't get screwed up.
 
-        List<String> names = new ArrayList<>();
+        Set<String> names = new HashSet<>();
         for (Iterator<ImportResolver> it = candidates.iterator(); it
                 .hasNext();) {
             ImportResolver r = it.next();
@@ -576,7 +578,9 @@ public class ImportFileTask extends
             }
         }
 
-        if (names.size() <= 1) {
+        MapView mv = MapView.getMapView();
+
+        if (names.size() <= 1 || mv == null) {
             // Through deduplication, we've
             // gotten down to only a single
             // option and there isn't any reason to 
@@ -593,42 +597,37 @@ public class ImportFileTask extends
             return;
         }
 
-        new AlertDialog.Builder(_context)
-                .setTitle(
-                        String.format(
-                                _context.getString(
-                                        R.string.importmgr_select_desired_import_method),
-                                file.getName()))
-                .setItems(names.toArray(new String[0]),
-                        new OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog,
-                                    int which) {
-                                Log.d("ImportFilesTest", "Clicked item: "
-                                        + which);
+        TileButtonDialog d = new TileButtonDialog(mv);
+        for (ImportResolver res : candidates)
+            d.addButton(res.getIcon(), res.getDisplayableName());
+        d.setTitle(R.string.importmgr_select_desired_import_method,
+                file.getName());
+        d.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                Log.d("ImportFilesTest", "Clicked item: " + which);
 
-                                if (which != 0) {
-                                    // If the selected resolver is not the first item
-                                    // in the list, move it to the beginning so it will
-                                    // be attempted first.
-                                    ImportResolver selected = candidates
-                                            .get(which);
-                                    candidates.remove(selected);
-                                    candidates.add(0, selected);
-                                }
+                if (which != 0) {
+                    // If the selected resolver is not the first item
+                    // in the list, move it to the beginning so it will
+                    // be attempted first.
+                    ImportResolver selected = candidates
+                            .get(which);
+                    candidates.remove(selected);
+                    candidates.add(0, selected);
+                }
 
-                                _semaphore.release();
-                            }
-                        })
-                .setOnCancelListener(new OnCancelListener() {
-                    @Override
-                    public void onCancel(DialogInterface dialog) {
-                        isCanceled.canceled = true;
-                        _semaphore.release();
-                    }
-
-                })
-                .show();
+                _semaphore.release();
+            }
+        });
+        d.setOnCancelListener(new OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface dialog) {
+                isCanceled.canceled = true;
+                _semaphore.release();
+            }
+        });
+        d.show(true);
     }
 
     private void promptForOverwrite(File destFile,

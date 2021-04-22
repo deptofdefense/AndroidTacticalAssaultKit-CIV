@@ -12,6 +12,8 @@ import com.atakmap.interop.Pointer;
 import com.atakmap.map.projection.MapProjectionDisplayModel;
 import com.atakmap.map.projection.Projection;
 import com.atakmap.map.projection.ProjectionFactory;
+import com.atakmap.math.AABB;
+import com.atakmap.math.Frustum;
 import com.atakmap.math.GeometryModel;
 import com.atakmap.math.PointD;
 import com.atakmap.math.Matrix;
@@ -42,13 +44,14 @@ public final class MapSceneModel implements Disposable {
     public float focusx;
     public float focusy;
     public double gsd;
+    public double dpi;
 
     private boolean continuousScroll;
     private int hemisphere;
     private double westBound, eastBound;
     private boolean crossesIDL;
 
-    public final MapProjectionDisplayModel displayModel;
+    public MapProjectionDisplayModel displayModel;
 
     final ReadWriteLock rwlock = new ReadWriteLock();
     Pointer pointer;
@@ -111,37 +114,58 @@ public final class MapSceneModel implements Disposable {
         this.continuousScroll = continuousScroll;
     }
 
+    /**
+     * Copy constructor.
+     *
+     * @param other
+     */
+    public MapSceneModel(MapSceneModel other) {
+        this(clone(other.pointer.raw), null);
+    }
+
     MapSceneModel(Pointer pointer, Object owner) {
         cleaner = NativePeerManager.register(this, pointer, this.rwlock, null, CLEANER);
 
         this.pointer = pointer;
         this.owner = owner;
 
+        init();
+    }
+
+    void init() {
         this.displayModel = MapProjectionDisplayModel.getModel(getProjection(this.pointer.raw));
         this.width = getWidth(this.pointer.raw);
         this.height = getHeight(this.pointer.raw);
         this.mapProjection = ProjectionFactory.getProjection(getProjection(this.pointer.raw));
         this.earth = (this.displayModel != null) ? this.displayModel.earth : null;
-        this.forward = Matrix_interop.create(getForward(this.pointer.raw), this);
-        this.inverse = Matrix_interop.create(getInverse(this.pointer.raw), this);
+        if(this.forward == null)
+            this.forward = Matrix_interop.create(getForward(this.pointer.raw), this);
+        if(this.inverse == null)
+            this.inverse = Matrix_interop.create(getInverse(this.pointer.raw), this);
         this.gsd = getGsd(this.pointer.raw);
+        this.dpi = getDpi(this.pointer.raw);
         this.focusx = getFocusX(this.pointer.raw);
         this.focusy = getFocusY(this.pointer.raw);
 
-        this.camera = new MapCamera();
+        if(this.camera == null)
+            this.camera = new MapCamera();
         this.camera.aspectRatio = getCameraAspectRatio(this.pointer.raw);
         this.camera.azimuth = getCameraAzimuth(this.pointer.raw);
         this.camera.elevation = getCameraElevation(this.pointer.raw);
         this.camera.roll = getCameraRoll(this.pointer.raw);
         this.camera.near = getCameraNear(this.pointer.raw);
+        this.camera.nearMeters = getCameraNearMeters(this.pointer.raw);
         this.camera.far = getCameraFar(this.pointer.raw);
+        this.camera.farMeters = getCameraFarMeters(this.pointer.raw);
         this.camera.fov = getCameraFov(this.pointer.raw);
         this.camera.location = new PointD(0d, 0d, 0d);
         getCameraLocation(this.pointer.raw, this.camera.location);
         this.camera.target = new PointD(0d, 0d, 0d);
         getCameraTarget(this.pointer.raw, this.camera.target);
-        this.camera.projection = Matrix_interop.create(getCameraProjection(this.pointer.raw), this);
-        this.camera.modelView = Matrix_interop.create(getCameraModelView(this.pointer.raw), this);
+        if(this.camera.projection == null)
+            this.camera.projection = Matrix_interop.create(getCameraProjection(this.pointer.raw), this);
+        if(this.camera.modelView == null)
+            this.camera.modelView = Matrix_interop.create(getCameraModelView(this.pointer.raw), this);
         this.camera.perspective = isCameraPerspective(this.pointer.raw);
 
         if(this.inverse == null)
@@ -158,8 +182,9 @@ public final class MapSceneModel implements Disposable {
 
         this.hemisphere = GeoCalculations.getHemisphere(focusGeo);
 
-        // XXX - 
+        // XXX -
         this.continuousScroll = true;
+        this.crossesIDL = false;
 
         // Calculate east and west bounds for correct forward corrections
         // when crossing the IDL in continuous scroll mode
@@ -179,42 +204,51 @@ public final class MapSceneModel implements Disposable {
             this.crossesIDL = true;
         }
     }
-/*
-    private static Matrix createProjection(double mapWidth, double mapHeight, double mapResolution, double mapTilt, double _range) {
-        //final double scaleAdj = 1d + (Math.sin(Math.toRadians(mapTilt))*1.5d);
-        final double scaleAdj = 1d;
 
-        // XXX - account for tilt
+    public void set(double displayDPI, int width, int height,
+                    Projection proj, GeoPoint focusGeo, float focusX, float focusY,
+                    double rotation, double tilt, double resolution,
+                    boolean continuousScroll) {
+        this.rwlock.acquireRead();
+        try {
+            if(this.pointer.raw == 0L)
+                return;
+            set(this.pointer.raw,
+                    displayDPI,
+                    width, height,
+                    proj.getSpatialReferenceID(),
+                    focusGeo.getLatitude(), focusGeo.getLongitude(), focusGeo.getAltitude(), focusGeo.getAltitudeReference() == GeoPoint.AltitudeReference.HAE,
+                    focusX, focusY,
+                    rotation,
+                    tilt,
+                    resolution);
 
-        // http://www.mathopenref.com/sagitta.html
-        final double wgs84Radius = Datum.WGS84.referenceEllipsoid.semiMajorAxis/2d;
-        final double halfChordLength = Math.min(Datum.WGS84.referenceEllipsoid.semiMajorAxis, mapResolution*mapWidth)/2d;
-        //final double far = Math.max(2d, _range+2000+(wgs84Radius-Math.sqrt((wgs84Radius*wgs84Radius)-(halfChordLength*halfChordLength)))+4500)*scaleAdj;
-        final double far = Math.max(2d, _range+2000+halfChordLength);
-        //final double near = Math.max(1d, _range-25000)/scaleAdj;
-        double near=(_range*Math.sin(Math.toRadians(mapTilt)))*0.5+1;
-        //final double near = 1d;
-        //final double far = _range*4;
-
-        //Calculate the distance to the horizon
-        //double h=Math.max(_range-Datum.WGS84.referenceEllipsoid.semiMajorAxis,1.0);
-        //double far=Math.sqrt(2.0*Datum.WGS84.referenceEllipsoid.semiMajorAxis*h+h*h);
-        //far*=Math.cos(Math.atan(Datum.WGS84.referenceEllipsoid.semiMajorAxis/far)*(mapTilt / -90d));
-        //double near=(_range*Math.sin(-mapTilt* Math.PI/180d))*0.5+1;
-
-        if(mapTilt > 0d)
-            Log.w(TAG, "MapSceneModel(resolution=" + mapResolution + ",range=" + _range + ",near=" + near + ",far=" + far + ")");
-
-        Matrix xproj = Matrix.getIdentity();
-        perspectiveM(xproj,
-                     fov,
-                     (double)mapWidth/(double)mapHeight,
-                     near,
-                     far);
-        return xproj;
+            this.continuousScroll = continuousScroll;
+            init();
+        } finally {
+            this.rwlock.releaseRead();
+        }
     }
-*/
 
+    public void set(MapSceneModel other) {
+        other.rwlock.acquireRead();
+        try {
+            if(other.pointer.raw == 0L)
+                throw new IllegalArgumentException();
+            this.rwlock.acquireRead();
+            try {
+                if (this.pointer.raw == 0L)
+                    return;
+                set(this.pointer.raw, other.pointer.raw);
+                this.continuousScroll = other.continuousScroll;
+                init();
+            } finally {
+                this.rwlock.releaseRead();
+            }
+        } finally {
+            other.rwlock.releaseRead();
+        }
+    }
 
     public PointF forward(GeoPoint geo, PointF point) {
         if (this.continuousScroll && this.crossesIDL) {
@@ -311,62 +345,42 @@ public final class MapSceneModel implements Disposable {
             this.cleaner.clean();
     }
 
-    // XXX - note to self
-    /* for perspective
-        org.x = this.camera.location.x;
-        org.y = this.camera.location.y;
-        org.z = this.camera.location.z;
+    @Override
+    public boolean equals(Object o) {
+        if(!(o instanceof MapSceneModel))
+            return false;
 
-        tgt.z = 0.0001d;
-        this.inverse.transform(tgt, tgt);
-      */
-     /* from camera plane
-        // construct plane camera with normal cam->tgt
-        Plane cameraP = new Plane(new Vector3D(camera.target.x-camera.location.x,
-                                               camera.target.y-camera.location.y,
-                                               camera.target.z-camera.location.z).normalize(),
-                                  camera.location);
-        // XXX - cast ray in scene into camera plane
-        PointD p0 = inverse.transform(new PointD(point.x, point.y, 2d), null);
-        PointD p1 = inverse.transform(new PointD(point.x, point.y, 1d), null);
+        final MapSceneModel other = (MapSceneModel)o;
+        if(this == other)
+            return true;
 
-        // XXX - org is camera plane isect, tgt unchanged
-        org = cameraP.intersect(new Ray(p0, new Vector3D(p1.x-p0.x, p1.y-p0.y, p1.z-p0.z).normalize()));
-        this.inverse.transform(tgt, tgt);
-      */
+        // check projection
+        if(this.mapProjection.getSpatialReferenceID() != other.mapProjection.getSpatialReferenceID())
+            return false;
 
-     private static com.atakmap.map.layer.feature.geometry.Envelope transform(com.atakmap.map.layer.feature.geometry.Envelope mbb, Projection proj) {
-         PointD[] p = new PointD[8];
-         int idx = 0;
-         p[idx++] = proj.forward(new GeoPoint(mbb.minY, mbb.minX, mbb.minZ), null);
-         p[idx++] = proj.forward(new GeoPoint(mbb.minY, mbb.maxX, mbb.minZ), null);
-         p[idx++] = proj.forward(new GeoPoint(mbb.maxY, mbb.maxX, mbb.minZ), null);
-         p[idx++] = proj.forward(new GeoPoint(mbb.maxY, mbb.minX, mbb.minZ), null);
-         p[idx++] = proj.forward(new GeoPoint(mbb.minY, mbb.minX, mbb.maxZ), null);
-         p[idx++] = proj.forward(new GeoPoint(mbb.minY, mbb.maxX, mbb.maxZ), null);
-         p[idx++] = proj.forward(new GeoPoint(mbb.maxY, mbb.maxX, mbb.maxZ), null);
-         p[idx++] = proj.forward(new GeoPoint(mbb.maxY, mbb.minX, mbb.maxZ), null);
+        if(this.gsd != other.gsd)
+            return false;
 
-         mbb.minX = p[0].x;
-         mbb.minY = p[0].y;
-         mbb.minZ = p[0].z;
-         mbb.maxX = p[0].x;
-         mbb.maxY = p[0].y;
-         mbb.maxZ = p[0].z;
+        if(this.width != other.width || this.height != other.height)
+            return false;
 
-         for(int i = 1; i < idx; i++) {
-             if(p[i].x < mbb.minX)      mbb.minX = p[i].x;
-             else if(p[i].x > mbb.minX) mbb.maxX = p[i].x;
-             if(p[i].y < mbb.minY)      mbb.minY = p[i].y;
-             else if(p[i].y > mbb.minY) mbb.maxY = p[i].y;
-             if(p[i].z < mbb.minZ)      mbb.minZ = p[i].z;
-             else if(p[i].z > mbb.minZ) mbb.maxZ = p[i].z;
-         }
+        if(this.focusx != other.focusx || this.focusy != other.focusy)
+            return false;
 
-         return mbb;
-     }
+        // check camera definition
+        return this.camera.azimuth == other.camera.azimuth &&
+                this.camera.location.x == other.camera.location.x &&
+                this.camera.location.y == other.camera.location.y &&
+                this.camera.location.z == other.camera.location.z &&
+                this.camera.target.x == other.camera.target.x &&
+                this.camera.target.y == other.camera.target.y &&
+                this.camera.target.z == other.camera.target.z &&
+                this.camera.roll == other.camera.roll &&
+                this.camera.fov == other.camera.fov;
+    }
 
     /**
+     * AABB intersection test with the viewing frustum.
      *
      * @param model
      * @param mbbMinX   The minimum longitude of the MBB
@@ -375,109 +389,35 @@ public final class MapSceneModel implements Disposable {
      * @param mbbMaxX   The maximum longitude of the MBB
      * @param mbbMaxY   The maximum latitude of the MBB
      * @param mbbMaxZ   The maximum altitude (HAE) of the MBB
-     * @return  <code>true</code> if the bounding region intersets the view
-     *          frustum, <code>false</code> otherwise.
      *
+     * @return  <code>true</code> if the bounding region intersects the view
+     *          frustum, <code>false</code> otherwise.
      */
     public static boolean intersects(MapSceneModel model, double mbbMinX, double mbbMinY, double mbbMinZ, double mbbMaxX, double mbbMaxY, double mbbMaxZ) {
-         if(false) {
-             return intersectsImpl(model, mbbMinX, mbbMinY, mbbMinZ,
-                     mbbMaxX, mbbMaxY, mbbMaxZ);
-         }
-        return intersects(model.pointer.raw,
+        return intersectsAAbbWgs84(model.pointer.raw,
                 mbbMinX, mbbMinY, mbbMinZ,
                 mbbMaxX, mbbMaxY, mbbMaxZ);
     }
 
-    private static boolean intersectsImpl(MapSceneModel scene, double mbbMinX, double mbbMinY, double mbbMinZ, double mbbMaxX, double mbbMaxY, double mbbMaxZ) {
-        Matrix xform = scene.forward;
-
-        double minX = Double.NaN;
-        double minY = Double.NaN;
-        double minZ = Double.NaN;
-        double maxX = Double.NaN;
-        double maxY = Double.NaN;
-        double maxZ = Double.NaN;
-
-        // transform the MBB to the native projection
-        if(scene.mapProjection.getSpatialReferenceID() != 4326) {
-            GeoPoint[] points = new GeoPoint[8];
-            points[0] = new GeoPoint(mbbMinY, mbbMinX, mbbMinZ);
-            points[1] = new GeoPoint(mbbMinY, mbbMaxX, mbbMinZ);
-            points[2] = new GeoPoint(mbbMaxY, mbbMaxX, mbbMinZ);
-            points[3] = new GeoPoint(mbbMaxY, mbbMinX, mbbMinZ);
-            points[4] = new GeoPoint(mbbMinY, mbbMinX, mbbMaxZ);
-            points[5] = new GeoPoint(mbbMinY, mbbMaxX, mbbMaxZ);
-            points[6] = new GeoPoint(mbbMaxY, mbbMaxX, mbbMaxZ);
-            points[7] = new GeoPoint(mbbMaxY, mbbMinX, mbbMaxZ);
-
-            int idx = 0;
-            for( ; idx < 8; idx++) {
-                PointD scratch = new PointD(0d, 0d, 0d);
-                if(scene.mapProjection.forward(points[idx], scratch) == null)
-                    continue;
-                mbbMinX = scratch.x;
-                mbbMinY = scratch.y;
-                mbbMinZ = scratch.z;
-                mbbMaxX = scratch.x;
-                mbbMaxY = scratch.y;
-                mbbMaxZ = scratch.z;
-                break;
-            }
-            if(idx == 8)
-                return false;
-            for( ; idx < 8; idx++) {
-                PointD scratch = new PointD(0d, 0d, 0d);
-                if(scene.mapProjection.forward(points[idx], scratch) == null)
-                    continue;
-                if(scratch.x < mbbMinX)        mbbMinX = scratch.x;
-                else if(scratch.x > mbbMaxX)   mbbMaxX = scratch.x;
-                if(scratch.y < mbbMinY)        mbbMinY = scratch.y;
-                else if(scratch.y > mbbMaxY)   mbbMaxY = scratch.y;
-                if(scratch.z < mbbMinZ)        mbbMinZ = scratch.z;
-                else if(scratch.z > mbbMaxZ)   mbbMaxZ = scratch.z;
-            }
-        }
-
-        PointD[] points = new PointD[8];
-        points[0] = new PointD(mbbMinX, mbbMinY, mbbMinZ);
-        points[1] = new PointD(mbbMinX, mbbMaxY, mbbMinZ);
-        points[2] = new PointD(mbbMaxX, mbbMaxY, mbbMinZ);
-        points[3] = new PointD(mbbMaxX, mbbMinY, mbbMinZ);
-        points[4] = new PointD(mbbMinX, mbbMinY, mbbMaxZ);
-        points[5] = new PointD(mbbMinX, mbbMaxY, mbbMaxZ);
-        points[6] = new PointD(mbbMaxX, mbbMaxY, mbbMaxZ);
-        points[7] = new PointD(mbbMaxX, mbbMinY, mbbMaxZ);
-
-        int idx = 0;
-        for( ; idx < 8; idx++) {
-            PointD scratch = new PointD(0d, 0d, 0d);
-            if(xform.transform(points[idx], scratch)  == null )
-                continue;
-            minX = scratch.x;
-            minY = scratch.y;
-            minZ = scratch.z;
-            maxX = scratch.x;
-            maxY = scratch.y;
-            maxZ = scratch.z;
-            break;
-        }
-        if(idx == 8)
-            return false;
-        for( ; idx < 8; idx++) {
-            PointD scratch = new PointD(0d, 0d, 0d);
-            if(xform.transform(points[idx], scratch)  == null )
-                continue;
-            if(scratch.x < minX)        minX = scratch.x;
-            else if(scratch.x > maxX)   maxX = scratch.x;
-            if(scratch.y < minY)        minY = scratch.y;
-            else if(scratch.y > maxY)   maxY = scratch.y;
-            if(scratch.z < minZ)        minZ = scratch.z;
-            else if(scratch.z > maxZ)   maxZ = scratch.z;
-        }
-
-        return com.atakmap.math.Rectangle.intersects(0, 0, scene.width, scene.height, minX, 0, maxX, scene.height);
+    /**
+     * Bounding sphere intersection test with the viewing frustum.
+     *
+     * @param model
+     * @param latitude      Latitude of the center of the sphere
+     * @param longitude     Longitude of the center of the sphere
+     * @param hae           Altitude of the center of the sphere, meters HAE
+     * @param radiusMeters  The radius of the sphere, in meters
+     *
+     * @return  <code>true</code> if the bounding region intersects the view
+     *          frustum, <code>false</code> otherwise.
+     */
+    public static boolean intersects(MapSceneModel model, double latitude, double longitude, double hae, double radiusMeters) {
+        return intersectsSphereWgs84(model.pointer.raw,
+                longitude, latitude, hae, radiusMeters);
     }
+
+    public static native double gsd(double range, double vfov, int sceneHeightPixels);
+    public static native double range(double gsd, double vfov, int sceneHeightPixels);
 
     // Interop<MapSceneModel> interface
     static long getPointer(MapSceneModel obj) {
@@ -510,6 +450,21 @@ public final class MapSceneModel implements Disposable {
                                  double rotation,
                                  double tilt,
                                  double resolution);
+   static native void set(long pointer,
+                          double displayDPI,
+                          int width,
+                          int height,
+                          int srid,
+                          double focusLat,
+                          double focusLng,
+                          double focusAlt,
+                          boolean focusAltAbsolute,
+                          float focusX,
+                          float focusY,
+                          double rotation,
+                          double tilt,
+                          double resolution);
+   static native void set(long ptr, long otherPtr);
 
     static native Pointer getEarth(long pointer);
     static native int getProjection(long pointer);
@@ -521,6 +476,7 @@ public final class MapSceneModel implements Disposable {
     static native float getFocusY(long pointer);
     static native double getGsd(long pointer);
     static native Pointer getDisplayModel(long pointer);
+    static native double getDpi(long ptr);
 
     //public Matrix projection;
     static native Pointer getCameraProjection(long pointer);
@@ -544,6 +500,8 @@ public final class MapSceneModel implements Disposable {
     static native double getCameraNear(long pointer);
     //public double far;
     static native double getCameraFar(long pointer);
+    static native double getCameraNearMeters(long pointer);
+    static native double getCameraFarMeters(long pointer);
 
     static native boolean isCameraPerspective(long pointer);
 
@@ -555,7 +513,10 @@ public final class MapSceneModel implements Disposable {
     public static native void setPerspectiveCameraEnabled(boolean e);
     public static native boolean isPerspectiveCameraEnabled();
 
-    static native boolean intersects(long ptr,
+    static native boolean intersectsAAbbWgs84(long ptr,
         double minX, double minY, double minZ,
         double maxX, double maxY, double maxZ);
+    static native boolean intersectsSphereWgs84(long ptr,
+        double cx, double cy, double cz,
+        double radius);
 }

@@ -3,6 +3,7 @@ package com.atakmap.android.vehicle.model.opengl;
 
 import android.opengl.GLES30;
 
+import com.atakmap.coremap.log.Log;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.layer.model.Mesh;
 import com.atakmap.map.layer.model.Model;
@@ -340,17 +341,23 @@ public class GLInstancedMesh extends GLInstancedRenderable {
             VertexDataLayout.Array vdlArr, int size) {
         if (!MathUtils.hasBits(vdl.attributes, attr))
             return null;
-        Buffer buf = _subject.getVertices(attr);
-        buf.position(vdlArr.offset);
-        int[] bufID = new int[1];
-        GLES30.glGenBuffers(1, bufID, 0);
-        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, bufID[0]);
-        GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, _subject.getNumVertices()
-                * vdlArr.stride, buf, GLES30.GL_STATIC_DRAW);
-        GLES30.glVertexAttribPointer(idx, size, GLES30.GL_FLOAT, false,
-                vdlArr.stride, 0);
-        GLES30.glEnableVertexAttribArray(idx);
-        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, 0);
-        return bufID;
+        try {
+            Buffer buf = _subject.getVertices(attr);
+            buf.position(vdlArr.offset);
+            int[] bufID = new int[1];
+            GLES30.glGenBuffers(1, bufID, 0);
+            GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, bufID[0]);
+            GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, _subject.getNumVertices()
+                    * vdlArr.stride, buf, GLES30.GL_STATIC_DRAW);
+            GLES30.glVertexAttribPointer(idx, size, GLES30.GL_FLOAT, false,
+                    vdlArr.stride, 0);
+            GLES30.glEnableVertexAttribArray(idx);
+            GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, 0);
+            return bufID;
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to setup vertex buffer for " + _name
+                    + " (attr = " + attr + ")", e);
+            return null;
+        }
     }
 }

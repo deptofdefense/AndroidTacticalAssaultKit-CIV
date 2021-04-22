@@ -80,7 +80,6 @@ public class DoghouseReceiver extends BroadcastReceiver implements
     private final MapGroup _doghouseGroup;
     private final DoghouseViewModel _viewModel;
 
-
     private static DoghouseReceiver instance;
 
     private DoghouseReceiver(MapView mapView) {

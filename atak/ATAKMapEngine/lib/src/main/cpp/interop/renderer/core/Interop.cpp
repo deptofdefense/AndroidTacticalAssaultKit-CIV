@@ -45,7 +45,7 @@ namespace
     InterfaceMarshalContext<GLMapRenderable2> GLMapRenderable2_interop;
     InterfaceMarshalContext<GLLayer2> GLLayer2_interop;
     InterfaceMarshalContext<GLLayerSpi2> GLLayerSpi2_interop;
-    ImplementationMarshalContext<GLMapView2> GLMapView2_interop;
+    ImplementationMarshalContext<GLGlobeBase> GLGlobeBase_interop;
 
     // NOTE: pairs of C++ GLMapView2::RenderPass, Java GLMapView.RENDER_PASS_XXX
     // array is length 64 as there is a maximum of 32 bit-mask values
@@ -56,13 +56,13 @@ namespace
 }
 
 // GLMapView interop
-TAKErr TAKEngineJNI::Interop::Renderer::Core::Interop_marshal(std::shared_ptr<TAK::Engine::Renderer::Core::GLMapView2> &value, JNIEnv &env, jobject mview) NOTHROWS
+TAKErr TAKEngineJNI::Interop::Renderer::Core::Interop_marshal(std::shared_ptr<TAK::Engine::Renderer::Core::GLGlobeBase> &value, JNIEnv &env, jobject mview) NOTHROWS
 {
-    return GLMapView2_interop.marshal(value, env, mview);
+    return GLGlobeBase_interop.marshal(value, env, mview);
 }
-TAKErr TAKEngineJNI::Interop::Renderer::Core::Interop_marshal(Java::JNILocalRef &value, JNIEnv &env, const TAK::Engine::Renderer::Core::GLMapView2 &cview) NOTHROWS
+TAKErr TAKEngineJNI::Interop::Renderer::Core::Interop_marshal(Java::JNILocalRef &value, JNIEnv &env, const TAK::Engine::Renderer::Core::GLGlobeBase &cview) NOTHROWS
 {
-    return GLMapView2_interop.marshal(value, env, cview);
+    return GLGlobeBase_interop.marshal(value, env, cview);
 }
 
 // GLMapView::RenderPass interop
@@ -265,7 +265,7 @@ namespace
         GLMapView_class.id = ATAKMapEngineJNI_findClass(&env, "com/atakmap/map/opengl/GLMapView");
         GLMapView_class.pointer = env.GetFieldID(GLMapView_class.id, "pointer", "Lcom/atakmap/interop/Pointer;");
 
-        GLMapView2_interop.init(env, GLMapView_class.id, GLMapView_class.pointer, NULL);
+        GLGlobeBase_interop.init(env, GLMapView_class.id, GLMapView_class.pointer, NULL);
 
         {
             memset(renderPassMapping, 0u, sizeof(unsigned int)*64u);

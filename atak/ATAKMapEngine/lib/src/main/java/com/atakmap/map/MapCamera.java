@@ -35,9 +35,16 @@ public class MapCamera {
     public double azimuth;
 
     public double fov;
+    /** height:width */
     public double aspectRatio;
+    /** `z` value corresponding to the near plane */
     public double near;
+    /** `z` value corresponding to the far plane */
     public double far;
+    /** near distance from camera, in nominal display meters */
+    public double nearMeters;
+    /** far distance from camera, in nominal display meters */
+    public double farMeters;
 
     public boolean perspective;
 }

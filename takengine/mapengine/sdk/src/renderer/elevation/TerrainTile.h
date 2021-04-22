@@ -3,6 +3,7 @@
 
 #include <cstdlib>
 
+#include "elevation/ElevationChunk.h"
 #include "model/Mesh.h"
 #include "model/SceneInfo.h"
 #include "port/Platform.h"

@@ -110,20 +110,6 @@ public class Gv2FMobilePlayer extends MetricActivity
     /** Temp directory in use - not used for file opens */
     private File tmpDir;
 
-    /* Static block to do native library loading and Gv2F Initialization */
-    static {
-        try {
-            /* Loading gnustl_shared is required BEFORE Gv2F init */
-            com.atakmap.coremap.loader.NativeLoader
-                    .loadLibrary("gnustl_shared");
-
-            /* Initialize Gv2F - License parameters are not needed for Android */
-            MediaProcessor.PGSCMediaInit(new byte[0], 0, 0);
-        } catch (MediaException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     /************************************************************/
     /*
      * Activity /***********************************************************

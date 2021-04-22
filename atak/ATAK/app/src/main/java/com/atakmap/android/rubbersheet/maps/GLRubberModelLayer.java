@@ -14,10 +14,15 @@ import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.MapSceneModel;
+import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.model.Model;
 import com.atakmap.map.layer.opengl.GLAsynchronousLayer2;
 import com.atakmap.map.opengl.GLMapRenderable2;
 import com.atakmap.map.opengl.GLMapView;
+import com.atakmap.map.projection.EquirectangularMapProjection;
+import com.atakmap.math.Matrix;
+import com.atakmap.spatial.GeometryTransformer;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -112,6 +117,7 @@ public class GLRubberModelLayer extends
             else
                 focus = mv.getMapTouchController().getFreeForm3DItem();
         }
+
         for (int i = 0; i < _modelList.size(); i++) {
             GLRubberModel glMDL = _modelList.valueAt(i);
             RubberModel mdl = (RubberModel) glMDL.getSubject();
@@ -129,9 +135,26 @@ public class GLRubberModelLayer extends
             // Check view state bounds against model render bounds
             if (!onScreen) {
                 glMDL.getBounds(_scratchBounds);
+
+                // perform a quick 2D test for surface intersection
                 onScreen = _scratchBounds.intersects(state.northBound,
                         state.westBound, state.southBound, state.eastBound,
                         state.crossesIDL);
+
+                // if the map is tilted, perform frustum culling
+                if (!onScreen && state.drawTilt > 0) {
+                    // XXX - GLMapItem2 API does not provide min/max z, use some
+                    //       reasonable values based on the maximum altitudes
+                    //       achievable by fixed wing aircraft
+                    double maxAlt = 19000d;
+                    double minAlt = -900d;
+
+                    onScreen = MapSceneModel.intersects(state.scene,
+                            _scratchBounds.getWest(),
+                            _scratchBounds.getSouth(), minAlt,
+                            _scratchBounds.getEast(),
+                            _scratchBounds.getNorth(), maxAlt);
+                }
             }
 
             if (onScreen)

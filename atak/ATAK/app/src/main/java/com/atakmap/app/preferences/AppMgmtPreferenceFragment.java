@@ -257,6 +257,7 @@ public class AppMgmtPreferenceFragment extends AtakPreferenceFragment {
 
         importView.setTitle(R.string.select_directory_to_import);
         importView.setStartDirectory(_lastDirectory);
+        importView.setUseProvider(false);
         importView.allowAnyExtenstionType();
         AlertDialog.Builder b = new AlertDialog.Builder(context);
         b.setView(importView);

@@ -14,7 +14,8 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.overlay.MapOverlay;
 import com.atakmap.android.overlay.MapOverlayParent;
-import com.atakmap.android.tilecapture.imagery.MapItemCapturePP;
+import com.atakmap.android.tilecapture.TileCapture;
+import com.atakmap.android.tilecapture.imagery.ImageryCaptureTask;
 import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.cot.event.CotEvent;
@@ -53,8 +54,8 @@ import java.util.Set;
 
 /**
  * Image capture tool class
- * @deprecated Use {@link MapItemCapturePP} instead for much better
- * performance and results
+ * @deprecated Use a {@link TileCapture} instance w/ {@link ImageryCaptureTask}
+ * for much better performance and results
  */
 @Deprecated
 @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
@@ -477,11 +478,11 @@ public class ImageCapture extends AbstractLayer {
                 + "</gx:LatLonQuad>"
                 + "</GroundOverlay>"
                 + "</kml>";
-        try(OutputStream os = IOProviderFactory
+        try (OutputStream os = IOProviderFactory
                 .getOutputStream(new File(dir, "doc.kml"));
-            OutputStreamWriter osw = new OutputStreamWriter(os,
-                FileSystemUtils.UTF8_CHARSET.name());
-            PrintWriter out = new PrintWriter(osw)) {
+                OutputStreamWriter osw = new OutputStreamWriter(os,
+                        FileSystemUtils.UTF8_CHARSET.name());
+                PrintWriter out = new PrintWriter(osw)) {
             out.println(docSkel);
         } catch (IOException ioe) {
             Log.d(TAG, "error occurred writing the doc.xml file", ioe);

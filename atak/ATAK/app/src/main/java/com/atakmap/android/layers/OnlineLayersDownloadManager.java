@@ -289,8 +289,8 @@ public class OnlineLayersDownloadManager {
         downloader.setTitle(title);
         downloader.setResolution(minRes, maxRes);
         downloader.setCacheURI(cacheUri);
-        downloader.setSourceURI(((MobileImagerySpec) layerSelection.getTag())
-                .desc.getUri());
+        downloader.setSourceURI(
+                ((MobileImagerySpec) layerSelection.getTag()).desc.getUri());
         if (downloader.startDownload()) {
             resetProgressBar();
             downloadPB.setMax(downloader.calculateTileCount());

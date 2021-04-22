@@ -7,6 +7,7 @@
 #include "raster/mosaic/MosaicDatabaseFactory2.h"
 #include "raster/tilereader/TileReaderFactory2.h"
 #include "renderer/core/ColorControl.h"
+#include "renderer/core/GLGlobeSurfaceRenderer.h"
 #include "renderer/core/GLMapRenderGlobals.h"
 #include "renderer/raster/RasterDataAccessControl.h"
 #include "renderer/raster/tilereader/GLQuadTileNode2.h"
@@ -52,7 +53,7 @@ namespace {
     };
 
     bool stringStartsWith(const std::string &s, const std::string &preface);
-    bool intersects(const GLAsynchronousMapRenderable3::ViewState &state, const MosaicDatabase2::Frame &frame);
+    bool intersects(const GLGlobeBase::State &state, const MosaicDatabase2::Frame &frame);
     Feature::Point2 toPoint(const GeoPoint2 geo);
     TAKErr getDatasetProjection(DatasetProjection2Ptr &projection, const Raster::Mosaic::MosaicDatabase2::Frame *frame);
     void renderThreadCleaner(void *opaque) NOTHROWS;
@@ -66,26 +67,10 @@ class GLMosaicMapLayer::GLQuadTileNodeInitializer : public Renderer::Raster::Til
    public:
     GLQuadTileNodeInitializer(GLMosaicMapLayer *owner);
     ~GLQuadTileNodeInitializer() override;
-    Util::TAKErr init(TAK::Engine::Raster::TileReader::TileReader2Ptr &reader,
+    Util::TAKErr init(std::shared_ptr<TAK::Engine::Raster::TileReader::TileReader2> &reader,
                               TAK::Engine::Raster::DatasetProjection2Ptr &imprecise, TAK::Engine::Raster::DatasetProjection2Ptr &precise,
                               const TAK::Engine::Raster::ImageInfo *info,
                               TAK::Engine::Raster::TileReader::TileReaderFactory2Options &readerOpts) const override;
-
-   private:
-    GLMosaicMapLayer *owner;
-};
-
-class GLMosaicMapLayer::QueryArgument : public GLAsynchronousMapRenderable3::ViewState
-{
-   public:
-    double minGSD;
-    double maxGSD;
-    bool valid;
-
-    QueryArgument(GLMosaicMapLayer *owner);
-    ~QueryArgument() override;
-    void set(const GLMapView2 &view) override;
-    void copy(const ViewState &view) override;
 
    private:
     GLMosaicMapLayer *owner;
@@ -149,7 +134,8 @@ GLMosaicMapLayer::GLMosaicMapLayer(TAK::Engine::Core::RenderContext *context, Mo
       raster_access_control_(nullptr),
       select_control_(nullptr),
       resolution_select_mode_(),
-      imagery_type_filter_()
+      imagery_type_filter_(),
+      data_region_(-180.0, -90.0, 0.0, 180.0, 90.0, 0.0)
 {
     commonInit(context, info);
 }
@@ -168,9 +154,10 @@ GLMosaicMapLayer::GLMosaicMapLayer(TAK::Engine::Core::MapRenderer *renderer, Mos
       raster_access_control_(nullptr),
       select_control_(nullptr),
       resolution_select_mode_(),
-      imagery_type_filter_()
+      imagery_type_filter_(),
+      data_region_(-180.0, -90.0, 0.0, 180.0, 90.0, 0.0)
 {
-    commonInit(&static_cast<Core::GLMapView2 *>(renderer)->context, info);
+    commonInit(&static_cast<Core::GLGlobeBase *>(renderer)->context, info);
 }
 
 GLMosaicMapLayer::~GLMosaicMapLayer() NOTHROWS
@@ -200,8 +187,8 @@ Util::TAKErr GLMosaicMapLayer::createRootNode(GLQuadTileNode2Ptr &value, const M
     ::TileReader::TileReaderFactory2Options opts;
     opts.asyncIO = this->asyncio;
     opts.cacheUri = tileCacheDatabase.c_str();
-    opts.preferredTileWidth = 512;
-    opts.preferredTileHeight = 512;
+    opts.preferredTileWidth = 256;
+    opts.preferredTileHeight = 256;
 
     Renderer::Raster::TileReader::GLQuadTileNode2::Options glopts;
     glopts.levelTransitionAdjustment = -1.0 * ConfigOptions_getDoubleOptionOrDefault("imagery.zoom-level-adjust", 0.0);
@@ -251,7 +238,7 @@ Util::TAKErr GLMosaicMapLayer::getControl(void **ctrl, const char *type) const N
     return TE_Ok;
 }
 
-void GLMosaicMapLayer::draw(const GLMapView2 &view, const int renderPass) NOTHROWS
+void GLMosaicMapLayer::draw(const GLGlobeBase &view, const int renderPass) NOTHROWS
 {
     Thread::Monitor::Lock lock(monitor_);
 
@@ -271,7 +258,7 @@ void GLMosaicMapLayer::draw(const GLMapView2 &view, const int renderPass) NOTHRO
         iter++;
         if (allResolved || zombieIter->second->getState() == GLQuadTileNode2::State::UNRESOLVED ||
             zombieIter->second->getState() == GLQuadTileNode2::State::UNRESOLVABLE ||
-            !intersects(*this->prepared_state_, zombieIter->first)) {
+            !intersects(this->prepared_state_, zombieIter->first)) {
             // all visible frames are resolved, the zombie frame has no
             // data or has fallen out of the ROI; release it
             zombieIter->second->release();
@@ -303,7 +290,7 @@ void GLMosaicMapLayer::draw(const GLMapView2 &view, const int renderPass) NOTHRO
 
 int GLMosaicMapLayer::getRenderPass() NOTHROWS
 {
-    return GLMapView2::Surface;
+    return GLGlobeBase::Surface;
 }
 
 void GLMosaicMapLayer::start() NOTHROWS {}
@@ -394,9 +381,27 @@ Util::TAKErr GLMosaicMapLayer::updateRenderableLists(QueryContext &pendingDataOp
         }
 
         // add it to the list of frames that are now visible
-        if (mapRenderable != nullptr)
+        if (mapRenderable != nullptr) {
             swap.insert(SortedFrameMap::value_type(framePair.first, mapRenderable));
+
+            if (swap.size() == 1) {
+                data_region_ = TAK::Engine::Feature::Envelope2(framePair.first.minLon, framePair.first.minLat, 0.0, framePair.first.maxLon, framePair.first.maxLat, 0.0);
+            } else {
+                if (framePair.first.minLon < data_region_.minX)
+                    data_region_.minX = framePair.first.minLon;
+                if (framePair.first.maxLon > data_region_.maxX)
+                    data_region_.maxX = framePair.first.maxLon;
+                if (framePair.first.minLat < data_region_.minY)
+                    data_region_.minY = framePair.first.minLat;
+                if (framePair.first.maxLat > data_region_.maxY)
+                    data_region_.maxY = framePair.first.maxLat;
+            }
+        }
     }
+
+    if(!swap.empty() && surface_ctrl_)
+        surface_ctrl_->markDirty(data_region_, false);
+
     // NOTE: the renderables contained in the frame list that we didn't use have been instantiated but
     //       not yet initialized. This is an important distinction as we
     //       must invoke release (or, destruct as here) to free any non-GL resources owned by the
@@ -409,7 +414,7 @@ Util::TAKErr GLMosaicMapLayer::updateRenderableLists(QueryContext &pendingDataOp
         // if the frame marked for release intersects the current ROI, make
         // it a zombie
         if (curIter->second->getState() != GLQuadTileNode2::State::UNRESOLVED &&
-            curIter->second->getState() != GLQuadTileNode2::State::UNRESOLVABLE && intersects(*this->target_state_, curIter->first)) {
+            curIter->second->getState() != GLQuadTileNode2::State::UNRESOLVABLE && intersects(this->target_state_, curIter->first)) {
             this->zombie_frames_.insert(SortedFrameMap::value_type(curIter->first, std::move(curIter->second)));
             this->visibleFrames.erase(curIter);
         }
@@ -442,27 +447,22 @@ Util::TAKErr GLMosaicMapLayer::releaseImpl() NOTHROWS
     return TE_Ok;
 }
 
-Util::TAKErr GLMosaicMapLayer::query(QueryContext &result, const ViewState &state) NOTHROWS
+Util::TAKErr GLMosaicMapLayer::query(QueryContext &result, const GLGlobeBase::State &state) NOTHROWS
 {
     auto &retval = static_cast<MosaicPendingData &>(result);
 
     if (retval.database == nullptr)
         return TE_Ok;
 
-    auto &localQuery = (QueryArgument &)state;
-    if (!localQuery.valid) {
-        Logger_log(LogLevel::TELL_Debug, "QUERY INVALID!!!");
-        return TE_Ok;
-    }
-
+    auto &localQuery = state;
     if (state.crossesIDL) {
         std::map<MosaicDatabase2::Frame, GLQuadTileNode2Ptr, decltype(frameSort) *> frameMap(frameSort);
         TAKErr code;
 
-        QueryArgument hemi(this);
+        GLGlobeBase::State hemi;
 
         // west of IDL
-        hemi.copy(state);
+        hemi = state;
         hemi.eastBound = 180.0;
         hemi.upperLeft = GeoPoint2(hemi.northBound, hemi.westBound);
         hemi.upperRight = GeoPoint2(hemi.northBound, hemi.eastBound);
@@ -477,7 +477,7 @@ Util::TAKErr GLMosaicMapLayer::query(QueryContext &result, const ViewState &stat
         retval.frames.clear();
 
         // east of IDL
-        hemi.copy(localQuery);
+        hemi = localQuery;
         hemi.westBound = -180.0;
         hemi.upperLeft = GeoPoint2(hemi.northBound, hemi.westBound);
         hemi.upperRight = GeoPoint2(hemi.northBound, hemi.eastBound);
@@ -497,12 +497,6 @@ Util::TAKErr GLMosaicMapLayer::query(QueryContext &result, const ViewState &stat
     }
 }
 
-Util::TAKErr GLMosaicMapLayer::newViewStateInstance(ViewStatePtr &value) NOTHROWS
-{
-    value = ViewStatePtr(new QueryArgument(this), Memory_deleter_const<ViewState, QueryArgument>);
-    return TE_Ok;
-}
-
 Util::TAKErr GLMosaicMapLayer::getBackgroundThreadName(TAK::Engine::Port::String &value) NOTHROWS
 {
     std::stringstream sstr;
@@ -512,24 +506,24 @@ Util::TAKErr GLMosaicMapLayer::getBackgroundThreadName(TAK::Engine::Port::String
     return TE_Ok;
 }
 
-void GLMosaicMapLayer::initImpl(const GLMapView2 &view) NOTHROWS {}
+void GLMosaicMapLayer::initImpl(const GLGlobeBase &view) NOTHROWS {}
 
 // Java - checkState()
 bool GLMosaicMapLayer::shouldQuery() NOTHROWS
 {
-    auto *prepared = static_cast<QueryArgument *>(this->prepared_state_.get());
-    auto *target = static_cast<QueryArgument *>(this->target_state_.get());
+    auto *prepared = &this->prepared_state_;
+    auto* target = &this->target_state_;
 
     // System.out.println("GLGdalMosaicMapLayer checkState prepared.valid=" + (prepared.valid != target.valid) + " prepared.types=" +
     // !equals(prepared.types, target.types) + " super=" + super.checkState());
 
-    return (prepared->valid != target->valid) || GLAsynchronousMapRenderable3::shouldQuery();
+    return GLAsynchronousMapRenderable3::shouldQuery();
 }
 
 bool GLMosaicMapLayer::shouldCancel() NOTHROWS
 {
-    auto *prepared = static_cast<QueryArgument *>(this->prepared_state_.get());
-    auto *target = static_cast<QueryArgument *>(this->target_state_.get());
+    auto *prepared = &this->prepared_state_;
+    auto *target = &this->target_state_;
     double delta = log(target->drawMapResolution / prepared->drawMapResolution) / log(2.0);
     if(abs(delta) > 1.0) {
         return true;
@@ -579,7 +573,7 @@ void GLMosaicMapLayer::commonInit(TAK::Engine::Core::RenderContext *context, Mos
     this->controls["TAK.Engine.Renderer.Raster.ImagerySelectionControl"] = this->select_control_.get();
 }
 
-TAKErr GLMosaicMapLayer::constructQueryParams(std::list<MosaicDatabase2::QueryParameters> *retval, const QueryArgument &localQuery) NOTHROWS
+TAKErr GLMosaicMapLayer::constructQueryParams(std::list<MosaicDatabase2::QueryParameters> *retval, const GLGlobeBase::State &localQuery) NOTHROWS
 {
     TAKErr code(TE_Ok);
 
@@ -623,7 +617,7 @@ TAKErr GLMosaicMapLayer::constructQueryParams(std::list<MosaicDatabase2::QueryPa
     return TE_Ok;
 }
 
-TAKErr GLMosaicMapLayer::queryImpl(QueryContext &retvalqc, const QueryArgument &localQuery) NOTHROWS
+TAKErr GLMosaicMapLayer::queryImpl(QueryContext &retvalqc, const GLGlobeBase::State &localQuery) NOTHROWS
 {
     TAKErr code(TE_Ok);
     auto &retval = static_cast<MosaicPendingData &>(retvalqc);
@@ -632,8 +626,8 @@ TAKErr GLMosaicMapLayer::queryImpl(QueryContext &retvalqc, const QueryArgument &
 
     // compute the amount of buffering to be added around the bounds of the
     // frame -- target 2 pixels
-    const auto deltaPxX = (double)(localQuery._right - localQuery._left);
-    const auto deltaPxY = (double)(localQuery._top - localQuery._bottom);
+    const auto deltaPxX = (double)(localQuery.right - localQuery.left);
+    const auto deltaPxY = (double)(localQuery.top - localQuery.bottom);
     const double distancePx = sqrt(deltaPxX * deltaPxX + deltaPxY * deltaPxY);
     const double deltaLat = localQuery.northBound - localQuery.southBound;
     const double deltaLng = localQuery.eastBound - localQuery.westBound;
@@ -830,7 +824,7 @@ bool GLMosaicMapLayer::frameSort(const MosaicDatabase2::Frame &f0, const MosaicD
 GLMosaicMapLayer::GLQuadTileNodeInitializer::GLQuadTileNodeInitializer(GLMosaicMapLayer *owner) : owner(owner) {}
 
 GLMosaicMapLayer::GLQuadTileNodeInitializer::~GLQuadTileNodeInitializer() {}
-TAKErr GLMosaicMapLayer::GLQuadTileNodeInitializer::init(TAK::Engine::Raster::TileReader::TileReader2Ptr &reader,
+TAKErr GLMosaicMapLayer::GLQuadTileNodeInitializer::init(std::shared_ptr<TAK::Engine::Raster::TileReader::TileReader2> &reader,
                                                          TAK::Engine::Raster::DatasetProjection2Ptr &imprecise,
                                                          TAK::Engine::Raster::DatasetProjection2Ptr &precise,
                                                          const TAK::Engine::Raster::ImageInfo *info,
@@ -844,13 +838,16 @@ TAKErr GLMosaicMapLayer::GLQuadTileNodeInitializer::init(TAK::Engine::Raster::Ti
     // any preferred provider first then try a general open
     reader.reset();
     do {
-        code = TAK::Engine::Raster::TileReader::TileReaderFactory2_create(reader, frame->path.get(), &readerOpts);
-        if (code == TE_Ok || readerOpts.preferredSpi == nullptr)
+        TAK::Engine::Raster::TileReader::TileReader2Ptr ureader(nullptr, nullptr);
+        code = TAK::Engine::Raster::TileReader::TileReaderFactory2_create(ureader, frame->path.get(), &readerOpts);
+        if (code == TE_Ok || readerOpts.preferredSpi == nullptr) {
+            reader = std::move(ureader);
             break;
+        }
         readerOpts.preferredSpi = nullptr;
     } while (true);
 
-    if (reader == nullptr)
+    if (!reader)
         return TE_Done;
 
     code = getDatasetProjection(imprecise, frame);
@@ -893,47 +890,6 @@ TAKErr GLMosaicMapLayer::GLQuadTileNodeInitializer::init(TAK::Engine::Raster::Ti
     }
 
     return TE_Ok;
-}
-
-/*****************************************************************************/
-// Private internal class - QueryArgument
-
-GLMosaicMapLayer::QueryArgument::QueryArgument(GLMosaicMapLayer *owner)
-    : GLAsynchronousMapRenderable3::ViewState(), minGSD(NAN), maxGSD(NAN), valid(false), owner(owner)
-{}
-
-GLMosaicMapLayer::QueryArgument::~QueryArgument() {}
-
-void GLMosaicMapLayer::QueryArgument::set(const GLMapView2 &view)
-{
-    GLAsynchronousMapRenderable3::ViewState::set(view);
-
-    const double mapResolution = view.view.getMapResolution(view.drawMapScale);
-
-    // query the database over the spatial ROI
-    this->minGSD = NAN;
-    this->maxGSD = NAN;
-    if (mapResolution < owner->info_->getMaxResolution()) {
-        // the map resolution exceeds what is available; cap maximum
-        // requested GSD at available
-        this->maxGSD = owner->info_->getMaxResolution();
-    } else {
-        // don't give anything with a resolution higher than the twice
-        // the current map resolution
-        this->maxGSD = mapResolution;
-    }
-
-    this->valid = true;
-}
-
-void GLMosaicMapLayer::QueryArgument::copy(const ViewState &view)
-{
-    ViewState::copy(view);
-
-    const auto &other = (const QueryArgument &)view;
-    this->minGSD = other.minGSD;
-    this->maxGSD = other.maxGSD;
-    this->valid = other.valid;
 }
 
 /*****************************************************************************/
@@ -1061,7 +1017,7 @@ namespace {
         return preface.length() <= s.length() && 0 == s.compare(0, preface.length(), preface);
     }
 
-    bool intersects(const GLAsynchronousMapRenderable3::ViewState &state, const MosaicDatabase2::Frame &frame)
+    bool intersects(const GLGlobeBase::State &state, const MosaicDatabase2::Frame &frame)
     {
         return (state.southBound <= frame.maxLat && state.northBound >= frame.minLat && state.westBound <= frame.maxLon &&
                 state.eastBound >= frame.minLon);

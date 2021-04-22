@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Point;
+import android.graphics.PointF;
 import android.os.Bundle;
 import android.view.GestureDetector;
 import android.view.KeyEvent;
@@ -20,6 +21,7 @@ import com.atakmap.android.maps.MapMode;
 import com.atakmap.android.preference.AtakPreferences;
 import com.atakmap.android.selfcoordoverlay.SelfCoordOverlayUpdater;
 import com.atakmap.android.selfcoordoverlay.SelfCoordOverlayUpdaterCompat;
+import com.atakmap.android.targetbubble.graphics.GLMapTargetBubble;
 import com.atakmap.android.tools.ActionBarReceiver;
 
 import com.atakmap.android.maps.MapTouchController;
@@ -41,6 +43,10 @@ import com.atakmap.android.targetbubble.MapTargetBubble.OnLocationChangedListene
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 
+import com.atakmap.map.CameraController;
+import com.atakmap.map.MapControl;
+import com.atakmap.map.MapRenderer2;
+import com.atakmap.map.MapSceneModel;
 import com.atakmap.map.elevation.ElevationManager;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -51,6 +57,8 @@ import com.atakmap.map.AtakMapController;
 import com.atakmap.android.gui.CoordDialogView;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.app.R;
+import com.atakmap.math.PointD;
+import com.atakmap.util.Visitor;
 
 import android.view.LayoutInflater;
 import android.app.AlertDialog;
@@ -95,6 +103,8 @@ public class TargetBubbleReceiver extends BroadcastReceiver implements
     private double _restoreTilt;
     private int _restoreTiltEnabled;
     private boolean _enable3D;
+    /** Relative scale factor of bubble versus basemap */
+    private double _relativeScale;
 
     private boolean barPreviouslyHidden, hidSelfWidget;
 
@@ -126,6 +136,7 @@ public class TargetBubbleReceiver extends BroadcastReceiver implements
                 "user"); /* XXX: hack to trigger elevation lookup */
         _mapView.getRootGroup().addItem(targetPoint);
         _targetPoint = targetPoint;
+        _relativeScale = 4d;
 
         _rootLayoutWidget = (LayoutWidget) _mapView
                 .getComponentExtra("rootLayoutWidget");
@@ -268,11 +279,19 @@ public class TargetBubbleReceiver extends BroadcastReceiver implements
             _enable3D = _prefs.get("status_3d_enabled", false);
         }
         if (tilt != 0) {
+            final MapSceneModel sm = _mapView.getRenderer3().getMapSceneModel(
+                    false, MapRenderer2.DisplayOrigin.UpperLeft);
             GeoPoint focus = _mapView.inverseWithElevation(
-                    _mapView.getMapController().getFocusX(),
-                    _mapView.getMapController().getFocusY()).get();
+                    sm.focusx,
+                    sm.focusy).get();
 
-            _mapView.getMapController().tiltBy(-tilt, focus, false);
+            _mapView.getRenderer3().lookAt(
+                    focus,
+                    sm.gsd,
+                    sm.camera.azimuth,
+                    0d,
+                    false);
+
             _mapView.getMapTouchController().setTiltEnabledState(
                     MapTouchController.STATE_TILT_DISABLED);
 
@@ -533,7 +552,22 @@ public class TargetBubbleReceiver extends BroadcastReceiver implements
         if (point == null)
             return null;
 
-        double bubbleResolution = _mapView.getMapResolution() / 4d;
+        // the perspective camera has additional effective zoom based on the
+        // AGL. Since the bubble is always an ortho rendering, we will need to
+        // adjust the scale factor to account for this.
+        final MapSceneModel sm = _mapView.getSceneModel();
+        double bubbleResolution = sm.gsd;
+        if (sm.camera.perspective) {
+            GeoPoint cam = sm.mapProjection.inverse(sm.camera.location, null);
+            if (cam != null) {
+                final double localel = ElevationManager.getElevation(
+                        cam.getLatitude(), cam.getLongitude(), null);
+                if (!Double.isNaN(localel))
+                    bubbleResolution = Math.abs(cam.getAltitude() - localel)
+                            * Math.tan(sm.camera.fov / 2d) / (sm.height / 2d);
+            }
+        }
+        bubbleResolution /= _relativeScale;
 
         MapTargetBubble bubble = new MapTargetBubble(_mapView,
                 x, y,
@@ -644,8 +678,11 @@ public class TargetBubbleReceiver extends BroadcastReceiver implements
             _prefs.set("status_3d_enabled", _enable3D);
             _mapView.getMapTouchController().setTiltEnabledState(
                     _restoreTiltEnabled);
-            _mapView.getMapController().tiltBy(_restoreTilt,
-                    _targetPoint.getPoint(), false);
+            CameraController.Programmatic.tiltTo(
+                    _mapView.getRenderer3(),
+                    _restoreTilt,
+                    _targetPoint.getPoint(),
+                    false);
             onTargetBubbleDismiss(_bubble);
             _mapView.removeOnTouchListener(this);
             _mapView.removeOnKeyListener(this);
@@ -727,19 +764,41 @@ public class TargetBubbleReceiver extends BroadcastReceiver implements
         }
     };
 
-    void _scrollBy(float x, float y) {
-        // legacy zoom ~204800
-        double bubbleScale = 1.0d / 1926.0d;
-        if (_bubble != null)
-            bubbleScale = _bubble.getMapScale();
-        _mapView.getMapController().panByAtScale(x, y, bubbleScale, false);
+    void _scrollBy(final float x, final float y) {
         if (_bubble != null) {
-            Point focusPoint = _mapView.getMapController().getFocusPoint();
-            GeoPointMetaData panToPoint = _mapView.inverse(focusPoint.x,
-                    focusPoint.y,
-                    MapView.InverseMode.RayCast);
-            _setLocation(_bubble, panToPoint.get().getLatitude(),
-                    panToPoint.get().getLongitude());
+            final Point focusPoint = _mapView.getMapController()
+                    .getFocusPoint();
+            final GeoPoint[] panTo = new GeoPoint[1];
+            // we want to pan the bubble (ortho map) by the scroll pixels. The
+            // main map uses the perspective projection so motion isn't quite
+            // the same between the two.
+            if (!_mapView.getRenderer3().visitControl(_bubble,
+                    new Visitor<GLMapTargetBubble>() {
+                        @Override
+                        public void visit(GLMapTargetBubble object) {
+                            final MapRenderer2 r = object.getRenderer();
+                            if (r == null)
+                                return;
+                            // inverse transform the pan-to location using the surface model
+                            MapSceneModel sm = r.getMapSceneModel(false,
+                                    MapRenderer2.DisplayOrigin.UpperLeft);
+                            panTo[0] = sm.inverse(new PointF(focusPoint.x + x,
+                                    focusPoint.y + y), null);
+                        }
+                    }, GLMapTargetBubble.class) || panTo[0] == null) {
+                panTo[0] = _mapView.inverse(focusPoint.x,
+                        focusPoint.y,
+                        MapView.InverseMode.RayCast).get();
+            }
+            _mapView.getMapController().panTo(panTo[0], false);
+            _setLocation(_bubble, panTo[0].getLatitude(),
+                    panTo[0].getLongitude());
+        } else {
+            // legacy zoom ~204800
+            double bubbleScale = 1.0d / 1926.0d;
+            if (_bubble != null)
+                bubbleScale = _bubble.getMapScale();
+            _mapView.getMapController().panByAtScale(x, y, bubbleScale, false);
         }
     }
 

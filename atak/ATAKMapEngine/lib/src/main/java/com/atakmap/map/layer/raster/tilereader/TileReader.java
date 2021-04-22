@@ -848,6 +848,9 @@ public abstract class TileReader implements Controls {
      *          image and tile dimensions.
      */
     public static int getNumResolutionLevels(long width, long height, long tileWidth, long tileHeight) {
+        if(tileWidth <= 0 || tileHeight <= 0)
+            throw new IllegalArgumentException();
+
         long numTilesX = (long) Math.ceil((double) width / (double) tileWidth);
         long numTilesY = (long) Math.ceil((double) height / (double) tileHeight);
 

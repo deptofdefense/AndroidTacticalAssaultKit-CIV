@@ -62,7 +62,8 @@ public class ImportFileDownloader extends NetworkLinkDownloader {
      * @param resource the resource to be downloaded
      */
     @Override
-    public void download(final RemoteResource resource, boolean showNotifications) {
+    public void download(final RemoteResource resource,
+            boolean showNotifications) {
         // Note the type specific import sorters will ensure a file has the proper extension
         int notificationId = getNotificationId();
         RemoteResourceRequest request;
@@ -73,10 +74,10 @@ public class ImportFileDownloader extends NetworkLinkDownloader {
                     f.getParent(), notificationId, showNotifications);
         } else
             request = new RemoteResourceRequest(
-                resource, FileSystemUtils
-                        .getItem(FileSystemUtils.TMP_DIRECTORY)
-                        .getAbsolutePath(),
-                notificationId, showNotifications);
+                    resource, FileSystemUtils
+                            .getItem(FileSystemUtils.TMP_DIRECTORY)
+                            .getAbsolutePath(),
+                    notificationId, showNotifications);
 
         // notify user
         Log.d(TAG,
@@ -87,7 +88,8 @@ public class ImportFileDownloader extends NetworkLinkDownloader {
                 ImportRemoteFileTask.FlagNotifyUserSuccess)) {
             postNotification(request, R.drawable.download_remote_file,
                     getString(R.string.importmgr_remote_file_download_started),
-                    getString(R.string.importmgr_downloading_url, request.getUrl()));
+                    getString(R.string.importmgr_downloading_url,
+                            request.getUrl()));
         }
 
         // Kick off async HTTP request to get file
@@ -127,7 +129,7 @@ public class ImportFileDownloader extends NetworkLinkDownloader {
                     File fout = new File(request.getDir(),
                             request.getFileName());
 
-                    try(FileOutputStream fos = IOProviderFactory
+                    try (FileOutputStream fos = IOProviderFactory
                             .getOutputStream(fout)) {
                         FileSystemUtils.copy(input, fos);
                         Log.d(TAG, "success: " + request.getFileName());
@@ -200,8 +202,10 @@ public class ImportFileDownloader extends NetworkLinkDownloader {
                         "Remote File Download Failed - Failed to create local file");
                 postNotification(initialRequest,
                         R.drawable.ic_network_error_notification_icon,
-                                getString(R.string.importmgr_remote_file_download_failed),
-                                getString(R.string.importmgr_failed_to_create_local_file));
+                        getString(
+                                R.string.importmgr_remote_file_download_failed),
+                        getString(
+                                R.string.importmgr_failed_to_create_local_file));
                 return;
             }
 
@@ -213,7 +217,8 @@ public class ImportFileDownloader extends NetworkLinkDownloader {
                     initialRequest.getNotificationId());
             task.addFlag(ImportFileTask.FlagSkipDeleteOnMD5Match | _flags);
             if (!initialRequest.showNotifications()) {
-                task.removeFlag(ImportFileTask.FlagShowNotificationsDuringImport);
+                task.removeFlag(
+                        ImportFileTask.FlagShowNotificationsDuringImport);
                 task.removeFlag(ImportRemoteFileTask.FlagNotifyUserSuccess);
             }
             task.execute(downloadedFile.getAbsolutePath());

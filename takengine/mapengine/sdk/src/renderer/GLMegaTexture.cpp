@@ -1,5 +1,9 @@
 #include "renderer/GLMegaTexture.h"
 
+#include <cassert>
+
+#define MT_POOL_LIMIT (2u*1024u*1024u)
+
 using namespace TAK::Engine::Renderer;
 
 using namespace TAK::Engine::Util;
@@ -8,7 +12,8 @@ GLMegaTexture::GLMegaTexture(const std::size_t width_, const std::size_t height_
     width(width_),
     height(height_),
     tileSize(tileSize_),
-    hasAlpha(hasAlpha_)
+    hasAlpha(hasAlpha_),
+    shareWith(nullptr)
 {}
 GLMegaTexture::~GLMegaTexture() NOTHROWS
 {}
@@ -24,12 +29,24 @@ std::size_t GLMegaTexture::getTileSize() const NOTHROWS
 {
     return tileSize;
 }
+std::size_t GLMegaTexture::getTileSize(const TileIndex &key) const NOTHROWS
+{
+    auto entry = tiles.find(key);
+    if (entry == tiles.end())
+        return tileSize;
+    else
+        return entry->second.textureWidth;
+}
 GLuint GLMegaTexture::getTile(const std::size_t level, const std::size_t column, const std::size_t row) const NOTHROWS
 {
     TileIndex key;
     key.level = level;
     key.column = column;
     key.row = row;
+    return getTile(key);
+}
+GLuint GLMegaTexture::getTile(const TileIndex &key) const NOTHROWS
+{
     auto entry = tiles.find(key);
     if (entry == tiles.end())
         return GL_NONE;
@@ -49,115 +66,67 @@ TAKErr GLMegaTexture::getAvailableTiles(TileIndex* value, const std::size_t size
         value[idx++] = it->first;
     return TE_Ok;
 }
-TAKErr GLMegaTexture::bindTile(const std::size_t level, const std::size_t column, const std::size_t row) NOTHROWS
+TAKErr GLMegaTexture::bindTile(const std::size_t level, const std::size_t column, const std::size_t row, const std::size_t mip) NOTHROWS
 {
     TileIndex key;
     key.level = level;
     key.column = column;
     key.row = row;
+    return bindTile(key, mip);
+}
+TAKErr GLMegaTexture::bindTile(const TileIndex &key, const std::size_t mip) NOTHROWS
+{
     auto entry = tiles.find(key);
     if (entry != tiles.end()) {
-        entry->second.bind();
-    } else {
-        GLOffscreenFramebuffer tile;
-        if(!pool.empty()) {
-            tile = pool[pool.size() - 1u];
-            pool.pop_back();
-        } else {
-            GLOffscreenFramebuffer::Options opts;
-            opts.colorType = GL_UNSIGNED_BYTE;
-            if(hasAlpha)
-                opts.colorFormat = GL_RGBA;
-            else
-                opts.colorFormat = GL_RGB;
-            
-            TAKErr code = GLOffscreenFramebuffer_create(&tile, (int)tileSize, (int)tileSize, opts);
-            TE_CHECKRETURN_CODE(code);
-        }
-        tiles[key] = tile;
-        tile.bind();
+        do {
+            if (sharedTiles) {
+                auto shared = sharedTiles->find(entry->second.handle);
+                if (shared != sharedTiles->end()) {
+                    assert(!!shared->second);
+                    // stop using the shared instance
+                    shared->second--;
+                    // other references to the tile are still held
+                    if (shared->second)
+                        break;
+                    // this megatexture holds the only reference
+                    sharedTiles->erase(shared);
+                }
+            }
+            if(entry->second.textureWidth == (tileSize>>mip)) {
+                entry->second.bind();
+                return TE_Ok;
+            } else {
+                GLOffscreenFramebuffer_release(entry->second);
+            }
+        } while(false);
     }
 
-    return TE_Ok;
-}
-TAKErr GLMegaTexture::setTile(const GLuint texid, const std::size_t level, const std::size_t column, const std::size_t row) NOTHROWS
-{
-    struct GLFBOGuard {
-        GLFBOGuard() { glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, (GLint*)&currentFbo); }
-        ~GLFBOGuard() { glBindFramebuffer(GL_FRAMEBUFFER, currentFbo); }
-        GLuint currentFbo = GL_NONE;
-    };
-
-    GLFBOGuard fboGuard;
-
-    TileIndex key;
-    key.level = level;
-    key.column = column;
-    key.row = row;
-
     GLOffscreenFramebuffer tile;
-    tile.width = (int)width;
-    tile.height = (int)height;
-    tile.textureWidth = (int)width;
-    tile.textureHeight = (int)height;
-    tile.colorTexture = texid;
+    if(!pool.empty() && !mip) {
+        tile = pool[pool.size() - 1u];
+        pool.pop_back();
+    } else {
+        GLOffscreenFramebuffer::Options opts;
+        if(hasAlpha) {
+            opts.colorFormat = GL_RGBA;
+            opts.colorType = GL_UNSIGNED_BYTE;
+        } else {
+            opts.colorFormat = GL_RGB;
+            opts.colorInternalFormat = GL_RGB565;
+            opts.colorType = GL_UNSIGNED_SHORT_5_6_5;
+        }
+        opts.bufferMask = GL_COLOR_BUFFER_BIT;
+            
+        TAKErr code = GLOffscreenFramebuffer_create(&tile, (int)(tileSize>>mip), (int)(tileSize>>mip), opts);
+        TE_CHECKRETURN_CODE(code);
 
-    bool fboCreated = false;
-    do {
-        // clear any pending errors
-        while (glGetError() != GL_NO_ERROR)
-            ;
+        glBindTexture(GL_TEXTURE_2D, tile.colorTexture);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    }
+    tiles[key] = tile;
+    tile.bind();
 
-        glGenFramebuffers(1, &tile.handle);
-
-        GLuint depthBuffer;
-        glGenRenderbuffers(1, &depthBuffer);
-        glBindRenderbuffer(GL_RENDERBUFFER, depthBuffer);
-        glRenderbufferStorage(GL_RENDERBUFFER,
-            GL_DEPTH_COMPONENT24,
-            tile.textureWidth, tile.textureHeight);
-        glBindRenderbuffer(GL_RENDERBUFFER, 0);
-
-        // bind the FBO and set all texture attachments
-        glBindFramebuffer(GL_FRAMEBUFFER, tile.handle);
-
-        // clear any pending errors
-        while (glGetError() != GL_NO_ERROR)
-            ;
-
-        glFramebufferTexture2D(GL_FRAMEBUFFER,
-            GL_COLOR_ATTACHMENT0,
-            GL_TEXTURE_2D, tile.colorTexture, 0);
-
-        // XXX - observing hard crash following bind of "complete"
-        //       FBO on SM-T230NU. reported error is 1280 (invalid
-        //       enum) on glFramebufferTexture2D. I have tried using
-        //       the color-renderable formats required by GLES 2.0
-        //       (RGBA4, RGB5_A1, RGB565) but all seem to produce
-        //       the same outcome.
-        if (glGetError() != GL_NO_ERROR)
-            break;
-
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, tile.handle);
-        if (glGetError() != GL_NO_ERROR)
-            break;
-
-        int fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-        if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
-            break;
-
-        // if there was already a tile, send it to the pool
-        auto entry = tiles.find(key);
-        if (entry != tiles.end())
-            pool.push_back(entry->second);
-
-        // set the new tile
-        tiles[key] = tile;
-
-        return TE_Ok;
-    } while (false);
-
-    return TE_Err;
+    return TE_Ok;
 }
 void GLMegaTexture::clear() NOTHROWS
 {
@@ -166,22 +135,156 @@ void GLMegaTexture::clear() NOTHROWS
     if (pool.capacity() < tiles.size())
         pool.reserve(tiles.size());
     const std::size_t limit = tiles.size();
-    for (auto it = tiles.begin(); it != tiles.end(); it++) {
-        if(pool.size() < limit)
-            pool.push_back(it->second);
-        else
-            GLOffscreenFramebuffer_release(it->second);
-    }
+    for (auto it = tiles.begin(); it != tiles.end(); it++)
+        releaseTile(it->first, (pool.size() < limit));
     tiles.clear();
 }
 void GLMegaTexture::release() NOTHROWS
 {
     for (auto it = tiles.begin(); it != tiles.end(); it++)
-        GLOffscreenFramebuffer_release(it->second);
+        releaseTile(it->first, false);
     tiles.clear();
     for (auto it = pool.begin(); it != pool.end(); it++)
         GLOffscreenFramebuffer_release(*it);
     pool.clear();
+}
+TAKErr GLMegaTexture::shareTile(GLMegaTexture &other, const TileIndex& tile) NOTHROWS
+{
+    // get the tile
+    const auto entry = tiles.find(tile);
+    // if the tile isn't available, we can't share
+    if (entry == tiles.end())
+        return TE_InvalidArg;
+
+    // check if sharing relationship already established
+    if ((shareWith && shareWith != &other) || (other.shareWith && other.shareWith != this))
+        return TE_IllegalState;
+    if (!sharedTiles)
+        sharedTiles.reset(new std::map<GLuint, std::size_t>());
+    // establish relationship if necessary
+    if (!other.shareWith) {
+        other,shareWith = this;
+        other.sharedTiles = sharedTiles;
+    }
+
+    // evict the old entry from other, if there is one
+    {
+        other.releaseTile(tile, true);
+    }
+    // share the entry
+    {
+        other.tiles[tile] = entry->second;
+        // bump the shared count
+        auto shares = sharedTiles->find(entry->second.handle);
+        if (shares != sharedTiles->end()) {
+            assert(!!shares->second);
+            shares->second++;
+        } else {
+            // the tile is now shared with two references -- `this` and
+            // `shareWith`
+            (*sharedTiles)[entry->second.handle] = 2u;
+        }
+    }
+
+    return TE_Ok;
+}
+TAKErr GLMegaTexture::transferTile(GLMegaTexture &other, const TileIndex& tile) NOTHROWS
+{
+    // get the tile
+    const auto entry = tiles.find(tile);
+    // if the tile isn't available, we can't transfer
+    if (entry == tiles.end())
+        return TE_InvalidArg;
+
+    // evict the old entry from other, if there is one
+    {
+        other.releaseTile(tile, true);
+        if(!other.pool.empty()) {
+            // add to the pool
+            pool.push_back(other.pool.back());
+            other.pool.pop_back();
+        }
+    }
+    // tranfer the entry
+    {
+        other.tiles[tile] = entry->second;
+        tiles.erase(entry);
+    }
+
+    return TE_Ok;
+}
+TAKErr GLMegaTexture::compressTile(const TileIndex &tile, const std::size_t mip) NOTHROWS
+{
+    TAKErr code(TE_Ok);
+    // get the tile
+    const auto entry = tiles.find(tile);
+    // if the tile isn't available, we can't compress
+    if (entry == tiles.end())
+        return TE_InvalidArg;
+    const std::size_t compressedSize = tileSize>>mip;
+    if(!compressedSize) // invalid mip
+        return TE_InvalidArg;
+    if(compressedSize >= entry->second.width)
+        return TE_Ok; // meets or exceeds user request
+    GLOffscreenFramebuffer compressed;
+    GLOffscreenFramebuffer::Options opts;
+    if(hasAlpha) {
+        opts.colorFormat = GL_RGBA;
+        opts.colorType = GL_UNSIGNED_BYTE;
+    } else {
+        opts.colorFormat = GL_RGB;
+        opts.colorInternalFormat = GL_RGB565;
+        opts.colorType = GL_UNSIGNED_SHORT_5_6_5;
+    }
+    opts.bufferMask = GL_COLOR_BUFFER_BIT;
+    code = GLOffscreenFramebuffer_create(&compressed, (int)compressedSize, (int)compressedSize, opts);
+    TE_CHECKRETURN_CODE(code);
+#if 0
+    // capture current FBO
+    GLint currentFbo;
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &currentFbo);
+    // bind compressed
+    compressed.bind(true);
+    // XXX - render old tile to compessed
+
+    // restore FBO
+    glBindFramebuffer(GL_FRAMEBUFFER, currentFbo;)
+
+    // release old tile
+    GLOffscreenFramebuffer_release(entry->second);
+    // reset reference to the newly compressed tile
+    entry->second = compressed;
+#endif
+    return code;
+}
+void GLMegaTexture::releaseTile(const TileIndex& tile, const bool sendToPool) NOTHROWS
+{
+    auto entry = tiles.find(tile);
+    if (entry == tiles.end())
+        return;
+    if (sharedTiles) {
+        auto shares = sharedTiles->find(entry->second.handle);
+        const bool isShared = (shares != sharedTiles->end());
+        if (isShared) {
+            assert(!!shares->second);
+            // decrement the share count
+            shares->second--;
+            // if this megatexture held the last reference, remove the entry
+            // and fall through to disposal, else, ownership is relinquished
+            // to the other reference holders
+            if (!shares->second)
+                sharedTiles->erase(shares);
+            else
+                return;
+        }
+    }
+
+    const std::size_t textureStorage = (entry->second.textureWidth*entry->second.textureHeight)*(hasAlpha ? 4u : 2u);
+    if (sendToPool && (entry->second.textureWidth == tileSize) && (pool.size()*textureStorage) < MT_POOL_LIMIT)
+        pool.push_back(entry->second);
+    else
+        GLOffscreenFramebuffer_release(entry->second);
+    tiles.erase(entry);
 }
 
 bool GLMegaTexture::TileIndexComp::operator()(const TileIndex& a, const TileIndex& b) const
@@ -199,5 +302,5 @@ bool GLMegaTexture::TileIndexComp::operator()(const TileIndex& a, const TileInde
     else if (a.row > b.row)
         return false;
     else
-        return true;
+        return false;
 }

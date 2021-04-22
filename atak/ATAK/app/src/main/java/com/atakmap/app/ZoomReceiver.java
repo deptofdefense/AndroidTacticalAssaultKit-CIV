@@ -7,6 +7,8 @@ import android.content.Intent;
 
 import com.atakmap.android.maps.MapView;
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.map.CameraController;
+import com.atakmap.map.MapRenderer3;
 
 /**
  * Broadcast receiver that can handle zoom events via intent.
@@ -37,12 +39,14 @@ public class ZoomReceiver extends BroadcastReceiver {
                         true);
                 break;
             case "com.atakmap.android.map.ZOOM_IN":
-                _mapView.getMapController()
-                        .zoomTo(_mapView.getMapScale() * 2, true);
+                CameraController.Interactive.zoomBy(
+                        _mapView.getRenderer3(), 2d,
+                        MapRenderer3.CameraCollision.Abort, true);
                 break;
             case "com.atakmap.android.map.ZOOM_OUT":
-                _mapView.getMapController()
-                        .zoomTo(_mapView.getMapScale() / 2, true);
+                CameraController.Interactive.zoomBy(
+                        _mapView.getRenderer3(), 0.5d,
+                        MapRenderer3.CameraCollision.AdjustFocus, true);
                 break;
         }
     }

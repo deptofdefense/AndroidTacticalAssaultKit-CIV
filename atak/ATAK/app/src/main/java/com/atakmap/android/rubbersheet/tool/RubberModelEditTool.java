@@ -18,6 +18,7 @@ import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPoint.AltitudeReference;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.map.CameraController;
 
 /**
  * Rotation tool for models
@@ -168,13 +169,18 @@ public class RubberModelEditTool extends RubberSheetEditTool {
         // Tilt the map so the user can see what they're doing
         if (v == _buttons[ELEV] && _mapView.getMapTilt() == 0d) {
             CompassArrowMapComponent.getInstance().enable3DControls(true);
-            _mapView.getMapController().tiltTo(_mapView.getMaxMapTilt(), false);
+            _mapView.getMapController().tiltTo(_mapView.getMaxMapTilt() * 0.9d,
+                    false);
         }
 
         // Tilt the map back when switching from elevation to drag
         else if (v == _buttons[DRAG] && getMode() == ELEV) {
-            _mapView.getMapController().tiltTo(0, false);
-            _mapView.getMapController().panTo(_center.get(), false);
+            _mapView.getMapController().dispatchOnPanRequested();
+            CameraController.Programmatic.tiltTo(
+                    _mapView.getRenderer3(),
+                    0d,
+                    _center.get(),
+                    false);
         }
 
         super.onClick(v);

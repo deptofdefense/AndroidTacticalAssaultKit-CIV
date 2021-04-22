@@ -22,6 +22,6 @@ public class ExampleInstrumentedTest extends ATAKInstrumentedTest {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getTargetContext();
 
-        assertEquals("com.atakmap.app", appContext.getPackageName());
+        assertEquals("com.atakmap.app.civ", appContext.getPackageName());
     }
 }

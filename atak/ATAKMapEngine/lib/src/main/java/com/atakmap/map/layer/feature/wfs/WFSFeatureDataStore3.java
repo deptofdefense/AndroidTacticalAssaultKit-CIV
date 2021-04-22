@@ -214,15 +214,20 @@ public class WFSFeatureDataStore3 extends AbstractFeatureDataStore implements Ru
                 checkSchema = IOProviderFactory.exists(indexDbFile);
                 // try to open the database. if the database somehow became
                 // corrupted, delete the file and start anew
+                CursorIface result = null;
                 try {
                     indexDatabase = IOProviderFactory.createDatabase(indexDbFile);
-                    indexDatabase.execute("PRAGMA journal_mode = WAL", null);
+                    result = indexDatabase.query("PRAGMA journal_mode = WAL", null);
                     break;
-                } catch(Throwable t) {
-                    if(IOProviderFactory.exists(indexDbFile) && !indexDbFile.delete())
+                } catch (Throwable t) {
+                    if (IOProviderFactory.exists(indexDbFile) && !IOProviderFactory.delete(indexDbFile))
                         throw new RuntimeException("Unable to delete file", t);
+                } finally {
+                    if (result != null) {
+                        result.close();
+                    }
                 }
-            } while(true);
+        } while(true);
 
             if(checkSchema && indexDatabase.getVersion() != SCHEMA_VERSION)
                 indexDatabase.execute("DROP TABLE IF EXISTS featuredbs", null);

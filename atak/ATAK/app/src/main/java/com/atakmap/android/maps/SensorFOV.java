@@ -49,6 +49,7 @@ public class SensorFOV extends Shape implements MapItem.OnGroupChangedListener,
         arrow.setStrokeColor(Color.argb(20, 211, 211, 211));
         arrow.setStrokeWeight(1f);
         arrow.setText("");
+        arrow.setMetaBoolean("forceClampToGround", true);
         addOnGroupChangedListener(this);
         addOnVisibleChangedListener(this);
     }

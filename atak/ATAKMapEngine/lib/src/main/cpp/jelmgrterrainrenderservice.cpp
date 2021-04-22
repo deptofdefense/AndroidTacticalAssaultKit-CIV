@@ -99,7 +99,8 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_ElMgrTerrainRenderService_unl
     STLVectorAdapter<std::shared_ptr<const TerrainTile>> ctiles;
     for(std::size_t i = 0; i < (std::size_t)count; i++) {
         std::shared_ptr<TerrainTile> ctile;
-        code = Pointer_get(ctile, *env, env->GetObjectArrayElement(mtilePtrsArr, i));
+        Java::JNILocalRef mptr(*env, env->GetObjectArrayElement(mtilePtrsArr, i));
+        code = Pointer_get(ctile, *env, mptr);
         TE_CHECKBREAK_CODE(code);
         code = ctiles.add(ctile);
         TE_CHECKBREAK_CODE(code);

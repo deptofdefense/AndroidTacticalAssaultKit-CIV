@@ -513,9 +513,9 @@ public class NetworkDeviceManager {
         try {
             File f = new File(directory, "network.map");
             if (IOProviderFactory.exists(f)) {
-                try(InputStream is = IOProviderFactory.getInputStream(f);
-                    InputStreamReader isr = new InputStreamReader(is);
-                    BufferedReader br = new BufferedReader(isr)) {
+                try (InputStream is = IOProviderFactory.getInputStream(f);
+                        InputStreamReader isr = new InputStreamReader(is);
+                        BufferedReader br = new BufferedReader(isr)) {
                     String line;
                     while ((line = br.readLine()) != null) {
                         NetworkDevice nd = NetworkDevice.fromCSVLine(line);

@@ -24,7 +24,8 @@ public class MenuMapAdapter {
 
     public void loadMenuFilters(MapAssets mapAssets, String filtersPath)
             throws IOException {
-        try (InputStream in = mapAssets.getInputStream(Uri.parse(filtersPath))) {
+        try (InputStream in = mapAssets
+                .getInputStream(Uri.parse(filtersPath))) {
             _filters = FiltersConfig.parseFromStream(in);
             if (_filters != null)
                 _filters.setComparator("type",

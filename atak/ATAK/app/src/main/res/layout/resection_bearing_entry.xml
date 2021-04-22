@@ -60,7 +60,7 @@
             style="@style/darkButton"/>
         <ToggleButton
             android:id="@+id/magToggle"
-            android:layout_width="48dp"
+            android:layout_width="64dp"
             android:layout_height="48dp"
             android:layout_marginTop="@dimen/auto_margin"
             android:padding="@dimen/auto_margin"

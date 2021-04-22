@@ -576,7 +576,8 @@ public class GLModelCaptureRequest implements GLOffscreenCaptureRequest {
 
         //pass in texture coordinate information (if any)
         if (MathUtils.hasBits(attr, Mesh.VERTEX_ATTR_TEXCOORD_0)) {
-            Buffer modelTexCoords = mesh.getVertices(Model.VERTEX_ATTR_TEXCOORD_0);
+            Buffer modelTexCoords = mesh
+                    .getVertices(Model.VERTEX_ATTR_TEXCOORD_0);
             modelTexCoords.position(layout.texCoord0.offset);
             GLES30.glVertexAttribPointer(aTexCoords, 2, GLES30.GL_FLOAT, false,
                     layout.texCoord0.stride, modelTexCoords);

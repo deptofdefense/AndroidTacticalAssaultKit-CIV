@@ -98,7 +98,7 @@ public class AtakWebProtocolHandlerCallbacks
                         url.getHost(),
                         authCreds.username,
                         authCreds.password,
-                        true);
+                        false);
             } catch (Throwable t) {
                 Log.d(TAG, "Failed login attempt for host " + uri);
             }

@@ -4,6 +4,7 @@ package com.atakmap.spatial;
 import java.util.Collection;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.feature.geometry.Geometry;
 import com.atakmap.map.layer.feature.geometry.GeometryCollection;
 import com.atakmap.map.layer.feature.geometry.LineString;
@@ -45,7 +46,123 @@ public final class GeometryTransformer {
             return transformGeneric3DImpl(src, srcProj, dstProj);
         else
             throw new IllegalStateException();
+    }
 
+    public static Envelope transform(Envelope src, int srcSrid, int dstSrid) {
+        if(srcSrid == dstSrid)
+            return src;
+
+        final Projection srcProj = ProjectionFactory.getProjection(srcSrid);
+        final Projection dstProj = ProjectionFactory.getProjection(dstSrid);
+
+        return transform(src, srcProj, dstProj);
+    }
+
+    public static Envelope transform(Envelope src, Projection srcProj, Projection dstProj) {
+        if(srcProj.getSpatialReferenceID() == dstProj.getSpatialReferenceID())
+            return src;
+
+
+        GeoPoint lla = GeoPoint.createMutable();
+        PointD xyz = new PointD(0, 0, 0);
+
+        xyz.x = src.minX;
+        xyz.y = src.minY;
+        xyz.z = src.minZ;
+        srcProj.inverse(xyz, lla);
+        dstProj.forward(lla, xyz);
+
+        Envelope dst = new Envelope(xyz.x, xyz.y, xyz.z, xyz.x, xyz.y, xyz.z);
+
+        xyz.x = src.maxX;
+        xyz.y = src.minY;
+        xyz.z = src.minZ;
+        srcProj.inverse(xyz, lla);
+        dstProj.forward(lla, xyz);
+        if(xyz.x < dst.minX)        dst.minX = xyz.x;
+        else if(xyz.x > dst.maxX)   dst.maxX = xyz.x;
+        if(xyz.y < dst.minY)        dst.minY = xyz.y;
+        else if(xyz.y > dst.maxY)   dst.maxY = xyz.y;
+        if(xyz.z < dst.minZ)        dst.minZ = xyz.z;
+        else if(xyz.z > dst.maxZ)   dst.maxZ = xyz.z;
+
+        xyz.x = src.maxX;
+        xyz.y = src.maxY;
+        xyz.z = src.minZ;
+        srcProj.inverse(xyz, lla);
+        dstProj.forward(lla, xyz);
+        if(xyz.x < dst.minX)        dst.minX = xyz.x;
+        else if(xyz.x > dst.maxX)   dst.maxX = xyz.x;
+        if(xyz.y < dst.minY)        dst.minY = xyz.y;
+        else if(xyz.y > dst.maxY)   dst.maxY = xyz.y;
+        if(xyz.z < dst.minZ)        dst.minZ = xyz.z;
+        else if(xyz.z > dst.maxZ)   dst.maxZ = xyz.z;
+
+        xyz.x = src.minX;
+        xyz.y = src.maxY;
+        xyz.z = src.minZ;
+        srcProj.inverse(xyz, lla);
+        dstProj.forward(lla, xyz);
+        if(xyz.x < dst.minX)        dst.minX = xyz.x;
+        else if(xyz.x > dst.maxX)   dst.maxX = xyz.x;
+        if(xyz.y < dst.minY)        dst.minY = xyz.y;
+        else if(xyz.y > dst.maxY)   dst.maxY = xyz.y;
+        if(xyz.z < dst.minZ)        dst.minZ = xyz.z;
+        else if(xyz.z > dst.maxZ)   dst.maxZ = xyz.z;
+
+        // short-circuit on 2D
+        if(Double.isNaN(src.maxX) || (src.minX == src.maxX))
+            return dst;
+
+        xyz.x = src.minX;
+        xyz.y = src.minY;
+        xyz.z = src.maxZ;
+        srcProj.inverse(xyz, lla);
+        dstProj.forward(lla, xyz);
+        if(xyz.x < dst.minX)        dst.minX = xyz.x;
+        else if(xyz.x > dst.maxX)   dst.maxX = xyz.x;
+        if(xyz.y < dst.minY)        dst.minY = xyz.y;
+        else if(xyz.y > dst.maxY)   dst.maxY = xyz.y;
+        if(xyz.z < dst.minZ)        dst.minZ = xyz.z;
+        else if(xyz.z > dst.maxZ)   dst.maxZ = xyz.z;
+
+        xyz.x = src.maxX;
+        xyz.y = src.minY;
+        xyz.z = src.maxZ;
+        srcProj.inverse(xyz, lla);
+        dstProj.forward(lla, xyz);
+        if(xyz.x < dst.minX)        dst.minX = xyz.x;
+        else if(xyz.x > dst.maxX)   dst.maxX = xyz.x;
+        if(xyz.y < dst.minY)        dst.minY = xyz.y;
+        else if(xyz.y > dst.maxY)   dst.maxY = xyz.y;
+        if(xyz.z < dst.minZ)        dst.minZ = xyz.z;
+        else if(xyz.z > dst.maxZ)   dst.maxZ = xyz.z;
+
+        xyz.x = src.maxX;
+        xyz.y = src.maxY;
+        xyz.z = src.maxZ;
+        srcProj.inverse(xyz, lla);
+        dstProj.forward(lla, xyz);
+        if(xyz.x < dst.minX)        dst.minX = xyz.x;
+        else if(xyz.x > dst.maxX)   dst.maxX = xyz.x;
+        if(xyz.y < dst.minY)        dst.minY = xyz.y;
+        else if(xyz.y > dst.maxY)   dst.maxY = xyz.y;
+        if(xyz.z < dst.minZ)        dst.minZ = xyz.z;
+        else if(xyz.z > dst.maxZ)   dst.maxZ = xyz.z;
+
+        xyz.x = src.minX;
+        xyz.y = src.maxY;
+        xyz.z = src.maxZ;
+        srcProj.inverse(xyz, lla);
+        dstProj.forward(lla, xyz);
+        if(xyz.x < dst.minX)        dst.minX = xyz.x;
+        else if(xyz.x > dst.maxX)   dst.maxX = xyz.x;
+        if(xyz.y < dst.minY)        dst.minY = xyz.y;
+        else if(xyz.y > dst.maxY)   dst.maxY = xyz.y;
+        if(xyz.z < dst.minZ)        dst.minZ = xyz.z;
+        else if(xyz.z > dst.maxZ)   dst.maxZ = xyz.z;
+
+        return dst;
     }
 
     private static Geometry transformGeneric2DImpl(Geometry src, Projection srcProj, Projection dstProj) {

@@ -790,22 +790,13 @@ namespace {
 
         TAK::Engine::Port::String scheme;
         TAK::Engine::Port::String path;
-        TAK::Engine::Port::String query;
-        TAK::Engine::Port::String fragment;
-        TAK::Engine::Port::String authority;
-
-        if (URI_parse(&scheme, &authority, nullptr, &path, &query, &fragment, URI) != TE_Ok || scheme.get() == nullptr)
+        
+        if (URI_parse(&scheme, nullptr, nullptr, &path, nullptr, nullptr, URI) != TE_Ok || scheme.get() == nullptr)
             return false;
 
         // guard against nulls
-        if (!query)
-            query = "";
-        if (!fragment)
-            fragment = "";
         if (!path)
             path = "";
-        if (!authority)
-            authority = "";
         if (!scheme)
             scheme = "";
 
@@ -831,9 +822,7 @@ namespace {
         // Assume it is a base URI
         if (!fileName || (tsCmp != 0 && !isB3Dm)) {
             fileName = "tileset.json";
-            StringBuilder sb;
-            StringBuilder_combine(sb, scheme, ":", authority, "/tileset.json", query, fragment);
-            filePathValue = sb.c_str();
+            URI_combine(&filePathValue, URI, "/tileset.json");
             dirPathValue = URI;
             tilesetPathValue = filePathValue;
         } else {

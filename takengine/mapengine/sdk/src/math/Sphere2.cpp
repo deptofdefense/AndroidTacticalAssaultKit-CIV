@@ -60,3 +60,9 @@ void Sphere2::clone(GeometryModel2Ptr &value) const
     value = GeometryModel2Ptr(new Sphere2(*this), Memory_deleter_const<GeometryModel2, Sphere2>);
 }
 
+double TAK::Engine::Math::Sphere2_getRadius(const double radius, const double offsetFromCenter) NOTHROWS
+{
+    if(offsetFromCenter >= radius)
+        return 0.0;
+    return sqrt(radius*radius - offsetFromCenter*offsetFromCenter);
+}

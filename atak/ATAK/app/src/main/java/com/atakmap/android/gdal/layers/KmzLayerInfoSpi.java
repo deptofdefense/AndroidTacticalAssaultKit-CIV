@@ -2,6 +2,7 @@
 package com.atakmap.android.gdal.layers;
 
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.os.SystemClock;
 import android.util.Pair;
 import android.util.Xml;
@@ -306,6 +307,8 @@ public class KmzLayerInfoSpi extends AbstractDatasetDescriptorSpi {
         tagStack.push(parser.getName());
 
         ZipVirtualFile iconFile = null;
+        int color = Color.WHITE;
+        boolean visible = true;
         boolean coords = false;
         GeoPoint ul = GeoPoint.createMutable();
         GeoPoint ur = GeoPoint.createMutable();
@@ -336,8 +339,31 @@ public class KmzLayerInfoSpi extends AbstractDatasetDescriptorSpi {
                     break;
                 case XmlPullParser.TEXT:
                     inTag = tagStack.peek();
-                    if (inTag.equals("href")) {
-                        iconFile = new ZipVirtualFile(file, parser.getText());
+                    switch (inTag) {
+                        // Image file/link
+                        case "href":
+                            iconFile = new ZipVirtualFile(file,
+                                    parser.getText());
+                            break;
+
+                        // Color/alpha modulation
+                        case "color": {
+                            String colTxt = parser.getText();
+                            if (!colTxt.startsWith("#"))
+                                colTxt = "#" + colTxt;
+                            try {
+                                color = Color.parseColor(colTxt);
+                            } catch (Exception e) {
+                                Log.e(TAG, "Failed to parse color: " + colTxt,
+                                        e);
+                            }
+                            break;
+                        }
+
+                        // Visibility toggle
+                        case "visibility":
+                            visible = parser.getText().equals("1");
+                            break;
                     }
                     break;
                 case XmlPullParser.END_DOCUMENT:
@@ -363,6 +389,9 @@ public class KmzLayerInfoSpi extends AbstractDatasetDescriptorSpi {
         extraData
                 .put("tilecache", (new File(workingDir, "tilecache.sqlite"))
                         .getAbsolutePath());
+
+        extraData.put("color", String.valueOf(color));
+        extraData.put("visible", String.valueOf(visible));
 
         final double gsd = DatasetDescriptor.computeGSD(frame.width,
                 frame.height, ul, ur, lr, ll);

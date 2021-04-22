@@ -8,10 +8,12 @@
 #include "feature/Style.h"
 #include "feature/LineString.h"
 
+#include "renderer/core/GLMapRenderGlobals.h"
 #include "renderer/feature/GLBatchGeometry3.h"
 #include "renderer/feature/GLBatchLineString3.h"
 #include "renderer/feature/GLGeometry.h"
 
+using namespace TAK::Engine::Renderer::Core;
 using namespace TAK::Engine::Renderer::Feature;
 
 using namespace TAK::Engine::Core;
@@ -83,13 +85,14 @@ TAKErr GLBatchLineString3::pushStyle(const atakmap::feature::Style& style) NOTHR
         case atakmap::feature::TESC_BasicStrokeStyle :
         {
             const atakmap::feature::BasicStrokeStyle& basic = static_cast<const atakmap::feature::BasicStrokeStyle&>(style);
-            stroke.push_back(Stroke(basic.getStrokeWidth(), basic.getColor()));
+            stroke.push_back(Stroke(basic.getStrokeWidth() * GLMapRenderGlobals_getRelativeDisplayDensity(), basic.getColor()));
             break;
         }
         case atakmap::feature::TESC_PatternStrokeStyle :
         {
             const atakmap::feature::PatternStrokeStyle& pattern = static_cast<const atakmap::feature::PatternStrokeStyle&>(style);
-            stroke.push_back(Stroke(pattern.getStrokeWidth(), pattern.getColor(), static_cast<GLsizei>(pattern.getFactor()), static_cast<GLuint>(pattern.getPattern())));
+            stroke.push_back(Stroke(pattern.getStrokeWidth() * GLMapRenderGlobals_getRelativeDisplayDensity(), pattern.getColor(),
+                                    static_cast<GLsizei>(pattern.getFactor()), static_cast<GLuint>(pattern.getPattern())));
             break;
         }
         case atakmap::feature::TESC_CompositeStyle :
@@ -454,7 +457,7 @@ TAKErr GLBatchLineString3::setGeometryImpl(const atakmap::feature::Geometry &geo
     return code;
 }
 
-TAKErr GLBatchLineString3::projectVertices(const float **result, const GLMapView2 &view, const int vertices_type) NOTHROWS
+TAKErr GLBatchLineString3::projectVertices(const float **result, const GLGlobeBase &view, const int vertices_type) NOTHROWS
 {
     if (this->points.get() == nullptr || this->numPoints < 2)
     {
@@ -475,7 +478,7 @@ TAKErr GLBatchLineString3::projectVertices(const float **result, const GLMapView
     switch (vertices_type)
     {
         case GLGeometry::VERTICES_PIXEL:
-            view.forward(this->vertices.get(), 2u, this->points.get(), 3u, this->numPoints);
+            GLMapView2_forward(this->vertices.get(), view, 2u, this->points.get(), 3u, this->numPoints);
             *result = this->vertices.get();
             if (this->drawVersion != view.drawVersion) {
                 this->screen_mbb.minX = this->vertices.get()[0];
@@ -498,7 +501,7 @@ TAKErr GLBatchLineString3::projectVertices(const float **result, const GLMapView
             }
             return TE_Ok;
         case GLGeometry::VERTICES_PROJECTED:
-            if (view.drawSrid != this->projectedVerticesSrid)
+            if (view.renderPass->drawSrid != this->projectedVerticesSrid)
             {
                 for (std::size_t i = 0u; i < this->numPoints; i++)
                 {
@@ -519,12 +522,12 @@ TAKErr GLBatchLineString3::projectVertices(const float **result, const GLMapView
                         scratchGeo.altitude = alt * view.elevationScaleFactor;
                     }
                     TAK::Engine::Math::Point2<double> scratchPointD;
-                    view.scene.projection->forward(&scratchPointD, scratchGeo);
+                    view.renderPass->scene.projection->forward(&scratchPointD, scratchGeo);
                     this->projectedVertices.get()[i * 3u] = (float)(scratchPointD.x-projectedCentroid.x);
                     this->projectedVertices.get()[i * 3u + 1] = (float)(scratchPointD.y-projectedCentroid.y);
                     this->projectedVertices.get()[i * 3u + 2] = (float)(scratchPointD.z-projectedCentroid.z);
                 }
-                this->projectedVerticesSrid = view.drawSrid;
+                this->projectedVerticesSrid = view.renderPass->drawSrid;
                 this->projectedVerticesSize = 3u;
 
                 // XXX - !!! this will be broken for 3D !!!
@@ -545,15 +548,15 @@ TAKErr GLBatchLineString3::projectVertices(const float **result, const GLMapView
                 {
                     GeoPoint2 scratchGeo;
                     scratchGeo.latitude = 0;
-                    scratchGeo.longitude = view.scene.projection->getMaxLongitude();
+                    scratchGeo.longitude = view.renderPass->scene.projection->getMaxLongitude();
 
                     TAK::Engine::Math::Point2<double> scratchPointD;
-                    view.scene.projection->forward(&scratchPointD, scratchGeo);
+                    view.renderPass->scene.projection->forward(&scratchPointD, scratchGeo);
                     double projMaxX = scratchPointD.x;
 
                     scratchGeo.latitude = 0;
-                    scratchGeo.longitude = view.scene.projection->getMinLongitude();
-                    view.scene.projection->forward(&scratchPointD, scratchGeo);
+                    scratchGeo.longitude = view.renderPass->scene.projection->getMinLongitude();
+                    view.renderPass->scene.projection->forward(&scratchPointD, scratchGeo);
                     double projMinX = scratchPointD.x;
 
                     this->projectedNominalUnitSize = (6378137.0 * 2.0 * M_PI) / std::fabs(projMaxX - projMinX);
@@ -567,7 +570,7 @@ TAKErr GLBatchLineString3::projectVertices(const float **result, const GLMapView
                 xyz.x = this->projectedVertices[0u]+this->projectedCentroid.x;
                 xyz.y = this->projectedVertices[1u]+this->projectedCentroid.y;
                 xyz.z = this->projectedVertices[2u]+this->projectedCentroid.z;
-                view.scene.forwardTransform.transform(&xyz, xyz);
+                view.renderPass->scene.forwardTransform.transform(&xyz, xyz);
                 this->vertices[0] = (float)xyz.x;
                 this->vertices[1] = (float)xyz.y;
                 this->screen_mbb.minX = this->vertices[0];
@@ -578,7 +581,7 @@ TAKErr GLBatchLineString3::projectVertices(const float **result, const GLMapView
                     xyz.x = this->projectedVertices[i*3u]+this->projectedCentroid.x;
                     xyz.y = this->projectedVertices[i*3u+1u]+this->projectedCentroid.y;
                     xyz.z = this->projectedVertices[i*3u+2u]+this->projectedCentroid.z;
-                    view.scene.forwardTransform.transform(&xyz, xyz);
+                    view.renderPass->scene.forwardTransform.transform(&xyz, xyz);
                     this->vertices.get()[i * 2] = (float)xyz.x;
                     this->vertices.get()[i * 2 + 1] = (float)xyz.y;
 
@@ -601,12 +604,12 @@ TAKErr GLBatchLineString3::projectVertices(const float **result, const GLMapView
     }
 }
 
-void GLBatchLineString3::draw(const GLMapView2 &view, const int render_pass) NOTHROWS
+void GLBatchLineString3::draw(const GLGlobeBase &view, const int render_pass) NOTHROWS
 {
     this->draw(view, render_pass, GLGeometry::VERTICES_PIXEL);
 }
 
-TAKErr GLBatchLineString3::draw(const GLMapView2 &view, const int render_pass, const int vertices_type) NOTHROWS
+TAKErr GLBatchLineString3::draw(const GLGlobeBase &view, const int render_pass, const int vertices_type) NOTHROWS
 {
     TAKErr code;
 
@@ -621,7 +624,7 @@ TAKErr GLBatchLineString3::draw(const GLMapView2 &view, const int render_pass, c
     return this->drawImpl(view, render_pass, v, (vertices_type == GLGeometry::VERTICES_PROJECTED) ? this->projectedVerticesSize : 2);
 }
 
-TAKErr GLBatchLineString3::drawImpl(const GLMapView2 &view, const int render_pass, const float *v, int size) NOTHROWS
+TAKErr GLBatchLineString3::drawImpl(const GLGlobeBase &view, const int render_pass, const float *v, int size) NOTHROWS
 {
     GLES20FixedPipeline::getInstance()->glEnableClientState(GLES20FixedPipeline::ClientState::CS_GL_VERTEX_ARRAY);
     glEnable(GL_BLEND);
@@ -632,7 +635,7 @@ TAKErr GLBatchLineString3::drawImpl(const GLMapView2 &view, const int render_pas
     for (std::size_t i = 0u; i < stroke.size(); i++) {
         GLES20FixedPipeline::getInstance()->glColor4f(stroke[i].color.r, stroke[i].color.g, stroke[i].color.b, stroke[i].color.a);
 
-        glLineWidth(stroke[i].width);
+        glLineWidth(stroke[i].width*GLMapRenderGlobals_getRelativeDisplayDensity());
         GLES20FixedPipeline::getInstance()->glDrawArrays(GL_LINE_STRIP, 0, static_cast<int>(this->numPoints));
     }
 
@@ -651,7 +654,7 @@ void GLBatchLineString3::release() NOTHROWS
     this->projectedVerticesSrid = -1;
 }
 
-TAKErr GLBatchLineString3::batch(const GLMapView2 &view, const int render_pass, GLRenderBatch2 &batch) NOTHROWS
+TAKErr GLBatchLineString3::batch(const GLGlobeBase &view, const int render_pass, GLRenderBatch2 &batch) NOTHROWS
 {
     TAKErr code(TE_Ok);
     if(this->numPoints > 1)
@@ -659,7 +662,7 @@ TAKErr GLBatchLineString3::batch(const GLMapView2 &view, const int render_pass, 
     return code;
 }
 
-TAKErr GLBatchLineString3::batch(const GLMapView2 &view, const int render_pass, GLRenderBatch2 &batch, const int vertices_type) NOTHROWS
+TAKErr GLBatchLineString3::batch(const GLGlobeBase &view, const int render_pass, GLRenderBatch2 &batch, const int vertices_type) NOTHROWS
 {
     TAKErr code;
 
@@ -674,7 +677,7 @@ TAKErr GLBatchLineString3::batch(const GLMapView2 &view, const int render_pass, 
     return this->batchImpl(view, render_pass, batch, vertices_type, v);
 }
 
-TAKErr GLBatchLineString3::batchImpl(const GLMapView2 &view, const int render_pass, GLRenderBatch2 &batch, const int vertices_type, const float *v) NOTHROWS
+TAKErr GLBatchLineString3::batchImpl(const GLGlobeBase &view, const int render_pass, GLRenderBatch2 &batch, const int vertices_type, const float *v) NOTHROWS
 {
     float strokeFactor;
     switch (vertices_type)
@@ -683,7 +686,7 @@ TAKErr GLBatchLineString3::batchImpl(const GLMapView2 &view, const int render_pa
             strokeFactor = 1.0f;
             break;
         case GLGeometry::VERTICES_PROJECTED :
-            strokeFactor = (float)(view.drawMapResolution / this->projectedNominalUnitSize);
+            strokeFactor = (float)(view.renderPass->drawMapResolution / this->projectedNominalUnitSize);
             break;
         default :
             return TE_InvalidArg;
@@ -693,7 +696,7 @@ TAKErr GLBatchLineString3::batchImpl(const GLMapView2 &view, const int render_pa
 
     // XXX - texturing
     for (std::size_t i = 0u; i < stroke.size(); i++) {
-        batch.setLineWidth(stroke[i].width);
+        batch.setLineWidth(stroke[i].width*GLMapRenderGlobals_getRelativeDisplayDensity());
         batch.batch(-1, GL_LINE_STRIP, this->numPoints, size, 0, v, 0, nullptr, stroke[i].color.r, stroke[i].color.g, stroke[i].color.b, stroke[i].color.a);
     }
     return TE_Ok;
@@ -768,7 +771,7 @@ namespace
                         linestringDst[idx] = linestringDst[idx - 3] + dx;
                         linestringDst[idx + 1] = linestringDst[idx - 2] + dy;
                         linestringDst[idx + 2] = linestringDst[idx - 1] + dz;
-                        idx += 2;
+                        idx += 3;
                     }
                 }
 

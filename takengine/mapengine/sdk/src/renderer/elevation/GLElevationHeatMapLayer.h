@@ -18,7 +18,7 @@ namespace TAK {
                 public: // GLLayer2
                     virtual TAK::Engine::Core::Layer2 &getSubject() NOTHROWS;
                 public : // GLMapRenderable2
-                    virtual void draw(const TAK::Engine::Renderer::Core::GLMapView2 &view, const int renderPass) NOTHROWS;
+                    virtual void draw(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const int renderPass) NOTHROWS;
                     virtual void release() NOTHROWS;
                     virtual int getRenderPass() NOTHROWS;
                     virtual void start() NOTHROWS;

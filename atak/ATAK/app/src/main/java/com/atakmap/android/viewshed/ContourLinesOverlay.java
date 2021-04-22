@@ -161,6 +161,10 @@ public class ContourLinesOverlay extends AbstractHierarchyListItem
         try {
             workingPath = programDataContourLinesDirectory.getAbsolutePath()
                     + "/" + "WrkDir";
+            if (!IOProviderFactory.exists(new File(workingPath)) &&
+                    !IOProviderFactory.mkdirs(new File(workingPath))) {
+                Log.w(TAG, "Failed to create contour lines data store");
+            }
             contourDataStore = new PersistentDataSourceFeatureDataStore2(
                     new File(workingPath));
         } catch (Exception e) {
@@ -972,45 +976,54 @@ public class ContourLinesOverlay extends AbstractHierarchyListItem
             if (feature == null)
                 return;
 
-            if (isCancelled.get()) {
-                contourLayer.delete();
-                dataset.delete();
-                band.delete();
-                driver.delete();
-                return;
-            }
 
-            //call to generate the contours based upon a interval count and starting elevation
-            gdal.ContourGenerate(band, interval, 0, null,
-                    ((noDataValue[0] == null) ? 0 : 1),
-                    ((noDataValue[0] == null) ? 0 : noDataValue[0]),
-                    contourLayer,
-                    feature.GetFieldIndex("ID"),
-                    feature.GetFieldIndex(field.GetName()));
-
-            if (isCancelled.get()) {
-                contourLayer.delete();
-                dataset.delete();
-                band.delete();
-                driver.delete();
-                return;
-            }
-
-            MapView.getMapView().post(new Runnable() {
-                @Override
-                public void run() {
-                    updateProgress((int) (progress + _progressStep));
+            try {
+                if (isCancelled.get()) {
+                    return;
                 }
-            });
 
-            dataSource.SyncToDisk();
-            dataset.delete();
-            band.delete();
-            driver.delete();
-            if (contourLayer.GetFeatureCount(1) >= 0) {
-                WriteToDataStore(myDir2.getAbsolutePath());
+                //call to generate the contours based upon a interval count and starting elevation
+                gdal.ContourGenerate(band, interval, 0, null,
+                        ((noDataValue[0] == null) ? 0 : 1),
+                        ((noDataValue[0] == null) ? 0 : noDataValue[0]),
+                        contourLayer,
+                        feature.GetFieldIndex("ID"),
+                        feature.GetFieldIndex(field.GetName()));
+
+                if (isCancelled.get()) {
+                    return;
+                }
+
+                MapView.getMapView().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        updateProgress((int) (progress + _progressStep));
+                    }
+                });
+
+                try {
+                    dataSource.FlushCache();
+                    if (contourLayer.GetFeatureCount(1) >= 0) {
+                        WriteToDataStore(myDir2.getAbsolutePath());
+                    }
+                } catch (Exception e) {
+                    Log.d(TAG, "error flushing datasource, removing", e);
+                    try {
+                        dataSource.delete();
+                    } catch (Exception ignored) {
+                        Log.e(TAG, "error deleting datasource");
+                    }
+                }
+            } finally {
+                try {
+                    contourLayer.delete();
+                    dataset.delete();
+                    band.delete();
+                    driver.delete();
+                } catch (Exception ignored) {
+                    // delete and clean up has failed, just continue
+                }
             }
-            contourLayer.delete();
         }
     }
 

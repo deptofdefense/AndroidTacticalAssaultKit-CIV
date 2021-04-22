@@ -457,9 +457,7 @@ public class ExportTrackHistoryTask extends AsyncTask<Void, String, String> {
 
         File kml = new File(kmlFile);
         File kmz = new File(kml.getParentFile(), name + ".kmz");
-        try(FileOutputStream fos = IOProviderFactory.getOutputStream(kmz);
-            BufferedOutputStream bfos = new BufferedOutputStream(fos);
-            ZipOutputStream zos = new ZipOutputStream(bfos)) {
+        try (ZipOutputStream zos = FileSystemUtils.getZipOutputStream(kmz)) {
 
             //and doc.kml
             FileSystemUtils.addFile(zos, kml, "doc.kml");
@@ -490,10 +488,7 @@ public class ExportTrackHistoryTask extends AsyncTask<Void, String, String> {
 
         File kml = new File(kmlFile);
         File kmz = new File(kml.getParentFile(), name + ".kmz");
-        ZipOutputStream zos = null;
-        try(OutputStream fos = IOProviderFactory.getOutputStream(kmz);
-            BufferedOutputStream bfos = new BufferedOutputStream(fos)) {
-            zos = new ZipOutputStream(bfos);
+        try (ZipOutputStream zos = FileSystemUtils.getZipOutputStream(kmz)) {
 
             //and doc.kml
             FileSystemUtils.addFile(zos, kml, "doc.kml");
@@ -505,8 +500,6 @@ public class ExportTrackHistoryTask extends AsyncTask<Void, String, String> {
         } catch (Exception e) {
             Log.e(TAG, "Failed to create KMZ file", e);
             return null;
-        } finally {
-            IoUtils.close(zos, TAG, "Failed to close KMZ: " + kmz.getAbsolutePath());
         }
     }
 
@@ -1008,10 +1001,10 @@ public class ExportTrackHistoryTask extends AsyncTask<Void, String, String> {
             exportPath += ".csv";
         File exportFile = new File(exportPath);
 
-        try(OutputStream os = IOProviderFactory.getOutputStream(exportFile)) {
+        try (OutputStream os = IOProviderFactory.getOutputStream(exportFile)) {
 
             StringBuilder sb = new StringBuilder();
-            
+
             if (bExportHeaders) {
                 sb.append(HEADER + NEW_LINE);
             }

@@ -45,8 +45,34 @@ public class LayerContentHandler extends FileOverlayContentHandler {
     }
 
     @Override
+    public boolean isVisible() {
+        Layer current = _rasterLayers.get();
+        if (!(current instanceof RasterLayer2) || !current.isVisible())
+            return false;
+        if (isMobileLayer() && !current.getName().equals("Mobile"))
+            return false;
+        return FileSystemUtils.isEquals(((RasterLayer2) current)
+                .getSelection(), _desc.getName());
+    }
+
+    @Override
+    protected boolean setVisibleImpl(boolean visible) {
+        if (isVisible() != visible) {
+            _rasterLayers.show(isMobileLayer() ? "Mobile" : "Native");
+            Layer current = _rasterLayers.get();
+            if (current instanceof RasterLayer2) {
+                ((RasterLayer2) current).setSelection(visible
+                        ? _desc.getName()
+                        : null);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
     public boolean goTo(boolean select) {
-        if (FileSystemUtils.isEquals(_desc.getProvider(), "mobac")) {
+        if (isMobileLayer()) {
             _rasterLayers.show("Mobile");
             for (Layer l : _rasterLayers.getLayers()) {
                 if (l instanceof RasterLayer2 && l.getName().equals("Mobile"))
@@ -57,5 +83,9 @@ public class LayerContentHandler extends FileOverlayContentHandler {
             super.goTo(select);
         }
         return true;
+    }
+
+    private boolean isMobileLayer() {
+        return FileSystemUtils.isEquals(_desc.getProvider(), "mobac");
     }
 }

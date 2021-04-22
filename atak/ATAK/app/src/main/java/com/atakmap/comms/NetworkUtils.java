@@ -1,14 +1,19 @@
 
 package com.atakmap.comms;
 
+import android.util.Patterns;
+import android.webkit.URLUtil;
+
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InterfaceAddress;
+import java.net.MalformedURLException;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.URL;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -232,6 +237,22 @@ public class NetworkUtils {
                 }
             }
         }
+    }
+
+    /**
+     * Return true if the network address passed in is considered valid
+     * @param address the string address either in IP or named format
+     * @return true if the address is considered valid.
+     */
+    public static boolean isValid(final String address) {
+        try {
+            String urlString = "https://" + address + ":" + 80;
+            URL url = new URL(urlString);
+            return URLUtil.isValidUrl(urlString)
+                    && Patterns.WEB_URL.matcher(urlString).matches();
+        } catch (MalformedURLException ignored) {
+        }
+        return false;
     }
 
 }

@@ -13,7 +13,8 @@ GLZoomLevel::GLZoomLevel(GLZoomLevel *prev, GLTiledLayerCore *core, const TAK::E
             patchesGridOffsetX(0), patchesGridOffsetY(0), numPatchesX(0), numPatchesY(0),
             info(lod),
             previous(prev),
-            tileMeshSubdivisions(0)           
+            tileMeshSubdivisions(0),
+            lastPumpDrawn(-1)
 {
     Math::Point2<double> minTile, maxTile;
     TAK::Engine::Raster::TileMatrix::TileMatrix_getTileIndex(&minTile, *(core->matrix), info.level, core->fullExtent.minX,
@@ -41,7 +42,7 @@ GLZoomLevel::GLZoomLevel(GLZoomLevel *prev, GLTiledLayerCore *core, const TAK::E
 
 GLZoomLevel::~GLZoomLevel() { release(); }
 
-TAK::Engine::Util::TAKErr GLZoomLevel::batch(const TAK::Engine::Renderer::Core::GLMapView2 &view, const int renderPass,
+TAK::Engine::Util::TAKErr GLZoomLevel::batch(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const int renderPass,
                                 TAK::Engine::Renderer::GLRenderBatch2 &batch) NOTHROWS {
     if (!TAK::Engine::Util::MathUtils_hasBits(renderPass, getRenderPass()))
         return TAK::Engine::Util::TE_Ok;
@@ -49,16 +50,18 @@ TAK::Engine::Util::TAKErr GLZoomLevel::batch(const TAK::Engine::Renderer::Core::
     // compute patch geo intersect with view
     if (!atakmap::math::Rectangle<double>::intersects(core->fullExtentMinLng, core->fullExtentMinLat, core->fullExtentMaxLng,
                                               core->fullExtentMaxLat,
-                                view.westBound, view.southBound,
-                                view.eastBound, view.northBound)) {
+                                view.renderPass->westBound, view.renderPass->southBound,
+                                view.renderPass->eastBound, view.renderPass->northBound)) {
 
         return TAK::Engine::Util::TE_Ok;
     }
+
+    lastPumpDrawn = -1;
         
-    const double isectMinLat = atakmap::math::max(core->fullExtentMinLat, view.southBound);
-    const double isectMinLng = atakmap::math::max(core->fullExtentMinLng, view.westBound);
-    const double isectMaxLat = atakmap::math::min(core->fullExtentMinLat, view.northBound);
-    const double isectMaxLng = atakmap::math::min(core->fullExtentMinLng, view.eastBound);
+    const double isectMinLat = atakmap::math::max(core->fullExtentMinLat, view.renderPass->southBound);
+    const double isectMinLng = atakmap::math::max(core->fullExtentMinLng, view.renderPass->westBound);
+    const double isectMaxLat = atakmap::math::min(core->fullExtentMinLat, view.renderPass->northBound);
+    const double isectMaxLng = atakmap::math::min(core->fullExtentMinLng, view.renderPass->eastBound);
         
     // transform patch intersect to proj
     Math::Point2<double> pointD;
@@ -92,8 +95,6 @@ TAK::Engine::Util::TAKErr GLZoomLevel::batch(const TAK::Engine::Renderer::Core::
                                                  projIsectMinY);
     maxPatch.x /= patchCols;
     maxPatch.y /= patchRows;
-                
-    std::map<int, GLTilePatch *> releasable(patches);
 
     std::map<int, GLTilePatch *>::iterator iter;
     for (int patchY = static_cast<int>(minPatch.y); patchY <= maxPatch.y; patchY++) {
@@ -121,34 +122,30 @@ TAK::Engine::Util::TAKErr GLZoomLevel::batch(const TAK::Engine::Renderer::Core::
             patch->batch(view, renderPass, batch);
         }
     }
-        
-    // release any patches not in view
-    for (iter = releasable.begin(); iter != releasable.end(); ++iter) {
-        if (iter->second->release(false)) {
-            delete iter->second;
-            patches.erase(iter->first);
-        }
-    }
+
     return TAK::Engine::Util::TE_Ok;
 }
 
-void GLZoomLevel::draw(const TAK::Engine::Renderer::Core::GLMapView2 &view, const int renderPass) NOTHROWS {
+void GLZoomLevel::draw(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const int renderPass) NOTHROWS {
     if (!TAK::Engine::Util::MathUtils_hasBits(renderPass, getRenderPass()))
         return;
 
     // compute patch geo intersect with view
     if (!atakmap::math::Rectangle<double>::intersects(core->fullExtentMinLng, core->fullExtentMinLat,
                                 core->fullExtentMaxLng, core->fullExtentMaxLat,
-                                view.westBound, view.southBound,
-                                view.eastBound, view.northBound)) {
+                                view.renderPass->westBound, view.renderPass->southBound,
+                                view.renderPass->eastBound, view.renderPass->northBound)) {
 
         return;
     }
         
-    const double isectMinLat = atakmap::math::max(core->fullExtentMinLat, view.southBound);
-    const double isectMinLng = atakmap::math::max(core->fullExtentMinLng, view.westBound);
-    const double isectMaxLat = atakmap::math::min(core->fullExtentMaxLat, view.northBound);
-    const double isectMaxLng = atakmap::math::min(core->fullExtentMaxLng, view.eastBound);
+
+    lastPumpDrawn = view.renderPass->renderPump;
+
+    const double isectMinLat = atakmap::math::max(core->fullExtentMinLat, view.renderPass->southBound);
+    const double isectMinLng = atakmap::math::max(core->fullExtentMinLng, view.renderPass->westBound);
+    const double isectMaxLat = atakmap::math::min(core->fullExtentMaxLat, view.renderPass->northBound);
+    const double isectMaxLng = atakmap::math::min(core->fullExtentMaxLng, view.renderPass->eastBound);
         
     // transform patch intersect to proj
     Math::Point2<double> pointD;
@@ -182,8 +179,6 @@ void GLZoomLevel::draw(const TAK::Engine::Renderer::Core::GLMapView2 &view, cons
     maxPatch.x /= patchCols;
     maxPatch.y /= patchRows;
 
-    std::map<int, GLTilePatch *> releasable(patches);
-
     std::map<int, GLTilePatch *>::iterator iter;
     for(int patchY = static_cast<int>(minPatch.y); patchY <= maxPatch.y; patchY++) {
         if(patchY < patchesGridOffsetY || patchY >= (patchesGridOffsetY+numPatchesY))
@@ -205,23 +200,14 @@ void GLZoomLevel::draw(const TAK::Engine::Renderer::Core::GLMapView2 &view, cons
                 patches[idx] = patch;
             } else {
                 patch = iter->second;
-                releasable.erase(iter->first);
             }
 
             patch->draw(view, renderPass);
         }
     }
-        
-    // release any patches not in view
-    for (iter = releasable.begin(); iter != releasable.end();  ++iter) {
-        if (iter->second->release(false)) {
-            delete iter->second;
-            patches.erase(iter->first);
-        }
-    }
 }
 
-void GLZoomLevel::release() NOTHROWS { release(false); }
+void GLZoomLevel::release() NOTHROWS { release(false, -1); }
 
 int GLZoomLevel::getRenderPass() NOTHROWS { return Core::GLMapView2::Surface; }
 
@@ -276,7 +262,7 @@ void GLZoomLevel::getTiles(std::set<std::shared_ptr<GLTile>> *tiles, double minX
     }
 }
 
-bool GLZoomLevel::release(bool unusedOnly) {
+bool GLZoomLevel::release(bool unusedOnly, int renderPump) {
     std::map<int, GLTilePatch *>::iterator iter;
     if (!unusedOnly) {
         for (iter = patches.begin(); iter != patches.end(); ++iter) {
@@ -290,7 +276,7 @@ bool GLZoomLevel::release(bool unusedOnly) {
         while (iter != patches.end()) {
             auto curIter = iter;
             ++iter;
-            if (curIter->second->release(unusedOnly)) {
+            if (curIter->second->release(unusedOnly, renderPump)) {
                 delete curIter->second;
                 patches.erase(curIter);
             }

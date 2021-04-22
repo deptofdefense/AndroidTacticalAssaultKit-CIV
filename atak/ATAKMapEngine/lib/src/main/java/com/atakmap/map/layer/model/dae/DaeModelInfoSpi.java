@@ -163,7 +163,12 @@ public class DaeModelInfoSpi implements ModelInfoSpi {
             info.altitudeMode = parseAltMode(altMode);
 
             String modelPath = getTextContent(model, new String[]{"Link", "href"});
-            info.uri = kmlFile.getParentFile().getPath() + File.separator + modelPath;
+            String parentPath = kmlFile.getParentFile().getPath();
+            if (parentPath.contains(".kmz/")) {
+                int endOfParentPath = parentPath.indexOf(".kmz/") + 5;
+                parentPath = parentPath.substring(0, endOfParentPath);
+            }
+            info.uri = parentPath + File.separator + modelPath;
 
             int upAxis = determineUpAxis(info.uri);
             if (upAxis == DOES_NOT_EXIST) {

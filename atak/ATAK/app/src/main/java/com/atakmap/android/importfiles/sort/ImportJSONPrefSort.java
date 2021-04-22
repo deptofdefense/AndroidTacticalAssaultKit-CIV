@@ -37,7 +37,7 @@ public class ImportJSONPrefSort extends ImportInternalSDResolver {
         if (!super.match(file))
             return false;
 
-        try(InputStream is = IOProviderFactory.getInputStream(file)) {
+        try (InputStream is = IOProviderFactory.getInputStream(file)) {
             return isPreference(is);
         } catch (IOException e) {
             Log.e(TAG, "Failed to match Pref file: " + file.getAbsolutePath(),

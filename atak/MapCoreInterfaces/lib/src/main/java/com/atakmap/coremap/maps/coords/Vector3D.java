@@ -66,6 +66,33 @@ public class Vector3D {
                 * v.z);
     }
 
+    public static double[] nearestPointOnSegment(
+            final double pointx, final double pointy, final double pointz,
+            final double seg0x, final double seg0y, final double seg0z,
+            final double seg1x, final double seg1y, final double seg1z) {
+        double vx = seg1x - seg0x;
+        double vy = seg1y - seg0y;
+        double vz = seg1z - seg0z;
+        double wx = pointx - seg0x;
+        double wy = pointy - seg0y;
+        double wz = pointz - seg0z;
+        double c1 = dot(wx, wy, wz, vx, vy, vz);
+        if (c1 <= 0)
+            return new double[] {
+                    seg0x, seg0y, seg0z
+            };
+        double c2 = dot(vx, vy, vz, vx, vy, vz);
+        if (c2 <= c1)
+            return new double[] {
+                    seg1x, seg1y, seg1z
+            };
+        double b = c1 / c2;
+        return new double[] {
+                seg0x + b * vx, seg0y + b * vy, seg0z + b
+                        * vz
+        };
+    }
+
     public static float distanceSqToSegment(final Vector3D point,
             final Vector3D seg0,
             final Vector3D seg1) {
@@ -84,5 +111,11 @@ public class Vector3D {
 
     public double length() {
         return Math.sqrt(x * x + y * y + z * z);
+    }
+
+    public static double dot(
+            final double x, final double y, final double z,
+            final double vx, final double vy, final double vz) {
+        return x * vx + y * vy + z * vz;
     }
 }

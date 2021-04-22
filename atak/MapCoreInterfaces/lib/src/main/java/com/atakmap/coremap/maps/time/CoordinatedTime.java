@@ -311,11 +311,11 @@ public class CoordinatedTime implements Parcelable {
                 }
 
                 try (OutputStream is = IOProviderFactory
-                             .getOutputStream(new File(directory,
-                                             "bad_time.txt"),true);
-                     OutputStreamWriter osw = new OutputStreamWriter(
-                             is,FileSystemUtils.UTF8_CHARSET);
-                     PrintWriter w = new PrintWriter(osw)) {
+                        .getOutputStream(new File(directory,
+                                "bad_time.txt"), true);
+                        OutputStreamWriter osw = new OutputStreamWriter(
+                                is, FileSystemUtils.UTF8_CHARSET);
+                        PrintWriter w = new PrintWriter(osw)) {
                     w.append(msg).append("\r\n");
                     e.printStackTrace(w);
                 } catch (FileNotFoundException e1) {

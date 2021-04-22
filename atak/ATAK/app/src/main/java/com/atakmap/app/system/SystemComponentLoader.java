@@ -3,11 +3,13 @@ package com.atakmap.app.system;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.Application;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.Signature;
+import android.os.SystemClock;
 import android.view.LayoutInflater;
 
 import com.atakmap.app.ATAKApplication;
@@ -15,6 +17,8 @@ import com.atakmap.app.BuildConfig;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
+
+import java.util.List;
 
 import dalvik.system.DexClassLoader;
 
@@ -183,6 +187,29 @@ public class SystemComponentLoader {
     }
 
     /**
+     * Retrieve the first application that contains the specified prefix as part of the package
+     * name.
+     * @param prefix the prefix of the package name to be used.
+     * @return the application info
+     */
+    private static ApplicationInfo getApplicationInfo(final PackageManager pm,
+            final String prefix) throws PackageManager.NameNotFoundException {
+        ApplicationInfo info = null;
+        List<ApplicationInfo> list = pm
+                .getInstalledApplications(PackageManager.GET_META_DATA);
+        for (ApplicationInfo ai : list) {
+            if (ai.packageName.startsWith(prefix)) {
+                info = ai;
+                break;
+            }
+        }
+        if (info == null)
+            throw new PackageManager.NameNotFoundException();
+
+        return info;
+    }
+
+    /**
      * Attempt to load a flavor system component
      * @param context the system context used to load the flavor component
      */
@@ -193,8 +220,10 @@ public class SystemComponentLoader {
         final PackageManager pm = context.getPackageManager();
         final ApplicationInfo info;
         try {
-            info = pm.getApplicationInfo("com.atakmap.app.flavor",
-                    PackageManager.GET_META_DATA);
+            long start = SystemClock.elapsedRealtime();
+            info = getApplicationInfo(pm, "com.atakmap.app.flavor.");
+            Log.d(TAG, "loading flavor "
+                    + (SystemClock.elapsedRealtime() - start) + "ms");
             flavorCrashInfo = infoToJson(info.packageName, context);
         } catch (Exception e) {
             Log.d(TAG, "no flavor system component found");
@@ -228,7 +257,7 @@ public class SystemComponentLoader {
 
     /**
      * Attempt to load an encryption system component.
-     * @param activity the activity used to load the encryption component
+     * @param activity the activity used to load the encryption component.
      */
     public synchronized static void initializeEncryption(
             final Activity activity) {
@@ -239,10 +268,12 @@ public class SystemComponentLoader {
         final PackageManager pm = activity.getPackageManager();
         final ApplicationInfo info;
         try {
-            info = pm.getApplicationInfo("com.atakmap.app.encryption",
+            long start = SystemClock.elapsedRealtime();
+            info = getApplicationInfo(pm, "com.atakmap.app.flavor.encryption.");
+            PackageInfo pInfo = pm.getPackageInfo(info.packageName,
                     PackageManager.GET_META_DATA);
-            PackageInfo pInfo = pm.getPackageInfo("com.atakmap.app.encryption",
-                    PackageManager.GET_META_DATA);
+            Log.d(TAG, "loading encryption "
+                    + (SystemClock.elapsedRealtime() - start) + "ms");
             encryptionName = info.loadLabel(pm) + " " + pInfo.versionName;
             encryptionCrashInfo = infoToJson(info.packageName, activity);
         } catch (Exception e) {
@@ -269,6 +300,10 @@ public class SystemComponentLoader {
             final Class<?> c = pluginClassLoader
                     .loadClass("com.atakmap.android.EncryptionComponent");
             encryptionComponent = (AbstractSystemComponent) c.newInstance();
+            if (!(encryptionComponent instanceof EncryptionProvider)) {
+                Log.d(TAG,
+                        "encryption component does not implement encryption provider, this is an error");
+            }
             encryptionComponent.setPluginContext(pluginContext);
             encryptionComponent.setAppContext(activity);
             encryptionComponent.load();
@@ -316,11 +351,31 @@ public class SystemComponentLoader {
     }
 
     /**
-     * Obtain a flavor proviver if it is installed.
-     * @return null if no flavor provider is installed.
+     * Obtain a flavor provider if it is installed.
+     * @return null if no flavor is installed.
      */
     public static FlavorProvider getFlavorProvider() {
         return (FlavorProvider) flavorComponent;
+    }
+
+    /**
+     * Obtain an encryption provider if it is installed.
+     * @return null if no encryption capability is installed
+     */
+    public static EncryptionProvider getEncryptionProvider() {
+        return (EncryptionProvider) encryptionComponent;
+    }
+
+    /**
+     * Unregister the registered encryption provider and replace it with the generic unencrypted
+     * ATAKFileIOProvider.
+     * @param activity the ATAKApplication to call notifyEncryption changed on.
+     */
+    public static void disableEncryptionProvider(final Activity activity) {
+        IOProviderFactory.registerProvider(new ATAKFileIOProvider(), true);
+        ((ATAKApplication) activity.getApplication())
+                .notifyEncryptionChanged();
+
     }
 
     /**
@@ -335,9 +390,9 @@ public class SystemComponentLoader {
 
         try {
             final PackageManager pm = context.getPackageManager();
-            ApplicationInfo info = pm.getApplicationInfo(
-                    "com.atakmap.app.flavor",
-                    PackageManager.GET_META_DATA);
+            ApplicationInfo info = getApplicationInfo(pm,
+                    "com.atakmap.app.flavor.");
+
             if (info.metaData != null) {
                 Object value = info.metaData.get("plugin-api");
                 if (value instanceof String) {

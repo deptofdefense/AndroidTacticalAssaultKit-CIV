@@ -65,7 +65,9 @@ public class ATAKDatabaseHelper {
                         AtakAuthenticationCredentials.TYPE_APK_DOWNLOADER,
                         "com.atakmap.app.v2");
 
-        if (credentials == null) credentials = new AtakAuthenticationCredentials();
+        if (credentials == null)
+            credentials = new AtakAuthenticationCredentials();
+
 
 
         // DB doesn't exist and there is no key; create original key
@@ -82,7 +84,7 @@ public class ATAKDatabaseHelper {
         }
 
         // DB exists; check key
-        if (!checkKeyAgainstDatabase(testDb)) {
+        if (IOProviderFactory.isDefault() && !checkKeyAgainstDatabase(testDb)) {
             AlertDialog.Builder ad = new AlertDialog.Builder(context);
             ad.setCancelable(false);
 
@@ -448,7 +450,8 @@ public class ATAKDatabaseHelper {
 
             final String s = "SQLite format 3";
             final byte[] b = new byte[s.length()];
-            try (FileInputStream fis = IOProviderFactory.getInputStream(dbFile)) {
+            try (FileInputStream fis = IOProviderFactory
+                    .getInputStream(dbFile)) {
                 final int bytesRead = fis.read(b);
                 if (bytesRead == s.length() && s
                         .equals(new String(b, FileSystemUtils.UTF8_CHARSET))) {

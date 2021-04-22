@@ -202,19 +202,21 @@ public interface TileMatrix extends Disposable {
          *          units.
          */
         public static Envelope getTileBounds(TileMatrix matrix, int level, int tileX, int tileY) {
-            ZoomLevel zoom = findLevelOrThrow(matrix, level);
-            
+            return getTileBounds(findLevelOrThrow(matrix, level), matrix.getOriginX(), matrix.getOriginY(), tileX, tileY);
+        }
+
+        public static Envelope getTileBounds(ZoomLevel zoom, double originX, double originY, int tileX, int tileY) {
             Envelope retval = new Envelope(Double.NaN, Double.NaN, 0, Double.NaN, Double.NaN, 0);
-            
+
             PointD point;
-            
-            point = getTilePointImpl(matrix.getOriginX(), matrix.getOriginY(), zoom, tileX, tileY, 0, zoom.tileHeight);
+
+            point = getTilePointImpl(originX, originY, zoom, tileX, tileY, 0, zoom.tileHeight);
             retval.minX = point.x;
             retval.minY = point.y;
-            point = getTilePointImpl(matrix.getOriginX(), matrix.getOriginY(), zoom, tileX, tileY, zoom.tileWidth, 0);
+            point = getTilePointImpl(originX, originY, zoom, tileX, tileY, zoom.tileWidth, 0);
             retval.maxX = point.x;
             retval.maxY = point.y;
-            
+
             return retval;
         }
         

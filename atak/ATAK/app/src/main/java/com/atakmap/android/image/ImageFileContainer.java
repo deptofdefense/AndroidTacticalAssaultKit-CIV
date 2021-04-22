@@ -328,9 +328,9 @@ public class ImageFileContainer
     private static File readLink(File linkFile) {
         File link = null;
 
-        try(InputStream is = IOProviderFactory.getInputStream(linkFile);
-            InputStreamReader isr = new InputStreamReader(is);
-            BufferedReader br = new BufferedReader(isr)) {
+        try (InputStream is = IOProviderFactory.getInputStream(linkFile);
+                InputStreamReader isr = new InputStreamReader(is);
+                BufferedReader br = new BufferedReader(isr)) {
             String line = br.readLine();
             if (line != null)
                 link = new File(

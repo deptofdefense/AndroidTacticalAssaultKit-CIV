@@ -48,8 +48,7 @@ public class ResectionMapComponent extends DropDownMapComponent {
     private ResectionDropDownReceiver _defaultWorkflow;
 
     private final ResectionReconciliationViewModel resectionViewModel = new ResectionReconciliationViewModel();
-    private final ResectionWorkflowResultHandler resectionWorkflowResultHandler =
-            new ResectionWorkflowResultHandler();
+    private final ResectionWorkflowResultHandler resectionWorkflowResultHandler = new ResectionWorkflowResultHandler();
 
     @Override
     public void onCreate(final Context context, final Intent intent,
@@ -61,8 +60,8 @@ public class ResectionMapComponent extends DropDownMapComponent {
         DocumentedIntentFilter filter = new DocumentedIntentFilter();
         filter.addAction(ResectionWorkflowReceiver.RESECTION_WORKFLOW,
                 "Intent to launch the Resection Workflow which could contain one or "
-                + "more resectioning tools.  If it only contains one tool, then it will enter "
-                + "into the standard resectioning capability.");
+                        + "more resectioning tools.  If it only contains one tool, then it will enter "
+                        + "into the standard resectioning capability.");
         registerReceiver(context, _resectionWorkflowReceiver, filter);
 
         // Default resection workflow
@@ -103,29 +102,36 @@ public class ResectionMapComponent extends DropDownMapComponent {
         tb.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-            startResection(rwf);
+                startResection(rwf);
             }
         });
         tb.setOnLongClickListener(new View.OnLongClickListener() {
 
             @Override
             public boolean onLongClick(View v) {
-                Toast.makeText(context, "Workflow " + rwf.getName(), Toast.LENGTH_LONG).show();
+                Toast.makeText(context, "Workflow " + rwf.getName(),
+                        Toast.LENGTH_LONG).show();
 
                 // Get our detail view
-                LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-                View descriptionView = inflater.inflate(R.layout.resection_workflow_description, null, false);
+                LayoutInflater inflater = (LayoutInflater) context
+                        .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                View descriptionView = inflater.inflate(
+                        R.layout.resection_workflow_description, null, false);
 
                 // Populate some details into our view
-                TextView txtDescription = descriptionView.findViewById(R.id.txtDescription);
+                TextView txtDescription = descriptionView
+                        .findViewById(R.id.txtDescription);
                 txtDescription.setText(rwf.getDescription());
-                TextView txtIdealConditions = descriptionView.findViewById(R.id.txtIdealConditions);
+                TextView txtIdealConditions = descriptionView
+                        .findViewById(R.id.txtIdealConditions);
                 txtIdealConditions.setText(rwf.getIdealConditions());
-                TextView txtRelativeAccuracy = descriptionView.findViewById(R.id.txtRelativeAccuracy);
+                TextView txtRelativeAccuracy = descriptionView
+                        .findViewById(R.id.txtRelativeAccuracy);
                 txtRelativeAccuracy.setText(rwf.getRelativeAccuracy());
 
                 // Scale our icon if necessary
-                float targetDimPixels = 32f * context.getResources().getDisplayMetrics().density;
+                float targetDimPixels = 32f
+                        * context.getResources().getDisplayMetrics().density;
                 float width = icon.getIntrinsicWidth();
                 float height = icon.getIntrinsicHeight();
                 float scaleX = targetDimPixels / width;
@@ -135,21 +141,28 @@ public class ResectionMapComponent extends DropDownMapComponent {
                 int newY = (int) (height * scaleY);
 
                 Bitmap bitmap = ((BitmapDrawable) icon).getBitmap();
-                BitmapDrawable bIcon = new BitmapDrawable(context.getResources(), Bitmap.createScaledBitmap(bitmap, newX, newY, true));
+                BitmapDrawable bIcon = new BitmapDrawable(
+                        context.getResources(),
+                        Bitmap.createScaledBitmap(bitmap, newX, newY, true));
 
                 AlertDialog dlg = new AlertDialog.Builder(context)
                         .setIcon(bIcon)
                         .setView(descriptionView)
-                        .setTitle(context.getString(R.string.resection_details_label, rwf.getName()))
-                        .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                dialog.dismiss();
-                            }
-                        })
+                        .setTitle(context.getString(
+                                R.string.resection_details_label,
+                                rwf.getName()))
+                        .setPositiveButton(R.string.ok,
+                                new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog,
+                                            int which) {
+                                        dialog.dismiss();
+                                    }
+                                })
                         .create();
                 Window window = dlg.getWindow();
-                window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT);
+                window.setLayout(WindowManager.LayoutParams.MATCH_PARENT,
+                        WindowManager.LayoutParams.WRAP_CONTENT);
                 window.setGravity(Gravity.CENTER);
                 dlg.show();
 
@@ -221,9 +234,11 @@ public class ResectionMapComponent extends DropDownMapComponent {
     /**
      * Handler class for dealing with location estimates coming in from Resection Workflows.
      */
-    public class ResectionWorkflowResultHandler implements OnResectionResult, ReconciliationEvents {
+    public class ResectionWorkflowResultHandler
+            implements OnResectionResult, ReconciliationEvents {
         public ResectionWorkflowResultHandler() {
-            resectionViewModel.registerListener(ResectionWorkflowResultHandler.this);
+            resectionViewModel
+                    .registerListener(ResectionWorkflowResultHandler.this);
         }
 
         /**
@@ -232,37 +247,47 @@ public class ResectionMapComponent extends DropDownMapComponent {
          * @param estimate Location estimate from resectioning
          * @return The dialog itself
          */
-        private AlertDialog buildResultDialog(final ResectionLocationEstimate estimate) {
+        private AlertDialog buildResultDialog(
+                final ResectionLocationEstimate estimate) {
             String locString = getPointLabel(estimate.getPoint());
 
             AlertDialog dlg = new AlertDialog.Builder(context)
                     .setTitle(R.string.resection_update_location_title)
-                    .setMessage(context.getString(R.string.resection_update_location_message, locString))
-                    .setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.dismiss();
-                        }
-                    })
-                    .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            MapView.getMapView().getSelfMarker().setPoint(estimate.getPoint());
-                        }
-                    })
+                    .setMessage(context.getString(
+                            R.string.resection_update_location_message,
+                            locString))
+                    .setNegativeButton(R.string.no,
+                            new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog,
+                                        int which) {
+                                    dialog.dismiss();
+                                }
+                            })
+                    .setPositiveButton(R.string.yes,
+                            new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog,
+                                        int which) {
+                                    MapView.getMapView().getSelfMarker()
+                                            .setPoint(estimate.getPoint());
+                                }
+                            })
                     .create();
 
             return dlg;
         }
 
         private String getPointLabel(GeoPoint pt) {
-            CoordinateFormat fmt = CoordinateFormat.find(PreferenceManager.getDefaultSharedPreferences(context));
+            CoordinateFormat fmt = CoordinateFormat.find(
+                    PreferenceManager.getDefaultSharedPreferences(context));
             return CoordinateFormatUtilities.formatToString(pt, fmt);
         }
 
         private String buildEstimateLabel(ResectionLocationEstimate estimate) {
             String confidenceLabel;
-            if (estimate.getConfidence() == Double.MIN_VALUE || estimate.getConfidence() > 1
+            if (estimate.getConfidence() == Double.MIN_VALUE
+                    || estimate.getConfidence() > 1
                     || estimate.getConfidence() < 0) {
                 confidenceLabel = "--";
             } else {
@@ -270,7 +295,8 @@ public class ResectionMapComponent extends DropDownMapComponent {
                 confidenceLabel = String.valueOf(percent);
             }
 
-            return context.getString(R.string.resection_estimate_label, estimate.getSource(),
+            return context.getString(R.string.resection_estimate_label,
+                    estimate.getSource(),
                     getPointLabel(estimate.getPoint()), confidenceLabel);
         }
 
@@ -285,9 +311,11 @@ public class ResectionMapComponent extends DropDownMapComponent {
                     + resectionViewModel.getEstimates().size());
 
             // Build our list of choices
-            String[] choices = new String[resectionViewModel.getEstimates().size()];
+            String[] choices = new String[resectionViewModel.getEstimates()
+                    .size()];
             for (int i = 0; i < resectionViewModel.getEstimates().size(); i++) {
-                choices[i] = buildEstimateLabel(resectionViewModel.getEstimates().get(i));
+                choices[i] = buildEstimateLabel(
+                        resectionViewModel.getEstimates().get(i));
             }
 
             final List<Integer> selectedEstimateIndices = new ArrayList<>();
@@ -296,49 +324,64 @@ public class ResectionMapComponent extends DropDownMapComponent {
                     .setTitle(R.string.resection_select_estimates_prompt_title)
                     .setMultiChoiceItems(choices, null,
                             new DialogInterface.OnMultiChoiceClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which, boolean isChecked) {
-                            Log.d(TAG, "check state change on choice index " + which);
+                                @Override
+                                public void onClick(DialogInterface dialog,
+                                        int which, boolean isChecked) {
+                                    Log.d(TAG,
+                                            "check state change on choice index "
+                                                    + which);
 
-                            if (isChecked) {
-                                selectedEstimateIndices.add(which);
-                            } else if (selectedEstimateIndices.contains(which)) {
-                                selectedEstimateIndices.remove(Integer.valueOf(which));
-                            }
-                        }
-                    })
-                    .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            List<ResectionLocationEstimate> selectedEstimates =
-                                    new ArrayList<>(selectedEstimateIndices.size());
-                            for (Integer index : selectedEstimateIndices) {
-                                selectedEstimates.add(resectionViewModel.getEstimates().get(index));
-                            }
+                                    if (isChecked) {
+                                        selectedEstimateIndices.add(which);
+                                    } else if (selectedEstimateIndices
+                                            .contains(which)) {
+                                        selectedEstimateIndices
+                                                .remove(Integer.valueOf(which));
+                                    }
+                                }
+                            })
+                    .setPositiveButton(R.string.ok,
+                            new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog,
+                                        int which) {
+                                    List<ResectionLocationEstimate> selectedEstimates = new ArrayList<>(
+                                            selectedEstimateIndices.size());
+                                    for (Integer index : selectedEstimateIndices) {
+                                        selectedEstimates.add(resectionViewModel
+                                                .getEstimates().get(index));
+                                    }
 
-                            resectionViewModel.estimatesSelected(selectedEstimates);
-                        }
-                    })
-                    .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.dismiss();
-                        }
-                    })
+                                    resectionViewModel.estimatesSelected(
+                                            selectedEstimates);
+                                }
+                            })
+                    .setNegativeButton(R.string.cancel,
+                            new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog,
+                                        int which) {
+                                    dialog.dismiss();
+                                }
+                            })
                     .create();
 
             return dlg;
         }
 
         @Override
-        public void result(ResectionWorkflow rwf, final ResectionLocationEstimate estimate) {
+        public void result(ResectionWorkflow rwf,
+                final ResectionLocationEstimate estimate) {
             if (estimate.getPoint() == null) {
                 // No estimated location, therefore no action required--go quietly into the night
                 return;
             }
 
-            Log.d(TAG, "Got a location estimate back of " + estimate.getPoint().getLatitude()
-                    + "," + estimate.getPoint().getLongitude()  + " from " + rwf.getName());
+            Log.d(TAG,
+                    "Got a location estimate back of "
+                            + estimate.getPoint().getLatitude()
+                            + "," + estimate.getPoint().getLongitude()
+                            + " from " + rwf.getName());
 
             resectionViewModel.addEstimate(estimate);
 
@@ -352,39 +395,55 @@ public class ResectionMapComponent extends DropDownMapComponent {
                 AlertDialog dlg = new AlertDialog.Builder(context)
                         .setTitle(R.string.resection_run_another_title)
                         .setMessage(R.string.resection_run_another_message)
-                        .setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                // If we only have one estimate available, then no need to pick
-                                // which one to use as there IS only one
-                                if (resectionViewModel.getEstimates().size() == 1) {
-                                    resectionViewModel.estimatesSelected(resectionViewModel.getEstimates());
-                                } else {
-                                    Log.d(TAG, "component available estimate size: " + resectionViewModel.getEstimates().size());
+                        .setNegativeButton(R.string.no,
+                                new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog,
+                                            int which) {
+                                        // If we only have one estimate available, then no need to pick
+                                        // which one to use as there IS only one
+                                        if (resectionViewModel.getEstimates()
+                                                .size() == 1) {
+                                            resectionViewModel
+                                                    .estimatesSelected(
+                                                            resectionViewModel
+                                                                    .getEstimates());
+                                        } else {
+                                            Log.d(TAG,
+                                                    "component available estimate size: "
+                                                            + resectionViewModel
+                                                                    .getEstimates()
+                                                                    .size());
 
-                                    // Figure out which of our location estimates we should use
-                                    AlertDialog selectionDlg = buildEstimateSelectionDialog();
-                                    selectionDlg.show();
-                                }
-                            }
-                        })
-                        .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                tileButtonDialog.show();
-                            }
-                        }).create();
+                                            // Figure out which of our location estimates we should use
+                                            AlertDialog selectionDlg = buildEstimateSelectionDialog();
+                                            selectionDlg.show();
+                                        }
+                                    }
+                                })
+                        .setPositiveButton(R.string.yes,
+                                new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog,
+                                            int which) {
+                                        tileButtonDialog.show();
+                                    }
+                                })
+                        .create();
 
                 dlg.show();
             }
         }
 
         @Override
-        public void estimatesSelected(List<ResectionLocationEstimate> estimates) {
+        public void estimatesSelected(
+                List<ResectionLocationEstimate> estimates) {
             ResectionLocationEstimate estimate = null;
 
             if (estimates == null || estimates.isEmpty()) {
-                Toast.makeText(context, R.string.resection_no_estimates_selected, Toast.LENGTH_LONG).show();
+                Toast.makeText(context,
+                        R.string.resection_no_estimates_selected,
+                        Toast.LENGTH_LONG).show();
                 Log.d(TAG, "No estimates selected for use");
 
                 return;
@@ -439,7 +498,8 @@ public class ResectionMapComponent extends DropDownMapComponent {
          * selected. Notifies all registered ReconciliationEvent listeners.
          * @param estimates The estimates that should be reconciled together
          */
-        public void estimatesSelected(List<ResectionLocationEstimate> estimates) {
+        public void estimatesSelected(
+                List<ResectionLocationEstimate> estimates) {
 
             for (ReconciliationEvents listener : eventListener) {
                 listener.estimatesSelected(estimates);

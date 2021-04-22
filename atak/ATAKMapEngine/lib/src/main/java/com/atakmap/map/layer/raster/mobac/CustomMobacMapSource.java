@@ -76,6 +76,7 @@ public class CustomMobacMapSource extends AbstractMobacMapSource {
     protected void configureConnection(URLConnection conn) {
 
         conn.setRequestProperty("User-Agent", "TAK");
+        conn.setRequestProperty("x-common-site-name", getName());
         conn.setUseCaches(true);
         if(this.config != null) { 
             conn.setConnectTimeout(this.config.connectTimeout);

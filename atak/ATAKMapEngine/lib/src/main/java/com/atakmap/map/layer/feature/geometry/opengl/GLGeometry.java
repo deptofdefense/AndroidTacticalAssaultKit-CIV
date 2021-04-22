@@ -14,6 +14,7 @@ import com.atakmap.map.layer.feature.geometry.Polygon;
 public abstract class GLGeometry {
     public final static int VERTICES_PROJECTED = 0;
     public final static int VERTICES_PIXEL = 1;
+    public final static int VERTICES_BATCH = 2;
 
     protected final Geometry geometry;
 

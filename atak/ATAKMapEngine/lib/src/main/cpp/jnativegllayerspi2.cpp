@@ -126,7 +126,7 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_opengl_NativeGLLayerSpi2_cr
         return NULL; // no mapping exists, will not be supported
     if(ATAKMapEngineJNI_checkOrThrow(env, code))
         return NULL;
-    std::shared_ptr<GLMapView2> cview;
+    std::shared_ptr<GLGlobeBase> cview;
     code = Renderer::Core::Interop_marshal(cview, *env, mview);
     if(ATAKMapEngineJNI_checkOrThrow(env, code))
         return NULL;

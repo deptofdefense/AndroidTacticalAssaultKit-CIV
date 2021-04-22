@@ -1,3 +1,4 @@
+
 package com.atakmap.android.importfiles.resource;
 
 import android.content.Context;
@@ -39,7 +40,8 @@ import java.util.Set;
 public class RemoteResourceImporter extends ImportInPlaceResolver {
 
     private static final String TAG = "KMLNetworkLinkImporter";
-    private static final File KML_FOLDER = FileSystemUtils.getItem("tools/import/cache");
+    private static final File KML_FOLDER = FileSystemUtils
+            .getItem("tools/import/cache");
 
     public static final String CONTENT_TYPE = "Remote Resource";
 
@@ -55,7 +57,8 @@ public class RemoteResourceImporter extends ImportInPlaceResolver {
     public RemoteResourceImporter(MapView mapView) {
         super(".kml", FileSystemUtils.OVERLAYS_DIRECTORY, true,
                 false, true,
-                mapView.getContext().getString(R.string.importmgr_remote_resource),
+                mapView.getContext()
+                        .getString(R.string.importmgr_remote_resource),
                 mapView.getContext().getDrawable(R.drawable.ic_kml_network));
         _mapView = mapView;
         _context = mapView.getContext();
@@ -70,7 +73,7 @@ public class RemoteResourceImporter extends ImportInPlaceResolver {
             return false;
 
         // it is a .kml, now lets see if it contains reasonable xml
-        try(FileInputStream fis = IOProviderFactory.getInputStream(file)) {
+        try (FileInputStream fis = IOProviderFactory.getInputStream(file)) {
             return isKML && isNetworkKML(fis) || isXML && isNetworkXML(fis);
         } catch (IOException e) {
             Log.e(TAG, "Error checking if KML: " + file.getAbsolutePath(), e);
@@ -82,7 +85,8 @@ public class RemoteResourceImporter extends ImportInPlaceResolver {
     private static boolean isNetworkKML(InputStream stream) {
         boolean isKML = false;
         boolean isLink = false;
-        try (BufferedReader r = new BufferedReader(new InputStreamReader(stream))) {
+        try (BufferedReader r = new BufferedReader(
+                new InputStreamReader(stream))) {
             char[] buffer = new char[FileSystemUtils.BUF_SIZE];
             int numRead;
             while ((numRead = r.read(buffer)) > 0) {
@@ -101,7 +105,8 @@ public class RemoteResourceImporter extends ImportInPlaceResolver {
     }
 
     private static boolean isNetworkXML(InputStream stream) {
-        try (BufferedReader r = new BufferedReader(new InputStreamReader(stream))) {
+        try (BufferedReader r = new BufferedReader(
+                new InputStreamReader(stream))) {
             char[] buffer = new char[FileSystemUtils.BUF_SIZE];
             int numRead = r.read(buffer);
             if (numRead > 0) {
@@ -121,18 +126,19 @@ public class RemoteResourceImporter extends ImportInPlaceResolver {
 
     @Override
     public boolean beginImport(File file) {
-        try(FileInputStream fis = IOProviderFactory.getInputStream(file)) {
+        try (FileInputStream fis = IOProviderFactory.getInputStream(file)) {
             final List<RemoteResource> resources = new ArrayList<>();
             if (FileSystemUtils.checkExtension(file, "kml")) {
-                KMLUtil.parseNetworkLinks(fis, new FeatureHandler<NetworkLink>() {
-                    @Override
-                    public boolean process(NetworkLink nl) {
-                        RemoteResource res = createRemoteResource(nl);
-                        if (res != null)
-                            resources.add(res);
-                        return false;
-                    }
-                });
+                KMLUtil.parseNetworkLinks(fis,
+                        new FeatureHandler<NetworkLink>() {
+                            @Override
+                            public boolean process(NetworkLink nl) {
+                                RemoteResource res = createRemoteResource(nl);
+                                if (res != null)
+                                    resources.add(res);
+                                return false;
+                            }
+                        });
             } else {
                 RemoteResources rrs = RemoteResources.load(file, _xmlPersister);
                 if (rrs != null)
@@ -157,19 +163,24 @@ public class RemoteResourceImporter extends ImportInPlaceResolver {
                                 .getOverlay(_mapView);
                         String toast = _context.getString(
                                 R.string.kml_links_added_failed_msg);
-                        if (overlay != null && overlay.addResources(resources, true)) {
+                        if (overlay != null
+                                && overlay.addResources(resources, true)) {
                             toast = _context.getString(
                                     R.string.kml_links_added_msg,
                                     resources.size());
                             ArrayList<String> overlayPaths = new ArrayList<>();
                             overlayPaths.add(overlay.getIdentifier());
-                            AtakBroadcast.getInstance().sendBroadcast(new Intent(
-                                    HierarchyListReceiver.MANAGE_HIERARCHY)
-                                    .putStringArrayListExtra("list_item_paths",
-                                            overlayPaths)
-                                    .putExtra("isRootList", true));
+                            AtakBroadcast.getInstance()
+                                    .sendBroadcast(new Intent(
+                                            HierarchyListReceiver.MANAGE_HIERARCHY)
+                                                    .putStringArrayListExtra(
+                                                            "list_item_paths",
+                                                            overlayPaths)
+                                                    .putExtra("isRootList",
+                                                            true));
                         }
-                        Toast.makeText(_context, toast, Toast.LENGTH_LONG).show();
+                        Toast.makeText(_context, toast, Toast.LENGTH_LONG)
+                                .show();
                     }
                 });
             }

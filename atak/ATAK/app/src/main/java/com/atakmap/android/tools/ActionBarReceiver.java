@@ -37,6 +37,7 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
+import com.atakmap.android.data.URIContentManager;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.toolbar.ToolbarBroadcastReceiver;
@@ -93,11 +94,12 @@ public class ActionBarReceiver extends BroadcastReceiver {
     private static final int ACTIVE_TOOLBAR_BACKGROUND = Color.argb(70, 255,
             255, 255);
 
-    private static Activity mActivity;
+    protected static Activity mActivity;
     private static SharedPreferences _prefs;
 
     private AtakActionBarListData mActionBars;
     private AtakActionBarListData apkMenus;
+    private final ActionBarContentResolver contentResolver;
 
     private static List<ActionMenuData> latestPluginData;
 
@@ -145,7 +147,9 @@ public class ActionBarReceiver extends BroadcastReceiver {
         _disableActionBar = false;
         _actionBarDisabledReason = null;
 
-        mActionBars = loadActionBars(mActivity);
+        URIContentManager.getInstance().registerResolver(
+                contentResolver = new ActionBarContentResolver());
+        setActionBars(loadActionBars(mActivity));
 
         _prefs = PreferenceManager.getDefaultSharedPreferences(activity);
         _prefs.registerOnSharedPreferenceChangeListener(_prefListener);
@@ -208,10 +212,15 @@ public class ActionBarReceiver extends BroadcastReceiver {
             Log.d(TAG, "Updating menu version: "
                     + (mActionBars == null ? "null" : mActionBars.getVersion())
                     + " to " + apkMenus.getVersion());
-            mActionBars = apkMenus;
+            setActionBars(apkMenus);
             mActionBars.save();
         }
         instance = this;
+    }
+
+    private void setActionBars(AtakActionBarListData actionBars) {
+        mActionBars = actionBars;
+        contentResolver.loadActionBars(actionBars);
     }
 
     public interface ActionBarChangeListener {
@@ -464,7 +473,7 @@ public class ActionBarReceiver extends BroadcastReceiver {
         //Log.d(TAG, "Reloading Action Bar");
 
         if (mActivity != null) {
-            mActionBars = loadActionBars(mActivity);
+            setActionBars(loadActionBars(mActivity));
             onChange();
             mActivity.invalidateOptionsMenu();
         }
@@ -911,6 +920,7 @@ public class ActionBarReceiver extends BroadcastReceiver {
     public void dispose() {
         mActivity = null;
         mActionBars = null;
+        URIContentManager.getInstance().unregisterResolver(contentResolver);
     }
 
     /**

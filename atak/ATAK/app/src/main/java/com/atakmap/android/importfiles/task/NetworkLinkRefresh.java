@@ -34,7 +34,8 @@ public class NetworkLinkRefresh {
     private final NetworkLinkDownloader _downloader;
     private final Activity _activity;
 
-    public NetworkLinkRefresh(Activity activity, NetworkLinkDownloader downloader) {
+    public NetworkLinkRefresh(Activity activity,
+            NetworkLinkDownloader downloader) {
         _activity = activity;
         scheduler = Executors.newScheduledThreadPool(2, new NamedThreadFactory(
                 "KMLNetworkListRefresher"));
@@ -49,7 +50,8 @@ public class NetworkLinkRefresh {
      */
     public void add(RemoteResource res) {
         String filename = res.getName();
-        Pair<NetworkLinkRefreshTask, ScheduledFuture> taskPair = findTask(filename);
+        Pair<NetworkLinkRefreshTask, ScheduledFuture> taskPair = findTask(
+                filename);
         if (taskPair != null) {
             // Skip update if nothing has changed
             NetworkLinkRefreshTask task = (NetworkLinkRefreshTask) taskPair.first;
@@ -76,11 +78,13 @@ public class NetworkLinkRefresh {
                         + task.toString());
 
         synchronized (this) {
-            futureTasks.add(new Pair<NetworkLinkRefreshTask, ScheduledFuture>(task, scheduler
-                    .scheduleWithFixedDelay(
-                            task,
-                            interval, interval,
-                            TimeUnit.SECONDS)));
+            futureTasks
+                    .add(new Pair<NetworkLinkRefreshTask, ScheduledFuture>(task,
+                            scheduler
+                                    .scheduleWithFixedDelay(
+                                            task,
+                                            interval, interval,
+                                            TimeUnit.SECONDS)));
         }
     }
 
@@ -110,7 +114,8 @@ public class NetworkLinkRefresh {
         }
     }
 
-    private Pair<NetworkLinkRefreshTask, ScheduledFuture> findTask(String filename) {
+    private Pair<NetworkLinkRefreshTask, ScheduledFuture> findTask(
+            String filename) {
         /**
          * TODO, do I really have to keep a reference to runnable to support finding/canceling a
          * task? Was hoping I could iterate the ScheduledFuture list and cast/find the one I wanted
@@ -173,7 +178,7 @@ public class NetworkLinkRefresh {
         private final long _seconds;
 
         NetworkLinkRefreshTask(NetworkLinkDownloader downloader,
-                               RemoteResource res) {
+                RemoteResource res) {
             _downloader = downloader;
             _resource = res;
             _seconds = res.getRefreshSeconds();
@@ -218,7 +223,8 @@ public class NetworkLinkRefresh {
 
         @Override
         public String toString() {
-            return String.format("%s %s", _resource.getName(), _resource.getUrl());
+            return String.format("%s %s", _resource.getName(),
+                    _resource.getUrl());
         }
     }
 }

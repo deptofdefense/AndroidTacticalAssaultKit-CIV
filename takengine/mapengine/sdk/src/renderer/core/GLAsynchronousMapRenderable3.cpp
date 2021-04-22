@@ -2,35 +2,32 @@
 
 #include <sstream>
 
+#include "feature/SpatialCalculator2.h"
 #include "util/Memory.h"
 
 using namespace TAK::Engine::Renderer::Core;
 
+using namespace TAK::Engine::Feature;
 using namespace TAK::Engine::Port;
 using namespace TAK::Engine::Thread;
 using namespace TAK::Engine::Util;
 
 GLAsynchronousMapRenderable3::GLAsynchronousMapRenderable3() NOTHROWS :
-    prepared_state_(nullptr, nullptr),
-    target_state_(nullptr, nullptr),
     thread_(nullptr, nullptr),
     initialized_(false),
     servicing_request_(false),
     invalid_(false),
     cancelled_(false),
-    monitor_(TEMT_Recursive)
-{}
+    monitor_(TEMT_Recursive),
+    surface_ctrl_(nullptr)
+{
+    prepared_state_.drawVersion = -1;
+    target_state_.drawVersion = -1;
+}
 
 GLAsynchronousMapRenderable3::~GLAsynchronousMapRenderable3() NOTHROWS
 {
     release();
-}
-
-
-TAKErr GLAsynchronousMapRenderable3::newViewStateInstance(ViewStatePtr &result) NOTHROWS
-{
-    result = ViewStatePtr(new ViewState(), Memory_deleter_const<ViewState>);
-    return TE_Ok;
 }
 
 int GLAsynchronousMapRenderable3::getBackgroundThreadPriority() const NOTHROWS
@@ -50,7 +47,7 @@ TAKErr GLAsynchronousMapRenderable3::getBackgroundThreadName(TAK::Engine::Port::
 bool GLAsynchronousMapRenderable3::shouldQuery() NOTHROWS
 {
     return invalid_ ||
-        (prepared_state_->drawVersion != target_state_->drawVersion);
+        (prepared_state_.drawVersion != target_state_.drawVersion);
 }
 
 bool GLAsynchronousMapRenderable3::shouldCancel() NOTHROWS
@@ -58,12 +55,15 @@ bool GLAsynchronousMapRenderable3::shouldCancel() NOTHROWS
     return false;
 }
 
-void GLAsynchronousMapRenderable3::initImpl(const GLMapView2 &view) NOTHROWS
+void GLAsynchronousMapRenderable3::initImpl(const GLGlobeBase &view) NOTHROWS
 {}
 
 void GLAsynchronousMapRenderable3::invalidateNoSync() NOTHROWS
 {
     invalid_ = true;
+    if (surface_ctrl_) {
+        surface_ctrl_->markDirty();
+    }
 }
 
 void GLAsynchronousMapRenderable3::invalidate() NOTHROWS
@@ -72,7 +72,7 @@ void GLAsynchronousMapRenderable3::invalidate() NOTHROWS
     invalidateNoSync();
 }
 
-void GLAsynchronousMapRenderable3::draw(const GLMapView2 &view, int renderPass) NOTHROWS
+void GLAsynchronousMapRenderable3::draw(const GLGlobeBase &view, int renderPass) NOTHROWS
 {
     if (!(renderPass&getRenderPass()))
         return;
@@ -83,9 +83,12 @@ void GLAsynchronousMapRenderable3::draw(const GLMapView2 &view, int renderPass) 
     code = lock.status;
 
     if (!initialized_) {
-        // XXX - check error codes !!!
-        code = newViewStateInstance(prepared_state_);
-        code = newViewStateInstance(target_state_);
+        surface_ctrl_ = view.getSurfaceRendererControl();
+
+        // force refresh
+        prepared_state_.drawVersion = ~view.renderPasses[0u].drawVersion;
+        target_state_.drawVersion = ~view.renderPasses[0u].drawVersion;
+        invalid_ = true;
 
         background_worker_.reset(new WorkerThread(*this));
 
@@ -102,8 +105,14 @@ void GLAsynchronousMapRenderable3::draw(const GLMapView2 &view, int renderPass) 
         cancelled_ = false;
     }
 
-    if(target_state_->drawVersion != view.drawVersion)
-        target_state_->set(view);
+    const bool hasNonSurface = !!(getRenderPass()&~(GLGlobeBase::Surface|GLGlobeBase::Surface2));
+    const int passTest = hasNonSurface ? ~(GLGlobeBase::Surface|GLGlobeBase::Surface2) : getRenderPass();
+        
+    // if the target state has not already been computed for the pump and
+    // it is a sprite pass if there is any sprite content or there is a pass
+    // match and there is not any sprite content, update the target state
+    if ((target_state_.drawVersion != view.renderPasses[0u].drawVersion) && (passTest & renderPass) != 0)
+        target_state_ = view.renderPasses[0u];
     if (shouldQuery()) {
         if (!servicing_request_) {
             lock.signal();
@@ -111,6 +120,23 @@ void GLAsynchronousMapRenderable3::draw(const GLMapView2 &view, int renderPass) 
             cancelled_ = true;
             lock.signal();
         }
+    }
+
+    // if surface only pass, ignore outside of current AOI
+    if ((renderPass & ~(GLGlobeBase::Surface | GLGlobeBase::Surface2)) == 0) {
+        Envelope2 aois[2];
+        std::size_t numAois = 0u;
+        if (prepared_state_.crossesIDL) {
+            aois[numAois++] = Envelope2(prepared_state_.westBound, prepared_state_.southBound, 0.0, 180.0, prepared_state_.northBound, 0.0);
+            aois[numAois++] = Envelope2(-180.0, prepared_state_.southBound, 0.0, prepared_state_.eastBound, prepared_state_.northBound, 0.0);
+        } else {
+            aois[numAois++] = Envelope2(prepared_state_.westBound, prepared_state_.southBound, 0.0, prepared_state_.eastBound, prepared_state_.northBound, 0.0);
+        }
+        bool isect = false;
+        for (std::size_t i = 0; i < numAois; i++)
+            isect |= SpatialCalculator_intersects(Envelope2(view.renderPass->westBound, view.renderPass->southBound, 0.0, view.renderPass->eastBound, view.renderPass->northBound, 0.0), aois[i]);
+        if (!isect)
+            return;
     }
 
     // lock the renderables for read
@@ -161,9 +187,6 @@ void GLAsynchronousMapRenderable3::release() NOTHROWS
     {
         Monitor::Lock lock(monitor_);
 
-        prepared_state_.reset();
-        target_state_.reset();
-
         {
             WriteLock wlock(renderables_mutex_);
             releaseImpl();
@@ -172,105 +195,15 @@ void GLAsynchronousMapRenderable3::release() NOTHROWS
         initialized_ = false;
         // release lock
     }
+
+    if (surface_ctrl_) {
+        surface_ctrl_->markDirty();
+    }
 }
 
 TAKErr GLAsynchronousMapRenderable3::releaseImpl() NOTHROWS
 {
     return TE_Ok;
-}
-
-/*****************************************************************************/
-// View State
-
-GLAsynchronousMapRenderable3::ViewState::ViewState() :
-    drawMapScale(NAN),
-    drawMapResolution(NAN),
-    drawLat(NAN),
-    drawLng(NAN),
-    drawRotation(NAN),
-    animationFactor(NAN),
-    drawVersion(-1),
-    drawSrid(-1),
-    westBound(NAN),
-    southBound(NAN),
-    northBound(NAN),
-    eastBound(NAN),
-    upperLeft(NAN, NAN),
-    upperRight(NAN, NAN),
-    lowerRight(NAN, NAN),
-    lowerLeft(NAN, NAN),
-    targetMapScale(NAN),
-    targetLat(NAN),
-    targetLng(NAN),
-    targetRotation(NAN),
-    _left(-1),
-    _right(-1),
-    _top(-1),
-    _bottom(-1),
-    focusx(NAN),
-    focusy(NAN),
-    settled(false),
-    crossesIDL(false)
-{}
-
-GLAsynchronousMapRenderable3::ViewState::~ViewState()
-{}
-
-
-void GLAsynchronousMapRenderable3::ViewState::set(const GLMapView2 &view)
-{
-    drawMapScale = view.drawMapScale;
-    drawMapResolution = view.drawMapResolution;
-    drawLat = view.drawLat;
-    drawLng = view.drawLng;
-    drawRotation = view.drawRotation;
-    animationFactor = view.animationFactor;
-    drawVersion = view.drawVersion;
-    drawSrid = view.drawSrid;
-    westBound = view.westBound;
-    southBound = view.southBound;
-    northBound = view.northBound;
-    eastBound = view.eastBound;
-    upperLeft = view.upperLeft;
-    upperRight = view.upperRight;
-    lowerRight = view.lowerRight;
-    lowerLeft = view.lowerLeft;
-    _left = view.left;
-    _right = view.right;
-    _top = view.top;
-    _bottom = view.bottom;
-    focusx = view.focusx;
-    focusy = view.focusy;
-    settled = view.settled;
-    crossesIDL = view.crossesIDL;
-}
-
-void GLAsynchronousMapRenderable3::ViewState::copy(const ViewState &view)
-{
-    drawMapScale = view.drawMapScale;
-    drawMapResolution = view.drawMapResolution;
-    drawLat = view.drawLat;
-    drawLng = view.drawLng;
-    drawRotation = view.drawRotation;
-    animationFactor = view.animationFactor;
-    drawVersion = view.drawVersion;
-    drawSrid = view.drawSrid;
-    westBound = view.westBound;
-    southBound = view.southBound;
-    northBound = view.northBound;
-    eastBound = view.eastBound;
-    upperLeft = view.upperLeft;
-    upperRight = view.upperRight;
-    lowerRight = view.lowerRight;
-    lowerLeft = view.lowerLeft;
-    _left = view._left;
-    _right = view._right;
-    _top = view._top;
-    _bottom = view._bottom;
-    focusx = view.focusx;
-    focusy = view.focusy;
-    settled = view.settled;
-    crossesIDL = view.crossesIDL;
 }
 
 /*****************************************************************************/
@@ -297,8 +230,7 @@ void GLAsynchronousMapRenderable3::WorkerThread::asyncRunImpl() {
     QueryContextPtr pendingData(nullptr, nullptr);
     try {
         code = owner_.createQueryContext(pendingData);
-        ViewStatePtr queryState(nullptr, nullptr);
-        code = owner_.newViewStateInstance(queryState);
+        GLGlobeBase::State queryState;
         while (true) {
             {
                 Monitor::Lock lock(owner_.monitor_);
@@ -312,7 +244,15 @@ void GLAsynchronousMapRenderable3::WorkerThread::asyncRunImpl() {
                     code = wlock.status;
                     TE_CHECKBREAK_CODE(code);
                     if (owner_.servicing_request_ && owner_.updateRenderableLists(*pendingData) == TE_Ok) {
-                        owner_.prepared_state_->copy(*queryState);
+                        owner_.prepared_state_ = queryState;
+                        if (owner_.surface_ctrl_ && (owner_.getRenderPass()&(GLGlobeBase::Surface|GLGlobeBase::Surface2))) {
+                            if (owner_.prepared_state_.crossesIDL) {
+                                owner_.surface_ctrl_->markDirty(Envelope2(owner_.prepared_state_.westBound, owner_.prepared_state_.southBound, 0.0, 180.0, owner_.prepared_state_.northBound, 0.0), false);
+                                owner_.surface_ctrl_->markDirty(Envelope2(-180.0, owner_.prepared_state_.southBound, 0.0, owner_.prepared_state_.eastBound, owner_.prepared_state_.northBound, 0.0), false);
+                            } else {
+                                owner_.surface_ctrl_->markDirty(Envelope2(owner_.prepared_state_.westBound, owner_.prepared_state_.southBound, 0.0, owner_.prepared_state_.eastBound, owner_.prepared_state_.northBound, 0.0), false);
+                    }
+                }
                     }
                 }
 
@@ -327,13 +267,13 @@ void GLAsynchronousMapRenderable3::WorkerThread::asyncRunImpl() {
 
                 // copy the target state to query outside of the
                 // synchronized block
-                queryState->copy(*owner_.target_state_);
+                queryState = owner_.target_state_;
                 owner_.invalid_ = false;
                 owner_.servicing_request_ = true;
                 owner_.cancelled_ = false;
             }
 
-            code = owner_.query(*pendingData, *queryState);
+            code = owner_.query(*pendingData, queryState);
         }
     }
     catch (...) { }

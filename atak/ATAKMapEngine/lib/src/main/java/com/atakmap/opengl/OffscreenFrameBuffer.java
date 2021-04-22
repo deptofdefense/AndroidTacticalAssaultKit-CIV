@@ -133,7 +133,7 @@ public final class OffscreenFrameBuffer {
                         GLES30.GL_DEPTH_ATTACHMENT,
                         GLES30.GL_TEXTURE_2D, result.depthTexture, 0);
             } else {
-                GLES30.glFramebufferRenderbuffer(GLES30.GL_FRAMEBUFFER, GLES30.GL_DEPTH_ATTACHMENT, GLES30.GL_RENDERBUFFER, fbo[0]);
+                GLES30.glFramebufferRenderbuffer(GLES30.GL_FRAMEBUFFER, GLES30.GL_DEPTH_ATTACHMENT, GLES30.GL_RENDERBUFFER, fbo[1]);
             }
             if(GLES30.glGetError() != GLES30.GL_NO_ERROR)
                 break;

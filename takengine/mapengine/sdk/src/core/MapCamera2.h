@@ -10,6 +10,8 @@
 #endif
 #endif
 
+#include <cmath>
+
 #include "math/Matrix2.h"
 #include "math/Point2.h"
 
@@ -33,13 +35,17 @@ namespace TAK {
                 Math::Matrix2 modelView;
                 Math::Point2<double> target;
                 Math::Point2<double> location;
-                double roll;
-                double azimuth;
-                double elevation;
-                double near;
-                double far;
+                double roll {0.0};
+                double azimuth {0.0};
+                double elevation {-90.0};
+                double near {1.0};
+                double nearMeters;
+                double far {-1.0};
+                double farMeters;
                 double fov;
-                double aspectRatio;
+                double aspectRatio {1.0};
+                /** If not `NAN`, indicates computed AGL of the camera */
+                double agl {NAN};
                 Mode mode;
             };
 

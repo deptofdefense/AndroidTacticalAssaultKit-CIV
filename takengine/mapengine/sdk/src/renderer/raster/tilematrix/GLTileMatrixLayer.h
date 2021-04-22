@@ -71,7 +71,7 @@ namespace TAK {
                         /*************************************************************/
                         // GLMapRenderable2 (via GLMapLayer2)
 
-                        void draw(const Core::GLMapView2 &view, const int renderPass) NOTHROWS;
+                        void draw(const Core::GLGlobeBase &view, const int renderPass) NOTHROWS;
                         void release() NOTHROWS;
                         int getRenderPass() NOTHROWS;
                         void start() NOTHROWS;
@@ -79,7 +79,7 @@ namespace TAK {
 
                         /*************************************************************/
                         // Misc public
-                        void debugDraw(const Core::GLMapView2 &view);
+                        void debugDraw(const Core::GLGlobeBase &view);
 
                     };
                 }

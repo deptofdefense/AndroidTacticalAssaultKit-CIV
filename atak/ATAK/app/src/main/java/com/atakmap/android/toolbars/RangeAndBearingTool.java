@@ -91,14 +91,10 @@ public class RangeAndBearingTool extends ButtonTool implements
         _mapView.getMapTouchController().setToolActive(true);
 
         if (_pt1 == null)
-            TextContainer.getInstance()
-                    .displayPrompt(_mapView.getResources().getString(
-                            R.string.rb_prompt));
+            prompt(R.string.rb_prompt);
         else {
             TextContainer.getInstance().closePrompt();
-            TextContainer.getInstance().displayPrompt(
-                    _mapView.getResources().getString(
-                            R.string.rb_measure_prompt));
+            prompt(R.string.rb_measure_prompt);
         }
         return true;
     }
@@ -151,19 +147,14 @@ public class RangeAndBearingTool extends ButtonTool implements
 
     @Override
     public void onMapEvent(MapEvent event) {
-        GeoPointMetaData point = null;
-        if (event.getPoint() != null)
-            point = _mapView.inverseWithElevation(event.getPoint().x,
-                    event.getPoint().y);
+        GeoPointMetaData point = findPoint(event);
         switch (event.getType()) {
             case MapEvent.MAP_CLICK:
             case MapEvent.MAP_LONG_PRESS:
                 if (_pt1 == null) {
                     _pt1 = createRabEndpoint(point);
                     TextContainer.getInstance().closePrompt();
-                    TextContainer.getInstance().displayPrompt(
-                            _mapView.getResources().getString(
-                                    R.string.rb_measure_prompt));
+                    prompt(R.string.rb_measure_prompt);
                 } else if (_pt2 == null) {
                     _pt2 = createRabEndpoint(point);
                     makeRabWidget();
@@ -192,9 +183,7 @@ public class RangeAndBearingTool extends ButtonTool implements
                     if (_pt1 == null) {
                         _pt1 = (PointMapItem) item;
                         TextContainer.getInstance().closePrompt();
-                        TextContainer.getInstance()
-                                .displayPrompt(_mapView.getContext().getString(
-                                        R.string.rb_prompt3));
+                        prompt(R.string.rb_prompt3);
                     } else if (_pt2 == null) {
                         if (item != _pt1) {
                             _pt2 = (PointMapItem) item;
@@ -204,14 +193,10 @@ public class RangeAndBearingTool extends ButtonTool implements
                     }
                 } else if (item instanceof Shape) {
                     // Shape selected from deconfliction menu
-                    point = GeoPointMetaData
-                            .wrap(((Shape) item).findTouchPoint());
                     if (_pt1 == null) {
                         _pt1 = createRabEndpoint(point);
                         TextContainer.getInstance().closePrompt();
-                        TextContainer.getInstance().displayPrompt(
-                                _mapView.getResources().getString(
-                                        R.string.rb_measure_prompt));
+                        prompt(R.string.rb_measure_prompt);
                     } else if (_pt2 == null) {
                         _pt2 = createRabEndpoint(point);
                         makeRabWidget();
@@ -251,5 +236,11 @@ public class RangeAndBearingTool extends ButtonTool implements
         pt.setMetaString("menu", "menus/rab_endpoint_menu.xml");
         _rabGroup.addItem(pt);
         return pt;
+    }
+
+    synchronized protected void prompt(int stringId) {
+        TextContainer.getInstance().displayPrompt(
+                _mapView.getResources()
+                        .getString(stringId));
     }
 }

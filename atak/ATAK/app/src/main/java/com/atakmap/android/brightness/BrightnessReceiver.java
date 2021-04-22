@@ -9,8 +9,11 @@ import android.preference.PreferenceManager;
 
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.widgets.SeekBarControl;
+import com.atakmap.map.MapControl;
+import com.atakmap.map.layer.control.SurfaceRendererControl;
 import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.math.MathUtils;
+import com.atakmap.util.Visitor;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -106,6 +109,11 @@ public class BrightnessReceiver extends BroadcastReceiver implements
         _prefs.edit()
                 .putInt(BRIGHT_PREF, _brightness.intValue())
                 .apply();
+
+        final SurfaceRendererControl ctrl = _mapView.getRenderer3()
+                .getControl(SurfaceRendererControl.class);
+        if (ctrl != null)
+            ctrl.markDirty();
     }
 
     @Override

@@ -5,6 +5,7 @@ import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.io.ZipVirtualFile;
+import com.atakmap.map.MapRenderer2;
 import com.atakmap.map.MapSceneModel;
 import com.atakmap.map.layer.control.ColorControl;
 import com.atakmap.map.layer.control.Controls;
@@ -546,7 +547,7 @@ final class GLContextCaptureTile implements GLTileNode, Controls {
                 meshes.locks++;
             }
 
-            final MapSceneModel sm = ((GLMapSurface)ctx.getRenderContext()).getMapView().getSceneModel();
+            final MapSceneModel sm = ctx.getMapSceneModel(false, MapRenderer2.DisplayOrigin.UpperLeft);
             boolean retval = false;
             for (GLMesh mesh : meshes.data) {
                 // XXX - need to find closest hit

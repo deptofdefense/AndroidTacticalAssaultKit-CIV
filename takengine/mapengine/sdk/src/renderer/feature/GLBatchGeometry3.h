@@ -56,14 +56,14 @@ namespace TAK {
 
                     virtual Util::TAKErr setAltitudeMode(const TAK::Engine::Feature::AltitudeMode altitude_mode) NOTHROWS;
 
-                    virtual void draw(const TAK::Engine::Renderer::Core::GLMapView2 &view, const int renderPass) NOTHROWS override = 0;
+                    virtual void draw(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const int renderPass) NOTHROWS override = 0;
                     virtual int getRenderPass() NOTHROWS override;
                     virtual void start() NOTHROWS override;
                     virtual void stop() NOTHROWS override;
 
                     virtual void release() NOTHROWS override = 0;
 
-                    virtual Util::TAKErr batch(const TAK::Engine::Renderer::Core::GLMapView2 &view, const int renderPass, TAK::Engine::Renderer::GLRenderBatch2 &batch) NOTHROWS  override= 0;
+                    virtual Util::TAKErr batch(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const int renderPass, TAK::Engine::Renderer::GLRenderBatch2 &batch) NOTHROWS  override= 0;
 
                 public:
                     virtual Util::TAKErr setGeometryImpl(BlobPtr &&blob, const int type) NOTHROWS = 0;

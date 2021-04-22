@@ -271,7 +271,10 @@ public class GLRubberModel extends AbstractGLMapItem2 implements
         if (Double.isNaN(_altitudeOffset)) {
             PointD anchorPoint = Models.findAnchorPoint(_model);
             PointD base = _matrix.transform(anchorPoint, null);
-            _altitudeOffset = (view.getTerrainMeshElevation(base.y, base.x) - anchorPoint.z) - (view.getTerrainMeshElevation(_anchorPoint.getLatitude(), _anchorPoint.getLongitude()));
+            _altitudeOffset = (view.getTerrainMeshElevation(base.y, base.x)
+                    - anchorPoint.z)
+                    - (view.getTerrainMeshElevation(_anchorPoint.getLatitude(),
+                            _anchorPoint.getLongitude()));
         }
         if (_updateAltitudeOffset) {
             _modelInfo.localFrame.translate(0, 0, _altitudeOffset);

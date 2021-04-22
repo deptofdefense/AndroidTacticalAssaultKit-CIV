@@ -8,6 +8,8 @@ import com.atakmap.android.maps.Shape.OnPointsChangedListener;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.layer.control.SurfaceRendererControl;
+import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.feature.geometry.LineString;
 import com.atakmap.map.layer.feature.geometry.Polygon;
 import com.atakmap.map.layer.feature.geometry.opengl.GLBatchPolygon;
@@ -30,6 +32,7 @@ public class GLSensorFOV extends GLShape implements OnMetricsChangedListener,
 
     float _extent;
     private final GLBatchPolygon _poly;
+    private SurfaceRendererControl _surfaceControl;
 
     public GLSensorFOV(MapRenderer surface, SensorFOV subject) {
         super(surface, subject);
@@ -41,18 +44,30 @@ public class GLSensorFOV extends GLShape implements OnMetricsChangedListener,
     }
 
     private void refreshStyle() {
-        boolean stroke = strokeWeight > 0;
-        ArrayList<Style> composite = new ArrayList<>();
-        composite.add(new BasicFillStyle(this.fillColor));
-        if (stroke)
-            composite.add(
-                    new BasicStrokeStyle(this.strokeColor, this.strokeWeight));
-        Style s = new CompositeStyle(composite.toArray(new Style[0]));
-        _poly.setStyle(s);
+        renderContext.queueEvent(new Runnable() {
+            @Override
+            public void run() {
+                boolean stroke = strokeWeight > 0;
+                ArrayList<Style> composite = new ArrayList<>();
+                composite.add(new BasicFillStyle(fillColor));
+                if (stroke)
+                    composite.add(
+                            new BasicStrokeStyle(strokeColor, strokeWeight));
+                Style s = new CompositeStyle(composite.toArray(new Style[0]));
+                _poly.setStyle(s);
+
+                if (_surfaceControl != null)
+                    _surfaceControl.markDirty(new Envelope(bounds.getWest(),
+                            bounds.getSouth(), 0d, bounds.getEast(),
+                            bounds.getNorth(), 0d), true);
+            }
+        });
     }
 
     @Override
     public void draw(GLMapView ortho) {
+        if (_surfaceControl == null)
+            _surfaceControl = ortho.getControl(SurfaceRendererControl.class);
         _poly.draw(ortho);
     }
 
@@ -108,34 +123,19 @@ public class GLSensorFOV extends GLShape implements OnMetricsChangedListener,
     @Override
     public void onFillColorChanged(Shape shape) {
         super.onFillColorChanged(shape);
-        renderContext.queueEvent(new Runnable() {
-            @Override
-            public void run() {
-                refreshStyle();
-            }
-        });
+        refreshStyle();
     }
 
     @Override
     public void onStrokeColorChanged(Shape shape) {
         super.onStrokeColorChanged(shape);
-        renderContext.queueEvent(new Runnable() {
-            @Override
-            public void run() {
-                refreshStyle();
-            }
-        });
+        refreshStyle();
     }
 
     @Override
     public void onStrokeWeightChanged(Shape shape) {
         super.onStrokeWeightChanged(shape);
-        renderContext.queueEvent(new Runnable() {
-            @Override
-            public void run() {
-                refreshStyle();
-            }
-        });
+        refreshStyle();
     }
 
     private void _setMetrics(float azimuth, float fov, float extent) {

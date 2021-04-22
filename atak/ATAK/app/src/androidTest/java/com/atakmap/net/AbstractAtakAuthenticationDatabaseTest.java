@@ -145,4 +145,5 @@ public abstract class AbstractAtakAuthenticationDatabaseTest
             assertNull(creds);
         }
     }
+
 }

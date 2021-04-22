@@ -25,11 +25,6 @@
               android:layout_width="fill_parent"
               android:layout_height="fill_parent"
               android:layout_weight="12" >
-
-              <FrameLayout
-                  android:id="@+id/left_side_panel_container"
-                  android:layout_width="wrap_content"
-                  android:layout_height="match_parent" />
      
               <FrameLayout
                   android:id="@+id/main_map_container"
@@ -43,6 +38,11 @@
                       android:layout_height="fill_parent" />
           
               </FrameLayout>
+
+             <FrameLayout
+                 android:id="@+id/left_side_panel_container"
+                 android:layout_width="wrap_content"
+                 android:layout_height="match_parent" />
      
               <FrameLayout
                   android:id="@+id/right_side_panel_container"

@@ -211,8 +211,8 @@ public final class Bitmap {
 
         final int dstOriginX = (int)bnds.left;
         final int dstOriginY = (int)bnds.top;
-        final int dstWidth = (int)Math.ceil(bnds.right-bnds.left);
-        final int dstHeight = (int)Math.ceil(bnds.top-bnds.bottom);
+        final int dstWidth = (int)Math.abs(Math.ceil(bnds.right-bnds.left));
+        final int dstHeight = (int)Math.abs(Math.ceil(bnds.top-bnds.bottom));
 
         BufferedImage image = new BufferedImage(dstWidth, dstHeight, src.image.getType());
         if(isVerticalFlip(matrix)) {

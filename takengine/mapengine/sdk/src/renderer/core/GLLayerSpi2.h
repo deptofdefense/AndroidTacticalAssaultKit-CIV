@@ -4,7 +4,7 @@
 #include <memory>
 
 #include "port/Platform.h"
-#include "renderer/core/GLLayer2.h"
+#include "renderer/core/GLGlobeBase.h"
 #include "renderer/core/GLMapView2.h"
 #include "util/Error.h"
 
@@ -15,7 +15,7 @@ namespace TAK {
                 class ENGINE_API GLLayerSpi2
                 {
                 public :
-                    virtual Util::TAKErr create(GLLayer2Ptr &value, GLMapView2 &renderer, TAK::Engine::Core::Layer2 &subject) NOTHROWS = 0;
+                    virtual Util::TAKErr create(GLLayer2Ptr &value, GLGlobeBase &renderer, TAK::Engine::Core::Layer2 &subject) NOTHROWS = 0;
                     virtual ~GLLayerSpi2() NOTHROWS = 0;
                 };
 
