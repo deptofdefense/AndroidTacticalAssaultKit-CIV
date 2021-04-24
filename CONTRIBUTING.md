@@ -17,7 +17,7 @@ There are several ways in which you can help improve this project:
 
 ## Getting Started
 
-ATAK-CIV is a andorid application and software development kit. 
+ATAK-CIV is an Android application and software development kit. 
 
 ## Making Changes
 
