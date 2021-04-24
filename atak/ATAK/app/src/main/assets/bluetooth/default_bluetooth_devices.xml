@@ -21,5 +21,6 @@
     <device name="GNSS"             readerClass="com.atakmap.android.gps.bluetooth.BluetoothGPSNMEAReader"/>
     <device name="XGPS"             readerClass="com.atakmap.android.gps.bluetooth.BluetoothGPSNMEAReader"/>
     <device name="Garmin GLO"       readerClass="com.atakmap.android.gps.bluetooth.BluetoothGPSNMEAReader"/>
+    <device name="LTAC-BFT"         readerClass="com.atakmap.android.cot.bluetooth.BluetoothSerialCotReader" />
 
 </bluetooth>
