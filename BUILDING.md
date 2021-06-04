@@ -8,16 +8,15 @@ ATAK primarily uses a gradle based build system. We recommend Android Studio as 
 
 https://developer.android.com/studio
 
-### Android NDK r12b
+### Android NDK r21
 
 Unless otherwise noted, all shared objects in ATAK that are compiled from source are compiled using NDK r12b.  
 
 Direct download links:  
 
-* Windows 32-bit https://dl.google.com/android/repository/android-ndk-r12b-windows-x86.zip
-* Windows 64-bit https://dl.google.com/android/repository/android-ndk-r12b-windows-x86_64.zip
-* Mac OS X https://dl.google.com/android/repository/android-ndk-r12b-darwin-x86_64.zip
-* Linux 64-bit https://dl.google.com/android/repository/android-ndk-r12b-linux-x86_64.zip
+* Windows 64-bit https://dl.google.com/android/repository/android-ndk-r21-windows-x86_64.zip
+* Mac OS X https://dl.google.com/android/repository/android-ndk-r21-darwin-x86_64.zip
+* Linux 64-bit https://dl.google.com/android/repository/android-ndk-r21-linux-x86_64.zip
 
 The NDK should be installed in one of the directories that gradle will detect. This includes  
 
@@ -31,7 +30,7 @@ The NDK should be installed in one of the directories that gradle will detect. T
 
 ATAK requires STL Soft 1.9. The repository should be cloned under `takengine/thirdparty/stlsoft`.  
   
-From local repository root:  
+From local repository root, if not using prebuild script:  
 
 ``` sh
 cd takengine/thirdparty
