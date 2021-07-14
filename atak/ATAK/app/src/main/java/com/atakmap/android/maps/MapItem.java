@@ -682,6 +682,9 @@ public abstract class MapItem extends FilterMetaDataHolder implements
         _typeListeners.clear();
         _clickableListeners.clear();
         _zOrderListeners.clear();
+        _onGroupListeners.clear();
+        _onMetadataChangedListeners.clear();
+        _onHeightChanged.clear();
         group = null;
     }
 
