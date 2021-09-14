@@ -320,4 +320,15 @@
 
 # make sure jassimp is happy
 -keep class jassimp.** {*;}
+
+
 -keep class com.atakmap.coremap.filesystem.RemovableStorageHelper {*;}
+
+
+# Specific for 4.3.0.x as to make sure the mapping is not broken.
+-keep class com.atakmap.android.elev.ElevationDownloader {*;}
+-keep class com.atakmap.android.elev.ElevationDownloader$* {*;}
+-keep class com.atakmap.android.elev.ElevationMapComponent {
+        private com.atakmap.android.elev.ElevationDownloader _downloader;
+}
+

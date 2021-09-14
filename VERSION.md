@@ -1,5 +1,11 @@
 # Version History
 
+## 4.3.0.2
+
+* Add auto-download DTED0
+* Support integer-only representations for fill color for CoT shapes
+
+
 ## 4.3.0.1
 
 * Throw out invalid polyline points

@@ -58,7 +58,7 @@ public class PluginTemplateDropDownReceiver extends DropDownReceiver implements
         if (action.equals(SHOW_PLUGIN)) {
 
             Log.d(TAG, "showing plugin drop down");
-            showDropDown(templateView, FULL_WIDTH, FULL_HEIGHT, FULL_WIDTH,
+            showDropDown(templateView, HALF_WIDTH, FULL_HEIGHT, FULL_WIDTH,
                     HALF_HEIGHT, false);
         }
     }

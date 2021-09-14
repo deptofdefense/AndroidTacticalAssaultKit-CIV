@@ -36,6 +36,7 @@ public class ElevationMapComponent extends AbstractMapComponent {
     private final Set<Dt2MosaicDatabase> dt2dbs = Collections
             .newSetFromMap(new IdentityHashMap<Dt2MosaicDatabase, Boolean>());
     private Dt2OutlineMapOverlay _outlineOverlay;
+    private ElevationDownloader _downloader;
 
     @Override
     public void onCreate(Context context, Intent intent, MapView view) {
@@ -70,7 +71,11 @@ public class ElevationMapComponent extends AbstractMapComponent {
         for (String srtmPath : srtmPaths)
             SrtmElevationSource.mountDirectory(new File(srtmPath));
 
+        // DTED tile outlines
         _outlineOverlay = new Dt2OutlineMapOverlay(view);
+
+        // Automatic DTED downloader
+        _downloader = new ElevationDownloader(view);
     }
 
     public static String[] findDtedPaths() {
@@ -100,6 +105,7 @@ public class ElevationMapComponent extends AbstractMapComponent {
 
         ElevationManager.unregisterDataSpi(Dt2ElevationData.SPI);
         _outlineOverlay.dispose();
+        _downloader.dispose();
     }
 
     private final OnPointChangedListener _onPointChangedListener = new OnPointChangedListener() {
