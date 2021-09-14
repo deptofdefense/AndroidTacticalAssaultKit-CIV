@@ -174,11 +174,22 @@ public class ShapeDetailHandler extends CotDetailHandler {
             points.add(GeoPointMetaData.wrap(point));
         }
 
-        int color = _getColorAttr(polyline, "color");
+        final int color = _getColorAttr(polyline, "color");
         poly.setStrokeColor(color);
-        poly.setFillColor(Color.argb(45, Color.red(color),
-                Color.green(color),
-                Color.blue(color)));
+
+
+        final String fillColorStr = polyline.getAttribute("fillColor");
+        if (!FileSystemUtils.isEmpty(fillColorStr)) {
+             int fillColor = _getColorAttr(polyline, "fillColor");
+
+             System.out.println("shb: " + fillColor);
+             poly.setFillColor(fillColor);
+        } else { 
+             // legacy behavior
+             poly.setFillColor(Color.argb(45, Color.red(color),
+                    Color.green(color),
+                    Color.blue(color)));
+        }
 
         poly.setStyle(polyStyle | Polyline.STYLE_OUTLINE_STROKE_MASK);
         poly.setStrokeWeight(2d);
@@ -222,10 +233,13 @@ public class ShapeDetailHandler extends CotDetailHandler {
         if (colorString != null) {
             try {
                 color = Color.parseColor(colorString);
-            } catch (Exception ex) {
-                Log.w(TAG, "Ignoring color: " + colorString);
+            } catch (Exception ignored) {
+                try { 
+                    color = Integer.parseInt(colorString);
+                } catch (Exception ignore) {}
             }
         }
+       
         return color;
     }
 }

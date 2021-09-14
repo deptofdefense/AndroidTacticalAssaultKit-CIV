@@ -1,6 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen
   xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+        android:title="Elevation Data">
+
+        <com.atakmap.android.gui.PanEditTextPreference
+            android:title="Elevation Server"
+            android:key="prefs_dted_stream_server"
+            android:summary="The publicly facing elevation server to pull data from"
+            android:defaultValue="tak.gov"
+            android:inputType="textUri" />
+
+        <com.atakmap.android.gui.PanPreference
+            android:title="Elevation Downloader"
+            android:key="prefs_dted_download"
+            android:summary="Attempts to mass download elevation data for the entire world from the server and gives the user options for which hemisphere they are in." />
+
+        <CheckBoxPreference
+            android:title="Stream Elevation Data"
+            android:key="prefs_dted_stream"
+            android:summary="Stream elevation data when missing instead of downloading the entire world."
+            android:defaultValue="true" />
+    </PreferenceCategory>
+
     <PreferenceCategory 
     android:title="@string/elevationPreferences">
         <CheckBoxPreference 
