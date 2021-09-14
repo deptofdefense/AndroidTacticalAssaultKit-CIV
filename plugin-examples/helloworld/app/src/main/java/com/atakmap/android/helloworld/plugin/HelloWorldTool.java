@@ -5,7 +5,6 @@ import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.tools.ActionBarReceiver;
 import com.atakmap.android.tools.BadgeDrawable;
 
-
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -33,7 +32,6 @@ public class HelloWorldTool extends Tool implements ToolDescriptor {
     private final Context context;
     private final LayerDrawable _icon;
 
-
     public HelloWorldTool(final Context context) {
         this.context = context;
 
@@ -41,17 +39,17 @@ public class HelloWorldTool extends Tool implements ToolDescriptor {
         //_icon = AtakLayerDrawableUtil.getInstance(context).getBadgeableIcon(
         //        context.getDrawable(R.drawable.ic_launcher));
 
+        _icon = (LayerDrawable) context.getResources()
+                .getDrawable(R.drawable.ic_launcher_badge, context.getTheme());
 
-        _icon = (LayerDrawable) context.getResources().getDrawable(R.drawable.ic_launcher_badge, context.getTheme());
-
-
-        AtakBroadcast.getInstance().registerReceiver(br, new AtakBroadcast.DocumentedIntentFilter("com.atakmap.android.helloworld.plugin.iconcount"));
+        AtakBroadcast.getInstance().registerReceiver(br,
+                new AtakBroadcast.DocumentedIntentFilter(
+                        "com.atakmap.android.helloworld.plugin.iconcount"));
 
     }
 
-
     private static void setBadgeCount(Context context, LayerDrawable icon,
-                                      int count) {
+            int count) {
         BadgeDrawable badge;
 
         // Reuse drawable if possible
@@ -67,11 +65,9 @@ public class HelloWorldTool extends Tool implements ToolDescriptor {
         icon.setDrawableByLayerId(R.id.ic_badge, badge);
     }
 
-
-
-
     private final BroadcastReceiver br = new BroadcastReceiver() {
         private int count = 0;
+
         @Override
         public void onReceive(Context c, Intent intent) {
             // currently broken
@@ -85,8 +81,6 @@ public class HelloWorldTool extends Tool implements ToolDescriptor {
         }
     };
 
-
-
     @Override
     public String getDescription() {
         return context.getString(R.string.app_name);
@@ -94,7 +88,7 @@ public class HelloWorldTool extends Tool implements ToolDescriptor {
 
     @Override
     public Drawable getIcon() {
-         return _icon;
+        return _icon;
     }
 
     @Override

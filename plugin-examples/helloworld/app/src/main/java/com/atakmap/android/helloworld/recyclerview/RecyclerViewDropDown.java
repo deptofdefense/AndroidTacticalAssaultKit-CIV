@@ -1,3 +1,4 @@
+
 package com.atakmap.android.helloworld.recyclerview;
 
 import android.content.Context;
@@ -130,6 +131,7 @@ public class RecyclerViewDropDown extends DropDownReceiver implements
     }
 
     public void show() {
-        showDropDown(_view, THREE_EIGHTHS_WIDTH, FULL_HEIGHT, FULL_WIDTH, THIRD_HEIGHT);
+        showDropDown(_view, THREE_EIGHTHS_WIDTH, FULL_HEIGHT, FULL_WIDTH,
+                THIRD_HEIGHT);
     }
 }

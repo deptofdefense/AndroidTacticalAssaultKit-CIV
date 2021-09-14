@@ -49,14 +49,16 @@ public class HelloWorldPreferenceFragment extends PluginPreferenceFragment {
 
                         ImportFileBrowserDialog.show("Test File Browser",
                                 null,
-                                new String[]{
+                                new String[] {
                                         ".txt"
-                                },
+                        },
                                 new ImportFileBrowserDialog.DialogDismissed() {
                                     public void onFileSelected(
                                             final File file) {
                                         if (FileSystemUtils.isFile(file)) {
-                                            Toast.makeText(getActivity(), "file: " + file, Toast.LENGTH_SHORT).show();
+                                            Toast.makeText(getActivity(),
+                                                    "file: " + file,
+                                                    Toast.LENGTH_SHORT).show();
                                         }
                                     }
 
@@ -74,7 +76,9 @@ public class HelloWorldPreferenceFragment extends PluginPreferenceFragment {
                 .setOnPreferenceClickListener(new OnPreferenceClickListener() {
                     @Override
                     public boolean onPreferenceClick(Preference p) {
-                        HelloWorldPreferenceFragment.this.showScreen(new HelloWorldSubPreferenceFragment(staticPluginContext));
+                        HelloWorldPreferenceFragment.this
+                                .showScreen(new HelloWorldSubPreferenceFragment(
+                                        staticPluginContext));
                         return true;
                     }
                 });

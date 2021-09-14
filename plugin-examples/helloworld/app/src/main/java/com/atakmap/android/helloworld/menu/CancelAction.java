@@ -1,3 +1,4 @@
+
 package com.atakmap.android.helloworld.menu;
 
 import android.app.AlertDialog;
@@ -17,8 +18,7 @@ public class CancelAction implements MapAction {
             "com.atakmap.android.maps.HIDE_MENU"
     };
 
-    final DialogInterface.OnClickListener handler
-            = new DialogInterface.OnClickListener() {
+    final DialogInterface.OnClickListener handler = new DialogInterface.OnClickListener() {
         @Override
         public void onClick(DialogInterface dialog, int which) {
             for (String cancel : cancelIntents) {
@@ -31,8 +31,8 @@ public class CancelAction implements MapAction {
     @Override
     public void performAction(MapView mapView, MapItem mapItem) {
 
-        AlertDialog.Builder alertBuilder =
-                new AlertDialog.Builder(mapView.getContext());
+        AlertDialog.Builder alertBuilder = new AlertDialog.Builder(
+                mapView.getContext());
         alertBuilder.setTitle("Example Action");
         alertBuilder.setMessage("Can you hear me now?");
 

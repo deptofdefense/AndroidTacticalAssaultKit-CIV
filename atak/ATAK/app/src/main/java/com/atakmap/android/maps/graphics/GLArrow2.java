@@ -12,6 +12,7 @@ import com.atakmap.android.maps.Arrow.OnTextChangedListener;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Shape;
 import com.atakmap.android.maps.Shape.OnPointsChangedListener;
+import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.Vector3D;
@@ -167,6 +168,8 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
 
         _arrowheadVersion = ortho.currentPass.drawVersion;
 
+        // Fetch last 2 points w/ altitude
+        GeoPoint[] pts = new GeoPoint[2];
         float[] points = new float[6];
         for (int i = 0; i < 2; i++) {
             ortho.scratch.geo.set(_pts[_pts.length - (2 - i)]);
@@ -177,11 +180,23 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
             if(ptAgl)
                 ortho.scratch.geo.set(getHae(ortho, ortho.scratch.geo));
 
-            ortho.forward(ortho.scratch.geo, ortho.scratch.pointD);
+            pts[i] = new GeoPoint(ortho.scratch.geo);
+        }
+
+        // Compute the nearby tail end of the arrow for more accurate forward results
+        double distance = pts[1].distanceTo(pts[0]);
+        double bearing = pts[1].bearingTo(pts[0]);
+        double inclination = Math.toDegrees(Math.atan2(pts[0].getAltitude() - pts[1].getAltitude(), distance));
+        pts[0] = DistanceCalculations.computeDestinationPoint(pts[1], bearing, ortho.currentScene.drawMapResolution, inclination);
+
+        // Get the tail and head in screen coordinates so we can calculate the on-screen angle
+        for (int i = 0; i < 2; i++) {
+            ortho.forward(pts[i], ortho.scratch.pointD);
             points[i * 3] = (float) ortho.scratch.pointD.x;
             points[i * 3 + 1] = (float) ortho.scratch.pointD.y;
             points[i * 3 + 2] = (float) ortho.scratch.pointD.z;
         }
+
         int zx = 3, zy = 4, zz = 5;
         int yx = 0, yy = 1;
 

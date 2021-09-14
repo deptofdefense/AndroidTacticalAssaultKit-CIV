@@ -1,3 +1,4 @@
+
 package com.atakmap.android.helloworld;
 
 import android.content.Context;
@@ -52,8 +53,10 @@ public class TabViewDropDown extends DropDownReceiver implements
         fragments.add(new TestFragment().init(_plugin, 2));
         fragments.add(new TestFragment().init(_plugin, 3));
 
-        TestPagerAdapter adapter = new TestPagerAdapter(((FragmentActivity)
-                mapView.getContext()).getSupportFragmentManager(), fragments);
+        TestPagerAdapter adapter = new TestPagerAdapter(
+                ((FragmentActivity) mapView.getContext())
+                        .getSupportFragmentManager(),
+                fragments);
         _viewPager = _view.findViewById(R.id.tab_pager);
         _viewPager.setAdapter(adapter);
         _viewPager.setOnPageChangeListener(this);
@@ -72,7 +75,8 @@ public class TabViewDropDown extends DropDownReceiver implements
     }
 
     public void show() {
-        showDropDown(_view, THREE_EIGHTHS_WIDTH, FULL_HEIGHT, FULL_WIDTH, THIRD_HEIGHT);
+        showDropDown(_view, THREE_EIGHTHS_WIDTH, FULL_HEIGHT, FULL_WIDTH,
+                THIRD_HEIGHT);
     }
 
     @Override
@@ -83,7 +87,8 @@ public class TabViewDropDown extends DropDownReceiver implements
     }
 
     @Override
-    public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+    public void onPageScrolled(int position, float positionOffset,
+            int positionOffsetPixels) {
     }
 
     @Override
@@ -103,7 +108,7 @@ public class TabViewDropDown extends DropDownReceiver implements
 
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                                 Bundle savedInstanceState) {
+                Bundle savedInstanceState) {
             View v = LayoutInflater.from(_plugin).inflate(
                     R.layout.fragment_foo, container, false);
             TextView tv = v.findViewById(R.id.textView1);

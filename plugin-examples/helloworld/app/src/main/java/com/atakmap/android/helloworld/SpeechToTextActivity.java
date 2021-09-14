@@ -61,19 +61,19 @@ public class SpeechToTextActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.speech_to_text);
 
-        btnMGRS =  findViewById(R.id.speakMGRS_btn);
+        btnMGRS = findViewById(R.id.speakMGRS_btn);
         btnDropMarker = findViewById(R.id.dropMarker_btn);
         txtNorthing = findViewById(R.id.northing_txt);
         txtEasting = findViewById(R.id.easting_txt);
-        txtSquareID =  findViewById(R.id.squareID_txt);
-        txtNumericGrid =  findViewById(R.id.numericGrid_txt);
+        txtSquareID = findViewById(R.id.squareID_txt);
+        txtNumericGrid = findViewById(R.id.numericGrid_txt);
         txtAlphaGrid = findViewById(R.id.alphaGrid_txt);
         txtMarkerType = findViewById(R.id.marker_txt);
         txtMarker = findViewById(R.id.marker_type);
         // hide the action bar
         ActionBar bar = getActionBar();
         if (bar != null)
-           bar.hide();
+            bar.hide();
 
         btnMGRS.setOnClickListener(new View.OnClickListener() {
 
@@ -350,55 +350,62 @@ public class SpeechToTextActivity extends Activity {
         //the Second letter in the square id must be between A and V
         //no letters can be O or I
         for (String s : lengthValidatedResults) {
-            if (validatorType.equals(ALPHA_VALIDATOR)) {
-                char[] chars = s.toCharArray();
-                for (char c : chars) {
-                    if (!(Character.isLetter(c))) {
-                        return null;
+            switch (validatorType) {
+                case ALPHA_VALIDATOR: {
+                    char[] chars = s.toCharArray();
+                    for (char c : chars) {
+                        if (!(Character.isLetter(c))) {
+                            return null;
+                        }
+                        if (c == 'O' || c == 'I') {
+                            return null;
+                        }
                     }
-                    if (c == 'O' || c == 'I') {
-                        return null;
+                    if (currentIntent == ALPHA_GRID_INTENT) {
+                        if (chars[0] >= 'C' && chars[0] <= 'X') {
+                            return s;
+                        }
+                    } else {
+                        if (chars[1] >= 'A' && chars[1] <= 'V') {
+                            return s;
+                        }
                     }
+
+                    //Validate Digits
+                    //the only special case is that the numeric portion of the grid must be 1-60
+                    break;
                 }
-                if (currentIntent == ALPHA_GRID_INTENT) {
-                    if (chars[0] >= 'C' && chars[0] <= 'X') {
+                case DIGIT_VALIDATOR: {
+                    char[] chars = s.toCharArray();
+                    for (char c : chars) {
+                        if (!Character.isDigit(c)) {
+                            return null;
+                        }
+                    }
+                    if (currentIntent == NUMERIC_GRID_INTENT) {
+                        if (Integer.parseInt(s) >= 1
+                                && Integer.parseInt(s) <= 60) {
+                            return s;
+                        }
+                    } else {
                         return s;
                     }
-                } else {
-                    if (chars[1] >= 'A' && chars[1] <= 'V') {
-                        return s;
-                    }
-                }
 
-                //Validate Digits
-                //the only special case is that the numeric portion of the grid must be 1-60
-            } else if (validatorType.equals(DIGIT_VALIDATOR)) {
-                char[] chars = s.toCharArray();
-                for (char c : chars) {
-                    if (!Character.isDigit(c)) {
-                        return null;
-                    }
+                    //Ensure our marker type is the correct word and case
+                    break;
                 }
-                if (currentIntent == NUMERIC_GRID_INTENT) {
-                    if (Integer.parseInt(s) >= 1 && Integer.parseInt(s) <= 60) {
-                        return s;
-                    }
-                } else {
-                    return s;
-                }
+                case MARKER_VALIDATOR:
 
-                //Ensure our marker type is the correct word and case
-            } else if (validatorType.equals(MARKER_VALIDATOR)) {
-
-                if (s.equalsIgnoreCase("hostile")) {
-                    return "Hostile";
-                } else if (s.equalsIgnoreCase("friendly")) {
-                    return "Friendly";
-                } else if (s.equalsIgnoreCase("unknown")) {
-                    return "Unknown";
-                } else if (s.equalsIgnoreCase("neutral")) {
-                    return "Neutral";
-                }
+                    if (s.equalsIgnoreCase("hostile")) {
+                        return "Hostile";
+                    } else if (s.equalsIgnoreCase("friendly")) {
+                        return "Friendly";
+                    } else if (s.equalsIgnoreCase("unknown")) {
+                        return "Unknown";
+                    } else if (s.equalsIgnoreCase("neutral")) {
+                        return "Neutral";
+                    }
+                    break;
             }
         }
         //we return null so that we do not continue with any bad data
@@ -456,7 +463,8 @@ public class SpeechToTextActivity extends Activity {
                     Bundle extras = intent
                             .getExtras();
                     if (extras != null) {
-                        HashMap<String, String> s = (HashMap<String, String>) extras.get("mgrsData");
+                        HashMap<String, String> s = (HashMap<String, String>) extras
+                                .get("mgrsData");
                         if (s != null && sdr != null)
                             sdr.onSpeechDataReceived(s);
                     }

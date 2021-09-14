@@ -1,5 +1,12 @@
 # Version History
 
+## 4.3.0.1
+
+* Throw out invalid polyline points
+* Fix R&B arrow direction on globe tilt
+* Handle potential invalid memory accesses for meshes that may not have textures
+* Set a default tessellation threshold (160km) for polyine rendering
+
 ## 4.3.0.0
 
 * Lasso tool to create imagery download regions

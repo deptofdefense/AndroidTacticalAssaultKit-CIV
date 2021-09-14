@@ -1,3 +1,4 @@
+
 package com.atakmap.android.helloworld.speechtotext;
 
 import android.content.Intent;
@@ -23,21 +24,23 @@ public class SpeechDetailOpener {
      * @param view - view from the HelloWorldDropDownReceiver. Needed to get the self marker. And to get the mapGroups
      */
     public SpeechDetailOpener(String speech, MapView view) {
-        MapGroup cotGroup = view.getRootGroup().findMapGroup("Cursor on Target");
+        MapGroup cotGroup = view.getRootGroup()
+                .findMapGroup("Cursor on Target");
         MapItem item = cotGroup.deepFindItem("callsign", speech);
-        Intent detailOpener = new Intent().setAction(CoTInfoBroadcastReceiver.COTINFO_DETAILS);
+        Intent detailOpener = new Intent()
+                .setAction(CoTInfoBroadcastReceiver.COTINFO_DETAILS);
         boolean self = false;
         if (speech.contains("my")) {
             detailOpener.putExtra("targetUID", view.getSelfMarker().getUID());
             self = true;
         }
         if (item == null && !self) {
-            Toast.makeText(view.getContext(), "Callsign not found", Toast.LENGTH_SHORT).show();
-        } else if(item!=null){
+            Toast.makeText(view.getContext(), "Callsign not found",
+                    Toast.LENGTH_SHORT).show();
+        } else if (item != null) {
             detailOpener.putExtra("targetUID", item.getUID());
         }
         AtakBroadcast.getInstance().sendBroadcast(detailOpener);
-
 
     }
 }

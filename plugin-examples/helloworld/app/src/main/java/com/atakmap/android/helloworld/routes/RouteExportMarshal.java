@@ -12,7 +12,6 @@ import com.atakmap.android.importexport.Exportable;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.routes.Route;
-import com.atakmap.coremap.cot.event.CotEvent;
 
 import java.util.Collection;
 import java.util.List;

@@ -283,6 +283,7 @@ public class HelloWorldMapOverlay extends AbstractMapOverlay2 {
             _layer = layer;
             _multilayer = null;
         }
+
         LayerHierarchyListItem(ExampleMultiLayer multilayer) {
             _multilayer = multilayer;
             _layer = null;
@@ -383,7 +384,8 @@ public class HelloWorldMapOverlay extends AbstractMapOverlay2 {
         @Override
         public boolean goTo(boolean select) {
             if (_layer != null) {
-                ATAKUtilities.scaleToFit(_mapView, _layer.getPoints(), _mapView.getWidth(), _mapView.getHeight());
+                ATAKUtilities.scaleToFit(_mapView, _layer.getPoints(),
+                        _mapView.getWidth(), _mapView.getHeight());
                 if (select) {
                     MenuLayoutWidget mw = MapMenuReceiver.getMenuWidget();
                     if (mw != null) {
@@ -393,7 +395,8 @@ public class HelloWorldMapOverlay extends AbstractMapOverlay2 {
                 }
             }
             if (_multilayer != null) {
-                ATAKUtilities.scaleToFit(_mapView, _multilayer.getPoints(), _mapView.getWidth(), _mapView.getHeight());
+                ATAKUtilities.scaleToFit(_mapView, _multilayer.getPoints(),
+                        _mapView.getWidth(), _mapView.getHeight());
                 if (select) {
                     MenuLayoutWidget mw = MapMenuReceiver.getMenuWidget();
                     if (mw != null) {

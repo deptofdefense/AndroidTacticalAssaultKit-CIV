@@ -1,3 +1,4 @@
+
 package com.atakmap.android.helloworld.speechtotext;
 
 import android.content.Context;
@@ -21,13 +22,14 @@ public class SpeechNineLine extends SpeechActivity {
     private final String TAG = "SPEECH_NINE_LINE";
     private String target;
     private final MapGroup cotGroup;
+
     /**
      * Finds the described marker
      * @param input - the marker wanted
      * @param view - needed to get map groups
      */
-    public SpeechNineLine(String input, MapView view, Context pluginContext){
-        super(view,pluginContext);
+    public SpeechNineLine(String input, MapView view, Context pluginContext) {
+        super(view, pluginContext);
         cotGroup = view.getRootGroup().findMapGroup("Cursor on Target");
         analyzeSpeech(input);
         startActivity();
@@ -40,19 +42,22 @@ public class SpeechNineLine extends SpeechActivity {
      */
     @Override
     void analyzeSpeech(String input) {
-        String[] onArray = getPluginContext().getResources().getStringArray(R.array.at_array);
+        String[] onArray = getPluginContext().getResources()
+                .getStringArray(R.array.at_array);
         int indexOn = -1;
         String[] inputArr = input.split(" ");
         //Get the index of "on" style word in input
-        for(int i = 0;i < inputArr.length;i++){
-            for(String s : onArray){
-                if(s.equalsIgnoreCase(inputArr[i]))
+        for (int i = 0; i < inputArr.length; i++) {
+            for (String s : onArray) {
+                if (s.equalsIgnoreCase(inputArr[i])) {
                     indexOn = i;
+                    break;
+                }
             }
         }
         //Now build the words after "on" into the callsign
         StringBuilder targetBuilder = new StringBuilder();
-        for(int i = indexOn+1;i<inputArr.length;i++){
+        for (int i = indexOn + 1; i < inputArr.length; i++) {
             targetBuilder.append(inputArr[i]);
             targetBuilder.append(" ");
         }
@@ -66,14 +71,15 @@ public class SpeechNineLine extends SpeechActivity {
      */
     @Override
     void startActivity() {
-        MapItem marker = cotGroup.deepFindItem("callsign",target);
-        if(marker != null){
-            Intent intent = new Intent().setAction("com.atakmap.baokit.NINE_LINE");
-            intent.putExtra("targetUID",marker.getUID());
+        MapItem marker = cotGroup.deepFindItem("callsign", target);
+        if (marker != null) {
+            Intent intent = new Intent()
+                    .setAction("com.atakmap.baokit.NINE_LINE");
+            intent.putExtra("targetUID", marker.getUID());
             AtakBroadcast.getInstance().sendBroadcast(intent);
-        }
-        else{
-            Toast.makeText(getView().getContext(),"Callsign not found",Toast.LENGTH_SHORT   ).show();
+        } else {
+            Toast.makeText(getView().getContext(), "Callsign not found",
+                    Toast.LENGTH_SHORT).show();
         }
 
     }

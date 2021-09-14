@@ -1,3 +1,4 @@
+
 package com.atakmap.android.helloworld.speechtotext;
 
 import android.content.Context;
@@ -14,7 +15,7 @@ import com.atakmap.android.maps.MapView;
  * Class that takes in speech input: Change brightness to xxx
  * Gets x then sends it to the brightness receiver to change the brightness
  */
- public class SpeechBrightness extends SpeechActivity {
+public class SpeechBrightness extends SpeechActivity {
     private final String[] highArray;
     private final String[] mediumArray;
     private final String[] lowArray;
@@ -24,9 +25,12 @@ import com.atakmap.android.maps.MapView;
 
     public SpeechBrightness(MapView view, Context pluginContext, String input) {
         super(view, pluginContext);
-        highArray = getPluginContext().getResources().getStringArray(R.array.high_array);
-        mediumArray = getPluginContext().getResources().getStringArray(R.array.medium_array);
-        lowArray = getPluginContext().getResources().getStringArray(R.array.low_array);
+        highArray = getPluginContext().getResources()
+                .getStringArray(R.array.high_array);
+        mediumArray = getPluginContext().getResources()
+                .getStringArray(R.array.medium_array);
+        lowArray = getPluginContext().getResources()
+                .getStringArray(R.array.low_array);
         analyzeSpeech(input);
     }
 
@@ -69,12 +73,15 @@ import com.atakmap.android.maps.MapView;
                 try {
                     value = Integer.parseInt(x);
                 } catch (NumberFormatException e) {
-                    Toast.makeText(getView().getContext(), "Invalid brightness", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getView().getContext(), "Invalid brightness",
+                            Toast.LENGTH_SHORT).show();
                 }
                 startActivity();
             }
         } else
-            Toast.makeText(getView().getContext(), "Example: Change brightness to high", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getView().getContext(),
+                    "Example: Change brightness to high", Toast.LENGTH_SHORT)
+                    .show();
     }
 
     /**

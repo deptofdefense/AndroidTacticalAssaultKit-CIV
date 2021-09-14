@@ -1,3 +1,4 @@
+
 package com.atakmap.android.helloworld.speechtotext;
 
 import android.app.Activity;
@@ -45,7 +46,6 @@ public class SpeechToActivity extends Activity {
     public static final String EMERGENCY_TYPE = "com.atakmap.android.helloworld.EMERGENCYTYPE";
     public static final String ACTIVITY_INTENT = "com.atakmap.android.helloworld.ACTIVITY";
 
-
     private final int REQ_CODE_SPEECH_INPUT = 100;
 
     private static final String TAG = "SpeechToActivity";
@@ -72,7 +72,6 @@ public class SpeechToActivity extends Activity {
     private Intent returnIntent;
     private final Bundle activities = new Bundle();
 
-
     /**
      * This is what gets triggered when a user hits the Speech to Activity button.
      * It loads in all the synonym arrays, creates the intent and calls the promptSpeechInput()
@@ -95,8 +94,9 @@ public class SpeechToActivity extends Activity {
         emergencyArray = resources.getStringArray(R.array.emergency_array);
         nineOneOneArray = resources.getStringArray(R.array.NineOneOne_Array);
         cancelArray = resources.getStringArray(R.array.Cancel_Array);
-        ringTheBellArray  = resources.getStringArray(R.array.RingTheBell_Array);
-        troopsInContactArray  = resources.getStringArray(R.array.TroopsInContact);
+        ringTheBellArray = resources.getStringArray(R.array.RingTheBell_Array);
+        troopsInContactArray = resources
+                .getStringArray(R.array.TroopsInContact);
         linkArray = resources.getStringArray(R.array.link_array);
         cameraArray = resources.getStringArray(R.array.camera_array);
 
@@ -132,7 +132,8 @@ public class SpeechToActivity extends Activity {
      * @param data        - The actual text converted from speech
      */
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    protected void onActivityResult(int requestCode, int resultCode,
+            Intent data) {
 
         super.onActivityResult(requestCode, resultCode, data);
 
@@ -141,7 +142,8 @@ public class SpeechToActivity extends Activity {
                 if (resultCode == RESULT_OK && null != data) {
 
                     ArrayList<String> result = data
-                            .getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+                            .getStringArrayListExtra(
+                                    RecognizerIntent.EXTRA_RESULTS);
 
                     activityDecider(result.get(0));
                 } else {
@@ -168,8 +170,8 @@ public class SpeechToActivity extends Activity {
         for (String s : dropArray) {
             if (input.contains(s)) {
                 activities.putInt(ACTIVITY_INTENT, PLOT_INTENT);
-                activities.putString(DESTINATION,input);
-                returnIntent.putExtra(ACTIVITY_INFO_BUNDLE,activities);
+                activities.putString(DESTINATION, input);
+                returnIntent.putExtra(ACTIVITY_INFO_BUNDLE, activities);
                 broadcast();
             }
         }
@@ -181,8 +183,8 @@ public class SpeechToActivity extends Activity {
                     if (input.contains(q))
                         activities.putBoolean(QUICK_INTENT, true);
                 }
-                activities.putString(DESTINATION,input);
-                returnIntent.putExtra(ACTIVITY_INFO_BUNDLE,activities);
+                activities.putString(DESTINATION, input);
+                returnIntent.putExtra(ACTIVITY_INFO_BUNDLE, activities);
                 broadcast();
             }
         }
@@ -205,15 +207,15 @@ public class SpeechToActivity extends Activity {
         for (String s : compassArray) {
             if (input.contains(s)) {
                 activities.putInt(ACTIVITY_INTENT, COMPASS_INTENT);
-                returnIntent.putExtra(ACTIVITY_INFO_BUNDLE,activities);
+                returnIntent.putExtra(ACTIVITY_INFO_BUNDLE, activities);
                 broadcast();
             }
         }
         for (String s : brightnessArray) {
             if (input.contains(s)) {
                 activities.putInt(ACTIVITY_INTENT, BRIGHTNESS_INTENT);
-                activities.putString(DESTINATION,input);
-                returnIntent.putExtra(ACTIVITY_INFO_BUNDLE,activities);
+                activities.putString(DESTINATION, input);
+                returnIntent.putExtra(ACTIVITY_INFO_BUNDLE, activities);
                 broadcast();
             }
         }
@@ -225,19 +227,20 @@ public class SpeechToActivity extends Activity {
                 broadcast();
             }
         }
-        for(String s : cameraArray){
-            if(input.contains(s)){
-                activities.putInt(ACTIVITY_INTENT,CAMERA_INTENT);
-                returnIntent.putExtra(ACTIVITY_INFO_BUNDLE,activities);
+        for (String s : cameraArray) {
+            if (input.contains(s)) {
+                activities.putInt(ACTIVITY_INTENT, CAMERA_INTENT);
+                returnIntent.putExtra(ACTIVITY_INFO_BUNDLE, activities);
                 broadcast();
             }
         }
         for (String s : openArray) {
             if (input.contains(s)) {
                 for (String w : detailsArray) {
-                    if (input.contains(w)){
+                    if (input.contains(w)) {
                         activities.putInt(ACTIVITY_INTENT, OPEN_DETAILS_INTENT);
-                        input = input.replace(w, "").replace(s, "").replace("'s", "").trim();
+                        input = input.replace(w, "").replace(s, "")
+                                .replace("'s", "").trim();
                         activities.putString(DESTINATION, input);
                         returnIntent.putExtra(ACTIVITY_INFO_BUNDLE, activities);
                         broadcast();
@@ -245,57 +248,58 @@ public class SpeechToActivity extends Activity {
                 }
                 for (String h : hostileSynonyms) {
                     if (input.contains(h)) {
-                        activities.putInt(ACTIVITY_INTENT, SHOW_HOSTILES_INTENT);
-                        returnIntent.putExtra(ACTIVITY_INFO_BUNDLE,activities);
+                        activities.putInt(ACTIVITY_INTENT,
+                                SHOW_HOSTILES_INTENT);
+                        returnIntent.putExtra(ACTIVITY_INFO_BUNDLE, activities);
                         broadcast();
                     }
                 }
             }
         }
-        for(String s : emergencyArray){
-            if(input.contains(s)){
-                activities.putInt(ACTIVITY_INTENT,EMERGENCY_INTENT);
-                String em= "911 Alert";
-                    for(String w: nineOneOneArray){
-                        if(input.contains(w)){
-                            activities.putString(EMERGENCY_TYPE,em);
-                            returnIntent.putExtra(ACTIVITY_INFO_BUNDLE, activities);
-                            broadcast();
-                        }
+        for (String s : emergencyArray) {
+            if (input.contains(s)) {
+                activities.putInt(ACTIVITY_INTENT, EMERGENCY_INTENT);
+                String em = "911 Alert";
+                for (String w : nineOneOneArray) {
+                    if (input.contains(w)) {
+                        activities.putString(EMERGENCY_TYPE, em);
+                        returnIntent.putExtra(ACTIVITY_INFO_BUNDLE, activities);
+                        broadcast();
                     }
-                    for(String w: cancelArray){
-                        if(input.contains(w)){
-                            em = "Cancel Alert";
-                            activities.putString(EMERGENCY_TYPE,em);
-                            returnIntent.putExtra(ACTIVITY_INFO_BUNDLE, activities);
-                            broadcast();
-                        }
+                }
+                for (String w : cancelArray) {
+                    if (input.contains(w)) {
+                        em = "Cancel Alert";
+                        activities.putString(EMERGENCY_TYPE, em);
+                        returnIntent.putExtra(ACTIVITY_INFO_BUNDLE, activities);
+                        broadcast();
                     }
-                    for(String w: ringTheBellArray){
-                        if(input.contains(w)){
-                            em = "Ring The Bell";
-                            activities.putString(EMERGENCY_TYPE,em);
-                            returnIntent.putExtra(ACTIVITY_INFO_BUNDLE, activities);
-                            broadcast();
-                        }
+                }
+                for (String w : ringTheBellArray) {
+                    if (input.contains(w)) {
+                        em = "Ring The Bell";
+                        activities.putString(EMERGENCY_TYPE, em);
+                        returnIntent.putExtra(ACTIVITY_INFO_BUNDLE, activities);
+                        broadcast();
                     }
-                    for(String w: troopsInContactArray){
-                        if(input.contains(w)){
-                            em = "Troops In Contact";
-                            activities.putString(EMERGENCY_TYPE,em);
-                            returnIntent.putExtra(ACTIVITY_INFO_BUNDLE, activities);
-                            broadcast();
-                        }
+                }
+                for (String w : troopsInContactArray) {
+                    if (input.contains(w)) {
+                        em = "Troops In Contact";
+                        activities.putString(EMERGENCY_TYPE, em);
+                        returnIntent.putExtra(ACTIVITY_INFO_BUNDLE, activities);
+                        broadcast();
                     }
+                }
                 returnIntent.putExtra(ACTIVITY_INFO_BUNDLE, activities);
                 broadcast();
             }
         }
-        for(String s : linkArray){
-            if(input.contains(s)){
-                activities.putInt(ACTIVITY_INTENT,LINK_INTENT);
-                activities.putString(DESTINATION,input);
-                returnIntent.putExtra(ACTIVITY_INFO_BUNDLE,activities);
+        for (String s : linkArray) {
+            if (input.contains(s)) {
+                activities.putInt(ACTIVITY_INTENT, LINK_INTENT);
+                activities.putString(DESTINATION, input);
+                returnIntent.putExtra(ACTIVITY_INFO_BUNDLE, activities);
                 broadcast();
             }
         }
@@ -326,9 +330,10 @@ public class SpeechToActivity extends Activity {
         private SpeechToActivity.SpeechDataReceiver sdra = null;
 
         synchronized public void register(Context context,
-                                          SpeechToActivity.SpeechDataReceiver sdra) {
+                SpeechToActivity.SpeechDataReceiver sdra) {
             if (!registered)
-                context.registerReceiver(this, new IntentFilter(NAVIGATE_SPEECH_INFO));
+                context.registerReceiver(this,
+                        new IntentFilter(NAVIGATE_SPEECH_INFO));
 
             this.sdra = sdra;
             registered = true;
@@ -338,7 +343,8 @@ public class SpeechToActivity extends Activity {
         public void onReceive(Context context, Intent intent) {
             synchronized (this) {
                 try {
-                    Bundle activityInfoBundle = intent.getBundleExtra(ACTIVITY_INFO_BUNDLE);
+                    Bundle activityInfoBundle = intent
+                            .getBundleExtra(ACTIVITY_INFO_BUNDLE);
                     if (activityInfoBundle != null && sdra != null)
                         sdra.onSpeechDataReceived(activityInfoBundle);
                 } catch (Exception e) {

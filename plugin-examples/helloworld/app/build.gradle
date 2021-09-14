@@ -8,7 +8,7 @@
 
  buildscript {
     ext.PLUGIN_VERSION = "1.0"
-    ext.ATAK_VERSION = "4.2.1"
+    ext.ATAK_VERSION = "4.3.0"
 
     def takdevVersion = '2.0.0'
 
@@ -59,7 +59,7 @@
         }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.0.1'
+        classpath 'com.android.tools.build:gradle:4.0.2'
         if(isDevKitEnabled()) {
             classpath "com.atakmap.gradle:atak-gradle-takdev:${takdevVersion}"
         } else {
@@ -251,7 +251,7 @@ android {
             getIsDefault().set(true)
             dimension "application"
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".MIL"]
-            buildConfigField 'String', 'ATAK_PACKAGE_NAME', '"com.atakmap.app"'
+            buildConfigField 'String', 'ATAK_PACKAGE_NAME', '"com.atakmap.app.civ"'
         }
         civ {
             dimension "application"
@@ -261,42 +261,42 @@ android {
         fvey {
             dimension "application"
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".FVEY"]
-            buildConfigField 'String', 'ATAK_PACKAGE_NAME', '"com.atakmap.app.fvey"'
+            buildConfigField 'String', 'ATAK_PACKAGE_NAME', '"com.atakmap.app.civ"'
         }
         aus {
             dimension "application"
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".AUS"]
-            buildConfigField 'String', 'ATAK_PACKAGE_NAME', '"com.atakmap.app.fvey"'
+            buildConfigField 'String', 'ATAK_PACKAGE_NAME', '"com.atakmap.app.civ"'
         }
         nzl {
             dimension "application"
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".NZL"]
-            buildConfigField 'String', 'ATAK_PACKAGE_NAME', '"com.atakmap.app.fvey"'
+            buildConfigField 'String', 'ATAK_PACKAGE_NAME', '"com.atakmap.app.civ"'
         }
         prt {
             dimension "application"
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".PRT"]
-            buildConfigField 'String', 'ATAK_PACKAGE_NAME', '"com.atakmap.app.fvey"'
+            buildConfigField 'String', 'ATAK_PACKAGE_NAME', '"com.atakmap.app.civ"'
         }
         nor {
             dimension "application"
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".NOR"]
-            buildConfigField 'String', 'ATAK_PACKAGE_NAME', '"com.atakmap.app.fvey"'
+            buildConfigField 'String', 'ATAK_PACKAGE_NAME', '"com.atakmap.app.civ"'
         }
         hun {
             dimension "application"
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".HUN"]
-            buildConfigField 'String', 'ATAK_PACKAGE_NAME', '"com.atakmap.app.fvey"'
+            buildConfigField 'String', 'ATAK_PACKAGE_NAME', '"com.atakmap.app.civ"'
         }
         bel {
             dimension "application"
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".BEL"]
-            buildConfigField 'String', 'ATAK_PACKAGE_NAME', '"com.atakmap.app.fvey"'
+            buildConfigField 'String', 'ATAK_PACKAGE_NAME', '"com.atakmap.app.civ"'
         }
         gbr {
             dimension "application"
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".GBR"]
-            buildConfigField 'String', 'ATAK_PACKAGE_NAME', '"com.atakmap.app.fvey"'
+            buildConfigField 'String', 'ATAK_PACKAGE_NAME', '"com.atakmap.app.civ"'
         }
         gov {
             dimension "application"
@@ -306,12 +306,7 @@ android {
         can {
             dimension "application"
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".CAN"]
-            buildConfigField 'String', 'ATAK_PACKAGE_NAME', '"com.atakmap.app.fvey"'
-        }
-        intl {
-            dimension "application"
-            manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".INTL"]
-            buildConfigField 'String', 'ATAK_PACKAGE_NAME', '"com.atakmap.app.intl"'
+            buildConfigField 'String', 'ATAK_PACKAGE_NAME', '"com.atakmap.app.civ"'
         }
 
         applicationVariants.all { variant ->

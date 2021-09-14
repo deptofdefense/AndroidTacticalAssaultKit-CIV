@@ -66,7 +66,6 @@ public class GLExampleLayer extends GLAbstractLayer {
         // transform the frame's corner coordinates to GL x,y
         view.forward(frame.points, frame.vertexCoordinates);
 
-
         if (frame.texture == null) {
             return;
         }
@@ -82,7 +81,6 @@ public class GLExampleLayer extends GLAbstractLayer {
         this.frame = null;
         super.release();
     }
-
 
     public void setData(int[] argb, final int width, final int height,
             GeoPoint upperLeft,
