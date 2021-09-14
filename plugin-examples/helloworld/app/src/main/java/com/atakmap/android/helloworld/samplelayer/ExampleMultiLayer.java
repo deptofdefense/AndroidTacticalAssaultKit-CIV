@@ -33,13 +33,14 @@ public class ExampleMultiLayer extends AbstractLayer {
     private final Context pluginContext;
     private final MetaShape metaShape;
 
-    public ExampleMultiLayer(Context plugin, final String name, final String uri,
-        final GeoPoint ul, final GeoPoint ur,
-        final GeoPoint lr, final GeoPoint ll) {
+    public ExampleMultiLayer(Context plugin, final String name,
+            final String uri,
+            final GeoPoint ul, final GeoPoint ur,
+            final GeoPoint lr, final GeoPoint ll) {
         super(name);
 
         this.pluginContext = plugin;
-        
+
         this.upperLeft = GeoPoint.createMutable();
         this.upperRight = GeoPoint.createMutable();
         this.lowerRight = GeoPoint.createMutable();
@@ -63,8 +64,10 @@ public class ExampleMultiLayer extends AbstractLayer {
         metaShape = new MetaShape(UUID.randomUUID().toString()) {
             @Override
             public GeoPointMetaData[] getMetaDataPoints() {
-                return GeoPointMetaData.wrap(ExampleMultiLayer.this.getPoints());
+                return GeoPointMetaData
+                        .wrap(ExampleMultiLayer.this.getPoints());
             }
+
             @Override
             public GeoPoint[] getPoints() {
                 return ExampleMultiLayer.this.getPoints();

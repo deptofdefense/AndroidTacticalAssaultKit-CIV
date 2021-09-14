@@ -1,7 +1,9 @@
 
 package com.atakmap.android.helloworld;
 
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -10,20 +12,25 @@ import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.app.AlertDialog;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
 
 import android.os.Build;
 
 import com.atakmap.android.cot.detail.SensorDetailHandler;
 import com.atakmap.android.drawing.mapItems.DrawingShape;
+import com.atakmap.android.helloworld.image.MapScreenshotExample;
+import com.atakmap.android.helloworld.layers.LayerDownloadExample;
 import com.atakmap.android.helloworld.menu.MenuFactory;
 import com.atakmap.android.maps.DefaultMapGroup;
 import com.atakmap.android.maps.MultiPolyline;
 import com.atakmap.android.maps.SensorFOV;
 import com.atakmap.android.overlay.DefaultMapGroupOverlay;
+import com.atakmap.android.util.SimpleItemSelectedListener;
 import com.atakmap.android.video.StreamManagementUtils;
 import com.atakmap.android.video.ConnectionEntry;
 import com.atak.plugins.impl.PluginLayoutInflater;
@@ -41,7 +48,6 @@ import com.atakmap.android.image.quickpic.QuickPicReceiver;
 import com.atakmap.android.menu.MapMenuReceiver;
 import com.atakmap.android.dropdown.DropDownManager;
 import com.atakmap.android.routes.Route.RouteMethod;
-
 
 import com.atakmap.android.hierarchy.HierarchyListReceiver;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
@@ -137,8 +143,6 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import android.view.View.OnClickListener;
 import android.view.View.OnLongClickListener;
 
-import android.content.ComponentName;
-
 import android.content.DialogInterface;
 
 import android.graphics.Color;
@@ -157,8 +161,6 @@ import android.app.Activity;
 import java.io.FileOutputStream;
 import java.lang.*;
 import java.util.*;
-import java.util.Map;
-import java.util.HashMap;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -211,7 +213,12 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
     private Route r;
 
     private ExampleLayer exampleLayer;
-    private Map<Integer, ExampleMultiLayer> exampleMultiLayers = new HashMap<>();
+    private final Map<Integer, ExampleMultiLayer> exampleMultiLayers = new HashMap<>();
+
+    private LayerDownloadExample layerDownloader;
+
+    private double currWidth = HALF_WIDTH;
+    private double currHeight = HALF_HEIGHT;
 
     private final CameraActivity.CameraDataListener cdl = new CameraActivity.CameraDataListener();
     private final CameraActivity.CameraDataReceiver cdr = new CameraActivity.CameraDataReceiver() {
@@ -221,8 +228,8 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
         }
     };
 
-    private SpeechToTextActivity.SpeechDataListener sd1 = new SpeechToTextActivity.SpeechDataListener();
-    private SpeechToTextActivity.SpeechDataReceiver sdr = new SpeechToTextActivity.SpeechDataReceiver() {
+    private final SpeechToTextActivity.SpeechDataListener sd1 = new SpeechToTextActivity.SpeechDataListener();
+    private final SpeechToTextActivity.SpeechDataReceiver sdr = new SpeechToTextActivity.SpeechDataReceiver() {
         public void onSpeechDataReceived(HashMap<String, String> s) {
             Log.d(TAG, "==========speech======>" + s);
             createSpeechMarker(s);
@@ -244,59 +251,98 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
          */
         public void onSpeechDataReceived(Bundle activityInfoBundle) {
             MapView view = getMapView();
-            switch (activityInfoBundle.getInt(SpeechToActivity.ACTIVITY_INTENT)) {
+            switch (activityInfoBundle
+                    .getInt(SpeechToActivity.ACTIVITY_INTENT)) {
                 //This case is for drawing and navigating routes
                 case SpeechToActivity.NAVIGATE_INTENT:
-                    new SpeechNavigator(view, activityInfoBundle.getString(SpeechToActivity.DESTINATION), activityInfoBundle.getBoolean(SpeechToActivity.QUICK_INTENT));
+                    new SpeechNavigator(view,
+                            activityInfoBundle
+                                    .getString(SpeechToActivity.DESTINATION),
+                            activityInfoBundle
+                                    .getBoolean(SpeechToActivity.QUICK_INTENT));
                     break;
                 // This case is for plotting down markers
                 case SpeechToActivity.PLOT_INTENT:
-                    new SpeechPointDropper(activityInfoBundle.getString(SpeechToActivity.DESTINATION), view, pluginContext);
+                    new SpeechPointDropper(
+                            activityInfoBundle
+                                    .getString(SpeechToActivity.DESTINATION),
+                            view, pluginContext);
                     break;
                 //This case is for bloodhounding to markers,routes, or addresses
                 case SpeechToActivity.BLOODHOUND_INTENT:
-                    new SpeechBloodHound(view, activityInfoBundle.getString(SpeechToActivity.DESTINATION), pluginContext);
+                    new SpeechBloodHound(view,
+                            activityInfoBundle
+                                    .getString(SpeechToActivity.DESTINATION),
+                            pluginContext);
                     break;
                 //This case is for launching the 9 Line window on a target
                 case SpeechToActivity.NINE_LINE_INTENT:
-                    new SpeechNineLine(activityInfoBundle.getString(SpeechToActivity.DESTINATION), view, pluginContext);
+                    new SpeechNineLine(
+                            activityInfoBundle
+                                    .getString(SpeechToActivity.DESTINATION),
+                            view, pluginContext);
                     break;
                 //DOESNT WORK//This case is to open the compass on your self marker
                 case SpeechToActivity.COMPASS_INTENT:
-                    AtakBroadcast.getInstance().sendBroadcast(new Intent().setAction("com.atakmap.android.maps.COMPASS").putExtra("targetUID", view.getSelfMarker().getUID()));
+                    AtakBroadcast.getInstance()
+                            .sendBroadcast(new Intent()
+                                    .setAction(
+                                            "com.atakmap.android.maps.COMPASS")
+                                    .putExtra("targetUID",
+                                            view.getSelfMarker().getUID()));
                     break;
                 //This case toggles the brightness slider
                 case SpeechToActivity.BRIGHTNESS_INTENT:
-                    new SpeechBrightness(view,pluginContext,activityInfoBundle.getString(SpeechToActivity.DESTINATION));
+                    new SpeechBrightness(view, pluginContext, activityInfoBundle
+                            .getString(SpeechToActivity.DESTINATION));
                     break;
                 //this case deletes a shape, marker, or route
                 case SpeechToActivity.DELETE_INTENT:
-                    new SpeechItemRemover(activityInfoBundle.getString(SpeechToActivity.DESTINATION), view, pluginContext);
+                    new SpeechItemRemover(
+                            activityInfoBundle
+                                    .getString(SpeechToActivity.DESTINATION),
+                            view, pluginContext);
                     break;
                 //this case opens the hostiles window from fire tools
                 case SpeechToActivity.SHOW_HOSTILES_INTENT:
-                    AtakBroadcast.getInstance().sendBroadcast(new Intent().setAction("com.atakmap.android.maps.MANAGE_HOSTILES"));
+                    AtakBroadcast.getInstance()
+                            .sendBroadcast(new Intent().setAction(
+                                    "com.atakmap.android.maps.MANAGE_HOSTILES"));
                     break;
                 //This case opens a markers detail menu
                 case SpeechToActivity.OPEN_DETAILS_INTENT:
-                    new SpeechDetailOpener(activityInfoBundle.getString(SpeechToActivity.DESTINATION), view);
+                    new SpeechDetailOpener(activityInfoBundle
+                            .getString(SpeechToActivity.DESTINATION), view);
                     break;
                 //this case starts an emergency
                 case SpeechToActivity.EMERGENCY_INTENT:
-                    EmergencyManager.getInstance().setEmergencyType(EmergencyType.fromDescription(activityInfoBundle.getString(SpeechToActivity.EMERGENCY_TYPE)));
-                    EmergencyManager.getInstance().initiateRepeat(EmergencyType.fromDescription(activityInfoBundle.getString(SpeechToActivity.EMERGENCY_TYPE)), false);
+                    EmergencyManager.getInstance()
+                            .setEmergencyType(EmergencyType.fromDescription(
+                                    activityInfoBundle.getString(
+                                            SpeechToActivity.EMERGENCY_TYPE)));
+                    EmergencyManager.getInstance().initiateRepeat(
+                            EmergencyType.fromDescription(
+                                    activityInfoBundle.getString(
+                                            SpeechToActivity.EMERGENCY_TYPE)),
+                            false);
                     EmergencyManager.getInstance().setEmergencyOn(true);
                     break;
                 //This case draws a R&B line between 2 map items
                 case SpeechToActivity.LINK_INTENT:
-                    new SpeechLinker(activityInfoBundle.getString(SpeechToActivity.DESTINATION), view, pluginContext);
+                    new SpeechLinker(
+                            activityInfoBundle
+                                    .getString(SpeechToActivity.DESTINATION),
+                            view, pluginContext);
                     break;
                 //This case launches the camera
                 case SpeechToActivity.CAMERA_INTENT:
-                    AtakBroadcast.getInstance().sendBroadcast(new Intent().setAction(QuickPicReceiver.QUICK_PIC));
+                    AtakBroadcast.getInstance().sendBroadcast(
+                            new Intent().setAction(QuickPicReceiver.QUICK_PIC));
                     break;
                 default:
-                    Toast.makeText(getMapView().getContext(), "I did not understand please try again", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getMapView().getContext(),
+                            "I did not understand please try again",
+                            Toast.LENGTH_SHORT).show();
 
             }
         }
@@ -332,20 +378,20 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
             Log.v(TAG,
                     "Received ADD message for "
                             + descBundle
-                            .getString(CotPort.DESCRIPTION_KEY)
+                                    .getString(CotPort.DESCRIPTION_KEY)
                             + ": enabled="
                             + descBundle.getBoolean(
-                            CotPort.ENABLED_KEY, true)
+                                    CotPort.ENABLED_KEY, true)
                             + ": connected="
                             + descBundle.getBoolean(
-                            CotPort.CONNECTED_KEY, false));
+                                    CotPort.CONNECTED_KEY, false));
         }
     };
 
     /**************************** CONSTRUCTOR *****************************/
 
     public HelloWorldDropDownReceiver(final MapView mapView,
-                                      final Context context, HelloWorldMapOverlay overlay) {
+            final Context context, HelloWorldMapOverlay overlay) {
         super(mapView);
         this.pluginContext = context;
         this.mapOverlay = overlay;
@@ -365,13 +411,13 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
 
             @Override
             protected void enabled(CotPortListActivity.CotPort port,
-                                   boolean enabled) {
+                    boolean enabled) {
                 Log.d(TAG, "stream enabled");
             }
 
             @Override
             protected void connected(CotPortListActivity.CotPort port,
-                                     boolean connected) {
+                    boolean connected) {
                 Log.d(TAG, "stream connected");
             }
 
@@ -384,6 +430,10 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
 
         printNetworks();
 
+        AtakBroadcast.DocumentedIntentFilter dif = new AtakBroadcast.DocumentedIntentFilter(
+                "com.atakmap.android.helloworld.FAKE_PHONE_CALL");
+        AtakBroadcast.getInstance().registerReceiver(fakePhoneCallReceiver,
+                dif);
 
         // If you are using a custom layout you need to make use of the PluginLayoutInflator to clear
         // out the layout cache so that the plugin can be properly unloaded and reloaded.
@@ -486,6 +536,10 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
                     case R.id.notificationSpammer:
                         toast(context.getString(R.string.notificationSpammer));
                         break;
+                    case R.id.notificationWithOptions:
+                        toast(context
+                                .getString(R.string.notificationWithOptions));
+                        break;
                     case R.id.videoLauncher:
                         toast(context.getString(R.string.videoLauncher));
                         break;
@@ -512,6 +566,14 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
                         break;
                     case R.id.btnHookNavigationEvents:
                         toast(context.getString(R.string.hookNavigation));
+                        break;
+                    case R.id.downloadMapLayer:
+                        toast(context
+                                .getString(R.string.download_map_layer_msg));
+                        break;
+                    case R.id.mapScreenshot:
+                        toast(context.getString(R.string.map_screenshot_desc));
+                        break;
                 }
                 return true;
             }
@@ -620,7 +682,7 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
 
                             @Override
                             public void onClick(DialogInterface dialog,
-                                                int which) {
+                                    int which) {
                                 dialog.dismiss();
                             }
                         });
@@ -746,7 +808,8 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
         dropRoute.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                Route _route = new Route(getMapView(), "my flying route", Color.RED, "cp", UUID.randomUUID().toString());
+                Route _route = new Route(getMapView(), "my flying route",
+                        Color.RED, "cp", UUID.randomUUID().toString());
                 _route.setRouteMethod(RouteMethod.Flying.toString());
                 RouteMapReceiver _receiver = RouteMapReceiver.getInstance();
                 // Finalize route and show details
@@ -793,7 +856,7 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
                 if (mi == null) {
 
                     PlacePointTool.MarkerCreator mc = new PlacePointTool.MarkerCreator(
-                            new GeoPoint(32, -72. -100));
+                            new GeoPoint(32, -72. - 100));
                     mc.setUid("detect-ae:3e:ee");
                     mc.setCallsign("detect 1");
                     mc.setType("a-h-G");
@@ -874,21 +937,26 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
             @Override
             public void onClick(View v) {
                 MapGroup dmg = new DefaultMapGroup("MyCustomGroup");
-                DefaultMapGroupOverlay dmo = new DefaultMapGroupOverlay(mapView, dmg,
-                        "android.resource://" + pluginContext.getPackageName() + "/" + R.drawable.ic_launcher_badge);
+                DefaultMapGroupOverlay dmo = new DefaultMapGroupOverlay(mapView,
+                        dmg,
+                        "android.resource://" + pluginContext.getPackageName()
+                                + "/" + R.drawable.ic_launcher_badge);
 
                 mapView.getRootGroup().addGroup(dmg);
                 mapView.getMapOverlayManager().addOverlay(dmo);
 
                 //Start of Overlay Menu Test ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 //Create a shape
-                GeoPoint[] points = {(new GeoPoint(43.08321804, -77.67835268)),
+                GeoPoint[] points = {
+                        (new GeoPoint(43.08321804, -77.67835268)),
                         (new GeoPoint(43.09321804, -77.67835268)),
                         (new GeoPoint(43.09321804, -77.67935268)),
                         (new GeoPoint(43.08821804, -77.67895268)),
                         (new GeoPoint(43.08321804, -77.67935268)),
-                        (new GeoPoint(43.08321804, -77.67835268))};
-                DrawingShape ds = new DrawingShape(mapView, UUID.randomUUID().toString());
+                        (new GeoPoint(43.08321804, -77.67835268))
+                };
+                DrawingShape ds = new DrawingShape(mapView,
+                        UUID.randomUUID().toString());
                 ds.setPoints(points);
                 ds.setClickable(true);
                 ds.setMetaBoolean("editable", true);
@@ -900,7 +968,9 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
 
                 dmg.addItem(ds);
 
-                Marker point = new Marker(new GeoPoint(43.10321804, -77.67835268), UUID.randomUUID().toString());
+                Marker point = new Marker(
+                        new GeoPoint(43.10321804, -77.67835268),
+                        UUID.randomUUID().toString());
                 point.setType("a-u-g");
                 point.setTitle("ovTest");
                 point.setMetaString("callsign", "ovTest");
@@ -1099,12 +1169,14 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
                     imis.requestEndTool();
                 } else {
 
-                    AtakBroadcast.getInstance().registerReceiver(inspectionReceiver,
-                            new AtakBroadcast.DocumentedIntentFilter("com.atakmap.android.helloworld.InspectionMapItemSelectionTool.Finished"));
+                    AtakBroadcast.getInstance().registerReceiver(
+                            inspectionReceiver,
+                            new AtakBroadcast.DocumentedIntentFilter(
+                                    "com.atakmap.android.helloworld.InspectionMapItemSelectionTool.Finished"));
                     Bundle extras = new Bundle();
                     ToolManagerBroadcastReceiver.getInstance().startTool(
-                            "com.atakmap.android.helloworld.InspectionMapItemSelectionTool", extras);
-
+                            "com.atakmap.android.helloworld.InspectionMapItemSelectionTool",
+                            extras);
 
                 }
                 itemInspect.setSelected(!val);
@@ -1136,25 +1208,30 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
             public void onClick(View v) {
                 boolean b = bumpControl.isSelected();
                 bumpControl.setSelected(!b);
-                SensorManager sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
+                SensorManager sensorManager = (SensorManager) context
+                        .getSystemService(Context.SENSOR_SERVICE);
 
                 if (!b) {
                     TextContainer.getTopInstance()
-                            .displayPrompt("Tilt the phone to perform an action");
+                            .displayPrompt(
+                                    "Tilt the phone to perform an action");
 
-                    sensorManager.registerListener(HelloWorldDropDownReceiver.this,
-                            sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
+                    sensorManager.registerListener(
+                            HelloWorldDropDownReceiver.this,
+                            sensorManager.getDefaultSensor(
+                                    Sensor.TYPE_ACCELEROMETER),
                             SensorManager.SENSOR_DELAY_NORMAL);
 
                 } else {
-                    sensorManager.unregisterListener(HelloWorldDropDownReceiver.this);
+                    sensorManager.unregisterListener(
+                            HelloWorldDropDownReceiver.this);
                     TextContainer.getTopInstance().closePrompt();
 
                 }
             }
         });
 
-/* Functionallity implemented into SpeechToActivity: SpeechPointDropper specifically
+        /* Functionallity implemented into SpeechToActivity: SpeechPointDropper specifically
         final Button speechToText = (Button) helloView
                 .findViewById(R.id.speechToText);
         speechToText.setOnClickListener(new OnClickListener() {
@@ -1171,7 +1248,7 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 intent.putExtra("EXTRA_MESSAGE", "");
                 parentActivity.startActivityForResult(intent, 0);
-
+        
             }
         });*/
 
@@ -1220,7 +1297,6 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
                 //iBuilder = new Icon.Builder().setImageUri(0,
                 //        "file:///sdcard/custom_marker.png");
                 m.setIcon(iBuilder.build());
-
 
                 MapGroup _mapGroup = getMapView().getRootGroup()
                         .findMapGroup("Cursor on Target");
@@ -1305,15 +1381,12 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
 
         });
 
-
         // ATAK 4.1 disables the cleartext block
         // The current ISS plotting site uses cleartext http connection and offers no https ability.
         // Since this is not allowed on Android 9 or higher, hide the capability until the web site 
         // offers https
         //if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
         //     issLocation.setVisibility(View.GONE);
-
-
 
         final Button sensorFOV = helloView
                 .findViewById(R.id.sensorFOV);
@@ -1360,18 +1433,73 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
             }
         });
 
+        final Button notificationWithOptions = helloView
+                .findViewById(R.id.notificationWithOptions);
+        notificationWithOptions.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                Intent atakFrontIntent = new Intent();
+
+                atakFrontIntent
+                        .setComponent(new ComponentName("com.atakmap.app.civ",
+                                "com.atakmap.app.ATAKActivity"));
+                atakFrontIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+
+                Intent fakePhoneCall = new Intent(
+                        "com.atakmap.android.helloworld.FAKE_PHONE_CALL");
+                int id = fakePhoneCall.hashCode();
+
+                fakePhoneCall.putExtra("mytime",
+                        "my time: " + System.currentTimeMillis());
+                fakePhoneCall.putExtra("notificationId", id);
+                atakFrontIntent.putExtra("internalIntent", fakePhoneCall);
+                PendingIntent appIntent = PendingIntent.getActivity(
+                        mapView.getContext(), fakePhoneCall.hashCode(),
+                        atakFrontIntent, 0);
+
+                NotificationManager nm = (NotificationManager) mapView
+                        .getContext()
+                        .getSystemService(Context.NOTIFICATION_SERVICE);
+
+                Notification.Builder notificationBuilder;
+                if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+                    notificationBuilder = new Notification.Builder(
+                            mapView.getContext());
+                } else {
+                    notificationBuilder = new Notification.Builder(
+                            mapView.getContext(), "com.atakmap.app.def");
+                }
+                String gid = java.util.UUID.randomUUID().toString();
+
+                notificationBuilder.setContentTitle("Test Notification")
+                        .setSmallIcon(
+                                com.atakmap.app.R.drawable.ic_atak_launcher)
+                        .setOngoing(false)
+                        .setGroup(gid)
+                        .addAction(com.atakmap.app.R.drawable.phone_icon,
+                                "Phone Call", appIntent);
+                Notification notification = notificationBuilder.build();
+                nm.notify(notification.hashCode(), notification);
+            }
+        });
+
         final Button videoLauncher = helloView
                 .findViewById(R.id.videoLauncher);
         videoLauncher.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-               ConnectionEntry ce = StreamManagementUtils
-                    .createConnectionEntryFromUrl("big buck bunny", "rtsp://3.84.6.190/vod/mp4:BigBuckBunny_115k.mov");
-               Intent i = new Intent("com.atakmap.maps.video.DISPLAY");
-               i.putExtra("CONNECTION_ENTRY", ce);
-               i.putExtra("layers", new String[] { "test-layer" });
-               i.putExtra("cancelClose", "true");
-               AtakBroadcast.getInstance().sendBroadcast(i);       
+                ConnectionEntry ce = StreamManagementUtils
+                        .createConnectionEntryFromUrl("big buck bunny",
+                                "rtsp://3.84.6.190:554/vod/mp4:BigBuckBunny_115k.mov");
+                Intent i = new Intent("com.atakmap.maps.video.DISPLAY");
+                i.putExtra("CONNECTION_ENTRY", ce);
+                i.putExtra("layers", new String[] {
+                        "test-layer"
+                });
+                i.putExtra("cancelClose", "true");
+                AtakBroadcast.getInstance().sendBroadcast(i);
             }
         });
 
@@ -1398,13 +1526,13 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
             public void onClick(View v) {
                 if (v.isSelected()) {
                     Intent intent = new Intent(ActionBarReceiver.REMOVE_TOOLS);
-                    intent.putExtra("menus", new ActionMenuData[]{
+                    intent.putExtra("menus", new ActionMenuData[] {
                             amd
                     });
                     AtakBroadcast.getInstance().sendBroadcast(intent);
                 } else {
                     Intent intent = new Intent(ActionBarReceiver.ADD_NEW_TOOLS);
-                    intent.putExtra("menus", new ActionMenuData[]{
+                    intent.putExtra("menus", new ActionMenuData[] {
                             amd
                     });
                     AtakBroadcast.getInstance().sendBroadcast(intent);
@@ -1413,15 +1541,16 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
             }
         });
 
-        final Button addCountToIcon = helloView.findViewById(R.id.addCountToIcon);
+        final Button addCountToIcon = helloView
+                .findViewById(R.id.addCountToIcon);
         addCountToIcon.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent("com.atakmap.android.helloworld.plugin.iconcount");
+                Intent i = new Intent(
+                        "com.atakmap.android.helloworld.plugin.iconcount");
                 AtakBroadcast.getInstance().sendBroadcast(i);
             }
         });
-
 
         final Button imageAttach = helloView
                 .findViewById(R.id.imageAttach);
@@ -1463,6 +1592,17 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
             }
         });
 
+        final Button mapScreenshot = helloView.findViewById(R.id.mapScreenshot);
+        mapScreenshot.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                new MapScreenshotExample(mapView, pluginContext).start();
+                Toast.makeText(context, pluginContext.getString(
+                        R.string.map_screenshot_started),
+                        Toast.LENGTH_LONG).show();
+            }
+        });
+
         final Button addLayer = helloView
                 .findViewById(R.id.addLayer);
         addLayer.setOnClickListener(new OnClickListener() {
@@ -1475,7 +1615,8 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
                     fos = new FileOutputStream(f);
                     if (FileSystemUtils.assetExists(pluginContext,
                             "logo.png")) {
-                        FileSystemUtils.copyFromAssets(pluginContext, "logo.png",
+                        FileSystemUtils.copyFromAssets(pluginContext,
+                                "logo.png",
                                 fos);
                     }
                 } catch (Exception e) {
@@ -1488,7 +1629,8 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
                     if (fos != null)
                         try {
                             fos.close();
-                        } catch (Exception ignored) {};
+                        } catch (Exception ignored) {
+                        }
                 }
 
                 synchronized (HelloWorldDropDownReceiver.this) {
@@ -1536,9 +1678,10 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
                     return;
                 }
                 synchronized (HelloWorldDropDownReceiver.this) {
-                    if ((exampleMultiLayers == null) || exampleMultiLayers.isEmpty()) {
+                    if ((exampleMultiLayers == null)
+                            || exampleMultiLayers.isEmpty()) {
                         for (int index = 0; index < 3; index++) {
-                            int altitude = (index+1)*50;
+                            int altitude = (index + 1) * 50;
                             GeoPoint ul = GeoPoint.createMutable();
                             GeoPoint ur = GeoPoint.createMutable();
                             GeoPoint lr = GeoPoint.createMutable();
@@ -1547,10 +1690,15 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
                             lr.set(49.999, -49.999, altitude);
                             ll.set(49.999, -50, altitude);
                             ul.set(50, -50, altitude);
-                            ExampleMultiLayer exampleMultiLayer = new ExampleMultiLayer(pluginContext,
-                                String.format("HelloWorld Test Multi Layer %4d", altitude), fp, ul, ur, lr, ll);
+                            ExampleMultiLayer exampleMultiLayer = new ExampleMultiLayer(
+                                    pluginContext,
+                                    String.format(
+                                            "HelloWorld Test Multi Layer %4d",
+                                            altitude),
+                                    fp, ul, ur, lr, ll);
                             if (exampleMultiLayer != null) {
-                                exampleMultiLayers.put(altitude, exampleMultiLayer);
+                                exampleMultiLayers.put(altitude,
+                                        exampleMultiLayer);
                             }
                         }
                     }
@@ -1559,9 +1707,11 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
                 if (addMultiLayer.isSelected()) {
                     // Remove the layer from the map
                     if (!exampleMultiLayers.isEmpty()) {
-                        for (ExampleMultiLayer layer : exampleMultiLayers.values()) {
+                        for (ExampleMultiLayer layer : exampleMultiLayers
+                                .values()) {
                             // Remove the layer from the map
-                            getMapView().removeLayer(MapView.RenderStack.MAP_SURFACE_OVERLAYS,
+                            getMapView().removeLayer(
+                                    MapView.RenderStack.MAP_SURFACE_OVERLAYS,
                                     layer);
                         }
                         exampleMultiLayers.clear();
@@ -1569,16 +1719,20 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
                 } else {
                     // Add the layer to the map
                     if (!exampleMultiLayers.isEmpty()) {
-                        for (ExampleMultiLayer layer : exampleMultiLayers.values()) {
+                        for (ExampleMultiLayer layer : exampleMultiLayers
+                                .values()) {
                             // Remove the layer from the map
-                            getMapView().addLayer(RenderStack.MAP_SURFACE_OVERLAYS,
+                            getMapView().addLayer(
+                                    RenderStack.MAP_SURFACE_OVERLAYS,
                                     layer);
                             layer.setVisible(true);
                         }
                     }
 
                     // Pan and zoom to the layer
-                    ATAKUtilities.scaleToFit(mapView, exampleMultiLayers.entrySet().iterator().next().getValue().getPoints(),
+                    ATAKUtilities.scaleToFit(mapView,
+                            exampleMultiLayers.entrySet().iterator().next()
+                                    .getValue().getPoints(),
                             mapView.getWidth(), mapView.getHeight());
                 }
                 // Refresh Overlay Manager
@@ -1669,7 +1823,7 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
                                 new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialog,
-                                                        int which) {
+                                            int which) {
                                         GeoPointMetaData gp = coordView
                                                 .getPoint();
                                         if (coordView
@@ -1722,6 +1876,35 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
             }
         });
 
+        // Downloading a map layer
+        final Button downloadLayer = helloView.findViewById(
+                R.id.downloadMapLayer);
+        downloadLayer.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (layerDownloader != null)
+                    layerDownloader.dispose();
+                layerDownloader = new LayerDownloadExample(mapView,
+                        pluginContext);
+                layerDownloader.start();
+            }
+        });
+
+        // Dark themed spinners need some text color correction
+        final Spinner spinner = helloView
+                .findViewById(R.id.spinner1);
+
+        spinner.setOnItemSelectedListener(new SimpleItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent,
+                    View view,
+                    int position, long id) {
+                if (view instanceof TextView)
+                    ((TextView) view).setTextColor(Color.WHITE);
+            }
+        });
+        spinner.setSelection(0);
+
         //implement onLongClickListener for buttons
         smaller.setOnLongClickListener(longClickListener);
         larger.setOnLongClickListener(longClickListener);
@@ -1751,7 +1934,8 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
         //speechToText.setOnLongClickListener(longClickListener);
         btnHookNavigationEvents.setOnLongClickListener(longClickListener);
         issLocation.setOnLongClickListener(longClickListener);
-
+        downloadLayer.setOnLongClickListener(longClickListener);
+        mapScreenshot.setOnLongClickListener(longClickListener);
 
     }
 
@@ -1775,15 +1959,16 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
 
     }
 
-
     /**
      * This class makes use of a compact class to aid with the selection of map items.   Prior to
      * 3.12, this all had to be manually done playing with the dispatcher and listening for map
      * events.
      */
-    public class InspectionMapItemSelectionTool extends AbstractMapItemSelectionTool {
+    public class InspectionMapItemSelectionTool
+            extends AbstractMapItemSelectionTool {
         public InspectionMapItemSelectionTool() {
-            super(getMapView(), "com.atakmap.android.helloworld.InspectionMapItemSelectionTool",
+            super(getMapView(),
+                    "com.atakmap.android.helloworld.InspectionMapItemSelectionTool",
                     "com.atakmap.android.helloworld.InspectionMapItemSelectionTool.Finished",
                     "Select Map Item on the screen",
                     "Invalid Selection");
@@ -1793,7 +1978,6 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
         protected boolean isItem(MapItem mi) {
             return true;
         }
-
 
     }
 
@@ -1838,25 +2022,22 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
                 @Override
                 public boolean onLongClick(View v) {
                     // Copy the Text to the clipboard
-                    ClipboardManager manager = 
-                        (ClipboardManager) getMapView().getContext().getSystemService(Context.CLIPBOARD_SERVICE);
+                    ClipboardManager manager = (ClipboardManager) getMapView()
+                            .getContext()
+                            .getSystemService(Context.CLIPBOARD_SERVICE);
                     TextView showTextParam = (TextView) v;
                     manager.setText(showTextParam.getText());
-                    Toast.makeText(v.getContext(), 
-                          "copied the data", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(v.getContext(),
+                            "copied the data", Toast.LENGTH_SHORT).show();
                     return true;
                 }
             });
-
-
-
 
             builderSingle.setTitle("Resulting CoT");
             builderSingle.setView(showText);
             builderSingle.show();
         }
     };
-
 
     synchronized public void runSim() {
         Marker item = getMapView().getSelfMarker();
@@ -1984,10 +2165,10 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
         String countNum = "Javacodegeeks: " + count + " records are deleted.";
         toast(countNum);
 
-        String[] names = new String[]{
+        String[] names = new String[] {
                 "Joe", "Bob", "Sam", "Carol"
         };
-        String[] dates = new String[]{
+        String[] dates = new String[] {
                 "01/01/2001", "01/01/2002", "01/01/2003", "01/01/2004"
         };
         for (int i = 0; i < names.length; ++i) {
@@ -2019,7 +2200,10 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
             issTimer = null;
         }
 
-        SensorManager sensorManager = (SensorManager) getMapView().getContext().getSystemService(Context.SENSOR_SERVICE);
+        AtakBroadcast.getInstance().unregisterReceiver(fakePhoneCallReceiver);
+
+        SensorManager sensorManager = (SensorManager) getMapView().getContext()
+                .getSystemService(Context.SENSOR_SERVICE);
         sensorManager.unregisterListener(HelloWorldDropDownReceiver.this);
         TextContainer.getTopInstance().closePrompt();
 
@@ -2043,7 +2227,6 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
 
     }
 
-
     /**************************** INHERITED METHODS *****************************/
 
     @Override
@@ -2059,14 +2242,15 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
             case SHOW_HELLO_WORLD:
                 if (!isClosed()) {
                     Log.d(TAG, "the drop down is already open");
-		    unhideDropDown();
+                    unhideDropDown();
                     return;
                 }
-                
+
                 showDropDown(helloView, HALF_WIDTH, FULL_HEIGHT,
                         FULL_WIDTH, HALF_HEIGHT, false, this);
                 setAssociationKey("helloWorldPreference");
-                List<Contact> allContacts = Contacts.getInstance().getAllContacts();
+                List<Contact> allContacts = Contacts.getInstance()
+                        .getAllContacts();
                 for (Contact c : allContacts) {
                     if (c instanceof IndividualContact)
                         Log.d(TAG, "Contact IP address: "
@@ -2102,8 +2286,10 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
 
             // Toggle visibility of example layer
             case LAYER_VISIBILITY: {
-                Log.d(TAG, "used the custom action to toggle layer visibility on: " + intent
-                        .getStringExtra("uid"));
+                Log.d(TAG,
+                        "used the custom action to toggle layer visibility on: "
+                                + intent
+                                        .getStringExtra("uid"));
                 ExampleLayer l = mapOverlay.findLayer(intent
                         .getStringExtra("uid"));
                 if (l != null) {
@@ -2119,17 +2305,21 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
 
             // Delete example layer
             case LAYER_DELETE: {
-                Log.d(TAG, "used the custom action to delete the layer on: " + intent
-                        .getStringExtra("uid"));
+                Log.d(TAG,
+                        "used the custom action to delete the layer on: "
+                                + intent
+                                        .getStringExtra("uid"));
                 ExampleLayer l = mapOverlay.findLayer(intent
                         .getStringExtra("uid"));
                 if (l != null) {
-                    getMapView().removeLayer(RenderStack.MAP_SURFACE_OVERLAYS, l);
+                    getMapView().removeLayer(RenderStack.MAP_SURFACE_OVERLAYS,
+                            l);
                 } else {
                     ExampleMultiLayer ml = mapOverlay.findMultiLayer(intent
                             .getStringExtra("uid"));
                     if (ml != null)
-                        getMapView().removeLayer(RenderStack.MAP_SURFACE_OVERLAYS, ml);
+                        getMapView().removeLayer(
+                                RenderStack.MAP_SURFACE_OVERLAYS, ml);
                 }
                 break;
             }
@@ -2148,6 +2338,28 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
     }
 
     @Override
+    protected void onStateRequested(int state) {
+        if (state == DROPDOWN_STATE_FULLSCREEN) {
+            if (!isPortrait()) {
+                if (Double.compare(currWidth, HALF_WIDTH) == 0) {
+                    resize(FULL_WIDTH - HANDLE_THICKNESS_LANDSCAPE,
+                            FULL_HEIGHT);
+                }
+            } else {
+                if (Double.compare(currHeight, HALF_HEIGHT) == 0) {
+                    resize(FULL_WIDTH, FULL_HEIGHT - HANDLE_THICKNESS_PORTRAIT);
+                }
+            }
+        } else if (state == DROPDOWN_STATE_NORMAL) {
+            if (!isPortrait()) {
+                resize(HALF_WIDTH, FULL_HEIGHT);
+            } else {
+                resize(FULL_WIDTH, HALF_HEIGHT);
+            }
+        }
+    }
+
+    @Override
     public void onDropDownSelectionRemoved() {
     }
 
@@ -2157,6 +2369,8 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
 
     @Override
     public void onDropDownSizeChanged(double width, double height) {
+        currWidth = width;
+        currHeight = height;
     }
 
     @Override
@@ -2208,7 +2422,7 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
     public void createSpeechMarker(HashMap<String, String> s) {
         final GeoPoint mgrsPoint;
         try {
-            String[] coord = new String[]{
+            String[] coord = new String[] {
                     s.get("numericGrid") + s.get("alphaGrid"),
                     s.get("squareID"),
                     s.get("easting"),
@@ -2305,7 +2519,6 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
 
     }
 
-
     public void createOrModifySensorFOV() {
         final MapView mapView = getMapView();
         final String cameraID = "sensor-fov-example-uid";
@@ -2314,7 +2527,8 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
 
         MapItem mi = mapView.getMapItem(cameraID);
         if (mi == null) {
-            PlacePointTool.MarkerCreator markerCreator = new PlacePointTool.MarkerCreator(point);
+            PlacePointTool.MarkerCreator markerCreator = new PlacePointTool.MarkerCreator(
+                    point);
             markerCreator.setUid(cameraID);
             //this settings automatically pops open to CotDetails page after dropping the marker
             markerCreator.showCotDetails(false);
@@ -2330,27 +2544,29 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
 
         }
         // blind cast, ensure this is really a marker.
-        Marker camera1 = (Marker)mi;
+        Marker camera1 = (Marker) mi;
         camera1.setPoint(point);
 
-        mi = mapView.getMapItem(camera1.getUID()+"-fov");
+        mi = mapView.getMapItem(camera1.getUID() + "-fov");
         if (mi instanceof SensorFOV) {
-            SensorFOV sFov = (SensorFOV)mi;
+            SensorFOV sFov = (SensorFOV) mi;
             float r = ((0x00FF0000 & color) >> 16) / 256f;
             float g = ((0x0000FF00 & color) >> 8) / 256f;
             float b = ((0x000000FF & color) >> 0) / 256f;
 
             sFov.setColor(color); // currently broken
-            sFov.setColor(r,g,b);
-            sFov.setMetrics((int)(90 * Math.random()), (int)(70 * Math.random()), 400);
+            sFov.setColor(r, g, b);
+            sFov.setMetrics((int) (90 * Math.random()),
+                    (int) (70 * Math.random()), 400);
         } else { // use this case
             float r = ((0x00FF0000 & color) >> 16) / 256f;
             float g = ((0x0000FF00 & color) >> 8) / 256f;
             float b = ((0x000000FF & color) >> 0) / 256f;
-            SensorDetailHandler.addFovToMap(camera1, 90, 70, 400, new float[]{r, g, b, 90}, true);
+            SensorDetailHandler.addFovToMap(camera1, 90, 70, 400, new float[] {
+                    r, g, b, 90
+            }, true);
         }
     }
-
 
     public void createUnit() {
 
@@ -2414,27 +2630,27 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
         }
     }
 
-
     void drawShapes() {
         MapView mapView = getMapView();
         MapGroup group = mapView.getRootGroup().findMapGroup(
                 "Drawing Objects");
         List<DrawingShape> dslist = new ArrayList<>();
 
-
         DrawingShape ds = new DrawingShape(mapView, "ds-1");
         ds.setStrokeColor(Color.RED);
-        ds.setPoints(new GeoPoint[] { new GeoPoint(0,0), new GeoPoint(1,1), new GeoPoint(2,1)});
+        ds.setPoints(new GeoPoint[] {
+                new GeoPoint(0, 0), new GeoPoint(1, 1), new GeoPoint(2, 1)
+        });
         ds.setHeight(100);
         //group.addItem(ds);
         dslist.add(ds);
         // test to set closed after adding to a group
         ds.setClosed(true);
 
-
-
         ds = new DrawingShape(mapView, "ds-2");
-        ds.setPoints(new GeoPoint[] { new GeoPoint(0,0), new GeoPoint(-1,-1), new GeoPoint(-2,-1)});
+        ds.setPoints(new GeoPoint[] {
+                new GeoPoint(0, 0), new GeoPoint(-1, -1), new GeoPoint(-2, -1)
+        });
         ds.setHeight(200);
         ds.setClosed(true);
         ds.setStrokeColor(Color.BLUE);
@@ -2446,7 +2662,9 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
         group.addItem(mp);
         mp.setMovable(false);
         ds = new DrawingShape(mapView, "ds-3");
-        ds.setPoints(new GeoPoint[] { new GeoPoint(0,0), new GeoPoint(2,0), new GeoPoint(2,-1)});
+        ds.setPoints(new GeoPoint[] {
+                new GeoPoint(0, 0), new GeoPoint(2, 0), new GeoPoint(2, -1)
+        });
         ds.setClosed(true);
         ds.setStrokeColor(Color.YELLOW);
         ds.setHeight(300);
@@ -2454,7 +2672,9 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
         ds.setMovable(false);
         group.addItem(ds);
         ds = new DrawingShape(mapView, "ds-4");
-        ds.setPoints(new GeoPoint[] { new GeoPoint(0,0), new GeoPoint(-2,0), new GeoPoint(-2,1)});
+        ds.setPoints(new GeoPoint[] {
+                new GeoPoint(0, 0), new GeoPoint(-2, 0), new GeoPoint(-2, 1)
+        });
         ds.setStrokeColor(Color.GREEN);
         group.addItem(ds);
         ds.setHeight(400);
@@ -2584,7 +2804,7 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
             final MapItem mi = getMapView().getMapItem("iss-unique-identifier");
             if (mi != null) {
                 if (mi instanceof Marker) {
-                    Marker marker = (Marker)mi;
+                    Marker marker = (Marker) mi;
 
                     GeoPoint newPoint = new GeoPoint(lat, lon);
                     GeoPoint lastPoint = ((Marker) mi).getPoint();
@@ -2594,14 +2814,15 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
                     double dir = lastPoint.bearingTo(newPoint);
 
                     double delta = currTime -
-                             mi.getMetaLong("iss.lastUpdateTime", 0);
+                            mi.getMetaLong("iss.lastUpdateTime", 0);
 
                     double speed = dist / (delta / 1000f);
 
                     marker.setTrack(dir, speed);
 
                     marker.setPoint(newPoint);
-                    mi.setMetaLong("iss.lastUpdateTime", SystemClock.elapsedRealtime());
+                    mi.setMetaLong("iss.lastUpdateTime",
+                            SystemClock.elapsedRealtime());
 
                 }
             } else {
@@ -2632,9 +2853,11 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
             float z = values[2];
 
             float asr = (x * x + y * y + z * z)
-                    / (SensorManager.GRAVITY_EARTH * SensorManager.GRAVITY_EARTH);
+                    / (SensorManager.GRAVITY_EARTH
+                            * SensorManager.GRAVITY_EARTH);
             if (Math.abs(x) > 6 || Math.abs(y) > 6 || Math.abs(z) > 8)
-                Log.d(TAG, "gravity=" + SensorManager.GRAVITY_EARTH + " x=" + x + " y=" + y + " z=" + z + " asr=" + asr);
+                Log.d(TAG, "gravity=" + SensorManager.GRAVITY_EARTH + " x=" + x
+                        + " y=" + y + " z=" + z + " asr=" + asr);
             if (y > 7) {
                 TextContainer.getTopInstance().displayPrompt("Tilt Right");
                 Log.d(TAG, "tilt right");
@@ -2657,4 +2880,29 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
             Log.d(TAG, "accuracy for the accelerometer: " + accuracy);
         }
     }
+
+    BroadcastReceiver fakePhoneCallReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(final Context context, final Intent intent) {
+            Log.d(TAG, "intent: " + intent.getAction() + " "
+                    + intent.getStringExtra("mytime"));
+            getMapView().post(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(getMapView().getContext(),
+                            "intent: " + intent.getAction() + " "
+                                    + intent.getStringExtra("mytime"),
+                            Toast.LENGTH_LONG).show();
+                }
+            });
+            NotificationManager nm = (NotificationManager) getMapView()
+                    .getContext()
+                    .getSystemService(Context.NOTIFICATION_SERVICE);
+            int id = intent.getIntExtra("notificationId", 0);
+            Log.d(TAG, "cancelling id: " + id);
+            if (id > 0) {
+                nm.cancel(id);
+            }
+        }
+    };
 }

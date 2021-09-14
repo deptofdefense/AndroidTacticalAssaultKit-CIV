@@ -22,7 +22,8 @@ import android.content.BroadcastReceiver;
 import com.atakmap.coremap.log.Log;
 
 public class HelloWorldWidget extends AbstractWidgetMapComponent implements
-        OnPressListener, MapWidget.OnUnpressListener, MapWidget.OnMoveListener, MapWidget.OnClickListener {
+        OnPressListener, MapWidget.OnUnpressListener, MapWidget.OnMoveListener,
+        MapWidget.OnClickListener {
 
     private MapView mapView;
 
@@ -59,8 +60,7 @@ public class HelloWorldWidget extends AbstractWidgetMapComponent implements
 
                 //imageUri = "file:///sdcard/custom_marker.png";
 
-
-                widget.setPoint((mapView.getWidth() / 2)
+                widget.setPoint((mapView.getWidth() / 2f)
                         - (MapView.DENSITY * ICON_WIDTH / 2) + 72, 160f);
 
                 Icon.Builder builder = new Icon.Builder();
@@ -86,15 +86,13 @@ public class HelloWorldWidget extends AbstractWidgetMapComponent implements
     private PointF pointDown = null;
     private boolean dragging;
 
-
     @Override
     public boolean onMapWidgetMove(MapWidget widget, MotionEvent event) {
         if (dragging || (pointDown != null &&
-            Math.abs(pointDown.x - event.getX()) < 2 &&
+                Math.abs(pointDown.x - event.getX()) < 2 &&
                 Math.abs(pointDown.y - event.getY()) < 2)) {
             dragging = true;
         }
-
 
         Log.d(TAG, event.getX() + " " + event.getY());
         return true;
@@ -127,10 +125,8 @@ public class HelloWorldWidget extends AbstractWidgetMapComponent implements
         Log.d(TAG, "onMapUnpressed called");
     }
 
-
     @Override
     public void onMapWidgetPress(MapWidget widget, MotionEvent event) {
-
 
         Log.d(TAG, "onMapPressed called");
         dragging = false;

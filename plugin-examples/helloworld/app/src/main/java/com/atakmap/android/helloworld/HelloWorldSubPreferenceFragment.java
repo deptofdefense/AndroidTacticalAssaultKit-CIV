@@ -28,6 +28,7 @@ public class HelloWorldSubPreferenceFragment extends PluginPreferenceFragment {
 
     @Override
     public String getSubTitle() {
-        return getSubTitle("Hello World Preferences", "Hello World SubPreferences");
+        return getSubTitle("Hello World Preferences",
+                "Hello World SubPreferences");
     }
 }

@@ -37,7 +37,7 @@ public class ExampleLayer extends AbstractLayer {
         super(name);
 
         this.pluginContext = plugin;
-        
+
         this.upperLeft = GeoPoint.createMutable();
         this.upperRight = GeoPoint.createMutable();
         this.lowerRight = GeoPoint.createMutable();
@@ -63,6 +63,7 @@ public class ExampleLayer extends AbstractLayer {
             public GeoPointMetaData[] getMetaDataPoints() {
                 return GeoPointMetaData.wrap(ExampleLayer.this.getPoints());
             }
+
             @Override
             public GeoPoint[] getPoints() {
                 return ExampleLayer.this.getPoints();

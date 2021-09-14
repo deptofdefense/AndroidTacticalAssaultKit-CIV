@@ -1,3 +1,4 @@
+
 package com.atakmap.android.helloworld;
 
 import android.content.Context;
@@ -10,8 +11,8 @@ import androidx.test.espresso.action.ViewActions;
 import androidx.test.espresso.matcher.ViewMatchers;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
-import com.atakmap.android.maps.assets.MapAssets;
 import com.atakmap.android.test.helpers.ATAKTestClass;
 import com.atakmap.android.test.helpers.DrawableMatcher;
 import com.atakmap.app.R;
@@ -31,12 +32,13 @@ import java.util.concurrent.Callable;
  * testing of common code helper functions.
  */
 public class MapTest extends ATAKTestClass {
-    private final Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
+    private final Context appContext = InstrumentationRegistry
+            .getInstrumentation().getTargetContext();
 
     // TODO: move these to ATAKTestClass if they're useful to generalize, but may need to be tailored a bit for each test class
     @BeforeClass
     public static void setupBeforeAllTests() throws Exception {
-      helper.deleteAllMarkers();
+        helper.deleteAllMarkers();
     }
 
     @Before
@@ -50,16 +52,14 @@ public class MapTest extends ATAKTestClass {
         helper.deleteAllMarkers();
     }
 
-
     // TODO: move this to a helper class?
     public static Matcher<View> withDrawable(final int resourceId) {
         return new DrawableMatcher(resourceId);
     }
 
-
     @Test
     public void useAppContext() throws Exception {
-        Assert.assertEquals("com.atakmap.app", appContext.getPackageName());
+        Assert.assertEquals("com.atakmap.app.civ", appContext.getPackageName());
     }
 
     @Test
@@ -68,30 +68,30 @@ public class MapTest extends ATAKTestClass {
         helper.pressBackTimes(1);
     }
 
-
     @Test
     public void placeMarker() throws Exception {
         // Short-term fix for first hint dialog, just disable that hint so the rest of the test works:
         PreferenceManager.getDefaultSharedPreferences(appContext)
-            .edit()
-            .putBoolean("atak.hint.iconset", false)
-            .apply();
-            
+                .edit()
+                .putBoolean("atak.hint.iconset", false)
+                .apply();
+
         // Open marker palette
         helper.pressButtonFromLayoutManager("Point Dropper");
-        
+
         // Close hint dialog that appears the first time this tool is run
         //TODO: fix the next line -- I think Espresso is probably getting hung up on the animation the Point Dropper does while the hint dialog is open? Long-term, might need to have a way to either disable the animation or animate in a way Espresso can deal with.
         //onView(withId(android.R.id.button1)).inRoot(isDialog()).perform(click());
-            
+
         // Select friendly marker button
-        Espresso.onView(ViewMatchers.withId(R.id.enterLocationTypeFriendly)).perform(ViewActions.click());
-        
+        Espresso.onView(ViewMatchers.withId(R.id.enterLocationTypeFriendly))
+                .perform(ViewActions.click());
+
         // Close hint dialog that appears the first time this button is pressed
         helper.closeHelperDialog();
 
         // Place a marker at 0,0
-        helper.pressMapLocationMinScale(new GeoPoint(0,0));
+        helper.pressMapLocationMinScale(new GeoPoint(0, 0));
 
         // Verify newly placed marker exists
         Assert.assertNotNull(helper.nullWait(new Callable<Marker>() {
@@ -105,9 +105,10 @@ public class MapTest extends ATAKTestClass {
     @Test
     public void selectRadialMenuButton() throws Exception {
         helper.pressButtonFromLayoutManager("Red X Tool");
-        MapAssets assets = new MapAssets(appContext);
         //see assets\menus\redx_menu.xml for all the actions you can perform for red x radial
+        helper.pressMapLocation(MapView.getMapView().getCenterPoint().get());
         helper.pressMarkerNameOnMap("Red X");
-        helper.pressRadialButton(helper.getMarkerOfName("Red X"), "dropfriendly", assets);
+        helper.pressRadialButton(helper.getMarkerOfName("Red X"),
+                "asset://icons/target.png");
     }
 }

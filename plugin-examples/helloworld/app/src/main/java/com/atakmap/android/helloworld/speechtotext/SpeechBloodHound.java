@@ -1,3 +1,4 @@
+
 package com.atakmap.android.helloworld.speechtotext;
 
 import android.content.Context;
@@ -38,12 +39,14 @@ public class SpeechBloodHound extends SpeechActivity {
      * @param context - This is the plugin context needed so we can load resources.
      */
     public SpeechBloodHound(MapView view, String input, Context context) {
-        super(view,context);
+        super(view, context);
         Log.d(TAG, "============INSIDE SPEECH BLOOD HOUND==========");
         routeArray = context.getResources().getStringArray(R.array.route_array);
-        callsignArray = context.getResources().getStringArray(R.array.callsign_array);
+        callsignArray = context.getResources()
+                .getStringArray(R.array.callsign_array);
         analyzeSpeech(input);
     }
+
     /**
      * Decides if a user is looking for a Route, callsign, or address.
      * If they say route, they're looking for a route and so on.
@@ -63,8 +66,10 @@ public class SpeechBloodHound extends SpeechActivity {
         int indexR = -1, indexC = -1;
         for (int i = 0; i < destArr.length; i++) {
             for (String s : routeArray) {
-                if (destArr[i].equalsIgnoreCase(s))
+                if (destArr[i].equalsIgnoreCase(s)) {
                     indexR = i;
+                    break;
+                }
             }
             for (String s : callsignArray) {
                 if (destArr[i].equalsIgnoreCase(s))
@@ -79,7 +84,7 @@ public class SpeechBloodHound extends SpeechActivity {
             String routeName = destName.toString().trim();
             Log.d(TAG, "=========Route name ========" + routeName);
             mapGroupType = "Route";
-            UIDFinder(routeName,mapGroupType);
+            UIDFinder(routeName, mapGroupType);
         } else if (indexC != -1) {
             for (int i = indexC + 1; i < destArr.length; i++) {
                 destName.append(destArr[i]);
@@ -100,13 +105,17 @@ public class SpeechBloodHound extends SpeechActivity {
                 public void onResult() {
                     if (gt.getPoint() != null) {
                         Log.d(TAG, "Inside GeocodingTask result listener");
-                        PlacePointTool.MarkerCreator marker = new PlacePointTool.MarkerCreator(gt.getPoint());
+                        PlacePointTool.MarkerCreator marker = new PlacePointTool.MarkerCreator(
+                                gt.getPoint());
                         String randomUID = UUID.randomUUID().toString();
-                        marker.setCallsign(input).setUid(randomUID).setType("b-m-p-w-GOTO");
+                        marker.setCallsign(input).setUid(randomUID)
+                                .setType("b-m-p-w-GOTO");
                         marker.placePoint();
                         startActivity(randomUID);
                     } else {
-                        Toast.makeText(getView().getContext(), "Address not found, Try moving map", Toast.LENGTH_LONG).show();
+                        Toast.makeText(getView().getContext(),
+                                "Address not found, Try moving map",
+                                Toast.LENGTH_LONG).show();
                     }
                 }
             });
@@ -137,24 +146,24 @@ public class SpeechBloodHound extends SpeechActivity {
      *
      * @param title - the marker the user is looking for
      */
-    private void UIDFinder(String title,String mapGroupType) {
+    private void UIDFinder(String title, String mapGroupType) {
         MapGroup cotGroup = getView().getRootGroup().findMapGroup(mapGroupType);
-        if(mapGroupType.equalsIgnoreCase("route")){
+        if (mapGroupType.equalsIgnoreCase("route")) {
             MapItem item = cotGroup.deepFindItem("title", title);
-            if(item!=null){
+            if (item != null) {
                 Route route = (Route) item;
                 startActivity(route.getMarker(0).getUID());
-            }
-            else
-                Toast.makeText(getView().getContext(),"Route not found",Toast.LENGTH_SHORT).show();
+            } else
+                Toast.makeText(getView().getContext(), "Route not found",
+                        Toast.LENGTH_SHORT).show();
 
-        }
-        else{
+        } else {
             MapItem item = cotGroup.deepFindItem("callsign", title);
-            if(item!=null)
-            startActivity(item.getUID());
+            if (item != null)
+                startActivity(item.getUID());
             else
-                Toast.makeText(getView().getContext(),"Callsign not found",Toast.LENGTH_SHORT).show();
+                Toast.makeText(getView().getContext(), "Callsign not found",
+                        Toast.LENGTH_SHORT).show();
         }
     }
 

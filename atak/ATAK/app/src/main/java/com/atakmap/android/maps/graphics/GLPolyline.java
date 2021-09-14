@@ -71,6 +71,8 @@ public class GLPolyline extends GLShape2 implements
 
     private final static double DEFAULT_MIN_RENDER_SCALE = (1.0d / 100000.0d);
 
+    private static final double threshold = 160000;
+
     private final Polyline _subject;
     private boolean _closed;
     private DoubleBuffer _points;
@@ -171,6 +173,7 @@ public class GLPolyline extends GLShape2 implements
                 | GLMapView.RENDER_PASS_SURFACE
                 | GLMapView.RENDER_PASS_SCENES);
         this.impl = new GLBatchPolygon(surface);
+        this.impl.setTesselationThreshold(threshold);
 
         _subject = subject;
         GeoPoint[] points = subject.getPoints();

@@ -1,3 +1,4 @@
+
 package com.atakmap.android.helloworld.utils;
 
 import androidx.recyclerview.widget.RecyclerView;
@@ -10,7 +11,7 @@ import android.util.AttributeSet;
  * Overcome an issue with the RecyclerView passing back the wrong 
  * Resouce when used within a plugin.    
  */
-public class PluginRecyclerView extends RecyclerView { 
+public class PluginRecyclerView extends RecyclerView {
 
     private static Context appContext;
 
@@ -22,7 +23,8 @@ public class PluginRecyclerView extends RecyclerView {
         this(context, attrs, R.attr.recyclerViewStyle);
     }
 
-    public PluginRecyclerView(Context context, AttributeSet attrs, int defStyleAttr) {
+    public PluginRecyclerView(Context context, AttributeSet attrs,
+            int defStyleAttr) {
         super(context, attrs, defStyleAttr);
     }
 
@@ -32,8 +34,8 @@ public class PluginRecyclerView extends RecyclerView {
      * This is left in for future possible fixes.
      * @param context the application context.   
      */
-    public static void setAppContext(Context context) { 
-         appContext = context;
+    public static void setAppContext(Context context) {
+        appContext = context;
     }
 
     /**
@@ -41,7 +43,7 @@ public class PluginRecyclerView extends RecyclerView {
      * Resources from the application context and not the resources
      * from the plugin context.
      */
-    public Resources getResources() { 
-          return getContext().getResources();
+    public Resources getResources() {
+        return getContext().getResources();
     }
 }

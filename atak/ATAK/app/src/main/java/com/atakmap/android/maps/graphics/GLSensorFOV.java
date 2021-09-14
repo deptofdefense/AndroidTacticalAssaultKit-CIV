@@ -146,6 +146,11 @@ public class GLSensorFOV extends GLShape implements OnMetricsChangedListener,
     }
 
     private void updatePolygon() {
+
+        // in this case the camera point is not valid, so the polygon should not be computed
+        if (Double.isNaN(_point.getLatitude()) || Double.isNaN(_point.getLongitude()))
+            return;
+
         LineString ls = new LineString(3);
 
         int numSlices = SLICES_PER_90 * (int) Math.ceil(_fov / 90);
@@ -157,6 +162,7 @@ public class GLSensorFOV extends GLShape implements OnMetricsChangedListener,
                     _point, _extent,
                     _azimuth - (_fov / 2.0f) + ((_fov / numSlices) * i));
             ls.addPoint(gp.getLongitude(), gp.getLatitude(), 0);
+
         }
 
         ls.addPoint(_point.getLongitude(), _point.getLatitude(), 0);

@@ -1,3 +1,4 @@
+
 package com.atakmap.android.helloworld;
 
 import com.atakmap.android.test.helpers.ATAKTestClass;
@@ -12,14 +13,14 @@ import static com.atakmap.android.test.helpers.ClassLoaderReplacer.restoreLoader
 
 import android.os.Build;
 
-
 public class ExampleTest extends ATAKTestClass {
     private final HelloWorldRobot helloWorldRobot = new HelloWorldRobot();
 
     @BeforeClass
     public static void setupPlugin() throws Exception {
         HelloWorldRobot.installPlugin();
-        fixClassLoaderForClass(ExampleTest.class, "com.atakmap.android.helloworld.plugin");
+        fixClassLoaderForClass(ExampleTest.class,
+                "com.atakmap.android.helloworld.plugin");
     }
 
     @AfterClass
@@ -61,7 +62,7 @@ public class ExampleTest extends ATAKTestClass {
         // The current ISS plotting site uses cleartext http connection and offers no https ability.
         // Since this is not allowed on Android 9 or higher, do not test this capability.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
-              return;
+            return;
 
         helloWorldRobot
                 .openToolFromOverflow()

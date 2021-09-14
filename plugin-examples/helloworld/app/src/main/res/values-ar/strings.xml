@@ -30,6 +30,7 @@
     <string name="fakeContentProvider">Connect to a fake content provider</string>
     <string name="pluginNotification">Display an android notification</string>
     <string name="notificationSpammer">Spam android notifications</string>
+    <string name="notificationWithOptions">Shows how to produce a notification with buttons</string>
     <string name="cameraLauncher">Launch the camera</string>
     <string name="imageAttach">Create a marker with an attached image</string>
     <string name="webView">Demonstrate how to launch a plugin with a web view.</string>
@@ -195,6 +196,21 @@
     <string name="route_exporter_name">Hello World Route Exporter</string>
 
     <string name="country_prompt">Choose a country</string>
+
+    <string name="download_map_layer_msg">Download map layer using a shape</string>
+    <string name="no_mobile_imagery_found">No mobile imagery found. Make sure you\'re switched to the "Mobile" tab.</string>
+    <string name="map_layer_download">Map Layer Download</string>
+    <string name="job_status_downloading">Downloading tiles…</string>
+    <string name="job_status_connecting">Connecting to server…</string>
+    <string name="map_layer_download_error">Map layer download error occurred.</string>
+    <string name="map_layer_download_complete">Map layer download has completed.</string>
+    <string name="download_tiles_progress">%s tiles</string>
+    <string name="download_layers_progress">%s layers</string>
+    <string name="download_time_left">Est. Time Left: %s</string>
+
+    <string name="map_screenshot_desc">Capture a screenshot of the map and save to a file</string>
+    <string name="map_screenshot_started">Capturing map screenshot…</string>
+    <string name="map_screenshot_finished">Finished capturing map screenshot to %s</string>
 
     <string-array name="country_arrays">
         <item>Malaysia</item>

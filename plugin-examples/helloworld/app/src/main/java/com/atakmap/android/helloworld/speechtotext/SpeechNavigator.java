@@ -1,3 +1,4 @@
+
 package com.atakmap.android.helloworld.speechtotext;
 
 import android.content.Intent;
@@ -17,7 +18,7 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 /**
  * Takes in String addresses and starts navigation to them.
  */
- public class SpeechNavigator extends SpeechActivity {
+public class SpeechNavigator extends SpeechActivity {
     private static final String TAG = "SPEECH_NAVIGATOR";
 
     private String geoAddress;
@@ -30,9 +31,9 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
     private final boolean navFlag;
 
     public SpeechNavigator(MapView mapview, String input, Boolean quickNav) {
-         super(mapview,mapview.getContext());
-         this.navFlag = quickNav;
-         analyzeSpeech(input);
+        super(mapview, mapview.getContext());
+        this.navFlag = quickNav;
+        analyzeSpeech(input);
     }
 
     /**
@@ -43,20 +44,20 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
      * @param input - The speech input
      */
     @Override
-     void analyzeSpeech(String input) {
+    void analyzeSpeech(String input) {
         int toIndex = -1;
         int fromIndex = -1;
         StringBuilder destinationBuilder = new StringBuilder();
         String[] inputArr = input.split(" ");
-        for(int i = 0; i < inputArr.length;i++){
-            if(inputArr[i].equalsIgnoreCase("to"))
+        for (int i = 0; i < inputArr.length; i++) {
+            if (inputArr[i].equalsIgnoreCase("to"))
                 toIndex = i;
-            if(inputArr[i].equalsIgnoreCase("from"))
+            if (inputArr[i].equalsIgnoreCase("from"))
                 fromIndex = i;
         }
         //Now get whats after from and to
-        if(toIndex!=-1){
-            for(int i = toIndex+1;i<inputArr.length;i++){
+        if (toIndex != -1) {
+            for (int i = toIndex + 1; i < inputArr.length; i++) {
                 destinationBuilder.append(inputArr[i]);
                 destinationBuilder.append(" ");
             }
@@ -65,13 +66,13 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
         if (fromIndex != -1) {
             StringBuilder origin = new StringBuilder();
             if (fromIndex > toIndex) {
-                for (int i = fromIndex+1; i < inputArr.length; i++) {
+                for (int i = fromIndex + 1; i < inputArr.length; i++) {
                     origin.append(inputArr[i]);
                     origin.append(" ");
                 }
                 inputOrigin = origin.toString().trim();
             } else {
-                for (int i = fromIndex+1; i < toIndex; i++) {
+                for (int i = fromIndex + 1; i < toIndex; i++) {
                     origin.append(inputArr[i]);
                     origin.append(" ");
                 }
@@ -89,7 +90,7 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
      */
     @Override
     void startActivity() {
-        if(inputOrigin!=null)
+        if (inputOrigin != null)
             originFinder(inputOrigin);
         else
             source = getView().getSelfMarker().getPoint();
@@ -103,21 +104,28 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
                 if (gt.getPoint() != null) {
                     Log.d(TAG, "Inside GeocodingTask result listener");
                     destination = gt.getPoint();
-                    if(!navFlag){
-                       route =  RouteMapReceiver.promptPlanRoute(getView(), source, destination, "Route to " + inputDestination, Color.RED);
+                    if (!navFlag) {
+                        route = RouteMapReceiver.promptPlanRoute(getView(),
+                                source, destination,
+                                "Route to " + inputDestination, Color.RED);
                         route.persist(getView().getMapEventDispatcher(), null,
                                 this.getClass());
-                    }
-                    else{
-                      route = RouteMapReceiver.promptPlanRoute(getView(), source, destination, "Route to " + inputDestination, Color.RED);
+                    } else {
+                        route = RouteMapReceiver.promptPlanRoute(getView(),
+                                source, destination,
+                                "Route to " + inputDestination, Color.RED);
                         route.persist(getView().getMapEventDispatcher(), null,
                                 this.getClass());
-                        Intent startNavIntent = new Intent(RouteMapReceiver.START_NAV)
-                                .putExtra("routeUID",route.getUID());
-                        AtakBroadcast.getInstance().sendBroadcast(startNavIntent);
+                        Intent startNavIntent = new Intent(
+                                RouteMapReceiver.START_NAV)
+                                        .putExtra("routeUID", route.getUID());
+                        AtakBroadcast.getInstance()
+                                .sendBroadcast(startNavIntent);
                     }
                 } else {
-                    Toast.makeText(getPluginContext(), "Address not found, Try moving map", Toast.LENGTH_LONG).show();
+                    Toast.makeText(getPluginContext(),
+                            "Address not found, Try moving map",
+                            Toast.LENGTH_LONG).show();
                 }
             }
         });
@@ -129,7 +137,7 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
      * Navigates from x to y : it finds x
      * @param s - the address to find
      */
-    private void originFinder(String s){
+    private void originFinder(String s) {
         GeoBounds gb = getView().getBounds();
         final GeocodingTask gt = new GeocodingTask(getView().getContext(),
                 gb.getSouth(), gb.getWest(), gb.getNorth(),
@@ -141,7 +149,9 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
                     Log.d(TAG, "Inside GeocodingTask result listener");
                     source = gt.getPoint();
                 } else {
-                    Toast.makeText(getPluginContext(), "Origin Address not found, Try moving map", Toast.LENGTH_LONG).show();
+                    Toast.makeText(getPluginContext(),
+                            "Origin Address not found, Try moving map",
+                            Toast.LENGTH_LONG).show();
                 }
             }
         });

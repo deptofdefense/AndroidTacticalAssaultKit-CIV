@@ -11,9 +11,11 @@ import androidx.annotation.NonNull;
 import com.atakmap.android.model.viewer.processing.ShaderHelper;
 import com.atakmap.android.model.viewer.processing.TextureHelper;
 import com.atakmap.map.layer.feature.geometry.Envelope;
+import com.atakmap.map.layer.model.Mesh;
 import com.atakmap.map.layer.model.Model;
 import com.atakmap.map.layer.model.Models;
 import com.atakmap.map.layer.model.VertexDataLayout;
+import com.atakmap.math.MathUtils;
 
 import java.nio.Buffer;
 
@@ -251,23 +253,26 @@ public class ModelRenderer implements GLSurfaceView.Renderer {
     private void drawModel() {
         final VertexDataLayout layout = objModel.getVertexDataLayout();
 
-        // XXX - this is assuming that buffer is ByteBuffer
-        Buffer modelVertices = objModel.getVertices(Model.VERTEX_ATTR_POSITION);
-        modelVertices.position(layout.position.offset);
+        if (MathUtils.hasBits(layout.attributes, Mesh.VERTEX_ATTR_POSITION)) {
+            // XXX - this is assuming that buffer is ByteBuffer
+            Buffer modelVertices = objModel.getVertices(Mesh.VERTEX_ATTR_POSITION);
+            modelVertices.position(layout.position.offset);
 
-        GLES30.glVertexAttribPointer(positionHandle, 3, GLES30.GL_FLOAT, false,
-                layout.position.stride,
-                objModel.getVertices(Model.VERTEX_ATTR_POSITION));
-        GLES30.glEnableVertexAttribArray(positionHandle);
+            GLES30.glVertexAttribPointer(positionHandle, 3, GLES30.GL_FLOAT, false,
+                    layout.position.stride, modelVertices);
+            GLES30.glEnableVertexAttribArray(positionHandle);
+        }
 
-        //pass in texture coordinate information
-        Buffer modelTexCoords = objModel
-                .getVertices(Model.VERTEX_ATTR_TEXCOORD_0);
-        modelTexCoords.position(layout.texCoord0.offset);
+        if (MathUtils.hasBits(layout.attributes, Mesh.VERTEX_ATTR_TEXCOORD_0)) {
+            //pass in texture coordinate information
+            Buffer modelTexCoords = objModel
+                    .getVertices(Mesh.VERTEX_ATTR_TEXCOORD_0);
+            modelTexCoords.position(layout.texCoord0.offset);
 
-        GLES30.glVertexAttribPointer(texCoodsHandle, 2, GLES30.GL_FLOAT, false,
-                layout.texCoord0.stride, modelTexCoords);
-        GLES30.glEnableVertexAttribArray(texCoodsHandle);
+            GLES30.glVertexAttribPointer(texCoodsHandle, 2, GLES30.GL_FLOAT, false,
+                    layout.texCoord0.stride, modelTexCoords);
+            GLES30.glEnableVertexAttribArray(texCoodsHandle);
+        }
 
         Matrix.multiplyMM(mvpMatrix, 0, viewMatrix, 0, modelMatrix, 0);
         GLES30.glUniformMatrix4fv(mvMatrixHandle, 1, false, mvpMatrix, 0);

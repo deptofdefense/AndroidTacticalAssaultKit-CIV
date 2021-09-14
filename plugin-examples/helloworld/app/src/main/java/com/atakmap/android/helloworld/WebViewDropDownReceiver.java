@@ -74,7 +74,7 @@ public class WebViewDropDownReceiver extends DropDownReceiver implements
 
     }
 
-    public class Client extends WebViewClient {
+    public static class Client extends WebViewClient {
         @Override
         public void onPageStarted(WebView view, String url, Bitmap favicon) {
             Log.d(TAG, "started retrieving: " + url);
@@ -95,7 +95,7 @@ public class WebViewDropDownReceiver extends DropDownReceiver implements
 
     }
 
-    private class ChromeClient extends WebChromeClient {
+    private static class ChromeClient extends WebChromeClient {
         @Override
         public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
             Log.d(TAG, consoleMessage.message() + " -- From line "

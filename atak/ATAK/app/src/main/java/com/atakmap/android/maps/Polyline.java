@@ -12,6 +12,7 @@ import com.atakmap.android.imagecapture.CapturePP;
 import com.atakmap.android.imagecapture.PointA;
 import com.atakmap.android.maps.graphics.GLMapItem;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -162,6 +163,7 @@ public class Polyline extends Shape {
      * Set the points for the polyline.   These points have metadata.
      * 
      * @param points the array of points
+     * @throws IllegalArgumentException if one of the points is not valid
      */
     public void setPoints(GeoPointMetaData[] points) {
         this.setPoints(points, 0, points.length);
@@ -171,6 +173,7 @@ public class Polyline extends Shape {
      * Set the points for the polyline.   These points do not have any metadata.
      *
      * @param points the array of points, cannot be null.
+     * @throws IllegalArgumentException if one of the points is not valid
      */
     public void setPoints(GeoPoint[] points) {
         this.setPoints(GeoPointMetaData.wrap(points), 0, points.length);
@@ -182,6 +185,7 @@ public class Polyline extends Shape {
      * @param points lat/lon/alt
      * @param off the offset into the points array
      * @param len the length to be used within the points array.
+     * @throws IllegalArgumentException if one of the points is not valid
      */
     public void setPoints(GeoPoint[] points, int off, int len) {
         this.setPoints(GeoPointMetaData.wrap(points), off, len);
@@ -193,6 +197,7 @@ public class Polyline extends Shape {
      * @param points metadata enhanced points
      * @param off the offset into the points array
      * @param len the length to be used within the points array.
+     * @throws IllegalArgumentException if one of the points is not valid
      */
     synchronized public void setPoints(final GeoPointMetaData[] points,
             final int off, final int len) {
@@ -211,6 +216,16 @@ public class Polyline extends Shape {
                 this.onPointsChanged();
                 return;
 
+            }
+        }
+        
+        // Validate
+        for (int i = off; i < off + len; i++) {
+            GeoPoint gp = points[i].get();
+            if (Double.isNaN(gp.getLatitude()) || Double.isNaN(gp.getLongitude())) {
+                Log.e(getClass().getName(), "Invalid point " + points[i].get(), new Throwable());
+                // Abandon
+                return;
             }
         }
 

@@ -472,6 +472,14 @@
                 android:text="Notification Spammer" />
 
             <Button
+                android:id="@+id/notificationWithOptions"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Notification With Options" />
+
+            <Button
                 android:id="@+id/videoLauncher"
                 style="@style/darkButton"
                 android:layout_width="wrap_content"
@@ -537,6 +545,14 @@
                 android:layout_height="wrap_content"
                 android:padding="6dp"
                 android:text="Web View" />
+
+            <Button
+                android:id="@+id/mapScreenshot"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Map Screenshot" />
 
             <TextView
                 android:id="@+id/speechToText_TV"
@@ -633,6 +649,26 @@
                 android:padding="6dp"
                 android:text="Get Image" />
 
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Map Layers"
+                android:textColor="@android:color/white"
+                android:textSize="18sp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/white" />
+
+            <Button
+                android:id="@+id/downloadMapLayer"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Download Map Layer"/>
+
             <LinearLayout
                 android:id="@+id/secondRender"
                 android:layout_width="match_parent"
@@ -660,6 +696,8 @@
             <com.atakmap.android.gui.PluginSpinner
                 android:id="@+id/spinner1"
                 android:layout_width="match_parent"
+                android:padding="6dp"
+                style="@style/darkButton"
                 android:layout_height="wrap_content"
                 android:entries="@array/country_arrays"
                 android:prompt="@string/country_prompt" />

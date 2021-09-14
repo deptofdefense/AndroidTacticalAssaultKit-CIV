@@ -1,3 +1,4 @@
+
 package com.atakmap.android.helloworld;
 
 import android.content.Context;
@@ -6,7 +7,6 @@ import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.atakmap.android.helloworld.plugin.R;
 import com.atakmap.android.maps.Marker;
-import com.atakmap.android.maps.assets.MapAssets;
 import com.atakmap.android.test.helpers.helper_versions.HelperFactory;
 import com.atakmap.android.test.helpers.helper_versions.HelperFunctions;
 
@@ -58,12 +58,14 @@ public class HelloWorldRobot {
     }
 
     public HelloWorldRobot verifyEmergencyMarkerExists() {
-        assertNotNull("Could not find emergency marker", HELPER.getMarkerOfType("b-a-o-tbl"));
+        assertNotNull("Could not find emergency marker",
+                HELPER.getMarkerOfType("b-a-o-tbl"));
         return this;
     }
 
     public HelloWorldRobot verifyNoEmergencyMarkerExists() {
-        assertNull("Found an emergency marker", HELPER.getMarkerOfType("b-a-o-tbl"));
+        assertNull("Found an emergency marker",
+                HELPER.getMarkerOfType("b-a-o-tbl"));
         return this;
     }
 
@@ -85,17 +87,21 @@ public class HelloWorldRobot {
     }
 
     public HelloWorldRobot pressAircraftDetailsRadialMenuButton() {
-        MapAssets assets = new MapAssets(appContext);
-        HELPER.pressRadialButton(HELPER.getMarkerOfType("a-f-A"), "showdetails", assets);
+        HELPER.pressRadialButton(HELPER.getMarkerOfType("a-f-A"),
+                "asset://icons/details.png");
+        try {
+            Thread.sleep(3000);
+        } catch (Exception ignored) {
+        }
         return this;
     }
 
     public HelloWorldRobot verifyMarkerDetailsName(String name) {
         onView(withId(appContext.getResources().getIdentifier(
-                        "cotInfoNameEdit",
-                        "id",
-                        "com.atakmap.app")))
-                .check(matches(withText(name)));
+                "cotInfoNameEdit",
+                "id",
+                "com.atakmap.app")))
+                        .check(matches(withText(name)));
         return this;
     }
 }

@@ -1,3 +1,4 @@
+
 package com.atakmap.android.helloworld.menu;
 
 import android.content.Context;
@@ -43,7 +44,7 @@ public class MenuFactory implements MapMenuFactory {
      * Demonstrates a MapMenuFactory that mixes in the default
      * implementation with custom handling
      */
-    public MenuFactory (final Context context) {
+    public MenuFactory(final Context context) {
         pluginContext = context;
         final MapView mapView = MapView.getMapView();
         appContext = mapView.getContext();
@@ -55,8 +56,8 @@ public class MenuFactory implements MapMenuFactory {
         } catch (IOException e) {
             // do something better here
         }
-        resourceFactory =
-                new MenuResourceFactory(mapView, mapView.getMapData(), mapAssets, adapter);
+        resourceFactory = new MenuResourceFactory(mapView, mapView.getMapData(),
+                mapAssets, adapter);
     }
 
     @Override
@@ -83,14 +84,14 @@ public class MenuFactory implements MapMenuFactory {
                 .setColor(AbstractButtonWidget.STATE_DISABLED,
                         Color.parseColor("#7f7f7f7f"))
                 .setColor(AbstractButtonWidget.STATE_DISABLED
-                                | AbstractButtonWidget.STATE_PRESSED,
+                        | AbstractButtonWidget.STATE_PRESSED,
                         Color.parseColor("#7f7f7f7f"))
                 .setColor(AbstractButtonWidget.STATE_PRESSED,
                         Color.parseColor("#ff7fff7f"))
                 .setColor(AbstractButtonWidget.STATE_SELECTED,
                         Color.parseColor("#ff7fffff"))
                 .setColor(AbstractButtonWidget.STATE_SELECTED |
-                                AbstractButtonWidget.STATE_PRESSED,
+                        AbstractButtonWidget.STATE_PRESSED,
                         Color.parseColor("#ff7fff7f"))
                 .build();
     }
@@ -107,7 +108,7 @@ public class MenuFactory implements MapMenuFactory {
             for (MapWidget child : menuWidget.getChildWidgets()) {
                 if (child instanceof MapMenuButtonWidget) {
                     MapMenuButtonWidget buttonWidget = (MapMenuButtonWidget) child;
-                    submenuWidget =  buttonWidget.getSubmenuWidget();
+                    submenuWidget = buttonWidget.getSubmenuWidget();
                     // other logic here to determine what submenu has been
                     // found. For our example, we're looking for the cff
                     // submenu which is associated with the button using the
@@ -115,7 +116,8 @@ public class MenuFactory implements MapMenuFactory {
                     if (null != submenuWidget) {
                         final WidgetIcon widgetIcon = buttonWidget.getIcon();
                         final MapDataRef mapDataRef = widgetIcon.getIconRef(0);
-                        if (mapDataRef.toUri().contentEquals("asset://icons/cas.png"))
+                        if (mapDataRef.toUri()
+                                .contentEquals("asset://icons/cas.png"))
                             break;
                     }
                 }
@@ -123,8 +125,8 @@ public class MenuFactory implements MapMenuFactory {
             if (null != submenuWidget) {
                 // add a button, arbitrary choice of plugin
                 // scoped remove icon image with prompt action
-                final MapMenuButtonWidget buttonWidget =
-                        createButton("details.png");
+                final MapMenuButtonWidget buttonWidget = createButton(
+                        "details.png");
                 // size our button to look like the others ...
                 float span = 0;
                 float width = 0;
@@ -160,10 +162,9 @@ public class MenuFactory implements MapMenuFactory {
         final MapMenuWidget menuWidget = new MapMenuWidget();
         // arbitrary composition
         final MapMenuWidget submenuWidget = new MapMenuWidget();
-        for (int index = 2, max = iconFiles.length;
-             max > index; ++index) {
-            final MapMenuButtonWidget buttonWidget =
-                    createButton(iconFiles[index]);
+        for (int index = 2, max = iconFiles.length; max > index; ++index) {
+            final MapMenuButtonWidget buttonWidget = createButton(
+                    iconFiles[index]);
             submenuWidget.addWidget(buttonWidget);
             // weight the first button span 1.5 times the other buttons
             if (2 == index) {
@@ -171,9 +172,9 @@ public class MenuFactory implements MapMenuFactory {
             }
         }
         for (int index = 0, max = 3; max > index; ++index) {
-            final MapMenuButtonWidget buttonWidget = 1 == index ?
-                    createButton(iconFiles[index], submenuWidget) :
-                    createButton(iconFiles[index]);
+            final MapMenuButtonWidget buttonWidget = 1 == index
+                    ? createButton(iconFiles[index], submenuWidget)
+                    : createButton(iconFiles[index]);
             menuWidget.addWidget(buttonWidget);
         }
         // parenting
@@ -193,8 +194,7 @@ public class MenuFactory implements MapMenuFactory {
     private MapMenuWidget createSimpleDark() {
         MapMenuWidget menuWidget = new MapMenuWidget();
         for (String icon : iconFiles) {
-            final MapMenuButtonWidget buttonWidget =
-                    createButton(icon);
+            final MapMenuButtonWidget buttonWidget = createButton(icon);
             buttonWidget.setBackground(createDarkWidget());
             menuWidget.addWidget(buttonWidget);
         }
@@ -206,8 +206,7 @@ public class MenuFactory implements MapMenuFactory {
      Create a WidgetIcon from an image file path
      */
     private WidgetIcon createWidgetIcon(String path) {
-        String asset =
-                PluginMenuParser.getItem(pluginContext, path);
+        String asset = PluginMenuParser.getItem(pluginContext, path);
         if (0 == asset.length()) {
             asset = "asset:///" + path;
         }
@@ -224,9 +223,8 @@ public class MenuFactory implements MapMenuFactory {
     Uses default factory to create action from asset
      */
     private MapMenuButtonWidget createButton(String iconFile,
-                                              MapMenuWidget submenu) {
-        MapMenuButtonWidget buttonWidget =
-                new MapMenuButtonWidget(appContext);
+            MapMenuWidget submenu) {
+        MapMenuButtonWidget buttonWidget = new MapMenuButtonWidget(appContext);
         final MapAction action = resourceFactory
                 .resolveAction("actions/cancel.xml");
         buttonWidget.setOnClickAction(action);
@@ -239,8 +237,7 @@ public class MenuFactory implements MapMenuFactory {
     Same as prior button method, but uses a MapAction created from scratch
      */
     private MapMenuButtonWidget createButton(String iconFile) {
-        MapMenuButtonWidget buttonWidget =
-                new MapMenuButtonWidget(appContext);
+        MapMenuButtonWidget buttonWidget = new MapMenuButtonWidget(appContext);
         buttonWidget.setOnClickAction(new CancelAction());
         buttonWidget.setIcon(createWidgetIcon(iconFile));
         return buttonWidget;

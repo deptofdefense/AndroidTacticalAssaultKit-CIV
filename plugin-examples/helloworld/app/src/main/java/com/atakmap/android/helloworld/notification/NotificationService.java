@@ -41,15 +41,11 @@ public class NotificationService extends Service {
     public void onCreate() {
         super.onCreate();
 
-
-
-
-            Log.d(TAG,
+        Log.d(TAG,
                 "getting ready to show the notification, can never use notification compat.");
 
-            NotificationManager notificationManager = (NotificationManager) getSystemService(
-                    NOTIFICATION_SERVICE);
-
+        NotificationManager notificationManager = (NotificationManager) getSystemService(
+                NOTIFICATION_SERVICE);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
@@ -60,21 +56,22 @@ public class NotificationService extends Service {
             notificationManager.createNotificationChannel(channel);
         }
 
-
-
         Intent atakFrontIntent = new Intent();
 
-        atakFrontIntent.setComponent(new ComponentName(BuildConfig.ATAK_PACKAGE_NAME, "com.atakmap.app.ATAKActivity"));
+        atakFrontIntent.setComponent(new ComponentName(
+                BuildConfig.ATAK_PACKAGE_NAME, "com.atakmap.app.ATAKActivity"));
         atakFrontIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP
                 | Intent.FLAG_ACTIVITY_SINGLE_TOP);
 
-        atakFrontIntent.putExtra("internalIntent", new Intent("com.atakmap.android.helloworld.SHOW_HELLO_WORLD"));
+        atakFrontIntent.putExtra("internalIntent",
+                new Intent("com.atakmap.android.helloworld.SHOW_HELLO_WORLD"));
         PendingIntent appIntent = PendingIntent.getActivity(this, 0,
                 atakFrontIntent, 0);
 
         Notification.Builder nb;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            nb = new Notification.Builder(this, "com.atakmap.android.helloworld.def");
+            nb = new Notification.Builder(this,
+                    "com.atakmap.android.helloworld.def");
         } else {
             nb = new Notification.Builder(this);
         }
@@ -85,7 +82,7 @@ public class NotificationService extends Service {
         nb.setOngoing(false);
         nb.setAutoCancel(true);
 
-        notificationManager.notify( 9999, nb.build());
+        notificationManager.notify(9999, nb.build());
 
     }
 

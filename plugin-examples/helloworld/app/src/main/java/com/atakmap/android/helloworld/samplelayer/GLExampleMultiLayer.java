@@ -7,7 +7,6 @@ import android.util.Pair;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.Layer;
-import com.atakmap.map.layer.opengl.GLAbstractLayer;
 import com.atakmap.map.layer.opengl.GLAbstractLayer2;
 import com.atakmap.map.layer.opengl.GLLayer2;
 import com.atakmap.map.layer.opengl.GLLayerSpi2;
@@ -74,9 +73,12 @@ public class GLExampleMultiLayer extends GLAbstractLayer2 {
         if (frame.texture == null) {
             return;
         }
-        frame.texture.draw(frame.texture.getTexId(), 6, 4, 2, GLES20FixedPipeline.GL_FLOAT,
-                frame.textureCoordinates, 3, GLES20FixedPipeline.GL_FLOAT, frame.vertexCoordinates,
-                1.0f, 1.0f, 1.0f, 1.0f);    }
+        frame.texture.draw(frame.texture.getTexId(), 6, 4, 2,
+                GLES20FixedPipeline.GL_FLOAT,
+                frame.textureCoordinates, 3, GLES20FixedPipeline.GL_FLOAT,
+                frame.vertexCoordinates,
+                1.0f, 1.0f, 1.0f, 1.0f);
+    }
 
     @Override
     public void release() {
@@ -86,7 +88,6 @@ public class GLExampleMultiLayer extends GLAbstractLayer2 {
         this.frame = null;
         super.release();
     }
-
 
     public void setData(int[] argb, final int width, final int height,
             GeoPoint upperLeft,
@@ -119,7 +120,7 @@ public class GLExampleMultiLayer extends GLAbstractLayer2 {
 
     /**************************************************************************/
 
-    private class Data {
+    private static class Data {
         GLTexture texture;
         final DoubleBuffer points;
         final FloatBuffer vertexCoordinates;

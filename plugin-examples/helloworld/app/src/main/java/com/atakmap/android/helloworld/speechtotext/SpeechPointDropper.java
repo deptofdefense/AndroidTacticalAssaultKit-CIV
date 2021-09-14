@@ -1,3 +1,4 @@
+
 package com.atakmap.android.helloworld.speechtotext;
 
 import android.content.Context;
@@ -53,7 +54,6 @@ public class SpeechPointDropper extends SpeechActivity {
     private boolean polarDrop = false;
     private Span span = Span.METER;
 
-
     /**
      * Constructor
      *
@@ -61,7 +61,7 @@ public class SpeechPointDropper extends SpeechActivity {
      * @param context - The plugin context needed to load in resources.
      * @param view    - the mapview passed in from HelloWorldDropReceiver, needed for geobound stuff.
      */
-    public  SpeechPointDropper(String input, MapView view, Context context) {
+    public SpeechPointDropper(String input, MapView view, Context context) {
         super(view, context);
         Log.d(TAG, "=======INSIDE SpeechPointDropper Constructor======");
         loadResources();
@@ -127,7 +127,8 @@ public class SpeechPointDropper extends SpeechActivity {
                     destinationBuilder.append(inputArr[i]);
                     destinationBuilder.append(" ");
                 }
-                rawCoordInfo = destinationBuilder.toString().trim().toLowerCase();
+                rawCoordInfo = destinationBuilder.toString().trim()
+                        .toLowerCase();
                 StringBuilder markerBuilder = new StringBuilder();
                 for (int i = aIndex + 1; i <= objEndIndex; i++) {
                     markerBuilder.append(inputArr[i]);
@@ -138,7 +139,8 @@ public class SpeechPointDropper extends SpeechActivity {
             }
         }
 
-        Log.d(TAG, "MARKER TYPE: " + this.markerType + " RAW COORD INFO: " + this.rawCoordInfo);
+        Log.d(TAG, "MARKER TYPE: " + this.markerType + " RAW COORD INFO: "
+                + this.rawCoordInfo);
     }
 
     @Override
@@ -204,7 +206,8 @@ public class SpeechPointDropper extends SpeechActivity {
         Log.d(TAG, "==========INSIDE coordTypeDiscoverer===========");
         if (polarDrop) {
             polar();
-        } else if (rawCoordInfo.toLowerCase().contains("degrees") || rawCoordInfo.toLowerCase().contains(CHAR_DEG)) {
+        } else if (rawCoordInfo.toLowerCase().contains("degrees")
+                || rawCoordInfo.toLowerCase().contains(CHAR_DEG)) {
             coordinateFormat = CoordinateFormat.DD;
             if (rawCoordInfo.toLowerCase().contains("minutes")) {
                 coordinateFormat = CoordinateFormat.DM;
@@ -236,22 +239,29 @@ public class SpeechPointDropper extends SpeechActivity {
         Log.d(TAG, "=========INSIDE OF coordFormatter===========");
         //Possible entrants: North 22 degrees West 14.9139 degrees
         if (coordinateFormat.getDisplayName().contains("D") &&
-                (!coordinateFormat.getDisplayName().equals(CoordinateFormat.ADDRESS.getDisplayName()))) {
+                (!coordinateFormat.getDisplayName()
+                        .equals(CoordinateFormat.ADDRESS.getDisplayName()))) {
             cleanCoordInfo = degreeCleaner(rawCoordInfo);
-            Log.d(TAG, coordinateFormat.getDisplayName() + " CLEANED====" + cleanCoordInfo);
-            convertedCoordinate = CoordinateFormatUtilities.convert(cleanCoordInfo, coordinateFormat);
+            Log.d(TAG, coordinateFormat.getDisplayName() + " CLEANED===="
+                    + cleanCoordInfo);
+            convertedCoordinate = CoordinateFormatUtilities
+                    .convert(cleanCoordInfo, coordinateFormat);
             pointPlotter(convertedCoordinate);
         } else if (coordinateFormat.getDisplayName().equals("MGRS")) {
             Log.d(TAG, "====INSIDE MGRS====" + rawCoordInfo);
             cleanCoordInfo = mgrsAndUTMCleaner(rawCoordInfo);
-            Log.d(TAG, coordinateFormat.getDisplayName() + " CLEANED====" + cleanCoordInfo);
-            convertedCoordinate = CoordinateFormatUtilities.convert(cleanCoordInfo, coordinateFormat);
+            Log.d(TAG, coordinateFormat.getDisplayName() + " CLEANED===="
+                    + cleanCoordInfo);
+            convertedCoordinate = CoordinateFormatUtilities
+                    .convert(cleanCoordInfo, coordinateFormat);
             pointPlotter(convertedCoordinate);
         } else if (coordinateFormat.getDisplayName().equals("UTM")) {
             Log.d(TAG, "====INSIDE UTM====");
             cleanCoordInfo = mgrsAndUTMCleaner(rawCoordInfo);
-            Log.d(TAG, coordinateFormat.getDisplayName() + " CLEANED====" + cleanCoordInfo);
-            convertedCoordinate = CoordinateFormatUtilities.convert(cleanCoordInfo, coordinateFormat);
+            Log.d(TAG, coordinateFormat.getDisplayName() + " CLEANED===="
+                    + cleanCoordInfo);
+            convertedCoordinate = CoordinateFormatUtilities
+                    .convert(cleanCoordInfo, coordinateFormat);
             pointPlotter(convertedCoordinate);
         } else {
             GeoBounds gb = getView().getBounds();
@@ -262,11 +272,14 @@ public class SpeechPointDropper extends SpeechActivity {
                 @Override
                 public void onResult() {
                     if (gt.getPoint() != null) {
-                        Log.d(TAG, "GEO ADDRESS ++++++++" + gt.getHumanAddress());
+                        Log.d(TAG,
+                                "GEO ADDRESS ++++++++" + gt.getHumanAddress());
                         pointPlotter(gt.getPoint());
 
                     } else {
-                        Toast.makeText(getView().getContext(), "Address not found, Try moving map", Toast.LENGTH_LONG).show();
+                        Toast.makeText(getView().getContext(),
+                                "Address not found, Try moving map",
+                                Toast.LENGTH_LONG).show();
                     }
                 }
             });
@@ -280,10 +293,12 @@ public class SpeechPointDropper extends SpeechActivity {
      * @param coordinate - the coordinate created from the user's speech input rawCoordInfo
      */
     private void pointPlotter(GeoPoint coordinate) {
-        Log.d(TAG, "========inside of point plotter======" + coordinate.toString());
+        Log.d(TAG, "========inside of point plotter======"
+                + coordinate.toString());
         marker = new PlacePointTool.MarkerCreator(coordinate);
         markerValidator();
-        marker.setUid(UUID.randomUUID().toString()).setCallsign("Speech " + markerType + " " + rawCoordInfo);
+        marker.setUid(UUID.randomUUID().toString())
+                .setCallsign("Speech " + markerType + " " + rawCoordInfo);
         marker.placePoint();
         getView().getMapController().panTo(coordinate, true);
         Log.d(TAG, "Point placed at " + rawCoordInfo);
@@ -304,12 +319,14 @@ public class SpeechPointDropper extends SpeechActivity {
         for (String s : wordNumberArray) {
             String[] wordNumberTemp = s.split(",");
             if (cleanedString.contains(wordNumberTemp[1]))
-                cleanedString = cleanedString.replace(wordNumberTemp[1], wordNumberTemp[0]);
+                cleanedString = cleanedString.replace(wordNumberTemp[1],
+                        wordNumberTemp[0]);
         }
         for (String s : wordLetterArray) {
             String[] wordLetterTemp = s.split(",");
             if (cleanedString.contains(wordLetterTemp[1]))
-                cleanedString = cleanedString.replace(wordLetterTemp[1], wordLetterTemp[0]);
+                cleanedString = cleanedString.replace(wordLetterTemp[1],
+                        wordLetterTemp[0]);
         }
         return cleanedString.toUpperCase();
     }
@@ -350,19 +367,32 @@ public class SpeechPointDropper extends SpeechActivity {
      * This loads in the arrays of words to compare the input to.
      */
     private void loadResources() {
-        spotMapArray = getPluginContext().getResources().getStringArray(R.array.spotmap_array);
-        neutralArray = getPluginContext().getResources().getStringArray(R.array.neutral_array);
-        unknownArray = getPluginContext().getResources().getStringArray(R.array.unknown_array);
-        hostileArray = getPluginContext().getResources().getStringArray(R.array.hostile_array);
-        friendlyArray = getPluginContext().getResources().getStringArray(R.array.friendly_array);
-        wordLetterArray = getPluginContext().getResources().getStringArray(R.array.letter_array);
-        wordNumberArray = getPluginContext().getResources().getStringArray(R.array.word_number_array);
-        aArray = getPluginContext().getResources().getStringArray(R.array.a_array);
-        atArray = getPluginContext().getResources().getStringArray(R.array.at_array);
-        rangeUnitsArray = getPluginContext().getResources().getStringArray(R.array.range_units_array);
-        cardinalArray = getPluginContext().getResources().getStringArray(R.array.cardinal_array);
-        unitTypesArray = getPluginContext().getResources().getStringArray(R.array.unit_types_array);
-        unitTagsArray = getPluginContext().getResources().getStringArray(R.array.unit_tag_array);
+        spotMapArray = getPluginContext().getResources()
+                .getStringArray(R.array.spotmap_array);
+        neutralArray = getPluginContext().getResources()
+                .getStringArray(R.array.neutral_array);
+        unknownArray = getPluginContext().getResources()
+                .getStringArray(R.array.unknown_array);
+        hostileArray = getPluginContext().getResources()
+                .getStringArray(R.array.hostile_array);
+        friendlyArray = getPluginContext().getResources()
+                .getStringArray(R.array.friendly_array);
+        wordLetterArray = getPluginContext().getResources()
+                .getStringArray(R.array.letter_array);
+        wordNumberArray = getPluginContext().getResources()
+                .getStringArray(R.array.word_number_array);
+        aArray = getPluginContext().getResources()
+                .getStringArray(R.array.a_array);
+        atArray = getPluginContext().getResources()
+                .getStringArray(R.array.at_array);
+        rangeUnitsArray = getPluginContext().getResources()
+                .getStringArray(R.array.range_units_array);
+        cardinalArray = getPluginContext().getResources()
+                .getStringArray(R.array.cardinal_array);
+        unitTypesArray = getPluginContext().getResources()
+                .getStringArray(R.array.unit_types_array);
+        unitTagsArray = getPluginContext().getResources()
+                .getStringArray(R.array.unit_tag_array);
     }
 
     /**
@@ -396,14 +426,15 @@ public class SpeechPointDropper extends SpeechActivity {
                 rawCoordInfo = rawCoordInfo.replace("nm", " nm");
                 break;
             default:
-                Log.d(TAG,"Inside Polar default switch case somehow");
+                Log.d(TAG, "Inside Polar default switch case somehow");
         }
         rawCoordInfo = rawCoordInfo.replace("  ", " ");
         String[] rawCoordArr = rawCoordInfo.split(" ");
         for (String s : wordNumberArray) {
             String[] wordNumberTemp = s.split(",");
             if (rawCoordArr[0].contains(wordNumberTemp[1]))
-                rawCoordArr[0] = rawCoordArr[0].replace(wordNumberTemp[1], wordNumberTemp[0]);
+                rawCoordArr[0] = rawCoordArr[0].replace(wordNumberTemp[1],
+                        wordNumberTemp[0]);
         }
         rawCoordArr[0] = rawCoordArr[0].replace(",", "");
         double range = 0.0;
@@ -411,9 +442,11 @@ public class SpeechPointDropper extends SpeechActivity {
             range = Double.parseDouble(rawCoordArr[0]);
         } catch (NumberFormatException e) {
             Log.d(TAG, "==Not a number in first part of rawCoordInfo==");
-            Toast.makeText(getView().getContext(), "Unable to decipher range", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getView().getContext(), "Unable to decipher range",
+                    Toast.LENGTH_SHORT).show();
         }
-        if (rawCoordArr[1].equalsIgnoreCase("million") || rawCoordArr[1].equalsIgnoreCase("millions"))
+        if (rawCoordArr[1].equalsIgnoreCase("million")
+                || rawCoordArr[1].equalsIgnoreCase("millions"))
             range = range * 1000000;
 
         double rangeM = SpanUtilities.convert(range, span, Span.METER);
@@ -423,8 +456,10 @@ public class SpeechPointDropper extends SpeechActivity {
             if (rawCoordInfo.toLowerCase().contains(dirBear[0]))
                 bearing = Double.parseDouble(dirBear[1]);
         }
-        bearing = ATAKUtilities.convertFromMagneticToTrue(getView().getSelfMarker().getPoint(), bearing);
-        GeoPoint gp = DistanceCalculations.computeDestinationPoint(getView().getSelfMarker().getPoint(), bearing, rangeM);
+        bearing = ATAKUtilities.convertFromMagneticToTrue(
+                getView().getSelfMarker().getPoint(), bearing);
+        GeoPoint gp = DistanceCalculations.computeDestinationPoint(
+                getView().getSelfMarker().getPoint(), bearing, rangeM);
         pointPlotter(gp);
 
     }

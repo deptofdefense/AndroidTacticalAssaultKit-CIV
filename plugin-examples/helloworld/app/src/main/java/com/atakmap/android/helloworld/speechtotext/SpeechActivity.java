@@ -1,3 +1,4 @@
+
 package com.atakmap.android.helloworld.speechtotext;
 
 import android.content.Context;
@@ -10,10 +11,10 @@ import com.atakmap.android.maps.MapView;
  *                        -broadcast that target to some receiver
  */
 abstract class SpeechActivity {
-  private final MapView view;
-  private final Context pluginContext;
+    private final MapView view;
+    private final Context pluginContext;
 
-  SpeechActivity(MapView view, Context pluginContext) {
+    SpeechActivity(MapView view, Context pluginContext) {
         this.view = view;
         this.pluginContext = pluginContext;
     }
@@ -34,7 +35,7 @@ abstract class SpeechActivity {
      * Gets the view out of the class
      * @return - should be the map view from HelloWorldDropDownReceiver
      */
-     MapView getView() {
+    MapView getView() {
         return view;
     }
 
@@ -45,7 +46,7 @@ abstract class SpeechActivity {
      *      because its a different context.
      * @return - the pluginContext from HelloWorldDropDownReceiver
      */
-     Context getPluginContext() {
+    Context getPluginContext() {
         return pluginContext;
     }
 
