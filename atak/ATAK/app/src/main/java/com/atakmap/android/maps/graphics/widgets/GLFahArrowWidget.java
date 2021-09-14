@@ -428,9 +428,10 @@ public class GLFahArrowWidget extends GLShapeWidget implements
         if (orthoView.currentScene.drawTilt == 0d || RENDER_TOUCH_POINT_SPRITE)
             _drawTouchPointSprite(orthoView);
 
-        drawArrowText();
 
         this.validateTextArray();
+
+        drawArrowText();
 
         drawTextAngle(0);
         drawTextAngle(1);
