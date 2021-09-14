@@ -1,5 +1,9 @@
 # Version History
 
+## 4.3.0.3
+
+* Reorder logic for FAH arrow rendering to ensure text validated before drawing
+
 ## 4.3.0.2
 
 * Add auto-download DTED0
