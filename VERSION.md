@@ -1,5 +1,10 @@
 # Version History
 
+## 4.3.1.1
+
+* Bug Fix
+  * for crash caused by an Android Toast being used improperly. (Playstore Crash Log)
+
 ## 4.3.1.0
 
 * Bug Fixes
