@@ -2066,7 +2066,7 @@ public class ATAKActivity extends MapActivity implements
         }
 
         // cache off the lock button
-        _lockActionMenu = ActionBarReceiver.getMenuItem("Lock on Self");
+        _lockActionMenu = ActionBarReceiver.getMenuItem(getString(R.string.actionbar_lockonself));
         if (_lockActionMenu == null) {
             Log.w(TAG, "Failed to find lock action menu");
         }

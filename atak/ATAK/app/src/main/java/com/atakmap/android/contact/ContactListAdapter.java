@@ -26,6 +26,7 @@ import android.widget.TextView;
 import com.atakmap.android.chat.ChatDatabase;
 import com.atakmap.android.chat.ChatManagerMapComponent;
 import com.atakmap.android.chat.TeamGroup;
+import com.atakmap.android.chat.GeoChatService;
 import com.atakmap.android.contact.Contact.UpdateStatus;
 import com.atakmap.android.contact.ContactFilter.FilterMode;
 import com.atakmap.android.contact.Contacts.OnContactsChangedListener;
@@ -644,8 +645,7 @@ public class ContactListAdapter extends BaseAdapter implements
         Contacts cts = Contacts.getInstance();
         if (!cts.validContact(list)
                 || list == cts.getRootGroup())
-            list = cts.getContactByUuid(this.mapView.getContext()
-                    .getString(R.string.all_chat_rooms));
+            list = cts.getContactByUuid(GeoChatService.DEFAULT_CHATROOM_NAME);
         if (list != null) {
             title = list.getName();
             uid = list.getUID();

@@ -781,5 +781,4 @@ public class ConversationFragment extends Fragment implements
             ChatConvoFragCreateWatcher watcher) {
         watcherList.remove(watcher);
     }
-
 }

@@ -34,6 +34,7 @@ import com.atakmap.android.attachment.DeleteAfterSendCallback;
 import com.atakmap.android.util.AfterTextChangedWatcher;
 import com.atakmap.android.util.SimpleItemSelectedListener;
 
+import com.atakmap.android.chat.GeoChatService;
 import com.atakmap.android.chat.ChatDatabase;
 import com.atakmap.android.chat.ChatManagerMapComponent;
 import com.atakmap.android.chat.GeoChatConnectorHandler;
@@ -680,8 +681,7 @@ public class ContactPresenceDropdown extends DropDownReceiver
                     };
                 if (sendCallback != null) {
                     Intent cb = new Intent(sendCallback);
-                    cb.putExtra("sendTo", new String[] {
-                            _context.getString(R.string.all_chat_rooms)
+                    cb.putExtra("sendTo", new String[] { GeoChatService.DEFAULT_CHATROOM_NAME
                     });
                     AtakBroadcast.getInstance().sendBroadcast(cb);
                 } else if (uidList != null) {
@@ -695,8 +695,7 @@ public class ContactPresenceDropdown extends DropDownReceiver
                     sendFile(filename, null);
                 } else if (msg != null) {
                     List<Contact> dests = new ArrayList<>();
-                    dests.add(Contacts.getInstance().getContactByUuid(
-                            _context.getString(R.string.all_chat_rooms)));
+                    dests.add(Contacts.getInstance().getContactByUuid(GeoChatService.DEFAULT_CHATROOM_NAME));
                     ChatManagerMapComponent.getInstance().sendMessage(
                             msg, dests);
                 } else
@@ -1082,7 +1081,7 @@ public class ContactPresenceDropdown extends DropDownReceiver
                 _showAllTop.setVisibility(View.VISIBLE);
                 dispModes.add(FilterMode.UID_BLACKLIST);
                 List<String> excluded = new ArrayList<>();
-                excluded.add(_context.getString(R.string.all_chat_rooms));
+                excluded.add(GeoChatService.DEFAULT_CHATROOM_NAME);
                 adapter.setCustomUIDs(excluded);
                 break;
             case SELECT_W_ACTION:

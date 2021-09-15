@@ -42,7 +42,13 @@ public final class GeoChatService implements
 
     public static final String TAG = "GeoChatService";
 
-    public static String DEFAULT_CHATROOM_NAME;
+    /**
+     * The translation of these is only used in one place, but all of the backend business logic 
+     * requires these to be in english
+     */
+    public static final String DEFAULT_CHATROOM_NAME = "All Chat Rooms";
+
+
 
     static final String HISTORY_UPDATE = "com.atakmap.android.chat.HISTORY_UPDATE";
 
@@ -63,7 +69,6 @@ public final class GeoChatService implements
     private GeoChatService() {
         _mapView = MapView.getMapView();
         _context = _mapView.getContext();
-        DEFAULT_CHATROOM_NAME = _context.getString(R.string.all_chat_rooms);
         chatDb = ChatDatabase.getInstance(_context);
 
         _prefs = PreferenceManager.getDefaultSharedPreferences(_context);
@@ -129,7 +134,7 @@ public final class GeoChatService implements
 
                     else
                         Log.e(TAG,
-                                "Recieved message from unknown sender.  Possibly through the TAK server");
+                                "Received message from unknown sender.  Possibly through the TAK server");
                     CotDetail detail = cotEvent.getDetail();
                     if (senderUid == null) {
                         for (int i = 0; i < detail.childCount(); i++) {
@@ -262,7 +267,7 @@ public final class GeoChatService implements
         cotEvent = new CotEvent();
 
         cotEvent.setType("b-t-f");
-        cotEvent.setUID("GeoChat." + from + "." + room + "." + messageId);
+        cotEvent.setUID("GeoChat." + from + "." + id + "." + messageId);
 
         CoordinatedTime time = new CoordinatedTime();
         cotEvent.setTime(time);
@@ -474,9 +479,9 @@ public final class GeoChatService implements
                 bundle.putAll(b);
 
             String convId = bundle.getString("conversationId");
-            if (convId != null && (convId
-                    .equals(_context.getString(R.string.all_chat_rooms))
-                    || convId.equals(_context.getString(R.string.all_streaming))
+            if (convId != null 
+                   && (convId.equals(DEFAULT_CHATROOM_NAME)
+                    || convId.equals("All Streaming")
                     || convId.equals(ChatManagerMapComponent.getTeamName())
                     || convId.equals(ChatManagerMapComponent.getTeamName())))
                 bundle.putString("conversationName", convId);
