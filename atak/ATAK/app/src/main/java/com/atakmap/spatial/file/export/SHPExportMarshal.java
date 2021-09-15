@@ -13,11 +13,8 @@ import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.spatial.file.ShapefileSpatialDb;
 import com.atakmap.spatial.file.export.OGRFeatureExportWrapper.NamedGeometry;
-import com.atakmap.util.zip.IoUtils;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map.Entry;

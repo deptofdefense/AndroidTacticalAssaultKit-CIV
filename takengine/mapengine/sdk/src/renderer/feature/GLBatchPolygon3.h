@@ -5,6 +5,7 @@
 
 #include "feature/Polygon.h"
 #include "renderer/GLRenderBatch.h"
+#include "renderer/Tessellate.h"
 #include "renderer/feature/GLBatchLineString3.h"
 
 namespace TAK
@@ -24,10 +25,11 @@ namespace TAK
                     float fillColorB = 0;
                     float fillColorA = 0;
                     int fillColor = 0;
-                    int polyRenderMode = 0;
-                    Util::array_ptr<uint16_t> indices;
-                    std::size_t numIndices;
-                    std::size_t indicesLength;
+                    struct {
+                        VertexDataPtr data{ VertexDataPtr(nullptr, nullptr) };
+                        Util::array_ptr<float> vertices;
+                        std::size_t count{ 0u };
+                    } triangles;
                 public:
                     GLBatchPolygon3(TAK::Engine::Core::RenderContext &surface) NOTHROWS;
 
@@ -45,15 +47,10 @@ namespace TAK
 
                 public:
                     virtual Util::TAKErr draw(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const int render_pass, const int vertices_type) NOTHROWS override;
-                private:
-                    Util::TAKErr drawFillTriangulate(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const float *v, const int size) NOTHROWS;
-
-                    Util::TAKErr drawFillConvex(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const float *v, const int size) NOTHROWS;
-
-                    Util::TAKErr drawFillStencil(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const float *v, const int size) NOTHROWS;
-
                 protected:
                     virtual Util::TAKErr batchImpl(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const int render_pass, TAK::Engine::Renderer::GLRenderBatch2 &batch, const int vertices_type, const float *v) NOTHROWS override;
+                public :
+                    virtual Util::TAKErr projectVertices(const float **result, const TAK::Engine::Renderer::Core::GLGlobeBase &view, const int vertices_type) NOTHROWS override;
                 };
 
                 typedef std::unique_ptr<GLBatchPolygon3, void(*)(const GLBatchGeometry3 *)> GLBatchPolygon3Ptr;

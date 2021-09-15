@@ -178,8 +178,8 @@ public class DrawingCircle extends Shape implements
                     marker.getPoint());
             if (Math.abs(ra[0] - radius) > 0.1) {
                 // Radius marker needs to be moved
-                GeoPoint dest = DistanceCalculations
-                        .computeDestinationPoint(center, ra[1], radius);
+                GeoPoint dest = GeoCalculations.pointAtDistance(center, ra[1],
+                        radius);
                 marker.setPoint(new GeoPointMetaData(dest)
                         .setGeoPointSource(GeoPointMetaData.CALCULATED));
             }
@@ -413,8 +413,8 @@ public class DrawingCircle extends Shape implements
 
             double bearing = DistanceCalculations.computeDirection(
                     oldCenter, radius.getPoint())[1];
-            GeoPoint rPoint = DistanceCalculations.computeDestinationPoint(
-                    point.get(), bearing, getRadius());
+            GeoPoint rPoint = GeoCalculations.pointAtDistance(point.get(),
+                    bearing, getRadius());
 
             // If the radius marker is being set, then do not allow for a
             // looping condition where it keeps getting set.
@@ -630,7 +630,6 @@ public class DrawingCircle extends Shape implements
         super.setBasicLineStyle(basicLineStyle);
         refresh();
     }
-
 
     /**
      * Redirect hit detection to the rings

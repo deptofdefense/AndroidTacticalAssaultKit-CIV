@@ -26,8 +26,8 @@ namespace {
 
     class OpenSSLX509TrustStore : public X509TrustStore {
     public:
-        virtual ~OpenSSLX509TrustStore() NOTHROWS;
-        virtual TAKErr addEncodedCert(const uint8_t* data, size_t dataLen) NOTHROWS;
+        ~OpenSSLX509TrustStore() NOTHROWS override;
+        TAKErr addEncodedCert(const uint8_t* data, size_t dataLen) NOTHROWS override;
 
         void build(X509_STORE *store) NOTHROWS;
 
@@ -38,12 +38,12 @@ namespace {
     public:
         CURLDataInput(const std::shared_ptr<HttpProtocolHandlerClientInterface> &client_iface_, const std::shared_ptr<OpenSSLX509TrustStore> &trustStore);
         TAKErr open(const char *URI, HTTPSupport support) NOTHROWS;
-        virtual ~CURLDataInput();
-        virtual TAKErr close() NOTHROWS;
-        virtual TAKErr read(uint8_t* buf, std::size_t* numRead, const std::size_t len) NOTHROWS;
-        virtual TAKErr readByte(uint8_t* value) NOTHROWS;
-        virtual TAKErr skip(const std::size_t n) NOTHROWS;
-        virtual int64_t length() const NOTHROWS;
+        ~CURLDataInput() override;
+        TAKErr close() NOTHROWS override;
+        TAKErr read(uint8_t* buf, std::size_t* numRead, const std::size_t len) NOTHROWS override;
+        TAKErr readByte(uint8_t* value) NOTHROWS override;
+        TAKErr skip(const std::size_t n) NOTHROWS override;
+        int64_t length() const NOTHROWS override;
     private:
         TAKErr performRead(size_t len) NOTHROWS;
         static size_t writeCallback(void* data, size_t size, size_t nmemb, void* userData);
@@ -64,15 +64,15 @@ namespace {
 
     class DefaultHttpProtocolHandlerClientInterface : public HttpProtocolHandlerClientInterface {
     public:
-        virtual ~DefaultHttpProtocolHandlerClientInterface() NOTHROWS;
-        virtual TAKErr getUserAgent(TAK::Engine::Port::String* result, const char* host) NOTHROWS;
-        virtual bool shouldVerifySSLHost(const char* host) NOTHROWS;
-        virtual bool shouldVerifySSLPeer(const char* host) NOTHROWS;
-        virtual bool allowRedirect(const char* host) NOTHROWS;
-        virtual TAKErr populateX509TrustStore(X509TrustStore* trustStore, const char* host) NOTHROWS;
-        virtual bool shouldAuthenticateHost(const char* host, int priorAttempts) NOTHROWS;
-        virtual TAKErr getBasicAuth(TAK::Engine::Port::String* username, TAK::Engine::Port::String* password, const char *host) NOTHROWS;
-        virtual TAKErr shouldTrustCertificate(const uint8_t* x509Data, size_t size, const char* host) NOTHROWS;
+        ~DefaultHttpProtocolHandlerClientInterface() NOTHROWS override;
+        TAKErr getUserAgent(TAK::Engine::Port::String* result, const char* host) NOTHROWS override;
+        bool shouldVerifySSLHost(const char* host) NOTHROWS override;
+        bool shouldVerifySSLPeer(const char* host) NOTHROWS override;
+        bool allowRedirect(const char* host) NOTHROWS override;
+        TAKErr populateX509TrustStore(X509TrustStore* trustStore, const char* host) NOTHROWS override;
+        bool shouldAuthenticateHost(const char* host, int priorAttempts) NOTHROWS override;
+        TAKErr getBasicAuth(TAK::Engine::Port::String* username, TAK::Engine::Port::String* password, const char *host) NOTHROWS override;
+        TAKErr shouldTrustCertificate(const uint8_t* x509Data, size_t size, const char* host) NOTHROWS override;
     };
 }
 

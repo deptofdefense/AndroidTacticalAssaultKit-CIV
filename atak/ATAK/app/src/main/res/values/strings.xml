@@ -500,11 +500,7 @@
     <string name="preferences_text170">Imagery Tab Name</string>
     <string name="preferences_text171">Select either Imagery or Maps</string>
     <string name="preference_rab_show_eta_title">Display ETA on Range and Bearing Labels</string>
-    <string name="preference_rab_show_eta_summary">
-        If checked, an attempt will be made to compute ETA based
-        on your range and current speed. If speed cannot be detected,
-        it can be manually entered through the Range and Bearing details
-    </string>
+    <string name="preference_rab_show_eta_summary"> If checked, an attempt will be made to compute ETA based on your range and current speed. If speed cannot be detected, it can be manually entered through the Range and Bearing details </string>
 
     <!--Elevation-->
     <string name="preferences_text174">Value of the (HSV) Elevation Heat Map overlay in percent (0—100)</string>
@@ -729,9 +725,7 @@
     <string name="preferences_text310">When inside of this distance to a checkpoint, you will be considered to be at the checkpoint while navigating</string>
     <string name="preferences_text311">Enter bubble in meters</string>
     <string name="preference_doghouse_north_ref_title">Display \u00B0M Unit in Doghouse</string>
-    <string name="preference_doghouse_north_ref_desc">
-        Check to show the North Reference units (\u00B0M) on bearing readings in doghouses. Uncheck to hide those units.
-    </string>
+    <string name="preference_doghouse_north_ref_desc"> Check to show the North Reference units (\u00B0M) on bearing readings in doghouses. Uncheck to hide those units.  </string>
 
     <string name="preferences_route_swimming">Swimming</string>
     <string name="preferences_text312">Swimming Checkpoint Navigation Bubble Radius</string>
@@ -923,7 +917,7 @@
     <string name="eta_jm">ETA</string>
     <string name="xtrack_jm" translatable="false">X Track</string>
     <string name="proj_dist_jm" translatable="false">Projected Distance</string>
-    <string name="unitless" translatable="false"/>
+    <string name="unitless" translatable="false"></string>
 
     <string name="planned_gr_alt">Planned GR at Alt</string>
     <string name="gr_to_dip">GR to DIP</string>
@@ -952,6 +946,7 @@
     <string translatable="false" name="m">M</string>
     <string translatable="false" name="g">G</string>
     <string translatable="false" name="b">B</string>
+    <string translatable="false" name="a">A</string>
     <string translatable="false" name="y">Y</string>
     <string translatable="false" name="o">O</string>
     <string translatable="false" name="br">Br</string>
@@ -1047,8 +1042,7 @@
     <!--Routes-->
     <string name="routes_prompt">Tap a location to make it a part of the route.\nLong press to create a Check Point.</string>
     <string name="routes_prompt_2">Route creation</string>
-    <string name="routes_edit_prompt">Long press on a part of the route to move it.
-        Long press outside of the route to extend it.</string>
+    <string name="routes_edit_prompt">Long press on a part of the route to move it.  Long press outside of the route to extend it.</string>
     <string name="route_zoom_in_prompt">Zoom in to edit vertices.</string>
     <string name="route_draw_mode_prompt">Press and drag to draw a new segment along the route.</string>
     <string name="route_begin_navigation">Begin Navigation</string>
@@ -1704,33 +1698,7 @@
     <string name="video_text20">\' video stream?</string>
     <string name="video_text21">Send to contact or post to server?</string>
     <string name="video_text22">Video Overlay Feature</string>
-    <string name="video_text23">Tap to engage the video overlay feature when the video has 4 corner points.   When the video tool is minimized, this will allow for the video to be overlayed on the map.   When the tool is reopened, the video will return to the tool.   Note: The video overlay will only be as good as the corner coordinates transmitted from the platform.\n\n\nThe video must contain either\n
-         MISB STD 0601 Offset Corner Latitude Point 1 (Tag 26)\n
-         MISB STD 0601 Offset Corner Longitude Point 1 (Tag 27)\n
-         MISB STD 0601 Offset Corner Latitude Point 2 (Tag 28)\n
-         MISB STD 0601 Offset Corner Longitude Point 2 (Tag 29)\n
-         MISB STD 0601 Offset Corner Latitude Point 3 (Tag 30)\n
-         MISB STD 0601 Offset Corner Longitude Point 3 (Tag 31)\n
-         MISB STD 0601 Offset Corner Latitude Point 4 (Tag 32)\n
-         MISB STD 0601 Offset Corner Longitude Point 4 (Tag 33)\n
-         \n\n\t\t— or —\n\n
-         MISB EG 0104 Corner Latitude Point 1 (UL
-         \t060E2B34010101030701020103070100)\n
-         MISB EG 0104 Corner Longitude Point 1 (UL
-         \t060E2B340101010307010201030B0100)\n
-         MISB EG 0104 Corner Latitude Point 2 (UL
-         \t060E2B34010101030701020103080100)\n
-         MISB EG 0104 Corner Longitude Point 2 (UL
-         \t060E2B340101010307010201030C0100)\n
-         MISB EG 0104 Corner Latitude Point 3 (UL
-         \t060E2B34010101030701020103090100)\n
-         MISB EG 0104 Corner Longitude Point 3 (UL
-         \t060E2B340101010307010201030D0100)\n
-         MISB EG 0104 Corner Latitude Point 4 (UL
-         \t060E2B340101010307010201030A0100)\n
-         MISB EG 0104 Corner Longitude Point 4 (UL
-         \t060E2B340101010307010201030E0100) 
-    </string>
+    <string name="video_text23">Tap to engage the video overlay feature when the video has 4 corner points.   When the video tool is minimized, this will allow for the video to be overlayed on the map.   When the tool is reopened, the video will return to the tool.   Note: The video overlay will only be as good as the corner coordinates transmitted from the platform.\n\n\nThe video must contain either\n MISB STD 0601 Offset Corner Latitude Point 1 (Tag 26)\n MISB STD 0601 Offset Corner Longitude Point 1 (Tag 27)\n MISB STD 0601 Offset Corner Latitude Point 2 (Tag 28)\n MISB STD 0601 Offset Corner Longitude Point 2 (Tag 29)\n MISB STD 0601 Offset Corner Latitude Point 3 (Tag 30)\n MISB STD 0601 Offset Corner Longitude Point 3 (Tag 31)\n MISB STD 0601 Offset Corner Latitude Point 4 (Tag 32)\n MISB STD 0601 Offset Corner Longitude Point 4 (Tag 33)\n \n\n\t\t— or —\n\n MISB EG 0104 Corner Latitude Point 1 (UL \t060E2B34010101030701020103070100)\n MISB EG 0104 Corner Longitude Point 1 (UL \t060E2B340101010307010201030B0100)\n MISB EG 0104 Corner Latitude Point 2 (UL \t060E2B34010101030701020103080100)\n MISB EG 0104 Corner Longitude Point 2 (UL \t060E2B340101010307010201030C0100)\n MISB EG 0104 Corner Latitude Point 3 (UL \t060E2B34010101030701020103090100)\n MISB EG 0104 Corner Longitude Point 3 (UL \t060E2B340101010307010201030D0100)\n MISB EG 0104 Corner Latitude Point 4 (UL \t060E2B340101010307010201030A0100)\n MISB EG 0104 Corner Longitude Point 4 (UL \t060E2B340101010307010201030E0100) </string>
     <string name="video_text24">No Video</string>
     <string name="video_text25">The source media does not have a video track!</string>
     <string name="video_text26">Cancel Updating Video Stream</string>
@@ -2436,7 +2404,7 @@
     <string name="subdirectory">" subdirectory."</string>
     <string name="are_you_sure_remove_inputs">Are you sure you want to remove all listed inputs?</string>
     <string name="select_file_to_import">Select File to Import</string>
-    <string name="desc" translatable="false" >desc</string>
+    <string name="desc" translatable="false">desc</string>
 
     <!--Go To-->
     <string name="zone">Zone</string>
@@ -2563,7 +2531,7 @@
     <string name="tracks_on_server">\u0020tracks on track server…</string>
     <string name="no_tracks_found_for_user">No tracks found for selected user</string>
     <string name="select_user">Select User</string>
-    <string name="failed_search_user">Failed to search selected use</string>
+    <string name="failed_search_user">Failed to search selected user</string>
     <string name="server_search">Server Search</string>
     <string name="track">Track</string>
     <string name="remove_track">Remove Track:\u0020</string>
@@ -3310,6 +3278,7 @@
     <string name="kmz_file">KMZ File</string>
     <string name="lpt_file">LPT File</string>
     <string name="csv_file">CSV File</string>
+    <string name="mvt_file">Mapbox Vector Tiles</string>
     <string name="preference_file">Preference File</string>
     <string name="shapefile">Shapefile</string>
     <string name="zipped_shapefile">Zipped Shapefile</string>
@@ -3467,7 +3436,7 @@
     <!-- Gather strings changed in rebranding -->
     <string name="app_name" translatable="false">ATAK</string>
     <string name="atak_activity" translatable="false">com.atakmap.app.ATAKActivity</string>
-    <string name="atakUpdateServerUrlDefault" translatable="false" />
+    <string name="atakUpdateServerUrlDefault" translatable="false"></string>
     <string name="coord_display_pref_default">MGRS</string>
     <string name="grg_lowercase">grg</string>
     <string name="friendly">Friendly</string>
@@ -3476,8 +3445,8 @@
     <string name="fires_prefs">Fires Preferences</string>
     <string name="adjust_fire_settings">Adjust preferences for the Fires toolbar</string>
     <string name="IntelDumpReceiver_url" translatable="false">http://172.16.0.9/IntelDumps</string>
-    <string name="cot2525B" translatable="false">CoT 2525B</string>
-    <string name="s2525B">2525B</string>
+    <string name="cot2525C" translatable="false">CoT 2525C</string>
+    <string name="s2525C" translatable="false">2525C</string>
     <string name="default_cot_mapping">Default CoT Mapping</string>
 
     <string name="preferences_text422a">EULA Acceptance</string>
@@ -3595,7 +3564,7 @@
     <string name="checking_if_mission_package_on_server">Checking if data package is already on server</string>
     <string name="posting_mission_package_to_server">Posting data package to server: %s</string>
     <string name="posted_mission_package_to_server">Posted data package to server: %s</string>
-    <string name="failed_to_post_mission_package">Failed to posted data package to server: %s</string>
+    <string name="failed_to_post_mission_package">Failed to post data package to server: %s</string>
     <string name="mission_package_failed_to_extract">Failed to extract Data Package: %s</string>
     <string name="processing_mission_package">Processing Data Package</string>
     <string name="failed_to_process_mission_package">Failed to process Data Package</string>
@@ -3808,7 +3777,7 @@
     <string name="nv_external_settings">External Night Vision Application Settings</string>
     <string name="nv_adjust_night_vision">Adjust Night Vision settings</string>
     <string name="hide_my_position">Hide my current position</string>
-    <string name="hide_my_position_summary">This allows for people to chat or send you items without knowing your current position. If an emegency alert is sent, the result will be your current position.</string>
+    <string name="hide_my_position_summary">This allows for people to chat or send you items without knowing your current position. If an emergency alert is sent, the alert will contain your current position.</string>
     <string name="tradition_nav_mode">Traditional Navigation Mode</string>
     <string name="traditional_nav_mode_summary">When navigating a route, the self icon will be either in the center of the screen when stopped or will be placed at the bottom of the screen with the map in track up mode.</string>
     <string name="vibrate_arrival">Vibrate When Arriving at Checkpoint</string>
@@ -4037,7 +4006,7 @@
 
     <!-- Map controls -->
     <string name="map_controls">Map Controls</string>
-    <string name="imagery_transparency">Map Tilt Imagery Transparency</string>
+    <string name="imagery_transparency">Map Imagery Transparency</string>
     <string name="globe_display">Enable Globe Display Mode</string>
     <string name="globe_display_summary">The default is to display the earth as a globe. When disabled, display the earth flattened using Equirectangular Map Projection.</string>
     <string name="enable_dex_controls">Enable DEX Friendly Controls</string>
@@ -4119,10 +4088,10 @@
 
     <!--Splash Screen-->
     <!--Splash Screen-->
-    <string name="classificationLabel" translatable="false" />
-    <string name="statementLabel" translatable="false" />
-    <string name="distributionLabel" translatable="false"/>
-    <string name="destructionLabel" translatable="false" />
+    <string name="classificationLabel" translatable="false"></string>
+    <string name="statementLabel" translatable="false"></string>
+    <string name="distributionLabel" translatable="false"></string>
+    <string name="destructionLabel" translatable="false"></string>
 
     <!-- Even though this is the Distribution statement, we want it to
          appear at the bottom and not floating above empty text blocks -->
@@ -4284,8 +4253,8 @@
     <string name="civ_fires_prefs">Digital Pointer Preferences</string>
     <string name="civ_adjust_fire_settings">Adjust preferences for the Digital Pointer toolbar</string>
 
-    <string name="civ_cot2525B" translatable="false">Markers</string>
-    <string name="civ_s2525B">Markers</string>
+    <string name="civ_cot2525C" translatable="false">Markers</string>
+    <string name="civ_s2525C">Markers</string>
 
     <string name="civ_default_cot_mapping">Default Mapping</string>
 
@@ -4333,7 +4302,7 @@
     <string name="civ_filter_title_markers">Markers</string>
     <string name="civ_filter_title_hostiles">Red Markers</string>
 
-    <string name="mil_filter_title_marker">CoT 2525B</string>
+    <string name="mil_filter_title_marker" translatable="false">CoT 2525C</string>
     <string name="mil_filter_title_hostiles">Hostile Markers</string>
 
     <string name="mission_type">Mission Type</string>
@@ -4412,4 +4381,14 @@
     <string name="general_permission_step1">Step 1:</string>
     <string name="general_permission_step2">Step 2: Review the Denied List</string>
 
+    <string name="resection_required_data_label">Required Data (e.g., DTED)</string>
+    <string name="resection_required_hardware">Required Hardware (e.g., PLRF)</string>
+    <string name="resection_classic_tool_required_data">No special data required</string>
+    <string name="resection_classic_tool_required_hardware">No special hardware required</string>
+
+
+    <string name="lollipop_visibility">Lollipop Visibility when Tilted</string>
+    <string name="legacy_altitude_rendering">Enhanced Depth Perception</string>
+    <string name="disable_parallax_viewing">Enhances visualization of depth when looking straight down.</string>
+    <string name="lollipop_description">Draws a line to the exact point on the ground represented by the item.</string>
 </resources>

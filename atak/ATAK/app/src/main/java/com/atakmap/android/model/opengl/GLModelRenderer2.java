@@ -195,6 +195,8 @@ public class GLModelRenderer2 implements GLMapRenderable2, ModelHitTestControl {
                         this.modelLoader.start();
                     }
                 } else if (drawModel(view)) {
+                    if (glpoint != null)
+                        glpoint.releaseLabel();
                     return;
                 }
             }

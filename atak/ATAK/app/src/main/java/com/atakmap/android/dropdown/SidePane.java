@@ -1,7 +1,6 @@
 
 package com.atakmap.android.dropdown;
 
-import android.app.Activity;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import androidx.fragment.app.FragmentActivity;
@@ -250,7 +249,8 @@ class SidePane implements OnTouchListener {
         // need to hide the map view when it's no longer visible
         // See ATAK-14582
         mapView.setVisibility(mapPanelLP.width == 0 || mapPanelLP.height == 0
-                ? View.GONE : View.VISIBLE);
+                ? View.GONE
+                : View.VISIBLE);
 
         refresh(prevValue);
 

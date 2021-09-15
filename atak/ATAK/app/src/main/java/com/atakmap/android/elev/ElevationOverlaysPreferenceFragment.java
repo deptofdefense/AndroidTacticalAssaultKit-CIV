@@ -1,7 +1,6 @@
 
 package com.atakmap.android.elev;
 
-
 import android.os.Bundle;
 import android.preference.Preference;
 import com.atakmap.android.preference.AtakPreferenceFragment;
@@ -19,9 +18,9 @@ public class ElevationOverlaysPreferenceFragment
         super.onCreate(savedInstanceBundle);
         addPreferencesFromResource(getResourceID());
 
-
         final Preference p = findPreference("prefs_dted_download");
-        ElevationDownloader.getInstance().setupPreferenceDownloader(getActivity(), p);
+        ElevationDownloader.getInstance()
+                .setupPreferenceDownloader(getActivity(), p);
     }
 
     @Override
@@ -29,8 +28,5 @@ public class ElevationOverlaysPreferenceFragment
         return getSubTitle(getString(R.string.toolPreferences),
                 getSummary());
     }
-
-
-
 
 }

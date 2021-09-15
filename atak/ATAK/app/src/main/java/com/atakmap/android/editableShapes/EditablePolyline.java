@@ -219,10 +219,12 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
 
     @Override
     public void onItemRemoved(MapItem item, MapGroup oldParent) {
-        if (item == EditablePolyline.this)
-            EditablePolyline.this.delete(false, null);
-        else if (item == EditablePolyline.this.getShapeMarker())
-            EditablePolyline.this.delete(true, null);
+        if (item == this || item == getShapeMarker()) {
+            // Do not delete contents when transferring groups
+            if (getMetaBoolean("__groupTransfer", false))
+                return;
+            delete(item == getShapeMarker(), null);
+        }
     }
 
     @Override
@@ -255,9 +257,9 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
         // isn't removed. ATM removing the mapGroup it's in doesn't remove it.
         // this may have already happened if we're triggering from a delete event
         if (self) {
-            MapGroup setParent = EditablePolyline.this.getGroup();
+            MapGroup setParent = getGroup();
             if (setParent != null)
-                setParent.removeItem(EditablePolyline.this);
+                setParent.removeItem(this);
         }
 
         if (childItemGroup != null) {
@@ -356,7 +358,8 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
 
         // Determine if we need to do a 2D or 3D hit test so we can perform
         // some optimizations
-        boolean test3D = getAltitudeMode() != AltitudeMode.ClampToGround;
+        boolean test3D = getAltitudeMode() != AltitudeMode.ClampToGround
+                && !view.getMapTouchController().isNadirClamped();
 
         float radius = getHitRadius(view);
         Vector2D touch = new Vector2D(xpos, ypos);
@@ -441,6 +444,13 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
     protected final int testPointsHit(MapView view, int startIdx, int endIdx,
             RectF hitRect, GeoBounds hitBox) {
 
+        // Touch offset when vertices are drawn above terrain line
+        float yOffset = 0f;
+        if (getEditable()
+                && getAltitudeMode() == AltitudeMode.ClampToGround
+                && view.getMapTilt() > 0)
+            yOffset = (float) (Math.max(4, getStrokeWeight()) * 3f) / 2f;
+
         int numResults = 0;
         int count = _points.size();
         int hitIndex = -1;
@@ -456,7 +466,8 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
                 PointD pt = new PointD(0d, 0d, 0d);
                 view.getSceneModel()
                         .forward(view.getRenderElevationAdjustedPoint(gp), pt);
-                if (pt.z >= 1d || !hitRect.contains((float) pt.x, (float) pt.y))
+                if (pt.z >= 1d || !hitRect.contains((float) pt.x,
+                        (float) pt.y - yOffset))
                     continue;
             } else
                 continue;
@@ -507,7 +518,8 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
         int count = _points.size();
 
         // Search hit on all lines
-        boolean ignoreAlt = getAltitudeMode() == AltitudeMode.ClampToGround;
+        boolean ignoreAlt = getAltitudeMode() == AltitudeMode.ClampToGround
+                || view.getMapTouchController().isNadirClamped();
         double unwrap = view.getIDLHelper().getUnwrap(this.minimumBoundingBox);
         GeoPoint lastPoint = null;
         int currentIndex = 0;
@@ -1271,7 +1283,8 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
         if (!(point instanceof Marker))
             return;
         final Marker marker = (Marker) point;
-        if (marker.getIcon() == null || marker.getIcon().getImageUri(Icon.STATE_DEFAULT) == null)
+        if (marker.getIcon() == null
+                || marker.getIcon().getImageUri(Icon.STATE_DEFAULT) == null)
             return;
 
         if (Route.WAYPOINT_TYPE.equals(point.getType())) {
@@ -1406,7 +1419,8 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
             synchronized (EditablePolyline.this) {
                 Integer index = EditablePolyline.this.markerToIndex.get(item);
                 if (index == null) {
-                    Log.e(TAG, "Item with UID " + item.getUID() + " not found in line");
+                    Log.e(TAG, "Item with UID " + item.getUID()
+                            + " not found in line");
                     return;
                 }
 
@@ -2330,10 +2344,11 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
                     gpm.get().getAltitudeReference(),
                     gpm.get().getCE(),
                     gpm.get().getLE(),
-                    gpm.get().isMutable() ? GeoPoint.Access.READ_WRITE : GeoPoint.Access.READ_ONLY));
+                    gpm.get().isMutable() ? GeoPoint.Access.READ_WRITE
+                            : GeoPoint.Access.READ_ONLY));
             return ret;
         }
-            
+
         return gpm;
     }
 

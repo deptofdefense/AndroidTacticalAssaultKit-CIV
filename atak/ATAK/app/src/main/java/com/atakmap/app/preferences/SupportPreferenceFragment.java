@@ -128,14 +128,8 @@ public class SupportPreferenceFragment extends AtakPreferenceFragment {
                                 public boolean onPreferenceClick(
                                         Preference preference) {
                                     try {
-                                        File file = FileSystemUtils
-                                                .getItem(
-                                                        FileSystemUtils.SUPPORT_DIRECTORY
-                                                                + File.separatorChar
-                                                                + "README.txt");
-
                                         WebViewer.show(
-                                                file,
+                                                "file:///android_asset/support/README.txt",
                                                 context, 250);
                                     } catch (Exception e) {
                                         Log.e(TAG, "error loading readme.txt",

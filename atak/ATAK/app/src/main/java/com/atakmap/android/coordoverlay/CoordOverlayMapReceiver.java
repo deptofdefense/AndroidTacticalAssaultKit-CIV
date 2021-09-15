@@ -10,9 +10,6 @@ import android.preference.PreferenceManager;
 import android.view.MotionEvent;
 import android.graphics.Typeface;
 
-import com.atakmap.android.drawing.mapItems.DrawingCircle;
-import com.atakmap.android.drawing.mapItems.DrawingRectangle;
-import com.atakmap.android.drawing.mapItems.DrawingShape;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapMode;
 import com.atakmap.android.maps.MapTextFormat;

@@ -15,7 +15,6 @@ import android.graphics.Color;
 import android.util.Pair;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.lang.Objects;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.Layer;
@@ -31,7 +30,6 @@ import com.atakmap.map.layer.raster.controls.TileClientControl;
 import com.atakmap.map.layer.raster.service.OnlineImageryExtension;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.projection.Projection;
-import com.atakmap.map.projection.ProjectionFactory;
 import com.atakmap.math.Rectangle;
 
 import com.atakmap.coremap.log.Log;

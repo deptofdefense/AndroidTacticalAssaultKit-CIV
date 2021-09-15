@@ -5,10 +5,10 @@ import android.graphics.Color;
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.graphics.Typeface;
-import android.opengl.GLES30;
 
 import com.atakmap.android.maps.Arrow;
 import com.atakmap.android.maps.Arrow.OnTextChangedListener;
+import com.atakmap.android.maps.MapTextFormat;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Shape;
 import com.atakmap.android.maps.Shape.OnPointsChangedListener;
@@ -25,14 +25,11 @@ import com.atakmap.map.layer.feature.geometry.opengl.GLBatchLineString;
 import com.atakmap.map.layer.feature.style.BasicStrokeStyle;
 import com.atakmap.map.layer.feature.style.CompositeStyle;
 import com.atakmap.map.layer.feature.style.Style;
+import com.atakmap.map.opengl.GLLabelManager;
 import com.atakmap.map.opengl.GLMapView;
-import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.Plane;
-import com.atakmap.math.PointD;
-import com.atakmap.math.Rectangle;
 import com.atakmap.opengl.GLES20FixedPipeline;
-import com.atakmap.opengl.GLNinePatch;
 import com.atakmap.opengl.GLText;
 
 import java.nio.FloatBuffer;
@@ -42,9 +39,10 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
         OnTextChangedListener {
 
     private final Arrow _subject;
-    private GLSegmentFloatingLabel _label;
     private final FloatBuffer _arrowHead;
 
+    private int _labelID = GLLabelManager.NO_ID;
+    private String _text;
     private static final double div_pi_4 = Math.PI / 4f;
 
     private final static boolean CLAMP_TO_GROUND_ENABLED = true;
@@ -64,9 +62,11 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
 
     private boolean _forceClamp = false;
     private boolean _clampToGround = false;
+    private boolean _nadirClamp = false;
 
     private final GLBatchLineString impl;
     private final GLBatchLineString ximpl;
+    private final GLLabelManager _labelManager;
 
     private boolean _ptsAgl;
     private int _terrainVersion;
@@ -77,14 +77,15 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
                 arrow,
                 GLMapView.RENDER_PASS_SPRITES | GLMapView.RENDER_PASS_SURFACE);
 
+        _labelManager = ((GLMapView) surface).getLabelManager();
+
         _subject = arrow;
         _arrowHead = Unsafe.allocateDirect(9, FloatBuffer.class);
-        _label = new GLSegmentFloatingLabel();
-        _label.setText(GLText.localize(arrow.getText()));
-        _label.setTextColor(arrow.getTextColor());
+        updateText(GLText.localize(arrow.getText()), arrow.getTextColor());
         try {
             _forceClamp = subject.getMetaBoolean("forceClampToGround", false);
-        } catch(ConcurrentModificationException ignored) {}
+        } catch (ConcurrentModificationException ignored) {
+        }
         this.impl = new GLBatchLineString(surface);
         this.impl.setTesselationThreshold(threshold);
         this.ximpl = new GLBatchLineString(surface);
@@ -99,7 +100,8 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
         super.startObserving();
         try {
             _forceClamp = subject.getMetaBoolean("forceClampToGround", false);
-        } catch(ConcurrentModificationException ignored) {}
+        } catch (ConcurrentModificationException ignored) {
+        }
         refreshStyle();
         this.onPointsChanged(_subject);
         _subject.addOnStrokeColorChangedListener(this);
@@ -110,6 +112,7 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
     @Override
     public void stopObserving() {
         super.stopObserving();
+        removeLabel();
         _subject.removeOnStrokeColorChangedListener(this);
         _subject.removeOnPointsChangedListener(this);
         _subject.removeOnTextChangedListener(this);
@@ -141,6 +144,38 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
                 }
             });
 
+    }
+
+    private boolean ensureLabel() {
+        if (_labelID == GLLabelManager.NO_ID) {
+            _labelID = _labelManager.addLabel();
+            MapTextFormat mapTextFormat = MapView
+                    .getTextFormat(Typeface.DEFAULT, +2);
+            _labelManager.setTextFormat(_labelID, mapTextFormat);
+            _labelManager.setFill(_labelID, true);
+            _labelManager.setHints(_labelID, GLLabelManager.HINT_XRAY);
+
+            _labelManager.setBackgroundColor(_labelID,
+                    Color.argb(204/*=80%*/, 0, 0, 0));
+            _labelManager.setVerticalAlignment(_labelID,
+                    GLLabelManager.VerticalAlignment.Middle);
+            _labelManager.setVisible(_labelID, this.visible);
+            updateText(_text, _subject.getTextColor());
+            return true;
+        }
+        return false;
+    }
+
+    private void removeLabel() {
+        runOnGLThread(new Runnable() {
+            @Override
+            public void run() {
+                if (_labelID != GLLabelManager.NO_ID) {
+                    _labelManager.removeLabel(_labelID);
+                    _labelID = GLLabelManager.NO_ID;
+                }
+            }
+        });
     }
 
     private void refreshStyle() {
@@ -175,9 +210,10 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
             ortho.scratch.geo.set(_pts[_pts.length - (2 - i)]);
 
             // Note: interpreting NAN HAE as 0AGL
-            final boolean ptAgl = (_pts[i].getAltitudeReference() == GeoPoint.AltitudeReference.AGL ||
+            final boolean ptAgl = (_pts[i]
+                    .getAltitudeReference() == GeoPoint.AltitudeReference.AGL ||
                     Double.isNaN(_pts[i].getAltitude()));
-            if(ptAgl)
+            if (ptAgl)
                 ortho.scratch.geo.set(getHae(ortho, ortho.scratch.geo));
 
             pts[i] = new GeoPoint(ortho.scratch.geo);
@@ -186,8 +222,10 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
         // Compute the nearby tail end of the arrow for more accurate forward results
         double distance = pts[1].distanceTo(pts[0]);
         double bearing = pts[1].bearingTo(pts[0]);
-        double inclination = Math.toDegrees(Math.atan2(pts[0].getAltitude() - pts[1].getAltitude(), distance));
-        pts[0] = DistanceCalculations.computeDestinationPoint(pts[1], bearing, ortho.currentScene.drawMapResolution, inclination);
+        double inclination = Math.toDegrees(Math
+                .atan2(pts[0].getAltitude() - pts[1].getAltitude(), distance));
+        pts[0] = DistanceCalculations.computeDestinationPoint(pts[1], bearing,
+                ortho.currentScene.drawMapResolution, inclination);
 
         // Get the tail and head in screen coordinates so we can calculate the on-screen angle
         for (int i = 0; i < 2; i++) {
@@ -255,27 +293,30 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
         runOnGLThread(new Runnable() {
             @Override
             public void run() {
-                pointsChangedImpl((GLMapView)context, p, true);
+                pointsChangedImpl((GLMapView) context, p, true);
             }
         });
     }
 
     private double getHae(GLMapView ortho, GeoPoint geo) {
-        final boolean ptAgl = (geo.getAltitudeReference() == GeoPoint.AltitudeReference.AGL ||
+        final boolean ptAgl = (geo
+                .getAltitudeReference() == GeoPoint.AltitudeReference.AGL ||
                 Double.isNaN(geo.getAltitude()));
-        if(!ptAgl)
+        if (!ptAgl)
             return geo.getAltitude();
 
         double hae = geo.getAltitude();
-        if(Double.isNaN(hae))
+        if (Double.isNaN(hae))
             hae = 0d;
-        final double terrain = ortho.getTerrainMeshElevation(geo.getLatitude(), geo.getLongitude());
-        if(!Double.isNaN(terrain))
+        final double terrain = ortho.getTerrainMeshElevation(geo.getLatitude(),
+                geo.getLongitude());
+        if (!Double.isNaN(terrain))
             hae += terrain;
         return hae;
     }
 
-    private void pointsChangedImpl(GLMapView ortho, GeoPoint[] p, boolean updateBounds) {
+    private void pointsChangedImpl(GLMapView ortho, GeoPoint[] p,
+            boolean updateBounds) {
         _pts = p;
         _ptsAgl = false;
 
@@ -289,7 +330,8 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
         LineString ls = new LineString(3);
         for (int i = 0; i < numPts; i++) {
             // Note: interpreting NAN HAE as 0AGL
-            final boolean ptAgl = (_pts[i].getAltitudeReference() == GeoPoint.AltitudeReference.AGL ||
+            final boolean ptAgl = (_pts[i]
+                    .getAltitudeReference() == GeoPoint.AltitudeReference.AGL ||
                     Double.isNaN(_pts[i].getAltitude()));
             _ptsAgl |= ptAgl;
 
@@ -298,7 +340,7 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
             final double hae = getHae(ortho, _pts[i]);
             ls.addPoint(lng, lat, hae);
 
-            if(ptAgl)
+            if (ptAgl)
                 labelPoints[i] = new GeoPoint(lat, lng, hae);
             else
                 labelPoints[i] = _pts[i];
@@ -330,7 +372,7 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
                     elANgle < slantMinElAngle;
         }
 
-        _clampToGround |= _forceClamp;
+        _clampToGround |= _forceClamp || _nadirClamp;
 
         impl.setAltitudeMode(
                 _clampToGround ? Feature.AltitudeMode.ClampToGround
@@ -342,14 +384,18 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
                         : Feature.AltitudeMode.Absolute);
         ximpl.setTessellationEnabled(_clampToGround);
 
-        _label.setSegment(labelPoints);
-        _label.setClampToGround(_clampToGround);
+        if (_labelID != GLLabelManager.NO_ID) {
+            _labelManager.setGeometry(_labelID, ls);
+            _labelManager.setAltitudeMode(_labelID,
+                    _clampToGround ? Feature.AltitudeMode.ClampToGround
+                            : Feature.AltitudeMode.Absolute);
+        }
 
         _terrainVersion = ortho.getTerrainVersion();
         // invalidate arrowhead
         _arrowheadVersion = -1;
 
-        if(updateBounds) {
+        if (updateBounds) {
             MapView mv = MapView.getMapView();
             if (mv != null) {
                 Envelope env = impl.getBounds(mv.getProjection()
@@ -370,10 +416,33 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
         this.context.queueEvent(new Runnable() {
             @Override
             public void run() {
-                _label.setText(GLText.localize(text));
-                _label.setTextColor(textColor);
+                updateText(GLText.localize(text), textColor);
+
             }
         });
+    }
+
+    @Override
+    public void release() {
+        super.release();
+        if (_labelID != GLLabelManager.NO_ID) {
+            _labelManager.removeLabel(_labelID);
+            _labelID = GLLabelManager.NO_ID;
+        }
+        impl.release();
+        ximpl.release();
+
+        // force points re-validate on next draw
+        _ptsAgl = true;
+        _terrainVersion = -1;
+    }
+
+    private void updateText(String text, int textColor) {
+        _text = text;
+        if (_labelID != 0) {
+            _labelManager.setText(_labelID, _text);
+            _labelManager.setColor(_labelID, textColor);
+        }
     }
 
     /**
@@ -401,22 +470,32 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
         if (_pts == null)
             return;
 
-        if(_ptsAgl && ortho.getTerrainVersion() != _terrainVersion)
-            pointsChangedImpl(ortho, _pts, false);
-
         final boolean sprites = MathUtils.hasBits(renderPass,
                 GLMapView.RENDER_PASS_SPRITES);
         final boolean surface = MathUtils.hasBits(renderPass,
                 GLMapView.RENDER_PASS_SURFACE);
-        final boolean scenes = MathUtils.hasBits(renderPass,
-                GLMapView.RENDER_PASS_SCENES);
+
+        boolean nadirClamp = surface ? _nadirClamp
+                : getClampToGroundAtNadir()
+                        && Double.compare(ortho.currentPass.drawTilt, 0) == 0;
+
+        if (_ptsAgl && ortho.getTerrainVersion() != _terrainVersion ||
+                _labelID == GLLabelManager.NO_ID
+                || _nadirClamp != nadirClamp) {
+
+            _nadirClamp = nadirClamp;
+
+            // validate label if necessary
+            ensureLabel();
+
+            pointsChangedImpl(ortho, _pts, false);
+        }
 
         final boolean renderGeom = (surface && _clampToGround)
                 || (sprites && !_clampToGround);
-        final boolean renderLabel = sprites;
 
         if (renderGeom && _pts != null) {
-            if(_arrowheadVersion != ortho.currentPass.drawVersion)
+            if (_arrowheadVersion != ortho.currentPass.drawVersion)
                 _validateArrowhead(ortho);
 
             GLES20FixedPipeline.glPushMatrix();
@@ -458,17 +537,6 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
                     .glDisableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
 
             GLES20FixedPipeline.glPopMatrix();
-        }
-
-        if (renderLabel) {
-            ortho.scratch.depth.save();
-            if (ortho.drawTilt > 0d) {
-                GLES30.glEnable(GLES30.GL_DEPTH_TEST);
-                GLES30.glDepthFunc(GLES30.GL_LEQUAL);
-                GLES30.glDepthMask(true);
-            }
-            _label.draw(ortho);
-            ortho.scratch.depth.restore();
         }
     }
 

@@ -309,10 +309,10 @@ public final class Feature implements Disposable {
     }
 
     /**
-     * 
-     * @param a
-     * @param b
-     * @return
+     * Compare two features for similarity.
+     * @param a the first feature
+     * @param b the second feature
+     * @return if the features share the same ID and version
      */
     public static boolean isSame(Feature a, Feature b) {
         return (a.getId() == b.getId()) &&

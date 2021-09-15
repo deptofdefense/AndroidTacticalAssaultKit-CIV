@@ -15,8 +15,8 @@ import com.atakmap.android.maps.MapOverlayManager;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.overlay.MapOverlayRenderer;
 
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint.AltitudeReference;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
 public class ViewShedReceiver extends BroadcastReceiver {
@@ -299,10 +299,8 @@ public class ViewShedReceiver extends BroadcastReceiver {
                             gp1,
                             radius, opacity);
                     for (int i = 0; i < samples - 1; i++) {
-                        GeoPoint gp = DistanceCalculations
-                                .computeDestinationPoint(
-                                        gp1, bearing,
-                                        (distance / (samples - 1) * (i + 1)));
+                        GeoPoint gp = GeoCalculations.pointAtDistance(gp1,
+                                bearing, (distance / (samples - 1) * (i + 1)));
                         double altval = startAltVal
                                 + ((altChange / (samples - 1)) * (i + 1));
                         gp = new GeoPoint(gp.getLatitude(), gp.getLongitude(),

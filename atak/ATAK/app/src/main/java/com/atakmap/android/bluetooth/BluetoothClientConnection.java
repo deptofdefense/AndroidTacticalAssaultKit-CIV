@@ -112,6 +112,8 @@ abstract class BluetoothClientConnection extends BluetoothConnection {
         try {
             m = device.getClass().getMethod("createRfcommSocket", int.class);
             s = (BluetoothSocket) m.invoke(device, 1);
+            if (s == null)
+                throw new IOException("could not create a socket");
             s.connect();
             if (!s.isConnected())
                 throw new IOException("Connect completed, but not connected");

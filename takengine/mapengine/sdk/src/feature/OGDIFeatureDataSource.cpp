@@ -32,6 +32,7 @@
 
 #include "OGR_SchemaDefinition.h"
 #include "DefaultSchemaDefinition.h"
+#include "formats/ogr/OGRUtils.h"
 
 #define MEM_FN( fn )    "TAK::Engine::Feature::OGDIFeatureDataSource::" fn ": "
 
@@ -789,7 +790,7 @@ namespace
 
 					if (!skipPoint)
 					{
-						std::size_t levelOfDetail = atakmap::feature::OGR_FeatureDataSource::ComputeLevelOfDetail(m_areaThreshold, datasetMBR);
+						std::size_t levelOfDetail = TAK::Engine::Formats::OGR::OGRUtils_ComputeLevelOfDetail(m_areaThreshold, datasetMBR);
 						if (m_currentLevelOfDetail == 0 || levelOfDetail < m_currentLevelOfDetail)
 							m_currentLevelOfDetail = levelOfDetail;
 					}

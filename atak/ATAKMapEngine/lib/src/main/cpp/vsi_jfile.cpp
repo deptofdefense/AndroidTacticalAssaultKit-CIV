@@ -160,7 +160,7 @@ int VSIJFileHandle::Seek(vsi_l_offset nOffset, int nWhence)
     }
 
     jlong newPosition = nOffset + startPos;
-    env->CallObjectMethod(m_instance, FileHandle_class.seekMethodId, newPosition);
+    JNILocalRef unused(*env, env->CallObjectMethod(m_instance, FileHandle_class.seekMethodId, newPosition));
 
     if(env->ExceptionCheck())
     {

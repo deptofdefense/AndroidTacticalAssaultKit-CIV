@@ -13,6 +13,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
+import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -25,7 +26,6 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.ScaleDrawable;
 import android.preference.PreferenceManager;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -128,6 +128,24 @@ public class ResectionMapComponent extends DropDownMapComponent {
                 TextView txtRelativeAccuracy = descriptionView
                         .findViewById(R.id.txtRelativeAccuracy);
                 txtRelativeAccuracy.setText(rwf.getRelativeAccuracy());
+
+                final TextView txtRequiredData = descriptionView
+                        .findViewById(R.id.txtRequiredData);
+                final String requiredData = rwf.getRequiredData();
+                if (FileSystemUtils.isEmpty(requiredData)) {
+                    txtRequiredData.setVisibility(View.GONE);
+                } else {
+                    txtRequiredData.setText(requiredData);
+                }
+
+                final TextView txtRequiredHardware = descriptionView
+                        .findViewById(R.id.txtRequiredHardware);
+                final String requiredHardware = rwf.getRequiredHardware();
+                if (FileSystemUtils.isEmpty(requiredHardware)) {
+                    txtRequiredHardware.setVisibility(View.GONE);
+                } else {
+                    txtRequiredHardware.setText(requiredHardware);
+                }
 
                 // Scale our icon if necessary
                 float targetDimPixels = 32f

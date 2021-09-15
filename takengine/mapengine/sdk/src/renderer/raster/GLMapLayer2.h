@@ -20,7 +20,7 @@ namespace TAK {
                     virtual Util::TAKErr getControl(void **ctrl, const char *type) const NOTHROWS = 0;
                 };
 
-
+                typedef std::unique_ptr<GLMapLayer2, void (*)(const GLMapLayer2 *)> GLMapLayer2Ptr;
             }
         }
     }

@@ -578,6 +578,7 @@ namespace atakmap                       // Open atakmap namespace.
         };
 
         ENGINE_API TAK::Engine::Util::TAKErr Style_parseStyle(StylePtr &value, const char *ogr) NOTHROWS;
+        ENGINE_API TAK::Engine::Util::TAKErr Style_parseStyle(StylePtr_Const &value, const char *ogr) NOTHROWS;
 
         ENGINE_API TAK::Engine::Util::TAKErr BasicFillStyle_create(StylePtr &value, const unsigned int color) NOTHROWS;
         ENGINE_API TAK::Engine::Util::TAKErr BasicPointStyle_create(StylePtr &value, const unsigned int color, const float size) NOTHROWS;

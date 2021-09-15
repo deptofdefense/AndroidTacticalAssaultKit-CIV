@@ -2,8 +2,6 @@
 package com.atakmap.android.maps.graphics;
 
 import android.graphics.Color;
-import android.graphics.PointF;
-import android.graphics.RectF;
 import android.graphics.Typeface;
 
 import com.atakmap.android.maps.MapTextFormat;

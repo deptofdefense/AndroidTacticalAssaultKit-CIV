@@ -1475,7 +1475,12 @@ TAKErr GLBatchGeometryRenderer3::buildPointsBuffers(std::vector<PointsBuffer> &l
             lastTexId = point.textureId;
             point.validateProjectedLocation(view);
 
-            auto relativeScaling = static_cast<float>(1.0f / /*view.pixelDensity*/1.0);
+            Math::Point2<double> scratchPoint;
+            view.renderPass->scene.forwardTransform.transform(&scratchPoint, point.posProjected);
+            point.screen_x = scratchPoint.x;
+            point.screen_y = scratchPoint.y;
+
+            auto relativeScaling = static_cast<float>(1.0f / /*view.pixelDensity*/ 1.0);
 
             int textureSize = static_cast<int>(std::ceil(point.iconAtlas->getTextureSize() * relativeScaling));
             std::size_t iconSize;

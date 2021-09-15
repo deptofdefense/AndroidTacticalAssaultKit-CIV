@@ -33,10 +33,11 @@ using namespace atakmap::renderer;
 
 namespace {
     void asyncSetBaseMap(void *opaque) NOTHROWS;
+#ifndef __ANDROID__
     void asyncSetLabelManager(void* opaque) NOTHROWS;
+#endif
     bool hasSettled(double dlat, double dlng, double dscale, double drot, double dtilt, double dfocusX, double dfocusY) NOTHROWS;
     void State_save(GLGlobeBase::State *value, const GLGlobeBase& view) NOTHROWS;
-    void validateAltitude(GeoPoint2 &geo) NOTHROWS;
 }
 
 struct GLGlobeBase::AsyncRunnable
@@ -89,11 +90,12 @@ GLGlobeBase::GLGlobeBase(RenderContext &ctx, const double dpi, const MapCamera2:
     displayDpi(dpi),
     animationFactor(1.0),
     targeting(false),
+    isScreenshot(false),
     settled(true),
     animationLastTick(0LL),
     animationDelta(0LL),
     basemap(nullptr, nullptr),
-    labelManager(nullptr),
+    labelManager(new GLLabelManager(), Memory_deleter_const<GLLabelManager>),
     asyncRunnablesMutex(new Mutex(TEMT_Recursive)),
     disposed(new bool(false)),
     layerRenderersMutex(TEMT_Recursive),
@@ -172,16 +174,17 @@ void GLGlobeBase::setBaseMap(GLMapRenderable2Ptr &&map) NOTHROWS
         basemap = std::move(map);
     }
 }
+#ifndef __ANDROID__
 void GLGlobeBase::setLabelManager(GLLabelManager* labelMan) NOTHROWS
 {
     if (!context.isRenderThread()) {
         std::unique_ptr<std::pair<GLGlobeBase&, GLLabelManager*>> p(new std::pair<GLGlobeBase&, GLLabelManager*>(*this, std::move(labelMan)));
         context.queueEvent(asyncSetLabelManager, std::unique_ptr<void, void(*)(const void *)>(p.release(), Memory_leaker_const<void>));
-    }
-    else {
-        labelManager = std::move(labelMan);
+    } else {
+        labelManager = std::unique_ptr<GLLabelManager, void(*)(const GLLabelManager *)>(labelMan, Memory_leaker_const<GLLabelManager>);
     }
 }
+#endif
 void GLGlobeBase::release() NOTHROWS
 {
     for(auto it = renderables.begin(); it != renderables.end(); it++)
@@ -223,7 +226,7 @@ void GLGlobeBase::prepareScene() NOTHROWS
     GLWorkers_doResourceLoadingWork(30);
     GLWorkers_doGLThreadWork();
 }
-void GLGlobeBase::drawRenderables(const GLMapView2::State &renderState) NOTHROWS
+void GLGlobeBase::drawRenderables(const GLGlobeBase::State &renderState) NOTHROWS
 {
     this->renderPass = &renderState;
     this->multiPartPass = false;
@@ -265,7 +268,7 @@ void GLGlobeBase::drawRenderable(GLMapRenderable2& renderable, const int pass) N
 }
 GLLabelManager* GLGlobeBase::getLabelManager() const NOTHROWS
 {
-    return labelManager;
+    return labelManager.get();
 }
 TAKErr GLGlobeBase::registerControl(const Layer2 &layer, const char *type, void *ctrl) NOTHROWS
 {
@@ -558,21 +561,8 @@ bool GLGlobeBase::animate() NOTHROWS
 
     this->animationLastUpdate = this->animationLastTick;
 
-    validateAltitude(animation.current.point);
-    validateAltitude(animation.target.point);
-
-    const double camRangeAnimationTarget = MapSceneModel2_range(
-            atakmap::core::AtakMapView_getMapResolution(displayDpi, animation.target.mapScale),
-            renderPasses[0u].scene.camera.fov,
-            renderPasses[0u].scene.height) - animation.target.point.altitude;
-    const double camRangeAnimationCurrent = MapSceneModel2_range(
-            atakmap::core::AtakMapView_getMapResolution(displayDpi, animation.current.mapScale),
-            renderPasses[0u].scene.camera.fov,
-            renderPasses[0u].scene.height) - animation.current.point.altitude;
-
     // capture the difference between the target and current animation states
     // to determine if the animation is "settled"
-    const double camRangeDelta = (camRangeAnimationTarget-camRangeAnimationCurrent);
     const double scaleDelta = (animation.target.mapScale - animation.current.mapScale);
     const double pointDelta = TAK::Engine::Core::GeoPoint2_distance(animation.target.point,
                                                                     animation.current.point,
@@ -581,8 +571,6 @@ bool GLGlobeBase::animate() NOTHROWS
                              animation.current.point.latitude);
     const double lngDelta = (animation.target.point.longitude -
                              animation.current.point.longitude);
-    const double altDelta = (animation.target.point.altitude -
-                             animation.current.point.altitude);
     const double focusxDelta = (animation.target.focusx - animation.current.focusx);
     const double focusyDelta = (animation.target.focusy - animation.current.focusy);
 
@@ -595,19 +583,17 @@ bool GLGlobeBase::animate() NOTHROWS
                                                                                  false),
                                                                          pointDelta *
                                                                          animationFactor, false);
-    updatePoint.altitude = (animation.current.point.altitude + altDelta*animationFactor);
 
+    animation.current.mapScale += scaleDelta * animationFactor;
     animation.current.point.latitude = updatePoint.latitude;
     animation.current.point.longitude = updatePoint.longitude;
     if (animation.current.point.longitude < -180.0)
         animation.current.point.longitude += 360.0;
     else if (animation.current.point.longitude > 180.0)
         animation.current.point.longitude -= 360.0;
-    animation.current.point.altitude = updatePoint.altitude;
+    animation.current.point.altitude = animation.target.point.altitude;
     animation.current.focusx += (float) (focusxDelta * animationFactor);
     animation.current.focusy += (float) (focusyDelta * animationFactor);
-    animation.current.mapScale = atakmap::core::AtakMapView_getMapScale(displayDpi,
-            MapSceneModel2_gsd(camRangeAnimationCurrent+camRangeDelta*animationFactor + animation.current.point.altitude, renderPasses[0].scene.camera.fov, renderPasses[0].scene.height));
 
     double rotDelta = (animation.target.rotation - animation.current.rotation);
 
@@ -636,7 +622,6 @@ bool GLGlobeBase::animate() NOTHROWS
     // if settled, set to the exact target values.
     if (animation.settled)
         animation.current = animation.target;
-
     return true;
 }
 TAKErr GLGlobeBase::setDisplayMode(const MapRenderer::DisplayMode mode) NOTHROWS
@@ -1041,12 +1026,14 @@ namespace {
         std::unique_ptr<std::pair<GLGlobeBase&, GLMapRenderable2Ptr>> p(static_cast<std::pair<GLGlobeBase &, GLMapRenderable2Ptr> *>(opaque));
         p->first.setBaseMap(std::move(p->second));
     }
+
+#ifndef __ANDROID__
     void asyncSetLabelManager(void* opaque) NOTHROWS
     {
         std::unique_ptr<std::pair<GLGlobeBase&, GLLabelManager*>> p(static_cast<std::pair<GLGlobeBase&, GLLabelManager*>*>(opaque));
         p->first.setLabelManager(std::move(p->second));
     }
-
+#endif
     bool hasSettled(double dlat, double dlng, double dscale, double drot, double dtilt, double dfocusX, double dfocusY) NOTHROWS
     {
         return IS_TINY(dlat) &&
@@ -1070,6 +1057,7 @@ namespace {
         value->animationFactor = view.animationFactor;
         value->drawVersion = view.renderPasses[0].drawVersion;
         value->targeting = view.targeting;
+        value->isScreenshot = view.isScreenshot;
         value->westBound = view.renderPasses[0].westBound;
         value->southBound = view.renderPasses[0].southBound;
         value->northBound = view.renderPasses[0].northBound;
@@ -1097,10 +1085,5 @@ namespace {
         value->drawHorizon = view.renderPasses[0].drawHorizon;
         value->crossesIDL = view.renderPasses[0].crossesIDL;
         value->displayDpi = view.displayDpi;
-    }
-    void validateAltitude(GeoPoint2 &geo) NOTHROWS
-    {
-        if(isnan(geo.altitude))
-            geo.altitude = 0.0;
     }
 }

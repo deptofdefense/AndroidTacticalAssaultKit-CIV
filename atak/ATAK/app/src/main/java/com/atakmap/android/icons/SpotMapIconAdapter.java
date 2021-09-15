@@ -10,7 +10,7 @@ import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.maps.assets.Icon;
 
 /**
- * Adapt icon to a colored dot, based on 2525B type
+ * Adapt icon to a colored dot, based on 2525C type
  * 
  * 
  */

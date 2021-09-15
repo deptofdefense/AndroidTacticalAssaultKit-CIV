@@ -156,7 +156,6 @@ public class MetricReportMapComponent extends AbstractMapComponent
         bundleFilter.add("caPassword");
         bundleFilter.add("clientPassword");
 
-
         //Realtime metrics sent only to TAK Server
         metricDispatcher = new CotDispatcher();
         metricDispatcher.setDispatchFlags(
@@ -217,7 +216,6 @@ public class MetricReportMapComponent extends AbstractMapComponent
         Log.d(TAG, "starting metrics collection");
 
         startTime = SystemClock.elapsedRealtime();
-
 
         // this is for all of the apps on the device not just this app
         startUsageDataRx = android.net.TrafficStats.getTotalRxBytes();

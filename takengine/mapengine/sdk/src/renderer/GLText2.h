@@ -5,6 +5,7 @@
 
 #include "math/Rectangle.h"
 #include "port/Platform.h"
+#include "port/String.h"
 #include "renderer/Bitmap2.h"
 #include "renderer/GLTextureAtlas2.h"
 #include "renderer/GLRenderBatch.h"
@@ -54,6 +55,18 @@ namespace TAK {
                 bool underline;
                 bool strikethrough;
             };
+
+#ifdef __ANDROID__
+            class ENGINE_API TextFormatFactory
+            {
+            public:
+                virtual Util::TAKErr createTextFormat(TextFormat2Ptr& value, const TextFormatParams& params) NOTHROWS = 0;
+            protected:
+                virtual ~TextFormatFactory() NOTHROWS = 0;
+            };
+
+            ENGINE_API Util::TAKErr TextFormat2_setTextFormatFactory(const std::shared_ptr<TextFormatFactory>& factory) NOTHROWS;
+#endif
 
             ENGINE_API Util::TAKErr TextFormat2_createDefaultSystemTextFormat(TextFormat2Ptr &value, const float textSize) NOTHROWS;
             ENGINE_API Util::TAKErr TextFormat2_createTextFormat(TextFormat2Ptr &value, const TextFormatParams &params) NOTHROWS;
@@ -116,6 +129,7 @@ namespace TAK {
                 TextFormat2 &getTextFormat() const NOTHROWS;
             public :
                 static std::size_t getLineCount(const char *text) NOTHROWS;
+
             private:
                 /** batches single line of text */
                 Util::TAKErr batchImpl(atakmap::renderer::GLRenderBatch &batch,
@@ -156,10 +170,55 @@ namespace TAK {
                 int commonCharTexId[GLTEXT2_NUM_COMMON_CHARS];
                 float commonCharWidth[GLTEXT2_NUM_COMMON_CHARS];
 #undef GLTEXT2_NUM_COMMON_CHARS
+
+                friend ENGINE_API Util::TAKErr GLText2_invalidate(GLText2* glText) NOTHROWS;
             };
 
             ENGINE_API GLText2 *GLText2_intern(std::shared_ptr<TextFormat2> textFormat) NOTHROWS;
             ENGINE_API GLText2 *GLText2_intern(const TextFormatParams &fmt) NOTHROWS;
+
+            /**
+             * Invalidate every cached GLText2 instance forcing it to rebuild cached
+             * metrics and/or assets.
+             *
+             * Call from valid GLThread
+             *
+             * @return TE_Ok always
+             */
+            ENGINE_API Util::TAKErr GLText2_invalidateCache() NOTHROWS;
+
+            /**
+             * Invalidate any cached metrics and/or assets in a GLText2 instance forcing
+             * them to rebuild
+             *
+             * Call from valid GLThread
+             *
+             * @return TE_InvalidArg if glText is nullptr
+             */
+            ENGINE_API Util::TAKErr GLText2_invalidate(GLText2* glText) NOTHROWS;
+
+            /**
+             * Localize a text string for appropriate right-to-left, left-to-right text order. This assumes
+             * all input text is left-to-right AND bidirectional order is left-to-right.
+             * 
+             * @param result the resulting reordered string (UTF8)
+             * @param mtext the input text (UTF8)
+             */
+            ENGINE_API Util::TAKErr GLText2_localize(Port::String* result, const char* mtext) NOTHROWS;
+
+            /**
+             * Defines the overall bidirectional text order (right-to-left or Left-to-right) text mode. For instance
+             * <LTR0> <RTL0> <LTR1>
+             *  - OR -
+             * <LTR1> <RTL0> <LTR0>
+             * 
+             * NOTE: Currently used for testing.
+             */
+            enum BidirectionalTextMode {
+                TEBTM_Default, /// < let the system decide
+                TEBTM_HostRightToLeft, /// < force right-to-left overall ordering
+                TEBTM_HostLeftToRight, /// < force left-to-right overall ordering
+            };
         }
     }
 }

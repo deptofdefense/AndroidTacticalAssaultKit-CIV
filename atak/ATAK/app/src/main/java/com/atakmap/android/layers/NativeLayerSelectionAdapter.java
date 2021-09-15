@@ -12,7 +12,6 @@ import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.ImageButton;
 import android.widget.TextView;
-import android.widget.ToggleButton;
 
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.math.MathUtils;

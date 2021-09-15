@@ -33,7 +33,7 @@ import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.widgets.SeekBarControl;
 import com.atakmap.app.R;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
@@ -231,8 +231,8 @@ public class RubberSheetReceiver extends BroadcastReceiver implements
             float[] ra = new float[2];
             Location.distanceBetween(s.getLatitude(), s.getLongitude(),
                     e.getLatitude(), e.getLongitude(), ra);
-            GeoPointMetaData c2 = GeoPointMetaData.wrap(DistanceCalculations
-                    .computeDestinationPoint(c.get(), ra[1], ra[0]));
+            GeoPointMetaData c2 = GeoPointMetaData.wrap(
+                    GeoCalculations.pointAtDistance(c.get(), ra[1], ra[0]));
             RubberSheetUtils.getAltitude(c2);
             _activeSheet.move(c, c2);
             _activeSheet = null;

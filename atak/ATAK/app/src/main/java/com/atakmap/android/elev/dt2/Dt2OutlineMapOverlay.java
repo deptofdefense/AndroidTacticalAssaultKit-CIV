@@ -199,7 +199,8 @@ public class Dt2OutlineMapOverlay extends AbstractMapOverlay2 implements
             _childCount = _dtedWatcher.getFileCount();
             List<HierarchyListItem> filtered = new ArrayList<>();
             for (int level = 0; level < 4; level++) {
-                DirectoryItem item = new DirectoryItem(level, "DTED", -1, listener);
+                DirectoryItem item = new DirectoryItem(level, "DTED", -1,
+                        listener);
                 if (this.filter.accept(item)) {
                     item.syncRefresh(listener, filter);
                     filtered.add(item);

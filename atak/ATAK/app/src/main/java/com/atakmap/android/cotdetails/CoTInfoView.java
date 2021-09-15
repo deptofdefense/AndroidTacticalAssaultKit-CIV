@@ -45,7 +45,7 @@ import com.atakmap.android.gui.ColorPalette.OnColorSelectedListener;
 import com.atakmap.android.gui.CoordDialogView;
 import com.atakmap.android.gui.RangeAndBearingTableHandler;
 import com.atakmap.android.gui.RangeEntryDialog;
-import com.atakmap.android.icons.Icon2525bTypeResolver;
+import com.atakmap.android.icons.Icon2525cTypeResolver;
 import com.atakmap.android.icons.UserIcon;
 import com.atakmap.android.image.ImageGalleryReceiver;
 import com.atakmap.android.ipc.AtakBroadcast;
@@ -1024,12 +1024,12 @@ public class CoTInfoView extends RelativeLayout
             return "";
 
         // get the CoT name from some library
-        String _25b25bName = Icon2525bTypeResolver.mil2525bFromCotType(type);
+        String _25b25bName = Icon2525cTypeResolver.mil2525cFromCotType(type);
 
         String targ = context.getString(R.string.not_recognized);
         boolean includeType = true;
         if (_25b25bName.length() > 3) {
-            targ = Icon2525bTypeResolver.getHumanName(type, context);
+            targ = Icon2525cTypeResolver.getHumanName(type, context);
             includeType = targ.equals(context.getString(
                     R.string.not_recognized));
         } else if (type.equals(QUICK_NAV_COT) || type.equals(WAYPOINT_COT))

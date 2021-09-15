@@ -71,7 +71,7 @@ public interface FeatureDataSource {
          * the {@link ContentPointer#FEATURE} pointer is automatically reset
          * to the first feature for the new set.
          * 
-         * @param point    The pointer to be incremented
+         * @param pointer    The pointer to be incremented
          * 
          * @return <code>true</code> if there is another feature,
          *         <code>false</code> if no more features are available.
@@ -173,7 +173,7 @@ public interface FeatureDataSource {
          * Creates a new feature from the associated properties based on the
          * coding.
          * 
-         * @return 
+         * @return the Feature
          * 
          * @throws  UnsupportedOperationException   If the specified geometry
          *                                          or style codings are not

@@ -39,10 +39,10 @@ TAKErr GLBatchGeometry3::init(const int64_t feature_id, const char *name_val, TA
     this->name = name_val;
     this->altitudeMode = altitude_mode;
     this->extrude = extrude_val;
+    if (style.get()) setStyle(style);
     if (geom.get()) {
         setGeometry(*geom);
     }
-    if (style.get()) setStyle(style);
     return TE_Ok;
 }
 

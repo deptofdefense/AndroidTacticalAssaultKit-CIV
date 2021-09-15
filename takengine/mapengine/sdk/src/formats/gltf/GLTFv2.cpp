@@ -643,12 +643,13 @@ namespace {
             tinygltf::Accessor &indices = model.accessors[prim.indices];
             tinygltf::BufferView &bv = model.bufferViews[indices.bufferView];
             tinygltf::Buffer &b = model.buffers[bv.buffer];
+            state.usedBuffers.insert(bv.buffer);
 
             code = GLTF_dataTypeForAccessorComponentTypeV2(indexType, indices.componentType);
             if (code != TE_Ok)
                 return code;
 
-            indicesData = &b.data[0] + bv.byteOffset;
+            indicesData = &b.data[0] + bv.byteOffset + indices.byteOffset;
             indexCount = indices.count;
         }
 

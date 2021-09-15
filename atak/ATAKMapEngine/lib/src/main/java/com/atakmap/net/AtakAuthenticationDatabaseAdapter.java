@@ -1,7 +1,5 @@
 package com.atakmap.net;
 
-import android.net.Uri;
-
 import com.atakmap.annotations.ModifierApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;

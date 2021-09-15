@@ -3,8 +3,6 @@ package com.atakmap.android.maps;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.graphics.PorterDuff;
-import android.graphics.drawable.Drawable;
 import android.preference.PreferenceManager;
 import androidx.annotation.NonNull;
 import android.view.LayoutInflater;

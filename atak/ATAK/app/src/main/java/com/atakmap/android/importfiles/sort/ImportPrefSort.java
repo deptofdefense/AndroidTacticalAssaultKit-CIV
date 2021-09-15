@@ -91,7 +91,7 @@ public class ImportPrefSort extends ImportInternalSDResolver {
         try {
             char[] buffer = new char[8192];
             BufferedReader reader = null;
-            int numRead = 0;
+            int numRead;
 
             try {
                 reader = new BufferedReader(new InputStreamReader(

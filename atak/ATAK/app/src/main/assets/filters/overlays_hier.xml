@@ -68,20 +68,20 @@
             <filter type='a-k'/>
         </overlay>
         <overlay id='friendly' title='Friendly Markers' icon='asset://icons/friendly.png' order='1'>
-            <overlay id='friendlytroops' title='Troops' icon='asset://mil-std-2525b/sfgpuc---------.png' order='2'>
+            <overlay id='friendlytroops' title='Troops' icon='asset://mil-std-2525c/sfgpuc---------.png' order='2'>
                 <filter type='a-f-G-U-C'/>
             </overlay>
-            <overlay id='friendlygroundvehicles' title='Ground Vehicles' icon='asset://mil-std-2525b/sfgpev---------.png' order='3'>
+            <overlay id='friendlygroundvehicles' title='Ground Vehicles' icon='asset://mil-std-2525c/sfgpev---------.png' order='3'>
                 <filter type='a-f-G-E-V'/>
             </overlay>
-            <overlay id='friendlyairplatforms' title='Air Platforms' icon='asset://mil-std-2525b/sfapmf---------.png' order='4'>
+            <overlay id='friendlyairplatforms' title='Air Platforms' icon='asset://mil-std-2525c/sfapmf---------.png' order='4'>
                 <filter type='a-f-A'/>
             </overlay>
-            <overlay id='friendlyships' title='Ships' icon='asset://mil-std-2525b/sfspcl---------.png' order='5'>
+            <overlay id='friendlyships' title='Ships' icon='asset://mil-std-2525c/sfspcl---------.png' order='5'>
                 <filter type='a-f-S'/>
                 <filter type='a-f-U'/>
             </overlay>
-            <overlay id='friendlystructures' title='Structures' icon='asset://mil-std-2525b/sfgpime---h----.png' order='6'>
+            <overlay id='friendlystructures' title='Structures' icon='asset://mil-std-2525c/sfgpime---h----.png' order='6'>
                 <filter type='a-f-G-I'/>
             </overlay>
             <overlay id='friendlyother' title='Other' icon='asset://icons/friendly.png' order='7'>

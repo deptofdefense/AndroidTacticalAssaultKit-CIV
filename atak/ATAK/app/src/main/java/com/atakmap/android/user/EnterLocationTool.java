@@ -29,7 +29,7 @@ import com.atakmap.android.toolbar.Tool;
 import com.atakmap.android.toolbar.widgets.TextContainer;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
@@ -157,9 +157,8 @@ public class EnterLocationTool extends Tool implements
             GeoPoint clickedPoint) {
         double tBearing = ATAKUtilities.convertFromMagneticToTrue(clickedPoint,
                 bearing);
-        GeoPoint newPoint = DistanceCalculations.computeDestinationPoint(
-                clickedPoint, tBearing,
-                range);
+        GeoPoint newPoint = GeoCalculations.pointAtDistance(clickedPoint,
+                tBearing, range);
         MapItem marker = this.enterLocation
                 .processPoint(GeoPointMetaData.wrap(newPoint));
         if (marker != null) {

@@ -4,7 +4,7 @@ package com.atakmap.android.items;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MetaDataHolder;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.database.FilteredRowIterator;
 import com.atakmap.database.RowIterator;
@@ -398,12 +398,10 @@ public abstract class MapItemsDatabase {
             double mapScale,
             Map<String, String> metadata, boolean visibleOnly) {
         final double distance = Math.sqrt(2.0d) * radius;
-        final GeoPoint upperLeft = DistanceCalculations
-                .computeDestinationPoint(center, 315.0d,
-                        distance);
-        final GeoPoint lowerRight = DistanceCalculations
-                .computeDestinationPoint(center, 135.0d,
-                        distance);
+        final GeoPoint upperLeft = GeoCalculations.pointAtDistance(center,
+                315.0d, distance);
+        final GeoPoint lowerRight = GeoCalculations.pointAtDistance(center,
+                135.0d, distance);
 
         return new FilteredMetaDataHolderCursor<MapItem>(
                 this.queryItemsImpl(parentGroupSerialId,

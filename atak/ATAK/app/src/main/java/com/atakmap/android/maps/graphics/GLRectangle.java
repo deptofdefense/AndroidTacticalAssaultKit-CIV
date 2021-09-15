@@ -18,11 +18,9 @@ public class GLRectangle extends GLPolyline implements
     @Override
     public void onRectPropertiesChanged(SimpleRectangle rectangle,
             int changed) {
-        // TODO Auto-generated method stub
     }
 
     @Override
     public void onRectFillTypeChanged(SimpleRectangle rectangle) {
-        // TODO Auto-generated method stub
     }
 }

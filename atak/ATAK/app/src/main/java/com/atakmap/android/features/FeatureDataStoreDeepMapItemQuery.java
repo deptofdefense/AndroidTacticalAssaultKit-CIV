@@ -20,8 +20,8 @@ import com.atakmap.android.maps.Shape;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.assets.Icon;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoBounds;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
@@ -56,6 +56,7 @@ import com.atakmap.map.layer.feature.style.BasicPointStyle;
 import com.atakmap.map.layer.feature.style.BasicStrokeStyle;
 import com.atakmap.map.layer.feature.style.CompositeStyle;
 import com.atakmap.map.layer.feature.style.IconPointStyle;
+import com.atakmap.spatial.file.MvtSpatialDb;
 import com.atakmap.util.Collections2;
 import com.atakmap.util.Visitor;
 
@@ -365,6 +366,16 @@ public class FeatureDataStoreDeepMapItemQuery implements DeepMapItemQuery {
                 m.setMetaDouble("minRenderScale", DEFAULT_RENDER_SCALE);
             } else
                 m.setAlwaysShowText(true);
+
+            m.addOnIconChangedListener(new Marker.OnIconChangedListener() {
+                @Override
+                public void onIconChanged(Marker marker) {
+                    updateFeatureStyle(id, new IconPointStyle(
+                            marker.getIconColor(),
+                            marker.getIcon().getImageUri(Icon.STATE_DEFAULT)));
+                }
+            });
+
             item = m;
         } else if (geom instanceof LineString) {
             LineString line = (LineString) geom;
@@ -389,6 +400,32 @@ public class FeatureDataStoreDeepMapItemQuery implements DeepMapItemQuery {
             poly.setPoints(pts);// getCoordinates());
             poly.setTitle(title);
             applyStyle(poly, style);
+
+            poly.addOnStyleChangedListener(new Shape.OnStyleChangedListener() {
+                @Override
+                public void onStyleChanged(Shape s) {
+                    updateFeatureStyle(id, new BasicStrokeStyle(
+                            s.getStrokeColor(), (float) s.getStrokeWeight()));
+                }
+            });
+            poly.addOnStrokeColorChangedListener(
+                    new Shape.OnStrokeColorChangedListener() {
+                        @Override
+                        public void onStrokeColorChanged(Shape s) {
+                            updateFeatureStyle(id,
+                                    new BasicStrokeStyle(s.getStrokeColor(),
+                                            (float) s.getStrokeWeight()));
+                        }
+                    });
+            poly.addOnStrokeWeightChangedListener(
+                    new Shape.OnStrokeWeightChangedListener() {
+                        @Override
+                        public void onStrokeWeightChanged(Shape s) {
+                            updateFeatureStyle(id,
+                                    new BasicStrokeStyle(s.getStrokeColor(),
+                                            (float) s.getStrokeWeight()));
+                        }
+                    });
             item = poly;
 
         } else if (geom instanceof Polygon) {
@@ -424,8 +461,39 @@ public class FeatureDataStoreDeepMapItemQuery implements DeepMapItemQuery {
                 poly.setTitle(title);
 
             poly.addStyleBits(Polyline.STYLE_CLOSED_MASK);
-
             applyStyle(poly, style);
+
+            poly.addOnStrokeWeightChangedListener(
+                    new Shape.OnStrokeWeightChangedListener() {
+                        @Override
+                        public void onStrokeWeightChanged(Shape p) {
+                            updateFeatureStyle(id,
+                                    new CompositeStyle(new Style[] {
+                                            new BasicFillStyle(
+                                                    p.getFillColor()),
+                                            new BasicStrokeStyle(
+                                                    p.getStrokeColor(),
+                                                    (float) p
+                                                            .getStrokeWeight()),
+                            }));
+                        }
+                    });
+
+            poly.addOnFillColorChangedListener(
+                    new Shape.OnFillColorChangedListener() {
+                        @Override
+                        public void onFillColorChanged(Shape s) {
+                            updateFeatureStyle(id,
+                                    new CompositeStyle(new Style[] {
+                                            new BasicFillStyle(
+                                                    s.getFillColor()),
+                                            new BasicStrokeStyle(
+                                                    s.getStrokeColor(),
+                                                    (float) s
+                                                            .getStrokeWeight()),
+                            }));
+                        }
+                    });
 
             item = poly;
         } else if (geom instanceof GeometryCollection) {
@@ -492,8 +560,20 @@ public class FeatureDataStoreDeepMapItemQuery implements DeepMapItemQuery {
             File f = Utils.getSourceFile(this.spatialDb, featureSet);
             if (f != null)
                 item.setMetaString("file", f.getAbsolutePath());
+            item.setEditable(!featureSet.getType()
+                    .equals(MvtSpatialDb.MVT_CONTENT_TYPE));
         }
         return item;
+    }
+
+    private void updateFeatureStyle(long id, Style style) {
+        try {
+            spatialDb.updateFeature(id,
+                    FeatureDataStore2.PROPERTY_FEATURE_STYLE, null,
+                    null, style, null, 0);
+        } catch (Exception e) {
+            Log.e(TAG, "Update Feature Error", e);
+        }
     }
 
     private static FeatureSet getFeatureSet(FeatureDataStore2 db, long fsid) {
@@ -686,9 +766,8 @@ public class FeatureDataStoreDeepMapItemQuery implements DeepMapItemQuery {
             if (this.location != null && !Double.isNaN(this.radius)) {
                 LineString ring = new LineString(2);
                 for (int i = 0; i < 360; i += 10) {
-                    GeoPoint proj = DistanceCalculations
-                            .computeDestinationPoint(this.location, i,
-                                    this.radius);
+                    GeoPoint proj = GeoCalculations
+                            .pointAtDistance(this.location, i, this.radius);
                     ring.addPoint(proj.getLongitude(), proj.getLatitude());
                 }
                 ring.addPoint(ring.getX(0), ring.getY(0));

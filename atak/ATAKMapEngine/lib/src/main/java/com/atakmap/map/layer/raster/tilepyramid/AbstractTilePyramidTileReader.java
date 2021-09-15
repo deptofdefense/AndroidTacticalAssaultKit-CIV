@@ -11,7 +11,6 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
 
-import com.atakmap.coremap.log.Log;
 import com.atakmap.map.layer.raster.tilereader.TileReader;
 import com.atakmap.math.MathUtils;
 import com.atakmap.util.ResourcePool;

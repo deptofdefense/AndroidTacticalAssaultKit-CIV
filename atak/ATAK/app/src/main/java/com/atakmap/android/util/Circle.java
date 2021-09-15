@@ -119,8 +119,8 @@ public class Circle extends Polyline {
 
         double bearing = DistanceCalculations.bearingFromSourceToTarget(
                 getCenter().get(), point);
-        GeoPoint p = DistanceCalculations.computeDestinationPoint(
-                getCenter().get(), bearing, getRadius());
+        GeoPoint p = GeoCalculations.pointAtDistance(getCenter().get(), bearing,
+                getRadius());
         if (bounds.contains(p)) {
             GeoPointMetaData gpmd = new GeoPointMetaData(p);
             ElevationManager.getElevation(p.getLatitude(), p.getLongitude(),
@@ -217,8 +217,8 @@ public class Circle extends Polyline {
         GeoPointMetaData[] points = new GeoPointMetaData[res];
         for (int i = 0; i < res; i++) {
             final double theta = (i * (360.0 / res)) - offsetLength;
-            GeoPoint point = DistanceCalculations.computeDestinationPoint(
-                    _center.get(), theta, _radius);
+            GeoPoint point = GeoCalculations.pointAtDistance(_center.get(),
+                    theta, _radius);
             points[i] = GeoPointMetaData.wrap(point);
 
             double lat = point.getLatitude();
@@ -259,10 +259,10 @@ public class Circle extends Polyline {
         Bundle data = new Bundle();
         GeoPointMetaData center = getCenter();
         double radius = getRadius();
-        GeoPoint edgeY = DistanceCalculations
-                .computeDestinationPoint(center.get(), 0, radius);
-        GeoPoint edgeX = DistanceCalculations
-                .computeDestinationPoint(center.get(), 90, radius);
+        GeoPoint edgeY = GeoCalculations.pointAtDistance(center.get(), 0,
+                radius);
+        GeoPoint edgeX = GeoCalculations.pointAtDistance(center.get(), 90,
+                radius);
         PointF c = cap.forward(center.get()), rx = cap.forward(edgeX), ry = cap
                 .forward(edgeY);
         PointF[] p = new PointF[2];
@@ -291,10 +291,10 @@ public class Circle extends Polyline {
                     angle = 270;
                     break;
             }
-            lp[0] = DistanceCalculations.computeDestinationPoint(
-                    center.get(), angle + 6, radius);
-            lp[1] = DistanceCalculations.computeDestinationPoint(
-                    center.get(), angle - 6, radius);
+            lp[0] = GeoCalculations.pointAtDistance(center.get(), angle + 6,
+                    radius);
+            lp[1] = GeoCalculations.pointAtDistance(center.get(), angle - 6,
+                    radius);
             if (bounds.contains(lp[0]) || bounds.contains(lp[1]))
                 break;
         }

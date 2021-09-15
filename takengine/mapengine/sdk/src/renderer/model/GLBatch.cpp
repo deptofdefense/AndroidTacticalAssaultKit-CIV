@@ -182,8 +182,10 @@ namespace {
     constexpr uint32_t OP_TEX_ = ((4 << 1) | PREPARE_BIT_);
     constexpr uint32_t OP_DRAWA_ = (1 << 1);
     constexpr uint32_t OP_DRAWE_ = (2 << 1);
+    constexpr uint32_t OP_DRAWE32_ = (3 << 1);
 
-    //
+    // shader set flags (8 slots)
+    constexpr uint32_t LF_SET_FLAG_ = 1;
 }
 
 GLBatch::GLBatch(size_t shader_count,
@@ -368,6 +370,10 @@ TAKErr GLBatchBuilder::drawArrays(GLenum draw_mode, size_t vert_count) NOTHROWS 
 }
 
 TAKErr GLBatchBuilder::drawElements(GLenum draw_mode, size_t index_count, size_t buffer_index) NOTHROWS {
+    return this->drawElements(draw_mode, GL_UNSIGNED_SHORT, index_count, buffer_index);
+}
+
+TAKErr GLBatchBuilder::drawElements(GLenum draw_mode, GLenum type, size_t index_count, size_t buffer_index) NOTHROWS {
 
     if (index_count > std::numeric_limits<uint32_t>::max())
         return TE_InvalidArg;
@@ -376,7 +382,11 @@ TAKErr GLBatchBuilder::drawElements(GLenum draw_mode, size_t index_count, size_t
 
     this->prepareForDraw();
 
-    uint32_t instr = (draw_mode << (OPERAND_SHIFT_ + 8)) | (static_cast<uint32_t>(buffer_index) << OPERAND_SHIFT_) | OP_DRAWA_;
+    uint32_t op = OP_DRAWE_;
+    if (type == GL_UNSIGNED_INT)
+        op = OP_DRAWE32_;
+
+    uint32_t instr = (draw_mode << (OPERAND_SHIFT_ + 8)) | (static_cast<uint32_t>(buffer_index) << OPERAND_SHIFT_) | op;
     this->instrs_.push_back(instr);
 
     instr = static_cast<uint32_t>(index_count);
@@ -413,12 +423,16 @@ TAKErr GLBatchBuilder::prepareForDraw() NOTHROWS {
 
     // if shader switch, everything else must follow
     if (this->shader_dirty_) {
-        this->lf_dirty_ = true;
         this->streams_dirty_ = true;
     }
 
     if (this->shader_dirty_) {
-        uint32_t instr = (static_cast<uint32_t>(this->shader_index_) << OPERAND_SHIFT_) | OP_SHADER_;
+
+        // trigger set of various uniforms after shader swap
+        uint32_t set_flags = !this->lf_dirty_ ? LF_SET_FLAG_ : 0;
+
+        uint32_t instr = (static_cast<uint32_t>(set_flags) << (OPERAND_SHIFT_ + 16)) |
+            (static_cast<uint32_t>(this->shader_index_) << OPERAND_SHIFT_) | OP_SHADER_;
         this->instrs_.push_back(instr);
         this->shader_dirty_ = false;
     }
@@ -468,6 +482,10 @@ TAKErr GLBatchBuilder::prepareForDraw() NOTHROWS {
     }
 
     if (this->lf_dirty_) {
+
+        if (this->lf_index_ >= this->lfs_.size())
+            return TE_IllegalState;
+
         LocalFrame_& lf = this->lfs_[this->lf_index_];
 
         if (lf.raw_offset >= this->raw_.size()) {
@@ -605,7 +623,37 @@ const float IDENT_MATRIX_[16] = {
     0.0f, 0.0f, 0.0f, 1.0f
 };
 
-TAKErr GLBatch::execute(RenderState& state, const Matrix2& forwardTransform, const float* proj, uint32_t feature_bits) const NOTHROWS {
+TAKErr GLBatch::execute(RenderState& state, const Matrix2& forwardTransform, const float* proj) const NOTHROWS {
+    ExecuteState_ execute_state{state, nullptr};
+    return executeImpl_(execute_state, forwardTransform, proj);
+}
+
+TAKErr GLBatch::execute(GLDepthSampler& sampler, const Math::Matrix2& forwardTransform, const float* proj) const NOTHROWS {
+    ExecuteState_ execute_state{RenderState_getCurrent(), &sampler};
+    return executeImpl_(execute_state, forwardTransform, proj);
+}
+
+template <typename TA, typename TB>
+inline static void matrixMult(float* dst, TA* a, TB* b) {
+    dst[0] = (float)(a[0] * b[0] + a[4] * b[1] + a[8] * b[2] + a[12] * b[3]);
+    dst[1] = (float)(a[1] * b[0] + a[5] * b[1] + a[9] * b[2] + a[13] * b[3]);
+    dst[2] = (float)(a[2] * b[0] + a[6] * b[1] + a[10] * b[2] + a[14] * b[3]);
+    dst[3] = (float)(a[3] * b[0] + a[7] * b[1] + a[11] * b[2] + a[15] * b[3]);
+    dst[4] = (float)(a[0] * b[4] + a[4] * b[5] + a[8] * b[6] + a[12] * b[7]);
+    dst[5] = (float)(a[1] * b[4] + a[5] * b[5] + a[9] * b[6] + a[13] * b[7]);
+    dst[6] = (float)(a[2] * b[4] + a[6] * b[5] + a[10] * b[6] + a[14] * b[7]);
+    dst[7] = (float)(a[3] * b[4] + a[7] * b[5] + a[11] * b[6] + a[15] * b[7]);
+    dst[8] = (float)(a[0] * b[8] + a[4] * b[9] + a[8] * b[10] + a[12] * b[11]);
+    dst[9] = (float)(a[1] * b[8] + a[5] * b[9] + a[9] * b[10] + a[13] * b[11]);
+    dst[10] = (float)(a[2] * b[8] + a[6] * b[9] + a[10] * b[10] + a[14] * b[11]);
+    dst[11] = (float)(a[3] * b[8] + a[7] * b[9] + a[11] * b[10] + a[15] * b[11]);
+    dst[12] = (float)(a[0] * b[12] + a[4] * b[13] + a[8] * b[14] + a[12] * b[15]);
+    dst[13] = (float)(a[1] * b[12] + a[5] * b[13] + a[9] * b[14] + a[13] * b[15]);
+    dst[14] = (float)(a[2] * b[12] + a[6] * b[13] + a[10] * b[14] + a[14] * b[15]);
+    dst[15] = (float)(a[3] * b[12] + a[7] * b[13] + a[11] * b[14] + a[15] * b[15]);
+}
+
+TAKErr GLBatch::executeImpl_(ExecuteState_& execState, const Math::Matrix2& forwardTransform, const float* proj) const NOTHROWS {
     
     TAKErr code(TE_Ok);
 
@@ -616,32 +664,48 @@ TAKErr GLBatch::execute(RenderState& state, const Matrix2& forwardTransform, con
 
     std::shared_ptr<const Shader> last_shader;
 
-    const bool support_shader_swaps = (feature_bits & GLBatch::SHADER_OVERRIDE_BIT) == 0;
+    const bool is_depth_sampler = execState.depth_sampler != nullptr;
+    RenderState& state = execState.renderState;
 
-    GLenum front_face = GL_CCW;
-    if (front_face != GL_NONE) {
-        if (state.cull.face != GL_BACK) {
-            state.cull.face = GL_BACK;
-            glCullFace(state.cull.face);
-        }
-        if (state.cull.front != front_face) {
-            state.cull.front = (GLint)front_face;
-            glFrontFace(state.cull.front);
-        }
-        if (!state.cull.enabled) {
-            state.cull.enabled = true;
-            glEnable(GL_CULL_FACE);
-        }
-    }
+    GLint aVertexCoords = -1;
+    GLint aColorPointer = -1;
+    GLint aNormals = -1;
+    GLint aTextureCoords = -1;
+    GLint uModelView = -1;
+    GLint uMVP = -1;
 
-    if (!state.blend.enabled) {
-        state.blend.enabled = true;
-        glEnable(GL_BLEND);
-    }
-    if (state.blend.src != GL_SRC_ALPHA || state.blend.dst != GL_ONE_MINUS_SRC_ALPHA) {
-        state.blend.src = GL_SRC_ALPHA;
-        state.blend.dst = GL_ONE_MINUS_SRC_ALPHA;
-        glBlendFunc(state.blend.src, state.blend.dst);
+    if (execState.depth_sampler) {
+        aVertexCoords = execState.depth_sampler->attributeVertexCoords();
+        uMVP = execState.depth_sampler->uniformMVP();
+
+        // no face culling for depth sampler
+        glDisable(GL_CULL_FACE);
+    } else {
+        GLenum front_face = GL_CCW;
+        if (front_face != GL_NONE) {
+            if (state.cull.face != GL_BACK) {
+                state.cull.face = GL_BACK;
+                glCullFace(state.cull.face);
+            }
+            if (state.cull.front != front_face) {
+                state.cull.front = (GLint)front_face;
+                glFrontFace(state.cull.front);
+            }
+            if (!state.cull.enabled) {
+                state.cull.enabled = true;
+                glEnable(GL_CULL_FACE);
+            }
+        }
+
+        if (!state.blend.enabled) {
+            state.blend.enabled = true;
+            glEnable(GL_BLEND);
+        }
+        if (state.blend.src != GL_SRC_ALPHA || state.blend.dst != GL_ONE_MINUS_SRC_ALPHA) {
+            state.blend.src = GL_SRC_ALPHA;
+            state.blend.dst = GL_ONE_MINUS_SRC_ALPHA;
+            glBlendFunc(state.blend.src, state.blend.dst);
+        }
     }
 
     while (ip != end) {
@@ -656,17 +720,23 @@ TAKErr GLBatch::execute(RenderState& state, const Matrix2& forwardTransform, con
             switch (op) {
             case OP_SHADER_: {
 
-                // override shader swaps?
-                if (!support_shader_swaps)
+                if (is_depth_sampler)
                     break;
 
-                std::shared_ptr<const Shader> shader = this->shader_begin_[instr >> OPERAND_SHIFT_];
+                std::shared_ptr<const Shader> shader = this->shader_begin_[(instr >> OPERAND_SHIFT_) & 0xffff];
                 if (!shader)
                     return TE_Canceled;
 
                 if (shader != state.shader) {
                     last_shader = state.shader;
                     state.shader = shader;
+
+                    aVertexCoords = shader->aVertexCoords;
+                    aColorPointer = shader->aColorPointer;
+                    aNormals = shader->aNormals;
+                    aTextureCoords = shader->aTextureCoords;
+                    uModelView = shader->uModelView;
+
                     glUseProgram(state.shader->handle);
 
                     glUniformMatrix4fv(state.shader->uProjection, 1, false, proj);
@@ -677,9 +747,28 @@ TAKErr GLBatch::execute(RenderState& state, const Matrix2& forwardTransform, con
                     if (state.shader->uColor != -1)
                         glUniform4f(state.shader->uColor, 1.0f, 1.0f, 1.0f, 1.0f);
                 }
+
+                uint32_t set_flags = instr >> (OPERAND_SHIFT_ + 16);
+
+                // set flag to set uModelView to forwardTransform
+                if (set_flags & LF_SET_FLAG_ /*&& state.shader->uModelView != -1*/) {
+                    float mv[16];
+                    double a[16];
+                    forwardTransform.get(a, Matrix2::COLUMN_MAJOR);
+                    for (size_t i = 0; i < 16; ++i)
+                        mv[i] = static_cast<float>(a[i]);
+                    glUniformMatrix4fv(uModelView, 1, false, mv);
+                }
             }
                 break;
             case OP_STREAMS_: {
+
+                if (is_depth_sampler) {
+                    glEnableVertexAttribArray(0);
+                    glDisableVertexAttribArray(1);
+                    glDisableVertexAttribArray(2);
+                }
+
                 // enable/disable
                 //const GLuint a = 0;//(instr >> OPERAND_SHIFT_) & 0xf;
                 //const GLuint b = 2;//(instr >> (OPERAND_SHIFT_ + 4)) & 0xf;
@@ -705,23 +794,26 @@ TAKErr GLBatch::execute(RenderState& state, const Matrix2& forwardTransform, con
 
                 if (bits & TEVA_Position) {
                     ATTRIB_OPERS_();
-                    setVertexAttribPtr(bound_array_buffer, state.shader->aVertexCoords,
+                    setVertexAttribPtr(bound_array_buffer, aVertexCoords,
                         3, GL_FLOAT, false, stride, buffer, offset);
                 }
                 if (bits & TEVA_Color) {
                     ATTRIB_OPERS_();
-                    setVertexAttribPtr(bound_array_buffer, state.shader->aColorPointer,
-                        4, GL_UNSIGNED_INT, false, stride, buffer, offset);
+                    if (!is_depth_sampler)
+                        setVertexAttribPtr(bound_array_buffer, aColorPointer,
+                            4, GL_UNSIGNED_INT, false, stride, buffer, offset);
                 }
                 if (bits & TEVA_Normal) {
                     ATTRIB_OPERS_();
-                    setVertexAttribPtr(bound_array_buffer, state.shader->aNormals,
-                        3, GL_FLOAT, false, stride, buffer, offset);
+                    if (!is_depth_sampler)
+                        setVertexAttribPtr(bound_array_buffer, aNormals,
+                            3, GL_FLOAT, false, stride, buffer, offset);
                 }
                 if (bits & TEVA_TexCoord0) {
                     ATTRIB_OPERS_();
-                    setVertexAttribPtr(bound_array_buffer, state.shader->aTextureCoords,
-                        2, GL_FLOAT, false, stride, buffer, offset);
+                    if (!is_depth_sampler)
+                        setVertexAttribPtr(bound_array_buffer, aTextureCoords,
+                            2, GL_FLOAT, false, stride, buffer, offset);
                 }
             } 
                 break;
@@ -732,38 +824,17 @@ TAKErr GLBatch::execute(RenderState& state, const Matrix2& forwardTransform, con
                 float mv[16];
                 double a[16];
 
-#if 0
-                Matrix2 res(forwardTransform);
-                Matrix2 lf;
-                for (std::size_t i = 0u; i < 16u; i++)
-                    lf.set(i % 4u, i / 4u, b[i]);
-                res.concatenate(lf);
-
-                res.get(a, Matrix2::COLUMN_MAJOR);
-                for (size_t i = 0; i < 16; ++i)
-                    mv[i] = (float)a[i];
-#else
                 forwardTransform.get(a, Matrix2::COLUMN_MAJOR);
+                matrixMult(mv, a, b);
+                
+                if (uModelView != -1)
+                    glUniformMatrix4fv(uModelView, 1, false, mv);
 
-                mv[0] = (float)(a[0] * b[0] + a[4] * b[1] + a[8] * b[2] + a[12] * b[3]);
-                mv[1] = (float)(a[1] * b[0] + a[5] * b[1] + a[9] * b[2] + a[13] * b[3]);
-                mv[2] = (float)(a[2] * b[0] + a[6] * b[1] + a[10] * b[2] + a[14] * b[3]);
-                mv[3] = (float)(a[3] * b[0] + a[7] * b[1] + a[11] * b[2] + a[15] * b[3]);
-                mv[4] = (float)(a[0] * b[4] + a[4] * b[5] + a[8] * b[6] + a[12] * b[7]);
-                mv[5] = (float)(a[1] * b[4] + a[5] * b[5] + a[9] * b[6] + a[13] * b[7]);
-                mv[6] = (float)(a[2] * b[4] + a[6] * b[5] + a[10] * b[6] + a[14] * b[7]);
-                mv[7] = (float)(a[3] * b[4] + a[7] * b[5] + a[11] * b[6] + a[15] * b[7]);
-                mv[8] = (float)(a[0] * b[8] + a[4] * b[9] + a[8] * b[10] + a[12] * b[11]);
-                mv[9] = (float)(a[1] * b[8] + a[5] * b[9] + a[9] * b[10] + a[13] * b[11]);
-                mv[10] = (float)(a[2] * b[8] + a[6] * b[9] + a[10] * b[10] + a[14] * b[11]);
-                mv[11] = (float)(a[3] * b[8] + a[7] * b[9] + a[11] * b[10] + a[15] * b[11]);
-                mv[12] = (float)(a[0] * b[12] + a[4] * b[13] + a[8] * b[14] + a[12] * b[15]);
-                mv[13] = (float)(a[1] * b[12] + a[5] * b[13] + a[9] * b[14] + a[13] * b[15]);
-                mv[14] = (float)(a[2] * b[12] + a[6] * b[13] + a[10] * b[14] + a[14] * b[15]);
-                mv[15] = (float)(a[3] * b[12] + a[7] * b[13] + a[11] * b[14] + a[15] * b[15]);
-#endif
-
-                glUniformMatrix4fv(state.shader->uModelView, 1, false, mv);
+                if (uMVP != -1) {
+                    float mvp[16];
+                    matrixMult(mvp, proj, mv);
+                    glUniformMatrix4fv(uMVP, 1, false, mvp);
+                }
             }
                 break;
 
@@ -771,6 +842,11 @@ TAKErr GLBatch::execute(RenderState& state, const Matrix2& forwardTransform, con
                 const size_t texture_index = (instr >> OPERAND_SHIFT_);
                 auto tex = this->texture_begin_()[texture_index];
                 GLuint texId = tex ? tex->tex_id : 0;
+
+                // skip texture op when depth sampling
+                if (is_depth_sampler)
+                    break;
+
                 if (texId == 0) {
                     ip = end; // cut out early if textures aren't loaded
                 } else {
@@ -803,8 +879,17 @@ TAKErr GLBatch::execute(RenderState& state, const Matrix2& forwardTransform, con
                 size_t buffer_index = (instr >> (OPERAND_SHIFT_)) & 0xff;
                 instr = *ip++;
                 GLsizei index_count = instr;
-                glDrawElements(draw_mode, index_count, GL_UNSIGNED_SHORT,
-                    this->buffer_begin_()[buffer_index]->u.ptr);
+                const void* ptr = this->buffer_begin_()[buffer_index]->u.ptr;
+                glDrawElements(draw_mode, index_count, GL_UNSIGNED_SHORT, ptr);
+            }
+                break;
+            case OP_DRAWE32_: {
+                GLenum draw_mode = instr >> (OPERAND_SHIFT_ + 8);
+                size_t buffer_index = (instr >> (OPERAND_SHIFT_)) & 0xff;
+                instr = *ip++;
+                GLsizei index_count = instr;
+                const void* ptr = this->buffer_begin_()[buffer_index]->u.ptr;
+                glDrawElements(draw_mode, index_count, GL_UNSIGNED_INT, ptr);
             }
                 break;
             default:

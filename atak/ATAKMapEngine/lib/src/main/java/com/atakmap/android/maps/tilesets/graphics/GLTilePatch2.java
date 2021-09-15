@@ -26,7 +26,6 @@ import com.atakmap.map.layer.raster.service.RasterDataAccessControl;
 import com.atakmap.android.maps.tilesets.OnlineTilesetSupport;
 import com.atakmap.android.maps.tilesets.TilesetInfo;
 import com.atakmap.android.maps.tilesets.TilesetSupport;
-import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.map.opengl.GLResolvableMapRenderable;

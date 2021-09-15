@@ -8,7 +8,6 @@ import android.util.Base64;
 import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.annotations.ModifierApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.IOProvider;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.filesystem.HashingUtils;

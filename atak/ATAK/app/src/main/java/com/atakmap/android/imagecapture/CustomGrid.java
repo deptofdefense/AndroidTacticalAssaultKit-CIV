@@ -23,9 +23,9 @@ import com.atakmap.android.maps.PointMapItem.OnPointChangedListener;
 import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.ConversionFactors;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.Ellipsoid;
 import com.atakmap.coremap.maps.coords.GeoBounds;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.MGRSPoint;
@@ -249,10 +249,8 @@ public class CustomGrid extends AbstractLayer implements Capturable {
         double nGCF = gcf(10000000, s);
 
         // Calculate top left
-        GeoPoint left = DistanceCalculations.computeDestinationPoint(c, 270,
-                hWidth);
-        GeoPoint tl = DistanceCalculations.computeDestinationPoint(left, 0,
-                hHeight);
+        GeoPoint left = GeoCalculations.pointAtDistance(c, 270, hWidth);
+        GeoPoint tl = GeoCalculations.pointAtDistance(left, 0, hHeight);
         UTMPoint tl_utm = UTMPoint.fromGeoPoint(tl);
         if (tl_utm.getZoneDescriptor() == null)
             return false;
@@ -266,8 +264,7 @@ public class CustomGrid extends AbstractLayer implements Capturable {
         GeoPoint tr = tl;
         UTMPoint tr_utm = tl_utm;
         for (int i = 1; i <= cols; i++) {
-            tr = DistanceCalculations.computeDestinationPoint(
-                    tr, 90, s);
+            tr = GeoCalculations.pointAtDistance(tr, 90, s);
             tr_utm = UTMPoint.fromGeoPoint(tr);
             if (tr_utm.getZoneDescriptor() == null)
                 return false;
@@ -281,8 +278,7 @@ public class CustomGrid extends AbstractLayer implements Capturable {
         GeoPoint br = tr;
         UTMPoint br_utm = tr_utm;
         for (int i = 1; i <= rows; i++) {
-            br = DistanceCalculations.computeDestinationPoint(
-                    br, 180, s);
+            br = GeoCalculations.pointAtDistance(br, 180, s);
             br_utm = UTMPoint.fromGeoPoint(br);
             if (br_utm.getZoneDescriptor() == null)
                 return false;
@@ -296,8 +292,7 @@ public class CustomGrid extends AbstractLayer implements Capturable {
         GeoPoint bl = tl;
         UTMPoint bl_utm = tl_utm;
         for (int i = 1; i <= rows; i++) {
-            bl = DistanceCalculations.computeDestinationPoint(
-                    bl, 180, s);
+            bl = GeoCalculations.pointAtDistance(bl, 180, s);
             bl_utm = UTMPoint.fromGeoPoint(bl);
             if (bl_utm.getZoneDescriptor() == null)
                 return false;
@@ -538,8 +533,8 @@ public class CustomGrid extends AbstractLayer implements Capturable {
             GeoPoint lastBot = _bottomLeft;
             for (int x = 1; x <= _xLines; x++) {
                 // Top line point
-                GeoPoint top = DistanceCalculations.computeDestinationPoint(
-                        lastTop, 90, _mSpacing);
+                GeoPoint top = GeoCalculations.pointAtDistance(lastTop, 90,
+                        _mSpacing);
                 UTMPoint tp = UTMPoint.fromGeoPoint(top);
                 tp = new UTMPoint(tp.getZoneDescriptor(),
                         round(tp.getEasting(), _mSpacing, ROUND),
@@ -547,8 +542,8 @@ public class CustomGrid extends AbstractLayer implements Capturable {
                 top = tp.toGeoPoint();
 
                 // Bottom line point
-                GeoPoint bot = DistanceCalculations.computeDestinationPoint(
-                        lastBot, 90, _mSpacing);
+                GeoPoint bot = GeoCalculations.pointAtDistance(lastBot, 90,
+                        _mSpacing);
                 UTMPoint bp = UTMPoint.fromGeoPoint(bot);
                 bp = new UTMPoint(bp.getZoneDescriptor(),
                         round(bp.getEasting(), _mSpacing, ROUND),
@@ -587,8 +582,8 @@ public class CustomGrid extends AbstractLayer implements Capturable {
             double nGCF = gcf(10000000, _mSpacing);
             for (int y = 1; y <= _yLines; y++) {
                 // Top line point
-                lastTop = DistanceCalculations.computeDestinationPoint(
-                        lastTop, 180, _mSpacing);
+                lastTop = GeoCalculations.pointAtDistance(lastTop, 180,
+                        _mSpacing);
                 UTMPoint lp = UTMPoint.fromGeoPoint(lastTop);
                 lp = new UTMPoint(lp.getZoneDescriptor(),
                         tl.getEasting(),
@@ -597,8 +592,8 @@ public class CustomGrid extends AbstractLayer implements Capturable {
                 addPoint(lastTop);
                 _labels[l++] = getLabel(lp, false);
                 // Right line point
-                lastBot = DistanceCalculations.computeDestinationPoint(
-                        lastBot, 180, _mSpacing);
+                lastBot = GeoCalculations.pointAtDistance(lastBot, 180,
+                        _mSpacing);
                 UTMPoint rp = UTMPoint.fromGeoPoint(lastBot);
                 rp = new UTMPoint(rp.getZoneDescriptor(),
                         br.getEasting(),

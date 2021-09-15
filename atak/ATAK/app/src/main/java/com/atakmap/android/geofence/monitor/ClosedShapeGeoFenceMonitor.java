@@ -6,10 +6,10 @@ import android.util.Pair;
 import com.atakmap.android.drawing.mapItems.DrawingShape;
 import com.atakmap.android.geofence.alert.GeoFenceAlerting;
 import com.atakmap.android.geofence.data.GeoFence;
-import com.atakmap.android.geofence.data.ShapeUtils;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.Shape;
+import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
@@ -96,7 +96,7 @@ public class ClosedShapeGeoFenceMonitor extends GeoFenceMonitor {
         if (_fenceHandle <= 0) {
             Log.w(TAG,
                     "Unable to insert shape: "
-                            + ShapeUtils.getShapeName(_shape));
+                            + ATAKUtilities.getDisplayName(ATAKUtilities.findAssocShape(_shape)));
         } else {
             _shape.addOnPointsChangedListener(_shapeChanged);
         }
@@ -124,7 +124,7 @@ public class ClosedShapeGeoFenceMonitor extends GeoFenceMonitor {
             if (_fenceHandle <= 0) {
                 Log.w(TAG,
                         "Unable to update shape: "
-                                + ShapeUtils.getShapeName(_shape));
+                                + ATAKUtilities.getDisplayName(ATAKUtilities.findAssocShape(_shape)));
                 return;
             }
 
@@ -137,13 +137,13 @@ public class ClosedShapeGeoFenceMonitor extends GeoFenceMonitor {
                 _fenceHandle = -1;
                 Log.w(TAG,
                         "Unable to update un-closed shape: "
-                                + ShapeUtils.getShapeName(_shape)
+                                + ATAKUtilities.getDisplayName(ATAKUtilities.findAssocShape(_shape))
                                 + ", " + _shape.getNumPoints());
                 return;
             }
 
             Log.d(TAG,
-                    "Updating shape points: " + ShapeUtils.getShapeName(_shape)
+                    "Updating shape points: " + ATAKUtilities.getDisplayName(ATAKUtilities.findAssocShape(_shape))
                             + ", handle=" + _fenceHandle);
 
             //TODO synchronized...?

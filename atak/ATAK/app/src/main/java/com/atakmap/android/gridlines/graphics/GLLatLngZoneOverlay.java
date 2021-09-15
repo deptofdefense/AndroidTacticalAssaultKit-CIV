@@ -15,7 +15,6 @@ import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.Rectangle;
 import com.atakmap.opengl.GLES20FixedPipeline;
-import com.atakmap.opengl.GLText;
 
 import org.apache.commons.lang.StringUtils;
 

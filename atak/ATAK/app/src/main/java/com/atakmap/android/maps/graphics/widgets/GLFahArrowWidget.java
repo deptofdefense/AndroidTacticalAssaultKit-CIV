@@ -428,7 +428,6 @@ public class GLFahArrowWidget extends GLShapeWidget implements
         if (orthoView.currentScene.drawTilt == 0d || RENDER_TOUCH_POINT_SPRITE)
             _drawTouchPointSprite(orthoView);
 
-
         this.validateTextArray();
 
         drawArrowText();
@@ -1099,8 +1098,8 @@ public class GLFahArrowWidget extends GLShapeWidget implements
             float bearing = step * w;
 
             // Get the point from the target w/ the given heading and distance
-            GeoPoint p = DistanceCalculations.computeDestinationPoint(_target,
-                    bearing, distance);
+            GeoPoint p = GeoCalculations.pointAtDistance(_target, bearing,
+                    distance);
 
             // Place the lat longs in the double array to be used by a later call to _buildCone()
             _coneCirclePoints[w * 2] = p.getLongitude();

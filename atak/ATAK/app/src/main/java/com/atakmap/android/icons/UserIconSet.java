@@ -268,7 +268,7 @@ public class UserIconSet {
     }
 
     /**
-     * Get icon with best match for CoT/2525B type
+     * Get icon with best match for CoT/2525C type
      * @param type
      * @return
      */
@@ -276,14 +276,14 @@ public class UserIconSet {
         if (FileSystemUtils.isEmpty(type) || !hasIcons())
             return null;
 
-        //first look for exact 2525B match
+        //first look for exact 2525C match
         for (UserIcon icon : icons) {
-            if (icon != null && type.equals(icon.get2525bType())) {
+            if (icon != null && type.equals(icon.get2525cType())) {
                 return icon;
             }
         }
 
-        //look for partial 2525B match
+        //look for partial 2525C match
         UserIcon icon = _getIconBestMatch(type);
         if (icon != null)
             return icon;
@@ -314,7 +314,7 @@ public class UserIconSet {
 
     private UserIcon _getIconForType(String type) {
         for (UserIcon icon : icons) {
-            if (type.equalsIgnoreCase(icon.get2525bType()))
+            if (type.equalsIgnoreCase(icon.get2525cType()))
                 return icon;
         }
 

@@ -17,6 +17,7 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.Angle;
 import com.atakmap.coremap.conversions.AngleUtilities;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.NorthReference;
@@ -173,8 +174,8 @@ public class DesignatorTargetLine implements
             return;
         GeoPoint tPoint = t.getPoint();
 
-        GeoPoint dPoint = DistanceCalculations.computeDestinationPoint(tPoint,
-                -180, distance);
+        GeoPoint dPoint = GeoCalculations.pointAtDistance(tPoint, -180,
+                distance);
         drabe.setPoint(dPoint);
         _mapGroup.addItem(drabe);
         set(t, drabe);
@@ -279,8 +280,8 @@ public class DesignatorTargetLine implements
         // compute the point at the given distance
         final GeoPoint dPoint;
         if (distance > 0) {
-            dPoint = DistanceCalculations.computeDestinationPoint(tPoint,
-                    da[1] - 180, distance);
+            dPoint = GeoCalculations.pointAtDistance(tPoint, da[1] - 180,
+                    distance);
         } else {
             dPoint = designator.getPoint();
         }

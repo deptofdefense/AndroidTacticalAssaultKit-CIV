@@ -2,7 +2,6 @@
 package com.atakmap.android.image;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -12,12 +11,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import android.graphics.Point;
-import android.view.Window;
-import android.view.WindowManager;
-import android.view.Display;
-
-import android.os.Environment;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import com.atakmap.android.attachment.AttachFileTask;
@@ -32,6 +25,7 @@ import com.atakmap.android.data.URIContentManager;
 import com.atakmap.android.data.URIContentProvider;
 import com.atakmap.android.dropdown.DropDown;
 import com.atakmap.android.dropdown.DropDownReceiver;
+import com.atakmap.android.gui.AlertDialogHelper;
 import com.atakmap.android.gui.TileButtonDialog;
 import com.atakmap.android.image.gallery.GalleryContentProvider;
 import com.atakmap.android.importfiles.ui.ImportManagerFileBrowser;
@@ -838,27 +832,10 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
         });
         final AlertDialog alert = b.create();
 
-        // Find the current width of the window, we will use this in a minute to determine how large
-        // to make the dialog.
-        WindowManager wm = (WindowManager) mapView.getContext()
-                .getSystemService(Context.WINDOW_SERVICE);
-        Display display = wm.getDefaultDisplay();
-        Point p = new Point();
-        display.getSize(p);
-
         // Show the dialog
         alert.show();
 
-        // Copy over the attributes from the displayed window and then set the width
-        // to be 70% of the total window width
-        Window w = alert.getWindow();
-        if (w != null) {
-            WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
-            lp.copyFrom(w.getAttributes());
-            lp.width = Math.min((int) (p.x * .90), 2160);
-            lp.height = WindowManager.LayoutParams.MATCH_PARENT;
-            w.setAttributes(lp);
-        }
+        AlertDialogHelper.adjustWidth(alert, 0.90d);
     }
 
     /**

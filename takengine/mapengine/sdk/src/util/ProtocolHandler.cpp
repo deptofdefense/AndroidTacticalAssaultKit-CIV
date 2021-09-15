@@ -99,9 +99,19 @@ bool TAK::Engine::Util::ProtocolHandler_isHandlerRegistered(const char* scheme) 
 
 TAKErr FileProtocolHandler::handleURI(DataInput2Ptr &ctx, const char * uri) NOTHROWS
 {
-    const std::string target(uri);
+    std::string target(uri);
     static const std::regex rx("([[:alpha:]]+):\\/\\/(.+)");
     std::smatch matches;
+
+#ifdef MSVC
+    if (target.find("file:///") == 0u) {
+        target.replace(target.find("file:///"), sizeof("file:///") - 1, "file://");
+    }
+#endif
+    // URI encoding may encode a space character as %20
+    while (target.find("%20") != std::string::npos) {
+        target.replace(target.find("%20"), sizeof("%20") - 1, " ");
+    }
 
     enum { match_full, match_scheme, match_path, match_quantity = match_path };
 

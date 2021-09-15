@@ -99,6 +99,18 @@ public class ResectionDropDownReceiver extends DropDownReceiver
     }
 
     @Override
+    public String getRequiredData() {
+        return _context
+                .getString(R.string.resection_classic_tool_required_data);
+    }
+
+    @Override
+    public String getRequiredHardware() {
+        return _context
+                .getString(R.string.resection_classic_tool_required_hardware);
+    }
+
+    @Override
     public void start(OnResectionResult callback) {
         resectionResultCallback = callback;
         showDropDown();

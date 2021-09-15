@@ -1,7 +1,7 @@
 
 package com.atakmap.android.rubbersheet.data;
 
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.map.elevation.ElevationData;
@@ -29,28 +29,24 @@ public class RubberSheetUtils {
     public static GeoPoint[] computeCorners(GeoPoint center, double length,
             double width, double heading) {
         // Top left
-        GeoPoint tl = DistanceCalculations.computeDestinationPoint(
-                center, heading, length / 2);
-        tl = DistanceCalculations.computeDestinationPoint(
-                tl, heading - 90, width / 2);
+        GeoPoint tl = GeoCalculations.pointAtDistance(center, heading,
+                length / 2);
+        tl = GeoCalculations.pointAtDistance(tl, heading - 90, width / 2);
 
         // Top right
-        GeoPoint tr = DistanceCalculations.computeDestinationPoint(
-                center, heading, length / 2);
-        tr = DistanceCalculations.computeDestinationPoint(
-                tr, heading + 90, width / 2);
+        GeoPoint tr = GeoCalculations.pointAtDistance(center, heading,
+                length / 2);
+        tr = GeoCalculations.pointAtDistance(tr, heading + 90, width / 2);
 
         // Bottom right
-        GeoPoint br = DistanceCalculations.computeDestinationPoint(
-                center, heading + 180, length / 2);
-        br = DistanceCalculations.computeDestinationPoint(
-                br, heading + 90, width / 2);
+        GeoPoint br = GeoCalculations.pointAtDistance(center, heading + 180,
+                length / 2);
+        br = GeoCalculations.pointAtDistance(br, heading + 90, width / 2);
 
         // Bottom left
-        GeoPoint bl = DistanceCalculations.computeDestinationPoint(
-                center, heading + 180, length / 2);
-        bl = DistanceCalculations.computeDestinationPoint(
-                bl, heading - 90, width / 2);
+        GeoPoint bl = GeoCalculations.pointAtDistance(center, heading + 180,
+                length / 2);
+        bl = GeoCalculations.pointAtDistance(bl, heading - 90, width / 2);
 
         return new GeoPoint[] {
                 tl, tr, br, bl

@@ -255,10 +255,12 @@ public class ModelRenderer implements GLSurfaceView.Renderer {
 
         if (MathUtils.hasBits(layout.attributes, Mesh.VERTEX_ATTR_POSITION)) {
             // XXX - this is assuming that buffer is ByteBuffer
-            Buffer modelVertices = objModel.getVertices(Mesh.VERTEX_ATTR_POSITION);
+            Buffer modelVertices = objModel
+                    .getVertices(Mesh.VERTEX_ATTR_POSITION);
             modelVertices.position(layout.position.offset);
 
-            GLES30.glVertexAttribPointer(positionHandle, 3, GLES30.GL_FLOAT, false,
+            GLES30.glVertexAttribPointer(positionHandle, 3, GLES30.GL_FLOAT,
+                    false,
                     layout.position.stride, modelVertices);
             GLES30.glEnableVertexAttribArray(positionHandle);
         }
@@ -269,7 +271,8 @@ public class ModelRenderer implements GLSurfaceView.Renderer {
                     .getVertices(Mesh.VERTEX_ATTR_TEXCOORD_0);
             modelTexCoords.position(layout.texCoord0.offset);
 
-            GLES30.glVertexAttribPointer(texCoodsHandle, 2, GLES30.GL_FLOAT, false,
+            GLES30.glVertexAttribPointer(texCoodsHandle, 2, GLES30.GL_FLOAT,
+                    false,
                     layout.texCoord0.stride, modelTexCoords);
             GLES30.glEnableVertexAttribArray(texCoodsHandle);
         }

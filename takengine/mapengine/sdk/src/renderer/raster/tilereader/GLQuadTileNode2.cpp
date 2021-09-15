@@ -1481,8 +1481,8 @@ void GLQuadTileNode2::draw(const Renderer::Core::GLGlobeBase &view, size_t level
         const int64_t maxSrcX = (srcX + srcW) - 1;
         const int64_t maxSrcY = (srcY + srcH) - 1;
 
-        const int64_t tileMidSrcX = (this->tile_src_x_ + ((long)this->half_tile_width_ << this->level_));
-        const int64_t tileMidSrcY = (this->tile_src_y_ + ((long)this->half_tile_height_ << this->level_));
+        const int64_t tileMidSrcX = (this->tile_src_x_ + (this->half_tile_width_ << this->level_));
+        const int64_t tileMidSrcY = (this->tile_src_y_ + (this->half_tile_height_ << this->level_));
         const int64_t tileMaxSrcX = (this->tile_src_x_ + this->tile_src_width_) - 1;
         const int64_t tileMaxSrcY = (this->tile_src_y_ + this->tile_src_height_) - 1;
 

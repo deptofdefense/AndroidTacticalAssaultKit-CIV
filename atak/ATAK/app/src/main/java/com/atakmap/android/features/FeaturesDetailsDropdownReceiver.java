@@ -7,16 +7,22 @@ import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 
+import android.view.ViewGroup;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.webkit.WebResourceResponse;
+import android.widget.ImageButton;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TabHost;
 import android.widget.TabHost.TabContentFactory;
 import android.widget.TextView;
 
+import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.io.ZipVirtualFile;
 import java.io.IOException;
+
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 
 import com.atakmap.app.R;
@@ -65,6 +71,7 @@ public class FeaturesDetailsDropdownReceiver extends DropDownReceiver implements
         if (htmlViewer != null) {
             this.htmlViewer.setVerticalScrollBarEnabled(true);
             this.htmlViewer.setHorizontalScrollBarEnabled(true);
+            this.htmlViewer.setLayerType(WebView.LAYER_TYPE_SOFTWARE, null);
 
             final WebSettings webSettings = this.htmlViewer.getSettings();
 
@@ -117,8 +124,8 @@ public class FeaturesDetailsDropdownReceiver extends DropDownReceiver implements
                 }
             });
         }
-        this.itemViewer = (MapItemDetailsView) inflater.inflate(
-                R.layout.map_item_view, null);
+        this.itemViewer = (MapItemDetailsView) inflater
+                .inflate(R.layout.map_item_view, null);
         this.itemViewer.setDropDown(this);
         this.itemViewer.setGalleryAsAttachments(false);
     }
@@ -188,20 +195,64 @@ public class FeaturesDetailsDropdownReceiver extends DropDownReceiver implements
                     metadataTab.setContent(new TabContentFactory() {
                         @Override
                         public View createTabContent(String tag) {
-                            if (htmlViewer != null)
-                                return htmlViewer;
-                            else {
+                            LinearLayout outer = new LinearLayout(context);
+                            outer.setOrientation(LinearLayout.VERTICAL);
+                            outer.setLayoutParams(new ViewGroup.LayoutParams(
+                                    ViewGroup.LayoutParams.MATCH_PARENT,
+                                    ViewGroup.LayoutParams.WRAP_CONTENT));
+                            ScrollView htmlScrollView = new ScrollView(context);
+                            htmlScrollView.setLayoutParams(
+                                    new LinearLayout.LayoutParams(
+                                            LinearLayout.LayoutParams.MATCH_PARENT,
+                                            0, 1.0f));
+                            outer.addView(htmlScrollView);
+
+                            LinearLayout scrollViewLayout = new LinearLayout(
+                                    context);
+                            scrollViewLayout
+                                    .setOrientation(LinearLayout.VERTICAL);
+
+                            htmlScrollView.addView(scrollViewLayout);
+                            if (htmlViewer != null) {
+                                scrollViewLayout.addView(htmlViewer);
+                            } else {
                                 final TextView tv = new TextView(context);
                                 tv.setText(R.string.webview_not_installed);
-                                return tv;
+                                scrollViewLayout.addView(tv);
                             }
+                            ImageButton button = new ImageButton(context, null,
+                                    R.style.darkButton);
+                            button.setImageDrawable(
+                                    context.getDrawable(R.drawable.edit));
+                            button.setLayoutParams(new ViewGroup.LayoutParams(
+                                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                                    ViewGroup.LayoutParams.WRAP_CONTENT));
+                            button.setOnClickListener(
+                                    new View.OnClickListener() {
+                                        @Override
+                                        public void onClick(View v) {
+                                            Intent i = new Intent(
+                                                    FeatureEditDropdownReceiver.SHOW_EDIT);
+                                            i.putExtra("fid",
+                                                    FeaturesDetailsDropdownReceiver.this.item
+                                                            .getMetaLong("fid",
+                                                                    0));
+                                            i.putExtra("title",
+                                                    FeaturesDetailsDropdownReceiver.this.item
+                                                            .getTitle());
+                                            AtakBroadcast.getInstance()
+                                                    .sendBroadcast(i);
+                                        }
+                                    });
+                            if (item.getEditable()) {
+                                outer.addView(button);
+                            }
+                            return outer;
                         }
                     });
-
                     this.tabs.addTab(metadataTab);
                     this.tabs.addTab(detailsTab);
                 }
-
                 this.itemViewer.setItem(getMapView(), item);
 
                 if (htmlViewer != null) {

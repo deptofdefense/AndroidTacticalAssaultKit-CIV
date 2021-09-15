@@ -61,6 +61,11 @@ namespace TAK {
                      */
                     void cancelAll() NOTHROWS;
 
+                    /**
+                     * Determine if there are pending loads in the context
+                     */
+                    bool hasPending() const NOTHROWS;
+
                     inline TAK::Engine::Core::RenderContext& getRenderContext() const NOTHROWS {
                         return ctx_;
                     }

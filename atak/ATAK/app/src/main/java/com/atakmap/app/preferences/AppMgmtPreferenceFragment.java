@@ -6,16 +6,13 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.graphics.Point;
 import android.os.Bundle;
 import android.preference.CheckBoxPreference;
 import android.preference.Preference;
-import android.view.Display;
 import android.view.LayoutInflater;
-import android.view.Window;
-import android.view.WindowManager;
 import android.widget.Toast;
 
+import com.atakmap.android.gui.AlertDialogHelper;
 import com.atakmap.android.gui.HintDialogHelper;
 import com.atakmap.android.importfiles.ui.ImportManagerFileBrowser;
 import com.atakmap.android.ipc.AtakBroadcast;
@@ -287,29 +284,10 @@ public class AppMgmtPreferenceFragment extends AtakPreferenceFragment {
         // that the user provides to the alert dialog.
         importView.setAlertDialog(alert);
 
-        // Find the current width of the window, we will use this in a minute to determine how large
-        // to make the dialog.
-        WindowManager wm = (WindowManager) context
-                .getSystemService(Context.WINDOW_SERVICE);
-        Point p = new Point();
-        if (wm != null) {
-            Display display = wm.getDefaultDisplay();
-            display.getSize(p);
-        }
-
         // Show the dialog
         alert.show();
 
-        // Copy over the attributes from the displayed window and then set the width
-        // to be 70% of the total window width
-        Window w = alert.getWindow();
-        if (w != null) {
-            WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
-            lp.copyFrom(w.getAttributes());
-            lp.width = Math.min((int) (p.x * .90), 2160);
-            lp.height = WindowManager.LayoutParams.MATCH_PARENT;
-            w.setAttributes(lp);
-        }
+        AlertDialogHelper.adjustWidth(alert, .90);
 
         HintDialogHelper.showHint(getActivity(),
                 getString(R.string.apk_directory_no_apks_hint_title),

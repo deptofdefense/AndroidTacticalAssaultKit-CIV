@@ -23,6 +23,7 @@ import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.map.formats.mapbox.MvtFeatureDataSource;
 import com.atakmap.map.gdal.GdalLibrary;
 import com.atakmap.map.layer.Layer;
 import com.atakmap.map.layer.Layers;
@@ -404,6 +405,7 @@ public class AtakMapView extends ViewGroup {
 
         FeatureDataSourceContentFactory.register(new FalconViewFeatureDataSource(), 2);
         FeatureDataSourceContentFactory.register(new OgrFeatureDataSource(), 1);
+        FeatureDataSourceContentFactory.register(new MvtFeatureDataSource(), 2);
 
         // MosaicDatabaseSpi
         MosaicDatabaseFactory2.register(NativeImageryMosaicDatabase2.SPI);

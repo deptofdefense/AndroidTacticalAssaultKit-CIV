@@ -71,7 +71,7 @@ public class ChatMessageParser {
             String convId = getConversationUid(version, chatChild);
             if (FileSystemUtils.isEmpty(convId))
                 convId = getFallbackConversationId(event);
-            if (convId.equals("All Streaming"))
+            if (convId.equals(GeoChatService.DEFAULT_CHATROOM_NAME_LEGACY))
                 convId = GeoChatService.DEFAULT_CHATROOM_NAME;
             message.setConversationId(convId);
 
@@ -82,7 +82,7 @@ public class ChatMessageParser {
             message.setSenderName(senderName);
 
             String convName = chatChild.getAttribute("chatroom");
-            if (convName.equals("All Streaming"))
+            if (convName.equals(GeoChatService.DEFAULT_CHATROOM_NAME_LEGACY))
                 convName = GeoChatService.DEFAULT_CHATROOM_NAME;
             if (convId.equals(MapView.getDeviceUid())) {
                 //TODO: make sure of what version we are running here
@@ -223,7 +223,7 @@ public class ChatMessageParser {
             case CHAT3:
                 uid = chatNode.getAttribute("id");
                 if (uid.equals("Streaming"))
-                    uid = "All Streaming";
+                    uid = GeoChatService.DEFAULT_CHATROOM_NAME_LEGACY;
                 break;
             case GEO_CHAT:
                 String callsign = chatNode.getAttribute("chatroom");
@@ -302,7 +302,8 @@ public class ChatMessageParser {
                                         .getChatBroadcastContact());
                         if (ip != null) {
                             if (dest.equals(ip.toString())) {
-                                uidsOfDestinations.add(GeoChatService.DEFAULT_CHATROOM_NAME);
+                                uidsOfDestinations.add(
+                                        GeoChatService.DEFAULT_CHATROOM_NAME);
                             } else {
                                 //TODO: this is ip so we need to do something with it
                                 String[] components = dest.split(":");

@@ -19,7 +19,6 @@ import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
-import com.atakmap.map.layer.Layer;
 
 import java.util.Collection;
 import java.util.List;

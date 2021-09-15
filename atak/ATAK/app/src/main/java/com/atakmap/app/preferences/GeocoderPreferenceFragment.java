@@ -19,6 +19,8 @@ import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.xml.XMLUtils;
 
+import android.content.Context;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -171,8 +173,13 @@ public class GeocoderPreferenceFragment extends AtakPreferenceFragment {
         }
 
         private void performReverse() {
+            final Context c = getActivity();
+
+            if (c == null)
+                return;
+
             final ReverseGeocodingTask rgt = new ReverseGeocodingTask(
-                    new GeoPoint(42, -72), getActivity());
+                    new GeoPoint(42, -72), c);
             rgt.setOnResultListener(new ReverseGeocodingTask.ResultListener() {
                 @Override
                 public void onResult() {
@@ -181,7 +188,7 @@ public class GeocoderPreferenceFragment extends AtakPreferenceFragment {
                         result(true, "");
                     } else {
                         result(false,
-                                getString(R.string.preferences_text398));
+                                c.getString(R.string.preferences_text398));
                     }
                 }
             });

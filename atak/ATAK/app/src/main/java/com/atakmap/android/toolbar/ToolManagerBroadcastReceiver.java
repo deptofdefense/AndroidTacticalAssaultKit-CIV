@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 
-import com.atakmap.android.menu.MapMenuReceiver;
 import com.atakmap.android.menu.MapMenuReceiverCompat;
 import com.atakmap.coremap.log.Log;
 

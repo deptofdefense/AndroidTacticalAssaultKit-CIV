@@ -99,6 +99,7 @@ namespace TAK {
                     static atakmap::renderer::GLNinePatch *smallNinePatch;
                     static float iconAtlasDensity;// = atakmap::core::AtakMapView::DENSITY;
                     static const double defaultLabelRenderScale;// = (1.0 / 250000.0);
+                    static Port::String defaultIconUri;
                 public:
                     double latitude;
                     double longitude;
@@ -134,6 +135,7 @@ namespace TAK {
                     uint32_t labelId;
                     float iconOffsetX;
                     float iconOffsetY;
+                    float iconScale;
                 protected:
                     TAK::Engine::Renderer::AsyncBitmapLoader2::Task iconLoader;
                 private :

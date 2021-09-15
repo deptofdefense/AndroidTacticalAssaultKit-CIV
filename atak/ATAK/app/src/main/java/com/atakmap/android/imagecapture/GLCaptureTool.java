@@ -49,7 +49,6 @@ import com.atakmap.map.opengl.GLResolvableMapRenderable;
 import com.atakmap.math.MathUtils;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLResolvable;
-import com.atakmap.opengl.GLResolvable.State;
 
 import org.gdal.gdal.Dataset;
 import org.gdal.gdal.Driver;

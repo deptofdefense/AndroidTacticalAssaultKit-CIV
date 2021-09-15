@@ -12,6 +12,8 @@
 #include "renderer/RenderAttributes.h"
 #include "renderer/GLES20FixedPipeline.h"
 
+#include <algorithm>
+#include <iostream>
 using namespace TAK::Engine::Renderer::Core;
 using namespace TAK::Engine::Core;
 using namespace TAK::Engine::Math;
@@ -33,8 +35,241 @@ void main() {
 }
 )";
 
+constexpr double planetRadius =  6356752.3142;
+constexpr double planetEllipsoid = 6378137.0;
+constexpr double atmosphereHeight = 100e3;
+
+
+Vector4<double> rsi(Vector4<double> r0, Vector4<double> ray_dir, double sr) {
+    // ray-sphere intersection that assumes
+    // the sphere is centered at the origin.
+    // No intersection when result.x > result.y
+    ray_dir.normalize(&ray_dir);
+    double a = ray_dir.dot(&ray_dir);
+    double b = 2.0 * ray_dir.dot(&r0);
+    double c = r0.dot(&r0) - (sr * sr);
+    double d = (b*b) - 4.0*a*c;
+    if (d < 0.0) return Vector4<double>(1e15,-1e15, 0);
+    return Vector4<double>(
+    (-b - sqrt(d))/(2.0*a),
+    (-b + sqrt(d))/(2.0*a), 0);
+}
+
+Vector4<double> atmosphere_intersect(Vector4<double> ray_dir, Vector4<double> r0, double  rPlanet, double rAtmos)
+{
+    Vector4<double> no_intersect = Vector4<double>(1e15, -1e15,0);
+    bool outside = (r0.length() - rAtmos) > 0.0;
+    // Calculate the step size of the primary ray.
+    Vector4<double> p = rsi(r0, ray_dir, rAtmos);
+    if (p.x > p.y) return no_intersect;
+    if(p.y < 0.0) return no_intersect;
+    Vector4<double> planet_p = rsi(r0, ray_dir, rPlanet);
+    if(planet_p.x < 0.0)
+        planet_p.x = 1e15;
+
+    if(planet_p.y > planet_p.x)
+        return no_intersect;
+
+    p.y = std::min(p.y, planet_p.x);
+    if(!outside)
+        p.x = 0;
+
+    return p;
+}
+
+Vector4<double> atmosphere(Vector4<double> ray_dir, Vector4<double> r0, Vector4<double> pSun, double iSun, Vector4<double> atmosphere_intersection,
+        double rPlanet, double rAtmos)
+{
+    const Vector4<double> kRlh(5.5e-6, 13.0e-6, 22.4e-6);	// Rayleigh scattering coefficient
+    constexpr double kMie = 21e-6;		// Mie scattering coefficient
+    constexpr double shRlh = 8e3;		// Rayleigh scale height
+    constexpr double shMie = 1.2e3;		// Mie scale height
+    constexpr double MieG  =0.758;			// Mie preferred scattering direction
+    constexpr std::size_t iSteps = 16;
+
+    pSun.normalize(&pSun);
+    ray_dir.normalize(&ray_dir);
+
+    // Normalize the sun and view directions.
+
+    Vector4<double> p = atmosphere_intersection;
+
+    double iStepSize = (p.y - p.x) / float(iSteps);
+
+    double iTime = 0.0;
+
+    // Initialize accumulators for Rayleigh and Mie scattering.
+    Vector4<double> totalRlh(0,0,0);
+    Vector4<double> totalMie(0,0,0);
+
+    // Initialize optical depth accumulators for the primary ray.
+    double iOdRlh = 0.0;
+    double iOdMie = 0.0;
+
+    // Calculate the Rayleigh and Mie phases.
+    double mu = ray_dir.dot(&pSun);
+    double mumu = mu * mu;
+    double gg = MieG * MieG;
+    double pRlh = 3.0 / (16.0 * M_PI) * (1.0 + mumu);
+    double pMie = 3.0 / (8.0 * M_PI) * ((1.0 - gg) * (mumu + 1.0)) / (pow(1.0 + gg - 2.0 * mu * MieG, 1.5) * (2.0 + gg));
+
+    // Sample the primary ray.
+    for (int i = 0; i < iSteps; i++) {
+
+        // Calculate the primary ray sample position.
+        Vector4<double> iPos(0,0,0);
+        ray_dir.multiply(( p.x + iTime + iStepSize * 0.5), &iPos);
+        iPos.add(&r0, &iPos);
+
+        // Calculate the height of the sample.
+        double iHeight = iPos.length() - rPlanet;
+        iHeight = std::max(5000.0, iHeight);
+
+        // Calculate the optical depth of the Rayleigh and Mie scattering for this step.
+        double odStepRlh = exp(-iHeight / shRlh) * iStepSize;
+        double odStepMie = exp(-iHeight / shMie) * iStepSize;
+
+        // Accumulate optical depth.
+        iOdRlh += odStepRlh;
+        iOdMie += odStepMie;
+
+        // Calculate attenuation.
+        Vector4<double> attn(0,0,0);// = exp(-(kMie * (iOdMie) + kRlh * (iOdRlh)));
+        attn.x = exp(-(kMie * (iOdMie) + kRlh.x * (iOdRlh)));
+        attn.y = exp(-(kMie * (iOdMie) + kRlh.y * (iOdRlh)));
+        attn.z = exp(-(kMie * (iOdMie) + kRlh.z * (iOdRlh)));
+
+        Vector4<double> rlhInc(attn), mieInc(attn);
+        rlhInc.multiply(odStepRlh, &rlhInc);
+        mieInc.multiply(odStepMie, &mieInc);
+
+        // Accumulate scattering.
+        totalRlh.add(&rlhInc, &totalRlh);
+        totalMie.add(&mieInc, &totalMie);
+
+        // Increment the primary ray time.
+        iTime += iStepSize;
+    }
+
+    totalRlh.multiply(pRlh, &totalRlh);
+    totalRlh = Vector4<double>(totalRlh.x * kRlh.x, totalRlh.y * kRlh.y, totalRlh.z * kRlh.z);
+    totalMie.multiply(pMie * kMie, &totalMie);
+
+    Vector4<double> ret = totalRlh;
+    ret.add(&totalMie, &ret);
+    ret.multiply(iSun, &ret);
+    return ret;
+    // Calculate and return the final color.
+}
+
+unsigned int RGBA(double r, double g, double b, double a = 1.0)
+{
+    r = std::min(std::max(r, 0.), 1.) * 255.;
+    g = std::min(std::max(g, 0.), 1.) * 255.;
+    b = std::min(std::max(b, 0.), 1.) * 255.;
+    a = std::min(std::max(a, 0.), 1.) * 255.;
+
+    unsigned int ret = 0;
+    ret |= ((unsigned char)r) << 0;
+    ret |= ((unsigned char)g) << 8;
+    ret |= ((unsigned char)b) << 16;
+    ret |= ((unsigned char)a) << 24;
+    return ret;
+}
+
+void GLAtmosphere::ComputeInsideTexture()
+{
+    constexpr std::size_t insideWidth = 64;
+    constexpr std::size_t insideHeight = 64;
+
+    unsigned int texture[insideHeight * insideWidth];
+    for(std::size_t x = 0;x < insideWidth;++x)
+    {
+        double height = atmosphereHeight * ((double)x / (double)(insideWidth - 1)) ;
+        Vector4<double> location(0,0,planetRadius+height);
+        for(std::size_t y = 0;y < insideHeight;++y)
+        {
+            double angle = (M_PI / double(insideHeight - 1)) * double(insideHeight - y);
+            Vector4<double> ray(0, -sin(angle),-cos(angle));
+
+            Vector4<double> intersection = atmosphere_intersect(ray, location, planetRadius, planetRadius + atmosphereHeight);
+            Vector4<double> col = atmosphere(ray, location, Vector4<double>(0,0,-1), 33, intersection, planetEllipsoid, planetEllipsoid + atmosphereHeight);
+            col = Vector4<double>(1.0 - exp(-1.0 * col.x), 1.0 - exp(-1.0 * col.y), 1.0 - exp(-1.0 * col.z));
+            texture[y * insideWidth + x] = RGBA(col.x, col.y, col.z);
+        }
+    }
+    glGenTextures(1, &insideTextureHandle);
+    glBindTexture(GL_TEXTURE_2D, insideTextureHandle);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, insideWidth, insideHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+double findHeightForLength(double length)
+{
+    const std::size_t numSteps = 20;
+    double upper = M_PI/2.;
+    double lower = 0;
+    double mid = (upper + lower) / 2.;
+    for(std::size_t i = 0;i < numSteps;++i)
+    {
+        mid = (upper + lower) / 2.;
+        double l = cos(mid) * 2. * (planetRadius + atmosphereHeight);
+        if(l < length)
+            upper = mid;
+        else
+            lower = mid;
+    }
+    return sin(mid) * (planetRadius + atmosphereHeight);
+}
+
+void GLAtmosphere::ComputeOutsideTexture()
+{
+    constexpr std::size_t outsideWidth = 1;
+    constexpr std::size_t outsideHeight = 64;
+
+    unsigned int texture[outsideWidth * outsideHeight];
+    for(std::size_t x = 0;x < outsideWidth;++x)
+    {
+        for(std::size_t y = 0;y < outsideHeight;++y)
+        {
+            constexpr double maxAtmosphereLength = atmosphereHeight * 25.;
+
+            double length = maxAtmosphereLength * (double)( y) / (double)outsideHeight;
+            Vector4<double> ray(0, -1, 0);
+            double height = findHeightForLength(length);
+
+            height = std::max(planetRadius + 2000., height);
+            Vector4<double> location = Vector4<double>(0, (planetRadius + atmosphereHeight) * 2.0, height);
+
+            Vector4<double> intersection = atmosphere_intersect(ray, location, planetRadius, planetRadius + atmosphereHeight);
+            Vector4<double> col = atmosphere(ray, location, Vector4<double>(0,0,-1), 33, intersection, planetEllipsoid, planetEllipsoid + atmosphereHeight);
+            col = Vector4<double>(1.0 - exp(-1.0 * col.x), 1.0 - exp(-1.0 * col.y), 1.0 - exp(-1.0 * col.z));
+
+            texture[y * outsideWidth + x] = RGBA(col.x, col.y, col.z);
+        }
+    }
+    glGenTextures(1, &outsideTextureHandle);
+    glBindTexture(GL_TEXTURE_2D, outsideTextureHandle);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, outsideWidth, outsideHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+
 void GLAtmosphere::init() NOTHROWS
 {
+
     const char* vertShaderSource = VERT_SHADER;
     const char* fragShaderSource = FRAG_SHADER;
 
@@ -51,6 +286,10 @@ void GLAtmosphere::init() NOTHROWS
     uSunpos = glGetUniformLocation(program->program, "uSunPos");
     aVertexCoordsHandle = glGetAttribLocation(program->program, "aVertexCoords");
     aEyeRayHandle = glGetAttribLocation(program->program, "aEyeRay");
+
+    ComputeOutsideTexture();
+
+    ComputeInsideTexture();
 }
 
 Matrix2 ComputeInverse(const TAK::Engine::Core::MapSceneModel2& mapSceneModel2) NOTHROWS
@@ -142,6 +381,13 @@ void GLAtmosphere::DrawAtmosphere(const GLGlobeBase& view) const NOTHROWS
 
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
+
+    double height = campos.length();
+    if(height < planetRadius + atmosphereHeight)
+        glBindTexture(GL_TEXTURE_2D, insideTextureHandle);
+    else
+        glBindTexture(GL_TEXTURE_2D, outsideTextureHandle);
+
     DrawQuad(inv, campos);
     
     glEnable(GL_DEPTH_TEST);
@@ -204,6 +450,8 @@ void GLAtmosphere::DrawQuad(const Matrix2& inv, const Vector4<double>& camposv) 
 
     glEnableVertexAttribArray(aEyeRayHandle);
     glVertexAttribPointer(aEyeRayHandle, 3, GL_FLOAT, GL_FALSE, 28, (float*)&verts[0] + 4);
+
+
 
     glDrawArrays(GL_TRIANGLES, 0, vertsSize / 7);
 }

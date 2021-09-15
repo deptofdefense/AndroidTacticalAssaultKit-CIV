@@ -12,6 +12,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.os.Environment;
 import android.util.DisplayMetrics;
 
+import com.atakmap.android.user.icon.Icon2525cPallet;
 import com.atakmap.coremap.log.Log;
 
 import java.io.BufferedReader;
@@ -39,7 +40,7 @@ class FileIO {
 
     BitmapDrawable loadIcon(String fn) {
         BitmapDrawable ic = null;
-        String filename = "mil-std-2525b/" + fn;
+        String filename = Icon2525cPallet.ASSET_PATH + fn;
         if (_checkAsset(filename)) {
             InputStream bitis = null;
             try {

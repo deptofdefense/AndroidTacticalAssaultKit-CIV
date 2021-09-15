@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.PorterDuff;
 import android.preference.PreferenceManager;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
@@ -32,6 +31,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.atakmap.android.maps.MapTouchController;
+import com.atakmap.android.user.icon.Icon2525cPallet;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.system.ResourceUtil;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
@@ -55,7 +55,6 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.menu.MapMenuReceiver;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
-import com.atakmap.android.user.icon.Icon2525bPallet;
 import com.atakmap.android.user.icon.IconPallet;
 import com.atakmap.android.user.icon.IconPallet.CreatePointException;
 import com.atakmap.android.user.icon.MissionSpecificPallet;
@@ -247,7 +246,7 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
                 if (_selectedIconPallet != null
                         && uid.equals(_selectedIconPallet.getUid())) {
                     _selectedIconPallet = _iconPalletAdapter
-                            .getPallet(Icon2525bPallet.COT_MAPPING_2525B);
+                            .getPallet(Icon2525cPallet.COT_MAPPING_2525C);
                     if (_selectedIconPallet != null) {
                         _palletTitle.setText(_selectedIconPallet.getTitle());
                         setPallet(_selectedIconPallet.getUid());
@@ -290,13 +289,13 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
     }
 
     private List<IconPallet> loadPallets() {
-        //add 2525B, dot map, user icons
+        //add 2525C, dot map, user icons
         List<IconPallet> pallets = new ArrayList<>();
-        IconPallet pallet = new Icon2525bPallet(ResourceUtil
-                .getString(getMapView().getContext(), R.string.civ_cot2525B,
-                        R.string.cot2525B));
+        IconPallet pallet = new Icon2525cPallet(ResourceUtil
+                .getString(getMapView().getContext(), R.string.civ_cot2525C,
+                        R.string.cot2525C));
         pallets.add(pallet);
-        Log.d(TAG, "Adding Icon2525bPallet");
+        Log.d(TAG, "Adding Icon2525cPallet");
         if (_selectedIconPallet == null)
             _selectedIconPallet = pallet;
 

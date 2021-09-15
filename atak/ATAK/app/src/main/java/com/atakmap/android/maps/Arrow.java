@@ -73,6 +73,16 @@ public class Arrow extends Shape {
         GeoPoint p1 = _point1.get();
         GeoPoint p2 = _point2.get();
 
+        // Determine whether or not the line is clamped to the ground
+        boolean clampToGround = getMetaBoolean("forceClampToGround", false)
+                || view.getMapTouchController().isNadirClamped();
+
+        // Remove elevation so terrain is used instead
+        if (clampToGround) {
+            p1 = new GeoPoint(p1.getLatitude(), p1.getLongitude());
+            p2 = new GeoPoint(p2.getLatitude(), p2.getLongitude());
+        }
+
         // adjust the endpoints to account for terrain offset/scale if tilted
         p1 = view.getRenderElevationAdjustedPoint(p1);
         p2 = view.getRenderElevationAdjustedPoint(p2);

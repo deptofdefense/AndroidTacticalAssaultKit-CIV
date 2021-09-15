@@ -2,7 +2,6 @@
 package com.atakmap.android.gridlines.graphics;
 
 import com.atakmap.android.maps.MapView;
-import com.atakmap.android.maps.graphics.AbstractGLMapItem2;
 import com.atakmap.android.maps.graphics.GLSegmentFloatingLabel;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
@@ -11,20 +10,16 @@ import com.atakmap.coremap.maps.coords.MGRSPoint;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
 import com.atakmap.coremap.maps.coords.MutableMGRSPoint;
 import com.atakmap.coremap.maps.coords.Vector2D;
-import com.atakmap.lang.Unsafe;
 import com.atakmap.map.elevation.ElevationManager;
 import com.atakmap.map.layer.control.SurfaceRendererControl;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.raster.osm.OSMUtils;
 import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
-import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.map.opengl.GLAntiAliasedLine;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.PointD;
 import com.atakmap.math.Rectangle;
-import com.atakmap.opengl.GLES20FixedPipeline;
-import com.atakmap.opengl.GLNinePatch;
 import com.atakmap.opengl.GLText;
 import com.atakmap.util.DirectExecutorService;
 

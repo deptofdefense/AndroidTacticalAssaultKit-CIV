@@ -1,11 +1,12 @@
 
 package com.atakmap.android.maps;
 
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import com.atakmap.annotations.DeprecatedApi;
-import com.atakmap.map.AtakMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
 
 import android.graphics.Canvas;
@@ -25,6 +26,14 @@ public final class MapTextFormat {
 
     private final Impl impl;
 
+    private int textOptions = 0;
+
+    static private HashMap<Typeface, String> typefaceFamilyNameMap = new HashMap<>();
+
+    static
+    {
+        initTypefaceFamilyMap();
+    }
     /**
      * @deprecated use {@link #MapTextFormat(Typeface, int)} instead
      */
@@ -32,6 +41,12 @@ public final class MapTextFormat {
     @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public MapTextFormat(Typeface typeface, float densityAdjustedTextSize, boolean legacy) {
         this(typeface, (int) (densityAdjustedTextSize / GLRenderGlobals.getRelativeScaling()));
+    }
+
+    public MapTextFormat(Typeface typeface, int textSize, int textOptions)
+    {
+        this(typeface, false, textSize);
+        this.textOptions = textOptions;
     }
 
     public MapTextFormat(Typeface typeface, int textSize) {
@@ -67,8 +82,28 @@ public final class MapTextFormat {
         return this.impl.densityAdjustedSize;
     }
 
+    /**
+     * Returns the typeface described by this MapTextFormat.
+     * @return the typeface
+     */
     public Typeface getTypeface() {
         return this.impl.face;
+    }
+
+    /**
+     * Returns true if the MapTextFormat has strikethrough set.
+     * @return true if strikethrough is set
+     */
+    public boolean isStrikethrough() {
+        return (textOptions & Paint.STRIKE_THRU_TEXT_FLAG) > 0;
+    }
+
+    /**
+     * Returns true if the MapTextFormat has underline set.
+     * @return true if underline is set
+     */
+    public boolean isUnderlined() {
+        return (textOptions & Paint.UNDERLINE_TEXT_FLAG) > 0;
     }
 
     /**************************************************************************/
@@ -87,7 +122,7 @@ public final class MapTextFormat {
     public int measureTextWidth(final String text) {
         double maxWidth = 0.0;
         double currWidth = 0.0;
-        char[] carr = new char[1];
+        final char[] carr = new char[1];
 
         int numLines = 1;
         final int len = text.length();
@@ -115,6 +150,7 @@ public final class MapTextFormat {
 
     /**
      * Computes the width of the character on the screen.
+     * @return the width as a floating point number for a specific character
      */
     public float getCharWidth(final int c) {
         if (c >= COMMON_CHAR_START && c <= COMMON_CHAR_END)
@@ -185,6 +221,12 @@ public final class MapTextFormat {
                     y - this.impl._fontMetricsInt.top, this.impl._outlinePaint);
     }
 
+    public String getTypefaceFamilyName()
+    {
+        return impl.familyName;
+    }
+
+
     /**************************************************************************/
     
     public static synchronized void invalidate() {
@@ -193,11 +235,37 @@ public final class MapTextFormat {
             impl.init();
     }
 
+    private static Map<String, Typeface> getSSystemFontMap() throws NoSuchFieldException, IllegalAccessException {
+        Map<String, Typeface> sSystemFontMap = null;
+        Typeface typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL);
+        Field f = Typeface.class.getDeclaredField("sSystemFontMap");
+        f.setAccessible(true);
+        sSystemFontMap = (Map<String, Typeface>) f.get(typeface);
+        return sSystemFontMap;
+    }
+
+    private static String initTypefaceFamilyMap() {
+        try {
+            Map map = getSSystemFontMap();
+            Set set = map.entrySet();
+            for (Object obj : set) {
+                Map.Entry entry = (Map.Entry) obj;
+                typefaceFamilyNameMap.put((Typeface)entry.getValue(), (String)entry.getKey());
+            }
+        }
+        catch(Exception e){
+
+        }
+        return null;
+    }
+
+
     /**************************************************************************/
     /** shared data container */
 
     static class Impl {
         Typeface face;
+        String familyName;
         int fontSize;
         float densityAdjustedSize;
         boolean outlined;
@@ -216,6 +284,7 @@ public final class MapTextFormat {
             this.face = typeface;
             this.fontSize = textSize;
             this.outlined = outlined;
+            this.familyName = typefaceFamilyNameMap.get(this.face);
 
             this.commonCharWidths = new float[COMMON_CHAR_END - COMMON_CHAR_START + 1];
             this.densityAdjustedSize = 0.0f;

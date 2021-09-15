@@ -23,8 +23,8 @@ import java.util.regex.Pattern
 
 buildscript {
 
-    ext.ATAK_VERSION = "4.3.0"
-    ext.ATAK_VERSION_SUBMINOR = ".4"
+    ext.ATAK_VERSION = "4.3.1"
+    ext.ATAK_VERSION_SUBMINOR = ".0"
 
     ext.jacocoVersion = '0.8.5'
 
@@ -73,7 +73,7 @@ buildscript {
         classpath 'com.android.tools.build:gradle:4.0.2'
         classpath "org.jacoco:org.jacoco.core:$jacocoVersion"
         if(isDevKitEnabled()) {
-            classpath 'com.atakmap.gradle:atak-gradle-devkit:2.0.0'
+            classpath 'com.atakmap.gradle:atak-gradle-devkit:3.0.0'
     }
     }
 }
@@ -102,7 +102,6 @@ if(isDevKitEnabled()) {
 }
 
 dependencies {
-     implementation project(':MapCoreInterfaces:lib')
      implementation project(':ATAKMapEngine:lib')
      implementation fileTree(include: '*.jar', dir: 'libs')
 
@@ -259,6 +258,11 @@ android {
         applicationId = "com.atakmap.app"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    compileOptions {
+         sourceCompatibility JavaVersion.VERSION_1_8
+         targetCompatibility JavaVersion.VERSION_1_8
     }
 
     flavorDimensions "application"
@@ -679,15 +683,12 @@ android.applicationVariants.all { variant ->
         def fileFilter = ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**/Manifest*.*', '**/*Test*.*', 'android/**/*.*']
         def debugTree = fileTree(dir: "$project.buildDir/intermediates/javac/${variant.name}", excludes: fileFilter)
         def mainSrc = "$project.projectDir/src/main/java"
-        def MapCoreInterfaces_src = new File(project(':MapCoreInterfaces:lib').projectDir.toString() + "/src/main/java")
-        def MapCoreInterfaces_debugTree = fileTree(dir: new File(project(':MapCoreInterfaces:lib').buildDir.toString() +
-                                         "/intermediates/javac/${variant.name}"), excludes: fileFilter)
         def ATAKMapEngine_src = new File(project(':ATAKMapEngine:lib').projectDir.toString() + "/src/main/java")
         def ATAKMapEngine_debugTree = fileTree(dir: new File(project(':ATAKMapEngine:lib').buildDir.toString() +
                                          "/intermediates/javac/${variant.name}"), excludes: fileFilter)
 
-        sourceDirectories.setFrom(files([mainSrc, MapCoreInterfaces_src, ATAKMapEngine_src]))
-        classDirectories.setFrom(files([debugTree, MapCoreInterfaces_debugTree, ATAKMapEngine_debugTree]))
+        sourceDirectories.setFrom(files([mainSrc, ATAKMapEngine_src]))
+        classDirectories.setFrom(files([debugTree, ATAKMapEngine_debugTree]))
 
         executionData.setFrom(fileTree(dir: project.buildDir, includes: [
                 "jacoco/test${variant.name.capitalize()}UnitTest.exec", 
@@ -703,14 +704,6 @@ android.applicationVariants.all { variant ->
 configurations.all {
     resolutionStrategy {
         force("org.objenesis:objenesis:2.6")
-    }
-}
-
-android {
-    // In order for the test harness to run on the Samsung S9 and possibly others, add in the compilation options
-    compileOptions {
-         sourceCompatibility JavaVersion.VERSION_1_8
-         targetCompatibility JavaVersion.VERSION_1_8
     }
 }
 

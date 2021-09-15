@@ -1,7 +1,5 @@
 package com.atakmap.map.opengl;
 
-import android.util.Pair;
-
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;

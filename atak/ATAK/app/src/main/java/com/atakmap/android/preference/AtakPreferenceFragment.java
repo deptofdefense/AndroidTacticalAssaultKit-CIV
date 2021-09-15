@@ -24,7 +24,6 @@ import android.view.WindowManager.LayoutParams;
 import android.content.res.Configuration;
 
 import com.atakmap.android.metrics.MetricsApi;
-import com.atakmap.android.overlay.MapOverlay;
 import com.atakmap.android.util.ATAKConstants;
 import com.atakmap.app.preferences.ToolsPreferenceFragment;
 import com.atakmap.coremap.filesystem.FileSystemUtils;

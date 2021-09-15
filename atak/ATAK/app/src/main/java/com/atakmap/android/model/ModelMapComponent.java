@@ -71,7 +71,6 @@ import com.atakmap.map.layer.opengl.GLLayerFactory;
 import com.atakmap.map.layer.opengl.GLLayerSpi2;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;

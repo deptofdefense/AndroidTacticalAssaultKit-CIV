@@ -6,7 +6,6 @@ import java.util.List;
 
 import android.os.Bundle;
 
-import com.atakmap.android.cot.CotMapComponent;
 import com.atakmap.coremap.log.Log;
 
 import com.atakmap.coremap.cot.event.CotEvent;
@@ -138,13 +137,21 @@ public class CotServiceRemote {
      * immediately fire back the connected() callback.
      */
     static public void fireConnect() {
-        synchronized (lock) {
-            alreadyReceivedStart = true;
-            for (CotServiceRemote csr : queued) {
-                csr.notifyConnect();
+        final Thread t = new Thread() {
+            public void run() {
+                synchronized (lock) {
+                    if (alreadyReceivedStart)
+                        return;
+
+                    alreadyReceivedStart = true;
+                    for (final CotServiceRemote csr : queued) {
+                        csr.notifyConnect();
+                    }
+                    queued.clear();
+                }
             }
-            queued.clear();
-        }
+        };
+        t.start();
     }
 
     synchronized private void notifyConnect() {

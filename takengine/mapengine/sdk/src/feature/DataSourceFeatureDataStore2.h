@@ -7,7 +7,7 @@
 namespace TAK {
     namespace Engine {
         namespace Feature {
-            class DataSourceFeatureDataStore2 : public virtual FeatureDataStore2
+            class ENGINE_API DataSourceFeatureDataStore2 : public virtual FeatureDataStore2
             {
             public :
                 class FileCursor;

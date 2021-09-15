@@ -433,12 +433,16 @@ public class RouteListModel extends FilterMapOverlay.ListModelImpl
                                 .putExtra("routeUID", getUID()));
 
             } else if (i1 == R.id.route_manager_nav_button) {// Start route navigation
+                // Check to see if the route has a custom nav action sent,
+                // otherwise, use the default nav tool.
+                String navAction = _route.getMetaString("navAction",
+                        RouteMapReceiver.START_NAV);
                 Intent[] navIntents = new Intent[] {
                         new Intent("com.atakmap.android.maps.HIDE_COORDS"),
                         new Intent(MapMenuReceiver.HIDE_MENU),
                         new Intent(ActionBarReceiver.TOGGLE_ACTIONBAR)
                                 .putExtra("show", true),
-                        new Intent(RouteMapReceiver.START_NAV)
+                        new Intent(navAction)
                                 .putExtra("routeUID", getUID())
                 };
 
@@ -452,11 +456,21 @@ public class RouteListModel extends FilterMapOverlay.ListModelImpl
                 intents.add(new Intent(
                         "com.atakmap.android.maps.HIDE_DETAILS"));
                 intents.add(new Intent(MapMenuReceiver.HIDE_MENU));
-                intents.add(new Intent(
-                        ToolManagerBroadcastReceiver.BEGIN_TOOL)
-                                .putExtra("tool", RouteEditTool.TOOL_IDENTIFIER)
-                                .putExtra("routeUID", getUID())
-                                .putExtra("uid", getUID()));
+                // Check to see if the route has a custom edit action sent,
+                // otherwise, use the default edit tool.
+                String editAction = _route.getMetaString("editAction", "");
+                if (editAction.equals("")) {
+                    intents.add(new Intent(
+                            ToolManagerBroadcastReceiver.BEGIN_TOOL)
+                                    .putExtra("tool",
+                                            RouteEditTool.TOOL_IDENTIFIER)
+                                    .putExtra("routeUID", getUID())
+                                    .putExtra("uid", getUID()));
+                } else {
+                    intents.add(new Intent(editAction)
+                            .putExtra("routeUID", getUID())
+                            .putExtra("uid", getUID()));
+                }
 
             } else if (i1 == R.id.reverse_route) {
                 promptReverseRoute(getUID(), true);

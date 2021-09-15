@@ -4,15 +4,18 @@ package com.atakmap.map.layer.feature.geometry.opengl;
 import java.nio.ByteBuffer;
 
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.layer.control.ClampToGroundControl;
+import com.atakmap.map.layer.control.LollipopControl;
 import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.map.layer.feature.geometry.Geometry;
 import com.atakmap.map.opengl.GLMapBatchable2;
 import com.atakmap.map.opengl.GLMapRenderable;
-import com.atakmap.opengl.GLText;
+import com.atakmap.map.opengl.GLMapView;
 
 public abstract class GLBatchGeometry implements GLMapRenderable,
-                                                 GLMapBatchable2 {
+        GLMapBatchable2, LollipopControl, ClampToGroundControl {
+
     final MapRenderer renderContext;
 
     String name;
@@ -21,6 +24,10 @@ public abstract class GLBatchGeometry implements GLMapRenderable,
     public int lod;
     public int subid;
     public long version;
+
+    private boolean clampToGroundAtNadir;
+    private boolean lollipopsVisible;
+    private boolean nadirClamp;
 
     GLBatchGeometry(MapRenderer surface, int zOrder) {
         this.renderContext = surface;
@@ -32,7 +39,7 @@ public abstract class GLBatchGeometry implements GLMapRenderable,
     /** may be called on any thread */
     public void init(long featureId, String name) {
         this.featureId = featureId;
-        this.name = GLText.localize(name);
+        this.name = name;
     }
 
     /*** may be called from any thread */
@@ -84,4 +91,59 @@ public abstract class GLBatchGeometry implements GLMapRenderable,
      * @param value the extrude value.
      */
     public abstract void setExtrude(double value);
+
+    /**
+     * Soft release for labels
+     *
+     * @deprecated least intrusive change based on expectation of deprecation
+     *             of Java renderers
+     */
+    public void releaseLabel() {}
+
+    @Override
+    public void setClampToGroundAtNadir(boolean v) {
+        clampToGroundAtNadir = v;
+    }
+
+    @Override
+    public boolean getClampToGroundAtNadir() {
+        return clampToGroundAtNadir;
+    }
+
+
+    @Override
+    public boolean getLollipopsVisible() {
+        return lollipopsVisible;
+    }
+
+    @Override
+    public void setLollipopsVisible(boolean v) {
+        lollipopsVisible = v;
+    }
+
+    /**
+     * Update the display state of the NADIR clamping based on the value of
+     * {@link #getClampToGroundAtNadir()} and the current map tilt
+     * @param view Map view
+     * @return True if the value was changed
+     */
+    protected boolean updateNadirClamp(GLMapView view) {
+        boolean nadirClamp = Double.compare(view.currentScene.drawTilt, 0) == 0
+                && getClampToGroundAtNadir();
+        if (this.nadirClamp != nadirClamp) {
+            this.nadirClamp = nadirClamp;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Check if NADIR clamping is enabled
+     * This is different from {@link #getClampToGroundAtNadir()} in that
+     * it takes into account the latest map tilt
+     * @return True if NADIR clamping is enabled
+     */
+    protected boolean isNadirClampEnabled() {
+        return this.nadirClamp;
+    }
 }

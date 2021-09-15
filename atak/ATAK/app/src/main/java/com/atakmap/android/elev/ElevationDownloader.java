@@ -1,3 +1,4 @@
+
 package com.atakmap.android.elev;
 
 import android.app.Activity;
@@ -59,11 +60,15 @@ class ElevationDownloader implements AtakMapView.OnMapMovedListener {
     private static final int COVERAGE_SIZE = 360 * 180;
     private static final int COVERAGE_SIZE_BYTES = 8098;
 
-    private static final String[] HEMISPHERE_NAMES = new String[]
-            { "North East Hemisphere", "North West Hemisphere", "South East Hemisphere", "South West Hemisphere" };
+    private static final String[] HEMISPHERE_NAMES = new String[] {
+            "North East Hemisphere", "North West Hemisphere",
+            "South East Hemisphere", "South West Hemisphere"
+    };
 
-    private static final String[] HEMISPHERE_FILES = new String[]
-            {"dted_ne_hemi.zip", "dted_nw_hemi.zip", "dted_se_hemi.zip", "dted_sw_hemi.zip"};
+    private static final String[] HEMISPHERE_FILES = new String[] {
+            "dted_ne_hemi.zip", "dted_nw_hemi.zip", "dted_se_hemi.zip",
+            "dted_sw_hemi.zip"
+    };
 
     private static ElevationDownloader _instance;
 
@@ -96,7 +101,8 @@ class ElevationDownloader implements AtakMapView.OnMapMovedListener {
     private final AtakPreferences _prefs;
     private final Dt2FileWatcher _fileCache;
     private final BitSet _downloadQueued, _downloadFailed;
-    private final ExecutorService _downloadPool = Executors.newFixedThreadPool(5);
+    private final ExecutorService _downloadPool = Executors
+            .newFixedThreadPool(5);
 
     private boolean _active;
     private long _retryTime = -1;
@@ -114,19 +120,23 @@ class ElevationDownloader implements AtakMapView.OnMapMovedListener {
 
         // Read remote coverage bitset file
         BitSet remoteCoverage;
-        try (InputStream is = FileSystemUtils.getInputStreamFromAsset(_context, "remote_elevation.cov")) {
+        try (InputStream is = FileSystemUtils.getInputStreamFromAsset(_context,
+                "remote_elevation.cov")) {
             byte[] cov = new byte[COVERAGE_SIZE_BYTES];
             int read = is.read(cov);
 
             // Ensure correct file size
             if (read < COVERAGE_SIZE_BYTES)
-                throw new Exception("Unexpected file size (expected " + COVERAGE_SIZE_BYTES + ", got " + read + ")");
+                throw new Exception("Unexpected file size (expected "
+                        + COVERAGE_SIZE_BYTES + ", got " + read + ")");
 
             remoteCoverage = BitSet.valueOf(cov);
 
             // Ensure correct bit set size
             if (remoteCoverage.size() != _downloadQueued.size())
-                throw new Exception("Unexpected coverage size (expected " + _downloadQueued.size() + ", got " + remoteCoverage.size() + ")");
+                throw new Exception("Unexpected coverage size (expected "
+                        + _downloadQueued.size() + ", got "
+                        + remoteCoverage.size() + ")");
         } catch (Exception e) {
             Log.e(TAG, "error loading code coverage", e);
             remoteCoverage = null;
@@ -134,12 +144,34 @@ class ElevationDownloader implements AtakMapView.OnMapMovedListener {
         remote_coverage = remoteCoverage;
     }
 
-
     void dispose() {
         _active = false;
         _downloadPool.shutdown();
         _downloadScanner.dispose(false);
         _mapView.removeOnMapMovedListener(this);
+    }
+
+    /**
+     * A dialog telling the user that elevation might not be available on this device and that is it
+     * pretty important.  If we can get automatic downloading working in this class based on the current map position,
+     * then we might not need to even have this method.
+     */
+    public void displayInformation(Context context) {
+        HintDialogHelper.showHint(context,
+                "Install Elevation Data",
+                "Elevation Data is very important to the proper functioning of any mapping tool.  Click 'OK' to choose what elevation data you want. \n\nIf you want more, you can download it under Settings",
+                PREF_WARNING,
+                new HintDialogHelper.HintActions() {
+                    @Override
+                    public void postHint() {
+                        chooseElevationToDownload(_context);
+                    }
+
+                    public void preHint() {
+                    }
+
+                });
+
     }
 
     /**
@@ -150,20 +182,22 @@ class ElevationDownloader implements AtakMapView.OnMapMovedListener {
         final ListView listView = new ListView(context);
         listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
         listView.setAdapter(new ArrayAdapter<>(context,
-                android.R.layout.simple_list_item_multiple_choice, HEMISPHERE_NAMES));
+                android.R.layout.simple_list_item_multiple_choice,
+                HEMISPHERE_NAMES));
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setView(listView);
         builder.setCancelable(false);
         builder.setNegativeButton(R.string.cancel, null);
-        builder.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                listView.isItemChecked(0);
-                startDownload(context, listView);
-            }
-        });
+        builder.setPositiveButton(R.string.ok,
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        listView.isItemChecked(0);
+                        startDownload(context, listView);
+                    }
+                });
 
-        ((Activity)context).runOnUiThread(new Runnable() {
+        ((Activity) context).runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 builder.show();
@@ -171,21 +205,22 @@ class ElevationDownloader implements AtakMapView.OnMapMovedListener {
         });
     }
 
-
     private void startDownload(Context context, ListView listView) {
 
         final ProgressDialog progressDialog = new ProgressDialog(context);
-        final DownloadThread dt = new DownloadThread(context, progressDialog, listView);
+        final DownloadThread dt = new DownloadThread(context, progressDialog,
+                listView);
 
         progressDialog.setMessage("Downloading...");
         progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
         progressDialog.setCanceledOnTouchOutside(false);
-        progressDialog.setButton(_context.getString(R.string.cancel), new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dt.cancel();
-            }
-        });
+        progressDialog.setButton(_context.getString(R.string.cancel),
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dt.cancel();
+                    }
+                });
 
         progressDialog.show();
         dt.start();
@@ -199,7 +234,8 @@ class ElevationDownloader implements AtakMapView.OnMapMovedListener {
 
         private boolean cancelled = false;
 
-        DownloadThread(Context context, ProgressDialog dialog, ListView listView) {
+        DownloadThread(Context context, ProgressDialog dialog,
+                ListView listView) {
             this.dialog = dialog;
             this.listView = listView;
             this.context = context;
@@ -212,22 +248,25 @@ class ElevationDownloader implements AtakMapView.OnMapMovedListener {
             cancelled = true;
         }
 
-        private void setProgress(final int progress, final int max, final String message) {
-            ((Activity)context).runOnUiThread(new Runnable() {
+        private void setProgress(final int progress, final int max,
+                final String message) {
+            ((Activity) context).runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     dialog.setMessage(message);
                     dialog.setMax(100);
-                    dialog.setProgress( (int)Math.floor( (progress / (float)max) * 100 ));
+                    dialog.setProgress(
+                            (int) Math.floor((progress / (float) max) * 100));
                 }
             });
         }
 
         @Override
         public void run() {
-            final String server = _prefs.get(PREF_DOWNLOAD_SERVER, DEFAULT_DOWNLOAD_SERVER);
+            final String server = _prefs.get(PREF_DOWNLOAD_SERVER,
+                    DEFAULT_DOWNLOAD_SERVER);
 
-            final byte[] buffer = new byte[8096*2];
+            final byte[] buffer = new byte[8096 * 2];
 
             int len, off;
             int count = 0;
@@ -241,10 +280,12 @@ class ElevationDownloader implements AtakMapView.OnMapMovedListener {
                 if (!listView.isItemChecked(i))
                     continue;
                 count++;
-                final String srcPath = "https://" + server + "/elevation/DTED/" + file;
+                final String srcPath = "https://" + server + "/elevation/DTED/"
+                        + file;
                 final File dstPathZip = FileSystemUtils.getItem("DTED/" + file);
 
-                final String message = "Downloading: " + name + "(" + count + " of " + listView.getCheckedItemCount() + ")";
+                final String message = "Downloading: " + name + "(" + count
+                        + " of " + listView.getCheckedItemCount() + ")";
                 setProgress(0, 100, message);
 
                 InputStream is = null;
@@ -260,15 +301,15 @@ class ElevationDownloader implements AtakMapView.OnMapMovedListener {
                     os = new FileOutputStream(dstPathZip.getAbsolutePath());
                     while ((len = is.read(buffer)) >= 0) {
                         os.write(buffer, 0, len);
-                        off+=len;
+                        off += len;
                         setProgress(off, fileLength, message);
                         if (cancelled)
                             return;
                     }
                     os.flush();
-                    FileSystemUtils.unzip(new File(dstPathZip.getAbsolutePath()),
+                    FileSystemUtils.unzip(
+                            new File(dstPathZip.getAbsolutePath()),
                             dstPathZip.getParentFile(), true);
-
 
                 } catch (Exception e) {
                     Log.d(TAG, "error occurred: ", e);
@@ -276,23 +317,29 @@ class ElevationDownloader implements AtakMapView.OnMapMovedListener {
                     if (is != null) {
                         try {
                             is.close();
-                        } catch (Exception ignored) {}
+                        } catch (Exception ignored) {
+                        }
                     }
                     if (os != null) {
                         try {
                             os.close();
-                        } catch (Exception ignored) {}
+                        } catch (Exception ignored) {
+                        }
                     }
                     FileSystemUtils.delete(dstPathZip);
                 }
             }
 
             // Dismiss progress dialog
-            ((Activity)context).runOnUiThread(new Runnable() {
+            ((Activity) context).runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    if (dialog != null)
-                        dialog.dismiss();
+                    if (dialog != null) {
+                        try {
+                            dialog.dismiss();
+                        } catch (Exception ignored) {
+                        }
+                    }
                 }
             });
         }
@@ -305,7 +352,8 @@ class ElevationDownloader implements AtakMapView.OnMapMovedListener {
     private void checkDownloadTiles(GeoBounds bounds) {
 
         // Pull server host and whether this feature is enabled from prefs
-        final String server = _prefs.get(PREF_DOWNLOAD_SERVER, DEFAULT_DOWNLOAD_SERVER);
+        final String server = _prefs.get(PREF_DOWNLOAD_SERVER,
+                DEFAULT_DOWNLOAD_SERVER);
         final boolean userActive = _prefs.get(PREF_DTED_STREAM, true);
 
         // Feature is disabled
@@ -348,7 +396,6 @@ class ElevationDownloader implements AtakMapView.OnMapMovedListener {
                 else if (lngWrapped < -180)
                     lngWrapped += 360;
 
-
                 int idx = Dt2FileWatcher.getCoverageIndex(lat, lngWrapped);
 
                 // Make sure the server has coverage for this tile
@@ -376,11 +423,13 @@ class ElevationDownloader implements AtakMapView.OnMapMovedListener {
      * @param lng the longitude
      * @param lngUnwrapped Unwrapped longitude
      */
-    private void downloadTile(String server, final int lat, final int lng, final int lngUnwrapped) {
+    private void downloadTile(String server, final int lat, final int lng,
+            final int lngUnwrapped) {
         final String file = Dt2FileWatcher.getRelativePath(0, lat, lng);
         final File tileFile = FileSystemUtils.getItem("DTED/" + file);
         final File zipFile = new File(tileFile.getAbsolutePath() + ".zip");
-        final String url = "https://" + server + "/elevation/DTED/" + file + ".zip";
+        final String url = "https://" + server + "/elevation/DTED/" + file
+                + ".zip";
         final int tileIdx = Dt2FileWatcher.getCoverageIndex(lat, lng);
 
         // Flag tile as being downloaded so it isn't requested again
@@ -415,8 +464,10 @@ class ElevationDownloader implements AtakMapView.OnMapMovedListener {
                     synchronized (ElevationDownloader.this) {
                         // This is sync'd so we don't attempt (and fail) to mkdirs
                         // when the directory was just created by another thread
-                        if (!IOProviderFactory.exists(parent) && !IOProviderFactory.mkdirs(parent))
-                            throw new FileNotFoundException("Failed to make directory: " + parent);
+                        if (!IOProviderFactory.exists(parent)
+                                && !IOProviderFactory.mkdirs(parent))
+                            throw new FileNotFoundException(
+                                    "Failed to make directory: " + parent);
                     }
                     //Log.d(TAG, "Downloading " + url);
                     final URL u = new URL(url);
@@ -453,7 +504,8 @@ class ElevationDownloader implements AtakMapView.OnMapMovedListener {
                     if (!success) {
                         _downloadFailed.set(tileIdx, true);
                         if (_retryTime < 0)
-                            _retryTime = System.currentTimeMillis() + RETRY_TIMEOUT;
+                            _retryTime = System.currentTimeMillis()
+                                    + RETRY_TIMEOUT;
                     }
                     _downloadQueued.set(tileIdx, false);
                 }
@@ -467,18 +519,19 @@ class ElevationDownloader implements AtakMapView.OnMapMovedListener {
     }
 
     // Checks for tiles to download once per second
-    private final LimitingThread _downloadScanner = new LimitingThread(TAG + "-Scanner", new Runnable() {
-        @Override
-        public void run() {
-            if (_active) {
-                checkDownloadTiles(_mapView.getBounds());
-                try {
-                    Thread.sleep(DOWNLOAD_INTERVAL);
-                } catch (InterruptedException ignored) {
+    private final LimitingThread _downloadScanner = new LimitingThread(
+            TAG + "-Scanner", new Runnable() {
+                @Override
+                public void run() {
+                    if (_active) {
+                        checkDownloadTiles(_mapView.getBounds());
+                        try {
+                            Thread.sleep(DOWNLOAD_INTERVAL);
+                        } catch (InterruptedException ignored) {
+                        }
+                    }
                 }
-            }
-        }
-    });
+            });
 
     /**
      * Setup a preference button for downloading elevation data.   This localizes the changes for
@@ -486,14 +539,16 @@ class ElevationDownloader implements AtakMapView.OnMapMovedListener {
      * @param prefActivity the activity used for the mechanism for downloading the datasets.
      * @param p the preference
      */
-    void setupPreferenceDownloader(final Activity prefActivity, final Preference p) {
-        p.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-            @Override
-            public boolean onPreferenceClick(Preference preference) {
-                chooseElevationToDownload(prefActivity);
-                return true;
-            }
-        });
+    void setupPreferenceDownloader(final Activity prefActivity,
+            final Preference p) {
+        p.setOnPreferenceClickListener(
+                new Preference.OnPreferenceClickListener() {
+                    @Override
+                    public boolean onPreferenceClick(Preference preference) {
+                        chooseElevationToDownload(prefActivity);
+                        return true;
+                    }
+                });
     }
 
     /**
@@ -508,7 +563,8 @@ class ElevationDownloader implements AtakMapView.OnMapMovedListener {
         double s = bounds.getSouth();
 
         // Invalid bounds
-        if (Double.isNaN(w) || Double.isNaN(e) || Double.isNaN(n) || Double.isNaN(s))
+        if (Double.isNaN(w) || Double.isNaN(e) || Double.isNaN(n)
+                || Double.isNaN(s))
             return null;
 
         // Unwrap longitude west of IDL
@@ -526,9 +582,9 @@ class ElevationDownloader implements AtakMapView.OnMapMovedListener {
         minLat = MathUtils.clamp(minLat, -90, 90);
         maxLat = MathUtils.clamp(maxLat, -90, 90);
 
-        return new int[] {minLng, minLat, maxLng, maxLat};
+        return new int[] {
+                minLng, minLat, maxLng, maxLat
+        };
     }
-
-
 
 }

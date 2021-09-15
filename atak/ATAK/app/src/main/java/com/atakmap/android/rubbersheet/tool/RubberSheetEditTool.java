@@ -32,6 +32,7 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.Angle;
 import com.atakmap.coremap.conversions.AngleUtilities;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.NorthReference;
@@ -304,14 +305,14 @@ public class RubberSheetEditTool extends RectangleEditTool
     protected void rotate(double ang) {
         if (_center == null)
             return;
-        GeoPoint p0 = DistanceCalculations.computeDestinationPoint(
-                _center.get(), _p0[1] - ang, _p0[0]);
-        GeoPoint p1 = DistanceCalculations.computeDestinationPoint(
-                _center.get(), _p1[1] - ang, _p1[0]);
-        GeoPoint p2 = DistanceCalculations.computeDestinationPoint(
-                _center.get(), _p2[1] - ang, _p2[0]);
-        GeoPoint p3 = DistanceCalculations.computeDestinationPoint(
-                _center.get(), _p3[1] - ang, _p3[0]);
+        GeoPoint p0 = GeoCalculations.pointAtDistance(_center.get(),
+                _p0[1] - ang, _p0[0]);
+        GeoPoint p1 = GeoCalculations.pointAtDistance(_center.get(),
+                _p1[1] - ang, _p1[0]);
+        GeoPoint p2 = GeoCalculations.pointAtDistance(_center.get(),
+                _p2[1] - ang, _p2[0]);
+        GeoPoint p3 = GeoCalculations.pointAtDistance(_center.get(),
+                _p3[1] - ang, _p3[0]);
         _sheet.setPoints(GeoPointMetaData.wrap(p0), GeoPointMetaData.wrap(p1),
                 GeoPointMetaData.wrap(p2), GeoPointMetaData.wrap(p3));
         updateSubText();

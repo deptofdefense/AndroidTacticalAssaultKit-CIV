@@ -35,7 +35,6 @@ import com.atakmap.map.layer.raster.mosaic.MosaicUtils;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
 import com.atakmap.map.layer.raster.tilereader.TileReader;
-import com.atakmap.database.Databases;
 import com.atakmap.map.layer.raster.AbstractDatasetDescriptorSpi;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
 import com.atakmap.map.layer.raster.DatasetDescriptorSpi;

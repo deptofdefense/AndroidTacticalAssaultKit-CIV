@@ -34,46 +34,6 @@ using namespace TAK::Engine::Util;
 
 namespace
 {
-    TAKErr Platform_atoi(int *value, const char *s) NOTHROWS
-    {
-        if (!value)
-            return TE_InvalidArg;
-        if (!s)
-            return TE_InvalidArg;
-        try {
-            *value = std::stoi(s);
-            return TE_Ok;
-        } catch (...) {
-            return TE_Err;
-        }
-    }
-    TAKErr Platform_atoll(int64_t *value, const char *s) NOTHROWS
-    {
-        if (!value)
-            return TE_InvalidArg;
-        if (!s)
-            return TE_InvalidArg;
-        try {
-            *value = std::stoll(s);
-            return TE_Ok;
-        } catch (...) {
-            return TE_Err;
-        }
-    }
-    TAKErr Platform_atof(float *value, const char *s) NOTHROWS
-    {
-        if (!value)
-            return TE_InvalidArg;
-        if (!s)
-            return TE_InvalidArg;
-        try {
-            *value = std::stof(s);
-            return TE_Ok;
-        } catch (...) {
-            return TE_Err;
-        }
-    }
-
     double min(double a, double b, double c, double d) NOTHROWS;
     double max(double a, double b, double c, double d) NOTHROWS;
 
@@ -233,13 +193,11 @@ public :
                         break;
                     } else {
                         std::string fieldName(cfieldName);
-                        std::string fieldNameLower;
-                        fieldNameLower.reserve(fieldName.length());
 
-                        std::transform(fieldName.begin(), fieldName.end(), fieldNameLower.begin(), ::tolower);
+                        std::transform(fieldName.begin(), fieldName.end(), fieldName.begin(), ::tolower);
 
-                        if (strstr(fieldNameLower.c_str(), "name"))
-                            candidates.push_back(fieldName);
+                        if (strstr(fieldName.c_str(), "name"))
+                            candidates.push_back(cfieldName);
                     }
                 }
 
@@ -298,7 +256,8 @@ OGRFeatureDataStore::OGRFeatureDataStore(const char *uri_, const char *workingDi
     disposing(false),
     backgroundRefresh(asyncRefresh_),
     provider("ogr"),
-    type("ogr)")
+    type("ogr)"),
+    openOptions(nullptr)
 {
     bool exists;
     IO_exists(&exists, workingDir);
@@ -328,7 +287,8 @@ OGRFeatureDataStore::OGRFeatureDataStore(const char *uri_, const char *workingDi
     backgroundRefresh(asyncRefresh_),
     userSchema(std::move(schema_)),
     provider("ogr"),
-    type("ogr")
+    type("ogr"),
+    openOptions(nullptr)
 {
     bool exists;
     IO_exists(&exists, workingDir);
@@ -346,10 +306,47 @@ OGRFeatureDataStore::OGRFeatureDataStore(const char *uri_, const char *workingDi
     // the feature data from remote
     this->refresh();
 }
+OGRFeatureDataStore::OGRFeatureDataStore(const char* uri_, const char* driver_, const char** opts_, const std::shared_ptr<SchemaHandler> &schema_) NOTHROWS :
+    AbstractFeatureDataStore2(0, VISIBILITY_SETTINGS_FEATURESET),
+    uri(uri_),
+    workingDir(uri_),
+    refreshThread(nullptr, nullptr),
+    refreshRequest(0),
+    disposed(false),
+    disposing(false),
+    backgroundRefresh(false),
+    userSchema(schema_),
+    provider("ogr"),
+    type("ogr"),
+    openOptions(nullptr)
+{
+    if (driver_) {
+        array_ptr<char> d(new char[strlen(driver_) + 1u]);
+        strcpy(d.get(), driver_);
+        driver.push_back(d.release());
+        driver.push_back(nullptr);
+    }
 
+    if (opts_) {
+        while (opts_[0u]) {
+            openOptions = CSLAddString(openOptions, opts_[0u]);
+            opts_++;
+        }
+    }
+
+    // refresh to update immediately from the cache (if available) and fetch
+    // the feature data from remote
+    this->refresh();
+}
 OGRFeatureDataStore::~OGRFeatureDataStore() NOTHROWS
 {
     this->close();
+
+    for (std::size_t i = 0u; i < driver.size(); i++)
+        delete[] driver[i];
+    if(openOptions) {
+        CSLDestroy(openOptions);
+    }
 }
 
 TAKErr OGRFeatureDataStore::close() NOTHROWS
@@ -443,7 +440,7 @@ TAKErr OGRFeatureDataStore::refreshImpl() NOTHROWS
     wfs = GDALDataset_unique_ptr(
         GDALOpenEx(this->uri,
             GDAL_OF_READONLY | GDAL_OF_VERBOSE_ERROR | GDAL_OF_INTERNAL,
-            nullptr, nullptr, nullptr),
+            driver.empty() ? nullptr : &driver.at(0), openOptions, nullptr),
         GDALDataset_delete);
     if (!wfs.get())
     {
@@ -509,9 +506,9 @@ TAKErr OGRFeatureDataStore::refreshImpl() NOTHROWS
     TE_CHECKRETURN_CODE(code);
     {
         type = "ogr";
-        GDALDriverH driver = GDALGetDatasetDriver(wfs.get());
-        if (driver)
-            type = GDALGetDriverShortName(driver);
+        GDALDriverH gdriver = GDALGetDatasetDriver(wfs.get());
+        if (gdriver)
+            type = GDALGetDriverShortName(gdriver);
 
         this->schema = std::move(datasetSchema);
 
@@ -629,10 +626,10 @@ TAKErr OGRFeatureDataStore::OpenConnection(GDALDataset_unique_ptr &value) NOTHRO
         }
     }
 
-    GDALDataset_unique_ptr wfs = GDALDataset_unique_ptr(
+    GDALDataset_unique_ptr wfs(
         GDALOpenEx(this->uri,
             GDAL_OF_READONLY | GDAL_OF_VERBOSE_ERROR | GDAL_OF_INTERNAL,
-            nullptr, nullptr, nullptr),
+            driver.empty() ? nullptr : &driver.at(0), openOptions, nullptr),
         GDALDataset_delete);
     if (!wfs.get()) {
         Logger_log(TELL_Warning, "Failed to connect to WFS %s, server may be unavailable.", this->uri.get());
@@ -1547,8 +1544,8 @@ TAKErr OGRFeatureDataStore::createSchemaHandler(SchemaHandlerPtr &value, GDALDat
     OGRDriverDefinition2Ptr driverDef(nullptr, nullptr);
     const char *driverName = "ogr";
     if (dataset) {
-        GDALDriverH driver = GDALGetDatasetDriver(dataset);
-        driverName = GDALGetDriverShortName(driver);
+        GDALDriverH gdriver = GDALGetDatasetDriver(dataset);
+        driverName = GDALGetDriverShortName(gdriver);
         code = OGRDriverDefinition2_create(driverDef, uri, driverName);
     }
     if (!dataset || code != TE_Ok) {
@@ -1595,6 +1592,7 @@ TAKErr OGRFeatureDataStore::FeatureSetCursorImpl::get(const FeatureSet2 **value)
 
 TAKErr OGRFeatureDataStore::FeatureSetCursorImpl::moveToNext() NOTHROWS
 {
+    row.reset();
     if (impl == defns.end())
         return TE_Done;
     if (!first)
@@ -1961,7 +1959,7 @@ namespace
             return -1;
 
         int srid;
-        if (Platform_atoi(&srid, value) != TE_Ok)
+        if (String_parseInteger(&srid, value) != TE_Ok)
             return -1;
         return srid;
     }
@@ -1992,9 +1990,9 @@ namespace
             return TE_InvalidArg;
 
         array_ptr<unsigned char> wkb(new unsigned char[wkbSize]);
-        OGR_G_ExportToWkb(geomPtr.get(), (TE_PlatformEndian == TE_LittleEndian) ? wkbNDR : wkbXDR, wkb.get());
+        OGR_G_ExportToIsoWkb(geomPtr.get(), (TE_PlatformEndian == TE_LittleEndian) ? wkbNDR : wkbXDR, wkb.get());
 
-#if 0
+#if 1
         Geometry2Ptr geom2(NULL, NULL);
         code = GeometryFactory_fromWkb(geom2, wkb.get(), wkbSize);
         TE_CHECKRETURN_CODE(code);

@@ -1,8 +1,8 @@
 package com.atakmap.map.formats.mapbox;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.log.Log;
 import com.atakmap.io.UriFactory;
-import com.atakmap.map.elevation.ElevationSource;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -10,6 +10,8 @@ import java.io.FileOutputStream;
 final class TerrainRGBDownload implements Runnable {
     String url;
     File local;
+
+    private static final String TAG = "TerrainRGBDownload";
 
     @Override
     public void run() {
@@ -23,7 +25,7 @@ final class TerrainRGBDownload implements Runnable {
                 FileSystemUtils.copyStream(result.inputStream, false, new FileOutputStream(local), true);
             }
         } catch (Throwable t) {
-            t.printStackTrace();
+            Log.e(TAG, "error", t);
         }
     }
 }

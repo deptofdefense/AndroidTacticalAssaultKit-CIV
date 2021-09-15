@@ -52,7 +52,7 @@ public class MobacTileClient2 implements TileClient, TileClientControl {
                     c.dnsLookupTimeout = opts.dnsLookupTimeout;
                     c.connectTimeout = (int)opts.connectTimeout;
                 }
-                MobacMapSource src = MobacMapSourceFactory.create(new File(path), c);
+                MobacMapSource src = MobacMapSourceFactory.create(path, c);
                 if(src == null)
                     return null;
                 TileClient client = (proxy) ?

@@ -9,11 +9,9 @@ import android.preference.PreferenceManager;
 
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.widgets.SeekBarControl;
-import com.atakmap.map.MapControl;
 import com.atakmap.map.layer.control.SurfaceRendererControl;
 import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.math.MathUtils;
-import com.atakmap.util.Visitor;
 
 import java.util.concurrent.atomic.AtomicInteger;
 

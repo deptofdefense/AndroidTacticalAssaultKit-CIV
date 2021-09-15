@@ -1,21 +1,17 @@
 
 package com.atakmap.android.bpha;
 
-import android.app.Activity;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.text.Editable;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.atakmap.android.maps.MapView;
 import com.atakmap.android.util.AfterTextChangedWatcher;
 import com.atakmap.app.R;
 import com.atakmap.coremap.log.Log;

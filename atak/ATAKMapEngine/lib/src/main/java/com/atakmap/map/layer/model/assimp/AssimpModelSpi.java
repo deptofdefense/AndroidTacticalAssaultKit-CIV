@@ -176,7 +176,7 @@ public class AssimpModelSpi implements ModelSpi {
      *
      * @param meshProgress  A two dimensional array. Index 0 stores the number of processed meshes,
      *                      index 1 contains the total number of meshes
-     * @param callback
+     * @param callback the callback to be used when the scene building is finished
      */
     private static void buildScene(ModelInfo modelInfo, File file, Map<String, int[]> meshVertCount, int[] meshInstanceCount, boolean[] meshDataPushed, Map<String, MeshBuilder> builders, ModelBuilder builder, AiScene scene, List<AiMesh> meshes, AiNode node, Matrix accumulated, int[] meshProgress, ModelSpi.Callback callback) {
         String uri = modelInfo.uri;

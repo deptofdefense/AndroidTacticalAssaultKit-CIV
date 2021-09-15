@@ -39,7 +39,6 @@ import com.atakmap.opengl.GLText;
 import com.atakmap.util.Visitor;
 
 import java.nio.ByteBuffer;
-import java.nio.DoubleBuffer;
 import java.util.Arrays;
 
 final class GLAngleOverlay2 extends GLShape2 implements
@@ -396,7 +395,8 @@ final class GLAngleOverlay2 extends GLShape2 implements
                 final double radius = (i == 0) ? rm : rm / 3d;
                 GeoPoint cardinal = GeoCalculations.pointAtDistance(centerGP,
                         angle, radius);
-                double alt = ElevationManager.getElevation(cardinal.getLatitude(),
+                double alt = ElevationManager.getElevation(
+                        cardinal.getLatitude(),
                         cardinal.getLongitude(), null);
                 cardinal = new GeoPoint(cardinal.getLatitude(),
                         cardinal.getLongitude(), alt);
@@ -426,7 +426,8 @@ final class GLAngleOverlay2 extends GLShape2 implements
                 GeoPoint p = arrowPts[i];
                 double pct = i == 1 ? dirArrowTipPct : dirArrowEndPct;
                 double alt = center.getAltitude() * (1 - pct) + northAlt * pct;
-                arrowPts[i] = new GeoPoint(p.getLatitude(), p.getLongitude(), alt);
+                arrowPts[i] = new GeoPoint(p.getLatitude(), p.getLongitude(),
+                        alt);
             }
 
             directionArrow.setPoints(arrowPts);

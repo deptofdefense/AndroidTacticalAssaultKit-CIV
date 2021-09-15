@@ -3,6 +3,7 @@ package com.atakmap.android.maps.graphics;
 
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.PointMapItem.OnPointChangedListener;
+import com.atakmap.map.layer.control.LollipopControl;
 import com.atakmap.coremap.maps.conversion.EGM96;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -11,7 +12,7 @@ import com.atakmap.map.layer.feature.Feature.AltitudeMode;
 import com.atakmap.map.opengl.GLMapView;
 
 public abstract class GLPointMapItem2 extends AbstractGLMapItem2 implements
-        OnPointChangedListener {
+        OnPointChangedListener, LollipopControl {
 
     public GeoPoint point;
     protected double latitude;
@@ -21,11 +22,14 @@ public abstract class GLPointMapItem2 extends AbstractGLMapItem2 implements
     protected AltitudeMode altMode;
     protected double localTerrainValue;
     protected int terrainVersion = 0;
+    private boolean lollipopsVisible;
 
     public GLPointMapItem2(MapRenderer surface, PointMapItem subject,
             int renderPass) {
         super(surface, subject, renderPass);
         point = subject.getPoint();
+        altMode = subject.getAltitudeMode();
+        lollipopsVisible = true;
 
         this.context.queueEvent(new Runnable() {
             @Override
@@ -71,6 +75,20 @@ public abstract class GLPointMapItem2 extends AbstractGLMapItem2 implements
         pointItem.removeOnPointChangedListener(this);
     }
 
+    /**
+     * Rendering style modified by the {@link LollipopControl}
+     * @param v True if lollipops should be visible
+     */
+    @Override
+    public void setLollipopsVisible(boolean v) {
+        lollipopsVisible = v;
+    }
+
+    @Override
+    public boolean getLollipopsVisible() {
+        return lollipopsVisible;
+    }
+
     @Override
     public void onPointChanged(PointMapItem item) {
         final GeoPoint p = item.getPoint();
@@ -105,5 +123,13 @@ public abstract class GLPointMapItem2 extends AbstractGLMapItem2 implements
 
             }
         });
+    }
+
+    /**
+     * Get the current altitude mode
+     * @return Altitude mode
+     */
+    protected AltitudeMode getAltitudeMode() {
+        return altMode != null ? altMode : AltitudeMode.Absolute;
     }
 }

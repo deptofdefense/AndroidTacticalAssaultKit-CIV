@@ -695,7 +695,15 @@ public class CotService implements OnSharedPreferenceChangeListener,
             boolean useAuth = prefs.getBoolean("useAuth" + i, false);
             boolean enrollForCertificateWithTrust = prefs.getBoolean(
                     "enrollForCertificateWithTrust" + i, false);
-            long expiration = prefs.getLong(TAKServer.EXPIRATION_KEY + i, -1);
+
+            long expiration = -1;
+            try {
+                expiration = prefs.getLong(TAKServer.EXPIRATION_KEY + i, -1);
+            } catch (Exception e) {
+                Log.d(TAG,
+                        "Exception parsing EXPIRATION_KEY, using default value",
+                        e);
+            }
 
             Bundle input = new Bundle();
             input.putString("description", desc);

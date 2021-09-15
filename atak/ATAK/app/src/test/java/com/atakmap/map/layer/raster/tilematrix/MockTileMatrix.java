@@ -5,8 +5,6 @@ import android.graphics.Bitmap;
 
 import com.atakmap.map.layer.feature.geometry.Envelope;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 

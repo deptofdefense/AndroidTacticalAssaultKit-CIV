@@ -1,15 +1,9 @@
 #include "renderer/core/GLLabelManager.h"
 
 #include "core/Ellipsoid.h"
-#include "feature/LegacyAdapters.h"
-#include "math/Vector4.h"
-#include "renderer/GL.h"
 #include "renderer/GLES20FixedPipeline.h"
-#include "renderer/GLText2.h"
-#include "renderer/core/GLLabel.h"
-#include "renderer/core/GLMapRenderGlobals.h"
 #include "renderer/core/GLMapView2.h"
-#include "thread/Mutex.h"
+#include "thread/Lock.h"
 #include "util/ConfigOptions.h"
 
 using namespace TAK::Engine::Renderer::Core;
@@ -123,8 +117,9 @@ void GLLabelManager::setTextFormat(const uint32_t id, const TextFormatParams* fm
     if (fmt == nullptr ||
         (fmt->size == defaultFontSize && fmt->fontName == nullptr && !fmt->bold && !fmt->italic && !fmt->underline && !fmt->strikethrough))
         labels_[id].setTextFormat(nullptr);
-    else
+    else {
         labels_[id].setTextFormat(fmt);
+    }
 }
 
 void GLLabelManager::setVisible(const uint32_t id, bool visible) NOTHROWS {
@@ -239,7 +234,8 @@ void GLLabelManager::getSize(const uint32_t id, atakmap::math::Rectangle<double>
 
     if (map_idx_ <= id) return;
 
-    size_rect = labels_[id].labelRect;
+    size_rect.width = labels_[id].labelSize.width;
+    size_rect.height = labels_[id].labelSize.height;
 
     if (size_rect.width == 0 && size_rect.height == 0) {
         GLText2* gltext = labels_[id].gltext_;
@@ -267,6 +263,26 @@ void GLLabelManager::setPriority(const uint32_t id, const Priority priority) NOT
     labels_[id].setPriority(priority);
 }
 
+void GLLabelManager::setHints(const uint32_t id, const unsigned int hints) NOTHROWS
+{
+    if (map_idx_ <= id) return;
+
+    draw_version_ = -1;
+
+    labels_[id].setHints(hints);
+}
+
+unsigned int GLLabelManager::getHints(const uint32_t id) NOTHROWS
+{
+    if (map_idx_ <= id) return 0u;
+
+    const auto label = labels_.find(id);
+    if(label == labels_.end())
+        return 0u;
+
+    return label->second.hints_;
+}
+
 void GLLabelManager::setVisible(bool visible) NOTHROWS {
     Lock lock(mutex_);
 
@@ -284,6 +300,13 @@ void GLLabelManager::draw(const GLGlobeBase& view, const int render_pass) NOTHRO
         this->batch_.reset(new GLRenderBatch2(0xFFFF));
     }
 
+    bool depthRestore = false;
+    if (view.renderPass->drawTilt == 0) {
+        depthRestore = glIsEnabled(GL_DEPTH_TEST);
+        glDisable(GL_DEPTH_TEST);
+    }
+
+    bool didAnimate = false;
     try {
         GLES20FixedPipeline::getInstance()->glMatrixMode(GLES20FixedPipeline::MatrixMode::MM_GL_MODELVIEW);
         GLES20FixedPipeline::getInstance()->glPushMatrix();
@@ -302,7 +325,8 @@ void GLLabelManager::draw(const GLGlobeBase& view, const int render_pass) NOTHRO
             this->batch_->setMatrix(GL_MODELVIEW, mx);
         }
 
-        std::vector<atakmap::math::Rectangle<double>> label_placements;
+        std::vector<GLLabel::LabelPlacement> label_placements;
+        std::vector<uint32_t> renderedLabels;
 
         if (draw_version_ != view.drawVersion) {
             draw_version_ = view.drawVersion;
@@ -313,21 +337,48 @@ void GLLabelManager::draw(const GLGlobeBase& view, const int render_pass) NOTHRO
 
             const Feature::Geometry2* geometry = label.getGeometry();
             if (geometry != nullptr) {
-                label.validateProjectedLocation(view);
                 GLText2 *gltext = label.gltext_;
                 if (!gltext)
                     gltext = defaultText;
-                label.place(view, *gltext, label_placements);
-                label.batch(view, *gltext, *(batch_.get()));
-                label_placements.push_back(label.labelRect);
+                label.validate(view, *gltext);
+                for(auto &placement : label.transformed_anchor_) {
+                    bool didReplace;
+                    if(label.place(placement, view, *gltext, label_placements, didReplace))
+                        label_placements.push_back(placement);
             }
+                label.batch(view, *gltext, *(batch_.get()), render_pass);
+                renderedLabels.push_back(always_render_idx_);
         }
-
-        draw(view, Priority::TEP_High, label_placements);
-        draw(view, Priority::TEP_Standard, label_placements);
-        draw(view, Priority::TEP_Low, label_placements);
-
+        }
+        draw(view, Priority::TEP_High, label_placements, render_pass, renderedLabels);
+        draw(view, Priority::TEP_Standard, label_placements, render_pass, renderedLabels);
+        draw(view, Priority::TEP_Low, label_placements, render_pass, renderedLabels);
         batch_->end();
+
+        glDisable(GL_DEPTH_TEST);
+        batch_->begin();
+        {
+            float mx[16];
+            GLES20FixedPipeline::getInstance()->readMatrix(GLES20FixedPipeline::MatrixMode::MM_GL_PROJECTION, mx);
+            this->batch_->setMatrix(GL_PROJECTION, mx);
+            GLES20FixedPipeline::getInstance()->readMatrix(GLES20FixedPipeline::MatrixMode::MM_GL_MODELVIEW, mx);
+            this->batch_->setMatrix(GL_MODELVIEW, mx);
+        }
+        for(uint32_t& label_id : renderedLabels)
+        {
+            GLLabel& label = labels_[label_id];
+            if(label.hints_ & GLLabel::XRay) {
+                GLText2 *gltext = label.gltext_;
+                if (!gltext)
+                    gltext = defaultText;
+                label.batch(view, *gltext, *batch_, GLGlobeBase::XRay);
+            }
+
+            // mark if any animated
+            didAnimate |= label.did_animate_;
+        }
+        batch_->end();
+        glEnable(GL_DEPTH_TEST);
 
         GLES20FixedPipeline::getInstance()->glMatrixMode(GLES20FixedPipeline::MatrixMode::MM_GL_PROJECTION);
         GLES20FixedPipeline::getInstance()->glPopMatrix();
@@ -338,15 +389,25 @@ void GLLabelManager::draw(const GLGlobeBase& view, const int render_pass) NOTHRO
         // ignored
     }
 
+    if (depthRestore)
+        glEnable(GL_DEPTH_TEST);
+
     replace_labels_ = false;
+
+    // if an animation was performed, queue up a refresh
+    if(didAnimate)
+        view.context.requestRefresh();
 }
 
 void GLLabelManager::draw(const GLGlobeBase& view, const Priority priority,
-                          std::vector<atakmap::math::Rectangle<double>>& label_placements) NOTHROWS {
+                          std::vector<GLLabel::LabelPlacement>& label_placements, int render_pass, std::vector<uint32_t> &renderedLabels ) NOTHROWS {
     auto ids_it = label_priorities_.find(priority);
     if (ids_it == label_priorities_.end()) return;
-    auto ids = ids_it->second;
+    auto &ids = ids_it->second;
 
+    //first render all GLLabels that do not need replacing,
+    // store GLLabels that need to be replaced for later placement
+    std::vector<uint32_t > replaced_labels;
     for (auto it = ids.begin(); it != ids.end(); it++) {
         const uint32_t label_id = *it;
         if (label_id == always_render_idx_) continue;
@@ -357,33 +418,87 @@ void GLLabelManager::draw(const GLGlobeBase& view, const Priority priority,
         GLLabel& label = label_it->second;
 
         if (label.text_.empty()) continue;
+
         if (!label.shouldRenderAtResolution(view.renderPass->drawMapResolution)) continue;
-
-        label.validateProjectedLocation(view);
-
-        double range;
-        Vector2_length(&range, Point2<double>(label.pos_projected_.x - view.renderPass->scene.camera.location.x,
-                                              label.pos_projected_.y - view.renderPass->scene.camera.location.y,
-                                              label.pos_projected_.z - view.renderPass->scene.camera.location.z));
-
-        // avoid any points on other side of earth
-        if (range > atakmap::core::Ellipsoid::WGS84.semiMajorAxis) continue;
-
-        Point2<double> xyz;
-        view.renderPass->scene.forwardTransform.transform(&xyz, label.pos_projected_);
-        // confirm location is in view
-        if (!atakmap::math::Rectangle<double>::contains(view.renderPass->left, view.renderPass->bottom, view.renderPass->right, view.renderPass->top, xyz.x, xyz.y)) continue;
 
         GLText2* gltext = label.gltext_;
         if (!gltext) gltext = defaultText;
-        if (replace_labels_) {
-            label.place(view, *gltext, label_placements);
+
+        label.validate(view, *gltext);
+
+        bool didReplace = false;
+
+        std::vector<GLLabel::LabelPlacement> temporaryPlacements;
+        for(auto &placement : label.transformed_anchor_)
+        {
+            Point2<double> xyz(placement.anchor_xyz_);
+
+            // skip points outside of the near and far clip planes
+            if(placement.anchor_xyz_.z > 1.f) continue;
+
+        // confirm location is in view
+            if (!atakmap::math::Rectangle<double>::contains(view.renderPass->left, view.renderPass->bottom, view.renderPass->right, view.renderPass->top, xyz.x, xyz.y)) continue;
+
+            if (replace_labels_)
+            {
+                if(label.place(placement, view, *gltext, label_placements, didReplace))
+                {
+                    if(!didReplace)
+                    {
+                        temporaryPlacements.push_back(placement);
+                    }
+                    else
+                    {
+                        replaced_labels.push_back(label_id);
+                        break;
+                    }
+                }
+            }
         }
-        if (label.canDraw) {
-            label.batch(view, *gltext, *(batch_.get()));
-            label_placements.push_back(label.labelRect);
+
+        if(!didReplace)
+        {
+            label_placements.insert(label_placements.end(), temporaryPlacements.begin(), temporaryPlacements.end());
+            label.batch(view, *gltext, *(batch_.get()), render_pass);
+            renderedLabels.push_back(label_id);
         }
+
+#if 0
+        // debug draw label placement bounds
+        for(auto &placement : label.transformed_anchor_) {
+            float bnds[10u];
+            bnds[0u] = placement.rotatedRectangle[0].x;
+            bnds[1u] = placement.rotatedRectangle[0].y;
+            bnds[2u] = placement.rotatedRectangle[1].x;
+            bnds[3u] = placement.rotatedRectangle[1].y;
+            bnds[4u] = placement.rotatedRectangle[2].x;
+            bnds[5u] = placement.rotatedRectangle[2].y;
+            bnds[6u] = placement.rotatedRectangle[3].x;
+            bnds[7u] = placement.rotatedRectangle[3].y;
+            bnds[8u] = placement.rotatedRectangle[0].x;
+            bnds[9u] = placement.rotatedRectangle[0].y;
+            batch_->setLineWidth(3.f);
+            batch_->batch(0, GL_LINE_STRIP, 5u, 2u, 8u, bnds, 0u, nullptr, 1.f, 1.f, 1.f, 1.f);
+        }
+#endif
     }
+
+    //rePlace and render all labels that haven't been rendered
+    for(int label_id : replaced_labels)
+    {
+        GLLabel& label = labels_[label_id];
+        GLText2* gltext = label.gltext_;
+        if (!gltext) gltext = defaultText;
+        for(auto &placement : label.transformed_anchor_) {
+            bool didReplace;
+            if(label.place(placement, view, *gltext, label_placements, didReplace)) {
+                label_placements.push_back(placement);
+        }
+        }
+        label.batch(view, *gltext, *(batch_.get()), render_pass);
+        renderedLabels.push_back(label_id);
+    }
+
 }
 
 

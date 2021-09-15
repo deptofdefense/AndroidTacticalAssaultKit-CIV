@@ -1,6 +1,7 @@
 
 package com.atakmap.app;
 
+import android.os.Build;
 import android.view.KeyEvent;
 import android.widget.ImageButton;
 import android.content.ComponentName;
@@ -168,6 +169,13 @@ public class FauxNavBar implements OnSharedPreferenceChangeListener {
                     R.drawable.sh_home);
             setup(R.id.btn3_portrait, R.id.btn3_landscape, recentAction, null,
                     R.drawable.sh_recent);
+            if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                activity.findViewById(R.id.btn3_portrait)
+                        .setVisibility(View.INVISIBLE);
+                activity.findViewById(R.id.btn3_landscape)
+                        .setVisibility(View.INVISIBLE);
+            }
+
         } else {
             setup(R.id.btn3_portrait, R.id.btn3_landscape, backAction,
                     backLongAction, R.drawable.sh_back);
@@ -175,6 +183,12 @@ public class FauxNavBar implements OnSharedPreferenceChangeListener {
                     R.drawable.sh_home);
             setup(R.id.btn1_portrait, R.id.btn1_landscape, recentAction, null,
                     R.drawable.sh_recent);
+            if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                activity.findViewById(R.id.btn1_portrait)
+                        .setVisibility(View.INVISIBLE);
+                activity.findViewById(R.id.btn1_landscape)
+                        .setVisibility(View.INVISIBLE);
+            }
         }
 
     }
@@ -213,11 +227,16 @@ public class FauxNavBar implements OnSharedPreferenceChangeListener {
     private final View.OnClickListener homeAction = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            final Intent i = new Intent(Intent.ACTION_MAIN);
-            i.addCategory(Intent.CATEGORY_HOME);
-            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
-                    | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
-            activity.startActivity(i);
+            try {
+                final Intent i = new Intent(Intent.ACTION_MAIN);
+                i.addCategory(Intent.CATEGORY_HOME);
+                i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                        | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+                i.setComponent(new ComponentName("com.sec.android.app.launcher",
+                        "com.sec.android.app.launcher.activities.LauncherActivity"));
+                activity.startActivity(i);
+            } catch (Exception e) {
+            }
         }
     };
 
@@ -232,13 +251,23 @@ public class FauxNavBar implements OnSharedPreferenceChangeListener {
         public void onClick(View v) {
             try {
                 Intent intent = new Intent(
-                        "com.android.systemui.recent.action.TOGGLE_RECENTS");
+                        "com.android.systemui.recents.TOGGLE_RECENTS");
                 intent.setComponent(new ComponentName(
                         "com.android.systemui",
-                        "com.android.systemui.recent.RecentsActivity"));
+                        "com.android.systemui.recents.RecentsActivity"));
                 activity.startActivity(intent);
                 return;
             } catch (Exception ignored) {
+                try {
+                    Intent intent = new Intent(
+                            "com.android.systemui.recent.action.TOGGLE_RECENTS");
+                    intent.setComponent(new ComponentName(
+                            "com.android.systemui",
+                            "com.android.systemui.recent.RecentsActivity"));
+                    activity.startActivity(intent);
+                    return;
+                } catch (Exception e) {
+                }
             }
 
             try {

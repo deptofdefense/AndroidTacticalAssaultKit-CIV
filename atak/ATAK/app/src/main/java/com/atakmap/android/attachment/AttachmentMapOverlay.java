@@ -57,7 +57,6 @@ import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.assets.Icon;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
-import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.spatial.file.export.GPXExportWrapper;
 import com.atakmap.spatial.file.export.KMZFolder;
 import com.atakmap.spatial.file.export.OGRFeatureExportWrapper;
@@ -209,8 +208,10 @@ public class AttachmentMapOverlay extends AbstractMapOverlay2 {
                 String altitudeMode = "absolute";
                 if (mi instanceof PointMapItem) {
                     PointMapItem pmi = (PointMapItem) mi;
-                    coord = KMLUtil.convertKmlCoord(pmi.getGeoPointMetaData(), false);
-                    altitudeMode = KMLUtil.convertAltitudeMode(pmi.getAltitudeMode());
+                    coord = KMLUtil.convertKmlCoord(pmi.getGeoPointMetaData(),
+                            false);
+                    altitudeMode = KMLUtil
+                            .convertAltitudeMode(pmi.getAltitudeMode());
                 }
                 if (coord == null) {
                     Log.w(TAG, "No marker location set");
@@ -321,8 +322,10 @@ public class AttachmentMapOverlay extends AbstractMapOverlay2 {
                 String altitudeMode = "absolute";
                 if (mi instanceof PointMapItem) {
                     PointMapItem pmi = (PointMapItem) mi;
-                    coord = KMLUtil.convertKmlCoord(pmi.getGeoPointMetaData(), false);
-                    altitudeMode = KMLUtil.convertAltitudeMode(pmi.getAltitudeMode());
+                    coord = KMLUtil.convertKmlCoord(pmi.getGeoPointMetaData(),
+                            false);
+                    altitudeMode = KMLUtil
+                            .convertAltitudeMode(pmi.getAltitudeMode());
                 }
                 if (coord == null) {
                     Log.w(TAG, "No marker location set");

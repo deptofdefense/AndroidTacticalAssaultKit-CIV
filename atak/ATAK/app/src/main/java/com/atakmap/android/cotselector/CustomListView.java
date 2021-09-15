@@ -196,27 +196,27 @@ public class CustomListView extends ListView implements View.OnClickListener {
 
     private String get2525FromCoT(String cot) {
         if (cot != null && cot.indexOf("a") == 0 && cot.length() > 3) {
-            StringBuilder s2525B = new StringBuilder("s_");
+            StringBuilder s2525C = new StringBuilder("s_");
 
             for (int x = 4; x < cot.length(); x += 2) {
                 char[] t = {
                         cot.charAt(x)
                 };
                 String s = new String(t);
-                s2525B.append(s.toLowerCase(LocaleUtil.getCurrent()));
+                s2525C.append(s.toLowerCase(LocaleUtil.getCurrent()));
                 if (x == 4) {
-                    s2525B.append("p");
+                    s2525C.append("p");
                 }
             }
-            for (int x = s2525B.length(); x < 15; x++) {
-                if (x == 10 && s2525B.charAt(2) == 'g'
-                        && s2525B.charAt(4) == 'i') {
-                    s2525B.append("h");
+            for (int x = s2525C.length(); x < 15; x++) {
+                if (x == 10 && s2525C.charAt(2) == 'g'
+                        && s2525C.charAt(4) == 'i') {
+                    s2525C.append("h");
                 } else {
-                    s2525B.append("-");
+                    s2525C.append("-");
                 }
             }
-            return s2525B.toString();
+            return s2525C.toString();
         }
 
         return "";

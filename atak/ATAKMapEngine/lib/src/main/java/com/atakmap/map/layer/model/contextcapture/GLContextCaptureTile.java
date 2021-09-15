@@ -20,7 +20,6 @@ import com.atakmap.map.layer.model.assimp.AssimpModelSpi;
 import com.atakmap.map.layer.model.opengl.GLMaterial;
 import com.atakmap.map.layer.model.opengl.GLMesh;
 import com.atakmap.map.layer.model.opengl.MaterialManager;
-import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.PointD;

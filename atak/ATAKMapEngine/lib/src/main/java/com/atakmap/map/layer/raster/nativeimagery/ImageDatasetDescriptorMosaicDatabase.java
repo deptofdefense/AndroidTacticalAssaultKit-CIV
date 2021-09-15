@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.Map;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
-import com.atakmap.database.CursorIface;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.raster.ImageDatasetDescriptor;
 import com.atakmap.map.layer.raster.gdal.GdalLayerInfo;

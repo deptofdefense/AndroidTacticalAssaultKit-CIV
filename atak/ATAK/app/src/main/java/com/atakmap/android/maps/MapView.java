@@ -807,7 +807,6 @@ public class MapView extends AtakMapView {
         if (getGLSurface().getGLMapView() == null)
             return p;
 
-        int hints = 0;
         GeoPoint lla = GeoPoint.createMutable();
         final MapRenderer2.InverseResult result = getGLSurface().getGLMapView()
                 .inverse(

@@ -15,7 +15,6 @@ import com.atakmap.android.contact.TadilJContact;
 import com.atakmap.android.cot.CotMapComponent;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapView;
-import com.atakmap.app.R;
 import com.atakmap.comms.CotServiceRemote;
 import com.atakmap.comms.CotServiceRemote.ConnectionListener;
 import com.atakmap.comms.CotServiceRemote.CotEventListener;
@@ -47,8 +46,7 @@ public final class GeoChatService implements
      * requires these to be in english
      */
     public static final String DEFAULT_CHATROOM_NAME = "All Chat Rooms";
-
-
+    public static final String DEFAULT_CHATROOM_NAME_LEGACY = "All Streaming";
 
     static final String HISTORY_UPDATE = "com.atakmap.android.chat.HISTORY_UPDATE";
 
@@ -479,11 +477,13 @@ public final class GeoChatService implements
                 bundle.putAll(b);
 
             String convId = bundle.getString("conversationId");
-            if (convId != null 
-                   && (convId.equals(DEFAULT_CHATROOM_NAME)
-                    || convId.equals("All Streaming")
-                    || convId.equals(ChatManagerMapComponent.getTeamName())
-                    || convId.equals(ChatManagerMapComponent.getTeamName())))
+            if (convId != null
+                    && (convId.equals(DEFAULT_CHATROOM_NAME)
+                            || convId.equals(DEFAULT_CHATROOM_NAME_LEGACY)
+                            || convId.equals(
+                                    ChatManagerMapComponent.getTeamName())
+                            || convId.equals(
+                                    ChatManagerMapComponent.getTeamName())))
                 bundle.putString("conversationName", convId);
             else {
                 Contact sender = Contacts.getInstance().getContactByUuid(

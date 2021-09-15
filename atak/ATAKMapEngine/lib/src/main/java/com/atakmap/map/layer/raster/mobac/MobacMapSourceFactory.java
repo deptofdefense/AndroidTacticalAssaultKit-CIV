@@ -18,16 +18,18 @@ import android.util.Xml;
 
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
+import com.atakmap.io.UriFactory;
 
 public class MobacMapSourceFactory {
     private MobacMapSourceFactory() {
     }
 
     public static MobacMapSource create(final File f) throws IOException {
-        if (f.getName().toLowerCase(LocaleUtil.getCurrent()).endsWith(".xml"))
-            return parseXmlMapSource(f);
-        else
+        if (!f.getName().toLowerCase(LocaleUtil.getCurrent()).endsWith(".xml"))
             return null;
+        try(FileInputStream stream = IOProviderFactory.getInputStream(f)) {
+            return parseXmlMapSource(stream);
+        }
     }
 
     public static MobacMapSource create(File f, MobacMapSource.Config config) throws IOException {
@@ -37,17 +39,28 @@ public class MobacMapSourceFactory {
         return mmc;
     }
 
-    public static MobacMapSource create(InputStream s, MobacMapSource.Config config) throws IOException {
-        final MobacMapSource mmc = parseXmlMapSource(s);
+    public static MobacMapSource create(String uri, MobacMapSource.Config config) throws IOException {
+        final MobacMapSource mmc = create(uri);
         if (mmc != null && config != null)
             mmc.setConfig(config);
         return mmc;
     }
 
-    private static MobacMapSource parseXmlMapSource(File f) throws IOException {
-        try(InputStream fileInputStream = IOProviderFactory.getInputStream(f)) {
-            return parseXmlMapSource(fileInputStream);
+    public static MobacMapSource create(final String uri) throws IOException {
+        if(IOProviderFactory.exists(new File(uri)))
+            return MobacMapSourceFactory.create(new File(uri));
+        try(UriFactory.OpenResult result = UriFactory.open(uri)) {
+            if(result == null)
+                return null;
+            return parseXmlMapSource(result.inputStream);
         }
+    }
+
+    public static MobacMapSource create(InputStream s, MobacMapSource.Config config) throws IOException {
+        final MobacMapSource mmc = parseXmlMapSource(s);
+        if (mmc != null && config != null)
+            mmc.setConfig(config);
+        return mmc;
     }
 
     private static MobacMapSource parseXmlMapSource(InputStream stream) throws IOException {

@@ -7,6 +7,7 @@ import android.os.SystemClock;
 import android.preference.PreferenceManager;
 
 import com.atakmap.android.cot.detail.PrecisionLocationHandler;
+import com.atakmap.android.gps.bluetooth.NMEAMessageHelper;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.location.LocationMapComponent;
 import com.atakmap.android.maps.MapItem;
@@ -23,6 +24,12 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketTimeoutException;
+
+import gnu.nmea.Packet;
+import gnu.nmea.PacketGGA;
+import gnu.nmea.PacketPTNL;
+import gnu.nmea.PacketRMC;
+import gnu.nmea.SentenceHandler;
 
 /**
  * This thread will provide an entry point to receive and process externally supplied GPS data. The
@@ -49,6 +56,14 @@ public class ExternalGPSInput implements Runnable {
 
     private final int _port;
     private DatagramSocket socket;
+
+
+    // used for the NMEA over ethernet capability //
+    private PacketRMC rmc = null;
+    private PacketGGA gga = null;
+    private PacketPTNL ptnl = null;
+
+
 
     private static ExternalGPSInput _instance;
 
@@ -104,16 +119,74 @@ public class ExternalGPSInput implements Runnable {
         Log.w(TAG, "mocking UDP no longer listening on port: " + _port);
     }
 
-    public void process(String data) {
-        CotEvent event;
-        try {
-            event = CotEvent.parse(data);
-            process(event);
-        } catch (Exception e) {
-            Log.e(TAG, "error: ", e);
+    private void process(String data) {
+        if (data.charAt(0) == '$') {
+            // Found NMEA messages, will go ahead and process
+            try {
+                processNMEA(data);
+            } catch (Exception e) {
+
+            }
+        } else {
+            CotEvent event;
+            try {
+                event = CotEvent.parse(data);
+                process(event);
+            } catch (Exception e) {
+                Log.e(TAG, "error: ", e);
+            }
         }
     }
 
+    private void processNMEA(final String data) {
+        Packet p = null;
+        String lines[] = data.split("\\r?\\n");
+        for (String line : lines) {
+            try {
+                p = SentenceHandler.makePacket(line, false);
+            } catch (Exception ignored) {
+            }
+
+            if (p == null) {
+                Log.e(TAG, "unable to process NMEA string: " + line);
+            }
+
+            if (p instanceof PacketRMC) {
+                rmc = (PacketRMC) p;
+            } else if (p instanceof PacketGGA) {
+                gga = (PacketGGA) p;
+            } else if (p instanceof PacketPTNL) {
+                ptnl = (PacketPTNL) p;
+            }
+
+            String msg = null;
+            CotEvent event = null;
+            if (ptnl != null) {
+                if (ptnl.isActive()) {
+                    msg = NMEAMessageHelper.createMessage(ptnl, "NW");
+                }
+                ptnl = null;
+            } else if ((rmc != null) && (gga != null)) {
+                if (rmc.isActive()) {
+                    msg = NMEAMessageHelper
+                            .createMessage(rmc, gga, "NW");
+
+                }
+                rmc = null;
+                gga = null;
+            }
+            if (msg != null) {
+                event = CotEvent.parse(msg);
+                process(event);
+            }
+        }
+    }
+
+
+    /**
+     * Process a CoT event that purports to be a GPS ownship position.
+     * @param event the event
+     */
     public void process(CotEvent event) {
 
         if (event == null ||

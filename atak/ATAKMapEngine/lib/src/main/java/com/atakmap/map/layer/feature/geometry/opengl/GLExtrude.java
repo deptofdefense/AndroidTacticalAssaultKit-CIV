@@ -11,6 +11,7 @@ import com.atakmap.map.layer.feature.geometry.GeometryFactory.ExtrusionHints;
 import com.atakmap.map.layer.feature.geometry.LineString;
 import com.atakmap.map.layer.feature.geometry.Point;
 import com.atakmap.map.layer.feature.geometry.Polygon;
+import com.atakmap.math.MathUtils;
 import com.atakmap.opengl.GLTriangulate;
 import com.atakmap.opengl.GLTriangulate.HeightVector2D;
 import com.atakmap.opengl.GLTriangulate.Segment;
@@ -25,6 +26,13 @@ import java.util.List;
  * Implements a few utility functions for extruding shapes into 3d objects and outlines.
  */
 public class GLExtrude {
+
+    // Extrusion options
+    public static final int OPTION_NONE = 0,
+            OPTION_CLOSED = 1, // Shape is closed (top is rendered)
+            OPTION_TRIANGULATE_TOP = 1 << 1, // Triangulate the top face
+            OPTION_TOP_ONLY = 1 << 2, // Only render the top face
+            OPTION_SIMPLIFIED_OUTLINE = 1 << 3; // Simplified outline
 
     /**
      * Extrude the given shape using a relative altitude. The base of the shape will be baseAltitude
@@ -72,6 +80,17 @@ public class GLExtrude {
         return extrudeRelative(baseAltitude, points, pointSize, closed, true, extrudeHeights);
     }
 
+    public static DoubleBuffer extrudeRelative(double baseAltitude,
+           DoubleBuffer points, int pointSize, boolean closed, boolean triangulateTopFace,
+           double... extrudeHeights) {
+        int options = OPTION_NONE;
+        if (closed)
+            options |= OPTION_CLOSED;
+        if (triangulateTopFace)
+            options |= OPTION_TRIANGULATE_TOP;
+        return extrudeRelative(baseAltitude, points, pointSize, options, extrudeHeights);
+    }
+
     /**
      * Extrude the given shape using a relative altitude. The base of the shape will be baseAltitude
      * and the top will be baseAltitude + extrudeHeight.
@@ -79,15 +98,17 @@ public class GLExtrude {
      * @param baseAltitude The altitude of the shape's base.
      * @param points The shape's points.
      * @param pointSize The number of components for the shape's points (should only be 2 or 3).
-     * @param closed True if the shape is closed, false if open
+     * @param options Extrusion options
      * @param extrudeHeights The height(s) to extrude to. If a single value is
      *                      passed in, the extrusion will be a fixed height
      *                      relative to the points
      * @return The extruded shape.
      */
     public static DoubleBuffer extrudeRelative(double baseAltitude,
-            DoubleBuffer points, int pointSize, boolean closed, boolean triangulateTopFace,
+            DoubleBuffer points, int pointSize, int options,
             double... extrudeHeights) {
+
+        boolean closed = MathUtils.hasBits(options, OPTION_CLOSED);
 
         // Make sure extrude heights match the number of points
         int numPoints = points.limit() / pointSize;
@@ -133,7 +154,7 @@ public class GLExtrude {
                 if (pSize == 4)
                     heights[h] = polygon.get(3);
 
-                vertices.addAll(extrudePolygon(new Polygon(ls), true, triangulateTopFace, heights));
+                vertices.addAll(extrudePolygon(new Polygon(ls), options, heights));
             }
         } else {
             LineString ls = new LineString(3);
@@ -154,8 +175,7 @@ public class GLExtrude {
             }
 
             Polygon polylinePolygon = new Polygon(ls);
-            vertices.addAll(extrudePolygon(polylinePolygon, closed, triangulateTopFace,
-                    extrudeHeights));
+            vertices.addAll(extrudePolygon(polylinePolygon, options, extrudeHeights));
         }
         double[] tmp = new double[vertices.size()];
         for (int i = 0; i < vertices.size(); i++) {
@@ -217,13 +237,18 @@ public class GLExtrude {
     /**
      * Generate an extruded polygon given the base polygon to extrude off of
      * @param polygon Base polygon
-     * @param closed True if the base polygon is closed
+     * @param options Extrusion options
      * @param extrudeHeights Array of extrude heights per vertices
      * Passing a single height value will extrude by a fixed height
      * @return List of vertices making up the extruded polygon
      */
-    private static List<Double> extrudePolygon(Polygon polygon,
-            boolean closed, boolean triangulateTopFace, double... extrudeHeights) {
+    private static List<Double> extrudePolygon(Polygon polygon, int options,
+            double... extrudeHeights) {
+
+        boolean closed = MathUtils.hasBits(options, OPTION_CLOSED);
+        boolean triangulateTopFace = MathUtils.hasBits(options, OPTION_TRIANGULATE_TOP);
+        boolean topOnly = MathUtils.hasBits(options, OPTION_TOP_ONLY);
+
         ExtrusionHints hint = ExtrusionHints.TEEH_None;
         if (!closed || !triangulateTopFace)
             hint = ExtrusionHints.TEEH_OmitTopFace;
@@ -234,9 +259,21 @@ public class GLExtrude {
         else
             extrudedPolygon = GeometryFactory.extrude(polygon,
                     extrudeHeights, hint);
-        List<Double> newPoints = new ArrayList<>();
+
+        List<Geometry> geoms = new ArrayList<>(((GeometryCollection) extrudedPolygon).getGeometries());
+
+        // Omit side faces
+        // TODO: Make this a proper extrusion hint utilized in native
+        if (topOnly && hint != ExtrusionHints.TEEH_OmitTopFace) {
+            // The top is always added last in this case, so remove everything
+            // except the very last geometry
+            for (int i = 0; i < geoms.size() - 1; i++)
+                geoms.remove(i--);
+        }
+
         // Triangulate the polygons that were returned from the extrude() call
-        for (Geometry g : ((GeometryCollection) extrudedPolygon).getGeometries()) {
+        List<Double> newPoints = new ArrayList<>();
+        for (Geometry g : geoms) {
             triangulatePolygon(newPoints, (Polygon) g, triangulateTopFace);
         }
         return newPoints;
@@ -293,15 +330,13 @@ public class GLExtrude {
      *
      * @param baseAltitude Altitude of the lower horizontal outline segments.
      * @param points Input surface level geometry. Altitude is ignored.
-     * @param closed True if the outline is closed, false if open
-     * @param simplified True to reduce the amount of vertical lines
+     * @param options Extrusion options
      * @param extrudeHeights Altitude(s) of the upper horizontal outline segments.
      *                       A single value will extrude by a fixed height.
      * @return line segment buffer with 3 components per vertex.
      */
     public static DoubleBuffer extrudeOutline(double baseAltitude,
-            GeoPoint[] points, boolean closed, boolean simplified,
-            double... extrudeHeights) {
+            GeoPoint[] points, int options, double... extrudeHeights) {
         int pointSize = Double.isNaN(baseAltitude) ? 3 : 2;
         DoubleBuffer newPoints = DoubleBuffer.allocate(points.length
                 * pointSize);
@@ -311,8 +346,23 @@ public class GLExtrude {
             if (pointSize == 3)
                 newPoints.put(pt.getAltitude());
         }
-        return extrudeOutline(baseAltitude, newPoints, pointSize,
-                closed, simplified, extrudeHeights);
+        try {
+            return extrudeOutline(baseAltitude, newPoints, pointSize, options,
+                    extrudeHeights);
+        } finally {
+            Unsafe.free(newPoints);
+        }
+    }
+
+    public static DoubleBuffer extrudeOutline(double baseAltitude,
+            GeoPoint[] points, boolean closed, boolean simplified,
+            double... extrudeHeights) {
+        int options = OPTION_NONE;
+        if (closed)
+            options |= OPTION_CLOSED;
+        if (simplified)
+            options |= OPTION_SIMPLIFIED_OUTLINE;
+        return extrudeOutline(baseAltitude, points, options, extrudeHeights);
     }
 
     /**
@@ -337,15 +387,18 @@ public class GLExtrude {
      * @param baseAltitude Altitude of the lower horizontal outline segments.
      * @param points Input surface level geometry.
      * @param pointSize Components per vertex in points. At least 2, altitude is ignored
-     * @param closed True if the outline is closed, false if open
-     * @param simplified True to reduce the amount of vertical lines
+     * @param options Extrusion options
      * @param extrudeHeights Altitude of the upper horizontal outline segments.
      *                       A single value will extrude by a fixed height
      * @return line segment buffer with 3 components per vertex.
      */
     public static DoubleBuffer extrudeOutline(double baseAltitude,
-            DoubleBuffer points, int pointSize, boolean closed,
-            boolean simplified, double... extrudeHeights) {
+            DoubleBuffer points, int pointSize, int options,
+            double... extrudeHeights) {
+
+        boolean closed = MathUtils.hasBits(options, OPTION_CLOSED);
+        boolean simplified = MathUtils.hasBits(options, OPTION_SIMPLIFIED_OUTLINE);
+        boolean topOnly = MathUtils.hasBits(options, OPTION_TOP_ONLY);
 
         int limit = points.limit();
 
@@ -398,28 +451,41 @@ public class GLExtrude {
             h++;
         }
 
-        // generate vertical segments
-        h = 0;
-        for(int i = 0; i < limit; i += pointSize) {
-            double extrudeHeight = extrudeHeights.length == 1
-                    ? extrudeHeights[0] : extrudeHeights[h++];
+        if (!topOnly) {
+            // generate vertical segments
+            h = 0;
+            for (int i = 0; i < limit; i += pointSize) {
+                double extrudeHeight = extrudeHeights.length == 1
+                        ? extrudeHeights[0] : extrudeHeights[h++];
 
-            // Skip intermediate segments
-            if (simplified && (closed || i > 0 && i < limit - pointSize))
-                continue;
+                // Skip intermediate segments
+                if (simplified && (closed || i > 0 && i < limit - pointSize))
+                    continue;
 
-            double alt = pointSize == 3 ? points.get(i + 2) : baseAltitude;
+                double alt = pointSize == 3 ? points.get(i + 2) : baseAltitude;
 
-            outlineBuffer.put(points.get(i));
-            outlineBuffer.put(points.get(i + 1));
-            outlineBuffer.put(alt);
+                outlineBuffer.put(points.get(i));
+                outlineBuffer.put(points.get(i + 1));
+                outlineBuffer.put(alt);
 
-            outlineBuffer.put(points.get(i));
-            outlineBuffer.put(points.get(i + 1));
-            outlineBuffer.put(alt + extrudeHeight);
+                outlineBuffer.put(points.get(i));
+                outlineBuffer.put(points.get(i + 1));
+                outlineBuffer.put(alt + extrudeHeight);
+            }
         }
 
         return outlineBuffer;
+    }
+
+    public static DoubleBuffer extrudeOutline(double baseAltitude,
+            DoubleBuffer points, int pointSize, boolean closed,
+            boolean simplified, double... extrudeHeights) {
+        int options = OPTION_NONE;
+        if (closed)
+            options |= OPTION_CLOSED;
+        if (simplified)
+            options |= OPTION_SIMPLIFIED_OUTLINE;
+        return extrudeOutline(baseAltitude, points, pointSize, options, extrudeHeights);
     }
 
     /**

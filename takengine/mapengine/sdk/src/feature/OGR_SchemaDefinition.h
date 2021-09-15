@@ -68,7 +68,7 @@ namespace feature                       // Open feature namespace.
 ///=============================================================================
 
 
-class OGR_SchemaDefinition
+class ENGINE_API OGR_SchemaDefinition
   {
                                         //====================================//
   public:                               //                      PUBLIC        //

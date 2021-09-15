@@ -44,7 +44,6 @@ import android.util.SparseBooleanArray;
 import com.atakmap.android.missionpackage.api.MissionPackageApi;
 import com.atakmap.android.missionpackage.file.MissionPackageManifest;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.io.File;

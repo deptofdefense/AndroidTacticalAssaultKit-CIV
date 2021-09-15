@@ -269,7 +269,8 @@ public class TrackDetailsView extends LinearLayout implements
         final int spanUnits = Integer.parseInt(_prefs.getString(
                 "rab_rng_units_pref", String.valueOf(Span.METRIC)));
 
-        String label = spanUnits == Span.METRIC ? "M/KM" : (spanUnits == Span.ENGLISH) ? "Ft/Mi" : "NM";
+        String label = spanUnits == Span.METRIC ? "M/KM"
+                : (spanUnits == Span.ENGLISH) ? "Ft/Mi" : "NM";
         _distUnits.setText(label);
         _distance.setText(_track.getDistanceString(spanUnits));
         _gain.setText(_track.getGainString());

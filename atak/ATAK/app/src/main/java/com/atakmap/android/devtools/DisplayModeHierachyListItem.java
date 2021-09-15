@@ -1,13 +1,7 @@
 
 package com.atakmap.android.devtools;
 
-import android.view.View;
-
-import com.atakmap.android.hierarchy.HierarchyListItem;
-import com.atakmap.android.hierarchy.action.Action;
 import com.atakmap.map.MapRenderer2;
-
-import java.util.ArrayList;
 
 final class DisplayModeHierachyListItem extends DevToolGroup {
     private final MapRenderer2 _renderer;

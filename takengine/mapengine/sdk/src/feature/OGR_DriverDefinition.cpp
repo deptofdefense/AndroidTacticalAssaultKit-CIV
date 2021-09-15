@@ -37,6 +37,7 @@
 #include "thread/Mutex.h"
 
 #include "feature/OGRDriverDefinition2.h"
+#include "feature/DefaultDriverDefinition2.h"
 //#include "feature/SingletonDriverDefinition2Spi.h"
 #include "util/Memory.h"
 
@@ -78,6 +79,8 @@ public:
 public: // driver definition
     const char* getDriverName() const NOTHROWS override;
     atakmap::feature::FeatureDataSource::FeatureDefinition::Encoding getFeatureEncoding() const NOTHROWS override;
+    TAK::Engine::Util::TAKErr setGeometry(std::unique_ptr<atakmap::feature::FeatureDataSource::FeatureDefinition> &featureDefinition,
+                                                 const OGRFeature &, const OGRGeometry &) const NOTHROWS override;
     TAK::Engine::Util::TAKErr getStyle(TAK::Engine::Port::String &value, const OGRFeature&, const OGRGeometry&) NOTHROWS override;
     const char* getType() const NOTHROWS override;
     unsigned int parseVersion() const NOTHROWS override;
@@ -87,6 +90,7 @@ public: // driver definition
 private :
     TAK::Engine::Port::String filePath;
     const atakmap::feature::OGR_DriverDefinition * const impl;
+    TAK::Engine::Feature::DefaultDriverDefinition2 default_driver;
 };
 
 class DriverAdapterSpi : public TAK::Engine::Feature::OGRDriverDefinition2Spi
@@ -267,7 +271,8 @@ namespace                               // Open unnamed namespace.
 
     DriverAdapter::DriverAdapter(const char *filePath_, const atakmap::feature::OGR_DriverDefinition *impl_) NOTHROWS :
         filePath(filePath_),
-        impl(impl_)
+        impl(impl_),
+        default_driver(impl->getDriverName(), impl->getDriverName(), impl->parseVersion())
     {}
     DriverAdapter::~DriverAdapter() NOTHROWS
     {}
@@ -278,6 +283,11 @@ namespace                               // Open unnamed namespace.
     atakmap::feature::FeatureDataSource::FeatureDefinition::Encoding DriverAdapter::getFeatureEncoding() const NOTHROWS
     {
         return impl->getFeatureEncoding();
+    }
+    TAK::Engine::Util::TAKErr DriverAdapter::setGeometry(
+        std::unique_ptr<atakmap::feature::FeatureDataSource::FeatureDefinition>& featureDefinition, const OGRFeature& feature,
+        const OGRGeometry& geometry) const NOTHROWS {
+        return default_driver.setGeometry(featureDefinition, feature, geometry);
     }
     TAK::Engine::Util::TAKErr DriverAdapter::getStyle(TAK::Engine::Port::String &value, const OGRFeature &f, const OGRGeometry &g) NOTHROWS
     {

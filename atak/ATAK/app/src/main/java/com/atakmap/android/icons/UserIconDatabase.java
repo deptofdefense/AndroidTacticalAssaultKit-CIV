@@ -557,15 +557,15 @@ public class UserIconDatabase extends SQLiteOpenHelper {
                 .getIconsetUid()));
         icon.setFileName(FileSystemUtils.sanitizeFilename(icon.getFileName()));
         icon.setGroup(FileSystemUtils.sanitizeWithSpaces(icon.getGroup()));
-        icon.set2525bType(
-                FileSystemUtils.sanitizeFilename(icon.get2525bType()));
+        icon.set2525cType(
+                FileSystemUtils.sanitizeFilename(icon.get2525cType()));
 
         //Log.d(TAG, "Adding icon: " + icon.toString());
         ContentValues insertValues = new ContentValues();
         insertValues.put(UserIcon.COLUMN_ICONS_SETUID, icon.getIconsetUid());
         insertValues.put(UserIcon.COLUMN_ICONS_GROUP, icon.getGroup());
         insertValues.put(UserIcon.COLUMN_ICONS_FILENAME, icon.getFileName());
-        insertValues.put(UserIcon.COLUMN_ICONS_COTTYPE, icon.get2525bType());
+        insertValues.put(UserIcon.COLUMN_ICONS_COTTYPE, icon.get2525cType());
         insertValues.put(UserIcon.COLUMN_ICONS_BITMAP, bitMap);
         insertValues.put(UserIcon.COLUMN_ICONS_USECNT, 0);
         return AndroidDatabaseAdapter.insert(this.getWritableDatabase(),

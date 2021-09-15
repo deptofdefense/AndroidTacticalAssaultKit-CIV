@@ -95,7 +95,7 @@ public class ImportManagerDropdown extends DropDownReceiver {
                 // TODO: Rewrite this entire system in 3.13 - it's terrible
                 if (intent.getBooleanExtra("updateLocalPath", false)) {
                     for (RemoteResource r : _overlay.getResources()) {
-                        if (r.getUrl().equals(resource.getUrl())) {
+                        if (resource != null && r.getUrl().equals(resource.getUrl())) {
                             r.setLocalPath(resource.getLocalPath());
                             r.setMd5(resource.getMd5());
                             r.setType(resource.getType());

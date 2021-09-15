@@ -1,14 +1,8 @@
 
 package com.atakmap.android.devtools;
 
-import android.view.View;
-
-import com.atakmap.android.hierarchy.HierarchyListItem;
-import com.atakmap.android.hierarchy.action.Action;
 import com.atakmap.map.layer.control.SurfaceRendererControl;
 import com.atakmap.map.layer.model.Mesh;
-
-import java.util.ArrayList;
 
 final class SurfaceRendererControlHierarchyListItem extends DevToolGroup {
     private final SurfaceRendererControl _ctrl;

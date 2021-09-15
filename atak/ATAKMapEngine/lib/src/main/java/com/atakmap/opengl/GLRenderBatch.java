@@ -3,7 +3,6 @@ package com.atakmap.opengl;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 
-import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLRenderGlobals;
 
 import android.opengl.GLES30;

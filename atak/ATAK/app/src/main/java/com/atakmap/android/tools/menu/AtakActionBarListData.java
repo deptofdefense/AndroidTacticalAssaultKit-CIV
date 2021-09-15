@@ -13,7 +13,6 @@ import com.atakmap.app.system.SystemComponentLoader;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
-import com.atakmap.coremap.locale.LocaleUtil;
 
 import com.atakmap.util.zip.IoUtils;
 import org.simpleframework.xml.Serializer;

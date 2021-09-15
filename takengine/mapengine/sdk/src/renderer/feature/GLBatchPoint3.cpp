@@ -48,6 +48,7 @@ namespace
 GLNinePatch *GLBatchPoint3::smallNinePatch = nullptr;
 float GLBatchPoint3::iconAtlasDensity = atakmap::core::AtakMapView::DENSITY;
 const double GLBatchPoint3::defaultLabelRenderScale = (1.0 / 250000.0);
+TAK::Engine::Port::String GLBatchPoint3::defaultIconUri = nullptr;
 GLBatchPoint3::IconLoadersMap GLBatchPoint3::iconLoaders;
 Mutex GLBatchPoint3::staticMutex;
 float GLBatchPoint3::defaultFontSize = 0;
@@ -83,7 +84,8 @@ GLBatchPoint3::GLBatchPoint3(RenderContext &surface) :
     labelId(GLLabelManager::NO_ID),
     iconLoaderUri(nullptr),
     iconOffsetX(0.0),
-    iconOffsetY(0.0)
+    iconOffsetY(0.0),
+    iconScale(1.0f)
 {
     GLMapRenderGlobals_getIconAtlas2(&this->iconAtlas, surface);
 }
@@ -245,9 +247,10 @@ void GLBatchPoint3::draw(const GLGlobeBase &ortho, const int render_pass) NOTHRO
                 auto iconW = static_cast<float>(iconWi);
                 auto iconH = static_cast<float>(iconHi);
 
-                auto densityMultiplier = static_cast<float>(1.0f / /*ortho.pixelDensity*/1.0f);
-                float iconWc = iconWi * densityMultiplier;
-                float iconHc = iconHi * densityMultiplier;
+                float scale = static_cast<float>(1.0f / /*view.pixelDensity*/ 1.0f);
+                if (iconScale > 0.0) scale *= iconScale;
+                float iconWc = iconWi * scale;
+                float iconHc = iconHi * scale;
 
                 this->texCoords[0] = iconX / textureSize;
                 this->texCoords[1] = (iconY + iconH - 1.0f) / textureSize;
@@ -494,8 +497,14 @@ TAKErr GLBatchPoint3::setStyleImpl(const atakmap::feature::Style *style) NOTHROW
         this->absoluteIconRotation = iconStyle->isRotationAbsolute();
         this->iconOffsetX = iconStyle->getOffsetX();
         this->iconOffsetY = iconStyle->getOffsetY();
+        this->iconScale = iconStyle->getScaling();
     } else if (basicStyle) {
         iconColor = basicStyle->getColor();
+        if (defaultIconUri == nullptr) {
+            TAKErr code = ConfigOptions_getOption(defaultIconUri, "defaultIconUri");
+            TE_CHECKRETURN_CODE(code);
+    }
+        icon_uri = defaultIconUri;
     }
     labels.clear();
     rotatedLabels = false;
@@ -581,7 +590,9 @@ TAKErr GLBatchPoint3::setGeometryImpl(const atakmap::feature::Geometry &geom) NO
 bool GLBatchPoint3::hasBatchProhibitiveAttributes() const NOTHROWS {
     return this->iconRotation || // icon rotation
            this->rotatedLabels || // label rotation
-           this->iconOffsetX || this->iconOffsetY; // icon offset
+           this->iconOffsetX || this->iconOffsetY ||  // icon offset
+           (this->iconScale != 1.0) ||                // icon scale
+           (this->color != -1);                       // icon color
 }
 
 bool GLBatchPoint3::validateProjectedLocation(const GLGlobeBase &view) NOTHROWS
@@ -725,9 +736,10 @@ TAKErr GLBatchPoint3::batch(const GLGlobeBase &view, const int render_pass, GLRe
         auto iconWidth = static_cast<float>(iconWidthi);
         auto iconHeight = static_cast<float>(iconHeighti);
 
-        auto densityMultiplier = static_cast<float>(1.0f / /*view.pixelDensity*/1.0f);
-        float iconRenderWidth = iconWidth * densityMultiplier;
-        float iconRenderHeight = iconHeight * densityMultiplier;
+        float scale = static_cast<float>(1.0f / /*view.pixelDensity*/1.0f);
+        if (iconScale > 0.0) scale *= iconScale;
+        float iconRenderWidth = iconWidth * scale;
+        float iconRenderHeight = iconHeight * scale;
         
         float vertexCoords[12];
         vertexCoords[0] = xpos - (iconRenderWidth / 2);
@@ -899,9 +911,11 @@ TAKErr GLBatchPoint3::getOrFetchIcon(RenderContext &surface, GLBatchPoint3 &poin
                 }
 
                 if (bitmap.get() == nullptr) {
-                    TAK::Engine::Port::String defaultIconUri;
+                    if (defaultIconUri == nullptr) {
                     code = ConfigOptions_getOption(defaultIconUri, "defaultIconUri");
-                    TE_CHECKLOGRETURN_CODE(code, Logger::Error, "GLBatchPoint3: Failed to load icon %s, no default icon available", point.iconUri.get());
+                        TE_CHECKLOGRETURN_CODE(code, Logger::Error, "GLBatchPoint3: Failed to load icon %s, no default icon available",
+                                               point.iconUri.get());
+                    }
 
                     if (defaultIconUri && !strcmp(point.iconUri, defaultIconUri)) {
                         Logger::log(Logger::Error, "GLBatchPoint3: Failed to load default icon %s", defaultIconUri.get());
@@ -945,9 +959,11 @@ TAKErr GLBatchPoint3::getOrFetchIcon(RenderContext &surface, GLBatchPoint3 &poin
             code = bitmapLoader->loadBitmapUri(iconLoader.task, point.iconUri);
             if (code != TE_Ok) {
                 // the URI was not accepted, try the default icon
-                TAK::Engine::Port::String defaultIconUri;
+                if (defaultIconUri == nullptr) {
                 code = ConfigOptions_getOption(defaultIconUri, "defaultIconUri");
-                TE_CHECKLOGRETURN_CODE(code, Logger::Error, "GLBatchPoint3: Failed to load icon %s, no default icon available", point.iconUri.get());
+                    TE_CHECKLOGRETURN_CODE(code, Logger::Error, "GLBatchPoint3: Failed to load icon %s, no default icon available",
+                                           point.iconUri.get());
+                }
 
                 if (defaultIconUri && !strcmp(point.iconUri, defaultIconUri)) {
                     Logger::log(Logger::Error, "GLBatchPoint3: Failed to create loader for default icon %s", defaultIconUri.get());

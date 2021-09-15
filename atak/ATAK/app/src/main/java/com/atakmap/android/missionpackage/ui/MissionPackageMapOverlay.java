@@ -12,14 +12,9 @@ import android.os.SystemClock;
 import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.Window;
 import android.widget.BaseAdapter;
 import android.widget.CheckBox;
 import android.widget.Toast;
-
-import android.graphics.Point;
-import android.view.WindowManager;
-import android.view.Display;
 
 import com.atakmap.android.cot.CotUtils;
 import com.atakmap.android.data.URIContentHandler;
@@ -27,6 +22,7 @@ import com.atakmap.android.data.URIContentListener;
 import com.atakmap.android.data.URIContentManager;
 import com.atakmap.android.data.URIContentProvider;
 import com.atakmap.android.data.URIHelper;
+import com.atakmap.android.gui.AlertDialogHelper;
 import com.atakmap.android.gui.TileButtonDialog;
 import com.atakmap.android.hierarchy.HierarchyListAdapter;
 import com.atakmap.android.hierarchy.action.Export;
@@ -1200,27 +1196,11 @@ public class MissionPackageMapOverlay extends AbstractMapOverlay2 implements
             }
         });
         final AlertDialog alert = b.create();
-        // Find the current width of the window, we will use this in a minute to determine how large
-        // to make the dialog.
-        WindowManager wm = (WindowManager) _view.getContext()
-                .getSystemService(Context.WINDOW_SERVICE);
-        Display display = wm.getDefaultDisplay();
-        Point p = new Point();
-        display.getSize(p);
 
         // Show the dialog
         alert.show();
 
-        // Copy over the attributes from the displayed window and then set the width
-        // to be 70% of the total window width
-        Window w = alert.getWindow();
-        if (w != null) {
-            WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
-            lp.copyFrom(w.getAttributes());
-            lp.width = Math.min((int) (p.x * .90), 2160);
-            lp.height = WindowManager.LayoutParams.MATCH_PARENT;
-            w.setAttributes(lp);
-        }
+        AlertDialogHelper.adjustWidth(alert, 0.90d);
     }
 
     void deletePackage(MissionPackageListGroup group, boolean toast,

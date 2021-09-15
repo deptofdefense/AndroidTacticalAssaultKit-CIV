@@ -21,6 +21,16 @@ namespace
         jmethodID ctor;
     } Matrix_class;
 
+    struct
+    {
+        jclass id;
+        jmethodID ctor;
+        jfieldID X;
+        jfieldID Y;
+        jfieldID Width;
+        jfieldID Height;
+    } Rectangle_class;
+
     bool checkInit(JNIEnv &env) NOTHROWS;
     bool Math_interop_init(JNIEnv &env) NOTHROWS;
 }
@@ -66,6 +76,34 @@ TAKErr TAKEngineJNI::Interop::Math::Interop_marshal(jobject value, JNIEnv &env, 
     impl->set(cmatrix);
     return TE_Ok;
 }
+TAKErr TAKEngineJNI::Interop::Math::Interop_marshal(TAK::Engine::Math::Rectangle2<double> *value, JNIEnv &env, jobject mrect) NOTHROWS
+{
+    if(!checkInit(env))
+        return TE_IllegalState;
+    value->x = env.GetDoubleField(mrect, Rectangle_class.X);
+    value->y = env.GetDoubleField(mrect, Rectangle_class.Y);
+    value->width = env.GetDoubleField(mrect, Rectangle_class.Width);
+    value->height = env.GetDoubleField(mrect, Rectangle_class.Height);
+    return TE_Ok;
+}
+TAKErr TAKEngineJNI::Interop::Math::Interop_marshal(Java::JNILocalRef &value, JNIEnv &env, const TAK::Engine::Math::Rectangle2<double> &crect) NOTHROWS
+{
+    if(!checkInit(env))
+        return TE_IllegalState;
+    value = Java::JNILocalRef(env, env.NewObject(Rectangle_class.id, Rectangle_class.ctor, crect.x, crect.y, crect.width, crect.height));
+    return TE_Ok;
+}
+TAKErr TAKEngineJNI::Interop::Math::Interop_marshal(jobject value, JNIEnv &env, const TAK::Engine::Math::Rectangle2<double> &crect) NOTHROWS
+{
+    if(!checkInit(env))
+        return TE_IllegalState;
+    env.SetDoubleField(value, Rectangle_class.X, crect.x);
+    env.SetDoubleField(value, Rectangle_class.Y, crect.y);
+    env.SetDoubleField(value, Rectangle_class.Width, crect.width);
+    env.SetDoubleField(value, Rectangle_class.Height, crect.height);
+
+    return TE_Ok;
+}
 
 namespace
 {
@@ -79,6 +117,13 @@ namespace
         Matrix_class.id = ATAKMapEngineJNI_findClass(&env, "com/atakmap/math/Matrix");
         Matrix_class.pointer = env.GetFieldID(Matrix_class.id, "pointer", "Lcom/atakmap/interop/Pointer;");
         Matrix_class.ctor = env.GetMethodID(Matrix_class.id, "<init>", "(Lcom/atakmap/interop/Pointer;Ljava/lang/Object;)V");
+
+        Rectangle_class.id = ATAKMapEngineJNI_findClass(&env, "com/atakmap/math/Rectangle");
+        Rectangle_class.ctor = env.GetMethodID(Rectangle_class.id, "<init>", "(DDDD)V");
+        Rectangle_class.X = env.GetFieldID(Rectangle_class.id, "X", "D");
+        Rectangle_class.Y = env.GetFieldID(Rectangle_class.id, "Y", "D");
+        Rectangle_class.Width = env.GetFieldID(Rectangle_class.id, "Width", "D");
+        Rectangle_class.Height = env.GetFieldID(Rectangle_class.id, "Height", "D");
 
         return true;
     }

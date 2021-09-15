@@ -3,17 +3,14 @@ package com.atakmap.map;
 import android.graphics.PointF;
 
 import com.atakmap.annotations.IncubatingApi;
-import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
-import com.atakmap.map.projection.Projection;
 import com.atakmap.math.Ellipsoid;
 import com.atakmap.math.GeometryModel;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.Matrix;
 import com.atakmap.math.Plane;
 import com.atakmap.math.PointD;
-import com.atakmap.math.Ray;
 import com.atakmap.math.Sphere;
 import com.atakmap.math.Vector3D;
 

@@ -3,13 +3,13 @@
 #include "feature/Style.h"
 #include "renderer/core/GLMapRenderGlobals.h"
 #include "util/ConfigOptions.h"
+#include "util/IO.h"
 
 #include "ogr_feature.h"
 #include "ogr_geometry.h"
 #include "ogrsf_frmts.h"
 
 using namespace TAK::Engine::Feature;
-
 using namespace TAK::Engine::Util;
 
 namespace
@@ -56,6 +56,31 @@ DefaultDriverDefinition2::DefaultDriverDefinition2 (const char* driverName_,
     strokeWidth(strokeWidth_),
     strokeColor(strokeColor_)
 {}
+ 
+TAKErr DefaultDriverDefinition2::setGeometry(std::unique_ptr<atakmap::feature::FeatureDataSource::FeatureDefinition>& featureDefinition,
+                                             const OGRFeature& feature, const OGRGeometry& geometry) const NOTHROWS {
+    switch (getFeatureEncoding()) {
+        case atakmap::feature::FeatureDataSource::FeatureDefinition::WKB: {
+            OGRwkbByteOrder byteOrder(atakmap::util::ENDIAN_BYTE ? wkbNDR : wkbXDR);
+            std::size_t buffSize(geometry.WkbSize());
+            TAK::Engine::Util::array_ptr<unsigned char> buff(new unsigned char[buffSize]);
+
+            geometry.exportToWkb(byteOrder, buff.get(), wkbVariantIso);
+            atakmap::feature::FeatureDataSource::FeatureDefinition::ByteBuffer wkb(buff.get(), buff.get() + buffSize);
+            featureDefinition->setGeometry(wkb, atakmap::feature::FeatureDataSource::FeatureDefinition::WKB);
+        }
+            return TE_Ok;
+        case atakmap::feature::FeatureDataSource::FeatureDefinition::WKT: {
+            char* buff(nullptr);
+            geometry.exportToWkt(&buff);
+            std::unique_ptr<char, decltype(&OGRFree)> cleanup(buff, OGRFree);
+            featureDefinition->setGeometry(buff);
+        }
+            return TE_Ok;
+        default:
+            return TE_InvalidArg;
+    }
+}
 
 TAKErr DefaultDriverDefinition2::getStyle(TAK::Engine::Port::String &value, const OGRFeature& feature, const OGRGeometry& geometry) NOTHROWS
 {

@@ -1,7 +1,5 @@
 package com.atakmap.map.layer.model.pointcloud;
 
-import android.util.JsonReader;
-
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
@@ -17,8 +15,6 @@ import com.atakmap.math.PointD;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
 

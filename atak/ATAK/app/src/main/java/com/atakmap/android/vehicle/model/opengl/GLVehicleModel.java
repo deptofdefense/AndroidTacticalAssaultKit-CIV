@@ -7,7 +7,7 @@ import android.graphics.PointF;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.rubbersheet.maps.GLRubberModel;
 import com.atakmap.android.vehicle.model.VehicleModel;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.MapSceneModel;
@@ -208,7 +208,7 @@ public class GLVehicleModel extends GLRubberModel {
 
     private static GeoPoint computeDestinationPoint(GeoPoint p, double a,
             double d) {
-        GeoPoint surf = DistanceCalculations.computeDestinationPoint(p, a, d);
+        GeoPoint surf = GeoCalculations.pointAtDistance(p, a, d);
         return new GeoPoint(surf.getLatitude(), surf.getLongitude(),
                 p.getAltitude(), p.getAltitudeReference(),
                 GeoPoint.UNKNOWN, GeoPoint.UNKNOWN);

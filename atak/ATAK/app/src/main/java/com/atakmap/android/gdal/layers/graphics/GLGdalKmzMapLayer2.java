@@ -12,7 +12,6 @@ import com.atakmap.map.layer.raster.DatasetDescriptor;
 import com.atakmap.map.layer.raster.DatasetProjection2;
 import com.atakmap.map.layer.raster.DefaultDatasetProjection2;
 import com.atakmap.map.layer.raster.ImageDatasetDescriptor;
-import com.atakmap.map.layer.raster.gdal.GdalLayerInfo;
 import com.atakmap.map.layer.raster.gdal.GdalTileReader;
 import com.atakmap.map.layer.raster.gdal.opengl.GLGdalMapLayer2;
 import com.atakmap.map.layer.raster.opengl.GLMapLayer3;
@@ -26,7 +25,6 @@ import com.atakmap.map.layer.raster.tilereader.TileReaderSpi2;
 import com.atakmap.map.layer.raster.tilereader.opengl.GLTiledMapLayer2;
 
 import org.gdal.gdal.Dataset;
-import org.gdal.gdal.gdal;
 
 public class GLGdalKmzMapLayer2 extends GLGdalMapLayer2 {
     static {
@@ -90,6 +88,8 @@ public class GLGdalKmzMapLayer2 extends GLGdalMapLayer2 {
                 try {
                     d = GdalLibrary.openDatasetFromPath(uri);
                     return d != null;
+                } catch (Exception e) {
+                    return false;
                 } finally {
                     if (d != null)
                         d.delete();

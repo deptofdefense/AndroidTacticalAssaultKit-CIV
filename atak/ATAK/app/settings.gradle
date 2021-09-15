@@ -1,10 +1,5 @@
 include ':app'
 
-include ':MapCoreInterfaces'
-project(':MapCoreInterfaces').projectDir = new File(settingsDir, '../MapCoreInterfaces')
-include ':MapCoreInterfaces:lib'
-
-
 include ':ATAKMapEngine'
 project(':ATAKMapEngine').projectDir = new File(settingsDir, '../ATAKMapEngine')
 include ':ATAKMapEngine:lib'

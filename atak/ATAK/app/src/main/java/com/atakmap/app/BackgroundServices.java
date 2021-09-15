@@ -118,6 +118,39 @@ public class BackgroundServices extends Service implements LocationListener,
 
         _instance = this;
 
+        // create the notification util which creates the default channel on the newer android versions
+        NotificationUtil.getInstance().cancelAll();
+
+        Intent atakFrontIntent = new Intent();
+        atakFrontIntent.setComponent(ATAKConstants.getComponentName());
+
+        atakFrontIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP
+                | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+
+        // requires the use of currentTimeMillis
+        PendingIntent contentIntent = PendingIntent.getActivity(this,
+                (int) System.currentTimeMillis(),
+                atakFrontIntent, PendingIntent.FLAG_CANCEL_CURRENT);
+        Notification.Builder nBuilder;
+        if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            nBuilder = new Notification.Builder(this);
+        } else {
+            nBuilder = new Notification.Builder(this, "com.atakmap.app.def");
+        }
+
+        com.atakmap.android.util.ATAKConstants.init(this);
+        nBuilder.setContentTitle(ATAKConstants.getAppName())
+                .setContentText(ATAKConstants.getAppName() + " Running....")
+                .setSmallIcon(
+                        com.atakmap.android.util.ATAKConstants.getIconId())
+                .setContentIntent(contentIntent)
+                .setAutoCancel(true);
+        nBuilder.setStyle(new Notification.BigTextStyle()
+                .bigText(ATAKConstants.getAppName() + " Running...."));
+        nBuilder.setOngoing(true);
+        nBuilder.setAutoCancel(false);
+        notification = nBuilder.build();
+
         startForeground(NOTIFICATION_ID, notification);
 
         mLocationManager = (LocationManager) this
@@ -241,8 +274,15 @@ public class BackgroundServices extends Service implements LocationListener,
             Log.d(TAG, "error", e);
         }
         try {
-            mLocationManager.removeUpdates(this);
-            mLocationManager.removeGpsStatusListener(this);
+            if (mLocationManager != null) {
+                mLocationManager.removeUpdates(this);
+                mLocationManager.removeGpsStatusListener(this);
+            }
+        } catch (Exception e) {
+            Log.d(TAG, "error", e);
+        }
+
+        try {
             stopForeground(true);
         } catch (Exception e) {
             Log.d(TAG, "error", e);
@@ -251,39 +291,6 @@ public class BackgroundServices extends Service implements LocationListener,
     }
 
     public static void start(final Activity a) {
-
-        final Context ctx = a;
-
-        // create the notification util which creates the default channel on the newer android versions
-        NotificationUtil.getInstance().cancelAll();
-
-        Intent atakFrontIntent = new Intent();
-        atakFrontIntent.setComponent(ATAKConstants.getComponentName());
-
-        atakFrontIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP
-                | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-
-        // requires the use of currentTimeMillis
-        PendingIntent contentIntent = PendingIntent.getActivity(ctx,
-                (int) System.currentTimeMillis(),
-                atakFrontIntent, PendingIntent.FLAG_CANCEL_CURRENT);
-        Notification.Builder nBuilder;
-        if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-            nBuilder = new Notification.Builder(ctx);
-        } else {
-            nBuilder = new Notification.Builder(ctx, "com.atakmap.app.def");
-        }
-        nBuilder.setContentTitle(ATAKConstants.getAppName())
-                .setContentText(ATAKConstants.getAppName() + " Running....")
-                .setSmallIcon(
-                        com.atakmap.android.util.ATAKConstants.getIconId())
-                .setContentIntent(contentIntent)
-                .setAutoCancel(true);
-        nBuilder.setStyle(new Notification.BigTextStyle()
-                .bigText(ATAKConstants.getAppName() + " Running...."));
-        nBuilder.setOngoing(true);
-        nBuilder.setAutoCancel(false);
-        notification = nBuilder.build();
 
         Log.d(TAG, "call to start the gps keep alive service");
         Intent i = new Intent(a, BackgroundServices.class);

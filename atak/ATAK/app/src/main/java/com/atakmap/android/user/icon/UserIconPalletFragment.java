@@ -444,8 +444,8 @@ public class UserIconPalletFragment extends Fragment {
         //if type is set in iconset, use type but set affiliation
         //based on color
         String type = null;
-        if (!FileSystemUtils.isEmpty(selectedIcon.get2525bType())) {
-            type = getTypeFromColor(selectedIcon.get2525bType());
+        if (!FileSystemUtils.isEmpty(selectedIcon.get2525cType())) {
+            type = getTypeFromColor(selectedIcon.get2525cType());
         }
         //no type set, just set default based on affiliation
         if (FileSystemUtils.isEmpty(type)) {
@@ -485,38 +485,38 @@ public class UserIconPalletFragment extends Fragment {
     /**
      * Set affiliation based on color
      * 
-     * @param type2525b
+     * @param type2525c
      * @return
      */
-    private String getTypeFromColor(String type2525b) {
+    private String getTypeFromColor(String type2525c) {
         switch (curColor) {
             //red
             case ColorPalette.COLOR4:
             case ColorPalette.COLOR5:
             case ColorPalette.COLOR6:
             case ColorPalette.COLOR7:
-                if (type2525b.startsWith("a-u-"))
-                    return type2525b.replaceFirst("a-u-", "a-h-");
+                if (type2525c.startsWith("a-u-"))
+                    return type2525c.replaceFirst("a-u-", "a-h-");
                 else
-                    return type2525b;
+                    return type2525c;
 
                 //blue
             case ColorPalette.COLOR8:
             case ColorPalette.COLOR9:
             case ColorPalette.COLOR10:
             case ColorPalette.COLOR11:
-                if (type2525b.startsWith("a-u-"))
-                    return type2525b.replaceFirst("a-u-", "a-f-");
+                if (type2525c.startsWith("a-u-"))
+                    return type2525c.replaceFirst("a-u-", "a-f-");
                 else
-                    return type2525b;
+                    return type2525c;
 
                 //green
             case ColorPalette.COLOR12:
             case ColorPalette.COLOR13:
-                if (type2525b.startsWith("a-u-"))
-                    return type2525b.replaceFirst("a-u-", "a-n-");
+                if (type2525c.startsWith("a-u-"))
+                    return type2525c.replaceFirst("a-u-", "a-n-");
                 else
-                    return type2525b;
+                    return type2525c;
 
                 //yellow, other
             default:
@@ -526,12 +526,12 @@ public class UserIconPalletFragment extends Fragment {
             case ColorPalette.COLOR14:
             case ColorPalette.COLOR15:
                 //no fixup needed
-                return type2525b;
+                return type2525c;
         }
     }
 
     /**
-     * Map colors to 2525B based on <code>ColorPalette</code>
+     * Map colors to 2525C based on <code>ColorPalette</code>
      * @return
      */
     private String getTypeFromColor() {
@@ -580,92 +580,29 @@ public class UserIconPalletFragment extends Fragment {
      * 
      * 
      */
-    class UserIconsetAdapter extends BaseAdapter {
+    class UserIconsetAdapter extends IconsetAdapterBase {
         private static final String TAG = "UserIconsetAdapter";
 
-        class ViewHolder {
-            ImageView image;
-        }
-
-        protected final Context mContext;
-        protected List<UserIcon> mGroupIcons;
-
         public UserIconsetAdapter(Context c, List<UserIcon> icons) {
-            mContext = c;
-            mGroupIcons = icons;
+            super(c, icons);
         }
 
+        @Override
         public void setIcons(List<UserIcon> icons) {
             mGroupIcons = icons;
             Collections.sort(mGroupIcons, UseCountSort);
             notifyDataSetChanged();
         }
 
-        @Override
-        public int getCount() {
-            return mGroupIcons.size();
-        }
-
-        @Override
-        public Object getItem(int position) {
-            if (position < mGroupIcons.size())
-                return mGroupIcons.get(position);
-
-            return null;
-        }
-
-        @Override
-        public long getItemId(int position) {
-            if (position < mGroupIcons.size())
-                return mGroupIcons.get(position).getId();
-
-            return 0;
-        }
-
         // create a new ImageView for each item referenced by the Adapter
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
-            if (position >= mGroupIcons.size()) {
-                Log.e(TAG, "Invalid position: " + position);
-                LayoutInflater inflater = ((Activity) mContext)
-                        .getLayoutInflater();
-                return inflater.inflate(R.layout.empty, parent, false);
-            }
-
-            View row = convertView;
-            ViewHolder holder = null;
-
-            if (row == null) {
-                LayoutInflater inflater = ((Activity) mContext)
-                        .getLayoutInflater();
-                row = inflater.inflate(R.layout.enter_location_user_icon_child,
-                        parent, false);
-
-                holder = new ViewHolder();
-                holder.image = row
-                        .findViewById(R.id.userIcon_childImage);
-                row.setTag(holder);
-            } else {
-                holder = (ViewHolder) row.getTag();
-            }
-
-            UserIcon icon = mGroupIcons.get(position);
-
-            try {
-                // attempt to create image view for icon
-                Bitmap bitmap = UserIconDatabase.instance(getActivity())
-                        .getIconBitmap(icon.getId());
-                holder.image.setImageBitmap(bitmap);
-                Drawable d = holder.image.getDrawable();
-                if (bitmap != null && d != null) {
-                    d.setColorFilter(curColor, Mode.MULTIPLY);
-                    holder.image.setImageDrawable(d);
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "Failed to load icon: " + icon.toString(), e);
-                Drawable d = mContext.getResources().getDrawable(
-                        R.drawable.close);
-                holder.image.setImageDrawable(d);
+            View row = super.getView(position, convertView, parent);
+            IconsetAdapterBase.ViewHolder holder = (IconsetAdapterBase.ViewHolder) row
+                    .getTag();
+            if (holder.image != null) {
+                holder.image.getDrawable().setColorFilter(curColor,
+                        Mode.MULTIPLY);
             }
 
             if (position == selectedPosition)

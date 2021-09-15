@@ -1,10 +1,11 @@
 
 package com.atakmap.android.maps.graphics;
 
-import android.graphics.PointF;
-import android.graphics.RectF;
+import android.graphics.Color;
 import android.graphics.Typeface;
+import android.opengl.GLES30;
 
+import com.atakmap.android.editableShapes.Rectangle;
 import com.atakmap.android.maps.Association;
 import com.atakmap.android.maps.Association.OnClampToGroundChangedListener;
 import com.atakmap.android.maps.Association.OnColorChangedListener;
@@ -14,11 +15,15 @@ import com.atakmap.android.maps.Association.OnSecondItemChangedListener;
 import com.atakmap.android.maps.Association.OnStrokeWeightChangedListener;
 import com.atakmap.android.maps.Association.OnStyleChangedListener;
 import com.atakmap.android.maps.Association.OnTextChangedListener;
+import com.atakmap.android.maps.AssociationSet;
+import com.atakmap.android.maps.MapItem;
+import com.atakmap.android.maps.MapTextFormat;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.PointMapItem;
+import com.atakmap.android.maps.Polyline;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
-import com.atakmap.map.MapControl;
+import com.atakmap.lang.Unsafe;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.MapRenderer3;
 import com.atakmap.map.layer.control.SurfaceRendererControl;
@@ -26,17 +31,23 @@ import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.feature.geometry.LineString;
 import com.atakmap.map.layer.feature.geometry.opengl.GLBatchLineString;
+import com.atakmap.map.layer.feature.geometry.opengl.GLExtrude;
 import com.atakmap.map.layer.feature.style.BasicStrokeStyle;
 import com.atakmap.map.layer.feature.style.CompositeStyle;
 import com.atakmap.map.layer.feature.style.PatternStrokeStyle;
 import com.atakmap.map.layer.feature.style.Style;
+import com.atakmap.map.opengl.GLAntiMeridianHelper;
+import com.atakmap.map.opengl.GLLabelManager;
 import com.atakmap.map.opengl.GLMapView;
-import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.math.MathUtils;
+import com.atakmap.math.Matrix;
+import com.atakmap.math.PointD;
 import com.atakmap.opengl.GLES20FixedPipeline;
-import com.atakmap.opengl.GLNinePatch;
-import com.atakmap.opengl.GLText;
 import com.atakmap.util.Visitor;
+
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.util.Arrays;
 
 public class GLAssociation2 extends AbstractGLMapItem2 implements
         OnStyleChangedListener,
@@ -44,37 +55,57 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
         OnFirstItemChangedListener,
         OnSecondItemChangedListener, OnStrokeWeightChangedListener,
         OnClampToGroundChangedListener,
-        OnTextChangedListener {
+        OnTextChangedListener,
+        MapItem.OnHeightChangedListener,
+        Association.OnParentChangedListener {
 
     private final GeoPoint[] _points = {
             null, null
     };
 
     private int _link;
-    private GLText _glText;
+    private int _labelID = GLLabelManager.NO_ID;
     private String _text;
-    private GLNinePatch _ninePatch;
     private boolean _clampToGround;
     private double _unwrap;
+    private boolean _nadirClamp;
+
+    // Height extrusion
+    private double _height;
+    private boolean _hasHeight;
+    private DoubleBuffer _outlinePointsPreForward, _fillPointsPreForward;
+    private FloatBuffer _outlinePoints, _fillPoints;
+    private boolean _extrudeInvalid;
+    private boolean _extrudeCrossesIDL;
+    private int _extrudePrimaryHemi;
+    private final GeoPoint _extrusionCentroid = GeoPoint.createMutable();
+    private final PointD _extrusionCentroidProj = new PointD(0d, 0d, 0d);
+    private int _extrusionCentroidSrid = -1;
+    private int _extrusionTerrainVersion = -1;
 
     private final GLBatchLineString impl;
+    private boolean implInvalid;
+    private boolean labelInvalid;
     private int color = -1;
     private boolean outline = false;
     private byte pattern = (byte) 0xFF;
     private float strokeWidth = 1f;
+    private AssociationSet _parent;
 
     private SurfaceRendererControl _surfaceCtrl;
 
-    private float _textAngle;
-    private float _textWidth;
-    private float _textHeight;
-    private final float[] _textPoint = new float[2];
     private final static float div_180_pi = 180f / (float) Math.PI;
     private static final float div_2 = 1f / 2f;
+    private final GLLabelManager _labelManager;
+    private final GLMapView _glMapView;
 
     public GLAssociation2(MapRenderer surface, Association subject) {
         super(surface, subject, GLMapView.RENDER_PASS_SPRITES
-                | GLMapView.RENDER_PASS_SURFACE);
+                | GLMapView.RENDER_PASS_SURFACE
+                | GLMapView.RENDER_PASS_SCENES);
+
+        _glMapView = (GLMapView) surface;
+        _labelManager = _glMapView.getLabelManager();
 
         impl = new GLBatchLineString(surface);
 
@@ -91,22 +122,14 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
 
         _link = subject.getLink();
         _clampToGround = subject.getClampToGround();
-        if (subject.getFirstItem() != null) {
-            subject.getFirstItem().addOnPointChangedListener(
-                    _firstItemMovedListener);
-        }
-        if (subject.getSecondItem() != null) {
-            subject.getSecondItem().addOnPointChangedListener(
-                    _secondItemMovedListener);
-        }
+        setHeight(subject.getHeight());
+
         final PointMapItem i1 = subject.getFirstItem();
         if (i1 != null)
-            _setEndPoint(0, i1.getPoint());
+            _setEndPoint(0, i1.getPoint(), true);
         final PointMapItem i2 = subject.getSecondItem();
         if (i2 != null)
-            _setEndPoint(1, i2.getPoint());
-
-        onAssociationTextChanged(subject);
+            _setEndPoint(1, i2.getPoint(), true);
     }
 
     @Override
@@ -120,18 +143,30 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
         association.addOnSecondItemChangedListener(this);
         association.addOnStrokeWeightChangedListener(this);
         association.addOnTextChangedListener(this);
+        association.addOnHeightChangedListener(this);
+        association.addOnParentChangedListener(this);
+
+        final PointMapItem firstItem = association.getFirstItem();
+        if (firstItem != null) {
+            firstItem.addOnPointChangedListener(_firstItemMovedListener);
+        }
+        final PointMapItem secondItem = association.getSecondItem();
+        if (secondItem != null) {
+            secondItem.addOnPointChangedListener(_secondItemMovedListener);
+        }
 
         // sync 'impl' with 'subject'
         onAssociationStyleChanged(association);
         onAssociationColorChanged(association);
         onAssociationStrokeWeightChanged(association);
-        _setEndPoint(0, _points[0]);
+        _setEndPoint(0, _points[0], true);
     }
 
     @Override
     public void stopObserving() {
         final Association association = (Association) this.subject;
         super.stopObserving();
+        removeLabel();
         association.removeOnStyleChangedListener(this);
         association.removeOnLinkChangedListener(this);
         association.removeOnColorChangedListener(this);
@@ -146,6 +181,9 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
         }
         association.removeOnSecondItemChangedListner(this);
         association.removeOnStrokeWeightChangedListener(this);
+        association.removeOnTextChangedListener(this);
+        association.removeOnHeightChangedListener(this);
+        association.removeOnParentChangedListener(this);
     }
 
     private void refreshStyle() {
@@ -165,7 +203,7 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
                 });
             }
         }
-        context.queueEvent(new Runnable() {
+        runOnGLThread(new Runnable() {
             @Override
             public void run() {
                 impl.setStyle(update[0]);
@@ -183,9 +221,44 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
         });
     }
 
+    private void removeLabel() {
+        runOnGLThread(new Runnable() {
+            @Override
+            public void run() {
+                if (_labelID != GLLabelManager.NO_ID) {
+                    _labelManager.removeLabel(_labelID);
+                    _labelID = GLLabelManager.NO_ID;
+                }
+                labelInvalid = true;
+            }
+        });
+    }
+
+    private boolean ensureLabel() {
+        if (_labelID == GLLabelManager.NO_ID) {
+            MapTextFormat mtf = MapView.getTextFormat(
+                    Typeface.DEFAULT, +2);
+            _labelID = _labelManager.addLabel();
+            _labelManager.setTextFormat(_labelID,
+                    null,
+                    mtf.getFontSize(),
+                    mtf.getTypeface().isBold(),
+                    mtf.getTypeface().isItalic(),
+                    false,
+                    false);
+            _labelManager.setVerticalAlignment(_labelID,
+                    GLLabelManager.VerticalAlignment.Middle);
+            _labelManager.setFill(_labelID, true);
+            _labelManager.setBackgroundColor(_labelID,
+                    Color.argb(204 /*=80%*/, 0, 0, 0));
+            return true;
+        }
+        return false;
+    }
+
     @Override
     public void onAssociationLinkChanged(final Association association) {
-        this.context.queueEvent(new Runnable() {
+        runOnGLThread(new Runnable() {
             @Override
             public void run() {
                 _link = association.getLink();
@@ -238,12 +311,23 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
             final PointMapItem pointItem) {
         final GeoPoint point = (pointItem != null) ? pointItem.getPoint()
                 : null;
-        this.context.queueEvent(new Runnable() {
+        runOnGLThread(new Runnable() {
             @Override
             public void run() {
-                _setEndPoint(index, point);
+                _setEndPoint(index, point, true);
             }
         });
+    }
+
+    private void setHeight(double height) {
+        _height = height;
+        _hasHeight = Double.compare(_height, 0) != 0
+                && !Double.isNaN(_height);
+        if (!_hasHeight) {
+            // Free unused buffers
+            freeExtrusionBuffers();
+        }
+        implInvalid = labelInvalid = _extrudeInvalid = true;
     }
 
     @Override
@@ -266,14 +350,14 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
     @Override
     public void onAssociationTextChanged(Association assoc) {
         final String text = assoc.getText();
-        this.context.queueEvent(new Runnable() {
+        runOnGLThread(new Runnable() {
             @Override
             public void run() {
                 _text = text;
-                if (_glText != null) {
-                    _textWidth = _glText.getStringWidth(_text);
-                    _textHeight = _glText.getStringHeight();
-                }
+                if (_labelID != GLLabelManager.NO_ID)
+                    _labelManager.setText(_labelID, _text);
+                else
+                    labelInvalid = true; // mark label dirty
             }
         });
     }
@@ -281,23 +365,82 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
     @Override
     public void onAssociationClampToGroundChanged(Association assoc) {
         final boolean clampToGround = assoc.getClampToGround();
-        this.context.queueEvent(new Runnable() {
+        runOnGLThread(new Runnable() {
             @Override
             public void run() {
                 _clampToGround = clampToGround;
-                if (_glText != null) {
-                    _textWidth = _glText.getStringWidth(_text);
-                    _textHeight = _glText.getStringHeight();
-                }
-                impl.setAltitudeMode(
-                        _clampToGround ? Feature.AltitudeMode.ClampToGround
-                                : Feature.AltitudeMode.Absolute);
-                impl.setTessellationEnabled(_clampToGround);
-
-                // force geometry refresh
-                _setEndPoint(0, _points[0]);
+                implInvalid = true;
+                labelInvalid = true;
             }
         });
+    }
+
+    @Override
+    public void onHeightChanged(MapItem item) {
+        final double height = item.getHeight();
+        runOnGLThread(new Runnable() {
+            @Override
+            public void run() {
+                setHeight(height);
+            }
+        });
+    }
+
+    @Override
+    public void onParentChanged(Association assoc,
+            final AssociationSet parent) {
+        runOnGLThread(new Runnable() {
+            @Override
+            public void run() {
+                _parent = parent;
+            }
+        });
+    }
+
+    @Override
+    public void release() {
+        super.release();
+        if (_labelID != GLLabelManager.NO_ID) {
+            _labelManager.removeLabel(_labelID);
+            _labelID = GLLabelManager.NO_ID;
+        }
+        labelInvalid = true;
+        impl.release();
+        implInvalid = true;
+        _extrudeInvalid = true;
+
+        freeExtrusionBuffers();
+    }
+
+    private void freeExtrusionBuffers() {
+        Unsafe.free(_outlinePointsPreForward);
+        _outlinePointsPreForward = null;
+
+        Unsafe.free(_outlinePoints);
+        _outlinePoints = null;
+
+        Unsafe.free(_fillPointsPreForward);
+        _fillPointsPreForward = null;
+
+        Unsafe.free(_fillPoints);
+        _fillPoints = null;
+    }
+
+    /**
+     * Sync the NADIR clamp boolean with the current clamp to ground setting
+     * @param ortho Map view
+     */
+    protected void updateNadirClamp(GLMapView ortho) {
+        boolean nadirClamp = getClampToGroundAtNadir()
+                && Double.compare(ortho.currentPass.drawTilt, 0) == 0;
+        if (_nadirClamp != nadirClamp) {
+            _nadirClamp = nadirClamp;
+            implInvalid = _extrudeInvalid = labelInvalid = true;
+        }
+    }
+
+    protected boolean clampToGround() {
+        return _nadirClamp || _clampToGround;
     }
 
     @Override
@@ -306,6 +449,13 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
                 GLMapView.RENDER_PASS_SPRITES);
         boolean surface = MathUtils.hasBits(renderPass,
                 GLMapView.RENDER_PASS_SURFACE);
+        boolean scenes = MathUtils.hasBits(renderPass,
+                GLMapView.RENDER_PASS_SCENES);
+
+        if (!surface)
+            updateNadirClamp(ortho);
+
+        boolean clampToGround = clampToGround();
 
         this.bounds.setWrap180(ortho.continuousScrollEnabled);
         _unwrap = ortho.idlHelper.getUnwrap(this.bounds);
@@ -314,19 +464,285 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
                 _points[1] != null &&
                 _link != Association.LINK_NONE) {
 
+            if (labelInvalid || _labelID == GLLabelManager.NO_ID) {
+                // if label is newly created, reassign geometry
+                implInvalid |= ensureLabel();
+
+                _labelManager.setText(_labelID, _text);
+                labelInvalid = false;
+            }
+            if (implInvalid) {
+                _setEndPoint(0, _points[0], false);
+                labelInvalid = true;
+            }
+
             // delegate drawing of the link to GLPolyline
-            if (surface && _clampToGround || sprites && !_clampToGround)
+            if (surface && clampToGround || sprites && !clampToGround)
                 impl.draw(ortho);
 
-            if (sprites)
-                _drawText(ortho);
+            if (scenes && _hasHeight && !_nadirClamp) {
+
+                final int terrainVersion = ortho.getTerrainVersion();
+                _extrudeInvalid |= (_extrusionTerrainVersion != terrainVersion);
+
+                float a = 0f;
+
+                // Fill based on parent alpha - disabled for now
+                /*if (_parent != null && MathUtils.hasBits(_parent.getStyle(),
+                        Shape.STYLE_FILLED_MASK | Polyline.STYLE_CLOSED_MASK))
+                    a = Color.alpha(_parent.getFillColor()) / 255f;*/
+
+                if (_extrudeInvalid) {
+                    _extrusionTerrainVersion = terrainVersion;
+                    _extrusionCentroidSrid = -1;
+
+                    // Find min/max altitude
+                    double minAlt = Double.MAX_VALUE;
+                    double maxAlt = -Double.MAX_VALUE;
+                    GeoPoint[] points = _points;
+                    double[] alts = new double[points.length];
+                    for (int i = 0; i < points.length; i++) {
+                        GeoPoint gp = points[i];
+                        double alt = gp.getAltitude();
+                        if (clampToGround || !gp.isAltitudeValid())
+                            alt = ortho.getTerrainMeshElevation(
+                                    gp.getLatitude(),
+                                    gp.getLongitude());
+                        minAlt = Math.min(alt, minAlt);
+                        maxAlt = Math.max(alt, maxAlt);
+                        alts[i] = alt;
+                    }
+
+                    if (_parent != null) {
+                        GeoPoint[] parentPoints = _parent.getPoints();
+                        int parLen = parentPoints.length;
+                        if (_parent instanceof Rectangle)
+                            parLen = 4; // XXX - HACK
+                        for (int i = 0; i < parLen; i++) {
+                            GeoPoint gp = parentPoints[i];
+                            double alt = gp.getAltitude();
+                            if (clampToGround || !gp.isAltitudeValid())
+                                alt = ortho.getTerrainMeshElevation(
+                                        gp.getLatitude(),
+                                        gp.getLongitude());
+                            minAlt = Math.min(alt, minAlt);
+                            maxAlt = Math.max(alt, maxAlt);
+                        }
+                    }
+
+                    // Center altitude is meant to be (min + max) / 2 based on
+                    // how KMLs render relative height
+                    double centerAlt = (maxAlt + minAlt) / 2;
+
+                    //int extrudeMode = getExtrudeMode();
+                    int extrudeMode = Polyline.HEIGHT_EXTRUDE_CENTER_ALT;
+                    int extOptions = GLExtrude.OPTION_TOP_ONLY
+                            | GLExtrude.OPTION_SIMPLIFIED_OUTLINE;
+                    double height = _height;
+                    double baseAltitude = minAlt;
+
+                    if (extrudeMode == Polyline.HEIGHT_EXTRUDE_MAX_ALT)
+                        baseAltitude = maxAlt;
+                    else if (extrudeMode == Polyline.HEIGHT_EXTRUDE_CENTER_ALT)
+                        baseAltitude = centerAlt; // KML style
+
+                    // Update point buffer with terrain elevations if we're clamped
+                    if (clampToGround) {
+                        // XXX - Dirty hack for ATAK-14494
+                        // Use the lowest valid altitude value as the base of the
+                        // extrusion
+                        if (ortho.currentPass.drawTilt > 0) {
+                            Arrays.fill(alts, GeoPoint.MIN_ACCEPTABLE_ALTITUDE);
+                            if (extrudeMode == Polyline.HEIGHT_EXTRUDE_PER_POINT)
+                                height += baseAltitude
+                                        - GeoPoint.MIN_ACCEPTABLE_ALTITUDE;
+                        }
+
+                        // Store terrain elevation in point buffer
+                        for (int i = 0; i < points.length; i++) {
+                            GeoPoint gp = points[i];
+                            points[i] = new GeoPoint(gp.getLatitude(),
+                                    gp.getLongitude(), alts[i]);
+                        }
+                    }
+
+                    // Generate height offsets to create flat top/bottom effect
+                    double[] heights;
+                    if (extrudeMode != Polyline.HEIGHT_EXTRUDE_PER_POINT) {
+                        heights = new double[alts.length];
+                        for (int i = 0; i < alts.length; i++)
+                            heights[i] = (baseAltitude + height) - alts[i];
+                    } else
+                        heights = new double[] {
+                                height
+                        };
+
+                    freeExtrusionBuffers();
+
+                    if (a > 0) {
+                        _fillPointsPreForward = GLExtrude.extrudeRelative(
+                                Double.NaN, points, true, heights);
+
+                        _fillPoints = Unsafe.allocateDirect(
+                                _fillPointsPreForward.limit(),
+                                FloatBuffer.class);
+                        _fillPointsPreForward.rewind();
+
+                        final int idlInfo = GLAntiMeridianHelper
+                                .normalizeHemisphere(3, _fillPointsPreForward,
+                                        _fillPointsPreForward);
+                        _fillPointsPreForward.flip();
+                        _extrudePrimaryHemi = (idlInfo
+                                & GLAntiMeridianHelper.MASK_PRIMARY_HEMISPHERE);
+                        _extrudeCrossesIDL = (idlInfo
+                                & GLAntiMeridianHelper.MASK_IDL_CROSS) != 0;
+                    }
+
+                    _outlinePointsPreForward = GLExtrude.extrudeOutline(
+                            Double.NaN, points, extOptions, heights);
+                    _outlinePoints = Unsafe.allocateDirect(
+                            _outlinePointsPreForward.limit(),
+                            FloatBuffer.class);
+                    _outlinePointsPreForward.rewind();
+
+                    int idlInfo = GLAntiMeridianHelper.normalizeHemisphere(3,
+                            _outlinePointsPreForward, _outlinePointsPreForward);
+                    _outlinePointsPreForward.flip();
+                    _extrudePrimaryHemi = (idlInfo
+                            & GLAntiMeridianHelper.MASK_PRIMARY_HEMISPHERE);
+                    _extrudeCrossesIDL = (idlInfo
+                            & GLAntiMeridianHelper.MASK_IDL_CROSS) != 0;
+
+                    _extrudeInvalid = false;
+                }
+
+                // extrusion vertices (fill+outline) need to be rebuilt when projection changes
+                final boolean rebuildExtrusionVertices = (_extrusionCentroidSrid != ortho.currentPass.drawSrid);
+                if (rebuildExtrusionVertices) {
+                    ortho.currentPass.scene.mapProjection
+                            .forward(_extrusionCentroid,
+                                    _extrusionCentroidProj);
+                    _extrusionCentroidSrid = ortho.currentPass.drawSrid;
+                }
+
+                // set up model-view matrix
+                GLES20FixedPipeline
+                        .glMatrixMode(GLES20FixedPipeline.GL_MODELVIEW);
+                GLES20FixedPipeline.glPushMatrix();
+                GLES20FixedPipeline.glLoadIdentity();
+
+                ortho.scratch.matrix.set(ortho.currentPass.scene.forward);
+                // apply hemisphere shift if necessary
+                final double unwrap = GLAntiMeridianHelper.getUnwrap(ortho,
+                        _extrudeCrossesIDL, _extrudePrimaryHemi);
+                ortho.scratch.matrix.translate(unwrap, 0d, 0d);
+                // translate relative-to-center for extrusion geometry
+                ortho.scratch.matrix.translate(_extrusionCentroidProj.x,
+                        _extrusionCentroidProj.y, _extrusionCentroidProj.z);
+                // upload model-view transform
+                ortho.scratch.matrix.get(ortho.scratch.matrixD,
+                        Matrix.MatrixOrder.COLUMN_MAJOR);
+                for (int i = 0; i < 16; i++)
+                    ortho.scratch.matrixF[i] = (float) ortho.scratch.matrixD[i];
+                GLES20FixedPipeline.glLoadMatrixf(ortho.scratch.matrixF, 0);
+
+                GLES20FixedPipeline
+                        .glEnableClientState(
+                                GLES20FixedPipeline.GL_VERTEX_ARRAY);
+
+                GLES20FixedPipeline.glEnable(GLES20FixedPipeline.GL_BLEND);
+                GLES20FixedPipeline.glBlendFunc(
+                        GLES20FixedPipeline.GL_SRC_ALPHA,
+                        GLES20FixedPipeline.GL_ONE_MINUS_SRC_ALPHA);
+                float r = Color.red(color) / 255.0f;
+                float g = Color.green(color) / 255.0f;
+                float b = Color.blue(color) / 255.0f;
+
+                if (a > 0) {
+                    // validate the render vertices
+                    if (rebuildExtrusionVertices) {
+                        _fillPoints.clear();
+                        for (int i = 0; i < _fillPointsPreForward
+                                .limit(); i += 3) {
+                            final double lng = _fillPointsPreForward.get(i);
+                            final double lat = _fillPointsPreForward.get(i + 1);
+                            final double alt = _fillPointsPreForward.get(i + 2);
+                            ortho.scratch.geo.set(lat, lng, alt);
+                            ortho.currentPass.scene.mapProjection.forward(
+                                    ortho.scratch.geo, ortho.scratch.pointD);
+                            _fillPoints.put((float) (ortho.scratch.pointD.x
+                                    - _extrusionCentroidProj.x));
+                            _fillPoints.put((float) (ortho.scratch.pointD.y
+                                    - _extrusionCentroidProj.y));
+                            _fillPoints.put((float) (ortho.scratch.pointD.z
+                                    - _extrusionCentroidProj.z));
+                        }
+                        _fillPoints.flip();
+                    }
+
+                    GLES20FixedPipeline.glColor4f(r, g, b, a);
+
+                    GLES30.glEnable(GLES30.GL_POLYGON_OFFSET_FILL);
+                    GLES30.glPolygonOffset(1.0f, 1.0f);
+
+                    GLES20FixedPipeline.glVertexPointer(3,
+                            GLES20FixedPipeline.GL_FLOAT, 0, _fillPoints);
+
+                    int pCount = _fillPoints.limit() / 3;
+
+                    GLES20FixedPipeline.glDrawArrays(GLES30.GL_TRIANGLES, 0,
+                            pCount);
+
+                    GLES30.glPolygonOffset(0.0f, 0.0f);
+                    GLES30.glDisable(GLES30.GL_POLYGON_OFFSET_FILL);
+                }
+
+                // validate the render vertices
+                if (rebuildExtrusionVertices) {
+                    _outlinePoints.clear();
+                    for (int i = 0; i < _outlinePointsPreForward.limit()
+                            / 3; i++) {
+                        final double lng = _outlinePointsPreForward.get(i * 3);
+                        final double lat = _outlinePointsPreForward
+                                .get(i * 3 + 1);
+                        final double alt = _outlinePointsPreForward
+                                .get(i * 3 + 2);
+                        ortho.scratch.geo.set(lat, lng, alt);
+                        ortho.currentPass.scene.mapProjection.forward(
+                                ortho.scratch.geo, ortho.scratch.pointD);
+                        _outlinePoints.put((float) (ortho.scratch.pointD.x
+                                - _extrusionCentroidProj.x));
+                        _outlinePoints.put((float) (ortho.scratch.pointD.y
+                                - _extrusionCentroidProj.y));
+                        _outlinePoints.put((float) (ortho.scratch.pointD.z
+                                - _extrusionCentroidProj.z));
+                    }
+                    _outlinePoints.flip();
+                }
+
+                GLES20FixedPipeline.glLineWidth(this.strokeWidth
+                        / ortho.currentPass.relativeScaleHint);
+                GLES20FixedPipeline.glVertexPointer(3, GLES30.GL_FLOAT, 0,
+                        _outlinePoints);
+                GLES20FixedPipeline.glColor4f(r, g, b, 1.0f);
+                GLES20FixedPipeline.glDrawArrays(GLES30.GL_LINES, 0,
+                        _outlinePoints.limit() / 3);
+
+                GLES20FixedPipeline
+                        .glDisableClientState(
+                                GLES20FixedPipeline.GL_VERTEX_ARRAY);
+                GLES20FixedPipeline.glDisable(GLES20FixedPipeline.GL_BLEND);
+                GLES20FixedPipeline.glPopMatrix();
+            }
         }
     }
 
-    private void _setEndPoint(final int index, final GeoPoint point) {
-        impl.setAltitudeMode(_clampToGround ? Feature.AltitudeMode.ClampToGround
-                : Feature.AltitudeMode.Absolute);
-        impl.setTessellationEnabled(_clampToGround);
+    private void _setEndPoint(final int index, final GeoPoint point,
+            boolean dispatchBounds) {
+        impl.setAltitudeMode(
+                clampToGround() ? Feature.AltitudeMode.ClampToGround
+                        : Feature.AltitudeMode.Absolute);
+        impl.setTessellationEnabled(clampToGround());
 
         _points[index] = point;
 
@@ -335,16 +751,23 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
         LineString ls = new LineString(3);
         if (_points[0] != null)
             ls.addPoint(_points[0].getLongitude(), _points[0].getLatitude(),
-                    Double.isNaN(_points[0].getAltitude()) ? 0d
-                            : _points[0].getAltitude());
+                    getHae(_points[0]));
         if (_points[1] != null)
             ls.addPoint(_points[1].getLongitude(), _points[1].getLatitude(),
-                    Double.isNaN(_points[1].getAltitude()) ? 0d
-                            : _points[1].getAltitude());
+                    getHae(_points[1]));
         impl.setGeometry(ls);
+        if (_labelID != GLLabelManager.NO_ID) {
+            _labelManager.setGeometry(_labelID, ls);
+            _labelManager.setAltitudeMode(_labelID,
+                    clampToGround() ? Feature.AltitudeMode.ClampToGround
+                            : Feature.AltitudeMode.Absolute);
+        }
+
+        implInvalid = false;
+        _extrudeInvalid = true;
 
         // dispatch bounds update
-        if (valid) {
+        if (valid && dispatchBounds) {
             final double lat0 = _points[0].getLatitude();
             final double lon0 = _points[0].getLongitude();
             final double lat1 = _points[1].getLatitude();
@@ -369,12 +792,36 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
                     bounds.set(N, W, S, E);
                     bounds.setWrap180(mv != null
                             && mv.isContinuousScrollEnabled());
+                    bounds.getCenter(_extrusionCentroid);
+                    _extrusionCentroidSrid = -1;
 
                     dispatchOnBoundsChanged();
                 }
 
             });
         }
+    }
+
+    /**
+     * Adjust the point up so it does not end up rendering subsurface
+     * XXX - direct copy of the GLArrow2 implementation for 4.3.1,   Larger discussion needs to occur
+     * how this can be handled more generically.
+     */
+    private double getHae(final GeoPoint geo) {
+        final boolean ptAgl = (geo
+                .getAltitudeReference() == GeoPoint.AltitudeReference.AGL ||
+                Double.isNaN(geo.getAltitude()));
+        if (!ptAgl)
+            return geo.getAltitude();
+
+        double hae = geo.getAltitude();
+        if (Double.isNaN(hae))
+            hae = 0d;
+        final double terrain = +_glMapView
+                .getTerrainMeshElevation(geo.getLatitude(), geo.getLongitude());
+        if (!Double.isNaN(terrain))
+            hae += terrain;
+        return hae;
     }
 
     private final PointMapItem.OnPointChangedListener _firstItemMovedListener = new PointMapItem.OnPointChangedListener() {
@@ -390,158 +837,4 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
             _updateItemPoint(1, item);
         }
     };
-
-    private void _drawText(GLMapView ortho) {
-        GeoPoint[] pts = _points;
-        float[] points = new float[pts.length * 2 + 6];
-
-        float xmin = Float.MAX_VALUE;
-        float xmax = Float.MIN_VALUE;
-        float ymin = Float.MAX_VALUE;
-        float ymax = Float.MIN_VALUE;
-
-        for (int x = 0; x < pts.length; x++) {
-            GeoPoint gp = pts[x];
-            if (!gp.isAltitudeValid()) {
-                double alt = ortho.getTerrainMeshElevation(gp.getLatitude(),
-                        gp.getLongitude());
-                gp = new GeoPoint(gp.getLatitude(), gp.getLongitude(), alt);
-            }
-            forward(ortho, gp, ortho.scratch.pointF, _unwrap);
-            points[2 * x] = ortho.scratch.pointF.x;
-            points[2 * x + 1] = ortho.scratch.pointF.y;
-            if (points[2 * x] < xmin)
-                xmin = points[2 * x];
-            if (points[2 * x] > xmax)
-                xmax = points[2 * x];
-            if (points[2 * x + 1] < ymin)
-                ymin = points[2 * x + 1];
-            if (points[2 * x + 1] > ymax)
-                ymax = points[2 * x + 1];
-        }
-
-        float screenRot = 0f;
-
-        if (_glText == null && _text != null) {
-            _glText = GLText.getInstance(MapView.getTextFormat(
-                    Typeface.DEFAULT, +2));
-            _ninePatch = GLRenderGlobals.get(this.context)
-                    .getMediumNinePatch();
-            _textWidth = _glText.getStringWidth(_text);
-            _textHeight = _glText.getStringHeight();
-        }
-        boolean drawText = false;
-        if (_text == null || (xmax - xmin < _textWidth
-                && ymax - ymin < _textWidth
-                || _text.length() == 0)) {
-            drawText = false;
-            _textPoint[0] = (xmax + xmin) / 2;
-            _textPoint[1] = ymin - _textHeight / 2;
-            _textAngle = 0;
-        } else {
-            drawText = true;
-            if (pts.length % 2 == 0) {
-                int idx = 2 * (pts.length / 2 - 1);
-
-                PointF startPoint = new PointF(points[idx], points[idx + 1]);
-                PointF endPoint = new PointF(points[idx + 2], points[idx + 3]);
-
-                float xmid = (int) (points[idx] + points[idx + 2]) * div_2;
-                float ymid = (int) (points[idx + 1] + points[idx + 3]) * div_2;
-
-                // obtain the bounds of the current view
-                RectF _view = GLMapItem.getDefaultWidgetViewF(this.context);
-
-                // find the point that is contained in the image, if both points are outside the 
-                // image, it does not matter.
-
-                if (startPoint.y < _view.top &&
-                        startPoint.x < _view.right &&
-                        startPoint.x > 0 &&
-                        startPoint.y > 0) {
-                    //Log.d("SHB", "start point is inside the view");
-                } else {
-                    //Log.d("SHB", "end point is inside the view");
-                    PointF tmp = startPoint;
-                    startPoint = endPoint;
-                    endPoint = tmp;
-                }
-
-                // determine the intersection point, if both points intersect, center between them
-                // if one point intersects, draw the text to be the midline between the point 
-                // inside the view and the intersection point.
-
-                PointF[] ip = GLMapItem._getIntersectionPoint(_view,
-                        startPoint, endPoint);
-
-                if (ip[0] != null || ip[1] != null) {
-                    if (ip[0] != null && ip[1] != null) {
-                        xmid = (ip[0].x + ip[1].x) / 2.0f;
-                        ymid = (ip[0].y + ip[1].y) / 2.0f;
-                    } else {
-
-                        if (ip[0] != null) {
-                            //Log.d("SHB", "bottom is clipped");
-                            xmid = (ip[0].x + startPoint.x) / 2.0f;
-                            ymid = (ip[0].y + startPoint.y) / 2.0f;
-                        } else {
-                            //Log.d("SHB", "top is clipped");
-                            xmid = (ip[1].x + startPoint.x) / 2.0f;
-                            ymid = (ip[1].y + startPoint.y) / 2.0f;
-                        }
-                    }
-                }
-
-                _textAngle = (float) (Math.atan2(points[idx + 1]
-                        - points[idx + 3],
-                        points[idx]
-                                - points[idx + 2])
-                        * div_180_pi)
-                        - screenRot;
-
-                _textPoint[0] = xmid;
-                _textPoint[1] = ymid;
-            } else {
-                int idx = 2 * (pts.length - 1) / 2;
-                float xmid = (int) points[idx];
-                float ymid = (int) points[idx + 1];
-                _textAngle = (float) (Math.atan2(points[idx - 1]
-                        - points[idx + 3],
-                        points[idx - 2]
-                                - points[idx + 2])
-                        * div_180_pi)
-                        - screenRot;
-                _textPoint[0] = xmid;
-                _textPoint[1] = ymid;
-            }
-        }
-        if (_textAngle > 90 || _textAngle < -90)
-            _textAngle += 180;
-
-        if (drawText) {
-            GLES20FixedPipeline.glPushMatrix();
-            GLES20FixedPipeline.glTranslatef(_textPoint[0], _textPoint[1],
-                    0);
-            GLES20FixedPipeline.glRotatef(_textAngle, 0f, 0f, 1f);
-            GLES20FixedPipeline.glTranslatef(
-                    -_glText.getStringWidth(_text) / 2,
-                    -_glText.getStringHeight() / 2 + _glText.getDescent(),
-                    0);
-            GLES20FixedPipeline.glPushMatrix();
-            float outlineOffset = -((GLText.getLineCount(_text) - 1) * _glText
-                    .getBaselineSpacing())
-                    - _glText.getDescent();
-            GLES20FixedPipeline.glTranslatef(-8f, outlineOffset - 4f, 0f);
-            GLES20FixedPipeline.glColor4f(0f, 0f, 0f, 0.8f);
-            if (_ninePatch != null) {
-                _ninePatch
-                        .draw(_glText.getStringWidth(_text) + 16f,
-                                _glText.getStringHeight() + 8f);
-            }
-            GLES20FixedPipeline.glPopMatrix();
-            _glText.draw(_text, 1.0f, 1.0f, 1.0f, 1.0f);
-
-            GLES20FixedPipeline.glPopMatrix();
-        }
-    }
 }

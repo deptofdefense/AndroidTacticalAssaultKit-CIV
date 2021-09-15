@@ -3,7 +3,6 @@ package com.atakmap.opengl;
 
 import android.util.Pair;
 
-import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.Vector2D;
 
 import java.nio.Buffer;

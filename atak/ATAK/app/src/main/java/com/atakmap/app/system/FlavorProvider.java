@@ -7,8 +7,6 @@ import com.atakmap.android.maps.MapComponent;
 
 import java.io.InputStream;
 
-import transapps.mapi.MapView;
-
 public interface FlavorProvider {
 
     /**
@@ -52,4 +50,5 @@ public interface FlavorProvider {
      * Load components
      */
     MapComponent[] getFlavorMapComponents();
+
 }

@@ -17,10 +17,7 @@ import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.MultiPolyline;
 import com.atakmap.android.maps.Polyline;
 import com.atakmap.android.maps.SimpleRectangle;
-import com.atakmap.android.maps.graphics.widgets.GLAngleOverlay;
-import com.atakmap.android.maps.graphics.widgets.GLAutoSizeAngleOverlay;
 import com.atakmap.android.track.crumb.Crumb;
-import com.atakmap.android.widgets.AngleOverlayShape;
 import com.atakmap.android.widgets.AutoSizeAngleOverlayShape;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.MapRenderer;
@@ -58,6 +55,7 @@ public final class GLMapGroup2 implements MapGroup.OnItemListChangedListener,
             onItemAdded(item, subject);
         }
 
+        _subject = subject;
     }
 
     public void startObserving(MapGroup subject) {
@@ -265,6 +263,11 @@ public final class GLMapGroup2 implements MapGroup.OnItemListChangedListener,
         _removeAllFromRenderer(childItems.values());
         Collection<GLMapGroup2> groups = childGroups.values();
 
+        if (permanent && _subject != null) {
+            stopObserving(_subject);
+            _subject = null;
+        }
+
         for (GLMapGroup2 group : groups) {
             group._deepRemoveFromRenderer(permanent);
         }
@@ -303,6 +306,7 @@ public final class GLMapGroup2 implements MapGroup.OnItemListChangedListener,
     }
 
     boolean hidden;
+    private MapGroup _subject;
     final HashMap<Long, GLMapItem2> childItems = new HashMap<>();
     final HashMap<Long, GLMapGroup2> childGroups = new HashMap<>();
     private GLMapGroup2 _parent;

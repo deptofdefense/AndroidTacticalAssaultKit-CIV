@@ -35,6 +35,7 @@ public class ColorPalette extends LinearLayout {
 
     /** Callback listener for when a color is selected */
     protected OnColorSelectedListener _listener;
+    protected boolean _enableAlphaSlider;
 
     /**
      * Note this pallet is referenced by other sections of code
@@ -102,6 +103,7 @@ public class ColorPalette extends LinearLayout {
             OnColorSelectedListener listener) {
         super(context, attrs);
         _listener = listener;
+        _enableAlphaSlider = false;
         init(initialColor);
     }
 
@@ -117,6 +119,7 @@ public class ColorPalette extends LinearLayout {
             OnColorSelectedListener listener) {
         super(context);
         _listener = listener;
+        _enableAlphaSlider = false;
         init(initialColor);
     }
 
@@ -128,6 +131,21 @@ public class ColorPalette extends LinearLayout {
      */
     public ColorPalette(Context context, int initialColor) {
         super(context);
+        _enableAlphaSlider = false;
+        init(initialColor);
+    }
+
+    /**
+     * Creates a {@see ColorPallete} gridview that displays various colors for the user to choose.
+     * Note
+     *
+     * @param context - {@link Context} for this view
+     * @param initialColor - Enables the alpha slider in the {@see ColorPicker} if equal to true.
+     */
+    public ColorPalette(Context context, int initialColor,
+            boolean enableAlphaSlider) {
+        super(context);
+        _enableAlphaSlider = enableAlphaSlider;
         init(initialColor);
     }
 
@@ -214,7 +232,7 @@ public class ColorPalette extends LinearLayout {
             @Override
             public void onClick(View arg0) {
                 final ColorPicker picker = new ColorPicker(context,
-                        initialColor);
+                        initialColor, _enableAlphaSlider);
                 AlertDialog.Builder b = new AlertDialog.Builder(context)
                         .setTitle(R.string.custom_color_dialog)
                         .setPositiveButton(R.string.ok,

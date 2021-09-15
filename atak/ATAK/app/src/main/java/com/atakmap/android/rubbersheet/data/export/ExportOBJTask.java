@@ -17,7 +17,7 @@ import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.conversion.EGM96;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.UTMPoint;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
@@ -113,8 +113,8 @@ public class ExportOBJTask extends ExportFileTask implements
 
         // Grid north offset - must be applied or else the model is offset slightly
         // when viewed outside of the tool
-        GeoPoint gEnd = DistanceCalculations.computeDestinationPoint(
-                center, 0, Math.max(_item.getWidth(), _item.getLength()));
+        GeoPoint gEnd = GeoCalculations.pointAtDistance(center, 0,
+                Math.max(_item.getWidth(), _item.getLength()));
         double gConv = ATAKUtilities.computeGridConvergence(center, gEnd);
 
         dstInfo.localFrame.scale(1d / scale[0], 1d / scale[1], 1d / scale[2]);

@@ -19,7 +19,6 @@ import com.atakmap.map.gdal.GdalLibrary;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.raster.tilematrix.TileMatrix;
 
-import org.gdal.gdal.gdal;
 import org.gdal.gdal.Dataset;
 
 /**

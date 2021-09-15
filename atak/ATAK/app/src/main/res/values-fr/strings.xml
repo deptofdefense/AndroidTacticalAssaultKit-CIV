@@ -131,7 +131,7 @@
   <string name="bloodhoundSubPreferences">Ajuster les param&#xE8;tres Bloodhound</string>
   <string name="bloodhoundETAPreferences">Pr&#xE9;f&#xE9;rences Bloodhound ETA</string>
   <string name="bloodhoundRerouteTimer">Reroute timer frequency</string>
-    <string name="bloodhound_no_planners">No route planners available.</string>
+  <string name="bloodhound_no_planners">No route planners available.</string>
   <string name="bloodhoundRerouteDistance">Reroute distance</string>
   <string name="bloodhoundRerouteTimerDescription">Specify how frequently bloodhound will check to see if a reroute needs to be calculated.</string>
   <string name="bloodhoundRerouteDistanceDescription">Specify the distance away from the route a point has to move before calculating a reroute.</string>
@@ -668,7 +668,7 @@
   <string name="preferences_text317">Entrez la bulle en m&#xE8;tres</string>
   <string name="preferences_route_off_route_bubble">En dehors de cette distance, vous serez consid&#xE9;r&#xE9; comme hors de l\'itin&#xE9;raire lors de la navigation</string>
   <string name="open_route_around">Open Route Around Region Manager</string>
-    <string name="manage_route_around_regions">Manage route around regions</string>
+  <string name="manage_route_around_regions">Manage route around regions</string>
   <string name="preferences_text318">Profil d\'altitude Interpoler les altitudes</string>
   <string name="preferences_text319">Permet d\'interpoler les altitudes du graphique du profil d\'&#xE9;l&#xE9;vation &#xE0; partir des points de route &#xE0; proximit&#xE9;. D&#xE9;sactiver pour utiliser les altitudes DTED pour les points interpol&#xE9;s.</string>
   <string name="preferences_text320">Centre de profil d\'&#xE9;l&#xE9;vation sur le chercheur</string>
@@ -2053,7 +2053,7 @@
   <string name="no_import_files">Aucun fichier n\'a &#xE9;t&#xE9; s&#xE9;lectionn&#xE9; pour l\'importation!</string>
   <string name="no_import_directory">Aucun r&#xE9;pertoire n\'a &#xE9;t&#xE9; s&#xE9;lectionn&#xE9;!</string>
   <string name="multiple_import_directory">S&#xE9;lectionnez un seul r&#xE9;pertoire</string>
-  <string name="apk_directory_no_apks">Aucun fichier APK dans le r&#xE9;pertoire, voulez-vous continuer? \n %s</string> 
+  <string name="apk_directory_no_apks">Aucun fichier APK dans le r&#xE9;pertoire, voulez-vous continuer? \n %s</string>
   <string name="apk_directory_no_apks_hint_title">S&#xE9;lectionnez le r&#xE9;pertoire</string>
   <string name="apk_directory_no_apks_hint">Acc&#xE9;dez au r&#xE9;pertoire parent et cochez la case en regard du r&#xE9;pertoire contenant les fichiers APK</string>
   <string name="confirm_directory">Confirmer le r&#xE9;pertoire</string>
@@ -3014,6 +3014,7 @@
   <string name="kmz_file">Fichier KMZ</string>
   <string name="lpt_file">Fichier LPT</string>
   <string name="csv_file">Fichier CSV</string>
+  <string name="mvt_file">Mapbox Vector Tiles</string>
   <string name="preference_file">Fichier de pr&#xE9;f&#xE9;rence</string>
   <string name="shapefile">Shapefile</string>
   <string name="zipped_shapefile">Shapefile zipp&#xE9;</string>
@@ -3118,7 +3119,6 @@
   <string name="fire_control_prefs">Pr&#xE9;f&#xE9;rences de la barre d\'outils Fires</string>
   <string name="fires_prefs">Pr&#xE9;f&#xE9;rences des Tirs</string>
   <string name="adjust_fire_settings">Ajuster les pr&#xE9;f&#xE9;rences de la barre d\'outils Tirs</string>
-  <string name="s2525B">2525B</string>
   <string name="default_cot_mapping">Mappage CoT par d&#xE9;faut</string>
   <string name="preferences_text422a">Acceptation du CLUF</string>
   <string name="preferences_text422b">Configuration de l\'appareil TAK</string>
@@ -3547,7 +3547,7 @@
   <string name="contour_lines">Contour</string>
   <!-- Map controls -->
   <string name="map_controls">Contr&#xF4;les de carte</string>
-  <string name="imagery_transparency">Transparence des images d\'inclinaison de carte</string>
+  <string name="imagery_transparency">Transparence des images de carte</string>
   <string name="globe_display">Activer le mode d\'affichage du globe</string>
   <string name="globe_display_summary">The default is to display the earth as a globe. When disabled, display the earth flattened using Equirectangular Map Projection.</string>
   <string name="basic_display_settings">Param&#xE8;tres d\'affichage de base</string>
@@ -3561,154 +3561,153 @@
   <string name="hsppplink">Liaison point &#xE0; point &#xE0; haute vitesse</string>
   <string name="hsppplink_summary">Lorsqu\'elle est s&#xE9;lectionn&#xE9;e, la liaison point &#xE0; point sur le syst&#xE8;me est consid&#xE9;r&#xE9;e comme capable de haute vitesse. Cela ne doit pas &#xEA;tre activ&#xE9; sauf indication contraire. Les radios plus r&#xE9;centes sont capables de prendre en charge des tunnels &#xE0; grande vitesse point &#xE0; point. Les radios plus anciennes prennent en charge les connexions point &#xE0; point s&#xE9;rie qui ne sont pas capables de haute vitesse. Pour ces radios plus anciennes, l\'activation de ce lien sursaturera la d&#xE9;sactivation de la capacit&#xE9;.</string>
   <string name="load_failure_summary">%1$s component: %2$s is not compatible or failed to load properly. Would you like to uninstall this plugin now?</string>
-
   <string name="sticky_tag_hint">Ajouter un nouveau Tag</string>
   <string name="add_to_hashtag">Ajouter au hashtag: %s</string>
   <string name="unexpected_error">Une erreur inattendue est apparue.</string>
-  <string name="attempt_disable_media_scanner">Tentative de désactiver le scanner media</string>
+  <string name="attempt_disable_media_scanner">Tentative de d&#xE9;sactiver le scanner media</string>
   <string name="bt_scan_inprogress">scan Bluetooth en cours</string>
-  <string name="bt_started">Bluetooth a commencé</string>
-  <string name="bt_stopped">bluetooth arrêté</string>
-  <string name="bullseye_radius_large">Le rayon de visée est trop grand</string>
-  <string name="read_image_cancelled">Image de lecture annulée: %s</string>
-  <string name="read_model_cancelled">Modèle de lecture annulé: %s</string>
+  <string name="bt_started">Bluetooth a commenc&#xE9;</string>
+  <string name="bt_stopped">bluetooth arr&#xEA;t&#xE9;</string>
+  <string name="bullseye_radius_large">Le rayon de vis&#xE9;e est trop grand</string>
+  <string name="read_image_cancelled">Image de lecture annul&#xE9;e: %s</string>
+  <string name="read_model_cancelled">Mod&#xE8;le de lecture annul&#xE9;: %s</string>
   <string name="invalid_bloodhound_item">ne peut pas bloodhound cet article</string>
-  <string name="preference_doghouse_north_ref_desc">Cochez pour afficher les unités de référence nord (° M) sur les relevés de roulements. Décochez pour masquer ces unités.</string>
-  <string name="installBegin">Cliquez sur \'Commencer\' pour installer les produits %d répertoriés ci-dessous</string>
-  <string name="uninstallBegin">Cliquez sur \'Commencer\' pour désinstaller les produits %d répertoriés ci-dessous</string>
-  <string name="compressing_zip">Compression de \'%s\'…</string>
-  <string name="copied_to_clipboard_generic">Copié dans le presse-papier...</string>
+  <string name="preference_doghouse_north_ref_desc">Cochez pour afficher les unit&#xE9;s de r&#xE9;f&#xE9;rence nord (&#xB0; M) sur les relev&#xE9;s de roulements. D&#xE9;cochez pour masquer ces unit&#xE9;s.</string>
+  <string name="installBegin">Cliquez sur \'Commencer\' pour installer les produits %d r&#xE9;pertori&#xE9;s ci-dessous</string>
+  <string name="uninstallBegin">Cliquez sur \'Commencer\' pour d&#xE9;sinstaller les produits %d r&#xE9;pertori&#xE9;s ci-dessous</string>
+  <string name="compressing_zip">Compression de \'%s\'&#x2026;</string>
+  <string name="copied_to_clipboard_generic">Copi&#xE9; dans le presse-papier...</string>
   <string name="bt_pair_error">Impossible d\'associer avec %s</string>
-  <string name="creating_rubber_model">Création d\'un modèle de superposition pour %s…</string>
-  <string name="creating_rubber_sheet">Création d\'une feuille de superposition pour %s…</string>
-  <string name="invalid_splash_size">Écran d\'accueil personnalisé trop grand</string>
+  <string name="creating_rubber_model">Cr&#xE9;ation d\'un mod&#xE8;le de superposition pour %s&#x2026;</string>
+  <string name="creating_rubber_sheet">Cr&#xE9;ation d\'une feuille de superposition pour %s&#x2026;</string>
+  <string name="invalid_splash_size">&#xC9;cran d\'accueil personnalis&#xE9; trop grand</string>
   <string name="delete_groups">Supprimer des groupes</string>
   <string name="dex_options">Options DEX</string>
   <string name="dimensions">Dimensions</string>
-  <string name="preference_doghouse_north_ref_title">Afficher l\'unité °M  in Doghouse</string>
-  <string name="enable_dex_controls_summary">Affichage des commandes 3D et du zoom pour permettre à l\'utilisateur d\'effectuer des actions multi-touch</string>
-  <string name="preference_rab_show_eta_title">Afficher l\'ETA sur les étiquettes de portée et de traces</string>
-  <string name="done_searching_no_bt">Recherche terminée, aucun appareil BT trouvé</string>
+  <string name="preference_doghouse_north_ref_title">Afficher l\'unit&#xE9; &#xB0;M  in Doghouse</string>
+  <string name="enable_dex_controls_summary">Affichage des commandes 3D et du zoom pour permettre &#xE0; l\'utilisateur d\'effectuer des actions multi-touch</string>
+  <string name="preference_rab_show_eta_title">Afficher l\'ETA sur les &#xE9;tiquettes de port&#xE9;e et de traces</string>
+  <string name="done_searching_no_bt">Recherche termin&#xE9;e, aucun appareil BT trouv&#xE9;</string>
   <string name="drag">Glisser</string>
-  <string name="drag_sheet_tooltip">Faites glisser un coin, un côté ou le centre du rectangle.</string>
-  <string name="enable_dex_controls">Activer les contrôles amis DEX</string>
-  <string name="forceCenterMovingSummary">L\'activation de cette préférence se traduira par le marqueur d\'individu restant centré lors du déplacement en mode de suivi, cela annule le comportement par défaut de flottement de l\'icône d\'individu au bas de l\'écran lors du déplacement pour donner à l\'utilisateur une vue plus à 360 degrés.</string>
+  <string name="drag_sheet_tooltip">Faites glisser un coin, un c&#xF4;t&#xE9; ou le centre du rectangle.</string>
+  <string name="enable_dex_controls">Activer les contr&#xF4;les amis DEX</string>
+  <string name="forceCenterMovingSummary">L\'activation de cette pr&#xE9;f&#xE9;rence se traduira par le marqueur d\'individu restant centr&#xE9; lors du d&#xE9;placement en mode de suivi, cela annule le comportement par d&#xE9;faut de flottement de l\'ic&#xF4;ne d\'individu au bas de l\'&#xE9;cran lors du d&#xE9;placement pour donner &#xE0; l\'utilisateur une vue plus &#xE0; 360 degr&#xE9;s.</string>
   <string name="load_failure_title">Erreur avec le plug-in: %s</string>
-  <string name="estimated_speed">Vitesse estimée</string>
-  <string name="export_cancelled_for">Exportation annulée pour %s</string>
-  <string name="exported_kmz">KMZ exporté vers %s</string>
-  <string name="exported_obj">Zip OBJ exporté vers %s</string>
-  <string name="export_finished_title">Exportation terminée</string>
-  <string name="exporting_kmz">Exportation de \'%s\' vers un fichier KMZ…</string>
-  <string name="exporting_obj">Exportation de \'%s\' vers un fichier OBJ…</string>
-  <string name="failed_to_export_kmz">Échec de l\'exportation de KMZ</string>
-  <string name="failed_to_export_obj">Échec de l\'exportation du zip OBJ</string>
-  <string name="failed_to_install">Échec de l\'installation: %s</string>
+  <string name="estimated_speed">Vitesse estim&#xE9;e</string>
+  <string name="export_cancelled_for">Exportation annul&#xE9;e pour %s</string>
+  <string name="exported_kmz">KMZ export&#xE9; vers %s</string>
+  <string name="exported_obj">Zip OBJ export&#xE9; vers %s</string>
+  <string name="export_finished_title">Exportation termin&#xE9;e</string>
+  <string name="exporting_kmz">Exportation de \'%s\' vers un fichier KMZ&#x2026;</string>
+  <string name="exporting_obj">Exportation de \'%s\' vers un fichier OBJ&#x2026;</string>
+  <string name="failed_to_export_kmz">&#xC9;chec de l\'exportation de KMZ</string>
+  <string name="failed_to_export_obj">&#xC9;chec de l\'exportation du zip OBJ</string>
+  <string name="failed_to_install">&#xC9;chec de l\'installation: %s</string>
   <string name="failed_to_read_image">Impossible de lire l\'image: %s</string>
-  <string name="failed_to_read_model">Impossible de lire le modèle: %s</string>
+  <string name="failed_to_read_model">Impossible de lire le mod&#xE8;le: %s</string>
   <string name="file_does_not_exist">Le fichier n\'existe pas: %s</string>
   <string name="file_not_supported">Fichier non pris en charge: %s</string>
   <string name="export_finished_message1">L\'exportation \'%1$s\' vers:</string>
   <string name="model_flip_y_z">Retourner Y/Z</string>
-  <string name="forceCenterMoving">Force Center pendant le déplacement</string>
-  <string name="settings_found_in">Trouvé dans %s</string>
+  <string name="forceCenterMoving">Force Center pendant le d&#xE9;placement</string>
+  <string name="settings_found_in">Trouv&#xE9; dans %s</string>
   <string name="location_mode_title">Avertissement GPS</string>
   <string name="height_fmt">H: %s</string>
   <string name="hashtags">Hashtags</string>
   <string name="heading">Titre</string>
-  <string name="heading_fmt">En-tête: %s</string>
-  <string name="host">Hôte</string>
-  <string name="preference_rab_show_eta_summary">Si cette case est cochée, une tentative sera faite pour calculer l\'ETA en fonction de votre portée et de votre vitesse actuelle. Si la vitesse ne peut pas être détectée, elle peut être saisie manuellement via les détails de la portée et du roulement</string>
-  <string name="preferences_text701s">Si coché, les journaux de débogage (Logcat et trafic réseau) seront téléchargés sur le serveur TAK</string>
-  <string name="import_model">Importer un modèle 3D</string>
+  <string name="heading_fmt">En-t&#xEA;te: %s</string>
+  <string name="host">H&#xF4;te</string>
+  <string name="preference_rab_show_eta_summary">Si cette case est coch&#xE9;e, une tentative sera faite pour calculer l\'ETA en fonction de votre port&#xE9;e et de votre vitesse actuelle. Si la vitesse ne peut pas &#xEA;tre d&#xE9;tect&#xE9;e, elle peut &#xEA;tre saisie manuellement via les d&#xE9;tails de la port&#xE9;e et du roulement</string>
+  <string name="preferences_text701s">Si coch&#xE9;, les journaux de d&#xE9;bogage (Logcat et trafic r&#xE9;seau) seront t&#xE9;l&#xE9;charg&#xE9;s sur le serveur TAK</string>
+  <string name="import_model">Importer un mod&#xE8;le 3D</string>
   <string name="import_model_msg">Options d\'importation pour %s:</string>
   <string name="incompatible_plugins">Plugin incompatible: %1$s</string>
   <string name="installProduct">Installer le produit</string>
-  <string name="invalid_splash">Écran de démarrage personnalisé non valide détecté</string>
-  <string name="invalid_input">entrée invalide</string>
+  <string name="invalid_splash">&#xC9;cran de d&#xE9;marrage personnalis&#xE9; non valide d&#xE9;tect&#xE9;</string>
+  <string name="invalid_input">entr&#xE9;e invalide</string>
   <string name="invalid_passphrase">Mot de passe non valide fournie</string>
   <string name="invalid_value">valeur invalide</string>
   <string name="slant_jackpot">Jackpot</string>
   <string name="length_fmt">L: %s</string>
-  <string name="layer_details">Détails du calque</string>
-  <string name="loading_percent">Chargement…%d%%</string>
+  <string name="layer_details">D&#xE9;tails du calque</string>
+  <string name="loading_percent">Chargement&#x2026;%d%%</string>
   <string name="loadPlugins">Charger des plugins</string>
   <string name="lockBehavior">Comportement de verrouillage</string>
-  <string name="wms_preferences_summary">Préférences de données cartographiques</string>
-  <string name="geofence_value_min_higher_than_max">La valeur minimale est supérieure à la valeur maximale, échange de valeurs.</string>
-  <string name="model">Modèle</string>
+  <string name="wms_preferences_summary">Pr&#xE9;f&#xE9;rences de donn&#xE9;es cartographiques</string>
+  <string name="geofence_value_min_higher_than_max">La valeur minimale est sup&#xE9;rieure &#xE0; la valeur maximale, &#xE9;change de valeurs.</string>
+  <string name="model">Mod&#xE8;le</string>
   <string name="new_hashtag">Nouveau hashtag</string>
-  <string name="no_exporters_registered">Aucun exportateur enregistré</string>
+  <string name="no_exporters_registered">Aucun exportateur enregistr&#xE9;</string>
   <string name="permit_manually">Autoriser manuellement</string>
-  <string name="pitch">Intensité</string>
-  <string name="pitch_fmt">Intensité: %s</string>
-  <string name="reason3">Veuillez vous référer à l\'outil de gestion de package TAK pour savoir pourquoi ce plugin n\'est pas compatible.</string>
-  <string name="plugin_btreader_failed">échec du lecteur bluetooth fourni par le plugin:</string>
+  <string name="pitch">Intensit&#xE9;</string>
+  <string name="pitch_fmt">Intensit&#xE9;: %s</string>
+  <string name="reason3">Veuillez vous r&#xE9;f&#xE9;rer &#xE0; l\'outil de gestion de package TAK pour savoir pourquoi ce plugin n\'est pas compatible.</string>
+  <string name="plugin_btreader_failed">&#xE9;chec du lecteur bluetooth fourni par le plugin:</string>
   <string name="pointDroppingBehavior">Comportement de chute de points</string>
-  <string name="prefs_use_klv_elevation">Préférez l\'élévation du centre du cadre KLV</string>
+  <string name="prefs_use_klv_elevation">Pr&#xE9;f&#xE9;rez l\'&#xE9;l&#xE9;vation du centre du cadre KLV</string>
   <string name="version_production_string">Produit par %s</string>
   <string name="model_projection">Projection:</string>
-  <string name="reading_model">Lecture de \'%s\'…</string>
+  <string name="reading_model">Lecture de \'%s\'&#x2026;</string>
   <string name="rectangle_color">Couleur rectangle</string>
   <string name="relock">Re-verrouiller</string>
-  <string name="remove_rs_models_msg">Supprimer les modèles %1$d dans \'%2$s\'?</string>
-  <string name="remove_model_msg">Supprimer le modèle de superposition \'%s\'?</string>
+  <string name="remove_rs_models_msg">Supprimer les mod&#xE8;les %1$d dans \'%2$s\'?</string>
+  <string name="remove_model_msg">Supprimer le mod&#xE8;le de superposition \'%s\'?</string>
   <string name="remove_rs_msg">Supprimer la feuille de superposition \ \'%s\'?</string>
   <string name="roll">Rouler</string>
   <string name="roll_fmt">Rouler: %s</string>
   <string name="rotate">Tourner</string>
   <string name="rotation">Rotation</string>
-  <string name="route_download_range">Plage de téléchargement d\'itinéraire (m)</string>
+  <string name="route_download_range">Plage de t&#xE9;l&#xE9;chargement d\'itin&#xE9;raire (m)</string>
   <string name="rubber_sheet">Feuille de superposition</string>
-  <string name="scale">Échelle</string>
+  <string name="scale">&#xC9;chelle</string>
   <string name="scanning">Annalyse...</string>
   <string name="scanning_apps">Analyse des applications et plugins disponibles</string>
-  <string name="scanning_supported_bt_devices">Recherche de périphériques BT pris en charge</string>
-  <string name="background_scanning">Numérisation en arrière-plan ...</string>
-  <string name="search_settings">Paramètres de recherche</string>
-  <string name="select_lock_pointitem">Sélectionnez un seul marqueur ou élément ponctuel</string>
+  <string name="scanning_supported_bt_devices">Recherche de p&#xE9;riph&#xE9;riques BT pris en charge</string>
+  <string name="background_scanning">Num&#xE9;risation en arri&#xE8;re-plan ...</string>
+  <string name="search_settings">Param&#xE8;tres de recherche</string>
+  <string name="select_lock_pointitem">S&#xE9;lectionnez un seul marqueur ou &#xE9;l&#xE9;ment ponctuel</string>
   <string name="sheet_center_point">Point central de la feuille</string>
   <string name="sheet_name">Nom de la feuille</string>
-  <string name="shutting_down_bt">Arrêter Bluetooth</string>
-  <string name="stale_item_cleanup">Temps de nettoyage des articles périmés</string>
-  <string name="bt_classic_time">démarrage de la recherche des appareils Bluetooth pris en charge</string>
-  <string name="bt_le_time">démarrage de la recherche des appareils Bluetooth Low Energy pris en charge</string>
+  <string name="shutting_down_bt">Arr&#xEA;ter Bluetooth</string>
+  <string name="stale_item_cleanup">Temps de nettoyage des articles p&#xE9;rim&#xE9;s</string>
+  <string name="bt_classic_time">d&#xE9;marrage de la recherche des appareils Bluetooth pris en charge</string>
+  <string name="bt_le_time">d&#xE9;marrage de la recherche des appareils Bluetooth Low Energy pris en charge</string>
   <string name="sticky_tags">Tags collants</string>
   <string name="tactical_overlay">Superposition tactique</string>
-  <string name="tag_items">Éléments de balise: %s</string>
-  <string name="network_data_restriction_summary">Appuyez sur et activez \'Autoriser l\'utilisation des données en arrière-plan\' pour permettre à l\'application d\'accéder au réseau sans restriction.</string>
-  <string name="tap_lock_item">Appuyez sur l\'élément pour verrouiller la carte.</string>
-  <string name="invalid_passphrase_tick">La phrase secrète ne peut pas contenir de marque \'</string>
+  <string name="tag_items">&#xC9;l&#xE9;ments de balise: %s</string>
+  <string name="network_data_restriction_summary">Appuyez sur et activez \'Autoriser l\'utilisation des donn&#xE9;es en arri&#xE8;re-plan\' pour permettre &#xE0; l\'application d\'acc&#xE9;der au r&#xE9;seau sans restriction.</string>
+  <string name="tap_lock_item">Appuyez sur l\'&#xE9;l&#xE9;ment pour verrouiller la carte.</string>
+  <string name="invalid_passphrase_tick">La phrase secr&#xE8;te ne peut pas contenir de marque \'</string>
   <string name="signature_invalid">La signature du plugin est INVALIDE</string>
   <string name="signature_valid">La signature du plugin est VALIDE</string>
-  <string name="permission_warning">Cette application nécessite les autorisations précédemment refusées pour fonctionner, veuillez sélectionner \'Autoriser manuellement\' pour accéder à l\'écran des paramètres.</string>
-  <string name="reason2">Ce plugin a échoué à la validation de la signature.</string>
-  <string name="location_mode_desc">Cet appareil est actuellement réglé sur \'Économie de batterie\'. Pour utiliser le GPS, les paramètres de localisation Android doivent être définis sur \'Haute précision\' ou \'Appareil uniquement\'.</string>
-  <string name="reason1">Ce plugin nécessite une version logicielle: %1$s mais vous exécutez: %2$s</string>
-  <string name="installWizardHint">Cet assistant produit peut être utilisé pour simplifier l\'installation de plusieurs applications et plug-ins. À chaque étape de l\'assistant, veuillez attendre la fin de l\'étape précédente avant de continuer.</string>
-  <string name="uninstallWizardHint">Cet assistant produit peut être utilisé pour simplifier la suppression de plusieurs applications et plug-ins. À chaque étape de l\'assistant, veuillez attendre la fin de l\'étape précédente avant de continuer.</string>
-  <string name="transforming_model">Transformation de \'%s\'…</string>
-  <string name="unable_adjust_transparency_grg">Impossible d\'ajuster la transparence pour le GRG sélectionné</string>
+  <string name="permission_warning">Cette application n&#xE9;cessite les autorisations pr&#xE9;c&#xE9;demment refus&#xE9;es pour fonctionner, veuillez s&#xE9;lectionner \'Autoriser manuellement\' pour acc&#xE9;der &#xE0; l\'&#xE9;cran des param&#xE8;tres.</string>
+  <string name="reason2">Ce plugin a &#xE9;chou&#xE9; &#xE0; la validation de la signature.</string>
+  <string name="location_mode_desc">Cet appareil est actuellement r&#xE9;gl&#xE9; sur \'&#xC9;conomie de batterie\'. Pour utiliser le GPS, les param&#xE8;tres de localisation Android doivent &#xEA;tre d&#xE9;finis sur \'Haute pr&#xE9;cision\' ou \'Appareil uniquement\'.</string>
+  <string name="reason1">Ce plugin n&#xE9;cessite une version logicielle: %1$s mais vous ex&#xE9;cutez: %2$s</string>
+  <string name="installWizardHint">Cet assistant produit peut &#xEA;tre utilis&#xE9; pour simplifier l\'installation de plusieurs applications et plug-ins. &#xC0; chaque &#xE9;tape de l\'assistant, veuillez attendre la fin de l\'&#xE9;tape pr&#xE9;c&#xE9;dente avant de continuer.</string>
+  <string name="uninstallWizardHint">Cet assistant produit peut &#xEA;tre utilis&#xE9; pour simplifier la suppression de plusieurs applications et plug-ins. &#xC0; chaque &#xE9;tape de l\'assistant, veuillez attendre la fin de l\'&#xE9;tape pr&#xE9;c&#xE9;dente avant de continuer.</string>
+  <string name="transforming_model">Transformation de \'%s\'&#x2026;</string>
+  <string name="unable_adjust_transparency_grg">Impossible d\'ajuster la transparence pour le GRG s&#xE9;lectionn&#xE9;</string>
   <string name="unable_to_find_sheet">Impossible de trouver la feuille.</string>
   <string name="unable_to_resolve_host">Impossible de trouver la feuille.</string>
-  <string name="bt_le_error">impossible de démarrer la numérisation Bluetooth Low Energy</string>
-  <string name="bt_classic_error">impossible de démarrer la numérisation Bluetooth</string>
-  <string name="uninstall">Désinstaller</string>
-  <string name="unload_plugin">Décharger le plugin</string>
-  <string name="unload_plugin_title">Décharger le plugin %s</string>
-  <string name="preferences_text701">Télécharger les journaux de débogage</string>
+  <string name="bt_le_error">impossible de d&#xE9;marrer la num&#xE9;risation Bluetooth Low Energy</string>
+  <string name="bt_classic_error">impossible de d&#xE9;marrer la num&#xE9;risation Bluetooth</string>
+  <string name="uninstall">D&#xE9;sinstaller</string>
+  <string name="unload_plugin">D&#xE9;charger le plugin</string>
+  <string name="unload_plugin_title">D&#xE9;charger le plugin %s</string>
+  <string name="preferences_text701">T&#xE9;l&#xE9;charger les journaux de d&#xE9;bogage</string>
   <string name="uri_missing">URI manquant</string>
-  <string name="prefs_use_klv_elevation_sum">Utilisez les données d\'élévation Frame Center fournies dans KLV au lieu des données d\'élévation locales.</string>
-  <string name="rotate_model_tooltip2">Utilisez le défilement à deux doigts pour modifier l\'élévation du modèle.</string>
-  <string name="rotate_model_tooltip1">Utilisez deux doigts pour faire pivoter le modèle %s.</string>
+  <string name="prefs_use_klv_elevation_sum">Utilisez les donn&#xE9;es d\'&#xE9;l&#xE9;vation Frame Center fournies dans KLV au lieu des donn&#xE9;es d\'&#xE9;l&#xE9;vation locales.</string>
+  <string name="rotate_model_tooltip2">Utilisez le d&#xE9;filement &#xE0; deux doigts pour modifier l\'&#xE9;l&#xE9;vation du mod&#xE8;le.</string>
+  <string name="rotate_model_tooltip1">Utilisez deux doigts pour faire pivoter le mod&#xE8;le %s.</string>
   <string name="rotate_sheet_tooltip">Utilisez deux doigts pour faire pivoter la feuille en place.</string>
   <string name="width_fmt">W: %s</string>
-  <string name="network_data_restriction">Avertissement: restriction des données réseau activée</string>
-  <string name="ps_restriction">Avertissement: restriction d\'économie d\'énergie activée</string>
-  <string name="ps_restriction_summary">Lorsque les économies d\'énergie sont activées, le GPS interne peut être désactivé lorsque l\'écran est éteint</string>
+  <string name="network_data_restriction">Avertissement: restriction des donn&#xE9;es r&#xE9;seau activ&#xE9;e</string>
+  <string name="ps_restriction">Avertissement: restriction d\'&#xE9;conomie d\'&#xE9;nergie activ&#xE9;e</string>
+  <string name="ps_restriction_summary">Lorsque les &#xE9;conomies d\'&#xE9;nergie sont activ&#xE9;es, le GPS interne peut &#xEA;tre d&#xE9;sactiv&#xE9; lorsque l\'&#xE9;cran est &#xE9;teint</string>
   <string name="export_finished_message2">Souhaitez-vous importer le produit fini dans ATAK?</string>
-  <string name="unload_plugin_message">Voulez-vous décharger %s maintenant?</string>
-  <string name="marker_open_warning">Vous avez reçu une mise à jour pour le marqueur actuellement ouvert.</string>
+  <string name="unload_plugin_message">Voulez-vous d&#xE9;charger %s maintenant?</string>
+  <string name="marker_open_warning">Vous avez re&#xE7;u une mise &#xE0; jour pour le marqueur actuellement ouvert.</string>
   <string name="mission_package_remarks_hint">Entrez la description et les #hashtags ici</string>
   <string name="install_date">Install Date</string>
   <string name="update_date">Update Date</string>
@@ -3731,55 +3730,42 @@
   <string name="show_outline">Show Outline</string>
   <string name="outline_only">Outline Only</string>
   <string name="breadcrumb_color">Breadcrumb Color</string>
-
   <string name="preferences_text220a">Secure Server port</string>
   <string name="preferences_text221a">Secure Port of the file sharing Server</string>
-
   <string name="preferences_text172">Render Speed</string>
   <string name="preferences_text173">Render at full speed or limit to save battery</string>
-
   <string name="fssystem_fiveline">"FS System "</string>
-    <string name="login_to">Login to %s</string>
-    <string name="show_password">Show Password</string>
+  <string name="login_to">Login to %s</string>
+  <string name="show_password">Show Password</string>
   <string name="routes_prompt_2">Route creation</string>
-    <string name="video_text71">Passphrase</string>
-
-    <string name="http_401_message">The server has refused the connection because the username or password may not be correct.</string>
-    <string name="http_403_message">The server has refused the connection because the user may not have the appropriate permissions.</string>
-
+  <string name="video_text71">Passphrase</string>
+  <string name="http_401_message">The server has refused the connection because the username or password may not be correct.</string>
+  <string name="http_403_message">The server has refused the connection because the user may not have the appropriate permissions.</string>
   <string name="new_folder">New Folder</string>
   <string name="read_only_location_msg">This location is read-only.</string>
   <string name="name_cannot_be_blank">Name cannot be blank.</string>
   <string name="name_contains_invalid_chars">Name contains invalid characters.</string>
   <string name="new_folder_failed">Failed to create new folder.</string>
-
   <string name="show_urls">Show URLs</string>
-    <string name="next_restart">Setting will take effect on restart</string>
+  <string name="next_restart">Setting will take effect on restart</string>
   <string name="redeploy">Redeploy</string>
   <string name="sure_next_restart">Are you sure you would like to redeploy the default WMS configuration files on the next restart?</string>
-
-    <string name="bloodhound_must_be_hounding_start">Bloodhound must be started.</string>
-    <string name="bloodhound_must_be_in_route_mode">Must be in route mode to navigate.</string>
-    <string name="bloodhound_open_navigation">Open navigation interface.</string>
-    <string name="server_auth_error">Server Authentication Error</string>
-
+  <string name="bloodhound_must_be_hounding_start">Bloodhound must be started.</string>
+  <string name="bloodhound_must_be_in_route_mode">Must be in route mode to navigate.</string>
+  <string name="bloodhound_open_navigation">Open navigation interface.</string>
+  <string name="server_auth_error">Server Authentication Error</string>
   <string name="civ_enable_grg_interact">Enable Image Overlay Map Interaction</string>
   <string name="civ_enable_grg_interact_summ">Enable to allow interaction with Image Overlays on the map when the outline is visible.   If no outline is visible, then the Image Overlay cannot be interacted with.  If this is false, no interaction can occur even if the outline is visible.</string>
   <string name="civ_delete_grg">Delete Image Overlay</string>
   <string name="civ_grg_file">Image Overlay File</string>
   <string name="civ_grg_lowercase">image overlay</string>
-
   <string name="civ_SPI_prompt">Press the DP button to toggle between movable and pinned state. Long press to remove.</string>
   <string name="civ_fire_control_prefs">Digital Pointer Toolbar Preferences</string>
   <string name="civ_fires_prefs">Digital Pointer Preferences</string>
   <string name="civ_adjust_fire_settings">Adjust preferences for the Digital Pointer toolbar</string>
-
-  <string name="civ_cot2525B" translatable="false">Markers</string>
-  <string name="civ_s2525B">Markers</string>
-
+  <string name="civ_cot2525C" translatable="false">Markers</string>
+  <string name="civ_s2525C">Markers</string>
   <string name="civ_default_cot_mapping">Default Mapping</string>
-
-
   <string name="tadilj_settings">Datalink Preferences</string>
   <string name="tadilj_id">My Datalink Id</string>
   <string name="tadilj_id2">Datalink ID</string>
@@ -3794,16 +3780,12 @@
   <string name="preferences_text438">Reset Datalink offset</string>
   <string name="details_text50">"Enter Datalink info: "</string>
   <string name="details_text52">"Clear all Datalink contacts? "</string>
-
-
   <string name="civ_stringSPIDesc">Toggle the DP tool.</string>
   <string name="civ_quick_select_spi">Quick Select DP</string>
-
   <string name="civ_tool_text31">The Digital Pointer (DP) has a menu item that when selected allows the DP to be dragged around the radius to correct issues introduced by the magnetic compass in the Laser Range Finder.   The red cone displays a 10 degree offset of either side of the reported shot to aid in correction.</string>
   <string name="civ_place_local_spi">Place Local DP</string>
   <string name="civ_spi_update_delay">DP Update Period</string>
   <string name="civ_spi_update_delay_summary">The maximum delay between sending updates for the DP point, if enabled (in seconds) even if the DP is not modified.   Moving a DP point locally will generate updates immediately.</string>
-
   <string name="civ_bloodhound_text9">Enable Auto Zoom feature to display self and DP in map view when tool is first launched</string>
   <string name="civ_imagery_change_summ">In this version, the Image Overlay tab has been fully migrated to the Overlay Manager.\nImage Overlay files, in TIF or KMZ file format, should be placed in the atak/grg folder on either the sdcard or the internal memory.\n\nImagery based map products (pfps, native, layers) should now be placed in the atak/imagery folder either on the sdcard or the internal memory.\n\nOverlay products like KML, KMZ, LPT, DRW, etc should be placed in the atak/overlay folder either on the sdcard or internal memory.</string>
   <string name="civ_point_dropper_text40">Invalid DP update delay set. Resetting to default value 5.</string>
@@ -3812,55 +3794,43 @@
   <string name="civ_fireSpiNumberSummary">Number of DPs to show in the Digital Pointer toolbar</string>
   <string name="civ_spi_redx_fah">DP/RedX FAH Width</string>
   <string name="civ_spi_redx_fah_summary">Sets the width of the FAH cone (in degrees) when enabled from a DP or the Red X (rounds to the closest increment of 10)</string>
-
   <!-- already a mil equiv -->
   <string name="actionbar_firetools">Digital Pointer Tools</string>
-
   <!-- possibly unused -->
   <string name="civ_fire_tools_title">Digital Pointer Tools</string>
-
-
   <!-- Even though this is the Distribution statement, we want it to
        appear at the bottom and not floating above empty text blocks -->
   <string name="caseLabel">Distribution Statement A: Approved for public release; distribution is unlimited.</string>
-
-    <!-- for filter names -->
-    <string name="civ_filter_title_markers">Markers</string>
-    <string name="civ_filter_title_hostiles">Red Markers</string>
-
-    <string name="mil_filter_title_marker">CoT 2525B</string>
-    <string name="mil_filter_title_hostiles">Hostile Markers</string>
-
-    <string name="mission_type">Mission Type</string>
-    <string name="indirect_fire">Indirect</string>
-
-    <string name="dar_encryptor_message">[%s Installed]</string>
-    <string name="outline_colon">Outline:</string>
-    <string name="chat_message_no_recipients">There are currently no online users in this group.</string>
-    <string name="pref_save_title">File name without extension (atak/config/prefs directory</string>
-    <string name="pref_billboard_distance_title">Billboard Render Distance</string>
-    <string name="pref_billboard_category">Attachment Billboards</string>
-    <string name="pref_billboard_distance_desc">Image attachment billboards within this distance will be shown while navigating.</string>
-    <string name="pref_billboard_enabled_title">Show Attachment Billboards</string>
-    <string name="pref_billboard_enabled_desc">Show image attachment billboards above markers while route navigation is active.</string>
-    <string name="plugin_warning">Plugin Warning</string>
+  <!-- for filter names -->
+  <string name="civ_filter_title_markers">Markers</string>
+  <string name="civ_filter_title_hostiles">Red Markers</string>
+  <string name="mil_filter_title_hostiles">Hostile Markers</string>
+  <string name="mission_type">Mission Type</string>
+  <string name="indirect_fire">Indirect</string>
+  <string name="dar_encryptor_message">[%s Installed]</string>
+  <string name="outline_colon">Outline:</string>
+  <string name="chat_message_no_recipients">There are currently no online users in this group.</string>
+  <string name="pref_save_title">File name without extension (atak/config/prefs directory</string>
+  <string name="pref_billboard_distance_title">Billboard Render Distance</string>
+  <string name="pref_billboard_category">Attachment Billboards</string>
+  <string name="pref_billboard_distance_desc">Image attachment billboards within this distance will be shown while navigating.</string>
+  <string name="pref_billboard_enabled_title">Show Attachment Billboards</string>
+  <string name="pref_billboard_enabled_desc">Show image attachment billboards above markers while route navigation is active.</string>
+  <string name="plugin_warning">Plugin Warning</string>
   <string name="plugin_warning_message">This build is running one or more plugins not officially signed.  Only plugins with a green shield are officially signed.</string>
   <string name="see_more">See More</string>
   <string name="officially_signed">This plugin is officially signed.</string>
   <string name="not_officially_signed">This plugin is not officially signed.</string>
-    <string name="elevation_data">Elevation Data</string>
-    <string name="addendum">Addendum</string>
+  <string name="elevation_data">Elevation Data</string>
+  <string name="addendum">Addendum</string>
   <string name="webview_not_installed">This display window is not supported because Android System Webview is not installed</string>
-
-
   <string name="use_your_location_title">Use Your Location in the Background</string>
   <string name="background_permission_warning">ATAK asks for the ability to collect location in the background so that when users are running ATAK and background it to perform other activities, it can continue to report the precise location to team members either on a local network of via a TAK Server that the user has configured to use.   The data is sent out to other team members to show the precise location of the individual helping with coordinating such things such as incident response, disaster relief, and personal safety.</string>
   <string name="background_permission_warning_bullet">\t1) This data is not sent to the developers of the application.\n\t2) ATAK does not collect location data when the app is not running, only when it is backgrounded.</string>
   <string name="background_permission_warning_action">This application requires the location permission to be set to \'Allow all of the time\'</string>
-    <string name="delete_elevation_data_warning">You cannot delete the entire elevation data set. Please select a specific set.</string>
+  <string name="delete_elevation_data_warning">You cannot delete the entire elevation data set. Please select a specific set.</string>
   <string name="are_you_sure_delete_elevation">Are you sure you want to delete %s elevation data?</string>
   <string name="delete_elevation_please_lock">Please lock both switches to delete elevation</string>
-
   <string name="resection_update_location_title">Update location?</string>
   <string name="resection_update_location_message">Do you want to update your location to the resection estimate?\nLocation: %s</string>
   <string name="resection_estimate_label">Provider: %1$s\nLocation: %2$s\nConfidence: %3$s</string>
@@ -3871,14 +3841,14 @@
   <string name="resection_classic_tool_description">Classic resection. Takes lines of bearing from observer\'s point to 2 or more landmarks</string>
   <string name="resection_classic_tool_ideal_conditions">When there are landmarks you are able to identify and match to the map. Highest accuracy when angle between landmarks approaches 90 degrees</string>
   <string name="resection_classic_tool_relative_accuracy">Dependent upon how accurately the landmarks and relative bearings are identified</string>
-    <string name="invalid_cot_address">Invalid output encountered, make sure the address does not contain the protocol or port</string>
-    <string name="image_overlay_hud">Image Overlay HUD</string>
+  <string name="invalid_cot_address">Invalid output encountered, make sure the address does not contain the protocol or port</string>
+  <string name="image_overlay_hud">Image Overlay HUD</string>
   <string name="image_overlay_warning">This option will permanently overlay metadata onto the image. Continue?</string>
-    <string name="kml_network_link">KML Network Link</string>
-    <string name="kml_links_added_msg">Added %d KML network links</string>
+  <string name="kml_network_link">KML Network Link</string>
+  <string name="kml_links_added_msg">Added %d KML network links</string>
   <string name="kml_links_added_failed_msg">Failed to add KML network links</string>
-    <string name="import_kml_network_link">Import KML Network Link</string>
-    <string name="kml_link_desc">%1$s (%2$d sub-links)</string>
+  <string name="import_kml_network_link">Import KML Network Link</string>
+  <string name="kml_link_desc">%1$s (%2$d sub-links)</string>
   <string name="resection_ideal_conditions_label">Ideal Conditions</string>
   <string name="resection_relative_accuracy_label">Relative Accuracy</string>
   <string name="resection_details_label">%s Details</string>
@@ -3887,22 +3857,28 @@
   <string name="lasso">Lasso</string>
   <string name="shapes">Shapes</string>
   <string name="files">Files</string>
-    <string name="android_11_warning">Android 11 Warning</string>
+  <string name="android_11_warning">Android 11 Warning</string>
   <string name="android_11_warning_details">Android 11 restricts the use of GPS in the background.   To continue publishing your location when ATAK is in the background you need to manually grant ATAK the \'Allow all the time\' permission. You can access the Android Location Permission screen by selecting the Allow in Settings prompt when the Device Location\'s Permission screen is displayed.\n\nPlease note - ATAK does not collect GPS information while it is not running.</string>
-    <string name="http_code_message">Error %d - If you believe this is an error and do not have login credentials, click \'Cancel\'.   Please notify the server administrator.</string>
-    <string name="address_blank_error">Address cannot be blank</string>
-    <string name="address_invalid_error">Address is invalid %s</string>
-
-    <string name="location_perm_warning_1">In order to enable GPS usage while ATAK is running but in the background, you have two chances to enable this.</string>
-    <string name="location_perm_warning_2">WARNING: If you miss these chances, then you will need to do it manually. Android intentionally makes this difficult</string>
-    <string name="location_perm_warning_chance1">Chance 1: Click on \'Allow In Settings\'</string>
-    <string name="location_perm_warning_chance2">Chance 2: Click on \'Allow In Settings\'</string>
-    <string name="select_with_colon">Select:</string>
-    <string name="location_permission_guidance_1">In order to enable GPS usage while ATAK is running but in the background, perform the following steps.</string>
-    <string name="step_one_with_colon">Step 1:</string>
-    <string name="location_permission_step2">Step 2:</string>
-    <string name="location_permission_step3">Step 3:</string>
-    <string name="general_permission_step1">Step 1:</string>
-    <string name="general_permission_step2">Step 2: Review the Denied List</string>
-
+  <string name="http_code_message">Error %d - If you believe this is an error and do not have login credentials, click \'Cancel\'.   Please notify the server administrator.</string>
+  <string name="address_blank_error">Address cannot be blank</string>
+  <string name="address_invalid_error">Address is invalid %s</string>
+  <string name="location_perm_warning_1">In order to enable GPS usage while ATAK is running but in the background, you have two chances to enable this.</string>
+  <string name="location_perm_warning_2">WARNING: If you miss these chances, then you will need to do it manually. Android intentionally makes this difficult</string>
+  <string name="location_perm_warning_chance1">Chance 1: Click on \'Allow In Settings\'</string>
+  <string name="location_perm_warning_chance2">Chance 2: Click on \'Allow In Settings\'</string>
+  <string name="select_with_colon">Select:</string>
+  <string name="location_permission_guidance_1">In order to enable GPS usage while ATAK is running but in the background, perform the following steps.</string>
+  <string name="step_one_with_colon">Step 1:</string>
+  <string name="location_permission_step2">Step 2:</string>
+  <string name="location_permission_step3">Step 3:</string>
+  <string name="general_permission_step1">Step 1:</string>
+  <string name="general_permission_step2">Step 2: Review the Denied List</string>
+  <string name="resection_required_data_label">Required Data (e.g., DTED)</string>
+  <string name="resection_required_hardware">Required Hardware (e.g., PLRF)</string>
+  <string name="resection_classic_tool_required_data">No special data required</string>
+  <string name="resection_classic_tool_required_hardware">No special hardware required</string>
+  <string name="lollipop_visibility">Lollipop Visibility when Tilted</string>
+  <string name="legacy_altitude_rendering">Enhanced Depth Perception</string>
+  <string name="disable_parallax_viewing">Enhances visualization of depth when looking straight down.</string>
+  <string name="lollipop_description">Draws a line to the exact point on the ground represented by the item.</string>
 </resources>

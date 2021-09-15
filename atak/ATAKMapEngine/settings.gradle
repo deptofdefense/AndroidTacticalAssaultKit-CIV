@@ -1,3 +1,1 @@
-include ':MapCoreInterfaces'
-project(':MapCoreInterfaces').projectDir = new File(settingsDir, '../MapCoreInterfaces')
-include ':MapCoreInterfaces:lib'
+

@@ -1,11 +1,14 @@
 
 package com.atakmap.spatial.file;
 
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 
 import com.atakmap.android.data.URIContentManager;
+import com.atakmap.android.features.FeatureDataStoreDeepMapItemQuery;
+import com.atakmap.android.features.FeatureDataStoreMapOverlay;
 import com.atakmap.android.hierarchy.HierarchyListReceiver;
 import com.atakmap.android.importexport.ImportExportMapComponent;
 import com.atakmap.android.importexport.ImportReceiver;
@@ -13,6 +16,7 @@ import com.atakmap.android.importexport.Importer;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.DefaultMapGroup;
 import com.atakmap.android.maps.MapGroup;
+import com.atakmap.android.overlay.MapOverlay;
 import com.atakmap.android.util.NotificationIdRecycler;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.R;
@@ -28,7 +32,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.HashSet;
-import com.atakmap.coremap.locale.LocaleUtil;
 import java.util.Set;
 
 /**
@@ -166,6 +169,16 @@ public abstract class SpatialDbContentSource implements Importer {
 
     public SpatialDbContentResolver getContentResolver() {
         return this.contentResolver;
+    }
+
+    public MapOverlay createOverlay(Context context,
+            FeatureDataStoreDeepMapItemQuery query) {
+        return new FeatureDataStoreMapOverlay(
+                context, this.getDatabase(), this.getType(),
+                this.getGroupName(), this.getIconPath(),
+                query,
+                this.getContentType(),
+                this.getFileMimeType());
     }
 
     /**

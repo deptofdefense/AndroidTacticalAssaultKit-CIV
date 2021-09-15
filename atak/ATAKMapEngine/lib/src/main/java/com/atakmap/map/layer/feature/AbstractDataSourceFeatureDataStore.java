@@ -124,7 +124,7 @@ public abstract class AbstractDataSourceFeatureDataStore extends AbstractFeature
      * @return  <code>true</code> if the layers for the file were added,
      *          <code>false</code> if no layers could be derived from the file.
      *          
-     * @throws IOException
+     * @throws IOException when there is an error modifying the data source
      */
     protected boolean addNoSync(File file, String hint, boolean notify) throws IOException {
         FeatureDataSource.Content content = null;

@@ -24,7 +24,7 @@ import com.atakmap.coremap.conversions.Angle;
 import com.atakmap.coremap.conversions.AngleUtilities;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.NorthReference;
 
@@ -138,8 +138,8 @@ public class ResectionLandmarkAdapter extends BaseAdapter implements
         double bearing = m.getMetaDouble("bearing", 0);
 
         if (ref == NorthReference.GRID) {
-            GeoPoint endPoint = DistanceCalculations.computeDestinationPoint(
-                    point, bearing, 1000);
+            GeoPoint endPoint = GeoCalculations.pointAtDistance(point, bearing,
+                    1000);
             double gridConvergence = ATAKUtilities
                     .computeGridConvergence(point, endPoint);
             bearing -= gridConvergence;

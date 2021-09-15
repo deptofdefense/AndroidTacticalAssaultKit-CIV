@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
@@ -25,7 +26,9 @@ import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.Layer;
 import com.atakmap.map.layer.Layer2;
 import com.atakmap.map.layer.control.AttributionControl;
+import com.atakmap.map.layer.control.ClampToGroundControl;
 import com.atakmap.map.layer.control.Controls;
+import com.atakmap.map.layer.control.LollipopControl;
 import com.atakmap.map.layer.control.TimeSpanControl;
 import com.atakmap.map.layer.feature.Adapters;
 import com.atakmap.map.layer.feature.AttributeSet;
@@ -65,6 +68,8 @@ import com.atakmap.map.layer.opengl.GLLayerSpi2;
 import com.atakmap.map.layer.raster.osm.OSMUtils;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.math.Statistics;
+import com.atakmap.util.Collections2;
+import com.atakmap.util.Visitor;
 
 public class GLBatchGeometryFeatureDataStoreRenderer extends
         GLAsynchronousLayer2<LinkedList<GLBatchGeometry>> implements
@@ -112,7 +117,11 @@ public class GLBatchGeometryFeatureDataStoreRenderer extends
     private final TimespanControlImpl timespanControl;
     private final AttributionControlImpl attributionControl;
     private final AttributionControl srcAttributionControl;
+    private final LollipopControlImpl lollipopControl;
+    private final ClampToGroundControlImpl nadirClampControl;
     private final Set<MapControl> controls;
+    /** only to be accessed on query thread */
+    private final Set<GLBatchGeometry> lastBatch;
 
     public GLBatchGeometryFeatureDataStoreRenderer(MapRenderer surface, FeatureLayer subject) {
         this(surface, subject, Adapters.adapt(subject.getDataStore()));
@@ -148,12 +157,17 @@ public class GLBatchGeometryFeatureDataStoreRenderer extends
             this.attributionControl = new AttributionControlImpl();
         else
             this.attributionControl = null;
+
+        this.nadirClampControl = new ClampToGroundControlImpl();
+        this.lollipopControl = new LollipopControlImpl();
         
         this.controls = new HashSet<MapControl>();
         if(this.timespanControl != null)
             this.controls.add(this.timespanControl);
         if(this.attributionControl != null)
             this.controls.add(this.attributionControl);
+        this.controls.add(this.nadirClampControl);
+        this.controls.add(this.lollipopControl);
 
         if(this.dataStore instanceof Controls) {
             Collection<Object> dataStoreControls = new LinkedList<Object>();
@@ -174,6 +188,8 @@ public class GLBatchGeometryFeatureDataStoreRenderer extends
                 this.controls.add((MapControl)ctrl);
             }
         }
+
+        this.lastBatch = Collections2.newIdentityHashSet();
     }
     
     /**************************************************************************/
@@ -186,7 +202,21 @@ public class GLBatchGeometryFeatureDataStoreRenderer extends
         this.dataStore.addOnDataStoreContentChangedListener(this);
         this.renderContext.registerControl(this.subject, this);
         for(MapControl ctrl : this.controls)
-            this.renderContext.registerControl(this.subject, ctrl);        
+            this.renderContext.registerControl(this.subject, ctrl);
+
+        // Sync controls with their current state
+        this.renderContext.visitControls(null, new Visitor<Iterator<MapControl>>() {
+            @Override
+            public void visit(Iterator<MapControl> controls) {
+                while (controls.hasNext()) {
+                    MapControl mc = controls.next();
+                    if (mc instanceof LollipopControl)
+                        lollipopControl.enabled = ((LollipopControl) mc).getLollipopsVisible();
+                    else if (mc instanceof ClampToGroundControl)
+                        nadirClampControl.enabled = ((ClampToGroundControl) mc).getClampToGroundAtNadir();
+                }
+            }
+        });
     }
     
     @Override
@@ -290,6 +320,29 @@ public class GLBatchGeometryFeatureDataStoreRenderer extends
         } finally {
             state.copy(scratch);
         }
+
+        // NOTE: some micro-optimizations here based on knowledge that
+        //       currently only points have labels
+
+        // remove all labels for renderables that are no longer visible
+        final Set<GLBatchGeometry> labelsToInvalidate = Collections2.newIdentityHashSet();
+        for(GLBatchGeometry g : lastBatch) {
+            if (g instanceof GLBatchPoint)
+                labelsToInvalidate.add(g);
+        }
+        labelsToInvalidate.removeAll(result);
+
+        lastBatch.clear();
+        lastBatch.addAll(result);
+
+        if(!labelsToInvalidate.isEmpty()) {
+            renderContext.queueEvent(new Runnable() {
+                public void run() {
+                    for(GLBatchGeometry geom : labelsToInvalidate)
+                        geom.releaseLabel();
+                }
+            });
+        }
     }
 
     private void queryImpl(
@@ -349,6 +402,8 @@ public class GLBatchGeometryFeatureDataStoreRenderer extends
                         // also make sure to verify if the version is the same otherwise
                         // go through the complete initialization
                         if (glitem.lod == lod  && glitem.version == version) {
+                            glitem.setClampToGroundAtNadir(this.nadirClampControl.enabled);
+                            glitem.setLollipopsVisible(this.lollipopControl.enabled);
                             result.add(glitem);
                             continue;
                         }
@@ -412,6 +467,7 @@ public class GLBatchGeometryFeatureDataStoreRenderer extends
                             throw new IllegalStateException("unknown geometry encountered");
                         }
                     }
+
 
                     if (glitem == null) {
                         switch (type % 1000) {
@@ -515,6 +571,9 @@ public class GLBatchGeometryFeatureDataStoreRenderer extends
                         glitem.setExtrude(((FeatureDefinition3) cursor).getExtrude());
                     }
 
+                    glitem.setClampToGroundAtNadir(this.nadirClampControl.enabled);
+                    glitem.setLollipopsVisible(this.lollipopControl.enabled);
+
                     glitem.version = version;
                     // only add the result if it's visible
                     result.add(glitem);
@@ -548,6 +607,15 @@ public class GLBatchGeometryFeatureDataStoreRenderer extends
             //throw new RuntimeException(e);
             Log.e(TAG, "Unexpected SQLite exception", e);
         }
+    }
+
+    @Override
+    public void draw(GLMapView view, int renderPass) {
+        super.draw(view, renderPass);
+
+        // Batch renderer is requesting a full batch list refresh
+        if (batchRenderer.checkBatchListRefresh())
+            invalidate();
     }
 
     @Override
@@ -632,7 +700,43 @@ public class GLBatchGeometryFeatureDataStoreRenderer extends
 
         fids.addAll(glfids);
     }
-    
+
+    private class ClampToGroundControlImpl implements ClampToGroundControl {
+
+        private boolean enabled;
+
+        @Override
+        public void setClampToGroundAtNadir(boolean v) {
+            if (enabled != v) {
+                enabled = v;
+                invalidate();
+            }
+        }
+
+        @Override
+        public boolean getClampToGroundAtNadir() {
+            return enabled;
+        }
+    }
+
+    private class LollipopControlImpl implements LollipopControl {
+
+        private boolean enabled = true;
+
+        @Override
+        public boolean getLollipopsVisible() {
+            return enabled;
+        }
+
+        @Override
+        public void setLollipopsVisible(boolean v) {
+            if (enabled != v) {
+                enabled = v;
+                invalidate();
+            }
+        }
+    }
+
     private class TimespanControlImpl implements TimeSpanControl {
 
         private TimeSpan bounds = TimeSpan.createInterval(dataStore.getMinimumTimestamp(), dataStore.getMaximumTimestamp());

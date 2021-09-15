@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 
 import com.atakmap.android.data.ClearContentRegistry;
+import com.atakmap.android.features.FeatureEditDropdownReceiver;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import android.database.sqlite.SQLiteException;
 import android.net.Uri;
@@ -14,7 +15,6 @@ import android.os.SystemClock;
 
 import com.atakmap.android.data.DataMgmtReceiver;
 import com.atakmap.android.features.FeatureDataStoreDeepMapItemQuery;
-import com.atakmap.android.features.FeatureDataStoreMapOverlay;
 import com.atakmap.android.features.FeaturesDetailsDropdownReceiver;
 import com.atakmap.android.importexport.ExporterManager;
 import com.atakmap.android.importexport.Importer;
@@ -45,6 +45,8 @@ import com.atakmap.spatial.file.GpxContentResolver;
 import com.atakmap.spatial.file.GpxFileSpatialDb;
 import com.atakmap.spatial.file.KmlContentResolver;
 import com.atakmap.spatial.file.KmlFileSpatialDb;
+import com.atakmap.spatial.file.MvtContentResolver;
+import com.atakmap.spatial.file.MvtSpatialDb;
 import com.atakmap.spatial.file.ShapefileContentResolver;
 import com.atakmap.spatial.file.ShapefileMarshal;
 import com.atakmap.spatial.file.ShapefileSpatialDb;
@@ -86,6 +88,7 @@ public class WktMapComponent extends AbstractMapComponent {
     private FeatureLayer layer;
     private MapView mapView;
     private BroadcastReceiver detailsDropdownReceiver;
+    private BroadcastReceiver featureEditDropdownReceiver;
     /**
      * Token indicating that previously installed providers were invalidated.
      * On provider change, this flag should be set to <code>true</code>, then
@@ -191,6 +194,12 @@ public class WktMapComponent extends AbstractMapComponent {
                     .dispose();
             this.detailsDropdownReceiver = null;
         }
+        if (this.featureEditDropdownReceiver != null) {
+            this.unregisterReceiver(context, this.featureEditDropdownReceiver);
+            ((FeaturesDetailsDropdownReceiver) this.featureEditDropdownReceiver)
+                    .dispose();
+            this.featureEditDropdownReceiver = null;
+        }
         // remove feature layer
         if (layer != null) {
             List<Layer> layers = view
@@ -290,6 +299,12 @@ public class WktMapComponent extends AbstractMapComponent {
         addContentSource(context, new FalconViewSpatialDb(this.spatialDb,
                 FalconViewSpatialDb.DRW), fvResolver, query);
 
+        // Mapbox Vector Tiles files
+        MvtContentResolver mvtResolver = new MvtContentResolver(
+                view, this.spatialDb);
+        addContentSource(context, new MvtSpatialDb(this.spatialDb),
+                mvtResolver, query);
+
         // add the overlays
         for (ContentSource entry : this.contentSources
                 .values()) {
@@ -313,6 +328,16 @@ public class WktMapComponent extends AbstractMapComponent {
                 "Toggle feature visibility");
         this.registerReceiver(context,
                 detailsDropdownReceiver, i);
+
+        // Register the feature edit dropdown receiver
+        this.featureEditDropdownReceiver = new FeatureEditDropdownReceiver(view,
+                this.spatialDb);
+        DocumentedIntentFilter featureEditDocumentedIntentFilter = new DocumentedIntentFilter();
+        featureEditDocumentedIntentFilter.addAction(
+                FeatureEditDropdownReceiver.SHOW_EDIT,
+                "Show feature edit drop down");
+        this.registerReceiver(context,
+                featureEditDropdownReceiver, featureEditDocumentedIntentFilter);
         // start background initialization
         this.backgroundInit(this.spatialDb);
     }
@@ -605,12 +630,7 @@ public class WktMapComponent extends AbstractMapComponent {
                 FeatureDataStoreDeepMapItemQuery query) {
             this.impl = src;
 
-            this.overlay = new FeatureDataStoreMapOverlay(
-                    context, this.impl.getDatabase(), this.impl.getType(),
-                    this.impl.getGroupName(), this.impl.getIconPath(),
-                    query,
-                    this.impl.getContentType(),
-                    this.impl.getFileMimeType());
+            this.overlay = impl.createOverlay(context, query);
 
             // XXX - resolve type v. content type post 3.3
             this.typeImporter = new WktImporter(impl.getType(), impl);

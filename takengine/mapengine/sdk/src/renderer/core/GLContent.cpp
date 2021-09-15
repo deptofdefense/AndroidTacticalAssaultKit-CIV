@@ -48,8 +48,8 @@ namespace {
     public:
         FuncLoader(TAKErr(*loadFunc)(GLMapRenderable2Ptr&, TAK::Engine::Core::RenderContext&, const String&)) NOTHROWS
             : load_func_(loadFunc) {}
-        ~FuncLoader() NOTHROWS {}
-        virtual TAKErr load(GLMapRenderable2Ptr&result, TAK::Engine::Core::RenderContext& ctx, const String& URI) NOTHROWS {
+        ~FuncLoader() NOTHROWS override {}
+        TAKErr load(GLMapRenderable2Ptr&result, TAK::Engine::Core::RenderContext& ctx, const String& URI) NOTHROWS override {
             return load_func_(result, ctx, URI);
         }
         TAKErr(*load_func_)(GLMapRenderable2Ptr&, TAK::Engine::Core::RenderContext&, const String&);
@@ -75,8 +75,7 @@ GLContentContext::GLContentContext(
     pending_list_.next = pending_list_.prev = &pending_list_;
 }
 
-Future<Core::GLMapRenderable2*> GLContentContext::loadImpl_(const std::shared_ptr<HolderImpl_>& holder,
-    const char* URI) NOTHROWS {
+Future<Core::GLMapRenderable2*> GLContentContext::loadImpl_(const std::shared_ptr<HolderImpl_>& holder, const char* URI) NOTHROWS {
 
     // we are in GLThread
 
@@ -159,6 +158,11 @@ void GLContentContext::cancelAll() NOTHROWS {
 
         node = next;
     }
+}
+
+bool GLContentContext::hasPending() const NOTHROWS {
+    Node_* node = pending_list_.next; //  head
+    return node != &pending_list_;
 }
 
 //

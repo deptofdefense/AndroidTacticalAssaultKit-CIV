@@ -22,6 +22,7 @@ import com.atakmap.android.importfiles.sort.ImportKMLSort;
 import com.atakmap.android.importfiles.sort.ImportKMZSort;
 import com.atakmap.android.importfiles.sort.ImportLPTSort;
 import com.atakmap.android.importfiles.sort.ImportLayersSort;
+import com.atakmap.android.importfiles.sort.ImportMVTSort;
 import com.atakmap.android.importfiles.sort.ImportMissionPackageSort;
 import com.atakmap.android.importfiles.sort.ImportPrefSort;
 import com.atakmap.android.importfiles.sort.ImportResolver;
@@ -257,6 +258,8 @@ public class ImportFilesTask extends AsyncTask<Void, Void, Integer> {
         sorters.add(new ImportGMLZSort(context, validateExt, copyFile,
                 importInPlace));
 
+        sorters.add(new ImportMVTSort(context, validateExt, copyFile,
+                importInPlace));
 
         sorters.add(new ImportDTEDZSort.ImportDTEDZv1Sort(context, validateExt,
                 copyFile,

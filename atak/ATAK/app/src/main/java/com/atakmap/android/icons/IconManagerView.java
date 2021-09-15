@@ -7,7 +7,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
-import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
@@ -25,7 +24,7 @@ import com.atakmap.android.gui.ImportFileBrowserDialog;
 import com.atakmap.android.importfiles.sort.ImportUserIconSetSort;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapView;
-import com.atakmap.android.user.icon.Icon2525bPallet;
+import com.atakmap.android.user.icon.Icon2525cPallet;
 import com.atakmap.android.user.icon.SpotMapPallet;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
@@ -112,7 +111,7 @@ public class IconManagerView extends LinearLayout {
     }
 
     /**
-     * Display dialog to select 2525B, dotmap, or any iconset
+     * Display dialog to select 2525C, dotmap, or any iconset
      */
     private void setDefaultCoTMapping() {
         final List<UserIconSet> iconsets = new ArrayList<>();
@@ -124,17 +123,17 @@ public class IconManagerView extends LinearLayout {
         String currentMapping = getDefaultCoTMapping(_prefs);
         boolean forceMapping = getForceCoTMapping(_prefs);
 
-        //first two entries are 2525B and Dot Map, followed by user icon sets
+        //first two entries are 2525C and Dot Map, followed by user icon sets
         int count = 2 + iconsets.size();
         final String[] items = new String[count];
         if (!FileSystemUtils.isEmpty(currentMapping)
-                && currentMapping.equals(Icon2525bPallet.COT_MAPPING_2525B))
-            items[0] = ResourceUtil.getString(_context, R.string.civ_s2525B,
-                    R.string.s2525B)
+                && currentMapping.equals(Icon2525cPallet.COT_MAPPING_2525C))
+            items[0] = ResourceUtil.getString(_context, R.string.civ_s2525C,
+                    R.string.s2525C)
                     + _context.getString(R.string.mapping_selected);
         else
-            items[0] = ResourceUtil.getString(_context, R.string.civ_s2525B,
-                    R.string.s2525B);
+            items[0] = ResourceUtil.getString(_context, R.string.civ_s2525C,
+                    R.string.s2525C);
 
         if (!FileSystemUtils.isEmpty(currentMapping)
                 && currentMapping.equals(SpotMapPallet.COT_MAPPING_SPOTMAP))
@@ -185,7 +184,7 @@ public class IconManagerView extends LinearLayout {
                 switch (item) {
                     case 0: {
                         setDefaultCoTMapping(_prefs,
-                                Icon2525bPallet.COT_MAPPING_2525B);
+                                Icon2525cPallet.COT_MAPPING_2525C);
                     }
                         break;
                     case 1: {
@@ -283,11 +282,11 @@ public class IconManagerView extends LinearLayout {
     public static String getDefaultCoTMapping(final SharedPreferences prefs) {
         if (prefs == null) {
             Log.w(TAG, "Failed to get Default CoT Mapping");
-            return Icon2525bPallet.COT_MAPPING_2525B;
+            return Icon2525cPallet.COT_MAPPING_2525C;
         }
 
         return prefs.getString("iconset.default.cotMapping",
-                Icon2525bPallet.COT_MAPPING_2525B);
+                Icon2525cPallet.COT_MAPPING_2525C);
     }
 
     /**
@@ -323,7 +322,7 @@ public class IconManagerView extends LinearLayout {
         String defaultUUID = getDefaultCoTMapping(prefs);
         if (!FileSystemUtils.isEmpty(defaultUUID) && defaultUUID.equals(uid)) {
             Log.d(TAG, "Refreshing Default CoT Mapping");
-            setDefaultCoTMapping(prefs, Icon2525bPallet.COT_MAPPING_2525B);
+            setDefaultCoTMapping(prefs, Icon2525cPallet.COT_MAPPING_2525C);
         }
     }
 

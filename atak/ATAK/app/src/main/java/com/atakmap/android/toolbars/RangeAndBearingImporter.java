@@ -20,6 +20,7 @@ import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.comms.CommsMapComponent.ImportResult;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
@@ -127,8 +128,7 @@ public class RangeAndBearingImporter extends MapItemImporter {
                 }
             }
         } else {
-            GeoPoint rPoint = DistanceCalculations
-                    .computeDestinationPoint(anchor, b, r);
+            GeoPoint rPoint = GeoCalculations.pointAtDistance(anchor, b, r);
             if (!Double.isNaN(i))
                 rPoint = DistanceCalculations
                         .computeDestinationPoint(anchor, b, r, i);

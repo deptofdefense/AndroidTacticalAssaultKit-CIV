@@ -89,7 +89,7 @@ public class MenuLayoutBase extends LayoutWidget implements
         return widget;
     }
 
-    private MapMenuWidget _openSubmenu(MapMenuWidget parent,
+    protected MapMenuWidget _openSubmenu(MapMenuWidget parent,
             MapMenuButtonWidget buttonWidget) {
         if ((null == parent) || (null == buttonWidget))
             return null;
@@ -251,7 +251,7 @@ public class MenuLayoutBase extends LayoutWidget implements
     /**
      * Controls what actions are to be taken when a MapMenuButtonWidget is pressed.
      */
-    private void _addPressExpanders(final MapMenuWidget submenuWidget,
+    protected void _addPressExpanders(final MapMenuWidget submenuWidget,
             final MapMenuButtonWidget parentButton) {
         for (int i = 0; i < submenuWidget.getChildCount(); ++i) {
             final MapMenuButtonWidget childButton = (MapMenuButtonWidget) submenuWidget

@@ -28,7 +28,7 @@ public class ATAKAiIOSystem implements AiIOSystem<AiIOStream>, Disposable {
     private ModelSpi.Callback callback;
     private int maxProgress;
 
-    private Set<InputStreamAiIOStream> streams = Collections.newSetFromMap(new IdentityHashMap<InputStreamAiIOStream, Boolean>());
+    private final Set<InputStreamAiIOStream> streams = Collections.newSetFromMap(new IdentityHashMap<InputStreamAiIOStream, Boolean>());
 
     private static class InputStreamAiIOStream implements AiIOStream, Closeable {
 

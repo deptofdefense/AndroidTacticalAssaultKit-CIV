@@ -199,113 +199,11 @@ TAKErr TAK::Engine::Feature::GeometryFactory_fromWkb(Geometry2Ptr &value, DataIn
         break;
 
       case 4:                           // MultiPoint
-          {
-            //std::auto_ptr<GeometryCollection> collection
-            //    (new GeometryCollection (dim));
-            std::unique_ptr<GeometryCollection2> collection(new GeometryCollection2());
-            code = collection->setDimension(dim);
-            TE_CHECKRETURN_CODE(code);
-            //std::size_t count (read<uint32_t> (strm, byteOrder));
-            int count;
-            code = src.readInt(&count);
-            TE_CHECKRETURN_CODE(code);
-
-            for (int i (0); i < count; ++i)
-              {
-//#ifdef MSVC
-//                std::auto_ptr<Geometry> g
-//                    (parseWKB_Point (strm, byteOrder, dim, hasMeasure));//
-//
-//                collection->add (g.get ());
-//#else
-//                collection->add (parseWKB_Point (strm, byteOrder, dim,
-//                                                 hasMeasure));
-//#endif
-                  Geometry2Ptr g(nullptr, nullptr);
-                  code = parseWKB_Point(g, src, dim, hasMeasure);
-                  TE_CHECKBREAK_CODE(code);
-
-                  code = collection->addGeometry(std::move(g));
-                  TE_CHECKBREAK_CODE(code);
-              }
-            TE_CHECKRETURN_CODE(code);
-
-            //result = collection.release ();
-            value = Geometry2Ptr(collection.release(), Memory_deleter_const<Geometry2>);
-          }
-        break;
-
       case 5:                           // MultiLineString
       case 11:                          // MultiCurve
-          {
-            //std::auto_ptr<GeometryCollection> collection
-            //    (new GeometryCollection (dim));
-            std::unique_ptr<GeometryCollection2> collection(new GeometryCollection2());
-            code = collection->setDimension(dim);
-            TE_CHECKRETURN_CODE(code);
-            //std::size_t count (read<uint32_t> (strm, byteOrder));
-            int count;
-            code = src.readInt(&count);
-            TE_CHECKRETURN_CODE(code);
-
-            for (int i (0); i < count; ++i)
-              {
-//#ifdef MSVC
-//                std::auto_ptr<Geometry> g
-//                    (parseWKB_LineString (strm, byteOrder, dim, hasMeasure));
-//
-//                collection->add (g.get ());
-//#else
-//                collection->add (parseWKB_LineString (strm, byteOrder, dim,
-//                                                      hasMeasure));
-//
-//#endif
-                  Geometry2Ptr g(nullptr, nullptr);
-                  code = parseWKB_LineString(g, src, dim, hasMeasure);
-                  TE_CHECKBREAK_CODE(code);
-
-                  code = collection->addGeometry(std::move(g));
-                  TE_CHECKBREAK_CODE(code);
-              }
-            TE_CHECKRETURN_CODE(code);
-
-            //result = collection.release ();
-            value = Geometry2Ptr(collection.release(), Memory_deleter_const<Geometry2>);
-          }
-        break;
-
       case 6:                           // MultiPolygon
       case 15:                          // PolyhedralSurface
       case 16:                          // TIN
-          {
-            //std::auto_ptr<GeometryCollection> collection
-            //    (new GeometryCollection (dim));
-            std::unique_ptr<GeometryCollection2> collection(new GeometryCollection2());
-            code = collection->setDimension(dim);
-            TE_CHECKRETURN_CODE(code);
-            //std::size_t count (read<uint32_t> (strm, byteOrder));
-            int count;
-            code = src.readInt(&count);
-            TE_CHECKRETURN_CODE(code);
-
-            for (int i (0); i < count; ++i)
-              {
-//                std::auto_ptr<Geometry> g
-//                    (parseWKB_Polygon (strm, byteOrder, dim, hasMeasure));
-                  Geometry2Ptr g(nullptr, nullptr);
-                  code = parseWKB_Polygon(g, src, dim, hasMeasure);
-                  TE_CHECKBREAK_CODE(code);
-
-                  code = collection->addGeometry(std::move(g));
-                  TE_CHECKBREAK_CODE(code);
-              }
-            TE_CHECKRETURN_CODE(code);
-
-            //result = collection.release ();
-            value = Geometry2Ptr(collection.release(), Memory_deleter_const<Geometry2>);
-          }
-        break;
-
       case 7:                           // GeometryCollection
       case 12:                         // MultiSurface
           {

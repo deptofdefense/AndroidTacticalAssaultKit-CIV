@@ -11,7 +11,7 @@ public final class FeatureDataSourceContentFactory {
 
     public static final String TAG = "FeatureDataSourceContentFactory";
 
-    private static Map<FeatureDataSource, Pointer> spis = new HashMap<>();
+    private static final Map<FeatureDataSource, Pointer> spis = new HashMap<>();
 
     private FeatureDataSourceContentFactory() {
     }

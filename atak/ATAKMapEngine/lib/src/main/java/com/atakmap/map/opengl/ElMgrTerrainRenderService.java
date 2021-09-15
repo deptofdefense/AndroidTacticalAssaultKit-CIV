@@ -1,6 +1,5 @@
 package com.atakmap.map.opengl;
 
-import android.util.Pair;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.interop.NativePeerManager;
 import com.atakmap.interop.Pointer;
@@ -10,8 +9,6 @@ import com.atakmap.map.elevation.ElevationChunk;
 import com.atakmap.map.elevation.ElevationManager;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.model.Mesh;
-import com.atakmap.map.layer.model.ModelBuilder;
-import com.atakmap.map.layer.model.ModelInfo;
 import com.atakmap.math.Matrix;
 import com.atakmap.util.ReadWriteLock;
 

@@ -177,16 +177,13 @@ public class ShapeDetailHandler extends CotDetailHandler {
         final int color = _getColorAttr(polyline, "color");
         poly.setStrokeColor(color);
 
-
         final String fillColorStr = polyline.getAttribute("fillColor");
         if (!FileSystemUtils.isEmpty(fillColorStr)) {
-             int fillColor = _getColorAttr(polyline, "fillColor");
-
-             System.out.println("shb: " + fillColor);
-             poly.setFillColor(fillColor);
-        } else { 
-             // legacy behavior
-             poly.setFillColor(Color.argb(45, Color.red(color),
+            int fillColor = _getColorAttr(polyline, "fillColor");
+            poly.setFillColor(fillColor);
+        } else {
+            // legacy behavior
+            poly.setFillColor(Color.argb(45, Color.red(color),
                     Color.green(color),
                     Color.blue(color)));
         }
@@ -234,12 +231,13 @@ public class ShapeDetailHandler extends CotDetailHandler {
             try {
                 color = Color.parseColor(colorString);
             } catch (Exception ignored) {
-                try { 
+                try {
                     color = Integer.parseInt(colorString);
-                } catch (Exception ignore) {}
+                } catch (Exception ignore) {
+                }
             }
         }
-       
+
         return color;
     }
 }

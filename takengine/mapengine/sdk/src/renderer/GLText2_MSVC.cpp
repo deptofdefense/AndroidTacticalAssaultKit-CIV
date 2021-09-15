@@ -62,6 +62,7 @@ namespace
 
         char_metrics_t common_char_metrics_[COMMON_CHAR_END - COMMON_CHAR_START + 1];
         std::map<unsigned int, char_metrics_t> char_metrics_;
+        std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> convert_;
 
         static char_metrics_t MeasureDisplayStringBounds(const wchar_t *text, std::size_t index, std::size_t length, Gdiplus::Font &font);
 
@@ -84,11 +85,10 @@ namespace
         TAKErr loadGlyph(BitmapPtr &value, const unsigned int c) NOTHROWS override;
     private:
         void getCharMetrics(char_metrics_t *metrics, const unsigned int c);
+        std::wstring getWideString(unsigned int c);
     private:
         int designUnitsToPixels(float value);
     };
-
-    std::wstring getWideString(unsigned int c);
 
     float computeDescent(Gdiplus::Font &font, Gdiplus::FontStyle style);
 
@@ -224,6 +224,7 @@ namespace
         TextFormat2(),
         font_(std::move(font)),
         char_height_(0),
+        convert_(),
         font_size_(static_cast<int>(font_->GetSize())),
         descent_(computeDescent(*font_, Gdiplus::FontStyleRegular))
     {
@@ -240,8 +241,7 @@ namespace
         float maxWidth = 0;
         float curWidth = 0;
 
-        std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> convert;
-        std::wstring wstr = convert.from_bytes(text);
+        std::wstring wstr = convert_.from_bytes(text);
         const wchar_t *wtext = wstr.c_str();
 
         while (*wtext) {
@@ -392,8 +392,7 @@ namespace
         return BitmapAdapter_adapt(value, *sbmap);
     }
 
-    std::wstring getWideString(unsigned int c) {
-        std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> convert;
+    std::wstring CLITextFormat2::getWideString(unsigned int c) {
         char buf[5u];
         std::wstring wstring;
         if (c < 0xFF) {
@@ -405,14 +404,14 @@ namespace
             buf[0] = 0xC0 | ((c >> 6) & 0x1F);
             buf[1] = 0x80 | (c & 0x3F);
             buf[2] = '\0';
-            wstring = convert.from_bytes(buf);
+            wstring = convert_.from_bytes(buf);
         } else if (c < 0x10000) {
             // 16 bits
             buf[0] = 0xE0 | ((c >> 12) & 0x0F);
             buf[1] = 0x80 | ((c >> 6) & 0x3F);
             buf[2] = 0x80 | (c & 0x3F);
             buf[3] = '\0';
-            wstring = convert.from_bytes(buf);
+            wstring = convert_.from_bytes(buf);
         } else {
             // truncated to 21 bits
             buf[0] = 0xF0 | ((c >> 18) & 0x07);
@@ -420,7 +419,7 @@ namespace
             buf[2] = 0x80 | ((c >> 6) & 0x3F);
             buf[3] = 0x80 | (c & 0x3F);
             buf[4] = '\0';
-            wstring = convert.from_bytes(buf);
+            wstring = convert_.from_bytes(buf);
         }
 
         return wstring;

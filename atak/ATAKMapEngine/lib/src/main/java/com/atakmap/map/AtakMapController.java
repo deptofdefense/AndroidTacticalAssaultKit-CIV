@@ -3,7 +3,6 @@ package com.atakmap.map;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import android.graphics.Camera;
 import android.graphics.Point;
 import android.graphics.PointF;
 

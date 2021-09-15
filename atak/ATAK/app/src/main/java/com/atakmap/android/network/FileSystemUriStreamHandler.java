@@ -1,3 +1,4 @@
+
 package com.atakmap.android.network;
 
 import android.net.Uri;
@@ -12,7 +13,7 @@ import java.io.InputStream;
 /**
  * URI Stream handler for file system only URIs
  */
-public final class FileSystemUriStreamHandler  implements URIStreamHandler {
+public final class FileSystemUriStreamHandler implements URIStreamHandler {
 
     /**
      * Single instance
@@ -22,7 +23,8 @@ public final class FileSystemUriStreamHandler  implements URIStreamHandler {
     /**
      * Private constructor so it cannot be constructed outside this class
      */
-    private FileSystemUriStreamHandler() {}
+    private FileSystemUriStreamHandler() {
+    }
 
     /**
      * Gets the uri content input stream
@@ -34,7 +36,7 @@ public final class FileSystemUriStreamHandler  implements URIStreamHandler {
     @Override
     public InputStream getContent(Uri uri) throws IOException {
         final String path = uri.getPath();
-        if(path == null || path.isEmpty())
+        if (path == null || path.isEmpty())
             throw new FileNotFoundException("URI does not specify a path");
         return IOProviderFactory.getInputStream(new File(path));
     }

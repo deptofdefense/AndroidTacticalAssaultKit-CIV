@@ -85,7 +85,7 @@ namespace
             return TE_IllegalState;
         double x = geo.longitude;
         double y = geo.latitude;
-        double z = ::isnan(geo.altitude) ? 0.0 : geo.altitude;
+        double z = isnan(geo.altitude) ? 0.0 : geo.altitude;
         if(!OCTTransform(forwardImpl.get(), 1, &x, &y, &z))
             return TE_Err;
         proj->x = x;

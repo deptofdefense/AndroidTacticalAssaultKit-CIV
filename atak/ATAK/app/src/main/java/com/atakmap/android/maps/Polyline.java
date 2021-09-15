@@ -72,15 +72,14 @@ public class Polyline extends Shape {
      */
     public static final int STYLE_OUTLINE_HALO_MASK = 16;
 
-
-
     /**
      * Height styles (bit masks)
      */
     public static final int HEIGHT_STYLE_NONE = 0, // Do not draw height in 3D
             HEIGHT_STYLE_POLYGON = 1, // Draw the 3D height polygon
-            HEIGHT_STYLE_OUTLINE = 2, // Draw an outline representing the height
-            HEIGHT_STYLE_OUTLINE_SIMPLE = 4; // Simplified height outline
+            HEIGHT_STYLE_OUTLINE = 1 << 1, // Draw an outline representing the height
+            HEIGHT_STYLE_OUTLINE_SIMPLE = 1 << 2, // Simplified height outline
+            HEIGHT_STYLE_TOP_ONLY = 1 << 3; // Only render the top plane of the shape
 
     /**
      * Methods for how to extrude the shape's height (mutually exclusive)
@@ -218,12 +217,14 @@ public class Polyline extends Shape {
 
             }
         }
-        
+
         // Validate
         for (int i = off; i < off + len; i++) {
             GeoPoint gp = points[i].get();
-            if (Double.isNaN(gp.getLatitude()) || Double.isNaN(gp.getLongitude())) {
-                Log.e(getClass().getName(), "Invalid point " + points[i].get(), new Throwable());
+            if (Double.isNaN(gp.getLatitude())
+                    || Double.isNaN(gp.getLongitude())) {
+                Log.e(getClass().getName(), "Invalid point " + points[i].get(),
+                        new Throwable());
                 // Abandon
                 return;
             }
@@ -283,15 +284,12 @@ public class Polyline extends Shape {
     private final ConcurrentLinkedQueue<OnAltitudeModeChangedListener> _onAltitudeModeChanged = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<OnHeightStyleChangedListener> _onHeightStyleChanged = new ConcurrentLinkedQueue<>();
 
-
     private int heightStyle = HEIGHT_STYLE_POLYGON | HEIGHT_STYLE_OUTLINE;
     private int extrudeMode = HEIGHT_EXTRUDE_DEFAULT;
 
     public interface OnLabelsChangedListener {
         void onLabelsChanged(Polyline p);
     }
-
-
 
     public interface OnLabelTextSizeChanged {
         void onLabelTextSizeChanged(Polyline p);

@@ -6,7 +6,6 @@
 
 package com.atakmap.map.layer.raster.tilereader;
 
-import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.database.*;
 

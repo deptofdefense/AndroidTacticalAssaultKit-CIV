@@ -17,7 +17,7 @@ import org.simpleframework.xml.Attribute;
 public class MapOverlayFilter {
 
     /**
-     * CoT/2525B type
+     * CoT/2525C type
      */
     @Attribute(name = "type", required = false)
     private String type;

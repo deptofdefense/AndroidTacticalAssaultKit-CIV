@@ -11,11 +11,11 @@ import com.atakmap.android.elev.dt2.Dt2ElevationModel;
 import com.atakmap.android.importexport.handlers.ParentMapItem;
 import com.atakmap.android.maps.AnchoredMapItem;
 import com.atakmap.android.maps.Association;
+import com.atakmap.android.maps.AssociationSet;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
-import com.atakmap.android.maps.MetaShape;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.Polyline;
 import com.atakmap.android.maps.Shape;
@@ -36,6 +36,7 @@ import com.atakmap.coremap.maps.coords.MutableGeoBounds;
 import com.atakmap.coremap.maps.coords.MutableUTMPoint;
 
 import com.atakmap.coremap.maps.coords.Vector3D;
+import com.atakmap.map.elevation.ElevationManager;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,7 +50,8 @@ import java.util.UUID;
  *
  * See {@link DrawingRectangle} for the default drawing shape implementation
  */
-public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
+public abstract class Rectangle extends AssociationSet
+        implements AnchoredMapItem,
         ParentMapItem, OnSharedPreferenceChangeListener,
         MapItem.OnGroupChangedListener, PointMapItem.OnPointChangedListener {
 
@@ -223,9 +225,8 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
             _ignore += 8; // changing 8 points
             for (int j = 0; j < 4; j++) {
                 GeoPointMetaData n = GeoPointMetaData.wrap(
-                        DistanceCalculations.computeDestinationPoint(
-                                newPoint.get(), da[j * 2 + 1],
-                                da[j * 2]),
+                        GeoCalculations.pointAtDistance(newPoint.get(),
+                                da[j * 2 + 1], da[j * 2]),
                         GeoPointMetaData.CALCULATED,
                         GeoPointMetaData.CALCULATED);
                 setPoint(getPointAt(j), n);
@@ -280,7 +281,6 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
     static private GeoPointMetaData fillAltitude(final GeoPointMetaData p) {
         final Dt2ElevationModel dem = Dt2ElevationModel.getInstance();
         return dem.queryPoint(p.get().getLatitude(), p.get().getLongitude());
-
     }
 
     /**
@@ -506,9 +506,7 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
             g = p.getGeoPointMetaData();
             if (g.get().isMutable())
                 g.set(new GeoPoint(g.get(), GeoPoint.Access.READ_ONLY));
-            // Update altitude on corner points only
-            retval[idx] = idx < 4 ? fillAltitude(g) : g;
-            idx++;
+            retval[idx++] = g;
         }
         return retval;
     }
@@ -620,7 +618,6 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
             _center.setColor(strokeColor);
         super.setStrokeColor(strokeColor);
     }
-
 
     @Override
     public void setBasicLineStyle(int basicLineStyle) {
@@ -899,23 +896,6 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
         return _showLines;
     }
 
-    /************************ PROTECTED METHODS ****************************/
-
-    /**
-     * @return Array of {@link Association} that make up the lines of this Rectangle
-     */
-    protected Association[] getAssociations() {
-        return _lines.toArray(new Association[0]);
-    }
-
-    /**
-     * @param index
-     * @return Association of the {@link Rectangle} at specified index
-     */
-    private Association getAssociationAt(int index) {
-        return _lines.get(index);
-    }
-
     /**
      * SubClasses should override this function in order to mark each corner point with a
      * specialized parent UID Key, (e.g. {AirField} overrides it with
@@ -960,9 +940,17 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
         }
         // Recalculate average altitude based on corners
         double sum = 0;
-        for (int i = 0; i < corners; i++)
-            sum += gp[i].get().getAltitude();
-        this._avgAltitude = sum / (float) corners;
+        int valid = 0;
+        for (int i = 0; i < corners; i++) {
+            GeoPoint p = gp[i].get();
+            double alt = ElevationManager.getElevation(p.getLatitude(),
+                    p.getLongitude(), null);
+            if (GeoPoint.isAltitudeValid(alt)) {
+                sum += alt;
+                valid++;
+            }
+        }
+        this._avgAltitude = valid > 0 ? sum / valid : Double.NaN;
 
         _recalculateLabels();
 
@@ -1019,8 +1007,7 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
     private GeoPointMetaData _getActualCenter(GeoPoint p1, GeoPoint p2) {
         double[] rb = DistanceCalculations.computeDirection(p1, p2);
         return GeoPointMetaData.wrap(
-                DistanceCalculations.computeDestinationPoint(p1, rb[1],
-                        rb[0] * 0.5),
+                GeoCalculations.pointAtDistance(p1, rb[1], rb[0] * 0.5),
                 GeoPointMetaData.CALCULATED,
                 GeoPointMetaData.CALCULATED);
     }
@@ -1074,7 +1061,7 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
 
             if (_mirrorWidth) {
                 //Update the opposite edge position
-                oppPos = DistanceCalculations.computeDestinationPoint(fulcrum,
+                oppPos = GeoCalculations.pointAtDistance(fulcrum,
                         rbFS1[1] + 180, rbFS1[0]);
             }
 
@@ -1082,28 +1069,26 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
             _ignore += 6; //Suppress corner/edge move events for 6 more updates
             setPoint(a.getFirstItem(),
                     GeoPointMetaData.wrap(
-                            DistanceCalculations.computeDestinationPoint(
-                                    sidePos,
+                            GeoCalculations.pointAtDistance(sidePos,
                                     rbS1[1] + rotS, rbS1[0]),
                             GeoPointMetaData.CALCULATED,
                             GeoPointMetaData.CALCULATED));
             setPoint(a.getSecondItem(),
                     GeoPointMetaData.wrap(
-                            DistanceCalculations.computeDestinationPoint(
-                                    sidePos,
+                            GeoCalculations.pointAtDistance(sidePos,
                                     rbS2[1] + rotS, rbS2[0]),
                             GeoPointMetaData.CALCULATED,
                             GeoPointMetaData.CALCULATED));
 
             setPoint(ao.getFirstItem(),
                     GeoPointMetaData.wrap(
-                            DistanceCalculations.computeDestinationPoint(oppPos,
+                            GeoCalculations.pointAtDistance(oppPos,
                                     rbO1[1] + rotO, rbO1[0]),
                             GeoPointMetaData.CALCULATED,
                             GeoPointMetaData.CALCULATED));
             setPoint(ao.getSecondItem(),
                     GeoPointMetaData.wrap(
-                            DistanceCalculations.computeDestinationPoint(oppPos,
+                            GeoCalculations.pointAtDistance(oppPos,
                                     rbO2[1] + rotO, rbO2[0]),
                             GeoPointMetaData.CALCULATED,
                             GeoPointMetaData.CALCULATED));
@@ -1146,19 +1131,18 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
                 .calculateAngleDifference(azi, rbCC[1]);
         _ignore += 2;
         setPoint(ca,
-                GeoPointMetaData.wrap(DistanceCalculations
-                        .computeDestinationPoint(center.get(), azi
+                GeoPointMetaData
+                        .wrap(GeoCalculations.pointAtDistance(center.get(), azi
                                 - ang, rbCC[0])));
         setPoint(cb,
-                GeoPointMetaData.wrap(DistanceCalculations
-                        .computeDestinationPoint(center.get(), azi
+                GeoPointMetaData
+                        .wrap(GeoCalculations.pointAtDistance(center.get(), azi
                                 - ang + 180, rbCC[0])));
         if (_mirrorWidth) {
             _ignore += 1;
             setPoint(co,
-                    GeoPointMetaData.wrap(DistanceCalculations
-                            .computeDestinationPoint(center.get(),
-                                    azi + ang + 180, rbCC[0])));
+                    GeoPointMetaData.wrap(GeoCalculations.pointAtDistance(
+                            center.get(), azi + ang + 180, rbCC[0])));
         }
 
         _ignore += 4;
@@ -1238,6 +1222,7 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
         Marker c = this._createCenterMarker();
         c.setTitle(_childMapGroup.getFriendlyName());
         setCenterMarker(c);
+        setAssociations(_lines);
     }
 
     private Association _createAssociation(PointMapItem firstItem,
@@ -1565,11 +1550,11 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
             double azi = rbcb[1];
             //Compute the far corners
             GeoPointMetaData gp2 = GeoPointMetaData
-                    .wrap(DistanceCalculations.computeDestinationPoint(
-                            gcenter, azi + 180 - ang, radius));
+                    .wrap(GeoCalculations.pointAtDistance(gcenter,
+                            azi + 180 - ang, radius));
             GeoPointMetaData gp3 = GeoPointMetaData
-                    .wrap(DistanceCalculations.computeDestinationPoint(
-                            gcenter, azi + 180 + ang, radius));
+                    .wrap(GeoCalculations.pointAtDistance(gcenter,
+                            azi + 180 + ang, radius));
 
             _m2 = _r._createCornerMarker(gp2);
             _m2.addOnPointChangedListener(_r.cornerListener);
@@ -1596,6 +1581,7 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
                 _r.getChildMapGroup().addItem(a);
             }
 
+            _r.setAssociations(_r._lines);
             _r._initDimensions();
 
             return this;
@@ -1628,6 +1614,7 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
                         _r._lines.add(a);
                         _r.getChildMapGroup().addItem(a);
                     }
+                    _r.setAssociations(_r._lines);
                     break;
                 case START_END_WIDTH_SIDE:
                     _m1 = _r._createCornerMarker(p);
@@ -1676,6 +1663,7 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
                         _r._lines.add(i, associations[i]);
                         _r.getChildMapGroup().addItem(associations[i]);
                     }
+                    _r.setAssociations(_r._lines);
                     break;
             }
             return this;
@@ -1688,32 +1676,28 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
                 case START_END_WIDTH_MIRRORED:
                     double half = width / 2;
                     _r._points.get(0).setPoint(
-                            DistanceCalculations.computeDestinationPoint(
-                                    _m0.getPoint(),
+                            GeoCalculations.pointAtDistance(_m0.getPoint(),
                                     da[1] - 90d, half));
                     _r._points.get(1).setPoint(
-                            DistanceCalculations.computeDestinationPoint(
-                                    _m0.getPoint(),
+                            GeoCalculations.pointAtDistance(_m0.getPoint(),
                                     da[1] + 90d, half));
                     _r._points.get(2).setPoint(
-                            DistanceCalculations.computeDestinationPoint(
-                                    _m1.getPoint(),
+                            GeoCalculations.pointAtDistance(_m1.getPoint(),
                                     da[1] + 90d, half));
                     _r._points.get(3).setPoint(
-                            DistanceCalculations.computeDestinationPoint(
-                                    _m1.getPoint(),
+                            GeoCalculations.pointAtDistance(_m1.getPoint(),
                                     da[1] - 90d, half));
                     break;
                 case START_END_WIDTH_UNMIRRORED:
                     break;
                 case START_END_WIDTH_SIDE:
                     Marker s0 = _r._createCornerMarker(
-                            GeoPointMetaData.wrap(DistanceCalculations
-                                    .computeDestinationPoint(_m0.getPoint(),
+                            GeoPointMetaData.wrap(GeoCalculations
+                                    .pointAtDistance(_m0.getPoint(),
                                             da[1] + 90d, width)));
                     Marker s1 = _r._createCornerMarker(
-                            GeoPointMetaData.wrap(DistanceCalculations
-                                    .computeDestinationPoint(_m1.getPoint(),
+                            GeoPointMetaData.wrap(GeoCalculations
+                                    .pointAtDistance(_m1.getPoint(),
                                             da[1] + 90d, width)));
                     s0.addOnPointChangedListener(_r.cornerListener);
                     s0.addOnPointChangedListener(_r.cornerListener);
@@ -1738,6 +1722,7 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
                     _r.getChildMapGroup().addItem(a3);
                     for (Association a : _r._lines)
                         _r._points.add(a.getMarker());
+                    _r.setAssociations(_r._lines);
                     break;
                 case START_END_CORNERS:
                     break;

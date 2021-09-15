@@ -4,7 +4,6 @@ package com.atakmap.android.editableShapes;
 import com.atakmap.android.drawing.mapItems.DrawingShape;
 import com.atakmap.android.maps.MultiPolyline;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
-import com.atakmap.map.MapControl;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.MapRenderer3;
 import com.atakmap.map.layer.control.SurfaceRendererControl;

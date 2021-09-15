@@ -38,7 +38,7 @@ import android.view.WindowManager;
 
 import com.atakmap.android.elev.dt2.Dt2ElevationModel;
 import com.atakmap.android.gui.HintDialogHelper;
-import com.atakmap.android.icons.Icon2525bIconAdapter;
+import com.atakmap.android.icons.Icon2525cIconAdapter;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import com.atakmap.android.mapcompass.CompassArrowMapComponent;
@@ -1670,6 +1670,7 @@ public class LocationMapComponent extends AbstractMapComponent implements
             _locationMarker.setType("self");
             _locationMarker.setMetaString("team",
                     locationPrefs.getString("locationTeam", "Cyan"));
+            _locationMarker.setMetaBoolean("addToObjList", false);
             _locationMarker
                     .addOnTrackChangedListener(_trackChangedListener);
             _locationMarker
@@ -1811,7 +1812,7 @@ public class LocationMapComponent extends AbstractMapComponent implements
                             context.getPackageName() + "/"
                             + R.drawable.ic_self_white);
                     builder.setColor(0,
-                            Icon2525bIconAdapter.teamToColor(userTeam));
+                            Icon2525cIconAdapter.teamToColor(userTeam));
                     builder.setSize(size, size);
                     break;
                 case 2:

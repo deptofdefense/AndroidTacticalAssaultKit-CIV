@@ -3,7 +3,6 @@ package com.atakmap.io;
 import android.util.Base64;
 import com.atakmap.util.zip.IoUtils;
 
-import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
@@ -76,7 +75,7 @@ public class WebProtocolHandler implements ProtocolHandler {
         X509TrustManager getTrustManager();
     }
 
-    private static String USER_AGENT = "TAK";
+    private final static String USER_AGENT = "TAK";
     private static Callbacks callbacks;
 
     private static class DefaultCallbacks implements Callbacks {

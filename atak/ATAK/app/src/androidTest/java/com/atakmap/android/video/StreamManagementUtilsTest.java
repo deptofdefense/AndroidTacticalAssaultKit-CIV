@@ -146,7 +146,8 @@ public class StreamManagementUtilsTest extends ATAKInstrumentedTest {
         ConnectionEntry ce1 = StreamManagementUtils
                 .createConnectionEntryFromUrl("name",
                         "http://username:password@192.168.1.1:8081/test.mjpg");
-        assertEquals("http:address", "username:password@192.168.1.1", ce1.getAddress());
+        assertEquals("http:address", "username:password@192.168.1.1",
+                ce1.getAddress());
         assertEquals("http:port", 8081, ce1.getPort());
         assertEquals("http:path", "/test.mjpg", ce1.getPath());
     }

@@ -16,7 +16,6 @@ import com.atakmap.map.layer.raster.opengl.GLMapLayer3;
 import com.atakmap.map.layer.raster.tilematrix.TileMatrix;
 import com.atakmap.map.layer.raster.tilematrix.opengl.GLTiledLayerCore;
 import com.atakmap.map.layer.raster.tilematrix.opengl.GLZoomLevel;
-import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.math.MathUtils;

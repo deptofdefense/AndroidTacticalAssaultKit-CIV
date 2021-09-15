@@ -17,12 +17,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import android.net.Uri;
 import android.util.Pair;
 
 import com.atakmap.content.BindArgument;
 import com.atakmap.content.WhereClauseBuilder;
-import com.atakmap.coremap.io.DatabaseInformation;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.database.CursorIface;

@@ -31,15 +31,15 @@ struct VertexData {
         short vtmp = 0;
         short htmp = 0;
         for (int i = 0; i < vertexCount; i++) {
-            utmp = zzDec(buffer, u, utmp, i);
+            utmp = (short)zzDec(buffer, u, utmp, i);
         }
         
         for (int i = 0; i < vertexCount; i++) {
-            vtmp = zzDec(buffer, v, vtmp, i);
+            vtmp = (short)zzDec(buffer, v, vtmp, i);
         }
         
         for (int i = 0; i < vertexCount; i++) {
-            htmp =  zzDec(buffer, height, htmp, i);
+            htmp =  (short)zzDec(buffer, height, htmp, i);
         }
     }
 

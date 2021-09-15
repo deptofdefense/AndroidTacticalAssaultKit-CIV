@@ -3,7 +3,6 @@ package com.atakmap.app.system;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.Application;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
@@ -12,12 +11,14 @@ import android.content.pm.Signature;
 import android.os.SystemClock;
 import android.view.LayoutInflater;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.ATAKApplication;
 import com.atakmap.app.BuildConfig;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import dalvik.system.DexClassLoader;
@@ -247,8 +248,6 @@ public class SystemComponentLoader {
             }
             flavorComponent.setPluginContext(pluginContext);
             flavorComponent.setAppContext(context);
-            flavorComponent.load();
-
         } catch (Throwable e) {
             Log.d(TAG, "error loading the flavor system component", e);
             flavorComponent = null;
@@ -306,8 +305,6 @@ public class SystemComponentLoader {
             }
             encryptionComponent.setPluginContext(pluginContext);
             encryptionComponent.setAppContext(activity);
-            encryptionComponent.load();
-
         } catch (Throwable e) {
             Log.d(TAG, "error loading the encryption system component", e);
             encryptionComponent = null;
@@ -361,9 +358,25 @@ public class SystemComponentLoader {
     /**
      * Obtain an encryption provider if it is installed.
      * @return null if no encryption capability is installed
+     * @deprecated
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.3.1", forRemoval = true, removeAt = "4.5.0")
     public static EncryptionProvider getEncryptionProvider() {
         return (EncryptionProvider) encryptionComponent;
+    }
+
+    /**
+     * Returns the list of abstract components in order of importance.
+     * @return
+     */
+    public static AbstractSystemComponent[] getComponents() {
+        ArrayList<AbstractSystemComponent> components = new ArrayList<>();
+        if (flavorComponent != null)
+            components.add(flavorComponent);
+        if (encryptionComponent != null)
+            components.add(encryptionComponent);
+        return components.toArray(new AbstractSystemComponent[0]);
     }
 
     /**

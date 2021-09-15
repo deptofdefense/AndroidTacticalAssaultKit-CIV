@@ -303,7 +303,8 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
             return false;
 
         String conversationId = message.getString("conversationId",
-                GeoChatService.DEFAULT_CHATROOM_NAME);;
+                GeoChatService.DEFAULT_CHATROOM_NAME);
+        ;
         String conversationName = message.getString("conversationName",
                 conversationId);
 
@@ -769,8 +770,7 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
                 continue;
             Log.d(TAG, "Sending to " + destinationUid);
 
-            if (destinationUid.equals(GeoChatService.DEFAULT_CHATROOM_NAME
-                    )) {
+            if (destinationUid.equals(GeoChatService.DEFAULT_CHATROOM_NAME)) {
                 // Notify plugins to send a message to all chat rooms
                 Intent intent = new Intent(PLUGIN_SEND_MESSAGE_ALL_CHAT_ROOMS);
                 intent.putExtra(PLUGIN_SEND_MESSAGE_EXTRA, msg);
@@ -928,7 +928,7 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
         return id != null
                 &&
                 (id.equals(GeoChatService.DEFAULT_CHATROOM_NAME) ||
-                        id.equals("All Streaming"));
+                        id.equals(GeoChatService.DEFAULT_CHATROOM_NAME_LEGACY));
     }
 
     /**

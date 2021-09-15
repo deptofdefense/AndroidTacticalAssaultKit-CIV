@@ -108,6 +108,20 @@ public abstract class AbstractGeometryTests extends ATAKInstrumentedTest {
         Assert.assertEquals(p.getDimension(), 3);
     }
 
+    @Test
+    public void Geometry_2d_clone_roundtrip_test() {
+        Geometry p = createTestGeometry(2);
+        Geometry c = p.clone();
+        Assert.assertEquals(p, c);
+    }
+
+    @Test
+    public void Geometry_3d_clone_roundtrip_test() {
+        Geometry p = createTestGeometry(3);
+        Geometry c = p.clone();
+        Assert.assertEquals(p, c);
+    }
+
     // envelope test support
 
     void envelope_test(Geometry g, Envelope truth) {

@@ -49,8 +49,6 @@ import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
-import com.atakmap.coremap.maps.coords.GeoPointMetaData;
-import com.atakmap.map.CameraController;
 import com.atakmap.map.MapRenderer2;
 import com.atakmap.map.MapSceneModel;
 import com.atakmap.map.layer.feature.Feature;

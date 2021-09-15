@@ -373,7 +373,6 @@ public class ModelFileHierarchyListItem extends AbstractHierarchyListItem2
             uri = Uri.fromFile(new File(uri)).toString();
         }
 
-        File modelFile = new File(uri);
         Intent i = new Intent(
                 ImportExportMapComponent.ACTION_DELETE_DATA);
         i.putExtra(ImportReceiver.EXTRA_CONTENT,

@@ -7,7 +7,7 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.feature.geometry.Geometry;
@@ -136,10 +136,10 @@ public final class Adapters {
         dst.offset = src.offset;
         if(src.spatialFilter instanceof FeatureDataStore.FeatureQueryParameters.RadiusSpatialFilter) {
             FeatureDataStore.FeatureQueryParameters.RadiusSpatialFilter radius = (FeatureDataStore.FeatureQueryParameters.RadiusSpatialFilter)src.spatialFilter;
-            GeoPoint n = DistanceCalculations.computeDestinationPoint(radius.point, 0d, radius.radius);
-            GeoPoint e = DistanceCalculations.computeDestinationPoint(radius.point, 90d, radius.radius);
-            GeoPoint s = DistanceCalculations.computeDestinationPoint(radius.point, 180d, radius.radius);
-            GeoPoint w = DistanceCalculations.computeDestinationPoint(radius.point, 270d, radius.radius);
+            GeoPoint n = GeoCalculations.pointAtDistance(radius.point, 0d, radius.radius);
+            GeoPoint e = GeoCalculations.pointAtDistance(radius.point, 90d, radius.radius);
+            GeoPoint s = GeoCalculations.pointAtDistance(radius.point, 180d, radius.radius);
+            GeoPoint w = GeoCalculations.pointAtDistance(radius.point, 270d, radius.radius);
             dst.spatialFilter = GeometryFactory.fromEnvelope(new Envelope(w.getLongitude(), s.getLatitude(), 0d, e.getLongitude(), n.getLatitude(), 0d));
         } else if(src.spatialFilter instanceof FeatureDataStore.FeatureQueryParameters.RegionSpatialFilter) {
             FeatureDataStore.FeatureQueryParameters.RegionSpatialFilter region = (FeatureDataStore.FeatureQueryParameters.RegionSpatialFilter)src.spatialFilter;
@@ -387,7 +387,7 @@ public final class Adapters {
         
         FeatureDataStoreAdapter(FeatureDataStore impl) {
             this.impl = impl;
-            this.listeners = new IdentityHashMap<OnDataStoreContentChangedListener, CallbackForwarder>();
+            this.listeners = new IdentityHashMap<>();
         }
 
         @Override
@@ -508,8 +508,8 @@ public final class Adapters {
                     switch(attrUpdateType) {
                         case UPDATE_ATTRIBUTES_ADD_OR_REPLACE :
                             Feature f = this.impl.getFeature(fid);
-                            if(f != null) {
-                                AttributeSet old = new AttributeSet(f.getAttributes());
+                            if(f != null && f.getAttributes() != null) {
+                                final AttributeSet old = new AttributeSet(f.getAttributes());
                                 for(String key : attributes.getAttributeNames()) {
                                     Class<?> attrType = attributes.getAttributeType(key);
                                     if(attrType == null)

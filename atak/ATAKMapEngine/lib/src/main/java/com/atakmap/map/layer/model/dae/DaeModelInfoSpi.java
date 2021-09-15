@@ -1,7 +1,6 @@
 package com.atakmap.map.layer.model.dae;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint.AltitudeReference;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -77,7 +76,7 @@ public class DaeModelInfoSpi implements ModelInfoSpi {
                 continue;
 
             if(((Element)node).getTagName().equalsIgnoreCase("name")) {
-                name = ((Element)node).getTextContent();
+                name = node.getTextContent();
                 break;
             }
         }
@@ -156,9 +155,13 @@ public class DaeModelInfoSpi implements ModelInfoSpi {
             ModelInfo info = new ModelInfo();
             if(models.size() > 1)
                 info.name = name;
-            else
-                info.name = kmlFile.getParentFile().getName();
-
+            else {
+                final File parentFile = kmlFile.getParentFile();
+                if (parentFile != null)
+                    info.name = parentFile.getName();
+                else
+                    info.name = "unknown file";
+            }
             String altMode = getTextContent(model, new String[]{"altitudeMode"});
             info.altitudeMode = parseAltMode(altMode);
 
@@ -411,12 +414,13 @@ public class DaeModelInfoSpi implements ModelInfoSpi {
                     if (upAxisNodes.getLength() > 0) {
                         String value = upAxisNodes.item(0).getTextContent();
                         if (value != null) {
-                            if (value.equals("Y_UP")) {
-                                return Y_UP;
-                            } else if (value.equals("Z_UP")) {
-                                return Z_UP;
-                            } else if (value.equals("X_UP")) {
-                                return X_UP;
+                            switch (value) {
+                                case "Y_UP":
+                                    return Y_UP;
+                                case "Z_UP":
+                                    return Z_UP;
+                                case "X_UP":
+                                    return X_UP;
                             }
                         }
                     }

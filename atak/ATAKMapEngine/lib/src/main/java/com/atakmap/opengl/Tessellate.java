@@ -1,6 +1,5 @@
 package com.atakmap.opengl;
 
-import com.atakmap.coremap.log.Log;
 import com.atakmap.interop.DataType;
 
 import java.nio.Buffer;

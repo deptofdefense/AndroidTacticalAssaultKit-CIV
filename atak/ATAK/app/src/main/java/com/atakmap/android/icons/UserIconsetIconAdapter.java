@@ -7,13 +7,13 @@ import android.graphics.Color;
 import com.atakmap.android.maps.MapDataRef;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.SqliteMapDataRef;
-import com.atakmap.android.user.icon.Icon2525bPallet;
+import com.atakmap.android.user.icon.Icon2525cPallet;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.maps.assets.Icon;
 
 /**
  * Adapt icon based on iconset path if possible (e.g. <iconsetpath UID>/<group>/<filename>)
- * Otherwise adapt based on best match for 2525B type
+ * Otherwise adapt based on best match for 2525C type
  * 
  * 
  */
@@ -40,9 +40,9 @@ public class UserIconsetIconAdapter implements IconAdapter {
                 "");
 
         //attempt to adapt based on User Specified Iconset if not forced by 
-        //user into preferred iconset. Also 2525B based iconset cannot be queried this way
+        //user into preferred iconset. Also 2525C based iconset cannot be queried this way
         if (!FileSystemUtils.isEmpty(iconsetPath)
-                && !iconsetPath.startsWith(Icon2525bPallet.COT_MAPPING_2525B)) {
+                && !iconsetPath.startsWith(Icon2525cPallet.COT_MAPPING_2525)) {
 
             //icon URI is a bitmap query optimized for GL layer
             String optimizedQuery = UserIcon.GetIconBitmapQueryFromIconsetPath(

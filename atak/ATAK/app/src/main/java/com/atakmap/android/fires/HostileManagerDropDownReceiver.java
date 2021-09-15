@@ -254,7 +254,7 @@ public class HostileManagerDropDownReceiver extends DropDownReceiver implements
 
         StringBuilder builder = new StringBuilder();
         synchronized (lock) {
-            if (hostilesListBase.isEmpty()){
+            if (hostilesListBase.isEmpty()) {
                 return;
             }
             for (MapItem item : hostilesListBase) {

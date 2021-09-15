@@ -111,7 +111,7 @@ public class GeoFenceListModel extends AbstractHierarchyListItem2
 
     @Override
     public String getTitle() {
-        String title = ShapeUtils.getShapeName(_item);
+        String title = ATAKUtilities.getDisplayName(ATAKUtilities.findAssocShape(_item));
         if (FileSystemUtils.isEmpty(title))
             title = GeoFenceReceiver.GEO_FENCE;
 
@@ -217,7 +217,7 @@ public class GeoFenceListModel extends AbstractHierarchyListItem2
             b.setTitle(R.string.confirm_delete);
             b.setMessage(_context.getString(
                     R.string.geofence_overlay_fenceitem_deletebtn_alert_inquiry,
-                    ShapeUtils.getShapeName(_item), getChildCount()));
+                    ATAKUtilities.getDisplayName(ATAKUtilities.findAssocShape(_item)), getChildCount()));
             b.setPositiveButton(R.string.dismiss_alerts,
                     new DialogInterface.OnClickListener() {
                         @Override
@@ -559,7 +559,7 @@ public class GeoFenceListModel extends AbstractHierarchyListItem2
                                         R.string.entered_lower)
                                         : _context.getString(
                                                 R.string.exited_lower)),
-                                ShapeUtils.getShapeName(_fenceShape),
+                                ATAKUtilities.getDisplayName(ATAKUtilities.findAssocShape(_fenceShape)),
                                 timeString);
                         breachMarker.setTitle(title);
                         breachMarker.setMetaString("callsign", title);
@@ -572,9 +572,7 @@ public class GeoFenceListModel extends AbstractHierarchyListItem2
                                                         : " exited")
                                                 + " Geo Fence '"
                                                 +
-                                                ShapeUtils
-                                                        .getShapeName(
-                                                                _fenceShape)
+                                                ATAKUtilities.getDisplayName(ATAKUtilities.findAssocShape(_fenceShape))
                                                 + "' at "
                                                 + KMLUtil.KMLDateTimeFormatter
                                                         .get()
@@ -711,7 +709,7 @@ public class GeoFenceListModel extends AbstractHierarchyListItem2
                     R.string.geofence_listmodel_longclick_message,
                     _alert.isEntered() ? _context.getString(R.string.entered)
                             : _context.getString(R.string.exited),
-                    ShapeUtils.getShapeName(_fenceShape), timeDiff,
+                    ATAKUtilities.getDisplayName(ATAKUtilities.findAssocShape(_fenceShape)), timeDiff,
                     KMLUtil.KMLDateTimeFormatter.get().format(new Date(_alert
                             .getTimestamp()))));
             b.setPositiveButton(R.string.dismiss,

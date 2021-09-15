@@ -28,6 +28,15 @@ namespace TAKEngineJNI {
                 jobject mimpl;
                 jobject mglyphRenderer;
             };
+
+            class ManagedTextFormatFactory : public TAK::Engine::Renderer::TextFormatFactory {
+            public:
+                ManagedTextFormatFactory(JNIEnv &env, jobject mfactory) NOTHROWS;
+                virtual ~ManagedTextFormatFactory() NOTHROWS;
+                virtual TAK::Engine::Util::TAKErr createTextFormat(TAK::Engine::Renderer::TextFormat2Ptr& value, const TAK::Engine::Renderer::TextFormatParams& params) NOTHROWS;
+            private:
+                jobject mimpl;
+            };
         }
     }
 }

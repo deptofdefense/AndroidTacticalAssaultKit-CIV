@@ -12,6 +12,7 @@
 #include "feature/FeatureCursor2.h"
 #include "feature/FeatureDataSource2.h"
 #include "feature/FeatureSetCursor2.h"
+#include "feature/FilterFeatureCursor2.h"
 #include "port/Platform.h"
 #include "thread/Cond.h"
 #include "util/Error.h"
@@ -154,7 +155,10 @@ namespace TAK {
                 FeatureDb();
             public :
                 std::shared_ptr<DatabaseRef> database;
-                int64_t fsid;
+                struct {
+                    int64_t pub{ FeatureDataStore2::FEATURESET_ID_NONE };
+                    int64_t priv{ FeatureDataStore2::FEATURESET_ID_NONE };
+                } fsid;
                 Port::String name;
                 Port::String provider;
                 Port::String type;
@@ -184,8 +188,8 @@ namespace TAK {
                 Util::TAKErr finalizeCatalogEntry(const int64_t catalogId) NOTHROWS;
                 Util::TAKErr query(CatalogCursorPtr &ptr, const int64_t fsid) NOTHROWS;
                 Util::TAKErr insertFeatureSet(int64_t *value, const int64_t catalogId, const char *name, const char *fdb, const char *provider, const char *type) NOTHROWS;
-                Util::TAKErr reserveFeatureSet(int64_t *value, const char *name, const char *fdb, const char *provider, const char *type) NOTHROWS;
-                Util::TAKErr reserveFeatureSet(const int64_t value, const char *name, const char *fdb, const char *provider, const char *type) NOTHROWS;
+                Util::TAKErr reserveFeatureSet(int64_t *value, const char *name, const char *fdb, const char *provider, const char *type, const char *fdb_type) NOTHROWS;
+                Util::TAKErr reserveFeatureSet(const int64_t value, const char *name, const char *fdb, const char *provider, const char *type, const char *fdb_type) NOTHROWS;
                 Util::TAKErr setFeatureSetCatalogId(const int64_t value, const int64_t catalogId) NOTHROWS;
 
                 /**************************************************************************/
@@ -223,30 +227,19 @@ namespace TAK {
                 FeatureDataStore2 * const value;
             };
 
-            class PersistentDataSourceFeatureDataStore2::DistributedFeatureCursorImpl : public FeatureCursor2
+            class PersistentDataSourceFeatureDataStore2::DistributedFeatureCursorImpl : public FilterFeatureCursor2
             {
             public:
                 DistributedFeatureCursorImpl(FeatureCursorPtr &&cursor, std::shared_ptr<DatabaseRef> db) NOTHROWS;
             public: // FeatureCursor2
                 virtual Util::TAKErr getId(int64_t *value) NOTHROWS override;
-                virtual Util::TAKErr getFeatureSetId(int64_t *value) NOTHROWS override;
-                virtual Util::TAKErr getVersion(int64_t *value) NOTHROWS override;
             public: // FeatureDefinition2
-                virtual Util::TAKErr getRawGeometry(FeatureDefinition2::RawData *value) NOTHROWS override;
-                virtual FeatureDefinition2::GeometryEncoding getGeomCoding() NOTHROWS override;
-                virtual AltitudeMode getAltitudeMode() NOTHROWS override;
-                virtual double getExtrude() NOTHROWS override;
-                virtual Util::TAKErr getName(const char **value) NOTHROWS override;
-                virtual FeatureDefinition2::StyleEncoding getStyleCoding() NOTHROWS override;
-                virtual Util::TAKErr getRawStyle(FeatureDefinition2::RawData *value) NOTHROWS override;
-                virtual Util::TAKErr getAttributes(const atakmap::util::AttributeSet **value) NOTHROWS override;
                 virtual Util::TAKErr get(const Feature2 **feature) NOTHROWS override;
             public: // RowIterator
                 virtual Util::TAKErr moveToNext() NOTHROWS override;
             private:
                 std::shared_ptr<DatabaseRef> db;
                 std::unique_ptr<Feature2> rowData;
-                FeatureCursorPtr filter;
             };
 
             class PersistentDataSourceFeatureDataStore2::FeatureSetCursorImpl : public FeatureSetCursor2
@@ -263,7 +256,7 @@ namespace TAK {
                         } else if (b->name) {
                             return false;
                         } else {
-                            return (a->fsid < b->fsid);
+                            return (a->fsid.pub < b->fsid.pub);
                         }
                     }
                 };

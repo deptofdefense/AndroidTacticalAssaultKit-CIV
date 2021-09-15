@@ -7,7 +7,6 @@ import com.atakmap.map.layer.Layer;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.Set;
 
 public final class Imagery {

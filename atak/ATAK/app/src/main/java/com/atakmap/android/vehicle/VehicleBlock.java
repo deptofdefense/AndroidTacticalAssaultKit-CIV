@@ -16,7 +16,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
@@ -507,11 +507,10 @@ public class VehicleBlock {
         // Convert to geopoints
         for (PointF p : points) {
             PointF nextPoint = new PointF(p.x - avg.x, p.y - avg.y);
-            GeoPoint partial = DistanceCalculations.computeDestinationPoint(
-                    center, angle + 180, nextPoint.y);
-            ret.add(new GeoPointMetaData(DistanceCalculations
-                    .computeDestinationPoint(partial, angle + 270,
-                            nextPoint.x)));
+            GeoPoint partial = GeoCalculations.pointAtDistance(center,
+                    angle + 180, nextPoint.y);
+            ret.add(new GeoPointMetaData(GeoCalculations
+                    .pointAtDistance(partial, angle + 270, nextPoint.x)));
         }
 
         // Close shape if we need to

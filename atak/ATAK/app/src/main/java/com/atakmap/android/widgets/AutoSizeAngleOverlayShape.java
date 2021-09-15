@@ -16,8 +16,8 @@ import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.MetaDataHolder;
 import com.atakmap.android.maps.Shape;
 import com.atakmap.android.util.ATAKUtilities;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoBounds;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
@@ -117,10 +117,10 @@ public class AutoSizeAngleOverlayShape extends Shape
         _azimuth = NorthReference.GRID;
         if (center != null) {
             //get Grid Convergence using center and point on the bullseye
-            GeoPoint test0 = DistanceCalculations
-                    .computeDestinationPoint(center.get(), 0, 100);
-            GeoPoint test180 = DistanceCalculations
-                    .computeDestinationPoint(center.get(), 180, 100);
+            GeoPoint test0 = GeoCalculations.pointAtDistance(center.get(), 0,
+                    100);
+            GeoPoint test180 = GeoCalculations.pointAtDistance(center.get(),
+                    180, 100);
             offset = ATAKUtilities.computeGridConvergence(test0, test180);
             if (showProjectionProportition)
                 computeEllipseTestVerts();
@@ -145,12 +145,10 @@ public class AutoSizeAngleOverlayShape extends Shape
 
     protected void computeEllipseTestVerts() {
         if (center != null) {
-            ellipseTestX = DistanceCalculations.computeDestinationPoint(
-                    center.get(),
-                    90, 100);
-            ellipseTestY = DistanceCalculations.computeDestinationPoint(
-                    center.get(),
-                    0, 100);
+            ellipseTestX = GeoCalculations.pointAtDistance(center.get(), 90,
+                    100);
+            ellipseTestY = GeoCalculations.pointAtDistance(center.get(), 0,
+                    100);
         }
     }
 

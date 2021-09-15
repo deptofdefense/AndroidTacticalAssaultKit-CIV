@@ -11,13 +11,7 @@ import com.atakmap.coremap.log.Log;
 import com.atakmap.spatial.file.GMLSpatialDb;
 
 import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 
 /**

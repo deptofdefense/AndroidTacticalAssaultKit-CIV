@@ -24,6 +24,8 @@ namespace atakmap {
                 static bool isInitialized();
 
                 static int getSpatialReferenceID(OGRSpatialReference *srs);
+
+                static int coordSysName2EPSG(const char *value);
                 
                 static std::shared_ptr<atakmap::raster::tilereader::TileReader::AsynchronousIO> getMasterIOThread();
             };

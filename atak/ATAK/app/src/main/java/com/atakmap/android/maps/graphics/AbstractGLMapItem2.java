@@ -11,24 +11,23 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import com.atakmap.android.maps.MapItem;
 
-import com.atakmap.annotations.IncubatingApi;
+import com.atakmap.map.layer.control.ClampToGroundControl;
 import com.atakmap.coremap.maps.coords.GeoPoint.AltitudeReference;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
 import com.atakmap.lang.Unsafe;
-import com.atakmap.map.MapControl;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.MapRenderer3;
 import com.atakmap.map.layer.control.SurfaceRendererControl;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.math.PointD;
-import com.atakmap.util.ConfigOptions;
 import com.atakmap.util.Visitor;
 
 public abstract class AbstractGLMapItem2 implements GLMapItem2,
-        MapItem.OnVisibleChangedListener, MapItem.OnZOrderChangedListener {
+        MapItem.OnVisibleChangedListener, MapItem.OnZOrderChangedListener,
+        ClampToGroundControl {
 
     private Object opaque;
     protected final MapRenderer context;
@@ -38,6 +37,7 @@ public abstract class AbstractGLMapItem2 implements GLMapItem2,
     protected final MutableGeoBounds bounds;
     protected double zOrder;
     protected double minMapGsd;
+    private boolean clampToGroundAtNadir;
 
     private final Collection<OnBoundsChangedListener> boundsListeners;
     private final Collection<OnVisibleChangedListener> visibleListeners;
@@ -48,6 +48,7 @@ public abstract class AbstractGLMapItem2 implements GLMapItem2,
         this.subject = subject;
         this.renderPass = renderPass;
         this.bounds = new MutableGeoBounds(0d, 0d, 0d, 0d);
+        this.clampToGroundAtNadir = false;
 
         this.boundsListeners = new ConcurrentLinkedQueue<>();
         this.visibleListeners = new ConcurrentLinkedQueue<>();
@@ -115,6 +116,20 @@ public abstract class AbstractGLMapItem2 implements GLMapItem2,
     @Override
     public final double getMinDrawResolution() {
         return this.minMapGsd;
+    }
+
+    /**
+     * Rendering style modified by the {@link ClampToGroundControl}
+     * @param v True if at NADIR the item is clamped to ground
+     */
+    @Override
+    public void setClampToGroundAtNadir(boolean v) {
+        this.clampToGroundAtNadir = v;
+    }
+
+    @Override
+    public boolean getClampToGroundAtNadir() {
+        return this.clampToGroundAtNadir;
     }
 
     @Override

@@ -208,7 +208,7 @@ public class MCIAGRGMapOverlay extends AbstractMapOverlay2 {
         private final Context context;
         private final DatasetDescriptor layerInfo;
         private final BaseAdapter listener;
-        private HierarchyListFilter filter;
+        private final HierarchyListFilter filter;
 
         private final Map<String, String> groupAliases;
         private final String[] groupOrder;
