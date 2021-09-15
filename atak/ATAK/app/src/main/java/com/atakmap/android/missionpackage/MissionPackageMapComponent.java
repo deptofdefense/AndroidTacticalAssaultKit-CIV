@@ -403,11 +403,17 @@ public class MissionPackageMapComponent extends AbstractWidgetMapComponent
         Log.i(TAG, "Enabling File Sharing");
         // start web server
         boolean success = enableCommsFileSharing();
-        if (!success)
-            Toast.makeText(_context,
-                    R.string.mission_package_failed_to_enable_file_sharing,
-                    Toast.LENGTH_SHORT).show();
-
+        if (!success) {
+            try {
+                Toast.makeText(_context,
+                        R.string.mission_package_failed_to_enable_file_sharing,
+                        Toast.LENGTH_SHORT).show();
+            } catch (Exception e) {
+                // unable to toast off of the UI thread and this is a patch
+                // since correcting it would change the mapping too much that
+                // is only for 4.3.1.
+            }
+        }
         _enabled = success;
         return success;
     }
