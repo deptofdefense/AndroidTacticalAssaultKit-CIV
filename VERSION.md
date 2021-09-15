@@ -1,5 +1,13 @@
 # Version History
 
+## 4.3.0.4
+
+* Fix various typos
+* Implement _latitude_ wrapping for routes
+* Fix bounds check for FAH arrow renderer
+* Update logic for chat room handling to support translations for well-known chat room names
+* Guard against potential NPE for geometry collections
+
 ## 4.3.0.3
 
 * Reorder logic for FAH arrow rendering to ensure text validated before drawing

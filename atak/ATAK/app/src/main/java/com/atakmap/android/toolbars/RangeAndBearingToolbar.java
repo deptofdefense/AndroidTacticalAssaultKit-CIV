@@ -107,7 +107,7 @@ public class RangeAndBearingToolbar implements IToolbarExtension,
     public boolean actionBarChanged() {
         boolean changed = false;
         // get the new actionBar receiver //
-        _amd = ActionBarReceiver.getMenuItem("Red X Tool");
+        _amd = ActionBarReceiver.getMenuItem(_mapView.getContext().getString(R.string.actionbar_redxtool));
         if (_amd != null) {
             final MapView view = MapView.getMapView();
 
@@ -173,7 +173,7 @@ public class RangeAndBearingToolbar implements IToolbarExtension,
         public void onReceive(Context context, Intent intent) {
             // lazy instantiation of the red x tool button.
             if (_amd == null)
-                _amd = ActionBarReceiver.getMenuItem("Red X Tool");
+                _amd = ActionBarReceiver.getMenuItem(_mapView.getContext().getString(R.string.actionbar_redxtool));
             _spbt.setActionMenuData(_amd);
 
             String action = intent.getAction();

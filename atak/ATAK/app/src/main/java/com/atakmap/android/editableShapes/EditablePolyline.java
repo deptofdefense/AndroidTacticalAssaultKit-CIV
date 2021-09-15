@@ -2255,7 +2255,7 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
         if (!changed) {
             for (int i = 0; i < points.size(); i++) {
                 GeoPointMetaData oldP = _points.get(i);
-                GeoPointMetaData newP = points.get(i);
+                GeoPointMetaData newP = clampLat(points.get(i));
                 if (oldP == null || !oldP.equals(newP)) {
                     changed = true;
                     break;
@@ -2276,7 +2276,9 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
             this.controlPoints.clear();
 
             // Then add new points/markers
-            _points.addAll(points);
+            for (GeoPointMetaData p : points) {
+                _points.add(clampLat(p));
+            }
             for (int i = 0; i < markers.size(); i++) {
                 int k = markers.keyAt(i);
                 PointMapItem m = markers.valueAt(i);
@@ -2299,6 +2301,40 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
                     this.getClass());
         }
         return changed;
+    }
+
+    /**
+     * Clamp latitude values in a GeoPointMetadata to the n/s poles.
+     * As an example, a point of latitude of 95 degrees is replaced
+     * with a latitude of 85 degrees.
+     * @param gpm GeoPointMetadata to inspect and clamp the latitude of
+     * @return a GeoPointMetadata equivalent to the provided one, but with the latitude clampped
+     */
+    private GeoPointMetaData clampLat(GeoPointMetaData gpm) {
+        double lat = gpm.get().getLatitude();
+        boolean changed = false;
+        // Handles only values from 90 -> 180 and -90 -> -180 presently.
+        if (lat > 90) {
+            lat = 90 - (lat - 90);
+            changed = true;
+        }
+        if (lat < -90) {
+            lat = -90 - (lat + 90);
+            changed = true;
+        }
+        if (changed) {
+            GeoPointMetaData ret = new GeoPointMetaData(gpm);
+            ret.set(new GeoPoint(lat,
+                    gpm.get().getLongitude(),
+                    gpm.get().getAltitude(),
+                    gpm.get().getAltitudeReference(),
+                    gpm.get().getCE(),
+                    gpm.get().getLE(),
+                    gpm.get().isMutable() ? GeoPoint.Access.READ_WRITE : GeoPoint.Access.READ_ONLY));
+            return ret;
+        }
+            
+        return gpm;
     }
 
     private static boolean markersChanged(Map<Integer, PointMapItem> oldMarkers,

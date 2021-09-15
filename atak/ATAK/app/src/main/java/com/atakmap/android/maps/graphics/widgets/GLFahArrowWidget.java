@@ -110,7 +110,7 @@ public class GLFahArrowWidget extends GLShapeWidget implements
                     final boolean sprites = MathUtils.hasBits(pass,
                             GLMapView.RENDER_PASS_SPRITES);
                     if (surface && !bounds.intersects(ortho.northBound,
-                            ortho.westBound, ortho.eastBound, ortho.southBound))
+                            ortho.westBound, ortho.southBound, ortho.eastBound))
                         return;
 
                     // draw the widget onto the map surface

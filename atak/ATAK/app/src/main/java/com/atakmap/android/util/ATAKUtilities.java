@@ -263,6 +263,9 @@ public class ATAKUtilities {
         double maxAlt = -Double.MAX_VALUE;
         ArrayList<GeoPoint> pointList = new ArrayList<>(items.length);
         for (MapItem i : items) {
+            if (i == null)
+                continue;
+
             double alt = Double.NaN;
 
             // Rectangles, circles, polylines, etc.
@@ -294,8 +297,11 @@ public class ATAKUtilities {
             }
 
             // Anchored map items that aren't shapes - redirect to anchor
-            else if (i instanceof AnchoredMapItem)
-                i = ((AnchoredMapItem) i).getAnchorItem();
+            else if (i instanceof AnchoredMapItem) {
+                MapItem anchor = ((AnchoredMapItem) i).getAnchorItem();
+                if (anchor != null)
+                    i = anchor;
+            }
 
             // Markers
             if (i instanceof PointMapItem) {

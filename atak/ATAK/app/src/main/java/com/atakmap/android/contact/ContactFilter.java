@@ -58,8 +58,7 @@ public class ContactFilter extends HierarchyListFilter {
                     return item instanceof GroupContact;
                 case UNIQUE_CONTACTS:
                     String uid = item.getUID();
-                    return !uid.equals(MapView.getMapView().getContext()
-                            .getString(R.string.all_streaming))
+                    return !uid.equals("All Streaming")
                             && !uid.equals(GeoChatService.DEFAULT_CHATROOM_NAME)
                             && !uid.equals(ChatManagerMapComponent
                                     .getRoleName());

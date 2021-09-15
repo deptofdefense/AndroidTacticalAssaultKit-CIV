@@ -284,7 +284,7 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
      */
     private boolean shouldIgnoreMessage(final Bundle msg) {
         String convId = msg.getString("conversationId",
-                _context.getString(R.string.all_chat_rooms));
+                GeoChatService.DEFAULT_CHATROOM_NAME);
         String line = msg.getString("message");
         if (line == null)
             return false;
@@ -303,7 +303,7 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
             return false;
 
         String conversationId = message.getString("conversationId",
-                _context.getString(R.string.all_chat_rooms));
+                GeoChatService.DEFAULT_CHATROOM_NAME);;
         String conversationName = message.getString("conversationName",
                 conversationId);
 
@@ -348,7 +348,7 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
 
         String senderUid = getSenderUidFromMessage(message);
         String converstaionId = message.getString("conversationId",
-                _context.getString(R.string.all_chat_rooms));
+                GeoChatService.DEFAULT_CHATROOM_NAME);
         if (isSpecialGroup(converstaionId)) {
             destinationArray.add(converstaionId);
             return destinationArray;
@@ -464,13 +464,13 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
         if (port.isEmpty())
             port = "17012";
 
-        String room = _context.getString(R.string.all_chat_rooms);
-
         NetConnectString ncs = NetConnectString.fromString(
                 address + ":" + port + ":udp");
         //set up "All Chat" with only geochat connector
         if (_chatBroadcastContact == null) {
-            _chatBroadcastContact = new IndividualContact(room, room);
+            _chatBroadcastContact = new IndividualContact(
+                    _context.getString(R.string.all_chat_rooms),
+                    GeoChatService.DEFAULT_CHATROOM_NAME);
             _chatBroadcastContact.addConnector(new GeoChatConnector(ncs));
             _chatBroadcastContact.getExtras().putBoolean("fakeGroup", true);
             _chatBroadcastContact.getExtras().putBoolean("metaGroup", true);
@@ -769,8 +769,8 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
                 continue;
             Log.d(TAG, "Sending to " + destinationUid);
 
-            if (destinationUid.equals(_context.getString(
-                    R.string.all_chat_rooms))) {
+            if (destinationUid.equals(GeoChatService.DEFAULT_CHATROOM_NAME
+                    )) {
                 // Notify plugins to send a message to all chat rooms
                 Intent intent = new Intent(PLUGIN_SEND_MESSAGE_ALL_CHAT_ROOMS);
                 intent.putExtra(PLUGIN_SEND_MESSAGE_EXTRA, msg);
@@ -927,10 +927,8 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
     public static boolean isSpecialGroup(String id) {
         return id != null
                 &&
-                (id.equals(MapView.getMapView().getContext()
-                        .getString(R.string.all_chat_rooms)) ||
-                        id.equals(MapView.getMapView().getContext()
-                                .getString(R.string.all_streaming)));
+                (id.equals(GeoChatService.DEFAULT_CHATROOM_NAME) ||
+                        id.equals("All Streaming"));
     }
 
     /**

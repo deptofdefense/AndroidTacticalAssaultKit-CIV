@@ -54,6 +54,14 @@ public class GLBatchGeometryCollection extends GLBatchGeometry {
         collections = new LinkedList<GLBatchGeometry>();
         
         this.style = null;
+
+        // provide a non nullary default altitude mode for the batch rendering in case setAltitude is
+        // not called prior to the rendering
+        this.altitudeMode = Feature.AltitudeMode.ClampToGround;
+
+        this.extrude = 0d;
+
+
         this.collectionEntityType = collectionEntityType;
         this.renderPass = renderPass;
     }
