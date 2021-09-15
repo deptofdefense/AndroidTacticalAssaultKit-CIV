@@ -11,13 +11,9 @@ import com.atakmap.map.MapRenderer3;
 import com.atakmap.map.layer.Layer;
 import com.atakmap.map.layer.control.SurfaceRendererControl;
 import com.atakmap.map.layer.opengl.GLAbstractLayer2;
-import com.atakmap.map.layer.opengl.GLLayer;
 import com.atakmap.map.layer.opengl.GLLayer2;
-import com.atakmap.map.layer.opengl.GLLayer3;
-import com.atakmap.map.layer.opengl.GLLayerFactory;
 import com.atakmap.map.layer.opengl.GLLayerSpi2;
 import com.atakmap.map.opengl.GLMapView;
-import com.atakmap.math.MathUtils;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.util.Visitor;
 

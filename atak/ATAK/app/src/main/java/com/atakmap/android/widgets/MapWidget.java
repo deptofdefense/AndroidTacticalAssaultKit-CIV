@@ -7,7 +7,6 @@ import android.view.MotionEvent;
 import com.atakmap.android.config.ConfigEnvironment;
 import com.atakmap.android.config.ConfigFactory;
 import com.atakmap.android.config.DataParser;
-import com.atakmap.android.maps.MapItem;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 
 import org.w3c.dom.NamedNodeMap;

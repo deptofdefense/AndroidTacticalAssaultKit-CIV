@@ -5,12 +5,9 @@ import java.util.Collection;
 
 
 import com.atakmap.map.Globe;
-import com.atakmap.map.MapRenderer;
 import com.atakmap.map.MapSceneModel;
 import com.atakmap.map.RenderContext;
 import com.atakmap.map.layer.control.SurfaceRendererControl;
-import com.atakmap.map.layer.feature.geometry.Envelope;
-import com.atakmap.math.MathUtils;
 import com.atakmap.opengl.GLResolvable;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 

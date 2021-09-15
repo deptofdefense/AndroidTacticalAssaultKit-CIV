@@ -320,9 +320,12 @@ public final class DoghouseViewModel {
         while ((index + 1) < points.size()) {
             if (index >= doghouses.size()) {
                 Doghouse dh = buildDoghouse(index, route);
-                updateRelativeLocation(index, dh, route);
-                doghouses.add(index, dh);
-                _doghouseGroup.addItem(dh);
+                if (dh != null) {
+                    updateRelativeLocation(index, dh, route);
+                    dh.updateNose();
+                    doghouses.add(index, dh);
+                    _doghouseGroup.addItem(dh);
+                }
             } else {
                 Doghouse dh = doghouses.get(index);
                 GeoPointMetaData source = points.get(index);
@@ -330,6 +333,7 @@ public final class DoghouseViewModel {
                 dh.setSource(source);
                 dh.setTarget(target);
                 updateRelativeLocation(index, dh, route);
+                dh.updateNose();
             }
             index++;
         }

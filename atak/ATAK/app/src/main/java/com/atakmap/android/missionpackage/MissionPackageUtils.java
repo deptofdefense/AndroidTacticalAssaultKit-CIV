@@ -11,7 +11,7 @@ import android.graphics.drawable.Drawable;
 import com.atakmap.android.config.FiltersConfig;
 import com.atakmap.android.filesharing.android.service.AndroidFileInfo;
 import com.atakmap.android.filesharing.android.service.FileInfoPersistanceHelper;
-import com.atakmap.android.icons.Icon2525bTypeResolver;
+import com.atakmap.android.icons.Icon2525cTypeResolver;
 import com.atakmap.android.icons.UserIcon;
 import com.atakmap.android.icons.UserIconDatabase;
 import com.atakmap.android.maps.AssetMapDataRef;
@@ -22,7 +22,7 @@ import com.atakmap.android.maps.SqliteMapDataRef;
 import com.atakmap.android.missionpackage.file.MissionPackageManifest;
 import com.atakmap.android.missionpackage.file.MissionPackageManifestAdapter;
 import com.atakmap.android.missionpackage.ui.MissionPackageListGroup;
-import com.atakmap.android.user.icon.Icon2525bPallet;
+import com.atakmap.android.user.icon.Icon2525cPallet;
 import com.atakmap.android.user.icon.SpotMapPallet;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.vehicle.VehicleShape;
@@ -213,13 +213,13 @@ public class MissionPackageUtils {
         String iconUri = null;
         if (!FileSystemUtils.isEmpty(iconPath)) {
             // Find user-provided icon
-            if (iconPath.startsWith(Icon2525bPallet.COT_MAPPING_2525B)) {
-                // Find 2525b icon
-                String type2525 = Icon2525bTypeResolver
-                        .mil2525bFromCotType(type);
+            if (iconPath.startsWith(Icon2525cPallet.COT_MAPPING_2525)) {
+                // Find 2525c icon
+                String type2525 = Icon2525cTypeResolver
+                        .mil2525cFromCotType(type);
                 if (!FileSystemUtils.isEmpty(type2525))
                     iconUri = AssetMapDataRef.toUri(
-                            "mil-std-2525b/" + type2525 + ".png");
+                            Icon2525cPallet.ASSET_PATH + type2525 + ".png");
             } else if (iconPath.startsWith(SpotMapPallet.COT_MAPPING_SPOTMAP)) {
                 // Find spot map icon (generic point or label)
                 iconUri = AssetMapDataRef.toUri("icons/reference_point.png");

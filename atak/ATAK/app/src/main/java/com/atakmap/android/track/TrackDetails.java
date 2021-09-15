@@ -16,7 +16,6 @@ import com.atakmap.android.track.crumb.CrumbDatabase;
 import com.atakmap.android.track.maps.TrackPolyline;
 import com.atakmap.android.util.AltitudeUtilities;
 import com.atakmap.android.util.SpeedFormatter;
-import com.atakmap.coremap.conversions.ConversionFactors;
 import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.conversions.SpanUtilities;
 import com.atakmap.coremap.log.Log;
@@ -472,12 +471,15 @@ public class TrackDetails
     private String getSpeedString(final double speed, final int units) {
         switch (units) {
             case Span.NM:
-                return SpeedFormatter.getInstance().getSpeedFormatted(speed, SpeedFormatter.KTS);
+                return SpeedFormatter.getInstance().getSpeedFormatted(speed,
+                        SpeedFormatter.KTS);
             case Span.METRIC:
-                return SpeedFormatter.getInstance().getSpeedFormatted(speed, SpeedFormatter.KMPH);
+                return SpeedFormatter.getInstance().getSpeedFormatted(speed,
+                        SpeedFormatter.KMPH);
             case Span.ENGLISH:
             default:
-               return SpeedFormatter.getInstance().getSpeedFormatted(speed, SpeedFormatter.MPH);
+                return SpeedFormatter.getInstance().getSpeedFormatted(speed,
+                        SpeedFormatter.MPH);
         }
 
     }

@@ -1,23 +1,12 @@
 
 package com.atakmap.map.gdal;
 
-import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.URL;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Map;
 
-import com.atakmap.util.zip.IoUtils;
 import org.gdal.gdal.Dataset;
 import org.gdal.gdal.gdal;
 import org.gdal.ogr.DataSource;
@@ -26,7 +15,6 @@ import org.gdal.osr.SpatialReference;
 
 import android.database.DatabaseErrorHandler;
 import android.database.sqlite.SQLiteDatabase;
-import android.speech.tts.TextToSpeech;
 
 import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.io.IOProviderFactory;

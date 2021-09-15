@@ -1,59 +1,24 @@
 
 package com.atakmap.android.user.icon;
 
-import androidx.fragment.app.Fragment;
+import com.atakmap.annotations.DeprecatedApi;
 
-import com.atakmap.android.maps.Marker;
-import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+/**
+ * @see Icon2525cPallet
+ * @deprecated
+ */
+@Deprecated
+@DeprecatedApi(since = "4.3.1", forRemoval = true, removeAt = "4.6.1")
+public class Icon2525bPallet {
 
-public class Icon2525bPallet implements IconPallet {
+    public static final String ASSET_PATH = "mil-std-2525c/";
 
-    public static final String COT_MAPPING_2525B = "COT_MAPPING_2525B";
-    private final String title;
+    /**
+     * @see Icon2525cPallet
+     * @deprecated
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.3.1", forRemoval = true, removeAt = "4.6.1")
+    public static final String COT_MAPPING_2525B = "COT_MAPPING_2525C";
 
-    final Icon2525bPalletFragment fragment;
-
-    public Icon2525bPallet(String title) {
-        this.title = title;
-        fragment = new Icon2525bPalletFragment();
-    }
-
-    @Override
-    public String getTitle() {
-        return title;
-    }
-
-    @Override
-    public String getUid() {
-        return COT_MAPPING_2525B;
-    }
-
-    @Override
-    public Fragment getFragment() {
-        return fragment;
-    }
-
-    @Override
-    public String toString() {
-        return "Icon2525bPallet";
-    }
-
-    @Override
-    public Marker getPointPlacedIntent(GeoPointMetaData point, String uid)
-            throws CreatePointException {
-        return fragment.getPointPlacedIntent(point, uid);
-    }
-
-    @Override
-    public void select(int resId) {
-    }
-
-    @Override
-    public void clearSelection(boolean bPauseListener) {
-        fragment.clearSelection(bPauseListener);
-    }
-
-    @Override
-    public void refresh() {
-    }
 }

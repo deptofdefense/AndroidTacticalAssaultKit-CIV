@@ -7,7 +7,6 @@ import com.atakmap.coremap.io.DatabaseInformation;
 import com.atakmap.coremap.io.IOProvider;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
-import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.database.CursorIface;
 import com.atakmap.database.DatabaseIface;
 import com.atakmap.database.QueryIface;

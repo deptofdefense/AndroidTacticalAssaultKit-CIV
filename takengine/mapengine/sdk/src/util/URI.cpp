@@ -50,7 +50,7 @@ namespace {
 
 TAKErr TAK::Engine::Util::URI_open(DataInput2Ptr& result, const char* URI) NOTHROWS {
     TAKErr code = sharedURIFactoryRegistry().read()->open(result, URI);
-    
+
     // fallback on filesystem
     if (code == TE_Unsupported) {
         code = IO_openFileV(result, URI);
@@ -89,7 +89,7 @@ TAKErr TAK::Engine::Util::URI_parse(
     String* query,
     String* fragment,
     const char* URI) NOTHROWS {
-    
+
     if (!URI)
         return TE_InvalidArg;
 
@@ -119,7 +119,7 @@ TAKErr TAK::Engine::Util::URI_parse(
         if (port && hostMatch.size() >= 4 && hostMatch[3].matched)
             *port = hostMatch[3].str().c_str();
     }
-    
+
     if (query && baseMatch.size() >= 5 && baseMatch[4].matched)
         *query = baseMatch[4].str().c_str();
     if (fragment && baseMatch.size() >= 6 && baseMatch[5].matched)
@@ -129,7 +129,7 @@ TAKErr TAK::Engine::Util::URI_parse(
 }
 
 TAKErr TAK::Engine::Util::URI_getParent(Port::String* result, const char* URI) NOTHROWS {
-    
+
     if (!result)
         return TE_InvalidArg;
 
@@ -204,8 +204,8 @@ TAKErr TAK::Engine::Util::URI_getRelative(Port::String* result, const char* base
     if (path == nullptr || basePath == nullptr)
         return TE_InvalidArg;
 
-    const char *bp = basePath.get();
-    const char *pp = path.get();
+    const char* bp = basePath.get();
+    const char* pp = path.get();
     while (*bp && *pp && *bp == *pp) {
         ++bp;
         ++pp;
@@ -219,7 +219,8 @@ TAKErr TAK::Engine::Util::URI_getRelative(Port::String* result, const char* base
         if (IS_PATH_SEP(pp[-1])) {
             *result = pp;
             return TE_Ok;
-        } else if (IS_PATH_SEP(pp[0])) {
+        }
+        else if (IS_PATH_SEP(pp[0])) {
             *result = pp + 1;
             return TE_Ok;
         }

@@ -8,7 +8,6 @@ import android.preference.PreferenceManager;
 import com.atakmap.android.maps.MapOverlayManager;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.overlay.MapOverlayRenderer;
-import com.atakmap.app.R;
 import com.atakmap.map.opengl.GLMapRenderable;
 import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;

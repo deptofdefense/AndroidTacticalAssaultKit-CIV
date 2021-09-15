@@ -59,7 +59,8 @@ public class BundleUtils {
                     final Bundle[] bundles = (Bundle[]) value;
                     final String[] strBundles = new String[bundles.length];
                     for (int i = 0; i < bundles.length; ++i) {
-                        strBundles[i] = "{" + bundleToString(bundles[i], filter) + "}";
+                        strBundles[i] = "{" + bundleToString(bundles[i], filter)
+                                + "}";
                     }
                     s = Arrays.toString(strBundles);
                 } else if (value instanceof int[]) {

@@ -714,9 +714,7 @@ namespace {
         if (!name)
             return TE_InvalidArg;
 
-        int cmp = -1;
-        TAK::Engine::Port::String_compareIgnoreCase(&cmp, name, "tileset.json");
-        if (cmp == 0) {
+        if (isExt(name, ".json")) {
             if (type) *type = C3DTFileType_TilesetJSON;
             return TE_Ok;
         }

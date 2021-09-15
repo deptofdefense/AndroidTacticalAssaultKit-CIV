@@ -19,15 +19,26 @@ public class ColorPicker extends LinearLayout {
     private SeekBar redSeek;
     private SeekBar greenSeek;
     private SeekBar blueSeek;
+    private SeekBar alphaSeek;
     private RelativeLayout colorLayout;
+    private final boolean enableAlphaSlider;
 
     public ColorPicker(Context context) {
         super(context);
+        this.enableAlphaSlider = false;
         _init(Color.BLACK);
     }
 
     public ColorPicker(Context context, int initialColor) {
         super(context);
+        this.enableAlphaSlider = false;
+        _init(initialColor);
+    }
+
+    public ColorPicker(Context context, int initialColor,
+            boolean enableAlphaSlider) {
+        super(context);
+        this.enableAlphaSlider = enableAlphaSlider;
         _init(initialColor);
     }
 
@@ -137,9 +148,42 @@ public class ColorPicker extends LinearLayout {
         blueLayout.addView(blueLabel);
         blueLayout.addView(blueSeek);
 
+        LinearLayout alphaLayout = new LinearLayout(this.getContext());
+        LinearLayout.LayoutParams alphaLayoutParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        // Setup the slider so we can still use it for updateColor() and getColor() without more
+        // checks on enableAlphaSlider.
+        alphaSeek = new SeekBar(this.getContext());
+        alphaSeek.setMax(SEEK_MAX);
+        alphaSeek.setProgress(Color.alpha(initialColor));
+        if (enableAlphaSlider) {
+            alphaLayout.setLayoutParams(alphaLayoutParams);
+            alphaLayout.setGravity(Gravity.CENTER);
+            alphaLayout.setOrientation(LinearLayout.HORIZONTAL);
+            TextView alphaLabel = new TextView(this.getContext());
+            alphaLabel.setText(R.string.a);
+            LinearLayout.LayoutParams alphaSeekParams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT);
+            alphaSeek.setLayoutParams(alphaSeekParams);
+            alphaSeek.setOnSeekBarChangeListener(new ProgressChangeListener() {
+                @Override
+                public void onProgressChanged(SeekBar seekBar, int progress,
+                        boolean fromUser) {
+                    updateColor();
+                }
+            });
+            alphaLayout.addView(alphaLabel);
+            alphaLayout.addView(alphaSeek);
+        }
+
         seekbarInnerLayout.addView(redLayout);
         seekbarInnerLayout.addView(greenLayout);
         seekbarInnerLayout.addView(blueLayout);
+        if (enableAlphaSlider) {
+            seekbarInnerLayout.addView(alphaLayout);
+        }
         seekbarLayout.addView(seekbarInnerLayout);
         layout.addView(seekbarLayout);
 
@@ -155,13 +199,15 @@ public class ColorPicker extends LinearLayout {
     }
 
     public final int getColor() {
-        return Color.argb(255, redSeek.getProgress(), greenSeek.getProgress(),
+        return Color.argb(alphaSeek.getProgress(), redSeek.getProgress(),
+                greenSeek.getProgress(),
                 blueSeek.getProgress());
     }
 
     private void updateColor() {
-        colorLayout.setBackgroundColor(Color.argb(255, redSeek.getProgress(),
-                greenSeek.getProgress(), blueSeek.getProgress()));
+        colorLayout.setBackgroundColor(Color.argb(alphaSeek.getProgress(),
+                redSeek.getProgress(), greenSeek.getProgress(),
+                blueSeek.getProgress()));
     }
 
     private static abstract class ProgressChangeListener implements

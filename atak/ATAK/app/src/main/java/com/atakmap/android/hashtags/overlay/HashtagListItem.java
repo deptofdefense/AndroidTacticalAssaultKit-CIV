@@ -26,7 +26,7 @@ import java.util.Set;
 public class HashtagListItem extends AbstractHierarchyListItem2 implements
         View.OnClickListener, Visibility2, Search, Delete {
 
-    private final HashtagMapOverlay _overlay;
+    protected final HashtagMapOverlay _overlay;
     private final String _tag;
 
     private boolean _vizSupported;

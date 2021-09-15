@@ -5,7 +5,6 @@ import android.graphics.PointF;
 import android.opengl.GLES30;
 
 import com.atakmap.annotations.DeprecatedApi;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
@@ -807,8 +806,7 @@ public class GLMesh implements GLMapRenderable2, Controls {
 
     private static GeoPoint computeDestinationPoint(GeoPoint p, double a,
                                                     double d) {
-        GeoPoint surface = DistanceCalculations.computeDestinationPoint(p, a,
-                d);
+        GeoPoint surface = GeoCalculations.pointAtDistance(p, a, d);
         return new GeoPoint(surface.getLatitude(), surface.getLongitude(),
                 p.getAltitude(), p.getAltitudeReference(), GeoPoint.UNKNOWN, GeoPoint.UNKNOWN);
     }

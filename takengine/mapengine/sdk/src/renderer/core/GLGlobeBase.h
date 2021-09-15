@@ -56,6 +56,7 @@ namespace TAK {
                         double animationFactor {0.3};
                         int drawVersion {0};
                         bool targeting {false};
+                        bool isScreenshot {false};
                         double westBound {-180.0};
                         double southBound {-90.0};
                         double northBound {90.0};
@@ -142,7 +143,10 @@ namespace TAK {
                     virtual Util::TAKErr stop() NOTHROWS;
                     virtual void render() NOTHROWS;
                     void setBaseMap(std::unique_ptr<GLMapRenderable2, void(*)(const GLMapRenderable2 *)> &&map) NOTHROWS;
+
+#ifndef __ANDROID__
                     void setLabelManager(GLLabelManager* labelManager) NOTHROWS;
+#endif
                     GLLabelManager* getLabelManager() const NOTHROWS;
                     /**
                      * Invokes `release()` on all renderables; subsequent call
@@ -226,6 +230,7 @@ namespace TAK {
                     double animationFactor;// override.3; //COVERED
                     /** Flag indicating whether or not this view is used for targeting */
                     bool targeting {false};
+                    bool isScreenshot {false};
                     double displayDpi {96.0};
                     int64_t animationLastTick {-1LL};
                     int64_t animationDelta {-1LL};
@@ -287,7 +292,7 @@ namespace TAK {
                     std::list<std::shared_ptr<GLLayer2>>  renderables; //COVERED
                 private :
                     std::unique_ptr<GLMapRenderable2, void(*)(const GLMapRenderable2 *)> basemap; //COVERED
-                    GLLabelManager* labelManager;
+                    std::unique_ptr<GLLabelManager, void(*)(const GLLabelManager *)> labelManager;
                 private : // controls
                     Thread::Mutex controlsMutex;
                     std::map<const TAK::Engine::Core::Layer2 *, std::map<std::string, std::set<void *>>> controls;

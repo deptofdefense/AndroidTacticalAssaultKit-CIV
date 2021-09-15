@@ -26,7 +26,7 @@ import com.atakmap.lang.Unsafe;
 import com.atakmap.map.Interop;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.MapSceneModel;
-import com.atakmap.map.layer.feature.Feature;
+import com.atakmap.map.layer.feature.Feature.AltitudeMode;
 import com.atakmap.map.layer.feature.FeatureDataStore;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.feature.geometry.Point;
@@ -183,13 +183,14 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
 
     /*************************************************************************/
 
-    private ArrayList<GLBatchPolygon> surfacePolys = new ArrayList<>();
-    private ArrayList<GLBatchLineString> spritePolys = new ArrayList<>();
-    private ArrayList<GLBatchLineString> spriteLines = new ArrayList<>();
-    private ArrayList<GLBatchLineString> surfaceLines = new ArrayList<>();
-    private ArrayList<GLBatchPoint> batchPoints2 = new ArrayList<>();
-    private ArrayList<GLBatchPoint> labels = new ArrayList<>();
-    private ArrayList<GLBatchPoint> loadingPoints = new ArrayList<>();
+    private final ArrayList<GLBatchPolygon> surfacePolys = new ArrayList<>();
+    private final ArrayList<GLBatchLineString> spritePolys = new ArrayList<>();
+    private final ArrayList<GLBatchLineString> spriteLines = new ArrayList<>();
+    private final ArrayList<GLBatchLineString> surfaceLines = new ArrayList<>();
+    private final ArrayList<GLBatchLineString> shapes = new ArrayList<>();
+    private final ArrayList<GLBatchPoint> batchPoints2 = new ArrayList<>();
+    private final ArrayList<GLBatchPoint> labels = new ArrayList<>();
+    private final ArrayList<GLBatchPoint> loadingPoints = new ArrayList<>();
 
     private SortInfo sortInfo = new SortInfo();
 
@@ -220,6 +221,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
     private GeoPoint batchSurfaceCentroid = GeoPoint.createMutable();
     private int rebuildBatchBuffers = -1;
     private int batchTerrainVersion = -1;
+    private boolean refreshBatchList;
     private Matrix spritesLocalFrame = Matrix.getIdentity();
     private Matrix surfaceLocalFrame = Matrix.getIdentity();
     private Collection<PrimitiveBuffer> surfaceLineBuffers = new ArrayList<>();
@@ -342,6 +344,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         spritePolys.clear();
         spriteLines.clear();
         surfaceLines.clear();
+        shapes.clear();
 
         loadingPoints.clear();
         batchPoints2.clear();
@@ -381,10 +384,11 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
                 case 2: {
                     if(((GLBatchPolygon)g).drawFill) {
                         final GLBatchPolygon poly = (GLBatchPolygon)g;
-                        if(poly.altitudeMode == Feature.AltitudeMode.ClampToGround)
+                        if(poly.getAltitudeMode() == AltitudeMode.ClampToGround)
                             surfacePolys.add(poly);
                         else
                             spritePolys.add(poly);
+                        shapes.add(poly);
                         break;
                     } else if(!((GLBatchPolygon)g).drawStroke) {
                         break;
@@ -393,12 +397,13 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
                 }
                 case 1: {
                     final GLBatchLineString line = (GLBatchLineString)g;
-                    if(line.altitudeMode == Feature.AltitudeMode.ClampToGround)
+                    if(line.getAltitudeMode() == AltitudeMode.ClampToGround)
                         surfaceLines.add(line);
                     else if(line.hasFill() && line.isExtruded())
                         spritePolys.add(line);
                     else
                         spriteLines.add(line);
+                    shapes.add(line);
                     break;
                 }
                 case 10 :
@@ -542,13 +547,21 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
 
 
     private void renderSprites(GLMapView view) {
+
+        // While we're in sprite rendering mode, check if any of the shapes
+        // need to be redrawn in the proper render pass
+        for (GLBatchLineString shape : shapes) {
+            if (shape.updateNadirClamp(view))
+                refreshBatchList = true;
+        }
+
         sortInfo.order = (view.drawTilt > 0d || view.drawSrid == 4978) ? SortInfo.DEPTH : SortInfo.FID;
         sortInfo.centerLat = view.drawLat;
         sortInfo.centerLng = view.drawLng;
         
         view.scratch.geo.set(view.drawLat, view.drawLng);
         GeoPoint bottomCenter = GeoCalculations.midPoint(view.lowerLeft, view.lowerRight);
-        GeoPoint measureFrom = DistanceCalculations.computeDestinationPoint(view.scratch.geo, view.scratch.geo.bearingTo(bottomCenter), view.scratch.geo.distanceTo(bottomCenter)*1.5d);
+        GeoPoint measureFrom = GeoCalculations.pointAtDistance(view.scratch.geo, view.scratch.geo.bearingTo(bottomCenter), view.scratch.geo.distanceTo(bottomCenter) * 1.5d);
         
         sortInfo.measureFromLat = measureFrom.getLatitude();
         sortInfo.measureFromLng = measureFrom.getLongitude();
@@ -693,6 +706,20 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
     @Override
     public int getRenderPass() {
         return GLMapView.RENDER_PASS_SPRITES|GLMapView.RENDER_PASS_SURFACE;
+    }
+
+    /**
+     * Check if this renderer is requesting a contents update via
+     * {@link #setBatch(Collection)}
+     * Once checked, the value is reset to false
+     * @return True if update requested
+     */
+    public boolean checkBatchListRefresh() {
+        try {
+            return refreshBatchList;
+        } finally {
+            refreshBatchList = false;
+        }
     }
 
     private static void bls3_vertex(ByteBuffer vbuf, GLBatchLineString.RenderState state, float relativeScale, PointD v1, PointD v2, int n, int dir) {
@@ -1293,6 +1320,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         this.spriteLines.clear();
         this.surfacePolys.clear();
         this.spritePolys.clear();
+        this.shapes.clear();
         
         this.batchPoints2.clear();
         this.loadingPoints.clear();
@@ -1564,8 +1592,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
             lx -= 360;
         }
 
-        boolean onGround = params.view.drawTilt == 0
-                || line.altitudeMode == Feature.AltitudeMode.ClampToGround;
+        boolean onGround = line.getAltitudeMode() == AltitudeMode.ClampToGround;
 
         // if it is not tilted, then a simple intersect should suffice for the first pass.
         if (onGround && !Rectangle.intersects(mbr.minX, mbr.minY, mbr.maxX, mbr.maxY,
@@ -1596,7 +1623,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
                 z0 = Unsafe.getDouble(linestringPtr + 16);
                 z1 = Unsafe.getDouble(linestringPtr + bytesPerPoint + 16);
 
-                if (line.altitudeMode == Feature.AltitudeMode.Relative) {
+                if (line.getAltitudeMode() == AltitudeMode.Relative) {
                     z0 += params.view.getTerrainMeshElevation(y0, x0);
                     z1 += params.view.getTerrainMeshElevation(y1, x1);
                 }

@@ -69,37 +69,19 @@ public class GLBatchGeometryCollection extends GLBatchGeometry {
     @Override
     public synchronized void init(long featureId, String name) {
         super.init(featureId, name);
-        for(GLBatchGeometry child : points)
-            child.init(featureId, name);
-        for(GLBatchGeometry child : lines)
-            child.init(featureId, name);
-        for(GLBatchGeometry child : polys)
-            child.init(featureId, name);
-        for(GLBatchGeometry child : collections)
+        for(GLBatchGeometry child : getChildren())
             child.init(featureId, name);
     }
     
     @Override
     public void draw(GLMapView view) {
-        for(GLBatchGeometry child : collections)
-            child.draw(view);
-        for(GLBatchGeometry child : polys)
-            child.draw(view);
-        for(GLBatchGeometry child : lines)
-            child.draw(view);
-        for(GLBatchGeometry child : points)
+        for(GLBatchGeometry child : getChildren())
             child.draw(view);
     }
 
     @Override
     public void release() {
-        for(GLBatchGeometry child : collections)
-            child.release();
-        for(GLBatchGeometry child : polys)
-            child.release();
-        for(GLBatchGeometry child : lines)
-            child.release();
-        for(GLBatchGeometry child : points)
+        for(GLBatchGeometry child : getChildren())
             child.release();
     }
 
@@ -107,13 +89,7 @@ public class GLBatchGeometryCollection extends GLBatchGeometry {
     public final void batch(GLMapView view, GLRenderBatch2 batch, int renderPass) {
         if(!MathUtils.hasBits(renderPass, this.renderPass))
             return;
-        for(GLBatchGeometry child : collections)
-            child.batch(view, batch, renderPass);
-        for(GLBatchGeometry child : polys)
-            child.batch(view, batch, renderPass);
-        for(GLBatchGeometry child : lines)
-            child.batch(view, batch, renderPass);
-        for(GLBatchGeometry child : points)
+        for (GLBatchGeometry child : getChildren())
             child.batch(view, batch, renderPass);
     }
 
@@ -124,41 +100,37 @@ public class GLBatchGeometryCollection extends GLBatchGeometry {
 
     @Override
     public synchronized void setStyle(Style style) {
-        for(GLBatchGeometry child : collections)
-            child.setStyle(style);
-        for(GLBatchGeometry child : polys)
-            child.setStyle(style);
-        for(GLBatchGeometry child : lines)
-            child.setStyle(style);
-        for(GLBatchGeometry child : points)
+        for(GLBatchGeometry child : getChildren())
             child.setStyle(style);
         this.style = style;
     }
 
     @Override
     public synchronized void setAltitudeMode(Feature.AltitudeMode altitudeMode) {
-        for(GLBatchGeometry child : collections)
-            child.setAltitudeMode(altitudeMode);
-        for(GLBatchGeometry child : polys)
-            child.setAltitudeMode(altitudeMode);
-        for(GLBatchGeometry child : lines)
-            child.setAltitudeMode(altitudeMode);
-        for(GLBatchGeometry child : points)
+        for(GLBatchGeometry child : getChildren())
             child.setAltitudeMode(altitudeMode);
         this.altitudeMode = altitudeMode;
     }
 
     @Override
     public synchronized void setExtrude(double value) {
-        for(GLBatchGeometry child : collections)
-            child.setExtrude(value);
-        for(GLBatchGeometry child : polys)
-            child.setExtrude(value);
-        for(GLBatchGeometry child : lines)
-            child.setExtrude(value);
-        for(GLBatchGeometry child : points)
+        for (GLBatchGeometry child : getChildren())
             child.setExtrude(value);
         this.extrude = value;
+    }
+
+    @Override
+    public void setLollipopsVisible(boolean v) {
+        super.setLollipopsVisible(v);
+        for (GLBatchGeometry child : getChildren())
+            child.setLollipopsVisible(v);
+    }
+
+    @Override
+    public void setClampToGroundAtNadir(boolean v) {
+        super.setClampToGroundAtNadir(v);
+        for (GLBatchGeometry child : getChildren())
+            child.setClampToGroundAtNadir(v);
     }
 
     public void setGeometry(GeometryCollection geometry) {
@@ -242,6 +214,8 @@ public class GLBatchGeometryCollection extends GLBatchGeometry {
                 glchild.setStyle(this.style);
             glchild.setExtrude(this.extrude);
             glchild.setAltitudeMode(this.altitudeMode);
+            glchild.setLollipopsVisible(getLollipopsVisible());
+            glchild.setClampToGroundAtNadir(getClampToGroundAtNadir());
         }
         
         while(pointsIter.hasNext()) {
@@ -327,6 +301,8 @@ public class GLBatchGeometryCollection extends GLBatchGeometry {
                 child.setStyle(this.style);
             child.setExtrude(this.extrude);
             child.setAltitudeMode(this.altitudeMode);
+            child.setLollipopsVisible(getLollipopsVisible());
+            child.setClampToGroundAtNadir(getClampToGroundAtNadir());
         }
         
         while(pointsIter.hasNext()) {
@@ -354,5 +330,38 @@ public class GLBatchGeometryCollection extends GLBatchGeometry {
     @Override
     protected void setGeometryImpl(Geometry geom) {
         throw new IllegalStateException();
+    }
+
+    /**
+     * Iterator for every piece of geometry that belongs to this collection
+     * Used to cut down on duplicate code
+     * @return Children iterator
+     */
+    private Iterable<GLBatchGeometry> getChildren() {
+        final Collection<?>[] lists = {
+                collections, points, lines, polys
+        };
+        return new Iterable<GLBatchGeometry>() {
+            @Override
+            public Iterator<GLBatchGeometry> iterator() {
+                return new Iterator<GLBatchGeometry>() {
+
+                    Iterator<?> iter;
+                    int l = 0;
+
+                    @Override
+                    public boolean hasNext() {
+                        while (l < lists.length && (iter == null || !iter.hasNext()))
+                            iter = lists[l++].iterator();
+                        return iter != null && iter.hasNext();
+                    }
+
+                    @Override
+                    public GLBatchGeometry next() {
+                        return (GLBatchGeometry) iter.next();
+                    }
+                };
+            }
+        };
     }
 }

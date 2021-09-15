@@ -120,8 +120,8 @@ namespace atakmap {
                 std::string genericType = util::toLowerCase(util::getFileName(subdir));
                 bool nitfChecks = genericType.compare("nitf") == 0;
                 std::vector<std::string> children = util::getDirContents(subdir);
-                int width;
-                int height;
+                size_t width;
+                size_t height;
                 math::PointD scratch(0, 0);
                 core::GeoPoint ul;
                 core::GeoPoint ur;
@@ -189,14 +189,14 @@ namespace atakmap {
                             scratch.x = 0;
                             scratch.y = 0;
                             proj->inverse(&scratch, &ul);
-                            scratch.x = width;
+                            scratch.x = static_cast<double>(width);
                             scratch.y = 0;
                             proj->inverse(&scratch, &ur);
-                            scratch.x = width;
-                            scratch.y = height;
+                            scratch.x = static_cast<double>(width);
+                            scratch.y = static_cast<double>(height);
                             proj->inverse(&scratch, &lr);
                             scratch.x = 0;
-                            scratch.y = height;
+                            scratch.y = static_cast<double>(height);
                             proj->inverse(&scratch, &ll);
 
 
@@ -212,7 +212,7 @@ namespace atakmap {
                         delete proj;
                         GDALClose(dataset);
                     }
-                    double gsd = DatasetDescriptor::computeGSD(width, height, ul, ur, lr, ll);
+                    double gsd = DatasetDescriptor::computeGSD(static_cast<unsigned long>(width), static_cast<unsigned long>(height), ul, ur, lr, ll);
                     database->insertRow(util::computeRelativePath(relativeTo, children[i].c_str()),
                                        type,
                                        ul,

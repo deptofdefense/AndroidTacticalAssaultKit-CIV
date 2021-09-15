@@ -10,8 +10,6 @@ import com.atakmap.android.maps.Marker;
 import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.ConversionFactors;
 
-import com.atakmap.coremap.maps.time.CoordinatedTime;
-
 /**
  * Class to convert speed based on user preferences.
  *
@@ -27,11 +25,10 @@ public class SpeedFormatter implements
     private int currentSpeedFormat;
     private final SharedPreferences _pref;
 
-
-    public static final int MPH = 0;      // miles per hour
-    public static final int KMPH = 1;     // kilometers per hour
-    public static final int KTS = 2;      // knots
-    public static final int MPS = 3;      // meters per second
+    public static final int MPH = 0; // miles per hour
+    public static final int KMPH = 1; // kilometers per hour
+    public static final int KTS = 2; // knots
+    public static final int MPS = 3; // meters per second
 
     private final String[] speedArray;
 

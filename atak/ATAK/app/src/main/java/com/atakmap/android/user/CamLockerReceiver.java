@@ -338,7 +338,6 @@ public class CamLockerReceiver extends BroadcastReceiver implements
                             focuslla.set(localEl);
                     }
 
-
                     if (_mapView.isPortrait())
                         focusy = sm.height * (float) BOTTOM_PORTRAIT_PERCENT;
                     else
@@ -411,7 +410,11 @@ public class CamLockerReceiver extends BroadcastReceiver implements
     }
 
     public void dispose() {
+        if (_lockedItem != null)
+            _lockedItem.removeOnPointChangedListener(this);
+
         prefs.unregisterOnSharedPreferenceChangeListener(this);
+
         disposed = true;
     }
 }

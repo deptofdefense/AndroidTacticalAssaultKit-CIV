@@ -2911,6 +2911,7 @@
     <string name="kmz_file">Archivo KMZ</string>
     <string name="lpt_file">Archivo LPT</string>
     <string name="csv_file">Archivo CSV</string>
+  <string name="mvt_file">Mapbox Vector Tiles</string>
     <string name="preference_file">Archivo de preferencias</string>
     <string name="shapefile">Archivo de forma</string>
     <string name="zipped_shapefile">Archivo de forma comprimido</string>
@@ -3014,7 +3015,6 @@
     <string name="fire_control_prefs">Preferencias de barra de herramientas de incendios</string>
     <string name="fires_prefs">Preferencias de incendios</string>
     <string name="adjust_fire_settings">Ajuste las preferencias para la barra de herramientas Fuegos</string>
-    <string name="s2525B">2525B</string>
     <string name="default_cot_mapping">Asignación predeterminada de CoT</string>
     <string name="preferences_text422a">Aceptación de EULA</string>
     <string name="preferences_text422b">Configuración del dispositivo TAK</string>
@@ -3447,7 +3447,7 @@
     <string name="contour_choose_line_color">Choose Contour Line Color</string>
     <string name="contour_lines">Contour</string>
     <string name="map_controls">Map Controls</string>
-    <string name="imagery_transparency">Map Tilt Imagery Transparency</string>
+  <string name="imagery_transparency">Map Imagery Transparency</string>
     <string name="globe_display">Enable Globe Display Mode</string>
     <string name="globe_display_summary">The default is to display the earth as a globe. When disabled, display the earth flattened using Equirectangular Map Projection.</string>
     <string name="basic_display_settings">Basic Display Settings</string>
@@ -3557,16 +3557,13 @@
     <string name="reason1">This plugin requires software version: %1$s but you are running: %2$s</string>
     <string name="reason2">This plugin failed signature validation.</string>
     <string name="reason3">Please refer to the TAK Package Management Tool for the reason this plugin is not compatible.</string>
-
     <string name="installProduct">Install Product</string>
     <string name="failed_to_install">Failed to install: %s</string>
     <string name="loadPlugins">Load Plugins</string>
     <string name="installBegin">Click \'Begin\' to install the %d products listed below</string>
     <string name="installWizardHint">This Product Wizard may be used to simplify the installation of multiple Apps and Plugins. At each step in the wizard, please wait for the previous step to complete before continuing.</string>
-
     <string name="uninstallBegin">Click \'Begin\' to uninstall the %d products listed below</string>
     <string name="uninstallWizardHint">This Product Wizard may be used to simplify the removal of multiple Apps and Plugins. At each step in the wizard, please wait for the previous step to complete before continuing.</string>
-
     <string name="bt_pair_error">Could not pair with %s</string>
     <string name="bt_classic_time">starting scan for supported Bluetooth devices\n(can take up to 30 seconds)</string>
     <string name="bt_classic_error">unable to start Bluetooth scanning</string>
@@ -3594,7 +3591,6 @@
     <string name="background_scanning">Scanning in background...</string>
     <string name="copied_to_clipboard_generic">Copied to clipboard...</string>
     <string name="no_exporters_registered">No exporters registered</string>
-
     <string name="scanning_apps">Scanning available apps and plugins</string>
     <string name="scanning">Scanning...</string>
     <string name="prefs_use_klv_elevation">Prefer KLV Frame Center Elevation</string>
@@ -3603,7 +3599,6 @@
     <string name="lockBehavior">Lock Behavior</string>
     <string name="forceCenterMoving">Force Center while Moving</string>
     <string name="forceCenterMovingSummary">Enabling this preference will result in the self marker remaining centered while moving in track up mode, This overrides the default behavior of floating the self icon to the bottom of the screen when moving to give the user a more 360 degree view.</string>
-
     <string name="mission_package_remarks_hint">Enter description and #hashtags here</string>
     <string name="install_date">Install Date</string>
     <string name="update_date">Update Date</string>
@@ -3626,55 +3621,42 @@
     <string name="show_outline">Show Outline</string>
     <string name="outline_only">Outline Only</string>
     <string name="breadcrumb_color">Breadcrumb Color</string>
-
     <string name="preferences_text220a">Secure Server port</string>
     <string name="preferences_text221a">Secure Port of the file sharing Server</string>
-
     <string name="preferences_text172">Render Speed</string>
     <string name="preferences_text173">Render at full speed or limit to save battery</string>
-
     <string name="fssystem_fiveline">"FS System "</string>
     <string name="login_to">Login to %s</string>
     <string name="show_password">Show Password</string>
     <string name="routes_prompt_2">Route creation</string>
     <string name="video_text71">Passphrase</string>
-
     <string name="http_401_message">The server has refused the connection because the username or password may not be correct.</string>
     <string name="http_403_message">The server has refused the connection because the user may not have the appropriate permissions.</string>
-
     <string name="new_folder">New Folder</string>
     <string name="read_only_location_msg">This location is read-only.</string>
     <string name="name_cannot_be_blank">Name cannot be blank.</string>
     <string name="name_contains_invalid_chars">Name contains invalid characters.</string>
     <string name="new_folder_failed">Failed to create new folder.</string>
-
     <string name="show_urls">Show URLs</string>
     <string name="next_restart">Setting will take effect on restart</string>
     <string name="redeploy">Redeploy</string>
     <string name="sure_next_restart">Are you sure you would like to redeploy the default WMS configuration files on the next restart?</string>
-
     <string name="bloodhound_must_be_hounding_start">Bloodhound must be started.</string>
     <string name="bloodhound_must_be_in_route_mode">Must be in route mode to navigate.</string>
     <string name="bloodhound_open_navigation">Open navigation interface.</string>
     <string name="server_auth_error">Server Authentication Error</string>
-
     <string name="civ_enable_grg_interact">Enable Image Overlay Map Interaction</string>
     <string name="civ_enable_grg_interact_summ">Enable to allow interaction with Image Overlays on the map when the outline is visible.   If no outline is visible, then the Image Overlay cannot be interacted with.  If this is false, no interaction can occur even if the outline is visible.</string>
     <string name="civ_delete_grg">Delete Image Overlay</string>
     <string name="civ_grg_file">Image Overlay File</string>
     <string name="civ_grg_lowercase">image overlay</string>
-
     <string name="civ_SPI_prompt">Press the DP button to toggle between movable and pinned state. Long press to remove.</string>
     <string name="civ_fire_control_prefs">Digital Pointer Toolbar Preferences</string>
     <string name="civ_fires_prefs">Digital Pointer Preferences</string>
     <string name="civ_adjust_fire_settings">Adjust preferences for the Digital Pointer toolbar</string>
-
-    <string name="civ_cot2525B" translatable="false">Markers</string>
-    <string name="civ_s2525B">Markers</string>
-
+  <string name="civ_cot2525C" translatable="false">Markers</string>
+  <string name="civ_s2525C">Markers</string>
     <string name="civ_default_cot_mapping">Default Mapping</string>
-
-
     <string name="tadilj_settings">Datalink Preferences</string>
     <string name="tadilj_id">My Datalink Id</string>
     <string name="tadilj_id2">Datalink ID</string>
@@ -3689,16 +3671,12 @@
     <string name="preferences_text438">Reset Datalink offset</string>
     <string name="details_text50">"Enter Datalink info: "</string>
     <string name="details_text52">"Clear all Datalink contacts? "</string>
-
-
     <string name="civ_stringSPIDesc">Toggle the DP tool.</string>
     <string name="civ_quick_select_spi">Quick Select DP</string>
-
     <string name="civ_tool_text31">The Digital Pointer (DP) has a menu item that when selected allows the DP to be dragged around the radius to correct issues introduced by the magnetic compass in the Laser Range Finder.   The red cone displays a 10 degree offset of either side of the reported shot to aid in correction.</string>
     <string name="civ_place_local_spi">Place Local DP</string>
     <string name="civ_spi_update_delay">DP Update Period</string>
     <string name="civ_spi_update_delay_summary">The maximum delay between sending updates for the DP point, if enabled (in seconds) even if the DP is not modified.   Moving a DP point locally will generate updates immediately.</string>
-
     <string name="civ_bloodhound_text9">Enable Auto Zoom feature to display self and DP in map view when tool is first launched</string>
     <string name="civ_imagery_change_summ">In this version, the Image Overlay tab has been fully migrated to the Overlay Manager.\nImage Overlay files, in TIF or KMZ file format, should be placed in the atak/grg folder on either the sdcard or the internal memory.\n\nImagery based map products (pfps, native, layers) should now be placed in the atak/imagery folder either on the sdcard or the internal memory.\n\nOverlay products like KML, KMZ, LPT, DRW, etc should be placed in the atak/overlay folder either on the sdcard or internal memory.</string>
     <string name="civ_point_dropper_text40">Invalid DP update delay set. Resetting to default value 5.</string>
@@ -3707,29 +3685,19 @@
     <string name="civ_fireSpiNumberSummary">Number of DPs to show in the Digital Pointer toolbar</string>
     <string name="civ_spi_redx_fah">DP/RedX FAH Width</string>
     <string name="civ_spi_redx_fah_summary">Sets the width of the FAH cone (in degrees) when enabled from a DP or the Red X (rounds to the closest increment of 10)</string>
-
     <!-- already a mil equiv -->
     <string name="actionbar_firetools">Digital Pointer Tools</string>
-
     <!-- possibly unused -->
     <string name="civ_fire_tools_title">Digital Pointer Tools</string>
-
     <!-- Even though this is the Distribution statement, we want it to
          appear at the bottom and not floating above empty text blocks -->
     <string name="caseLabel">Distribution Statement A: Approved for public release; distribution is unlimited.</string>
-
     <!-- for filter names -->
     <string name="civ_filter_title_markers">Markers</string>
     <string name="civ_filter_title_hostiles">Red Markers</string>
-
-    <string name="mil_filter_title_marker">CoT 2525B</string>
     <string name="mil_filter_title_hostiles">Hostile Markers</string>
-
-
     <string name="mission_type">Mission Type</string>
     <string name="indirect_fire">Indirect</string>
-
-
     <string name="dar_encryptor_message">[%s Installed]</string>
     <string name="outline_colon">Outline:</string>
     <string name="chat_message_no_recipients">There are currently no online users in this group.</string>
@@ -3747,17 +3715,13 @@
     <string name="elevation_data">Elevation Data</string>
     <string name="addendum">Addendum</string>
     <string name="webview_not_installed">This display window is not supported because Android System Webview is not installed</string>
-
-
     <string name="use_your_location_title">Use Your Location in the Background</string>
     <string name="background_permission_warning">ATAK asks for the ability to collect location in the background so that when users are running ATAK and background it to perform other activities, it can continue to report the precise location to team members either on a local network of via a TAK Server that the user has configured to use.   The data is sent out to other team members to show the precise location of the individual helping with coordinating such things such as incident response, disaster relief, and personal safety.</string>
     <string name="background_permission_warning_bullet">\t1) This data is not sent to the developers of the application.\n\t2) ATAK does not collect location data when the app is not running, only when it is backgrounded.</string>
     <string name="background_permission_warning_action">This application requires the location permission to be set to \'Allow all of the time\'</string>
-
     <string name="delete_elevation_data_warning">You cannot delete the entire elevation data set. Please select a specific set.</string>
     <string name="are_you_sure_delete_elevation">Are you sure you want to delete %s elevation data?</string>
     <string name="delete_elevation_please_lock">Please lock both switches to delete elevation</string>
-
     <string name="resection_update_location_title">Update location?</string>
     <string name="resection_update_location_message">Do you want to update your location to the resection estimate?\nLocation: %s</string>
     <string name="resection_estimate_label">Provider: %1$s\nLocation: %2$s\nConfidence: %3$s</string>
@@ -3789,7 +3753,6 @@
     <string name="http_code_message">Error %d - If you believe this is an error and do not have login credentials, click \'Cancel\'.   Please notify the server administrator.</string>
     <string name="address_blank_error">Address cannot be blank</string>
     <string name="address_invalid_error">Address is invalid %s</string>
-
     <string name="location_perm_warning_1">In order to enable GPS usage while ATAK is running but in the background, you have two chances to enable this.</string>
     <string name="location_perm_warning_2">WARNING: If you miss these chances, then you will need to do it manually. Android intentionally makes this difficult</string>
     <string name="location_perm_warning_chance1">Chance 1: Click on \'Allow In Settings\'</string>
@@ -3801,5 +3764,12 @@
     <string name="location_permission_step3">Step 3:</string>
     <string name="general_permission_step1">Step 1:</string>
     <string name="general_permission_step2">Step 2: Review the Denied List</string>
-
+  <string name="resection_required_data_label">Required Data (e.g., DTED)</string>
+  <string name="resection_required_hardware">Required Hardware (e.g., PLRF)</string>
+  <string name="resection_classic_tool_required_data">No special data required</string>
+  <string name="resection_classic_tool_required_hardware">No special hardware required</string>
+  <string name="lollipop_visibility">Lollipop Visibility when Tilted</string>
+  <string name="legacy_altitude_rendering">Enhanced Depth Perception</string>
+  <string name="disable_parallax_viewing">Enhances visualization of depth when looking straight down.</string>
+  <string name="lollipop_description">Draws a line to the exact point on the ground represented by the item.</string>
 </resources>

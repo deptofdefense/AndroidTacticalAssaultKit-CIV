@@ -128,10 +128,10 @@ namespace {
             reader(reader_)
         {}
 
-        virtual TAKErr init(std::shared_ptr<TileReader2> &value,
+        TAKErr init(std::shared_ptr<TileReader2> &value,
                             DatasetProjection2Ptr &imprecise,
                             DatasetProjection2Ptr &precise, const ImageInfo *info,
-                            TileReaderFactory2Options &readerOpts) const
+                            TileReaderFactory2Options &readerOpts) const override
         {
             TAKErr code(TE_Ok);
             if (!reader)
@@ -146,6 +146,42 @@ namespace {
     };
 }
 
+class GLTiledMapLayer2::ColorControlImpl : TAK::Engine::Renderer::Core::ColorControl {
+   private:
+    GLQuadTileNode2 *impl_;
+    TAK::Engine::Core::RenderContext *renderer_;
+
+   public:
+    struct SetColorUpdate {
+        ColorControlImpl *self;
+        int color;
+
+        SetColorUpdate(int color, ColorControlImpl *self) : self(self), color(color) {}
+
+        static void run(void *selfPtr) NOTHROWS {
+            SetColorUpdate *update = static_cast<SetColorUpdate *>(selfPtr);
+            update->self->setColor(Mode::Replace, update->color);
+        }
+    };
+
+    ColorControlImpl(GLQuadTileNode2 *impl, TAK::Engine::Core::RenderContext *renderer) NOTHROWS : impl_(impl), renderer_(renderer) {}
+    ~ColorControlImpl() NOTHROWS override = default;
+
+    TAK::Engine::Util::TAKErr setColor(const Mode mode, const unsigned int color) NOTHROWS override {
+        if (mode != Mode::Replace) return TAK::Engine::Util::TE_InvalidArg;
+        if (renderer_->isRenderThread()) {
+            impl_->setColor(color);
+        } else {
+            renderer_->queueEvent(SetColorUpdate::run, std::unique_ptr<void, void (*)(const void *)>(
+                                                           new SetColorUpdate(color, this), TAK::Engine::Util::Memory_leaker_const<void>));
+        }
+        return TAK::Engine::Util::TE_Ok;
+    }
+
+    unsigned int getColor() const NOTHROWS override { return 0xFFFFFFFF; }
+    Mode getMode() const NOTHROWS override { return Mode::Replace; }
+};
+
 
 GLTiledMapLayer2::GLTiledMapLayer2(const atakmap::raster::ImageDatasetDescriptor& desc_) NOTHROWS :
     GLTiledMapLayer2(desc_, TileReader2Ptr(nullptr, nullptr))
@@ -154,7 +190,9 @@ GLTiledMapLayer2::GLTiledMapLayer2(const atakmap::raster::ImageDatasetDescriptor
     desc(nullptr, nullptr),
     prealloced(std::move(prealloced_)),
     impl(nullptr, nullptr),
-    initialized(false)
+    initialized(false),
+    controls_(),
+    color_control_(nullptr)
 {
     desc_.clone(desc);
 }
@@ -168,9 +206,15 @@ const atakmap::raster::DatasetDescriptor* GLTiledMapLayer2::getInfo() const NOTH
 {
     return desc.get();
 }
-Util::TAKErr GLTiledMapLayer2::getControl(void** ctrl, const char* type) const NOTHROWS
+Util::TAKErr GLTiledMapLayer2::getControl(void** ctrl, const char* type) const NOTHROWS 
 {
-    return TE_InvalidArg;
+    if (!type) return TE_InvalidArg;
+
+    auto iter = this->controls_.find(type);
+    if (iter == this->controls_.end()) return TE_InvalidArg;
+
+    *ctrl = iter->second;
+    return TE_Ok;
 }
 void GLTiledMapLayer2::draw(const GLGlobeBase& view, const int renderPass) NOTHROWS
 {
@@ -185,8 +229,8 @@ void GLTiledMapLayer2::draw(const GLGlobeBase& view, const int renderPass) NOTHR
             const auto& image = static_cast<const atakmap::raster::ImageDatasetDescriptor&>(*desc);
             ImageInfo info;
             info.srid = image.getSpatialReferenceID();
-            info.width = (int)image.getWidth();
-            info.height = (int)image.getHeight();
+            info.width = image.getWidth();
+            info.height = image.getHeight();
             info.maxGsd = image.getMaxResolution();
             info.path = image.getURI();
             info.type = image.getImageryType();
@@ -210,13 +254,15 @@ void GLTiledMapLayer2::draw(const GLGlobeBase& view, const int renderPass) NOTHR
                     nodeOpts.childTextureCopyResolvesParent = !b;
             }
             // progressive load if streaming
-            nodeOpts.progressiveLoad = image.isRemote();
+            nodeOpts.progressiveLoad = image.isRemote() && !view.isScreenshot;
             nodeOpts.textureCopyEnabled = true;
             nodeOpts.textureBorrowEnabled = true;
 
             PrefetchedInitializer init(reader);
             GLQuadTileNode2::create(impl, &view.context, &info, readerOpts, nodeOpts, init);
         }
+        color_control_ = std::make_unique<ColorControlImpl>(impl.get(), &view.context);
+        this->controls_["TAK.Engine.Renderer.Core.ColorControl"] = this->color_control_.get();
         initialized = true;
     }
 

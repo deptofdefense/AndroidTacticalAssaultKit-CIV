@@ -1,8 +1,6 @@
 
 package com.atakmap.android.menu;
 
-import android.content.BroadcastReceiver;
-
 public class MapMenuReceiverCompat {
     public static boolean isNotNull() {
         return MapMenuReceiver.getInstance() != null;

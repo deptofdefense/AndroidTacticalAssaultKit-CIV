@@ -2,34 +2,20 @@
 package com.atakmap.map.layer.feature.geometry.opengl;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
-import java.util.ArrayList;
 
 import android.graphics.Color;
-import android.opengl.GLES20;
 import android.opengl.GLES30;
 
-import com.atakmap.coremap.log.Log;
 import com.atakmap.lang.Unsafe;
-import com.atakmap.map.EngineLibrary;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.Feature.AltitudeMode;
-import com.atakmap.map.layer.feature.style.BasicStrokeStyle;
 import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.map.layer.feature.geometry.Geometry;
 import com.atakmap.map.layer.feature.geometry.Polygon;
-import com.atakmap.map.layer.feature.style.BasicFillStyle;
-import com.atakmap.map.layer.feature.style.CompositeStyle;
-import com.atakmap.map.opengl.GLAntiMeridianHelper;
 import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
-import com.atakmap.math.MathUtils;
-import com.atakmap.math.Matrix;
-import com.atakmap.opengl.GLES20FixedPipeline;
-import com.atakmap.opengl.GLRenderBatch2;
 import com.atakmap.opengl.Tessellate;
 
 public class GLBatchPolygon extends GLBatchLineString {
@@ -208,6 +194,7 @@ public class GLBatchPolygon extends GLBatchLineString {
         return updated;
     }
 
+    @Override
     void extrudeGeometryImpl(GLMapView view, DoubleBuffer extPoints, double[] heights, boolean closed) {
         if(_numPolygons == 1) {
             // extrude the outline
@@ -264,7 +251,7 @@ public class GLBatchPolygon extends GLBatchLineString {
             renderPoints = Unsafe.allocateDirect(totalOutlineData, DoubleBuffer.class);
             if(drawFill) {
                 // ensure that the polyTriangles buffer contains the correct heights
-                if (altitudeMode == AltitudeMode.Relative) {
+                if (getAltitudeMode() == AltitudeMode.Relative) {
                     // XXX - can we avoid having to tessellate multiple times?
                     Unsafe.free(polyTriangles);
                     this.polyTriangles = Tessellate.polygon(this.points,

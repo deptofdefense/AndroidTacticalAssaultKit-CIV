@@ -19,6 +19,7 @@ import android.graphics.PointF;
 import android.graphics.RectF;
 import android.opengl.GLES30;
 
+import com.atakmap.map.opengl.GLLabelManager;
 import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.annotations.IncubatingApi;
 import com.atakmap.coremap.log.Log;
@@ -100,6 +101,7 @@ public class GLMapView implements
 
     final static Interop<MapSceneModel> MapSceneModel_interop = Interop.findInterop(MapSceneModel.class);
     final static Interop<Mesh> Mesh_interop = Interop.findInterop(Mesh.class);
+    final static Interop<GLLabelManager> GLLabelManager_interop = Interop.findInterop(GLLabelManager.class);
 
     private final static double ENABLED_COLLIDE_RADIUS = 10d;
     private final static double DISABLED_COLLIDE_RADIUS = 0d;
@@ -264,6 +266,7 @@ public class GLMapView implements
 
     private RenderContext _context;
     private RenderSurface _surface;
+    private GLLabelManager _labelManager;
     /**
      * @deprecated use {@link #currentPass}.{@link State#drawSrid drawSrid}
      */
@@ -526,6 +529,8 @@ public class GLMapView implements
         currentPass.scene = new MapSceneModel(currentScene.scene);
         this.lastsm = new MapSceneModel(currentScene.scene);
 
+        _labelManager = new GLLabelManager(getLabelManager(this.pointer.raw), this);
+
         this.sync();
 
         this.startAnimating(this.drawLat, this.drawLng, this.drawMapScale, this.drawRotation, this.drawTilt, 1d);
@@ -574,6 +579,11 @@ public class GLMapView implements
     }
     public void setBaseMap(final GLMapRenderable basemap) {
         setBaseMap(this.pointer.raw, LegacyAdapters.adapt(basemap));
+    }
+
+    public GLLabelManager getLabelManager()
+    {
+        return _labelManager;
     }
 
     /**
@@ -981,7 +991,6 @@ public class GLMapView implements
     public RenderSurface getRenderSurface() {
         return _surface;
     }
-
 
 
     /**
@@ -3093,6 +3102,9 @@ public class GLMapView implements
     static native void setRenderDiagnosticsEnabled(long ptr, boolean enabled, int impl);
     static native boolean isRenderDiagnosticsEnabled(long ptr, int impl);
     static native void addRenderDiagnostic(long ptr, String msg, int impl);
+
+    // GLLabelManager
+    static native long getLabelManager(long viewPtr);
 
     static native void setAtmosphereEnabled(long ptr, boolean enabled, int impl);
     static native boolean isAtmosphereEnabled(long ptr, int impl);

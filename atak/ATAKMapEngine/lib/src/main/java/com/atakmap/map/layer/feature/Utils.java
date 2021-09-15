@@ -18,7 +18,7 @@ public class Utils {
      * @param allowInterrupt if the modification allows for an interrupt to occur which would
      *                       throw a DataStoreException. If false, no interrupt is allowed and
      *                       the lock is reacquired
-     * @throws DataStoreException
+     * @throws DataStoreException if there an issue using equiring a lock on the data store
      */
     static void internalAcquireModifyLock(FeatureDataStore2 dataStore, boolean bulkModify, boolean allowInterrupt) throws DataStoreException {
         while(true) {

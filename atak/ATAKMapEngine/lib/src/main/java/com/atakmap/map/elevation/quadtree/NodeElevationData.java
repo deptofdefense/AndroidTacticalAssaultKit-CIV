@@ -19,12 +19,12 @@ public class NodeElevationData
     /**
      * This is a list of all the GeoPoints that is used to allow for bulk lookup operations
      */
-    private static final List<GeoPoint> pointCache = new ArrayList<GeoPoint>(  );
+    private static final List<GeoPoint> pointCache = new ArrayList<>();
 
     /**
      * This is a list that is used for the bulk lookup operations
      */
-    private static final List<GeoPoint> lookupList = new ArrayList<GeoPoint>(  );
+    private static final List<GeoPoint> lookupList = new ArrayList<>();
 
     /**
      * This is a single dimensional array which represents all the y values for the grid
@@ -98,10 +98,7 @@ public class NodeElevationData
     {
         synchronized( pointCache )
         {
-            for( GeoPoint point : lookupList )
-            {
-                pointCache.add(  point );
-            }
+            pointCache.addAll(lookupList);
             GeoPoint point;
             int size;
             lookupList.clear( );

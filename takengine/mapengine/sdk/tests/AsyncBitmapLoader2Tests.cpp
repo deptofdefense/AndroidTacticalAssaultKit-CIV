@@ -29,8 +29,17 @@ namespace takenginetests {
 		ctx->close();
 
 		std::replace(resource.begin(), resource.end(), '\\', '/');
-		resource.insert(0, "file://");
+		resource.insert(0, "file:///");
 		code = handler.handleURI(ctx, resource.c_str());
+		ASSERT_TRUE(TE_Ok == code);
+		ASSERT_FALSE(nullptr == ctx.get());
+		ctx->close();
+		
+		std::string resource2 = TAK::Engine::Tests::getResource("Fly Boys.kmz");
+        std::replace(resource2.begin(), resource2.end(), '\\', '/');
+        resource2.replace(resource2.find("Fly Boys.kmz"), sizeof("Fly Boys.kmz") - 1, "Fly%20Boys.kmz");
+		resource2.insert(0, "file://");
+        code = handler.handleURI(ctx, resource2.c_str());
 		ASSERT_TRUE(TE_Ok == code);
 		ASSERT_FALSE(nullptr == ctx.get());
 		ctx->close();

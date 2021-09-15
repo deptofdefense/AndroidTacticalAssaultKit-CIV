@@ -23,7 +23,7 @@ import com.atakmap.coremap.cot.event.CotDetail;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.cot.event.CotPoint;
 import com.atakmap.coremap.maps.assets.Icon;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.NorthReference;
@@ -191,10 +191,10 @@ public class VehicleShape extends EditablePolyline implements VehicleMapItem {
                 // Move entire vehicle rather than single point
                 GeoPointMetaData old = getPoint(index);
                 moveClosedSet(getCenter(),
-                        GeoPointMetaData.wrap(DistanceCalculations
-                                .computeDestinationPoint(getCenter().get(),
-                                        old.get().bearingTo(gp.get()),
-                                        old.get().distanceTo(gp.get()))));
+                        GeoPointMetaData.wrap(GeoCalculations.pointAtDistance(
+                                getCenter().get(),
+                                old.get().bearingTo(gp.get()),
+                                old.get().distanceTo(gp.get()))));
                 return true;
             }
             return false;

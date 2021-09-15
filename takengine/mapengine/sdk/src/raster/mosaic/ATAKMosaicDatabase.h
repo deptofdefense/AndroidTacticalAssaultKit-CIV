@@ -92,7 +92,7 @@ namespace atakmap {
                 virtual void setTransactionSuccessful();
                 virtual void endTransaction();
                 virtual void insertRow(const std::string &path, const std::string &type, core::GeoPoint ul, core::GeoPoint ur, core::GeoPoint lr,
-                               core::GeoPoint ll, double minGsd, double maxGsd, int width, int height);
+                               core::GeoPoint ll, double minGsd, double maxGsd, size_t width, size_t height);
 
                 virtual Cursor *query() const override;
                 virtual Cursor *query(const std::string *path) const override;

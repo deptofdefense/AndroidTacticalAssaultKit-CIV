@@ -294,7 +294,8 @@ public class BloodHoundTool extends ButtonTool implements
 
     @Override
     public boolean actionBarChanged() {
-        _amd = ActionBarReceiver.getMenuItem(_mapView.getContext().getString(R.string.actionbar_bloodhoundtool));
+        _amd = ActionBarReceiver.getMenuItem(_mapView.getContext()
+                .getString(R.string.actionbar_bloodhoundtool));
         if (_amd != null) {
             Log.d(TAG, "setting the menu icon based on: " + getActive());
             boolean retval = _amd.isSelected() != getActive();
@@ -348,7 +349,8 @@ public class BloodHoundTool extends ButtonTool implements
         public void onReceive(final Context context, Intent intent) {
 
             if (_amd == null) {
-                _amd = ActionBarReceiver.getMenuItem(_mapView.getContext().getString(R.string.actionbar_bloodhoundtool));
+                _amd = ActionBarReceiver.getMenuItem(_mapView.getContext()
+                        .getString(R.string.actionbar_bloodhoundtool));
             }
 
             if (intent == null || !intent.hasExtra("uid")) {
@@ -928,6 +930,7 @@ public class BloodHoundTool extends ButtonTool implements
         timer.schedule(timerTask, 300, 300);
 
         _zoomWidget.setVisible(true);
+        _bloodHoundHUD.updateWidget();
         _bloodHoundHUD.setLayoutVisible(true);
         _routeWidget.setVisible(true);
         _navWidget.setVisible(true);

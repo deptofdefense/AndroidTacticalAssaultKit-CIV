@@ -58,6 +58,8 @@ public class CoTInfoBroadcastReceiver extends DropDownReceiver implements
     // if sent via Mission Package, receiver will generate this action
     String onReceiveAction;
 
+    private PointMapItem pending;
+
     public CoTInfoBroadcastReceiver(final MapView mapView) {
         super(mapView);
         _prefs = PreferenceManager.getDefaultSharedPreferences(mapView
@@ -181,6 +183,10 @@ public class CoTInfoBroadcastReceiver extends DropDownReceiver implements
                         // Hidden but not closed - un-hide pane
                         DropDownManager.getInstance().unHidePane();
                     } else {
+                        // opening a new drop down will inevitably close the old drop down and
+                        // clear out the civ.setMarker above.
+                        pending = targetPMI;
+
                         setRetain(true);
                         showDropDown(civ, THREE_EIGHTHS_WIDTH, FULL_HEIGHT,
                                 FULL_WIDTH,
@@ -303,6 +309,13 @@ public class CoTInfoBroadcastReceiver extends DropDownReceiver implements
         if (civ != null)
             civ.cleanup(true);
         clearAssociatedMapItems();
+
+        // since this drop down shares the same CoTInfoView on the back end, closures and opens
+        // might manipulate the infoview out of order.
+        if (pending != null) {
+            civ.setMarker(pending);
+            pending = null;
+        }
     }
 
     private void clearAssociatedMapItems() {

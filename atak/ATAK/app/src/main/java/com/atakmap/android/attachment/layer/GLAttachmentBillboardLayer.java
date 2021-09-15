@@ -23,7 +23,6 @@ import com.atakmap.android.maps.graphics.GLImage;
 import com.atakmap.android.util.AttachmentManager;
 import com.atakmap.android.util.AttachmentWatcher;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;

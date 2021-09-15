@@ -976,7 +976,6 @@ public class ContourLinesOverlay extends AbstractHierarchyListItem
             if (feature == null)
                 return;
 
-
             try {
                 if (isCancelled.get()) {
                     return;

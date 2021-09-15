@@ -7,6 +7,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.SystemClock;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.layer.raster.controls.TileClientControl;
@@ -81,6 +82,12 @@ public class MobacTileReader extends AbstractTilePyramidTileReader {
     
     private long version;
 
+    // package private on deprecate complete
+    /**
+     * @deprecated use {@link com.atakmap.map.layer.raster.tilereader.TileReaderFactory#create(String, Options)}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.3", forRemoval = true, removeAt = "4.6")
     public MobacTileReader(String uri, String cacheUri, AsynchronousIO asyncIO, MobacMapSource mapSource) throws IOException {
         super(uri,
               null,

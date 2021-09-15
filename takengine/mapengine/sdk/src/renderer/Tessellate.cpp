@@ -576,6 +576,11 @@ namespace
                 Point2<double> xyz;
                 code = it(&xyz, data, src);
                 TE_CHECKBREAK_CODE(code);
+                
+                if (isnan(xyz.x) || isnan(xyz.y)) {
+                    code = TE_InvalidArg;
+                    TE_CHECKBREAK_CODE(code);
+                }
 
                 GLfloat xyzf[3];
                 xyzf[0] = static_cast<float>(xyz.x - value->origin.x);

@@ -8,7 +8,6 @@ import com.atakmap.android.http.rest.operation.GetCotEventOperation;
 import com.atakmap.android.http.rest.operation.GetCotHistoryOperation;
 import com.atakmap.android.http.rest.operation.GetServerVersionOperation;
 import com.atakmap.android.http.rest.operation.SimpleHttpOperation;
-import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.foxykeep.datadroid.service.RequestService.Operation;
 
@@ -92,10 +91,10 @@ public class NetworkOperationManager {
      * Register handler, return unique requestType.
      * Registering a handler instance may help when class names/paths are mangled by proguard
      * and may provide a slight performance bump for not recreating operations for each request
-     *
-     * @param clazz
-     * @param handler
-     * @return
+     * This uses an empty salt when generating the identifier which could end up duplicate identifiers
+     * @param clazz the class to register
+     * @param handler the operation handler
+     * @return returns a unique rest type identifier as an integer
      */
     static synchronized public Integer register(String clazz,
             Operation handler) {
@@ -107,15 +106,17 @@ public class NetworkOperationManager {
      * Optionally salt the clazz hash. e.g. this could be used to allow a single Operation implementation
      * to be used for multiple request types
      *
-     * @param clazz
-     * @param handler
-     * @param salt
-     * @return
+     * @param clazz the class to register
+     * @param handler the operation handler
+     * @param salt the salt to be used to generate a unique id
+     * @return returns a unique rest type identifier as an integer
      */
     static synchronized public Integer register(String clazz,
             Operation handler, String salt) {
-        Integer uid = clazz.hashCode()
-                + (FileSystemUtils.isEmpty(salt) ? 0 : salt.hashCode());
+        final String id = handler.getClass().getClassLoader().hashCode() + ":"
+                + clazz + ":" +
+                (salt == null ? 0 : salt.hashCode());
+        final Integer uid = id.hashCode();
         get().put(uid, new Pair<>(clazz, handler));
         //Log.d(TAG, "Registered: " + uid + (clazz == null ? "," : ", class=" + clazz) +
         //        (handler == null ? "" : ",handler=" + handler.getClass().getName()));

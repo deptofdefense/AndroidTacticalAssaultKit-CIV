@@ -37,18 +37,18 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
-import com.atakmap.map.AtakMapController;
 import com.atakmap.map.CameraController;
 import com.atakmap.map.MapRenderer2;
 import com.atakmap.map.MapRenderer3;
 import com.atakmap.map.MapSceneModel;
-import com.atakmap.map.RenderSurface;
 import com.atakmap.map.elevation.ElevationManager;
 
+import com.atakmap.map.layer.control.ClampToGroundControl;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.Plane;
 import com.atakmap.math.PointD;
 import com.atakmap.math.Vector3D;
+import com.atakmap.util.Visitor;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -101,6 +101,7 @@ public class MapTouchController implements OnTouchListener,
     private boolean _inGesture, _inLongPressDrag;
     private final MapTouchEventListener _mapListener;
     private boolean _toolActive;
+    private boolean _nadirClamped;
     private MotionEvent _lastDrag;
     private final android.view.ViewConfiguration viewConfig;
 
@@ -1148,6 +1149,7 @@ public class MapTouchController implements OnTouchListener,
     }
 
     private MapItem _fetchOrthoHit(float x, float y, GeoPoint geo) {
+        updateNadirClamp();
         return _mapView.getRootGroup().deepHitTest((int) x, (int) y,
                 geo,
                 _mapView);
@@ -1156,6 +1158,7 @@ public class MapTouchController implements OnTouchListener,
     // RC/AML/2015-01-20: Check which tracks were hit and return a sorted set containing them.
     private SortedSet<MapItem> _fetchOrthoHitItems(float x, float y,
             GeoPoint geo) {
+        updateNadirClamp();
         return _mapView.getRootGroup().deepHitTestItems((int) x, (int) y,
                 geo,
                 _mapView);
@@ -1756,6 +1759,34 @@ public class MapTouchController implements OnTouchListener,
 
     public void skipDeconfliction(boolean skip) {
         _skipDeconfliction = skip;
+    }
+
+    /**
+     * Check if the map view tilt is zero and NADIR clamping is enabled since
+     * the last touch event
+     * @return True if NADIR and clamping enabled
+     */
+    public boolean isNadirClamped() {
+        return _nadirClamped;
+    }
+
+    /**
+     * Update the NADIR clamp state before processing a touch event
+     */
+    private void updateNadirClamp() {
+        final boolean[] clamp = {
+                false
+        };
+        if (Double.compare(_mapView.getMapTilt(), 0) == 0) {
+            _mapView.getGLSurface().getGLMapView().visitControl(null,
+                    new Visitor<ClampToGroundControl>() {
+                        @Override
+                        public void visit(ClampToGroundControl ctrl) {
+                            clamp[0] = ctrl.getClampToGroundAtNadir();
+                        }
+                    }, ClampToGroundControl.class);
+        }
+        _nadirClamped = clamp[0];
     }
 
     private void onGestureStart(float gestureFocusX, float gestureFocusY,

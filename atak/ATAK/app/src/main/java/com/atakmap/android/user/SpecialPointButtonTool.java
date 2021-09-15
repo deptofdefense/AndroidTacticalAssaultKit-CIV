@@ -290,6 +290,7 @@ public abstract class SpecialPointButtonTool extends Tool {
             _marker.setMetaString("label", callsign);
             _marker.setMetaString("callsign", callsign);
             _marker.setTitle(callsign);
+            _marker.setShowLabel(false);
             _marker.setMetaBoolean("ignoreFocus", false);
             _marker.setMetaBoolean("toggleDetails", true);
             _marker.setMetaBoolean("ignoreMenu", false);

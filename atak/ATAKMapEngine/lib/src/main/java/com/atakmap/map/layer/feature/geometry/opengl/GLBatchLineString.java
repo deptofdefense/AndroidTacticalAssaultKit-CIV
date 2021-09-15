@@ -14,7 +14,7 @@ import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.MapRenderer;
-import com.atakmap.map.layer.feature.Feature;
+import com.atakmap.map.layer.feature.Feature.AltitudeMode;
 import com.atakmap.map.layer.feature.style.BasicFillStyle;
 import com.atakmap.map.layer.feature.style.PatternStrokeStyle;
 import com.atakmap.map.layer.feature.style.Style;
@@ -91,7 +91,7 @@ public class GLBatchLineString extends GLBatchGeometry {
     private boolean tessellationEnabled;
     private Tessellate.Mode tessellationMode;
 
-    protected Feature.AltitudeMode altitudeMode;
+    protected AltitudeMode altitudeMode;
     protected double extrude = 0d;
 
     private boolean _aalineDirty;
@@ -128,7 +128,7 @@ public class GLBatchLineString extends GLBatchGeometry {
         
         this.mbb = new Envelope(Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN);
 
-        this.altitudeMode = Feature.AltitudeMode.ClampToGround;
+        this.altitudeMode = AltitudeMode.ClampToGround;
 
         this.needsTessellate = false;
         this.tessellated = false;
@@ -139,8 +139,12 @@ public class GLBatchLineString extends GLBatchGeometry {
     }
 
     @Override
-    public void setAltitudeMode(Feature.AltitudeMode altitudeMode) {
+    public void setAltitudeMode(AltitudeMode altitudeMode) {
         this.altitudeMode = altitudeMode;
+    }
+
+    protected AltitudeMode getAltitudeMode() {
+        return isNadirClampEnabled() ? AltitudeMode.ClampToGround : altitudeMode;
     }
 
     @Override
@@ -149,7 +153,7 @@ public class GLBatchLineString extends GLBatchGeometry {
     }
 
     public boolean isExtruded() {
-        return Double.compare(this.extrude, 0.0) != 0;
+        return !isNadirClampEnabled() && Double.compare(this.extrude, 0.0) != 0;
     }
 
     public void setTessellationEnabled(boolean e) {
@@ -596,8 +600,8 @@ public class GLBatchLineString extends GLBatchGeometry {
         this.thresholdxyz = threshold / 10_000_000D;
     }
 
-    private Feature.AltitudeMode extrudeGeometry(GLMapView view) {
-        Feature.AltitudeMode altMode = isExtruded() ? Feature.AltitudeMode.Absolute : altitudeMode;
+    private AltitudeMode extrudeGeometry(GLMapView view) {
+        AltitudeMode altMode = isExtruded() ? AltitudeMode.Absolute : getAltitudeMode();
         if(isExtruded() && !hasBeenExtruded) {
             // XXX - recompute render points as extrusion outline
             int last = points.limit() - 3;
@@ -633,7 +637,7 @@ public class GLBatchLineString extends GLBatchGeometry {
 
                 // (Minimum altitude + height) - point elevation
                 double alt = extPoints.get(i + 2);
-                heights[h++] = altitudeMode == Feature.AltitudeMode.Absolute
+                heights[h++] = altitudeMode == AltitudeMode.Absolute
                         ? height - alt : (centerAlt + height) - alt;
             }
 
@@ -701,7 +705,7 @@ public class GLBatchLineString extends GLBatchGeometry {
         hasBeenExtruded &= terrainValid;
 
         // extrude as necessary
-        Feature.AltitudeMode altMode = extrudeGeometry(view);
+        AltitudeMode altMode = extrudeGeometry(view);
 
         // validate buffers
         if(this.vertices == null || (this.vertices.capacity() < renderPoints.limit())) {
@@ -915,7 +919,7 @@ public class GLBatchLineString extends GLBatchGeometry {
         return true;
     }
 
-    final static void projectVerticesImpl(GLMapView view, DoubleBuffer points, int numPoints, int type, Feature.AltitudeMode altitudeMode, double unwrap, FloatBuffer vertices, PointD centroidProj) {
+    final static void projectVerticesImpl(GLMapView view, DoubleBuffer points, int numPoints, int type, AltitudeMode altitudeMode, double unwrap, FloatBuffer vertices, PointD centroidProj) {
         switch(type) {
             case GLGeometry.VERTICES_PIXEL :
                 vertices.clear();
@@ -985,6 +989,7 @@ public class GLBatchLineString extends GLBatchGeometry {
      * @param view
      */
     public void draw(GLMapView view, int vertices) {
+        updateNadirClamp(view);
         this.needsTessellate = (view.currentScene.drawSrid == 4978) && this.tessellationEnabled;
         this.validateGeometry();
 
@@ -1088,7 +1093,7 @@ public class GLBatchLineString extends GLBatchGeometry {
             if(_aalineDirty) {
                 if(_lineRenderer == null)
                     _lineRenderer = new GLAntiAliasedLine();
-                _lineRenderer.setLineData(this.renderPoints, 3, GLAntiAliasedLine.ConnectionType.AS_IS, altitudeMode);
+                _lineRenderer.setLineData(this.renderPoints, 3, GLAntiAliasedLine.ConnectionType.AS_IS, getAltitudeMode());
                 _aalineDirty = false;
             }
             _lineRenderer.draw(view,
@@ -1167,6 +1172,10 @@ public class GLBatchLineString extends GLBatchGeometry {
         if(!MathUtils.hasBits(getRenderPass(), renderPass))
             return;
 
+        // Only update NADIR clamp in sprite pass (tilt is always zero in surface pass)
+        if (MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SPRITES))
+            updateNadirClamp(view);
+
         this.projectVertices(view, vertices);
         FloatBuffer v = this.vertices;
         if (v == null)
@@ -1193,8 +1202,9 @@ public class GLBatchLineString extends GLBatchGeometry {
         boolean surface = MathUtils.hasBits(renderPass,
                 GLMapView.RENDER_PASS_SURFACE);
 
-        if (surface && altitudeMode != Feature.AltitudeMode.ClampToGround
-                || sprites && altitudeMode == Feature.AltitudeMode.ClampToGround)
+        AltitudeMode altMode = getAltitudeMode();
+        if (surface && altMode != AltitudeMode.ClampToGround
+                || sprites && altMode == AltitudeMode.ClampToGround)
             return;
 
         if (this.hasFill() && this.polyVertices != null) {

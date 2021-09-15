@@ -5,8 +5,6 @@ import com.atakmap.android.chat.ChatManagerMapComponent;
 import com.atakmap.android.chat.GeoChatService;
 import com.atakmap.android.hierarchy.HierarchyListFilter;
 import com.atakmap.android.hierarchy.HierarchyListItem;
-import com.atakmap.android.maps.MapView;
-import com.atakmap.app.R;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,7 +56,8 @@ public class ContactFilter extends HierarchyListFilter {
                     return item instanceof GroupContact;
                 case UNIQUE_CONTACTS:
                     String uid = item.getUID();
-                    return !uid.equals("All Streaming")
+                    return !uid
+                            .equals(GeoChatService.DEFAULT_CHATROOM_NAME_LEGACY)
                             && !uid.equals(GeoChatService.DEFAULT_CHATROOM_NAME)
                             && !uid.equals(ChatManagerMapComponent
                                     .getRoleName());

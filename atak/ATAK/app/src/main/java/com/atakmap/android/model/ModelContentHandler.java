@@ -47,7 +47,6 @@ import com.atakmap.map.layer.feature.FeatureDataStore2.FeatureQueryParameters;
 import com.atakmap.map.layer.feature.FeatureDataStore2.FeatureSetQueryParameters;
 import com.atakmap.map.layer.feature.FeatureSet;
 import com.atakmap.map.layer.feature.geometry.Envelope;
-import com.atakmap.map.layer.feature.geometry.Geometry;
 import com.atakmap.map.layer.model.Model;
 import com.atakmap.map.layer.model.ModelFactory;
 import com.atakmap.map.layer.model.ModelInfo;

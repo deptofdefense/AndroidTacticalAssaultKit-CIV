@@ -22,27 +22,26 @@ using namespace atakmap::renderer;
 namespace {
     const char* DEPTH_VERT_SHADER =
         "precision highp float;"
-        "vec4 PackDepth(float v) {"
-            "vec4 r = vec4(1.,255.,65025.,16581375.) * v;" // shift
-            "r = fract(r);"
-            "r -= r.yzww * vec4(1.0/255.0,1.0/255.0,1.0/255.0,0.0);" // mask
-            "return r;"
-        "}"       
         "uniform mat4 uMVP;"
         "attribute vec3 aVertexCoords;"
-        "varying vec4 vDepthColor;"
+        "varying float depth;"
         "void main() {"
             "vec4 vcoords = uMVP * vec4(aVertexCoords.xyz, 1.0);"
-            "float depth = (vcoords.z + 1.0) * 0.5;"
-            "vDepthColor = PackDepth(depth);"
+            "depth = (vcoords.z + 1.0) * 0.5;"
             "gl_Position = vcoords;"
         "}";
 
     const char* DEPTH_FRAG_SHADER_SRC =
         "precision mediump float;"
-        "varying vec4 vDepthColor;"
+        "varying float depth;"
+        "vec4 PackDepth(float v) {"
+        "vec4 r = vec4(1.,255.,65025.,16581375.) * v;" // shift
+        "r = fract(r);"
+        "r -= r.yzww * vec4(1.0/255.0,1.0/255.0,1.0/255.0,0.0);" // mask
+        "return r;"
+        "}"
         "void main(void) {"
-            "gl_FragColor = vDepthColor;"
+        "gl_FragColor = PackDepth(depth);"
         "}";
 
     const char* ID_VERT_SHADER =

@@ -131,6 +131,7 @@ namespace {
         size_t jsonLength, size_t binaryLength) NOTHROWS;
     TAKErr parseBatchTable(ParseData* result, DataInput2* input,
         size_t jsonLength, size_t binaryLength) NOTHROWS;
+    TAKErr parseJSON(json* result, DataInput2* input) NOTHROWS;
 }
 
 const Matrix2 Y_UP_TO_Z_UP(
@@ -192,6 +193,37 @@ TAKErr parseImpl(ParseData *impl, bool fullParse, DataInput2* innerInput, const 
     if (code == TE_Unsupported) {
         rewindInput.rewind(rewindInput.numRecorded());
         code = parse24ByteHeaderVersion(impl, &rewindInput);
+    } else {
+        // for 20-byte header, look for CESIUM_RTC extension in glTF
+        rewindInput.enableRewind(true);
+        rewindInput.skip(12);
+
+        uint32_t jsonLength = 0;
+        READ_UINT(jsonLength);
+
+        if (jsonLength) {
+            LimitDataInput2 jsonInput(input, jsonLength);
+            json table;
+            rewindInput.skip(4);
+            code = parseJSON(&table, &jsonInput);
+            TE_CHECKRETURN_CODE(code);
+
+            auto ext = table.find("extensions");
+            if (ext != table.end() && ext->is_object()) {
+                auto rtcCenter = ext->find("CESIUM_RTC");
+                if (rtcCenter != ext->end() && rtcCenter->is_object()) {
+                    auto center = rtcCenter->find("center");
+                    if (center != rtcCenter->end() && center->is_array() && center->size() == 3) {
+                        impl->rtcCenter.x = (*center)[0].get<double>();
+                        impl->rtcCenter.y = (*center)[1].get<double>();
+                        impl->rtcCenter.z = (*center)[2].get<double>();
+                    }
+                }
+            }
+        }
+
+        rewindInput.rewind(rewindInput.numRecorded());
+        rewindInput.enableRewind(false);
     }
     if (code == TE_Unsupported) {
         rewindInput.rewind(rewindInput.numRecorded());
@@ -306,8 +338,10 @@ namespace {
                     rbuf.resize(pos + bufferSkip + numRead);
                     code = TE_InvalidArg;
                 }
-                if (code == TE_Ok)
+                if (code == TE_Ok) {
                     pos += bufferSkip + numRead;
+                    len_ -= bufferSkip + numRead;
+                }
             } else {
                 if (rbuf.size())
                     safe();
@@ -315,6 +349,7 @@ namespace {
             }
         } else {
             pos += bufferSkip;
+            len_ -= bufferSkip;
             if (rbuf.size() && !record)
                 safe();
         }

@@ -4,15 +4,10 @@ package com.atakmap.android.maps.graphics;
 import android.util.Pair;
 
 import com.atakmap.android.maps.CrumbTrail;
-import com.atakmap.android.maps.Doghouse;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MetaMapPoint;
 import com.atakmap.android.maps.MetaShape;
 import com.atakmap.android.maps.SensorFOV;
-import com.atakmap.android.maps.graphics.widgets.GLAngleOverlay;
-import com.atakmap.android.maps.graphics.widgets.GLAutoSizeAngleOverlay;
-import com.atakmap.android.widgets.AngleOverlayShape;
-import com.atakmap.android.widgets.AutoSizeAngleOverlayShape;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.MapRenderer;
 

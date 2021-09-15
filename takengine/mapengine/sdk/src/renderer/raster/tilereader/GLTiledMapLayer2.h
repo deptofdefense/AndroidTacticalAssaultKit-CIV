@@ -7,6 +7,7 @@
 #include "raster/ImageDatasetDescriptor.h"
 #include "raster/DatasetProjection2.h"
 #include "raster/tilereader/TileReader2.h"
+#include "renderer/core/ColorControl.h"
 #include "renderer/core/GLMapRenderable2.h"
 #include "renderer/core/GLGlobeBase.h"
 #include "renderer/raster/GLMapLayer2.h"
@@ -36,10 +37,14 @@ namespace TAK {
                         void start() NOTHROWS;
                         void stop() NOTHROWS;
                     private :
+                        class ColorControlImpl;
+                    private :
                         atakmap::raster::DatasetDescriptorUniquePtr desc;
                         GLQuadTileNode2Ptr impl;
                         std::shared_ptr<TAK::Engine::Raster::TileReader::TileReader2> prealloced;
                         bool initialized;
+                        std::map<std::string, void *> controls_;
+                        std::unique_ptr<ColorControlImpl> color_control_;
                     };
 
                     Util::TAKErr GLTiledMapLayer2_getRasterROI2(atakmap::math::Rectangle<double> (&rois)[2], size_t *numROIs,

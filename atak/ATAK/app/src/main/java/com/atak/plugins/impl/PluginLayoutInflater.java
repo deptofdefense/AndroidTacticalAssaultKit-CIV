@@ -20,23 +20,60 @@ public class PluginLayoutInflater {
 
     /**
      * Preferred mechanism for loading a view within TAK from a plugin.   This mimics the current
-     * parameters from calling inflate(resourceId, viewGroup).
+     * parameters from calling {@link LayoutInflater#inflate(int, ViewGroup, boolean)}
      *
      * Used for inflating plugin without the concerns that come with previously cached views.  Cached
      * views become a problem when the class name is used to cache the view but the view might be
      * from a different class loader.
      * 
      *
-     * @param c the plugin context
-     * @param resId the resource id.
-     * @param viewGroup the parent view group.
-     * @return the view
+     * @param plugin Plugin context used to inflate the layout
+     * @param resId Layout resource ID
+     * @param root Root/parent view group
+     * @param attachToRoot True to attach to the parent view
+     *                     False to only use it for layout parameters
+     * @return Newly inflated view
      */
-    public static View inflate(final Context c, final int resId,
-            final ViewGroup viewGroup) {
-        final LayoutInflater inflater = LayoutInflater.from(c);
+    public static View inflate(final Context plugin, final int resId,
+            final ViewGroup root, boolean attachToRoot) {
+        final LayoutInflater inflater = LayoutInflater.from(plugin);
         dispose();
-        return inflater.inflate(resId, viewGroup);
+        return inflater.inflate(resId, root, attachToRoot);
+    }
+
+    /**
+     * Preferred mechanism for loading a view within TAK from a plugin.   This mimics the current
+     * parameters from calling {@link LayoutInflater#inflate(int, ViewGroup)}
+     *
+     * Used for inflating plugin without the concerns that come with previously cached views.  Cached
+     * views become a problem when the class name is used to cache the view but the view might be
+     * from a different class loader.
+     *
+     *
+     * @param plugin Plugin context used to inflate the layout
+     * @param resId Layout resource ID
+     * @param root Root/parent view group
+     * @return Newly inflated view
+     */
+    public static View inflate(Context plugin, int resId, ViewGroup root) {
+        return inflate(plugin, resId, root, root != null);
+    }
+
+    /**
+     * Preferred mechanism for loading a view within TAK from a plugin.   This mimics the current
+     * parameters from calling {@link LayoutInflater#inflate(int, ViewGroup)} with a null root.
+     *
+     * Used for inflating plugin without the concerns that come with previously cached views.  Cached
+     * views become a problem when the class name is used to cache the view but the view might be
+     * from a different class loader.
+     *
+     *
+     * @param plugin Plugin context used to inflate the layout
+     * @param resId Layout resource ID
+     * @return Newly inflated view
+     */
+    public static View inflate(Context plugin, int resId) {
+        return inflate(plugin, resId, null);
     }
 
     /**

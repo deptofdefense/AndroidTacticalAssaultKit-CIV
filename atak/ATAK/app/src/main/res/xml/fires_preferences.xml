@@ -21,7 +21,7 @@
             android:summary="@string/summary_legacy_toolbar_mode"
             android:key="legacyFiresToolbarMode"
             android:defaultValue="false" />
-        <ListPreference
+        <com.atakmap.android.gui.PanListPreference
             android:title="@string/civ_fireSpiNumber"
             android:key="firesNumberOfSpis"
             android:entryValues="@array/spi_number"

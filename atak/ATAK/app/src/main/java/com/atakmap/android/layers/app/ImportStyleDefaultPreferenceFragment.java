@@ -4,7 +4,6 @@ package com.atakmap.android.layers.app;
 import android.content.Context;
 import android.os.Bundle;
 
-import com.atakmap.android.gui.PanEditTextPreference;
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.android.preference.PreferenceSearchIndex;
 import com.atakmap.app.R;

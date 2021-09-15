@@ -16,8 +16,6 @@ import com.atakmap.android.maps.Marker;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
-import com.atakmap.util.zip.IoUtils;
-import org.apache.sanselan.util.IOUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -165,7 +163,7 @@ public class CoTAutoBroadcaster implements
 
         StringBuilder builder = new StringBuilder();
         synchronized (_markers) {
-            if (_markers.isEmpty()){
+            if (_markers.isEmpty()) {
                 return;
             }
             for (String m : _markers) {

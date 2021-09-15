@@ -16,7 +16,7 @@ import com.atakmap.android.user.PlacePointTool;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
 import com.atakmap.coremap.maps.assets.Icon;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.NorthReference;
@@ -83,9 +83,8 @@ public class VehicleModelEditTool extends RubberModelEditTool implements
             double len = 1.2d * Math.max(_vehicle.getLength(), 10);
 
             GeoPointMetaData center = _vehicle.getCenter();
-            GeoPoint anchorPos = DistanceCalculations
-                    .computeDestinationPoint(center.get(),
-                            _vehicle.getAzimuth(NorthReference.TRUE), len);
+            GeoPoint anchorPos = GeoCalculations.pointAtDistance(center.get(),
+                    _vehicle.getAzimuth(NorthReference.TRUE), len);
 
             PlacePointTool.MarkerCreator mc = new PlacePointTool.MarkerCreator(
                     anchorPos);
@@ -142,7 +141,7 @@ public class VehicleModelEditTool extends RubberModelEditTool implements
 
             _vehicle.setAzimuth(ang, NorthReference.TRUE);
 
-            GeoPoint offset = DistanceCalculations.computeDestinationPoint(
+            GeoPoint offset = GeoCalculations.pointAtDistance(
                     _vehicle.getCenter().get(), ang, 1.2d * Math.max(
                             _vehicle.getLength(), 10));
             _anchor.setPoint(offset);

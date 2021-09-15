@@ -4,7 +4,6 @@ import com.atakmap.map.layer.raster.DefaultDatasetProjection2;
 import com.atakmap.map.layer.raster.ImageInfo;
 import com.atakmap.map.layer.raster.PrecisionImagery;
 import com.atakmap.map.layer.raster.PrecisionImageryFactory;
-import com.atakmap.map.layer.raster.tilereader.TileReader;
 import com.atakmap.map.layer.raster.tilereader.TileReaderFactory;
 
 public class DefaultInitializer implements GLQuadTileNode2.Initializer {

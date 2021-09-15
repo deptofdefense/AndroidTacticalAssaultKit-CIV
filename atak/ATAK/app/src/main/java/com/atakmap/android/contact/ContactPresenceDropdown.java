@@ -681,7 +681,8 @@ public class ContactPresenceDropdown extends DropDownReceiver
                     };
                 if (sendCallback != null) {
                     Intent cb = new Intent(sendCallback);
-                    cb.putExtra("sendTo", new String[] { GeoChatService.DEFAULT_CHATROOM_NAME
+                    cb.putExtra("sendTo", new String[] {
+                            GeoChatService.DEFAULT_CHATROOM_NAME
                     });
                     AtakBroadcast.getInstance().sendBroadcast(cb);
                 } else if (uidList != null) {
@@ -695,7 +696,8 @@ public class ContactPresenceDropdown extends DropDownReceiver
                     sendFile(filename, null);
                 } else if (msg != null) {
                     List<Contact> dests = new ArrayList<>();
-                    dests.add(Contacts.getInstance().getContactByUuid(GeoChatService.DEFAULT_CHATROOM_NAME));
+                    dests.add(Contacts.getInstance().getContactByUuid(
+                            GeoChatService.DEFAULT_CHATROOM_NAME));
                     ChatManagerMapComponent.getInstance().sendMessage(
                             msg, dests);
                 } else

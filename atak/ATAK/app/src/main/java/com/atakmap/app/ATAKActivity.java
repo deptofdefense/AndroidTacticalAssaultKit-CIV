@@ -16,7 +16,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
-import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Configuration;
@@ -52,7 +51,6 @@ import android.widget.Toast;
 
 import com.atakmap.android.data.ClearContentTask;
 import com.atakmap.android.dropdown.DropDownManager;
-import com.atakmap.map.CameraController;
 import com.atakmap.map.Globe;
 import com.atakmap.map.MapRenderer2;
 import com.atakmap.map.MapSceneModel;
@@ -192,6 +190,8 @@ public class ATAKActivity extends MapActivity implements
                     .build());
         }
 
+        setRequestedOrientation(AtakPreferenceFragment.getOrientation(this));
+
         SystemComponentLoader.initializeEncryption(this);
         SystemComponentLoader.initializeFlavor(this);
 
@@ -212,9 +212,38 @@ public class ATAKActivity extends MapActivity implements
             return;
         }
 
-        // Currently the Encryption plugin implementation requires some aynchronous interaction before
-        // continuing to load ATAK.
+        // Support potential asynchronous load each one of the system components
+        final AbstractSystemComponent[] components = SystemComponentLoader
+                .getComponents();
+        for (AbstractSystemComponent component : components) {
+            if (component != null) {
+                if (!component.load(new AbstractSystemComponent.Callback() {
+                    @Override
+                    public void setupComplete(int condition) {
+                        if (condition == AbstractSystemComponent.Callback.FAILED_STOP) {
+                            acceptedPermissions = false; // short circuit the shutdown
+                            ATAKActivity.this.finish();
+                        } else {
+                            if (component instanceof EncryptionProvider)
+                                SystemComponentLoader
+                                        .disableEncryptionProvider(
+                                                ATAKActivity.this);
+                            runOnUiThread(new Runnable() {
+                                public void run() {
+                                    onCreate(null);
+                                }
+                            });
+                        }
+                    }
+                })) {
+                    onCreateWaitMode();
+                    return;
+                }
+            }
+        }
 
+        // Currently the Encryption plugin implementation requires some asynchronous interaction before
+        // continuing to load ATAK.
         final EncryptionProvider encryptionProvider = SystemComponentLoader
                 .getEncryptionProvider();
         if (encryptionProvider != null) {
@@ -417,7 +446,6 @@ public class ATAKActivity extends MapActivity implements
      * calling, this method, return must be called.
      */
     private void onCreateWaitMode() {
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         setContentView(R.layout.atak_splash);
         setupSplash(findViewById(android.R.id.content));
         final ActionBar actionBar = this.getActionBar();
@@ -971,7 +999,7 @@ public class ATAKActivity extends MapActivity implements
                 .getItem(FileSystemUtils.SUPPORT_DIRECTORY + File.separatorChar
                         + "cottimedebug"));
 
-        extractPrivateResource("wmm_cof", "world-magnetic-model-file");
+        extractPrivateResource("wmm_cof", "world-magnetic-model-file", false);
 
         _unitChangeReceiver = new UnitChangeReceiver(_mapView);
         Log.d(TAG, "Created UnitChangeReceiver");
@@ -1049,7 +1077,8 @@ public class ATAKActivity extends MapActivity implements
         setupActionBar(true);
     }
 
-    private void extractPrivateResource(String resourceName, String option) {
+    private void extractPrivateResource(String resourceName, String option,
+            boolean useIOAbstraction) {
         InputStream stream = null;
 
         try {
@@ -1066,8 +1095,17 @@ public class ATAKActivity extends MapActivity implements
                 throw new ExceptionInInitializerError();
 
             File cofFile = new File(this.getFilesDir(), resourceName);
-            FileSystemUtils.copy(stream,
-                    IOProviderFactory.getOutputStream(cofFile));
+            /*Check if the flag to utilize IOAbstraction is enabled
+            * Loading this with Encryption causes invalid returns
+            */
+
+            if (useIOAbstraction) {
+                FileSystemUtils.copy(stream,
+                        IOProviderFactory.getOutputStream(cofFile));
+            } else {
+                FileSystemUtils.copy(stream,
+                        new FileOutputStream(cofFile));
+            }
             long e = SystemClock.uptimeMillis();
 
             Log.v(TAG, "Extracted resource [" + resourceName + "] in " + (e - s)
@@ -1614,15 +1652,19 @@ public class ATAKActivity extends MapActivity implements
             // if there was no elevation data during the last run and has been
             // subsequently loaded, adjust the altitude to prevent the camera
             // from starting underneath the terrain
-            final double localTerrain = ElevationManager.getElevation(lat, lon, null);
-            if(Double.isNaN(alt) || alt < localTerrain) {
-                if(!Double.isNaN(localTerrain) && localTerrain > 0d)
+            final double localTerrain = ElevationManager.getElevation(lat, lon,
+                    null);
+            if (Double.isNaN(alt) || alt < localTerrain) {
+                if (!Double.isNaN(localTerrain) && localTerrain > 0d)
                     alt = localTerrain;
-                double gsd = Globe.getMapResolution(_mapView.getDisplayDpi(), scale);
-                double range = MapSceneModel.range(gsd, 45d, _mapView.getHeight());
+                double gsd = Globe.getMapResolution(_mapView.getDisplayDpi(),
+                        scale);
+                double range = MapSceneModel.range(gsd, 45d,
+                        _mapView.getHeight());
                 scale = Globe.getMapScale(
                         _mapView.getDisplayDpi(),
-                        MapSceneModel.gsd(range+alt, 45d, _mapView.getHeight()));
+                        MapSceneModel.gsd(range + alt, 45d,
+                                _mapView.getHeight()));
             }
             Log.d(TAG, "using saved screen location lat: " + lat + " lon: "
                     + lon
@@ -1644,6 +1686,8 @@ public class ATAKActivity extends MapActivity implements
 
         if (!acceptedPermissions) {
             super.onDestroy();
+            monitorThread.setDaemon(true); // just in cases ATAK exits early
+            monitorThread.start();
             return;
         }
 
@@ -1863,29 +1907,31 @@ public class ATAKActivity extends MapActivity implements
             // on some Pixel devices and the Samsung S20.
             ensureCorrectIcon();
 
-            Thread monitorThread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        Thread.sleep(250);
-                    } catch (InterruptedException ignored) {
-                    }
-                    Log.v(TAG, "shutting down now...");
-                    if (!callSystemExit)
-                        Log.v(TAG,
-                                " ---- set to ignore final system shutdown for automated testing ----");
-
-                    Log.unregisterLogListener(fileLogger);
-
-                    if (callSystemExit)
-                        System.exit(0);
-
-                }
-            }, TAG + "-Monitor");
             monitorThread.setDaemon(true); // just in cases ATAK exits early
             monitorThread.start();
         }
     }
+
+    private final Thread monitorThread = new Thread(new Runnable() {
+        @Override
+        public void run() {
+            try {
+                Thread.sleep(250);
+            } catch (InterruptedException ignored) {
+            }
+            Log.v(TAG, "shutting down now...");
+            if (!callSystemExit)
+                Log.v(TAG,
+                        " ---- set to ignore final system shutdown for automated testing ----");
+
+            if (fileLogger != null)
+                Log.unregisterLogListener(fileLogger);
+
+            if (callSystemExit)
+                System.exit(0);
+
+        }
+    }, TAG + "-Monitor");
 
     @Override
     public void onStop() {
@@ -2066,7 +2112,8 @@ public class ATAKActivity extends MapActivity implements
         }
 
         // cache off the lock button
-        _lockActionMenu = ActionBarReceiver.getMenuItem(getString(R.string.actionbar_lockonself));
+        _lockActionMenu = ActionBarReceiver
+                .getMenuItem(getString(R.string.actionbar_lockonself));
         if (_lockActionMenu == null) {
             Log.w(TAG, "Failed to find lock action menu");
         }
@@ -3034,7 +3081,7 @@ public class ATAKActivity extends MapActivity implements
             if (b) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
                     requestPermissions(Permissions.PermissionsList,
-                        Permissions.REQUEST_ID);
+                            Permissions.REQUEST_ID);
             } else {
                 Log.d(TAG, "location permission set not granted, retry...");
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)

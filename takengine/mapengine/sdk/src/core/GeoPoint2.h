@@ -48,11 +48,13 @@ namespace TAK
             ENGINE_API GeoPoint2 GeoPoint2_midpoint(const GeoPoint2 &a, const GeoPoint2 &b, const bool quick) NOTHROWS;
             ENGINE_API GeoPoint2 GeoPoint2_pointAtDistance(const GeoPoint2 &a, const double az, const double distance, const bool quick) NOTHROWS;
             ENGINE_API GeoPoint2 GeoPoint2_pointAtDistance(const GeoPoint2 &a, const double az, const double distance, const double inclination, const bool quick) NOTHROWS;
+            ENGINE_API GeoPoint2 GeoPoint2_pointAtDistance(const GeoPoint2 &a, const GeoPoint2 &b, const double weight, const bool quick) NOTHROWS;
 
             ENGINE_API double GeoPoint2_approximateMetersPerDegreeLatitude(const double latitude) NOTHROWS;
             ENGINE_API double GeoPoint2_approximateMetersPerDegreeLongitude(const double latitude) NOTHROWS;
 
             ENGINE_API TAK::Engine::Util::TAKErr GeoPoint2_lobIntersection(GeoPoint2 &intersection, const GeoPoint2 &p1, const double &brng1, const GeoPoint2 &p2, const double &brng2) NOTHROWS;
+            ENGINE_API double GeoPoint2_alongTrackDistance(const GeoPoint2 &start, const GeoPoint2 &end, const GeoPoint2 &p, const bool quick) NOTHROWS;
 
             ENGINE_API double GeoPoint2_distanceToHorizon(const double altitudeMsl) NOTHROWS;
         }

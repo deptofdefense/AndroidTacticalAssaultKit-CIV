@@ -63,6 +63,16 @@ namespace
         const double rlng2 = rlng1 + atan2(sin(brng/180.0*M_PI)*sin(d/R)*cos(rlat1), cos(d/R)-sin(rlat1)*sin(rlat2));
         return GeoPoint2(rlat2 / M_PI * 180.0, rlng2 / M_PI * 180.0);
     }
+    double alongTrackDistance(const GeoPoint2 &sp, const GeoPoint2 &ep, const GeoPoint2 &p) NOTHROWS
+    {
+        //https://edwilliams.org/avform.htm
+        const double crs_AB = greatCircleBearing(sp.latitude, sp.longitude, ep.latitude, ep.longitude)/180.0*M_PI;
+        const double crs_AD = greatCircleBearing(sp.latitude, sp.longitude, p.latitude, p.longitude)/180.0*M_PI;
+        const double dist_AD = greatCircleDistance(sp.latitude, sp.longitude, p.latitude, p.longitude)/Datum2::WGS84.reference.semiMajorAxis;
+        const double XTD = asin(sin(dist_AD)*sin(crs_AD-crs_AB));
+        return acos(cos(dist_AD)/cos(XTD))*Datum2::WGS84.reference.semiMajorAxis;
+
+    }
 
     GeoPoint2 hae(const GeoPoint2 &p) NOTHROWS
     {
@@ -278,6 +288,11 @@ GeoPoint2 TAK::Engine::Core::GeoPoint2_pointAtDistance(const GeoPoint2& a, const
 
     return retval;
 }
+GeoPoint2 TAK::Engine::Core::GeoPoint2_pointAtDistance(const GeoPoint2 &a, const GeoPoint2 &b, const double weight, const bool quick) NOTHROWS
+{
+    const double distance = GeoPoint2_distance(a, b, quick);
+    return GeoPoint2_pointAtDistance(a, GeoPoint2_bearing(a, b, quick), distance*weight, quick);
+}
 
 double TAK::Engine::Core::GeoPoint2_approximateMetersPerDegreeLongitude(const double latitude) NOTHROWS
 {
@@ -344,6 +359,10 @@ TAKErr TAK::Engine::Core::GeoPoint2_lobIntersection(GeoPoint2 &intersection, con
     intersection.longitude = lambda3 / M_PI * 180.0;
 
     return TE_Ok;
+}
+double TAK::Engine::Core::GeoPoint2_alongTrackDistance(const GeoPoint2 &start, const GeoPoint2 &end, const GeoPoint2 &p, const bool quick) NOTHROWS
+{
+    return alongTrackDistance(start, end, p);
 }
 
 ENGINE_API double TAK::Engine::Core::GeoPoint2_distanceToHorizon(const double altitudeMsl) NOTHROWS

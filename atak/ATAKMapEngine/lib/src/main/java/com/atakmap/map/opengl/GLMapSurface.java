@@ -17,7 +17,6 @@ import com.atakmap.map.AtakMapView;
 import com.atakmap.map.AtakMapView.OnDisplayFlagsChangedListener;
 import com.atakmap.map.RenderContext;
 import com.atakmap.map.RenderSurface;
-import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.android.maps.graphics.GLImageCache;
 import com.atakmap.opengl.GLNinePatch;
 import com.atakmap.opengl.GLText;
@@ -422,6 +421,9 @@ public class GLMapSurface extends GLSurfaceView implements RenderContext, Render
                     if(glbls != null)
                         glbls.getImageCache().release();
                     lastDensity = AtakMapView.DENSITY;
+
+                    // reset any cached text metrics/assets
+                    GLText.invalidateCache();
                 }
             }
         });

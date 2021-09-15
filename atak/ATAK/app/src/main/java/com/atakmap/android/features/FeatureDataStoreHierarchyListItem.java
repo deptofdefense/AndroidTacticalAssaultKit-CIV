@@ -212,11 +212,7 @@ public class FeatureDataStoreHierarchyListItem extends
                 featureSet = result.get();
                 final String path = featureSet.getName();
                 // XXX - prefer not to do instance check intra-loop
-                if (spatialDb instanceof DataSourceFeatureDataStore)
-                    file = ((DataSourceFeatureDataStore) spatialDb)
-                            .getFile(featureSet);
-                else
-                    file = null;
+                file = Utils.getSourceFile(spatialDb, featureSet);
                 root = fileToRoot.get(file);
                 if (root == null)
                     fileToRoot.put(file, root = new PathEntry(""));
@@ -499,7 +495,7 @@ public class FeatureDataStoreHierarchyListItem extends
 
     /**************************************************************************/
 
-    private static class ContentChangedHandler implements
+    private class ContentChangedHandler implements
             FeatureDataStore2.OnDataStoreContentChangedListener {
         private final WeakReference<FeatureDataStoreHierarchyListItem> ref;
         private final String refUID;

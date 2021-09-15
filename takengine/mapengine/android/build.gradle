@@ -193,6 +193,14 @@ android.libraryVariants.all { variant ->
                     duplicatesStrategy 'include'
                 }
                 copy {
+                    from('../android/thirdparty') {
+                        include 'ttp-dist.zip'
+                    }
+                    into project.property('includes.outputDir') + '/ttp'
+
+                    duplicatesStrategy 'include'
+                }
+                copy {
                     from('thirdparty/android-armeabi-v7a-release') {
                         include 'ttp-include.zip'
 

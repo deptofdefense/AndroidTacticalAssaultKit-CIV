@@ -1,59 +1,26 @@
 
 package com.atakmap.map.layer.raster.tilereader.opengl;
 
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
-import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
 
 
-import android.graphics.Typeface;
-import com.atakmap.android.maps.MapTextFormat;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
-
-
-import android.graphics.Color;
-import android.graphics.PointF;
-import android.opengl.GLES30;
-
-import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
-import com.atakmap.lang.Unsafe;
 import com.atakmap.map.Interop;
 import com.atakmap.map.RenderContext;
 import com.atakmap.map.layer.raster.DatasetProjection2;
 import com.atakmap.map.layer.raster.ImageInfo;
 import com.atakmap.map.layer.raster.RasterDataAccess2;
-import com.atakmap.map.layer.raster.gdal.GdalGraphicUtils;
 import com.atakmap.map.layer.raster.gdal.GdalTileReader;
-import com.atakmap.map.layer.raster.osm.OSMUtils;
 import com.atakmap.map.layer.raster.tilereader.TileReader;
 import com.atakmap.map.layer.raster.tilereader.TileReaderFactory;
-import com.atakmap.map.opengl.GLAntiMeridianHelper;
 import com.atakmap.map.opengl.GLMapRenderable2;
-import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
-import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.map.opengl.GLResolvableMapRenderable;
 import com.atakmap.map.projection.PointL;
 import com.atakmap.math.Matrix;
-import com.atakmap.math.Rectangle;
-import com.atakmap.opengl.GLTexture;
 import com.atakmap.opengl.GLTextureCache;
-import com.atakmap.opengl.GLWireFrame;
-import com.atakmap.opengl.Shader;
-import com.atakmap.util.ConfigOptions;
 import com.atakmap.util.Disposable;
-import com.atakmap.util.Releasable;
-import com.atakmap.math.MathUtils;
 import com.atakmap.math.PointD;
 import com.atakmap.util.ResourcePool;
 

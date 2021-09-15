@@ -1,7 +1,5 @@
 package com.atakmap.io;
 
-import java.util.Collection;
-
 abstract class FilterProtocolHandler implements ProtocolHandler {
     final ProtocolHandler impl;
 

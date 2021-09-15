@@ -35,6 +35,9 @@ TAKErr TAK::Engine::Formats::MBTiles::MBTilesInfo_get(MBTilesInfo *info, DB::Dat
 {
     TAKErr code(TE_Ok);
 
+    // defaults to raster
+    info->tileset = MBTilesInfo::Raster;
+
     // validate the schema
     std::set<TAK::Engine::Port::String, TAK::Engine::Port::StringLess> tilesTable;
     TAK::Engine::Port::STLSetAdapter<TAK::Engine::Port::String, TAK::Engine::Port::StringLess> tilesTableAdapter(tilesTable);
@@ -92,6 +95,14 @@ TAKErr TAK::Engine::Formats::MBTiles::MBTilesInfo_get(MBTilesInfo *info, DB::Dat
             code = result->getString(&value, 1);
             TE_CHECKBREAK_CODE(code);
             info->name = value;
+        } else if (strcmp(key, "format") == 0) {
+            const char *value;
+            code = result->getString(&value, 1);
+            TE_CHECKBREAK_CODE(code);
+            if (strcmp(value, "pbf") == 0)
+                info->tileset = MBTilesInfo::Vector;
+            else
+                info->tileset = MBTilesInfo::Raster;
         }
     } while (true);
     if (code == TE_Done)
@@ -210,33 +221,35 @@ TAKErr TAK::Engine::Formats::MBTiles::MBTilesInfo_get(MBTilesInfo *info, DB::Dat
     result.reset();
 
     // obtain and tile dimensions
-    info->tileWidth = 256u;
-    info->tileHeight = 256u;
+    if (info->tileset == MBTilesInfo::Raster) {
+        info->tileWidth = 256u;
+        info->tileHeight = 256u;
 
-    result.reset();
-    {
-        code = database.query(result, "SELECT tile_data FROM tiles LIMIT 1");
-        TE_CHECKRETURN_CODE(code);
-        if (result->moveToNext() == TE_Ok) {
-            const uint8_t *blobData;
-            std::size_t blobLen;
-            code = result->getBlob(&blobData, &blobLen, 0);
+        result.reset();
+        {
+            code = database.query(result, "SELECT tile_data FROM tiles LIMIT 1");
             TE_CHECKRETURN_CODE(code);
+            if (result->moveToNext() == TE_Ok) {
+                const uint8_t* blobData;
+                std::size_t blobLen;
+                code = result->getBlob(&blobData, &blobLen, 0);
+                TE_CHECKRETURN_CODE(code);
 
-            MemoryInput2 input;
-            code = input.open(blobData, blobLen);
-            TE_CHECKRETURN_CODE(code);
-            BitmapPtr tile(nullptr, nullptr);
-            code = BitmapFactory2_decode(tile, input, nullptr);
-            TE_CHECKRETURN_CODE(code);
+                MemoryInput2 input;
+                code = input.open(blobData, blobLen);
+                TE_CHECKRETURN_CODE(code);
+                BitmapPtr tile(nullptr, nullptr);
+                code = BitmapFactory2_decode(tile, input, nullptr);
+                TE_CHECKRETURN_CODE(code);
 
-            info->tileWidth = tile->getWidth();
-            info->tileHeight = tile->getHeight();
-        } else {
-            return TE_IllegalState;
+                info->tileWidth = tile->getWidth();
+                info->tileHeight = tile->getHeight();
+            } else {
+                return TE_IllegalState;
+            }
         }
+        result.reset();
     }
-    result.reset();
 
     return code;
 }

@@ -678,71 +678,13 @@ parseWKB (std::istream& strm)
         result = parseWKB_Polygon(strm, swapEndian, dim, hasMeasure);
         break;
 
+        // observation based on GDAL WKB coding is that the Multi<Specialized> use nominal WKB encoding, not type specific coding
       case 4:                           // MultiPoint
-          {
-            std::unique_ptr<GeometryCollection> collection
-                (new GeometryCollection (dim));
-            std::size_t count(read<uint32_t>(strm, swapEndian));
-
-            for (std::size_t i (0); i < count; ++i)
-              {
-#ifdef MSVC
-                std::unique_ptr<Geometry> g
-                    (parseWKB_Point (strm, swapEndian, dim, hasMeasure));
-
-                collection->add (g.get ());
-#else
-                collection->add (parseWKB_Point (strm, byteOrder, dim,
-                                                 hasMeasure));
-#endif
-              }
-            result = collection.release ();
-          }
-        break;
-
       case 5:                           // MultiLineString
       case 11:                          // MultiCurve
-          {
-            std::unique_ptr<GeometryCollection> collection
-                (new GeometryCollection (dim));
-            std::size_t count(read<uint32_t>(strm, swapEndian));
-
-            for (std::size_t i (0); i < count; ++i)
-              {
-#ifdef MSVC
-                std::unique_ptr<Geometry> g
-                    (parseWKB_LineString (strm, swapEndian, dim, hasMeasure));
-
-                collection->add (g.get ());
-#else
-                collection->add (parseWKB_LineString (strm, byteOrder, dim,
-                                                      hasMeasure));
-
-#endif
-              }
-            result = collection.release ();
-          }
-        break;
-
       case 6:                           // MultiPolygon
       case 15:                          // PolyhedralSurface
       case 16:                          // TIN
-          {
-            std::unique_ptr<GeometryCollection> collection
-                (new GeometryCollection (dim));
-            std::size_t count (read<uint32_t> (strm, swapEndian));
-
-            for (std::size_t i (0); i < count; ++i)
-              {
-                std::unique_ptr<Geometry> g
-                    (parseWKB_Polygon (strm, swapEndian, dim, hasMeasure));
-
-                collection->add (g.get ());
-              }
-            result = collection.release ();
-          }
-        break;
-
       case 7:                           // GeometryCollection
       case 12:                         // MultiSurface
           {

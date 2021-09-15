@@ -10,6 +10,7 @@
 #include "renderer/GLRenderBatch2.h"
 #include "renderer/GLRenderContext.h"
 #include "renderer/GLTextureAtlas2.h"
+#include "thread/Mutex.h"
 
 #include <vector>
 
@@ -53,6 +54,8 @@ namespace TAK
                     void setFill(const uint32_t id, const bool fill) NOTHROWS;
                     void setRotation(const uint32_t id, const float rotation, const bool absolute) NOTHROWS;
                     void setPriority(const uint32_t, const Priority priority) NOTHROWS;
+                    void setHints(const uint32_t id, const unsigned int hints) NOTHROWS;
+                    unsigned int getHints(const uint32_t id) NOTHROWS;
                     void getSize(const uint32_t id, atakmap::math::Rectangle<double>& size_rect) NOTHROWS;
                     void setVisible(const bool visible) NOTHROWS;
                 public:
@@ -63,7 +66,7 @@ namespace TAK
                     void stop() NOTHROWS override;
                 private:
                     void draw(const GLGlobeBase& view, const Priority priority,
-                              std::vector<atakmap::math::Rectangle<double>>& label_placements) NOTHROWS;
+                              std::vector<GLLabel::LabelPlacement>& label_placements, int render_pass, std::vector<uint32_t> &renderedLabels) NOTHROWS;
                 private:
                     static float defaultFontSize;
                     static GLText2* getDefaultText() NOTHROWS;

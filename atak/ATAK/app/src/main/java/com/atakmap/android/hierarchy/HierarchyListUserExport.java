@@ -39,7 +39,7 @@ import java.util.Set;
 class HierarchyListUserExport extends HierarchyListUserSelect {
 
     public static final String TAG = "HierarchyListUserExport";
-    private final ExportMarshal marshal;
+    protected ExportMarshal marshal;
 
     /**
      * BBox filter allows us to filter out (from the UI) map

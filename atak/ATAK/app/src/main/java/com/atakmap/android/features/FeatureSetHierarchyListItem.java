@@ -7,10 +7,8 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.database.CursorWindow;
 import android.net.Uri;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.BaseAdapter;
-import android.widget.ImageButton;
 
 import com.atakmap.android.data.URIContentHandler;
 import com.atakmap.android.data.URIContentManager;
@@ -53,6 +51,7 @@ import com.atakmap.map.layer.feature.geometry.Point;
 import com.atakmap.map.layer.feature.style.BasicPointStyle;
 import com.atakmap.map.layer.feature.style.BasicStrokeStyle;
 import com.atakmap.math.MathUtils;
+import com.atakmap.spatial.file.MvtSpatialDb;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -280,7 +279,7 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
     @Override
     public int getChildCount() {
         if (this.featureChildCount == -1) {
-            FeatureDataStore.FeatureQueryParameters params = new FeatureDataStore.FeatureQueryParameters();
+            FeatureQueryParameters params = new FeatureQueryParameters();
             params.featureSetIds = Collections.singleton(this.entry.fsid);
 
             try {
@@ -296,7 +295,7 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
     @Override
     public int getDescendantCount() {
         if (this.descendantCount == -1) {
-            FeatureDataStore.FeatureQueryParameters params = new FeatureDataStore.FeatureQueryParameters();
+            FeatureQueryParameters params = new FeatureQueryParameters();
             params.featureSets = Collections.singleton(this.path + "/%");
             params.featureSetIds = this.entry.childFsids;
 
@@ -450,33 +449,41 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
 
     @Override
     public Object getUserObject() {
-        return null;
+        return Long.valueOf(entry.fsid);
     }
 
+    // TODO 4.4: Utilize AbstractHierarchyListItem2.getExtraView(row, parent)
+    //  for better performance
     @Override
     public View getExtraView() {
         final File file = this.getGroupFile();
         if (file == null)
             return null;
 
-        URIContentHandler h = URIContentManager.getInstance().getHandler(file);
+        // Get/create view holder
+        FeatureExtraHolder h = FeatureExtraHolder.get(null, null);
+        if (h == null)
+            return null;
 
-        LayoutInflater inflater = LayoutInflater.from(context);
-        View view = inflater.inflate(R.layout.feature_set_extra, null);
+        URIContentHandler fh = URIContentManager.getInstance().getHandler(file);
 
-        ImageButton panBtn = view.findViewById(R.id.panButton);
-        panBtn.setVisibility(h != null && h.isActionSupported(GoTo.class)
+        h.pan.setVisibility(fh != null && fh.isActionSupported(GoTo.class)
                 ? View.VISIBLE
                 : View.GONE);
 
-        ImageButton sendBtn = view.findViewById(R.id.sendButton);
-        sendBtn.setVisibility(h != null && h.isActionSupported(Send.class)
+        h.edit.setVisibility(
+                this.contentType.equals(MvtSpatialDb.MVT_CONTENT_TYPE)
+                        ? View.GONE
+                        : View.VISIBLE);
+
+        h.send.setVisibility(fh != null && fh.isActionSupported(Send.class)
                 || FileSystemUtils.isFile(file) ? View.VISIBLE : View.GONE);
 
-        panBtn.setOnClickListener(this);
-        sendBtn.setOnClickListener(this);
+        h.pan.setOnClickListener(this);
+        h.edit.setOnClickListener(this);
+        h.send.setOnClickListener(this);
 
-        return view;
+        return h.root;
     }
 
     @Override
@@ -507,7 +514,7 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
 
     @Override
     public Set<HierarchyListItem> find(String terms) {
-        FeatureDataStore.FeatureQueryParameters params = new FeatureDataStore.FeatureQueryParameters();
+        FeatureQueryParameters params = new FeatureQueryParameters();
         prepareQueryParams(params);
         params.ignoredFields = FeatureQueryParameters.FIELD_ATTRIBUTES;
         if (terms.length() >= 2)
@@ -566,6 +573,27 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
                 new SendDialog.Builder(mv)
                         .addFile(file, contentType)
                         .show();
+        }
+
+        // Edit features
+        else if (id == R.id.editButton) {
+            // collect the fsids from the current list item or any children it may have
+            String[] uidArray;
+            if (this.entry.fsid == 0) {
+                ArrayList<String> fsids = new ArrayList<>();
+                for (long fsid : this.entry.childFsids) {
+                    fsids.add(Long.toString(fsid));
+                }
+                uidArray = fsids.toArray(new String[0]);
+            } else {
+                uidArray = new String[] {
+                        Long.toString(this.entry.fsid)
+                };
+            }
+            Intent i = new Intent(FeatureEditDropdownReceiver.SHOW_EDIT);
+            i.putExtra("fsids", uidArray);
+            i.putExtra("title", this.title);
+            AtakBroadcast.getInstance().sendBroadcast(i);
         }
     }
 
@@ -658,7 +686,7 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
                 return false;
             }
         } else {
-            FeatureDataStore.FeatureQueryParameters params = new FeatureDataStore.FeatureQueryParameters();
+            FeatureQueryParameters params = new FeatureQueryParameters();
             prepareQueryParams(params);
             params.visibleOnly = true;
             params.limit = 1;
@@ -697,7 +725,7 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
     }
 
     private void fillWindow(CursorWindow resultsWindow, int off, int num) {
-        FeatureDataStore.FeatureQueryParameters params = new FeatureDataStore.FeatureQueryParameters();
+        FeatureQueryParameters params = new FeatureQueryParameters();
 
         FeatureCursor result = null;
         try {
@@ -706,12 +734,12 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
                     && this.featureChildCount < MAX_DISTANCE_SORT) {
                 final SortDistanceFrom distanceFrom = (SortDistanceFrom) order;
 
-                params.order = Collections.<FeatureDataStore.FeatureQueryParameters.Order> singleton(
-                        new FeatureDataStore.FeatureQueryParameters.Distance(
+                params.order = Collections.singleton(
+                        new FeatureQueryParameters.Distance(
                                 distanceFrom.location));
             } else { // default to alphabetic sort
-                params.order = Collections.<FeatureDataStore.FeatureQueryParameters.Order> singleton(
-                        FeatureDataStore.FeatureQueryParameters.FeatureName.INSTANCE);
+                params.order = Collections.singleton(
+                        FeatureQueryParameters.FeatureName.INSTANCE);
             }
 
             params.featureSetIds = Collections.singleton(this.entry.fsid);

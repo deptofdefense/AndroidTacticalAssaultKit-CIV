@@ -25,7 +25,18 @@ public class NativeFeatureCursor implements FeatureCursor, FeatureDefinition3 {
         try {
             if(this.pointer.raw == 0L)
                 throw new IllegalStateException();
-            return getRawGeometry(this.pointer.raw);
+            final Object rawGeom = getRawGeometry(this.pointer.raw);
+            switch(getGeomCoding()) {
+                case FeatureDefinition.GEOM_WKT :
+                    return (String)rawGeom;
+                case FeatureDefinition.GEOM_WKB :
+                case FeatureDefinition.GEOM_SPATIALITE_BLOB :
+                    return (byte[])rawGeom;
+                case FeatureDefinition.GEOM_ATAK_GEOMETRY :
+                    return Interop.createGeometry((Pointer)rawGeom, this).clone();
+                default :
+                    return null;
+            }
         } finally {
             this.rwlock.releaseRead();
         }
@@ -83,7 +94,17 @@ public class NativeFeatureCursor implements FeatureCursor, FeatureDefinition3 {
         try {
             if(this.pointer.raw == 0L)
                 throw new IllegalStateException();
-            return getRawStyle(this.pointer.raw);
+            final Object rawStyle = getRawStyle(this.pointer.raw);
+            if(rawStyle == null)
+                return null;
+            switch(getStyleCoding()) {
+                case FeatureDefinition.STYLE_OGR :
+                    return (String) rawStyle;
+                case FeatureDefinition.STYLE_ATAK_STYLE :
+                    return Interop.createStyle((Pointer)rawStyle, this).clone();
+                default :
+                    return null;
+            }
         } finally {
             this.rwlock.releaseRead();
         }

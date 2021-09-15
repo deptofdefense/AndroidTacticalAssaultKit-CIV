@@ -2,11 +2,9 @@
 package com.atakmap.android.fires.bridge;
 
 import android.graphics.drawable.Drawable;
-import android.view.View;
 
 import com.atakmap.android.dropdown.DropDown;
 import com.atakmap.android.dropdown.DropDownReceiver;
-import com.atakmap.android.gui.TileButtonDialog;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.coremap.cot.event.CotEvent;

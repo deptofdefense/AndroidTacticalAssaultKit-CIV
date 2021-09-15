@@ -5,13 +5,11 @@ import android.graphics.SurfaceTexture;
 import android.opengl.GLES30;
 import android.opengl.Matrix;
 import android.util.Pair;
-import android.view.Surface;
 
 import com.atakmap.android.video.VideoOverlayLayer;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.lang.Unsafe;
-import com.atakmap.map.MapControl;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.MapRenderer3;
 import com.atakmap.map.layer.Layer;

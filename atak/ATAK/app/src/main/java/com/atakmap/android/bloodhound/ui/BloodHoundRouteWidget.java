@@ -2,11 +2,9 @@
 package com.atakmap.android.bloodhound.ui;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Handler;
 import android.os.Looper;
-import android.preference.PreferenceManager;
 import android.view.MotionEvent;
 import android.widget.Toast;
 

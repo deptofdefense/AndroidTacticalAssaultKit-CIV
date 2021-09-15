@@ -3,26 +3,34 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
+    android:paddingStart="@dimen/auto_space_big"
     android:orientation="horizontal">
 
     <ImageButton
         android:id="@+id/panButton"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginEnd="@dimen/auto_margin"
+        android:layout_width="@dimen/button_small"
+        android:layout_height="@dimen/button_small"
+        android:layout_marginEnd="@dimen/auto_space_big"
         style="@style/darkButton"
         android:padding="@dimen/auto_space_big"
-        android:src="@drawable/panto_button"
-        android:textSize="@dimen/draper_title_font" />
+        android:src="@drawable/panto_button"/>
+
+    <ImageButton
+        android:id="@+id/editButton"
+        android:layout_width="@dimen/button_small"
+        android:layout_height="@dimen/button_small"
+        android:layout_marginEnd="@dimen/auto_space_big"
+        style="@style/darkButton"
+        android:padding="@dimen/auto_space_big"
+        android:src="@drawable/ic_edit"/>
 
     <ImageButton
         android:id="@+id/sendButton"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
+        android:layout_width="@dimen/button_small"
+        android:layout_height="@dimen/button_small"
         style="@style/darkButton"
         android:padding="@dimen/auto_space_big"
-        android:src="@drawable/send_square"
-        android:textSize="@dimen/draper_title_font" />
+        android:src="@drawable/send_square"/>
 
 </LinearLayout>
 

@@ -35,7 +35,6 @@ import android.util.Pair;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.gdal.GdalLibrary;
-import com.atakmap.map.gdal.VSIFileFileSystemHandler;
 import com.atakmap.map.layer.feature.geometry.Geometry;
 import com.atakmap.map.layer.raster.mosaic.ATAKMosaicDatabase3;
 import com.atakmap.map.layer.raster.mosaic.MosaicDatabase2;

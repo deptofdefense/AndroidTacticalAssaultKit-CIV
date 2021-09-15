@@ -45,7 +45,7 @@ namespace
 
     public:
         CPLErr read(int srcX, int srcY, int srcW, int srcH, int dstW, int dstH, uint8_t *data) override = 0;
-        virtual ~AbstractReaderImpl() = default;
+        ~AbstractReaderImpl() override = default;
     };
 
     class ByteReaderImpl : public AbstractReaderImpl

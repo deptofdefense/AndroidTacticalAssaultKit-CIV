@@ -9,7 +9,7 @@ import android.net.Uri;
 import com.atakmap.android.maps.DefaultMapGroup;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.SqliteMapDataRef;
-import com.atakmap.android.user.icon.Icon2525bPallet;
+import com.atakmap.android.user.icon.Icon2525cPallet;
 import com.atakmap.android.user.icon.SpotMapPallet;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
@@ -38,7 +38,7 @@ public class UserIcon {
     final static String COLUMN_ICONS_ID = "id";
     final static String COLUMN_ICONS_SETUID = "iconset_uid";
     final static String COLUMN_ICONS_FILENAME = "filename";
-    final static String COLUMN_ICONS_COTTYPE = "type2525b";
+    final static String COLUMN_ICONS_COTTYPE = "type2525b"; // for legacy databases
     final static String COLUMN_ICONS_GROUP = "groupName";
     final static String COLUMN_ICONS_USECNT = "useCnt";
     final static String COLUMN_ICONS_BITMAP = "bitmap";
@@ -61,10 +61,11 @@ public class UserIcon {
 
     /**
      * XML or DB, optional CoT for compliance with other CoT viewers (e.g. when ATAK
-     * sends points out over the network)
+     * sends points out over the network).   The name is for legacy iconsets and should be considered
+     * reflective of 2525C iconology.
      */
     @Attribute(name = "type2525b", required = false)
-    private String type2525b;
+    private String type2525c;
 
     /**
      * DB, and derived from directory in zip file, not specified in XML
@@ -113,7 +114,7 @@ public class UserIcon {
 
     /**
      * Check if iconset is well-formed and references an icon currently stored
-     * on this device. Note returns false for 2525B and Spot Map iconset paths
+     * on this device. Note returns false for 2525C and Spot Map iconset paths
      * 
      * @param iconsetPath
      * @param requireDatabaseMatch
@@ -124,7 +125,7 @@ public class UserIcon {
         if (FileSystemUtils.isEmpty(iconsetPath))
             return false;
 
-        if (iconsetPath.startsWith(Icon2525bPallet.COT_MAPPING_2525B) ||
+        if (iconsetPath.startsWith(Icon2525cPallet.COT_MAPPING_2525) ||
                 iconsetPath.startsWith(SpotMapPallet.COT_MAPPING_SPOTMAP))
             return false;
 
@@ -150,7 +151,7 @@ public class UserIcon {
 
     /**
      * Check if iconset is well-formed and references an icon currently stored
-     * on this device. Note returns false for 2525B and Spot Map iconset paths.
+     * on this device. Note returns false for 2525C and Spot Map iconset paths.
      * Also returns false if the icon is not currently in the local database
      * 
      * @param iconsetPath
@@ -169,7 +170,7 @@ public class UserIcon {
         } else if (COLUMN_ICONS_FILENAME.equals(label)) {
             return getFileName();
         } else if (COLUMN_ICONS_COTTYPE.equals(label)) {
-            return get2525bType();
+            return get2525cType();
         } else if (COLUMN_ICONS_BITMAP.equals(label)) {
             return getBitMap();
         } else if (COLUMN_ICONS_GROUP.equals(label)) {
@@ -193,7 +194,7 @@ public class UserIcon {
         setIconsetUid(iconsetUid);
         setGroup(group);
         setFileName(fileName);
-        set2525bType(cotType);
+        set2525cType(cotType);
         setBitMap(bitmap);
         setUseCount(usecnt);
     }
@@ -222,12 +223,12 @@ public class UserIcon {
         this.fileName = fileName;
     }
 
-    public String get2525bType() {
-        return type2525b;
+    public String get2525cType() {
+        return type2525c;
     }
 
-    public void set2525bType(String t) {
-        this.type2525b = t;
+    public void set2525cType(String t) {
+        this.type2525c = t;
     }
 
     public Bitmap getBitMap() {
@@ -261,7 +262,7 @@ public class UserIcon {
     }
 
     public String toString() {
-        return iconsetUid + "/" + group + "/" + fileName + "/" + type2525b;
+        return iconsetUid + "/" + group + "/" + fileName + "/" + type2525c;
     }
 
     @Override
@@ -279,7 +280,7 @@ public class UserIcon {
         if (!FileSystemUtils.isEquals(fileName, rhsInfo.fileName))
             return false;
 
-        if (!FileSystemUtils.isEquals(type2525b, rhsInfo.type2525b))
+        if (!FileSystemUtils.isEquals(type2525c, rhsInfo.type2525c))
             return false;
 
         return true;

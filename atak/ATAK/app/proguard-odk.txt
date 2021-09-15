@@ -321,18 +321,9 @@
 -keep class com.atakmap.math.NativeGeometryModel {*;}
 -keep class com.atakmap.math.PointD {*;}
 -keep class com.atakmap.math.Ray {*;}
+-keep class com.atakmap.math.Rectangle {*;}
 -keep class com.atakmap.math.Vector3D {*;}
 -keep class com.atakmap.map.layer.feature.falconview.FalconViewFeatureDataSource {*;}
 
 # make sure jassimp is happy
 -keep class jassimp.** {*;}
-
--keep class com.atakmap.coremap.filesystem.RemovableStorageHelper {*;}
-
-# Specific for 4.3.0.x as to make sure the mapping is not broken.
--keep class com.atakmap.android.elev.ElevationDownloader {*;}
--keep class com.atakmap.android.elev.ElevationDownloader$* {*;}
--keep class com.atakmap.android.elev.ElevationMapComponent {
-        private com.atakmap.android.elev.ElevationDownloader _downloader;
-}
-

@@ -12,6 +12,7 @@
 #include "port/STLVectorAdapter.h"
 #include "port/StringBuilder.h"
 #include "thread/Lock.h"
+#include "util/URI.h"
 
 using namespace TAK::Engine::Model;
 
@@ -205,9 +206,28 @@ SceneLayer::SceneLayer(const char *name, const char *cpath) NOTHROWS :
             if (result->get(&fs) != TE_Ok)
                 continue;
             // evict entries do not exist
-            bool exists;
-            if (IO_exists(&exists, fs->getName()) != TE_Ok)
-                continue;
+            bool exists = false;
+
+            // check to see if it's non-file URI vs a file
+            String scheme = NULL;
+            String fsName = fs->getName();
+
+            IO_exists(&exists, fsName);
+
+            // fallback on URI parse
+            if (!exists) {
+                String fsPath;
+                URI_parse(&scheme, nullptr, nullptr, &fsPath, nullptr, nullptr, fsName);
+                if (scheme) {
+                    int fileCmp = -1;
+                    TAK::Engine::Port::String_compareIgnoreCase(&fileCmp, "file", scheme);
+                    if (fileCmp == 0)
+                        IO_exists(&exists, fsName);
+                    else
+                        exists = true; // allow assumed external/streaming uris to pass
+                }
+            }
+
             if(!exists)
                 removeSceneSet(FID2SID(fs->getId(), PERSISTENT_BIT));
         }

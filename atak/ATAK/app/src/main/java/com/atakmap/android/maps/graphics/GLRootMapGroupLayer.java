@@ -40,6 +40,7 @@ public class GLRootMapGroupLayer implements GLLayer3 {
     public GLRootMapGroupLayer(MapRenderer surface, RootMapGroupLayer subject) {
         this.renderContext = surface;
         this.subject = subject;
+        this.renderer = new GLQuadtreeNode2();
     }
 
     @Override
@@ -56,8 +57,6 @@ public class GLRootMapGroupLayer implements GLLayer3 {
     @Override
     public void draw(GLMapView view, int renderPass) {
         if (_rootObserver == null) {
-            this.renderer = new GLQuadtreeNode2();
-
             // add the root group observer
             _rootObserver = new GLMapGroup2(this.renderContext, this.renderer,
                     this.subject.getSubject());
@@ -75,7 +74,6 @@ public class GLRootMapGroupLayer implements GLLayer3 {
             _rootObserver = null;
 
             this.renderer.release();
-            this.renderer = null;
         }
     }
 
@@ -86,10 +84,11 @@ public class GLRootMapGroupLayer implements GLLayer3 {
 
     @Override
     public void start() {
+        renderContext.registerControl(this.subject, this.renderer);
     }
 
     @Override
     public void stop() {
+        renderContext.unregisterControl(this.subject, this.renderer);
     }
-
 }

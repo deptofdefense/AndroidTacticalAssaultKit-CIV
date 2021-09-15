@@ -55,7 +55,7 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_NativeFeatureCursor
             if(!rawGeom.object)
                 return NULL;
             Geometry2Ptr cgeom(NULL, NULL);
-            code = Geometry_clone(cgeom, *static_cast<const Geometry2 *>(rawGeom.object));
+            LegacyAdapters_adapt(cgeom, *static_cast<const atakmap::feature::Geometry *>(rawGeom.object));
             if(ATAKMapEngineJNI_checkOrThrow(env, code))
                 return NULL;
             return NewPointer(env, std::move(cgeom));

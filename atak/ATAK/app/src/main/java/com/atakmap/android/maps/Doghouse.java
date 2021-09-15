@@ -10,7 +10,7 @@ import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.*;
 import com.atakmap.coremap.locale.LocaleUtil;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
@@ -202,6 +202,15 @@ public final class Doghouse extends Polyline implements
         _prefs.registerOnSharedPreferenceChangeListener(this);
         _listeners = new ConcurrentLinkedQueue<>();
         setMetaString("menu", "menus/doghouse_menu.xml");
+    }
+
+    /**
+     * updates the nose of the doghouse on the route segment changes to the route
+     * should recalculate this position
+     */
+    public void updateNose() {
+        _noseShift = _prefs.getFloat(DoghouseReceiver.PERCENT_ALONG_LEG, 0.5f);
+        _nose = computeNosePosition(_noseShift);
     }
 
     @Override
@@ -442,9 +451,7 @@ public final class Doghouse extends Polyline implements
     }
 
     private GeoPoint computeNosePosition(double shift) {
-        return DistanceCalculations.computeDestinationPoint(
-                _source.get(),
-                _bearingToNext,
+        return GeoCalculations.pointAtDistance(_source.get(), _bearingToNext,
                 _distanceToNext * shift);
     }
 

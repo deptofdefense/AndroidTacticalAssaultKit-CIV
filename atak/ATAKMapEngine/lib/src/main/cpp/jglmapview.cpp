@@ -10,6 +10,7 @@
 #include <renderer/core/GLGlobeSurfaceRenderer.h>
 #include <renderer/core/GLGlobe.h>
 #include <renderer/core/GLMapView2.h>
+#include <renderer/core/GLLabelManager.h>
 #include <util/Logging2.h>
 
 #include "common.h"
@@ -160,6 +161,16 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_setBaseMap
     if(mbasemap)
         Renderer::Core::Interop_marshal(cbasemap, *env, mbasemap);
     cview->setBaseMap(std::move(cbasemap));
+}
+JNIEXPORT jlong JNICALL Java_com_atakmap_map_opengl_GLMapView_getLabelManager
+   (JNIEnv *env, jclass clazz, jlong viewPtr)
+{
+    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, viewPtr);
+    if(!cview) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return 0;
+    }
+    return INTPTR_TO_JLONG(cview->getLabelManager());
 }
 JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_sync
   (JNIEnv *env, jclass clazz, jlong ptr, jobject mview, jboolean current)
@@ -835,17 +846,18 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_setDisplayMode
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return;
     }
+    switch(srid) {
+        case 4326 :
+            cglobe->setDisplayMode(MapRenderer::Flat);
+            break;
+        case 4978 :
+            cglobe->setDisplayMode(MapRenderer::Globe);
+            break;
+        default :
+            break;
+    }
     if(type == com_atakmap_map_opengl_GLMapView_IMPL_IFACE) {
-        switch(srid) {
-            case 4326 :
-                cglobe->setDisplayMode(MapRenderer::Flat);
-                break;
-            case 4978 :
-                cglobe->setDisplayMode(MapRenderer::Globe);
-                break;
-            default :
-                break;
-        }
+        // no-op
     } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V1) {
         GLMapView2 *cview = static_cast<GLMapView2 *>(cglobe);
         cview->view.setProjection(srid);

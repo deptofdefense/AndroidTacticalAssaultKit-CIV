@@ -204,7 +204,7 @@ public class CotImporterManager extends AbstractCotEventImporter {
         // User icon markers
         registerImporter(new UserIconMarkerImporter(_mapView));
 
-        // 2525B markers
+        // 2525C markers
         registerImporter(new MarkerImporter(_mapView,
                 cotGroup.findMapGroup("Hostile"), "a-h", true));
         registerImporter(new FriendlyMarkerImporter(_mapView,

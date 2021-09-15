@@ -1301,7 +1301,7 @@ GLGlobeSurfaceRenderer& GLGlobe::getSurfaceRenderer() const NOTHROWS
 {
     return *surfaceRenderer;
 }
-TAKErr GLGlobe::getSurfaceBounds(Port::Collection<Feature::Envelope2> &value) const NOTHROWS
+TAKErr GLGlobe::getSurfaceBounds(TAK::Engine::Port::Collection<TAK::Engine::Feature::Envelope2> &value) const NOTHROWS
 {
     if(!context.isRenderThread())
         return TE_IllegalState;
@@ -1666,8 +1666,8 @@ bool GLGlobe::animate() NOTHROWS {
     // verify AGL exceeds `nearMeters`
     {
         const double dist = fabs(camlla.altitude-localEl);
-        if(dist/2.0 < sm.camera.nearMeters) {
-            animation.current.clip.near = dist*0.5;
+        if(dist < sm.camera.nearMeters) {
+            animation.current.clip.near = dist*0.2;
             animation.current.clip.far = NAN;
             animation.current.clip.override = true;
         } else {
@@ -2427,6 +2427,11 @@ TAKErr TAK::Engine::Renderer::Core::GLGlobe_lookAt(GLGlobe &view, const GeoPoint
         // angle is the dot product between the view and up vectors at the target
         const double dot = Vector2_dot(los, target_up);
         tilt = (acos(dot)/M_PI*180.0);
+        // tilt should never increase. due to precision issues, small tilt is
+        // periodically observed to be introduced when collision occurs in
+        // nadir.
+        if(isnan(tilt) || tilt > tilt_)
+            tilt = tilt_;
     }
 
     const double mapScale = atakmap::core::AtakMapView_getMapScale(view.view.getDisplayDpi(), resolution);

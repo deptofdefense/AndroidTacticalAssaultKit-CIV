@@ -36,8 +36,8 @@ namespace TAK {
                 Core::GeoPoint2 lowerRight;
                 Core::GeoPoint2 lowerLeft;
                 double maxGsd;
-                int width;
-                int height;
+                size_t width;
+                size_t height;
                 int srid;
             };
 

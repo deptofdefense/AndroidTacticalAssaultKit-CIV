@@ -47,3 +47,15 @@ JNIEXPORT void JNICALL Java_com_atakmap_opengl_GLText_batch__JJLjava_lang_String
     JNIStringUTF text(*env, mtext);
     gltext->batch(*batch, text, x, y, z, r, g, b, a, scissorX0, scissorX1);
 }
+
+JNIEXPORT void JNICALL Java_com_atakmap_opengl_GLText_setTextFormatFactory
+  (JNIEnv *env, jclass clazz, jobject factory)
+{
+    auto nativeFactory = std::make_shared<ManagedTextFormatFactory>(*env, factory);
+    TAK::Engine::Renderer::TextFormat2_setTextFormatFactory(nativeFactory);
+}
+
+JNIEXPORT void JNICALL Java_com_atakmap_opengl_GLText_invalidateCache(JNIEnv *env, jclass clazz) {
+
+    GLText2_invalidateCache();
+}

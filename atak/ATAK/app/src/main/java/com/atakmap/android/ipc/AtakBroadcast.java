@@ -15,7 +15,6 @@ import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.util.zip.IoUtils;
 
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

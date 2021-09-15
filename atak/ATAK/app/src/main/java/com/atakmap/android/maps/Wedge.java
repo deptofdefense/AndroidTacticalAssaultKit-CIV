@@ -3,6 +3,7 @@ package com.atakmap.android.maps;
 
 import com.atakmap.coremap.conversions.Angle;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
@@ -301,7 +302,7 @@ public class Wedge extends Polyline {
 
         // include the starting point and make the ending point the same as the starting point
         for (int i = 0; i <= NUM_SEGMENTS; i++) {
-            GeoPoint gp = DistanceCalculations.computeDestinationPoint(pointX,
+            GeoPoint gp = GeoCalculations.pointAtDistance(pointX,
                     azimuth - angleX - angleXprime * i * fraction, distance);
             corners[i + 1] = GeoPointMetaData.wrap(gp);
         }

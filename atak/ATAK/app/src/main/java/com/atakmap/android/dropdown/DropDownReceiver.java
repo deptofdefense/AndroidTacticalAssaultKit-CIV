@@ -9,7 +9,6 @@ import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
 import android.util.DisplayMetrics;
 import android.view.View;
-import android.widget.ImageButton;
 import android.widget.Toast;
 
 import com.atakmap.android.drawing.tools.TelestrationTool;
@@ -30,8 +29,6 @@ import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.assets.Icon;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 public abstract class DropDownReceiver extends BroadcastReceiver {

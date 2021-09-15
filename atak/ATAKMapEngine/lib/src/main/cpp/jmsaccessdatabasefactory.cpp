@@ -3,7 +3,7 @@
 #include <db/DatabaseFactory.h>
 #include <db/DatabaseProvider.h>
 #include <formats/msaccess/MsAccessDatabaseFactory.h>
-#include <feature/FalconViewFeatureDataSource.h>
+#include <formats/pfps/FalconViewFeatureDataSource.h>
 #include <util/Error.h>
 #include <util/Memory.h>
 
@@ -17,6 +17,7 @@ using namespace TAK::Engine::DB;
 using namespace TAK::Engine::Feature;
 using namespace TAK::Engine::Util;
 using namespace TAK::Engine::Formats::MsAccess;
+using namespace TAK::Engine::Formats::PFPS;
 
 using namespace TAKEngineJNI::Interop;
 using namespace TAKEngineJNI::Interop::Java;

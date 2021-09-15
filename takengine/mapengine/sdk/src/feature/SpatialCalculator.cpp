@@ -11,7 +11,7 @@
 #include "feature/FeatureDataSource.h"
 #include "feature/Geometry.h"
 #include "feature/GeometryCollection.h"
-#include "feature/Linestring.h"
+#include "feature/LineString.h"
 #include "feature/ParseGeometry.h"
 #include "feature/Point.h"
 #include "feature/Polygon.h"

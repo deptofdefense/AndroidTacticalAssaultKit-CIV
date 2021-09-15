@@ -921,6 +921,17 @@ TAKErr atakmap::feature::Style_parseStyle(StylePtr &value, const char *ogr) NOTH
         return TE_Err;
     }
 }
+TAKErr atakmap::feature::Style_parseStyle(StylePtr_Const& value, const char* ogr) NOTHROWS
+{
+    TAKErr code(TE_Ok);
+    StylePtr v(nullptr, nullptr);
+    code = Style_parseStyle(v, ogr);
+    if (code != TE_Ok)
+        return code;
+    value = StylePtr_Const(v.release(), v.get_deleter());
+    return code;
+    
+}
 TAKErr atakmap::feature::BasicFillStyle_create(StylePtr &value, const unsigned int color) NOTHROWS
 {
     try {

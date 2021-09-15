@@ -20,8 +20,6 @@ import com.atakmap.math.Ray;
 import com.atakmap.math.Vector3D;
 
 import java.nio.Buffer;
-import java.util.HashSet;
-import java.util.Set;
 
 public final class Models {
     public static interface OnTransformProgressListener {

@@ -1,16 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  ~ Copyright 2020 PAR Government Systems
-  ~  
-  ~  Unlimited Rights:
-  ~  PAR Government retains ownership rights to this software.  The Government has Unlimited Rights
-  ~  to use, modify, reproduce, release, perform, display, or disclose this
-  ~  software as identified in the purchase order contract. Any
-  ~  reproduction of computer software or portions thereof marked with this
-  ~  legend must also reproduce the markings. Any person who has been provided
-  ~  access to this software must be aware of the above restrictions.
-  -->
-
 <ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -55,6 +43,30 @@
 
         <TextView
             android:id="@+id/txtRelativeAccuracy"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:paddingTop="5dp"
+            android:textStyle="bold"
+            android:text="@string/resection_required_data_label" />
+
+        <TextView
+            android:id="@+id/txtRequiredData"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:paddingTop="5dp"
+            android:textStyle="bold"
+            android:text="@string/resection_required_hardware" />
+
+        <TextView
+            android:id="@+id/txtRequiredHardware"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
     </LinearLayout>

@@ -10,7 +10,6 @@ import java.util.Map;
 
 import com.atakmap.android.maps.graphics.GLBitmapLoader;
 import com.atakmap.android.maps.graphics.GLImageCache;
-import com.atakmap.coremap.log.Log;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.RenderContext;
 import com.atakmap.opengl.GLNinePatch;
@@ -150,6 +149,7 @@ public class GLRenderGlobals {
 
     public static void setRelativeScaling(float v) {
         relativeScaling = v;
+        setRelativeDisplayDensity(v);
     }
 
     public static float getRelativeScaling() {
@@ -195,4 +195,7 @@ public class GLRenderGlobals {
         } while(true);
         return ctx;
     }
+    
+    static native void setRelativeDisplayDensity(float density);
+    static native float getRelativeDisplayDensity();
 }

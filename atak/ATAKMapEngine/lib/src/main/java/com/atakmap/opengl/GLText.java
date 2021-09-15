@@ -1,26 +1,15 @@
 
 package com.atakmap.opengl;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
-import java.nio.ShortBuffer;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.RectF;
+import android.graphics.Paint;
 import android.graphics.Typeface;
-import android.opengl.GLES10;
-import android.opengl.Matrix;
 
 import com.atakmap.android.maps.MapTextFormat;
 import com.atakmap.coremap.locale.LocaleUtil;
-import com.atakmap.lang.Unsafe;
-import com.atakmap.map.AtakMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.math.MathUtils;
 import com.atakmap.util.ConfigOptions;
@@ -415,6 +404,28 @@ public final class GLText {
         return new String(textSequence);
     }
 
+    static {
+        setTextFormatFactory(new TextFormatFactory() {
+            @Override
+            public MapTextFormat createTextFormat(boolean isBold, boolean isItalic, int fontSize, boolean isUnderline, boolean isStrikethrough) {
+                Typeface typeface = Typeface.DEFAULT;
+                int style = Typeface.NORMAL;
+                if (isBold)
+                    style |= typeface.BOLD;
+                if (isItalic)
+                    style |= Typeface.ITALIC;
+
+                int options = (isUnderline ? 0 : Paint.UNDERLINE_TEXT_FLAG) | (isStrikethrough ? 0 : Paint.STRIKE_THRU_TEXT_FLAG);
+
+                if (style != Typeface.NORMAL)
+                    typeface = Typeface.defaultFromStyle(style);
+                return new MapTextFormat(typeface, fontSize, options);
+            }
+        });
+    }
+
+    public static native void setTextFormatFactory(TextFormatFactory factory);
+    public static native void invalidateCache();
     static native long intern(MapTextFormat fmt, MapTextFormat glyphRenderer);
     static native void invalidate(long ptr);
     static native void batch(long pointer, long batchPointer, String text, float x, float y, float z, float r, float g, float b, float a);

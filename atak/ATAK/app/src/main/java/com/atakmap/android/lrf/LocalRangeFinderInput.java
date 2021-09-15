@@ -34,17 +34,16 @@ import com.atakmap.android.toolbars.RangeAndBearingMapItem;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.util.Circle;
 import com.atakmap.app.R;
-import com.atakmap.coremap.conversions.Angle;
 import com.atakmap.coremap.conversions.ConversionFactors;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.assets.Icon;
 
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
-import com.atakmap.coremap.maps.coords.NorthReference;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.util.Disposable;
 import com.atakmap.android.gui.HintDialogHelper;
@@ -352,9 +351,8 @@ public class LocalRangeFinderInput implements Runnable, RangeFinderAction,
                                             event.getPoint().y).get());
                     double range = DistanceCalculations.calculateRange(
                             anchorPoint, marker.getPoint());
-                    final GeoPoint targetPoint = DistanceCalculations
-                            .computeDestinationPoint(anchorPoint, bearing,
-                                    range);
+                    final GeoPoint targetPoint = GeoCalculations
+                            .pointAtDistance(anchorPoint, bearing, range);
 
                     final GeoPointMetaData tpWithAlt = GeoPointMetaData.wrap(
                             new GeoPoint(
@@ -677,9 +675,9 @@ public class LocalRangeFinderInput implements Runnable, RangeFinderAction,
 
             }
 
-            final GeoPoint targetPoint = DistanceCalculations
-                    .computeDestinationPoint(selfPoint.get(),
-                            (azimuth + (double) declination), levelDistance);
+            final GeoPoint targetPoint = GeoCalculations.pointAtDistance(
+                    selfPoint.get(), (azimuth + (double) declination),
+                    levelDistance);
 
             final GeoPoint tpWithAlt = new GeoPoint(
                     targetPoint.getLatitude(),

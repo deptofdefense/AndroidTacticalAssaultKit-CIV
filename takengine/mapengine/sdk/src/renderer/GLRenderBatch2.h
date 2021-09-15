@@ -11,10 +11,6 @@
 #include "util/MemBuffer2.h"
 #include "util/Memory.h"
 
-#ifndef GL_TEXTURE
-#define GL_TEXTURE 0x00001702
-#endif
-
 #ifndef GL_MODELVIEW
 #define GL_MODELVIEW 0x00001700
 #endif

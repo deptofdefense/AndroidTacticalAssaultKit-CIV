@@ -250,6 +250,11 @@ public class DrawingShape extends EditablePolyline implements ParentMapItem {
     @Override
     public void onItemRemoved(MapItem item, MapGroup oldParent) {
         super.onItemRemoved(item, oldParent);
+
+        // Do not process deletion when transferring groups
+        if (getMetaBoolean("__groupTransfer", false))
+            return;
+
         // XXX - not quite sure why there are two child map groups
         if (childItemMapGroup != null) {
             final MapGroup parent = childItemMapGroup.getParentGroup();

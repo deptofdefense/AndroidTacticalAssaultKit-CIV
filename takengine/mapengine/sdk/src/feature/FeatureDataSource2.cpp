@@ -1,6 +1,7 @@
 #include "feature/FeatureDataSource2.h"
 
 #include <map>
+#include <queue>
 #include <set>
 
 #include "feature/FeatureDataSource.h"
@@ -17,9 +18,12 @@ using namespace TAK::Engine::Util;
 namespace
 {
     typedef std::map<TAK::Engine::Port::String, std::shared_ptr<FeatureDataSource2>, TAK::Engine::Port::StringLess> FeatureDataSourceMap;
+    typedef std::vector<std::pair<int,std::shared_ptr<FeatureDataSource2>>>  FeatureDataSourcePriorityVector;
+
 
     RWMutex &providerMapMutex() NOTHROWS;
     FeatureDataSourceMap& getProviderMap() NOTHROWS;
+    FeatureDataSourcePriorityVector& getProviderPriorityVector() NOTHROWS;
 }
 
 FeatureDataSource2::~FeatureDataSource2() NOTHROWS
@@ -37,6 +41,7 @@ TAKErr TAK::Engine::Feature::FeatureDataSourceFactory_parse(FeatureDataSource2::
     // return ContentPtr for current FeatureDataSource implemenations
     FeatureDataSourceMap featureDataSourceMap(getProviderMap());
     FeatureDataSourceMap::iterator it;
+
     if (hint) {
         std::shared_ptr<FeatureDataSource2> spi;
 
@@ -48,11 +53,14 @@ TAKErr TAK::Engine::Feature::FeatureDataSourceFactory_parse(FeatureDataSource2::
             if (spi.get() != nullptr)
                 return spi->parse(content, path);
         }
-    } else {
+    } 
+    else {
+        FeatureDataSourcePriorityVector &providers = getProviderPriorityVector();
         // iterate all available providers. choose the first that supports
-        for (it = featureDataSourceMap.begin(); it != featureDataSourceMap.end(); it++)
+        for (auto iter = providers.begin(); iter != providers.end(); iter++)
         {
-            code = it->second->parse(content, path);
+            auto source  = iter->second;
+            code = source->parse(content, path);
             if (code == TE_Ok)
                 return code;
         }
@@ -137,6 +145,11 @@ TAKErr TAK::Engine::Feature::FeatureDataSourceFactory_registerProvider(const std
     FeatureDataSourceMap &featureDataSourceMap = getProviderMap();
     featureDataSourceMap[provider->getName()] = provider;
 
+    const std::pair <int, std::shared_ptr<FeatureDataSource2>> prioritySource(priority, provider);
+    FeatureDataSourcePriorityVector &priorityQueue = getProviderPriorityVector();
+    priorityQueue.push_back(prioritySource);
+    std::sort(priorityQueue.begin(), priorityQueue.end(), std::greater<std::pair<int, std::shared_ptr<FeatureDataSource2>>>());
+
     return TE_Ok;
 }
 
@@ -148,13 +161,22 @@ TAKErr TAK::Engine::Feature::FeatureDataSourceFactory_unregisterProvider(const F
     TE_CHECKRETURN_CODE(code);
 
     FeatureDataSourceMap &featureDataSourceMap = getProviderMap();
+    FeatureDataSourcePriorityVector &featureDatasourcesByPriority = getProviderPriorityVector();
     FeatureDataSourceMap::iterator entry;
     for (entry = featureDataSourceMap.begin(); entry != featureDataSourceMap.end(); entry++) {
         if (entry->second.get() == &provider) {
+
             featureDataSourceMap.erase(entry);
+			for (FeatureDataSourcePriorityVector::iterator it = featureDatasourcesByPriority.begin(); it != featureDatasourcesByPriority.end(); it++) {
+				if (it->second.get() == &provider) {
+					featureDatasourcesByPriority.erase(it);
+					return TE_Ok;
+				}
+			}
             return TE_Ok;
         }
     }
+
 
     return TE_InvalidArg;
 }
@@ -171,5 +193,11 @@ namespace
     {
         static FeatureDataSourceMap providerMap;
         return providerMap;
+    }
+
+    FeatureDataSourcePriorityVector& getProviderPriorityVector() NOTHROWS
+    {
+        static FeatureDataSourcePriorityVector providerPriorityVector;
+        return providerPriorityVector;
     }
 }

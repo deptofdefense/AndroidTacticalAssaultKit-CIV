@@ -393,12 +393,13 @@ public class MissionPackageHierarchyListItem extends
                         b.setNegativeButton(R.string.cancel, null);
                         b.setPositiveButton(R.string.remove_contents,
                                 new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface d, int w) {
-                                new RemoveContentsTask(_group, _overlay,
-                                        _receiver).execute();
-                            }
-                        });
+                                    @Override
+                                    public void onClick(DialogInterface d,
+                                            int w) {
+                                        new RemoveContentsTask(_group, _overlay,
+                                                _receiver).execute();
+                                    }
+                                });
                         b.show();
                     }
                 });

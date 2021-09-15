@@ -91,7 +91,6 @@ set (takengine_COMMON_SRCS
     ${SRCDIR}/feature/DefaultSchemaDefinition.cpp
     ${SRCDIR}/feature/DrawingTool.cpp
     ${SRCDIR}/feature/Envelope2.cpp
-    ${SRCDIR}/feature/FalconViewFeatureDataSource.cpp
     ${SRCDIR}/feature/FDB.cpp
     ${SRCDIR}/feature/Feature.cpp
     ${SRCDIR}/feature/Feature2.cpp
@@ -104,6 +103,9 @@ set (takengine_COMMON_SRCS
     ${SRCDIR}/feature/FeatureSetCursor2.cpp
     ${SRCDIR}/feature/FeatureSetDatabase.cpp
     ${SRCDIR}/feature/FeatureSpatialDatabase.cpp
+    ${SRCDIR}/feature/FilterFeatureCursor2.cpp
+    ${SRCDIR}/feature/FilterFeatureDataStore2.cpp
+    ${SRCDIR}/feature/FilterFeatureSetCursor2.cpp
     ${SRCDIR}/feature/Geometry.cpp
     ${SRCDIR}/feature/Geometry2.cpp
     ${SRCDIR}/feature/GeometryCollection.cpp
@@ -145,9 +147,21 @@ set (takengine_COMMON_SRCS
     ${SRCDIR}/formats/glues/sweep.c
     ${SRCDIR}/formats/glues/tess.c
     ${SRCDIR}/formats/glues/tessmono.c
+    ${SRCDIR}/formats/mbtiles/MBTilesInfo.cpp
+    ${SRCDIR}/formats/mbtiles/MVTFeatureDataSource.cpp
+    ${SRCDIR}/formats/mbtiles/MVTFeatureDataStore.cpp
+    ${SRCDIR}/formats/ogr/AutoStyleSchemaHandler.cpp
+    ${SRCDIR}/formats/ogr/OGRFeatureDataStore.cpp
+    ${SRCDIR}/formats/ogr/OGRUtils.cpp
+    ${SRCDIR}/formats/ogr/OGR_Content.cpp
+    ${SRCDIR}/formats/ogr/OGR_FeatureDataSource2.cpp
+    ${SRCDIR}/formats/osr/OSRProjectionSpi.cpp
+    ${SRCDIR}/formats/pfps/FalconViewFeatureDataSource.cpp
     ${SRCDIR}/formats/s3tc/S3TC.cpp
     ${SRCDIR}/formats/wmm/GeomagnetismLibrary.cpp
     ${SRCDIR}/formats/msaccess/MsAccessDatabaseFactory.cpp
+    ${SRCDIR}/formats/ogr/OGRUtils.cpp
+    ${SRCDIR}/formats/ogr/OGR_Content.cpp
     
     # Math
     ${SRCDIR}/math/AABB.cpp
@@ -201,6 +215,7 @@ set (takengine_COMMON_SRCS
     ${SRCDIR}/renderer/GLES20FixedPipeline.cpp
     ${SRCDIR}/renderer/GLMatrix.cpp
     ${SRCDIR}/renderer/GLMegaTexture.cpp
+    ${SRCDIR}/renderer/GLNinePatch.cpp
     ${SRCDIR}/renderer/GLOffscreenFramebuffer.cpp
     ${SRCDIR}/renderer/GLRenderBatch.cpp
     ${SRCDIR}/renderer/GLRenderBatch2.cpp
@@ -221,6 +236,8 @@ set (takengine_COMMON_SRCS
     ${SRCDIR}/renderer/Tessellate.cpp
     ${SRCDIR}/renderer/core/ColorControl.cpp
     ${SRCDIR}/renderer/core/GLAntiMeridianHelper.cpp
+    ${SRCDIR}/renderer/core/GLLabel.cpp
+    ${SRCDIR}/renderer/core/GLLabelManager.cpp
 	${SRCDIR}/renderer/core/GLAtmosphere.cpp
     ${SRCDIR}/renderer/core/GLDiagnostics.cpp
     ${SRCDIR}/renderer/core/GLDirtyRegion.cpp
@@ -358,8 +375,6 @@ set (takengine_WINDOWS_SRCS
     ${SRCDIR}/formats/gltf/GLTFv1.cpp
     ${SRCDIR}/formats/gltf/GLTFv2.cpp
     ${SRCDIR}/formats/mbtiles/MBTilesInfo.cpp
-    ${SRCDIR}/formats/ogr/OGRFeatureDataStore.cpp
-    ${SRCDIR}/formats/osr/OSRProjectionSpi.cpp
 
     # Math
     ${SRCDIR}/math/Frustum.cpp
@@ -628,6 +643,7 @@ set (takengine_COMMON_INCS
     gl/khronos/EGL/api
     ${SRCDIR}
     ../thirdparty/stlsoft/include
+    ../thirdparty
 )
 
 set (takengine_WINDOWS_INCS

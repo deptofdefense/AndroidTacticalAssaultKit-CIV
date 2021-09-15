@@ -17,7 +17,6 @@ import com.atakmap.android.maps.tilesets.TilesetInfo;
 import com.atakmap.coremap.io.DatabaseInformation;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
-import com.atakmap.database.Databases;
 import com.atakmap.lang.Objects;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
 import com.atakmap.map.layer.raster.gdal.GdalGraphicUtils;

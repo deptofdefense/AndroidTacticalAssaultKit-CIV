@@ -26,6 +26,7 @@ import com.atakmap.coremap.conversions.AngleUtilities;
 import com.atakmap.coremap.conversions.ConversionFactors;
 import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
@@ -237,7 +238,7 @@ public class AngleOverlayShape extends AutoSizeAngleOverlayShape {
         // Spoke ends
         List<PointF> points = new ArrayList<>();
         for (int i = 0; i < 360; i += 30) {
-            GeoPoint endPoint = DistanceCalculations.computeDestinationPoint(
+            GeoPoint endPoint = GeoCalculations.pointAtDistance(
                     getCenter().get(), getOffsetAngle() + i, getRadius());
             points.add(cap.forward(endPoint));
         }

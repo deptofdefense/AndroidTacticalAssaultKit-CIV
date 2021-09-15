@@ -5,14 +5,12 @@ import android.graphics.BitmapFactory;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
+import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.io.UriFactory;
 import com.atakmap.io.WebProtocolHandler;
-import com.atakmap.map.contentservices.CacheRequest;
 import com.atakmap.map.elevation.ElevationChunk;
 import com.atakmap.map.elevation.ElevationData;
-import com.atakmap.map.elevation.ElevationSource;
-import com.atakmap.map.elevation.ElevationSourceManager;
 import com.atakmap.map.elevation.TiledElevationSource;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.feature.geometry.GeometryFactory;
@@ -20,21 +18,20 @@ import com.atakmap.map.layer.feature.geometry.Polygon;
 import com.atakmap.map.layer.raster.osm.OSMUtils;
 import com.atakmap.map.layer.raster.tilematrix.TileMatrix;
 import com.atakmap.map.projection.WebMercatorProjection;
-import com.atakmap.spatial.GeometryTransformer;
 import com.atakmap.util.Collections2;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 public final class MapBoxElevationSource extends TiledElevationSource {
+
+    private final String TAG = "MapBoxElevationSource";
 
     final static TileMatrix.ZoomLevel[] zoomLevels;
     static {
@@ -151,7 +148,7 @@ public final class MapBoxElevationSource extends TiledElevationSource {
                         }
                     }
                 } catch (Throwable t) {
-                    t.printStackTrace();
+                    Log.e(TAG, "error", t);
                 }
             }
         }

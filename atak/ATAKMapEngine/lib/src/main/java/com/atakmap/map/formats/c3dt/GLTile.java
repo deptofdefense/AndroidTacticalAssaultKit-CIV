@@ -8,13 +8,9 @@ import com.atakmap.map.MapSceneModel;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.projection.ECEFProjection;
-import com.atakmap.math.AABB;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.Matrix;
 import com.atakmap.math.PointD;
-import com.atakmap.math.Rectangle;
-import com.atakmap.math.Sphere;
-import com.atakmap.spatial.GeometryTransformer;
 
 final class GLTile implements ContentSource.OnContentChangedListener {
     final static long FAILED_CONTENT_RETRY_MILLIS = 5 /*mins*/ * 60 /*sec/min*/ * 1000 /*ms/sec*/;

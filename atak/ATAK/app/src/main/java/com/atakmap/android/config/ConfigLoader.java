@@ -20,7 +20,7 @@ import java.util.HashMap;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import com.atakmap.coremap.log.Log;
+
 import com.atakmap.coremap.xml.XMLUtils;
 
 /**

@@ -187,7 +187,6 @@ public class AddEditAlias {
                     try {
                         String temp = "http://" + host;
 
-
                         URI u = URI.create(temp);
                         if (u.getPort() > 0)
                             portVal = "" + u.getPort();
@@ -195,7 +194,7 @@ public class AddEditAlias {
                         if (host == null)
                             throw new Exception("badhost");
 
-                        if (!FileSystemUtils.isEmpty(u.getUserInfo()) )
+                        if (!FileSystemUtils.isEmpty(u.getUserInfo()))
                             host = u.getUserInfo() + "@" + host;
 
                     } catch (Exception e) {
@@ -205,7 +204,6 @@ public class AddEditAlias {
                                 Toast.LENGTH_LONG).show();
                         return;
                     }
-
 
                 } else {
                     Log.d(TAG,

@@ -33,9 +33,9 @@ TAKErr TAK::Engine::Formats::GLTF::GLTF_load(ScenePtr& scenePtr, const uint8_t *
         return code;
 
     switch (version) {
-    case 1: return GLTF_loadV1(scenePtr, data, size, baseURI);
-    case 2: return GLTF_loadV2(scenePtr, data, size, baseURI);
-    default: return TE_Unsupported;
+    case 1: code = GLTF_loadV1(scenePtr, data, size, baseURI); break;
+    case 2: code = GLTF_loadV2(scenePtr, data, size, baseURI); break;
+    default: code = TE_Unsupported; break;
     }
 
     return code;

@@ -10,12 +10,10 @@ import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.spatial.file.GMLSpatialDb;
-import com.atakmap.spatial.file.ShapefileSpatialDb;
 import com.atakmap.util.zip.ZipEntry;
 import com.atakmap.util.zip.ZipFile;
 
 import java.io.File;
-import java.io.InputStream;
 import java.util.Enumeration;
 
 /**
@@ -30,7 +28,7 @@ public class ImportGMLZSort extends ImportInPlaceResolver {
     private final Context _context;
 
     public ImportGMLZSort(Context context, boolean validateExt,
-                          boolean copyFile, boolean importInPlace) {
+            boolean copyFile, boolean importInPlace) {
         super(".zip", FileSystemUtils.OVERLAYS_DIRECTORY, validateExt,
                 copyFile, importInPlace,
                 "Zipped GML",
@@ -72,7 +70,8 @@ public class ImportGMLZSort extends ImportInPlaceResolver {
                 ZipEntry ze = entries.nextElement();
                 if (ze.getName().toLowerCase(LocaleUtil.getCurrent())
                         .endsWith(".gml")) {
-                    Log.d(TAG, "Matched archived GMLfile: " + file.getAbsolutePath());
+                    Log.d(TAG, "Matched archived GMLfile: "
+                            + file.getAbsolutePath());
                     return true;
                 }
             }

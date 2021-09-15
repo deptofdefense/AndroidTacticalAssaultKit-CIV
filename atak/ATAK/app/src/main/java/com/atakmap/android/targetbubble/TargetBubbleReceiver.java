@@ -44,7 +44,6 @@ import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 
 import com.atakmap.map.CameraController;
-import com.atakmap.map.MapControl;
 import com.atakmap.map.MapRenderer2;
 import com.atakmap.map.MapSceneModel;
 import com.atakmap.map.elevation.ElevationManager;
@@ -57,7 +56,6 @@ import com.atakmap.map.AtakMapController;
 import com.atakmap.android.gui.CoordDialogView;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.app.R;
-import com.atakmap.math.PointD;
 import com.atakmap.util.Visitor;
 
 import android.view.LayoutInflater;

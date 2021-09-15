@@ -36,6 +36,8 @@ namespace TAK {
                     void DrawAtmosphere(const GLGlobeBase& view) const NOTHROWS;
                     void DrawQuad(const TAK::Engine::Math::Matrix2 &inv, const TAK::Engine::Math::Vector4<double>&cameraPos) const NOTHROWS;
                     void init() NOTHROWS;
+                    void ComputeInsideTexture();
+                    void ComputeOutsideTexture();
 
                     std::shared_ptr<atakmap::renderer::Program> program;
 
@@ -43,6 +45,8 @@ namespace TAK {
                     int uSunpos;
                     int aVertexCoordsHandle;
                     int aEyeRayHandle;
+                    unsigned int insideTextureHandle;
+                    unsigned int outsideTextureHandle;
 
                 };
             }

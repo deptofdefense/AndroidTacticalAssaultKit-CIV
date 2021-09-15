@@ -15,7 +15,6 @@ import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.map.layer.raster.osm.OSMTilesetSupport;
 import com.atakmap.map.layer.raster.osm.OSMUtils;
 import com.atakmap.android.maps.graphics.GLBitmapLoader;
-import com.atakmap.database.Databases;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
 import com.atakmap.map.projection.WebMercatorProjection;
 import com.atakmap.coremap.locale.LocaleUtil;

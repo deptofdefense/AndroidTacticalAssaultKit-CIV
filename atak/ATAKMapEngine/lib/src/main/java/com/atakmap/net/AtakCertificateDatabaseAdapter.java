@@ -1,8 +1,5 @@
 package com.atakmap.net;
 
-import android.content.Context;
-import android.net.Uri;
-import android.preference.PreferenceManager;
 import android.util.Pair;
 import android.util.Patterns;
 

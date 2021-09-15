@@ -8,6 +8,7 @@
 #include "renderer/GLES20FixedPipeline.h"
 #include "renderer/GLTriangulate.h"
 #include "renderer/GLTriangulate2.h"
+#include "renderer/Tessellate.h"
 #include "renderer/core/GLGlobeBase.h"
 #include "renderer/feature/GLBatchPolygon3.h"
 #include "renderer/feature/GLGeometry.h"
@@ -33,10 +34,7 @@ GLBatchPolygon3::GLBatchPolygon3(TAK::Engine::Core::RenderContext &surface) NOTH
     fillColorG(0),
     fillColorB(0),
     fillColorA(0),
-    fillColor(0),
-    polyRenderMode(GLTriangulate::STENCIL),
-    indicesLength(0),
-    numIndices(0)
+    fillColor(0)
 {}
 
 TAKErr GLBatchPolygon3::setStyle(StylePtr_const &&value) NOTHROWS
@@ -107,23 +105,16 @@ TAKErr GLBatchPolygon3::setGeometryImpl(BlobPtr &&blob, const int type) NOTHROWS
 
         if (this->fillColorA > 0.0f && this->numPoints > 0)
         {
-            size_t numVerts = this->numPoints - 1;
-            if (!this->indices.get() || this->indicesLength < (numVerts - 2) * 3)
-            {
-                this->indices.reset(new uint16_t[(numVerts - 2) * 3]);
-                this->indicesLength = ((numVerts - 2) * 3);
+            VertexData srcgeom;
+            srcgeom.data = this->points.get();
+            srcgeom.size = 3u;
+            srcgeom.stride = 24u;
+
+            Tessellate_polygon<double>(triangles.data, &triangles.count, srcgeom, numPoints, 0.0, Tessellate_CartesianAlgorithm());
+        } else {
+            triangles.count = 0u;
             }
-#if TRIANGULATION_ENABLED
-            code = GLTriangulate2_triangulate(this->indices.get(), &this->numIndices, this->points.get(), 2, numVerts);
-            if (code == TE_Ok)
-                this->polyRenderMode = GLTriangulate::INDEXED;
-            else
-                this->polyRenderMode = GLTriangulate::STENCIL;
-#else
-            this->polyRenderMode = GLTriangulate::STENCIL;
-#endif
         }
-    }
 
     return TE_Ok;
 }
@@ -147,22 +138,16 @@ TAKErr GLBatchPolygon3::setGeometryImpl(const atakmap::feature::Geometry &geom) 
         GLBatchLineString3::setGeometryImpl(polygon.getExteriorRing());
 
         if (this->fillColorA > 0 && this->numPoints > 0) {
-            size_t numVerts = this->numPoints - 1;
-            if (this->indices.get() == nullptr || this->indicesLength < (numVerts - 2) * 3) {
-                this->indices.reset(new uint16_t[(numVerts - 2) * 3]);
-                this->indicesLength = ((numVerts - 2) * 3);
+            VertexData srcgeom;
+            srcgeom.data = this->points.get();
+            srcgeom.size = 3u;
+            srcgeom.stride = 24u;
+            VertexDataPtr tessellated(nullptr, nullptr);
+            Tessellate_polygon<double>(triangles.data, &triangles.count, srcgeom, numPoints, 0.0, Tessellate_CartesianAlgorithm());
+        } else {
+            triangles.count = 0u;
             }
-#if TRIANGULATION_ENABLED
-            code = GLTriangulate2_triangulate(this->indices.get(), &this->numIndices, this->points.get(), 2, numVerts);
-            if (code == TE_Ok)
-                this->polyRenderMode = GLTriangulate::INDEXED;
-            else
-                this->polyRenderMode = GLTriangulate::STENCIL;
-#else
-            this->polyRenderMode = GLTriangulate::STENCIL;
-#endif
         }
-    }
 
     return TE_Ok;
 }
@@ -181,24 +166,21 @@ TAKErr GLBatchPolygon3::draw(const GLGlobeBase &view, const int render_pass, con
 
     int size = (vertices_type == GLGeometry::VERTICES_PROJECTED) ? this->projectedVerticesSize : 2;
 
-    if (this->fillColorA > 0.0f)
+    if (this->fillColorA > 0.0f && triangles.count)
     {
-        switch (this->polyRenderMode)
-        {
-            case GLTriangulate::INDEXED:
-                code = this->drawFillTriangulate(view, v, size);
-                TE_CHECKRETURN_CODE(code);
-                break;
-            case GLTriangulate::TRIANGLE_FAN:
-                code = this->drawFillConvex(view, v, size);
-                TE_CHECKRETURN_CODE(code);
-                break;
-            case GLTriangulate::STENCIL:
-            default:
-                code = this->drawFillStencil(view, v, size);
-                TE_CHECKRETURN_CODE(code);
-                break;
-        }
+    GLES20FixedPipeline::getInstance()->glEnableClientState(GLES20FixedPipeline::ClientState::CS_GL_VERTEX_ARRAY);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    const float *vp = v;
+        GLES20FixedPipeline::getInstance()->glVertexPointer(size, GL_FLOAT, 0, triangles.vertices.get());
+
+    GLES20FixedPipeline::getInstance()->glColor4f(this->fillColorR, this->fillColorG, this->fillColorB, this->fillColorA);
+
+        GLES20FixedPipeline::getInstance()->glDrawArrays(GL_TRIANGLES, 0, (int)triangles.count);
+
+    glDisable(GL_BLEND);
+    GLES20FixedPipeline::getInstance()->glDisableClientState(GLES20FixedPipeline::ClientState::CS_GL_VERTEX_ARRAY);
     }
     if (!this->stroke.empty())
     {
@@ -209,100 +191,12 @@ TAKErr GLBatchPolygon3::draw(const GLGlobeBase &view, const int render_pass, con
     return code;
 }
 
-TAKErr GLBatchPolygon3::drawFillTriangulate(const GLGlobeBase &view, const float *v, const int size) NOTHROWS
-{
-    GLES20FixedPipeline::getInstance()->glEnableClientState(GLES20FixedPipeline::ClientState::CS_GL_VERTEX_ARRAY);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    const float *vp = v;
-    GLES20FixedPipeline::getInstance()->glVertexPointer(size, GL_FLOAT, 0, vp);
-
-    GLES20FixedPipeline::getInstance()->glColor4f(this->fillColorR, this->fillColorG, this->fillColorB, this->fillColorA);
-
-    const uint16_t *ip = this->indices.get();
-    GLES20FixedPipeline::getInstance()->glDrawElements(GL_TRIANGLES, static_cast<int>(this->numIndices), GL_UNSIGNED_SHORT, ip);
-
-    glDisable(GL_BLEND);
-    GLES20FixedPipeline::getInstance()->glDisableClientState(GLES20FixedPipeline::ClientState::CS_GL_VERTEX_ARRAY);
-
-    return TE_Ok;
-}
-
-TAKErr GLBatchPolygon3::drawFillConvex(const GLGlobeBase &view, const float *v, const int size) NOTHROWS
-{
-    GLES20FixedPipeline::getInstance()->glEnableClientState(GLES20FixedPipeline::ClientState::CS_GL_VERTEX_ARRAY);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    const float *vp = v;
-    GLES20FixedPipeline::getInstance()->glVertexPointer(size, GL_FLOAT, 0, vp);
-
-    GLES20FixedPipeline::getInstance()->glColor4f(this->fillColorR, this->fillColorG, this->fillColorB, this->fillColorA);
-
-    GLES20FixedPipeline::getInstance()->glDrawArrays(GL_TRIANGLE_FAN, 0, static_cast<int>(this->numPoints));
-
-    glDisable(GL_BLEND);
-    GLES20FixedPipeline::getInstance()->glDisableClientState(GLES20FixedPipeline::ClientState::CS_GL_VERTEX_ARRAY);
-    
-    return TE_Ok;
-}
-
-TAKErr GLBatchPolygon3::drawFillStencil(const GLGlobeBase &view, const float *v, const int size) NOTHROWS
-{
-    GLES20FixedPipeline::getInstance()->glEnableClientState(GLES20FixedPipeline::ClientState::CS_GL_VERTEX_ARRAY);
-
-    const float *vp = v;
-    GLES20FixedPipeline::getInstance()->glVertexPointer(size, GL_FLOAT, 0, vp);
-
-    glClear(GL_STENCIL_BUFFER_BIT);
-    glStencilMask(0xFFFFFFFF);
-    glStencilFunc(GL_ALWAYS, 0x1, 0xFFFF);
-    glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
-    glEnable(GL_STENCIL_TEST);
-
-    glColorMask(false, false, false, false);
-    GLES20FixedPipeline::getInstance()->glDrawArrays(GL_TRIANGLE_FAN, 0, static_cast<int>(this->numPoints));
-    glColorMask(true, true, true, true);
-
-    glStencilMask(0xFFFFFFFF);
-    glStencilFunc(GL_EQUAL, 0x1, 0x1);
-    glStencilOp(GL_KEEP, GL_KEEP, GL_ZERO);
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    GLES20FixedPipeline::getInstance()->glColor4f(this->fillColorR, this->fillColorG, this->fillColorB, this->fillColorA);
-    GLES20FixedPipeline::getInstance()->glDrawArrays(GL_TRIANGLE_FAN, 0, static_cast<int>(this->numPoints));
-
-    glDisable(GL_STENCIL_TEST);
-    glDisable(GL_BLEND);
-    GLES20FixedPipeline::getInstance()->glDisableClientState(GLES20FixedPipeline::ClientState::CS_GL_VERTEX_ARRAY);
-
-    return TE_Ok;
-}
-
 TAKErr GLBatchPolygon3::batchImpl(const GLGlobeBase &view, const int render_pass, GLRenderBatch2 &batch, const int vertices_type, const float *v) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    if (this->fillColorA > 0)
+    if (this->fillColorA > 0 && triangles.count)
     {
-        const int size = (vertices_type == GLGeometry::VERTICES_PROJECTED) ? this->projectedVerticesSize : 2;
-        switch (this->polyRenderMode)
-        {
-            case GLTriangulate::INDEXED :
-                code = batch.batch(-1, GL_TRIANGLES, this->numPoints, size, 0, v, 0, nullptr, this->numIndices, this->indices.get(), this->fillColorR, this->fillColorG, this->fillColorB, this->fillColorA);
-                break;
-            case GLTriangulate::TRIANGLE_FAN :
-                code = batch.batch(-1, GL_TRIANGLE_FAN, this->numPoints, size, 0, v, 0, nullptr, this->fillColorR, this->fillColorG, this->fillColorB, this->fillColorA);
-                break;
-            case GLTriangulate::STENCIL :
-                batch.end();
-                this->drawFillStencil(view, v, size);
-                batch.begin();
-                break;
-            default :
-                return TE_IllegalState;
-        }
+        code = batch.batch(-1, GL_TRIANGLES, triangles.count, 3u, 0, triangles.vertices.get(), 0, nullptr, this->fillColorR, this->fillColorG, this->fillColorB, this->fillColorA);
         TE_CHECKRETURN_CODE(code);
     }
 
@@ -313,4 +207,56 @@ TAKErr GLBatchPolygon3::batchImpl(const GLGlobeBase &view, const int render_pass
 
     return TE_Ok;
 }
+TAKErr GLBatchPolygon3::projectVertices(const float** result, const GLGlobeBase& view, const int vertices_type) NOTHROWS
+{
+    TAKErr code(TE_Ok);
+    code = GLBatchLineString3::projectVertices(result, view, vertices_type);
+    TE_CHECKRETURN_CODE(code);
 
+    if (triangles.count) {
+        triangles.vertices.reset(new float[triangles.count * 3u]);
+        const double* trixyz = static_cast<const double*>(triangles.data->data);
+        switch (vertices_type) {
+        case GLGeometry::VERTICES_PIXEL :
+            for (std::size_t i = 0u; i < triangles.count; i++) {
+                TAK::Engine::Core::GeoPoint2 lla(trixyz[1u], trixyz[0u], trixyz[2u], TAK::Engine::Core::HAE);
+                TAK::Engine::Math::Point2<double> xyz;
+                view.renderPass->scene.forward(&xyz, lla);
+                triangles.vertices[(i*3u)] = (float)xyz.x;
+                triangles.vertices[(i*3u)+1u] = (float)xyz.y;
+                triangles.vertices[(i*3u)+2u] = (float)xyz.z;
+                trixyz += 3u;
+            }
+                break;
+        case GLGeometry::VERTICES_PROJECTED :
+            for (std::size_t i = 0u; i < triangles.count; i++) {
+                TAK::Engine::Core::GeoPoint2 lla(trixyz[1u], trixyz[0u], trixyz[2u], TAK::Engine::Core::HAE);
+                if (isnan(lla.altitude) || this->altitudeMode == TEAM_ClampToGround) {
+                    lla.altitude = 0.0;
+                } else if (lla.altitude > 0) {
+                    if (this->altitudeMode == TEAM_Relative) {
+                        // RWI - Seems like we should be adding the terrain elevation here, but doing so causes the lines to be elevated
+                        // far above the ground when they shouldn't be
+                        double terrain;
+                        view.getTerrainMeshElevation(&terrain, lla.latitude, lla.longitude);
+                        lla.altitude += terrain;
+                    }
+                    lla.altitude *= view.elevationScaleFactor;
+                }
+                TAK::Engine::Math::Point2<double> xyz;
+                view.renderPass->scene.projection->forward(&xyz, lla);
+                triangles.vertices[(i*3u)] = (float)xyz.x;
+                triangles.vertices[(i*3u)+1u] = (float)xyz.y;
+                triangles.vertices[(i*3u)+2u] = (float)xyz.z;
+                trixyz += 3u;
+            }
+                break;
+            default :
+            return TE_InvalidArg;
+        }
+    } else {
+        triangles.vertices.reset();
+    }
+
+    return code;
+}

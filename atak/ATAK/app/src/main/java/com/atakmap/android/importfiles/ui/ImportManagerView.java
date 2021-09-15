@@ -11,16 +11,12 @@ import android.content.Intent;
 import com.atakmap.android.data.URIContentManager;
 import com.atakmap.android.data.URIContentProvider;
 import com.atakmap.android.data.URIHelper;
+import com.atakmap.android.gui.AlertDialogHelper;
 import com.atakmap.android.gui.TileButtonDialog;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import android.content.SharedPreferences;
-import android.graphics.Point;
 import android.os.Bundle;
-import android.os.Environment;
 import android.preference.PreferenceManager;
-import android.view.Display;
-import android.view.Window;
-import android.view.WindowManager;
 import android.widget.Toast;
 
 import com.atakmap.android.importfiles.resource.RemoteResource;
@@ -59,7 +55,6 @@ public class ImportManagerView extends BroadcastReceiver implements
 
     private final MapView _mapView;
     private final Context _context;
-    private Serializer _serializer;
     private SharedPreferences defaultPrefs;
 
     public ImportManagerView(MapView mapView) {
@@ -75,7 +70,6 @@ public class ImportManagerView extends BroadcastReceiver implements
     }
 
     public void dispose() {
-        _serializer = null;
         defaultPrefs = null;
         if (_mapView != null)
             AtakBroadcast.getInstance().unregisterReceiver(
@@ -209,10 +203,6 @@ public class ImportManagerView extends BroadcastReceiver implements
         }
     }
 
-    SharedPreferences getPrefs() {
-        return defaultPrefs;
-    }
-
     private void importLocalFile() {
         final ImportManagerFileBrowser importView = ImportManagerFileBrowser
                 .inflate(_mapView);
@@ -264,28 +254,9 @@ public class ImportManagerView extends BroadcastReceiver implements
         // that the user provides to the alert dialog.
         importView.setAlertDialog(alert);
 
-        // Find the current width of the window, we will use this in a minute to determine how large
-        // to make the dialog.
-        WindowManager wm = (WindowManager) _mapView.getContext()
-                .getSystemService(Context.WINDOW_SERVICE);
-        Point p = new Point();
-        if (wm != null) {
-            Display display = wm.getDefaultDisplay();
-            display.getSize(p);
-        }
-
         // Show the dialog
         alert.show();
 
-        // Copy over the attributes from the displayed window and then set the width
-        // to be 70% of the total window width
-        Window w = alert.getWindow();
-        if (w != null) {
-            WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
-            lp.copyFrom(w.getAttributes());
-            lp.width = Math.min((int) (p.x * .90), 2160);
-            lp.height = WindowManager.LayoutParams.MATCH_PARENT;
-            w.setAttributes(lp);
-        }
+        AlertDialogHelper.adjustWidth(alert, 0.90d);
     }
 }

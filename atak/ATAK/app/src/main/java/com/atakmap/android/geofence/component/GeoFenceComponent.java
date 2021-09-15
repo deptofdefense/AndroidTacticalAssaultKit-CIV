@@ -26,6 +26,8 @@ import com.atakmap.android.maps.MapView;
 
 import com.atakmap.android.geofence.data.ShapeUtils;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
+import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.R;
 
@@ -200,7 +202,7 @@ public class GeoFenceComponent extends AbstractMapComponent {
             String message = String
                     .format(_mapView.getContext().getString(
                             R.string.geofence_received_shape),
-                            ShapeUtils.getShapeName(item));
+                            ATAKUtilities.getDisplayName(ATAKUtilities.findAssocShape(item)));
             NotificationUtil.getInstance().postNotification(
                     R.drawable.ic_menu_geofence, NotificationUtil.WHITE,
                     _mapView.getContext()

@@ -188,10 +188,9 @@ as these certain components are created as "plugins".
 Code Structure
 ====
 
-ATAK is comprised of 3 Android projects.
+ATAK is comprised of 2 Android projects.
 
-      ATAKMapEngine    
-      MapCoreInterfaces
+      ATAKMapEngine
       ATAK
 
 

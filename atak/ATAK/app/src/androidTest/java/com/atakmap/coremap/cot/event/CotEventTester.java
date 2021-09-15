@@ -55,6 +55,16 @@ public class CotEventTester extends ATAKInstrumentedTest {
         assertEquals("904a7ff3-fe24-4809-86fd-0d486444a809", ce.getUID());
     }
 
+    @Test
+    public void valid2() {
+        CotEvent ce = CotEvent.parse(getValid3());
+        CotDetail cd = ce.getDetail();
+        CotDetail testDetail = cd.getChild(0);
+        assertEquals("test", testDetail.getElementName());
+        assertEquals("1", testDetail.getAttribute("a"));
+        assertEquals("extra", testDetail.getInnerText());
+    }
+
     private String getInvalid1() {
         return "invalid";
     }
@@ -102,6 +112,18 @@ public class CotEventTester extends ATAKInstrumentedTest {
                 "stale=\"2014-10-30T02:40:00.677Z\"><point ce=\"9999999.0\" le=\"9999999.0\"\n"
                 +
                 "hae=\"9999999.0\" lat=\"41.11903\" lon=\"-75.42835\"/></event>";
+
+    }
+
+    private String getValid3() {
+        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<event version=\"2.0\" uid=\"904a7ff3-fe24-4809-86fd-0d486444a809\" type=\"u-d-p\"\n"
+                +
+                "how=\"h-e\" time=\"2014-10-29T02:40:00.677Z\" start=\"2014-10-29T02:40:00.677Z\"\n"
+                +
+                "stale=\"2014-10-30T02:40:00.677Z\"><point ce=\"9999999.0\" le=\"9999999.0\"\n"
+                +
+                "hae=\"9999999.0\" lat=\"41.11903\" lon=\"-75.42835\"/><detail><test a=\"1\">extra</test></event>";
 
     }
 

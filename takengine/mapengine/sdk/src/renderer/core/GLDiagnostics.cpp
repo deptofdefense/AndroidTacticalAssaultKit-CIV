@@ -3,6 +3,7 @@
 //
 
 #include <chrono>
+#include <algorithm>
 
 #include "renderer/core/GLDiagnostics.h"
 

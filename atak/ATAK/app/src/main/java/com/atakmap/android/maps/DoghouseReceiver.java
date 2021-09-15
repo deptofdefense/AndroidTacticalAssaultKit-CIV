@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.preference.PreferenceManager;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -17,14 +16,8 @@ import com.atakmap.android.overlay.DefaultMapGroupOverlay;
 import com.atakmap.android.routes.Route;
 import com.atakmap.android.routes.RouteMapReceiver;
 import com.atakmap.annotations.DeprecatedApi;
-import com.atakmap.util.Disposable;
 
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 public class DoghouseReceiver extends BroadcastReceiver implements
         MapItem.OnVisibleChangedListener,
@@ -95,6 +88,10 @@ public class DoghouseReceiver extends BroadcastReceiver implements
                 MapEvent.ITEM_ADDED, this);
         _mapView.getMapEventDispatcher().addMapEventListener(
                 MapEvent.ITEM_REMOVED, this);
+        _mapView.getMapEventDispatcher()
+                .removeMapEventListener(MapEvent.ITEM_REFRESH, this);
+        _mapView.getMapEventDispatcher()
+                .addMapEventListener(MapEvent.ITEM_PERSIST, this);
 
         // ensure default data are visible
         SharedPreferences prefs = PreferenceManager
@@ -118,6 +115,10 @@ public class DoghouseReceiver extends BroadcastReceiver implements
                 MapEvent.ITEM_ADDED, this);
         _mapView.getMapEventDispatcher().removeMapEventListener(
                 MapEvent.ITEM_REMOVED, this);
+        _mapView.getMapEventDispatcher()
+                .removeMapEventListener(MapEvent.ITEM_REFRESH, this);
+        _mapView.getMapEventDispatcher()
+                .removeMapEventListener(MapEvent.ITEM_PERSIST, this);
         PreferenceManager.getDefaultSharedPreferences(_mapView.getContext())
                 .unregisterOnSharedPreferenceChangeListener(this);
         AtakBroadcast.getInstance().unregisterReceiver(this);
@@ -184,9 +185,18 @@ public class DoghouseReceiver extends BroadcastReceiver implements
             route.removeOnVisibleChangedListener(this);
             route.removeOnStrokeColorChangedListener(this);
             route.removeOnRouteMethodChangedListener(this);
-            // TODO: remove commented out line when method is removed
-            //            route.removeOnRoutePointsChangedListener(this);
+            route.removeOnRoutePointsChangedListener(this);
             route.removeOnPointsChangedListener(this);
+        } else if (MapEvent.ITEM_REFRESH.equals(event.getType())) {
+            if (route.getRouteMethod() == Route.RouteMethod.Flying
+                    && route.getMetaBoolean(META_SHOW_DOGHOUSES, true)) {
+                _viewModel.updateDoghouses(route);
+            }
+        } else if (MapEvent.ITEM_PERSIST.equals(event.getType())) {
+            if (route.getRouteMethod() == Route.RouteMethod.Flying
+                    && route.getMetaBoolean(META_SHOW_DOGHOUSES, true)) {
+                _viewModel.updateDoghouses(route);
+            }
         }
     }
 

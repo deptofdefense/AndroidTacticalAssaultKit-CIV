@@ -200,7 +200,7 @@ public class LassoSelectionDialog implements DialogInterface.OnDismissListener {
                 shapes.add(e);
         }
 
-        ret.put(_context.getString(R.string.civ_s2525B), markers);
+        ret.put(_context.getString(R.string.civ_s2525C), markers);
         ret.put(_context.getString(R.string.vehicles), vehicles);
         ret.put(_context.getString(R.string.shapes), shapes);
 

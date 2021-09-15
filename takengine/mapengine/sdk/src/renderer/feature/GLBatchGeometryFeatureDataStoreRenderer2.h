@@ -35,24 +35,24 @@ namespace TAK {
                     GLBatchGeometryFeatureDataStoreRenderer2(TAK::Engine::Core::RenderContext &surface, TAK::Engine::Feature::FeatureDataStore2 &subject, const GLBatchGeometryRenderer3::CachePolicy &cachingPolicy) NOTHROWS;
                     GLBatchGeometryFeatureDataStoreRenderer2(TAK::Engine::Core::RenderContext &surface, TAK::Engine::Feature::FeatureDataStore2 &subject, const GLBatchGeometryRenderer3::CachePolicy &cachingPolicy, const GLBatchGeometryFeatureDataStoreRendererOptions2 &opts) NOTHROWS;
                 public: // GLAsynchronousMapRenderable
-                    virtual void draw(const TAK::Engine::Renderer::Core::GLMapView2 &view, const int renderPass) NOTHROWS;
-                    virtual int getRenderPass() NOTHROWS;
-                    virtual void start() NOTHROWS;
-                    virtual void stop() NOTHROWS;
+                    void draw(const TAK::Engine::Renderer::Core::GLGlobeBase &view, const int renderPass) NOTHROWS override;
+                    int getRenderPass() NOTHROWS override;
+                    void start() NOTHROWS override;
+                    void stop() NOTHROWS override;
                 private :
-                    virtual Util::TAKErr getRenderables(Port::Collection<TAK::Engine::Renderer::Core::GLMapRenderable2 *>::IteratorPtr &iter) NOTHROWS;
+                    Util::TAKErr getRenderables(Port::Collection<TAK::Engine::Renderer::Core::GLMapRenderable2 *>::IteratorPtr &iter) NOTHROWS override;
                 protected:
-                    virtual void initImpl(const TAK::Engine::Renderer::Core::GLMapView2 &view) NOTHROWS;
-                    virtual Util::TAKErr releaseImpl() NOTHROWS;
-                    virtual Util::TAKErr createQueryContext(QueryContextPtr &value) NOTHROWS;
-                    virtual Util::TAKErr resetQueryContext(QueryContext &pendingData) NOTHROWS;
-                    virtual Util::TAKErr updateRenderableLists(QueryContext &pendingData) NOTHROWS;
-                    virtual Util::TAKErr getBackgroundThreadName(Port::String &value) NOTHROWS;
-                    virtual Util::TAKErr query(QueryContext &result, const TAK::Engine::Renderer::Core::GLMapView2::State &state) NOTHROWS;
+                    void initImpl(const GLGlobeBase &view) NOTHROWS override;
+                    Util::TAKErr releaseImpl() NOTHROWS override;
+                    Util::TAKErr createQueryContext(QueryContextPtr &value) NOTHROWS override;
+                    Util::TAKErr resetQueryContext(QueryContext &pendingData) NOTHROWS override;
+                    Util::TAKErr updateRenderableLists(QueryContext &pendingData) NOTHROWS override;
+                    Util::TAKErr getBackgroundThreadName(Port::String &value) NOTHROWS override;
+                    Util::TAKErr query(QueryContext &result, const TAK::Engine::Renderer::Core::GLMapView2::State &state) NOTHROWS override;
                 private:
                     Util::TAKErr queryImpl(QueryContext &result, const TAK::Engine::Renderer::Core::GLMapView2::State &state) NOTHROWS;
                 public: // FeatureDataStore2.OnDataStoreContentChangedListener
-                    virtual void onDataStoreContentChanged(TAK::Engine::Feature::FeatureDataStore2 &data_store) NOTHROWS;
+                    void onDataStoreContentChanged(TAK::Engine::Feature::FeatureDataStore2 &data_store) NOTHROWS override;
 
                     /**************************************************************************/
                     // Hit Test Service

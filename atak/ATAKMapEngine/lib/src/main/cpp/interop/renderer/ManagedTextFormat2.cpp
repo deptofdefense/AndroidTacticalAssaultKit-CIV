@@ -45,7 +45,18 @@ namespace {
         jmethodID init;
     } Canvas_class;
 
+    struct {
+        jclass id;
+        jmethodID createTextFormat;
+    } TextFormatFactory_class;
+
+    struct {
+        jclass id;
+        jmethodID init;
+    } GLLabelManager_TextFormatParams_class;
+
     bool ManagedTextFormat2_init(JNIEnv &env) NOTHROWS;
+    bool ManagedTextFormatFactory_init(JNIEnv &env) NOTHROWS;
 }
 
 ManagedTextFormat2::ManagedTextFormat2(JNIEnv &env_, jobject mtextformat_, jobject mglyphrenderer_) NOTHROWS :
@@ -181,6 +192,47 @@ TAKErr ManagedTextFormat2::loadGlyph(TAK::Engine::Renderer::BitmapPtr &value, co
     return TE_Ok;
 }
 
+//
+// ManagedTextFormatFactory
+//
+
+ManagedTextFormatFactory::ManagedTextFormatFactory(JNIEnv &env, jobject mfactory) NOTHROWS
+    : mimpl(env.NewGlobalRef(mfactory))
+{
+    static bool cinit = ManagedTextFormatFactory_init(env);
+}
+
+ManagedTextFormatFactory::~ManagedTextFormatFactory() NOTHROWS
+{
+    if(mimpl) {
+        LocalJNIEnv env;
+        env->DeleteGlobalRef(mimpl);
+        mimpl = NULL;
+    }
+}
+
+TAK::Engine::Util::TAKErr ManagedTextFormatFactory::createTextFormat(TAK::Engine::Renderer::TextFormat2Ptr& value, const TAK::Engine::Renderer::TextFormatParams& params) NOTHROWS
+{
+    LocalJNIEnv env;
+
+    Java::JNILocalRef mtext(*env, env->NewStringUTF(params.fontName));
+    if(env->ExceptionCheck()) {
+        env->ExceptionClear();
+        return TE_Err;
+    }
+
+    // call createTextFormat
+    Java::JNILocalRef mtextformat(*env, env->CallObjectMethod(mimpl, TextFormatFactory_class.createTextFormat, params.bold, params.italic,
+                                                              (int)params.size, params.underline, params.strikethrough));
+    if(env->ExceptionCheck()) {
+        env->ExceptionClear();
+        return TE_Err;
+    }
+
+    value = TextFormat2Ptr(new ManagedTextFormat2(*env, mtextformat), Memory_deleter_const<TextFormat2, ManagedTextFormat2>);
+    return TE_Ok;
+}
+
 namespace
 {
     bool ManagedTextFormat2_init(JNIEnv &env) NOTHROWS
@@ -208,6 +260,16 @@ namespace
         Canvas_class.id = ATAKMapEngineJNI_findClass(&env, "android/graphics/Canvas");
         Canvas_class.init = env.GetMethodID(Canvas_class.id, "<init>", "(Landroid/graphics/Bitmap;)V");
 
+
         return true;
+    }
+
+    bool ManagedTextFormatFactory_init(JNIEnv &env) NOTHROWS
+    {
+        TextFormatFactory_class.id = ATAKMapEngineJNI_findClass(&env, "com/atakmap/opengl/TextFormatFactory");
+        TextFormatFactory_class.createTextFormat = env.GetMethodID(TextFormatFactory_class.id,
+                "createTextFormat",
+                "(ZZIZZ)Lcom/atakmap/android/maps/MapTextFormat;");
+        return TextFormatFactory_class.id != 0 && TextFormatFactory_class.createTextFormat != 0;
     }
 }

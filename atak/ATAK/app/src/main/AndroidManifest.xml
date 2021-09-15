@@ -54,6 +54,9 @@
          of products from the map -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
+    <!-- Prerequisite of publishing to the playstore starting 05/05/2021 -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
+
     <!-- Any app that declares the WRITE_EXTERNAL_STORAGE permission is implicitly 
          granted this permission.  This permission is enforced starting in API level 
          19. Before API level 19, this permission is not enforced and all apps still 
@@ -293,37 +296,39 @@
         </activity>
         <activity
             android:name="com.atakmap.android.video.legacy.Gv2FMobilePlayer"
+            android:configChanges="orientation"
             android:screenOrientation="behind" />
         <activity
             android:name="com.atakmap.comms.app.CotManagerTabActivity"
-            android:screenOrientation="behind" >
-        </activity>
+            android:configChanges="orientation"
+            android:screenOrientation="behind" />
         <activity
             android:name="com.atakmap.comms.app.CotInputsListActivity"
-            android:configChanges="orientation"  >
-        </activity>
+            android:configChanges="orientation"
+            android:screenOrientation="behind" />
         <activity
             android:name="com.atakmap.comms.app.CotObjectsListActivity"
-            android:screenOrientation="behind" >
-        </activity>
+            android:configChanges="orientation"
+            android:screenOrientation="behind" />
         <activity
             android:name="com.atakmap.comms.app.AddNetInfoActivity"
-            android:configChanges="orientation" >
-        </activity>
+            android:configChanges="orientation"
+            android:screenOrientation="behind" />
         <activity
             android:name="com.atakmap.comms.app.CotStreamListActivity"
-            android:configChanges="orientation"  >
-        </activity>
+            android:configChanges="orientation"
+            android:screenOrientation="behind" />
         <activity
             android:name="com.atakmap.android.cot.TadilJListActivity"
-            android:configChanges="orientation"  >
-        </activity>
+            android:configChanges="orientation"
+            android:screenOrientation="behind" />
         <activity
             android:name="com.atakmap.comms.app.CotOutputsListActivity"
-            android:configChanges="orientation"  >
-        </activity>
+            android:configChanges="orientation"
+            android:screenOrientation="behind" />
         <activity
             android:name="com.atakmap.android.drawing.KmlImportListActivity"
+            android:configChanges="orientation"
             android:screenOrientation="behind" />
         <activity
             android:name="com.atakmap.app.SettingsActivity"
@@ -357,19 +362,25 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.atakmap.android.update.AppMgmtActivity" />
         </activity>
-        <activity android:name="com.atakmap.android.tools.AllToolsActivity">
+        <activity android:name="com.atakmap.android.tools.AllToolsActivity"
+            android:configChanges="orientation"
+            android:screenOrientation="behind" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".ATAKActivity" />
         </activity>
-        <activity android:name="com.atakmap.android.tools.AllToolsConfigMenuActivity">
+        <activity android:name="com.atakmap.android.tools.AllToolsConfigMenuActivity"
+            android:configChanges="orientation"
+            android:screenOrientation="behind" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.atakmap.android.tools.AllToolsActivity" />
         </activity>
 
         <activity android:name="com.atakmap.android.update.AppMgmtActivity"
-                  android:uiOptions="splitActionBarWhenNarrow">
+            android:uiOptions="splitActionBarWhenNarrow"
+            android:configChanges="orientation"
+            android:screenOrientation="behind" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".ATAKActivity" />

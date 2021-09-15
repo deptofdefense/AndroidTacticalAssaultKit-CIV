@@ -14,18 +14,15 @@ import com.atakmap.coremap.log.Log;
 import com.atakmap.spatial.file.KmlFileSpatialDb;
 import com.atakmap.spatial.kml.FeatureHandler;
 import com.atakmap.spatial.kml.KMLUtil;
-import com.atakmap.util.zip.IoUtils;
 import com.ekito.simpleKML.model.Feature;
 import com.ekito.simpleKML.model.Folder;
 import com.ekito.simpleKML.model.Placemark;
 import com.ekito.simpleKML.model.Style;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;

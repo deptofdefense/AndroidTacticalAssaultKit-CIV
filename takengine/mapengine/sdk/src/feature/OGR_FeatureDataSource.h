@@ -23,15 +23,16 @@
 #ifndef ATAKMAP_FEATURE_OGR_FEATURE_DATA_SOURCE_H_INCLUDED
 #define ATAKMAP_FEATURE_OGR_FEATURE_DATA_SOURCE_H_INCLUDED
 
+#include <ogr_core.h>
+
 #include <cstddef>
 
 #include "feature/FeatureDataSource.h"
 #include "port/Platform.h"
 
-#include "ogr_core.h"
-
 namespace atakmap {
     namespace feature {
+    
         class ENGINE_API OGR_FeatureDataSource : public FeatureDataSource
         {
         public:
@@ -55,13 +56,16 @@ namespace atakmap {
 
             unsigned int parseVersion() const NOTHROWS override
             { return 18; }
-        public :
-			static std::size_t ComputeAreaThreshold(unsigned int DPI);
+
+            static std::size_t ComputeAreaThreshold(unsigned int DPI);
             static std::size_t ComputeLevelOfDetail(std::size_t threshold, OGREnvelope env);
+
         private:
             std::size_t areaThreshold;
         };
+    
     }
 }
+
 
 #endif  // #ifndef ATAKMAP_FEATURE_OGR_FEATURE_DATA_SOURCE_H_INCLUDED

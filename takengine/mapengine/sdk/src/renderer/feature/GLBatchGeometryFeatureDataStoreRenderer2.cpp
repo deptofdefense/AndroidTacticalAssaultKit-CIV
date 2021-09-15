@@ -7,6 +7,7 @@
 #include "port/STLVectorAdapter.h"
 #include "port/StringBuilder.h"
 #include "raster/osm/OSMUtils.h"
+#include "renderer/core/GLGlobeBase.h"
 #include "renderer/feature/GLBatchGeometryCollection3.h"
 #include "renderer/feature/GLBatchLineString3.h"
 #include "renderer/feature/GLBatchMultiLineString3.h"
@@ -118,14 +119,14 @@ GLBatchGeometryFeatureDataStoreRenderer2::GLBatchGeometryFeatureDataStoreRendere
 /**************************************************************************/
 // GL Asynchronous Map Renderable
 
-void GLBatchGeometryFeatureDataStoreRenderer2::draw(const GLMapView2 &view, const int renderPass) NOTHROWS
+void GLBatchGeometryFeatureDataStoreRenderer2::draw(const GLGlobeBase &view, const int renderPass) NOTHROWS
 {
-    if (view.drawHorizon && view.drawMapResolution >= 2538.9415423720125)
+    if (view.renderPass->drawHorizon && view.renderPass->drawMapResolution >= 2538.9415423720125)
         return;
 
     // record the height during the render pump
-    if(renderPass&GLMapView2::Sprites)
-        renderHeightPump = (float)(view.top - view.bottom);
+    if (renderPass & GLMapView2::Sprites) 
+        renderHeightPump = (float)(view.renderPass->top - view.renderPass->bottom);
 
     // XXX - layer visibility
 
@@ -145,8 +146,7 @@ void GLBatchGeometryFeatureDataStoreRenderer2::stop() NOTHROWS
 {
 }
 
-void GLBatchGeometryFeatureDataStoreRenderer2::initImpl(const GLMapView2 &view) NOTHROWS
-{
+void GLBatchGeometryFeatureDataStoreRenderer2::initImpl(const GLGlobeBase &view) NOTHROWS {
     this->dataStore.addOnDataStoreContentChangedListener(this);
 }
 

@@ -25,14 +25,19 @@ public class MapControlsOverlay extends AbstractMapOverlay2 {
     private final MapView _mapView;
     private final Context _context;
     private final ListModel _listModel;
-    private final ImageryTransparencyListItem _imageryTransparency;
+    private final List<HierarchyListItem> _items = new ArrayList<>();
 
     public MapControlsOverlay(MapView mapView) {
         _mapView = mapView;
         _context = mapView.getContext();
 
         _listModel = new ListModel();
-        _imageryTransparency = new ImageryTransparencyListItem(_mapView);
+
+        // Items list
+        _items.add(new ImageryTransparencyListItem(_mapView));
+        _items.add(new LollipopListItem(_mapView));
+        _items.add(new LegacyAltitudeRenderingListItem(_mapView));
+
         _mapView.getMapOverlayManager().addOverlay(this);
     }
 
@@ -108,8 +113,10 @@ public class MapControlsOverlay extends AbstractMapOverlay2 {
         protected void refreshImpl() {
             List<HierarchyListItem> filtered = new ArrayList<>();
 
-            if (filter.accept(_imageryTransparency))
-                filtered.add(_imageryTransparency);
+            for (HierarchyListItem item : _items) {
+                if (filter.accept(item))
+                    filtered.add(item);
+            }
 
             sortItems(filtered);
             updateChildren(filtered);

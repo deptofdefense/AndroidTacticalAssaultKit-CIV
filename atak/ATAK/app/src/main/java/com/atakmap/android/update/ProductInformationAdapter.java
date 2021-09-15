@@ -1,7 +1,6 @@
 
 package com.atakmap.android.update;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -22,7 +21,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.atakmap.android.update.sorters.ProductInformationComparator;
-import com.atakmap.app.preferences.ToolsPreferenceFragment;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.android.math.MathUtils;
 import com.atakmap.coremap.locale.LocaleUtil;

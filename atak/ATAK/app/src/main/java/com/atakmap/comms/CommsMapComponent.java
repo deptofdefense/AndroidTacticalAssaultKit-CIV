@@ -3,7 +3,6 @@ package com.atakmap.comms;
 
 import java.io.FileInputStream;
 import java.io.OutputStream;
-import java.io.OutputStream;
 import java.net.*;
 import java.security.cert.Certificate;
 import java.util.*;

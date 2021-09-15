@@ -97,14 +97,6 @@ namespace TAK {
                 public:
                     ~GLBatch() NOTHROWS;
 
-                    enum {
-                        /**
-                         * When set as a feature_bit on call to execute, any shader switches will not be applied. This is handy for depth sampling
-                         * or debug drawing.
-                         */
-                        SHADER_OVERRIDE_BIT = 1,
-                    };
-
                     /**
                      * Execute the batched operations
                      * 
@@ -112,7 +104,25 @@ namespace TAK {
                      * @param forwardTransfor the forward transform applied to the local transforms as the ModelView matrix
                      * @param proj the projectio matrix float[16]
                      */
-                    Util::TAKErr execute(Renderer::RenderState& state, const Math::Matrix2& forwardTransform, const float* proj, uint32_t feature_bits = 0) const NOTHROWS;
+                    Util::TAKErr execute(RenderState& state, const Math::Matrix2& forwardTransform, const float* proj) const NOTHROWS;
+
+                    /**
+                     * Execute a batch with the depth sampler. This will ignore shader changes and streams that are not required
+                     * by the depth sampler.
+                     * 
+                     * @param sampler the depth sampler to use
+                     * @param forwardTransfor the forward transform applied to the local transforms as the ModelView matrix
+                     * @param proj the projectio matrix float[16]
+                     */
+                    Util::TAKErr execute(GLDepthSampler& sampler, const Math::Matrix2& forwardTransform, const float* proj) const NOTHROWS;
+
+                private:
+                    struct ExecuteState_ {
+                        RenderState renderState;
+                        GLDepthSampler *depth_sampler;
+                    };
+
+                    Util::TAKErr executeImpl_(ExecuteState_& state, const Math::Matrix2& forwardTransform, const float* proj) const NOTHROWS;
 
                 private:
                     friend class GLBatchBuilder;
@@ -272,6 +282,15 @@ namespace TAK {
                      * @param buffer_index the buffer index for the buffer containing the indices
                      */
                     Util::TAKErr drawElements(GLenum draw_mode, size_t index_count, size_t buffer_index) NOTHROWS;
+
+                    /**
+                     * Add a draw elements call
+                     *
+                     * @param draw_mode (GL_TRIANGLES, GL_POINTS, etc...)
+                     * @param index_count the number of indices passed to glDrawArrays
+                     * @param buffer_index the buffer index for the buffer containing the indices
+                     */
+                    Util::TAKErr drawElements(GLenum draw_mode, GLenum type, size_t index_count, size_t buffer_index) NOTHROWS;
 
                     /**
                      * Create the GLBatch for the current state

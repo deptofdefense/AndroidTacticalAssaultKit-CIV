@@ -1,5 +1,20 @@
 # Version History
 
+## 4.3.1.0
+
+* Bug Fixes
+  * will avoid leak of local reference in Java/JNI VSI layer's seek implementation
+  * corrected issues with strings found during translation to Japanese
+  * migrated the name of the directory for the icons from the incorrect mil-std-2525b to mil-std-2525c
+  * will resize the text widget if needed when the bloodhound is started
+  * migrated over fix for GlArrow2 so that the association arrow is not render sub-terrain when no altitude/elevation is present
+  * corrected issue with FAH being clipped incorrectly in areas greater than 90 degree longitude
+  * corrected issue with countries using translation for All Chat Room
+* Feature Additions
+  * can turn off enhanced depth perception mode
+  * can modify the styling of features (preliminary capability)
+  * migrated to Label Manager
+
 ## 4.3.0.4
 
 * Fix various typos

@@ -7,6 +7,8 @@
 #include <kml/engine.h>
 #include <kml/dom.h>
 
+
+#include "formats/ogr/OGRUtils.h"
 #include "core/AtakMapView.h"
 
 #include "util/Distance.h"
@@ -597,11 +599,12 @@ namespace
             //
             // Don't calculate level of detail for no features or just a single point.
             //
+            using namespace TAK::Engine::Formats::OGR;
             size_t levelOfDetail = 0;
             if (featureCount > 1 || pointFeatureCount > 1)
             {
-                const size_t areaThreshold = atakmap::feature::OGR_FeatureDataSource::ComputeAreaThreshold(static_cast<unsigned int>(std::ceil(atakmap::core::AtakMapView::DENSITY)));
-                levelOfDetail = atakmap::feature::OGR_FeatureDataSource::ComputeLevelOfDetail(areaThreshold, datasetMBR);
+                const size_t areaThreshold = OGRUtils_ComputeAreaThreshold(static_cast<unsigned int>(std::ceil(atakmap::core::AtakMapView::DENSITY)));
+                levelOfDetail = OGRUtils_ComputeLevelOfDetail(areaThreshold, datasetMBR);
                 if (featureCount > 5000)        // Maximum feature density is 5000.
                 {
                     //

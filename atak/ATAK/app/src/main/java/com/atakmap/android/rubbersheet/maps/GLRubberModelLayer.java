@@ -15,14 +15,10 @@ import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.MapSceneModel;
-import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.model.Model;
 import com.atakmap.map.layer.opengl.GLAsynchronousLayer2;
 import com.atakmap.map.opengl.GLMapRenderable2;
 import com.atakmap.map.opengl.GLMapView;
-import com.atakmap.map.projection.EquirectangularMapProjection;
-import com.atakmap.math.Matrix;
-import com.atakmap.spatial.GeometryTransformer;
 
 import java.util.ArrayList;
 import java.util.Collection;

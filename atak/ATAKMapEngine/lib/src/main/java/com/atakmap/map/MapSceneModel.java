@@ -12,8 +12,6 @@ import com.atakmap.interop.Pointer;
 import com.atakmap.map.projection.MapProjectionDisplayModel;
 import com.atakmap.map.projection.Projection;
 import com.atakmap.map.projection.ProjectionFactory;
-import com.atakmap.math.AABB;
-import com.atakmap.math.Frustum;
 import com.atakmap.math.GeometryModel;
 import com.atakmap.math.PointD;
 import com.atakmap.math.Matrix;

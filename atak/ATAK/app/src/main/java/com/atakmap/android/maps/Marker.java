@@ -14,6 +14,7 @@ import android.graphics.Typeface;
 import android.os.Bundle;
 import android.util.Pair;
 
+import com.atakmap.android.icons.Icon2525cIconAdapter;
 import com.atakmap.android.util.AttachmentManager;
 import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.conversions.CoordinateFormat;
@@ -121,6 +122,9 @@ public class Marker extends PointMapItem implements Exportable, Capturable {
     private final ConcurrentLinkedQueue<OnTrackChangedListener> _onTrackChanged = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<OnStyleChangedListener> _onStyleChanged = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<OnLabelTextSizeChangedListener> _onLabelSizeChanged = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<OnLabelPriorityChangedListener> _onLabelPriorityChanged = new ConcurrentLinkedQueue<>();
+
+    public enum LabelPriority { Low, Standard, High }
 
     private int _style = 0;
     private Icon _icon;
@@ -134,6 +138,9 @@ public class Marker extends PointMapItem implements Exportable, Capturable {
     private int _labelTextSize = (MapView.getDefaultTextFormat() == null) ? 14
             : MapView.getDefaultTextFormat().getFontSize();
     private Typeface _labelTypeface = Typeface.DEFAULT;
+
+    private LabelPriority _labelPriority = LabelPriority.Standard;
+    private LabelPriority _userSetLabelPriority = null;
 
     // Icon visibility states - similar to View visibility
     public static final int ICON_VISIBLE = 0;
@@ -223,12 +230,20 @@ public class Marker extends PointMapItem implements Exportable, Capturable {
 
     /* Listener interfaces for marker events */
 
+    public interface OnLabelPriorityChanged {
+        void onLabelPriorityChanged(Marker marker);
+    }
+
     public interface OnIconChangedListener {
         void onIconChanged(Marker marker);
     }
 
     public interface OnTitleChangedListener {
         void onTitleChanged(Marker marker);
+    }
+
+    public interface OnLabelPriorityChangedListener {
+        void onLabelPriorityChanged(Marker marker);
     }
 
     public interface OnLabelTextSizeChangedListener {
@@ -348,25 +363,55 @@ public class Marker extends PointMapItem implements Exportable, Capturable {
 
         double height = getHeight();
         AltitudeMode altMode = getAltitudeMode();
+        boolean nadirClamp = view.getMapTouchController().isNadirClamped();
 
         // XXX - not really ideal to reach down into the renderer, but the hit
         //       test should be totally deferred to the renderer
         double alt = point.getAltitude();
         double localEl = glview
-                    .getElevation(point.getLatitude(), point.getLongitude());
-        if (!point.isAltitudeValid() || altMode == AltitudeMode.ClampToGround)
+                .getElevation(point.getLatitude(), point.getLongitude());
+        if (!point.isAltitudeValid() || altMode == AltitudeMode.ClampToGround
+                || nadirClamp)
             alt = localEl;
         else if (altMode == AltitudeMode.Relative)
             alt += localEl;
-        if (!Double.isNaN(height))
+        if (!nadirClamp && !Double.isNaN(height))
             alt += height;
-        if(alt < localEl)
+        if (alt < localEl)
             alt = localEl;
         return new GeoPoint(
                 point.getLatitude(),
                 point.getLongitude(),
                 (alt + GLMapView.elevationOffset)
                         * view.getElevationExaggerationFactor());
+    }
+
+    /**
+     * Called when any of the following changes: the type, team or summary
+     */
+    private void calculateLabelPriority() {
+        if (_userSetLabelPriority != null)
+            return;
+
+        LabelPriority calculatedPriority = LabelPriority.Standard;
+
+        // User/team markers
+        if (hasMetaValue("team"))
+            calculatedPriority = LabelPriority.High;
+
+        // Hostile markers
+        final String type = getType();
+        if (type != null && type.startsWith("a-h-"))
+            calculatedPriority = LabelPriority.High;
+
+        // Marker with a summary defined
+        if (!FileSystemUtils.isEmpty(_summary))
+            calculatedPriority = LabelPriority.High;
+
+        if (_labelPriority != calculatedPriority) {
+            _labelPriority = calculatedPriority;
+            onLabelPriorityChanged();
+        }
     }
 
     /**
@@ -377,6 +422,7 @@ public class Marker extends PointMapItem implements Exportable, Capturable {
     public void setIcon(Icon icon) {
         if (icon != _icon) {
             _icon = icon;
+            calculateLabelPriority();
             onIconChanged();
         }
     }
@@ -429,16 +475,40 @@ public class Marker extends PointMapItem implements Exportable, Capturable {
      * @param summary - The string
      */
     public void setSummary(String summary) {
-        if (summary == null) {
+        if (summary == null)
             summary = "";
-            onSummaryChanged();
-        }
         if (!FileSystemUtils.isEquals(_summary, summary)) {
             _summary = summary;
             this.setMetaString("summary", _summary);
             updateTextBounds();
+            calculateLabelPriority();
             onSummaryChanged();
         }
+    }
+
+    /**
+     * Set the label priority on a case by case basis given a label priority.
+     * @param priority the label priority, null if a default priority calculation is expected.
+     */
+    public void setLabelPriority(LabelPriority priority) {
+
+        // the user/plugin has set the priority so it should be used above all others.
+        _userSetLabelPriority = priority;
+
+        // User-set label priority has been turned off - fallback to default
+        if (_userSetLabelPriority == null) {
+            calculateLabelPriority();
+            return;
+        }
+
+        if (_labelPriority != priority) {
+            _labelPriority = priority;
+            onLabelPriorityChanged();
+        }
+    }
+
+    public LabelPriority getLabelPriority() {
+        return _labelPriority;
     }
 
     @Override
@@ -448,7 +518,8 @@ public class Marker extends PointMapItem implements Exportable, Capturable {
                 : super.getRemarksKey();
     }
 
-    /**sets the text size to use for the rendering label
+    /**
+     * sets the text size to use for the rendering label
      * convenience method for setting label size meta
      * @param size the int value size to use on the labels for this marker
      * If not set the default MapView format size is used
@@ -708,7 +779,7 @@ public class Marker extends PointMapItem implements Exportable, Capturable {
     }
 
     /**
-     * Add a title property listener
+     * Add a summary changed listener
      *
      * @param listener the listener
      */
@@ -717,7 +788,7 @@ public class Marker extends PointMapItem implements Exportable, Capturable {
     }
 
     /**
-     * Remove a title property listener
+     * Remove a summary changed listener
      *
      * @param listener the listener
      */
@@ -725,6 +796,26 @@ public class Marker extends PointMapItem implements Exportable, Capturable {
             OnSummaryChangedListener listener) {
         _onSummaryChanged.remove(listener);
     }
+
+    /**
+     * Add a summary changed listener
+     *
+     * @param listener the listener
+     */
+    public void addOnLabelPriorityChangedListener(OnLabelPriorityChangedListener listener) {
+        _onLabelPriorityChanged.add(listener);
+    }
+
+    /**
+     * Remove a summary changed listener
+     *
+     * @param listener the listener
+     */
+    public void removeOnLabelPriorityChangedListener(
+            OnLabelPriorityChangedListener listener) {
+        _onLabelPriorityChanged.remove(listener);
+    }
+
 
     /**
      * Add a state property listener
@@ -922,6 +1013,12 @@ public class Marker extends PointMapItem implements Exportable, Capturable {
         }
     }
 
+    protected void onLabelPriorityChanged() {
+        for (OnLabelPriorityChangedListener l : _onLabelPriorityChanged) {
+            l.onLabelPriorityChanged(this);
+        }
+    }
+
     /**
      * Invoked when the summary property changes
      */
@@ -961,7 +1058,7 @@ public class Marker extends PointMapItem implements Exportable, Capturable {
             return Color.WHITE;
 
         if (t.hasMetaValue("team")) {
-            return com.atakmap.android.icons.Icon2525bIconAdapter.teamToColor(t
+            return Icon2525cIconAdapter.teamToColor(t
                     .getMetaString("team", "white"));
         }
 
@@ -1082,7 +1179,8 @@ public class Marker extends PointMapItem implements Exportable, Capturable {
 
             Point centerPoint = new Point();
             centerPoint.setCoordinates(coord);
-            centerPoint.setAltitudeMode(KMLUtil.convertAltitudeMode(getAltitudeMode()));
+            centerPoint.setAltitudeMode(
+                    KMLUtil.convertAltitudeMode(getAltitudeMode()));
 
             List<Geometry> pointGeomtries = new ArrayList<>();
             pointGeomtries.add(centerPoint);
@@ -1193,7 +1291,8 @@ public class Marker extends PointMapItem implements Exportable, Capturable {
 
             Point centerPoint = new Point();
             centerPoint.setCoordinates(coord);
-            centerPoint.setAltitudeMode(KMLUtil.convertAltitudeMode(getAltitudeMode()));
+            centerPoint.setAltitudeMode(
+                    KMLUtil.convertAltitudeMode(getAltitudeMode()));
 
             List<Geometry> geometryList = new ArrayList<>();
             geometryList.add(centerPoint);

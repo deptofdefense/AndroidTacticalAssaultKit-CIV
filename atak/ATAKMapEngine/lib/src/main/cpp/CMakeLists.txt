@@ -37,8 +37,10 @@ set (atakjni_COMMON_SRCS
     jglquadtilenode2.cpp
     jglrenderbatch2.cpp
     jglninepatch.cpp
+    jgllabelmanager.cpp
     jgllayerfactory.cpp
     jgllinebatch.cpp
+    jglrenderglobals.cpp
     jgltext.cpp
     jioproviderfactory.cpp
     jmapprojectiondisplaymodel.cpp
@@ -48,6 +50,7 @@ set (atakjni_COMMON_SRCS
     jmodelbuilder.cpp
     jmodels.cpp
     jmsaccessdatabasefactory.cpp
+    jmvtfeaturedatasource.cpp
     jnativeelevationchunk.cpp
     jnativeelevationsource.cpp
     jnativeelevationsourcecursor.cpp

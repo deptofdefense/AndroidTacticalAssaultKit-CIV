@@ -61,7 +61,8 @@ public abstract class MapActivity extends MetricFragmentActivity {
         URIStreamHandlerFactory.registerHandler("content", defaultHandler);
         URIStreamHandlerFactory.registerHandler("android.resource",
                 defaultHandler);
-        URIStreamHandlerFactory.registerHandler("file", FileSystemUriStreamHandler.INSTANCE);
+        URIStreamHandlerFactory.registerHandler("file",
+                FileSystemUriStreamHandler.INSTANCE);
 
     }
 

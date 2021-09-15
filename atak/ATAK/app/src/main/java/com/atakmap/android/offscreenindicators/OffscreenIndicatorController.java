@@ -10,6 +10,7 @@ import android.graphics.PointF;
 import android.graphics.RectF;
 import android.preference.PreferenceManager;
 
+import com.atakmap.android.icons.Icon2525cIconAdapter;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapEvent;
 import com.atakmap.android.maps.MapEventDispatcher;
@@ -251,7 +252,7 @@ public class OffscreenIndicatorController extends AbstractLayer implements
         int color = 0;
         if (marker.hasMetaValue("team")) {
 
-            color = com.atakmap.android.icons.Icon2525bIconAdapter
+            color = Icon2525cIconAdapter
                     .teamToColor(marker.getMetaString("team", "white"));
 
         } else if (marker.hasMetaValue("offscreen_arccolor")) {

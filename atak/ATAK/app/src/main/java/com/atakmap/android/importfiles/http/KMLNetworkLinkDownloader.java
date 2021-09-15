@@ -274,7 +274,6 @@ public class KMLNetworkLinkDownloader extends NetworkLinkDownloader {
                 //String cookies = conn
                 //        .getHeaderField("Set-Cookie");
 
-
                 // open the new connnection again
                 if (newUrl != null &&
                         (newUrl.startsWith("http://")

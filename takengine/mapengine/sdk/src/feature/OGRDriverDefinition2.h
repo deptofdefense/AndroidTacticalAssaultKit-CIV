@@ -23,6 +23,8 @@ namespace TAK {
             public :
                 virtual const char* getDriverName() const NOTHROWS = 0;
                 virtual atakmap::feature::FeatureDataSource::FeatureDefinition::Encoding getFeatureEncoding() const NOTHROWS = 0;
+                virtual Util::TAKErr setGeometry(std::unique_ptr<atakmap::feature::FeatureDataSource::FeatureDefinition> &featureDefinition,
+                                                 const OGRFeature &, const OGRGeometry &) const NOTHROWS = 0;
                 virtual Util::TAKErr getStyle(Port::String &value, const OGRFeature&, const OGRGeometry&) NOTHROWS = 0;
                 virtual const char* getType() const NOTHROWS = 0;
                 virtual unsigned int parseVersion() const NOTHROWS = 0;

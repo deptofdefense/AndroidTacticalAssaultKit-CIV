@@ -36,13 +36,11 @@ public abstract class Shape extends MapItem implements Capturable {
     private final ConcurrentLinkedQueue<OnPointsChangedListener> _onPointsChanged = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<Polyline.OnBasicLineStyleChangedListener> _onBasicLineStyleChanged = new ConcurrentLinkedQueue<>();
 
-
     private int basicLineStyle = Polyline.BASIC_LINE_STYLE_SOLID;
     private int _style = STYLE_STROKE_MASK;
     private int _strokeColor = Color.BLACK;
     private int _fillColor = Color.WHITE;
     private double _strokeWeight = 1d;
-
 
     /**
      * Basic line styles.

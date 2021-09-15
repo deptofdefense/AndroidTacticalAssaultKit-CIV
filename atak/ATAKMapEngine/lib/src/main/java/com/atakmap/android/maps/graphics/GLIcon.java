@@ -3,7 +3,6 @@ package com.atakmap.android.maps.graphics;
 
 import android.graphics.Color;
 
-import com.atakmap.map.AtakMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.coremap.maps.assets.Icon;

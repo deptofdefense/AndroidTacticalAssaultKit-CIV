@@ -73,7 +73,7 @@ import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.assets.Icon;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.spatial.file.GpxFileSpatialDb;
@@ -516,10 +516,8 @@ public class RouteMapReceiver extends BroadcastReceiver implements
                             double tBearing = ATAKUtilities
                                     .convertFromMagneticToTrue(
                                             waypoint.getPoint(), bearing);
-                            GeoPoint newPoint = DistanceCalculations
-                                    .computeDestinationPoint(
-                                            waypoint.getPoint(),
-                                            tBearing, range);
+                            GeoPoint newPoint = GeoCalculations.pointAtDistance(
+                                    waypoint.getPoint(), tBearing, range);
 
                             final Marker addMarker = Route.createWayPoint(
                                     GeoPointMetaData.wrap(newPoint),

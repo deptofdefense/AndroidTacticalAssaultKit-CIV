@@ -47,7 +47,6 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.spatial.kml.KMLUtil;
-import com.atakmap.util.zip.IoUtils;
 import com.ekito.simpleKML.model.Document;
 import com.ekito.simpleKML.model.Feature;
 import com.ekito.simpleKML.model.Folder;
@@ -64,9 +63,7 @@ import com.ekito.simpleKML.model.StyleSelector;
 import com.ekito.simpleKML.model.TimeStamp;
 import com.ekito.simpleKML.model.Track;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.io.IOException;
 import java.util.ArrayList;

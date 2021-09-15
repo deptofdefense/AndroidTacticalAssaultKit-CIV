@@ -86,14 +86,13 @@ public class CredentialsDialog {
         if (passwordString != null && !passwordString.isEmpty())
             passwordET.setText(passwordString);
 
-
         final CheckBox checkBox = credentialsView
                 .findViewById(R.id.password_checkbox);
         checkBox.setOnCheckedChangeListener(
                 new CompoundButton.OnCheckedChangeListener() {
                     @Override
                     public void onCheckedChanged(CompoundButton compoundButton,
-                                                 boolean isChecked) {
+                            boolean isChecked) {
                         if (isChecked) {
                             passwordET.setTransformationMethod(
                                     HideReturnsTransformationMethod
@@ -105,7 +104,6 @@ public class CredentialsDialog {
                         passwordET.setSelection(passwordET.getText().length());
                     }
                 });
-
 
         credentialsBuilder
                 .setTitle(R.string.enter_credentials)

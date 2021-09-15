@@ -25,7 +25,7 @@ import android.view.View;
 import android.app.Activity;
 import android.content.res.Resources;
 import com.atakmap.android.gui.ColorPicker;
-import com.atakmap.android.icons.Icon2525bIconAdapter;
+import com.atakmap.android.icons.Icon2525cIconAdapter;
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.app.R;
 
@@ -326,7 +326,7 @@ public class SelfMarkerCustomFragment extends AtakPreferenceFragment {
                 if (icon != null) {
                     icon = changeBitmapColor(
                             icon,
-                            Icon2525bIconAdapter.teamToColor(PreferenceManager
+                            Icon2525cIconAdapter.teamToColor(PreferenceManager
                                     .getDefaultSharedPreferences(
                                             activity)
                                     .getString("locationTeam", "Cyan")));

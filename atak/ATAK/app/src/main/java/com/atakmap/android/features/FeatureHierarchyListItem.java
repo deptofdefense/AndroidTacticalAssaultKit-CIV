@@ -4,20 +4,20 @@ package com.atakmap.android.features;
 import android.content.Intent;
 import android.graphics.Color;
 import android.view.View;
+import android.view.ViewGroup;
 
 import com.atakmap.android.coordoverlay.CoordOverlayMapReceiver;
-import com.atakmap.android.hierarchy.HierarchyListItem;
 import com.atakmap.android.hierarchy.action.Action;
 import com.atakmap.android.hierarchy.action.Delete;
 import com.atakmap.android.hierarchy.action.GoTo;
 import com.atakmap.android.hierarchy.action.Visibility;
-import com.atakmap.android.hierarchy.items.AbstractHierarchyListItem;
+import com.atakmap.android.hierarchy.items.AbstractChildlessListItem;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.Location;
-import com.atakmap.android.maps.MapView;
 import com.atakmap.android.menu.MapMenuReceiver;
 import com.atakmap.android.overlay.MapOverlay;
 import com.atakmap.android.user.FocusBroadcastReceiver;
+import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
 
 import com.atakmap.coremap.maps.coords.GeoBounds;
@@ -43,8 +43,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class FeatureHierarchyListItem extends
-        AbstractHierarchyListItem implements GoTo,
-        Visibility, Location, Delete {
+        AbstractChildlessListItem implements GoTo,
+        Visibility, Location, Delete, View.OnClickListener {
 
     private final FeatureDataStore2 spatialDb;
     private final long fid;
@@ -137,80 +137,74 @@ public class FeatureHierarchyListItem extends
 
     }
 
+    // XXX - Checking style is not the best way to get the icon type
+    // i.e. Extruded open polylines may have a fill style, which here returns
+    // the closed shape icon instead of the open polyline icon. If we really
+    // wanted to get fancy we could have a multi-layer drawable icon that
+    // shows both the stroke and fill color, but for now this method is satisfactory.
     public static String iconUriFromStyle(Style style) {
-        if (style != null) {
-            IconPointStyle istyle = (style instanceof IconPointStyle)
-                    ? (IconPointStyle) style
-                    : null;
-            BasicPointStyle bstyle = (style instanceof BasicPointStyle)
-                    ? (BasicPointStyle) style
-                    : null;
+        if (style == null)
+            return null;
 
-            if (style instanceof CompositeStyle) {
-                istyle = (IconPointStyle) CompositeStyle
-                        .find((CompositeStyle) style, IconPointStyle.class);
-                bstyle = (BasicPointStyle) CompositeStyle
-                        .find((CompositeStyle) style, BasicPointStyle.class);
-            }
-
-            if (style != null) {
-                if (istyle != null) {
-                    String uri = istyle.getIconUri();
-                    if (uri != null)
-                        return uri;
-                    // Fallback to generic point
-                    style = new BasicPointStyle(-1, 0);
-                }
-                if (bstyle != null)
-                    return "android.resource://"
-                            + MapView.getMapView().getContext()
-                                    .getPackageName()
-                            + "/"
-                            + R.drawable.generic;
-                else if (style instanceof BasicStrokeStyle)
-                    return "android.resource://"
-                            + MapView.getMapView().getContext()
-                                    .getPackageName()
-                            + "/"
-                            + R.drawable.polyline;
-                else if (style instanceof BasicFillStyle)
-                    return "android.resource://"
-                            + MapView.getMapView().getContext()
-                                    .getPackageName()
-                            + "/" + R.drawable.shape;
-            }
+        if (style instanceof CompositeStyle) {
+            style = findBestIconStyle((CompositeStyle) style);
+            if (style == null)
+                return null;
         }
+
+        if (style instanceof IconPointStyle) {
+            String uri = ((IconPointStyle) style).getIconUri();
+            return uri != null ? uri
+                    : ATAKUtilities.getResourceUri(R.drawable.generic);
+        } else if (style instanceof BasicPointStyle)
+            return ATAKUtilities.getResourceUri(R.drawable.generic);
+        else if (style instanceof BasicStrokeStyle)
+            return ATAKUtilities.getResourceUri(R.drawable.polyline);
+        else if (style instanceof BasicFillStyle)
+            return ATAKUtilities.getResourceUri(R.drawable.shape);
+
         return null;
     }
 
     public static int colorFromStyle(Style style) {
-        if (style != null) {
-            IconPointStyle istyle = (style instanceof IconPointStyle)
-                    ? (IconPointStyle) style
-                    : null;
-            BasicPointStyle bstyle = (style instanceof BasicPointStyle)
-                    ? (BasicPointStyle) style
-                    : null;
+        if (style instanceof CompositeStyle)
+            style = findBestIconStyle((CompositeStyle) style);
 
-            if (style instanceof CompositeStyle) {
-                istyle = (IconPointStyle) CompositeStyle
-                        .find((CompositeStyle) style, IconPointStyle.class);
-                bstyle = (BasicPointStyle) CompositeStyle
-                        .find((CompositeStyle) style, BasicPointStyle.class);
-            }
+        int color = Color.WHITE;
+        if (style instanceof IconPointStyle)
+            color = ((IconPointStyle) style).getColor();
+        else if (style instanceof BasicPointStyle)
+            color = ((BasicPointStyle) style).getColor();
+        else if (style instanceof BasicStrokeStyle)
+            color = ((BasicStrokeStyle) style).getColor();
+        else if (style instanceof BasicFillStyle)
+            color = ((BasicFillStyle) style).getColor();
 
-            if (style != null) {
-                if (istyle != null)
-                    return istyle.getColor();
-                else if (bstyle != null)
-                    return bstyle.getColor();
-                else if (style instanceof BasicStrokeStyle)
-                    return ((BasicStrokeStyle) style).getColor();
-                else if (style instanceof BasicFillStyle)
-                    return ((BasicFillStyle) style).getColor();
-            }
+        // Discard alpha since this color is used for icons
+        color = (color & 0xFFFFFF) | 0xFF000000;
+
+        return color;
+    }
+
+    /**
+     * Get the best style for representing a feature in icon form
+     * The order is fill > stroke > point/other
+     * @param style Composite style
+     * @return Dominant style or null if none found
+     */
+    private static Style findBestIconStyle(CompositeStyle style) {
+        Style dominant = null;
+        int numStyles = style.getNumStyles();
+        for (int i = 0; i < numStyles; i++) {
+            Style s = style.getStyle(i);
+            if (s instanceof CompositeStyle)
+                s = findBestIconStyle((CompositeStyle) s);
+            if (s instanceof BasicFillStyle)
+                return s;
+            else if (s instanceof BasicStrokeStyle || dominant == null)
+                dominant = s;
         }
-        return Color.WHITE;
+        return dominant;
     }
 
     protected GeoBounds getBounds() {
@@ -233,26 +227,6 @@ public class FeatureHierarchyListItem extends
     }
 
     @Override
-    public int getChildCount() {
-        return 0;
-    }
-
-    @Override
-    public int getDescendantCount() {
-        return 0;
-    }
-
-    @Override
-    public HierarchyListItem getChildAt(int index) {
-        return null;
-    }
-
-    @Override
-    public boolean isChildSupported() {
-        return false;
-    }
-
-    @Override
     public <T extends Action> T getAction(Class<T> clazz) {
         // XXX - legacy guard -- need to find out why we would get null bounds?
         if (clazz.equals(GoTo.class) && this.bounds == null)
@@ -271,13 +245,33 @@ public class FeatureHierarchyListItem extends
     }
 
     @Override
-    public View getExtraView() {
-        return null;
+    public View getExtraView(View convertView, ViewGroup parent) {
+
+        // Get/create view holder
+        FeatureExtraHolder h = FeatureExtraHolder.get(convertView, parent);
+        if (h == null)
+            return null;
+
+        // Button for editing this feature
+        h.edit.setVisibility(View.VISIBLE);
+        h.edit.setOnClickListener(this);
+
+        // Hide pan and send
+        h.pan.setVisibility(View.GONE);
+        h.send.setVisibility(View.GONE);
+
+        return h.root;
     }
 
     @Override
-    public Sort refresh(Sort sort) {
-        return sort;
+    public void onClick(View v) {
+        if (v.getId() == R.id.editButton) {
+            // TODO: Prompt to edit feature
+            Intent i = new Intent(FeatureEditDropdownReceiver.SHOW_EDIT);
+            i.putExtra("fid", this.fid);
+            i.putExtra("title", this.getTitle());
+            AtakBroadcast.getInstance().sendBroadcast(i);
+        }
     }
 
     /**************************************************************************/

@@ -12,7 +12,6 @@ import com.atakmap.map.layer.control.SurfaceRendererControl;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.feature.geometry.LineString;
 import com.atakmap.map.layer.feature.geometry.Polygon;
-import com.atakmap.map.layer.feature.geometry.opengl.GLBatchLineString;
 import com.atakmap.map.layer.feature.geometry.opengl.GLBatchPolygon;
 import com.atakmap.map.layer.feature.style.BasicFillStyle;
 import com.atakmap.map.layer.feature.style.BasicStrokeStyle;
@@ -68,9 +67,6 @@ public class GLDogHouse extends AbstractGLMapItem2 implements
         _currentDraw = 0L;
         _recompute = true;
 
-        _glText = GLText.getInstance(
-                MapView.getTextFormat(Typeface.DEFAULT,
-                        _doghouse.getFontOffset()));
         bounds.set(-90, -180, 90, 180);
 
         _midpoint = GeoPoint.createMutable();
@@ -245,7 +241,7 @@ public class GLDogHouse extends AbstractGLMapItem2 implements
                 computeGeoBounds(geoPoints);
 
                 // allocate a buffer for 5 2D float vertices
-                if(_vertices == null)
+                if (_vertices == null)
                     _vertices = Unsafe.allocateDirect(5 * 2, FloatBuffer.class);
 
                 // pack the vertices in the buffer in counter-clockwise order
@@ -447,6 +443,12 @@ public class GLDogHouse extends AbstractGLMapItem2 implements
     private void drawText(GLMapView ortho, String[] data, int rows,
             double bearing, float tx, float ty, float scaleX, float scaleY,
             float r, float g, float b, float a) {
+
+        if (_glText == null)
+            _glText = GLText.getInstance(
+                    MapView.getTextFormat(Typeface.DEFAULT,
+                            _doghouse.getFontOffset()));
+
         final PointF bottomLeft = new PointF(-1.0f * SEGMENT_SIZE,
                 -0.5f * SEGMENT_SIZE * rows);
 

@@ -1,4 +1,5 @@
 #include "renderer/core/GLMapRenderGlobals.h"
+#include "renderer/AsyncBitmapLoader2.h"
 #ifndef __ANDROID__
 #include "renderer/core/GLLabelManager.h"
 #endif
@@ -36,9 +37,7 @@ namespace
         std::unique_ptr<GLTextureAtlas> iconAtlas;
         std::unique_ptr<GLTextureCache> cache;
         std::unique_ptr<TAK::Engine::Renderer::AsyncBitmapLoader2> bitmapLoader;
-#ifndef __ANDROID__
         std::unique_ptr<TAK::Engine::Renderer::Core::GLLabelManager> labelManager;
-#endif
         std::unique_ptr<GLTextureAtlas2> atlas2;
         std::unique_ptr<GLTextureAtlas2> iconAtlas2;
         std::unique_ptr<GLTextureCache2> cache2;
@@ -242,7 +241,7 @@ TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_getTextureCache2(GLTextur
     return TE_Ok;
 }
 
-#ifndef __ANDROID__
+
 TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_getLabelManager(TAK::Engine::Renderer::Core::GLLabelManager** value, const RenderContext &ctx) NOTHROWS
 {
     TAKErr code(TE_Ok);
@@ -258,13 +257,12 @@ TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_getLabelManager(TAK::Engi
         }
         break;
     } while (true);
-
     if (!entry->second->labelManager.get())
         entry->second->labelManager.reset(new TAK::Engine::Renderer::Core::GLLabelManager());
     *value = entry->second->labelManager.get();
     return TE_Ok;
 }
-#endif
+
 TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_getTextureUnitLimit(std::size_t *value) NOTHROWS
 {
     TAKErr code(TE_Ok);

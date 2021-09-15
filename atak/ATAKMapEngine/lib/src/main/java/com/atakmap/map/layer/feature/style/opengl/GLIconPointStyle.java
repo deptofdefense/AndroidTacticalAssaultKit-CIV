@@ -14,7 +14,6 @@ import android.util.Pair;
 
 import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.lang.Unsafe;
-import com.atakmap.map.AtakMapView;
 import com.atakmap.map.RenderContext;
 import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.map.layer.feature.geometry.Geometry;

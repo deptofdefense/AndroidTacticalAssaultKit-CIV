@@ -16,7 +16,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 
@@ -27,9 +26,6 @@ public class Permissions {
     final static int REQUEST_ID = 90402;
 
     final static int LOCATION_REQUEST_ID = 90403;
-
-
-
 
     final static String[] PermissionsList = new String[] {
             Manifest.permission.ACCESS_FINE_LOCATION,
@@ -79,7 +75,6 @@ public class Permissions {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
             return true;
         }
-
 
         int result = 0;
         for (String permission : PermissionsList) {
@@ -152,7 +147,9 @@ public class Permissions {
 
                         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
                             View view = LayoutInflater.from(a)
-                                    .inflate(R.layout.location_permission_warning, null);
+                                    .inflate(
+                                            R.layout.location_permission_warning,
+                                            null);
 
                             AlertDialog.Builder ab = new AlertDialog.Builder(a);
                             ab.setTitle(R.string.android_11_warning);
@@ -164,12 +161,15 @@ public class Permissions {
                                         public void onClick(
                                                 DialogInterface dialog,
                                                 int which) {
-                                            a.requestPermissions(locationPermissionsList, LOCATION_REQUEST_ID);
+                                            a.requestPermissions(
+                                                    locationPermissionsList,
+                                                    LOCATION_REQUEST_ID);
                                         }
                                     });
                             ab.show();
                         } else {
-                            a.requestPermissions(locationPermissionsList, LOCATION_REQUEST_ID);
+                            a.requestPermissions(locationPermissionsList,
+                                    LOCATION_REQUEST_ID);
                         }
                     }
                 });
@@ -182,16 +182,16 @@ public class Permissions {
 
     static void displayNeverAskAgainDialog(final Activity a) {
 
-        View view = LayoutInflater.from(a).inflate(R.layout.general_permission_guidance,
+        View view = LayoutInflater.from(a).inflate(
+                R.layout.general_permission_guidance,
                 null);
 
-
-
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            final int result = a.checkSelfPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION);
+            final int result = a.checkSelfPermission(
+                    Manifest.permission.ACCESS_BACKGROUND_LOCATION);
             if (result != PackageManager.PERMISSION_GRANTED) {
-                view = LayoutInflater.from(a).inflate(R.layout.location_permission_guidance,
+                view = LayoutInflater.from(a).inflate(
+                        R.layout.location_permission_guidance,
                         null);
             }
         }

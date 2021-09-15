@@ -8,7 +8,6 @@ import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.database.CursorIface;
 import com.atakmap.database.DatabaseIface;
-import com.atakmap.database.Databases;
 import com.atakmap.database.QueryIface;
 import com.atakmap.map.layer.raster.tilepyramid.AbstractTilePyramidTileReader;
 import com.atakmap.map.layer.raster.tilereader.TileReader;

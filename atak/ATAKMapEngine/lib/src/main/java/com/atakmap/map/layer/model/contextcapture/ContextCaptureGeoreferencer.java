@@ -162,6 +162,10 @@ final class ContextCaptureGeoreferencer implements Georeferencer {
             return null;
         f = f.getParentFile();
         // parent file may be "Data" for unsegmented or some arbitrary name for segmented
+
+        if (f == null)
+            return null;
+
         f = f.getParentFile();
 
         f = new File(f, "metadata.xml");

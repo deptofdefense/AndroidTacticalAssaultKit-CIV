@@ -2,6 +2,7 @@
 #define TAK_ENGINE_FORMATS_OGR_OGRFEATUREDATASTORE_H_INCLUDED
 
 #include <cstdint>
+#include <list>
 #include <memory>
 
 #include <map>
@@ -58,7 +59,7 @@ namespace TAK {
                                 return true;
                             else if (!a.displayName)
                                 return false;
-#ifdef MSVC
+#ifdef _MSC_VER
                             int cmp = _stricmp(a.displayName, b.displayName);
 #else
                             int cmp = strcasecmp(a.displayName, b.displayName);
@@ -72,6 +73,7 @@ namespace TAK {
                 public :
                     OGRFeatureDataStore(const char *uri, const char *workingDir, const bool asyncRefresh) NOTHROWS;
                     OGRFeatureDataStore(const char *uri, const char *workingDir, const bool asyncRefresh, SchemaHandlerPtr &&schema) NOTHROWS;
+                    OGRFeatureDataStore(const char* uri, const char* driver, const char** opts, const std::shared_ptr<SchemaHandler> &schema) NOTHROWS;
                     virtual ~OGRFeatureDataStore() NOTHROWS;
                 public :
                     virtual Util::TAKErr getFeature(Feature::FeaturePtr_const &feature, const int64_t fid) NOTHROWS override;
@@ -131,6 +133,8 @@ namespace TAK {
                 private:
                     Port::String uri;
                     Port::String workingDir;
+                    std::vector<const char*> driver;
+                    char** openOptions;
 
                     Thread::ThreadPtr refreshThread;
 

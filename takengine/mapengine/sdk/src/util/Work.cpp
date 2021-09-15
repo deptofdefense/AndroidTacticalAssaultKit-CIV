@@ -333,7 +333,7 @@ namespace {
 		explicit OverrideWorker(const SharedWorkerPtr& bw) NOTHROWS
 			: backing_worker_(bw), task_num_(0) {}
 
-		virtual TAKErr scheduleWork(std::shared_ptr<Work> work) NOTHROWS;
+		TAKErr scheduleWork(std::shared_ptr<Work> work) NOTHROWS override;
 		Mutex state_mutex_;
 		const SharedWorkerPtr& backing_worker_;
 		std::shared_ptr<Work> ongoing_work_;

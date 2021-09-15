@@ -114,7 +114,7 @@ namespace atakmap {
                 }
 
                 void insertRow(const std::string &path, const std::string &type, core::GeoPoint ul, core::GeoPoint ur, core::GeoPoint lr,
-                                       core::GeoPoint ll, double minGsd, double maxGsd, int width, int height) override
+                                       core::GeoPoint ll, double minGsd, double maxGsd, size_t width, size_t height) override
                 {
                     Lock lock(filter->getMutex());
                     filter->insertRow(path, type, ul, ur, lr, ll, minGsd, maxGsd, width, height);
@@ -436,7 +436,7 @@ namespace atakmap {
             }
 
             void ATAKMosaicDatabase::insertRow(const std::string &path, const std::string &type, core::GeoPoint ul, core::GeoPoint ur, core::GeoPoint lr,
-                                               core::GeoPoint ll, double minGsd, double maxGsd, int width, int height)
+                                               core::GeoPoint ll, double minGsd, double maxGsd, size_t width, size_t height)
             {
 
             }

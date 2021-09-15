@@ -13,7 +13,6 @@ import com.atakmap.coremap.log.Log;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.Layer;
 import com.atakmap.map.layer.MultiLayer;
-import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLResolvableMapRenderable;
 

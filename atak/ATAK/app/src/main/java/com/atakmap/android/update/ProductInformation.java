@@ -63,8 +63,8 @@ public class ProductInformation {
         public static ProductType getSpecificPluginType(final String pkgName,
                 final ProductType type) {
             if (type == ProductType.plugin &&
-                    (pkgName.equals("com.atakmap.app.flavor")
-                            || pkgName.equals("com.atakmap.app.encryption")))
+                    (pkgName.startsWith("com.atakmap.app.flavor.")
+                            || pkgName.startsWith("com.atakmap.app.encryption.")))
                 return ProductType.systemplugin;
             return type;
         }

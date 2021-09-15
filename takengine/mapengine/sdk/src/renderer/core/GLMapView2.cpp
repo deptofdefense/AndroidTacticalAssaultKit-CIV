@@ -1367,6 +1367,8 @@ void GLMapView2::drawRenderables(const GLMapView2::State &renderState) NOTHROWS
 
 void GLMapView2::drawTerrainTiles(const GLTexture2 &tex, const std::size_t drawSurfaceWidth, const std::size_t drawSurfaceHeight) NOTHROWS
 {
+    if (offscreen->visibleTiles.empty()) return;
+
     TerrainTileShaders *shaders = 
         debugDrawDepth ?
             ((this->renderPasses[0].drawSrid == 4978) ? &offscreen->ecef.depth : &offscreen->planar.depth) :

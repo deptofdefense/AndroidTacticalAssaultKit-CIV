@@ -1,7 +1,6 @@
 
 package com.atakmap.android.video;
 
-import android.net.Uri;
 import java.net.URI;
 
 import com.atakmap.android.video.manager.VideoManager;
@@ -248,10 +247,6 @@ public class ConnectionEntry implements Serializable {
         setBufferTime(-1);
         setNetworkTimeout(5000);
 
-
-
-
-
         URI u = URI.create(uri);
 
         final Protocol protocol = Protocol.getProtocol(uri);
@@ -263,9 +258,8 @@ public class ConnectionEntry implements Serializable {
 
         final String userInfo = u.getUserInfo();
 
-
         String host = u.getHost();
-        if (!FileSystemUtils.isEmpty(u.getUserInfo()) )
+        if (!FileSystemUtils.isEmpty(u.getUserInfo()))
             host = u.getUserInfo() + "@" + host;
 
         setProtocol(protocol);

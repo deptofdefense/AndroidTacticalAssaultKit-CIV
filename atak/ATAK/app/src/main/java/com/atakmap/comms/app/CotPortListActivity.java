@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import androidx.core.app.NavUtils;
+import androidx.core.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -39,12 +40,15 @@ import com.atakmap.net.AtakCertificateDatabaseIFace;
 import com.atakmap.net.CertificateEnrollmentClient;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.ListIterator;
 
 public abstract class CotPortListActivity extends MetricActivity {
 
     public static final String TAG = "CotPortListActivity";
+    private boolean ascending = true;
 
     /**
      * Class that encapsulates the relevant attributes of a CotNetPort for display. This is only the
@@ -90,6 +94,13 @@ public abstract class CotPortListActivity extends MetricActivity {
 
         public void refresh(ArrayList<CotPort> list) {
             this.portDestinations = list;
+
+            try {
+                listActivity.sort();
+            } catch (Exception e) {
+                Log.e(TAG, "exception sorting portDestinations!", e);
+            }
+
             notifyDataSetChanged();
         }
 
@@ -504,8 +515,45 @@ public abstract class CotPortListActivity extends MetricActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.add_menu, menu);
+        inflater.inflate(R.menu.network_connections_menu, menu);
+
+        final MenuItem item = menu.findItem(R.id.network_connections_menu_sort);
+        if (item != null) {
+            item.setIcon(ContextCompat.getDrawable(this,
+                    ascending ? R.drawable.alpha_sort
+                            : R.drawable.alpha_sort_desc));
+        }
         return true;
+    }
+
+    private void sort() {
+        try {
+            if (_portList == null) {
+                Log.e(TAG, "_portList! is null in sort!");
+                return;
+            }
+
+            Collections.sort(_portList, new Comparator<CotPort>() {
+                @Override
+                public int compare(CotPort lhs, CotPort rhs) {
+                    if (lhs == null || rhs == null ||
+                            lhs.getDescription() == null
+                            || rhs.getDescription() == null) {
+                        Log.e(TAG, "null CotPort or description in compare!");
+                        return 0;
+                    }
+
+                    return ascending
+                            ? lhs.getDescription()
+                                    .compareToIgnoreCase(rhs.getDescription())
+                            : rhs.getDescription()
+                                    .compareToIgnoreCase(lhs.getDescription());
+                }
+            });
+
+        } catch (Exception e) {
+            Log.e(TAG, "exception in sort!", e);
+        }
     }
 
     @Override
@@ -518,6 +566,15 @@ public abstract class CotPortListActivity extends MetricActivity {
                 Log.d(TAG, "error occurred", iae);
                 finish();
             }
+            return true;
+        } else if (id == R.id.network_connections_menu_sort) {
+            Log.d(TAG, "network_connections_menu_sort selected");
+            ascending = !ascending;
+            item.setIcon(ContextCompat.getDrawable(this,
+                    ascending ? R.drawable.alpha_sort
+                            : R.drawable.alpha_sort_desc));
+            sort();
+            _portAdapter.refresh(_portList);
             return true;
         }
 

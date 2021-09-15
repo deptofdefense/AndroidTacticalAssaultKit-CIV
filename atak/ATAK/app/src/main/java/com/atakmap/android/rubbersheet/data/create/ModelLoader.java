@@ -8,7 +8,6 @@ import com.atakmap.android.rubbersheet.data.ModelTransformListener;
 import com.atakmap.android.rubbersheet.data.RubberModelData;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.layer.feature.geometry.Envelope;
@@ -160,11 +159,10 @@ public class ModelLoader implements ModelSpi.Callback {
                                 0, 0, 1);
                     PointD loc = new PointD(offset);
                     trOffset.transform(offset, loc);
-                    trInfo.location = DistanceCalculations
-                            .computeDestinationPoint(
-                                    trInfo.location,
-                                    Math.toDegrees(Math.atan2(loc.x, loc.y)),
-                                    Math.hypot(loc.x, loc.y));
+                    trInfo.location = GeoCalculations.pointAtDistance(
+                            trInfo.location,
+                            Math.toDegrees(Math.atan2(loc.x, loc.y)),
+                            Math.hypot(loc.x, loc.y));
                 }
 
                 // Center the model with the bottom level to the ground

@@ -1,6 +1,5 @@
 package com.atakmap.map.gdal;
 
-import com.atakmap.coremap.io.IOProvider;
 import com.atakmap.util.Collections2;
 
 import java.io.IOException;

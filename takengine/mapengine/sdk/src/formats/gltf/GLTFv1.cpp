@@ -171,6 +171,7 @@ namespace {
             auto it = scene.meshes.find(node.meshes[i]);
             if (it != scene.meshes.end()) {
                 const tinygltfloader::Mesh &mesh = it->second;
+
                 for (auto primIt = mesh.primitives.begin(); primIt != mesh.primitives.end(); ++primIt) {
                     std::shared_ptr<Mesh> meshPtr;
                     code = buildMesh(meshPtr, state, scene, node, it->second, *primIt);
@@ -237,11 +238,14 @@ namespace {
                 StringBuilder_combine(sb, state.baseURI, Platform_pathSep(), texImage.uri.c_str());
                 diffuse.textureUri = sb.c_str();
             } else if (texImage.image.size()) {
-                state.memBufferArgs.push_back(MemBufferArg {
-                        std::unique_ptr<const void, void (*)(const void *)>(&texImage.image[0], Memory_leaker_const<void>),
-                        texImage.image.size()
+                const tinygltfloader::BufferView& bv = scene.bufferViews.find(texImage.bufferView)->second;
+                const tinygltfloader::Buffer& b = scene.buffers.find(bv.buffer)->second;
+                state.meshBufferArgs.push_back(MemBufferArg {
+                        std::unique_ptr<const void, void (*)(const void *)>(&b.data[0] + bv.byteOffset, Memory_leaker_const<void>),
+                        bv.byteLength
                     });
-                state.usedImages.insert(tex.source);
+                Material_setBufferIndexTextureURI(&diffuse, state.meshBufferArgs.size() - 1);
+                state.usedBuffers.insert(bv.buffer);;
             }
         }
 
@@ -285,12 +289,13 @@ namespace {
             const tinygltfloader::Accessor& indices = indicesIt->second;
             const tinygltfloader::BufferView& bv = scene.bufferViews.find(indices.bufferView)->second;
             const tinygltfloader::Buffer& b = scene.buffers.find(bv.buffer)->second;
+            state.usedBuffers.insert(bv.buffer);
 
             code = GLTF_dataTypeForAccessorComponentTypeV1(indexType, indices.componentType);
             if (code != TE_Ok)
                 return code;
 
-            indicesData = &b.data[0] + bv.byteOffset;
+            indicesData = &b.data[0] + bv.byteOffset + indices.byteOffset;
             indexCount = indices.count;
         }
 
@@ -319,6 +324,7 @@ namespace {
                 
                 if (vertArray == &vertLayout.position) {
                     verts = &b.data[0] + bv.byteOffset;
+                    vertCount = accessor.count;
                     GLTF_setAABBMinMax(aabb, accessor.minValues, accessor.maxValues);
                 }
             }

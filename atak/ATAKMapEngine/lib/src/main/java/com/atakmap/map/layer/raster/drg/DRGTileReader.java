@@ -18,7 +18,6 @@ import com.atakmap.math.RectD;
 import com.atakmap.math.Rectangle;
 
 import org.gdal.gdal.Dataset;
-import org.gdal.gdal.gdal;
 
 import java.io.File;
 import java.nio.ByteBuffer;

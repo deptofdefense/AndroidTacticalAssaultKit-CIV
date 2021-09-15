@@ -14,7 +14,7 @@ import com.atakmap.android.maps.MapView;
  */
 public class HashtagMapComponent extends DropDownMapComponent {
 
-    private HashtagMapOverlay _overlay;
+    protected HashtagMapOverlay _overlay;
     private StickyHashtags _stickyTagListener;
     private AttachmentHashtagListener _attListener;
 

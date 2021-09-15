@@ -120,17 +120,17 @@ public class HierarchyListAdapter extends BaseAdapter implements
     private static final int UI_REFRESH_INTERVAL = 33;
 
     // Map view, context, and preferences
-    private final MapView mapView;
-    private final Context context;
+    protected final MapView mapView;
+    protected final Context context;
     private final SharedPreferences prefs;
 
     // Device UID and callsign
-    private final String devUID;
-    private final String devCallsign;
+    protected final String devUID;
+    protected final String devCallsign;
 
     // The OM intent and drop-down receiver
     // This handles OM-related intents and any UI outside of the list view
-    private final HierarchyListReceiver receiver;
+    protected final HierarchyListReceiver receiver;
 
     // The screen size configuration (small or large)
     // This determines which layout is used by list items
@@ -143,7 +143,7 @@ public class HierarchyListAdapter extends BaseAdapter implements
     private boolean initiating = false;
 
     // Whether OM is active (drop-down opened) or not
-    private boolean active = false;
+    protected boolean active = false;
 
     // Whether outside refresh requests are being blocked
     private boolean blockRefresh = false;
@@ -152,7 +152,7 @@ public class HierarchyListAdapter extends BaseAdapter implements
     private ListModelImpl model;
 
     // The current list being displayed
-    private HierarchyListItem currentList;
+    protected HierarchyListItem currentList;
 
     // The current list of items being displayed
     private final List<HierarchyListItem> items = new ArrayList<>();
@@ -161,28 +161,28 @@ public class HierarchyListAdapter extends BaseAdapter implements
     private final List<HierarchyListItem> pendingItems = new ArrayList<>();
 
     // The back-stack of lists
-    private Stack<HierarchyListItem> prevListStack = new Stack<>();
+    protected Stack<HierarchyListItem> prevListStack = new Stack<>();
 
     // The back-stack of scroll positions so the user doesn't lose their place
     // after navigating into a hierarchy of lists
-    private Stack<Integer> prevListScroll = new Stack<>();
+    protected Stack<Integer> prevListScroll = new Stack<>();
 
     // Support for 'user selected' item handlers
     // i.e. Multi-select export or deletion
-    private HierarchyListUserSelect userSelectHandler;
+    protected HierarchyListUserSelect userSelectHandler;
 
     // The list of selected item UIDs
-    private final List<String> selectedPaths = new ArrayList<>();
+    protected final List<String> selectedPaths = new ArrayList<>();
 
     // The button used to finish a multi-select action
-    private Button processBtn;
+    protected Button processBtn;
 
     // Whether to prevent the user from backing out of multi-select mode
     // This is set to 'true' when OM is started from a multi-select intent
     private boolean selectModeOnly = false;
 
     // The current item/list filter - applied while performing a refresh
-    private MultiFilter currFilter;
+    protected MultiFilter currFilter;
 
     // The current sort method (alphabetic by default)
     private Class<?> curSort = SortAlphabet.class;
@@ -194,8 +194,8 @@ public class HierarchyListAdapter extends BaseAdapter implements
     private final EmptyListFilter emptyListFilter = new EmptyListFilter();
 
     // Search parameters
-    private SearchResults searchResults;
-    private String searchTerms;
+    protected SearchResults searchResults;
+    protected String searchTerms;
     private boolean showSearchLoader = false;
 
     // Inverse of whether the "Show All" checkbox is activated
@@ -242,11 +242,6 @@ public class HierarchyListAdapter extends BaseAdapter implements
         this.coordFmt = CoordinateFormat.find(prefs.getString(
                 "coord_display_pref", context.getString(
                         R.string.coord_display_pref_default)));
-
-        // Ensure our self marker doesn't show up in OM
-        Marker self = ATAKUtilities.findSelf(mapView);
-        if (self != null)
-            self.setMetaBoolean("addToObjList", false);
 
         this.userSelectHandler = selectHandler;
         if (selectHandler != null) {
@@ -364,7 +359,7 @@ public class HierarchyListAdapter extends BaseAdapter implements
             });
 
     // Handles search requests made on the top-level OM list
-    private final Search rootSearchEngine = new Search() {
+    protected final Search rootSearchEngine = new Search() {
         @Override
         public Set<HierarchyListItem> find(String term) {
             // XXX - Is this even used?
@@ -1012,7 +1007,7 @@ public class HierarchyListAdapter extends BaseAdapter implements
      * @param item List item
      * @return True to show location description, false otherwise
      */
-    private boolean adaptLocationItem(HierarchyListItem item) {
+    protected boolean adaptLocationItem(HierarchyListItem item) {
         if (!(item instanceof ILocation) && !(item instanceof Location))
             return false;
 
@@ -1212,7 +1207,7 @@ public class HierarchyListAdapter extends BaseAdapter implements
             ((HierarchyListItem2) item).dispose();
     }
 
-    private void setCurrentList(HierarchyListItem curList) {
+    protected void setCurrentList(HierarchyListItem curList) {
         if (this.currentList != curList) {
             HierarchyListItem oldList = this.currentList;
             this.currentList = curList;
@@ -1229,7 +1224,7 @@ public class HierarchyListAdapter extends BaseAdapter implements
         }
     }
 
-    private void setModel(ListModelImpl model) {
+    protected void setModel(ListModelImpl model) {
         if (this.model != model) {
             dispose(this.model);
             this.model = model;
@@ -1299,7 +1294,7 @@ public class HierarchyListAdapter extends BaseAdapter implements
      * to be displayed in Overlay Manager
      * @return True if successs, false if failed (OM no longer active)
      */
-    private boolean buildRootList() {
+    protected boolean buildRootList() {
         if (!this.active)
             return false;
 
@@ -1423,14 +1418,14 @@ public class HierarchyListAdapter extends BaseAdapter implements
     /**
      * Task for finding items based on selection paths
      */
-    private class SelectionTask
+    protected class SelectionTask
             extends AsyncTask<Void, Integer, Set<HierarchyListItem>> {
 
         private final ProgressDialog pd;
         private final List<String> paths;
         private final HierarchyListUserSelect handler;
 
-        private SelectionTask(List<String> paths, HierarchyListUserSelect h) {
+        protected SelectionTask(List<String> paths, HierarchyListUserSelect h) {
             this.paths = paths;
             this.handler = h;
             this.pd = new ProgressDialog(context);
@@ -1517,7 +1512,7 @@ public class HierarchyListAdapter extends BaseAdapter implements
      * @param path The path string (usually returned by {@link #getCurrentPath})
      * @return The matching list item (or root if not found)
      */
-    private HierarchyListItem findListByPath(HierarchyListItem root,
+    protected HierarchyListItem findListByPath(HierarchyListItem root,
             String path) {
         HierarchyListItem last = root == null
                 ? (this.prevListStack.empty() ? this.currentList
@@ -1786,8 +1781,8 @@ public class HierarchyListAdapter extends BaseAdapter implements
     /**
      * Check if path is under a directory based on UID order
      *
-     * @param dir Directory (i.e. "\Markers\Cot 2525B"
-     * @param path Path (i.e. "\Markers\Cot 2525B\Hostile"
+     * @param dir Directory (i.e. "\Markers\Cot 2525C"
+     * @param path Path (i.e. "\Markers\Cot 2525C\Hostile"
      * @return True if path is equal to or under dir, false otherwise
      */
     private boolean withinDir(String dir, String path) {
@@ -2194,7 +2189,7 @@ public class HierarchyListAdapter extends BaseAdapter implements
     /**
      * The top-level list model
      */
-    private static class ListModelImpl extends AbstractHierarchyListItem2
+    protected static class ListModelImpl extends AbstractHierarchyListItem2
             implements Search {
 
         private final HierarchyListAdapter om;
@@ -2393,7 +2388,7 @@ public class HierarchyListAdapter extends BaseAdapter implements
     /**
      * The list used to display search results
      */
-    private static class SearchResults extends AbstractHierarchyListItem2 {
+    protected static class SearchResults extends AbstractHierarchyListItem2 {
 
         SearchResults(BaseAdapter listener, HierarchyListFilter filter) {
             this.listener = listener;

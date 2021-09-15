@@ -22,7 +22,6 @@ import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.filesystem.SecureDelete;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.opengl.GLMapSurface;
@@ -185,7 +184,7 @@ public class DataMgmtReceiver extends BroadcastReceiver {
                 File toDelete = new File(mountPoint, dir);
                 if (IOProviderFactory.exists(toDelete)
                         && IOProviderFactory.isDirectory(toDelete))
-                    SecureDelete.deleteDirectory(toDelete, bContentOnly);
+                    FileSystemUtils.deleteDirectory(toDelete, bContentOnly);
             }
         }
     }

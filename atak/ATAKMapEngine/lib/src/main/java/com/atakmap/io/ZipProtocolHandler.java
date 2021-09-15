@@ -1,14 +1,13 @@
 package com.atakmap.io;
 
 import com.atakmap.coremap.io.IOProviderFactory;
-import com.atakmap.coremap.locale.LocaleUtil;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 
 // derives from `FilterProtocolHandler` in the event that client code tries to
 // make any assumptions with instanceof FileProtocolHandler
@@ -21,7 +20,7 @@ public class ZipProtocolHandler extends FilterProtocolHandler {
 
     @Override
     public Collection<String> getSupportedSchemes() {
-        return Arrays.asList("zip");
+        return Collections.singletonList("zip");
     }
 
     private static class ZipFileHandler extends FileProtocolHandler {

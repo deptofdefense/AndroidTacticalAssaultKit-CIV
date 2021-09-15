@@ -15,7 +15,7 @@ import android.preference.PreferenceManager;
 import com.atakmap.android.importfiles.sort.ImportUserIconSetSort;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.Marker;
-import com.atakmap.android.user.icon.Icon2525bPallet;
+import com.atakmap.android.user.icon.Icon2525cPallet;
 import com.atakmap.android.user.icon.SpotMapPallet;
 import com.atakmap.android.user.icon.UserIconPalletFragment;
 import com.atakmap.android.util.ATAKConstants;
@@ -57,14 +57,14 @@ public class IconsMapAdapter extends BroadcastReceiver {
     private Context _context;
     private SharedPreferences _prefs;
 
-    private Icon2525bIconAdapter _2525bIconAdapter;
+    private Icon2525cIconAdapter _2525cIconAdapter;
     private SpotMapIconAdapter _spotMapIconAdapter;
     private UserIconsetIconAdapter _iconsetIconAdapter;
 
     public IconsMapAdapter(Context context) {
         _context = context;
         _prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        _2525bIconAdapter = new Icon2525bIconAdapter(context);
+        _2525cIconAdapter = new Icon2525cIconAdapter(context);
         _spotMapIconAdapter = new SpotMapIconAdapter();
         _iconsetIconAdapter = new UserIconsetIconAdapter(_context);
     }
@@ -111,13 +111,13 @@ public class IconsMapAdapter extends BroadcastReceiver {
     }
 
     /**
-     * Adapt marker based on user settings and/or 2525B type, in the following order:
+     * Adapt marker based on user settings and/or 2525C type, in the following order:
      *  If the marker is the self marker or if annotated with "adapt_marker_icon" with the value
      *  false, then the whole process is skipped.   Otherwise, it is adapted in the following order:
      *  1. First check for force/override default/preferred icon set (local users requires a single iconset)
      *  2. Then check for user specified icon set (remote user set an icon)
      *  3. Then check for default/preferred icon set (local user prefers a default icon set if none specified by remote user)
-     *  4. Finally, fallback on legacy 2525B icons (explicitly 2525B pallet, or no better match found)
+     *  4. Finally, fallback on legacy 2525C icons (explicitly 2525C pallet, or no better match found)
      * 
      * @param marker the marker to be adapted
      */
@@ -139,24 +139,24 @@ public class IconsMapAdapter extends BroadcastReceiver {
 
         //1. first check for force/override icon set   
         if (bForceMapping) {
-            //check 2525B and Spot Map special cases
+            //check 2525C and Spot Map special cases
             if (preferredCoTMappingUUID
-                    .equals(Icon2525bPallet.COT_MAPPING_2525B)) {
+                    .equals(Icon2525cPallet.COT_MAPPING_2525C)) {
                 //Log.i("adaptMarkerIcon", "1a");
-                _2525bIconAdapter.adapt(marker);
+                _2525cIconAdapter.adapt(marker);
             } else if (preferredCoTMappingUUID
                     .equals(SpotMapPallet.COT_MAPPING_SPOTMAP)) {
                 //Log.i("adaptMarkerIcon", "1b");
                 if (!_spotMapIconAdapter.adapt(marker)) {
                     //Log.d(TAG, "Failed to map icon to preferred: " + preferredCoTMappingUUID); 
-                    _2525bIconAdapter.adapt(marker);
+                    _2525cIconAdapter.adapt(marker);
                 }
 
             } else if (iconsetPath.startsWith(preferredCoTMappingUUID)) {
                 //Log.i("adaptMarkerIcon", "1c");
                 if (!_iconsetIconAdapter.adaptIconsetPath(marker)) {
                     //Log.d(TAG, "Failed to map icon to IconsetPath pallet: " + preferredCoTMappingUUID); 
-                    _2525bIconAdapter.adapt(marker);
+                    _2525cIconAdapter.adapt(marker);
                 }
 
             } else {
@@ -164,7 +164,7 @@ public class IconsMapAdapter extends BroadcastReceiver {
                 if (!_iconsetIconAdapter.adaptPreferredIconset(marker,
                         preferredCoTMappingUUID)) {
                     //Log.d(TAG, "Failed to map icon to preferred Iconset pallet: " + preferredCoTMappingUUID); 
-                    _2525bIconAdapter.adapt(marker);
+                    _2525cIconAdapter.adapt(marker);
                 }
 
             }
@@ -172,9 +172,9 @@ public class IconsMapAdapter extends BroadcastReceiver {
             //not forcing mapping based on user setting
 
             //2. Then check for user specified iconset
-            if (iconsetPath.startsWith(Icon2525bPallet.COT_MAPPING_2525B)) {
+            if (iconsetPath.startsWith(Icon2525cPallet.COT_MAPPING_2525C)) {
                 //Log.i("adaptMarkerIcon", "2a");
-                _2525bIconAdapter.adapt(marker);
+                _2525cIconAdapter.adapt(marker);
                 return;
             } else if (iconsetPath
                     .startsWith(SpotMapPallet.COT_MAPPING_SPOTMAP)) {
@@ -190,10 +190,10 @@ public class IconsMapAdapter extends BroadcastReceiver {
             }
 
             //3. Then check for user default/preferred icon set
-            //check 2525B and Spot Map special cases
+            //check 2525C and Spot Map special cases
             switch (preferredCoTMappingUUID) {
-                case Icon2525bPallet.COT_MAPPING_2525B:
-                    if (_2525bIconAdapter.adapt(marker)) {
+                case Icon2525cPallet.COT_MAPPING_2525C:
+                    if (_2525cIconAdapter.adapt(marker)) {
                         //Log.i("adaptMarkerIcon", "3a");
                         return;
                     }
@@ -214,9 +214,9 @@ public class IconsMapAdapter extends BroadcastReceiver {
                     break;
             }
 
-            //4. Finally, fallback on legacy 2525B icon mapping
+            //4. Finally, fallback on legacy 2525C icon mapping
             //Log.i("adaptMarkerIcon", "4");
-            _2525bIconAdapter.adapt(marker);
+            _2525cIconAdapter.adapt(marker);
         }
     }
 
@@ -489,9 +489,9 @@ public class IconsMapAdapter extends BroadcastReceiver {
         _context = null;
         _prefs = null;
 
-        if (_2525bIconAdapter != null) {
-            _2525bIconAdapter.dispose();
-            _2525bIconAdapter = null;
+        if (_2525cIconAdapter != null) {
+            _2525cIconAdapter.dispose();
+            _2525cIconAdapter = null;
         }
 
         if (_spotMapIconAdapter != null) {

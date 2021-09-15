@@ -281,7 +281,7 @@ public class GeoFenceManager implements GeoFenceComponent.GeoFenceListener,
                 if (monitor.removeItem(item)) {
                     Log.d(TAG, "Removed last item for monitor: " + monitor);
                     toast(_context.getString(R.string.deleted_last_tracked_item,
-                            ShapeUtils.getShapeName(monitor.getItem())));
+                            ATAKUtilities.getDisplayName(ATAKUtilities.findAssocShape(monitor.getItem()))));
                 }
             }
         }
@@ -342,7 +342,7 @@ public class GeoFenceManager implements GeoFenceComponent.GeoFenceListener,
             Log.d(TAG,
                     "Added " + ATAKUtilities.getDisplayName(item)
                             + " " +
-                            ShapeUtils.getShapeName(lastAdded.getItem()));
+                            ATAKUtilities.getDisplayName(ATAKUtilities.findAssocShape(lastAdded.getItem())));
             //toast(_context.getString(R.string.geofence_now_monitoring_for_one,
             //        ATAKUtilities.getDisplayName(item),
             //        ShapeUtils.getShapeName(lastAdded.getItem())));
@@ -653,7 +653,7 @@ public class GeoFenceManager implements GeoFenceComponent.GeoFenceListener,
             Log.d(TAG,
                     "Added " + ATAKUtilities.getDisplayName(lastAdded)
                             + " " +
-                            ShapeUtils.getShapeName(monitor.getItem()));
+                            ATAKUtilities.getDisplayName(ATAKUtilities.findAssocShape(monitor.getItem())));
 
             //toast(_context.getString(R.string.geofence_now_monitoring_for_one,
             //        ATAKUtilities.getDisplayName(lastAdded),
@@ -688,7 +688,7 @@ public class GeoFenceManager implements GeoFenceComponent.GeoFenceListener,
         if (size < 1)
             message = _context.getString(
                     R.string.geofence_no_items_within_fence_will_rescan,
-                    ShapeUtils.getShapeName(monitor.getItem()));
+                    ATAKUtilities.getDisplayName(ATAKUtilities.findAssocShape(monitor.getItem())));
         //toast(message);
         Log.d(TAG, message);
     }
@@ -795,7 +795,7 @@ public class GeoFenceManager implements GeoFenceComponent.GeoFenceListener,
         if (bStopMonitoring) {
             toast(_context.getString(
                     R.string.geofence_dismissed_all_tracked_items,
-                    ShapeUtils.getShapeName(monitor.getItem())));
+                    ATAKUtilities.getDisplayName(ATAKUtilities.findAssocShape(monitor.getItem()))));
             removeMonitor(monitor.getMapItemUid());
             monitor.getFence().setTracking(false);
             monitor.persist();
@@ -846,7 +846,7 @@ public class GeoFenceManager implements GeoFenceComponent.GeoFenceListener,
             Log.d(TAG, "Removed last item for monitor: " + monitor);
             toast(_context.getString(
                     R.string.geofence_dismissed_all_tracked_items,
-                    ShapeUtils.getShapeName(monitor.getItem())));
+                    ATAKUtilities.getDisplayName(ATAKUtilities.findAssocShape(monitor.getItem()))));
             removeMonitor(monitor.getMapItemUid());
             monitor.getFence().setTracking(false);
             monitor.persist();

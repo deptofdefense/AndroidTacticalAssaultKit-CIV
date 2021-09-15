@@ -1,6 +1,5 @@
 package com.atakmap.map.gdal;
 
-import com.atakmap.coremap.io.IOProvider;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.lang.Unsafe;
@@ -11,7 +10,6 @@ import com.atakmap.map.layer.raster.DatasetProjection2;
 import com.atakmap.map.layer.raster.gdal.GdalDatasetProjection2;
 import com.atakmap.math.PointD;
 
-import org.gdal.gdal.gdal;
 import org.gdal.gdalconst.gdalconst;
 import org.gdal.gdal.Dataset;
 
@@ -23,9 +21,9 @@ public final class GdalElevationChunk extends ElevationChunk.Factory.Sampler {
 
     private Dataset dataset;
     private DatasetProjection2 proj;
-    private int width;
-    private int height;
-    private double noDataValue;
+    private final int width;
+    private final int height;
+    private final double noDataValue;
 
     private GdalElevationChunk(Dataset dataset, DatasetProjection2 proj) {
         this.dataset = dataset;

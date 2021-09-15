@@ -10,7 +10,6 @@ import com.atakmap.android.maps.MapTextFormat;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.annotations.IncubatingApi;
-import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
@@ -90,7 +89,8 @@ public final class GLSegmentFloatingLabel {
         for (int x = 0; x < pts.length; x++) {
             double terrain = 0d;
             // query for local terrain if it may be used
-            if(_clampToGround || pts[x].getAltitudeReference() == GeoPoint.AltitudeReference.AGL) {
+            if (_clampToGround || pts[x]
+                    .getAltitudeReference() == GeoPoint.AltitudeReference.AGL) {
                 terrain = ortho.getTerrainMeshElevation(pts[x].getLatitude(),
                         pts[x].getLongitude());
             }

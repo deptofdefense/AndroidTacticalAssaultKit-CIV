@@ -5,8 +5,12 @@ import android.graphics.drawable.Drawable;
 
 import androidx.annotation.NonNull;
 
+import com.atakmap.annotations.DeprecatedApi;
+
 public interface EncryptionProvider {
 
+    @Deprecated
+    @DeprecatedApi(since = "4.3.1", forRemoval = true, removeAt = "4.5.0")
     public interface Callback {
         int SETUP_FAILED = 1;
         int SETUP_SUCCESSFUL = 0;
@@ -31,8 +35,11 @@ public interface EncryptionProvider {
      * false if the provider promises in all cases to call the callback.   If true is returned the
      * callback will be invalidated and any calls to it processed.   If the callback is called once,
      * it will be invalidated and any calls to it will not be processed.
-     *
+     * @deprecated
+     * @see AbstractSystemComponent#load(AbstractSystemComponent.Callback)
      */
-    boolean setup(EncryptionProvider.Callback callback);
+    @Deprecated
+    @DeprecatedApi(since = "4.3.1", forRemoval = true, removeAt = "4.5.0")
+    boolean setup(Callback callback);
 
 }

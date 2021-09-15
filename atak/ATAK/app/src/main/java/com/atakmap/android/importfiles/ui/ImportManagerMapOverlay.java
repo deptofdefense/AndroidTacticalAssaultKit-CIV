@@ -66,7 +66,7 @@ public class ImportManagerMapOverlay extends AbstractMapOverlay2
     private final MapView _view;
     private final Context _context;
     private boolean _firstLoad = true;
-    private Persister _serializer = new Persister();
+    private final Persister _serializer = new Persister();
     private final Map<String, RemoteResource> _resources = new HashMap<>();
 
     public ImportManagerMapOverlay(MapView view,
@@ -498,7 +498,7 @@ public class ImportManagerMapOverlay extends AbstractMapOverlay2
         File resFile = new File(resource.getLocalPath());
         if (FileSystemUtils.isFile(resFile)) {
             if (FileSystemUtils.checkExtension(resFile, "zip")
-                    && resFile.getParentFile().getName()
+                    && resFile.getParentFile() != null && resFile.getParentFile().getName()
                             .equals("datapackage")) {
                 MissionPackageFileIO.deletePackage(resFile.getAbsolutePath(),
                         _view.getRootGroup());

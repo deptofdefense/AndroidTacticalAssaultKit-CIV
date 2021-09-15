@@ -9,8 +9,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
 
-import com.atakmap.map.AtakMapView;
-
 import android.opengl.GLES10;
 import android.opengl.GLES30;
 import android.opengl.Matrix;
