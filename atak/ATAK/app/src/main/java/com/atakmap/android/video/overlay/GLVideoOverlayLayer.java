@@ -150,7 +150,7 @@ public class GLVideoOverlayLayer extends GLAbstractLayer implements
         final int numVertices = textureCoordinates.remaining()
                 / vertSize;
 
-        if (surfaceTexture == null)
+        if (surfaceTexture == null || !curPoints.hasRemaining())
             return;
         // clear any pending errors - body intentionally empty
         //noinspection StatementWithEmptyBody
@@ -159,6 +159,7 @@ public class GLVideoOverlayLayer extends GLAbstractLayer implements
         }
 
         // transform the frame's corner coordinates to GL x,y
+        vertexCoordinates.limit(curPoints.remaining());
         view.forward(curPoints, vertexCoordinates);
 
         // draw the frame
@@ -318,66 +319,72 @@ public class GLVideoOverlayLayer extends GLAbstractLayer implements
         this.curPoints.clear();
         this.textureCoordinates.clear();
         if (proj != null) {
-            // center
-            img.x = width / 2d;
-            img.y = height / 2d;
-            proj.imageToGround(img, geo);
-            this.curPoints.put(geo.getLongitude());
-            this.curPoints.put(geo.getLatitude());
-            this.textureCoordinates
-                    .put((float) img.x / (float) width);
-            this.textureCoordinates
-                    .put((float) img.y / (float) height);
-            // UL
-            img.x = 0d;
-            img.y = 0d;
-            proj.imageToGround(img, geo);
-            this.curPoints.put(geo.getLongitude());
-            this.curPoints.put(geo.getLatitude());
-            this.textureCoordinates
-                    .put(0);
-            this.textureCoordinates
-                    .put(1.0f);
-            // UR
-            img.x = width;
-            img.y = 0d;
-            proj.imageToGround(img, geo);
-            this.curPoints.put(geo.getLongitude());
-            this.curPoints.put(geo.getLatitude());
-            this.textureCoordinates
-                    .put(1.0f);
-            this.textureCoordinates
-                    .put(1.0f);
-            // LR
-            img.x = width;
-            img.y = height;
-            proj.imageToGround(img, geo);
-            this.curPoints.put(geo.getLongitude());
-            this.curPoints.put(geo.getLatitude());
-            this.textureCoordinates
-                    .put(1.0f);
-            this.textureCoordinates
-                    .put(0);
-            // LL
-            img.x = 0d;
-            img.y = height;
-            proj.imageToGround(img, geo);
-            this.curPoints.put(geo.getLongitude());
-            this.curPoints.put(geo.getLatitude());
-            this.textureCoordinates
-                    .put(0);
-            this.textureCoordinates
-                    .put(0);
-            // UL
-            img.x = 0d;
-            img.y = 0d;
-            proj.imageToGround(img, geo);
-            this.curPoints.put(geo.getLongitude());
-            this.curPoints.put(geo.getLatitude());
-            this.textureCoordinates
-                    .put(0);
-            this.textureCoordinates
-                    .put(1.0f);
+            try {
+                // center
+                img.x = width / 2d;
+                img.y = height / 2d;
+                proj.imageToGround(img, geo);
+                this.curPoints.put(geo.getLongitude());
+                this.curPoints.put(geo.getLatitude());
+                this.textureCoordinates
+                        .put((float) img.x / (float) width);
+                this.textureCoordinates
+                        .put((float) img.y / (float) height);
+                // UL
+                img.x = 0d;
+                img.y = 0d;
+                proj.imageToGround(img, geo);
+                this.curPoints.put(geo.getLongitude());
+                this.curPoints.put(geo.getLatitude());
+                this.textureCoordinates
+                        .put(0);
+                this.textureCoordinates
+                        .put(1.0f);
+                // UR
+                img.x = width;
+                img.y = 0d;
+                proj.imageToGround(img, geo);
+                this.curPoints.put(geo.getLongitude());
+                this.curPoints.put(geo.getLatitude());
+                this.textureCoordinates
+                        .put(1.0f);
+                this.textureCoordinates
+                        .put(1.0f);
+                // LR
+                img.x = width;
+                img.y = height;
+                proj.imageToGround(img, geo);
+                this.curPoints.put(geo.getLongitude());
+                this.curPoints.put(geo.getLatitude());
+                this.textureCoordinates
+                        .put(1.0f);
+                this.textureCoordinates
+                        .put(0);
+                // LL
+                img.x = 0d;
+                img.y = height;
+                proj.imageToGround(img, geo);
+                this.curPoints.put(geo.getLongitude());
+                this.curPoints.put(geo.getLatitude());
+                this.textureCoordinates
+                        .put(0);
+                this.textureCoordinates
+                        .put(0);
+                // UL
+                img.x = 0d;
+                img.y = 0d;
+                proj.imageToGround(img, geo);
+                this.curPoints.put(geo.getLongitude());
+                this.curPoints.put(geo.getLatitude());
+                this.textureCoordinates
+                        .put(0);
+                this.textureCoordinates
+                        .put(1.0f);
+            } catch (RuntimeException ex) {
+                Log.w(TAG, "Failed to transform frame corners for display", ex);
+                curPoints.clear();
+                textureCoordinates.clear();
+            }
         } else {
             // some generic quad that could not be projective mapped
 

@@ -4,6 +4,8 @@ package com.atakmap.android.importfiles.http;
 import android.content.Context;
 import android.os.Bundle;
 
+import com.atakmap.android.filesystem.ResourceFile;
+import com.atakmap.android.filesystem.ResourceFile.MIMEType;
 import com.atakmap.android.http.rest.NetworkOperationManager;
 import com.atakmap.android.http.rest.operation.GetFileOperation;
 import com.atakmap.android.http.rest.operation.NetworkOperation;
@@ -126,15 +128,24 @@ public class ImportFileDownloader extends NetworkLinkDownloader {
                         input = conn.getInputStream();
                     }
 
-                    File fout = new File(request.getDir(),
-                            request.getFileName());
+                    String fileName = request.getFileName();
+
+                    // Add extension based on response content type
+                    String contentType = conn.getHeaderField("Content-Type");
+                    if (!FileSystemUtils.isEmpty(contentType)) {
+                        MIMEType mt = ResourceFile.getMIMETypeForMIME(contentType);
+                        if (mt != null && !fileName.endsWith("." + mt.EXT))
+                            fileName += "." + mt.EXT;
+                    }
+
+                    File fout = new File(request.getDir(), fileName);
 
                     try (FileOutputStream fos = IOProviderFactory
                             .getOutputStream(fout)) {
                         FileSystemUtils.copy(input, fos);
-                        Log.d(TAG, "success: " + request.getFileName());
+                        Log.d(TAG, "success: " + fileName);
                     } catch (Exception e) {
-                        Log.d(TAG, "failure: " + request.getFileName());
+                        Log.d(TAG, "failure: " + fileName);
                         onRequestConnectionError(new Request(
                                 NetworkOperationManager.REQUEST_TYPE_GET_FILE),
                                 new RequestManager.ConnectionError(900,
@@ -144,6 +155,7 @@ public class ImportFileDownloader extends NetworkLinkDownloader {
                     }
                     Bundle b = new Bundle();
                     b.putParcelable(GetFileOperation.PARAM_GETFILE, request);
+                    b.putString("path", fout.getAbsolutePath());
                     onRequestFinished(new Request(
                             NetworkOperationManager.REQUEST_TYPE_GET_FILE), b);
 
@@ -195,8 +207,7 @@ public class ImportFileDownloader extends NetworkLinkDownloader {
                 return;
             }
 
-            File downloadedFile = new File(initialRequest.getDir(),
-                    initialRequest.getFileName());
+            File downloadedFile = new File(resultData.getString("path"));
             if (!FileSystemUtils.isFile(downloadedFile)) {
                 Log.e(TAG,
                         "Remote File Download Failed - Failed to create local file");
