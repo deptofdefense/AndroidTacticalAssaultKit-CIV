@@ -356,29 +356,16 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
                 Polyline.DEFAULT_MIN_LINE_RENDER_RESOLUTION))
             return false;
 
-        // Determine if we need to do a 2D or 3D hit test so we can perform
-        // some optimizations
-        boolean test3D = getAltitudeMode() != AltitudeMode.ClampToGround
-                && !view.getMapTouchController().isNadirClamped();
-
         float radius = getHitRadius(view);
         Vector2D touch = new Vector2D(xpos, ypos);
 
-        // Build the screen hit rectangle (for 3D) or hit box bounds (for 2D)
-        GeoBounds hitBox = null;
-        RectF hitRect = null;
-        if (test3D) {
-            hitRect = new RectF((float) touch.x - radius,
-                    (float) touch.y - radius,
-                    (float) touch.x + radius,
-                    (float) touch.y + radius);
-            if (!RectF.intersects(_screenRect, hitRect))
-                return false;
-        } else {
-            hitBox = view.createHitbox(point, radius);
-            if (!_bounds.intersects(hitBox))
-                return false;
-        }
+        // Build the screen hit rectangle
+        RectF hitRect = new RectF((float) touch.x - radius,
+                (float) touch.y - radius,
+                (float) touch.x + radius,
+                (float) touch.y + radius);
+        if (!RectF.intersects(_screenRect, hitRect))
+            return false;
 
         // Search for point hits first
         List<Integer> hitBounds = new ArrayList<>();
@@ -390,18 +377,16 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
 
         // Scan points within each intersected partition
         for (int i = 0; i < _partitionBounds.size(); ++i) {
-            MutableGeoBounds mb = _partitionBounds.get(i);
             RectF pr = _partitionRects.get(i);
 
             // Hit test on mini bounds
-            if (test3D && !RectF.intersects(pr, hitRect)
-                    || !test3D && !mb.intersects(hitBox))
+            if (!RectF.intersects(pr, hitRect))
                 continue;
 
             //Log.d(TAG, "hit maybe contained in geobounds: " + i);
             int start = i * PARTITION_SIZE;
             int end = Math.min(start + PARTITION_SIZE, _points.size() - 1);
-            numPointHits += testPointsHit(view, start, end, hitRect, hitBox);
+            numPointHits += testPointsHit(view, start, end, hitRect, null);
             if (numPointHits > 1) {
                 // Multiple vertices hit
                 setMetaInteger("hit_count", numPointHits);

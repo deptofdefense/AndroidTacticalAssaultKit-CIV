@@ -113,15 +113,14 @@ public class Circle extends Polyline {
         if (getCenter() == null || !touchable)
             return false;
 
-        GeoBounds bounds = view.createHitbox(point, getHitRadius(view));
-        if (!bounds.intersects(getBounds(null)))
-            return false;
-
-        double bearing = DistanceCalculations.bearingFromSourceToTarget(
-                getCenter().get(), point);
-        GeoPoint p = GeoCalculations.pointAtDistance(getCenter().get(), bearing,
-                getRadius());
-        if (bounds.contains(p)) {
+        double bearing = getCenter().get().bearingTo(point);
+        GeoPoint p = view.getRenderElevationAdjustedPoint(
+                GeoCalculations.pointAtDistance(getCenter().get(), bearing,
+                        getRadius()));
+        PointF pt = view.forward(p);
+        double dist = Math.pow(pt.x - xpos, 2) + Math.pow(pt.y - ypos, 2);
+        double hitSq = Math.pow(getHitRadius(view), 2);
+        if (dist < hitSq) {
             GeoPointMetaData gpmd = new GeoPointMetaData(p);
             ElevationManager.getElevation(p.getLatitude(), p.getLongitude(),
                     null, gpmd);

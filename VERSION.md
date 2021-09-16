@@ -1,5 +1,10 @@
 # Version History
 
+## 4.3.1.3
+
+* Bug Fix
+  * for crash caused by trying to query map view controls which using them (Playstore Crash Log)
+
 ## 4.3.1.2
 
 * Bug Fix

@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.pm.ActivityInfo;
+import android.graphics.PointF;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -890,23 +891,22 @@ public class MapView extends AtakMapView {
      * @param center Center point of hit box
      * @param radius Inner radius of hit box in pixels
      * @return GeoBounds hit box
+     * @deprecated No longer efficient with perspective camera rendering
+     *             Utilize screen point data from the GL thread where possible
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.6")
     public GeoBounds createHitbox(GeoPoint center, double radius) {
-        final double rlat = Math.toRadians(center.getLatitude());
-        final double metersDegLat = 111132.92 - 559.82 * Math.cos(2 * rlat)
-                + 1.175 * Math.cos(4 * rlat);
-        final double metersDegLng = 111412.84 * Math.cos(rlat) - 93.5
-                * Math.cos(3 * rlat);
-
-        double mercatorscale = Math.cos(rlat);
-        if (mercatorscale < 0.0001)
-            mercatorscale = 0.0001;
-        final double metersPerPixel = getMapResolution() * mercatorscale;
-        final double ra = radius * metersPerPixel / metersDegLat;
-        final double ro = radius * metersPerPixel / metersDegLng;
+        PointF c = forward(center);
+        radius = Math.hypot(radius, radius);
+        GeoPoint inv = inverse((float) (c.x + radius),
+                (float) (c.y + radius)).get();
+        double ra = Math.abs(inv.getLatitude() - center.getLatitude());
+        double ro = Math.abs(inv.getLongitude() - center.getLongitude());
 
         GeoBounds hitBox = new GeoBounds(center.getLatitude() + ra,
-                center.getLongitude() - ro, center.getLatitude() - ra,
+                center.getLongitude() - ro,
+                center.getLatitude() - ra,
                 center.getLongitude() + ro);
         hitBox.setWrap180(isContinuousScrollEnabled());
         return hitBox;

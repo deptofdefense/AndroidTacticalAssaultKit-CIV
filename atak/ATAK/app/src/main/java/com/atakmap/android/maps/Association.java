@@ -571,29 +571,6 @@ public class Association extends Shape implements AnchoredMapItem {
         boolean clampToGround = _clampToGround || view.getMapTouchController()
                 .isNadirClamped();
 
-        if (clampToGround) {
-            // Test hist bounds
-            final GeoBounds hitBox = view.createHitbox(point, hitRadius);
-            if (!bounds.intersects(hitBox))
-                return false;
-
-            // Let the endpoints (and center marker) bleed through so they can be
-            // repositioned or otherwise interacted with, but only if they exist,
-            // are visible, and clickable
-            PointMapItem[] endpoints = new PointMapItem[] {
-                    _firstItem, _secondItem, _marker
-            };
-            for (PointMapItem pmi : endpoints) {
-                if (pmi != null && hitBox.contains(pmi.getPoint())) {
-                    if (_firstItem.getClickable() && _firstItem.getVisible())
-                        return false;
-                    setTouchPoint(pmi.getPoint());
-                    setMetaString("menu_point", pmi.getPoint().toString());
-                    return true;
-                }
-            }
-        }
-
         final double unwrap = view.getIDLHelper().getUnwrap(bounds);
 
         // Let the endpoints (and center marker) bleed through so they can be repositioned or

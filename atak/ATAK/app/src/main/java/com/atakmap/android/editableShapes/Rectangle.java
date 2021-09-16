@@ -1350,11 +1350,6 @@ public abstract class Rectangle extends AssociationSet
         if (!isTouchable() || !_showLines)
             return false;
 
-        // Bounds check
-        GeoBounds hitBox = view.createHitbox(point, getHitRadius(view));
-        if (!hitBox.intersects(_bounds))
-            return false;
-
         // Hit test on lines
         for (Association a : _lines) {
             if (a.testOrthoHit(xpos, ypos, point, view)) {
