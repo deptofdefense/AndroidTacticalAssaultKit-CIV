@@ -1,17 +1,26 @@
 package com.atakmap.gradle.takdev
 
 import org.gradle.api.DefaultTask
+import org.gradle.api.DomainObjectSet
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.UnknownTaskException
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.Dependency
+import org.gradle.api.artifacts.ResolveException
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
 
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 
 class TakDevPlugin implements Plugin<Project> {
+
+    enum VariantType {
+        UNKNOWN,
+        APPLICATION,
+        LIBRARY
+    }
 
     class PathTuple {
         File apiJar
@@ -32,14 +41,21 @@ class TakDevPlugin implements Plugin<Project> {
     }
 
     void apply(Project project) {
-        verbose = getLocalOrProjectProperty(project, 'takdev.verbose', 'false').equals('true')
+        verbose = getLocalOrProjectProperty(project, 'takdev.verbose', null, 'false').equals('true')
 
-        // Consuming gradle project already handles 'takrepoUrl', 'takrepoUser' and 'takrepoPassword'
-        project.ext.mavenOnly = getLocalOrProjectProperty(project, 'takrepo.force', 'false').equals('true')
-        project.ext.snapshot = getLocalOrProjectProperty(project, 'takrepo.snapshot', 'true').equals('true')
-        project.ext.devkitVersion = getLocalOrProjectProperty(project, 'takrepo.devkit.version', project.ATAK_VERSION)
-        project.ext.takdevProduction = getLocalOrProjectProperty(project, 'takdev.production', 'false').equals('true')
-        project.ext.takdevNoApp = getLocalOrProjectProperty(project, 'takdev.noapp', 'false').equals('true')
+        String appVariant = VariantType.APPLICATION == getVariantType(project) ? 'true' : 'false'
+        String libVariant = VariantType.LIBRARY == getVariantType(project) ? 'true' : 'false'
+
+        // Consuming gradle project already handles 'isDevKitEnabled', 'takrepoUrl', 'takrepoUser' and 'takrepoPassword'
+        project.ext.mavenOnly = getLocalOrProjectProperty(project, 'takrepo.force', 'mavenOnly', 'false').equals('true')
+        project.ext.snapshot = getLocalOrProjectProperty(project, 'takrepo.snapshot', 'snapshot', 'true').equals('true')
+        project.ext.devkitVersion = getLocalOrProjectProperty(project, 'takrepo.devkit.version', 'devkitVersion', project.ATAK_VERSION)
+        project.ext.sdkPath = getLocalOrProjectProperty(project, 'sdk.path', 'sdkPath', "${project.rootDir}/sdk")
+        project.ext.takdevProduction = getLocalOrProjectProperty(project, 'takdev.production', 'takdevProduction', 'false').equals('true')
+        project.ext.takdevNoApp = getLocalOrProjectProperty(project, 'takdev.noapp', 'takdevNoApp', libVariant).equals('true')
+        project.ext.takdevConTestEnable = getLocalOrProjectProperty(project, 'takdev.contest.enable', 'takdevConTestEnable', appVariant).equals('true')
+        project.ext.takdevConTestVersion = getLocalOrProjectProperty(project, 'takdev.contest.version', 'takdevConTestVersion', project.devkitVersion)
+        project.ext.takdevConTestPath = getLocalOrProjectProperty(project, 'takdev.contest.path', 'takdevConTestPath', "${project.rootDir}/espresso")
 
         def haveRemoteRepo = !((null == project.takrepoUrl) || (null == project.takrepoUser) || (null == project.takrepoPassword))
 
@@ -50,8 +66,12 @@ class TakDevPlugin implements Plugin<Project> {
         debugPrintln("haveRemoteRepo => ${haveRemoteRepo}")
         debugPrintln("snapshot option => ${project.snapshot}")
         debugPrintln("devkitVersion option => ${project.devkitVersion}")
+        debugPrintln("sdkPath option => ${project.sdkPath}")
         debugPrintln("production option => ${project.takdevProduction}")
         debugPrintln("noapp option => ${project.takdevNoApp}")
+        debugPrintln("connected test enable => ${project.takdevConTestEnable}")
+        debugPrintln("connected test version => ${project.takdevConTestVersion}")
+        debugPrintln("connected test path => ${project.takdevConTestPath}")
 
         if (project.mavenOnly) {
             if (haveRemoteRepo) {
@@ -61,11 +81,9 @@ class TakDevPlugin implements Plugin<Project> {
             }
         } else {
             def tuple = getAutoBuilder(project)
-            if (null == tuple) {
+            boolean offline = null == tuple
+            if (offline) {
                 tuple = getOfflineDevKit(project)
-            } else {
-                println("Configuring Autobuilder TAK plugin build")
-                configureOffline(project, tuple)
             }
             if (null == tuple) {
                 if (haveRemoteRepo) {
@@ -75,7 +93,8 @@ class TakDevPlugin implements Plugin<Project> {
                     throw new GradleException("No remote repp or local files available to configure TAK DevKit")
                 }
             } else {
-                println("Configuring Offline DevKit TAK plugin build")
+                offline ? println("Configuring Offline TakDev plugin build") :
+                        println("Configuring Autobuilder TakDev plugin build")
                 configureOffline(project, tuple)
             }
         }
@@ -94,16 +113,16 @@ class TakDevPlugin implements Plugin<Project> {
         }
     }
 
-    static String getLocalOrProjectProperty(Project project, String key, String defval) {
+    static String getLocalOrProjectProperty(Project project, String localKey, String projectKey, String defval) {
         if (new File('local.properties').exists()) {
             def localProperties = new Properties()
             localProperties.load(project.rootProject.file('local.properties').newDataInputStream())
-            def value = localProperties.get(key)
+            def value = localProperties.get(localKey)
             if ((null != value)) {
                 return value
             }
         }
-        return project.properties.get(key, defval)
+        return project.properties[localKey] ?: String.valueOf(project.properties.get(projectKey, defval))
     }
 
     static String resolvePathFromSet(String[] filePaths, String fileName) {
@@ -129,7 +148,7 @@ class TakDevPlugin implements Plugin<Project> {
     PathTuple getOfflineDevKit(Project project) {
         String[] apiPaths = [
                 "${project.rootDir}/../..",
-                getLocalOrProjectProperty(project, 'sdk.path', "${project.rootDir}/sdk")
+                project.sdkPath
         ]
         def offlinePath = resolvePathFromSet(apiPaths, 'main.jar')
         def tuple = new PathTuple()
@@ -145,11 +164,26 @@ class TakDevPlugin implements Plugin<Project> {
 
         debugPrintln(tuple)
 
-        project.android.applicationVariants.all { variant ->
+        // Connected test support
+        if (project.takdevConTestEnable && !project.takdevConTestPath.isEmpty()) {
+            def contestFile = "${project.takdevConTestPath}/testSetup.gradle"
+            if (new File(contestFile).exists()) {
+                project.apply(from: contestFile)
+                debugPrintln("Resolved and applied connected test artifacts from local path, ${project.takdevConTestPath}")
+            } else {
+                println("Warning: local test files not found. Skipping connected tests.")
+            }
+        }
+
+        def variants = getVariantSet(project)
+        variants.all { variant ->
 
             Dependency dep = project.dependencies.create(project.files(tuple.apiJar.absolutePath))
             project.dependencies.add("${variant.name}CompileOnly", dep)
             project.dependencies.add("test${variant.name.capitalize()}Implementation", dep)
+            if ('debug' == variant.buildType.name) {
+                project.dependencies.add("${variant.name}AndroidTestCompileClasspath", dep)
+            }
 
             def compileProvider = project.tasks.named("compile${variant.name.capitalize()}JavaWithJavac")
             compileProvider.configure({
@@ -175,9 +209,7 @@ class TakDevPlugin implements Plugin<Project> {
                 }
             })
 
-            // inject keystore before validate signing
-            def signingProvider = project.tasks.named("validateSigning${variant.name.capitalize()}")
-            signingProvider.configure({
+            def signingClosure = {
                 doFirst {
                     // Keystore
                     def storeName = 'android_keystore'
@@ -189,11 +221,24 @@ class TakDevPlugin implements Plugin<Project> {
                         }
                     }
                 }
-            })
+            }
+
+            // inject keystore before validate signing
+            ["validateSigning${variant.name.capitalize()}",
+             "validateSigning${variant.name.capitalize()}AndroidTest"].each {
+                try {
+                    def signingProvider = project.tasks.named(it)
+                    signingProvider.configure(signingClosure)
+                } catch (UnknownTaskException ute) {
+                    debugPrintln("Unknown Task, skippiing ${it}.")
+                }
+            }
         }
     }
 
     void configureMaven(Project project) {
+
+        println("Configuring Maven TakDev plugin build")
 
         // add the maven repo as a dependency
         MavenArtifactRepository takrepo = project.repositories.maven({
@@ -212,18 +257,52 @@ class TakDevPlugin implements Plugin<Project> {
         String upperBound = "${versionTokens.join('.')}-SNAPSHOT"
         String mavenVersion = project.snapshot ? "[${lowerBound}, ${upperBound})" : "(${lowerBound}, ${upperBound})"
 
-        project.android.applicationVariants.all { variant ->
+        // Connected test support
+        if (project.takdevConTestEnable && !project.takdevConTestVersion.isEmpty()) {
+            def contestCoord = [group: 'com.atakmap.gradle', name: 'atak-connected-test', version: project.takdevConTestVersion]
+            def contestDep = project.dependencies.create(contestCoord)
+            def detachedConfig = project.configurations.detachedConfiguration(contestDep)
+            try {
+                def contestFiles = detachedConfig.resolve()
+                if (contestFiles.isEmpty()) {
+                    println("Warning: Skipping connected tests, no files from maven tuple ${contestCoord}")
+                } else {
+                    // this path has to be outside of buildDir, because a 'clean' task would other remove the artifacts
+                    def contestPath = "${project.rootDir}/espresso"
+                    project.copy {
+                        from project.zipTree(contestFiles[0])
+                        into contestPath
+                    }
+                    project.apply(from: "${contestPath}/testSetup.gradle")
+                    debugPrintln("Resolved and applied connected test artifacts from maven tuple ${contestCoord}")
+                }
+            } catch (ResolveException re) {
+                println("Warning: Skipping connected tests, could not resolve maven tuple ${contestCoord}")
+            }
+        }
 
+        def variants = getVariantSet(project)
+        variants.all { variant ->
             // arbitrary, variant specific, configuration names
             def apkZipConfigName = "${variant.name}ApkZip"
             def mappingConfigName = "${variant.name}Mapping"
             def keystoreConfigName = "${variant.name}Keystore"
 
-            def devType = variant.buildType.matchingFallbacks[0] ?: variant.buildType.name
-            if (project.takdevProduction && ('release' == variant.buildType.name)) {
-                devType = variant.buildType.name
+            // accommodate uses where variants may not be defined;  default to 'civ'
+            def devFlavor = variant.flavorName ?: 'civ'
+            def devType = variant.buildType.name
+            if (!variant.buildType.matchingFallbacks.isEmpty() &&
+                    !(project.takdevProduction && ('release' == variant.buildType.name))) {
+                devType = variant.buildType.matchingFallbacks[0]
             }
-            def devFlavor = variant.productFlavors.matchingFallbacks[0][0] ?: variant.flavorName
+            // if we still have a buildType of 'debug', use the 'sdk' buildType
+            if ('debug' == devType) {
+                devType = 'sdk'
+            }
+            // if we still have a non-production buildType of 'release', use the 'odk' buildType
+            if (!project.takdevProduction && 'release' == devType) {
+                devType = 'odk'
+            }
 
             def mavenGroupApp = 'com.atakmap.app'
             def mavenGroupCommon = "${mavenGroupApp}.${devFlavor}.common"
@@ -239,10 +318,12 @@ class TakDevPlugin implements Plugin<Project> {
                 return
             }
 
-            // api
+            // add the Maven API coordinate as a dependency
             project.dependencies.add("${variant.name}CompileOnly", mavenCoord)
-            // test
             project.dependencies.add("test${variant.name.capitalize()}Implementation", mavenCoord)
+            if ('debug' == variant.buildType.name) {
+                project.dependencies.add("${variant.name}AndroidTestCompileClasspath", mavenCoord)
+            }
 
             // other artifacts are strongly typed per variant
             mavenCoord.group = mavenGroupTyped
@@ -254,7 +335,7 @@ class TakDevPlugin implements Plugin<Project> {
                 apkZipConfiguration = project.configurations.register(apkZipConfigName)
                 project.dependencies.add(apkZipConfigName, mavenCoord)
                 debugPrintln("${variant.name} => Using repository APK, ${mavenCoord}")
-                if ('civ' != variant.flavorName) {
+                if ('civ' != devFlavor) {
                     def mavenCivCoord = [group: "${mavenGroupApp}.civ.${devType}", name: mavenCoord.name, version: mavenCoord.version]
                     project.dependencies.add(apkZipConfigName, mavenCivCoord)
                     debugPrintln("${variant.name} => Adding repository APK, ${mavenCivCoord}")
@@ -302,7 +383,7 @@ class TakDevPlugin implements Plugin<Project> {
             compileProvider.configure({
                 doFirst {
                     // Proguard mapping; flavor specific
-                    def mappingName = "proguard-${variant.flavorName}-${variant.buildType.name}-mapping.txt"
+                    def mappingName = "proguard-${devFlavor}-${devType}-mapping.txt"
                     def mappingFqn = "${project.buildDir}/${mappingName}"
                     project.copy {
                         from mappingConfiguration
@@ -317,9 +398,7 @@ class TakDevPlugin implements Plugin<Project> {
                 }
             })
 
-            // inject keystore before signing
-            def signingProvider = project.tasks.named("validateSigning${variant.name.capitalize()}")
-            signingProvider.configure({
+            def signingClosure = {
                 doFirst {
                     // Keystore
                     def storeName = 'android_keystore'
@@ -333,8 +412,44 @@ class TakDevPlugin implements Plugin<Project> {
                         }
                     }
                 }
-            })
+            }
+
+            // inject keystore before validate signing
+            ["validateSigning${variant.name.capitalize()}",
+             "validateSigning${variant.name.capitalize()}AndroidTest"].each {
+                try {
+                    def signingProvider = project.tasks.named(it)
+                    signingProvider.configure(signingClosure)
+                } catch (UnknownTaskException ute) {
+                    debugPrintln("Unknown Task, skippiing ${it}.")
+                }
+            }
         }
+    }
+
+    static VariantType getVariantType(Project project) {
+        VariantType variantType = VariantType.UNKNOWN
+        if (project.plugins.hasPlugin('com.android.application')) {
+            variantType = VariantType.APPLICATION
+        } else if (project.plugins.hasPlugin('com.android.library')) {
+            variantType = VariantType.LIBRARY
+        }
+        return variantType
+    }
+
+    static DomainObjectSet getVariantSet(Project project) {
+        DomainObjectSet variants
+        switch (getVariantType(project)) {
+            case VariantType.APPLICATION:
+                variants = project.android.applicationVariants
+                break
+            case VariantType.LIBRARY:
+                variants = project.android.libraryVariants
+                break
+            default:
+                throw new GradleException('Cannot locate either application or library variants')
+        }
+        return variants
     }
 
     static String readPluginProperty(Project project, String name, String defaultValue) {
@@ -411,7 +526,7 @@ class TakDevPlugin implements Plugin<Project> {
         }
 
         // check the cached values for dependency resolution
-        def depKey  = "${depcoord['group']}.${depcoord['name']}"
+        def depKey = "${depcoord['group']}.${depcoord['name']}"
         def repoHash = computeHash(p, takrepo)
         def dep = rootProject.dependencies.create(depcoord)
         def cachedHash = readPluginProperty(p, "${depKey}.hash", "")
@@ -429,26 +544,19 @@ class TakDevPlugin implements Plugin<Project> {
         }
 
         // create a transient configuration and attempt to resolve
-        Configuration config = null
+        Configuration config = p.configurations.detachedConfiguration(dep)
+        boolean resolved
         try {
-            config = rootProject.configurations.create("depResolver")
-            config.dependencies.add(dep.copy())
-            boolean resolved
-            try {
-                def deps = config.resolve()
-                resolved = (null != deps) && !deps.empty
-            } catch (Exception e) {
-                // dependency resolution failed
-                resolved = false
-            }
-            // update the cached dependency resolution state
-            writePluginProperty(p, "${depKey}.hash", repoHash)
-            writePluginProperty(p, "${depKey}.available", resolved ? 'true' : 'false')
-            return resolved
-        } finally {
-            if (config != null)
-                rootProject.configurations.remove(config)
+            def deps = config.resolve()
+            resolved = (null != deps) && !deps.empty
+        } catch (Exception e) {
+            // dependency resolution failed
+            resolved = false
         }
+        // update the cached dependency resolution state
+        writePluginProperty(p, "${dep.name}.hash", repoHash)
+        writePluginProperty(p, "${dep.name}.available", resolved ? 'true' : 'false')
+        return resolved
     }
 
     static int[] splitVersionString(String version) {

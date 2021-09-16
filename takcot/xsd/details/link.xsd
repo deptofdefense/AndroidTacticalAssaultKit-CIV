@@ -6,6 +6,14 @@
     <xs:attribute name="relation" use="required" type="xs:NCName"/>
     <xs:attribute name="type" use="required" type="xs:NCName"/>
     <xs:attribute name="uid" use="required" type="xs:NMTOKEN"/>
+    <xs:attribute name="callsign" type="xs:NCName"/>
+    <xs:attribute name="remarks" type="xs:NCName"/>
+    <xs:element name="point" type="xs:NCName">
+    <xs:annotation>
+          <xs:documentation>
+            concise version described as lat,lon,altHAE or lat,lon without a altitude
+          </xs:documentation>
+    </xs:annotation>
   </xs:complexType>
   <xs:element name="link">  
   </xs:element>

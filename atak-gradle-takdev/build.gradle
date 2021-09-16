@@ -1,7 +1,8 @@
 buildscript {
-    description = 'Plugin to resolve and apply development kits for ATAK Core'
+
+    description = 'Gradle plugin to resolve and apply development kits and test frameworks to ATAK plugins'
     group = 'com.atakmap.gradle'
-    version = '2.0.0'
+    version = '2.2.0'
 
     ext.getValueFromPropertiesFile = { propFile, key ->
         if(!propFile.isFile() || !propFile.canRead())
@@ -34,8 +35,6 @@ repositories {
 }
 
 dependencies {
-    implementation gradleApi()
-    testImplementation gradleTestKit()
 
     // FIX ME, tests don't yet work as plugin is not resolved on class path
     // See https://docs.gradle.org/current/userguide/test_kit.html for nominal guidance
