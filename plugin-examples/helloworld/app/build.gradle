@@ -293,6 +293,10 @@ android {
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".BEL"]
             buildConfigField 'String', 'ATAK_PACKAGE_NAME', '"com.atakmap.app.civ"'
         }
+        gov {
+            dimension "application"
+            manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".GOV"]
+        }
         natosof {
             dimension "application"
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".NATOSOF"]

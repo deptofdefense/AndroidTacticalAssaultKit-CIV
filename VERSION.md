@@ -1,5 +1,10 @@
 # Version History
 
+## 4.3.1.2
+
+* Bug Fix
+  * for crash when video encoding is being used by plugins such as UAS Tool
+
 ## 4.3.1.1
 
 * Bug Fix
