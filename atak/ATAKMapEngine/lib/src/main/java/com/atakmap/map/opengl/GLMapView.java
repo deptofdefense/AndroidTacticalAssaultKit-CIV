@@ -364,10 +364,11 @@ public class GLMapView implements
 
     public final static double recommendedGridSampleDistance = 0.125d;
 
-    private Map<Layer2, Collection<MapControl>> controls;
-    private Collection<MapControl> mapViewControls;
+    private final Map<Layer2, Collection<MapControl>> controls;
+    private final Collection<MapControl> rendererControls;
     // XXX - cache the model hit test controls separately to optimize inverse impl
     private final Set<ModelHitTestControl> modelHitTestControls = Collections2.newIdentityHashSet();
+    private final ReadWriteLock rendererControlsLock = new ReadWriteLock();
 
 
     public double hardwareTransformResolutionThreshold = 0d;
@@ -501,6 +502,8 @@ public class GLMapView implements
         this.terrain = new ElMgrTerrainRenderService(getTerrainRenderService(this.pointer.raw, impl), this);
 
         this.controlsListeners = Collections.newSetFromMap(new IdentityHashMap<OnControlsChangedListener, Boolean>());
+
+        this.rendererControls = Collections2.newIdentityHashSet();
 
         if(impl == IMPL_V2) {
             surfaceControl = new SurfaceControlImpl();
@@ -2161,13 +2164,6 @@ public class GLMapView implements
         private ScratchPad() {}
     }
 
-    private Collection<MapControl> getMapViewControls() {
-        if (this.mapViewControls == null) {
-            this.mapViewControls = Collections.newSetFromMap(new IdentityHashMap<MapControl, Boolean>());
-        }
-        return this.mapViewControls;
-    }
-
     @Override
     public void registerControl(Layer2 layer, MapControl ctrl) {
         if (ctrl instanceof ModelHitTestControl) {
@@ -2175,17 +2171,31 @@ public class GLMapView implements
                 this.modelHitTestControls.add((ModelHitTestControl) ctrl);
             }
         }
-        synchronized (this) {
-            Collection<MapControl> ctrls = this.getMapViewControls();
-            if (layer != null) {
-                ctrls = this.controls.get(layer);
-                if (ctrls == null)
-                    this.controls.put(layer, ctrls = Collections2.<MapControl>newIdentityHashSet());
-            }
-            if (ctrls.add(ctrl)) {
+
+        final boolean added = (layer != null) ?
+                registerLayerControl(layer, ctrl) :
+                registerRendererControl(ctrl);
+        if(added) {
+            synchronized(this) {
                 for (OnControlsChangedListener l : this.controlsListeners)
                     l.onControlRegistered(layer, ctrl);
             }
+        }
+    }
+
+    private synchronized boolean registerLayerControl(Layer2 layer, MapControl ctrl) {
+        Collection<MapControl> ctrls = controls.get(layer);
+        if(ctrls == null)
+            controls.put(layer, ctrls = Collections2.newIdentityHashSet());
+        return ctrls.add(ctrl);
+    }
+
+    private boolean registerRendererControl(MapControl control) {
+        rendererControlsLock.acquireWrite();
+        try {
+            return rendererControls.add(control);
+        } finally {
+            rendererControlsLock.releaseWrite();
         }
     }
 
@@ -2196,39 +2206,80 @@ public class GLMapView implements
                 this.modelHitTestControls.remove((ModelHitTestControl) ctrl);
             }
         }
-        synchronized (this) {
-            Collection<MapControl> ctrls = layer == null ? this.mapViewControls : this.controls.get(layer);
-            if (ctrls != null) {
-                if (ctrls.remove(ctrl)) {
-                    for (OnControlsChangedListener l : this.controlsListeners)
-                        l.onControlUnregistered(layer, ctrl);
-                }
+        final boolean removed = (layer != null) ?
+                unregisterLayerControl(layer, ctrl) :
+                unregisterRendererControl(ctrl);
+        if(removed) {
+            synchronized(this) {
+                for (OnControlsChangedListener l : this.controlsListeners)
+                    l.onControlUnregistered(layer, ctrl);
             }
         }
     }
 
-    @Override
-    public synchronized <T extends MapControl> boolean visitControl(Layer2 layer, Visitor<T> visitor, Class<T> ctrlClazz) {
-        Collection<MapControl> ctrls = layer == null ? this.mapViewControls : this.controls.get(layer);
+    private synchronized boolean unregisterLayerControl(Layer2 layer, MapControl ctrl) {
+        Collection<MapControl> ctrls = controls.get(layer);
         if(ctrls == null)
             return false;
+        return ctrls.remove(ctrl);
+    }
 
-        for(MapControl ctrl : ctrls) {
-            if(ctrlClazz.isAssignableFrom(ctrl.getClass())) {
-                visitor.visit(ctrlClazz.cast(ctrl));
-                return true;
+    private boolean unregisterRendererControl(MapControl control) {
+        rendererControlsLock.acquireWrite();
+        try {
+            return rendererControls.remove(control);
+        } finally {
+            rendererControlsLock.releaseWrite();
+        }
+    }
+
+    @Override
+    public <T extends MapControl> boolean visitControl(Layer2 layer, Visitor<T> visitor, Class<T> ctrlClazz) {
+        if(layer != null) {
+            synchronized(this) {
+                return visitImpl(visitor, ctrlClazz, this.controls.get(layer));
+            }
+        } else {
+            rendererControlsLock.acquireRead();
+            try {
+                return visitImpl(visitor, ctrlClazz, rendererControls);
+            } finally {
+                rendererControlsLock.releaseRead();
+            }
+        }
+    }
+
+    private <T extends MapControl> boolean visitImpl(Visitor<T> visitor, Class<T> ctrlClazz, Collection<MapControl> ctrls) {
+        if(ctrls != null) {
+            for (MapControl ctrl : ctrls) {
+                if (ctrlClazz.isAssignableFrom(ctrl.getClass())) {
+                    visitor.visit(ctrlClazz.cast(ctrl));
+                    return true;
+                }
             }
         }
         return false;
     }
 
     @Override
-    public synchronized boolean visitControls(Layer2 layer, Visitor<Iterator<MapControl>> visitor) {
-        Collection<MapControl> ctrls = layer == null ? this.mapViewControls : this.controls.get(layer);
-        if(ctrls == null)
-            return false;
-        visitor.visit(ctrls.iterator());
-        return true;
+    public boolean visitControls(Layer2 layer, Visitor<Iterator<MapControl>> visitor) {
+        if(layer != null) {
+            synchronized(this) {
+                Collection<MapControl> ctrls = this.controls.get(layer);
+                if(ctrls == null)
+                    return false;
+                visitor.visit(ctrls.iterator());
+                return true;
+            }
+        } else {
+            rendererControlsLock.acquireRead();
+            try {
+                visitor.visit(rendererControls.iterator());
+                return true;
+            } finally {
+                rendererControlsLock.releaseRead();
+            }
+        }
     }
 
     @Override
@@ -2238,11 +2289,16 @@ public class GLMapView implements
 
     @Override
     public <T> T getControl(Class<T> ctrlClazz) {
-        for(MapControl ctrl : this.mapViewControls) {
-            if(ctrlClazz.isAssignableFrom(ctrl.getClass()))
-                return (T)ctrl;
+        rendererControlsLock.acquireRead();
+        try {
+            for (MapControl ctrl : this.rendererControls) {
+                if (ctrlClazz.isAssignableFrom(ctrl.getClass()))
+                    return (T) ctrl;
+            }
+            return null;
+        } finally {
+            rendererControlsLock.releaseRead();
         }
-        return null;
     }
 
     /*************************************************************************/

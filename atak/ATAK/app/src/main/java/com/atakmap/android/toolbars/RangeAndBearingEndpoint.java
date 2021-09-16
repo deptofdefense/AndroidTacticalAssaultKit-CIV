@@ -42,16 +42,11 @@ public class RangeAndBearingEndpoint extends MetaMapPoint implements
         if (_parent == null || !_parent.getVisible())
             return false;
         float hitRadius = getHitRadius(view);
-        if (view.getMapTilt() > 0d) {
-            PointF xy = view
-                    .forward(view.getRenderElevationAdjustedPoint(getPoint()));
-            return Rectangle.contains(xpos - hitRadius, ypos - hitRadius,
-                    xpos + hitRadius, ypos + hitRadius,
-                    xy.x, xy.y);
-        } else {
-            GeoBounds hitBox = view.createHitbox(point, hitRadius);
-            return hitBox.contains(getPoint());
-        }
+        PointF xy = view
+                .forward(view.getRenderElevationAdjustedPoint(getPoint()));
+        return Rectangle.contains(xpos - hitRadius, ypos - hitRadius,
+                xpos + hitRadius, ypos + hitRadius,
+                xy.x, xy.y);
     }
 
     @Override

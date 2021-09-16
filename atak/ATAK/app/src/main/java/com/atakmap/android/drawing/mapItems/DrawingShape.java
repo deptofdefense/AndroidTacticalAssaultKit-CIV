@@ -381,6 +381,9 @@ public class DrawingShape extends EditablePolyline implements ParentMapItem {
 
     @Override
     public double getArea() {
+        if (!isClosed())
+            return Double.NaN;
+        
         return AreaUtilities.calcShapeArea(getPoints());
     }
 
