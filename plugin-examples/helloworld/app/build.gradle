@@ -295,7 +295,7 @@ android {
         }
         gov {
             dimension "application"
-            manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".GOV"]
+            manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".CIV"]  // CIV API with possible distributiion restrictions (see PluginTemplate)
         }
         natosof {
             dimension "application"

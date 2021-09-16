@@ -1,5 +1,10 @@
 # Version History
 
+## 4.3.1.4
+
+* Bug Fix
+  * for video playback issue detected in Thomas_Fire_Video with regards when projecting to the ground.
+
 ## 4.3.1.3
 
 * Bug Fix

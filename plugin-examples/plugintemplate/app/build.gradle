@@ -11,7 +11,7 @@ buildscript {
     ext.PLUGIN_VERSION = "1.0"
     ext.ATAK_VERSION = "4.3.1"
 
-    def takdevVersion = '2.0.0'
+    def takdevVersion = '2.2.0'
 
     ext.getValueFromPropertiesFile = { propFile, key ->
         if(!propFile.isFile() || !propFile.canRead())
@@ -227,10 +227,6 @@ android {
             dimension "application"
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".BEL"]
         }
-        gov {
-            dimension "application"
-            manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".GOV"]
-        }
         natosof {
             dimension "application"
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".NATOSOF"]
@@ -241,7 +237,8 @@ android {
         }
         gov {
             dimension "application"
-            manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".GOV"]
+            // GOV builds are just CIV api builds with additional information in the strings file 
+            manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".CIV"]
         }
         can {
             dimension "application"
@@ -263,8 +260,9 @@ android {
             defaultConfig.versionName = PLUGIN_VERSION + " (" + getVersionName() + ") - [" + ATAK_VERSION + "]"
         }
 
-        // Move the tests to tests/java, tests/res, etc...
-        //instrumentTest.setRoot('tests')
+        gov.java.srcDirs 'src/gov/java'
+        gov.assets.srcDir 'src/gov/assets'
+        gov.res.srcDir 'src/gov/res'
 
         // Move the build types to build-types/<type>
         // For instance, build-types/debug/java, build-types/debug/AndroidManifest.xml, ...
@@ -282,12 +280,6 @@ android {
         ndk {
             abiFilters "armeabi-v7a", "arm64-v8a", "x86"
         }
-    }
-
-    if (file("$project.projectDir/../espresso/testSetup.gradle").exists()) {
-         apply from: '../espresso/testSetup.gradle'
-    } else {
-         println("espresso test harness not found")
     }
 }
 
