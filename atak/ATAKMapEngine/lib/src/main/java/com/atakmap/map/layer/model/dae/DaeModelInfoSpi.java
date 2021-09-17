@@ -57,8 +57,8 @@ public class DaeModelInfoSpi implements ModelInfoSpi {
     }
 
     @Override
-    public boolean isSupported(String path) {
-        return this.create(path) != null;
+    public boolean isSupported(String uri) {
+        return this.create(uri) != null;
     }
 
     private void findModels(ZipVirtualFile kmlFile, String name, Element elem, List<ModelTuple> result) {
@@ -335,12 +335,12 @@ public class DaeModelInfoSpi implements ModelInfoSpi {
     }
 
     @Override
-    public Set<ModelInfo> create(String path) {
+    public Set<ModelInfo> create(String uri) {
         try {
-            File file = new File(path);
+            File file = FileSystemUtils.getFile(uri);
             if (FileSystemUtils.checkExtension(file, "kmz")) {
                 // Geospatial DAE (requires doc.kml)
-                ZipVirtualFile zf = new ZipVirtualFile(path);
+                ZipVirtualFile zf = new ZipVirtualFile(file);
                 List<File> kmlFiles = ModelFileUtils.findFiles(zf, Collections.singleton("kml"));
                 LinkedList<ModelTuple> models = new LinkedList<>();
                 for (File kmlFile : kmlFiles) {
@@ -383,7 +383,7 @@ public class DaeModelInfoSpi implements ModelInfoSpi {
                 return modelInfos(models);
             } else if (FileSystemUtils.checkExtension(file, "zip")) {
                 // Zipped DAE (no geospatial info)
-                ZipVirtualFile zf = new ZipVirtualFile(path);
+                ZipVirtualFile zf = new ZipVirtualFile(file);
                 List<File> daeFiles = ModelFileUtils.findFiles(zf,
                         Collections.singleton("dae"));
                 return modelInfos(file.getName(), daeFiles);

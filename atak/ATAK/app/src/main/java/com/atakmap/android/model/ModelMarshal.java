@@ -25,7 +25,7 @@ final class ModelMarshal extends AbstractMarshal {
 
     @Override
     public String marshal(Uri uri) throws IOException {
-        return ModelInfoFactory.isSupported(uri.getPath())
+        return ModelInfoFactory.isSupported(uri)
                 ? "application/octet-stream"
                 : null;
     }

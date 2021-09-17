@@ -49,7 +49,7 @@ public final class ObjModelInfoSpi implements ModelInfoSpi {
     }
 
     private boolean isSupported(String uri, File[] f) {
-        f[0] = new File(uri);
+        f[0] = FileSystemUtils.getFile(uri);
         if(FileSystemUtils.isZipPath(uri)) {
             try {
                 File entry = ObjUtils.findObj(new ZipVirtualFile(f[0]));

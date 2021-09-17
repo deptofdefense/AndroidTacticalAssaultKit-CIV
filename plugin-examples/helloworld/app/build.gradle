@@ -10,7 +10,7 @@
     ext.PLUGIN_VERSION = "1.0"
     ext.ATAK_VERSION = "4.3.1"
 
-    def takdevVersion = '2.0.0'
+    def takdevVersion = '2.2.0'
 
     ext.getValueFromPropertiesFile = { propFile, key ->
         if(!propFile.isFile() || !propFile.canRead())
@@ -65,7 +65,7 @@
         } else {
             classpath files(takdevPlugin)
         }
-     }
+    }
 
  }
 
@@ -321,12 +321,4 @@ android {
             variant.resValue "string", "versionName", variant.versionName
         }
     }
-
-    if(file("$project.projectDir/../espresso/testSetup.gradle").exists()) {
-         apply from: '../espresso/testSetup.gradle'
-    } else { 
-         println("espresso test harness not found")
-    }
-
-
 }

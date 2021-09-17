@@ -7,5 +7,5 @@ import java.util.Set;
 public interface ModelInfoSpi extends ServiceProvider<Set<ModelInfo>, String> {
     public String getName();
     public int getPriority();
-    public boolean isSupported(String path);
+    public boolean isSupported(String uri);
 }

@@ -47,10 +47,13 @@ final class Util {
         try {
             URI uriObj = new URI(uri);
             if (uriObj.getPath() != null) {
+                final String params = uriObj.getRawQuery();
                 if (uriObj.getPath().endsWith("/"))
                     uriObj = uriObj.resolve("..");
                 else
                     uriObj = uriObj.resolve(".");
+                if(params != null)
+                    uriObj = new URI(uriObj.toString() + "?" + params);
             }
             return uriObj.toString();
         } catch(Exception ignored) {}

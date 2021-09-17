@@ -1,5 +1,7 @@
 package com.atakmap.map.layer.model;
 
+import android.net.Uri;
+
 import com.atakmap.spi.PrioritizedStrategyServiceProviderRegistry2;
 import com.atakmap.util.ReadWriteLock;
 import com.atakmap.util.Visitor;
@@ -41,16 +43,21 @@ public final class ModelInfoFactory {
         return retval;
     }
 
-    public static boolean isSupported(String path) {
-        return isSupported(path, null);
+    public static boolean isSupported(Uri uri) {
+        return isSupported(uri.toString());
     }
-    public static boolean isSupported(final String path, String hint) {
+
+    public static boolean isSupported(String uri) {
+        return isSupported(uri, null);
+    }
+
+    public static boolean isSupported(final String uri, String hint) {
         final boolean[] supported = new boolean[] { false };
         registry.visitProviders(new Visitor<Iterator<ModelInfoSpi>>() {
             @Override
             public void visit(Iterator<ModelInfoSpi> object) {
                 while(object.hasNext()) {
-                    if(object.next().isSupported(path)) {
+                    if(object.next().isSupported(uri)) {
                         supported[0] = true;
                         break;
                     }

@@ -30,7 +30,7 @@ public class AssimpModelInfoSpi implements ModelInfoSpi {
     }
 
     @Override
-    public boolean isSupported(String path) {
+    public boolean isSupported(String uri) {
         return true;
     }
 

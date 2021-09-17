@@ -35,8 +35,8 @@ public class SingleFileModelInfoSpi implements ModelInfoSpi {
     }
 
     @Override
-    public boolean isSupported(String path) {
-        return create(path) != null;
+    public boolean isSupported(String uri) {
+        return create(uri) != null;
     }
 
     public Set<ModelInfo> create(List<File> plyFiles) throws IOException {
@@ -52,11 +52,11 @@ public class SingleFileModelInfoSpi implements ModelInfoSpi {
     }
 
     @Override
-    public Set<ModelInfo> create(String path) {
+    public Set<ModelInfo> create(String uri) {
         try {
-            File file = new File(path);
+            File file = FileSystemUtils.getFile(uri);
             if (FileSystemUtils.checkExtension(file, "zip")) {
-                ZipVirtualFile zf = new ZipVirtualFile(path);
+                ZipVirtualFile zf = new ZipVirtualFile(file);
                 List<File> plyFiles = ModelFileUtils.findFiles(zf, Collections.singleton(this.ext));
                 return create(plyFiles);
             } else if (FileSystemUtils.checkExtension(file, this.ext)) {

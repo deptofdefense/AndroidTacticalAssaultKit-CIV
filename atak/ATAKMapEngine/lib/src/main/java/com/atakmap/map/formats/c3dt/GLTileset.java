@@ -86,7 +86,7 @@ final class GLTileset implements GLMapRenderable2, Controls {
                     source = new ContentProxy(source, cache);
 
                 final String uri = Util.resolve(info.uri);
-                return new GLTileset(ctx, tileset, source, uri.substring(0, uri.lastIndexOf('/')+1));
+                return new GLTileset(ctx, tileset, source, uri.replace("tileset.json", ""));
             } catch(Throwable t) {
                 return null;
             }

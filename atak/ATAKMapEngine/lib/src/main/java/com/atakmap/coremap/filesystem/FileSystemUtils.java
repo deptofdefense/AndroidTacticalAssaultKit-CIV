@@ -2440,4 +2440,15 @@ public class FileSystemUtils {
             Log.d(TAG, "validity scan failed: " + reason);
         }
     }
+
+    /**
+     * Create a {@link File} object given a URI or path
+     * @param uriOrPath URI or path string
+     * @return File
+     */
+    public static File getFile(String uriOrPath) {
+        if (uriOrPath.startsWith("file://"))
+            uriOrPath = uriOrPath.substring(7);
+        return new File(uriOrPath);
+    }
 }

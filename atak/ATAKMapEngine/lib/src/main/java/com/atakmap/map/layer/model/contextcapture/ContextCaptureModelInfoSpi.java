@@ -27,17 +27,17 @@ public final class ContextCaptureModelInfoSpi implements ModelInfoSpi {
     }
 
     @Override
-    public boolean isSupported(String path) {
+    public boolean isSupported(String uri) {
         long s1 = System.currentTimeMillis();
-        boolean r1 = isSupported1(path);
+        boolean r1 = isSupported1(uri);
         long e1 = System.currentTimeMillis();
 
         Log.i("ContextCaptureModelInfoSpi", "isSupported in " + (e1-s1));
         return r1;
     }
-    private boolean isSupported1(String path) {
-        File f = new File(path);
-        if(FileSystemUtils.isZipPath(path)) {
+    private boolean isSupported1(String uri) {
+        File f = FileSystemUtils.getFile(uri);
+        if(FileSystemUtils.isZipPath(uri)) {
             try {
                 File entry = ObjUtils.findObj(new ZipVirtualFile(f));
                 if (entry == null)
