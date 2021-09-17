@@ -67,8 +67,8 @@ import com.atakmap.map.layer.opengl.GLLayer2;
 import com.atakmap.map.layer.opengl.GLLayerSpi2;
 import com.atakmap.map.layer.raster.osm.OSMUtils;
 import com.atakmap.map.opengl.GLMapView;
+import com.atakmap.math.MathUtils;
 import com.atakmap.math.Statistics;
-import com.atakmap.util.Collections2;
 import com.atakmap.util.Visitor;
 
 public class GLBatchGeometryFeatureDataStoreRenderer extends
@@ -120,8 +120,6 @@ public class GLBatchGeometryFeatureDataStoreRenderer extends
     private final LollipopControlImpl lollipopControl;
     private final ClampToGroundControlImpl nadirClampControl;
     private final Set<MapControl> controls;
-    /** only to be accessed on query thread */
-    private final Set<GLBatchGeometry> lastBatch;
 
     public GLBatchGeometryFeatureDataStoreRenderer(MapRenderer surface, FeatureLayer subject) {
         this(surface, subject, Adapters.adapt(subject.getDataStore()));
@@ -188,8 +186,6 @@ public class GLBatchGeometryFeatureDataStoreRenderer extends
                 this.controls.add((MapControl)ctrl);
             }
         }
-
-        this.lastBatch = Collections2.newIdentityHashSet();
     }
     
     /**************************************************************************/
@@ -319,29 +315,6 @@ public class GLBatchGeometryFeatureDataStoreRenderer extends
             }
         } finally {
             state.copy(scratch);
-        }
-
-        // NOTE: some micro-optimizations here based on knowledge that
-        //       currently only points have labels
-
-        // remove all labels for renderables that are no longer visible
-        final Set<GLBatchGeometry> labelsToInvalidate = Collections2.newIdentityHashSet();
-        for(GLBatchGeometry g : lastBatch) {
-            if (g instanceof GLBatchPoint)
-                labelsToInvalidate.add(g);
-        }
-        labelsToInvalidate.removeAll(result);
-
-        lastBatch.clear();
-        lastBatch.addAll(result);
-
-        if(!labelsToInvalidate.isEmpty()) {
-            renderContext.queueEvent(new Runnable() {
-                public void run() {
-                    for(GLBatchGeometry geom : labelsToInvalidate)
-                        geom.releaseLabel();
-                }
-            });
         }
     }
 
@@ -611,6 +584,11 @@ public class GLBatchGeometryFeatureDataStoreRenderer extends
 
     @Override
     public void draw(GLMapView view, int renderPass) {
+
+        // Cease drawing labels that are no longer being rendered
+        if (MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SPRITES))
+            this.batchRenderer.invalidateLabels(!isVisible());
+
         super.draw(view, renderPass);
 
         // Batch renderer is requesting a full batch list refresh
@@ -639,6 +617,12 @@ public class GLBatchGeometryFeatureDataStoreRenderer extends
     }
     @Override
     public void onFeatureVisibilityChanged(FeatureDataStore2 dataStore, long fid, boolean visible) {
+        this.invalidate();
+    }
+
+    @Override
+    public void onLayerVisibleChanged(Layer layer) {
+        super.onLayerVisibleChanged(layer);
         this.invalidate();
     }
 

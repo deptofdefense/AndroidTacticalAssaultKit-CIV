@@ -93,6 +93,14 @@ public abstract class GLAsynchronousLayer2<Pending> extends GLAsynchronousMapRen
         super.resume();
     }
 
+    /**
+     * Check whether or not the subject layer is visible
+     * @return True if visible
+     */
+    protected final boolean isVisible() {
+        return this.visible;
+    }
+
     /**************************************************************************/
     // GL Asynchronous Map Renderable
 

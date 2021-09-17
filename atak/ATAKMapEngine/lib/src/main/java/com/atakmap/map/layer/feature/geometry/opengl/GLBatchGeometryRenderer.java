@@ -12,6 +12,7 @@ import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import android.graphics.Color;
 import android.graphics.PointF;
@@ -44,6 +45,7 @@ import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLRenderBatch2;
 import com.atakmap.opengl.GLTextureAtlas;
 import com.atakmap.opengl.Shader;
+import com.atakmap.util.Collections2;
 import com.atakmap.util.ConfigOptions;
 
 public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable2 {
@@ -191,6 +193,8 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
     private final ArrayList<GLBatchPoint> batchPoints2 = new ArrayList<>();
     private final ArrayList<GLBatchPoint> labels = new ArrayList<>();
     private final ArrayList<GLBatchPoint> loadingPoints = new ArrayList<>();
+    private final ArrayList<GLBatchPoint> points = new ArrayList<>();
+    private final Set<GLBatchPoint> lastPoints = Collections2.newIdentityHashSet();
 
     private SortInfo sortInfo = new SortInfo();
 
@@ -200,14 +204,14 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
     private long pointsBufferPtr;
     private FloatBuffer pointsVertsTexCoordsBuffer;
     private IntBuffer textureAtlasIndicesBuffer;
-    
+
     private BatchPipelineState state;
-    
+
     private GLRenderBatch2 batch;
 
     private TextureProgram textureProgram2d;
     private TextureProgram textureProgram3d;
-    
+
     private VectorProgram vectorProgram2d;
     private VectorProgram vectorProgram3d;
 
@@ -241,7 +245,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
 
         this.state = new BatchPipelineState();
         this.batch = null;
-        
+
         this.buffers = null;
         _lineRenderer = new GLAntiAliasedLine();
     }
@@ -349,10 +353,11 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         loadingPoints.clear();
         batchPoints2.clear();
         labels.clear();
+        points.clear();
 
         this.fillBatchLists(geoms);
-        
-        // 
+
+        //
         if(sortInfo.order == SortInfo.FID)
             Collections.sort(this.batchPoints2, FID_COMPARATOR);
         else if(sortInfo.order == SortInfo.DEPTH)
@@ -379,6 +384,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
                     } else if(point.name != null){
                         labels.add(point);
                     }
+                    points.add(point);
                     break;
                 }
                 case 2: {
@@ -438,11 +444,11 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
                 }
                 buffers.references++;
             }
-         
+
             this.pointsBuffer = buffers.pointsBuffer;
             this.pointsBufferPtr = buffers.pointsBufferPtr;
             this.pointsVertsTexCoordsBuffer = buffers.pointsVertsTexCoordsBuffer;
-            this.textureAtlasIndicesBuffer = buffers.textureAtlasIndicesBuffer;            
+            this.textureAtlasIndicesBuffer = buffers.textureAtlasIndicesBuffer;
         }
 
         final boolean surface = MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SURFACE);
@@ -483,11 +489,11 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         this.state.color = 0xFFFFFFFF;
         this.state.lineWidth = 1.0f;
         this.state.texId = 0;
-        
+
         int[] i = new int[1];
         GLES20FixedPipeline.glGetIntegerv(GLES20FixedPipeline.GL_ACTIVE_TEXTURE, i, 0);
         this.state.textureUnit = i[0];
-        
+
         if(MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SURFACE))
             this.renderSurface(view);
         if(MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SPRITES))
@@ -558,17 +564,17 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         sortInfo.order = (view.drawTilt > 0d || view.drawSrid == 4978) ? SortInfo.DEPTH : SortInfo.FID;
         sortInfo.centerLat = view.drawLat;
         sortInfo.centerLng = view.drawLng;
-        
+
         view.scratch.geo.set(view.drawLat, view.drawLng);
         GeoPoint bottomCenter = GeoCalculations.midPoint(view.lowerLeft, view.lowerRight);
         GeoPoint measureFrom = GeoCalculations.pointAtDistance(view.scratch.geo, view.scratch.geo.bearingTo(bottomCenter), view.scratch.geo.distanceTo(bottomCenter) * 1.5d);
-        
+
         sortInfo.measureFromLat = measureFrom.getLatitude();
         sortInfo.measureFromLng = measureFrom.getLongitude();
         sortInfo.measureFromHae = measureFrom.getAltitude();
 
         // points
-        
+
         // if the relative scaling has changed we need to reset the default text
         // and clear the texture atlas
         if(GLBatchPoint.iconAtlasDensity != GLRenderGlobals.getRelativeScaling()) {
@@ -580,7 +586,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
 
         // check all points with loading icons and move those whose icon has
         // loaded into the batchable list
-        final Iterator<GLBatchPoint> iter = this.loadingPoints.iterator();        
+        final Iterator<GLBatchPoint> iter = this.loadingPoints.iterator();
         while(iter.hasNext()) {
             GLBatchPoint point = iter.next();
             GLBatchPoint.getOrFetchIcon(view.getRenderContext(), point);
@@ -607,7 +613,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
             this.batch.setMatrix(GLES20FixedPipeline.GL_PROJECTION, view.scratch.matrixF, 0);
             GLES20FixedPipeline.glGetFloatv(GLES20FixedPipeline.GL_MODELVIEW, view.scratch.matrixF, 0);
             this.batch.setMatrix(GLES20FixedPipeline.GL_MODELVIEW, view.scratch.matrixF, 0);
-            
+
             for(GLBatchGeometry g : this.labels)
                 g.batch(view, this.batch, GLMapView.RENDER_PASS_SPRITES);
             this.batch.end();
@@ -644,7 +650,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
             this.batch.setMatrix(GLES20FixedPipeline.GL_PROJECTION, view.scratch.matrixF, 0);
             GLES20FixedPipeline.glGetFloatv(GLES20FixedPipeline.GL_MODELVIEW, view.scratch.matrixF, 0);
             this.batch.setMatrix(GLES20FixedPipeline.GL_MODELVIEW, view.scratch.matrixF, 0);
-            
+
             for(GLBatchGeometry point : this.batchPoints2)
                 point.batch(view, this.batch, GLMapView.RENDER_PASS_SPRITES);
             this.batch.end();
@@ -666,7 +672,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
                 GLES30.glDeleteBuffers(1, lb.vbo, 0);
             spriteLineBuffers0.clear();
         }
-        
+
         // polygons
         if (!this.spritePolys.isEmpty()) {
             // 2D lines
@@ -699,7 +705,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
                 spriteLineBuffers1.clear();
         }
     }
-    
+
     int forceGLRB = -1;
     int forcePointsDraw = -1;
 
@@ -720,6 +726,27 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         } finally {
             refreshBatchList = false;
         }
+    }
+
+    /**
+     * Release labels that are no longer being rendered
+     * @param releaseAll True to release all labels regardless of whether
+     *                   they're still in the batch list or not
+     */
+    public void invalidateLabels(boolean releaseAll) {
+
+        // Exclude points that are still being rendered
+        if (!releaseAll)
+            lastPoints.removeAll(points);
+
+        // Release labels on points no longer being rendered
+        for(GLBatchPoint point : lastPoints)
+            point.releaseLabel();
+
+        // Update points list
+        lastPoints.clear();
+        if (!releaseAll)
+            lastPoints.addAll(points);
     }
 
     private static void bls3_vertex(ByteBuffer vbuf, GLBatchLineString.RenderState state, float relativeScale, PointD v1, PointD v2, int n, int dir) {
@@ -1111,13 +1138,13 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
 
         GLES20FixedPipeline.glPushMatrix();
         GLES20FixedPipeline.glLoadIdentity();
-        
+
         GLES20FixedPipeline.glEnable(GLES20FixedPipeline.GL_BLEND);
         GLES20FixedPipeline.glBlendFunc(GLES20FixedPipeline.GL_SRC_ALPHA,
                 GLES20FixedPipeline.GL_ONE_MINUS_SRC_ALPHA);
 
         final TextureProgram textureProgram;
-        
+
         if(view.drawTilt > 0d || view.drawSrid == 4978) {
             if(this.textureProgram3d == null)
                 this.textureProgram3d = new TextureProgram(3);
@@ -1131,7 +1158,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
                 GLES20FixedPipeline.glUseProgram(this.textureProgram2d.programHandle);
             textureProgram = this.textureProgram2d;
         }
-        
+
 
         GLES20FixedPipeline.glGetFloatv(GLES20FixedPipeline.GL_PROJECTION, view.scratch.matrixF, 0);
         GLES20FixedPipeline.glUniformMatrix4fv(textureProgram.uProjectionHandle, 1, false,
@@ -1140,19 +1167,19 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         GLES20FixedPipeline.glGetFloatv(GLES20FixedPipeline.GL_MODELVIEW, view.scratch.matrixF, 0);
         GLES20FixedPipeline.glUniformMatrix4fv(textureProgram.uModelViewHandle, 1, false, view.scratch.matrixF,
                 0);
-        
+
         // work with texture0
         GLES20FixedPipeline.glActiveTexture(this.state.textureUnit);
         GLES20FixedPipeline.glUniform1i(textureProgram.uTextureHandle, this.state.textureUnit
                 - GLES20FixedPipeline.GL_TEXTURE0);
-        
+
         // sync the current color with the shader
         GLES20FixedPipeline.glUniform4f(textureProgram.uColorHandle,
                                         Color.red(this.state.color) / 255f,
                                         Color.green(this.state.color) / 255f,
                                         Color.blue(this.state.color) / 255f,
                                         Color.alpha(this.state.color) / 255f);
-        
+
         this.pointsBuffer.clear();
         this.textureAtlasIndicesBuffer.clear();
 
@@ -1161,42 +1188,42 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         GLBatchPoint point;
         for(GLBatchGeometry geom : this.batchPoints2) {
             point = (GLBatchPoint)geom;
-            
+
             if(point.iconUri == null)
                 continue;
-            
+
             if(point.textureKey == 0L) {
                 GLBatchPoint.getOrFetchIcon(view.getRenderContext(), point);
                 continue;
             }
-            
+
             if(this.state.texId != point.textureId) {
                 this.pointsBuffer.position(pointsBufferPos/4);
                 this.renderPointsBuffers(view, textureProgram);
                 pointsBufferPos = 0;
                 this.pointsBuffer.clear();
                 this.textureAtlasIndicesBuffer.clear();
-                
+
                 this.state.texId = point.textureId;
                 GLES20FixedPipeline.glBindTexture(GLES20FixedPipeline.GL_TEXTURE_2D,
                         this.state.texId);
             }
             if(this.state.texId == 0)
                 continue;
-            
+
             if(point.color != this.state.color) {
                 this.pointsBuffer.position(pointsBufferPos/4);
                 this.renderPointsBuffers(view, textureProgram);
                 pointsBufferPos = 0;
                 this.pointsBuffer.clear();
                 this.textureAtlasIndicesBuffer.clear();
-                
+
                 GLES20FixedPipeline.glUniform4f(textureProgram.uColorHandle,
                         Color.red(point.color) / 255f,
                         Color.green(point.color) / 255f,
                         Color.blue(point.color) / 255f,
                         Color.alpha(point.color) / 255f);
-                
+
                 this.state.color = point.color;
             }
 
@@ -1239,7 +1266,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
                 pointsBufferPos = 0;
             }
         }
-        
+
         if(pointsBufferPos > 0) {
             this.pointsBuffer.position(pointsBufferPos/4);
             this.renderPointsBuffers(view, textureProgram);
@@ -1247,14 +1274,14 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
             this.pointsBuffer.clear();
             pointsBufferPos = 0;
         }
-        
+
         GLES20FixedPipeline.glPopMatrix();
-        
+
         GLES20FixedPipeline.glDisable(GLES20FixedPipeline.GL_BLEND);
 
         if(this.state.texId != 0)
             GLES20FixedPipeline.glBindTexture(GLES20FixedPipeline.GL_TEXTURE_2D, 0);
-        
+
         // sync the current color with the pipeline
         GLES20FixedPipeline.glColor4f(Color.red(this.state.color) / 255f,
                                       Color.green(this.state.color) / 255f,
@@ -1264,7 +1291,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
 
     private void renderPointsBuffers(GLMapView view, TextureProgram textureProgram) {
         this.textureAtlasIndicesBuffer.flip();
-        
+
         if(this.textureAtlasIndicesBuffer.remaining() < 1)
             return;
 
@@ -1290,7 +1317,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
                 GLES20FixedPipeline.GL_FLOAT,
                 false, (4*textureProgram.vertSize)+8, this.pointsVertsTexCoordsBuffer.position(textureProgram.vertSize));
         GLES20FixedPipeline.glEnableVertexAttribArray(textureProgram.aTextureCoordsHandle);
-        
+
         int remaining = this.textureAtlasIndicesBuffer.remaining();
         final int iconsPerPass = MAX_VERTS_PER_DRAW_ARRAYS / 6;
         int off = 0;
@@ -1306,14 +1333,14 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
             remaining -= iconsPerPass;
             off += iconsPerPass;
         } while(remaining > 0);
-        
+
         GLES20FixedPipeline.glDisableVertexAttribArray(textureProgram.aVertexCoordsHandle);
         GLES20FixedPipeline.glDisableVertexAttribArray(textureProgram.aTextureCoordsHandle);
-        
+
         this.pointsBuffer.position(this.pointsBuffer.limit());
         this.textureAtlasIndicesBuffer.position(this.textureAtlasIndicesBuffer.limit());
     }
-    
+
     @Override
     public void release() {
         this.surfaceLines.clear();
@@ -1321,7 +1348,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         this.surfacePolys.clear();
         this.spritePolys.clear();
         this.shapes.clear();
-        
+
         this.batchPoints2.clear();
         this.loadingPoints.clear();
         this.labels.clear();

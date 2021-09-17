@@ -1,14 +1,14 @@
 # Version History
 
+## 4.3.1.6
+
+* Bug Fix
+  * for plugins toggling feature labels
+
 ## 4.3.1.5
 
 * Bug Fix
   * for misidentification of PDF files on a remote system
-
-## 4.3.1.4
-
-* Bug Fix
-  * for video playback issue detected in Thomas_Fire_Video with regards when projecting to the ground.
 
 ## 4.3.1.4
 
