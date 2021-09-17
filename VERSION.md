@@ -1,5 +1,14 @@
 # Version History
 
+## 4.3.1.7
+
+* Bug Fixes
+  * fixed crash caused synchronized the invalidate labels call since it touches the points field
+
+* Feature Additions
+  * enabled KML/KMZ export in plugins by not filtering list items that implement Exportable and support the target class (usability)
+  * added support NGA GRiD streaming tile URLS
+
 ## 4.3.1.6
 
 * Bug Fix

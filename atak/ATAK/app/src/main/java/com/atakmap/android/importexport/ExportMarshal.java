@@ -131,7 +131,8 @@ public abstract class ExportMarshal extends HierarchyListFilter {
      * @return true to filter (don't display) specified item
      */
     public boolean filterListItemImpl(HierarchyListItem item) {
-        return true;
+        return !(item instanceof Exportable
+                && ((Exportable) item).isSupported(getTargetClass()));
     }
 
     /**

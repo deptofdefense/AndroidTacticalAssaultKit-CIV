@@ -1,6 +1,7 @@
 
 package com.atakmap.android.rubbersheet.data;
 
+import android.net.Uri;
 import android.widget.Toast;
 
 import com.atakmap.android.maps.MapView;
@@ -161,7 +162,7 @@ public class RubberModelData extends AbstractSheetData {
 
         // Shallow model check
         try {
-            return ModelInfoFactory.isSupported(f.getAbsolutePath());
+            return ModelInfoFactory.isSupported(Uri.fromFile(f));
         } catch (Exception e) {
             Log.e(TAG, "Invalid model file: " + f);
         }

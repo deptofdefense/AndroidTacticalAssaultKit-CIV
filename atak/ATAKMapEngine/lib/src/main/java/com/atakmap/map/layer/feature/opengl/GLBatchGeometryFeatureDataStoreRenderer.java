@@ -586,8 +586,11 @@ public class GLBatchGeometryFeatureDataStoreRenderer extends
     public void draw(GLMapView view, int renderPass) {
 
         // Cease drawing labels that are no longer being rendered
-        if (MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SPRITES))
-            this.batchRenderer.invalidateLabels(!isVisible());
+        if (MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SPRITES)) {
+            synchronized(this) {
+                this.batchRenderer.invalidateLabels(!isVisible());
+            }
+        }
 
         super.draw(view, renderPass);
 

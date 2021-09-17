@@ -5,6 +5,7 @@ import android.net.Uri;
 import android.util.Log;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
+import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.io.UriFactory;
 import com.atakmap.io.ZipVirtualFile;
@@ -44,20 +45,24 @@ public final class Cesium3DTilesModelInfoSpi implements ModelInfoSpi {
     }
 
     @Override
-    public boolean isSupported(String s) {
+    public boolean isSupported(String uriString) {
         // URI must have tileset.json
         try {
-            URI uri = new URI(s);
+            URI uri = new URI(uriString);
             String path = uri.getPath();
             String[] parts = path.split("/");
-            if (parts.length > 0 && parts[parts.length - 1].compareToIgnoreCase("tileset.json") == 0)
+            if (parts.length > 0 && parts[parts.length - 1].toLowerCase(LocaleUtil.getCurrent()).contains("tileset.json"))
+                return true;
+            else if(uri.getScheme() != null && uri.getScheme().equals("http") || uri.getScheme().equals("https"))
+                // we will allow through all HTTPS URLs, but then subsequently
+                // filter in `create`
                 return true;
         } catch (Exception e) {
             // ignore
         }
 
         // fallback on File test
-        File f = new File(s);
+        File f = FileSystemUtils.getFile(uriString);
         if(FileSystemUtils.checkExtension(f, "zip") ||
                 FileSystemUtils.checkExtension(f, "3tz")) {
             try {
@@ -84,6 +89,23 @@ public final class Cesium3DTilesModelInfoSpi implements ModelInfoSpi {
         }
         // remote URL load
         if(!IOProviderFactory.exists(f)) {
+            // if the URL does not specifically reference the `tileset.json` file, try to insert
+            if(!s.toLowerCase(LocaleUtil.getCurrent()).contains("tileset.json")) {
+                try {
+                    URI uri = new URI(s);
+                    String baseUri = s;
+                    if(baseUri.indexOf('?') >= 0)
+                        baseUri = s.substring(0, baseUri.indexOf('?'));
+                    if(!baseUri.endsWith("/"))
+                        baseUri += "/";
+                    s = baseUri + "tileset.json";
+                    if(uri.getRawQuery() != null)
+                        s += "?" + uri.getRawQuery();
+                } catch(Throwable t) {
+                    // insert of `tileset.json` file failed, halt further processing
+                    return null;
+                }
+            }
             try(UriFactory.OpenResult uriOpenResult = UriFactory.open(s)) {
                 if (uriOpenResult != null) {
                     try {
