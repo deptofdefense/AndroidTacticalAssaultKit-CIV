@@ -327,3 +327,10 @@
 
 # make sure jassimp is happy
 -keep class jassimp.** {*;}
+
+# specifically introduced on the maintenance-4.3 branch to keep the mapping happy
+-keepclassmembers class com.atakmap.map.layer.feature.geometry.opengl.GLBatchGeometryRenderer {
+    private ** points;
+    private ** lastPoints;
+
+}
