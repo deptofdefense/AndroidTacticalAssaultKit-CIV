@@ -1,5 +1,10 @@
 # Version History
 
+## 4.3.1.8
+
+* Bug Fix
+  * for hit testing for areas in high altitude
+  
 ## 4.3.1.7
 
 * Bug Fixes
