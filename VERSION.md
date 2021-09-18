@@ -1,5 +1,10 @@
 # Version History
 
+## 4.3.1.9
+
+* Bug Fix
+  * Account for possible `NullPointerException` in `FeatureDetailsView`
+  
 ## 4.3.1.8
 
 * Bug Fix
