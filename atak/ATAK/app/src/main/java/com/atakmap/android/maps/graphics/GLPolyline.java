@@ -82,7 +82,7 @@ public class GLPolyline extends GLShape2 implements
     protected boolean _needsUpdate;
     protected FloatBuffer _verts2;
     /** XY = 2, XYZ = 3; subclasses may set in constructor */
-    protected int _verts2Size = 2;
+    protected int _verts2Size = 3;
     protected long _verts2Ptr;
     private boolean _outlineStroke, _outlineHalo;
 
@@ -379,7 +379,7 @@ public class GLPolyline extends GLShape2 implements
     protected void updatePointsImpl(GeoPoint center, GeoPoint[] points) {
         if (points == null)
             points = new GeoPoint[0];
-        _pointsSize = uses2DPointBuffer() ? 2 : 3;
+        _pointsSize = 3;
         centerPoint = center;
         int pLen = points.length * _pointsSize;
         if (_points == null || _points.capacity() < pLen) {
@@ -479,10 +479,15 @@ public class GLPolyline extends GLShape2 implements
     /**
      * Whether points should be stored in a 2D or 3D point buffer
      * (if altitude should be ignored or not)
+     *
+     * XXX - We always need 3D points for hit testing to work properly
+     * with perspective rendering
+     *
      * @return True to use a 2D point buffer
      */
     protected boolean uses2DPointBuffer() {
-        return getAltitudeMode() == AltitudeMode.ClampToGround && !_hasHeight;
+        //return getAltitudeMode() == AltitudeMode.ClampToGround && !_hasHeight;
+        return true;
     }
 
     @Override
@@ -1412,6 +1417,11 @@ public class GLPolyline extends GLShape2 implements
         }
     }
 
+    /**
+     * TODO 4.4: Utilize the batch line string we already have instead of
+     *  creating a duplicate vertex buffer (_verts2). Also should be noted this
+     *  buffer is only used for hit testing and drawing vertices in editable mode.
+     */
     protected void _projectVerts(final GLMapView ortho) {
         if (recompute && this.numPoints > 0) {
             _ensureVertBuffer();
