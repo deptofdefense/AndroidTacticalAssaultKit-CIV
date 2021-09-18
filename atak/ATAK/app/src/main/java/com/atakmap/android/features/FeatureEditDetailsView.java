@@ -159,6 +159,12 @@ public class FeatureEditDetailsView extends LinearLayout {
         _db = db;
         _fid = fid;
         Feature feature = _db.getFeature(_fid);
+
+        if (feature == null) {
+            // TODO: Exit cleanly in this scenario
+            return;
+        }
+
         _fsids = new String[] {
                 Long.toString(feature.getFeatureSetId())
         };
