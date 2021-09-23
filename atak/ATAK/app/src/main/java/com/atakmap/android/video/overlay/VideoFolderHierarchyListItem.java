@@ -7,6 +7,7 @@ import com.atakmap.android.hierarchy.HierarchyListAdapter;
 import com.atakmap.android.hierarchy.HierarchyListItem;
 import com.atakmap.android.hierarchy.HierarchyListStateListener;
 import com.atakmap.android.hierarchy.action.Action;
+import com.atakmap.android.hierarchy.action.GroupDelete;
 import com.atakmap.android.hierarchy.action.ItemClick;
 import com.atakmap.android.hierarchy.action.Search;
 import com.atakmap.android.hierarchy.action.Visibility;
@@ -27,7 +28,8 @@ import java.util.List;
 import java.util.Set;
 
 class VideoFolderHierarchyListItem extends VideoBrowserHierarchyListItem
-        implements Visibility2, Search, HierarchyListStateListener {
+        implements Visibility2, Search, GroupDelete,
+        HierarchyListStateListener {
 
     protected final static int AUTO_HIDE_TIME_MS = 5000;
 
@@ -149,23 +151,9 @@ class VideoFolderHierarchyListItem extends VideoBrowserHierarchyListItem
     }
 
     @Override
-    public boolean onOpenList(HierarchyListAdapter om) {
-        return false;
-    }
-
-    @Override
     public boolean onCloseList(HierarchyListAdapter om, boolean forceClose) {
         // Clear the opened menu when we leave the list
         _showMenuUID = null;
-        return false;
-    }
-
-    @Override
-    public void onListVisible(HierarchyListAdapter om, boolean visible) {
-    }
-
-    @Override
-    public boolean onBackButton(HierarchyListAdapter om, boolean deviceBack) {
         return false;
     }
 

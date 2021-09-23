@@ -79,21 +79,21 @@ public class ContactConnectorManager {
         /**
          * Check if this handler supports the feature
          *
-         * @param feature
-         * @return
+         * @param feature the connector feature
+         * @return true if the contact manager supports that connector feature.
          */
         public abstract boolean hasFeature(ConnectorFeature feature);
 
         /**
          * Provide the human-readable handler name/title
-         * @return Handler name
+         * @return handler name
          */
         public abstract String getName();
 
         /**
-         * Provide human readable decription of the handler
+         * Provide human readable description of the handler
          *
-         * @return
+         * @return the description of the handler
          */
         public abstract String getDescription();
 
@@ -101,10 +101,10 @@ public class ContactConnectorManager {
          * Happens on UI thread, so please be quick
          * At least one of these two identifiers is required
          *
-         * @param connectorType
-         * @param contactUID
-         * @param connectorAddress
-         * @return
+         * @param connectorType the type of connector
+         * @param contactUID the contact identifier
+         * @param connectorAddress the address
+         * @return true if the connection manager can handle the contact
          */
         public abstract boolean handleContact(String connectorType,
                 String contactUID, String connectorAddress);

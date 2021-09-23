@@ -3,7 +3,6 @@ package com.atakmap.android.image;
 
 import android.content.Context;
 
-import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.maps.conversion.GeomagneticField;
 import androidx.exifinterface.media.ExifInterface;
@@ -11,7 +10,6 @@ import android.view.Display;
 import android.view.Surface;
 import android.view.WindowManager;
 
-import com.atakmap.android.elev.dt2.Dt2ElevationModel;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.util.ATAKUtilities;
@@ -21,6 +19,7 @@ import com.atakmap.coremap.maps.conversion.EGM96;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
+import com.atakmap.map.elevation.ElevationManager;
 import com.atakmap.util.zip.IoUtils;
 import org.apache.sanselan.ImageReadException;
 import org.apache.sanselan.ImageWriteException;
@@ -226,13 +225,16 @@ public class ExifHelper {
     public static double getDouble(TiffImageMetadata exif, TagInfo tag,
             double defaultValue) {
         if (exif != null && tag != null) {
+            String type = null;
             try {
                 TiffField tf = exif.findField(tag);
-                if (tf != null)
+                if (tf != null) {
+                    type = tf.getFieldTypeName();
                     return tf.getDoubleValue();
-            } catch (ImageReadException e) {
+                }
+            } catch (ImageReadException | ClassCastException e) {
                 Log.w(TAG, "Failed to read EXIF tag " + tag.name
-                        + " as double.");
+                        + " as double, it is a " + type);
             }
         }
         return defaultValue;
@@ -241,13 +243,16 @@ public class ExifHelper {
     public static int getInt(TiffImageMetadata exif, TagInfo tag,
             int defaultValue) {
         if (exif != null && tag != null) {
+            String type = null;
             try {
                 TiffField tf = exif.findField(tag);
-                if (tf != null)
+                if (tf != null) {
+                    type = tf.getFieldTypeName();
                     return tf.getIntValue();
-            } catch (ImageReadException e) {
+                }
+            } catch (ImageReadException | ClassCastException e) {
                 Log.w(TAG, "Failed to read EXIF tag " + tag.name
-                        + " as integer.");
+                        + " as integer, it is a " + type);
             }
         }
         return defaultValue;
@@ -256,15 +261,17 @@ public class ExifHelper {
     public static String getString(TiffImageMetadata exif, TagInfo tag,
             String defaultValue) {
         if (exif != null && tag != null) {
+            String type = null;
             try {
                 TiffField tf = exif.findField(tag);
                 if (tf != null) {
+                    type = tf.getFieldTypeName();
                     String ret = tf.getStringValue();
                     return (ret == null ? defaultValue : ret);
                 }
             } catch (ImageReadException e) {
                 Log.w(TAG, "Failed to read EXIF tag " + tag.name
-                        + " as string.");
+                        + " as string, it is a " + type);
             }
         }
         return defaultValue;
@@ -465,20 +472,6 @@ public class ExifHelper {
         } catch (Exception e) {
             Log.w(TAG, "Failed to putExtras", e);
         }
-    }
-
-    /**
-     * @deprecated Use {@link #putExtras(Map, TiffOutputSet)} directly
-     * @param exif
-     * @param bundle - unused
-     * @param tos
-     */
-    // No reason to pass TiffImageMetadata in here...
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public static void putExtras(TiffImageMetadata exif,
-            Map<String, Object> bundle, TiffOutputSet tos) {
-        putExtras(bundle, tos);
     }
 
     /**
@@ -721,9 +714,10 @@ public class ExifHelper {
                     altitude = spAltitude;
                 // Then try DTED
                 if (!GeoPoint.isAltitudeValid(altitude)) {
-                    Dt2ElevationModel ele = Dt2ElevationModel.getInstance();
-                    double dtedAltitude = EGM96
-                            .getMSL(ele.queryPoint(latitude, longitude).get());
+                    GeoPointMetaData gpm = ElevationManager
+                            .getElevationMetadata(
+                                    latitude, longitude, null);
+                    double dtedAltitude = EGM96.getMSL(gpm.get());
                     // If that doesn't work, revert back to self-marker altitude
                     if (GeoPoint.isAltitudeValid(dtedAltitude))
                         altitude = dtedAltitude;
@@ -902,7 +896,8 @@ public class ExifHelper {
                 // Chunk type
                 String chunkType = null;
                 if (fis.read(buf, 0, 4) == 4)
-                    chunkType = new String(buf, 0, 4, StandardCharsets.UTF_8);
+                    chunkType = new String(buf, 0, 4,
+                            FileSystemUtils.UTF8_CHARSET);
                 if (chunkType == null)
                     break;
 
@@ -922,7 +917,7 @@ public class ExifHelper {
                     for (int i = 0; i <= chunkLen; i++) {
                         if (i == chunkLen || buf[i] == 0) {
                             String s = new String(buf, start, i - start,
-                                    Charset.forName("ISO-8859-1"));
+                                    StandardCharsets.ISO_8859_1);
                             if (key == null)
                                 key = s;
                             else {

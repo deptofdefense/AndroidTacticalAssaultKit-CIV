@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import com.atakmap.android.hashtags.view.RemarksLayout;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.app.R;
 import com.atakmap.coremap.io.IOProviderFactory;
@@ -19,7 +20,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -215,7 +215,7 @@ public class ImageFileContainer
                 .findViewById(R.id.image_date_text);
         final TextView titleText = layout
                 .findViewById(R.id.image_title_text);
-        final EditText caption = layout
+        final RemarksLayout caption = layout
                 .findViewById(R.id.image_caption);
 
         locText.setText("---");
@@ -251,8 +251,7 @@ public class ImageFileContainer
                     }
 
                     if (bmpFile != null) {
-                        Bitmap imageBitmap = readNITF(bmpFile,
-                                context.getResources());
+                        Bitmap imageBitmap = readNITF(bmpFile);
 
                         if (imageBitmap == null) {
                             BitmapFactory.Options opts = new BitmapFactory.Options();

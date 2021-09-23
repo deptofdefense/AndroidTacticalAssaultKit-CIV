@@ -3,7 +3,10 @@ ifeq ($(and $(libspatialite_CFLAGS)),)
 endif
 
 libspatialite_libfile=$(LIB_PREFIX)spatialite.$(LIB_STATICSUFFIX)
-libspatialite_HOSTCC=gcc
+
+# Compiler to build binaries that run on build *host*
+libspatialite_HOSTCC_win32=$(VS_SETUP_win32) cl
+libspatialite_HOSTCC=$(if $(libspatialite_HOSTCC_$(PLATFORM)),$(libspatialite_HOSTCC_$(PLATFORM)),gcc)
 
 include mk/libspatialite-common.mk
 
@@ -38,9 +41,9 @@ libspatialite_configtouchfile=$(OUTDIR)/$(libspatialite_srcdir)/.configured
 
 $(libspatialite_configtouchfile): $(libspatialite_srctouchfile)
 	cd $(OUTDIR)/$(libspatialite_srcdir) &&              \
-		CFLAGS="$(libspatialite_CFLAGS) -fvisibility=hidden -I$(OUTDIR)/include"         \
-		CPPFLAGS="$(CPPFLAGS) -I$(OUTDIR)/include"                   \
-		LDFLAGS="$(libspatialite_LDFLAGS) -L$(OUTDIR)/lib"           \
+		CFLAGS="$(libspatialite_CFLAGS) -fvisibility=hidden -I$(OUTDIR_CYGSAFE)/include"         \
+		CPPFLAGS="$(CPPFLAGS) -I$(OUTDIR_CYGSAFE)/include"           \
+		LDFLAGS="$(libspatialite_LDFLAGS) -L$(OUTDIR_CYGSAFE)/lib"   \
 		CC="$(CC)"                                   \
 		CPP="$(CPP)"                                 \
 		CXX="$(CXX)"                                 \

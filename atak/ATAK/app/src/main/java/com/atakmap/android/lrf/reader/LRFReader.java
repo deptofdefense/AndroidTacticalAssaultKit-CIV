@@ -260,7 +260,7 @@ public class LRFReader extends BluetoothReader {
     private void debugData(byte[] bytes, int len) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < Math.min(len, bytes.length); ++i) {
-            sb.append(String.format("%02X ", (byte) bytes[i]));
+            sb.append(String.format("%02X ", bytes[i]));
         }
         Log.d(TAG, "Buffer [size=" + bytes.length + "] " + sb.toString());
     }

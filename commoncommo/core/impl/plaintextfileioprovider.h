@@ -10,6 +10,7 @@ namespace impl
 {
 
 class PlainTextFileIOProvider : public atakmap::commoncommo::FileIOProvider {
+public:
     FileHandle* open(const char* path, const char * mode) override;
 
     int close(FileHandle* filePtr) override;
@@ -27,6 +28,8 @@ class PlainTextFileIOProvider : public atakmap::commoncommo::FileIOProvider {
     int error(FileHandle* filePtr) override;
 
     size_t getSize(const char* path) override COMMO_THROW (std::invalid_argument);
+
+    ~PlainTextFileIOProvider() = default;
 };
 
 }

@@ -95,12 +95,8 @@ public class Selector {
             }
         });
 
-        if (_items.length < 2) {
-            // do not both the user by showing additional options
-            setEnabled(false);
-        } else {
-            setEnabled(true);
-        }
+        // do not both the user by showing additional options
+        setEnabled(_items.length >= 2);
     }
 
     public void setOnSelectionChangedListener(

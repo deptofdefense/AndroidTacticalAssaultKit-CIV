@@ -9,9 +9,9 @@
 buildscript {
 
     ext.PLUGIN_VERSION = "1.0"
-    ext.ATAK_VERSION = "4.3.1"
+    ext.ATAK_VERSION = "4.4.0"
 
-    def takdevVersion = '2.2.0'
+    def takdevVersion = '2.+'
 
     ext.getValueFromPropertiesFile = { propFile, key ->
         if(!propFile.isFile() || !propFile.canRead())
@@ -44,7 +44,6 @@ buildscript {
     ext.takdevPlugin = getProperty('takdev.plugin', "${rootDir}/../../atak-gradle-takdev.jar")
 
     repositories {
-        jcenter()
         google()
         mavenCentral()
         mavenLocal()
@@ -71,7 +70,7 @@ buildscript {
 
 allprojects {
     repositories {
-        jcenter()
+        mavenCentral()
         google()
         mavenCentral()
         mavenLocal()
@@ -226,6 +225,10 @@ android {
         bel {
             dimension "application"
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".BEL"]
+        }
+        swe {
+            dimension "application"
+            manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".SWE"]
         }
         natosof {
             dimension "application"

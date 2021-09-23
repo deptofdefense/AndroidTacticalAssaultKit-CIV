@@ -83,21 +83,23 @@ public class GetClientListOperation extends HTTPOperation {
 
         TakHttpClient client = null;
         try {
-            client = TakHttpClient.GetHttpClient(queryRequest.getBaseUrl());
+            //parse contact list
+            NetConnectString server = NetConnectString.fromString(queryRequest
+                    .getServerConnectString());
+            if (server == null) {
+                throw new IOException("Failed to parse server connect string: "
+                        + queryRequest.getServerConnectString());
+            }
+
+            client = TakHttpClient.GetHttpClient(queryRequest.getBaseUrl(),
+                    queryRequest
+                            .getServerConnectString());
 
             //TODO this api/endpoint supports a couple parameters we are not currently using
             String queryUrl = client.getUrl("api/clientEndPoints");
             String responseBody = client.getGZip(queryUrl,
                     queryRequest.getMatcher());
             long syncTime = new CoordinatedTime().getMilliseconds();
-
-            //parse contact list
-            NetConnectString server = NetConnectString.fromString(queryRequest
-                    .getServerConnectString());
-            if (server == null) {
-                throw new IOException("Failed to parse server connect string: "
-                        + responseBody);
-            }
 
             ArrayList<ServerContact> contactList = ServerContact
                     .fromResultJSON(server, syncTime, new JSONObject(

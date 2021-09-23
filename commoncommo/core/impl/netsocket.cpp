@@ -425,6 +425,10 @@ UdpSocket::UdpSocket(const NetAddress *localAddr, bool isBlocking, bool reuseAdd
         Socket(), boundAddr(NULL), currentTTL(1),
         outboundMcastIfSet(false)
 {
+    struct sockaddr_storage boundSAddrStor;
+    struct sockaddr *boundSAddr = (struct sockaddr *)&boundSAddrStor;
+    socklen_t boundSAddrLen = sizeof(boundSAddrStor);
+
     const struct sockaddr *saddr = localAddr->getSockAddr();
 
     PlatformNet::SocketFD newfd = PlatformNet::createSocket(saddr->sa_family, 
@@ -458,8 +462,16 @@ UdpSocket::UdpSocket(const NetAddress *localAddr, bool isBlocking, bool reuseAdd
             goto fail;
         }
     }
+
+    // Read back local address
+    if (getsockname(newfd, boundSAddr, &boundSAddrLen) != 0) {
+        msg = "Failed to get bound socket address";
+        goto fail;
+    }
+
     fd = newfd;
-    boundAddr = NetAddress::duplicateAddress(localAddr);
+    
+    boundAddr = NetAddress::create(boundSAddr);
     return;
 
 fail:
@@ -490,7 +502,8 @@ void UdpSocket::recvfrom(NetAddress **source,
     }
 
     try {
-        *source = NetAddress::create((struct sockaddr *)&saddr);
+        if (source)
+            *source = NetAddress::create((struct sockaddr *)&saddr);
     } catch (std::invalid_argument &) {
         // This should never happen since we're receiving on a socket
         // made against a valid address family...
@@ -562,6 +575,11 @@ void UdpSocket::checkAddr(const NetAddress* addr)
 {
     if (addr->family != boundAddr->family)
         throw SocketException();
+}
+
+NetAddress *UdpSocket::getBoundAddr()
+{
+    return NetAddress::duplicateAddress(boundAddr);
 }
 
 
@@ -703,4 +721,78 @@ size_t TcpSocket::read(uint8_t *data, const size_t len)
 }
 
 
+
+SelectInterrupter::SelectInterrupter() COMMO_THROW (SocketException) : 
+        localAddr(NULL), socket(NULL), dataBuf(), interruptCount(0), monitor()
+{
+    localAddr = NetAddress::create("127.0.0.1", NetAddress::WILDCARD_PORT);
+    if (localAddr == NULL)
+        throw SocketException(netinterfaceenums::ERR_OTHER, "Could not create local address");
+    socket = new UdpSocket(localAddr, false);
+    // Update to bound address
+    delete localAddr;
+    localAddr = socket->getBoundAddr();
+}
+
+SelectInterrupter::~SelectInterrupter()
+{
+    if (socket) {
+        delete socket;
+        socket = NULL;
+    }
+    if (localAddr) {
+        delete localAddr;
+        localAddr = NULL;
+    }
+}
+
+void SelectInterrupter::trigger()
+{
+    thread::MonitorLockPtr mLock;
+    thread::MonitorLock::create(mLock, monitor);
+    try {
+        socket->sendto(localAddr, dataBuf, 1);
+    } catch (SocketException &) {
+    }
+    interruptCount++;
+}
+
+void SelectInterrupter::waitUntilUntriggered()
+{
+    thread::MonitorLockPtr mLock;
+    thread::MonitorLock::create(mLock, monitor);
+    while (interruptCount != 0)
+        mLock->wait();
+}
+
+void SelectInterrupter::untrigger()
+{
+    thread::MonitorLockPtr mLock;
+    thread::MonitorLock::create(mLock, monitor);
+    if (interruptCount == 0)
+        // invalid
+        return;
+    
+    interruptCount--;
+    if (interruptCount == 0)
+        mLock->broadcast();
+}
+
+void SelectInterrupter::drain()
+{
+    try {
+        size_t len;
+        while (true) {
+            len = 16;
+            // Read until emptied (exception thrown)
+            socket->recvfrom(NULL, dataBuf, &len);
+        }
+    } catch (SocketException &) {
+    }
+}
+
+Socket *SelectInterrupter::getSocket()
+{
+    return socket;
+}
 

@@ -57,13 +57,10 @@ public class ExternalGPSInput implements Runnable {
     private final int _port;
     private DatagramSocket socket;
 
-
     // used for the NMEA over ethernet capability //
     private PacketRMC rmc = null;
     private PacketGGA gga = null;
     private PacketPTNL ptnl = null;
-
-
 
     private static ExternalGPSInput _instance;
 
@@ -124,7 +121,7 @@ public class ExternalGPSInput implements Runnable {
             // Found NMEA messages, will go ahead and process
             try {
                 processNMEA(data);
-            } catch (Exception e) {
+            } catch (Exception ignored) {
 
             }
         } else {
@@ -140,7 +137,7 @@ public class ExternalGPSInput implements Runnable {
 
     private void processNMEA(final String data) {
         Packet p = null;
-        String lines[] = data.split("\\r?\\n");
+        String[] lines = data.split("\\r?\\n");
         for (String line : lines) {
             try {
                 p = SentenceHandler.makePacket(line, false);
@@ -181,7 +178,6 @@ public class ExternalGPSInput implements Runnable {
             }
         }
     }
-
 
     /**
      * Process a CoT event that purports to be a GPS ownship position.

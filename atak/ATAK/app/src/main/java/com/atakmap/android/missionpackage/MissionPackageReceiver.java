@@ -23,6 +23,10 @@ import com.atakmap.android.coordoverlay.CoordOverlayMapReceiver;
 import com.atakmap.android.cot.CotMapComponent;
 import com.atakmap.android.cot.CotUtils;
 import com.atakmap.android.data.ClearContentRegistry;
+import com.atakmap.android.data.URIFilter;
+import com.atakmap.android.data.URIHelper;
+import com.atakmap.android.data.URIScheme;
+import com.atakmap.android.drawing.mapItems.DrawingShape;
 import com.atakmap.android.dropdown.DropDown.OnStateListener;
 import com.atakmap.android.dropdown.DropDownReceiver;
 import com.atakmap.android.filesharing.android.service.AndroidFileInfo;
@@ -33,6 +37,7 @@ import com.atakmap.android.filesystem.MIMETypeMapper;
 import com.atakmap.android.filesharing.android.service.FileTransferLog;
 import com.atakmap.android.filesharing.android.service.WebServer;
 import com.atakmap.android.filesharing.android.service.FileInfo;
+import com.atakmap.android.hierarchy.HierarchyListReceiver;
 import com.atakmap.android.hierarchy.items.MapItemHierarchyListItem;
 import com.atakmap.android.http.rest.DownloadProgressTracker;
 import com.atakmap.android.image.ImageDropDownReceiver;
@@ -66,6 +71,7 @@ import com.atakmap.android.missionpackage.http.MissionPackageDownloader;
 import com.atakmap.android.missionpackage.http.datamodel.FileTransfer;
 import com.atakmap.android.missionpackage.http.datamodel.MissionPackageQueryResult;
 import com.atakmap.android.missionpackage.http.rest.PostMissionPackageRequest;
+import com.atakmap.android.missionpackage.lasso.LassoSelectionDialog;
 import com.atakmap.android.missionpackage.ui.FileTransferLogView;
 import com.atakmap.android.missionpackage.ui.MissionPackageListGroup;
 import com.atakmap.android.missionpackage.ui.MissionPackageListItem;
@@ -97,8 +103,10 @@ import java.lang.reflect.Constructor;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -171,10 +179,15 @@ public class MissionPackageReceiver extends BroadcastReceiver implements
      */
     public static final String MISSIONPACKAGE_DOWNLOAD = "com.atakmap.android.missionpackage.MISSIONPACKAGE_DOWNLOAD";
 
+    /**
+     * Remove a list of contents using the lasso tool
+     */
+    public static final String MISSIONPACKAGE_REMOVE_LASSO = "com.atakmap.android.missionpackage.MISSIONPACKAGE_REMOVE_LASSO";
+
     // defaults for user settings
     public static final int DEFAULT_FILESIZE_THRESHOLD_NOGO_MB = 20;
     public static final int DEFAULT_CONNECTION_TIMEOUT_SECS = 10;
-    public static final int DEFAULT_TRANSFER_TIMEOUT_SECS = 15;
+    public static final int DEFAULT_TRANSFER_TIMEOUT_SECS = 10;
 
     public static final String TOOL_ID = "com.atakmap.android.missionpackage.MISSIONPACKAGE_TOOL";
 
@@ -687,23 +700,23 @@ public class MissionPackageReceiver extends BroadcastReceiver implements
                 return;
             }
 
-            String baseUrl = ServerListDialog.getBaseUrl(intent
-                    .getStringExtra("serverConnectString"));
-            if (FileSystemUtils.isEmpty(baseUrl)) {
-                baseUrl = _component.getConnectedServerUrl();
-                if (FileSystemUtils.isEmpty(baseUrl)) {
+            String serverConnectString = intent
+                    .getStringExtra("serverConnectString");
+            if (FileSystemUtils.isEmpty(serverConnectString)) {
+                serverConnectString = _component.getConnectedServerString();
+                if (FileSystemUtils.isEmpty(serverConnectString)) {
                     Log.w(TAG,
-                            "Cannot MISSIONPACKAGE_DOWNLOAD without valid server URL");
+                            "Cannot MISSIONPACKAGE_DOWNLOAD without valid server connectString");
                     promptForNetworkSettings();
                     return;
                 } else {
                     Log.d(TAG, "MISSIONPACKAGE_DOWNLOAD Using default server: "
-                            + baseUrl);
+                            + serverConnectString);
                 }
             }
 
             FileTransfer fileTransfer = FileTransfer.fromQuery(_context,
-                    result, baseUrl,
+                    result, serverConnectString,
                     _component.getFileIO()
                             .getMissionPackageIncomingDownloadPath());
             if (fileTransfer == null || !fileTransfer.isValid()) {
@@ -713,6 +726,76 @@ public class MissionPackageReceiver extends BroadcastReceiver implements
             }
 
             handleCoTFileTransfer(fileTransfer);
+        } else if (MISSIONPACKAGE_REMOVE_LASSO.equals(action)) {
+            MissionPackageMapOverlay overlay = MissionPackageMapOverlay
+                    .getOverlay();
+            if (overlay == null)
+                return;
+
+            String dpUID = extras.getString(
+                    MissionPackageApi.INTENT_EXTRA_MISSIONPACKAGEMANIFEST_UID);
+            final MissionPackageListGroup group = overlay.getGroup(dpUID);
+            if (group == null) {
+                Log.w(TAG, "Unable to save Package with no data package UID");
+                toast(R.string.no_mission_package_provided);
+                return;
+            }
+
+            String shapeUID = intent.getStringExtra("uid");
+            MapItem mi = _mapView.getMapItem(shapeUID);
+            if (!(mi instanceof DrawingShape))
+                return;
+
+            // XXX - Because data packages don't have any quick and easy
+            // way of looking up contents by UID/path we have to build
+            // a content map first
+            final Map<String, MissionPackageListItem> itemMap = new HashMap<>();
+            List<MissionPackageListItem> items = group.getItems();
+            for (MissionPackageListItem item : items) {
+                MissionPackageContent content = item.getContent();
+                String uid;
+                if (content.isCoT())
+                    uid = content.getParameterValue("uid");
+                else
+                    uid = content.getParameterValue("localpath");
+                if (FileSystemUtils.isEmpty(uid))
+                    continue;
+                itemMap.put(uid, item);
+            }
+
+            LassoSelectionDialog d = new LassoSelectionDialog(_mapView);
+            d.setLassoShape((DrawingShape) mi);
+            d.setFilter(new URIFilter() {
+                @Override
+                public boolean accept(String uri) {
+                    return itemMap.containsKey(URIHelper.getContent(uri));
+                }
+            });
+            d.setCallback(new LassoSelectionDialog.Callback() {
+                @Override
+                public void onContentSelected(List<String> uris) {
+                    // Iterate through URIs to remove
+                    for (String uri : uris) {
+                        MissionPackageListItem item = null;
+                        if (uri.startsWith(URIScheme.MAP_ITEM)) {
+                            MapItem mi = URIHelper.getMapItem(_mapView, uri);
+                            if (mi != null)
+                                item = itemMap.get(mi.getUID());
+                        } else if (uri.startsWith(URIScheme.FILE)) {
+                            File f = URIHelper.getFile(uri);
+                            if (f != null)
+                                item = itemMap.get(f.getAbsolutePath());
+                        }
+                        if (item != null) {
+                            group.removeItem(item);
+                            item.removeContent();
+                        }
+                    }
+                    AtakBroadcast.getInstance().sendBroadcast(new Intent(
+                            HierarchyListReceiver.REFRESH_HIERARCHY));
+                }
+            });
+            d.show();
         } else {
             Log.w(TAG, "Ignoring action of type: " + action);
         }

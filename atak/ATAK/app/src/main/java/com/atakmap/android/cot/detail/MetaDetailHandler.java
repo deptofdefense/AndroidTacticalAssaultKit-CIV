@@ -23,7 +23,7 @@ public class MetaDetailHandler extends CotDetailHandler {
         Map<String, Object> m = item.getMetaMap("meta");
         if (m != null && !m.isEmpty()) {
             for (Map.Entry<String, Object> pair : m.entrySet()) {
-                String k = (String) pair.getKey();
+                String k = pair.getKey();
                 String v = (String) pair.getValue();
                 CotDetail entry = new CotDetail();
                 entry.setAttribute("key", k);

@@ -28,6 +28,11 @@ namespace {
         "INFO",
         "ERROR"
     };
+    const char* TYPE_STRINGS[] = {
+            "GENERAL",
+            "PARSING",
+            "NETWORK"
+    };
 
 
     std::string getTimeString() {
@@ -374,7 +379,7 @@ void test::CommoAppCLI::ContactAdded(String ^const c)
     contactList->Add(c);
     String ^s = gcnew String(c);
     s->Insert(0, "Contact Added: ");
-    Log(ICommoLogger::Level::LevelInfo, s);
+    Log(ICommoLogger::Level::LevelInfo, ICommoLogger::Type::General, s, nullptr);
     contactMutex->ReleaseMutex();
 }
 
@@ -386,15 +391,18 @@ void test::CommoAppCLI::ContactRemoved(String ^const c)
         contactList->Remove(c);
     }
     s->Insert(0, "Contact Removed: ");
-    Log(ICommoLogger::Level::LevelInfo, s);
+    Log(ICommoLogger::Level::LevelInfo, ICommoLogger::Type::General, s, nullptr);
     contactMutex->ReleaseMutex();
 }
 
-void test::CommoAppCLI::Log(ICommoLogger::Level level, String ^message)
+void test::CommoAppCLI::Log(ICommoLogger::Level level, ICommoLogger::Type type, String^ message, Object^ data)
 {
     std::string s(LEVEL_STRINGS[Convert::ToInt32(level)]);
+    std::string t(TYPE_STRINGS[Convert::ToInt32(type)]);
     std::string time(getTimeString());
-    fprintf(logFile, "[%s] %s: %s\n", s.c_str(), time.c_str(), message);
+    msclr::interop::marshal_context mctx;
+    const char* msg = mctx.marshal_as<const char*>(message);
+    fprintf(logFile, "[%s-%s] %s: %s\n", s.c_str(), t.c_str(), time.c_str(), msg);
     fflush(logFile);
 }
 

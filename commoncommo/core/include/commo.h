@@ -482,6 +482,8 @@ public:
                                  const char *protodata,
                                  const size_t dataLen);
     void takmessageFree(char *takmessage);
+    
+    static const char *getVersionString();
 
 private:
     COMMO_DISALLOW_COPY(Commo);

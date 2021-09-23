@@ -69,23 +69,23 @@ public class RangeAndBearingCircleDropDown extends DropDownReceiver implements
 
     public static final String TAG = "RangeAndBearingCircleDropDown";
 
-    private static final Span[] unitsArray = new Span[] {
+    protected static final Span[] unitsArray = new Span[] {
             Span.METER, Span.KILOMETER, Span.NAUTICALMILE, Span.FOOT, Span.MILE
     };
-    private final DecimalFormat _one = LocaleUtil.getDecimalFormat("0.0");
-    private final DecimalFormat _two = LocaleUtil.getDecimalFormat("0.00");
+    protected final DecimalFormat _one = LocaleUtil.getDecimalFormat("0.0");
+    protected final DecimalFormat _two = LocaleUtil.getDecimalFormat("0.00");
 
-    private final MapView _mapView;
-    private final Context _context;
-    private final UnitPreferences _prefs;
-    private final ViewGroup _root;
-    private RangeCircle _rabCircle;
+    protected final MapView _mapView;
+    protected final Context _context;
+    protected final UnitPreferences _prefs;
+    protected final ViewGroup _root;
+    protected RangeCircle _rabCircle;
 
-    private EditText _nameEditText;
-    private RemarksLayout _remarksEditText;
+    protected EditText _nameEditText;
+    protected RemarksLayout _remarksEditText;
 
     private Button _radiusButton;
-    private ImageButton _colorButton;
+    protected ImageButton _colorButton;
     private ImageButton _sendButton;
     private Button _ringsPlusButton;
     private Button _ringsMinusButton;
@@ -98,13 +98,13 @@ public class RangeAndBearingCircleDropDown extends DropDownReceiver implements
 
     private TextView _centerPointLabel;
     private TextView _radiusPointLabel;
-    private Spinner unitsSpinner;
-    private UnitsArrayAdapter unitsAdapter;
+    protected Spinner unitsSpinner;
+    protected UnitsArrayAdapter unitsAdapter;
     private TextView _ringsText;
 
     private View _buttonLayout, _editLayout;
     private Button _editButton, _undoButton, _endButton;
-    private ExtraDetailsLayout _extrasLayout;
+    protected ExtraDetailsLayout _extrasLayout;
 
     public RangeAndBearingCircleDropDown(MapView mapView) {
 
@@ -115,12 +115,16 @@ public class RangeAndBearingCircleDropDown extends DropDownReceiver implements
 
         _prefs = new UnitPreferences(mapView);
 
-        _root = (ViewGroup) LayoutInflater.from(_context)
-                .inflate(R.layout.rab_circle_details, mapView, false);
+        _root = createRootView(mapView);
 
         initializeWidgets();
 
         ToolManagerBroadcastReceiver.getInstance().registerListener(this);
+    }
+
+    protected ViewGroup createRootView(MapView mapView) {
+        return (ViewGroup) LayoutInflater.from(_context)
+                .inflate(R.layout.rab_circle_details, mapView, false);
     }
 
     @Override
@@ -145,7 +149,7 @@ public class RangeAndBearingCircleDropDown extends DropDownReceiver implements
             startEdit();
     }
 
-    private void openCircle(final RangeCircle circle) {
+    protected void openCircle(final RangeCircle circle) {
         if (!isClosed()) {
             closeDropDown();
             _mapView.post(new Runnable() {
@@ -174,7 +178,7 @@ public class RangeAndBearingCircleDropDown extends DropDownReceiver implements
         refresh();
     }
 
-    private void initializeWidgets() {
+    protected void initializeWidgets() {
         GenericDetailsView.addEditTextPrompts(_root);
         _nameEditText = _root.findViewById(R.id.nameEditText);
         _nameEditText.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
@@ -356,7 +360,7 @@ public class RangeAndBearingCircleDropDown extends DropDownReceiver implements
                 d.getWindow().setSoftInputMode(
                         WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
             d.show();
-
+            input.requestFocus();
         }
 
         // Send circle
@@ -381,7 +385,7 @@ public class RangeAndBearingCircleDropDown extends DropDownReceiver implements
         }
     }
 
-    private void startEdit() {
+    protected void startEdit() {
         Bundle extras = new Bundle();
         extras.putString("uid", _rabCircle.getUID());
         ToolManagerBroadcastReceiver.getInstance().startTool(
@@ -398,14 +402,14 @@ public class RangeAndBearingCircleDropDown extends DropDownReceiver implements
         refresh();
     }
 
-    private CircleEditTool getEditTool() {
+    protected CircleEditTool getEditTool() {
         Tool active = ToolManagerBroadcastReceiver.getInstance()
                 .getActiveTool();
         return active instanceof CircleEditTool ? (CircleEditTool) active
                 : null;
     }
 
-    private void refresh() {
+    protected void refresh() {
         _mapView.post(new Runnable() {
             @Override
             public void run() {
@@ -448,7 +452,7 @@ public class RangeAndBearingCircleDropDown extends DropDownReceiver implements
     }
 
     // TODO: The separation is more stateful-widgets and non-stateful widgets.
-    private void populateLocationWidgets() {
+    protected void populateLocationWidgets() {
         _mapView.post(new Runnable() {
             @Override
             public void run() {
@@ -524,7 +528,7 @@ public class RangeAndBearingCircleDropDown extends DropDownReceiver implements
         alert.show();
     }
 
-    private void updateColorButton(final int color) {
+    protected void updateColorButton(final int color) {
         int newColor = Color.argb(255, Color.red(color), Color.green(color),
                 Color.blue(color));
         if (newColor != _rabCircle.getStrokeColor()) {
@@ -543,7 +547,7 @@ public class RangeAndBearingCircleDropDown extends DropDownReceiver implements
         });
     }
 
-    private void displayCoordinateDialog(GeoPointMetaData centerPoint) {
+    protected void displayCoordinateDialog(GeoPointMetaData centerPoint) {
 
         AlertDialog.Builder b = new AlertDialog.Builder(_context);
         LayoutInflater inflater = LayoutInflater.from(_context);

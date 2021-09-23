@@ -95,12 +95,6 @@
             android:defaultValue="1000"
             android:inputType="number" />
 
-        <com.atakmap.android.gui.PanCheckBoxPreference
-            android:key="doghouseShowNorthReference"
-            android:title="@string/preference_doghouse_north_ref_title"
-            android:summary="@string/preference_doghouse_north_ref_desc"
-            android:defaultValue="true"/>
-
         <!-- Swimming Preferences -->
         <PreferenceCategory
             android:title="@string/preferences_route_swimming" />

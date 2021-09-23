@@ -7,6 +7,10 @@ endif
 
 kdu_src=../kdu
 kdu_local_srcdir=$(OUTDIR)/kdu
+kdu_bindir=kdu_bin
+
+kdu_bindist_repo=../pgsc-kdu
+kdu_bindist_file=kdu_bin-$(TARGET)-$(BUILD_TYPE).tar.gz
 
 # Check that the outer source location is clean
 ifneq ($(or $(wildcard $(kdu_src)/coresys/make/*.$(OBJ_SUFFIX)),$(wildcard $(kdu_src)/apps/make/*.$(OBJ_SUFFIX)),$(wildcard $(kdu_src)/lib/$(kdu_PLATFORM)/*)),)
@@ -19,5 +23,7 @@ $(kdu_local_srcdir):
 	$(CP) -r $(kdu_src) $(OUTDIR)
 
 kdu_clean:
-	rm -f $(kdu_out_lib)
+	rm -rf $(OUTDIR)/$(kdu_bindir)
 	rm -rf $(kdu_local_srcdir)
+	rm -f $(OUTDIR)/$(kdu_bindist_file)
+	rm -f $(OUTDIR)/bin/$(kdu_out_lib)

@@ -68,9 +68,11 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -463,7 +465,7 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
 
     @Override
     public void onProgressChanged(BufferSeekBar seekBar, int progress) {
-        long posAct = processor.setTime((long) progress);
+        long posAct = processor.setTime(progress);
     }
 
     @Override
@@ -671,6 +673,22 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
         _prefs.unregisterOnSharedPreferenceChangeListener(this);
     }
 
+    /**
+     * Only returns a list of layers that do not have to be explicitly requested in order to show
+     * up.   These layers will be considered always on.
+     * @return the list of layers that do not have to be requested.
+     */
+    private String[] getGeneralLayers() {
+        Set<String> set = videoviewlayers.keySet();
+        List<String> list = new ArrayList<>();
+        for (String s : set) {
+            VideoViewLayer vvl = videoviewlayers.get(s);
+            if (vvl.isAlwaysOn())
+                list.add(s);
+        }
+        return list.toArray(new String[0]);
+    }
+
     @Override
     public void onReceive(final Context c, final Intent intent) {
 
@@ -725,7 +743,7 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
 
         showScreen(Screen.CONNECTING);
 
-        if (isClosed()) {
+        if (!isVisible()) {
             showDropDown(videoView, HALF_WIDTH, FULL_HEIGHT, FULL_WIDTH,
                     HALF_HEIGHT, true, this);
         }
@@ -740,7 +758,7 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
 
                 // otherwise go ahead and just display all of the layers registered
                 final String[] layers = (intentLayers != null) ? intentLayers
-                        : videoviewlayers.keySet().toArray(new String[0]);
+                        : getGeneralLayers();
 
                 getMapView().post(new Runnable() {
                     public void run() {
@@ -918,7 +936,7 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
                         srtPass = null;
                     Log.d(TAG,
                             "SRT connect to " + srtAddr + ":" + srtPort
-                                    + " pass is {" + srtPass + "} "
+                                    + " pass is { ********** } "
                                     + ce.getNetworkTimeout() + " "
                                     + ce.getBufferTime());
                     processor = new MediaProcessor(srtAddr, srtPort, srtPass,
@@ -1085,6 +1103,15 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
         if (!isVisible() && !isClosed()) {
             unhideDropDown();
             return true;
+        }
+
+        try {
+            //auto unregister non persistent layers when closing videos
+            for (VideoViewLayer vvl : activeLayers) {
+                unregisterVideoViewLayer(vvl);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "error with closing layer", e);
         }
 
         closeDropDown();
@@ -1453,9 +1480,9 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
         }
 
         int scaleW = (int) Math
-                .floor((double) ((float) sourceWidth * currentScale));
+                .floor((float) sourceWidth * currentScale);
         int scaleH = (int) Math
-                .floor((double) ((float) sourceHeight * currentScale));
+                .floor((float) sourceHeight * currentScale);
         int scaleDw = scaleW - sourceWidth;
         int scaleDh = scaleH - sourceHeight;
         float clampedPanX = MathUtils.clamp(currentPanX,

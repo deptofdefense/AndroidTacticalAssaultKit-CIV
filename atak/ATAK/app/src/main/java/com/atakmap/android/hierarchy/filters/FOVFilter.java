@@ -11,7 +11,6 @@ import com.atakmap.android.hierarchy.HierarchyListItem;
 import com.atakmap.android.hierarchy.items.MapItemUser;
 import com.atakmap.android.maps.AnchoredMapItem;
 import com.atakmap.android.maps.ILocation;
-import com.atakmap.android.maps.Location;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.PointMapItem;
@@ -103,12 +102,6 @@ public class FOVFilter extends HierarchyListFilter {
             iloc.getPoint(loc);
             iloc.getBounds(bounds);
             return accept(bounds) || accept(loc);
-        }
-
-        // Old location interface
-        if (item instanceof Location) {
-            GeoPointMetaData gpm = ((Location) item).getLocation();
-            return accept(gpm.get());
         }
 
         return defaultReturn;

@@ -1,0 +1,8 @@
+<PersistedActionMenu baseline="true" hideable="true" iconPath="ic_lasso"  title="lasso_select">
+   <ClickData actionType="click">
+      <broadcast>
+         <action>com.atakmap.android.missionpackage.lasso.SELECT</action>
+         <extras/>
+      </broadcast>
+   </ClickData>
+</PersistedActionMenu>

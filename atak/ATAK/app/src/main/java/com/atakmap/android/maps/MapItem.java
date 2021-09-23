@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Parcelable;
 
 import com.atakmap.android.data.URIHelper;
 import com.atakmap.android.hashtags.HashtagManager;
@@ -16,16 +17,25 @@ import com.atakmap.android.maps.visibility.VisibilityCondition;
 import com.atakmap.android.maps.visibility.VisibilityListener;
 import com.atakmap.android.maps.visibility.VisibilityUtil;
 import com.atakmap.android.util.ATAKUtilities;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
+import com.atakmap.map.MapRenderer3;
+import com.atakmap.map.hittest.HitTestable;
+import com.atakmap.map.layer.feature.Feature.AltitudeMode;
+import com.atakmap.map.hittest.HitTestQueryParameters;
 
+import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -112,7 +122,11 @@ public abstract class MapItem extends FilterMetaDataHolder implements
     /**
      * Default value of the clickable property
      */
-    public static final boolean CLICKABLE_DEFAULT = false;
+    public static final boolean CLICKABLE_DEFAULT = true;
+
+    public static final boolean EDITABLE_DEFAULT = false;
+
+    public static final boolean MOVABLE_DEFAULT = false;
 
     /**
      * Default value of the zOrder property
@@ -169,6 +183,17 @@ public abstract class MapItem extends FilterMetaDataHolder implements
         void onHeightChanged(MapItem item);
     }
 
+    /**
+     * Altitude mode property listener
+     */
+    public interface OnAltitudeModeChangedListener {
+        /**
+         * Called when the altitude mode is changed for the specific item
+         * @param altitudeMode The altitude mode that the map item was set to
+         */
+        void onAltitudeModeChanged(AltitudeMode altitudeMode);
+    }
+
     public interface OnGroupChangedListener {
         void onItemAdded(MapItem item, MapGroup group);
 
@@ -186,14 +211,17 @@ public abstract class MapItem extends FilterMetaDataHolder implements
     private boolean _visible = VISIBLE_DEFAULT;
     private int _visCond = VisibilityCondition.IGNORE;
     private double _zOrder = ZORDER_DEFAULT;
+    private AltitudeMode _altitudeMode = AltitudeMode.Absolute;
     private final ConcurrentLinkedQueue<OnVisibleChangedListener> _visibleListeners = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<OnTypeChangedListener> _typeListeners = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<OnClickableChangedListener> _clickableListeners = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<OnZOrderChangedListener> _zOrderListeners = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<OnGroupChangedListener> _onGroupListeners = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<OnMetadataChangedListener> _onMetadataChangedListeners = new ConcurrentLinkedQueue<>();
+    private final Map<String, ConcurrentLinkedQueue<OnMetadataChangedListener>> _onMetadataKeyListeners = new ConcurrentHashMap<>();
     private final ConcurrentLinkedQueue<OnHeightChangedListener> _onHeightChanged = new ConcurrentLinkedQueue<>();
-    private MapGroup group;
+    private final ConcurrentLinkedQueue<OnAltitudeModeChangedListener> _onAltitudeModeChanged = new ConcurrentLinkedQueue<>();
+    private MapGroup _group;
 
     MapItem(final long serialId, final String uid) {
         this(serialId, new DefaultMetaDataHolder(), uid);
@@ -288,25 +316,6 @@ public abstract class MapItem extends FilterMetaDataHolder implements
         }
     }
 
-    /**
-     *
-     */
-    @Override
-    public void setMetaString(final String k, final String dv) {
-        if (k.equals("uid")) {
-            Log.w(TAG, "### WARNING ###  changing an imutable UID --- BLOCKED "
-                    + _uid + " to: " + dv);
-        } else if (k.equals("type")) {
-            setType(dv);
-            return;
-        } else if (k.equals(getRemarksKey())) {
-            setRemarks(dv);
-            return;
-        }
-
-        super.setMetaString(k, dv);
-    }
-
     @Override
     public boolean getMetaBoolean(final String k, final boolean dv) {
         if (k.equals("camLocked"))
@@ -316,21 +325,6 @@ public abstract class MapItem extends FilterMetaDataHolder implements
                 return dv;
         else
             return super.getMetaBoolean(k, dv);
-    }
-
-    @Override
-    public void setMetaBoolean(final String k, final boolean dv) {
-        if (k.equals("camLocked"))
-            _camLocked = dv;
-
-        super.setMetaBoolean(k, dv);
-    }
-
-    @Override
-    public void removeMetaData(String k) {
-        if (k.equals("camLocked"))
-            _camLocked = null;
-        super.removeMetaData(k);
     }
 
     /**
@@ -410,10 +404,50 @@ public abstract class MapItem extends FilterMetaDataHolder implements
     }
 
     /**
+     * Add a metadata changed property listener for a specific key
+     *
+     * @param key Key to listen for changes on
+     * @param l Listener
+     */
+    public void addOnMetadataChangedListener(String key,
+            OnMetadataChangedListener l) {
+        ConcurrentLinkedQueue<OnMetadataChangedListener> listeners;
+        synchronized (_onMetadataKeyListeners) {
+            listeners = _onMetadataKeyListeners.get(key);
+            if (listeners == null)
+                _onMetadataKeyListeners.put(key,
+                        listeners = new ConcurrentLinkedQueue<>());
+        }
+        listeners.add(l);
+    }
+
+    /**
+     * Add a metadata changed property listener for a specific key
+     *
+     * @param key Key to remove listener from
+     * @param l Listener
+     */
+    public void removeOnMetadataChangedListener(String key,
+            OnMetadataChangedListener l) {
+        ConcurrentLinkedQueue<OnMetadataChangedListener> listeners;
+        synchronized (_onMetadataKeyListeners) {
+            listeners = _onMetadataKeyListeners.get(key);
+            if (listeners != null) {
+                listeners.remove(l);
+                if (listeners.isEmpty())
+                    _onMetadataKeyListeners.remove(key);
+            }
+        }
+    }
+
+    /**
      * Add a metadata changed property listener
      *
      * @param listener the listener
+     * @deprecated Use {@link #addOnMetadataChangedListener(String, OnMetadataChangedListener)} instead
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
     public void addOnMetadataChangedListener(
             OnMetadataChangedListener listener) {
         _onMetadataChangedListeners.add(listener);
@@ -423,7 +457,10 @@ public abstract class MapItem extends FilterMetaDataHolder implements
      * Remove a metadata property listener
      *
      * @param listener the listener
+     * @deprecated Use {@link #removeOnMetadataChangedListener(String, OnMetadataChangedListener)} instead
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
     public void removeOnMetadataChangedListener(
             OnMetadataChangedListener listener) {
         _onMetadataChangedListeners.remove(listener);
@@ -463,8 +500,8 @@ public abstract class MapItem extends FilterMetaDataHolder implements
             _visible = visible;
             onVisibleChanged();
             // Parent group needs to be visible or clicks won't work
-            if (visible && group != null && !group.getVisible())
-                group.setVisibleIgnoreChildren(true);
+            if (visible && _group != null && !_group.getVisible())
+                _group.setVisibleIgnoreChildren(true);
         } else if (ignoreConditions && visible != getVisible()) {
             // Ignore visibility condition temporarily
             _visCond = VisibilityCondition.IGNORE;
@@ -521,20 +558,16 @@ public abstract class MapItem extends FilterMetaDataHolder implements
         this.setMetaBoolean("editable", editable);
     }
 
-    final boolean DEFAULT_EDITABLE = false;
-
     public boolean getEditable() {
-        return this.getMetaBoolean("editable", DEFAULT_EDITABLE);
+        return this.getMetaBoolean("editable", EDITABLE_DEFAULT);
     }
 
     public void setMovable(boolean movable) {
         this.setMetaBoolean("movable", movable);
     }
 
-    final boolean DEFAULT_MOVABLE = false;
-
     public boolean getMovable() {
-        return this.getMetaBoolean("movable", DEFAULT_MOVABLE);
+        return this.getMetaBoolean("movable", MOVABLE_DEFAULT);
     }
 
     /**
@@ -547,22 +580,71 @@ public abstract class MapItem extends FilterMetaDataHolder implements
      *            location)
      * @param view the map view
      * @return true when a hit occurs
+     *
+     * @deprecated Hit-testing is now handled by implementing
+     * {@link HitTestable#hitTest(MapRenderer3, HitTestQueryParameters)}
+     * in the GL counterpart for this map item.
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
     public boolean testOrthoHit(int xpos, int ypos, GeoPoint point,
             MapView view) {
         return false;
     }
 
     /**
-     * Set whether this map item is touchable (used by testOrthoHit)
-     * @param state True if touchable
+     * @deprecated {@link #setClickable(boolean)}
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
     public void setTouchable(boolean state) {
-        setMetaBoolean("touchable", state);
+        setClickable(state);
     }
 
+    /**
+     * @deprecated {@link #getClickable()}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
     public boolean isTouchable() {
-        return getMetaBoolean("touchable", true);
+        return getClickable();
+    }
+
+    /**
+     * Set the geo point at which this item was last touched
+     * @param gp Geo point
+     */
+    public void setClickPoint(GeoPoint gp) {
+        if (gp != null) {
+            String gpStr = gp.toStringRepresentation();
+            setMetaString("last_touch", gpStr);
+            setMetaString("menu_point", gpStr);
+        }
+    }
+
+    /**
+     * Look for the last touched point on this item
+     * @return The last geo point that was touched or null if N/A
+     */
+    public GeoPoint getClickPoint() {
+        return GeoPoint.parseGeoPoint(getMetaString("last_touch",
+                getMetaString("menu_point", null)));
+    }
+
+    /**
+     * Set the path to the radial menu for this map item
+     * @param menuPath Menu path
+     */
+    public void setRadialMenu(String menuPath) {
+        setMetaString("menu", menuPath);
+    }
+
+    /**
+     * Get the path to the radial menu for this map item
+     * @return Radial menu path
+     */
+    public String getRadialMenuPath() {
+        return getMetaString("menu", null);
     }
 
     /**
@@ -602,7 +684,7 @@ public abstract class MapItem extends FilterMetaDataHolder implements
      * @return Map group or null if N/A
      */
     public MapGroup getGroup() {
-        return group;
+        return _group;
     }
 
     /**
@@ -666,11 +748,47 @@ public abstract class MapItem extends FilterMetaDataHolder implements
     }
 
     /**
-     * Invokes when the metadata property changes
+     * Invoked when the altitude mode property changes
      */
-    public void notifyMetadataChanged(final String field) {
+    protected void onAltitudeModeChanged() {
+
+        // Used for radial menu highlight
+        toggleMetaData("clampedToGround",
+                getAltitudeMode() == AltitudeMode.ClampToGround);
+
+        // Fire listeners
+        for (OnAltitudeModeChangedListener l : _onAltitudeModeChanged)
+            l.onAltitudeModeChanged(_altitudeMode);
+    }
+
+    /**
+     * Invoked when the metadata property changes
+     *
+     * @param key Metadata key that has been changed
+     */
+    protected void onMetadataChanged(String key) {
+        ConcurrentLinkedQueue<OnMetadataChangedListener> listeners = _onMetadataKeyListeners
+                .get(key);
+        if (listeners != null) {
+            for (OnMetadataChangedListener l : listeners) {
+                l.onMetadataChanged(this, key);
+            }
+        }
+    }
+
+    /**
+     * To be manually invoked when the metadata property changes
+     *
+     * @param key Metadata key that has been changed
+     * @deprecated No longer necessary when
+     * {@link #addOnMetadataChangedListener(String, OnMetadataChangedListener)}
+     * is used instead
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
+    public void notifyMetadataChanged(final String key) {
         for (OnMetadataChangedListener l : _onMetadataChangedListeners) {
-            l.onMetadataChanged(this, field);
+            l.onMetadataChanged(this, key);
         }
     }
 
@@ -682,17 +800,17 @@ public abstract class MapItem extends FilterMetaDataHolder implements
         _typeListeners.clear();
         _clickableListeners.clear();
         _zOrderListeners.clear();
-        group = null;
+        _group = null;
     }
 
     public void onAdded(MapGroup parent) {
-        this.group = parent;
+        _group = parent;
         this.onGroupChanged(true, parent);
     }
 
     public void onRemoved(MapGroup parent) {
-        final MapGroup old = this.group;
-        this.group = null;
+        final MapGroup old = _group;
+        _group = null;
         this.onGroupChanged(false, old);
     }
 
@@ -730,6 +848,21 @@ public abstract class MapItem extends FilterMetaDataHolder implements
     public void removeOnHeightChangedListener(
             OnHeightChangedListener listener) {
         _onHeightChanged.remove(listener);
+    }
+
+    /**
+     * Add altitude mode property listener
+     *
+     * @param listener Listener
+     */
+    public void addOnAltitudeModeChangedListener(
+            OnAltitudeModeChangedListener listener) {
+        _onAltitudeModeChanged.add(listener);
+    }
+
+    public void removeOnAltitudeModeChangedListener(
+            OnAltitudeModeChangedListener listener) {
+        _onAltitudeModeChanged.remove(listener);
     }
 
     public long getSerialId() {
@@ -960,12 +1093,24 @@ public abstract class MapItem extends FilterMetaDataHolder implements
         return getMetaDouble("height", Double.NaN);
     }
 
-    @Override
-    public void setMetaDouble(String key, double value) {
-        if (key.equals("height"))
-            setHeight(value);
-        else
-            super.setMetaDouble(key, value);
+    /**
+     * Set the altitude mode for this item
+     * See {@link AltitudeMode} for possible values
+     * @param altitudeMode Altitude mode
+     */
+    public void setAltitudeMode(AltitudeMode altitudeMode) {
+        if (_altitudeMode != altitudeMode) {
+            _altitudeMode = altitudeMode;
+            onAltitudeModeChanged();
+        }
+    }
+
+    /**
+     * Gets the current Altitude Mode for the polyline.
+     * @return the altitude mode.
+     */
+    public AltitudeMode getAltitudeMode() {
+        return _altitudeMode;
     }
 
     @Override
@@ -976,5 +1121,101 @@ public abstract class MapItem extends FilterMetaDataHolder implements
             _visCond = newVis;
             onVisibleChanged();
         }
+    }
+
+    /* Metadata change tracking */
+
+    @Override
+    public void setMetaInteger(String key, int value) {
+        super.setMetaInteger(key, value);
+        onMetadataChanged(key);
+    }
+
+    @Override
+    public void setMetaDouble(String key, double value) {
+        if (key.equals("height")) {
+            setHeight(value);
+            return;
+        }
+
+        super.setMetaDouble(key, value);
+        onMetadataChanged(key);
+    }
+
+    @Override
+    public void setMetaString(String key, String value) {
+        if (key.equals("uid")) {
+            Log.w(TAG, "### WARNING ###  changing an imutable UID --- BLOCKED "
+                    + _uid + " to: " + value);
+        } else if (key.equals("type")) {
+            setType(value);
+            return;
+        } else if (key.equals(getRemarksKey())) {
+            setRemarks(value);
+            return;
+        }
+
+        super.setMetaString(key, value);
+        onMetadataChanged(key);
+    }
+
+    @Override
+    public void setMetaBoolean(String key, boolean value) {
+        if (key.equals("camLocked"))
+            _camLocked = value;
+
+        super.setMetaBoolean(key, value);
+        onMetadataChanged(key);
+    }
+
+    @Override
+    public void removeMetaData(String k) {
+        if (k.equals("camLocked"))
+            _camLocked = null;
+        super.removeMetaData(k);
+        onMetadataChanged(k);
+    }
+
+    @Override
+    public void setMetaData(Map<String, Object> bundle) {
+        super.setMetaData(bundle);
+        for (String key : bundle.keySet())
+            onMetadataChanged(key);
+    }
+
+    @Override
+    public void setMetaLong(String key, long value) {
+        super.setMetaLong(key, value);
+        onMetadataChanged(key);
+    }
+
+    @Override
+    public void setMetaMap(String key, Map<String, Object> bundle) {
+        super.setMetaMap(key, bundle);
+        onMetadataChanged(key);
+    }
+
+    @Override
+    public void setMetaStringArrayList(String key, ArrayList<String> value) {
+        super.setMetaStringArrayList(key, value);
+        onMetadataChanged(key);
+    }
+
+    @Override
+    public void setMetaIntArray(String key, int[] value) {
+        super.setMetaIntArray(key, value);
+        onMetadataChanged(key);
+    }
+
+    @Override
+    public void setMetaSerializable(String key, Serializable value) {
+        super.setMetaSerializable(key, value);
+        onMetadataChanged(key);
+    }
+
+    @Override
+    public void setMetaParcelable(String key, Parcelable value) {
+        super.setMetaParcelable(key, value);
+        onMetadataChanged(key);
     }
 }

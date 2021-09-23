@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <Button
+        android:id="@+id/sort_size"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/button_small"
+        android:padding="@dimen/auto_margin"
+        android:text="@string/size"
+        style="@style/darkButton"/>
+    <Button
+        android:id="@+id/sort_name"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/button_small"
+        android:padding="@dimen/auto_margin"
+        android:text="@string/name"
+        style="@style/darkButton"/>
+    <Button
+        android:id="@+id/sort_date"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/button_small"
+        android:padding="@dimen/auto_margin"
+        android:text="@string/date"
+        style="@style/darkButton"/>
+    <View
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:layout_weight="1"/>
+    <Button
+        android:id="@+id/sort_checked"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/button_small"
+        android:padding="@dimen/auto_margin"
+        android:text="@string/checked_abbr"
+        style="@style/darkButton"/>
+
+</LinearLayout>

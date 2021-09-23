@@ -29,7 +29,6 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.MultiPolyline;
-import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.Polyline;
 import com.atakmap.android.menu.MapMenuReceiver;
 import com.atakmap.android.util.ATAKUtilities;
@@ -400,10 +399,7 @@ public class DrawingToolsMapReceiver extends DropDownReceiver implements
                 break;
             }
             case LABEL_ACTION: {
-                if (item instanceof PointMapItem) {
-                    // center point
-                    item = ATAKUtilities.findAssocShape(item);
-                }
+                item = ATAKUtilities.findAssocShape(item);
                 boolean labelsOn = item.hasMetaValue("labels_on");
                 item.toggleMetaData("labels_on", !labelsOn);
                 item.persist(getMapView().getMapEventDispatcher(),

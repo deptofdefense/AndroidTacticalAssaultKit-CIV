@@ -14,15 +14,12 @@ import com.atakmap.android.maps.Polyline;
 import com.atakmap.android.maps.Shape.OnBasicLineStyleChangedListener;
 import com.atakmap.android.maps.Polyline.OnLabelsChangedListener;
 import com.atakmap.android.maps.Shape;
+import com.atakmap.map.MapRenderer3;
 import com.atakmap.map.layer.control.ClampToGroundControl;
-import com.atakmap.android.maps.hittest.PartitionRect;
-import com.atakmap.android.maps.hittest.ShapeHitTestControl;
-import com.atakmap.annotations.DeprecatedApi;
+import com.atakmap.map.hittest.HitTestResult;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
-import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
-import com.atakmap.coremap.maps.coords.Vector2D;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.Globe;
 import com.atakmap.map.MapRenderer;
@@ -43,6 +40,7 @@ import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.map.opengl.GLAntiMeridianHelper;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLLabelManager;
+import com.atakmap.map.hittest.HitTestQueryParameters;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.Matrix;
 import com.atakmap.math.PointD;
@@ -62,10 +60,9 @@ import java.util.Map;
 public class GLPolyline extends GLShape2 implements
         Shape.OnPointsChangedListener, OnBasicLineStyleChangedListener,
         OnLabelsChangedListener, Polyline.OnLabelTextSizeChanged,
-        Polyline.OnAltitudeModeChangedListener,
+        MapItem.OnAltitudeModeChangedListener,
         Polyline.OnHeightStyleChangedListener,
-        Shape.OnHeightChangedListener,
-        ShapeHitTestControl {
+        Shape.OnHeightChangedListener {
 
     public static final String TAG = "GLPolyline";
 
@@ -112,7 +109,7 @@ public class GLPolyline extends GLShape2 implements
 
     public AltitudeMode altitudeMode;
 
-    private final GLBatchLineString impl;
+    protected final GLBatchLineString impl;
     private boolean implInvalid;
 
     protected boolean needsProjectVertices;
@@ -137,10 +134,10 @@ public class GLPolyline extends GLShape2 implements
     private PointD _extrusionCentroidProj = new PointD(0d, 0d, 0d);
     private int _extrusionCentroidSrid = -1;
     private int _extrusionTerrainVersion = -1;
-
-    // Hit testing
-    protected RectF _screenRect = new RectF();
-    protected List<PartitionRect> _partitionRects = new ArrayList<>();
+    /**
+     * Raw bounds of the geometry, does not account for height; `z` interpreted per `_altitudeMode`
+     */
+    private Envelope _geomBounds;
 
     // NADIR clamp toggle updated during render pass
     protected boolean _nadirClamp;
@@ -363,19 +360,6 @@ public class GLPolyline extends GLShape2 implements
         });
     }
 
-    /**
-     * @deprecated use {@link #updatePointsImpl(GeoPoint, GeoPoint[])}
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    protected void updatePointsImpl(GeoPoint[] points) {
-        final GeoPoint center = GeoCalculations.centerOfExtremes(points, 0,
-                points.length);
-        if (center != null) {
-            updatePointsImpl(center, points);
-        }
-    }
-
     protected void updatePointsImpl(GeoPoint center, GeoPoint[] points) {
         if (points == null)
             points = new GeoPoint[0];
@@ -430,11 +414,13 @@ public class GLPolyline extends GLShape2 implements
 
                 MapView mv = MapView.getMapView();
                 if (mv != null) {
-                    Envelope env = impl.getBounds(mv.getProjection()
+                    _geomBounds = impl.getBounds(mv.getProjection()
                             .getSpatialReferenceID());
-                    if (env != null) {
+                    if (_geomBounds != null) {
                         bounds.setWrap180(mv.isContinuousScrollEnabled());
-                        bounds.set(env.minY, env.minX, env.maxY, env.maxX);
+                        bounds.set(_geomBounds.minY, _geomBounds.minX,
+                                _geomBounds.maxY, _geomBounds.maxX);
+                        updateBoundsZ();
 
                         // XXX - naive implementation, will need to handle IDL better
                         bounds.getCenter(_extrusionCentroid);
@@ -570,6 +556,9 @@ public class GLPolyline extends GLShape2 implements
                 }
                 if (_hasHeight)
                     _shouldReextrude = true;
+
+                updateBoundsZ();
+                dispatchOnBoundsChanged();
             }
         });
     }
@@ -620,6 +609,44 @@ public class GLPolyline extends GLShape2 implements
         return extrudeMode;
     }
 
+    private void updateBoundsZ() {
+        double minZ = _geomBounds != null ? _geomBounds.minZ : Double.NaN;
+        double maxZ = _geomBounds != null ? _geomBounds.maxZ : Double.NaN;
+
+        AltitudeMode mode = (altitudeMode != null) ? altitudeMode
+                : AltitudeMode.ClampToGround;
+        switch (mode) {
+            case ClampToGround:
+                // geometry is clamped to ground/always surface; assume maximum and minimum surface
+                // altitudes
+                minZ = DEFAULT_MIN_ALT;
+                maxZ = DEFAULT_MAX_ALT;
+                break;
+            case Absolute:
+                // no additional interpretation
+                break;
+            case Relative:
+                // geometry is relative to terrain; offset from maximum and minimum surface
+                // altitudes
+                minZ += DEFAULT_MIN_ALT;
+                maxZ += DEFAULT_MAX_ALT;
+                break;
+            default:
+                minZ = Double.NaN;
+                maxZ = Double.NaN;
+                break;
+        }
+
+        // apply extrusion. This is not strict, however, it should be
+        // sufficient to cover the various permutations.
+        if (_hasHeight) {
+            maxZ += _height;
+        }
+
+        bounds.setMinAltitude(minZ);
+        bounds.setMaxAltitude(maxZ);
+    }
+
     @Override
     public void draw(GLMapView ortho, int renderPass) {
         if ((renderPass & this.renderPass) == 0)
@@ -642,6 +669,10 @@ public class GLPolyline extends GLShape2 implements
                 "minLineRenderResolution",
                 Polyline.DEFAULT_MIN_LINE_RENDER_RESOLUTION))
             return;
+
+        // XXX - note for future: tilt for rendered _scene_ can be obtained
+        //       from `GLMapView.currentScene.drawTilt`. Leaving as-is for
+        //       now to minimize unrelated changes.
 
         // Check if we need to update the points based on if the map is tilted
         // Since the map tilt is always zero during the surface pass, we have
@@ -1412,6 +1443,7 @@ public class GLPolyline extends GLShape2 implements
             }
             _verts2.clear();
         } else if (this.numPoints == 0) {
+            Unsafe.free(_verts2);
             _verts2 = null;
             _verts2Ptr = 0L;
         }
@@ -1464,152 +1496,24 @@ public class GLPolyline extends GLShape2 implements
                 if (_verts2Size == 3)
                     _verts2.put(idx++, _verts2.get(2));
             }
-
-            // Build bounds for hit testing
-            recomputeScreenRectangles(ortho);
         }
-    }
-
-    protected void recomputeScreenRectangles(GLMapView ortho) {
-        int maxIdx = (this.numPoints + (_closed ? 1 : 0)) * _verts2Size;
-        _verts2.clear();
-        int partIdx = 1;
-        int partCount = 0;
-        PartitionRect partition = !_partitionRects.isEmpty()
-                ? _partitionRects.get(0)
-                : new PartitionRect();
-        int idx = 0;
-        for (int i = 0; i < maxIdx; i += _verts2Size) {
-            float x = _verts2.get(i);
-            float y = _verts2.get(i + 1);
-
-            y = ortho.getTop() - y;
-
-            // Update main bounding rectangle
-            if (i == 0) {
-                _screenRect.set(x, y, x, y);
-            } else {
-                _screenRect.set(Math.min(_screenRect.left, x),
-                        Math.min(_screenRect.top, y),
-                        Math.max(_screenRect.right, x),
-                        Math.max(_screenRect.bottom, y));
-            }
-
-            // Update partition bounding rectangle
-            if (partIdx == 0) {
-                partition.set(x, y, x, y);
-            } else {
-                partition.set(Math.min(partition.left, x),
-                        Math.min(partition.top, y),
-                        Math.max(partition.right, x),
-                        Math.max(partition.bottom, y));
-            }
-
-            if (partIdx == Polyline.PARTITION_SIZE
-                    || i == maxIdx - _verts2Size) {
-                if (partCount >= _partitionRects.size())
-                    _partitionRects.add(partition);
-                partition.endIndex = idx;
-                partCount++;
-                partIdx = 0;
-                partition = partCount < _partitionRects.size()
-                        ? _partitionRects.get(partCount)
-                        : new PartitionRect();
-                partition.startIndex = idx + 1;
-            }
-            partIdx++;
-            idx++;
-        }
-        while (partCount < _partitionRects.size())
-            _partitionRects.remove(partCount);
     }
 
     @Override
-    public Result hitTest(float screenX, float screenY, float radius) {
-
-        RectF hitRect = new RectF(screenX - radius, screenY - radius,
-                screenX + radius, screenY + radius);
-
-        // First check hit on bounding rectangle
-        if (!RectF.intersects(_screenRect, hitRect))
+    protected HitTestResult hitTestImpl(MapRenderer3 renderer,
+            HitTestQueryParameters params) {
+        HitTestResult result = impl.hitTest(renderer, params);
+        if (result == null)
             return null;
 
-        // Now check partitions
-        List<PartitionRect> hitRects = new ArrayList<>();
-        for (PartitionRect r : _partitionRects) {
-
-            // Check hit on partition
-            if (!RectF.intersects(r, hitRect))
-                continue;
-
-            // Keep track of rectangles we've already hit tested
-            hitRects.add(r);
-
-            // Point hit test
-            for (int i = r.startIndex; i <= r.endIndex && i < numPoints; i++) {
-                int vIdx = i * _verts2Size;
-                float x = _verts2.get(vIdx);
-                float y = _verts2.get(vIdx + 1);
-
-                // Point not contained in hit rectangle
-                if (!hitRect.contains(x, y))
-                    continue;
-
-                // Found a hit - return result
-                int pIdx = i * 3;
-                double lng = _points.get(pIdx);
-                double lat = _points.get(pIdx + 1);
-                double hae = _points.get(pIdx + 2);
-                Result res = new Result();
-                res.screenPoint = new PointF(x, y);
-                res.geoPoint = new GeoPoint(lat, lng, hae);
-                res.hitType = HitType.POINT;
-                res.hitIndex = i;
-                return res;
-            }
+        // Check if we touched the last point in the closed shape
+        if (_closed && result.index == this.numPoints) {
+            // Redirect to the first point in the same
+            result.index = 0;
+            result.count = 1;
         }
 
-        // No point detections and no hit partitions
-        if (hitRects.isEmpty())
-            return null;
-
-        // Line hit test
-        Vector2D touch = new Vector2D(screenX, screenY);
-        for (PartitionRect r : hitRects) {
-            float lastX = 0, lastY = 0;
-            for (int i = r.startIndex; i <= r.endIndex && i <= numPoints; i++) {
-
-                int vIdx = i * _verts2Size;
-                float x = _verts2.get(vIdx);
-                float y = _verts2.get(vIdx + 1);
-
-                if (i > r.startIndex) {
-
-                    // Find the nearest point on this line based on the point we touched
-                    Vector2D nearest = Vector2D.nearestPointOnSegment(touch,
-                            new Vector2D(lastX, lastY),
-                            new Vector2D(x, y));
-                    float nx = (float) nearest.x;
-                    float ny = (float) nearest.y;
-
-                    // Check if the nearest point is within rectangle
-                    if (!hitRect.contains(nx, ny))
-                        continue;
-
-                    Result res = new Result();
-                    res.screenPoint = new PointF(nx, ny);
-                    res.geoPoint = null; // XXX - Need to lookup inverse later
-                    res.hitType = HitType.LINE;
-                    res.hitIndex = i - 1;
-                    return res;
-                }
-
-                lastX = x;
-                lastY = y;
-            }
-        }
-
-        return null;
+        return new HitTestResult(_subject, result);
     }
 
     @Override

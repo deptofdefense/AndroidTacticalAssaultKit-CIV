@@ -5,6 +5,7 @@ import android.content.Context;
 
 import com.atakmap.android.features.FeatureDataStoreDeepMapItemQuery;
 import com.atakmap.android.overlay.MapOverlay;
+import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
@@ -30,8 +31,9 @@ public class MvtSpatialDb extends SpatialDbContentSource {
     public static final String MVT_CONTENT_TYPE = "MVT";
     public static final String MVT_FILE_MIME_TYPE = "application/octet-stream";
     static final String GROUP_NAME = "Mapbox Vector Tiles";
-    static final String ICON_PATH = "asset://icons/mapbox-icon.png";
-    public static final int MVT_FILE_ICON_ID = R.drawable.ic_esri_file_notification_icon;
+    static final String ICON_PATH = ATAKUtilities
+            .getResourceUri(R.drawable.ic_mvt);
+    public static final int MVT_FILE_ICON_ID = R.drawable.ic_mvt;
     public static final String MVT_TYPE = "MVT";
 
     public MvtSpatialDb(DataSourceFeatureDataStore spatialDb) {

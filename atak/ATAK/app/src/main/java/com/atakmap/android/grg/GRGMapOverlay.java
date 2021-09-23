@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,6 +23,7 @@ import com.atakmap.android.hierarchy.HierarchyListReceiver;
 import com.atakmap.android.hierarchy.action.Delete;
 import com.atakmap.android.hierarchy.action.Export;
 import com.atakmap.android.hierarchy.action.GoTo;
+import com.atakmap.android.hierarchy.action.GroupDelete;
 import com.atakmap.android.hierarchy.action.Search;
 import com.atakmap.android.hierarchy.action.Visibility;
 import com.atakmap.android.hierarchy.action.Visibility2;
@@ -43,6 +43,7 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.menu.MapMenuReceiver;
 import com.atakmap.android.missionpackage.export.MissionPackageExportWrapper;
+import com.atakmap.android.preference.AtakPreferences;
 import com.atakmap.app.R;
 import com.atakmap.app.system.ResourceUtil;
 import com.atakmap.coremap.conversions.CoordinateFormat;
@@ -53,8 +54,8 @@ import com.atakmap.map.MapRenderer2;
 import com.atakmap.map.MapSceneModel;
 import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.FeatureCursor;
-import com.atakmap.map.layer.feature.FeatureDataStore;
-import com.atakmap.map.layer.feature.FeatureLayer;
+import com.atakmap.map.layer.feature.FeatureDataStore2.FeatureQueryParameters;
+import com.atakmap.map.layer.feature.FeatureLayer3;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.feature.geometry.Geometry;
 import com.atakmap.map.layer.feature.style.BasicStrokeStyle;
@@ -88,15 +89,15 @@ public final class GRGMapOverlay extends FeatureDataStoreMapOverlay {
     private final MapView mapView;
     private final Context _context;
 
-    private SharedPreferences _prefs;
+    private AtakPreferences _prefs;
     private SharedPreferences.OnSharedPreferenceChangeListener _prefListener;
     private RasterLayer2 _layer;
-    private FeatureLayer _coveragesLayer;
+    private FeatureLayer3 _coveragesLayer;
     private RasterDataStore _grgLayersDb;
     private GRGMapOverlayListModel _listModel;
 
     public GRGMapOverlay(MapView view, RasterLayer2 layer,
-            RasterDataStore grgLayersDb, FeatureLayer coveragesLayer) {
+            RasterDataStore grgLayersDb, FeatureLayer3 coveragesLayer) {
         super(view.getContext(),
                 coveragesLayer.getDataStore(),
                 null, // contentSource
@@ -119,15 +120,15 @@ public final class GRGMapOverlay extends FeatureDataStoreMapOverlay {
 
         _prefListener = (SharedPreferences.OnSharedPreferenceChangeListener) this
                 .getQueryFunction();
-        _prefs = PreferenceManager.getDefaultSharedPreferences(_context);
-        _prefs.registerOnSharedPreferenceChangeListener(_prefListener);
-        _prefListener.onSharedPreferenceChanged(_prefs,
+        _prefs = new AtakPreferences(view);
+        _prefs.registerListener(_prefListener);
+        _prefListener.onSharedPreferenceChanged(_prefs.getSharedPrefs(),
                 "prefs_layer_grg_map_interaction");
     }
 
     public void dispose() {
         if (_prefs != null && _prefListener != null) {
-            _prefs.unregisterOnSharedPreferenceChangeListener(_prefListener);
+            _prefs.unregisterListener(_prefListener);
             _prefListener = null;
             _prefs = null;
         }
@@ -150,7 +151,7 @@ public final class GRGMapOverlay extends FeatureDataStoreMapOverlay {
     // Overlay Manager List Model
 
     public class GRGMapOverlayListModel extends AbstractHierarchyListItem2
-            implements Search, Export, Delete, Visibility2,
+            implements Search, Export, GroupDelete, Visibility2,
             CompoundButton.OnCheckedChangeListener {
 
         private final static String TAG = "GRGMapOverlayListModel";
@@ -201,13 +202,13 @@ public final class GRGMapOverlay extends FeatureDataStoreMapOverlay {
                         R.layout.grg_list_footer, mapView, false);
                 _vizBtn = _footer.findViewById(
                         R.id.grg_visible_toggle);
-                _vizBtn.setOnCheckedChangeListener(this);
                 _outlineBtn = _footer.findViewById(
                         R.id.layer_outline_toggle);
-                _outlineBtn.setOnCheckedChangeListener(this);
-                _outlineBtn.setChecked(_prefs.getBoolean(
-                        "grgs.outlines-visible", true));
             }
+
+            _outlineBtn.setOnCheckedChangeListener(null);
+            _outlineBtn.setChecked(_prefs.get("grgs.outlines-visible", true));
+            _outlineBtn.setOnCheckedChangeListener(this);
 
             int viz = getVisibility();
             _vizBtn.setOnCheckedChangeListener(null);
@@ -264,11 +265,13 @@ public final class GRGMapOverlay extends FeatureDataStoreMapOverlay {
         public void onCheckedChanged(CompoundButton cb, boolean checked) {
             int i1 = cb.getId();
             if (i1 == R.id.layer_outline_toggle) {
-                Intent i = new Intent(
-                        "com.atakmap.android.grg.OUTLINE_VISIBLE");
-                i.putExtra("visible", checked);
-                AtakBroadcast.getInstance().sendBroadcast(i);
-
+                try {
+                    _coveragesLayer.getDataStore().setFeatureSetsVisible(null,
+                            checked);
+                    _prefs.set("grgs.outlines-visible", checked);
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to set outline visibility", e);
+                }
             } else if (i1 == R.id.grg_visible_toggle) {
                 setVisible(checked);
             }
@@ -278,15 +281,6 @@ public final class GRGMapOverlay extends FeatureDataStoreMapOverlay {
         }
 
         //**********************************************************************
-
-        @Override
-        public boolean delete() {
-            List<Delete> actions = getChildActions(Delete.class);
-            boolean ret = !actions.isEmpty();
-            for (Delete del : actions)
-                ret &= del.delete();
-            return ret;
-        }
 
         @Override
         public boolean setVisible(boolean visible) {
@@ -431,29 +425,31 @@ public final class GRGMapOverlay extends FeatureDataStoreMapOverlay {
         }
     }
 
-    public static int getColor(ImageOverlay item, FeatureLayer layer) {
+    public static int getColor(ImageOverlay item, FeatureLayer3 layer) {
         int color = 0;
 
         if (item != null && layer != null) {
-            FeatureCursor result = null;
-            try {
-                FeatureDataStore.FeatureQueryParameters params = new FeatureDataStore.FeatureQueryParameters();
-                params.featureNames = Collections.singleton(
-                        item.toString());
 
-                result = layer.getDataStore().queryFeatures(params);
+            FeatureQueryParameters params = new FeatureQueryParameters();
+            params.names = Collections.singleton(item.toString());
+
+            FeatureCursor c = null;
+            try {
+                c = layer.getDataStore().queryFeatures(params);
                 Feature f;
-                while (result.moveToNext()) {
-                    f = result.get();
+                while (c.moveToNext()) {
+                    f = c.get();
                     if (f.getStyle() instanceof BasicStrokeStyle) {
                         color = ((BasicStrokeStyle) f.getStyle())
                                 .getColor();
                         break;
                     }
                 }
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to query color", e);
             } finally {
-                if (result != null)
-                    result.close();
+                if (c != null)
+                    c.close();
             }
         }
 
@@ -508,8 +504,7 @@ public final class GRGMapOverlay extends FeatureDataStoreMapOverlay {
                         true);
             }
 
-            if (select && _prefs.getBoolean("prefs_layer_grg_map_interaction",
-                    true)) {
+            if (select && _prefs.get("prefs_layer_grg_map_interaction", true)) {
                 Intent showMenu = new Intent(MapMenuReceiver.SHOW_MENU);
                 showMenu.putExtra("uid", getUID());
                 AtakBroadcast.getInstance().sendBroadcast(showMenu);
@@ -530,7 +525,7 @@ public final class GRGMapOverlay extends FeatureDataStoreMapOverlay {
         @Override
         public String getDescription() {
             if (_item != null) {
-                CoordinateFormat cf = CoordinateFormat.find(_prefs.getString(
+                CoordinateFormat cf = CoordinateFormat.find(_prefs.get(
                         "coord_display_pref", _context.getString(
                                 R.string.coord_display_pref_default)));
                 return CoordinateFormatUtilities.formatToString(

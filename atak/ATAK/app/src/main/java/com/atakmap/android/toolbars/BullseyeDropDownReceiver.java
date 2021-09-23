@@ -75,7 +75,7 @@ public class BullseyeDropDownReceiver extends DropDownReceiver implements
 
     private static final String TAG = "BullseyeDropDownReceiver";
 
-    private static final DecimalFormat DEC_FMT_2 = LocaleUtil
+    protected static final DecimalFormat DEC_FMT_2 = LocaleUtil
             .getDecimalFormat("#.##");
 
     public static final double STROKE_WEIGHT = 3d;
@@ -83,40 +83,41 @@ public class BullseyeDropDownReceiver extends DropDownReceiver implements
             | Polyline.STYLE_CLOSED_MASK |
             Polyline.STYLE_STROKE_MASK | Polyline.STYLE_FILLED_MASK;
 
-    private static final Span[] unitsArray = new Span[] {
+    protected static final Span[] unitsArray = new Span[] {
             Span.METER, Span.KILOMETER, Span.NAUTICALMILE, Span.FOOT, Span.MILE
     };
 
     public static final String DROPDOWN_TOOL_IDENTIFIER = "com.atakmap.android.toolbars.BullseyeDropDown";
     public static final String RINGS_GROUP_PREFIX = "rangeRings.";
 
-    private AngleOverlayShape aos = null;
+    protected AngleOverlayShape aos = null;
 
-    private final MapView _mapView;
-    private final Context _context;
-    private final UnitPreferences _rPrefs;
-    private final UnitPreferences _bPrefs;
-    private Marker centerMarker;
-    private MapGroup subGroup;
-    private RangeCircle rabCircle = null;
+    protected final MapView _mapView;
+    protected final Context _context;
+    protected final UnitPreferences _rPrefs;
+    protected final UnitPreferences _bPrefs;
+    protected Marker centerMarker;
+    protected MapGroup subGroup;
+    protected RangeCircle rabCircle = null;
 
-    private ViewGroup bullseyeLayout;
+    protected ViewGroup bullseyeLayout;
     private TextView directionLabel;
     private TextView bearingUnitLabel, bearingRefLabel;
-    private Spinner bUnits, rUnits;
+    protected Spinner bUnits;
+    protected Spinner rUnits;
     private CheckBox showRingsCB;
     private TextView numRingsTV;
     private Button bRadiusButton, rRadiusButton;
-    private EditText title;
+    protected EditText title;
     private View ringsLayout;
     private View radiusLayout;
-    private UnitsArrayAdapter unitsAdapter;
+    protected UnitsArrayAdapter unitsAdapter;
     private TextView centerPointLabel;
-    private Intent reopenIntent;
+    protected Intent reopenIntent;
     private RemarksLayout remarksLayout;
-    private ExtraDetailsLayout extrasLayout;
+    protected ExtraDetailsLayout extrasLayout;
 
-    private final AutoSizeAngleOverlayShape.OnPropertyChangedListener propertyChangedListener = new AutoSizeAngleOverlayShape.OnPropertyChangedListener() {
+    protected final AutoSizeAngleOverlayShape.OnPropertyChangedListener propertyChangedListener = new AutoSizeAngleOverlayShape.OnPropertyChangedListener() {
         @Override
         public void onPropertyChanged() {
             _mapView.post(new Runnable() {
@@ -185,6 +186,10 @@ public class BullseyeDropDownReceiver extends DropDownReceiver implements
         if (aos != null)
             subGroup = aos.getGroup();
 
+        openBullseye();
+    }
+
+    protected void openBullseye() {
         if (!isClosed())
             closeDropDown();
 
@@ -354,7 +359,8 @@ public class BullseyeDropDownReceiver extends DropDownReceiver implements
      *
      * @return - the Rings object
      */
-    private RangeCircle buildRings(Marker centerMarker, AngleOverlayShape aos) {
+    protected RangeCircle buildRings(Marker centerMarker,
+            AngleOverlayShape aos) {
 
         RangeCircle rabCircle = new RangeCircle(getMapView());
         rabCircle.setCenterMarker(centerMarker);
@@ -378,7 +384,7 @@ public class BullseyeDropDownReceiver extends DropDownReceiver implements
      * Set up the view of the dropdown given the current AngleOverlayShape 
      *
      */
-    private void createLayout() {
+    protected void createLayout() {
         bullseyeLayout = (ViewGroup) LayoutInflater.from(_context).inflate(
                 R.layout.bullseye_details, getMapView(), false);
 
@@ -628,7 +634,7 @@ public class BullseyeDropDownReceiver extends DropDownReceiver implements
         HashtagManager.getInstance().registerUpdateListener(this);
     }
 
-    private void refresh() {
+    protected void refresh() {
         if (!isVisible() || aos == null || bullseyeLayout == null)
             return;
         //Title
@@ -760,6 +766,7 @@ public class BullseyeDropDownReceiver extends DropDownReceiver implements
                     return false;
                 }
             });
+            et.requestFocus();
         }
 
         // Add or subtract range ring

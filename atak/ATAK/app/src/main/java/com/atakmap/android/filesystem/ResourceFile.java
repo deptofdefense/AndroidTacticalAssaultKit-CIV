@@ -155,8 +155,8 @@ public class ResourceFile implements Parcelable {
         if (lastPeriod == -1)
             return null;
 
-        fn = fn.toLowerCase(LocaleUtil.getCurrent());
         fn = fn.substring(lastPeriod + 1);
+        fn = fn.toLowerCase(LocaleUtil.getCurrent());
         for (MIMEType t : MIMEType.values()) {
             if (fn.equals(t.EXT))
                 return t;

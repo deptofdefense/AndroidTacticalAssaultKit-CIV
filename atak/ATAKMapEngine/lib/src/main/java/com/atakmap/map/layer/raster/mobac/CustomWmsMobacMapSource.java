@@ -38,9 +38,16 @@ public class CustomWmsMobacMapSource extends CustomMobacMapSource {
             String additionalParameters,
             int backgroundColor,
             GeoBounds bounds) {
+        this(name, srid, tileSize, minZoom, maxZoom, type, url, layers, style, version, additionalParameters, backgroundColor, bounds, 0L);
+    }
 
+    public CustomWmsMobacMapSource(String name, int srid, int tileSize, int minZoom,
+        int maxZoom, String type, String url, String layers, String style, String version,
+                String additionalParameters,
+        int backgroundColor,
+        GeoBounds bounds, long refreshInterval) {
         super(name, srid, tileSize, minZoom, maxZoom, type, url, null,
-                backgroundColor, false);
+                backgroundColor, false, refreshInterval);
 
         this.layers = layers;
         this.style = style;

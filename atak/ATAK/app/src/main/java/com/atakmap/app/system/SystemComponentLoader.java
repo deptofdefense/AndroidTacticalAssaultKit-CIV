@@ -9,16 +9,17 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.Signature;
 import android.os.SystemClock;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 
 import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.ATAKApplication;
 import com.atakmap.app.BuildConfig;
-import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import dalvik.system.DexClassLoader;
@@ -35,9 +36,11 @@ public class SystemComponentLoader {
 
     private static AbstractSystemComponent flavorComponent;
     private static AbstractSystemComponent encryptionComponent;
+    private static AbstractSystemComponent raptorApiComponent;
     private static String encryptionName = null;
     private static String flavorCrashInfo;
     private static String encryptionCrashInfo;
+    private static String raptorApiCrashInfo;
 
     private static class PluginContext extends android.content.ContextWrapper {
         private final ClassLoader classLoader;
@@ -248,6 +251,7 @@ public class SystemComponentLoader {
             }
             flavorComponent.setPluginContext(pluginContext);
             flavorComponent.setAppContext(context);
+
         } catch (Throwable e) {
             Log.d(TAG, "error loading the flavor system component", e);
             flavorComponent = null;
@@ -319,6 +323,49 @@ public class SystemComponentLoader {
     }
 
     /**
+     *
+     * Attempt to load the RaptorApi system component.
+     *
+     * @param context The context used to load the system component
+     */
+    public synchronized static void initializeRaptorApi(final Context context) {
+        if (raptorApiComponent != null)
+            return;
+
+        final PackageManager pm = context.getPackageManager();
+        final ApplicationInfo info;
+        try {
+            long start = SystemClock.elapsedRealtime();
+            info = getApplicationInfo(pm, "gov.raptortak.plugin");
+            Log.d(TAG, "loading RaptorApi "
+                    + (SystemClock.elapsedRealtime() - start) + "ms");
+            raptorApiCrashInfo = infoToJson(info.packageName, context);
+        } catch (Exception e) {
+            Log.d(TAG, "no TAKX system component found");
+            return;
+        }
+
+        try {
+            if (!check(info, context))
+                return;
+
+            final ClassLoader pluginClassLoader = getClassLoader(context, info);
+            final Context pluginContext = getPluginContext(context, info,
+                    pluginClassLoader);
+
+            final Class<?> c = pluginClassLoader
+                    .loadClass("gov.raptortak.RaptorTakSystemComponent");
+            raptorApiComponent = (AbstractSystemComponent) c.newInstance();
+            raptorApiComponent.setPluginContext(pluginContext);
+            raptorApiComponent.setAppContext(context);
+
+        } catch (Throwable e) {
+            Log.d(TAG, "error loading the RaptorApi system component", e);
+            raptorApiComponent = null;
+        }
+    }
+
+    /**
      * Allow for system level plugins to be notified of changes in the state of the application
      * PAUSE, RESUME and when it is being shut down (DESTROYED).
      */
@@ -327,6 +374,8 @@ public class SystemComponentLoader {
             encryptionComponent.notify(state);
         if (encryptionComponent != null)
             encryptionComponent.notify(state);
+        if (raptorApiComponent != null)
+            raptorApiComponent.notify(state);
     }
 
     /**
@@ -371,11 +420,14 @@ public class SystemComponentLoader {
      * @return
      */
     public static AbstractSystemComponent[] getComponents() {
-        ArrayList<AbstractSystemComponent> components = new ArrayList<>();
+        // order is important //
+        final List<AbstractSystemComponent> components = new ArrayList<>();
         if (flavorComponent != null)
             components.add(flavorComponent);
         if (encryptionComponent != null)
             components.add(encryptionComponent);
+        if (raptorApiComponent != null)
+            components.add(raptorApiComponent);
         return components.toArray(new AbstractSystemComponent[0]);
     }
 
@@ -444,20 +496,10 @@ public class SystemComponentLoader {
      * @return the crash log informatino in json format.
      */
     public static String getCrashLogInfo() {
-        String retval = "\"system.plugins\": [";
+        List<String> crashInfo = new ArrayList<>(Arrays.asList(flavorCrashInfo,
+                encryptionCrashInfo, raptorApiCrashInfo));
+        crashInfo.removeAll(Arrays.asList(null, ""));
 
-        if (!FileSystemUtils.isEmpty(flavorCrashInfo)
-                && !FileSystemUtils.isEmpty(encryptionCrashInfo)) {
-            retval = retval + flavorCrashInfo + ", " + encryptionCrashInfo;
-        } else if (!FileSystemUtils.isEmpty(flavorCrashInfo)) {
-            retval = retval + flavorCrashInfo;
-        } else if (!FileSystemUtils.isEmpty(encryptionCrashInfo)) {
-            retval = retval + encryptionCrashInfo;
-        }
-
-        retval = retval + "]";
-
-        return retval;
-
+        return "\"system.plugins\": [" + TextUtils.join(", ", crashInfo) + "]";
     }
 }

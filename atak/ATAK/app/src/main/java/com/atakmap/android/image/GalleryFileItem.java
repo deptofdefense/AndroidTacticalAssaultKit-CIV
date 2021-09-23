@@ -191,7 +191,12 @@ public class GalleryFileItem extends AbstractChildlessListItem implements
                 caption = ExifHelper.getString(exif,
                         TiffConstants.TIFF_TAG_IMAGE_DESCRIPTION,
                         null);
-                location = ExifHelper.getLocation(exif);
+
+                try {
+                    location = ExifHelper.getLocation(exif);
+                } catch (Exception ignored) {
+                    // has EXIF data but the format of the location is not correct for sanselan
+                }
             }
         }
         this.exif = exif;

@@ -1,2 +1,0 @@
-include(':takengine')
-project(':takengine').projectDir = new File(settingsDir, '../lib')

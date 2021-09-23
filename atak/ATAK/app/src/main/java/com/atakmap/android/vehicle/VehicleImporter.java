@@ -61,9 +61,9 @@ class VehicleImporter extends MapItemImporter {
         String model = modelAttr.getAttribute("value");
         VehicleBlock block = VehicleBlock.getBlock(model);
 
-        // Invalid model or center
+        // Invalid block - fallback to 3D model
         if (!block.isValid())
-            return ImportResult.FAILURE;
+            return ImportResult.IGNORE;
 
         double heading = 0.0;
         try {

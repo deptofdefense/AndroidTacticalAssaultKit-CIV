@@ -2,9 +2,11 @@
 package com.atakmap.android.elev.dt2;
 
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.drawable.Drawable;
+import android.os.AsyncTask;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.BaseAdapter;
@@ -20,14 +22,17 @@ import com.atakmap.android.hierarchy.action.Visibility;
 import com.atakmap.android.hierarchy.filters.FOVFilter;
 import com.atakmap.android.hierarchy.items.AbstractChildlessListItem;
 import com.atakmap.android.hierarchy.items.AbstractHierarchyListItem2;
+import com.atakmap.android.hierarchy.items.MapItemUser;
 import com.atakmap.android.maps.DeepMapItemQuery;
 import com.atakmap.android.maps.MapGroup;
+import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.overlay.AbstractMapOverlay2;
 import com.atakmap.android.preference.AtakPreferences;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.map.layer.opengl.GLLayerFactory;
@@ -151,7 +156,7 @@ public class Dt2OutlineMapOverlay extends AbstractMapOverlay2 implements
     };
 
     private class ListModel extends AbstractHierarchyListItem2 implements
-            FOVFilter.Filterable, Visibility, Delete {
+            FOVFilter.Filterable, Visibility, Delete, MapItemUser {
 
         private int _childCount;
 
@@ -259,10 +264,16 @@ public class Dt2OutlineMapOverlay extends AbstractMapOverlay2 implements
                     maxLat, maxLng);
             return _childCount > 0;
         }
+
+        @Override
+        public MapItem getMapItem() {
+            // HACK - Avoids accepting this list in MapItemFilter
+            return null;
+        }
     }
 
     private class DirectoryItem extends AbstractHierarchyListItem2 implements
-            FOVFilter.Filterable, Delete {
+            FOVFilter.Filterable, Delete, MapItemUser {
 
         private final String _path;
         private final boolean _root;
@@ -417,9 +428,16 @@ public class Dt2OutlineMapOverlay extends AbstractMapOverlay2 implements
                                 return;
                             }
                             d.dismiss();
-                            Dt2FileWatcher.getInstance().delete(_level, _path);
+                            new DeleteDTEDTask(_mapView, _level, _path)
+                                    .execute();
                         }
                     });
+        }
+
+        @Override
+        public MapItem getMapItem() {
+            // HACK - Avoids accepting this list in MapItemFilter
+            return null;
         }
     }
 
@@ -502,6 +520,114 @@ public class Dt2OutlineMapOverlay extends AbstractMapOverlay2 implements
         @Override
         public boolean delete() {
             return Dt2FileWatcher.getInstance().delete(_level, _path);
+        }
+    }
+
+    // Asynchronous task for bulk deletion of DTED data
+    private static class DeleteDTEDTask extends AsyncTask<Void, Object, Void>
+            implements DialogInterface.OnCancelListener {
+
+        private final ProgressDialog _progDialog;
+        private final int _level;
+        private final String _path;
+        private final String _refreshMsg;
+
+        DeleteDTEDTask(MapView mapView, int level, String path) {
+            _level = level;
+            _path = path;
+
+            String dtedType = "DTED";
+            if (_level != -1)
+                dtedType += _level;
+            Context ctx = mapView.getContext();
+            _progDialog = new ProgressDialog(ctx);
+            _progDialog.setTitle(
+                    ctx.getString(R.string.deleting_dted_files, dtedType));
+            _progDialog.setMessage(" ");
+            _progDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+            _progDialog.setCanceledOnTouchOutside(false);
+            _progDialog.setOnCancelListener(this);
+            _progDialog.setButton(DialogInterface.BUTTON_NEGATIVE,
+                    ctx.getString(R.string.cancel),
+                    new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface d, int w) {
+                            _progDialog.cancel();
+                        }
+                    });
+
+            // Save this string for later so AS doesn't complain about Context leaks
+            _refreshMsg = ctx.getString(R.string.refreshing);
+        }
+
+        @Override
+        protected void onPreExecute() {
+            _progDialog.show();
+        }
+
+        @Override
+        protected Void doInBackground(Void... v) {
+
+            Dt2FileFilter dtedFilter = new Dt2FileFilter(_level);
+            List<File> roots = Dt2FileWatcher.getInstance().getRootDirs();
+
+            String path = _path;
+            if (path.startsWith("DTED"))
+                path = path.substring(4);
+            for (File root : roots) {
+                File dir = new File(root, path);
+                delete(dir, dtedFilter);
+            }
+
+            if (isCancelled())
+                return null;
+
+            // Force rescan
+            publishProgress(_refreshMsg, 1, 1);
+            Dt2FileWatcher.getInstance().scan();
+
+            return null;
+        }
+
+        private void delete(File dir, Dt2FileFilter filter) {
+            File[] files = IOProviderFactory.listFiles(dir, filter);
+            if (files == null)
+                return;
+            int progress = 0, total = files.length;
+            publishProgress(FileSystemUtils.prettyPrint(dir), 0, total);
+            for (File f : files) {
+                if (isCancelled())
+                    return;
+                if (IOProviderFactory.isDirectory(f))
+                    delete(f, filter);
+                else {
+                    FileSystemUtils.delete(f);
+                    publishProgress(null, ++progress, total);
+                }
+            }
+
+            // Remove empty directory
+            files = IOProviderFactory.listFiles(dir);
+            if (files != null && files.length == 0)
+                FileSystemUtils.deleteDirectory(dir, false);
+        }
+
+        @Override
+        protected void onProgressUpdate(Object... values) {
+            if (values[0] != null)
+                _progDialog.setMessage((String) values[0]);
+            _progDialog.setProgress((int) values[1]);
+            _progDialog.setMax((int) values[2]);
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            _progDialog.dismiss();
+        }
+
+        @Override
+        public void onCancel(DialogInterface dialog) {
+            cancel(false);
         }
     }
 }

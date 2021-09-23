@@ -116,7 +116,7 @@ public class SpecifySelfLocationTool extends Tool {
         @Override
         public void onReceive(Context context, Intent intent) {
             Marker self = _mapView.getSelfMarker();
-            if (self != null && !self.getMetaBoolean("movable", false))
+            if (self != null && !self.getMovable())
                 requestEndTool();
         }
     };

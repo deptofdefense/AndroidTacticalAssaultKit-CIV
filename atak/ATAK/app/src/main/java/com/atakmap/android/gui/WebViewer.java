@@ -86,7 +86,8 @@ public class WebViewer {
         final WebView v = createWebView(context);
         if (v != null) {
             try {
-                v.loadUrl(file.toURL().toString());
+                if (file != null)
+                    v.loadUrl(file.toURI().toURL().toString());
             } catch (MalformedURLException e) {
                 Log.e(TAG, "error encountered", e);
             }

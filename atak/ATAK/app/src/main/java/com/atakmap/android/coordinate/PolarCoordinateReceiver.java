@@ -38,6 +38,7 @@ import com.atakmap.coremap.conversions.SpanUtilities;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.conversion.EGM96;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.NorthReference;
@@ -184,7 +185,7 @@ public class PolarCoordinateReceiver extends BroadcastReceiver implements
                             return;
                         }
 
-                        if (!_destMarker.getMetaBoolean("moveable", true)) {
+                        if (!_destMarker.getMovable()) {
                             Log.w(TAG, "Destination not movable: "
                                     + _destMarker.getUID());
                             Toast.makeText(
@@ -338,12 +339,10 @@ public class PolarCoordinateReceiver extends BroadcastReceiver implements
 
                     double inclination = getTextValue(_inclinationText);
 
-                    GeoPoint point = DistanceCalculations
-                            .computeDestinationPoint(
-                                    _relativeMarker.getPoint(),
-                                    curBearingT,
-                                    curRangeM, // must be expressed in meters
-                                    inclination);
+                    // must be expressed in meters
+                    GeoPoint point = GeoCalculations.pointAtDistance(
+                            _relativeMarker.getPoint(), curBearingT, curRangeM,
+                            inclination);
                     placePoint(GeoPointMetaData.wrap(point));
                 } catch (NumberFormatException e) {
                     Log.e(TAG, "error: ", e);
@@ -681,7 +680,6 @@ public class PolarCoordinateReceiver extends BroadcastReceiver implements
         //wrap marker for the dest point
         RangeAndBearingEndpoint dest = new RangeAndBearingEndpoint(end,
                 UUID.randomUUID().toString());
-        dest.setClickable(true);
         dest.setMetaString("menu", "menus/rab_endpoint_menu.xml");
         if (getGroup() != null) {
             getGroup().addItem(dest);

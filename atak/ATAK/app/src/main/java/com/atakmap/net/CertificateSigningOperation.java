@@ -8,9 +8,11 @@ import android.util.Base64;
 import com.atakmap.android.http.rest.operation.HTTPOperation;
 import com.atakmap.android.http.rest.operation.NetworkOperation;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.util.ATAKConstants;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.R;
 import com.atakmap.comms.CommsMapComponent;
+import com.atakmap.comms.NetConnectString;
 import com.atakmap.comms.SslNetCotPort;
 import com.atakmap.comms.http.HttpUtil;
 import com.atakmap.comms.http.TakHttpClient;
@@ -29,6 +31,7 @@ import org.apache.http.entity.StringEntity;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.net.URLEncoder;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -80,7 +83,10 @@ public class CertificateSigningOperation extends HTTPOperation {
                     HttpUtil.DEFAULT_CONN_TIMEOUT_MS, DEFAULT_SO_TIMEOUT_MS);
 
             String path = "/api/tls/signClient?clientUid="
-                    + MapView.getDeviceUid();
+                    + MapView.getDeviceUid()
+                    + "&version=" + URLEncoder.encode(
+                            ATAKConstants.getVersionName(),
+                            FileSystemUtils.UTF8_CHARSET.name());
 
             // setup credentials for basic auth
             AtakAuthenticationCredentials credentials = new AtakAuthenticationCredentials();
@@ -158,6 +164,9 @@ public class CertificateSigningOperation extends HTTPOperation {
                     "Certificate signing request failed");
             return;
         }
+
+        NetConnectString ncs = NetConnectString
+                .fromString(initialRequest.getConnectString());
 
         // retrieve the private key from sqlcipher
         byte[] privateKey = AtakCertificateDatabase.getCertificate(
@@ -282,9 +291,9 @@ public class CertificateSigningOperation extends HTTPOperation {
                 "", keystorePassword, false);
 
         // store the client certificate
-        AtakCertificateDatabase.saveCertificateForServer(
+        AtakCertificateDatabase.saveCertificateForServerAndPort(
                 AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE,
-                initialRequest.getServer(),
+                initialRequest.getServer(), ncs.getPort(),
                 p12);
 
         if (!initialRequest.hasTruststore()) {
@@ -295,9 +304,9 @@ public class CertificateSigningOperation extends HTTPOperation {
                     "", truststorePassword, false);
 
             // store the CA certificate
-            AtakCertificateDatabase.saveCertificateForServer(
+            AtakCertificateDatabase.saveCertificateForServerAndPort(
                     AtakCertificateDatabaseIFace.TYPE_TRUST_STORE_CA,
-                    initialRequest.getServer(),
+                    initialRequest.getServer(), ncs.getPort(),
                     trustStoreP12);
         }
 

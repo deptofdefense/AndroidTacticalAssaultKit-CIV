@@ -37,6 +37,21 @@ public class URIHelper {
     }
 
     /**
+     * Get the content/path of the URI string (everything after the scheme://)
+     *
+     * @param uri URI string
+     * @return URI content or null if empty content/scheme undefined
+     */
+    public static String getContent(String uri) {
+        if (uri == null)
+            return null;
+        int schIdx = uri.indexOf("://");
+        if (schIdx == -1)
+            return null;
+        return uri.substring(schIdx + 3);
+    }
+
+    /**
      * Convert a file URI (file://[path]) to a file
      *
      * @param fileURI File URI string

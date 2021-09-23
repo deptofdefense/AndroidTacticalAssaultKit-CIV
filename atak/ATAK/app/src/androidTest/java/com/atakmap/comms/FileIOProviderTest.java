@@ -305,7 +305,7 @@ public class FileIOProviderTest extends ATAKInstrumentedTest {
         // ACT
         FileChannel openedChannel = _tester.open(f.getAbsolutePath(), "rw");
         long actualSize = openedChannel.size();
-        long size = _tester.getSize("/sdcard/encrypted/test.txt");
+        long size = _tester.getSize("/sdcard/test.txt");
         // ASSERT
         Assert.assertNotNull(_testChannel);
         Assert.assertEquals(actualSize, size);
@@ -317,7 +317,7 @@ public class FileIOProviderTest extends ATAKInstrumentedTest {
      * @return A created file
      */
     private File createTestFile() throws IOException {
-        File f = new File("test.txt");
+        File f = new File("/sdcard/test.txt");
         FileOutputStream fos = IOProviderFactory.getOutputStream(f);
         fos.write("test_stream".getBytes());
         fos.close();

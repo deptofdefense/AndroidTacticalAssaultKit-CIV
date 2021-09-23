@@ -10,7 +10,6 @@ import com.atakmap.android.missionpackage.file.MissionPackageContent;
 import com.atakmap.android.missionpackage.file.MissionPackageManifest;
 import com.atakmap.android.missionpackage.file.MissionPackageManifestAdapter;
 import com.atakmap.android.missionpackage.file.task.MissionPackageBaseTask.Callback;
-import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.android.missionpackage.file.NameValuePair;
@@ -87,17 +86,6 @@ public class MissionPackageListGroup {
 
     public String getUserName() {
         return _userName;
-    }
-
-    /**
-     * @@deprecated - dead code; no-op
-     * @param manifest
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public void setManifest(MissionPackageManifest manifest) {
-        // XXX - We shouldn't allow swapping out the entire manifest like this
-        // Create a new group item instead...
     }
 
     public void setItems(List<MissionPackageListItem> items) {

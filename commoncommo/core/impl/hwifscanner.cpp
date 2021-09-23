@@ -1,11 +1,12 @@
 #include "hwifscanner.h"
 #include "internalutils.h"
-#include <Lock.h>
+#include "commothread.h"
 #include "commotime.h"
 
 using namespace atakmap::commoncommo;
 using namespace atakmap::commoncommo::netinterfaceenums;
 using namespace atakmap::commoncommo::impl;
+using namespace atakmap::commoncommo::impl::thread;
 
 namespace {
     const char *THREAD_NAMES[] = {
@@ -28,8 +29,7 @@ HWIFScanner::~HWIFScanner()
 {
     stopThreads();
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, interfaceStateMutex);
+        Lock lock(interfaceStateMutex);
 
         std::map<const HwAddress *, NetAddress *, HwComp>::iterator iter;
         for (iter = interfaceStateMap.begin(); iter != interfaceStateMap.end(); ++iter) {
@@ -42,12 +42,11 @@ HWIFScanner::~HWIFScanner()
 void HWIFScanner::addHWAddress(
         const HwAddress* addr)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    PGSC::Thread::Lock_create(lock, interfaceStateMutex);
+    Lock lock(interfaceStateMutex);
     if (interfaceStateMap.find(addr) == interfaceStateMap.end()) {
         interfaceStateMap.insert(std::pair<HwAddress *, NetAddress *>(new InternalHwAddress(addr), NULL));
         // Wake so it can scan for it immediately
-        interfaceStateMonitor.broadcast(*lock);
+        interfaceStateMonitor.broadcast(lock);
         std::string hwStr = InternalUtils::hwAddrAsString(addr, addrMode);
         InternalUtils::logprintf(logger, CommoLogger::LEVEL_INFO, "Hw interface %s added for scanning", hwStr.c_str());
     }
@@ -56,8 +55,7 @@ void HWIFScanner::addHWAddress(
 void HWIFScanner::removeHWAddress(
         const HwAddress* addr)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    PGSC::Thread::Lock_create(lock, interfaceStateMutex);
+    Lock lock(interfaceStateMutex);
     std::map<const HwAddress *, NetAddress *, HwComp>::iterator iter;
     iter = interfaceStateMap.find(addr);
     if (iter != interfaceStateMap.end()) {
@@ -70,8 +68,7 @@ void HWIFScanner::removeHWAddress(
 bool HWIFScanner::isInterfaceUp(
         const HwAddress* addr) COMMO_THROW (std::invalid_argument)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    PGSC::Thread::Lock_create(lock, interfaceStateMutex);
+    Lock lock(interfaceStateMutex);
     std::map<const HwAddress *, NetAddress *, HwComp>::iterator iter = interfaceStateMap.find(addr);
     if (iter == interfaceStateMap.end())
         throw std::invalid_argument("Checking status for unknown interface");
@@ -81,8 +78,7 @@ bool HWIFScanner::isInterfaceUp(
 NetAddress* HWIFScanner::getNetAddress(
         const HwAddress* addr) COMMO_THROW (std::invalid_argument)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    PGSC::Thread::Lock_create(lock, interfaceStateMutex);
+    Lock lock(interfaceStateMutex);
     std::map<const HwAddress *, NetAddress *, HwComp>::iterator iter = interfaceStateMap.find(addr);
     if (iter == interfaceStateMap.end())
         throw std::invalid_argument("Checking status for unknown interface");
@@ -93,8 +89,7 @@ NetAddress* HWIFScanner::getNetAddress(
 
 std::string HWIFScanner::getPrimaryAddressString()
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    PGSC::Thread::Lock_create(lock, interfaceStateMutex);
+    Lock lock(interfaceStateMutex);
     std::map<const HwAddress *, NetAddress *, HwComp>::iterator iter;
     NetAddress *addr = NULL;
     for (iter = interfaceStateMap.begin(); iter != interfaceStateMap.end(); ++iter) {
@@ -113,8 +108,7 @@ std::string HWIFScanner::getPrimaryAddressString()
 void HWIFScanner::addListener(
         HWIFScannerListener* listener)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    PGSC::Thread::Lock_create(lock, listenerMutex);
+    Lock lock(listenerMutex);
     listeners.insert(listener);
 }
 
@@ -124,8 +118,7 @@ void HWIFScanner::removeListener(
     if (listener == NULL)
         return;
 
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    PGSC::Thread::Lock_create(lock, listenerMutex);
+    Lock lock(listenerMutex);
     listeners.erase(listener);
 }
 
@@ -136,9 +129,8 @@ NetInterfaceAddressMode HWIFScanner::getAddressMode()
 
 void HWIFScanner::threadStopSignal(size_t threadNum)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    PGSC::Thread::Lock_create(lock, interfaceStateMutex);
-    interfaceStateMonitor.broadcast(*lock);
+    Lock lock(interfaceStateMutex);
+    interfaceStateMonitor.broadcast(lock);
 }
 
 void HWIFScanner::threadEntry(size_t threadNum)
@@ -152,8 +144,7 @@ void HWIFScanner::threadEntry(size_t threadNum)
         std::vector<std::pair<InternalHwAddress *, NetAddress *> > fireUp;
         std::vector<InternalHwAddress *> fireDown;
         {
-            PGSC::Thread::LockPtr lock(NULL, NULL);
-            PGSC::Thread::Lock_create(lock, interfaceStateMutex);
+            Lock lock(interfaceStateMutex);
 
             std::map<const HwAddress *, NetAddress *, HwComp>::iterator iter;
             for (iter = interfaceStateMap.begin(); iter != interfaceStateMap.end(); ++iter) {
@@ -203,8 +194,7 @@ void HWIFScanner::threadEntry(size_t threadNum)
 
         // Fire events
         if (!fireDown.empty() || !fireUp.empty()) {
-            PGSC::Thread::LockPtr lock(NULL, NULL);
-            PGSC::Thread::Lock_create(lock, listenerMutex);
+            Lock lock(listenerMutex);
             std::set<HWIFScannerListener *>::iterator listenIter;
             for (listenIter = listeners.begin(); listenIter != listeners.end(); ++listenIter) {
                 HWIFScannerListener *l = *listenIter;
@@ -222,10 +212,9 @@ void HWIFScanner::threadEntry(size_t threadNum)
         }
 
         {
-            PGSC::Thread::LockPtr lock(NULL, NULL);
-            PGSC::Thread::Lock_create(lock, interfaceStateMutex);
+            Lock lock(interfaceStateMutex);
             int64_t millis = 10 * 1000;
-            interfaceStateMonitor.wait(*lock, millis);
+            interfaceStateMonitor.wait(lock, millis);
         }
     }
 

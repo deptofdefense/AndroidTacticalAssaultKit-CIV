@@ -23,18 +23,16 @@ import org.gdal.gdal.Dataset;
 public class GdalTileReader extends DatasetTileReader {
 
     private static final int TILE_SIZE = 256;
+    private static final double EPSILON = 1e-9;
 
-    private final Dataset _dataset;
+    protected final Dataset _dataset;
 
     // Width and height of the imagery
-    private final int _width, _height;
-
-    // Number of channels
-    private final int _channels;
+    protected final int _width, _height;
 
     // Upper-left and lower-right projection coordinate
-    private final PointD _ul = new PointD(0, 0);
-    private final PointD _lr = new PointD(0, 0);
+    protected final PointD _ul = new PointD(0, 0);
+    protected final PointD _lr = new PointD(0, 0);
 
     // Map tile coordinates to pixel coordinates
     // Typically this is a 1:1 mapping, however if the imagery is rotated
@@ -42,7 +40,7 @@ public class GdalTileReader extends DatasetTileReader {
     private final Matrix _tileToPixel = new Matrix();
     private final Matrix _pixelToTile = new Matrix();
 
-    private final PointD[] _sizes;
+    protected final PointD[] _sizes;
     private final byte[] _bytes;
     private final Paint _paint = new Paint();
 
@@ -50,11 +48,17 @@ public class GdalTileReader extends DatasetTileReader {
     private final com.atakmap.map.layer.raster.gdal.GdalTileReader _reader;
     private final Format _format;
 
+    /**
+     * Create a new tile reader for a imagery source that is GDAL-compatible
+     *
+     * @param srid Spatial reference ID
+     * @param corners Corner points in clockwise order [UL, UR, BR, BL]
+     * @param dataset GDAL dataset
+     */
     public GdalTileReader(int srid, GeoPoint[] corners, Dataset dataset) {
         _dataset = dataset;
         _width = _dataset.getRasterXSize();
         _height = _dataset.getRasterYSize();
-        _channels = dataset.getRasterCount();
         _tileWidth = _tileHeight = TILE_SIZE;
         _paint.setFilterBitmap(true);
 
@@ -144,10 +148,12 @@ public class GdalTileReader extends DatasetTileReader {
         x /= _lr.x - _ul.x;
         y /= _lr.y - _ul.y;
         PointD s = getSize(level);
-        dst.x = (int) Math.floor(x * s.x);
-        dst.y = (int) Math.floor(y * s.y);
-        if (dst.x < 0)
-            dst.x--;
+        x *= s.x;
+        y *= s.y;
+        x += EPSILON;
+        y += EPSILON;
+        dst.x = (int) Math.floor(x);
+        dst.y = (int) Math.floor(y);
     }
 
     @Override
@@ -171,18 +177,20 @@ public class GdalTileReader extends DatasetTileReader {
 
     @Override
     public TileBitmap getTile(int level, int c, int r) {
+        // Out of bounds
         if (c < 0 || r < 0)
             return null;
 
-        int levelInv = _maxLevels - level - 1;
-        if (c == getSize(levelInv).x)
-            c--;
-
         // Determine the size of the source tile to read and the x,y offset
+        int levelInv = _maxLevels - level - 1;
         int size = TILE_SIZE << levelInv;
         int x = c * size;
         int y = r * size;
         float scaleFactor = (float) size / TILE_SIZE;
+
+        // Out of bounds
+        if (x >= _width || y >= _height)
+            return null;
 
         Bitmap bmp;
         if (_tileToPixel.isIdentity()) {

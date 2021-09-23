@@ -1,3 +1,5 @@
+include mk/commoncommo-common.mk
+
 .PHONY: commoncommo commoncommo_clean
 
 ifeq ($(and $(commoncommo_CFLAGS)),)
@@ -5,12 +7,8 @@ ifeq ($(and $(commoncommo_CFLAGS)),)
 endif
 
 commoncommo_libfile=$(LIB_PREFIX)commoncommo.$(if commoncommo_BUILDSTATIC,$(LIB_STATICSUFFIX),$(LIB_SHAREDSUFFIX))
-commoncommo_src=../commoncommo
-commoncommo_local_srcdir=commoncommo
 commoncommo_local_libfile=$(OUTDIR)/$(commoncommo_local_srcdir)/core/impl/$(commoncommo_libfile)
 commoncommo_out_lib=$(OUTDIR)/lib/$(commoncommo_libfile)
-
-commoncommo_srctouchfile=$(OUTDIR)/$(commoncommo_local_srcdir)/.unpacked
 
 commoncommo_jnilibfile=$(LIB_PREFIX)commoncommojni.$(LIB_SHAREDSUFFIX)
 commoncommo_out_jnilib=$(OUTDIR)/lib/$(commoncommo_jnilibfile)
@@ -32,17 +30,10 @@ ifneq ($(wildcard $(commoncommo_src)/core/impl/*.$(OBJ_SUFFIX)),)
 endif
 
 
-.PHONY: $(OUTDIR)/$(commoncommo_local_srcdir)
-$(OUTDIR)/$(commoncommo_local_srcdir):
-	$(CP) -r $(commoncommo_src) $(OUTDIR)
-	rm -rf $(OUTDIR)/$(commoncommo_local_srcdir)/.git
-	cd $(OUTDIR)/$(commoncommo_local_srcdir)
-
 .PHONY: commoncommo_buildjava
 commoncommo_buildjava:
-	cd $(OUTDIR)/$(commoncommo_local_srcdir)/jni && ant jar
+	cd $(OUTDIR)/$(commoncommo_local_srcdir)/jni && ant $(commoncommo_ANT_FLAGS) jar
 	$(MAKE) -C $(OUTDIR)/$(commoncommo_local_srcdir)/jni/native    \
-            PGSCTHREAD=../../../pgscthread                             \
             TAKTHIRDPARTYDIR=$(OUTDIR_CYGSAFE)                         \
             COMMO_CXXFLAGS="$(commoncommo_CXXFLAGS)"                   \
             TARGET="$(TARGET)"                                         \
@@ -63,7 +54,6 @@ commoncommo_buildobjc:
 .PHONY: commoncommo_build
 commoncommo_build: $(OUTDIR)/$(commoncommo_local_srcdir)
 	$(MAKE) -C $(OUTDIR)/$(commoncommo_local_srcdir)/core/impl     \
-            PGSCTHREAD=../../../pgscthread                             \
             TAKTHIRDPARTYDIR=$(OUTDIR_CYGSAFE)                         \
             COMMO_CXXFLAGS="$(commoncommo_CXXFLAGS)"                   \
 	    CXX=$(CXX)                                                 \

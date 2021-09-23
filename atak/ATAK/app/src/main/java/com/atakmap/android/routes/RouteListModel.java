@@ -30,6 +30,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Toast;
 
 import com.atakmap.android.dropdown.DropDownManager;
+import com.atakmap.android.hierarchy.HierarchyListStateListener;
 import com.atakmap.android.maps.MapActivity;
 import com.atakmap.android.maps.MapComponent;
 
@@ -64,7 +65,7 @@ import java.util.Set;
  * Route manager overlay view
  */
 public class RouteListModel extends FilterMapOverlay.ListModelImpl
-        implements View.OnClickListener {
+        implements View.OnClickListener, HierarchyListStateListener {
 
     private static final String TAG = "RouteListModel";
 
@@ -108,7 +109,8 @@ public class RouteListModel extends FilterMapOverlay.ListModelImpl
     }
 
     @Override
-    public boolean onBackButtonPressed(boolean deviceBack) {
+    public boolean onBackButton(HierarchyListAdapter adapter,
+            boolean deviceBack) {
         if (deviceBack && !FileSystemUtils.isEmpty(_actionsUid)) {
             // Toggle off selected route when hitting back button
             toggleActions(_actionsUid);

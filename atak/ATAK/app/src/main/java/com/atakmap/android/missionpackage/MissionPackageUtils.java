@@ -332,11 +332,13 @@ public class MissionPackageUtils {
     public static List<MissionPackageListGroup> getUiPackages(MapGroup group) {
         List<MissionPackageListGroup> manifests = new ArrayList<>();
 
-        final FileInfoPersistanceHelper fiph = FileInfoPersistanceHelper.instance();
+        final FileInfoPersistanceHelper fiph = FileInfoPersistanceHelper
+                .instance();
         if (fiph == null)
-             return manifests;
+            return manifests;
 
-        List<AndroidFileInfo> files = fiph.allFiles(FileInfoPersistanceHelper.TABLETYPE.SAVED);
+        List<AndroidFileInfo> files = fiph
+                .allFiles(FileInfoPersistanceHelper.TABLETYPE.SAVED);
 
         if (files == null || files.size() < 1)
             return manifests;

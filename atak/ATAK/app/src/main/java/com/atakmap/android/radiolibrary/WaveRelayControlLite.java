@@ -244,7 +244,7 @@ public class WaveRelayControlLite
                 }
 
                 ms.joinGroup(InetAddress.getByAddress(_MULTICAST_ADDRESS));
-                ms.setSoTimeout(5000);
+                ms.setSoTimeout(10000);
 
                 DatagramPacket pack = new DatagramPacket(
                         new byte[_DEFAULT_BUFFER_LENGTH],
@@ -252,47 +252,53 @@ public class WaveRelayControlLite
 
                 while (!cancelled) {
                     pack.setLength(pack.getData().length);
-                    try {
-                        ms.receive(pack);
-                        // NOTE:
-                        // check to make sure that the message length is actually greater than the
-                        // data expected in the below loop. This would never error out because the
-                        // construction of the ByteBuffer would always be the length of the entire
-                        // packet.
+                    ms.receive(pack);
+                    // NOTE:
+                    // check to make sure that the message length is actually greater than the
+                    // data expected in the below loop. This would never error out because the
+                    // construction of the ByteBuffer would always be the length of the entire
+                    // packet.
 
-                        // TODO: If someone has access to an MPU 4 and can restructure
-                        // the below loop, we can wrap the pack.getData() outside of the loop,
-                        // setPosition to 0 and limit to pack.getLength() before an attempt is
-                        // made to process the data.
+                    // TODO: If someone has access to an MPU 4 and can restructure
+                    // the below loop, we can wrap the pack.getData() outside of the loop,
+                    // setPosition to 0 and limit to pack.getLength() before an attempt is
+                    // made to process the data.
 
-                        if (pack.getLength() > 9) {
-                            byte[] InetBytes = new byte[4];
-                            synchronized (lock) {
-                                final byte[] packData = pack.getData();
-                                final ByteBuffer bb = ByteBuffer.wrap(packData,
-                                        0, packData.length);
-                                bb.get(); // byte: TLV type (should be 6)
-                                bb.get(); // byte: TLV size (should be 4)
-                                bb.get(InetBytes); // read off 4 bytes of ip address
-                                _waverelay_InetAddress = InetAddress
-                                        .getByAddress(InetBytes);
+                    if (pack.getLength() > 9) {
+                        byte[] InetBytes = new byte[4];
+                        synchronized (lock) {
+                            final byte[] packData = pack.getData();
+                            final ByteBuffer bb = ByteBuffer.wrap(packData,
+                                    0, packData.length);
+                            bb.get(); // byte: TLV type (should be 6)
+                            bb.get(); // byte: TLV size (should be 4)
+                            bb.get(InetBytes); // read off 4 bytes of ip address
+                            _waverelay_InetAddress = InetAddress
+                                    .getByAddress(InetBytes);
 
-                                // Port to send request to redirect COT.
-                                bb.get(); // byte: TLV type (should be 7)
-                                bb.get(); // byte: TLV size (should be 2)
-                                _waverelay_port = bb.getShort();
-                            }
+                            // Port to send request to redirect COT.
+                            bb.get(); // byte: TLV type (should be 7)
+                            bb.get(); // byte: TLV size (should be 2)
+                            _waverelay_port = bb.getShort();
                         }
-                    } catch (SocketTimeoutException ste) {
-                        Log.e(TAG,
-                                "error occurred with redirect (no information received): "
-                                        + ste);
                     }
                 }
+            } catch (SocketTimeoutException ste) {
+                Log.e(TAG,
+                        "error occurred with redirect (no information received): "
+                                + ste);
             } catch (IOException e) {
                 if (!cancelled)
                     Log.e(TAG, "error occurred with redirect (healing): " + e);
+            } finally {
+                if (ms != null) {
+                    try {
+                        ms.close();
+                    } catch (Exception ignored) {
+                    }
+                }
             }
+
         }
 
     }

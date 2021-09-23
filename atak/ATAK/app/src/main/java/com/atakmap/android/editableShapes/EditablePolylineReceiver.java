@@ -91,16 +91,15 @@ public class EditablePolylineReceiver extends BroadcastReceiver {
                 if (found instanceof EditablePolyline) {
                     EditablePolyline poly = (EditablePolyline) found;
                     int index = poly.getMetaInteger("hit_index", -1);
+                    String hitType = poly.getMetaString("hit_type", "");
+                    GeoPoint point = GeoPoint
+                            .parseGeoPoint(extras.getString("point"));
 
-                    if (poly.getMetaString("hit_type", "").equals("line")) {
+                    if (point != null && hitType.equals("line")) {
                         // if it's an assoc marker, we just need to insert a point in it's place
                         index++;
-                        poly.getUndoable().run(
-                                poly.new InsertPointAction(GeoPointMetaData
-                                        .wrap(new GeoPoint(GeoPoint
-                                                .parseGeoPoint(extras
-                                                        .getString("point")))),
-                                        index));
+                        poly.getUndoable().run(poly.new InsertPointAction(
+                                GeoPointMetaData.wrap(point), index));
                         // TODO: make a combo action for the insert and the move????? how?
                     }
                 }

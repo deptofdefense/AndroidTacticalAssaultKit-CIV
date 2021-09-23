@@ -452,7 +452,7 @@ public class BloodHoundToolLink implements MapItem.OnGroupChangedListener,
         this.route.setMetaBoolean("nevercot", true);
 
         this.route.setEditable(false);
-        this.route.setTouchable(false);
+        this.route.setClickable(false);
 
         // See ATAK-13090
         // "removable" is assumed true by default, so we have to explicitly set

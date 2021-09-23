@@ -253,7 +253,8 @@ public class GeoFenceReceiver extends BroadcastReceiver implements
                             .format(
                                     context.getString(
                                             R.string.geofence_received_shape),
-                                    ATAKUtilities.getDisplayName(ATAKUtilities.findAssocShape(item)));
+                                    ATAKUtilities.getDisplayName(ATAKUtilities
+                                            .findAssocShape(item)));
                     NotificationUtil.getInstance().postNotification(
                             R.drawable.ic_menu_geofence, NotificationUtil.WHITE,
                             context.getString(R.string.geo_fence_received),
@@ -307,7 +308,8 @@ public class GeoFenceReceiver extends BroadcastReceiver implements
                 : context.getString(R.string.create_geo_fence));
         textViewGeoFenceName = view
                 .findViewById(R.id.textViewGeoFenceName);
-        textViewGeoFenceName.setText(ATAKUtilities.getDisplayName(ATAKUtilities.findAssocShape(item)));
+        textViewGeoFenceName.setText(ATAKUtilities
+                .getDisplayName(ATAKUtilities.findAssocShape(item)));
         switchGeoFenceStatus = view
                 .findViewById(R.id.switchGeoFenceStatus);
         switchGeoFenceStatus.setChecked(fence.isTracking());
@@ -536,7 +538,9 @@ public class GeoFenceReceiver extends BroadcastReceiver implements
                 b.setTitle(R.string.quick_dismiss);
                 b.setMessage(context.getString(
                         R.string.geofence_quick_dismiss_inquiry,
-                        ATAKUtilities.getDisplayName(ATAKUtilities.findAssocShape(item)), numAlerts.size()));
+                        ATAKUtilities.getDisplayName(
+                                ATAKUtilities.findAssocShape(item)),
+                        numAlerts.size()));
                 b.setPositiveButton(R.string.dismiss_alerts,
                         new DialogInterface.OnClickListener() {
                             @Override

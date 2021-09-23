@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Point;
 
-import com.atakmap.android.elev.dt2.Dt2ElevationModel;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapEvent;
 import com.atakmap.android.maps.MapEventDispatcher;
@@ -21,6 +20,7 @@ import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.map.elevation.ElevationManager;
 
 public class DynamicRangeAndBearingEndpoint extends Marker implements
         MapEventDispatcher.OnMapEventListener {
@@ -31,7 +31,6 @@ public class DynamicRangeAndBearingEndpoint extends Marker implements
     static final int PART_HEAD = 1;
 
     private final MapView _mapView;
-    private final Dt2ElevationModel _dem;
 
     private final float _hitRadiusSq = 1024; // 32 pixel touch radius, 1024 is 32 squared
 
@@ -55,7 +54,6 @@ public class DynamicRangeAndBearingEndpoint extends Marker implements
         setMetaBoolean("displayRnB", false);
         setZOrder(Double.NEGATIVE_INFINITY);
 
-        _dem = Dt2ElevationModel.getInstance();
         _defaultIcon = new Icon.Builder().setImageUri(0, "android.resource://"
                 + ctx.getPackageName() + "/"
                 + R.drawable.open_circle_small)
@@ -119,8 +117,7 @@ public class DynamicRangeAndBearingEndpoint extends Marker implements
                         .wrap(GeoCalculations.pointAtDistance(anchorPoint,
                                 bearing, range));
                 try {
-                    gp = _dem.queryPoint(gp.get().getLatitude(),
-                            gp.get().getLongitude());
+                    gp = ElevationManager.getElevationMetadata(gp.get());
                 } catch (Exception e) {
                     Log.w(TAG, "Failed to lookup elevation for point", e);
                 }

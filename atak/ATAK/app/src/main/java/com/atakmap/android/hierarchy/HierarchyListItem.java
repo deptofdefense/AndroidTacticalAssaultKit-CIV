@@ -73,7 +73,8 @@ public interface HierarchyListItem {
     /**
      * Returns the URI for the icon for the node.
      * 
-     * @return The URI for the icon for the node or <code>null</code> if the node has no icon.
+     * @return The URI for the icon for the node, <code>null</code> if the node
+     * has no icon, or "gone" to remove the icon space entirely.
      */
     String getIconUri();
 
@@ -178,6 +179,19 @@ public interface HierarchyListItem {
         @Override
         public String getIconUri() {
             return ATAKUtilities.getResourceUri(R.drawable.alpha_sort);
+        }
+    }
+
+    final class SortAlphabetDesc extends Sort {
+
+        @Override
+        public String getTitle() {
+            return "Descending";
+        }
+
+        @Override
+        public String getIconUri() {
+            return ATAKUtilities.getResourceUri(R.drawable.alpha_sort_desc);
         }
     }
 

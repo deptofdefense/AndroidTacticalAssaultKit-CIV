@@ -10,7 +10,8 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.coremap.log.Log;
 
 /**
- * ATAK core preferences helper
+ * ATAK core preferences helper which is used to centralize all of the calls to get the shared
+ * preference manager
  */
 public class AtakPreferences {
 
@@ -113,26 +114,60 @@ public class AtakPreferences {
         return defVal;
     }
 
+    /**
+     * Retrieve a String value from the preferences.
+     *
+     * @param key The name of the preference to retrieve.
+     * @param defVal Value to return if this preference does not exist.
+     */
     public String get(String key, String defVal) {
         return (String) get(key, (Object) defVal);
     }
 
+    /**
+     * Retrieve an int value from the preferences.
+     *
+     * @param key The name of the preference to retrieve.
+     * @param defVal Value to return if this preference does not exist.
+     */
     public int get(String key, int defVal) {
         return (Integer) get(key, (Integer) defVal);
     }
 
+    /**
+     * Retrieve a double value from the preferences.
+     *
+     * @param key The name of the preference to retrieve.
+     * @param defVal Value to return if this preference does not exist.
+     */
     public double get(String key, double defVal) {
         return (Double) get(key, (Double) defVal);
     }
 
+    /**
+     * Retrieve a boolean value from the preferences.
+     *
+     * @param key The name of the preference to retrieve.
+     * @param defVal Value to return if this preference does not exist.
+     */
     public boolean get(String key, boolean defVal) {
         return (Boolean) get(key, (Boolean) defVal);
     }
 
+    /**
+     * Registers a shared preference listener with the AtakPreferences.
+     *
+     * @param l the shared preference change listener
+     */
     public void registerListener(OnSharedPreferenceChangeListener l) {
         _prefs.registerOnSharedPreferenceChangeListener(l);
     }
 
+    /**
+     * Unregisters a shared preference listener with the AtakPreferences.
+     *
+     * @param l the shared preference change listener
+     */
     public void unregisterListener(OnSharedPreferenceChangeListener l) {
         _prefs.unregisterOnSharedPreferenceChangeListener(l);
     }

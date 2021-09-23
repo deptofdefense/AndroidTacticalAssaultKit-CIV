@@ -2,7 +2,7 @@ buildscript {
 
     description = 'Gradle plugin to resolve and apply development kits and test frameworks to ATAK plugins'
     group = 'com.atakmap.gradle'
-    version = '2.2.0'
+    version = '2.3.1'
 
     ext.getValueFromPropertiesFile = { propFile, key ->
         if(!propFile.isFile() || !propFile.canRead())
@@ -56,12 +56,6 @@ gradlePlugin {
 }
 
 publishing {
-    publications {
-        takdev(MavenPublication) {
-            from components.java
-        }
-    }
-
     repositories {
         maven {
             url = project.publishUrl
@@ -70,6 +64,12 @@ publishing {
                 username project.mavenUser
                 password project.mavenPassword
             }
+        }
+    }
+
+    publications {
+        takdev(MavenPublication) {
+            from components.java
         }
     }
 }

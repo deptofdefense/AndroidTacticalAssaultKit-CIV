@@ -203,7 +203,7 @@ public class Srtm1ElevationModel {
 
             short height = bb.getShort(0);
 
-            result = (double) height;
+            result = height;
         } catch (IOException e) {
             Log.e(TAG, "error: ", e);
         }

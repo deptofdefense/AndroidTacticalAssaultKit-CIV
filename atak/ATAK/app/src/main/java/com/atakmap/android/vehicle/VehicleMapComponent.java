@@ -90,11 +90,13 @@ public class VehicleMapComponent extends AbstractMapComponent {
         // 3D vehicle models layer
         _modelLayer = new VehicleModelLayer(view, _vehicleGroup);
 
-        // Register pallet (if listing is non-empty)
+        // Register vehicle model pallet (if listing is non-empty)
         _modelPallet = new VehicleModelPallet(view);
         _pointDropper = EnterLocationDropDownReceiver.getInstance(view);
         _pointDropper.addPallet(_modelPallet, 3);
 
+        // Load any vehicle blocks sitting in the block directory
+        VehicleBlock.init();
     }
 
     @Override

@@ -6,10 +6,13 @@ import com.atakmap.android.maps.Shape;
 import com.atakmap.android.maps.graphics.AbstractGLMapItem2;
 import com.atakmap.android.model.opengl.GLModelRenderer2.TextureLoader;
 import com.atakmap.android.rubbersheet.data.RubberSheetManager;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.MapRenderer3;
 import com.atakmap.map.MapSceneModel;
+import com.atakmap.map.hittest.HitTestResult;
 import com.atakmap.map.layer.control.ColorControl;
 import com.atakmap.map.layer.model.Mesh;
 import com.atakmap.map.layer.model.Model;
@@ -18,6 +21,7 @@ import com.atakmap.map.layer.model.Models;
 import com.atakmap.map.layer.model.opengl.GLMesh;
 import com.atakmap.map.layer.model.opengl.MaterialManager;
 import com.atakmap.map.opengl.GLMapView;
+import com.atakmap.map.hittest.HitTestQueryParameters;
 import com.atakmap.map.projection.ProjectionFactory;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.Matrix;
@@ -82,6 +86,9 @@ public class GLRubberModel extends AbstractGLMapItem2 implements
     protected boolean _updateAltitudeOffset;
     protected double _altitudeOffset;
 
+    // Last scene used to render the model (used for hit testing)
+    protected MapSceneModel _scene;
+
     public GLRubberModel(MapRenderer ctx, RubberModel subject) {
         super(ctx, subject, GLMapView.RENDER_PASS_SCENES);
         _renderCtx = ctx;
@@ -97,7 +104,6 @@ public class GLRubberModel extends AbstractGLMapItem2 implements
                 new TextureLoader(_renderCtx, texDir, 4096));
         _updateAltitudeOffset = true;
         _altitudeOffset = Double.NaN;
-        startObserving();
     }
 
     @Override
@@ -227,7 +233,7 @@ public class GLRubberModel extends AbstractGLMapItem2 implements
 
         // Apply matrix to model
         final GeoPoint fAnchor = center;
-        _renderCtx.queueEvent(new Runnable() {
+        runOnGLThread(new Runnable() {
             @Override
             public void run() {
                 if (_released)
@@ -250,15 +256,22 @@ public class GLRubberModel extends AbstractGLMapItem2 implements
     }
 
     public void draw(GLMapView view, int renderPass) {
-        if (!shouldRender() || !MathUtils.hasBits(renderPass, getRenderPass()))
+        if (!MathUtils.hasBits(renderPass, getRenderPass()))
+            return;
+
+        // Mark scene used for hit-testing as dirty/unusable
+        _scene = null;
+
+        // Do not render
+        if (!shouldRender())
             return;
 
         // Update map forwards
         updateDrawVersion(view);
 
         // Only draw model if we have some decent level of detail
-        if (!_noLod)
-            drawModel(view);
+        if (!_noLod && drawModel(view))
+            _scene = view.currentScene.scene;
     }
 
     protected boolean shouldRender() {
@@ -373,41 +386,54 @@ public class GLRubberModel extends AbstractGLMapItem2 implements
         _onScreen = onScreen;
     }
 
-    public boolean hitTest(int xpos, int ypos, GeoPoint result, MapView view) {
+    @Override
+    protected boolean getClickable() {
+        return super.getClickable() && !_noLod && shouldRender();
+    }
 
-        if (_noLod || !shouldRender())
-            return false;
+    @Override
+    protected HitTestResult hitTestImpl(MapRenderer3 renderer,
+            HitTestQueryParameters params) {
+
+        // Model isn't being rendered
+        if (_scene == null)
+            return null;
 
         final GLMesh[] meshes;
-        final MapSceneModel sm = view.getSceneModel();
         synchronized (this) {
             if (_glMeshes == null)
-                return false;
+                return null;
             meshes = _glMeshes;
             _meshesLocked = true;
         }
 
-        boolean retval = false;
+        HitTestResult retval = null;
 
+        GeoPoint geo = GeoPoint.createMutable();
         for (GLMesh mesh : meshes) {
             // XXX - need to find closest hit
-            if (mesh.hitTest(sm, xpos, ypos, result)) {
-                retval = true;
+            if (mesh.hitTest(_scene, params.point.x, params.point.y, geo)) {
+                retval = new HitTestResult(_subject, geo);
                 break;
             }
         }
 
         synchronized (this) {
             if (meshes != _glMeshes) {
-                _renderCtx.queueEvent(new Runnable() {
-                    public void run() {
-                        for (GLMesh mesh : meshes)
-                            mesh.release();
-                    }
-                });
+                for (GLMesh mesh : meshes)
+                    mesh.release();
             }
             _meshesLocked = false;
         }
         return retval;
+    }
+
+    /**
+     * @deprecated Replaced by {@link AbstractGLMapItem2#hitTest(MapRenderer3, HitTestQueryParameters)}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
+    public boolean hitTest(int xpos, int ypos, GeoPoint result, MapView view) {
+        return false;
     }
 }

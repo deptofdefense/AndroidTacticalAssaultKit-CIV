@@ -7,9 +7,12 @@ import com.atakmap.app.DeveloperOptions;
 import com.atakmap.app.R;
 import com.atakmap.map.Globe;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.MapRenderer3;
+import com.atakmap.map.hittest.HitTestResult;
 import com.atakmap.map.layer.feature.Feature.AltitudeMode;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
+import com.atakmap.map.hittest.HitTestQueryParameters;
 import com.atakmap.math.MathUtils;
 import com.atakmap.opengl.GLES20FixedPipeline;
 
@@ -116,7 +119,7 @@ class GLEditablePolyline extends GLPolyline implements
                         _vertexIconEntry.getTextureId());
 
                 // Scale icon relative to line width
-                int pixelSize = (int) Math.round((Math.max(4, strokeWeight) * 3)
+                int pixelSize = Math.round((Math.max(4, strokeWeight) * 3)
                         / ortho.currentPass.relativeScaleHint);
                 GLES20FixedPipeline.glPointSize(pixelSize);
 
@@ -167,10 +170,19 @@ class GLEditablePolyline extends GLPolyline implements
     }
 
     @Override
-    protected void recomputeScreenRectangles(final GLMapView ortho) {
-        super.recomputeScreenRectangles(ortho);
-
-        // Update for polyline hit test
-        _subject.updateScreenBounds(_screenRect, _partitionRects);
+    protected HitTestResult hitTestImpl(MapRenderer3 renderer,
+            HitTestQueryParameters params) {
+        HitTestResult result = super.hitTestImpl(renderer, params);
+        if (result != null) {
+            // Use the proper menu based on whether we hit a line or point
+            String menu = _subject.getShapeMenu();
+            if (_editable)
+                menu = result.type == HitTestResult.Type.LINE
+                        ? _subject.getLineMenu()
+                        : _subject.getCornerMenu();
+            _subject.setRadialMenu(menu);
+            return result;
+        }
+        return null;
     }
 }

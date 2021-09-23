@@ -1,0 +1,13 @@
+apply from: 'gradle/versions.gradle'
+
+task zipLibs(type: Zip) {
+    group = 'Build'
+    description = 'Assembles a zip file containing the native JCommonCommo libraries.'
+
+    archiveFileName = 'jcommoncommo-native.zip'
+    destinationDirectory = file("$buildDir")
+
+    from(project.file('..')) {
+        include 'native/'
+    }
+}

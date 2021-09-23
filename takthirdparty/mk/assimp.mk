@@ -1,26 +1,18 @@
 include mk/assimp-common.mk
 
 assimp_local_libfile=$(assimp_local_srcdir)/$(assimp_builddir)/code/$(assimp_libfile)
-assimp_local_jlibfile=$(assimp_local_srcdir)/$(assimp_builddir)/libjassimp.so
+assimp_local_jlibfile=$(assimp_local_srcdir)/$(assimp_builddir)/$(LIB_PREFIX)jassimp.$(LIB_SHAREDSUFFIX)
 
-assimp_out_jlib=$(OUTDIR)/lib/libjassimp.so
-
-assimp_extra_cmake_armeabi-v7a=-DCMAKE_ANDROID_ARM_NEON=ON
-assimp_extra_cmake_x86=
+assimp_out_jlib=$(OUTDIR)/lib/$(LIB_PREFIX)jassimp.$(LIB_SHAREDSUFFIX)
 
 .PHONY: assimp_build
-assimp_build: $(assimp_local_srcdir)
+assimp_build: cmake_check $(assimp_local_srcdir)
 	cd $(assimp_local_srcdir)/$(assimp_builddir)               &&     \
-          $(ASSIMP_CMAKE) -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release  \
-              -DCMAKE_SYSTEM_NAME=Android                                 \
-              -DCMAKE_SYSTEM_VERSION=$(ANDROID_API_LEVEL)                 \
-              -DCMAKE_ANDROID_STL_TYPE=gnustl_shared                      \
-              -DCMAKE_ANDROID_ARCH_ABI=$(ANDROID_ABI)                     \
-              $(assimp_extra_cmake_$(ANDROID_ABI))                        \
-              -DCMAKE_ANDROID_STANDALONE_TOOLCHAIN=$(call PATH_CYGSAFE,$(OUTDIR)/toolchain)  \
+          $(CMAKE) -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release         \
               -DCMAKE_INSTALL_PREFIX=../../../                            \
               -DZLIB_HOME=$(OUTDIR_CYGSAFE)                               \
               -DZLIB_ROOT=$(OUTDIR_CYGSAFE)                               \
+              $(assimp_CONFIG_EX)                                         \
               ../                      &&                                 \
 	    make assimp && make jassimp
 	cd $(assimp_local_srcdir)/port/jassimp && ant

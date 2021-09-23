@@ -5,14 +5,10 @@ import android.graphics.BitmapFactory;
 
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapView;
-import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.rubbersheet.data.BitmapPyramid;
 import com.atakmap.android.rubbersheet.data.RubberImageData;
-import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.maps.coords.GeoPoint;
-import com.atakmap.coremap.maps.coords.MutableGeoBounds;
-import com.atakmap.coremap.maps.coords.Vector2D;
 import com.atakmap.map.AtakMapView;
 
 import java.io.File;
@@ -27,14 +23,11 @@ public class RubberImage extends AbstractSheet {
     private static final String TAG = "RubberImage";
 
     private BitmapPyramid _image;
-    private final MutableGeoBounds _bounds = new MutableGeoBounds(0, 0, 0, 0);
-    private final Vector2D[] _quad = new Vector2D[4];
 
     private RubberImage(RubberImageData data) {
         super(data);
         setImage(data.file);
         setMenu("menus/rubber_image_menu.xml");
-        refreshBounds();
     }
 
     @Override
@@ -62,39 +55,6 @@ public class RubberImage extends AbstractSheet {
 
     public BitmapPyramid getImage() {
         return _image;
-    }
-
-    @Override
-    protected void onPointsChanged() {
-        super.onPointsChanged();
-        refreshBounds();
-    }
-
-    private void refreshBounds() {
-        getBounds(_bounds);
-        for (int i = 0; i < 4; i++) {
-            PointMapItem pmi = getPointAt(i);
-            if (pmi != null)
-                _quad[i] = ATAKUtilities.geo2Vector(pmi.getPoint());
-        }
-    }
-
-    @Override
-    public boolean testOrthoHit(int xpos, int ypos, GeoPoint point,
-            MapView view) {
-        // Touch on the line
-        if (super.testOrthoHit(xpos, ypos, point, view))
-            return true;
-
-        // Touch within the imagery
-        if (_bounds.contains(point) && Vector2D.polygonContainsPoint(
-                ATAKUtilities.geo2Vector(point), _quad)) {
-            setMetaString("menu_point", point.toStringRepresentation());
-            setTouchPoint(point);
-            return true;
-        }
-
-        return false;
     }
 
     public static RubberImage create(MapView mv, RubberImageData data) {

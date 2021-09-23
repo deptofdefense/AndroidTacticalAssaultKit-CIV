@@ -600,6 +600,9 @@ public class RoutePlannerView extends LinearLayout implements
         RouteEditTool tool = getEditTool();
         if (tool != null) {
             tool.requestEndTool();
+            synchronized (_undoStack) {
+                _undoStack.clear();
+            }
             refresh();
             return true;
         }
@@ -747,7 +750,7 @@ public class RoutePlannerView extends LinearLayout implements
             palette.setOnColorSelectedListener(l);
             alert.show();
         }
-    };
+    }
 
     private class ContactPointAdapter extends BaseAdapter {
 

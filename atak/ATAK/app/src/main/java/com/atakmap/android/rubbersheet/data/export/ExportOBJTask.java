@@ -61,7 +61,7 @@ public class ExportOBJTask extends ExportFileTask implements
         super(mapView, item, callback);
         _item = item;
         _exportTime = new CoordinatedTime();
-        _baseName = item.getName();
+        _baseName = item.getTitle();
         for (String ext : RubberModelData.EXTS) {
             ext = "." + ext;
             if (_baseName.endsWith(ext)) {

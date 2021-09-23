@@ -2426,6 +2426,7 @@
   <!--Elevation Tools-->
    <string name="heatmap">Mapa cieplna</string>
    <string name="viewshed">Pole widzenia</string>
+  <string name="terrainslope">Terrain Slope</string>
    <string name="hide_viewshed">Usuń pole widzenia</string>
    <string name="select_viewshed">Wybierz pole widzenia</string>
    <string name="no_marker_set">Brak zestawu znaczników</string>
@@ -2452,7 +2453,7 @@
    <string name="x_resolution_summ">Liczba próbek wysokości do pobrania wzdłuż osi X.</string>
    <string name="y_resolution">Rozdzielczość Y</string>
    <string name="y_resolution_summ">Liczba próbek wysokości do pobrania wzdłuż osi y</string>
-   <string name="show_heatmap">Pokaż mapę cieplną</string>
+  <string name="show_heatmap">Pokaż </string>
    <string name="dted">DTED:\u0020</string>
    <string name="level_1">Poziom 1</string>
    <string name="sample_rate">Rozdzielczość</string>
@@ -2466,6 +2467,7 @@
    <string name="rel_gradient">REL GRADIENT</string>
    <string name="show_circle">Kołowe pole\nwidzenia </string>
    <string name="show_circle2">Kołowe pole widzenia</string>
+  <string name="show_terrainslope">Show Terrain Slope</string>
   <!--Overlay Manager-->
    <string name="overlay_manager">Warstwy</string>
    <string name="process">Proces</string>
@@ -3847,7 +3849,7 @@
    <string name="resection_classic_tool_ideal_conditions">Gdy istnieją punkty orientacyjne, możesz je zidentyfikować i dopasować do mapy. Najwyższa dokładność, gdy kąt między punktami orientacyjnymi zbliża się do 90 stopni</string>
    <string name="resection_classic_tool_relative_accuracy">Zależna od tego, jak dokładnie zidentyfikowano punkty orientacyjne i namiary względne</string>
    <string name="invalid_cot_address">Napotkano nieprawidłowe dane wyjściowe, upewnij się że adres nie zawiera protokołu ani portu</string>
-   <string name="image_overlay_hud">HUD nakładki obrazu</string>
+  <string name="image_overlay_hud">nakładki obrazu</string>
    <string name="image_overlay_warning">Ta opcja spowoduje trwałe nałożenie metadanych na obraz. Kontyntynuj?</string>
    <string name="kml_network_link">KML Network Link</string>
    <string name="kml_links_added_msg">Added %d KML network links</string>
@@ -3886,4 +3888,24 @@
   <string name="legacy_altitude_rendering">Enhanced Depth Perception</string>
   <string name="disable_parallax_viewing">Enhances visualization of depth when looking straight down.</string>
   <string name="lollipop_description">Draws a line to the exact point on the ground represented by the item.</string>
+  <string name="self_authored">Self-Authored</string>
+  <string name="toggle_filters">Toggle Filters</string>
+  <string name="actionbar_channels">Channels</string>
+    <string name="enter_caption_button">Tap the Edit button to enter caption</string>
+    <string name="deleting_dted_files">Deleting %s files&#8230;</string>
+    <string name="refreshing">Refreshing&#8230;</string>
+  <string name="address_colon">Address:</string>
+  <string name="tak_server_quick_connect">TAK Server Quick Connect</string>
+  <string name="quick_connect">Quick Connect</string>
+  <string name="retry">Retry</string>
+    <string name="select_deletion_method">Select deletion method:</string>
+    <string name="no_content_selectable">No content can be selected</string>
+    <string name="delete_contents">Delete Contents</string>
+    <string name="select_lasso_action">Select Lasso Action</string>
+  <string name="lasso_select">Lasso Select</string>
+    <string name="checked_abbr">Chk</string>
+    <string name="perimeter">Perimeter</string>
+  <string name="circumference">Circumference</string>
+  <string name="length">Length</string>
+    <string name="bulk_feature_edit_limit_msg">Bulk editing of more than 500 features is not supported.</string>
 </resources>

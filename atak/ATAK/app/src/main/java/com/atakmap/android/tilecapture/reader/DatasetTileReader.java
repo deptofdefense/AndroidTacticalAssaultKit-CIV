@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
 
+import com.atakmap.android.math.MathUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.layer.raster.ImageDatasetDescriptor;
 import com.atakmap.math.PointD;
@@ -34,10 +35,10 @@ public abstract class DatasetTileReader implements BitmapReader {
     }
 
     protected DatasetTileReader(ImageDatasetDescriptor d) {
-        this(Integer.parseInt(d.getExtraData("levelOffset")),
-                Integer.parseInt(d.getExtraData("_levelCount")),
-                Integer.parseInt(d.getExtraData("_tilePixelWidth")),
-                Integer.parseInt(d.getExtraData("_tilePixelHeight")));
+        this(MathUtils.parseInt(d.getExtraData("levelOffset"), 0),
+                MathUtils.parseInt(d.getExtraData("_levelCount"), 1),
+                MathUtils.parseInt(d.getExtraData("_tilePixelWidth"), 256),
+                MathUtils.parseInt(d.getExtraData("_tilePixelHeight"), 256));
     }
 
     public int getTileWidth() {

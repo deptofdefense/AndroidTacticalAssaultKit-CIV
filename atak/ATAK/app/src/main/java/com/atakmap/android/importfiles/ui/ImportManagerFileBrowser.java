@@ -5,31 +5,37 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import androidx.annotation.NonNull;
+
+import android.graphics.drawable.Drawable;
 import android.text.Html;
 import android.util.AttributeSet;
+import android.util.Pair;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.atakmap.android.gui.ImportFileBrowser;
+import com.atakmap.android.icons.IconsMapAdapter;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.math.MathUtils;
 import com.atakmap.app.R;
-import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 
-import org.apache.commons.lang.StringUtils;
-
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -41,10 +47,26 @@ import java.util.Set;
  */
 public class ImportManagerFileBrowser extends ImportFileBrowser implements
         DialogInterface.OnKeyListener {
+
     private static final String TAG = "ImportManagerFileBrowser";
+
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(
+            "yyyy-MM-dd", LocaleUtil.getCurrent());
 
     protected final Set<File> _selectedItems = new HashSet<>();
     protected boolean _multiSelect = true;
+    protected boolean _directorySelect = true;
+    protected FileSort _fileSort;
+    protected final List<Button> _sortBtns = new ArrayList<>();
+
+    private final Comparator<File> _sortChecked = new Comparator<File>() {
+        @Override
+        public int compare(File f1, File f2) {
+            boolean s1 = _selectedItems.contains(f1);
+            boolean s2 = _selectedItems.contains(f2);
+            return Boolean.compare(s1, s2);
+        }
+    };
 
     public static ImportManagerFileBrowser inflate(MapView mv) {
         return (ImportManagerFileBrowser) LayoutInflater.from(mv.getContext())
@@ -59,6 +81,10 @@ public class ImportManagerFileBrowser extends ImportFileBrowser implements
         super(context);
     }
 
+    /**
+     * Set the title of this dialog
+     * @param title Title string
+     */
     public void setTitle(String title) {
         View titleView = findViewById(R.id.importManagerFileBrowserTitle);
         if (titleView != null)
@@ -69,14 +95,30 @@ public class ImportManagerFileBrowser extends ImportFileBrowser implements
             titleTV.setText(title);
     }
 
+    /**
+     * Set the title of this dialog
+     * @param titleId Title string ID
+     */
     public void setTitle(int titleId) {
         setTitle(getContext().getString(titleId));
     }
 
+    /**
+     * Set whether multi-select mode is enabled for the browser
+     * @param multiSelect True to enable multi-select
+     */
     public void setMultiSelect(boolean multiSelect) {
         _multiSelect = multiSelect;
         if (_adapter != null)
             _adapter.notifyDataSetChanged();
+    }
+
+    /**
+     * Set whether directories can be selected in multi-select mode
+     * @param dirSelect True to allow directories to be selected
+     */
+    public void allowDirectorySelect(boolean dirSelect) {
+        _directorySelect = dirSelect;
     }
 
     @Override
@@ -101,6 +143,14 @@ public class ImportManagerFileBrowser extends ImportFileBrowser implements
         ImageButton newFolderBtn = findViewById(R.id.newFolderBtn);
         if (newFolderBtn != null)
             setNewFolderButton(newFolderBtn);
+
+        ViewGroup sortModes = findViewById(R.id.importBrowserSortModes);
+        if (sortModes != null) {
+            setupSortButton(R.id.sort_name);
+            setupSortButton(R.id.sort_date);
+            setupSortButton(R.id.sort_size);
+            setupSortButton(R.id.sort_checked);
+        }
     }
 
     @Override
@@ -145,6 +195,27 @@ public class ImportManagerFileBrowser extends ImportFileBrowser implements
         return false;
     }
 
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view, int position,
+            long id) {
+        ViewHolder holder = getHolder(view);
+        if (holder != null)
+            holder.onClick(view);
+    }
+
+    @Override
+    public boolean onItemLongClick(AdapterView<?> parent, View view,
+            int position, long id) {
+        ViewHolder holder = getHolder(view);
+        return holder != null && holder.onLongClick(view);
+    }
+
+    private ViewHolder getHolder(View view) {
+        return view.getTag() instanceof ViewHolder
+                ? (ViewHolder) view.getTag()
+                : null;
+    }
+
     protected class FileItemAdapter extends ArrayAdapter<FileItem> {
 
         protected final MapView _mapView;
@@ -171,12 +242,14 @@ public class ImportManagerFileBrowser extends ImportFileBrowser implements
                 row.setTag(h);
             }
             h.fileItem = fileItem;
-            h.root.setOnClickListener(h);
-            h.root.setOnLongClickListener(h);
             h.selected.setOnClickListener(h);
 
             if (fileItem == null)
                 return row;
+
+            boolean isDirectory = fileItem.type == FileItem.DIRECTORY;
+            boolean showCheckbox = _multiSelect
+                    && (_directorySelect || !isDirectory);
 
             // Handle the special case where a directory does not contain any files.
             // This changes the list to simply display an item that says "Directory is Empty"
@@ -191,10 +264,10 @@ public class ImportManagerFileBrowser extends ImportFileBrowser implements
             } else {
                 h.icon.setVisibility(View.VISIBLE);
                 h.selected
-                        .setVisibility(_multiSelect ? View.VISIBLE : View.GONE);
+                        .setVisibility(showCheckbox ? View.VISIBLE : View.GONE);
             }
 
-            if (_multiSelect) {
+            if (showCheckbox) {
                 // If this item has been selected, update the checkbox state,
                 // otherwise uncheck it.
                 File checkFile = new File(_path, fileItem.file);
@@ -217,36 +290,36 @@ public class ImportManagerFileBrowser extends ImportFileBrowser implements
             }
 
             File f = new File(_path, fileItem.file);
-            h.icon.setImageDrawable(fileItem.iconDr);
+
+            Drawable icon = fileItem.iconDr;
+            h.icon.setImageDrawable(icon);
+
+            // Load image thumbnail if needed
+            if (IconsMapAdapter.IconFilenameFilter.accept(null, f.getName())) {
+                icon.setCallback(h.icon);
+                loadThumbnail(fileItem);
+            }
+
             h.fileName.setText(f.getName());
-            if (fileItem.type == FileItem.DIRECTORY) {
+            if (isDirectory) {
                 // Filter out undesired file types
-                String[] children = ioProvider.list(f, _fileFilter);
-                if (FileSystemUtils.isEmpty(children))
+                int childCount = _getFileCount(f);
+                if (childCount == 0)
                     h.fileInfo.setText(_mapCtx.getString(
                             R.string.importmgr_count_empty));
                 else
                     h.fileInfo.setText(_mapCtx.getString(
-                            R.string.importmgr_count_items, children.length));
+                            R.string.importmgr_count_items, childCount));
             } else
                 h.fileInfo.setText(
                         MathUtils.GetLengthString(ioProvider.length(f)));
 
+            h.modDate.setText(DATE_FORMAT.format(new Date(
+                    ioProvider.lastModified(f))));
+
             return row;
         }
     }
-
-    protected final FilenameFilter _fileFilter = new FilenameFilter() {
-        @Override
-        public boolean accept(File dir, String fileName) {
-            File sel = new File(dir, fileName);
-            String ext = StringUtils.substringAfterLast(fileName,
-                    ".");
-            if (isFile(sel))
-                return (_testExtension(ext)) && ioProvider.canRead(sel);
-            return ioProvider.canRead(sel) && ioProvider.isDirectory(sel);
-        }
-    };
 
     protected ViewHolder createViewHolder(ViewGroup parent) {
         ViewHolder h = new ViewHolder();
@@ -258,9 +331,21 @@ public class ImportManagerFileBrowser extends ImportFileBrowser implements
                 R.id.importManagerBrowserFileName);
         h.fileInfo = h.root.findViewById(
                 R.id.importManagerBrowserFileInfo);
+        h.modDate = h.root.findViewById(R.id.importManagerBrowserDate);
         h.selected = h.root.findViewById(
                 R.id.importManagerBrowserFileSelected);
         return h;
+    }
+
+    @Override
+    protected void _loadFileList() {
+        super._loadFileList();
+        _fileSort = new FileSort(new FileSort.NameSort());
+        for (Button btn : _sortBtns) {
+            Pair<String, FileSort> p = (Pair<String, FileSort>) btn.getTag();
+            if (p != null)
+                btn.setText(p.first);
+        }
     }
 
     public class ViewHolder implements View.OnClickListener,
@@ -268,13 +353,15 @@ public class ImportManagerFileBrowser extends ImportFileBrowser implements
 
         public View root;
         public ImageView icon;
-        public TextView fileName, fileInfo;
+        public TextView fileName, fileInfo, modDate;
         public CheckBox selected;
         public FileItem fileItem;
 
         // Check to see if a checkbox is checked or not, and update
         // the selectedItems set accordingly.
         protected void recordCheckBox() {
+            if (!_directorySelect && fileItem.type == FileItem.DIRECTORY)
+                return;
             boolean isChecked = selected.isChecked();
             try {
                 File selectedFile = new File(_path, fileItem.file)
@@ -345,7 +432,7 @@ public class ImportManagerFileBrowser extends ImportFileBrowser implements
             }
             _currFile = fileItem.file;
             File sel = new File(_path, _currFile);
-            if (ioProvider.isDirectory(sel)) {
+            if (fileItem.type == FileItem.DIRECTORY) {
                 if (ioProvider.canRead(sel)) {
                     _pathDirsList.add(_currFile);
                     _path = new File(sel + "");
@@ -364,7 +451,8 @@ public class ImportManagerFileBrowser extends ImportFileBrowser implements
 
         @Override
         public boolean onLongClick(View v) {
-            if (fileItem == null || _directoryEmpty)
+            if (fileItem == null || _directoryEmpty
+                    || !_directorySelect && fileItem.type == FileItem.DIRECTORY)
                 return false;
             _currFile = fileItem.file;
             if (!_multiSelect) {
@@ -376,5 +464,54 @@ public class ImportManagerFileBrowser extends ImportFileBrowser implements
             }
             return true;
         }
+    }
+
+    private void setupSortButton(int id) {
+        final Button sortBtn = findViewById(id);
+        if (sortBtn == null)
+            return;
+        Comparator<File> comp;
+        if (id == R.id.sort_name)
+            comp = new FileSort.NameSort();
+        else if (id == R.id.sort_date)
+            comp = new FileSort.DateSort(ioProvider);
+        else if (id == R.id.sort_size)
+            comp = new FileSort.SizeSort(ioProvider);
+        else if (id == R.id.sort_checked)
+            comp = _sortChecked;
+        else
+            return;
+        _sortBtns.add(sortBtn);
+        sortBtn.setTag(new Pair<>(sortBtn.getText(), new FileSort(comp)));
+        sortBtn.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Pair<String, FileSort> p = (Pair<String, FileSort>) v.getTag();
+                _fileSort = p.second;
+                _fileSort.setAscending(!_fileSort.isAscending());
+                sortBtn.setText(p.first
+                        + (_fileSort.isAscending() ? '\u25B2' : '\u25BC'));
+                if (_adapter != null)
+                    _adapter.sort(new Comparator<FileItem>() {
+                        @Override
+                        public int compare(FileItem f1, FileItem f2) {
+                            int dirComp = Boolean.compare(
+                                    f1.type == FileItem.DIRECTORY,
+                                    f2.type == FileItem.DIRECTORY);
+                            if (dirComp != 0)
+                                return dirComp;
+                            return _fileSort.compare(new File(_path, f1.file),
+                                    new File(_path, f2.file));
+                        }
+                    });
+                for (Button btn : _sortBtns) {
+                    p = (Pair<String, FileSort>) btn.getTag();
+                    if (p != null && btn != sortBtn) {
+                        p.second.setAscending(true);
+                        btn.setText(p.first);
+                    }
+                }
+            }
+        });
     }
 }

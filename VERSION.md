@@ -1,5 +1,26 @@
 # Version History
 
+## 4.4.0.0
+
+* Bug Fixes
+  * Renamed CoT 2525B to 2525C in Point Dropper to aligh with actual version of included symbology dataset
+  * Removed vehicle outlines from Point Dropper which are also supplied by 2D/3D models (custom user outlines are still available)
+  * Fixed issue in Overlay Manager where blank pane would be displayed
+  * Various issues reported through Google Play Store distribution
+* Feature Additions
+  * Map Controls
+    * Enhanced Depth Perception
+    * Lollipop Visibility
+  * DTED0 default elevation source. App will automatically download DTED0 from tak.gov when no elevation data is available. The Elevation Overlays preferences allow the user to configure the server and disable the feature.
+  * Mapbox Vector Tiles (MVT) support
+  * GeoChat read/unread indicators for chat messages
+  * Basic style editing for File Overlays (KML, Shapefile, etc.)
+  * 3D Tactical Rectangles
+  * Cesium 3D Tiles import from .3tz containers
+* Security
+  * An extra step is now required on first ATAK start to allow GPS while ATAK is in the background for Android 11
+  * Incorporated Google required text to inform user that data is not collected
+
 ## 4.3.1.9
 
 * Bug Fix

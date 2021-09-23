@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Environment;
 import com.atakmap.annotations.DeprecatedApi;
+import com.atakmap.annotations.FortifyFinding;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.xml.XMLUtils;
@@ -55,6 +56,7 @@ class MigrationShim {
         }
     }
 
+    @FortifyFinding(finding = "Path Manipulation: Zip Entry Overwrite", rational = "This is intended to overwrite files during the upgrade process.")
     private static void unzip(final File file, Activity activity)
             throws IOException {
 
@@ -107,10 +109,7 @@ class MigrationShim {
                             } else {
                                 //Log.d(TAG, "debug.remove writing: " + fileName);
 
-                                /**
-                                 * Fortify flags this as Path Manipulation: Zip Entry Overwrite
-                                 * This is intended to overwrite files during the upgrade process.
-                                 */
+                                // Path Manipulation as described in the FortifyFinding
                                 FileSystemUtils.copy(is,
                                         new FileOutputStream(f));
                             }

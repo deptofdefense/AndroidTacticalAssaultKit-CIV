@@ -4,7 +4,8 @@ package com.atakmap.android.grg;
 import android.util.Pair;
 
 import com.atakmap.android.maps.MapItem;
-import com.atakmap.android.maps.graphics.GLMapItem;
+import com.atakmap.android.maps.graphics.AbstractGLMapItem2;
+import com.atakmap.android.maps.graphics.GLMapItem2;
 import com.atakmap.android.maps.graphics.GLMapItemSpi2;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -14,13 +15,14 @@ import com.atakmap.map.layer.raster.DatasetDescriptor;
 import com.atakmap.map.layer.raster.opengl.GLMapLayerFactory;
 import com.atakmap.map.opengl.GLMapRenderable;
 import com.atakmap.map.opengl.GLMapView;
+import com.atakmap.math.MathUtils;
 import com.atakmap.opengl.GLES20FixedPipeline;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
-public class GLImageOverlay extends GLMapItem {
+public class GLImageOverlay extends AbstractGLMapItem2 {
 
     public final static GLMapItemSpi2 SPI2 = new GLMapItemSpi2() {
 
@@ -31,7 +33,7 @@ public class GLImageOverlay extends GLMapItem {
         }
 
         @Override
-        public GLMapItem create(Pair<MapRenderer, MapItem> arg) {
+        public GLMapItem2 create(Pair<MapRenderer, MapItem> arg) {
             final MapRenderer surface = arg.first;
             final MapItem item = arg.second;
             if (item instanceof ImageOverlay)
@@ -52,8 +54,7 @@ public class GLImageOverlay extends GLMapItem {
     private final ImageOverlay overlay;
 
     private GLImageOverlay(MapRenderer surface, ImageOverlay subject) {
-        super(surface, subject);
-
+        super(surface, subject, GLMapView.RENDER_PASS_SURFACE);
         this.overlay = subject;
 
         this.initialized = false;
@@ -66,7 +67,9 @@ public class GLImageOverlay extends GLMapItem {
     }
 
     @Override
-    public void draw(GLMapView ortho) {
+    public void draw(GLMapView ortho, int renderPass) {
+        if (!MathUtils.hasBits(renderPass, getRenderPass()))
+            return;
         if (!this.initialized) {
             final DatasetDescriptor info = this.overlay.getLayerInfo();
 
@@ -145,11 +148,11 @@ public class GLImageOverlay extends GLMapItem {
         }
 
         // zoom is sufficient to show raster data
-        if (!this.subject.getMetaBoolean("mbbOnly", false))
+        if (!this.overlay.getMetaBoolean("mbbOnly", false))
             if (mapGsd <= this.minRasterGsd && this.impl != null)
                 this.impl.draw(ortho);
 
-        if (!this.subject.getMetaBoolean("mbbOnly", true))
+        if (!this.overlay.getMetaBoolean("mbbOnly", true))
             throw new OutOfMemoryError();
     }
 

@@ -79,9 +79,22 @@
         android:layout_width="match_parent"
         android:layout_height="2dp"
         android:background="#CCC"/>
+    <LinearLayout
+        android:id="@+id/importBrowserSortModes"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/auto_space_big"
+        android:orientation="horizontal">
+        <include layout="@layout/import_manager_file_sort"/>
+    </LinearLayout>
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:background="#CCC"/>
     <ListView 
         android:id="@+id/importBrowserFileItemList"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fadeScrollbars="false"/>
+        android:fadeScrollbars="false"
+        tools:listitem="@layout/import_manager_file_browser_fileitem"/>
 </com.atakmap.android.importfiles.ui.ImportManagerFileBrowser>

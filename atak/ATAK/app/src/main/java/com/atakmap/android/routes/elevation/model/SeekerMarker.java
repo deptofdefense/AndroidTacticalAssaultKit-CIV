@@ -101,12 +101,11 @@ public class SeekerMarker implements OnSharedPreferenceChangeListener {
         _marker = new Marker(_uid);
         _marker.setIcon(_centerIcon);
         _marker.setVisible(true);
-        _marker.setClickable(true);
         _marker.setShowLabel(false);
         _marker.setTitle("Seeker");
         _marker.setMetaBoolean("addToObjList", false);
         _marker.setMetaBoolean("ignoreOffscreen", false);
-        _marker.setMetaBoolean("movable", false);
+        _marker.setMovable(false);
         _marker.setPoint(p);
         // HACK HACK HACK
         _marker.setZOrder(_marker.getZOrder() + 1);

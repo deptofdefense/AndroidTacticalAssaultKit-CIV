@@ -12,5 +12,5 @@ public interface LocationSearch {
      * @return A {@link SortedMap} of results. The keys are confidence values, ranging from
      *         <code>0.0f</code> to <code>1.0f</code>; values are the associated locations.
      */
-    SortedMap<Float, Location> findLocation(String term);
+    SortedMap<Float, ILocation> findLocation(String term);
 }

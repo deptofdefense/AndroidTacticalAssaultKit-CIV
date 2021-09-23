@@ -431,7 +431,12 @@ public class Dt2FileWatcher extends Thread {
         return ret;
     }
 
-    private void scan() {
+    /**
+     * Perform a DTED file scan
+     * NOTE: Do NOT call this on the main thread - this method can take several
+     * seconds to finish
+     */
+    public void scan() {
         // Recursively scan DTED directory
         ScanResult res = new ScanResult();
         for (File root : _rootDirs)

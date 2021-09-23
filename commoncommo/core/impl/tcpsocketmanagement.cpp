@@ -2,13 +2,14 @@
 #include "tcpsocketmanagement.h"
 #include "takmessage.h"
 #include "internalutils.h"
-#include <Lock.h>
+#include "commothread.h"
 
 #include <limits.h>
 #include <string.h>
 
 using namespace atakmap::commoncommo;
 using namespace atakmap::commoncommo::impl;
+using namespace atakmap::commoncommo::impl::thread;
 
 
 namespace {
@@ -54,7 +55,7 @@ TcpSocketManagement::TcpSocketManagement(CommoLogger *logger,
         txErrListenerMutex(),
         ifaceListeners(),
         ifaceListenerMutex(),
-        globalIOMutex(PGSC::Thread::TERW_Fair),
+        globalIOMutex(RWMutex::Policy_Fair),
         selector()
 {
     resolver = new ResolverQueue(logger, this, 5.0f, 1);
@@ -113,16 +114,14 @@ void TcpSocketManagement::threadStopSignal(size_t threadNum)
         }
     case TX_ERRQUEUE_THREADID:
         {
-            PGSC::Thread::LockPtr lock(NULL, NULL);
-            Lock_create(lock, txErrQueueMutex);
-            txErrQueueMonitor.broadcast(*lock);
+            Lock lock(txErrQueueMutex);
+            txErrQueueMonitor.broadcast(lock);
         }
         break;
     case RX_QUEUE_THREADID:
         {
-            PGSC::Thread::LockPtr lock(NULL, NULL);
-            Lock_create(lock, rxQueueMutex);
-            rxQueueMonitor.broadcast(*lock);
+            Lock lock(rxQueueMutex);
+            rxQueueMonitor.broadcast(lock);
             break;
         }
     }
@@ -131,8 +130,7 @@ void TcpSocketManagement::threadStopSignal(size_t threadNum)
 
 TcpInboundNetInterface *TcpSocketManagement::addInboundInterface(int port)
 {
-    PGSC::Thread::WriteLockPtr lock(NULL, NULL);
-    WriteLock_create(lock, globalIOMutex);
+    WriteLock lock(globalIOMutex);
     
     if (port > UINT16_MAX || port < 0)
         return NULL;
@@ -157,8 +155,7 @@ TcpInboundNetInterface *TcpSocketManagement::addInboundInterface(int port)
 CommoResult TcpSocketManagement::removeInboundInterface(
                                        TcpInboundNetInterface *iface)
 {
-    PGSC::Thread::WriteLockPtr lock(NULL, NULL);
-    WriteLock_create(lock, globalIOMutex);
+    WriteLock lock(globalIOMutex);
     
     InboundContext *ctx = (InboundContext *)iface;
     InboundCtxSet::iterator iter = inboundContexts.find(ctx);
@@ -180,8 +177,7 @@ void TcpSocketManagement::setCryptoKeys(const uint8_t *authKey,
                                         const uint8_t *cryptoKey)
 {
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, rxQueueMutex);
+        Lock lock(rxQueueMutex);
         
         if (rxCrypto) {
             delete rxCrypto;
@@ -191,8 +187,7 @@ void TcpSocketManagement::setCryptoKeys(const uint8_t *authKey,
             rxCrypto = new MeshNetCrypto(logger, cryptoKey, authKey);
     }
     {
-        PGSC::Thread::LockPtr txLock(NULL, NULL);
-        PGSC::Thread::Lock_create(txLock, txMutex);
+        Lock txLock(txMutex);
         
         if (txCrypto) {
             delete txCrypto;
@@ -213,8 +208,7 @@ void TcpSocketManagement::sendMessage(const std::string &host, int port,
 
     TxContext *ctx = NULL;
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        Lock_create(lock, txMutex);
+        Lock lock(txMutex);
         ctx = new TxContext(host, sport, txCrypto, msg, ourUid, protoVersion);
     }
 
@@ -222,15 +216,13 @@ void TcpSocketManagement::sendMessage(const std::string &host, int port,
     NetAddress *destAddr = NetAddress::create(host.c_str(), sport);
 
     if (destAddr) {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        Lock_create(lock, txMutex);
+        Lock lock(txMutex);
         ctx->destination = destAddr;
         txContexts.insert(ctx);
         txNeedsRebuild = true;
     } else {
         // Needs name resolution
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        Lock_create(lock, resolverContextsMutex);
+        Lock lock(resolverContextsMutex);
         ResolverReqMap resolverContexts;
         ResolverQueue::Request *r = resolver->queueForResolution(host);
         resolverContexts.insert(ResolverReqMap::value_type(r, ctx));
@@ -245,8 +237,7 @@ bool TcpSocketManagement::resolutionComplete(
     // Find our context
     TxContext *ctx = NULL;
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        Lock_create(lock, resolverContextsMutex);
+        Lock lock(resolverContextsMutex);
         ResolverReqMap::iterator iter = resolverContexts.find(identifier);
         if (iter == resolverContexts.end())
             // should never happen
@@ -258,8 +249,7 @@ bool TcpSocketManagement::resolutionComplete(
     if (!result) {
         queueTxErr(ctx, "Failed to resolve host", false);
     } else {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        Lock_create(lock, txMutex);
+        Lock lock(txMutex);
         ctx->destination = result->deriveNewAddress(ctx->destPort);
         txContexts.insert(ctx);
         txNeedsRebuild = true;
@@ -270,23 +260,20 @@ bool TcpSocketManagement::resolutionComplete(
 
 void TcpSocketManagement::addMessageReceiver(TcpMessageListener *receiver)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    Lock_create(lock, listenerMutex);
+    Lock lock(listenerMutex);
     listeners.insert(receiver);
 }
 
 void TcpSocketManagement::removeMessageReceiver(TcpMessageListener *receiver)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    Lock_create(lock, listenerMutex);
+    Lock lock(listenerMutex);
     listeners.erase(receiver);
 }
 
 CommoResult TcpSocketManagement::addCoTSendFailureListener(
             CoTSendFailureListener *listener)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    Lock_create(lock, txErrListenerMutex);
+    Lock lock(txErrListenerMutex);
     if (!txErrListeners.insert(listener).second)
         return COMMO_ILLEGAL_ARGUMENT;
     return COMMO_SUCCESS;
@@ -295,8 +282,7 @@ CommoResult TcpSocketManagement::addCoTSendFailureListener(
 CommoResult TcpSocketManagement::removeCoTSendFailureListener(
             CoTSendFailureListener *listener)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    Lock_create(lock, txErrListenerMutex);
+    Lock lock(txErrListenerMutex);
     if (txErrListeners.erase(listener) != 1)
         return COMMO_ILLEGAL_ARGUMENT;
     return COMMO_SUCCESS;
@@ -306,16 +292,14 @@ CommoResult TcpSocketManagement::removeCoTSendFailureListener(
 void TcpSocketManagement::addInterfaceStatusListener(
         InterfaceStatusListener *listener)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    Lock_create(lock, ifaceListenerMutex);
+    Lock lock(ifaceListenerMutex);
     ifaceListeners.insert(listener);
 }
 
 void TcpSocketManagement::removeInterfaceStatusListener(
         InterfaceStatusListener *listener)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    Lock_create(lock, ifaceListenerMutex);
+    Lock lock(ifaceListenerMutex);
     ifaceListeners.erase(listener);
 }
 
@@ -359,8 +343,7 @@ void TcpSocketManagement::ioThreadProcess()
     TxCtxSet curTxSet;
 
     while (!threadShouldStop(IO_THREADID)) {
-        PGSC::Thread::ReadLockPtr lock(NULL, NULL);
-        ReadLock_create(lock, globalIOMutex);
+        ReadLock lock(globalIOMutex);
         bool resetSelect = false;
         
         if (!inboundNeedsRebuild && 
@@ -414,8 +397,7 @@ void TcpSocketManagement::ioThreadProcess()
         }
         
         {
-            PGSC::Thread::LockPtr txLock(NULL, NULL);
-            Lock_create(txLock, txMutex);
+            Lock txLock(txMutex);
             if (txNeedsRebuild) {
                 writeSocks.clear();
                 curTxSet.clear();
@@ -465,8 +447,7 @@ void TcpSocketManagement::ioThreadProcess()
                                  txIter != curTxSet.end(); ++txIter) {
                     TxContext *ctx = *txIter;
                     if (ctx->isConnecting && nowTime > ctx->timeout) {
-                        PGSC::Thread::LockPtr txLock(NULL, NULL);
-                        Lock_create(txLock, txMutex);
+                        Lock txLock(txMutex);
                         queueTxErr(ctx, "Connection timed out", true);
                     }
                 }
@@ -475,7 +456,7 @@ void TcpSocketManagement::ioThreadProcess()
 
         } catch (SocketException &) {
             // odd. Force a rebuild
-            logger->log(CommoLogger::LEVEL_ERROR, "tcp main io select failed");
+            InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "tcp main io select failed");
             killAllSockets = true;
         }
 
@@ -558,8 +539,7 @@ void TcpSocketManagement::ioThreadProcess()
                          txIter != curTxSet.end(); ++txIter) {
             TxContext *ctx = *txIter;
             if (killAllSockets) {
-                PGSC::Thread::LockPtr txLock(NULL, NULL);
-                Lock_create(txLock, txMutex);
+                Lock txLock(txMutex);
                 queueTxErr(ctx, "An unknown error occurred", true);
 
             } else {
@@ -567,8 +547,7 @@ void TcpSocketManagement::ioThreadProcess()
                 if (ctx->isConnecting) {
                     if (selector.getLastConnectState(ctx->socket) == NetSelector::WRITABLE) {
                         if (ctx->socket->isSocketErrored()) {
-                            PGSC::Thread::LockPtr txLock(NULL, NULL);
-                            Lock_create(txLock, txMutex);
+                            Lock txLock(txMutex);
                             queueTxErr(ctx, "Connection to remote host failed", true);
                             ctx = NULL;
                         } else {
@@ -577,8 +556,7 @@ void TcpSocketManagement::ioThreadProcess()
                             connDone = true;
                         }
                     } else if (CommoTime::now() > ctx->timeout) {
-                        PGSC::Thread::LockPtr txLock(NULL, NULL);
-                        Lock_create(txLock, txMutex);
+                        Lock txLock(txMutex);
                         queueTxErr(ctx, "Connection timed out", true);
                         ctx = NULL;
                     }
@@ -599,8 +577,7 @@ void TcpSocketManagement::ioThreadProcess()
                             killTxCtx(ctx, true);
                         }
                     } catch (SocketException &) {
-                        PGSC::Thread::LockPtr txLock(NULL, NULL);
-                        Lock_create(txLock, txMutex);
+                        Lock txLock(txMutex);
                         queueTxErr(ctx, "I/O error transmitting data", true);
                     }
                 }
@@ -612,10 +589,9 @@ void TcpSocketManagement::ioThreadProcess()
 void TcpSocketManagement::recvQueueThreadProcess()
 {
     while (!threadShouldStop(RX_QUEUE_THREADID)) {
-        PGSC::Thread::LockPtr qLock(NULL, NULL);
-        Lock_create(qLock, rxQueueMutex);
+        Lock qLock(rxQueueMutex);
         if (rxQueue.empty()) {
-            rxQueueMonitor.wait(*qLock);
+            rxQueueMonitor.wait(qLock);
             continue;
         }
 
@@ -633,8 +609,7 @@ void TcpSocketManagement::recvQueueThreadProcess()
             TakMessage takmsg(logger, data, dataLen, true, true);
             const CoTMessage *msg = takmsg.getCoTMessage();
             if (msg) {
-                PGSC::Thread::LockPtr listenerLock(NULL, NULL);
-                Lock_create(listenerLock, listenerMutex);
+                Lock listenerLock(listenerMutex);
                 std::set<TcpMessageListener *>::iterator iter;
                 for (iter = listeners.begin(); iter != listeners.end(); 
                                                                  ++iter) {
@@ -644,7 +619,8 @@ void TcpSocketManagement::recvQueueThreadProcess()
             }
         } catch (std::invalid_argument &e) {
             // Drop this item
-            InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Invalid CoT message received: %s", e.what() == NULL ? "unknown error" : e.what());
+            CommoLogger::ParsingDetail detail{ data, dataLen, e.what() == NULL ? "" : e.what(), qItem.endpoint.c_str() };
+            InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, CommoLogger::TYPE_PARSING, &detail, "Invalid CoT message received: %s", e.what() == NULL ? "unknown error" : e.what());
         }
         if (decrypted)
             delete[] data;
@@ -656,18 +632,16 @@ void TcpSocketManagement::recvQueueThreadProcess()
 void TcpSocketManagement::txErrQueueThreadProcess()
 {
     while (!threadShouldStop(TX_ERRQUEUE_THREADID)) {
-        PGSC::Thread::LockPtr qLock(NULL, NULL);
-        Lock_create(qLock, txErrQueueMutex);
+        Lock qLock(txErrQueueMutex);
         if (txErrQueue.empty()) {
-            txErrQueueMonitor.wait(*qLock);
+            txErrQueueMonitor.wait(qLock);
             continue;
         }
 
         TxErrQueueItem qItem = txErrQueue.back();
         txErrQueue.pop_back();
         {
-            PGSC::Thread::LockPtr listenerLock(NULL, NULL);
-            Lock_create(listenerLock, txErrListenerMutex);
+            Lock listenerLock(txErrListenerMutex);
             std::set<CoTSendFailureListener *>::iterator iter;
             for (iter = txErrListeners.begin(); iter != txErrListeners.end(); ++iter) {
                 CoTSendFailureListener *l = *iter;
@@ -688,10 +662,9 @@ void TcpSocketManagement::txErrQueueThreadProcess()
 void TcpSocketManagement::queueTxErr(TxContext *ctx, const std::string &reason, bool removeFromCtxSet)
 {
     {
-        PGSC::Thread::LockPtr errLock(NULL, NULL);
-        Lock_create(errLock, txErrQueueMutex);
+        Lock errLock(txErrQueueMutex);
         txErrQueue.push_front(TxErrQueueItem(ctx->host, ctx->destPort, reason.c_str()));
-        txErrQueueMonitor.broadcast(*errLock);
+        txErrQueueMonitor.broadcast(errLock);
     }
     killTxCtx(ctx, removeFromCtxSet);
 }
@@ -735,12 +708,11 @@ void TcpSocketManagement::ioThreadQueueRx(ClientContext *ctx)
         return;
 
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        Lock_create(lock, rxQueueMutex);
+        Lock lock(rxQueueMutex);
         RxQueueItem rx(ctx->clientAddr, ctx->endpoint, ctx->data, ctx->len);
         ctx->clearBuffers();
         rxQueue.push_front(rx);
-        rxQueueMonitor.broadcast(*lock);
+        rxQueueMonitor.broadcast(lock);
     }
 }
 

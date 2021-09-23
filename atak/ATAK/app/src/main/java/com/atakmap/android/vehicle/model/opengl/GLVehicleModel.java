@@ -4,22 +4,31 @@ package com.atakmap.android.vehicle.model.opengl;
 import android.graphics.Color;
 import android.graphics.PointF;
 
-import com.atakmap.android.maps.MapView;
+import com.atakmap.android.hierarchy.filters.FOVFilter;
+import com.atakmap.android.imagecapture.CanvasHelper;
+import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.rubbersheet.maps.GLRubberModel;
 import com.atakmap.android.vehicle.model.VehicleModel;
+import com.atakmap.android.vehicle.model.VehicleModelInfo;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.coremap.maps.coords.MutableGeoBounds;
+import com.atakmap.coremap.maps.coords.Vector2D;
+import com.atakmap.lang.Unsafe;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.MapRenderer3;
 import com.atakmap.map.MapSceneModel;
+import com.atakmap.map.hittest.HitTestResult;
 import com.atakmap.map.layer.model.Mesh;
 import com.atakmap.map.layer.model.ModelInfo;
 import com.atakmap.map.layer.model.Models;
+import com.atakmap.map.hittest.HitTestQueryParameters;
 import com.atakmap.map.projection.ECEFProjection;
 import com.atakmap.math.GeometryModel;
-import com.atakmap.math.MathUtils;
 import com.atakmap.math.Matrix;
 import com.atakmap.math.PointD;
 
+import java.nio.DoubleBuffer;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -27,7 +36,8 @@ import java.util.List;
 /**
  * Renderer for vehicle models
  */
-public class GLVehicleModel extends GLRubberModel {
+public class GLVehicleModel extends GLRubberModel implements
+        MapItem.OnMetadataChangedListener {
 
     public static final Comparator<GLVehicleModel> SORT_Z = new Comparator<GLVehicleModel>() {
         @Override
@@ -37,12 +47,37 @@ public class GLVehicleModel extends GLRubberModel {
         }
     };
 
+    private final VehicleModel _subject;
     private final GLInstanceData _instanceData = new GLInstanceData();
-
     private final Matrix _localECEF = Matrix.getIdentity();
+
+    // Used for outline hit testing
+    private DoubleBuffer _outlinePts;
+    private boolean _outlineInvalid;
+    private boolean _showOutline;
+    private double _heading;
 
     public GLVehicleModel(MapRenderer ctx, VehicleModel subject) {
         super(ctx, subject);
+        _subject = subject;
+    }
+
+    @Override
+    public void startObserving() {
+        super.startObserving();
+        _subject.addOnMetadataChangedListener("outline", this);
+    }
+
+    @Override
+    public void stopObserving() {
+        super.stopObserving();
+        _subject.removeOnMetadataChangedListener("outline", this);
+    }
+
+    @Override
+    public synchronized void release() {
+        super.release();
+        freeOutlineBuffer();
     }
 
     public List<Mesh> getMeshes() {
@@ -73,6 +108,12 @@ public class GLVehicleModel extends GLRubberModel {
     }
 
     @Override
+    public void onMetadataChanged(MapItem item, String field) {
+        if (field.equals("outline"))
+            requestRefresh();
+    }
+
+    @Override
     protected void onRefresh() {
         // Set anchor center point
         _instanceData.setAnchor(_anchorPoint);
@@ -88,6 +129,27 @@ public class GLVehicleModel extends GLRubberModel {
 
         // Flag as needs update
         _instanceData.setDirty(true);
+
+        _heading = _subject.getHeading();
+        _showOutline = _subject.showOutline();
+        if (_showOutline)
+            _outlineInvalid = true;
+        else
+            freeOutlineBuffer();
+    }
+
+    /**
+     * Free the point buffer used for the calculated geodetic outline
+     */
+    private void freeOutlineBuffer() {
+        runOnGLThread(new Runnable() {
+            @Override
+            public void run() {
+                _outlineInvalid = false;
+                Unsafe.free(_outlinePts);
+                _outlinePts = null;
+            }
+        });
     }
 
     private void updateECEF() {
@@ -130,20 +192,53 @@ public class GLVehicleModel extends GLRubberModel {
     }
 
     @Override
-    public boolean hitTest(int x, int y, GeoPoint result, MapView view) {
+    protected boolean getClickable() {
+        return clickable && _showOutline || super.getClickable();
+    }
 
-        if (_model == null)
-            return false;
+    /**
+     * Update the latest map scene model used to render this model
+     * Only should be called by {@link GLVehicleModelLayer} during draw ops
+     *
+     * @param scene Map scene model
+     */
+    void updateScene(MapSceneModel scene) {
+        _scene = scene;
+    }
 
-        MapSceneModel sm = view.getSceneModel();
+    @Override
+    protected HitTestResult hitTestImpl(MapRenderer3 renderer,
+            HitTestQueryParameters params) {
+        if (_showOutline) {
+            HitTestResult result = hitTestOutline(params);
+            if (result != null)
+                return result;
+        }
+        if (shouldRender()) {
+            HitTestResult result = hitTestModel(params);
+            if (result != null)
+                return result;
+        }
+        return null;
+    }
+
+    /**
+     * Perform a hit test against the 3D model geometry
+     * @param params Hit test parameters
+     * @return Result if hit
+     */
+    private HitTestResult hitTestModel(HitTestQueryParameters params) {
+        if (_model == null || _scene == null)
+            return null;
 
         // The current transformation matrix of the model
         Matrix localFrame;
-        if (sm.mapProjection.getSpatialReferenceID() == 4978)
+        if (_scene.mapProjection.getSpatialReferenceID() == 4978)
             localFrame = _localECEF;
         else
             localFrame = _matrix;
 
+        GeoPoint geo = GeoPoint.createMutable();
         int numMeshes = _model.getNumMeshes();
         for (int i = 0; i < numMeshes; i++) {
 
@@ -152,65 +247,99 @@ public class GLVehicleModel extends GLRubberModel {
             // Note: this method accepts 'null' local frame, in which case it
             // assumes that LCS == WCS
             GeometryModel gm = Models.createGeometryModel(mesh, localFrame);
-            if (sm.inverse(new PointF(x, y), result, gm) == null)
+            if (_scene.inverse(params.point, geo, gm) == null)
                 continue;
 
-            // adjust altitude for renderer elevation offset
-            if (result.isAltitudeValid()) {
-                // specify a very small offset to move towards the camera. this is
-                // to prevent z-fighting when a point is placed directly on the
-                // surface. currently moving ~1ft
-                final double offset = 0.30d;
-                moveTowardsCamera(sm, x, y, result, offset);
-            }
-            return true;
+            return new HitTestResult(_subject, geo);
         }
-        return false;
+
+        return null;
     }
 
-    private static void moveTowardsCamera(MapSceneModel scene, float x, float y,
-            GeoPoint gp, double meters) {
-        PointD org = new PointD(x, y, -1d);
-        scene.inverse.transform(org, org);
-        PointD tgt = scene.mapProjection.forward(gp, null);
+    /**
+     * Perform a hit test against the vehicle's terrain outline
+     * @param params Hit test parameters
+     * @return Result if outline hit
+     */
+    private HitTestResult hitTestOutline(HitTestQueryParameters params) {
+        if (!params.bounds.intersects(this.bounds))
+            return null;
 
-        double dx = org.x - tgt.x;
-        double dy = org.y - tgt.y;
-        double dz = org.z - tgt.z;
-        final double d = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        dx /= d;
-        dy /= d;
-        dz /= d;
+        // Check if outline needs to be updated
+        if (_outlineInvalid) {
 
-        PointD off;
+            VehicleModelInfo vInfo = _subject.getVehicleInfo();
+            if (vInfo == null)
+                return null;
 
-        off = scene.mapProjection.forward(new GeoPoint(gp.getLatitude(),
-                gp.getLongitude(), gp.getAltitude() + meters), null);
-        final double tz = MathUtils.distance(tgt.x, tgt.y, tgt.z, off.x, off.y,
-                off.z);
-        off = scene.mapProjection.forward(
-                computeDestinationPoint(gp, 0d, meters),
-                null);
-        final double tx = MathUtils.distance(tgt.x, tgt.y, tgt.z, off.x, off.y,
-                off.z);
-        off = scene.mapProjection.forward(
-                computeDestinationPoint(gp, 90d, meters),
-                null);
-        final double ty = MathUtils.distance(tgt.x, tgt.y, tgt.z, off.x, off.y,
-                off.z);
+            List<PointF> points = vInfo.getOutline(null);
+            if (points == null)
+                return null;
 
-        tgt.x += dx * tx;
-        tgt.y += dy * ty;
-        tgt.z += dz * tz;
+            // Allocate buffer for geodetically calculated outline
+            int limit = points.size() * 2;
+            if (_outlinePts == null || _outlinePts.capacity() < limit) {
+                Unsafe.free(_outlinePts);
+                _outlinePts = Unsafe.allocateDirect(limit, DoubleBuffer.class);
+            }
+            _outlinePts.clear();
+            _outlinePts.limit(limit);
 
-        scene.mapProjection.inverse(tgt, gp);
-    }
+            // Calculate geodetic outline
+            PointF pCen = new PointF();
+            for (PointF p : points) {
+                double a = CanvasHelper.angleTo(pCen, p);
+                double d = CanvasHelper.length(pCen, p);
+                a += _heading + 180;
+                GeoPoint gp = GeoCalculations.pointAtDistance(_anchorPoint, a,
+                        d);
+                _outlinePts.put(gp.getLongitude());
+                _outlinePts.put(gp.getLatitude());
+            }
 
-    private static GeoPoint computeDestinationPoint(GeoPoint p, double a,
-            double d) {
-        GeoPoint surf = GeoCalculations.pointAtDistance(p, a, d);
-        return new GeoPoint(surf.getLatitude(), surf.getLongitude(),
-                p.getAltitude(), p.getAltitudeReference(),
-                GeoPoint.UNKNOWN, GeoPoint.UNKNOWN);
+            _outlineInvalid = false;
+        }
+
+        if (_outlinePts == null)
+            return null;
+
+        // Hit test against geodetic outline
+        GeoPoint cur = GeoPoint.createMutable();
+        GeoPoint last = GeoPoint.createMutable();
+        MutableGeoBounds lineBounds = new MutableGeoBounds();
+        int limit = _outlinePts.limit();
+        for (int i = 0; i < limit; i += 2) {
+            double lng = _outlinePts.get(i);
+            double lat = _outlinePts.get(i + 1);
+
+            cur.set(lat, lng);
+
+            // Check if the point is contained within the hit bounds
+            if (params.bounds.contains(cur))
+                return new HitTestResult(_subject, cur);
+
+            // Line hit check
+            if (i > 0) {
+                lineBounds.set(last.getLatitude(), last.getLongitude(), lat,
+                        lng);
+                if (params.bounds.intersects(lineBounds)) {
+                    Vector2D nearest = Vector2D.nearestPointOnSegment(
+                            FOVFilter.geo2Vector(params.geo),
+                            FOVFilter.geo2Vector(last),
+                            FOVFilter.geo2Vector(cur));
+                    float nx = (float) nearest.x;
+                    float ny = (float) nearest.y;
+
+                    // Check if the nearest point is within hit bounds
+                    GeoPoint pt = new GeoPoint(ny, nx);
+                    if (params.bounds.contains(pt))
+                        return new HitTestResult(_subject, pt);
+                }
+            }
+
+            last.set(cur);
+        }
+
+        return null;
     }
 }

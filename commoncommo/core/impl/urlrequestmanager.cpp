@@ -1,7 +1,7 @@
 #include "urlrequestmanager.h"
 #include "internalutils.h"
 #include "platform.h"
-#include <Lock.h>
+#include "commothread.h"
 #include <utility>
 #include <sstream>
 #include <cctype>
@@ -13,6 +13,7 @@
 
 using namespace atakmap::commoncommo;
 using namespace atakmap::commoncommo::impl;
+using namespace atakmap::commoncommo::impl::thread;
 
 namespace {
     const char *THREAD_NAMES[] = {
@@ -83,8 +84,7 @@ void URLRequestManager::initRequest(
                            int *xferId, URLRequestIO *io,
                            URLRequest *req)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    PGSC::Thread::Lock_create(lock, notRunningRequestsMutex);
+    Lock lock(notRunningRequestsMutex);
 
     auto provider(providerTracker->getCurrentProvider());
     IOContext *ctx = new IOContext(this, req, io,
@@ -106,8 +106,7 @@ void URLRequestManager::initRequest(
 void URLRequestManager::cancelRequest(int xferId)
 {
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, notRunningRequestsMutex);
+        Lock lock(notRunningRequestsMutex);
         std::map<int, IOContext *>::iterator iter;
         iter = notRunningRequests.find(xferId);
         if (iter != notRunningRequests.end()) {
@@ -119,17 +118,15 @@ void URLRequestManager::cancelRequest(int xferId)
     }
 
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, ioRequestsMutex);
+        Lock lock(ioRequestsMutex);
 
         {
-            PGSC::Thread::LockPtr lock(NULL, NULL);
-            PGSC::Thread::Lock_create(lock, statusUpdatesMutex);
+            Lock lock(statusUpdatesMutex);
             // Wait for status thread to finish its queue
             // to avoid in-progress-of-firing event getting fired after
             // this for transfer of interest
             while (!statusThreadWaiting) {
-                statusUpdatesMonitor.wait(*lock);
+                statusUpdatesMonitor.wait(lock);
             }
         }
         
@@ -161,8 +158,7 @@ void URLRequestManager::cancelRequestsForIO(
                            URLRequestIO *io)
 {
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, notRunningRequestsMutex);
+        Lock lock(notRunningRequestsMutex);
         std::map<int, IOContext *>::iterator iter;
         iter = notRunningRequests.begin();
         while (iter != notRunningRequests.end()) {
@@ -179,17 +175,15 @@ void URLRequestManager::cancelRequestsForIO(
     }
 
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, ioRequestsMutex);
+        Lock lock(ioRequestsMutex);
 
         {
-            PGSC::Thread::LockPtr lock(NULL, NULL);
-            PGSC::Thread::Lock_create(lock, statusUpdatesMutex);
+            Lock lock(statusUpdatesMutex);
             // Wait for status thread to finish its queue
             // to avoid in-progress-of-firing event getting fired after
             // this for transfer of interest
             while (!statusThreadWaiting) {
-                statusUpdatesMonitor.wait(*lock);
+                statusUpdatesMonitor.wait(lock);
             }
         }
         
@@ -228,8 +222,7 @@ atakmap::commoncommo::CommoResult URLRequestManager::startTransfer(
 {
     IOContext *ctx = NULL;
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, notRunningRequestsMutex);
+        Lock lock(notRunningRequestsMutex);
         std::map<int, IOContext *>::iterator iter;
         iter = notRunningRequests.find(xferId);
         if (iter == notRunningRequests.end())
@@ -244,12 +237,11 @@ atakmap::commoncommo::CommoResult URLRequestManager::startTransfer(
 
     
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, ioRequestsMutex);
+        Lock lock(ioRequestsMutex);
     
         // Give upload to the upload thread
         ioRequests.push_front(ctx);
-        ioRequestsMonitor.broadcast(*lock);
+        ioRequestsMonitor.broadcast(lock);
     }
 
     return COMMO_SUCCESS;
@@ -266,16 +258,14 @@ void URLRequestManager::threadStopSignal(
     switch (threadNum) {
     case IO_THREADID:
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, ioRequestsMutex);
-        ioRequestsMonitor.broadcast(*lock);
+        Lock lock(ioRequestsMutex);
+        ioRequestsMonitor.broadcast(lock);
         break;
     }
     case STATUS_THREADID:
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, statusUpdatesMutex);
-        statusUpdatesMonitor.broadcast(*lock);
+        Lock lock(statusUpdatesMutex);
+        statusUpdatesMonitor.broadcast(lock);
         break;
     }
     }
@@ -304,12 +294,11 @@ void URLRequestManager::statusThreadProcess()
     while (!threadShouldStop(STATUS_THREADID)) {
         StatusUpdate update;
         {
-            PGSC::Thread::LockPtr lock(NULL, NULL);
-            PGSC::Thread::Lock_create(lock, statusUpdatesMutex);
+            Lock lock(statusUpdatesMutex);
             if (statusUpdates.empty()) {
                 statusThreadWaiting = true;
-                statusUpdatesMonitor.broadcast(*lock);
-                statusUpdatesMonitor.wait(*lock);
+                statusUpdatesMonitor.broadcast(lock);
+                statusUpdatesMonitor.wait(lock);
                 statusThreadWaiting = false;
                 continue;
             }
@@ -336,8 +325,7 @@ void URLRequestManager::ioThreadProcess()
 
     while (!threadShouldStop(IO_THREADID)) {
         {
-            PGSC::Thread::LockPtr lock(NULL, NULL);
-            PGSC::Thread::Lock_create(lock, ioRequestsMutex);
+            Lock lock(ioRequestsMutex);
             while (!ioRequests.empty()) {
                 IOContext *ctx = ioRequests.back();
                 ioRequests.pop_back();
@@ -366,7 +354,7 @@ void URLRequestManager::ioThreadProcess()
                 while (!threadShouldStop(IO_THREADID)) {
                     if (!ioRequests.empty())
                         break;
-                    ioRequestsMonitor.wait(*lock);
+                    ioRequestsMonitor.wait(lock);
                 }
                 continue;
             }
@@ -387,8 +375,7 @@ void URLRequestManager::ioThreadProcess()
             // Grab lock here to protect against
             // cancels modifying the callback pointers of in-progress
             // transfers.
-            PGSC::Thread::LockPtr lock(NULL, NULL);
-            PGSC::Thread::Lock_create(lock, ioRequestsMutex);
+            Lock lock(ioRequestsMutex);
 
             int activeTransferCount = (int)ioCurRequests.size();
             count = activeTransferCount;
@@ -459,6 +446,23 @@ void URLRequestManager::ioThreadProcess()
 
                     case CURLE_SSL_CONNECT_ERROR:
                     case CURLE_USE_SSL_FAILED:
+                        status = FILEIO_SSL_OTHER_ERROR;
+                        break;
+
+#if LIBCURL_VERSION_MAJOR > 7 || (LIBCURL_VERSION_MAJOR == 7 && LIBCURL_VERSION_MINOR >= 62)
+                    // Starting in CURL 7.62.0, CURLE_SSL_CACERT (former value 60)
+                    // was effectively removed and defined to be symbolically
+                    // equivalent to CURLE_PEER_FAILED_VERIFICATION (former value
+                    // of 51, new value 60)
+                    // Once we have stabilized on post-7.62 this can be removed.
+                    // See https://github.com/curl/curl/pull/2901 for background
+                    // and https://github.com/curl/curl/pull/3291/commits/89d2e95f783963778b3db45a398360b94587c295
+                    // for documentation changes
+                    case CURLE_PEER_FAILED_VERIFICATION:
+                        status = FILEIO_SSL_UNTRUSTED_SERVER;
+                        break;
+
+#else
                     case CURLE_PEER_FAILED_VERIFICATION:
                         status = FILEIO_SSL_OTHER_ERROR;
                         break;
@@ -466,7 +470,8 @@ void URLRequestManager::ioThreadProcess()
                     case CURLE_SSL_CACERT:
                         status = FILEIO_SSL_UNTRUSTED_SERVER;
                         break;
-                    
+#endif
+
                     case CURLE_REMOTE_FILE_NOT_FOUND:
                         status = FILEIO_URL_NO_RESOURCE;
                         break;
@@ -675,6 +680,7 @@ void URLRequestManager::ioThreadInitCtx(IOContext *ioCtx) COMMO_THROW (IOStatusE
         CURL_CHECK(curl_easy_setopt(ioCtx->curlCtx, CURLOPT_URL,
                                     ioCtx->request->url.c_str()));
         CURL_CHECK(curl_easy_setopt(ioCtx->curlCtx, CURLOPT_NOSIGNAL, 1L));
+        CURL_CHECK(curl_easy_setopt(ioCtx->curlCtx, CURLOPT_FORBID_REUSE, 1L));
         CURL_CHECK(curl_easy_setopt(ioCtx->curlCtx, CURLOPT_PRIVATE, ioCtx));
         CURL_CHECK(curl_easy_setopt(ioCtx->curlCtx, CURLOPT_ERRORBUFFER,
                                     ioCtx->curlErrBuf));
@@ -756,12 +762,11 @@ queueUpdate(URLRequestIO *receiver, URLIOUpdate *update)
         update->getBaseUpdate()->bytesTransferred);
     
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, statusUpdatesMutex);
+        Lock lock(statusUpdatesMutex);
 
         // Give upload to the upload thread
         statusUpdates.push_front(StatusUpdate(receiver, update));
-        statusUpdatesMonitor.broadcast(*lock);
+        statusUpdatesMonitor.broadcast(lock);
     }
 }
 

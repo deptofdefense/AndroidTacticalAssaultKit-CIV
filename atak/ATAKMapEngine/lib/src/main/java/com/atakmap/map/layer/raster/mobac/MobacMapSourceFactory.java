@@ -132,6 +132,7 @@ public class MobacMapSourceFactory {
         boolean invertYAxis = false;
         int backgroundColor = 0;
         int srid = 3857;
+        long refreshInterval = 0L;
         int eventType;
         do {
             eventType = parser.next();
@@ -168,6 +169,9 @@ public class MobacMapSourceFactory {
                     } else if (inTag.equals("coordinatesystem")) {
                         if (parser.getText().matches("EPSG\\:\\d+"))
                             srid = Integer.parseInt(parser.getText().split("\\:")[1]);
+                    } else if (inTag.equals("tileUpdate")) {
+                        if (parser.getText().matches("\\d+"))
+                            refreshInterval = Integer.parseInt(parser.getText());
                     }
                     break;
                 }
@@ -191,7 +195,8 @@ public class MobacMapSourceFactory {
                 url,
                 serverParts,
                 backgroundColor,
-                invertYAxis);
+                invertYAxis,
+                refreshInterval);
     }
 
     private static MobacMapSource parseCustomMultiLayerMapSource(XmlPullParser parser)
@@ -286,6 +291,7 @@ public class MobacMapSourceFactory {
         String version = null;
         String name = null;
         String tileFormat = null;
+        long refreshInterval = 0L;
 
         double north = Double.NaN;
         double south = Double.NaN;
@@ -352,6 +358,9 @@ public class MobacMapSourceFactory {
                             west = Double.parseDouble(parser.getText());
                         } catch (NumberFormatException ignored) {
                         }
+                    } else if (inTag.equals("tileUpdate")) {
+                        if (parser.getText().matches("\\d+"))
+                            refreshInterval = Integer.parseInt(parser.getText());
                     }
                     break;
                 case XmlPullParser.END_DOCUMENT:
@@ -386,7 +395,8 @@ public class MobacMapSourceFactory {
                 version,
                 additionalParameters,
                 backgroundColor,
-                bounds);
+                bounds,
+                refreshInterval);
     }
 
     private static void checkAtTag(XmlPullParser parser, String tagName)

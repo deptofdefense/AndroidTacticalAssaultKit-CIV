@@ -11,6 +11,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import com.atakmap.android.maps.MapItem;
 
+import com.atakmap.map.hittest.HitTestResult;
+import com.atakmap.map.hittest.HitTestable;
 import com.atakmap.map.layer.control.ClampToGroundControl;
 import com.atakmap.coremap.maps.coords.GeoPoint.AltitudeReference;
 import com.atakmap.coremap.maps.coords.GeoBounds;
@@ -22,12 +24,19 @@ import com.atakmap.map.MapRenderer3;
 import com.atakmap.map.layer.control.SurfaceRendererControl;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.opengl.GLMapView;
+import com.atakmap.map.hittest.HitTestQueryParameters;
 import com.atakmap.math.PointD;
 import com.atakmap.util.Visitor;
 
-public abstract class AbstractGLMapItem2 implements GLMapItem2,
+public abstract class AbstractGLMapItem2 implements GLMapItem2, HitTestable,
         MapItem.OnVisibleChangedListener, MapItem.OnZOrderChangedListener,
-        ClampToGroundControl {
+        MapItem.OnClickableChangedListener, ClampToGroundControl {
+
+    // Default minimum and maximum altitude used for render bounds calculation
+    protected static final double DEFAULT_MIN_ALT = -500d;
+    protected static final double DEFAULT_MAX_ALT = 9000d;
+
+    private static final String TAG = "AbstractGLMapItem2";
 
     private Object opaque;
     protected final MapRenderer context;
@@ -36,6 +45,7 @@ public abstract class AbstractGLMapItem2 implements GLMapItem2,
     protected boolean visible;
     protected final MutableGeoBounds bounds;
     protected double zOrder;
+    protected boolean clickable;
     protected double minMapGsd;
     private boolean clampToGroundAtNadir;
 
@@ -55,6 +65,7 @@ public abstract class AbstractGLMapItem2 implements GLMapItem2,
 
         visible = subject.getVisible();
         zOrder = subject.getZOrder();
+        clickable = subject.getClickable();
     }
 
     @Override
@@ -80,6 +91,7 @@ public abstract class AbstractGLMapItem2 implements GLMapItem2,
 
         this.subject.addOnVisibleChangedListener(this);
         this.subject.addOnZOrderChangedListener(this);
+        this.subject.addOnClickableChangedListener(this);
     }
 
     /**
@@ -92,6 +104,7 @@ public abstract class AbstractGLMapItem2 implements GLMapItem2,
     public void stopObserving() {
         this.subject.removeOnVisibleChangedListener(this);
         this.subject.removeOnZOrderChangedListener(this);
+        this.subject.removeOnClickableChangedListener(this);
     }
 
     @Override
@@ -196,6 +209,55 @@ public abstract class AbstractGLMapItem2 implements GLMapItem2,
         });
     }
 
+    @Override
+    public void onClickableChanged(MapItem item) {
+        final boolean v = item.getClickable();
+        runOnGLThread(new Runnable() {
+            @Override
+            public void run() {
+                clickable = v;
+            }
+        });
+    }
+
+    /**
+     * Hit test control implementation that checks touchability
+     * Sub-classes should override the {@link #hitTestImpl(MapRenderer3, HitTestQueryParameters)} method
+     *
+     * @param renderer GL instance of the map view
+     * @param params Query parameters
+     */
+    @Override
+    public final HitTestResult hitTest(MapRenderer3 renderer,
+            HitTestQueryParameters params) {
+        return getClickable() && params.acceptsResult(getSubject())
+                ? hitTestImpl(renderer, params)
+                : null;
+    }
+
+    /**
+     * Determine whether or not this item is touchable
+     * By default this is tied to {@link MapItem#getClickable()}
+     *
+     * @return True if touchable
+     */
+    protected boolean getClickable() {
+        return clickable;
+    }
+
+    /**
+     * Perform a hit test on this map item
+     * Sub-classes should override this method for hit-testing
+     *
+     * @param renderer Map renderer
+     * @param params Query parameters
+     * @return Hit test result or null if not hit
+     */
+    protected HitTestResult hitTestImpl(MapRenderer3 renderer,
+            HitTestQueryParameters params) {
+        return null;
+    }
+
     /**
      * Run a method on the GL thread
      * Unlike calling {@link MapRenderer#queueEvent} directly, this will
@@ -288,7 +350,8 @@ public abstract class AbstractGLMapItem2 implements GLMapItem2,
         ortho.scratch.geo.set(lat, lon, 0d);
 
         // Z/altitude -- always needs to be populated with perspective camera
-        if (ortho.scene.camera.perspective || ortho.drawTilt > 0d) {
+        if (ortho.currentPass.scene.camera.perspective
+                || ortho.currentPass.drawTilt > 0d) {
             double adjustedAlt = alt;
             if (altValid) {
                 switch (altRef) {
@@ -319,7 +382,7 @@ public abstract class AbstractGLMapItem2 implements GLMapItem2,
             ortho.scratch.geo.set(terrain);
         }
 
-        ortho.scene.forward(ortho.scratch.geo, point);
+        ortho.currentPass.scene.forward(ortho.scratch.geo, point);
     }
 
     public static void forward(GLMapView ortho, GeoPoint gp, PointD point,

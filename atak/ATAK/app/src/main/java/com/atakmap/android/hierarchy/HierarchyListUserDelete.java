@@ -12,6 +12,7 @@ import android.widget.Toast;
 import com.atakmap.android.grg.GRGMapOverlay;
 import com.atakmap.android.hierarchy.action.Actions;
 import com.atakmap.android.hierarchy.action.Delete;
+import com.atakmap.android.hierarchy.action.GroupDelete;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
@@ -24,6 +25,8 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.spatial.file.FileDatabaseMapGroupHierarchyListItem;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -178,30 +181,54 @@ public class HierarchyListUserDelete extends AsyncListUserSelect {
         public Boolean doInBackground(Void... params) {
             if (_items.isEmpty())
                 return true;
-            boolean res = false;
-            int prog = 0;
-            Delete delete;
-            long start;
+
+            // Convert items to delete actions
+            List<Delete> topActions = new ArrayList<>();
             for (HierarchyListItem mi : _items) {
-                delete = mi.getAction(Delete.class);
-                if (delete != null) {
-                    start = System.currentTimeMillis();
-                    res |= delete.delete();
-                    Log.v(TAG,
-                            "Remove #" + prog + " took "
-                                    + (System.currentTimeMillis() - start));
-                } else {
-                    Log.w(TAG, "No delete action for: "
-                            + mi.getClass().getName());
+                Delete del = mi.getAction(Delete.class);
+                if (del == null) {
+                    Log.w(TAG, "No delete action for: " + mi.getClass());
+                    continue;
                 }
+                topActions.add(del);
+            }
+
+            // Gather a flat list of all the delete actions that need to be
+            // executed
+            List<Delete> actions = getRecursiveDeleteActions(topActions);
+            if (actions.isEmpty())
+                return true;
+
+            // Begin execution
+            publishProgress(0, actions.size());
+            boolean res = true;
+            int prog = 0;
+            for (Delete d : actions) {
+                res &= d.delete();
                 publishProgress(++prog);
             }
             return res;
         }
 
+        private List<Delete> getRecursiveDeleteActions(List<Delete> actions) {
+            List<Delete> ret = new ArrayList<>();
+            if (actions == null)
+                return ret;
+            for (Delete d : actions) {
+                if (d instanceof GroupDelete)
+                    ret.addAll(getRecursiveDeleteActions(((GroupDelete) d)
+                            .getDeleteActions()));
+                else if (d != null)
+                    ret.add(d);
+            }
+            return ret;
+        }
+
         @Override
         protected void onProgressUpdate(Integer... values) {
             _pd.setProgress(values[0]);
+            if (values.length > 1)
+                _pd.setMax(values[1]);
         }
 
         @Override

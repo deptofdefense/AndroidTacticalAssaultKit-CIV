@@ -1146,10 +1146,10 @@ public class DangerCloseAdapter extends BaseAdapter
                 //wrap ID
                 //get the ID of the last weapon created
                 NodeList children = custom.getChildNodes();
-                Integer lastId;
+                int lastId;
                 if (children.getLength() > 0) {
                     Node last = children.item(children.getLength() - 1);
-                    lastId = Integer.valueOf(last.getAttributes()
+                    lastId = Integer.parseInt(last.getAttributes()
                             .getNamedItem("ID").getNodeValue());
                     lastId++;
                 } else

@@ -1,5 +1,5 @@
 #include "contactmanager.h"
-#include <Lock.h>
+#include "commothread.h"
 #include <string.h>
 
 using namespace atakmap::commoncommo;
@@ -31,7 +31,7 @@ ContactManager::ContactManager(CommoLogger* logger,
                 StreamingMessageListener(),
                 logger(logger),
                 dgMgr(dgMgmt), tcpMgmt(tcpMgmt), streamMgmt(streamMgmt),
-                contacts(), contactMapMutex(PGSC::Thread::TERW_Fair),
+                contacts(), contactMapMutex(thread::RWMutex::Policy::Policy_Fair),
                 protoVMutex(), protoVMonitor(),
                 protoVersion(TakProtoInfo::SELF_MAX),
                 protoVDirty(false),
@@ -80,16 +80,14 @@ void ContactManager::threadStopSignal(size_t threadNum)
     switch (threadNum) {
     case EVENT_THREADID:
         {
-            PGSC::Thread::LockPtr lock(NULL, NULL);
-            PGSC::Thread::Lock_create(lock, eventQueueMutex);
-            eventQueueMonitor.broadcast(*lock);
+            thread::Lock lock(eventQueueMutex);
+            eventQueueMonitor.broadcast(lock);
             break;
         }
     case PROTOV_THREADID:
         {
-            PGSC::Thread::LockPtr lock(NULL, NULL);
-            PGSC::Thread::Lock_create(lock, protoVMutex);
-            protoVMonitor.broadcast(*lock);
+            thread::Lock lock(protoVMutex);
+            protoVMonitor.broadcast(lock);
             break;
         }
     }
@@ -118,21 +116,18 @@ void ContactManager::protoVThreadProcess()
         bool fireUpdate = false;
         CommoTime nowTime = CommoTime::now();
         {
-            PGSC::Thread::LockPtr lock(NULL, NULL);
-            PGSC::Thread::Lock_create(lock, protoVMutex);
+            thread::Lock lock(protoVMutex);
             
             unsigned int uberMin = TakProtoInfo::SELF_MIN;
             unsigned int uberMax = TakProtoInfo::SELF_MAX;
             int newProtoV = uberMax;
             {
-                PGSC::Thread::ReadLockPtr lock(NULL, NULL);
-                PGSC::Thread::ReadLock_create(lock, contactMapMutex);
+                thread::ReadLock lock(contactMapMutex);
                 
                 ContactMap::iterator iter;
                 for (iter = contacts.begin(); iter != contacts.end(); iter++) {
                     ContactState *state = iter->second;
-                    PGSC::Thread::LockPtr stateLock(NULL, NULL);
-                    PGSC::Thread::Lock_create(stateLock, state->mutex);
+                    thread::Lock stateLock(state->mutex);
                     
                     std::string dbgUid((const char *)iter->first->contactUID,
                                        iter->first->contactUIDLen);
@@ -198,11 +193,10 @@ void ContactManager::protoVThreadProcess()
         }
         
         {
-            PGSC::Thread::LockPtr lock(NULL, NULL);
-            PGSC::Thread::Lock_create(lock, protoVMutex);
+            thread::Lock lock(protoVMutex);
 
             if (!protoVDirty && !threadShouldStop(PROTOV_THREADID)) {
-                protoVMonitor.wait(*lock, 
+                protoVMonitor.wait(lock, 
                     TakMessage::PROTOINF_TIMEOUT_SEC / 4 * 1000);
             }
         }
@@ -330,8 +324,7 @@ CommoResult ContactManager::processContactUpdate(
     bool isOk = true;
     bool protoNeedsRefresh = false;
     {
-        PGSC::Thread::ReadLockPtr lock(NULL, NULL);
-        PGSC::Thread::ReadLock_create(lock, contactMapMutex);
+        thread::ReadLock lock(contactMapMutex);
         ContactMap::iterator iter = contacts.find(uid);
         if (iter != contacts.end()) {
             state = iter->second;
@@ -345,8 +338,7 @@ CommoResult ContactManager::processContactUpdate(
     }
     if (!protoInfOnly && !state) {
         // Retry with the write lock so we can add new if needed
-        PGSC::Thread::WriteLockPtr lock(NULL, NULL);
-        PGSC::Thread::WriteLock_create(lock, contactMapMutex);
+        thread::WriteLock lock(contactMapMutex);
         ContactMap::iterator iter = contacts.find(uid);
         bool isNew = (iter == contacts.end());
         if (!isNew) {
@@ -373,10 +365,9 @@ CommoResult ContactManager::processContactUpdate(
         }
     }
     if (protoNeedsRefresh) {
-        PGSC::Thread::LockPtr vLock(NULL, NULL);
-        PGSC::Thread::Lock_create(vLock, protoVMutex);
+        thread::Lock vLock(protoVMutex);
         protoVDirty = true;
-        protoVMonitor.broadcast(*vLock);
+        protoVMonitor.broadcast(vLock);
     }
     return isOk ? COMMO_SUCCESS : COMMO_ILLEGAL_ARGUMENT;
 }
@@ -396,8 +387,7 @@ bool ContactManager::processContactStateUpdate(ContactState *state,
     bool needRecompute = false;
     CommoTime nowTime = CommoTime::now();
     {
-        PGSC::Thread::LockPtr sLock(NULL, NULL);
-        PGSC::Thread::Lock_create(sLock, state->mutex);
+        thread::Lock sLock(state->mutex);
         if (knownEP != state->knownEndpoint) {
             *protoNeedsRefresh = false;
             return false;
@@ -469,8 +459,7 @@ void ContactManager::removeStream(const std::string &epString)
     std::set<ContactUID *> removedUids;
 
     {
-        PGSC::Thread::WriteLockPtr lock(NULL, NULL);
-        PGSC::Thread::WriteLock_create(lock, contactMapMutex);
+        thread::WriteLock lock(contactMapMutex);
         ContactMap::iterator iter = contacts.begin();
         while (iter != contacts.end()) {
             ContactMap::iterator curIter = iter;
@@ -478,8 +467,7 @@ void ContactManager::removeStream(const std::string &epString)
             bool killState = false;
             ContactState *state = curIter->second;
             {
-                PGSC::Thread::LockPtr sLock(NULL, NULL);
-                PGSC::Thread::Lock_create(sLock, state->mutex);
+                thread::Lock sLock(state->mutex);
                 if (state->streamEndpoint &&
                             state->streamEndpoint->getEndpointString() == epString) {
                     if (!state->datagramEndpoint && !state->tcpEndpoint) {
@@ -528,8 +516,7 @@ CommoResult ContactManager::sendCoT(
     typedef std::pair<std::vector<std::string>, std::vector<const ContactUID *> > CallContactPair;
     std::map<std::string, CallContactPair > streamMap;
     {
-        PGSC::Thread::ReadLockPtr lock(NULL, NULL);
-        PGSC::Thread::ReadLock_create(lock, contactMapMutex);
+        thread::ReadLock lock(contactMapMutex);
 
         std::map<std::string, CallContactPair >::iterator smIter;
         std::vector<const ContactUID *>::iterator iter;
@@ -542,8 +529,7 @@ CommoResult ContactManager::sendCoT(
             }
             ContactState *state = contactIter->second;
             {
-                PGSC::Thread::LockPtr stateLock(NULL, NULL);
-                PGSC::Thread::Lock_create(stateLock, state->mutex);
+                thread::Lock stateLock(state->mutex);
                 CoTEndpoint *ep = getCurrentEndpoint(state, sendMethod);
                 try {
                     if (!ep)
@@ -649,8 +635,7 @@ CommoResult ContactManager::sendCoT(
 void ContactManager::addContactPresenceListener(
         ContactPresenceListener* listener) COMMO_THROW (std::invalid_argument)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    PGSC::Thread::Lock_create(lock, listenerMutex);
+    thread::Lock lock(listenerMutex);
     if (!listeners.insert(listener).second)
         throw std::invalid_argument("Listener already registered");
 }
@@ -658,16 +643,14 @@ void ContactManager::addContactPresenceListener(
 void ContactManager::removeContactPresenceListener(
         ContactPresenceListener* listener) COMMO_THROW (std::invalid_argument)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    PGSC::Thread::Lock_create(lock, listenerMutex);
+    thread::Lock lock(listenerMutex);
     if (listeners.erase(listener) != 1)
         throw std::invalid_argument("Provided listener for removal is not registered");
 }
 
 void ContactManager::fireContactPresenceChange(const ContactUID *c, bool present)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    PGSC::Thread::Lock_create(lock, listenerMutex);
+    thread::Lock lock(listenerMutex);
     std::set<ContactPresenceListener *>::iterator iter;
     for (iter = listeners.begin(); iter != listeners.end(); ++iter) {
         ContactPresenceListener *listener = *iter;
@@ -680,11 +663,10 @@ void ContactManager::fireContactPresenceChange(const ContactUID *c, bool present
 
 void ContactManager::queueContactPresenceChange(const ContactUID *c, bool present)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    PGSC::Thread::Lock_create(lock, eventQueueMutex);
+    thread::Lock lock(eventQueueMutex);
 
     eventQueue.push_front(std::pair<InternalContactUID *, bool>(new InternalContactUID(c), present));
-    eventQueueMonitor.broadcast(*lock);
+    eventQueueMonitor.broadcast(lock);
 }
 
 void ContactManager::queueThread()
@@ -692,10 +674,9 @@ void ContactManager::queueThread()
     while (!threadShouldStop(EVENT_THREADID)) {
         std::pair<InternalContactUID *, bool> event;
         {
-            PGSC::Thread::LockPtr lock(NULL, NULL);
-            PGSC::Thread::Lock_create(lock, eventQueueMutex);
+            thread::Lock lock(eventQueueMutex);
             if (eventQueue.empty()) {
-                eventQueueMonitor.wait(*lock);
+                eventQueueMonitor.wait(lock);
                 continue;
             }
 
@@ -719,8 +700,7 @@ void ContactManager::setPreferStreamEndpoint(bool preferStream)
 
 const ContactList *ContactManager::getAllContacts()
 {
-    PGSC::Thread::ReadLockPtr lock(NULL, NULL);
-    PGSC::Thread::ReadLock_create(lock, contactMapMutex);
+    thread::ReadLock lock(contactMapMutex);
     size_t n = contacts.size();
     const ContactUID **extContacts = new const ContactUID*[n];
     ContactMap::iterator iter;
@@ -750,8 +730,7 @@ CommoResult ContactManager::configKnownEndpointContact(
 
     if (!ipAddr && !callsign) {
         // Delete this "known" contact
-        PGSC::Thread::WriteLockPtr lock(NULL, NULL);
-        PGSC::Thread::WriteLock_create(lock, contactMapMutex);
+        thread::WriteLock lock(contactMapMutex);
         ContactMap::iterator iter = contacts.find(contact);
         if (iter == contacts.end())
             return COMMO_ILLEGAL_ARGUMENT;
@@ -782,15 +761,13 @@ CommoResult ContactManager::configKnownEndpointContact(
 
 std::string ContactManager::getActiveEndpointHost(const ContactUID *contact)
 {
-    PGSC::Thread::ReadLockPtr lock(NULL, NULL);
-    PGSC::Thread::ReadLock_create(lock, contactMapMutex);
+    thread::ReadLock lock(contactMapMutex);
     ContactMap::iterator iter = contacts.find(contact);
     if (iter == contacts.end())
         return "";
 
     {
-        PGSC::Thread::LockPtr lock2(NULL, NULL);
-        PGSC::Thread::Lock_create(lock2, iter->second->mutex);
+        thread::Lock lock2(iter->second->mutex);
         CoTEndpoint *ep = getCurrentEndpoint(iter->second);
         if (ep->getType() == CoTEndpoint::STREAMING)
             return "";
@@ -807,38 +784,33 @@ std::string ContactManager::getActiveEndpointHost(const ContactUID *contact)
 
 bool ContactManager::hasContact(const ContactUID *contact)
 {
-    PGSC::Thread::ReadLockPtr lock(NULL, NULL);
-    PGSC::Thread::ReadLock_create(lock, contactMapMutex);
+    thread::ReadLock lock(contactMapMutex);
     ContactMap::iterator iter = contacts.find(contact);
     return iter != contacts.end();
 }
 
 bool ContactManager::hasStreamingEndpoint(const ContactUID *contact)
 {
-    PGSC::Thread::ReadLockPtr lock(NULL, NULL);
-    PGSC::Thread::ReadLock_create(lock, contactMapMutex);
+    thread::ReadLock lock(contactMapMutex);
     ContactMap::iterator iter = contacts.find(contact);
     if (iter == contacts.end())
         return false;
 
     {
-        PGSC::Thread::LockPtr lock2(NULL, NULL);
-        PGSC::Thread::Lock_create(lock2, iter->second->mutex);
+        thread::Lock lock2(iter->second->mutex);
         return iter->second->streamEndpoint != NULL;
     }
 }
 
 std::string ContactManager::getStreamEndpointIdentifier(const ContactUID *contact, bool ifActive) COMMO_THROW (std::invalid_argument)
 {
-    PGSC::Thread::ReadLockPtr lock(NULL, NULL);
-    PGSC::Thread::ReadLock_create(lock, contactMapMutex);
+    thread::ReadLock lock(contactMapMutex);
     ContactMap::iterator iter = contacts.find(contact);
     if (iter == contacts.end())
         throw std::invalid_argument("Specified contact is not known");
 
     {
-        PGSC::Thread::LockPtr lock2(NULL, NULL);
-        PGSC::Thread::Lock_create(lock2, iter->second->mutex);
+        thread::Lock lock2(iter->second->mutex);
         if (iter->second->streamEndpoint == NULL)
             throw std::invalid_argument("Specified contact has no streaming endpoint");
         else if (!ifActive || getCurrentEndpoint(iter->second) == iter->second->streamEndpoint)

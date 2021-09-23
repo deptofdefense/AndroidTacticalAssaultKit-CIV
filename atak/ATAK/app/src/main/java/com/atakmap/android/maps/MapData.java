@@ -154,7 +154,7 @@ public class MapData extends DefaultMetaDataHolder {
      * @param key the key that identifies the data
      */
     public <T extends Parcelable> T getParcelable(final String key) {
-        return (T) getMetaParcelable(key);
+        return getMetaParcelable(key);
     }
 
     /**

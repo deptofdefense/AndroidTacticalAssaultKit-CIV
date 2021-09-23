@@ -37,6 +37,7 @@ import com.atakmap.comms.app.CotPortListActivity;
 import com.atakmap.comms.app.CotStreamListActivity;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.net.CertificateEnrollmentClient;
 
 import java.util.Set;
 
@@ -192,7 +193,7 @@ public class MyPreferenceFragment extends AtakPreferenceFragment {
         d.addButton(r.getDrawable(R.drawable.missionpackage_icon),
                 r.getString(R.string.mission_package_name));
         d.addButton(r.getDrawable(R.drawable.ic_menu_network),
-                r.getString(R.string.MARTI_sync_server));
+                r.getString(R.string.quick_connect));
         d.addButton(r.getDrawable(R.drawable.ic_menu_settings),
                 r.getString(R.string.advanced_network_settings));
         d.show(R.string.preferences_text4373, R.string.choose_config_method,
@@ -210,9 +211,11 @@ public class MyPreferenceFragment extends AtakPreferenceFragment {
                         ImportMissionPackageSort.importMissionPackage(context);
                         break;
                     case 1:
-                        context.startActivity(new Intent(context,
-                                CotStreamListActivity.class)
-                                        .putExtra("add", true));
+                        // launch Quick Connect enrollment dialog
+                        CertificateEnrollmentClient.getInstance().enroll(
+                                context,
+                                null, null, null, null,
+                                null, true);
                         break;
                     case 2:
                         SettingsActivity

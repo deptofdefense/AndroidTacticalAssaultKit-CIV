@@ -8,6 +8,7 @@ import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
+import android.graphics.drawable.Drawable;
 import android.graphics.drawable.LayerDrawable;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -281,6 +282,22 @@ public class ContactListAdapter extends BaseAdapter implements
 
         ATAKUtilities.SetIcon(mapView.getContext(), view,
                 contact.getIconUri(), contact.getIconColor());
+
+        // Set the icon
+        // If a Drawable icon is not available then the URI is used as fallback
+        // If "gone" is specified for the URI then the icon space is removed
+        Drawable iconDr;
+        String iconUri = contact.getIconUri();
+        if ((iconDr = contact.getIconDrawable()) != null) {
+            view.setImageDrawable(iconDr);
+            view.setColorFilter(contact.getIconColor(),
+                    PorterDuff.Mode.MULTIPLY);
+            view.setVisibility(View.VISIBLE);
+        } else if (iconUri != null && iconUri.equals("gone"))
+            view.setVisibility(View.GONE);
+        else
+            ATAKUtilities.SetIcon(mapView.getContext(), view,
+                    contact.getIconUri(), contact.getIconColor());
 
         //now overlay presence if available
         LayerDrawable ld = (LayerDrawable) mapView.getContext().getResources()
@@ -755,8 +772,7 @@ public class ContactListAdapter extends BaseAdapter implements
                     filtered = currentList.getFilteredUIDs(false);
                 }
                 for (String uid : filtered) {
-                    if (selectedUids.contains(uid))
-                        selectedUids.remove(uid);
+                    selectedUids.remove(uid);
                 }
             }
             notifyChange();
@@ -856,7 +872,7 @@ public class ContactListAdapter extends BaseAdapter implements
 
     public void removeRefreshListener(RefreshListener r) {
         synchronized (_refreshListeners) {
-            if (r != null && _refreshListeners.contains(r))
+            if (r != null)
                 _refreshListeners.remove(r);
         }
     }

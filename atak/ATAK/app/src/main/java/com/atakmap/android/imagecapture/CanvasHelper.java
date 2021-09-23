@@ -8,7 +8,11 @@ import android.graphics.Path;
 import android.graphics.PointF;
 import android.graphics.RectF;
 
+import com.atakmap.coremap.maps.coords.Vector2D;
 import com.atakmap.math.MathUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Canvas/path drawing functions
@@ -172,5 +176,37 @@ public class CanvasHelper {
 
     public static double deg360(double deg) {
         return deg % 360 + (deg < 0 ? 360 : 0);
+    }
+
+    /**
+     * Provides the top and the bottom most intersection points on a line
+     * clipped with a rectangle
+     *
+     * @param r The rectangle to clip the line to
+     * @param sp The start point on the line segment
+     * @param ep The end point on the line segment
+     */
+    public static List<PointF> findIntersectionPoints(RectF r, PointF sp,
+            PointF ep) {
+
+        List<PointF> ret = new ArrayList<>();
+
+        // Convert to Vector2D to utilize Vector2D.segmentIntersectionsWithPolygon
+        Vector2D sv = new Vector2D(sp.x, sp.y);
+        Vector2D ev = new Vector2D(ep.x, ep.y);
+        Vector2D[] rectPoly = {
+                new Vector2D(r.left, r.top),
+                new Vector2D(r.right, r.top),
+                new Vector2D(r.right, r.bottom),
+                new Vector2D(r.left, r.bottom),
+                new Vector2D(r.left, r.top)
+        };
+
+        // Perform intersection test and convert result back to PointF
+        List<Vector2D> ips = Vector2D.segmentIntersectionsWithPolygon(sv, ev,
+                rectPoly);
+        for (Vector2D ip : ips)
+            ret.add(new PointF((float) ip.x, (float) ip.y));
+        return ret;
     }
 }

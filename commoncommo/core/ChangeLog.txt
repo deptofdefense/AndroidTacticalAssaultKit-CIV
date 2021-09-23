@@ -1,3 +1,81 @@
+** Release 1.3.0 - 2021-07-14
+NEW FEATURES
+* Java only: Native library loading can optionally be done transparently 
+  during Java class loading.  This is controlled via optional property
+  (defaults to disabled to enact old manual loading by calling application
+   behavior) given to the Java build.
+
+API CHANGES
+* Java only: Commo::initThirdpartyNativeLibraries()'s behavior has been 
+  changed in relation to above-described new native library loading
+  functionality when built for transparent loading
+
+BUG FIXES
+* File transfers (data packages, cloud, simple) traditionally kept
+  connections to a host open for some time to optimize future file
+  transfers to/from the same host. Due to lower than anticipated
+  client limits on some servers (notably embedded http server on Windows
+  builds of commo) causing inability to accept new connections, this
+  optimization has been removed.
+  See issue report COMMO-3
+* Disabling, enabling, or changing the port or https certificates for
+  the https server proxy will no longer incur significant delays.
+  See issue report ATAK-14519
+
+
+** Release 1.2.1 - 2021-06-08
+NEW FEATURES
+* The pgscthread library has been removed as a necessary dependency.
+  Functionality it previously provided has been rolled into commoncommo
+  itself. This change should see zero impact at runtime to users of
+  commoncommo as its use was restricted to internal implementation, however
+  this is noted here for the benefit of those building commoncommo
+  to clarify that pgscthread is no longer needed at build/link time.
+
+
+** Release 1.2.0 - 2021-05-10
+NEW FEATURES
+* Additional detail has been added for some types of logging events, most
+  notably for incoming message parsing problems.
+* Semantic versioning has been adopted from this release forward;
+  a version comprised of major.minor.patch will now be used.
+  Non-api impacting changes come with patch versions, API augmenting
+  and larger changes come with minor versions, and API breaking
+  changes come with major versions. A "build id" is also appended,
+  computed from the git commit hash in use.
+  The initial version number is 1.2.0 to make it higher than an
+  arbitrary 1.1.1 version previously having been assigned to some builds
+  prior to this feature being added.
+
+API CHANGES
+* CommoLogger's log() method signature has changed to include additional
+  information (see NEW FEATURES).  Existing implementations can adapt to the
+  change by simply ignoring the new "type" and "detail" arguments;  the 
+  other arguments are populated as they have been in the past. The new
+  arguments add specific details about log events for more sophisicated
+  logging display without need to parse the opaque log message string.
+* Major, minor, and patch level numeric values are now available in a new
+  public api header, commoversion.h
+* Commo::getVersionString() has been added as a static call to obtain
+  a string describing the version of the built library being used at
+  runtime.
+
+BUG FIXES
+* Update implementation to build against openssl version 7.62.0 and later
+  by handling a change in their internal definition of error codes.
+* Prevent a potential crash (at worst) or misbehavior (at best) of mission
+  package uploads to a TAK server on architectures where a long is not
+  64-bits due to a mismatch in data type passing through variadic function
+  arguments. The most common instance of this is 32-bit Linux and Windows
+  systems.  This bug will *not* impact 64-bit systems. This bug was
+  introduced in Release 2020-09-29.
+* Java only: Fix a resource leak issue in the JNI layer of the relatively
+  new file-based I/O abstraction layer.  This bug will only surface if
+  a Java-based "file i/o provider" is installed. All native i/o providers
+  (including the default) are not impacted by this bug.  This bug was
+  introduced in Release 2020-09-29.
+
+
 ** Release 2020-09-29
 NEW FEATURES
 * File-based I/O is now performed through a layer of abstraction allowing

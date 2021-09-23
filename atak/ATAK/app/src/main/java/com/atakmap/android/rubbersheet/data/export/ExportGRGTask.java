@@ -33,7 +33,7 @@ public class ExportGRGTask extends ExportFileTask {
 
     @Override
     protected String getProgressMessage() {
-        return _context.getString(R.string.exporting_kmz, _item.getName());
+        return _context.getString(R.string.exporting_kmz, _item.getTitle());
     }
 
     @Override
@@ -60,7 +60,7 @@ public class ExportGRGTask extends ExportFileTask {
         addOutputFile(tmpDir);
 
         // Create KML document
-        String name = _item.getName();
+        String name = _item.getTitle();
         StringBuilder cs = new StringBuilder();
         GeoPointMetaData[] p = _item.getGeoPoints();
         if (p.length < 4)

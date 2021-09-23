@@ -3,6 +3,7 @@ package com.atakmap.android.maps;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import com.atakmap.android.util.LinkedHashMap2;
 import com.atakmap.map.layer.Layer;
@@ -23,8 +24,12 @@ public class CardLayer extends ProxyLayer {
      * Add a layer to the current deck of cards.
      * @param layer the layer.
      */
-    public synchronized void add(final Layer layer) {
-        this.cards.put(layer.getName(), layer);
+    public void add(final Layer layer) {
+        this.add(layer, layer.getName());
+    }
+
+    public synchronized void add(final Layer layer, final String key) {
+        this.cards.put(key, layer);
         if (this.cards.size() == 1)
             this.set(layer);
     }
@@ -67,7 +72,7 @@ public class CardLayer extends ProxyLayer {
         Layer current = this.get();
         String previous = null;
         if (current != null)
-            previous = this.cards.previousKey(current.getName());
+            previous = this.cards.previousKey(getKey(current));
         if (previous == null)
             previous = this.cards.lastKey();
         this.show(previous);
@@ -82,7 +87,7 @@ public class CardLayer extends ProxyLayer {
         Layer current = this.get();
         String next = null;
         if (current != null)
-            next = this.cards.nextKey(current.getName());
+            next = this.cards.nextKey(getKey(current));
         if (next == null)
             next = this.cards.firstKey();
         this.show(next);
@@ -104,5 +109,13 @@ public class CardLayer extends ProxyLayer {
      */
     public synchronized List<Layer> getLayers() {
         return new LinkedList<>(this.cards.values());
+    }
+
+    private String getKey(Layer layer) {
+        for (Map.Entry<String, Layer> entry : this.cards.entrySet()) {
+            if (entry.getValue() == layer)
+                return entry.getKey();
+        }
+        return null;
     }
 }

@@ -20,6 +20,6 @@
 
     <button icon='icons/clamp.png'
             onClick='actions/clamp_toggle.xml'
-            selected='!{${absolute}}'/>
+            selected='${clampedToGround}'/>
 
 </menu>

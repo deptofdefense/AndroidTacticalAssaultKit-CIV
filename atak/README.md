@@ -10,6 +10,27 @@ Developer Notes
 
 *Please make sure to read these for solutions to commonly encountered issues*
 
+June 2021 - ATAK *requires* core developer to check out https://git.takmaps.com/core/takkernel as a sibling to the  https://git.takmaps.com/core/atak project or correct configuration of the artifactory settings:
+
+maven.consume.url=https://artifactory.takmaps.com/artifactory/maven
+maven.user=xxxxx@email.info
+maven.password=xxxxxxxxxxxx
+
+Failure to do either of these will result in the following error message:
+
+> FAILURE: Build failed with an exception.
+> * What went wrong:
+> Execution failed for task ':app:mergeCivDebugResources'.
+Could not resolve all files for configuration ':app:civDebugRuntimeClasspath'.
+>    > Could not resolve gov.tak.kernel:takkernel-aar:0.0.0.
+>      Required by:
+>          project :app
+>          project :app > project :ATAKMapEngine:lib
+>       > Could not resolve gov.tak.kernel:takkernel-aar:0.0.0.
+>          > Could not get resource 'http://localhost/gov/tak/kernel/takkernel-aar/0.0.0/takkernel-aar-0.0.0.pom'.
+>             > Could not GET 'http://localhost/gov/tak/kernel/takkernel-aar/0.0.0/takkernel-aar-0.0.0.pom'.
+>                > Connect to localhost:80 [localhost/127.0.0.1, localhost/0:0:0:0:0:0:0:1] failed: Connection refused: connect
+
 
 14 October 2020 - ATAK will *require* core developers using Android Studio to set the Launch Option for ATAK Activity to be manually set.  This is because Android Studio has a difficult time determining if you are running a flavor or unflavored version of ATAK.   Under the Run/Debug configuration for ATAK, please set the Launch Activity to com.atakmap.app.ATAKActivity
 
@@ -377,3 +398,18 @@ To test the App Standby mode with your app:
 
     Observe the behavior of your app after waking it. Make sure the app recovers gracefully from standby mode. In particular, you should check if your app's Notifications and background jobs continue to function as expected. 
 
+
+8) Shrinking and removing EXIF data from a TAK PDF
+
+    $ gs -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/printer -sOutputFile=output.pdf $1
+
+9) Pulling ANR trace logs depending on the device
+
+   Older Devices
+    $ adb pull /data/anr/traces.txt 
+
+   Newer Devices with a dialer 
+      1) go into the dialer and type in *#9900#
+      2) select "Run Dumpstate/Logcat/Modem Log"
+      3) when that finishes select "Copy To SDCARD (Include CP Ramdump)"
+      4) the directory under /sdcard/logs should contain a ton of things including the traces or a sub directory should contain the traces

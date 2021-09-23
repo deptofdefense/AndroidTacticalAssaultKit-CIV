@@ -64,6 +64,7 @@ public class CircleDetailsView extends GenericDetailsView implements
     private LinearLayout _sendView;
     private LinearLayout _editView;
     private Button _areaTV;
+    private Button _circumferenceTV;
 
     private int _previousPosition = 0;
 
@@ -181,6 +182,7 @@ public class CircleDetailsView extends GenericDetailsView implements
                 .setOnClickListener(this);
 
         _areaTV = findViewById(R.id.circleAreaText);
+        _circumferenceTV = findViewById(R.id.circumferenceText);
 
         ImageButton attButton = findViewById(
                 R.id.cotInfoAttachmentsButton);
@@ -259,6 +261,12 @@ public class CircleDetailsView extends GenericDetailsView implements
         _centerButton.setOnClickListener(this);
 
         setupAreaButton(_areaTV, new Runnable() {
+            public void run() {
+                refresh();
+            }
+        });
+
+        setupLengthButton(_circumferenceTV, new Runnable() {
             public void run() {
                 refresh();
             }
@@ -353,11 +361,17 @@ public class CircleDetailsView extends GenericDetailsView implements
         // Area
         // See ATAK-9517 - makes more sense to use the set radius units for area
         _areaTV.setText(AreaUtilities.formatArea(_unitPrefs.getAreaSystem(),
-                Math.pow(_circle.getRadius(), 2) * Math.PI,
+                _circle.getArea(),
                 Area.METER2));
 
+        int rangeSystem = _unitPrefs.getRangeSystem();
+        double range = _circle.getPerimeterOrLength();
+        _circumferenceTV.setText(
+                SpanUtilities.formatType(rangeSystem, range, Span.METER,
+                        false));
+
         // Height
-        Span unit = getUnitSpan(_circle);
+        Span unit = _unitPrefs.getAltitudeUnits();
         String heightTxt = "-- " + unit.getAbbrev();
         double height = _circle.getHeight();
         if (!Double.isNaN(height))
@@ -455,6 +469,7 @@ public class CircleDetailsView extends GenericDetailsView implements
                         }
                     }
                 });
+        input.requestFocus();
     }
 
     private void _onCenterSelected(MapView mapView) {
@@ -506,10 +521,7 @@ public class CircleDetailsView extends GenericDetailsView implements
 
     @Override
     protected void heightSelected(double height, Span u, double h) {
-        // Saved internally as meters
-        // Height unit is simply the display unit
-        _circle.setHeight(height);
-        _circle.setMetaInteger("height_unit", u.getValue());
+        super.heightSelected(height, u, h);
         refresh();
     }
 

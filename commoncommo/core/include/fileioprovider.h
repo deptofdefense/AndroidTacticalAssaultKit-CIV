@@ -23,6 +23,7 @@ public:
     virtual int seek(long offset, int whence, FileHandle* filePtr) = 0;
     virtual int error(FileHandle* filePtr) = 0;
     virtual size_t getSize(const char* path) = 0 COMMO_THROW (std::invalid_argument);
+    virtual ~FileIOProvider() = default;
 };
 
 }

@@ -67,10 +67,10 @@ public class PanPreference extends Preference {
                 dp.setDialogTitle(c.getString(resId));
             } else if (attrName.equals("pluginIcon") && resId > 0) {
                 p.setIcon(c.getDrawable(resId));
-            } else {
-                if (other != null)
-                    other.put(attrName, resId);
             }
+
+            if (other != null)
+                other.put(attrName, resId);
         }
     }
 

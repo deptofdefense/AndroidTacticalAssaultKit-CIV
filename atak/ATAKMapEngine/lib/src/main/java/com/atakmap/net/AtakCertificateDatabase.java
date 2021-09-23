@@ -243,11 +243,34 @@ public class AtakCertificateDatabase {
             String type, String server) {
         synchronized (getAdapter().lock) {
             if (!initialized) {
-                Log.e(TAG, "calling getCertificate prior to initialization or after a clear content");
+                Log.e(TAG, "calling getCertificateForServer prior to initialization or after a clear content");
                 return null;
             }
 
             return getAdapter().getCertificateForTypeAndServer(type, server);
+        }
+    }
+
+    /**
+     * Gets the certificate for the requested type and server and port
+     *
+     * @param type the type of certificate being requested, ATAK core defines a set of TYPE constants
+     *            in AtakCertificateDatabaseIFace for the certificate types used in core. Plugins
+     *             may specify any unique type
+     * @param server host of certificate being requested
+     * @param port port of certificate being requested
+     *
+     * @return byte[] containing hte p12 file for the requested certificate
+     */
+    public static byte[] getCertificateForServerAndPort(
+            String type, String server, final int port) {
+        synchronized (getAdapter().lock) {
+            if (!initialized) {
+                Log.e(TAG, "calling getCertificateForTypeAndServerAndPort prior to initialization or after a clear content");
+                return null;
+            }
+
+            return getAdapter().getCertificateForTypeAndServerAndPort(type, server, port);
         }
     }
 
@@ -269,6 +292,33 @@ public class AtakCertificateDatabase {
             }
 
             getAdapter().saveCertificateForTypeAndServer(type, server, certificate);
+
+            // Keep the CertificateManager in sync if we're saving a CA cert
+            if (type.equals(AtakCertificateDatabaseIFace.TYPE_TRUST_STORE_CA)) {
+                CertificateManager.getInstance().refresh();
+            }
+        }
+    }
+
+    /**
+     * Sets the certificate for the requested type and server and port
+     *
+     * @param type the type of certificate being requested, ATAK core defines a set of TYPE constants
+     *            in AtakCertificateDatabaseIFace for the certificate types used in core. Plugins
+     *             may specify any unique type
+     * @param server host of certificate being saved
+     * @param port port number that the certificate is associated with
+     * @param certificate containing hte p12 file for the requested certificate
+     */
+    public static void saveCertificateForServerAndPort(
+            String type, String server, int port, byte[] certificate) {
+        synchronized (getAdapter().lock) {
+            if (!initialized) {
+                Log.e(TAG, "calling saveCertificate prior to initialization  or after a clear content");
+                return;
+            }
+
+            getAdapter().saveCertificateForTypeAndServerAndPort(type, server, port, certificate);
 
             // Keep the CertificateManager in sync if we're saving a CA cert
             if (type.equals(AtakCertificateDatabaseIFace.TYPE_TRUST_STORE_CA)) {
@@ -335,6 +385,35 @@ public class AtakCertificateDatabase {
     }
 
     /**
+     * deletes the certificate for the requested type and server
+     *
+     * @param type the type of certificate being requested, ATAK core defines a set of TYPE constants
+     *            in AtakCertificateDatabaseIFace for the certificate types used in core. Plugins
+     *             may specify any unique type
+     * @param server host of certificate being saved
+     */
+    public static void deleteCertificateForServerAndPort(
+            String type, String server, int port) {
+        synchronized (getAdapter().lock) {
+            if (!initialized) {
+                Log.e(TAG, "calling deleteCertificateForTypeAndServerPort prior to initialization or after a clear content");
+                return;
+            }
+
+            boolean rc = getAdapter().deleteCertificateForTypeAndServerAndPort(type, server, port);
+            if (!rc) {
+                Log.e(TAG, "deleteCertificateForTypeAndServerPort returned " + rc);
+                return;
+            }
+
+            // Keep the CertificateManager in sync if we're deleting a CA cert
+            if (type.equals(AtakCertificateDatabaseIFace.TYPE_TRUST_STORE_CA)) {
+                CertificateManager.getInstance().refresh();
+            }
+        }
+    }
+
+    /**
      * Imports certificates being imported from mission packages into the certificate database
      *
      * @param loaction location on disk to load certificate from
@@ -383,7 +462,7 @@ public class AtakCertificateDatabase {
                 saveCertificate(type, contents);
             } else {
                 NetConnectString ncs = NetConnectString.fromString(connectString);
-                saveCertificateForServer(type, ncs.getHost(), contents);
+                saveCertificateForServerAndPort(type, ncs.getHost(), ncs.getPort(), contents);
             }
 
             return contents;
@@ -640,7 +719,7 @@ public class AtakCertificateDatabase {
                 }
             }
 
-            // get certs for each server
+            // get legacy certs
             String[] servers = atakCertificateDatabaseAdapter.getServers(
                     AtakCertificateDatabaseIFace.TYPE_TRUST_STORE_CA);
             if (servers != null) {
@@ -649,6 +728,27 @@ public class AtakCertificateDatabase {
                             AtakCertificateDatabaseAdapter.TYPE_TRUST_STORE_CA, server);
                     caCertCredentials = AtakAuthenticationDatabase.getCredentials(
                             AtakAuthenticationCredentials.TYPE_caPassword, server);
+                    if (caCertP12 != null && caCertCredentials != null &&
+                            !FileSystemUtils.isEmpty(caCertCredentials.password)) {
+                        List<X509Certificate> caCerts = loadCertificate(
+                                caCertP12, caCertCredentials.password);
+                        if (caCerts != null) {
+                            retval.addAll(caCerts);
+                        }
+                    }
+                }
+            }
+
+            // get certs for each server
+            NetConnectString[] netConnectStrings = atakCertificateDatabaseAdapter.getServerConnectStrings(
+                    AtakCertificateDatabaseIFace.TYPE_TRUST_STORE_CA);
+            if (netConnectStrings != null) {
+                for (NetConnectString netConnectString : netConnectStrings) {
+                    caCertP12 = getAdapter().getCertificateForTypeAndServerAndPort(
+                            AtakCertificateDatabaseAdapter.TYPE_TRUST_STORE_CA,
+                            netConnectString.getHost(), netConnectString.getPort());
+                    caCertCredentials = AtakAuthenticationDatabase.getCredentials(
+                            AtakAuthenticationCredentials.TYPE_caPassword, netConnectString.getHost());
                     if (caCertP12 != null && caCertCredentials != null &&
                             !FileSystemUtils.isEmpty(caCertCredentials.password)) {
                         List<X509Certificate> caCerts = loadCertificate(

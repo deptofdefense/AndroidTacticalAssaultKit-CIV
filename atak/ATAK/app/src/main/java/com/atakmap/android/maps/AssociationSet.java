@@ -1,3 +1,4 @@
+
 package com.atakmap.android.maps;
 
 import com.atakmap.coremap.maps.coords.GeoBounds;

@@ -9,6 +9,9 @@ public class URIScheme {
     // File - file://<path>
     public static final String FILE = "file://";
 
+    // ZIP file - zip://<path>
+    public static final String ZIP = "zip://";
+
     // Map item - map-item://<UID>
     public static final String MAP_ITEM = "map-item://";
 

@@ -4,9 +4,6 @@ ifeq ($(and $(protobuf_libfile)),)
     $(error Required var not set)
 endif
 
-# Used on Windows build hosts only
-PB_CMAKE="/cygdrive/c/Program Files (x86)/CMake/bin/cmake.exe"
-
 protobuf_src=$(DISTFILESDIR)/protobuf.tar.gz
 protobuf_patch=$(DISTFILESDIR)/protobuf-pgsc.patch
 protobuf_srcdir=protobuf
@@ -40,8 +37,8 @@ $(protobuf_srctouchfile): $(protobuf_src) $(protobuf_patch)
 define protobuf_win32_build =
 	cd $(protobuf_win32_build_cmdir) && mkdir -p $(BUILD_TYPE)
 	cd $(protobuf_win32_build_cmdir)/$(BUILD_TYPE)                   && \
-	    $(protobuf_win32_build_vssetup) \"`cygpath -m $(PB_CMAKE)`\" -G \"NMake Makefiles\" \
-	          -DCMAKE_BUILD_TYPE=Release                                \
+	    $(protobuf_win32_build_vssetup) \"`cygpath -m $(CMAKE)`\" -G \"NMake Makefiles\" \
+	          -DCMAKE_BUILD_TYPE=$(BUILD_TYPE)                          \
                   -DCMAKE_INSTALL_PREFIX=../../../                          \
                   $(protobuf_win32_build_cmextraargs)                       \
                   -Dprotobuf_BUILD_TESTS=off    ../                      && \
@@ -57,8 +54,6 @@ $(protobuf_hosttools_builttouchfile): $(protobuf_hosttools_srctouchfile)
 	# build protobuf for host
 	$(protobuf_win32_build)
 	touch $@
-protobuf_cmake_check:
-	@[ -x $(PB_CMAKE) ] || ( echo "ERROR - CMake not installed or incorrect version" >&2 ; false )
 
 else
 

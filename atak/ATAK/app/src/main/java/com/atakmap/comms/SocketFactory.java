@@ -1,7 +1,6 @@
 
 package com.atakmap.comms;
 
-import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.log.Log;
 
 import java.io.IOException;
@@ -11,10 +10,9 @@ import java.net.MulticastSocket;
 import java.net.SocketException;
 
 /**
- * @deprecated this has been largely overcome by common communications.
+ * Factory for creating a variety of standard sockets for use by plugins and by core
+ * ATAK.
  */
-@Deprecated
-@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
 public class SocketFactory {
 
     private final static String TAG = "SocketFactory";
@@ -26,6 +24,7 @@ public class SocketFactory {
 
     /**
      * Provides the current socket factory.
+     * @return SocketFactory the socket factory
      */
     public synchronized static SocketFactory getSocketFactory() {
         if (_instance == null)

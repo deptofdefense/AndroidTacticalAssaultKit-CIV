@@ -52,7 +52,7 @@ public class SceneSettingService implements
             if (state) {
                 if (!r.getUID().equals(route.getUID())) {
                     r.setAlpha(50);
-                    r.setTouchable(false);
+                    r.setClickable(false);
                     r.hideLabels(true);
                 } else {
                     r.setLocked(true);
@@ -62,7 +62,7 @@ public class SceneSettingService implements
                 }
             } else {
                 r.resetAlpha();
-                r.setTouchable(true);
+                r.setClickable(true);
                 r.hideLabels(false);
                 if (r.getUID().equals(route.getUID())) {
                     r.setLocked(false);

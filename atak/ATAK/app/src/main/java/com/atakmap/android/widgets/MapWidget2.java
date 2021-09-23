@@ -43,7 +43,12 @@ public class MapWidget2 extends MapWidget {
         return _height;
     }
 
-    public boolean setSize(float width, float height) {
+    /**
+     * Set the size of the widget
+     * @param width Bounds width
+     * @param height Bounds height
+     */
+    public boolean setSize(final float width, final float height) {
         if (Float.compare(width, _width) != 0
                 || Float.compare(height, _height) != 0) {
             _width = width;

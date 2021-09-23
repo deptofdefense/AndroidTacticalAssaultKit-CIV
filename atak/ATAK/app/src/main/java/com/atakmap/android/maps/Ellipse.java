@@ -1,13 +1,10 @@
 
 package com.atakmap.android.maps;
 
-import android.graphics.PointF;
-
-import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.MutableUTMPoint;
-import com.atakmap.coremap.maps.coords.Vector3D;
+import com.atakmap.map.layer.feature.Feature.AltitudeMode;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -34,6 +31,8 @@ public class Ellipse extends Polyline {
         super(serialId, metadata, uid);
 
         setStyle(getStyle() | Polyline.STYLE_CLOSED_MASK);
+        setHeightStyle(Polyline.HEIGHT_STYLE_POLYGON
+                | Polyline.HEIGHT_STYLE_OUTLINE_SIMPLE);
 
         for (int i = 0; i < coords.length; ++i) {
             coords[i] = GeoPoint.createMutable();
@@ -305,108 +304,83 @@ public class Ellipse extends Polyline {
         return fill;
     }
 
-    /*
-     * Returns true if the ellipse has been hit during a touch event.
-     */
     @Override
-    public boolean testOrthoHit(int xpos, int ypos, GeoPoint point,
-            MapView view) {
-        if (getCenter() == null || !getClickable())
-            return false;
-
-        double hitRadius = getHitRadius(view);
-        GeoBounds bounds = view.createHitbox(point, hitRadius);
-        if (!bounds.intersects(getBounds(null)))
-            return false;
-
-        double hitRadiusSq = hitRadius * hitRadius;
-
-        for (int x = 0; x < coords.length; x++) {
-            int y = (x + 1) % coords.length;
-            PointF p1 = view.forward(coords[x]);
-            Vector3D v1 = new Vector3D(p1.x, p1.y, 0);
-            PointF p2 = view.forward(coords[y]);
-            Vector3D v2 = new Vector3D(p2.x, p2.y, 0);
-            Vector3D v0 = new Vector3D(xpos, ypos, 0);
-            if (Vector3D.distanceSqToSegment(v0, v1, v2) < hitRadiusSq) {
-                setTouchPoint(point);
-                return true;
-            }
-        }
-
-        return false;
+    public void setAltitudeMode(AltitudeMode altMode) {
+        super.setAltitudeMode(altMode);
+        recomputePoly();
     }
 
     private void recomputePoly() {
-        if (center != null && minorRadius >= 0d && majorRadius >= 0d) {
+        if (center == null || !center.get().isValid() || minorRadius < 0
+                || majorRadius < 0)
+            return;
 
-            if (end < start) {
-                int nlen = (end + 360 - start) / 6;
-                if (coords.length != nlen) {
-                    coords = new GeoPoint[nlen];
-                    for (int i = 0; i < coords.length; ++i)
-                        coords[i] = GeoPoint.createMutable();
-                }
-            } else if (end > start) {
-                int nlen = (end - start) / 6;
-                if (coords.length != nlen) {
-                    coords = new GeoPoint[nlen];
-                    for (int i = 0; i < coords.length; ++i)
-                        coords[i] = GeoPoint.createMutable();
-                }
-            } else {
-                if (coords.length != 60) {
-                    coords = new GeoPoint[60];
-                    for (int i = 0; i < coords.length; ++i)
-                        coords[i] = GeoPoint.createMutable();
-                }
+        if (end < start) {
+            int nlen = (end + 360 - start) / 6;
+            if (coords.length != nlen) {
+                coords = new GeoPoint[nlen];
+                for (int i = 0; i < coords.length; ++i)
+                    coords[i] = GeoPoint.createMutable();
             }
-
-            if (start != (end % 360)) {
-                setStyle(getStyle() & ~Polyline.STYLE_CLOSED_MASK);
-                setStyle(getStyle() & ~Polyline.STYLE_FILLED_MASK);
-            } else if ((getStyle() & Polyline.STYLE_CLOSED_MASK) <= 0) {
-                setStyle(getStyle() | Polyline.STYLE_CLOSED_MASK);
+        } else if (end > start) {
+            int nlen = (end - start) / 6;
+            if (coords.length != nlen) {
+                coords = new GeoPoint[nlen];
+                for (int i = 0; i < coords.length; ++i)
+                    coords[i] = GeoPoint.createMutable();
             }
-
-            MutableUTMPoint centerUTM = new MutableUTMPoint(
-                    center.get().getLatitude(),
-                    center.get().getLongitude());
-
-            double angRad;
-            double angRad_cos = 1;
-            double angRad_sin = 0;
-
-            if (angle != 0d) {
-                angRad = Math.toRadians(angle);
-                angRad_cos = Math.cos(angRad);
-                angRad_sin = Math.sin(angRad);
+        } else {
+            if (coords.length != 60) {
+                coords = new GeoPoint[60];
+                for (int i = 0; i < coords.length; ++i)
+                    coords[i] = GeoPoint.createMutable();
             }
+        }
 
-            for (int i = 0; i < coords.length; i++) {
-                double angdev = Math.toRadians((i * 6 + start));
-                double x = Math.cos(angdev) * majorRadius;
-                double y = Math.sin(angdev) * minorRadius;
+        if (start != (end % 360)) {
+            setStyle(getStyle() & ~Polyline.STYLE_CLOSED_MASK);
+            setStyle(getStyle() & ~Polyline.STYLE_FILLED_MASK);
+        } else if ((getStyle() & Polyline.STYLE_CLOSED_MASK) <= 0) {
+            setStyle(getStyle() | Polyline.STYLE_CLOSED_MASK);
+        }
 
-                double x2 = angRad_sin * x - angRad_cos * y;
-                double y2 = angRad_cos * x + angRad_sin * y;
+        MutableUTMPoint centerUTM = new MutableUTMPoint(
+                center.get().getLatitude(),
+                center.get().getLongitude());
 
-                centerUTM.offset(x2, y2);
-                double[] cor1ll = centerUTM.toLatLng(null);
+        double angRad;
+        double angRad_cos = 1;
+        double angRad_sin = 0;
 
-                coords[i].set(cor1ll[0], cor1ll[1]);
-                centerUTM.offset(-x2, -y2);
+        if (angle != 0d) {
+            angRad = Math.toRadians(angle);
+            angRad_cos = Math.cos(angRad);
+            angRad_sin = Math.sin(angRad);
+        }
 
-            }
+        double alt = center.get().getAltitude();
 
-            setPoints(GeoPointMetaData.wrap(coords));
+        for (int i = 0; i < coords.length; i++) {
+            double angdev = Math.toRadians((i * 6 + start));
+            double x = Math.cos(angdev) * majorRadius;
+            double y = Math.sin(angdev) * minorRadius;
 
-            for (OnEllipsePropertiesChangedListener l : ellipsePropChangedListenerList) {
-                l.onEllipsePropertiesChanged(this);
-            }
+            double x2 = angRad_sin * x - angRad_cos * y;
+            double y2 = angRad_cos * x + angRad_sin * y;
+
+            centerUTM.offset(x2, y2);
+            double[] cor1ll = centerUTM.toLatLng(null);
+
+            coords[i].set(cor1ll[0], cor1ll[1], alt);
+            centerUTM.offset(-x2, -y2);
 
         }
 
+        setPoints(GeoPointMetaData.wrap(coords));
+
+        for (OnEllipsePropertiesChangedListener l : ellipsePropChangedListenerList) {
+            l.onEllipsePropertiesChanged(this);
+        }
     }
 
     /* DEPRECATED METHODS - When "width" and "height" were used instead */

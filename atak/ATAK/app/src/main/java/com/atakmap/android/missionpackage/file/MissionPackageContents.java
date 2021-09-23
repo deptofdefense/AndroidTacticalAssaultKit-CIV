@@ -163,7 +163,7 @@ public class MissionPackageContents implements Parcelable {
     private void readFromParcel(Parcel in) {
         int count = in.readInt();
         for (int cur = 0; cur < count; cur++) {
-            setContentNoSync((MissionPackageContent) in
+            setContentNoSync(in
                     .readParcelable(MissionPackageContent.class
                             .getClassLoader()));
         }

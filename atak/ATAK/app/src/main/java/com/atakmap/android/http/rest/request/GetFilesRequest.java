@@ -111,7 +111,7 @@ public class GetFilesRequest implements Parcelable {
         _requests = new ArrayList<>();
         for (int i = 0; i < size; i++)
             _requests
-                    .add((GetFileRequest) in
+                    .add(in
                             .readParcelable(GetFileRequest.class
                                     .getClassLoader()));
     }

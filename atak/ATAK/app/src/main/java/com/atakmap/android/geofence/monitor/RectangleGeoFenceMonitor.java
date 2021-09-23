@@ -98,7 +98,8 @@ class RectangleGeoFenceMonitor extends GeoFenceMonitor {
         if (_fenceHandle <= 0) {
             Log.w(TAG,
                     "Unable to insert shape: "
-                            + ATAKUtilities.getDisplayName(ATAKUtilities.findAssocShape(_shape)));
+                            + ATAKUtilities.getDisplayName(
+                                    ATAKUtilities.findAssocShape(_shape)));
         } else {
             _shape.addOnPointsChangedListener(_shapeChanged);
         }
@@ -126,7 +127,8 @@ class RectangleGeoFenceMonitor extends GeoFenceMonitor {
             if (_fenceHandle <= 0) {
                 Log.w(TAG,
                         "Unable to update shape: "
-                                + ATAKUtilities.getDisplayName(ATAKUtilities.findAssocShape(_shape)));
+                                + ATAKUtilities.getDisplayName(
+                                        ATAKUtilities.findAssocShape(_shape)));
                 return;
             }
 
@@ -136,13 +138,16 @@ class RectangleGeoFenceMonitor extends GeoFenceMonitor {
                 _fenceHandle = -1;
                 Log.w(TAG,
                         "Unable to update un-closed shape: "
-                                + ATAKUtilities.getDisplayName(ATAKUtilities.findAssocShape(_shape))
+                                + ATAKUtilities.getDisplayName(
+                                        ATAKUtilities.findAssocShape(_shape))
                                 + ", " + points.length);
                 return;
             }
 
             Log.d(TAG,
-                    "Updating shape points: " + ATAKUtilities.getDisplayName(ATAKUtilities.findAssocShape(_shape))
+                    "Updating shape points: "
+                            + ATAKUtilities.getDisplayName(
+                                    ATAKUtilities.findAssocShape(_shape))
                             + ", handle=" + _fenceHandle);
 
             synchronized (_spatialCalc) {

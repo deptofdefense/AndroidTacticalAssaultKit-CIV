@@ -94,7 +94,7 @@ public class SelectPointButtonTool extends SpecialPointButtonTool
             item.getFAH().enableStandaloneManipulation();
             item.getFAH().setStrokeColor(Color.argb(255, 255, 255, 0));
             item.getFAH().setTargetItem(mi);
-            item.setTouchable(mi.hasMetaValue("fahon"));
+            item.setClickable(mi.hasMetaValue("fahon"));
             item.getFAH().setVisible(mi.hasMetaValue("fahon"));
             item.getFAH().setDesignatorItem(null);
             _rootLayoutWidget.addItem(item);
@@ -284,11 +284,11 @@ public class SelectPointButtonTool extends SpecialPointButtonTool
                 final FahArrowWidget.Item fah = fetchFahArrowWidget(_marker);
                 if (_marker.hasMetaValue("fahon")) {
                     _marker.removeMetaData("fahon");
-                    fah.setTouchable(false);
+                    fah.setClickable(false);
                     fah.getFAH().setVisible(false);
                 } else {
                     _marker.setMetaBoolean("fahon", true);
-                    fah.setTouchable(true);
+                    fah.setClickable(true);
                     fah.getFAH().setVisible(true);
                 }
             } else if (REDX_LB.equals(action)) {
@@ -371,12 +371,12 @@ public class SelectPointButtonTool extends SpecialPointButtonTool
 
                 if (mi.hasMetaValue("fahon")) {
                     mi.removeMetaData("fahon");
-                    fahItem.setTouchable(false);
+                    fahItem.setClickable(false);
                     fahItem.getFAH().setVisible(false);
 
                 } else {
                     mi.setMetaBoolean("fahon", true);
-                    fahItem.setTouchable(true);
+                    fahItem.setClickable(true);
                     fahItem.getFAH().setVisible(true);
                 }
             } else if (SPI_LB.equals(action)) {

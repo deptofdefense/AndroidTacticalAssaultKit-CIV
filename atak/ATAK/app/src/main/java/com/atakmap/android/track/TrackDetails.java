@@ -429,7 +429,7 @@ public class TrackDetails
     }
 
     public String getMinAltString() {
-        return AltitudeUtilities.format(_minAlt, _prefs);
+        return AltitudeUtilities.format(_minAlt);
     }
 
     public void setMaxAlt(GeoPointMetaData d) {
@@ -441,7 +441,7 @@ public class TrackDetails
     }
 
     public String getMaxAltString() {
-        return AltitudeUtilities.format(_maxAlt, _prefs);
+        return AltitudeUtilities.format(_maxAlt);
     }
 
     public void setMaxSpeed(double d, GeoPointMetaData point) {

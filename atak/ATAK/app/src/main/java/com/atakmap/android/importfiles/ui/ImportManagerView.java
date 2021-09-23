@@ -15,6 +15,7 @@ import com.atakmap.android.gui.AlertDialogHelper;
 import com.atakmap.android.gui.TileButtonDialog;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.widget.Toast;
@@ -29,8 +30,6 @@ import com.atakmap.app.ATAKActivity;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
-
-import org.simpleframework.xml.Serializer;
 
 import java.io.File;
 import java.util.List;
@@ -102,21 +101,24 @@ public class ImportManagerView extends BroadcastReceiver implements
             return;
         }
 
+        Uri dataUri = data.getData();
+
         //use import manager...
-        Log.d(TAG, "Importing: " + data.getData());
+        Log.d(TAG, "Importing: " + dataUri);
         ImportFileTask importTask = new ImportFileTask(_mapView
                 .getContext(), null);
         importTask.addFlag(ImportFileTask.FlagValidateExt
                 | ImportFileTask.FlagPromptOverwrite
                 | ImportFileTask.FlagPromptOnMultipleMatch
                 | ImportFileTask.FlagShowNotificationsDuringImport);
-        importTask.execute(data.getData().toString());
+        importTask.execute(dataUri.toString());
     }
 
     void showDialog() {
         TileButtonDialog d = new TileButtonDialog(_mapView);
         d.setIcon(R.drawable.ic_menu_import_file);
         d.addButton(R.drawable.sdcard, R.string.local_sd);
+        d.addButton(R.drawable.ic_gallery, R.string.gallery_title);
         d.addButton(R.drawable.ic_kml, R.string.kml_networklink);
         d.addButton(R.drawable.ic_menu_network_connections, R.string.http_url);
 
@@ -138,25 +140,37 @@ public class ImportManagerView extends BroadcastReceiver implements
                     case 0: //Local SD
                         importLocalFile();
                         break;
-                    case 1: //KML NetworkLink
+                    case 1: //Gallery import
+                        try {
+                            ((Activity) _context).startActivityForResult(
+                                    new Intent(Intent.ACTION_GET_CONTENT)
+                                            .setType("image/*"),
+                                    FILE_SELECT_CODE);
+                        } catch (Exception e) {
+                            Log.w(TAG, "Failed to create gallery intent", e);
+                            Toast.makeText(_context, R.string.install_gallery,
+                                    Toast.LENGTH_LONG).show();
+                        }
+                        break;
+                    case 2: //KML NetworkLink
                         new AddEditResource(_mapView).add(
                                 RemoteResource.Type.KML);
                         break;
-                    case 2: //HTTP URL
+                    case 3: //HTTP URL
                         new AddEditResource(_mapView).add(
                                 RemoteResource.Type.OTHER);
                         break;
                 }
 
                 // Content providers
-                if (which >= 3 && which - 3 < providers.size()) {
-                    URIContentProvider provider = providers.get(which - 3);
+                if (which >= 4 && which - 4 < providers.size()) {
+                    URIContentProvider provider = providers.get(which - 4);
                     provider.addContent("Import Manager", new Bundle(),
                             ImportManagerView.this);
                 }
 
                 // Choose App
-                else if (which >= 3 + providers.size()) {
+                else if (which >= 4 + providers.size()) {
                     try {
                         //use ATAKActivity to get result from file picker
                         //e.g. via ES File Explorer

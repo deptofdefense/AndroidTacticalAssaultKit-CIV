@@ -3,9 +3,10 @@ package com.atakmap.android.medline;
 
 import android.content.Context;
 import android.content.Intent;
+
+import com.atakmap.android.cot.detail.CotDetailManager;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 
-import com.atakmap.android.cot.CotMapComponent;
 import com.atakmap.android.dropdown.DropDownMapComponent;
 import com.atakmap.android.maps.MapView;
 
@@ -28,7 +29,7 @@ public class MedicalLineMapComponent extends DropDownMapComponent {
         medFilter.addAction("com.atakmap.android.MED_LINE");
         registerDropDownReceiver(_medLineReceiver, medFilter);
 
-        CotMapComponent.getInstance().setMarkerDetailHandler("_medevac_",
+        CotDetailManager.getInstance().registerHandler("_medevac_",
                 new MedicalDetailHandler());
 
     }

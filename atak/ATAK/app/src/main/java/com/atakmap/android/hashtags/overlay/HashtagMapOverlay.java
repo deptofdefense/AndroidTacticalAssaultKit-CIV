@@ -28,7 +28,7 @@ import com.atakmap.android.hierarchy.HierarchyListItem;
 import com.atakmap.android.hierarchy.HierarchyListReceiver;
 import com.atakmap.android.hierarchy.HierarchySelectHandler;
 import com.atakmap.android.hierarchy.action.Action;
-import com.atakmap.android.hierarchy.action.Delete;
+import com.atakmap.android.hierarchy.action.GroupDelete;
 import com.atakmap.android.hierarchy.action.Search;
 import com.atakmap.android.hierarchy.action.Visibility;
 import com.atakmap.android.hierarchy.action.Visibility2;
@@ -237,7 +237,7 @@ public class HashtagMapOverlay extends AbstractMapOverlay2 implements
     }
 
     protected class ListModel extends AbstractHierarchyListItem2 implements
-            View.OnClickListener, Visibility2, Search, Delete {
+            View.OnClickListener, Visibility2, Search, GroupDelete {
 
         protected boolean _vizSupported;
 

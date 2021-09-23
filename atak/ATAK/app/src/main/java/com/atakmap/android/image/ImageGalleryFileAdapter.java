@@ -924,6 +924,8 @@ public class ImageGalleryFileAdapter extends ImageGalleryBaseAdapter
         final List<GalleryFileItem> filteredItems = new ArrayList<>();
 
         addFilter(new MetadataFileFilter());
+
+        // Filter out files that are not in the current FOV
         if (filterByFOV)
             addFilter(new FOVFilter(new MapState(getMapView()),
                     new HierarchyListItem.SortAlphabet()));
@@ -1084,7 +1086,7 @@ public class ImageGalleryFileAdapter extends ImageGalleryBaseAdapter
                 //
                 // The map might have been moved while we weren't listening.
                 //
-                if (filterByFOV) {
+                if (filterByFOV || !markerAttachments) {
                     refresh();
                 }
             } else {
