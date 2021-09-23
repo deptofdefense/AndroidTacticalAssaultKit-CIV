@@ -19,8 +19,9 @@ import com.atakmap.android.maps.MapView.RenderStack;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.MultiLayer;
+import com.atakmap.map.layer.feature.Adapters;
 import com.atakmap.map.layer.feature.FeatureDataStore;
-import com.atakmap.map.layer.feature.FeatureLayer;
+import com.atakmap.map.layer.feature.FeatureLayer3;
 import com.atakmap.map.layer.feature.ogr.SchemaDefinitionRegistry;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
 import com.atakmap.map.layer.raster.DatasetDescriptorFactory2;
@@ -81,7 +82,7 @@ public class GRGMapComponent extends AbstractMapComponent {
     private GRGMapOverlay overlay;
     private GRGContentResolver contentResolver;
     private FeatureDataStore coverageDataStore;
-    private FeatureLayer coveragesLayer;
+    private FeatureLayer3 coveragesLayer;
     private DatasetRasterLayer2 rasterLayer;
     private MCIAGRGMapOverlay mciagrgMapOverlay;
     private GRGMapReceiver mapReceiver;
@@ -116,8 +117,8 @@ public class GRGMapComponent extends AbstractMapComponent {
                 this.grgDatabase, 0);
 
         coverageDataStore = new OutlinesFeatureDataStore(rasterLayer, 0, false);
-        this.coveragesLayer = new FeatureLayer("GRG Outlines",
-                coverageDataStore);
+        this.coveragesLayer = new FeatureLayer3("GRG Outlines",
+                Adapters.adapt(coverageDataStore));
 
         SharedPreferences prefs = PreferenceManager
                 .getDefaultSharedPreferences(context);
@@ -218,7 +219,7 @@ public class GRGMapComponent extends AbstractMapComponent {
         return this.rasterLayer;
     }
 
-    public FeatureLayer getCoverageLayer() {
+    public FeatureLayer3 getCoverageLayer() {
         return this.coveragesLayer;
     }
 }

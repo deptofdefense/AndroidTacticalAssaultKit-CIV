@@ -74,6 +74,7 @@ class GLIsoKeyWidget extends GLWidget2 {
 
         MapTextFormat mtf = MapView.getDefaultTextFormat();
         GLText glText = GLText.getInstance(mtf);
+        float descent = glText.getDescent();
         float spacing = mtf.getBaselineSpacing();
 
         double minHeat, maxHeat;
@@ -92,8 +93,8 @@ class GLIsoKeyWidget extends GLWidget2 {
         if (GeoPoint.isAltitudeValid(minHeat) &&
                 GeoPoint.isAltitudeValid(maxHeat)) {
             // Draw scale labels
-            float textY = 0;
-            float textInc = (float) Math.ceil(barSize[1] / 1.125)
+            float textY = -spacing + descent;
+            float textInc = (barSize[1] - spacing)
                     / (IsoKeyWidget.NUM_LABELS - 1);
             for (int j = 0; j < IsoKeyWidget.NUM_LABELS; j++) {
                 String text = GLText.localize(String.valueOf((int) SpanUtilities
@@ -101,7 +102,7 @@ class GLIsoKeyWidget extends GLWidget2 {
                 keyColor = rgbaFromElevation(curAlt, minHeat, maxHeat);
                 GLES20FixedPipeline.glPushMatrix();
                 GLES20FixedPipeline.glTranslatef(barSize[0] + _padding[LEFT],
-                        textY + spacing, 0.0f);
+                        textY, 0.0f);
                 glText.drawSplitString(text, keyColor[0], keyColor[1],
                         keyColor[2], 1f);
                 GLES20FixedPipeline.glPopMatrix();
@@ -112,15 +113,13 @@ class GLIsoKeyWidget extends GLWidget2 {
 
         // Draw top labels (mode and extra if specified)
         String[] topLabels = IsoKeyWidget.getTopLabels();
-        float topLabelY = (float) Math.ceil(barSize[1] / 1.125) + spacing;
-        topLabelY = Math.max(topLabelY, barSize[1]);
+        float topLabelY = barSize[1] - spacing + descent;
         GLES20FixedPipeline.glPushMatrix();
-        GLES20FixedPipeline.glTranslatef(0f, topLabelY + _padding[BOTTOM], 0f);
+        GLES20FixedPipeline.glTranslatef(0f, topLabelY, 0f);
         if (!FileSystemUtils.isEmpty(topLabels[1])) {
-            GLES20FixedPipeline.glTranslatef(0f, spacing, 0f);
             glText.drawSplitString(topLabels[1], 1f, 1f, 1f, 1f);
+            GLES20FixedPipeline.glTranslatef(0f, spacing, 0f);
         }
-        GLES20FixedPipeline.glTranslatef(0f, spacing, 0f);
         glText.drawSplitString(topLabels[0], 1f, 1f, 1f, 1f);
         GLES20FixedPipeline.glPopMatrix();
 

@@ -242,20 +242,6 @@ public class RubberSheetMapOverlay extends AbstractMapOverlay2 implements
         }
 
         @Override
-        public boolean onCloseList(HierarchyListAdapter om, boolean fc) {
-            return false;
-        }
-
-        @Override
-        public void onListVisible(HierarchyListAdapter om, boolean visible) {
-        }
-
-        @Override
-        public boolean onBackButton(HierarchyListAdapter om, boolean devBack) {
-            return false;
-        }
-
-        @Override
         public void refreshImpl() {
             List<HierarchyListItem> filtered = new ArrayList<>();
             boolean vizSupported = false;

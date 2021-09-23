@@ -1,13 +1,14 @@
 #define __STDC_LIMIT_MACROS
 #include "resolverqueue.h"
 #include "internalutils.h"
-#include <Lock.h>
+#include "commothread.h"
 
 #include <sstream>
 #include <limits.h>
 
 using namespace atakmap::commoncommo;
 using namespace atakmap::commoncommo::impl;
+using namespace atakmap::commoncommo::impl::thread;
 
 
 /*************************************************************************/
@@ -51,18 +52,16 @@ ResolverQueue::~ResolverQueue()
 ResolverQueue::Request *ResolverQueue::queueForResolution(
                                 const std::string &name)
 {
-    PGSC::Thread::LockPtr rLock(NULL, NULL);
-    Lock_create(rLock, requestsMutex);
+    Lock rLock(requestsMutex);
     RequestImpl *r = new RequestImpl(name);
     requests.insert(r);
-    requestsMonitor.broadcast(*rLock);
+    requestsMonitor.broadcast(rLock);
     return r;
 }
 
 void ResolverQueue::cancelResolution(ResolverQueue::Request *request)
 {
-    PGSC::Thread::LockPtr rLock(NULL, NULL);
-    Lock_create(rLock, requestsMutex);
+    Lock rLock(requestsMutex);
     RequestImpl *rimpl = (RequestImpl *)request;
     if (requests.erase(rimpl) == 1)
         delete rimpl;
@@ -91,17 +90,15 @@ void ResolverQueue::threadStopSignal(size_t threadNum)
     switch (threadNum) {
     case DISPATCH_THREADID:
         {
-            PGSC::Thread::LockPtr dLock(NULL, NULL);
-            Lock_create(dLock, dispatchMutex);
-            dispatchMonitor.broadcast(*dLock);
+            Lock dLock(dispatchMutex);
+            dispatchMonitor.broadcast(dLock);
             break;
         }
         break;
     case RESOLUTION_THREADID:
         {
-            PGSC::Thread::LockPtr rLock(NULL, NULL);
-            Lock_create(rLock, requestsMutex);
-            requestsMonitor.broadcast(*rLock);
+            Lock rLock(requestsMutex);
+            requestsMonitor.broadcast(rLock);
             break;
         }
     }
@@ -119,11 +116,10 @@ void ResolverQueue::dispatchThreadProcess()
         std::string host;
         bool isErr;
         {
-            PGSC::Thread::LockPtr dLock(NULL, NULL);
-            Lock_create(dLock, dispatchMutex);
+            Lock dLock(dispatchMutex);
             
             if (errQueue.empty() && doneQueue.empty()) {
-                dispatchMonitor.wait(*dLock);
+                dispatchMonitor.wait(dLock);
                 continue;
             }
 
@@ -168,8 +164,7 @@ void ResolverQueue::resolutionThreadProcess()
         // Get context with lowest retry time that is past "now"
         RequestImpl *resolveMeRequest = NULL;
         {
-            PGSC::Thread::LockPtr lock(NULL, NULL);
-            Lock_create(lock, requestsMutex);
+            Lock lock(requestsMutex);
             int64_t wakeMillis;
             bool wakeTimeValid = false;
 
@@ -213,9 +208,9 @@ void ResolverQueue::resolutionThreadProcess()
                                 "Resolver (%p) No hostname resolution requests - sleeping",
                                 this);
                 if (wakeTimeValid)
-                    requestsMonitor.wait(*lock, wakeMillis);
+                    requestsMonitor.wait(lock, wakeMillis);
                 else
-                    requestsMonitor.wait(*lock);
+                    requestsMonitor.wait(lock);
 
                 // Go back to the top to check if thread should die; else
                 // recompute everything
@@ -235,8 +230,7 @@ void ResolverQueue::resolutionThreadProcess()
         // If so, let our listener know the result or retry later if failed
         // If not, toss it
         {
-            PGSC::Thread::LockPtr lock(NULL, NULL);
-            Lock_create(lock, requestsMutex);
+            Lock lock(requestsMutex);
 
             RequestSet::iterator iter = requests.find(resolveMeRequest);
             if (iter != requests.end()) {
@@ -246,11 +240,10 @@ void ResolverQueue::resolutionThreadProcess()
                     resolveMeRequest->result = addr;
                     {
                         // Move to done list and wake that guy up
-                        PGSC::Thread::LockPtr dLock(NULL, NULL);
-                        Lock_create(dLock, dispatchMutex);
+                        Lock dLock(dispatchMutex);
                         doneQueue.push_front(resolveMeRequest);
                         requests.erase(iter);
-                        dispatchMonitor.broadcast(*dLock);
+                        dispatchMonitor.broadcast(dLock);
                     }
                 } else {
                     InternalUtils::logprintf(logger, CommoLogger::LEVEL_INFO,
@@ -265,10 +258,9 @@ void ResolverQueue::resolutionThreadProcess()
                     // Copy over to error list - note that we retain
                     // ownership in requests list
                     {
-                        PGSC::Thread::LockPtr dLock(NULL, NULL);
-                        Lock_create(dLock, dispatchMutex);
+                        Lock dLock(dispatchMutex);
                         errQueue.push_front(resolveMeRequest);
-                        dispatchMonitor.broadcast(*dLock);
+                        dispatchMonitor.broadcast(dLock);
                     }
                 }
 

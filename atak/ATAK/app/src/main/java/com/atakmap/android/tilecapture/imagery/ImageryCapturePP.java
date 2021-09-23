@@ -169,7 +169,7 @@ public class ImageryCapturePP extends CapturePP {
 
     /**
      * Get the full map range
-     * @return Full map range in feet/yards
+     * @return Full map range in user-preferred display units
      */
     public double getMapRange() {
         return _mapRange;

@@ -173,8 +173,7 @@ public final class TileProxy implements TileClient {
     @Override
     public byte[] getTileData(int zoom, int x, int y, Throwable[] error) {
         final byte[] retval = cache.value.getTileData(zoom, x, y, error);
-        if(retval == null)
-            downloadTile(zoom, x, y);
+        downloadTile(zoom, x, y);
         return retval;
     }
 

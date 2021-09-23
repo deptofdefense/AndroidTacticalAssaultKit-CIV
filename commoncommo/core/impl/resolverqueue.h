@@ -9,9 +9,7 @@
 #include "commotime.h"
 #include "netsocket.h"
 #include "threadedhandler.h"
-
-#include <Mutex.h>
-#include <Cond.h>
+#include "commothread.h"
 
 #include <set>
 #include <deque>
@@ -75,14 +73,14 @@ private:
     const int nTries;
 
     RequestSet requests;
-    PGSC::Thread::Mutex requestsMutex;
-    PGSC::Thread::CondVar requestsMonitor;
+    thread::Mutex requestsMutex;
+    thread::CondVar requestsMonitor;
 
     RequestQueue errQueue;
     RequestQueue doneQueue;
 
-    PGSC::Thread::Mutex dispatchMutex;
-    PGSC::Thread::CondVar dispatchMonitor;
+    thread::Mutex dispatchMutex;
+    thread::CondVar dispatchMonitor;
 
 
     COMMO_DISALLOW_COPY(ResolverQueue);

@@ -2,7 +2,6 @@
 package com.atakmap.android.features;
 
 import android.graphics.Color;
-import android.graphics.Rect;
 import android.support.util.LruCache;
 import android.util.Pair;
 
@@ -17,6 +16,8 @@ import com.atakmap.android.maps.MetaShape;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.Polyline;
 import com.atakmap.android.maps.Shape;
+import com.atakmap.android.maps.hittest.DeepHitTestControlQuery;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.assets.Icon;
@@ -25,7 +26,11 @@ import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
-import com.atakmap.map.AtakMapView;
+import com.atakmap.map.MapControl;
+import com.atakmap.map.MapRenderer2;
+import com.atakmap.map.hittest.ClassResultFilter;
+import com.atakmap.map.hittest.HitTestControl;
+import com.atakmap.map.hittest.HitTestResult;
 import com.atakmap.map.layer.Layer2;
 import com.atakmap.map.layer.feature.Adapters;
 import com.atakmap.map.layer.feature.AttributeSet;
@@ -56,6 +61,8 @@ import com.atakmap.map.layer.feature.style.BasicPointStyle;
 import com.atakmap.map.layer.feature.style.BasicStrokeStyle;
 import com.atakmap.map.layer.feature.style.CompositeStyle;
 import com.atakmap.map.layer.feature.style.IconPointStyle;
+import com.atakmap.map.opengl.GLMapView;
+import com.atakmap.map.hittest.HitTestQueryParameters;
 import com.atakmap.spatial.file.MvtSpatialDb;
 import com.atakmap.util.Collections2;
 import com.atakmap.util.Visitor;
@@ -76,7 +83,8 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-public class FeatureDataStoreDeepMapItemQuery implements DeepMapItemQuery {
+public class FeatureDataStoreDeepMapItemQuery implements DeepMapItemQuery,
+        DeepHitTestControlQuery {
 
     private final static String TAG = "FeatureDataStoreDeepMapItemQuery";
 
@@ -310,9 +318,7 @@ public class FeatureDataStoreDeepMapItemQuery implements DeepMapItemQuery {
                     new DeferredFeatureMetadata(this.spatialDb, id),
                     uid);
             m.setPoint(gpm);
-            m.setClickable(true);
 
-            m.setMarkerHitBounds(new Rect(-32, -32, 32, 32));
             if (title != null) {
                 m.setTitle(title);
 
@@ -499,7 +505,7 @@ public class FeatureDataStoreDeepMapItemQuery implements DeepMapItemQuery {
         } else if (geom instanceof GeometryCollection) {
             final GeometryCollection c = (GeometryCollection) geom;
 
-            item = new MetaShape(
+            MetaShape shape = new MetaShape(
                     MapItem.createSerialId(),
                     new DeferredFeatureMetadata(this.spatialDb, id),
                     uid) {
@@ -524,9 +530,10 @@ public class FeatureDataStoreDeepMapItemQuery implements DeepMapItemQuery {
                             this.getPoints());
                 }
             };
-            if (title != null)
-                item.setTitle(title);
-            item.setMetaBoolean("collection", true);
+            item = shape;
+            shape.setTitle(title);
+            shape.setMetaBoolean("collection", true);
+            applyStyle(shape, style);
         } else {
             Log.w("FeatureDataStoreDeepMapItemsQuery",
                     "Cannot create MapItem for Geometry Type: "
@@ -537,12 +544,12 @@ public class FeatureDataStoreDeepMapItemQuery implements DeepMapItemQuery {
         item.setMetaLong("fid", id);
         item.setType(type);
         if (item instanceof PointMapItem) {
-            item.setMetaString("menu", "menus/feature_point_menu.xml");
+            item.setRadialMenu("menus/feature_point_menu.xml");
             item.setMetaString("menu_point", ((PointMapItem) item)
                     .getPoint()
                     .toString());
         } else {
-            item.setMetaString("menu", "menus/feature_menu.xml");
+            item.setRadialMenu("menus/feature_menu.xml");
         }
         item.setTitle(title);
         item.setZOrder(item.getZOrder() + 1.0d);
@@ -678,13 +685,72 @@ public class FeatureDataStoreDeepMapItemQuery implements DeepMapItemQuery {
     }
 
     @Override
+    public SortedSet<MapItem> deepHitTest(MapView mapView,
+            HitTestQueryParameters params,
+            Map<Layer2, Collection<HitTestControl>> controls) {
+
+        Collection<HitTestControl> ctrls = controls.get(this.layer);
+        if (ctrls == null)
+            return null;
+
+        HitTestVisitor2<HitTestControl> visitor = new HitTestVisitor2<>(
+                mapView, params, HitTestControl.class);
+
+        for (HitTestControl c : ctrls)
+            visitor.visit(c);
+
+        if (visitor.error != null) {
+            if (visitor.error instanceof RuntimeException)
+                throw (RuntimeException) visitor.error;
+            else
+                throw new RuntimeException(visitor.error);
+        }
+        return visitor.result;
+    }
+
+    @Override
     public MapItem deepHitTest(int xpos, int ypos, GeoPoint point,
             MapView view) {
-        SortedSet<MapItem> result = this.deepHitTestItemsImpl(xpos, ypos,
-                point, view, 1);
-        if (result.isEmpty())
-            return null;
-        return result.first();
+        SortedSet<MapItem> items = deepHitTestItemsImpl(xpos, ypos, point, view,
+                1);
+        return items != null ? items.first() : null;
+    }
+
+    @Override
+    public SortedSet<MapItem> deepHitTestItems(int xpos, int ypos,
+            GeoPoint point, MapView view) {
+        return deepHitTestItemsImpl(xpos, ypos, point, view,
+                MapTouchController.MAXITEMS);
+    }
+
+    /**
+     * @deprecated Use {@link #deepHitTest(MapView, HitTestQueryParameters)}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
+    protected SortedSet<MapItem> deepHitTestItemsImpl(int xpos, int ypos,
+            GeoPoint point, MapView view, int limit) {
+
+        HitTestQueryParameters params = new HitTestQueryParameters(
+                view.getGLSurface(), xpos, ypos,
+                MapRenderer2.DisplayOrigin.UpperLeft);
+        params.geo.set(point);
+        params.limit = limit;
+
+        HitTestVisitor2<FeatureHitTestControl> visitor = new HitTestVisitor2<>(
+                view, params, FeatureHitTestControl.class);
+        boolean visited = view.getGLSurface().getGLMapView().visitControl(
+                this.layer, visitor, FeatureHitTestControl.class);
+
+        if (!visited)
+            return new TreeSet<>(MapItem.ZORDER_HITTEST_COMPARATOR);
+        if (visitor.error != null) {
+            if (visitor.error instanceof RuntimeException)
+                throw (RuntimeException) visitor.error;
+            else
+                throw new RuntimeException(visitor.error);
+        }
+        return visitor.result;
     }
 
     private long getFeatureId(Map<String, String> metadata) {
@@ -718,22 +784,22 @@ public class FeatureDataStoreDeepMapItemQuery implements DeepMapItemQuery {
         return "spatialdb::" + spatialDb.getUri() + "::" + featureId;
     }
 
-    private static void applyStyle(Polyline poly, Style style) {
+    private static void applyStyle(Shape shape, Style style) {
         if (style == null) {
-            poly.setStrokeColor(Color.WHITE);
-            poly.setFillColor(0);
+            shape.setStrokeColor(Color.WHITE);
+            shape.setFillColor(0);
         } else if (style instanceof BasicStrokeStyle) {
-            poly.setStrokeColor(((BasicStrokeStyle) style).getColor());
-            poly.setStrokeWeight(((BasicStrokeStyle) style).getStrokeWidth());
+            shape.setStrokeColor(((BasicStrokeStyle) style).getColor());
+            shape.setStrokeWeight(((BasicStrokeStyle) style).getStrokeWidth());
 
-            poly.addStyleBits(Polyline.STYLE_OUTLINE_STROKE_MASK);
+            shape.addStyleBits(Polyline.STYLE_OUTLINE_STROKE_MASK);
         } else if (style instanceof BasicFillStyle) {
-            poly.setFillColor(((BasicFillStyle) style).getColor());
+            shape.setFillColor(((BasicFillStyle) style).getColor());
 
-            poly.addStyleBits(Shape.STYLE_FILLED_MASK);
+            shape.addStyleBits(Shape.STYLE_FILLED_MASK);
         } else if (style instanceof CompositeStyle) {
             for (int i = 0; i < ((CompositeStyle) style).getNumStyles(); i++)
-                applyStyle(poly, ((CompositeStyle) style).getStyle(i));
+                applyStyle(shape, ((CompositeStyle) style).getStyle(i));
         }
     }
 
@@ -799,65 +865,58 @@ public class FeatureDataStoreDeepMapItemQuery implements DeepMapItemQuery {
         }
     }
 
-    // RC/AML/2015-01-20: This function will never be used here.
-    @Override
-    public SortedSet<MapItem> deepHitTestItems(int xpos, int ypos,
-            GeoPoint point, MapView view) {
-        return this.deepHitTestItemsImpl(xpos, ypos, point, view,
-                MapTouchController.MAXITEMS);
-    }
+    private class HitTestVisitor2<T extends MapControl> implements Visitor<T> {
 
-    protected SortedSet<MapItem> deepHitTestItemsImpl(int xpos, int ypos,
-            GeoPoint point, MapView view, int limit) {
-
-        final HitTestVisitor2 visitor = new HitTestVisitor2(xpos, ypos, point,
-                view, limit);
-        final boolean visited = view.getGLSurface().getGLMapView()
-                .visitControl(this.layer, visitor, FeatureHitTestControl.class);
-        if (!visited)
-            return new TreeSet<>(MapItem.ZORDER_HITTEST_COMPARATOR);
-        if (visitor.error != null) {
-            if (visitor.error instanceof RuntimeException)
-                throw (RuntimeException) visitor.error;
-            else
-                throw new RuntimeException(visitor.error);
-        }
-        return visitor.result;
-    }
-
-    private class HitTestVisitor2 implements Visitor<FeatureHitTestControl> {
-        private final MapView view;
-        private final int xpos;
-        private final int ypos;
-        private final GeoPoint point;
-        private final int limit;
+        private final MapView mapView;
+        private final HitTestQueryParameters params;
+        private final Class<T> clazz;
 
         SortedSet<MapItem> result;
         Throwable error;
 
-        public HitTestVisitor2(int xpos, int ypos, GeoPoint point,
-                MapView view, int limit) {
-            this.view = view;
-            this.xpos = xpos;
-            this.ypos = ypos;
-            this.point = point;
-            this.limit = limit;
-
+        public HitTestVisitor2(MapView mapView, HitTestQueryParameters params,
+                Class<T> clazz) {
+            this.mapView = mapView;
+            this.params = params;
+            this.clazz = clazz;
             this.result = null;
         }
 
         @Override
-        public void visit(FeatureHitTestControl hittest) {
+        public void visit(T c) {
             try {
-                final double resolution = view.getMapResolution();
-                final float radiusPx = 32 * AtakMapView.DENSITY;
-                Set<Long> fids = new HashSet<>();
-                hittest.hitTest(fids, xpos, ypos, point,
-                        resolution, radiusPx, limit);
-                this.result = new TreeSet<>(
-                        MapItem.ZORDER_HITTEST_COMPARATOR);
-                if (fids.isEmpty())
+
+                // Must accept map item results
+                if (!this.params.acceptsResult(MapItem.class))
                     return;
+
+                Set<Long> fids = new HashSet<>();
+                GLMapView glmv = mapView.getGLSurface().getGLMapView();
+
+                HitTestQueryParameters params = new HitTestQueryParameters(
+                        this.params);
+                params.resultFilter = new ClassResultFilter(Long.class);
+
+                // Only hit test through the template class
+                if (c instanceof HitTestControl
+                        && clazz.equals(HitTestControl.class)) {
+                    List<HitTestResult> results = new ArrayList<>();
+                    ((HitTestControl) c).hitTest(glmv, params, results);
+                    for (HitTestResult result : results) {
+                        if (result.subject instanceof Long)
+                            fids.add((Long) result.subject);
+                    }
+                } else if (c instanceof FeatureHitTestControl
+                        && clazz.equals(FeatureHitTestControl.class)) {
+                    ((FeatureHitTestControl) c).hitTest(fids, params.point.x,
+                            params.point.y, params.geo,
+                            mapView.getMapResolution(), params.size,
+                            params.limit);
+                }
+
+                if (this.result == null)
+                    this.result = new TreeSet<>(
+                            MapItem.ZORDER_HITTEST_COMPARATOR);
 
                 // XXX - need to invalidate on datastore changed as version may
                 //       have been bumped
@@ -881,9 +940,7 @@ public class FeatureDataStoreDeepMapItemQuery implements DeepMapItemQuery {
                     Collection<MapItem> results = new LinkedList<>();
                     deepFindItemsImpl(results, queryBuilder);
                     for (MapItem item : results) {
-                        item.setMetaString("menu_point", point.toString());
-                        if (item instanceof Shape)
-                            ((Shape) item).setTouchPoint(point);
+                        item.setClickPoint(params.geo);
                         this.result.add(item);
                     }
                 }

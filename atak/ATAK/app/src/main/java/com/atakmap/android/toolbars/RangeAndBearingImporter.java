@@ -19,7 +19,6 @@ import com.atakmap.coremap.cot.event.CotDetail;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.comms.CommsMapComponent.ImportResult;
@@ -97,9 +96,8 @@ public class RangeAndBearingImporter extends MapItemImporter {
         String title = CotUtils.getCallsign(event);
         if (FileSystemUtils.isEmpty(title))
             title = "R&B " + getInstanceNum();
-        if (arrow != null)
-            arrow.setInitializing(true);
 
+        // Find the anchor and range markers
         PointMapItem pt1 = null, pt2 = null;
         boolean anchorPinned = false, radiusPinned = false;
         if (anchorUID != null) {
@@ -112,10 +110,6 @@ public class RangeAndBearingImporter extends MapItemImporter {
                     anchorPinned = true;
                 }
             }
-        } else {
-            if (arrow != null)
-                pt1 = arrow.getPoint1Item();
-            pt1 = setPoint(pt1, GeoPointMetaData.wrap(anchor));
         }
         if (rangeUID != null) {
             MapItem item = findItem(rangeUID);
@@ -127,27 +121,24 @@ public class RangeAndBearingImporter extends MapItemImporter {
                     radiusPinned = true;
                 }
             }
-        } else {
-            GeoPoint rPoint = GeoCalculations.pointAtDistance(anchor, b, r);
-            if (!Double.isNaN(i))
-                rPoint = DistanceCalculations
-                        .computeDestinationPoint(anchor, b, r, i);
-            if (arrow != null)
-                pt2 = arrow.getPoint2Item();
-            pt2 = setPoint(pt2, GeoPointMetaData.wrap(rPoint));
         }
 
         if (arrow != null)
-            arrow.setInitializing(false);
+            arrow.setInitializing(true);
 
+        // Fallback to generic endpoints if needed
         if (pt1 == null) {
-            Log.d(TAG, "the marker is missing for the anchor point");
-            return ImportResult.DEFERRED;
+            if (arrow != null)
+                pt1 = arrow.getPoint1Item();
+            pt1 = setPoint(pt1, GeoPointMetaData.wrap(anchor));
         }
-
         if (pt2 == null) {
-            Log.d(TAG, "the marker is missing for the range point");
-            return ImportResult.DEFERRED;
+            GeoPoint rPoint = GeoCalculations.pointAtDistance(anchor, b, r);
+            if (!Double.isNaN(i))
+                rPoint = GeoCalculations.pointAtDistance(anchor, b, r, i);
+            if (arrow != null)
+                pt2 = arrow.getPoint2Item();
+            pt2 = setPoint(pt2, GeoPointMetaData.wrap(rPoint));
         }
 
         String uid = event.getUID();
@@ -157,21 +148,22 @@ public class RangeAndBearingImporter extends MapItemImporter {
         if (arrow == null) {
             arrow = new RangeAndBearingMapItem(pt1, pt2, _mapView,
                     title, uid, rUnits, bUnits, nRef, c, false);
+            arrow.setInitializing(true);
             arrow.removeMetaData("nevercot");
         } else {
+            arrow.setPoint1(pt1);
+            arrow.setPoint2(pt2);
             arrow.setTitle(title);
             arrow.setMetaString("callsign", title);
             arrow.setStrokeColor(c);
         }
-        arrow.setInitializing(true);
 
         if (anchorPinned)
             arrow.setMetaBoolean("anchorAvailable", true);
         if (radiusPinned)
             arrow.setMetaBoolean("radiusAvailable", true);
-        arrow.setMetaBoolean("distanceLockAvailable", true);
-        if (anchorPinned && radiusPinned)
-            arrow.removeMetaData("distanceLockAvailable");
+        arrow.toggleMetaData("distanceLockAvailable",
+                !anchorPinned || !radiusPinned);
 
         if (pt1 instanceof RangeAndBearingEndpoint) {
             RangeAndBearingEndpoint rabe = (RangeAndBearingEndpoint) pt1;
@@ -202,6 +194,12 @@ public class RangeAndBearingImporter extends MapItemImporter {
         // Persist to the statesaver if needed
         persist(arrow, extras);
 
+        // Check if we should attempt to re-import this later in case one of
+        // the defined end markers couldn't be found
+        if (anchorUID != null && !anchorPinned
+                || rangeUID != null && !radiusPinned)
+            return ImportResult.DEFERRED;
+
         return ImportResult.SUCCESS;
     }
 
@@ -220,7 +218,6 @@ public class RangeAndBearingImporter extends MapItemImporter {
         } else {
             pmi = new RangeAndBearingEndpoint(gp, UUID
                     .randomUUID().toString());
-            pmi.setClickable(true);
             pmi.setMetaString("menu", "menus/rab_endpoint_menu.xml");
             addToGroup(pmi);
         }

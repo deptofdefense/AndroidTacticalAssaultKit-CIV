@@ -116,7 +116,7 @@ public class BufferSeekBar extends View implements View.OnTouchListener {
             bufMin = bufMax = -1;
         }
         curFramePct = Math
-                .max((float) (curTime - rangeMin) / (rangeMax - rangeMin), 0);
+                .max((curTime - rangeMin) / (rangeMax - rangeMin), 0);
 
         invalidate();
     }
@@ -124,7 +124,7 @@ public class BufferSeekBar extends View implements View.OnTouchListener {
     public void setCurrent(int currentTime) {
         curTime = currentTime;
         curFramePct = Math
-                .max((float) (curTime - rangeMin) / (rangeMax - rangeMin), 0);
+                .max((curTime - rangeMin) / (rangeMax - rangeMin), 0);
         invalidate();
     }
 

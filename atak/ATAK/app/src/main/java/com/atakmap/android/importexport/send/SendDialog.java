@@ -4,6 +4,7 @@ package com.atakmap.android.importexport.send;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.drawable.Drawable;
+import android.widget.Toast;
 
 import com.atakmap.android.data.URIContentManager;
 import com.atakmap.android.data.URIContentSender;
@@ -114,23 +115,29 @@ public class SendDialog {
         d.setOnClickListener(new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                if (which >= 0 && which < senders.size())
-                    send(uri, senders.get(which));
+                if (which >= 0 && which < senders.size()) {
+                    boolean success = send(uri, senders.get(which));
+                    if (!success)
+                        Toast.makeText(_context, R.string.failed_to_send_file,
+                                Toast.LENGTH_LONG).show();
+                }
             }
         });
         d.show(_context.getString(R.string.send) + " " + name, null, true);
     }
 
-    private void send(String uri, URIContentSender s) {
+    private boolean send(String uri, URIContentSender s) {
 
         Log.d(TAG, "sending: " + uri + " " + s);
+
         if (s == null)
-            return;
+            return false;
+
         if (_manifest != null && s instanceof MissionPackageSender)
-            ((MissionPackageSender) s).sendMissionPackage(
+            return ((MissionPackageSender) s).sendMissionPackage(
                     _manifest, _mpCallback, _callback);
         else
-            s.sendContent(uri, _callback);
+            return s.sendContent(uri, _callback);
     }
 
     public static class Builder {

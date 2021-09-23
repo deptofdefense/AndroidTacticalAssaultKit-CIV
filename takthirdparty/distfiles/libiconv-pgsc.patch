@@ -75,6 +75,65 @@ diff -U 10 -r libiconv-pristine/configure libiconv/configure
  	ac_prog=`$ECHO $ac_prog| $SED "s%$re_direlt%/%"`
        done
        test -z "$LD" && LD=$ac_prog
+@@ -7405,20 +7411,30 @@
+         lt_cv_to_host_file_cmd=func_convert_file_msys_to_cygwin
+         ;;
+       *-*-cygwin* )
+         lt_cv_to_host_file_cmd=func_convert_file_noop
+         ;;
+       * ) # otherwise, assume *nix
+         lt_cv_to_host_file_cmd=func_convert_file_nix_to_cygwin
+         ;;
+     esac
+     ;;
++  *-*-android* )
++    case $build in
++      *-*-cygwin* )
++        lt_cv_to_host_file_cmd=func_convert_file_cygwin_to_w32
++        ;;
++      * ) # otherwise, assume *nix
++        lt_cv_to_host_file_cmd=func_convert_file_nix_to_cygwin
++        ;;
++    esac
++    ;;
+   * ) # unhandled hosts (and "normal" native builds)
+     lt_cv_to_host_file_cmd=func_convert_file_noop
+     ;;
+ esac
+ 
+ fi
+ 
+ to_host_file_cmd=$lt_cv_to_host_file_cmd
+ { $as_echo "$as_me:${as_lineno-$LINENO}: result: $lt_cv_to_host_file_cmd" >&5
+ $as_echo "$lt_cv_to_host_file_cmd" >&6; }
+@@ -7435,20 +7451,27 @@
+   #assume ordinary cross tools, or native build.
+ lt_cv_to_tool_file_cmd=func_convert_file_noop
+ case $host in
+   *-*-mingw* )
+     case $build in
+       *-*-mingw* ) # actually msys
+         lt_cv_to_tool_file_cmd=func_convert_file_msys_to_w32
+         ;;
+     esac
+     ;;
++  *-*-android* )
++    case $build in
++      *-*-cygwin* ) # actually msys
++        lt_cv_to_tool_file_cmd=func_convert_file_cygwin_to_w32
++        ;;
++    esac
++    ;;
+ esac
+ 
+ fi
+ 
+ to_tool_file_cmd=$lt_cv_to_tool_file_cmd
+ { $as_echo "$as_me:${as_lineno-$LINENO}: result: $lt_cv_to_tool_file_cmd" >&5
+ $as_echo "$lt_cv_to_tool_file_cmd" >&6; }
+ 
+ 
+ 
 diff -U 10 -r libiconv-pristine/libcharset/configure libiconv/libcharset/configure
 --- libiconv-pristine/libcharset/configure	2017-01-01 18:03:38.000000000 -0500
 +++ libiconv/libcharset/configure	2018-05-21 23:34:40.615000000 -0400
@@ -115,6 +174,34 @@ diff -U 10 -r libiconv-pristine/libcharset/configure libiconv/libcharset/configu
  	ac_prog=`$ECHO $ac_prog| $SED "s%$re_direlt%/%"`
        done
        test -z "$LD" && LD=$ac_prog
+@@ -4526,20 +4529,27 @@
+   #assume ordinary cross tools, or native build.
+ lt_cv_to_tool_file_cmd=func_convert_file_noop
+ case $host in
+   *-*-mingw* )
+     case $build in
+       *-*-mingw* ) # actually msys
+         lt_cv_to_tool_file_cmd=func_convert_file_msys_to_w32
+         ;;
+     esac
+     ;;
++  *-*-android* )
++    case $build in
++      *-*-cygwin* ) # actually msys
++        lt_cv_to_tool_file_cmd=func_convert_file_cygwin_to_w32
++        ;;
++    esac
++    ;;
+ esac
+ 
+ fi
+ 
+ to_tool_file_cmd=$lt_cv_to_tool_file_cmd
+ { $as_echo "$as_me:${as_lineno-$LINENO}: result: $lt_cv_to_tool_file_cmd" >&5
+ $as_echo "$lt_cv_to_tool_file_cmd" >&6; }
+ 
+ 
+ 
 diff -U 10 -r libiconv-pristine/preload/configure libiconv/preload/configure
 --- libiconv-pristine/preload/configure	2017-01-01 18:03:35.000000000 -0500
 +++ libiconv/preload/configure	2018-05-21 23:41:55.838000000 -0400

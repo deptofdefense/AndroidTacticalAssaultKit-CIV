@@ -14,7 +14,6 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapTouchController;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.assets.MapAssets;
-import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
 public class MenuLayoutWidget extends MenuLayoutBase implements
@@ -39,17 +38,6 @@ public class MenuLayoutWidget extends MenuLayoutBase implements
         public void dispatchAction(MapAction mapAction, MapItem mapItem) {
             mapAction.performAction(_mapView, mapItem);
         }
-    }
-
-    /**
-     * @deprecated access will be removed as soon as the espresso test harness is migrated over.
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = false, removeAt = "4.4")
-    public MenuLayoutWidget(final android.content.Context ignored,
-            final MapView mapView, final MapAssets assets,
-            final MenuMapAdapter adapter) {
-        this(mapView, assets, adapter);
     }
 
     MenuLayoutWidget(final MapView mapView,

@@ -247,8 +247,10 @@ public class NetworkConnectionPreferenceFragment
                             NetConnectString ncs = NetConnectString
                                     .fromString(connectString);
                             server = ncs.getHost();
-                            AtakCertificateDatabase.saveCertificateForServer(
-                                    type, server, contents);
+                            AtakCertificateDatabase
+                                    .saveCertificateForServerAndPort(
+                                            type, server, ncs.getPort(),
+                                            contents);
                         }
 
                         Log.d(TAG,

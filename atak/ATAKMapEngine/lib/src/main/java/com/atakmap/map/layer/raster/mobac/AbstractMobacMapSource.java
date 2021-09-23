@@ -12,7 +12,7 @@ import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.map.projection.WebMercatorProjection;
 import com.atakmap.net.AtakAuthenticationHandlerHTTP;
 
-public abstract class AbstractMobacMapSource implements MobacMapSource {
+public abstract class AbstractMobacMapSource implements MobacMapSource2 {
 
     protected final String name;
     protected final int srid;
@@ -20,16 +20,23 @@ public abstract class AbstractMobacMapSource implements MobacMapSource {
     protected final int minZoom;
     protected final int maxZoom;
     protected final String tileType;
+    protected final long refreshInterval;
     protected Config config = new Config();
 
     protected AbstractMobacMapSource(String name, int srid, int tileSize, int minZoom, int maxZoom,
             String tileType) {
+        this(name, srid, tileSize, minZoom, maxZoom, tileType, 0L);
+    }
+
+    protected AbstractMobacMapSource(String name, int srid, int tileSize, int minZoom, int maxZoom,
+        String tileType, long refreshInterval) {
         this.srid = srid;
         this.name = name;
         this.tileSize = tileSize;
         this.minZoom = minZoom;
         this.maxZoom = maxZoom;
         this.tileType = tileType;
+        this.refreshInterval = refreshInterval;
     }
 
     @Override
@@ -120,5 +127,15 @@ public abstract class AbstractMobacMapSource implements MobacMapSource {
     @Override
     public void setConfig(Config c) {
         config = c;
+    }
+
+    @Override
+    public long getRefreshInterval() {
+        return refreshInterval;
+    }
+
+    @Override
+    public boolean invalidateCacheOnInit() {
+        return false;
     }
 }

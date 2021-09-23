@@ -1,8 +1,11 @@
 
 package com.atakmap.android.maps;
 
+import com.atakmap.android.maps.hittest.DeepHitTestQuery;
+import com.atakmap.android.maps.hittest.RootHitTestQuery;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.map.hittest.HitTestQueryParameters;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -19,7 +22,8 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-public final class RootMapGroup extends DefaultMapGroup {
+public final class RootMapGroup extends DefaultMapGroup
+        implements DeepHitTestQuery {
 
     private final static boolean DEBUGGING = false;
 
@@ -27,12 +31,14 @@ public final class RootMapGroup extends DefaultMapGroup {
 
     private final Map<DeepMapItemQuery, DeepQuerySpec> deepQueryFunctions;
     private final FastUIDLookup uidIndex;
+    private final RootHitTestQuery hitTester;
 
     RootMapGroup() {
         super("Root");
 
         this.deepQueryFunctions = new IdentityHashMap<>();
         this.uidIndex = new FastUIDLookup();
+        this.hitTester = new RootHitTestQuery();
     }
 
     FastUIDLookup getUidIndex() {
@@ -120,15 +126,77 @@ public final class RootMapGroup extends DefaultMapGroup {
     }
 
     @Override
-    public synchronized final MapItem deepHitTest(int xpos, int ypos,
-            GeoPoint point, MapView view) {
+    public SortedSet<MapItem> deepHitTest(MapView mapView,
+            HitTestQueryParameters params) {
+        final SortedSet<MapItem> candidates = new TreeSet<>(
+                MapItem.ZORDER_HITTEST_COMPARATOR);
+
+        // Only map item results supported
+        if (!params.acceptsResult(MapItem.class))
+            return null;
+
+        // Separate hit test queries from legacy map item queries
+        List<DeepMapItemQuery> legacyQueries = new ArrayList<>();
+        List<DeepHitTestQuery> hitQueries = new ArrayList<>();
+        for (DeepMapItemQuery query : this.deepQueryFunctions.keySet()) {
+            if (query instanceof DeepHitTestQuery)
+                hitQueries.add((DeepHitTestQuery) query);
+            else
+                legacyQueries.add(query);
+        }
+
+        SortedSet<MapItem> result;
+
+        // GL-based hit-testing
+        result = hitTester.deepHitTest(mapView, params, hitQueries);
+        if (result != null)
+            candidates.addAll(result);
+
+        int xpos = (int) params.point.x;
+        int ypos = (int) params.point.y;
+
+        // Geodetic hit-testing (slow, deprecated)
+        if (!params.hitLimit(candidates)) {
+            result = this.hitTestItems(xpos, ypos, params.geo, mapView);
+            if (result != null)
+                candidates.addAll(result);
+        }
+
+        // Run legacy hit test queries
+        for (DeepMapItemQuery query : legacyQueries) {
+            if (params.hitLimit(candidates))
+                break;
+            try {
+                result = query.deepHitTestItems(xpos, ypos, params.geo,
+                        mapView);
+                if (result != null)
+                    candidates.addAll(result);
+            } catch (RuntimeException e) {
+                Log.e(TAG,
+                        query.getClass().getSimpleName() + ": " + e.getClass());
+                if (DEBUGGING)
+                    throw e;
+            }
+        }
+
+        // Return results
+        return candidates.isEmpty() ? null : candidates;
+    }
+
+    @Override
+    public synchronized final MapItem deepHitTest(final int xpos,
+            final int ypos, final GeoPoint point, final MapView view) {
         SortedSet<MapItem> candidates = new TreeSet<>(
                 MapItem.ZORDER_HITTEST_COMPARATOR);
+
         MapItem result;
 
+        // Geodetic hit-testing (slow, deprecated)
         result = this.hitTest(xpos, ypos, point, view);
         if (result != null)
             candidates.add(result);
+
+        // Other map item queries
         for (DeepMapItemQuery query : this.deepQueryFunctions.keySet()) {
             try {
                 result = query.deepHitTest(xpos, ypos, point, view);
@@ -141,55 +209,11 @@ public final class RootMapGroup extends DefaultMapGroup {
                     throw e;
             }
         }
+
         if (candidates.size() > 0)
             return candidates.first();
         else
             return null;
-    }
-
-    // RC/AML/2015-01-20: Returns sorted list of all tracks that are hit.
-    @Override
-    public synchronized final SortedSet<MapItem> deepHitTestItems(int xpos,
-            int ypos, GeoPoint point, MapView view) {
-        SortedSet<MapItem> candidates = new TreeSet<>(
-                MapItem.ZORDER_HITTEST_COMPARATOR);
-        SortedSet<MapItem> result;
-
-        result = this.hitTestItems(xpos, ypos, point, view);
-        if (result != null)
-            candidates.addAll(result);
-        for (DeepMapItemQuery query : this.deepQueryFunctions.keySet()) {
-            try {
-                result = query.deepHitTestItems(xpos, ypos, point, view);
-                if (result != null)
-                    candidates.addAll(result);
-            } catch (RuntimeException e) {
-                Log.e(TAG,
-                        query.getClass().getSimpleName() + ": " + e.getClass());
-                if (DEBUGGING)
-                    throw e;
-            }
-        }
-        if (candidates.size() > 0)
-            return candidates;
-        else
-            return null;
-    }
-
-    @Override
-    public synchronized final List<MapItem> deepFindItems(
-            Map<String, String> metadata) {
-        List<MapItem> retval = new LinkedList<>(this.findItems(metadata));
-        for (DeepMapItemQuery query : this.deepQueryFunctions.keySet())
-            try {
-                retval.addAll(query.deepFindItems(metadata));
-            } catch (RuntimeException e) {
-                Log.e(TAG,
-                        query.getClass().getSimpleName() + ": " + e.getClass());
-                if (DEBUGGING)
-                    throw e;
-            }
-        return retval;
     }
 
     @Override
@@ -305,8 +329,7 @@ public final class RootMapGroup extends DefaultMapGroup {
             DeepQuerySpec spec;
             while (iter.hasNext()) {
                 spec = iter.next();
-                if (spec.targets.contains(group))
-                    spec.targets.remove(group);
+                spec.targets.remove(group);
                 if (spec.targets.isEmpty())
                     iter.remove();
             }

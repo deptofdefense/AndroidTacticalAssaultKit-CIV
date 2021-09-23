@@ -4,6 +4,7 @@ package com.atakmap.android.maps;
 import com.atak.plugins.impl.PluginMapComponent;
 import com.atakmap.android.bloodhound.BloodHoundMapComponent;
 import com.atakmap.android.brightness.BrightnessComponent;
+import com.atakmap.android.channels.ChannelsMapComponent;
 import com.atakmap.android.chat.ChatManagerMapComponent;
 import com.atakmap.android.compassring.CompassRingMapComponent;
 import com.atakmap.android.coordoverlay.CoordOverlayMapComponent;
@@ -63,7 +64,8 @@ import com.atakmap.android.warning.WarningComponent;
 import com.atakmap.android.warning.WarningMapComponent;
 import com.atakmap.android.wfs.WFSMapComponent;
 import com.atakmap.app.preferences.json.JSONPreferenceControl;
-import com.atakmap.app.system.FlavorProvider;
+import com.atakmap.app.system.AbstractSystemComponent;
+import com.atakmap.app.system.MapComponentProvider;
 import com.atakmap.app.system.SystemComponentLoader;
 import com.atakmap.comms.CommsMapComponent;
 import com.atakmap.coremap.log.Log;
@@ -173,6 +175,8 @@ public class MapComponentLoader {
 
         mapComponents.add(PluginMapComponent.class);
 
+        mapComponents.add(ChannelsMapComponent.class);
+
     }
 
     static void loadGLWidgets(MapActivity activity) {
@@ -223,13 +227,17 @@ public class MapComponentLoader {
             }
         }
 
-        final FlavorProvider fp = SystemComponentLoader.getFlavorProvider();
-        if (fp != null) {
-            for (MapComponent mc : fp.getFlavorMapComponents()) {
-                try {
-                    activity.registerMapComponent(mc);
-                } catch (Throwable t) {
-                    Log.e(TAG, "error loading: " + mc, t);
+        final AbstractSystemComponent[] systemComponents = SystemComponentLoader
+                .getComponents();
+        for (AbstractSystemComponent systemComponent : systemComponents) {
+            if (systemComponent instanceof MapComponentProvider) {
+                for (MapComponent mc : ((MapComponentProvider) systemComponent)
+                        .getMapComponents()) {
+                    try {
+                        activity.registerMapComponent(mc);
+                    } catch (Throwable t) {
+                        Log.e(TAG, "error loading: " + mc, t);
+                    }
                 }
             }
         }

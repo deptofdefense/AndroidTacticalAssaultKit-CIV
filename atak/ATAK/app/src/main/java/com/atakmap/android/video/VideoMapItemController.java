@@ -2,7 +2,6 @@
 package com.atakmap.android.video;
 
 import android.graphics.Color;
-import android.graphics.Rect;
 
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
@@ -296,11 +295,9 @@ class VideoMapItemController {
 
         blankMarker.setMetaString("stayopen", "true");
         setTitle(blankMarker, alias);
-        blankMarker.setMarkerHitBounds(new Rect(-32, -32,
-                32, 32));
 
         blankMarker.setMetaBoolean("editable", false);
-        blankMarker.setMetaBoolean("movable", false);
+        blankMarker.setMovable(false);
         blankMarker.setMetaBoolean("removable", false);
         blankMarker.setType(markerType);
         blankMarker.setMetaString("how", "m-g");

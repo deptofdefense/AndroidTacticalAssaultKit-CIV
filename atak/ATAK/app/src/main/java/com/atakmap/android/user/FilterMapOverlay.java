@@ -12,8 +12,8 @@ import com.atakmap.android.config.FiltersConfig;
 import com.atakmap.android.hierarchy.HierarchyListAdapter;
 import com.atakmap.android.hierarchy.HierarchyListFilter;
 import com.atakmap.android.hierarchy.HierarchyListItem;
-import com.atakmap.android.hierarchy.action.Delete;
 import com.atakmap.android.hierarchy.action.Export;
+import com.atakmap.android.hierarchy.action.GroupDelete;
 import com.atakmap.android.hierarchy.action.Search;
 import com.atakmap.android.hierarchy.action.Visibility;
 import com.atakmap.android.hierarchy.action.Visibility2;
@@ -163,7 +163,7 @@ public class FilterMapOverlay extends AbstractMapOverlay2
 
     public static class ListModelImpl extends AbstractHierarchyListItem2
             implements
-            Visibility2, Delete, Search, Export {
+            Visibility2, GroupDelete, Search, Export {
 
         private static final String TAG = "FilterMapOverlay.ListModelImpl";
 
@@ -288,21 +288,6 @@ public class FilterMapOverlay extends AbstractMapOverlay2
 
         public HierarchyListFilter getFilter() {
             return this.filter;
-        }
-
-        /**********************************************************************/
-        // Delete
-
-        @Override
-        public boolean delete() {
-            boolean retval = false;
-            List<Delete> actions = getChildActions(Delete.class);
-
-            // Then execute to avoid concurrent modification
-            for (Delete del : actions)
-                retval |= del.delete();
-
-            return retval;
         }
 
         /**********************************************************************/

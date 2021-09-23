@@ -8,5 +8,5 @@ import com.atakmap.map.MapRenderer;
 import com.atakmap.spi.PriorityServiceProvider;
 
 public interface GLMapItemSpi2 extends
-        PriorityServiceProvider<GLMapItem, Pair<MapRenderer, MapItem>> {
+        PriorityServiceProvider<GLMapItem2, Pair<MapRenderer, MapItem>> {
 }

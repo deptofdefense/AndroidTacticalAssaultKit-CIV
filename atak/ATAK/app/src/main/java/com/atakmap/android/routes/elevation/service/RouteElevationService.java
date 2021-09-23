@@ -1,7 +1,6 @@
 
 package com.atakmap.android.routes.elevation.service;
 
-import com.atakmap.android.elev.dt2.Dt2ElevationModel;
 import com.atakmap.android.routes.elevation.model.RouteData;
 import com.atakmap.android.routes.elevation.model.SegmentData;
 import com.atakmap.android.routes.elevation.model.UnitConverter;
@@ -10,6 +9,7 @@ import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.UTMPoint;
+import com.atakmap.map.elevation.ElevationManager;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -141,24 +141,17 @@ public class RouteElevationService {
         double minY = y1 < y2 ? y1 : y2;
         double maxY = y1 > y2 ? y1 : y2;
 
-        if (px >= minX && maxX <= x2 && py >= minY && py <= maxY) {
-            double[] out = new double[2];
-            p.toLatLng(out);
+        UTMPoint closest;
+        if (px >= minX && maxX <= x2 && py >= minY && py <= maxY)
+            closest = p;
+        else if (px < minX)
+            closest = new UTMPoint(zoneDescriptor, x1, y1);
+        else if (px > maxX)
+            closest = new UTMPoint(zoneDescriptor, x2, y2);
+        else
+            return null;
 
-            return Dt2ElevationModel.getInstance().queryPoint(out[0], out[1]);
-        } else if (px < minX) {
-            UTMPoint pp = new UTMPoint(zoneDescriptor, x1, y1);
-            double[] out = new double[2];
-            pp.toLatLng(out);
-            return Dt2ElevationModel.getInstance().queryPoint(out[0], out[1]);
-
-        } else if (px > maxX) {
-            UTMPoint pp = new UTMPoint(zoneDescriptor, x2, y2);
-            double[] out = new double[2];
-            pp.toLatLng(out);
-            return Dt2ElevationModel.getInstance().queryPoint(out[0], out[1]);
-        }
-        return null;
+        return ElevationManager.getElevationMetadata(closest.toGeoPoint());
     }
 
     public static SegmentData expandSegment(final GeoPointMetaData source,
@@ -182,8 +175,7 @@ public class RouteElevationService {
 
         // Get source altitude in HAE and store in new source point
         if (!sourceAlt.get().isAltitudeValid())
-            sourceAlt = Dt2ElevationModel.getInstance().queryPoint(
-                    source.get().getLatitude(), source.get().getLongitude());
+            sourceAlt = ElevationManager.getElevationMetadata(source.get());
 
         GeoPointMetaData newSource = GeoPointMetaData.wrap(
                 new GeoPoint(source.get().getLatitude(),
@@ -195,8 +187,7 @@ public class RouteElevationService {
 
         // Get target altitude in HAE and store in new target point
         if (!target.get().isAltitudeValid())
-            targAlt = Dt2ElevationModel.getInstance().queryPoint(
-                    target.get().getLatitude(), target.get().getLongitude());
+            targAlt = ElevationManager.getElevationMetadata(target.get());
 
         GeoPointMetaData newTarget = GeoPointMetaData.wrap(
                 new GeoPoint(target.get().getLatitude(),
@@ -250,9 +241,7 @@ public class RouteElevationService {
                 //see if we can get alt from DTED (HAE)
                 if (!GeoPoint.isAltitudeValid(alt)) {
                     //Log.d(TAG, "Using DTED alt");
-                    alt = Dt2ElevationModel.getInstance().queryPoint(
-                            newPoint.getLatitude(),
-                            newPoint.getLongitude()).get().getAltitude();
+                    alt = ElevationManager.getElevation(newPoint, null);
                 }
 
                 if (GeoPoint.isAltitudeValid(alt)) {

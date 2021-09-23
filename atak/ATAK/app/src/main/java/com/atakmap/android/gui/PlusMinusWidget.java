@@ -105,11 +105,7 @@ public class PlusMinusWidget extends LinearLayout {
                 if (cur > min) {
                     et.setText(String.valueOf(--cur));
                 }
-                if (cur - 1 < min)
-                    minusButton.setEnabled(false);
-                else {
-                    minusButton.setEnabled(true);
-                }
+                minusButton.setEnabled(cur - 1 >= min);
             }
         });
 
@@ -125,11 +121,7 @@ public class PlusMinusWidget extends LinearLayout {
                 if (cur < max) {
                     et.setText(String.valueOf(++cur));
                 }
-                if (cur + 1 > max) {
-                    plusButton.setEnabled(false);
-                } else {
-                    plusButton.setEnabled(true);
-                }
+                plusButton.setEnabled(cur + 1 <= max);
 
             }
         });
@@ -162,15 +154,9 @@ public class PlusMinusWidget extends LinearLayout {
                     et.setText(String.valueOf(min));
                 }
 
-                if (curHr < max)
-                    plusButton.setEnabled(true);
-                else
-                    plusButton.setEnabled(false);
+                plusButton.setEnabled(curHr < max);
 
-                if (curHr > min)
-                    minusButton.setEnabled(true);
-                else
-                    minusButton.setEnabled(false);
+                minusButton.setEnabled(curHr > min);
             }
         });
 

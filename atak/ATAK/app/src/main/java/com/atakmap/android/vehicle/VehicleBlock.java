@@ -9,10 +9,11 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PointF;
 import android.os.Environment;
-import android.os.SystemClock;
 
 import com.atakmap.android.imagecapture.CanvasHelper;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.user.EnterLocationDropDownReceiver;
+import com.atakmap.android.user.icon.VehiclePallet;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
@@ -20,11 +21,11 @@ import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -34,12 +35,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.atakmap.util.zip.IoUtils;
 import opencsv.CSVReader;
 
 public class VehicleBlock {
     public static final String TAG = "VehicleBlock";
-    public static final String ASSET_PATH = "vehicles";
+    public static final String ASSET_PATH = "vehicle_blocks";
     public static final String TOOL_DIR = Environment
             .getExternalStorageDirectory() + File.separator
             + FileSystemUtils.ATAK_ROOT_DIRECTORY + File.separator
@@ -59,6 +59,7 @@ public class VehicleBlock {
     };
 
     private static final HashMap<String, VehicleBlock> _blockCache = new HashMap<>();
+    private static VehiclePallet _blockPallet;
 
     // Instance fields
     private final String _name;
@@ -75,52 +76,6 @@ public class VehicleBlock {
     // Fixed-wing aircraft only
     private double _clearanceAC, _clearanceTX, _setbackPA, _setbackTX;
 
-    static {
-        // Copy assets
-        MapView mv = MapView.getMapView();
-        if (mv != null) {
-            long start = SystemClock.elapsedRealtime();
-            AssetManager assets = mv.getContext().getAssets();
-            copyAssets(assets, ASSET_PATH);
-            Log.d(TAG, "Took " + (SystemClock.elapsedRealtime() - start)
-                    + "ms to copy vehicle blocks from assets");
-        }
-    }
-
-    private static void copyAssets(AssetManager assets, String path) {
-        File dir = new File(TOOL_DIR, path);
-        if (!IOProviderFactory.exists(dir) && !IOProviderFactory.mkdirs(dir)) {
-            Log.e(TAG, "Failed to copy vehicle blocks from assets.");
-            return;
-        }
-        List<String> subDirs = new ArrayList<>();
-        InputStream in = null;
-        OutputStream out = null;
-        try {
-            String[] blocks = assets.list(path);
-            if (blocks != null) {
-                for (String block : blocks) {
-                    if (!block.contains(".")) {
-                        // Mark sub-directory for copy
-                        subDirs.add(path + File.separator + block);
-                        continue;
-                    }
-                    in = assets.open(path + File.separator + block);
-                    out = IOProviderFactory
-                            .getOutputStream(new File(dir, block));
-                    FileSystemUtils.copyStream(in, true, out, true);
-                }
-            }
-        } catch (IOException e) {
-            Log.e(TAG, "error: ", e);
-        } finally {
-            IoUtils.close(in);
-            IoUtils.close(out);
-        }
-        for (String subDir : subDirs)
-            copyAssets(assets, subDir);
-    }
-
     private VehicleBlock(File blockFile) {
         String name = blockFile.getName();
         _name = name.substring(0, name.lastIndexOf("."));
@@ -131,6 +86,7 @@ public class VehicleBlock {
             reload();
             _blockCache.put(_name, this);
         }
+        initPallet();
     }
 
     /**
@@ -348,6 +304,59 @@ public class VehicleBlock {
     }
 
     /**
+     * Migrate old vehicle blocks over to new director, scan for any vehicles,
+     * and create the pallet if needed
+     */
+    public static void init() {
+
+        File blocksDir = getBlockDir();
+        if (!IOProviderFactory.exists(blocksDir))
+            IOProviderFactory.mkdirs(blocksDir);
+
+        // Move legacy directory and remove old default vehicle blocks
+        File legacyDir = new File(TOOL_DIR, "vehicles");
+        if (IOProviderFactory.exists(legacyDir)) {
+
+            // Remove contents that are default
+            MapView mv = MapView.getMapView();
+            AssetManager assets = mv.getContext().getAssets();
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(assets.open(ASSET_PATH
+                            + "/defaults.txt")))) {
+                String line;
+                while (!FileSystemUtils.isEmpty(line = reader.readLine())) {
+                    File f = new File(legacyDir, line + ".block");
+                    if (FileSystemUtils.isFile(f))
+                        FileSystemUtils.deleteFile(f);
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to read defaults.txt", e);
+            }
+
+            // Move remaining blocks if any
+            File[] files = IOProviderFactory.listFiles(legacyDir);
+            if (files != null) {
+                for (File f : files) {
+                    // Skip empty directories
+                    if (IOProviderFactory.isDirectory(f)
+                            && FileSystemUtils
+                                    .isEmpty(IOProviderFactory.list(f)))
+                        continue;
+                    FileSystemUtils.renameTo(f,
+                            new File(blocksDir, f.getName()));
+                }
+            }
+
+            // Delete old directory
+            FileSystemUtils.deleteDirectory(legacyDir, false);
+        }
+
+        String[] blocks = getBlocks();
+        if (!FileSystemUtils.isEmpty(blocks))
+            initPallet();
+    }
+
+    /**
      * Get block file based on name
      * @param name Block name
      * @return Block file (note that blocks in sub-directories will
@@ -529,5 +538,16 @@ public class VehicleBlock {
     //          taxiway clearance, parking setback, taxiway setback }
     public static double[] getBlockRadials(String name) {
         return getBlock(name).getRadials();
+    }
+
+    private static void initPallet() {
+        // Create and register vehicle outline pallet if we haven't done so
+        if (_blockPallet == null) {
+            MapView mv = MapView.getMapView();
+            if (mv != null) {
+                EnterLocationDropDownReceiver.getInstance(mv).addPallet(
+                        _blockPallet = new VehiclePallet(), 4);
+            }
+        }
     }
 }

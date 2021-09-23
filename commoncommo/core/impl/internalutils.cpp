@@ -21,21 +21,40 @@ using namespace atakmap::commoncommo::impl;
 void InternalUtils::logprintf(CommoLogger* logger,
         CommoLogger::Level level, const char* format, ...)
 {
-    const size_t BUFSIZE = 1024;
-    char buf[BUFSIZE];
-
     va_list args;
     va_start(args, format);
 
-    vsnprintf(buf, BUFSIZE, format, args);
+    logprintfImpl(logger, level, CommoLogger::Type::TYPE_GENERAL, NULL,
+                  format, args);
+
+    va_end(args);
+}
+
+void InternalUtils::logprintf(CommoLogger* logger, 
+        CommoLogger::Level level, CommoLogger::Type type,
+        void* detail, const char* format, ...)
+{
+    va_list args;
+    va_start(args, format);
+
+    logprintfImpl(logger, level, type, detail, format, args);
+
+    va_end(args);
+}
+
+void InternalUtils::logprintfImpl(CommoLogger *logger,
+        CommoLogger::Level level, CommoLogger::Type type,
+        void* detail, const char* format, va_list vargs)
+{
+    const size_t BUFSIZE = 1024;
+    char buf[BUFSIZE];
+
+    vsnprintf(buf, BUFSIZE, format, vargs);
     // Be certain of null termination if string is too long
     buf[BUFSIZE - 1] = '\0';
 
-    va_end(args);
-
-    logger->log(level, buf);
+    logger->log(level, type, buf, detail);
 }
-
 
 std::string InternalUtils::hwAddrAsString(const HwAddress *addr, NetInterfaceAddressMode addrMode)
 {

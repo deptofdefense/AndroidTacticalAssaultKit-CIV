@@ -356,22 +356,19 @@ public class VehicleDetailsView extends GenericDetailsView implements
         _centerButton.setText(_unitPrefs.formatPoint(_shape.getCenter(), true));
 
         // Dimensions
-        Span unit = Span.findFromValue(
-                _shape.getMetaInteger("height_unit", Span.FOOT.getValue()));
-        if (unit != null) {
-            double length = _shape.getMetaDouble("length", 0.0);
-            double width = _shape.getMetaDouble("width", 0.0);
-            double height = _shape.getHeight();
-            if (Double.isNaN(height))
-                height = 0.0;
+        Span unit = _unitPrefs.getRangeUnits(1);
+        double length = _shape.getMetaDouble("length", 0.0);
+        double width = _shape.getMetaDouble("width", 0.0);
+        double height = _shape.getHeight();
+        if (Double.isNaN(height))
+            height = 0.0;
 
-            _dimensions.setText(String.format(getResources().getString(
-                    R.string.vehicle_dimensions),
-                    SpanUtilities.convert(length, Span.METER, unit),
-                    SpanUtilities.convert(width, Span.METER, unit),
-                    SpanUtilities.convert(height, Span.METER, unit),
-                    unit.getAbbrev()));
-        }
+        _dimensions.setText(String.format(getResources().getString(
+                R.string.vehicle_dimensions),
+                SpanUtilities.convert(length, Span.METER, unit),
+                SpanUtilities.convert(width, Span.METER, unit),
+                SpanUtilities.convert(height, Span.METER, unit),
+                unit.getAbbrev()));
 
         // Azimuth - metadata is in TRUE north
         NorthReference northRef = getNorthReferencePref();

@@ -33,9 +33,9 @@ public class GenericFragmentAdapter extends Fragment {
         }
         if (uid == null) {
             uid = UUID.randomUUID().toString();
-            Log.d(TAG, "new fragment wrapper: " + uid);
+            Log.d(TAG, "onCreate: new fragment wrapper: " + uid);
         } else {
-            Log.d(TAG, "fragment restored: " + uid);
+            Log.d(TAG, "onCreate: fragment restored: " + uid);
         }
     }
 
@@ -43,7 +43,7 @@ public class GenericFragmentAdapter extends Fragment {
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         Log.d(TAG,
-                "saving the uid in case the fragment has not been destroyed: "
+                "onSaveInstanceState: saving the uid in case the fragment has not been destroyed: "
                         + uid);
         outState.putString("viewuid", uid);
     }
@@ -57,7 +57,7 @@ public class GenericFragmentAdapter extends Fragment {
             uid = UUID.randomUUID().toString();
         }
 
-        Log.d(TAG, "setting a view for: " + uid);
+        Log.d(TAG, "setView: setting a view for: " + uid);
         mapping.put(uid, v);
 
     }
@@ -66,13 +66,13 @@ public class GenericFragmentAdapter extends Fragment {
     public View onCreateView(final LayoutInflater inflater,
             final ViewGroup container,
             final Bundle savedInstanceState) {
-        Log.d(TAG, "getting a fragment view for: " + uid);
+        Log.d(TAG, "onCreateView: getting a fragment view for: " + uid);
         return mapping.get(uid);
     }
 
     @Override
     public void onDestroyView() {
-        Log.d(TAG, "destroying the fragment view for: " + uid);
+        Log.d(TAG, "onDestroyView: destroying the fragment view for: " + uid);
         View view = mapping.get(uid);
         //Remove the view from the parent group prior to destroying the fragment.
         if (view != null) {
@@ -85,12 +85,20 @@ public class GenericFragmentAdapter extends Fragment {
     }
 
     @Override
+    public void onDetach() {
+        super.onDetach();
+        Log.d(TAG, "onDetach: call to detach view: " + uid);
+    }
+
+    @Override
     public void onDestroy() {
-        super.onDestroy();
+        onDestroyView();
         mapping.remove(uid);
-        // XXX: it might be better to place this in onDetach vs onDestroy 
+        super.onDestroy();
+        // XXX: it might be better to place this in onDetach vs onDestroy
         Log.d(TAG,
-                "removing view: " + uid + " retained size: " + mapping.size());
+                "onDestroy: removing view: " + uid + " retained size: "
+                        + mapping.size());
     }
 
 }

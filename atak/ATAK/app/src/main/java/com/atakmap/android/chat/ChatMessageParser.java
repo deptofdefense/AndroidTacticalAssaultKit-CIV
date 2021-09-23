@@ -62,7 +62,7 @@ public class ChatMessageParser {
         CoordinatedTime time = event.getTime();
         message.setReceiveTime(time);
 
-        CotDetail chatChild = detail.getFirstChildByName(0, "__chat");
+        CotDetail chatChild = event.findDetail("__chat");
         if (chatChild != null) {
             Contacts cts = Contacts.getInstance();
             ChatVersion version = getMessageVersionFromCotDetail(chatChild);
@@ -332,6 +332,18 @@ public class ChatMessageParser {
     }
 
     private static String getMessageId(CotEvent event) {
+
+        // Explicitly stated message ID
+        CotDetail chatDt = event.findDetail("__chat");
+        if (chatDt != null) {
+            String msgId = chatDt.getAttribute("messageId");
+            if (msgId != null)
+                return msgId;
+        }
+
+        // Fallback parse from CoT event UID
+        // This isn't as reliable because if the format of this changes or
+        // one of the UIDs happen to contain a dot then this parser will fail
         String messageId = "";
         String uid = event.getUID();
         if (uid != null && uid.split("\\.").length > 0) {

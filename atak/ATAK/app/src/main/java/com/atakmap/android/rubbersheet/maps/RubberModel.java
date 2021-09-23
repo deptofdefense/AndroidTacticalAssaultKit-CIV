@@ -1,13 +1,13 @@
 
 package com.atakmap.android.rubbersheet.maps;
 
-import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.rubbersheet.data.ModelProjection;
 import com.atakmap.android.rubbersheet.data.RubberModelData;
 import com.atakmap.android.rubbersheet.data.RubberSheetUtils;
 import com.atakmap.android.rubbersheet.data.create.ModelLoader;
 import com.atakmap.android.util.ATAKUtilities;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
@@ -43,7 +43,6 @@ public class RubberModel extends AbstractSheet implements ModelLoader.Callback {
     // To be loaded
     private ModelInfo _info;
     private Model _model;
-    private GLRubberModel _renderer;
 
     protected RubberModel(RubberModelData data) {
         super(data);
@@ -240,49 +239,23 @@ public class RubberModel extends AbstractSheet implements ModelLoader.Callback {
         double scaleY = points[4].get().distanceTo(points[6].get()) / dim[1];
         _scale[0] = _scale[1] = _scale[2] = Math.min(scaleX, scaleY);
         _rotation[1] = getHeading();
-        _info.location = center.get();
+
+        if (_info != null)
+            _info.location = center.get();
 
         super.onPointsChanged();
-    }
-
-    @Override
-    public boolean testOrthoHit(int x, int y, GeoPoint point, MapView view) {
-        if (!isTouchable())
-            return false;
-
-        Marker center = getCenterMarker();
-        if (center != null && center.testOrthoHit(x, y, point, view))
-            return true;
-
-        // Hit test on the rectangle lines
-        if (super.testOrthoHit(x, y, point, view))
-            return true;
-
-        // Hit test on the model itself
-        if (!isModelVisible())
-            return false;
-
-        return orthoHitModel(x, y, point, view);
-    }
-
-    protected boolean orthoHitModel(int x, int y, GeoPoint point,
-            MapView view) {
-        GeoPoint result = GeoPoint.createMutable();
-        final GLRubberModel renderer = _renderer;
-        if (renderer != null && renderer.hitTest(x, y, result, view)) {
-            setTouchPoint(result);
-            setMetaString("menu_point", result.toString());
-            return true;
-        }
-        return false;
     }
 
     protected boolean isModelVisible() {
         return getAlpha() > 0;
     }
 
+    /**
+     * @deprecated This was previously used for hit testing but is no longer needed
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
     public void setRenderer(GLRubberModel renderer) {
-        _renderer = renderer;
     }
 
     public synchronized void addChangeListener(OnChangedListener l) {

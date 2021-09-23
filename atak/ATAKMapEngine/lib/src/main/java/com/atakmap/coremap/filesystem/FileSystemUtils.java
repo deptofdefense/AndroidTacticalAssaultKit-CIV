@@ -2,6 +2,7 @@
 package com.atakmap.coremap.filesystem;
 
 import android.content.Context;
+import android.net.Uri;
 import android.os.Environment;
 
 import com.atakmap.annotations.DeprecatedApi;
@@ -2335,7 +2336,7 @@ public class FileSystemUtils {
     }
 
     /**
-     * Fortify Validity check for String filenames so they cannot 
+     * Fortify Validity check for String filenames so they cannot
      * contain path manipulation characters.
      */
     public static String validityScan(final String fileName)
@@ -2344,7 +2345,7 @@ public class FileSystemUtils {
     }
 
     /**
-     * Fortify Validity check for String filenames so they cannot 
+     * Fortify Validity check for String filenames so they cannot
      * contain path manipulation characters.
      *
      * If the following string is expected to have a specific 
@@ -2447,8 +2448,10 @@ public class FileSystemUtils {
      * @return File
      */
     public static File getFile(String uriOrPath) {
-        if (uriOrPath.startsWith("file://"))
+        if (uriOrPath.startsWith("file://")) {
             uriOrPath = uriOrPath.substring(7);
+            uriOrPath = Uri.decode(uriOrPath);
+        }
         return new File(uriOrPath);
     }
 }

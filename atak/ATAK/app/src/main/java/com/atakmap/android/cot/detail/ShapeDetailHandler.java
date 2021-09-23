@@ -143,6 +143,7 @@ public class ShapeDetailHandler extends CotDetailHandler {
             poly = new Polyline(UUID.randomUUID().toString());
             poly.setMetaString("ownerUID", event.getUID());
             poly.setMetaBoolean("addToObjList", false);
+            poly.setClickable(false);
         }
 
         int polyStyle = 0;

@@ -59,7 +59,8 @@ public final class QueryMissionPackageOperation extends HTTPOperation {
         try {
             client = TakHttpClient.GetHttpClient(ServerListDialog
                     .getBaseUrl(queryRequest
-                            .getServerConnectString()));
+                            .getServerConnectString()),
+                    queryRequest.getServerConnectString());
 
             String queryUrl = client
                     .getUrl("/sync/search?keywords=missionpackage");

@@ -189,7 +189,7 @@ public class VehicleModelDetailsView extends GenericDetailsView implements
         _outlineCB.setOnCheckedChangeListener(this);
         _vehicle.addOnPointsChangedListener(this);
         _vehicle.addOnAlphaChangedListener(this);
-        _vehicle.addOnMetadataChangedListener(this);
+        _vehicle.addOnMetadataChangedListener("outline", this);
         _vehicle.addChangeListener(this);
 
         ImageButton attBtn = this.findViewById(R.id.attachmentsButton);
@@ -492,8 +492,7 @@ public class VehicleModelDetailsView extends GenericDetailsView implements
 
     @Override
     public void onMetadataChanged(MapItem item, String field) {
-        if (field.equals("outline"))
-            refresh();
+        refresh();
     }
 
     @Override

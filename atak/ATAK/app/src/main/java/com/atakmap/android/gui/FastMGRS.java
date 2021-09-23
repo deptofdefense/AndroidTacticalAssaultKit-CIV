@@ -15,7 +15,6 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 
-import com.atakmap.android.elev.dt2.Dt2ElevationModel;
 import com.atakmap.app.system.ResourceUtil;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
@@ -28,6 +27,7 @@ import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.map.AtakMapController;
+import com.atakmap.map.elevation.ElevationManager;
 
 public class FastMGRS {
 
@@ -160,11 +160,8 @@ public class FastMGRS {
                                     PointOfInterest poi = PointOfInterest
                                             .getInstance();
                                     // Include DTED elevation
-                                    poi.setPoint(
-                                            Dt2ElevationModel.getInstance()
-                                                    .queryPoint(
-                                                            gp.getLatitude(),
-                                                            gp.getLongitude()));
+                                    poi.setPoint(ElevationManager
+                                            .getElevationMetadata(gp));
                                 }
 
                                 if (_listener != null && gp != null)

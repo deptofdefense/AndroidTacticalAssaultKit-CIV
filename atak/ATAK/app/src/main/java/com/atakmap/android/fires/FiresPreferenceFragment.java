@@ -6,6 +6,7 @@ import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
 
+import com.atakmap.android.gui.PanEditTextPreference;
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.app.R;
 import com.atakmap.app.system.ResourceUtil;
@@ -61,6 +62,7 @@ public class FiresPreferenceFragment extends AtakPreferenceFragment {
                 R.string.fireSpiNumberSummary));
 
         p = findPreference("spiFahSize");
+        ((PanEditTextPreference) p).setValidIntegerRange(0, 180);
 
         setTitle(p, ResourceUtil.getResource(R.string.civ_spi_redx_fah,
                 R.string.spi_redx_fah));

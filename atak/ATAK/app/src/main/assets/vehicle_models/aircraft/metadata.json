@@ -123,7 +123,8 @@
     },
     {
       "name": "CV-22",
-      "file": "cv-22.zip"
+      "file": "cv-22.zip",
+      "offset": [0, 0, -1.25]
     },
     {
       "name": "DC-10",

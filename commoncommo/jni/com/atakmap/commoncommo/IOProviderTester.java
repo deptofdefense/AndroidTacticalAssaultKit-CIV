@@ -12,6 +12,10 @@ import java.nio.ByteBuffer;
 
 
 public final class IOProviderTester {
+    static {
+        NativeInitializer.initialize();
+    }
+
     private final static Map<FileIOProvider, Long> ioProviders = new IdentityHashMap<FileIOProvider, Long>();
     private final static Map<FileChannel, Long> channels = new IdentityHashMap<FileChannel, Long>();
 

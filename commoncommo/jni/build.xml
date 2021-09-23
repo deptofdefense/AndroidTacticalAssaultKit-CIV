@@ -30,8 +30,8 @@
 <property name="common.javac.source" value="1.6"/>
 <property name="common.javac.target" value="1.6"/>
 
-
-
+<!-- control internal vs external native init -->
+<property name="native-init" value="external" />
 
 
 
@@ -41,6 +41,13 @@
 <patternset id="jcommoncommo.dirs">
     <include name="com/atakmap/commoncommo/"/>
 </patternset>
+
+    <patternset id="internal-initializer">
+        <exclude name="com/atakmap/commoncommo/ExternalNativeInitializer.java" />
+    </patternset>
+    <patternset id="external-initializer">
+        <exclude name="com/atakmap/commoncommo/InternalNativeInitializer.java" />
+    </patternset>
 
     <fileset id="jcommoncommo.classes" dir=".">
         <include name="com/atakmap/commoncommo/**/*.class"/>
@@ -79,6 +86,7 @@
             <classpath refid="jcommoncommo.classpath"/>
             
             <patternset refid="jcommoncommo.dirs"/>
+            <patternset refid="${native-init}-initializer"/>
         </javac>
     </target>
 

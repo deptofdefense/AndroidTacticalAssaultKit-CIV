@@ -9,11 +9,9 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
-import com.atakmap.comms.SslNetCotPort;
 import com.atakmap.filesystem.HashingUtils;
 
 import java.io.File;
-import com.atakmap.coremap.locale.LocaleUtil;
 
 /**
  * Provides parcelable and CoT representation of File Transfer details
@@ -37,7 +35,7 @@ public class FileTransfer implements Parcelable {
     private long _size;
 
     // sender info
-    private final String _senderURL; // where to download the file
+    private final String _connectString; // connectString used to build download Url
     private final String _senderLocalPath;
     private final String _senderUID;
     private final String _senderCallsign;
@@ -52,7 +50,7 @@ public class FileTransfer implements Parcelable {
         _senderCallsign = senderCallsign;
         _uid = fileShareUID;
         _senderLocalPath = senderLocalPath;
-        _senderURL = link;
+        _connectString = link;
         _size = size;
 
         _sha256 = sha256;
@@ -69,8 +67,8 @@ public class FileTransfer implements Parcelable {
         return _senderLocalPath;
     }
 
-    public String getSenderURL() {
-        return _senderURL;
+    public String getConnectString() {
+        return _connectString;
     }
 
     public long getSize() {
@@ -104,26 +102,20 @@ public class FileTransfer implements Parcelable {
 
     public static FileTransfer fromQuery(Context context,
             MissionPackageQueryResult result,
-            String baseUrl, String filesharePath) {
+            String serverConnectString, String filesharePath) {
         if (result == null || !result.isValid()) {
             Log.w(TAG,
                     "Unable to create FileTransfer from invalid query result");
             return null;
         }
 
-        String url = baseUrl;
-        if (FileSystemUtils.isEmpty(url)) {
-            Log.w(TAG, "Cannot create FileTransfer without valid server URL");
+        if (FileSystemUtils.isEmpty(serverConnectString)) {
+            Log.w(TAG,
+                    "Cannot create FileTransfer without valid serverConnectString");
             return null;
         }
 
         String fileShareUID = result.getUID();
-        boolean bSecure = url.toLowerCase(LocaleUtil.getCurrent()).startsWith(
-                "https");
-        url += SslNetCotPort
-                .getServerApiPath(bSecure ? SslNetCotPort.Type.SECURE
-                        : SslNetCotPort.Type.UNSECURE);
-        url += "/sync/content?hash=" + result.getHash();
         long size = result.getSize();
 
         String sha256 = result.getHash();
@@ -138,7 +130,7 @@ public class FileTransfer implements Parcelable {
         // No ack for TAK server manual downloads
 
         return new FileTransfer(name, senderUID, senderCallsign, fileShareUID,
-                localPath, url, size, sha256);
+                localPath, serverConnectString, size, sha256);
     }
 
     /**
@@ -168,7 +160,7 @@ public class FileTransfer implements Parcelable {
 
         return !FileSystemUtils.isEmpty(_senderLocalPath)
                 && !FileSystemUtils.isEmpty(_uid)
-                && !FileSystemUtils.isEmpty(_senderURL)
+                && !FileSystemUtils.isEmpty(_connectString)
                 //Not required when querying/downloading from TAK Server
                 //&& !FileSystemUtils.isEmpty(_senderUID)
                 && !FileSystemUtils.isEmpty(_senderCallsign)
@@ -188,7 +180,7 @@ public class FileTransfer implements Parcelable {
     public String toString() {
         return String.format("%s %s, %s SHA256=%s from %s", _name,
                 _senderLocalPath,
-                _senderURL, _sha256,
+                _connectString, _sha256,
                 _senderCallsign);
     }
 
@@ -197,7 +189,7 @@ public class FileTransfer implements Parcelable {
         if (isValid()) {
             dest.writeString(_name);
             dest.writeString(_senderLocalPath);
-            dest.writeString(_senderURL);
+            dest.writeString(_connectString);
             dest.writeString(_senderUID);
             dest.writeString(_senderCallsign);
             dest.writeString(_uid);
@@ -222,7 +214,7 @@ public class FileTransfer implements Parcelable {
     protected FileTransfer(Parcel in) {
         _name = in.readString();
         _senderLocalPath = in.readString();
-        _senderURL = in.readString();
+        _connectString = in.readString();
         _senderUID = in.readString();
         _senderCallsign = in.readString();
         _uid = in.readString();

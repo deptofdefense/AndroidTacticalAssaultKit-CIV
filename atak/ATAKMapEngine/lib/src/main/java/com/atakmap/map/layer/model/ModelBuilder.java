@@ -10,6 +10,7 @@ import com.atakmap.math.PointD;
 import java.nio.Buffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -217,10 +218,17 @@ public final class ModelBuilder {
         MeshReference[] meshes = new MeshReference[this.meshes.size()];
         Envelope aabb = new Envelope(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, -Double.MAX_VALUE, -Double.MAX_VALUE, -Double.MAX_VALUE);
         int idx = 0;
-        for (MeshReference ref : this.meshes) {
+        Iterator<MeshReference> iter = this.meshes.iterator();
+        while (iter.hasNext()) {
+            MeshReference ref = iter.next();
             meshes[idx] = ref.resolve();
             if(meshes[idx] == null) {
                 Log.w(TAG, "Unexpected null Mesh reference");
+                continue;
+            }
+            if(meshes[idx].get().getNumVertices() == 0) {
+                // skip empty meshes
+                iter.remove();
                 continue;
             }
 

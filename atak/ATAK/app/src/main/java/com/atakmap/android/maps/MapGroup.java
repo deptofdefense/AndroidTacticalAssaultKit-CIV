@@ -6,6 +6,7 @@ import android.util.Pair;
 import com.atakmap.android.hashtags.HashtagContent;
 import com.atakmap.android.hashtags.HashtagSearch;
 import com.atakmap.android.hashtags.util.HashtagUtils;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.lang.Objects;
 
@@ -21,6 +22,8 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
+
+import com.atakmap.map.hittest.HitTestControl;
 import com.atakmap.util.WildCard;
 
 /**
@@ -472,6 +475,13 @@ public abstract class MapGroup extends FilterMetaDataHolder implements
         return retval;
     }
 
+    /**
+     * @deprecated This is now handled by the {@link RootMapGroup} via
+     * {@link HitTestControl}. Implementation will be kept intact until
+     * deprecation removal.
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
     protected MapItem hitTest(final int xpos, final int ypos,
             final GeoPoint point, final MapView view) {
 
@@ -482,6 +492,13 @@ public abstract class MapGroup extends FilterMetaDataHolder implements
             return hits.first();
     }
 
+    /**
+     * @deprecated This is now handled by the {@link RootMapGroup} via
+     * {@link HitTestControl}. Implementation will be kept intact until
+     * deprecation removal.
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
     protected SortedSet<MapItem> hitTestItems(final int xpos, final int ypos,
             final GeoPoint point, final MapView view) {
 

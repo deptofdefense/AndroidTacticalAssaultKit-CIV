@@ -13,7 +13,6 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.Shape;
 import com.atakmap.android.util.ATAKUtilities;
-import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
@@ -46,18 +45,6 @@ public class ShapeUtils {
             return item.getMetaString("assocSetUID", null);
         else
             return null;
-    }
-
-    /**
-     * @deprecated Use {@link ATAKUtilities#findAssocShape(MapItem)} and
-     * {@link ATAKUtilities#getDisplayName(MapItem)}
-     * @param item
-     * @return
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public static String getShapeName(final MapItem item) {
-        return ATAKUtilities.getDisplayName(ATAKUtilities.findAssocShape(item));
     }
 
     /**
@@ -121,10 +108,10 @@ public class ShapeUtils {
      *  Rectangle: the Rectangle (u-d-r)
      *  DrawingShape
      *
-     * @param view
+     * @param view the mapview to use for getting the reference shape
      * @param bToast    True to toast GeoFence messages to user
-     * @param uid
-     * @param group
+     * @param uid the uid of the reference shape
+     * @param group the group to use
      * @param shapeUID allow a shapeUID to be passed in optionally, e.g. from a radial menu intent
      * @return returns the reference shape map item.
      */
@@ -166,8 +153,8 @@ public class ShapeUtils {
      * Note, this is messy, but have to break this out by type due to inconsistent
      * behavior across shape types
      *
-     * @param item
-     * @return
+     * @param item the center point of the shape
+     * @return a valid geopoint or null if no center exists.
      */
     public static GeoPointMetaData getShapeCenter(MapItem item) {
         item = resolveShape(item);
@@ -180,8 +167,8 @@ public class ShapeUtils {
      * Note, this is messy, but have to break this out by type due to inconsistent
      * behavior across shape types
      *
-     * @param item
-     * @return
+     * @param item the item to get the center marker for
+     * @return the map item that is the anchor (center marker)
      */
     public static MapItem getShapeCenterMarker(MapItem item) {
         item = resolveShape(item);

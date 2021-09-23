@@ -200,6 +200,7 @@
                 android:id="@+id/hierarchy_list_footer"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
                 android:orientation="horizontal"
                 android:visibility="gone">
             </LinearLayout>
@@ -208,24 +209,34 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
+                android:gravity="center_vertical"
                 android:orientation="horizontal" >
-                    <CheckBox
-                        android:id="@+id/showAll_cb"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="10dp"
-                        android:textSize="14sp"
-                        android:text="@string/show_all" />
 
-                    <ImageButton
-                        android:id="@+id/close_hmv"
-                        style="@style/darkButton"
-                        android:padding="6dp"
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:src="@drawable/close"
-                        android:gravity="center_vertical|center_horizontal"
-                        android:scaleType="fitCenter" />
+                <CheckBox
+                    android:id="@+id/showAll_cb"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="@dimen/auto_margin"
+                    android:text="@string/show_all"
+                    android:textSize="@dimen/fontSize"/>
+
+                <ImageButton
+                    android:id="@+id/filter_btn"
+                    style="@style/darkButton"
+                    android:padding="6dp"
+                    android:layout_width="@dimen/button_small"
+                    android:layout_height="@dimen/button_small"
+                    android:src="@drawable/ic_filter"/>
+
+                <ImageButton
+                    android:id="@+id/close_hmv"
+                    style="@style/darkButton"
+                    android:padding="6dp"
+                    android:layout_width="@dimen/button_small"
+                    android:layout_height="@dimen/button_small"
+                    android:src="@drawable/close"
+                    android:gravity="center_vertical|center_horizontal"
+                    android:scaleType="fitCenter" />
 
             </LinearLayout>
 

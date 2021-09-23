@@ -26,12 +26,14 @@ import com.atakmap.android.vehicle.model.icon.VehicleModelCaptureRequest;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.MapSceneModel;
 import com.atakmap.map.layer.model.Mesh;
 import com.atakmap.map.layer.model.ModelInfo;
 import com.atakmap.map.layer.model.opengl.MaterialManager;
 import com.atakmap.map.opengl.GLMapRenderable2;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
+import com.atakmap.map.hittest.LayerHitTestControl;
 import com.atakmap.math.MathUtils;
 
 import java.io.File;
@@ -60,6 +62,8 @@ public class GLVehicleModelLayer extends GLRubberModelLayer implements
     private final GLBitmapLoader _bmpLoader;
     private final GLImageCache _imageCache;
     private final Map<String, GLImageCache.Entry> _iconCache = new HashMap<>();
+
+    private MapSceneModel _scene;
 
     private final GLBitmapLoader.LoaderSpi _iconLoader = new GLBitmapLoader.LoaderSpi() {
         @Override
@@ -135,7 +139,7 @@ public class GLVehicleModelLayer extends GLRubberModelLayer implements
         VehicleModel vehicle = (VehicleModel) mdl;
         vehicle.addLoadListener(this);
         vehicle.addOnAlphaChangedListener(this);
-        vehicle.addOnMetadataChangedListener(this);
+        vehicle.addOnMetadataChangedListener("outline", this);
         return new GLVehicleModel(renderContext, vehicle);
     }
 
@@ -146,7 +150,7 @@ public class GLVehicleModelLayer extends GLRubberModelLayer implements
             VehicleModel vehicle = (VehicleModel) mdl;
             vehicle.removeLoadListener(this);
             vehicle.removeOnAlphaChangedListener(this);
-            vehicle.removeOnMetadataChangedListener(this);
+            vehicle.removeOnMetadataChangedListener("outline", this);
             VehicleModelInfo info = vehicle.getVehicleInfo();
             if (info != null)
                 unregister(info, mdl.getInfo(), mdl.getUID());
@@ -292,7 +296,7 @@ public class GLVehicleModelLayer extends GLRubberModelLayer implements
         }
 
         // Add the mesh layer
-        _meshLayer.setMeshes(opaque, transparent);
+        _meshLayer.setMeshes(pending, opaque, transparent);
         toRender.add(_meshLayer);
 
         return toRender;
@@ -338,19 +342,21 @@ public class GLVehicleModelLayer extends GLRubberModelLayer implements
      * Meta-renderable that allows us to sort the draw order of each instanced
      * mesh based on the current view
      */
-    private static class GLMeshLayer implements GLMapRenderable2 {
+    private class GLMeshLayer implements GLMapRenderable2,
+            LayerHitTestControl {
 
+        private final List<GLMapRenderable2> _renderables = new ArrayList<>();
         private final List<GLInstancedMesh> _opaque = new ArrayList<>();
         private final List<GLVehicleModel> _transparent = new ArrayList<>();
 
-        public synchronized void setMeshes(List<GLInstancedMesh> opaque,
+        public synchronized void setMeshes(
+                Collection<GLMapRenderable2> renderables,
+                List<GLInstancedMesh> opaque,
                 List<GLVehicleModel> transparent) {
-            synchronized (this) {
-                _opaque.clear();
-                _opaque.addAll(opaque);
-                _transparent.clear();
-                _transparent.addAll(transparent);
-            }
+            release();
+            _renderables.addAll(renderables);
+            _opaque.addAll(opaque);
+            _transparent.addAll(transparent);
         }
 
         @Override
@@ -358,11 +364,19 @@ public class GLVehicleModelLayer extends GLRubberModelLayer implements
             if (!MathUtils.hasBits(renderPass, getRenderPass()))
                 return;
 
+            _scene = view.currentScene.scene;
+
             List<GLInstancedMesh> opaque;
             List<GLVehicleModel> transparent;
             synchronized (this) {
                 opaque = new ArrayList<>(_opaque);
                 transparent = new ArrayList<>(_transparent);
+
+                // Required for hit-testing instanced (opaque) models
+                for (GLMapRenderable2 r : _renderables) {
+                    if (r instanceof GLVehicleModel)
+                        ((GLVehicleModel) r).updateScene(_scene);
+                }
             }
 
             // First draw all the opaque mesh instances, regardless of z-order
@@ -381,6 +395,7 @@ public class GLVehicleModelLayer extends GLRubberModelLayer implements
 
         @Override
         public synchronized void release() {
+            _renderables.clear();
             _opaque.clear();
             _transparent.clear();
         }
@@ -388,6 +403,11 @@ public class GLVehicleModelLayer extends GLRubberModelLayer implements
         @Override
         public int getRenderPass() {
             return GLMapView.RENDER_PASS_SCENES;
+        }
+
+        @Override
+        public synchronized Collection<?> getHitTestList() {
+            return _renderables;
         }
     }
 }

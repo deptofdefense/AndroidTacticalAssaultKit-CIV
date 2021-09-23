@@ -22,7 +22,9 @@ import com.atakmap.android.missionpackage.file.MissionPackageConfiguration;
 import com.atakmap.android.missionpackage.file.MissionPackageExtractorFactory;
 import com.atakmap.android.missionpackage.file.MissionPackageFileIO;
 import com.atakmap.android.missionpackage.file.MissionPackageManifest;
+import com.atakmap.android.util.ServerListDialog;
 import com.atakmap.app.R;
+import com.atakmap.comms.SslNetCotPort;
 import com.atakmap.comms.http.TakHttpClient;
 import com.atakmap.comms.http.TakHttpResponse;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -148,7 +150,19 @@ public final class GetFileTransferOperation extends HTTPOperation {
             // ///////
             // Get file
             // ///////
-            String getUrl = fileRequest.getFileTransfer().getSenderURL();
+            String connectString = fileRequest.getFileTransfer()
+                    .getConnectString();
+
+            String getUrl = ServerListDialog.getBaseUrl(connectString);
+            boolean bSecure = getUrl.toLowerCase(LocaleUtil.getCurrent())
+                    .startsWith(
+                            "https");
+            getUrl += SslNetCotPort
+                    .getServerApiPath(bSecure ? SslNetCotPort.Type.SECURE
+                            : SslNetCotPort.Type.UNSECURE);
+            getUrl += "/sync/content?hash="
+                    + fileRequest.getFileTransfer().getSHA256(false);
+
             if (bRestart) {
                 Uri.Builder uribuilder = Uri.parse(getUrl).buildUpon();
                 uribuilder.appendQueryParameter("offset",
@@ -166,7 +180,8 @@ public final class GetFileTransferOperation extends HTTPOperation {
             Log.d(TAG, "Sending File Transfer request to: " + getUrl);
 
             ///  XXXXX follow me for progress??
-            client = TakHttpClient.GetHttpClient(getUrl);
+            client = TakHttpClient.GetHttpClient(getUrl, connectString);
+
             HttpGet httpget = new HttpGet(getUrl);
             TakHttpResponse response = client.execute(httpget, false);
             statusCode = response.getStatusCode();

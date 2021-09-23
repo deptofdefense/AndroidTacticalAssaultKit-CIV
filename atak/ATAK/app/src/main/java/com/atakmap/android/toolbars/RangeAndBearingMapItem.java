@@ -9,10 +9,14 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 
+import com.atakmap.android.cot.detail.CotDetailManager;
 import com.atakmap.android.dropdown.DropDownReceiver;
 import com.atakmap.android.bloodhound.ui.BloodHoundHUD;
+import com.atakmap.android.maps.AnchoredMapItem;
 import com.atakmap.android.maps.MapEventDispatcher;
 import com.atakmap.app.R;
+import com.atakmap.coremap.cot.event.CotDetail;
+import com.atakmap.coremap.cot.event.CotPoint;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 
@@ -46,6 +50,7 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.NorthReference;
+import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.spatial.file.export.GPXExportWrapper;
 import com.atakmap.spatial.file.export.KMZFolder;
 import com.atakmap.spatial.file.export.OGRFeatureExportWrapper;
@@ -144,7 +149,6 @@ public class RangeAndBearingMapItem extends Arrow implements
                     rab = new RangeAndBearingMapItem(pmi1, pmi2,
                             MapView.getMapView(), id, persist);
 
-                    rab.setClickable(true);
                     if (pmi1 instanceof RangeAndBearingEndpoint) {
                         RangeAndBearingEndpoint rabe = (RangeAndBearingEndpoint) pmi1;
                         rabe.setParent(rab);
@@ -217,35 +221,28 @@ public class RangeAndBearingMapItem extends Arrow implements
     }
 
     public void setPoint1(PointMapItem pmi) {
-        if (_pt1 != null)
-            removeListenersFromPoint(_pt1);
-
-        _pt1 = pmi;
-
-        addListenersToPoint(_pt1);
-
-        _pt1.setMetaBoolean(
-                "isSelf",
-                pmi.getUID().equals(
-                        _mapView.getSelfMarker().getUID()));
-
-        onPointChanged(_pt1);
+        updateEndpoint(pmi, true);
     }
 
     public void setPoint2(PointMapItem pmi) {
-        if (_pt2 != null)
-            removeListenersFromPoint(_pt2);
+        updateEndpoint(pmi, false);
+    }
 
-        _pt2 = pmi;
+    private void updateEndpoint(PointMapItem newPt, boolean isPoint1) {
+        PointMapItem oldPt = isPoint1 ? _pt1 : _pt2;
+        if (oldPt == newPt)
+            return;
 
-        addListenersToPoint(_pt2);
+        if (oldPt != null)
+            removeListenersFromPoint(oldPt);
 
-        _pt2.setMetaBoolean(
-                "isSelf",
-                pmi.getUID().equals(
-                        _mapView.getSelfMarker().getUID()));
+        if (isPoint1)
+            _pt1 = newPt;
+        else
+            _pt2 = newPt;
 
-        onPointChanged(_pt2);
+        addListenersToPoint(newPt);
+        onPointChanged(newPt);
     }
 
     @Override
@@ -655,12 +652,15 @@ public class RangeAndBearingMapItem extends Arrow implements
         } else {
             List<RangeAndBearingMapItem> users = getUsers(item);
             users.remove(this);
-            if (users.isEmpty())
+            if (users.isEmpty()) {
                 // Remove listeners if no other parent candidates
                 _mapView.getMapEventDispatcher().removeMapItemEventListener(
                         item,
                         (RangeAndBearingEndpoint) item);
-            else
+
+                // Remove the endpoint from the group so it isn't orphaned
+                item.removeFromGroup();
+            } else
                 // Otherwise set parent to next candidate
                 ((RangeAndBearingEndpoint) item).setParent(users.get(0));
         }
@@ -1050,7 +1050,113 @@ public class RangeAndBearingMapItem extends Arrow implements
     /****************************** Serializers and Deserializers **************************/
 
     private CotEvent toCot() {
-        return RangeAndBearingCotEventSpi.createCotEvent(_mapView, this);
+
+        // If either marker is missing then this line is invalid
+        final PointMapItem pt1 = _pt1, pt2 = _pt2;
+        if (pt1 == null || pt2 == null)
+            return null;
+
+        CotEvent event = new CotEvent();
+
+        CoordinatedTime time = new CoordinatedTime();
+        event.setTime(time);
+        event.setStart(time);
+        event.setStale(time.addDays(1));
+
+        event.setUID(getUID());
+        event.setVersion(CotEvent.VERSION_2_0);
+        event.setHow("h-e");
+
+        event.setType("u-rb-a");
+
+        CotDetail detail = new CotDetail("detail");
+        event.setDetail(detail);
+
+        event.setPoint(new CotPoint(pt1.getPoint()));
+
+        double range = GeoCalculations.distanceTo(pt1.getPoint(),
+                pt2.getPoint());
+        double bearing = GeoCalculations.bearingTo(pt1.getPoint(),
+                pt2.getPoint());
+
+        CotDetail rangeDt = new CotDetail("range");
+        rangeDt.setAttribute("value", String.valueOf(range));
+        detail.addChild(rangeDt);
+
+        CotDetail bearingDt = new CotDetail("bearing");
+        bearingDt.setAttribute("value", String.valueOf(bearing));
+        detail.addChild(bearingDt);
+
+        CotDetail inclination = new CotDetail("inclination");
+        inclination.setAttribute("value",
+                Double.toString(getInclination()));
+        detail.addChild(inclination);
+
+        if (isEndpointSerializable(pt2)) {
+            CotDetail rangeUID = new CotDetail("rangeUID");
+            rangeUID.setAttribute("value", getEndpointUID(pt2));
+            detail.addChild(rangeUID);
+        }
+
+        if (isEndpointSerializable(pt1)) {
+            CotDetail anchorUID = new CotDetail("anchorUID");
+            anchorUID.setAttribute("value", getEndpointUID(pt1));
+            detail.addChild(anchorUID);
+        }
+
+        CotDetail rangeUnits = new CotDetail("rangeUnits");
+        CotDetail bearingUnits = new CotDetail("bearingUnits");
+        CotDetail northRef = new CotDetail("northRef");
+
+        rangeUnits.setAttribute("value", Integer.toString(getRangeUnits()));
+
+        bearingUnits.setAttribute("value",
+                Integer.toString(getBearingUnits().getValue()));
+
+        northRef.setAttribute("value",
+                Integer.toString(getNorthReference().getValue()));
+
+        detail.addChild(rangeUnits);
+        detail.addChild(bearingUnits);
+        detail.addChild(northRef);
+
+        // XXX - Trigger the color detail handler
+        setMetaInteger("color", getStrokeColor());
+        CotDetailManager.getInstance().addDetails(this, event);
+
+        return event;
+    }
+
+    /**
+     * Check if an endpoint is serializable when serializing the R&B line to CoT
+     * @param pmi End point
+     * @return True if serializable
+     */
+    private static boolean isEndpointSerializable(PointMapItem pmi) {
+        return !(pmi instanceof RangeAndBearingEndpoint
+                || pmi.getType().equals("self")
+                || pmi.getType().equals("b-m-p-s-p-i")
+                || pmi.hasMetaValue("atakRoleType")
+                || pmi.hasMetaValue("emergency")
+                || pmi.hasMetaValue("nevercot"));
+    }
+
+    /**
+     * Get the point UID
+     * If the point is a shape marker, use the shape UID instead
+     * @param pmi Point item
+     * @return Point/shape UID
+     */
+    private static String getEndpointUID(PointMapItem pmi) {
+        if (pmi.getType().equals("shape_marker")
+                || pmi.getType().equals("center_u-d-r")
+                || pmi.hasMetaValue("nevercot")) {
+            MapItem shp = ATAKUtilities.findAssocShape(pmi);
+            if (shp instanceof AnchoredMapItem
+                    && ((AnchoredMapItem) shp).getAnchorItem() == pmi)
+                return shp.getUID();
+        }
+        return pmi.getUID();
     }
 
     private Folder toKml() {

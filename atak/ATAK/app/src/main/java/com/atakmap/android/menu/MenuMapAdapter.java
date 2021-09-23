@@ -1,12 +1,10 @@
 
 package com.atakmap.android.menu;
 
-import android.graphics.Rect;
 import android.net.Uri;
 
 import com.atakmap.android.config.FiltersConfig;
 import com.atakmap.android.maps.MapItem;
-import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.assets.MapAssets;
 import com.atakmap.coremap.log.Log;
 
@@ -88,10 +86,6 @@ public class MenuMapAdapter {
             }
             if ((filter = _filters.lookupFilter(metadata)) != null) {
 
-                if (item instanceof Marker) {
-                    ((Marker) item).setMarkerHitBounds(new Rect(-32, -32, 32,
-                            32));
-                }
                 item.setClickable(true);
 
                 // MenuFilter checks the "type" of an object, this creates a problem with damaged
@@ -108,9 +102,6 @@ public class MenuMapAdapter {
 
         if (!item.hasMetaValue("menu")
                 && !item.getMetaBoolean("ignoreMenu", false)) {
-            if (item instanceof Marker) {
-                ((Marker) item).setMarkerHitBounds(new Rect(-32, -32, 32, 32));
-            }
             item.setClickable(true);
             if (item.hasMetaValue("type")) // if it has a type defined, allow interface to change
                                            // it

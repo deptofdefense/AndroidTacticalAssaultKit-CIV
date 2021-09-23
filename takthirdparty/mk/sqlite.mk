@@ -12,12 +12,16 @@ sqlite_fixedflags :=                                                  \
     -DHAVE_USLEEP=1                                                   \
     -DSQLITE_OMIT_BUILTIN_TEST=1
 
+# Build CC (cc that builds things that run on build host, rather than target
+# Uses detection in configure if not set
+bcc_win32=BUILD_CC="$(VS_SETUP_win32) cl"
 
 $(OUTDIR)/$(sqlite_srcdir)/sqlite3.c: $(sqlite_srctouchfile)
 	cd $(OUTDIR)/$(sqlite_srcdir) &&                            \
 		LDFLAGS=-L$(OUTDIR_CYGSAFE)/lib                     \
                 CFLAGS="$(sqlite_CFLAGS) -I$(OUTDIR_CYGSAFE)/include" \
 		CC="$(CC)"                                          \
+		$(bcc_$(PLATFORM))                                  \
 		./configure --prefix=$(OUTDIR)                      \
 			$(CONFIGURE_TARGET)                         \
 			--disable-tcl && make sqlite3.c

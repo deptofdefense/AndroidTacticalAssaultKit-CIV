@@ -41,8 +41,8 @@ public class DragMarkerHelper {
 
         // Reticle widget (drawn over map)
         Context ctx = mapView.getContext();
-        float retSize = (float) (80f * ctx.getResources()
-                .getDisplayMetrics().density);
+        float retSize = 80f * ctx.getResources()
+                .getDisplayMetrics().density;
         RootLayoutWidget root = (RootLayoutWidget) mapView.getComponentExtra(
                 "rootLayoutWidget");
         reticle = new MarkerDrawableWidget(ctx.getDrawable(

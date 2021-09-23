@@ -27,6 +27,7 @@ public class ImportKMLSort extends ImportInPlaceResolver {
     private static final String TAG = "ImportKMLSort";
 
     private final static String KMLMATCH = "<kml";
+    private final static String KMLMATCH_REGEX_WITHNS = "(?s).*<[^>]+:kml.*";
 
     private final Context _context;
 
@@ -69,7 +70,8 @@ public class ImportKMLSort extends ImportInPlaceResolver {
             }
 
             String content = String.valueOf(buffer, 0, numRead);
-            boolean match = content.contains(KMLMATCH);
+            boolean match = content.contains(KMLMATCH)
+                    || content.matches(KMLMATCH_REGEX_WITHNS);
             if (!match) {
                 Log.d(TAG, "Failed to match kml content");
             }

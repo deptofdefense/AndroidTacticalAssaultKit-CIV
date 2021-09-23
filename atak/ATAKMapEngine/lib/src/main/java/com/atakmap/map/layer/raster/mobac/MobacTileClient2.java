@@ -117,6 +117,8 @@ public class MobacTileClient2 implements TileClient, TileClientControl {
     public MobacTileClient2(MobacMapSource src, String offlineCachePath) {
         this.source = src;
         this.offlineMode = false;
+        if(src instanceof MobacMapSource2)
+            this.refreshInterval = ((MobacMapSource2)src).getRefreshInterval();
         
         Projection proj = MobileImageryRasterLayer2.getProjection(src.getSRID());
         this.origin = proj.forward(new GeoPoint(proj.getMaxLatitude(), proj.getMinLongitude()), null);

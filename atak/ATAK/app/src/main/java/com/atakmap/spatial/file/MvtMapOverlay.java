@@ -67,7 +67,7 @@ public final class MvtMapOverlay extends FeatureDataStoreMapOverlay {
                         mapped.add(i);
                         continue;
                     }
-                } catch (DataStoreException e) {
+                } catch (DataStoreException ignored) {
                 }
 
                 // not able to map to a file, add as top-level item

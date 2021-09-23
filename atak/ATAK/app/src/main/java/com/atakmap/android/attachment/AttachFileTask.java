@@ -286,7 +286,7 @@ public class AttachFileTask extends AsyncTask<File, File, AttachFileTask.Result>
      *                          otherwise a copy is executed. Note that the
      *                          move may be implemented via copy followed by
      *                          delete.
-     * @throws IOException
+     * @throws IOException      an exception if a problem occured moving or copying the file.
      */
     private Result copyMoveFile(File srcFile, File dstFile,
             IOProvider srcFileProvider, boolean move) throws IOException {

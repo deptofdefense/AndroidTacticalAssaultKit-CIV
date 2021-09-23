@@ -40,17 +40,22 @@ final class GLContentFactory {
             return null;
         if(tile.content.uri == null)
             return null;
-        URI uriObj = null;
-        try {
-            uriObj = new URI(baseUri);
-        } catch(Throwable e) {
-            return null;
-        }
 
         Content absContent = new Content();
-        absContent.uri = uriObj.resolve(".") + tile.content.uri;
-        if(uriObj.getRawQuery()  != null)
-            absContent.uri += "?" + uriObj.getRawQuery();
+        do {
+            // if streaming content, carry the query through on the URI
+            try {
+                URI uriObj = new URI(Uri_encode(baseUri));
+                absContent.uri = Uri_decode(uriObj.resolve(".").toString()) + tile.content.uri;
+                if (uriObj.getRawQuery() != null)
+                    absContent.uri += "?" + uriObj.getRawQuery();
+                break;
+            } catch (Throwable ignored) {}
+
+            // fall through and try simple construction
+            absContent.uri = baseUri + tile.content.uri;
+        } while(false);
+
         absContent.boundingVolume = tile.content.boundingVolume;
         String contentName = tile.content.uri.toLowerCase(LocaleUtil.getCurrent());
         if(contentName.endsWith(".b3dm"))
@@ -575,4 +580,11 @@ final class GLContentFactory {
         }
     }
 
+    static String Uri_encode(String u) {
+        return u.replace(" ", "%20");
+    }
+
+    static String Uri_decode(String u) {
+        return u.replace("%20", " ");
+    }
 }

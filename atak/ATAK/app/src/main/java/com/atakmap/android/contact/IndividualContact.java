@@ -497,7 +497,7 @@ public class IndividualContact extends Contact
         int count = 0;
         for (Object cur : counts) {
             if (cur instanceof Integer) {
-                Integer i = (Integer) cur;
+                int i = (Integer) cur;
                 if (i < 0) {
                     Log.w(TAG, "Skipping invalid count: " + i);
                     continue;

@@ -169,7 +169,7 @@ public class MarkerImporter extends MapItemImporter {
         // to be moved.
         if (event.getHow() != null) {
             if (!event.getHow().equals("m-g"))
-                marker.setMetaBoolean("movable", true);
+                marker.setMovable(true);
             else
                 marker.removeMetaData("movable");
         }
@@ -342,7 +342,7 @@ public class MarkerImporter extends MapItemImporter {
         }
 
         // Give it full mutability.
-        m.setMetaBoolean("movable", true);
+        m.setMovable(true);
         m.setMetaBoolean("removable", true);
         m.setMetaBoolean("editable", true);
 

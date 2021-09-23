@@ -12,12 +12,13 @@ import com.atakmap.android.maps.MapTextFormat;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Shape;
 import com.atakmap.android.maps.Shape.OnPointsChangedListener;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.Vector3D;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.MapRenderer3;
+import com.atakmap.map.hittest.HitTestResult;
 import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.feature.geometry.LineString;
@@ -27,6 +28,7 @@ import com.atakmap.map.layer.feature.style.CompositeStyle;
 import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.map.opengl.GLLabelManager;
 import com.atakmap.map.opengl.GLMapView;
+import com.atakmap.map.hittest.HitTestQueryParameters;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.Plane;
 import com.atakmap.opengl.GLES20FixedPipeline;
@@ -63,6 +65,7 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
     private boolean _forceClamp = false;
     private boolean _clampToGround = false;
     private boolean _nadirClamp = false;
+    private Envelope _geomBounds;
 
     private final GLBatchLineString impl;
     private final GLBatchLineString ximpl;
@@ -224,7 +227,7 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
         double bearing = pts[1].bearingTo(pts[0]);
         double inclination = Math.toDegrees(Math
                 .atan2(pts[0].getAltitude() - pts[1].getAltitude(), distance));
-        pts[0] = DistanceCalculations.computeDestinationPoint(pts[1], bearing,
+        pts[0] = GeoCalculations.pointAtDistance(pts[1], bearing,
                 ortho.currentScene.drawMapResolution, inclination);
 
         // Get the tail and head in screen coordinates so we can calculate the on-screen angle
@@ -398,11 +401,14 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
         if (updateBounds) {
             MapView mv = MapView.getMapView();
             if (mv != null) {
-                Envelope env = impl.getBounds(mv.getProjection()
+                _geomBounds = impl.getBounds(mv.getProjection()
                         .getSpatialReferenceID());
-                if (env != null) {
+                if (_geomBounds != null) {
                     bounds.setWrap180(mv.isContinuousScrollEnabled());
-                    bounds.set(env.minY, env.minX, env.maxY, env.maxX);
+                    bounds.set(_geomBounds.minY, _geomBounds.minX,
+                            _geomBounds.maxY, _geomBounds.maxX);
+                    bounds.setMinAltitude(_ptsAgl ? DEFAULT_MIN_ALT : minEl);
+                    bounds.setMaxAltitude(_ptsAgl ? DEFAULT_MAX_ALT : maxEl);
                     dispatchOnBoundsChanged();
                 }
             }
@@ -538,6 +544,13 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
 
             GLES20FixedPipeline.glPopMatrix();
         }
+    }
+
+    @Override
+    protected HitTestResult hitTestImpl(MapRenderer3 renderer,
+            HitTestQueryParameters params) {
+        HitTestResult result = impl.hitTest(renderer, params);
+        return result != null ? new HitTestResult(_subject, result) : null;
     }
 
     /**

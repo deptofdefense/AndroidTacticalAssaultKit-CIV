@@ -4,6 +4,7 @@ package com.atakmap.android.rubbersheet.maps;
 import android.graphics.Bitmap;
 import android.util.Pair;
 
+import com.atakmap.android.hierarchy.filters.FOVFilter;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Shape;
@@ -14,15 +15,18 @@ import com.atakmap.android.rubbersheet.data.BitmapPyramid;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.coremap.maps.coords.Vector2D;
 import com.atakmap.map.AtakMapView;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.MapRenderer3;
+import com.atakmap.map.hittest.HitTestResult;
 import com.atakmap.map.layer.control.SurfaceRendererControl;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.raster.DatasetProjection2;
 import com.atakmap.map.layer.raster.DefaultDatasetProjection2;
 import com.atakmap.map.layer.raster.tilereader.opengl.GLTileMesh;
 import com.atakmap.map.opengl.GLMapView;
+import com.atakmap.map.hittest.HitTestQueryParameters;
 import com.atakmap.math.MathUtils;
 import com.atakmap.opengl.GLTexture;
 import com.atakmap.util.Visitor;
@@ -53,6 +57,7 @@ public class GLRubberImage extends AbstractGLMapItem2 implements
     private final MapView _mapView;
     private final RubberImage _subject;
     private final DoubleBuffer _points;
+    private final Vector2D[] _quad = new Vector2D[4];
     private GLTileMesh _mesh;
     private boolean _meshDirty;
 
@@ -247,6 +252,7 @@ public class GLRubberImage extends AbstractGLMapItem2 implements
             GeoPoint gp = points[i];
             _points.put(gp.getLongitude());
             _points.put(gp.getLatitude());
+            _quad[i] = FOVFilter.geo2Vector(gp);
         }
         _points.flip();
         _meshDirty = true;
@@ -275,6 +281,16 @@ public class GLRubberImage extends AbstractGLMapItem2 implements
                     true);
         }
         context.requestRefresh();
+    }
+
+    @Override
+    protected HitTestResult hitTestImpl(MapRenderer3 renderer,
+            HitTestQueryParameters params) {
+        if (bounds.intersects(params.bounds) && Vector2D.polygonContainsPoint(
+                FOVFilter.geo2Vector(params.geo), _quad)) {
+            return new HitTestResult(_subject, params.geo);
+        }
+        return null;
     }
 
     private void checkShouldRecycle() {

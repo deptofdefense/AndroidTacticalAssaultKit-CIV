@@ -33,7 +33,7 @@ import java.io.FilenameFilter;
 import java.util.List;
 
 /**
- * Supports mgmt of ATAK plugins and auxillary apps. Currently supports
+ * Supports mgmt of ATAK plugins and auxiliary apps. Currently supports
  *
  *
  */
@@ -68,6 +68,13 @@ public class AppMgmtUtils {
         }
     };
 
+    /**
+     * Installs an APK in ATAK.
+     * @param context the context to use for the install process
+     * @param apk the apk pointed to by the file.
+     * @return true if the process was kicked off with sucess.   Does not
+     * indicate if the app was installed correctly.
+     */
     public static boolean install(Context context, File apk) {
         //Use java.io.File operations for Android installation purposes
 
@@ -114,6 +121,12 @@ public class AppMgmtUtils {
         }
     }
 
+    /**
+     * Given a packageName return the application name
+     * @param context the context to use
+     * @param packageName the package name
+     * @return the name of the app or if the app is not found, the package name provided is returned.
+     */
     public static String getAppNameOrPackage(final Context context,
             final String packageName) {
         final PackageManager pm = context.getPackageManager();
@@ -128,6 +141,12 @@ public class AppMgmtUtils {
         return packageName;
     }
 
+    /**
+     * Get the drawable for the apk.
+     * @param context the context to use
+     * @param packageName the package name
+     * @return null if the packageName does not resolve to an installed application.
+     */
     public static Drawable getAppDrawable(final Context context,
             final String packageName) {
         try {
@@ -173,13 +192,22 @@ public class AppMgmtUtils {
         return image;
     }
 
+    /**
+     * Given a drawable, get a scaled drawable useful for the dialog box
+     * @param context the context to use
+     * @param image the original drawable
+     * @return a 32dp icon useful for a dialog box icon.
+     */
     public static Drawable getDialogIcon(Context context, Drawable image) {
         return getDialogIcon(image, context.getResources()
                 .getDimension(R.dimen.button_small));
     }
 
     /**
-     * Gets the app information for a specific package name.
+     * Gets the app information for an application described by the package name
+     * @param context the context to use
+     * @param packageName the package name to resolve
+     * @return null if the application is not found otherwise the application information
      */
     public static ApplicationInfo getAppInfo(final Context context,
             final String packageName) {
@@ -193,7 +221,10 @@ public class AppMgmtUtils {
     }
 
     /**
-     * Obtains the app version code from a given package name.
+     * Obtains the app version code from an application described by the package name
+     * @param context the context to use
+     * @param pkg the package name to resolve
+     * @return the 32 bit version code for the application
      */
     public static int getAppVersionCode(Context context, String pkg) {
         PackageManager manager = context.getPackageManager();
@@ -208,6 +239,12 @@ public class AppMgmtUtils {
 
     }
 
+    /**
+     * Obtains the apps target sdk version from an application described by the package name.
+     * @param context the context to use
+     * @param pkg the package name to resolve
+     * @return the target sdk version
+     */
     static int getTargetSdkVersion(Context context, String pkg) {
         PackageManager manager = context.getPackageManager();
         try {
@@ -220,7 +257,10 @@ public class AppMgmtUtils {
     }
 
     /**
-     * Gets the version name of a package.
+     * Gets the version name of an application described by the package name.
+     * @param context the context to use
+     * @param pkg the package name to resolve
+     * @return the version name of the application
      */
     public static String getAppVersionName(Context context, String pkg) {
         try {
@@ -258,7 +298,10 @@ public class AppMgmtUtils {
     }
 
     /**
-     * Given a package name, request android to start uninstalling.
+     * Given a package name, request android to start uninstalling
+     * @param ctx the context to use
+     * @param packageName the package name to resolve     *
+     *
      */
     public static void uninstall(final Context ctx, final String packageName) {
         try {
@@ -274,7 +317,9 @@ public class AppMgmtUtils {
 
     /**
      * Checks is the package name is registered in the device package manager ie installed apk
+     * @param context the context to use
      * @param pkg the manifest package name that is associated with the application
+     * @return true if the application described by the package name is installed.
      */
     public static boolean isInstalled(Context context, String pkg) {
         PackageManager pm = context.getPackageManager();
@@ -287,6 +332,12 @@ public class AppMgmtUtils {
         return false;
     }
 
+    /**
+     * Gets the install date of an application described by the package name.
+     * @param context the context to use
+     * @param pkgname the package name to resolve
+     * @return the installation date of the app if supported by the system.
+     */
     public static long getInstalledDate(final Context context,
             final String pkgname) {
         try {
@@ -298,6 +349,12 @@ public class AppMgmtUtils {
         }
     }
 
+    /**
+     * Gets the update date of an application described by the package name.
+     * @param context the context to use
+     * @param pkgname the package name to resolve
+     * @return the update date of the app if supported by the system.
+     */
     public static long getUpdateDate(final Context context,
             final String pkgname) {
         try {
@@ -310,7 +367,9 @@ public class AppMgmtUtils {
     }
 
     /**
-     * Obtain the Signatures information for the package.
+     * Obtain the Signatures information of an application described by the package name.
+     * @param context the context to use
+     * @param pkgname the package name to resolve
      * @return the array of human reabable easily extract key information.  empty if no keys are
      * extractable.
      */
@@ -396,6 +455,12 @@ public class AppMgmtUtils {
         return false;
     }
 
+    /**
+     * Gets the description of the application described by the package name.
+     * @param context the context to use
+     * @param packageName the package name to resolve
+     * @return the description of the of the app
+     */
     public static String getAppDescription(final Context context,
             final String packageName) {
         try {

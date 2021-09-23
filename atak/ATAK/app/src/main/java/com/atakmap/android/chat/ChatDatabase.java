@@ -9,6 +9,7 @@ import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.database.CursorIface;
 import com.atakmap.database.DatabaseIface;
 import com.atakmap.database.Databases;
+import com.atakmap.database.QueryIface;
 import com.atakmap.database.StatementIface;
 
 import android.net.Uri;
@@ -44,7 +45,7 @@ import com.atakmap.util.zip.IoUtils;
 
 public class ChatDatabase {
     public static final String TAG = "ChatDatabase";
-    public static final int VERSION = 6;
+    public static final int VERSION = 7;
 
     private static DatabaseIface chatDb;
 
@@ -74,6 +75,7 @@ public class ChatDatabase {
     private static final String MESSAGE_ID_COL_NAME = "messageId";
     private static final String PROTOCOL_COL_NAME = "protocol";
     private static final String TYPE_COL_NAME = "type";
+    private static final String STATUS_COL_NAME = "status";
     private static final String RECEIVE_TIME_COL_NAME = "receiveTime";
     private static final String SENT_TIME_COL_NAME = "sentTime";
     private static final String SENDER_UID_COL_NAME = "senderUid";
@@ -104,7 +106,8 @@ public class ChatDatabase {
             new DBColumn(SENT_TIME_COL_NAME, INTEGER_COL_TYPE),
             new DBColumn(SENDER_UID_COL_NAME, TEXT_COL_TYPE),
             new DBColumn(MESSAGE_COL_NAME, TEXT_COL_TYPE),
-            new DBColumn(CONTACT_CALLSIGN_COL_NAME, TEXT_COL_TYPE)
+            new DBColumn(CONTACT_CALLSIGN_COL_NAME, TEXT_COL_TYPE),
+            new DBColumn(STATUS_COL_NAME, TEXT_COL_TYPE)
     };
 
     private static final DBColumn[] GROUP_COLS = {
@@ -229,12 +232,17 @@ public class ChatDatabase {
                 db.execute("ALTER TABLE " + TABLE_CHAT + " ADD COLUMN "
                         + CONTACT_CALLSIGN_COL_NAME + " " + TEXT_COL_TYPE
                         + " DEFAULT ''", null);
-                break;
             case 5:
                 // Add parent column to groups
                 db.execute("ALTER TABLE " + TABLE_GROUPS + " ADD COLUMN "
                         + GROUP_PARENT + " " + TEXT_COL_TYPE
                         + " DEFAULT ''", null);
+            case 6:
+                // Add parent column to groups
+                db.execute("ALTER TABLE " + TABLE_CHAT + " ADD COLUMN "
+                        + STATUS_COL_NAME + " " + TEXT_COL_TYPE
+                        + " DEFAULT ''", null);
+                db.setVersion(VERSION);
                 break;
             default:
                 db.execute("DROP TABLE IF EXISTS " + TABLE_CHAT, null);
@@ -255,7 +263,7 @@ public class ChatDatabase {
      * @param chatMessage a bundle created from ChatMessage.toBundle() or a bundle containing the
      *                    following keys - "conversationName", "conversationId", "messageId",
      *                    "senderUid", "senderCallsign", "parent", "paths", "deleteChild",
-     *                    "groupOwner", "message"
+     *                    "groupOwner", "message", status
      * @return a list of longs, but effectively a single row based on the Chat Message bundle.
      */
     public List<Long> addChat(Bundle chatMessage) {
@@ -972,20 +980,17 @@ public class ChatDatabase {
         if (messageId == null)
             return null;
 
-        CursorIface cursor = null;
+        QueryIface query = null;
         try {
             db = chatDb;
-            cursor = db.query(
-                    "SELECT * FROM " + TABLE_CHAT + " WHERE "
-                            + MESSAGE_ID_COL_NAME + "=\""
-                            + DatabaseUtils.sqlEscapeString(messageId) + "\"",
-                    null);
-            if (cursor.moveToNext()) {
-                ret = cursorToBundle(cursor);
-            }
+            query = db.compileQuery("SELECT * FROM " + TABLE_CHAT
+                    + " WHERE " + MESSAGE_ID_COL_NAME + "=? LIMIT 1");
+            query.bind(1, messageId);
+            if (query.moveToNext())
+                ret = cursorToBundle(query);
         } finally {
-            if (cursor != null)
-                cursor.close();
+            if (query != null)
+                query.close();
         }
         return ret;
     }

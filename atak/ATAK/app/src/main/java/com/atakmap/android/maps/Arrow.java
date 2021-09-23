@@ -14,8 +14,6 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
-import com.atakmap.coremap.maps.coords.Vector3D;
-import com.atakmap.math.MathUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,107 +51,6 @@ public class Arrow extends Shape {
     public void setHitRadius(float radius) {
         _hitRadius = radius;
         _hitRadiusSq = radius * radius;
-    }
-
-    @Override
-    public boolean testOrthoHit(int xpos, int ypos, GeoPoint point,
-            MapView view) {
-
-        float hitRadius = !Float.isNaN(_hitRadius)
-                ? _hitRadius
-                : getHitRadius(view);
-        float hitRadiusSq = !Float.isNaN(_hitRadiusSq)
-                ? _hitRadiusSq
-                : (hitRadius * hitRadius);
-
-        // if either endpoint is null, we do not have a segment, return
-        if (_point1 == null || _point2 == null)
-            return false;
-
-        GeoPoint p1 = _point1.get();
-        GeoPoint p2 = _point2.get();
-
-        // Determine whether or not the line is clamped to the ground
-        boolean clampToGround = getMetaBoolean("forceClampToGround", false)
-                || view.getMapTouchController().isNadirClamped();
-
-        // Remove elevation so terrain is used instead
-        if (clampToGround) {
-            p1 = new GeoPoint(p1.getLatitude(), p1.getLongitude());
-            p2 = new GeoPoint(p2.getLatitude(), p2.getLongitude());
-        }
-
-        // adjust the endpoints to account for terrain offset/scale if tilted
-        p1 = view.getRenderElevationAdjustedPoint(p1);
-        p2 = view.getRenderElevationAdjustedPoint(p2);
-
-        double unwrap = view.getIDLHelper().getUnwrap(this.minimumBoundingBox);
-
-        // Check for touches on the actual arrow
-        Vector3D touch = new Vector3D(xpos, ypos, 0);
-
-        PointF temp = view.forward(p1, unwrap);
-        if (Float.isNaN(temp.x) || Float.isNaN(temp.y))
-            return false;
-        // bleed through on endpoint item
-        if (com.atakmap.math.Rectangle.contains(xpos - hitRadius,
-                ypos - hitRadius,
-                xpos + hitRadius,
-                ypos + hitRadius,
-                temp.x, temp.y)) {
-
-            return false;
-        }
-        PointF temp2 = view.forward(p2, unwrap);
-        if (Float.isNaN(temp2.x) || Float.isNaN(temp2.y))
-            return false;
-        if (com.atakmap.math.Rectangle.contains(xpos - hitRadius,
-                ypos - hitRadius,
-                xpos + hitRadius,
-                ypos + hitRadius,
-                temp2.x, temp2.y)) {
-
-            return false;
-        }
-
-        // Check if the touch hit the line
-        Vector3D nearest = Vector3D.nearestPointOnSegment(touch,
-                new Vector3D(temp.x, temp.y, 0),
-                new Vector3D(temp2.x, temp2.y, 0));
-        if (hitRadiusSq > nearest.distanceSq(touch)) {
-            // Compute geodetic touch point
-            _touchPoint = view.inverse(nearest.x, nearest.y,
-                    MapView.InverseMode.RayCast).get();
-
-            double seg_px = MathUtils.distance(temp.x, temp.y, temp2.x,
-                    temp2.y);
-            double seg_pct = MathUtils.distance(nearest.x, nearest.y, temp.x,
-                    temp.y);
-            double seg_ratio = seg_pct / seg_px;
-
-            _touchPoint = GeoCalculations.pointAtDistance(p1,
-                    p1.bearingTo(p2), p1.distanceTo(p2) * seg_ratio);
-
-            // Altitude correction
-            if (p1.isAltitudeValid() && p2.isAltitudeValid()) {
-                // Compute altitude at the touched point on the line
-                double touchAlt = p1.getAltitude() + (p2.getAltitude()
-                        - p1.getAltitude()) * seg_ratio;
-                _touchPoint = new GeoPoint(_touchPoint.getLatitude(),
-                        _touchPoint.getLongitude(), touchAlt);
-            } else {
-                // Remove altitude if either point is missing it
-                _touchPoint = new GeoPoint(_touchPoint.getLatitude(),
-                        _touchPoint.getLongitude());
-            }
-
-            // Save touch point
-            setMetaString("menu_point", _touchPoint.toString());
-            setTouchPoint(_touchPoint);
-            return true;
-        }
-
-        return false;
     }
 
     public GeoPointMetaData getPoint1() {

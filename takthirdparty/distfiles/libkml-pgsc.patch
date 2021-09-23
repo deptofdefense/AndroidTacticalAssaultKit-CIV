@@ -99,6 +99,24 @@ diff -ubr ../libkml-orig/third_party/zlib-1.2.3/contrib/minizip/unzip.h ./third_
  // TODO: fix this for real.
  #ifdef _WIN32
 
+--- src/kml/base/color32.h      2021-05-08 18:57:25.447665122 -0400
++++ src/kml/base/color32.h      2021-05-08 18:58:03.985055291 -0400
+@@ -44,10 +44,12 @@
+   explicit Color32(int32_t abgr)
+     : color_abgr_(static_cast<uint32_t>(abgr)) {
+   }
+-  Color32(unsigned char a, unsigned char b, unsigned char g, unsigned char r) {
++  Color32(unsigned char a, unsigned char b, unsigned char g, unsigned char r)
++    : color_abgr_(0xffffffff) {
+     set_color_abgr((a << 24) | (b << 16) | (g << 8) | r);
+   }
+-  Color32(const string& value) {
++  Color32(const string& value)
++    : color_abgr_(0xffffffff) {
+     set_color_abgr(value);
+   }
+ 
+
 --- src/kml/engine/kml_file.cc          2014-06-05 15:57:48.000000000 -0400
 +++ src/kml/engine/kml_file.cc          2015-04-27 09:31:51.000000000 -0400
 @@ -38,7 +38,7 @@

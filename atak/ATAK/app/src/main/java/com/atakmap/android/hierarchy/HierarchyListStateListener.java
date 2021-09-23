@@ -20,7 +20,9 @@ public interface HierarchyListStateListener {
      * @param adapter Overlay Manager adapter
      * @return True if event handled, false to allow the list to open normally
      */
-    boolean onOpenList(HierarchyListAdapter adapter);
+    default boolean onOpenList(HierarchyListAdapter adapter) {
+        return false;
+    }
 
     /**
      * The list is about to be closed (popped off the stack or pushed beneath)
@@ -30,7 +32,10 @@ public interface HierarchyListStateListener {
      * @param forceClose True if the list is being forcibly closed
      * @return True if event handled, false to allow the list to close normally
      */
-    boolean onCloseList(HierarchyListAdapter adapter, boolean forceClose);
+    default boolean onCloseList(HierarchyListAdapter adapter,
+            boolean forceClose) {
+        return false;
+    }
 
     /**
      * The list's on-screen visibility state has changed
@@ -41,7 +46,8 @@ public interface HierarchyListStateListener {
      * @param adapter Overlay Manager adapter
      * @param visible True if the drop-down is visible
      */
-    void onListVisible(HierarchyListAdapter adapter, boolean visible);
+    default void onListVisible(HierarchyListAdapter adapter, boolean visible) {
+    }
 
     /**
      * A back button was pressed while on the list
@@ -52,5 +58,8 @@ public interface HierarchyListStateListener {
      *                   False if the list's inline back button was pressed
      * @return True if event handled, false for default back button behavior
      */
-    boolean onBackButton(HierarchyListAdapter adapter, boolean deviceBack);
+    default boolean onBackButton(HierarchyListAdapter adapter,
+            boolean deviceBack) {
+        return false;
+    }
 }

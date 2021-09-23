@@ -4,12 +4,6 @@
 #    $(error Required var not set)
 #endif
 
-ifeq ($(PLATFORM),win32)
-ASSIMP_CMAKE="/cygdrive/c/Program Files (x86)/CMake/bin/cmake.exe"
-else
-ASSIMP_CMAKE=cmake
-endif
-
 assimp_libfile=$(LIB_PREFIX)assimp.$(LIB_SHAREDSUFFIX)
 assimp_src=../assimp
 assimp_local_srcdir=$(OUTDIR)/assimp

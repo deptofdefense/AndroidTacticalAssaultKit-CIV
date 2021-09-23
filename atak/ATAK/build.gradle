@@ -2,7 +2,7 @@
 buildscript {
     repositories {
         google()
-        jcenter ()
+        mavenCentral()
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:4.0.2'
@@ -14,10 +14,23 @@ buildscript {
 allprojects {
     repositories {
         google()
-        jcenter()
+        mavenCentral()
     }
 }
 
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
+
+subprojects { subProject ->
+    if(subProject.path.startsWith(':takkernel:')) {
+        // more robust dependency resolution based on simple project name for when
+        // `takkernel` is included in multi-project configuration (e.g. integrated
+        // into the ATAK development environment)
+        subProject.dependencies.ext.project = { p ->
+            return subProject.parent.findProject(p) ?:
+                    subProject.parent.findProject(":${parent.name}:${p}")
+        }
+    }
+}
+

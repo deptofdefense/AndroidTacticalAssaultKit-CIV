@@ -93,7 +93,7 @@ public class AnalysisPanelPresenter implements View.OnClickListener {
             GenericDetailsView.addEditTextPrompts((ViewGroup) viewshedView);
         _showViewshedCB = viewshedView.findViewById(
                 R.id.showViewshed_cb);
-        final TextView altitudeET = (EditText) viewshedView
+        final TextView altitudeET = viewshedView
                 .findViewById(R.id.altitude_et);
         final int heightAboveMarker = prefs.getInt(
                 PREFERENCE_PROFILE_VIEWSHED_ALT, 6);

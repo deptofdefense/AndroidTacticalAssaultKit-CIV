@@ -13,7 +13,6 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 
-import com.atakmap.android.elev.dt2.Dt2ElevationModel;
 import com.atakmap.android.gui.ActionButton;
 import com.atakmap.android.gui.Selector;
 import com.atakmap.android.maps.MapEvent;
@@ -33,6 +32,7 @@ import com.atakmap.coremap.maps.assets.Icon;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.map.elevation.ElevationManager;
 
 /**
  *
@@ -550,9 +550,16 @@ public class HLZView extends LinearLayout
      * @param p - point to be made
      */
     private void makeZonePoint(GeoPoint p) {
+        MapItem mi = _mapView.getMapItem(_marker.getUID() + "." + "zonepoint");
+        if (mi instanceof Marker) {
+            ((Marker) mi).setPoint(p);
+            zonePoint = (Marker) mi;
+            return;
+        }
+
         PlacePointTool.MarkerCreator mc = new PlacePointTool.MarkerCreator(
                 p);
-
+        mc.setUid(_marker.getUID() + "." + "zonepoint");
         mc.setIconPath("icons/redtriangle.png");
         mc.showCotDetails(false);
         mc.setNeverPersist(true);
@@ -681,10 +688,8 @@ public class HLZView extends LinearLayout
                 String point = _marker.getMetaString("zone_prot_marker", null);
                 GeoPoint gp = GeoPoint.parseGeoPoint(point);
 
-                final Dt2ElevationModel dem = Dt2ElevationModel
-                        .getInstance();
-                GeoPointMetaData newPoint = dem.queryPoint(gp.getLatitude(),
-                        gp.getLongitude());
+                GeoPointMetaData newPoint = ElevationManager
+                        .getElevationMetadata(gp);
 
                 //if the zone point already exists just set it to visible
                 //otherwise make the new point

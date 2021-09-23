@@ -4,7 +4,6 @@ package com.atakmap.net;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.comms.NetConnectString;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.foxykeep.datadroid.requestmanager.Request;
@@ -20,14 +19,8 @@ public class CertificateConfigRequest implements Parcelable {
     private final String username;
     private final String password;
     private boolean hasTruststore;
+    private boolean quickConnect;
     private Long expiration;
-
-    /**
-     * @deprecated Certificate Enrollment only stores certificates with the connection
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1")
-    private boolean saveAsDefault;
 
     private boolean allowAllHostnames;
 
@@ -44,7 +37,6 @@ public class CertificateConfigRequest implements Parcelable {
         this.username = username;
         this.password = password;
         this.hasTruststore = false;
-        this.saveAsDefault = false;
         this.allowAllHostnames = false;
     }
 
@@ -100,30 +92,20 @@ public class CertificateConfigRequest implements Parcelable {
         this.expiration = expiration;
     }
 
-    /**
-     * @deprecated Certificate Enrollment only stores certificates with the connection
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1")
-    public boolean getSaveAsDefault() {
-        return saveAsDefault;
-    }
-
-    /**
-     * @deprecated Certificate Enrollment only stores certificates with the connection
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1")
-    public void setSaveAsDefault(boolean saveAsDefault) {
-        this.saveAsDefault = saveAsDefault;
-    }
-
     public boolean getAllowAllHostnames() {
         return allowAllHostnames;
     }
 
     public void setAllowAllHostnames(boolean allowAllHostnames) {
         this.allowAllHostnames = allowAllHostnames;
+    }
+
+    public boolean getQuickConnect() {
+        return quickConnect;
+    }
+
+    public void setQuickConnect(boolean quickConnect) {
+        this.quickConnect = quickConnect;
     }
 
     @Override
@@ -144,9 +126,9 @@ public class CertificateConfigRequest implements Parcelable {
             dest.writeString(username);
             dest.writeString(password);
             dest.writeByte((byte) (hasTruststore ? 1 : 0));
-            dest.writeByte((byte) (saveAsDefault ? 1 : 0));
             dest.writeByte((byte) (allowAllHostnames ? 1 : 0));
             dest.writeLong(expiration);
+            dest.writeByte((byte) (quickConnect ? 1 : 0));
         }
     }
 
@@ -171,9 +153,9 @@ public class CertificateConfigRequest implements Parcelable {
         username = in.readString();
         password = in.readString();
         hasTruststore = in.readByte() != 0;
-        saveAsDefault = in.readByte() != 0;
         allowAllHostnames = in.readByte() != 0;
         expiration = in.readLong();
+        quickConnect = in.readByte() != 0;
     }
 
     @Override

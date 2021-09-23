@@ -15,6 +15,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.menu.MapMenuReceiver;
 import com.atakmap.android.toolbar.ButtonTool;
 import com.atakmap.android.toolbar.widgets.TextContainer;
+import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.util.EditAction;
 import com.atakmap.android.util.Undoable;
 import com.atakmap.app.R;
@@ -136,17 +137,20 @@ public class CircleEditTool extends ButtonTool implements Undoable,
 
     @Override
     public void onMapEvent(final MapEvent event) {
-        if (event.getItem() != _circle.getCenterMarker()
-                && event.getItem() != _circle) {
+        MapItem item = event.getItem();
+        if (item == null)
             return;
-        }
+
+        MapItem shape = ATAKUtilities.findAssocShape(item);
+        if (shape != _circle)
+            return;
 
         // Get ready to add a new listener
         _mapView.getMapEventDispatcher().pushListeners();
         clearExtraListeners();
         twoListenerPushesDeep = true;
 
-        if (event.getItem() == _circle.getCenterMarker()) {
+        if (item == _circle.getCenterMarker()) {
             MapEventDispatchListener center = new MapEventDispatchListener() {
                 @Override
                 public void onMapEvent(MapEvent event) {

@@ -74,7 +74,8 @@ public class VehicleModelDetailHandler extends CotDetailHandler {
         }
 
         // Check for existing vehicle
-        String vehicleUID = mi.getUID() + ".vehicle_model";
+        String vehicleUID = mi.getMetaString("vehicleUID",
+                mi.getUID() + ".vehicle_model");
 
         VehicleModel vehicle = getMapItem(vehicleUID);
         if (vehicle == null) {
@@ -91,6 +92,7 @@ public class VehicleModelDetailHandler extends CotDetailHandler {
             vehicle.removeMetaData("editable");
             vehicle.setCenterMarker(marker);
             _vehicleGroup.addItem(vehicle);
+            mi.setMetaString("vehicleUID", vehicleUID);
         } else
             vehicle.setVehicleInfo(info);
 
@@ -113,10 +115,19 @@ public class VehicleModelDetailHandler extends CotDetailHandler {
         if (mi.getType().equals(VehicleModel.COT_TYPE))
             return false;
 
-        // Marker does not have attached vehicle
-        if (!mi.hasMetaValue("vehicleUID"))
+        // Check for existing vehicle
+        VehicleModel vehicle = getMapItem(mi.getMetaString("vehicleUID", null));
+        if (vehicle == null)
             return false;
 
-        return false;
+        //     <model type='vehicle' name='HH-60' category='Aircraft'/>
+        VehicleModelInfo vmi = vehicle.getVehicleInfo();
+        CotDetail model = new CotDetail("model");
+        model.setAttribute("type", "vehicle");
+        model.setAttribute("name", vmi.name);
+        model.setAttribute("category", vmi.category);
+        model.setAttribute("outline", String.valueOf(vehicle.showOutline()));
+        root.addChild(model);
+        return true;
     }
 }

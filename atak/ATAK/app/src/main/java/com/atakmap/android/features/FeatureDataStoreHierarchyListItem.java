@@ -495,7 +495,7 @@ public class FeatureDataStoreHierarchyListItem extends
 
     /**************************************************************************/
 
-    private class ContentChangedHandler implements
+    private static class ContentChangedHandler implements
             FeatureDataStore2.OnDataStoreContentChangedListener {
         private final WeakReference<FeatureDataStoreHierarchyListItem> ref;
         private final String refUID;

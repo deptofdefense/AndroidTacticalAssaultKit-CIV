@@ -1,0 +1,23 @@
+apply from: 'gradle/versions.gradle'
+
+publishing {
+    repositories {
+        maven {
+            name = 'upstream'
+            credentials {
+                username System.getenv('ARTIFACTORY_USER')
+                password System.getenv('ARTIFACTORY_PASS')
+            }
+            url = System.getenv('ARTIFACTORY_MAVEN_URL')
+        }
+    }
+    publications {
+        jcommoncommo(MavenPublication) {
+            group = 'jcommoncommo'
+            artifactId = 'jcommoncommo-native'
+            version = "${commoncommoVersion}"
+            artifact "$buildDir/jcommoncommo-native.zip"
+            artifact "$rootDir/../jcommoncommo.jar"
+        }
+    }
+}

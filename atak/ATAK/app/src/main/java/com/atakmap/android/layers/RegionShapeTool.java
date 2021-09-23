@@ -57,7 +57,7 @@ public class RegionShapeTool extends Tool implements Undoable,
         MapEventDispatcher.MapEventDispatchListener,
         View.OnClickListener, Dialog.OnClickListener {
 
-    private static final String TAG = "RegionShapeTool";
+    protected static final String TAG = "RegionShapeTool";
 
     public static final String TOOL_ID = "com.atakmap.android.layers.RegionShapeTool";
 
@@ -97,18 +97,19 @@ public class RegionShapeTool extends Tool implements Undoable,
     protected final Context _context;
     private final DrawingPreferences _prefs;
     private final ActionBarView _toolbar;
-    private final Button _undoButton, _endButton;
-    private final Stack<EditAction> _undoStack = new Stack<>();
+    protected final Button _undoButton;
+    private final Button _endButton;
+    protected final Stack<EditAction> _undoStack = new Stack<>();
     protected MapGroup _drawingGroup;
-    private Mode _mode;
-    private Intent _callback;
-    private Shape _shape;
-    private DrawingShape _drawShape;
-    private Point _lastPt;
+    protected Mode _mode;
+    protected Intent _callback;
+    protected Shape _shape;
+    protected DrawingShape _drawShape;
+    protected Point _lastPt;
     private Marker _firstPoint;
-    private double _expandDistance;
+    protected double _expandDistance;
     protected DrawingRectangle.Builder _builder;
-    private TileButtonDialog _dialog;
+    protected TileButtonDialog _dialog;
 
     public RegionShapeTool(MapView mapView) {
         super(mapView, TOOL_ID);
@@ -199,26 +200,13 @@ public class RegionShapeTool extends Tool implements Undoable,
 
     @Override
     protected void onToolEnd() {
+        // Cleanup
         if (_drawShape != null) {
             _drawShape.removeMarker(_firstPoint);
             if (_firstPoint != null)
                 _drawingGroup.removeItem(_firstPoint);
-        } else if (_builder != null) {
-            try {
-                _drawingGroup.addItem(_shape = _builder.build());
-                flagTempShape();
-            } catch (IndexOutOfBoundsException eb) {
-                Log.e(TAG,
-                        "rectangle is not defined correctly, builder is not valid");
-                _builder.dispose();
-                if (_firstPoint != null) {
-                    MapGroup mg = _firstPoint.getGroup();
-                    if (mg != null)
-                        mg.removeItem(_firstPoint);
-
-                }
-            }
-        }
+        } else if (_builder != null && !_builder.built())
+            _builder.dispose();
 
         if (_dialog != null) {
             _dialog.dismiss();
@@ -373,6 +361,8 @@ public class RegionShapeTool extends Tool implements Undoable,
                         R.string.select_area_prompt2));
             } else {
                 _builder.setSecondPoint(point);
+                _drawingGroup.addItem(_shape = _builder.build());
+                flagTempShape();
                 requestEndTool();
             }
         }

@@ -42,6 +42,7 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
+import com.atakmap.map.layer.feature.Feature.AltitudeMode;
 import com.atakmap.spatial.file.export.GPXExportWrapper;
 import com.atakmap.spatial.file.export.KMZFolder;
 import com.atakmap.spatial.file.export.OGRFeatureExportWrapper;
@@ -133,11 +134,10 @@ public class DrawingCircle extends Shape implements
         _childGroup.setMetaString("shapeUID", uid);
         setType(type);
         setMetaBoolean("removable", true);
-        setMetaBoolean("movable", true);
+        setMovable(true);
         setMetaBoolean("archive", true);
         setMetaBoolean("labels_on", true);
         setMetaBoolean("editable", true);
-        setClickable(true);
         setMetaString("iconUri", ATAKUtilities.getResourceUri(
                 mapView.getContext(), R.drawable.ic_circle));
         setMetaString("menu", "menus/drawing_circle_geofence_menu.xml");
@@ -288,18 +288,12 @@ public class DrawingCircle extends Shape implements
             return;
 
         double zOrder = getZOrder();
-        boolean labelsOn = hasMetaValue("labels_on");
         int strokeColor = getStrokeColor();
 
         Marker center = getCenterMarker();
         if (center != null && isCenterShapeMarker()) {
-            center.setTitle(getTitle());
             center.setZOrder(zOrder);
-            center.toggleMetaData("labels_on", labelsOn);
-            center.toggleMetaData("editable", getEditable());
-            center.setMetaString("menu", getMetaString("menu", ""));
-            center.setMovable(getMovable());
-            center.setHeight(getHeight());
+            setChildMetadata(center);
             if (strokeColor != center.getMetaInteger("color", Color.WHITE)) {
                 center.setMetaInteger("color", strokeColor);
                 center.refresh(_mapView.getMapEventDispatcher(),
@@ -320,15 +314,13 @@ public class DrawingCircle extends Shape implements
                 double r = radius * (i + 1);
                 c.setRadius(r);
                 c.setLineLabel(SpanUtilities.formatType(system, r, Span.METER));
-                c.toggleMetaData("labels_on", labelsOn);
                 c.setZOrder(zOrder += zInc);
                 c.setStrokeColor(strokeColor);
                 c.setStrokeWeight(getStrokeWeight());
                 c.setBasicLineStyle(getBasicLineStyle());
                 c.setStyle(getStyle());
                 c.setMetaBoolean("addToObjList", false);
-                c.setClickable(false);
-                c.setHeight(getHeight());
+                setChildMetadata(c);
                 if (i < _rings.size() - 1) {
                     c.setFillColor(emptyColor);
                     c.setHeightStyle(Polyline.HEIGHT_STYLE_OUTLINE_SIMPLE);
@@ -343,6 +335,18 @@ public class DrawingCircle extends Shape implements
                 }
             }
         }
+    }
+
+    private void setChildMetadata(MapItem mi) {
+        mi.setTitle(getTitle());
+        mi.toggleMetaData("labels_on", hasMetaValue("labels_on"));
+        mi.toggleMetaData("editable", getEditable());
+        mi.setRadialMenu(getRadialMenuPath());
+        mi.setMetaString("shapeUID", getUID());
+        mi.setMovable(getMovable());
+        mi.setHeight(getHeight());
+        mi.setAltitudeMode(getAltitudeMode());
+        mi.setClickable(getClickable());
     }
 
     /**
@@ -599,6 +603,12 @@ public class DrawingCircle extends Shape implements
         refresh();
     }
 
+    @Override
+    public void setAltitudeMode(AltitudeMode altitudeMode) {
+        super.setAltitudeMode(altitudeMode);
+        refresh();
+    }
+
     /**
      * Apply fill color to the outermost ring only
      * @param fillColor An argb packed by {@link Color}
@@ -629,27 +639,6 @@ public class DrawingCircle extends Shape implements
     public void setBasicLineStyle(int basicLineStyle) {
         super.setBasicLineStyle(basicLineStyle);
         refresh();
-    }
-
-    /**
-     * Redirect hit detection to the rings
-     */
-    @Override
-    public boolean testOrthoHit(int xpos, int ypos, GeoPoint point,
-            MapView view) {
-        GeoPoint touch = null;
-        for (Circle circle : getRings()) {
-            if (circle.testOrthoHit(xpos, ypos, point, view)) {
-                touch = circle.findTouchPoint();
-                break;
-            }
-        }
-        if (touch != null) {
-            setTouchPoint(touch);
-            setMetaString("menu_point", touch.toString());
-            return true;
-        }
-        return false;
     }
 
     @Override
@@ -1143,6 +1132,10 @@ public class DrawingCircle extends Shape implements
     @Override
     public double getArea() {
         return getRadius() * getRadius() * Math.PI;
+    }
 
+    @Override
+    public double getPerimeterOrLength() {
+        return 2 * Math.PI * getRadius();
     }
 }

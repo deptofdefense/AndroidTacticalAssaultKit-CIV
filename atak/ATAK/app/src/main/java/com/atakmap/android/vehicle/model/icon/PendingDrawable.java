@@ -95,7 +95,7 @@ public class PendingDrawable extends Drawable {
             ViewParent vp = v.getParent();
             while (vp != null) {
                 if (vp instanceof AdapterView) {
-                    AdapterView adapterView = (AdapterView) vp;
+                    AdapterView<?> adapterView = (AdapterView<?>) vp;
                     Adapter adapter = adapterView.getAdapter();
                     if (adapter instanceof BaseAdapter)
                         ((BaseAdapter) adapter).notifyDataSetChanged();

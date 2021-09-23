@@ -11,6 +11,9 @@ import com.atakmap.android.maps.graphics.GLMapItemSpi3;
 import com.atakmap.android.maps.graphics.GLPolyline;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.MapRenderer3;
+import com.atakmap.map.hittest.HitTestQueryParameters;
+import com.atakmap.map.hittest.HitTestResult;
 import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.opengl.GLMapBatchable;
 import com.atakmap.map.opengl.GLMapView;
@@ -33,7 +36,7 @@ public class GLTrackPolyline extends GLPolyline implements GLMapBatchable {
     public static final GLMapItemSpi3 SPI = new GLMapItemSpi3() {
         @Override
         public int getPriority() {
-            return 0;
+            return 1;
         }
 
         @Override
@@ -123,7 +126,7 @@ public class GLTrackPolyline extends GLPolyline implements GLMapBatchable {
     // calculates and draws arrows
     private void _projectArrows(final GLMapView ortho, GLRenderBatch batch) {
 
-        float radius = (float) (_subject.getCrumbSize() * MapView.DENSITY);
+        float radius = _subject.getCrumbSize() * MapView.DENSITY;
 
         // Update base arrow when radius changes
         if (_arrowSrcBuffer == null || _radius != radius) {
@@ -230,12 +233,16 @@ public class GLTrackPolyline extends GLPolyline implements GLMapBatchable {
                         0, 3);
 
                 GLES20FixedPipeline.glColor4f(0f, 0f, 0f, 1f);
-                GLES20FixedPipeline.glLineWidth((float) 1f);
+                GLES20FixedPipeline.glLineWidth(1f);
                 GLES20FixedPipeline.glDrawArrays(
                         GLES20FixedPipeline.GL_LINE_STRIP,
                         0, 4);
             }
         }
+
+        // Update impl for hit testing
+        impl.setAltitudeMode(getAltitudeMode());
+        impl.updateScreenVertices(ortho);
     }
 
     @Override
@@ -283,5 +290,17 @@ public class GLTrackPolyline extends GLPolyline implements GLMapBatchable {
         _projectArrows(view, batch);
 
         this.recompute = false;
+    }
+
+    @Override
+    protected HitTestResult hitTestImpl(MapRenderer3 renderer,
+            HitTestQueryParameters params) {
+        HitTestResult result = super.hitTestImpl(renderer, params);
+
+        // Only "point" hit results are allowed when rendering arrows
+        return result != null
+                && (basicLineStyle != TrackPolyline.BASIC_LINE_STYLE_ARROWS
+                        || result.type == HitTestResult.Type.POINT) ? result
+                                : null;
     }
 }

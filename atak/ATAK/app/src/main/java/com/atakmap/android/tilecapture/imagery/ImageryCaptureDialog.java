@@ -18,6 +18,9 @@ import com.atakmap.android.imagecapture.ImageDialog;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.coremap.log.Log;
 
+/**
+ * Image capture preview dialog w/ post-processing options
+ */
 public class ImageryCaptureDialog extends ImageDialog implements TextWatcher {
 
     private static final String TAG = "ImageryCaptureDialog";

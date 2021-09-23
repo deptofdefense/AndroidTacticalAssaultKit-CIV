@@ -263,7 +263,6 @@ public class DynamicRangeAndBearingTool extends Tool implements
             if (_pt1 == null) {
                 _pt1 = new DynamicRangeAndBearingEndpoint(_mapView, gp,
                         UUID.randomUUID().toString());
-                _pt1.setClickable(true);
                 _pt1.setMetaString("menu", "menus/drab_endpoint_menu.xml");
                 _pt1.setMetaString("entry", "user");
                 _rabGroup.addItem(_pt1);
@@ -271,7 +270,6 @@ public class DynamicRangeAndBearingTool extends Tool implements
             } else if (_pt2 == null) {
                 _pt2 = new DynamicRangeAndBearingEndpoint(_mapView, gp,
                         UUID.randomUUID().toString());
-                _pt2.setClickable(true);
                 _pt2.setMetaString("menu", "menus/drab_endpoint_menu.xml");
                 _pt2.setMetaString("entry", "user");
                 _rabGroup.addItem(_pt2);

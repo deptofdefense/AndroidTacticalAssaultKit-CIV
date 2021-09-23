@@ -3,16 +3,16 @@ package com.atakmap.android.munitions;
 
 import android.content.Context;
 import android.content.Intent;
+
+import com.atakmap.android.cot.detail.CotDetailManager;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 
-import com.atakmap.android.cot.CotMapComponent;
 import com.atakmap.android.ipc.DocumentedExtra;
 import com.atakmap.android.maps.AbstractMapComponent;
 import com.atakmap.android.maps.DefaultMapGroup;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.overlay.DefaultMapGroupOverlay;
-import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.android.importfiles.sort.ImportTXTSort;
 import com.atakmap.android.menu.MenuCapabilities;
@@ -36,7 +36,7 @@ public class DangerCloseMapComponent extends AbstractMapComponent {
 
         FileSystemUtils.ensureDataDirectory(DangerCloseAdapter.DIRNAME, false);
 
-        CotMapComponent.getInstance().setMarkerDetailHandler("targetMunitions",
+        CotDetailManager.getInstance().registerHandler("targetMunitions",
                 new TargetMunitionsDetailHandler());
 
         MapGroup mapGroup = new DefaultMapGroup("Weapons");
@@ -146,11 +146,6 @@ public class DangerCloseMapComponent extends AbstractMapComponent {
 
         _dcReceiver = new DangerCloseReceiver(view);
         registerReceiver(context, _dcReceiver, f);
-
-        // TODO: Remove this - no reason to have a tool for a one-off action
-        ToolManagerBroadcastReceiver.getInstance().registerTool(
-                DangerCloseTool.TOOL_NAME,
-                new DangerCloseTool(view));
     }
 
     @Override

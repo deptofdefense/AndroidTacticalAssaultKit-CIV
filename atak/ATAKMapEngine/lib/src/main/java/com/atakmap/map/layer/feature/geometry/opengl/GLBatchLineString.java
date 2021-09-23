@@ -4,6 +4,7 @@ import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,8 +13,12 @@ import android.opengl.GLES30;
 
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
+import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.coremap.maps.coords.MutableGeoBounds;
+import com.atakmap.coremap.maps.coords.Vector2D;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.MapRenderer3;
 import com.atakmap.map.layer.feature.Feature.AltitudeMode;
 import com.atakmap.map.layer.feature.style.BasicFillStyle;
 import com.atakmap.map.layer.feature.style.PatternStrokeStyle;
@@ -26,6 +31,9 @@ import com.atakmap.map.layer.feature.style.CompositeStyle;
 import com.atakmap.map.opengl.GLAntiMeridianHelper;
 import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
+import com.atakmap.map.hittest.HitTestQueryParameters;
+import com.atakmap.map.hittest.HitTestResult;
+import com.atakmap.map.hittest.HitRect;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.Matrix;
 import com.atakmap.math.PointD;
@@ -51,12 +59,14 @@ public class GLBatchLineString extends GLBatchGeometry {
 
     protected double threshold = 1_250_000D;
     protected double thresholdxyz = GLMapView.recommendedGridSampleDistance;
+    private int partitionSize = 25;
 
     /** the source points, xyz triplets */
     protected DoubleBuffer points;
     /** the source point count */
     protected int numPoints;
 
+    // These are 3D vertices relative to the center of the earth, NOT screen vertices
     FloatBuffer vertices;
     long verticesPtr;
     int vertexType;
@@ -73,6 +83,9 @@ public class GLBatchLineString extends GLBatchGeometry {
     /** the render point count */
     int numRenderPoints;
     int renderPointsDrawMode = GLES30.GL_LINE_STRIP;
+
+    // The index of each render point that matches an original point (null if same)
+    protected IntBuffer renderPointIndices;
 
     DoubleBuffer polyTriangles;
     FloatBuffer polyVertices;
@@ -103,6 +116,19 @@ public class GLBatchLineString extends GLBatchGeometry {
     protected int[] _startIndices;
     protected int[] _numVertices;
     protected int _numPolygons = 1;
+
+    // These are the line vertices projected to the screen
+    // Used for hit testing non-surface lines
+    private FloatBuffer _screenVertices;
+    private int _screenVerticesVersion;
+
+    // Screen hit testing (non-surface)
+    private final HitRect _screenRect = new HitRect();
+    private final List<HitRectPartition> _partitionRects = new ArrayList<>();
+
+    // Surface line hit-testing
+    private final MutableGeoBounds _hitBounds = new MutableGeoBounds();
+    private final List<GeoBoundsPartition> _partitionBounds = new ArrayList<>();
 
     public GLBatchLineString(GLMapSurface surface) {
         this(surface.getGLMapView());
@@ -516,6 +542,16 @@ public class GLBatchLineString extends GLBatchGeometry {
     protected boolean validateGeometry() {
         if(this.points != null && ((this.needsTessellate != this.tessellated) || (this.renderPoints == null))) {
             this.points.rewind();
+
+            // Free/reset buffers
+            if(this.renderPoints != this.points)
+                Unsafe.free(this.renderPoints);
+            Unsafe.free(this.renderPointIndices);
+            this.renderPointIndices = null;
+            this.renderPoints = this.points;
+            this.numRenderPoints = this.numPoints;
+            this.renderPointsDrawMode = GLES30.GL_LINE_STRIP;
+
             if(this.numPoints > 0 && this.needsTessellate && this.tessellatable) {
                 Buffer result = Tessellate.linestring(Double.TYPE,
                                                       this.points,
@@ -524,27 +560,43 @@ public class GLBatchLineString extends GLBatchGeometry {
                                                       this.numPoints,
                                                       this.tessellationMode == Tessellate.Mode.WGS84 ? threshold : thresholdxyz,
                                                       this.tessellationMode == Tessellate.Mode.WGS84);
-                if(result == this.points) {
-                    // no tessellation occurred
-                    if(this.renderPoints != this.points)
-                        Unsafe.free(this.renderPoints);
-                    this.renderPoints = this.points;
-                    this.numRenderPoints = this.numPoints;
-                } else {
+                if(result != this.points) {
                     // tessellation occurred
-                    if(this.renderPoints != this.points)
-                        Unsafe.free(this.renderPoints);
                     this.renderPoints = ((ByteBuffer) result).asDoubleBuffer();
                     this.numRenderPoints = this.renderPoints.limit() / 3;
+
+                    // For hit testing we need to know which point indices map to which original point index
+                    // XXX - It'd be more efficient if the tessellate function took care of this as well
+                    this.renderPointIndices = Unsafe.allocateDirect(this.numPoints, IntBuffer.class);
+                    int destPtIdx = 0, rpiLimit = 0;
+                    int srcLimit = this.numPoints * 3;
+                    int dstLimit = this.numRenderPoints * 3;
+                    for (int i = 0; i < srcLimit; i += 3) {
+
+                        // Source (original) point
+                        double srcLat = points.get(i+1);
+                        double srcLng = points.get(i);
+
+                        for (int j = destPtIdx * 3; j < dstLimit; j += 3, destPtIdx++) {
+
+                            // Output (tessellated) point
+                            double dstLat = renderPoints.get(j+1);
+                            double dstLng = renderPoints.get(j);
+
+                            // If the tessellated point matches the original
+                            // then record the index
+                            if (Double.compare(srcLat, dstLat) == 0
+                                    && Double.compare(srcLng, dstLng) == 0) {
+                                this.renderPointIndices.put(destPtIdx++);
+                                rpiLimit++;
+                                break;
+                            }
+                        }
+                    }
+                    this.renderPointIndices.clear();
+                    this.renderPointIndices.limit(rpiLimit);
                 }
-            } else {
-                // no need to tessellate
-                if(this.renderPoints != this.points)
-                    Unsafe.free(this.renderPoints);
-                this.renderPoints = this.points;
-                this.numRenderPoints = this.numPoints;
             }
-            this.renderPointsDrawMode = GLES30.GL_LINE_STRIP;
 
             // allocate/grow 'vertices' if necessary
             if(this.vertices == null || this.vertices.capacity() / 3 < (this.numRenderPoints)) {
@@ -558,19 +610,66 @@ public class GLBatchLineString extends GLBatchGeometry {
             // Update render bounds
             Envelope.Builder eb = new Envelope.Builder();
             eb.setHandleIdlCross(false);
+
+            Envelope.Builder ebPart = new Envelope.Builder();
+            ebPart.setHandleIdlCross(false);
+
+            int partIdx = 1;
+            int partCount = 0;
+            int idx = 0, startIndex = 0;
             for(int i = 0; i < numRenderPoints * 3; i += 3) {
                 double lat = renderPoints.get(i+1);
                 double lng = renderPoints.get(i);
-                eb.add(lng, lat);
+                double hae = renderPoints.get(i+2);
+                eb.add(lng, lat, hae);
+
+                // Update partition bounding rectangle
+                ebPart.add(lng, lat, hae);
+
+                if (partIdx == partitionSize || idx == numRenderPoints - 1) {
+                    Envelope e = ebPart.build();
+                    GeoBoundsPartition gbp = partCount < _partitionBounds.size()
+                            ? _partitionBounds.get(partCount)
+                            : new GeoBoundsPartition();
+                    gbp.set(e.minY, e.minX, e.maxY, e.maxX);
+                    gbp.setMinAltitude(e.minZ);
+                    gbp.setMaxAltitude(e.maxZ);
+                    gbp.startIndex = startIndex;
+                    gbp.endIndex = idx;
+                    if (partCount >= _partitionBounds.size())
+                        _partitionBounds.add(gbp);
+                    partCount++;
+                    partIdx = 0;
+                    startIndex = idx;
+                    ebPart.reset();
+                    ebPart.add(lng, lat, hae);
+                }
+                partIdx++;
+                idx++;
             }
+            while (partCount < _partitionBounds.size())
+                _partitionBounds.remove(partCount);
+
             this.renderBounds = eb.build();
-            // if the geometry crosses the IDL, the minimum and maximum will be
-            // reversed and need to be wrapped
-            if(this.crossesIDL) {
-                final double minX = this.renderBounds.minX;
-                final double maxX = this.renderBounds.maxX;
-                this.renderBounds.minX = GeoCalculations.wrapLongitude(maxX);
-                this.renderBounds.maxX = GeoCalculations.wrapLongitude(minX);
+
+            if (this.renderBounds != null) {
+
+                // if the geometry crosses the IDL, the minimum and maximum will be
+                // reversed and need to be wrapped
+                if (this.crossesIDL) {
+                    final double minX = this.renderBounds.minX;
+                    final double maxX = this.renderBounds.maxX;
+                    this.renderBounds.minX = GeoCalculations.wrapLongitude(maxX);
+                    this.renderBounds.maxX = GeoCalculations.wrapLongitude(minX);
+                }
+
+                // Hit testing data
+                _hitBounds.set(this.renderBounds.minY, this.renderBounds.minX,
+                        this.renderBounds.maxY, this.renderBounds.maxX);
+                _hitBounds.setMinAltitude(this.renderBounds.minZ);
+                _hitBounds.setMaxAltitude(this.renderBounds.maxZ);
+            } else {
+                _hitBounds.clear();
             }
 
             this.tessellated = this.needsTessellate;
@@ -908,7 +1007,7 @@ public class GLBatchLineString extends GLBatchGeometry {
 
 
     private boolean isTerrainValid(GLMapView ortho) {
-        if(ortho.drawTilt > 0d || ortho.scene.camera.perspective) {
+        if(ortho.currentPass.drawTilt > 0d || ortho.scene.camera.perspective) {
             final int renderTerrainVersion = ortho.terrain.getTerrainVersion();
             if(this.terrainVersion != renderTerrainVersion) {
                 // XXX - accessors should not be mutators
@@ -1009,6 +1108,10 @@ public class GLBatchLineString extends GLBatchGeometry {
         // if no well-formed primitives, return
         if(this.numRenderPoints < 2 && (this.polyTriangles == null || this.polyTriangles.limit() < 9))
             return;
+
+        // Get screen vertex coordinates for hit-testing
+        if (getAltitudeMode() != AltitudeMode.ClampToGround)
+            updateScreenVertices(view);
 
         GLES20FixedPipeline.glPushMatrix();
         if(vertices != GLGeometry.VERTICES_PIXEL) {
@@ -1140,6 +1243,8 @@ public class GLBatchLineString extends GLBatchGeometry {
 
         this.numRenderPoints = 0;
 
+        Unsafe.free(this.renderPointIndices);
+        this.renderPointIndices = null;
         Unsafe.free(this.points);
         this.points = null;
         Unsafe.free(this.vertices);
@@ -1153,6 +1258,9 @@ public class GLBatchLineString extends GLBatchGeometry {
         polyTriangles = null;
         Unsafe.free(polyVertices);
         polyVertices = null;
+        Unsafe.free(_screenVertices);
+        _screenVertices = null;
+        _screenRect.setEmpty();
 
         this.tessellated = !this.needsTessellate;
 
@@ -1181,7 +1289,6 @@ public class GLBatchLineString extends GLBatchGeometry {
         if (v == null)
             return;
         this.batchImpl(view, batch, renderPass, vertices, 3, v);
-
     }
         
     /**
@@ -1206,6 +1313,10 @@ public class GLBatchLineString extends GLBatchGeometry {
         if (surface && altMode != AltitudeMode.ClampToGround
                 || sprites && altMode == AltitudeMode.ClampToGround)
             return;
+
+        // Update screen vertex forwards if we're rendering a line above terrain
+        if (sprites)
+            updateScreenVertices(view);
 
         if (this.hasFill() && this.polyVertices != null) {
             for(RenderState rs : renderStates) {
@@ -1302,5 +1413,397 @@ public class GLBatchLineString extends GLBatchGeometry {
         // pattern
         short pattern = (short)0xFFFF;
         int factor = 1;
+    }
+
+    /**
+     * Update the screen coordinates for this line
+     * This MUST be called for hit-testing to work properly
+     *
+     * @param view Map view
+     */
+    public void updateScreenVertices(GLMapView view) {
+
+        // Render points are not set
+        if (renderPoints == null || numRenderPoints < 2)
+            return;
+
+        // Screen vertices are not used when clamping to ground
+        if (getAltitudeMode() == AltitudeMode.ClampToGround)
+            return;
+
+        // Check if an update is required
+        boolean terrainValid = isTerrainValid(view);
+        if (_screenVerticesVersion == view.currentScene.drawVersion && terrainValid)
+            return;
+
+        // Update draw version for screen vertices
+        _screenVerticesVersion = view.currentScene.drawVersion;
+
+        // Allocate screen vertices buffer
+        int limit = numRenderPoints * 3;
+        if(_screenVertices == null || _screenVertices.capacity() < limit) {
+            Unsafe.free(_screenVertices);
+            _screenVertices = Unsafe.allocateDirect(limit, FloatBuffer.class);
+        }
+
+        // Forward render points (geodetic) to OpenGL screen coordinates
+        renderPoints.clear();
+        renderPoints.limit(limit);
+        _screenVertices.clear();
+        _screenVertices.limit(limit);
+        view.forward(renderPoints, 3, _screenVertices, 3);
+
+        // Update screen bounds
+        updateScreenBounds();
+    }
+
+    /**
+     * Update the screen boundaries taken up by this line
+     */
+    private void updateScreenBounds() {
+        _screenVertices.clear();
+        int partIdx = 1;
+        int partCount = 0;
+        HitRectPartition partition = !_partitionRects.isEmpty()
+                ? _partitionRects.get(0)
+                : new HitRectPartition();
+        int idx = 0;
+        int endLoop = (this.numRenderPoints - 1) * 3;
+        for (int i = 0; i <= endLoop; i += 3) {
+            float x = _screenVertices.get(i);
+            float y = _screenVertices.get(i + 1);
+
+            // Update main bounding rectangle
+            if (i == 0) {
+                _screenRect.set(x, y, x, y);
+            } else {
+                _screenRect.set(Math.min(_screenRect.left, x),
+                        Math.min(_screenRect.bottom, y),
+                        Math.max(_screenRect.right, x),
+                        Math.max(_screenRect.top, y));
+            }
+
+            // Update partition bounding rectangle
+            if (partIdx == 0) {
+                partition.set(x, y, x, y);
+            } else {
+                partition.set(Math.min(partition.left, x),
+                        Math.min(partition.bottom, y),
+                        Math.max(partition.right, x),
+                        Math.max(partition.top, y));
+            }
+
+            if (partIdx == partitionSize || i == endLoop) {
+                if (partCount >= _partitionRects.size())
+                    _partitionRects.add(partition);
+                partition.endIndex = idx;
+                partCount++;
+                partIdx = 0;
+                partition = partCount < _partitionRects.size()
+                        ? _partitionRects.get(partCount)
+                        : new HitRectPartition();
+                partition.startIndex = idx;
+                partition.set(x, y, x, y);
+            }
+            partIdx++;
+            idx++;
+        }
+        while (partCount < _partitionRects.size())
+            _partitionRects.remove(partCount);
+    }
+
+    @Override
+    public HitTestResult hitTest(MapRenderer3 renderer, HitTestQueryParameters params) {
+        if (getAltitudeMode() == AltitudeMode.ClampToGround)
+            return surfaceHitTest(params);
+        else
+            return screenHitTest(params);
+    }
+
+    /**
+     * Hit test against the surface-rendered line
+     *
+     * @param params Hit test parameters
+     * @return Result if hit, null otherwise
+     */
+    private HitTestResult surfaceHitTest(HitTestQueryParameters params) {
+        if (!_hitBounds.intersects(params.bounds))
+            return null;
+
+        GeoPoint geo = GeoPoint.createMutable();
+
+        // Now check partitions
+        int numHits = 0;
+        int hitIndex = -1;
+        List<GeoBoundsPartition> hitBounds = new ArrayList<>();
+        for (GeoBoundsPartition b : _partitionBounds) {
+
+            // Check hit on partition
+            if (!b.intersects(params.bounds))
+                continue;
+
+            // Keep track of rectangles we've already hit tested
+            hitBounds.add(b);
+
+            // Point hit test
+            for (int i = b.startIndex; i <= b.endIndex && i < numRenderPoints; i++) {
+                int vIdx = i * 3;
+                double lng = renderPoints.get(vIdx);
+                double lat = renderPoints.get(vIdx + 1);
+
+                // Found a hit
+                geo.set(lat, lng);
+                if (params.bounds.contains(geo)) {
+                    hitIndex = i;
+                    numHits++;
+                }
+            }
+        }
+
+        if (hitIndex > -1) {
+            HitTestResult result = getHitTestResult(hitIndex, getRenderPoint(hitIndex));
+            result.count = numHits;
+            return result;
+        }
+
+        // No point detections and no hit partitions
+        if (hitBounds.isEmpty())
+            return null;
+
+        // Line hit test
+        Vector2D touch = new Vector2D(params.geo.getLongitude(),
+                params.geo.getLatitude());
+        MutableGeoBounds lineBounds = new MutableGeoBounds();
+        for (GeoBoundsPartition r : hitBounds) {
+            double lastLat = 0, lastLng = 0;
+            for (int i = r.startIndex; i <= r.endIndex && i <= numRenderPoints; i++) {
+
+                int vIdx = i * 3;
+                double lng = renderPoints.get(vIdx);
+                double lat = renderPoints.get(vIdx + 1);
+
+                lineBounds.set(lastLat, lastLng, lat, lng);
+
+                if (i > r.startIndex && params.bounds.intersects(lineBounds)) {
+
+                    // Find the nearest point on this line based on the point we touched
+                    Vector2D nearest = Vector2D.nearestPointOnSegment(touch,
+                            new Vector2D(lastLng, lastLat),
+                            new Vector2D(lng, lat));
+                    float nx = (float) nearest.x;
+                    float ny = (float) nearest.y;
+
+                    // Check if the nearest point is within rectangle
+                    GeoPoint pt = new GeoPoint(ny, nx);
+                    if (params.bounds.contains(pt)) {
+
+                        GeoPoint p1 = getRenderPoint(i - 1);
+                        GeoPoint p2 = getRenderPoint(i);
+
+                        double segLen = p1.distanceTo(p2);
+                        double touchLen = p1.distanceTo(pt);
+                        double segRatio = touchLen / segLen;
+
+                        // Altitude correction
+                        if (p1.isAltitudeValid() && p2.isAltitudeValid()) {
+                            // Compute altitude at the touched point on the line
+                            double touchAlt = p1.getAltitude() + (p2.getAltitude()
+                                    - p1.getAltitude()) * segRatio;
+                            pt = new GeoPoint(pt.getLatitude(), pt.getLongitude(), touchAlt);
+                        } else {
+                            // Remove altitude if either point is missing it
+                            pt = new GeoPoint(pt.getLatitude(), pt.getLongitude());
+                        }
+
+                        HitTestResult result = getHitTestResult(i - 1, pt);
+                        result.type = HitTestResult.Type.LINE;
+                        return result;
+                    }
+                }
+
+                lastLng = lng;
+                lastLat = lat;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Hit test against the screen rendered line (non-surface
+     *
+     * @param params Hit test parameters
+     * @return Result if hit, null otherwise
+     */
+    private HitTestResult screenHitTest(HitTestQueryParameters params) {
+
+        // First check hit on bounding rectangle
+        if (_screenVertices == null || !_screenRect.intersects(params.rect))
+            return null;
+
+        _screenVertices.clear();
+
+        // Now check partitions
+        int numHits = 0;
+        int hitIndex = -1;
+        List<HitRectPartition> hitRects = new ArrayList<>();
+        for (HitRectPartition r : _partitionRects) {
+
+            // Check hit on partition
+            if (!r.intersects(params.rect))
+                continue;
+
+            // Keep track of rectangles we've already hit tested
+            hitRects.add(r);
+
+            // Point hit test
+            for (int i = r.startIndex; i <= r.endIndex && i < numRenderPoints; i++) {
+                int vIdx = i * 3;
+                float x = _screenVertices.get(vIdx);
+                float y = _screenVertices.get(vIdx + 1);
+
+                // Found a hit
+                if (params.rect.contains(x, y)) {
+                    hitIndex = i;
+                    numHits++;
+                }
+            }
+        }
+
+        if (hitIndex > -1) {
+            HitTestResult result = getHitTestResult(hitIndex, getRenderPoint(hitIndex));
+            result.count = numHits;
+            return result;
+        }
+
+        // No point detections and no hit partitions
+        if (hitRects.isEmpty())
+            return null;
+
+        // Line hit test
+        Vector2D touch = new Vector2D(params.point.x, params.point.y);
+        HitRect lineRect = new HitRect();
+        for (HitRectPartition r : hitRects) {
+            float lastX = 0, lastY = 0;
+            for (int i = r.startIndex; i <= r.endIndex && i <= numRenderPoints; i++) {
+
+                int vIdx = i * 3;
+                float x = _screenVertices.get(vIdx);
+                float y = _screenVertices.get(vIdx + 1);
+
+                lineRect.set(Math.min(x, lastX), Math.min(y, lastY),
+                        Math.max(x, lastX), Math.max(y, lastY));
+
+                if (i > r.startIndex && params.rect.intersects(lineRect)) {
+
+                    // Find the nearest point on this line based on the point we touched
+                    Vector2D nearest = Vector2D.nearestPointOnSegment(touch,
+                            new Vector2D(lastX, lastY),
+                            new Vector2D(x, y));
+                    float nx = (float) nearest.x;
+                    float ny = (float) nearest.y;
+
+                    // Check if the nearest point is within rectangle
+                    if (params.rect.contains(nx, ny)) {
+
+                        // Approximate geo point on the line that was touched
+                        GeoPoint p1 = getRenderPoint(i - 1);
+                        GeoPoint p2 = getRenderPoint(i);
+                        double segLen = MathUtils.distance(lastX, lastY, x, y);
+                        double touchLen = MathUtils.distance(lastX, lastY, nx, ny);
+                        double segRatio = touchLen / segLen;
+                        GeoPoint pt = GeoCalculations.pointAtDistance(p1,
+                                p1.bearingTo(p2), p1.distanceTo(p2) * segRatio);
+
+                        // Altitude correction
+                        if (p1.isAltitudeValid() && p2.isAltitudeValid()) {
+                            // Compute altitude at the touched point on the line
+                            double touchAlt = p1.getAltitude() + (p2.getAltitude()
+                                    - p1.getAltitude()) * segRatio;
+                            pt = new GeoPoint(pt.getLatitude(), pt.getLongitude(), touchAlt);
+                        } else {
+                            // Remove altitude if either point is missing it
+                            pt = new GeoPoint(pt.getLatitude(), pt.getLongitude());
+                        }
+
+                        HitTestResult result = getHitTestResult(i - 1, pt);
+                        result.type = HitTestResult.Type.LINE;
+                        return result;
+                    }
+                }
+
+                lastX = x;
+                lastY = y;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Get the hit test result for the line given the render point index that was hit
+     *
+     * @param rpIndex Render point index that was hit
+     * @param point Geo point that was hit
+     * @return Hit test result with corrected hit index
+     */
+    private HitTestResult getHitTestResult(int rpIndex, GeoPoint point) {
+
+        HitTestResult result = new HitTestResult(featureId, point);
+        result.index = rpIndex;
+
+        // If the indices is null then the render points are the same as the original points
+        if (this.renderPointIndices == null)
+            return result;
+
+        // Find original point index given the render point index
+        int rpiLimit = this.renderPointIndices.limit();
+        for (int i = 0; i < rpiLimit; i++) {
+            int ind1 = this.renderPointIndices.get(i);
+            int ind2 = i < rpiLimit - 1 ? this.renderPointIndices.get(i + 1) : ind1 + 1;
+            if (rpIndex >= ind1 && rpIndex < ind2) {
+                result.index = i;
+                result.type = rpIndex == ind1 ? HitTestResult.Type.POINT : HitTestResult.Type.LINE;
+                break;
+            }
+        }
+
+        return result;
+    }
+
+    private GeoPoint getRenderPoint(int index) {
+        int i = index * 3;
+        return new GeoPoint(renderPoints.get(i + 1), renderPoints.get(i),
+                renderPoints.get(i + 2));
+    }
+
+    // A hit rectangle with line start and end indices
+    private static class HitRectPartition extends HitRect {
+
+        // Start and end point indices
+        public int startIndex, endIndex;
+
+        public HitRectPartition() {
+        }
+
+        public void set(HitRectPartition other) {
+            super.set(other);
+            this.startIndex = other.startIndex;
+            this.endIndex = other.endIndex;
+        }
+    }
+
+    private static class GeoBoundsPartition extends MutableGeoBounds {
+
+        public int startIndex, endIndex;
+
+        public GeoBoundsPartition() {
+        }
+
+        public void set(GeoBoundsPartition other) {
+            super.set(other);
+            this.startIndex = other.startIndex;
+            this.endIndex = other.endIndex;
+        }
     }
 }

@@ -21,6 +21,7 @@ import com.atakmap.android.track.ui.TrackUser;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.util.ServerListDialog;
 import com.atakmap.app.R;
+import com.atakmap.comms.TAKServer;
 import com.atakmap.comms.app.CotPortListActivity;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
@@ -216,10 +217,10 @@ public class UserListAdapter extends BaseAdapter implements
                         mapView.getContext().getString(
                                 R.string.select_track_server),
                         dropDown.getServers(),
-                        new ServerListDialog.ServerSelectCallback() {
+                        new ServerListDialog.Callback() {
                             @Override
                             public void onSelected(
-                                    CotPortListActivity.CotPort server) {
+                                    TAKServer server) {
                                 if (server == null) {
                                     Log.d(TAG, "No configured server selected");
                                     return;

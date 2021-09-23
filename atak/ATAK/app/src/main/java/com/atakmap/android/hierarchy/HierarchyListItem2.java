@@ -78,18 +78,6 @@ public interface HierarchyListItem2 extends HierarchyListItem {
     String getAssociationKey();
 
     /**
-     * Back button pressed while on this list
-     * @deprecated - please implement {@link HierarchyListStateListener} instead
-     *
-     * @param deviceBack True if the device back button was pressed
-     *                   False if the OM back button was pressed
-     * @return True if event handled, false for default back button behavior
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    boolean onBackButtonPressed(boolean deviceBack);
-
-    /**
      * Get a custom view for the entire OM drop-down
      * This is smoother than switching between drop-downs using intents
      * @return Inflated custom view

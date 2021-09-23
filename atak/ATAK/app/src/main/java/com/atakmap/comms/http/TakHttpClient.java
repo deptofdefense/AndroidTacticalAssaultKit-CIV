@@ -1,6 +1,7 @@
 
 package com.atakmap.comms.http;
 
+import com.atakmap.comms.NetConnectString;
 import com.atakmap.comms.SslNetCotPort;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.locale.LocaleUtil;
@@ -62,6 +63,34 @@ public class TakHttpClient {
     }
 
     /**
+     * Setup HTTP client.
+     * HTTPS base URLs use TLS to include client certificates. Uses internally stored certificates
+     * HTTP URLs use Basic Auth
+     * @param url the base url
+     * @param connectString the connectString which is in turn used for the certificate lookup to
+     *                      ensure that https are made with the correct client cert for the port
+     */
+    public TakHttpClient(String url, String connectString) {
+        if (url.toLowerCase(LocaleUtil.getCurrent())
+                .startsWith("https")) {
+            //just use last TAK Server SSL socket
+            //Log.d(TAG, "Streaming port was of type SSL, attempting to reuse socket factory");
+            _baseUrl = url
+                    + SslNetCotPort.getServerApiPath(SslNetCotPort.Type.SECURE);
+            _client = HttpUtil.GetHttpClient(
+                    CertificateManager.getSockFactory(true,
+                            NetConnectString.fromString(connectString)));
+        } else {
+            //use Basic Auth credentials
+            //Log.d(TAG, "Streaming port was of type TCP, using preemptive auth");
+            _baseUrl = url
+                    + SslNetCotPort
+                            .getServerApiPath(SslNetCotPort.Type.UNSECURE);
+            _client = HttpUtil.GetHttpClient(false);
+        }
+    }
+
+    /**
      * Setup HTTP client with a given sslSocketFactory. Note it is up to the caller to provide
      * a complete baseUrl with protocol, host, and port info
      * @param baseUrl the base url
@@ -96,6 +125,20 @@ public class TakHttpClient {
      */
     public static TakHttpClient GetHttpClient(String url) {
         return new TakHttpClient(url);
+    }
+
+    /**
+     * Creates an HttpClient and proper TAK Server base URL
+     * Uses internally stored certificates
+     *
+     * @param url the base url
+     * @return the corresponding client
+     * @param connectString the connectString which is in turn used for the certificate lookup to
+     *                      ensure that https are made with the correct client cert for the port
+     */
+    public static TakHttpClient GetHttpClient(String url,
+            String connectString) {
+        return new TakHttpClient(url, connectString);
     }
 
     /**

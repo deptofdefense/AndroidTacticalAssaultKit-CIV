@@ -5,7 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
-import com.atakmap.android.maps.Polyline;
+import com.atakmap.android.drawing.mapItems.DrawingShape;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 
 import android.preference.PreferenceManager;
@@ -33,12 +33,14 @@ import com.atakmap.android.overlay.MapOverlayParent;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.android.toolbar.tools.MovePointTool;
 import com.atakmap.android.user.icon.SpotMapReceiver;
+import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
 import com.atakmap.app.preferences.GeocoderPreferenceFragment;
 import com.atakmap.app.preferences.ToolsPreferenceFragment;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
-import com.atakmap.map.layer.feature.Feature;
+import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.map.layer.feature.Feature.AltitudeMode;
 
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -56,6 +58,8 @@ import java.util.Map;
 public class UserMapComponent extends AbstractMapComponent {
 
     public static final String TAG = "UserMapComponent";
+
+    public static final String CLAMP_TOGGLE = "com.atakmap.android.maps.CLAMP_TOGGLE";
 
     private MapView _mapView;
     private TaskableMarkerListAdapter _taskMarkerList;
@@ -320,7 +324,7 @@ public class UserMapComponent extends AbstractMapComponent {
         this.registerReceiver(context, spotMapReceiver, spotMapFilter);
 
         DocumentedIntentFilter clampToggle = new DocumentedIntentFilter();
-        clampToggle.addAction("com.atakmap.android.maps.CLAMP_TOGGLE",
+        clampToggle.addAction(CLAMP_TOGGLE,
                 "Listen for a generic action that toggles the rendering mode of a line within the system clamp to ground or absolute");
         AtakBroadcast.getInstance().registerReceiver(clampToggleReceiver,
                 clampToggle);
@@ -350,20 +354,26 @@ public class UserMapComponent extends AbstractMapComponent {
                     @Override
                     public void onMapEvent(MapEvent event) {
 
-                        if (event.getItem() instanceof MultiPolyline) {
-                            // Start point movement tool (MovePointTool)
-                            MultiPolyline itemMP = (MultiPolyline) event
-                                    .getItem();
-                            Intent i = new Intent(
-                                    ToolManagerBroadcastReceiver.BEGIN_SUB_TOOL);
-                            i.putExtra("tool", MovePointTool.TOOL_IDENTIFIER);
-                            i.putExtra("uid", itemMP.getUID());
-                            AtakBroadcast.getInstance().sendBroadcast(i);
+                        MapItem mi = event.getItem();
+
+                        if (mi instanceof DrawingShape) {
+                            GeoPoint clickPoint = mi.getClickPoint();
+                            mi = ATAKUtilities.findAssocShape(mi);
+                            if (mi instanceof MultiPolyline) {
+                                // Start point movement tool (MovePointTool)
+                                mi.setClickPoint(clickPoint);
+                                Intent i = new Intent(
+                                        ToolManagerBroadcastReceiver.BEGIN_SUB_TOOL);
+                                i.putExtra("tool",
+                                        MovePointTool.TOOL_IDENTIFIER);
+                                i.putExtra("uid", mi.getUID());
+                                AtakBroadcast.getInstance().sendBroadcast(i);
+                            }
                             return;
-                        } else if (!(event.getItem() instanceof PointMapItem))
+                        } else if (!(mi instanceof PointMapItem))
                             return;
 
-                        PointMapItem item = (PointMapItem) event.getItem();
+                        PointMapItem item = (PointMapItem) mi;
                         if (item.getMetaString("routeUID", null) != null) {
                             // this is an association marker
                             return;
@@ -379,7 +389,7 @@ public class UserMapComponent extends AbstractMapComponent {
                                 type.equals("rectangle_marker") ||
                                 type.equals("rectangle_width_marker") ||
                                 type.equals("rectangle_side_marker") ||
-                                !item.getMetaBoolean("movable", false))
+                                !item.getMovable())
                             return;
 
                         // Start point movement tool (MovePointTool)
@@ -446,24 +456,20 @@ public class UserMapComponent extends AbstractMapComponent {
         @Override
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();
-            if (action != null
-                    && action.equals("com.atakmap.android.maps.CLAMP_TOGGLE")) {
+            if (action != null && action.equals(CLAMP_TOGGLE)) {
                 String uid = intent.getStringExtra("uid");
-                if (uid == null)
+                String shapeUID = intent.getStringExtra("shapeUID");
+                MapItem mi = null;
+                if (!FileSystemUtils.isEmpty(shapeUID))
+                    mi = _mapView.getMapItem(shapeUID);
+                if (mi == null)
+                    mi = _mapView.getMapItem(uid);
+                if (mi == null)
                     return;
-                final MapItem mi = _mapView.getMapItem(uid);
-                if (mi instanceof Polyline) {
-                    if (mi.hasMetaValue("absolute")) {
-                        ((Polyline) mi).setAltitudeMode(
-                                Feature.AltitudeMode.ClampToGround);
-                        mi.removeMetaData("absolute");
-                    } else {
-                        mi.setMetaBoolean("absolute", true);
-                        ((Polyline) mi)
-                                .setAltitudeMode(Feature.AltitudeMode.Absolute);
-                    }
-                }
-
+                if (mi.getAltitudeMode() != AltitudeMode.ClampToGround)
+                    mi.setAltitudeMode(AltitudeMode.ClampToGround);
+                else
+                    mi.setAltitudeMode(AltitudeMode.Absolute);
             }
         }
     };

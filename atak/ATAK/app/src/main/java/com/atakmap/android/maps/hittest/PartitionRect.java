@@ -3,11 +3,15 @@ package com.atakmap.android.maps.hittest;
 
 import android.graphics.RectF;
 
+import com.atakmap.annotations.DeprecatedApi;
+
 import java.util.Objects;
 
 /**
- * Screen-based rectangle representing the bounds for a set of points on a line
+ * @deprecated No longer used
  */
+@Deprecated
+@DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
 public class PartitionRect extends RectF {
 
     // Start and end point indices

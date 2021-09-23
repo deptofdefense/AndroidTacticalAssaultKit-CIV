@@ -235,7 +235,7 @@ public class FauxNavBar implements OnSharedPreferenceChangeListener {
                 i.setComponent(new ComponentName("com.sec.android.app.launcher",
                         "com.sec.android.app.launcher.activities.LauncherActivity"));
                 activity.startActivity(i);
-            } catch (Exception e) {
+            } catch (Exception ignored) {
             }
         }
     };
@@ -266,7 +266,7 @@ public class FauxNavBar implements OnSharedPreferenceChangeListener {
                             "com.android.systemui.recent.RecentsActivity"));
                     activity.startActivity(intent);
                     return;
-                } catch (Exception e) {
+                } catch (Exception ignored1) {
                 }
             }
 

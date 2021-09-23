@@ -69,12 +69,14 @@ public class TileButtonDialog implements DialogInterface.OnDismissListener,
 
     /**
      * Instantiates a Plugin Context friendly variant of the TileButtonDialog.
-     * @param mapView the mapView for using the TileButtonDialog
-     * @param plugin the plugin context.
+     * @param mapView Map view instance
+     * @param context Activity context (usually {@link MapView#getContext()})
+     * @param plugin Plugin context used for looking up string and icon resources
+     * @param bPersistent True if the dialog should stay open when a tile
+     *                   button is pressed. The buttons act as toggles instead.
      */
     public TileButtonDialog(MapView mapView, Context context, Context plugin,
             boolean bPersistent) {
-        // TODO: Document undocumented constructor parameters
         _mapView = mapView;
         _context = context;
         _plugin = plugin;
@@ -154,8 +156,10 @@ public class TileButtonDialog implements DialogInterface.OnDismissListener,
     }
 
     /**
-     * Creates a button for adding to the TileButton dialog.   The return is the id that 
-     * should be used to distinguish this button from other Buttons. 
+     * Creates a button for adding to the TileButton dialog
+     * @param icon Icon drawable
+     * @param text Button text
+     * @return The newly created tile button
      */
     public TileButton createButton(Drawable icon, String text) {
         return new TileButton(icon, text);
@@ -415,6 +419,14 @@ public class TileButtonDialog implements DialogInterface.OnDismissListener,
             view.setTag(this);
         }
 
+        /**
+         * Set whether the tile button is highlighted
+         * @param selected True to select/highlight
+         */
+        public void setSelected(boolean selected) {
+            view.setSelected(selected);
+        }
+
         public synchronized void setOnClickListener(
                 final View.OnClickListener ocl) {
             view.setOnClickListener(
@@ -422,7 +434,7 @@ public class TileButtonDialog implements DialogInterface.OnDismissListener,
                         @Override
                         public void onClick(View v) {
                             if (!dismiss())
-                                view.setSelected(true);
+                                setSelected(true);
                             if (ocl != null)
                                 ocl.onClick(v);
                         }

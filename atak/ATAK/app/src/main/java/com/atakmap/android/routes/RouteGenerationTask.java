@@ -75,8 +75,7 @@ public abstract class RouteGenerationTask extends
     protected RoutePointPackage doInBackground(
             RouteGenerationPackage... routeGenerationPackages) {
         if (routeGenerationPackages == null
-                || routeGenerationPackages.length == 0
-                || routeGenerationPackages.length > 1) {
+                || routeGenerationPackages.length != 1) {
             throw new IllegalArgumentException(
                     "Must provide one and only one route package");
         }

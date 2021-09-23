@@ -4,7 +4,7 @@ package transapps.geom;
 import androidx.annotation.NonNull;
 
 import com.atakmap.annotations.DeprecatedApi;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 
 /**
  * Do not make use of this class.  It only exists for the purposes of getting a few legacy plugins to compile.
@@ -61,8 +61,8 @@ final public class GeoPoint extends Coordinate {
     }
 
     public GeoPoint destinationPoint(double meters, double angle) {
-        com.atakmap.coremap.maps.coords.GeoPoint retval = DistanceCalculations
-                .computeDestinationPoint(
+        com.atakmap.coremap.maps.coords.GeoPoint retval = GeoCalculations
+                .pointAtDistance(
                         new com.atakmap.coremap.maps.coords.GeoPoint(lat, lon),
                         meters, angle, 0);
         return new GeoPoint(retval.getLatitude(), retval.getLongitude());

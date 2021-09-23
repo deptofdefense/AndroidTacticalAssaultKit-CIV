@@ -60,7 +60,7 @@ public class GeoFenceDatabase {
             Log.w(TAG, "Unable to get geofence without UID");
             return false;
         }
-        GeoFence ret = null;
+
         //Log.d(TAG, "looking for: " + uid);
         for (GeoFence f : fenceList) {
             //Log.d(TAG, "found fence: " + f);
@@ -98,8 +98,8 @@ public class GeoFenceDatabase {
 
     /**
      * Insert or update Geo Fence in DB
-     * @param fence
-     * @return
+     * @param fence the geofence to insert or update
+     * @return the result of the insert or update
      */
     public synchronized InsertOrUpdateResult insertOrUpdate(GeoFence fence) {
         if (fence == null || !fence.isValid()) {

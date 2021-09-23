@@ -3,12 +3,16 @@ package com.atakmap.android.maps.hittest;
 
 import android.graphics.PointF;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.MapControl;
+import com.atakmap.map.hittest.HitTestControl;
 
 /**
- * Map control for hit testing shapes
+ * @deprecated Replaced by {@link HitTestControl}
  */
+@Deprecated
+@DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
 public interface ShapeHitTestControl extends MapControl {
 
     /**

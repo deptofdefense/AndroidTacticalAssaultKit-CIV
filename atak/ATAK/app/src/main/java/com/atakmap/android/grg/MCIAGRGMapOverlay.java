@@ -3,41 +3,50 @@ package com.atakmap.android.grg;
 
 import android.content.Context;
 import android.content.Intent;
-import android.view.View;
+import android.graphics.drawable.Drawable;
 import android.widget.BaseAdapter;
 
 import com.atakmap.android.features.FeatureHierarchyListItem;
 import com.atakmap.android.features.FeatureSetHierarchyListItem;
 import com.atakmap.android.hierarchy.HierarchyListFilter;
 import com.atakmap.android.hierarchy.HierarchyListItem;
+import com.atakmap.android.hierarchy.HierarchyListItem2;
 import com.atakmap.android.hierarchy.action.Action;
 import com.atakmap.android.hierarchy.action.GoTo;
 import com.atakmap.android.hierarchy.action.Search;
 import com.atakmap.android.hierarchy.items.AbstractHierarchyListItem2;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.DeepMapItemQuery;
-import com.atakmap.android.maps.Location;
 import com.atakmap.android.maps.MapCoreIntentsComponent;
 import com.atakmap.android.maps.MapGroup;
+import com.atakmap.android.math.MathUtils;
 import com.atakmap.android.overlay.AbstractMapOverlay2;
-import com.atakmap.android.overlay.MapOverlay;
+import com.atakmap.app.R;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
-import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.map.layer.feature.FeatureCursor;
 import com.atakmap.map.layer.feature.FeatureDataStore;
+import com.atakmap.map.layer.feature.FeatureDataStore.FeatureSetQueryParameters;
+import com.atakmap.map.layer.feature.FeatureDataStore.FeatureQueryParameters;
+import com.atakmap.map.layer.feature.FeatureDataStore.FeatureSetCursor;
+import com.atakmap.map.layer.feature.FeatureSet;
 import com.atakmap.map.layer.feature.PersistentDataSourceFeatureDataStore;
+import com.atakmap.map.layer.feature.PersistentDataSourceFeatureDataStore2;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
 import com.atakmap.map.layer.raster.LocalRasterDataStore;
-import com.atakmap.map.layer.raster.RasterDataStore;
+import com.atakmap.map.layer.raster.RasterDataStore.DatasetDescriptorCursor;
+import com.atakmap.map.layer.raster.RasterDataStore.DatasetQueryParameters;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -82,88 +91,44 @@ public class MCIAGRGMapOverlay extends AbstractMapOverlay2 {
     private class ListModel extends AbstractHierarchyListItem2 implements
             Search {
 
+        private final ListMap<DatasetDescriptor, GRGListModel> _lists = new ListMap<DatasetDescriptor, GRGListModel>() {
+            @Override
+            public String getUID(DatasetDescriptor desc) {
+                return desc.getUri();
+            }
+
+            @Override
+            public GRGListModel createList(DatasetDescriptor desc) {
+                return new GRGListModel(context, listener, filter, desc);
+            }
+        };
+
+        private int _descCount;
+
         ListModel(BaseAdapter listener, HierarchyListFilter filter) {
+            this.asyncRefresh = true;
+            this.reusable = true;
             refresh(listener, filter);
         }
 
         @Override
         public String getTitle() {
-            return MCIAGRGMapOverlay.this.getName();
-        }
-
-        @Override
-        public int getChildCount() {
-            RasterDataStore.DatasetQueryParameters params = new RasterDataStore.DatasetQueryParameters();
-            params.providers = Collections.singleton("mcia-grg");
-
-            return MCIAGRGMapOverlay.this.grgDatabase
-                    .queryDatasetsCount(params);
+            return getName();
         }
 
         @Override
         public int getDescendantCount() {
-            RasterDataStore.DatasetQueryParameters params = new RasterDataStore.DatasetQueryParameters();
-            params.providers = Collections.singleton("mcia-grg");
-
-            RasterDataStore.DatasetDescriptorCursor result = null;
-            try {
-                result = MCIAGRGMapOverlay.this.grgDatabase
-                        .queryDatasets(params);
-
-                int retval = 0;
-                while (result.moveToNext())
-                    retval += Integer.parseInt(DatasetDescriptor.getExtraData(
-                            result.get(), "numFeatures", "0"));
-                return retval;
-            } finally {
-                if (result != null)
-                    result.close();
-            }
+            return _descCount;
         }
 
         @Override
-        public HierarchyListItem getChildAt(int index) {
-            RasterDataStore.DatasetDescriptorCursor result = null;
-            try {
-                RasterDataStore.DatasetQueryParameters params = new RasterDataStore.DatasetQueryParameters();
-                params.providers = Collections.singleton("mcia-grg");
-                params.order = Collections.<RasterDataStore.DatasetQueryParameters.Order> singleton(
-                        RasterDataStore.DatasetQueryParameters.Name.INSTANCE);
-
-                result = MCIAGRGMapOverlay.this.grgDatabase
-                        .queryDatasets(params);
-
-                // XXX - just specify limit/offset ???
-                int i = 0;
-                while (result.moveToNext()) {
-                    if (i == index) {
-                        return new GRGListModel(MCIAGRGMapOverlay.this.context,
-                                this.listener,
-                                this.filter,
-                                result.get());
-                    }
-                    i++;
-                }
-
-                throw new IndexOutOfBoundsException();
-            } finally {
-                if (result != null)
-                    result.close();
-            }
+        public Drawable getIconDrawable() {
+            return context.getDrawable(R.drawable.ic_overlay_gridlines);
         }
 
         @Override
         public Object getUserObject() {
-            return null;
-        }
-
-        @Override
-        public View getExtraView() {
-            return null;
-        }
-
-        @Override
-        public void dispose() {
+            return MCIAGRGMapOverlay.this;
         }
 
         @Override
@@ -173,11 +138,43 @@ public class MCIAGRGMapOverlay extends AbstractMapOverlay2 {
 
         @Override
         protected void refreshImpl() {
-        }
 
-        @Override
-        public HierarchyListFilter refresh(HierarchyListFilter filter) {
-            return this.filter = filter;
+            // Query MCIA GRGs from GRG database
+            DatasetQueryParameters params = new DatasetQueryParameters();
+            params.providers = Collections.singleton("mcia-grg");
+            params.order = Collections
+                    .singleton(DatasetQueryParameters.Name.INSTANCE);
+            List<DatasetDescriptor> results = new ArrayList<>();
+            DatasetDescriptorCursor result = null;
+            try {
+                result = grgDatabase.queryDatasets(params);
+                while (result.moveToNext())
+                    results.add(result.get());
+            } finally {
+                if (result != null)
+                    result.close();
+            }
+
+            // Get corresponding lists and update map if needed
+            List<GRGListModel> lists = _lists.update(results);
+
+            // Filter
+            int descCount = 0;
+            List<HierarchyListItem> items = new ArrayList<>(lists.size());
+            for (GRGListModel list : lists) {
+                if (this.filter.accept(list)) {
+                    descCount += list.numFeatures;
+                    list.syncRefresh(this.listener, this.filter);
+                    items.add(list);
+                }
+            }
+
+            // Sort
+            sortItems(items);
+
+            // Update
+            _descCount = descCount;
+            updateChildren(items);
         }
 
         /**********************************************************************/
@@ -186,13 +183,9 @@ public class MCIAGRGMapOverlay extends AbstractMapOverlay2 {
         @Override
         public Set<HierarchyListItem> find(String terms) {
             Set<HierarchyListItem> retval = new LinkedHashSet<>();
-            final int count = this.getChildCount();
-            Search childSearch;
-            for (int i = 0; i < count; i++) {
-                childSearch = this.getChildAt(i).getAction(Search.class);
-                if (childSearch != null)
-                    retval.addAll(childSearch.find(terms));
-            }
+            List<Search> items = getChildActions(Search.class);
+            for (Search s : items)
+                retval.addAll(s.find(terms));
             return retval;
         }
     }
@@ -212,8 +205,28 @@ public class MCIAGRGMapOverlay extends AbstractMapOverlay2 {
 
         private final Map<String, String> groupAliases;
         private final String[] groupOrder;
+        private final int numFeatures;
 
         private final FeatureDataStore spatialdb;
+
+        private final ListMap<FeatureSet, FeatureSetHierarchyListItem> _lists = new ListMap<FeatureSet, FeatureSetHierarchyListItem>() {
+            @Override
+            public String getUID(FeatureSet fs) {
+                return String.valueOf(fs.getId());
+            }
+
+            @Override
+            public FeatureSetHierarchyListItem createList(FeatureSet fs) {
+                if (spatialdb == null)
+                    return null;
+                String name = fs.getName();
+                String alias = groupAliases.get(name);
+                if (alias == null)
+                    alias = name;
+                return new FeatureSetHierarchyListItem(context, spatialdb,
+                        fs, alias, filter, listener, null, null, null);
+            }
+        };
 
         GRGListModel(Context context, BaseAdapter listener,
                 HierarchyListFilter filter,
@@ -222,6 +235,7 @@ public class MCIAGRGMapOverlay extends AbstractMapOverlay2 {
             this.layerInfo = layerInfo;
             this.listener = listener;
             this.filter = filter;
+            this.reusable = true;
 
             this.groupAliases = new HashMap<>();
             this.groupOrder = new String[3];
@@ -248,13 +262,22 @@ public class MCIAGRGMapOverlay extends AbstractMapOverlay2 {
                 this.groupOrder[order++] = group;
             }
 
+            this.numFeatures = MathUtils.parseInt(
+                    layerInfo.getExtraData("numFeatures"), 0);
+
             // XXX - jsqlite.Database handles finalization itself which is
             //       different from the explicit close required for android
             //       SQLiteDatabase. ideally, there would be some kind of
             //       dispose method for the list item where we would explicitly
             //       close the spatialdb
-            this.spatialdb = new PersistentDataSourceFeatureDataStore(new File(
-                    this.layerInfo.getExtraData("spatialdb")));
+            File dbFile = new File(this.layerInfo.getExtraData("spatialdb"));
+            FeatureDataStore db;
+            try {
+                db = new PersistentDataSourceFeatureDataStore2(dbFile);
+            } catch (Exception e) {
+                db = new PersistentDataSourceFeatureDataStore(dbFile);
+            }
+            this.spatialdb = db;
         }
 
         @Override
@@ -263,66 +286,41 @@ public class MCIAGRGMapOverlay extends AbstractMapOverlay2 {
         }
 
         @Override
-        public int getChildCount() {
-            return this.spatialdb
-                    .queryFeatureSetsCount(
-                            new FeatureDataStore.FeatureSetQueryParameters());
-        }
-
-        @Override
         public int getDescendantCount() {
-            return this.spatialdb
-                    .queryFeaturesCount(
-                            new FeatureDataStore.FeatureQueryParameters());
-        }
-
-        @Override
-        public HierarchyListItem getChildAt(int index) {
-            // XXX - wildly inefficient
-            FeatureDataStore.FeatureSetCursor result = null;
-            try {
-                FeatureDataStore.FeatureSetQueryParameters params = new FeatureDataStore.FeatureSetQueryParameters();
-                params.names = Collections.singleton(this.groupOrder[index]);
-
-                params.limit = 1;
-
-                result = this.spatialdb.queryFeatureSets(params);
-                if (!result.moveToNext())
-                    throw new IllegalStateException();
-
-                return new ActionFilteredHierarchyListItem(
-                        new FeatureSetHierarchyListItem(this.context,
-                                this.spatialdb,
-                                result.get(),
-                                this.groupAliases.get(this.groupOrder[index]),
-                                this.filter,
-                                this.listener,
-                                null,
-                                null,
-                                null),
-                        ACTION_FILTER);
-            } finally {
-                if (result != null)
-                    result.close();
-            }
+            return this.numFeatures;
         }
 
         @Override
         public Object getUserObject() {
-            return null;
-        }
-
-        @Override
-        public View getExtraView() {
-            return null;
-        }
-
-        @Override
-        public void dispose() {
+            return layerInfo;
         }
 
         @Override
         protected void refreshImpl() {
+            List<FeatureSet> sets = new ArrayList<>();
+
+            if (spatialdb != null) {
+                FeatureSetCursor c = null;
+                try {
+                    FeatureSetQueryParameters params = new FeatureSetQueryParameters();
+                    c = this.spatialdb.queryFeatureSets(params);
+                    while (c.moveToNext())
+                        sets.add(c.get());
+                } finally {
+                    if (c != null)
+                        c.close();
+                }
+            }
+
+            List<FeatureSetHierarchyListItem> lists = _lists.update(sets);
+            List<HierarchyListItem> items = new ArrayList<>(lists.size());
+            for (FeatureSetHierarchyListItem list : lists) {
+                if (this.filter.accept(list))
+                    items.add(list);
+            }
+
+            sortItems(items);
+            updateChildren(items);
         }
 
         @Override
@@ -360,16 +358,19 @@ public class MCIAGRGMapOverlay extends AbstractMapOverlay2 {
 
         @Override
         public Set<HierarchyListItem> find(String terms) {
-            FeatureDataStore.FeatureQueryParameters params = new FeatureDataStore.FeatureQueryParameters();
+            Set<HierarchyListItem> retval = new HashSet<>();
+            if (spatialdb == null)
+                return null;
+
+            FeatureQueryParameters params = new FeatureQueryParameters();
             params.featureNames = Collections.singleton(terms + "%");
 
             params.order = new LinkedList<>();
             params.order
-                    .add(FeatureDataStore.FeatureQueryParameters.FeatureSet.INSTANCE);
+                    .add(FeatureQueryParameters.FeatureSet.INSTANCE);
             params.order
-                    .add(FeatureDataStore.FeatureQueryParameters.FeatureName.INSTANCE);
+                    .add(FeatureQueryParameters.FeatureName.INSTANCE);
 
-            Set<HierarchyListItem> retval = new HashSet<>();
             FeatureCursor result = null;
             try {
                 result = this.spatialdb.queryFeatures(params);
@@ -386,132 +387,62 @@ public class MCIAGRGMapOverlay extends AbstractMapOverlay2 {
         }
     }
 
-    private static class ActionFilteredHierarchyListItem implements
-            HierarchyListItem {
+    /**
+     * Convenience class for reusable hierarchy lists mapped by some UID
+     * @param <S> Class for the source item to create lists from
+     * @param <L> Class for the list items
+     *
+     * TODO: Move this into its own separate class and utilize elsewhere
+     *       so we can cut down on duplicate code
+     */
+    private abstract static class ListMap<S, L extends HierarchyListItem>
+            extends HashMap<String, L> {
 
-        protected final HierarchyListItem item;
-        private final Set<Class<? extends Action>> filter;
+        /**
+         * Get the UID of an entry in this list map
+         * @param source Source object
+         * @return Entry UID
+         */
+        public abstract String getUID(S source);
 
-        ActionFilteredHierarchyListItem(HierarchyListItem item,
-                Set<Class<? extends Action>> filter) {
-            this.item = item;
-            this.filter = filter;
-        }
+        /**
+         * Create a new list given a source object
+         * @param source Source object
+         * @return Newly created list
+         */
+        public abstract L createList(S source);
 
-        @Override
-        public String getUID() {
-            return this.item.getUID();
-        }
+        /**
+         * Given a list of entries get the corresponding lists while creating or
+         * removing newly added/removed lists
+         * @param sources List of sources to update lists from
+         * @return List items
+         */
+        public List<L> update(Collection<S> sources) {
+            List<L> lists = new ArrayList<>(sources.size());
+            synchronized (this) {
+                // Get/add new lists
+                Map<String, L> removed = new HashMap<>(this);
+                for (S entry : sources) {
+                    String uid = getUID(entry);
+                    L list = get(uid);
+                    if (list == null) {
+                        list = createList(entry);
+                        if (list != null)
+                            put(uid, list);
+                    }
+                    lists.add(list);
+                    removed.remove(uid);
+                }
 
-        @Override
-        public String getTitle() {
-            return this.item.getTitle();
-        }
-
-        @Override
-        public int getPreferredListIndex() {
-            return this.item.getPreferredListIndex();
-        }
-
-        @Override
-        public int getChildCount() {
-            return this.item.getChildCount();
-        }
-
-        @Override
-        public int getDescendantCount() {
-            return this.item.getDescendantCount();
-        }
-
-        @Override
-        public HierarchyListItem getChildAt(int index) {
-            final HierarchyListItem child = this.item.getChildAt(index);
-            if (child instanceof Location)
-                return new ActionFilteredLocationHierarchyListItem(child,
-                        this.filter);
-            else
-                return new ActionFilteredHierarchyListItem(child, this.filter);
-        }
-
-        @Override
-        public boolean isChildSupported() {
-            return true;
-        }
-
-        @Override
-        public String getIconUri() {
-            return this.item.getIconUri();
-        }
-
-        @Override
-        public int getIconColor() {
-            return this.item.getIconColor();
-        }
-
-        @Override
-        public Object setLocalData(String s, Object o) {
-            return this.item.setLocalData(s, o);
-        }
-
-        @Override
-        public Object getLocalData(String s) {
-            return this.item.getLocalData(s);
-        }
-
-        @Override
-        public <T> T getLocalData(String s, Class<T> clazz) {
-            return this.item.getLocalData(s, clazz);
-        }
-
-        @Override
-        public <T extends Action> T getAction(Class<T> clazz) {
-            if (!this.filter.contains(clazz))
-                return null;
-            return this.item.getAction(clazz);
-        }
-
-        @Override
-        public Object getUserObject() {
-            return this.item.getUserObject();
-        }
-
-        @Override
-        public View getExtraView() {
-            return null;
-        }
-
-        @Override
-        public Sort refresh(Sort sortHint) {
-            return this.item.refresh(sortHint);
-        }
-    }
-
-    private static final class ActionFilteredLocationHierarchyListItem extends
-            ActionFilteredHierarchyListItem implements Location {
-
-        ActionFilteredLocationHierarchyListItem(HierarchyListItem item,
-                Set<Class<? extends Action>> filter) {
-            super(item, filter);
-        }
-
-        @Override
-        public GeoPointMetaData getLocation() {
-            return ((Location) this.item).getLocation();
-        }
-
-        @Override
-        public String getFriendlyName() {
-            return ((Location) this.item).getFriendlyName();
-        }
-
-        @Override
-        public String getUID() {
-            return this.item.getUID();
-        }
-
-        @Override
-        public MapOverlay getOverlay() {
-            return ((Location) this.item).getOverlay();
+                // Remove and dispose lists that are no longer in the provided UIDs
+                for (String uid : removed.keySet()) {
+                    L list = remove(uid);
+                    if (list instanceof HierarchyListItem2)
+                        ((HierarchyListItem2) list).dispose();
+                }
+            }
+            return lists;
         }
     }
 }

@@ -68,7 +68,7 @@ public class MovePointTool extends Tool implements OnVisibleChangedListener {
         if (item == null) {
             return false;
         } else if (item instanceof MultiPolyline
-                && ((MultiPolyline) item).getMovable()) {
+                && item.getMovable()) {
             itemMP = (MultiPolyline) item;
             listenForTouchMP();
             return true;
@@ -76,7 +76,7 @@ public class MovePointTool extends Tool implements OnVisibleChangedListener {
         if (!(item instanceof PointMapItem))
             return false;
 
-        if (!item.getMetaBoolean("movable", true))
+        if (!item.getMovable())
             return false;
 
         itemToMove = (PointMapItem) item;
@@ -362,7 +362,7 @@ public class MovePointTool extends Tool implements OnVisibleChangedListener {
         @Override
         public void onReceive(Context context, Intent intent) {
             if (itemToMove != null && itemToMove == _mapView.getSelfMarker()
-                    && !itemToMove.getMetaBoolean("movable", false))
+                    && !itemToMove.getMovable())
                 requestEndTool();
         }
     };

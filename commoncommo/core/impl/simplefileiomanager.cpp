@@ -1,7 +1,7 @@
 #include "simplefileiomanager.h"
 #include "internalutils.h"
 #include "platform.h"
-#include <Lock.h>
+#include "commothread.h"
 #include <utility>
 #include <sstream>
 #include <cctype>
@@ -13,6 +13,7 @@
 
 using namespace atakmap::commoncommo;
 using namespace atakmap::commoncommo::impl;
+using namespace atakmap::commoncommo::impl::thread;
 
 namespace {
     const char *THREAD_NAMES[] = {
@@ -112,8 +113,7 @@ atakmap::commoncommo::CommoResult SimpleFileIOManager::startTransfer(
 {
     IOContext *ctx = NULL;
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, notRunningRequestsMutex);
+        Lock lock(notRunningRequestsMutex);
         std::map<int, IOContext *>::iterator iter;
         iter = notRunningRequests.find(xferId);
         if (iter == notRunningRequests.end())
@@ -128,12 +128,11 @@ atakmap::commoncommo::CommoResult SimpleFileIOManager::startTransfer(
 
     
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, ioRequestsMutex);
+        Lock lock(ioRequestsMutex);
     
         // Give upload to the upload thread
         ioRequests.push_front(ctx);
-        ioRequestsMonitor.broadcast(*lock);
+        ioRequestsMonitor.broadcast(lock);
     }
 
     return COMMO_SUCCESS;
@@ -150,16 +149,14 @@ void SimpleFileIOManager::threadStopSignal(
     switch (threadNum) {
     case IO_THREADID:
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, ioRequestsMutex);
-        ioRequestsMonitor.broadcast(*lock);
+        Lock lock(ioRequestsMutex);
+        ioRequestsMonitor.broadcast(lock);
         break;
     }
     case STATUS_THREADID:
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, statusUpdatesMutex);
-        statusUpdatesMonitor.broadcast(*lock);
+        Lock lock(statusUpdatesMutex);
+        statusUpdatesMonitor.broadcast(lock);
         break;
     }
     }
@@ -188,10 +185,9 @@ void SimpleFileIOManager::statusThreadProcess()
     while (!threadShouldStop(STATUS_THREADID)) {
         InternalFileIOUpdate *ioUpdate = NULL;
         {
-            PGSC::Thread::LockPtr lock(NULL, NULL);
-            PGSC::Thread::Lock_create(lock, statusUpdatesMutex);
+            Lock lock(statusUpdatesMutex);
             if (statusUpdates.empty()) {
-                statusUpdatesMonitor.wait(*lock);
+                statusUpdatesMonitor.wait(lock);
                 continue;
             }
 
@@ -218,8 +214,7 @@ void SimpleFileIOManager::ioThreadProcess()
 
     while (!threadShouldStop(IO_THREADID)) {
         {
-            PGSC::Thread::LockPtr lock(NULL, NULL);
-            PGSC::Thread::Lock_create(lock, ioRequestsMutex);
+            Lock lock(ioRequestsMutex);
             while (!ioRequests.empty()) {
                 IOContext *ctx = ioRequests.back();
                 ioRequests.pop_back();
@@ -245,11 +240,10 @@ void SimpleFileIOManager::ioThreadProcess()
         if (curRequests.empty()) {
             // Nap time - wait until a new request arrives
             while (!threadShouldStop(IO_THREADID)) {
-                PGSC::Thread::LockPtr lock(NULL, NULL);
-                PGSC::Thread::Lock_create(lock, ioRequestsMutex);
+                Lock lock(ioRequestsMutex);
                 if (!ioRequests.empty())
                     break;
-                ioRequestsMonitor.wait(*lock);
+                ioRequestsMonitor.wait(lock);
             }
             continue;
         }
@@ -332,6 +326,23 @@ void SimpleFileIOManager::ioThreadProcess()
 
                 case CURLE_SSL_CONNECT_ERROR:
                 case CURLE_USE_SSL_FAILED:
+                    status = FILEIO_SSL_OTHER_ERROR;
+                    break;
+
+#if LIBCURL_VERSION_MAJOR > 7 || (LIBCURL_VERSION_MAJOR == 7 && LIBCURL_VERSION_MINOR >= 62)
+                // Starting in CURL 7.62.0, CURLE_SSL_CACERT (former value 60)
+                // was effectively removed and defined to be symbolically
+                // equivalent to CURLE_PEER_FAILED_VERIFICATION (former value
+                // of 51, new value 60)
+                // Once we have stabilized on post-7.62 this can be removed.
+                // See https://github.com/curl/curl/pull/2901 for background
+                // and https://github.com/curl/curl/pull/3291/commits/89d2e95f783963778b3db45a398360b94587c295
+                // for documentation changes
+                case CURLE_PEER_FAILED_VERIFICATION:
+                    status = FILEIO_SSL_UNTRUSTED_SERVER;
+                    break;
+
+#else
                 case CURLE_PEER_FAILED_VERIFICATION:
                     status = FILEIO_SSL_OTHER_ERROR;
                     break;
@@ -339,7 +350,8 @@ void SimpleFileIOManager::ioThreadProcess()
                 case CURLE_SSL_CACERT:
                     status = FILEIO_SSL_UNTRUSTED_SERVER;
                     break;
-                
+#endif
+
                 case CURLE_REMOTE_FILE_NOT_FOUND:
                     status = FILEIO_URL_NO_RESOURCE;
                     break;
@@ -640,8 +652,7 @@ atakmap::commoncommo::CommoResult SimpleFileIOManager::queueFileIO(
                            const char *remotePassword)
 {
     try {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, notRunningRequestsMutex);
+        Lock lock(notRunningRequestsMutex);
 
         auto provider(providerTracker->getCurrentProvider());
         IOContext *ctx = new IOContext(this, forUpload, nextId,
@@ -676,12 +687,11 @@ queueUpdate(InternalFileIOUpdate *update)
         update->xferid, update->status, update->bytesTransferred);
     
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, statusUpdatesMutex);
+        Lock lock(statusUpdatesMutex);
 
         // Give upload to the upload thread
         statusUpdates.push_front(update);
-        statusUpdatesMonitor.broadcast(*lock);
+        statusUpdatesMonitor.broadcast(lock);
     }
 }
 

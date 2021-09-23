@@ -8,6 +8,9 @@ import com.atakmap.android.maps.*;
 import com.atakmap.coremap.maps.coords.*;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.MapRenderer3;
+import com.atakmap.map.hittest.HitTestQueryParameters;
+import com.atakmap.map.hittest.HitTestResult;
 import com.atakmap.map.layer.control.SurfaceRendererControl;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.feature.geometry.LineString;
@@ -26,21 +29,20 @@ import java.nio.*;
 public class GLDogHouse extends AbstractGLMapItem2 implements
         Doghouse.DoghouseChangeListener {
 
+    private final String TAG = "GLDogHouse";
+
     private static final float SEGMENT_SIZE = 120f;
 
     /** Increase this to widen the doghouses */
     private static final double NOSE_ANGLE = 120d; // degrees
 
+    // These variables should only be used on the GL thread
     private Doghouse _doghouse;
     private FloatBuffer _vertices;
-    private boolean _verticesInitiailized;
     private GLText _glText;
-    private long _currentDraw;
-    private boolean _recompute;
-    private final Object _lock = new Object();
-    private GeoPoint _midpoint;
-    private GeoPoint _source;
-    private Vector2D _offset;
+    private final GeoPoint _midpoint;
+    private final GeoPoint _source;
+    private final Vector2D _offset;
     private double _bearing;
     private Doghouse.DoghouseLocation _routeSide;
     boolean lastSurface = false;
@@ -58,15 +60,11 @@ public class GLDogHouse extends AbstractGLMapItem2 implements
     private boolean _surfaceStyleDirty;
     private int _surfaceVersion = -1;
 
-    // TODO: this needs to directly extend AbstractGLMapItem2 in the future
     // TODO: I want to have width and height that dictate the shape of these
     public GLDogHouse(MapRenderer surface, Doghouse dh) {
         super(surface, dh,
                 GLMapView.RENDER_PASS_SPRITES | GLMapView.RENDER_PASS_SURFACE);
         _doghouse = dh;
-        _currentDraw = 0L;
-        _recompute = true;
-
         bounds.set(-90, -180, 90, 180);
 
         _midpoint = GeoPoint.createMutable();
@@ -78,6 +76,7 @@ public class GLDogHouse extends AbstractGLMapItem2 implements
 
     @Override
     public void draw(GLMapView ortho, int renderPass) {
+
         final boolean surface = MathUtils.hasBits(renderPass,
                 GLMapView.RENDER_PASS_SURFACE);
         final boolean sprites = MathUtils.hasBits(renderPass,
@@ -110,18 +109,12 @@ public class GLDogHouse extends AbstractGLMapItem2 implements
             // not a SURFACE render pass, move along
             return;
         }
-        synchronized (_lock) {
-            if (_doghouse == null
-                    || ortho.currentScene.drawMapResolution > (double) _doghouse
-                            .getMaxVisibleScale()) {
-                return;
-            }
-        }
 
-        if (_currentDraw != ortho.drawVersion) {
-            _recompute = true;
+        if (_doghouse == null
+                || ortho.currentScene.drawMapResolution > (double) _doghouse
+                        .getMaxVisibleScale()) {
+            return;
         }
-        _currentDraw = ortho.drawVersion;
 
         int rows;
         String[] data;
@@ -133,25 +126,24 @@ public class GLDogHouse extends AbstractGLMapItem2 implements
         float[] textColor;
         GeoPoint midpoint;
         Doghouse.DoghouseLocation routeSide;
-        synchronized (_lock) {
-            rows = _doghouse.size();
-            data = new String[rows];
-            for (int i = 0; i < rows; i++) {
-                data[i] = _doghouse.getData(i);
-            }
 
-            translation = _doghouse.getTotalTranslation();
-
-            routeSide = _doghouse.getRelativeLocation();
-
-            bearing = _doghouse.getBearing();
-            strokeWidth = _doghouse.getStrokeWidth();
-            strokeColor = _doghouse.getStrokeColor();
-            shadeColor = _doghouse.getShadeColor();
-            textColor = _doghouse.getTextColor();
-            _source.set(_doghouse.getSource());
-            midpoint = _doghouse.getNose();
+        rows = _doghouse.size();
+        data = new String[rows];
+        for (int i = 0; i < rows; i++) {
+            data[i] = _doghouse.getData(i);
         }
+
+        translation = _doghouse.getTotalTranslation();
+
+        routeSide = _doghouse.getRelativeLocation();
+
+        bearing = _doghouse.getBearing();
+        strokeWidth = _doghouse.getStrokeWidth();
+        strokeColor = _doghouse.getStrokeColor();
+        shadeColor = _doghouse.getShadeColor();
+        textColor = _doghouse.getTextColor();
+        _source.set(_doghouse.getSource());
+        midpoint = _doghouse.getNose();
 
         // validate geometry
         final boolean geometryDirty = (rows != _rows) ||
@@ -178,8 +170,6 @@ public class GLDogHouse extends AbstractGLMapItem2 implements
         // check clip
         if (ortho.scratch.pointD.z >= 1d)
             return;
-
-        _recompute = false;
 
         float ssOriginX = 0f;
         float ssOriginY = 0f;
@@ -444,10 +434,14 @@ public class GLDogHouse extends AbstractGLMapItem2 implements
             double bearing, float tx, float ty, float scaleX, float scaleY,
             float r, float g, float b, float a) {
 
-        if (_glText == null)
+        if (_doghouse == null)
+            return;
+
+        if (_glText == null) {
             _glText = GLText.getInstance(
                     MapView.getTextFormat(Typeface.DEFAULT,
                             _doghouse.getFontOffset()));
+        }
 
         final PointF bottomLeft = new PointF(-1.0f * SEGMENT_SIZE,
                 -0.5f * SEGMENT_SIZE * rows);
@@ -490,25 +484,33 @@ public class GLDogHouse extends AbstractGLMapItem2 implements
 
     @Override
     public void startObserving() {
-        Log.d("GLDoghouse", "State: startObserving");
+        Log.d(TAG, "State: startObserving");
         super.startObserving();
-        if (_doghouse != null) {
-            _doghouse.registerDoghouseChangeListener(this);
-        }
+        runOnGLThread(new Runnable() {
+            @Override
+            public void run() {
+                if (_doghouse != null)
+                    _doghouse.registerDoghouseChangeListener(GLDogHouse.this);
+            }
+        });
     }
 
     @Override
     public void stopObserving() {
-        Log.d("GLDoghouse", "State: stopObserving");
+        Log.d(TAG, "State: stopObserving");
         super.stopObserving();
-        if (_doghouse != null) {
-            _doghouse.unregisterDoghouseChangeListener(this);
-        }
+        runOnGLThread(new Runnable() {
+            @Override
+            public void run() {
+                if (_doghouse != null)
+                    _doghouse.unregisterDoghouseChangeListener(GLDogHouse.this);
+            }
+        });
     }
 
     @Override
     public void release() {
-        Log.d("GLDoghouse", "State: release");
+        Log.d(TAG, "State: release");
         if (_vertices != null) {
             _vertices.clear();
             Unsafe.free(_vertices);
@@ -528,22 +530,34 @@ public class GLDogHouse extends AbstractGLMapItem2 implements
     }
 
     @Override
-    public void onDoghouseChanged(Doghouse doghouse) {
-        synchronized (_lock) {
-            _doghouse = doghouse;
-            //            _recompute = true;
-        }
+    public void onDoghouseChanged(final Doghouse doghouse) {
+        setDoghouse(doghouse);
     }
 
     @Override
     public void onDoghouseRemoved(Doghouse doghouse) {
-        synchronized (_lock) {
-            _doghouse = null;
-        }
+        setDoghouse(null);
     }
 
-    public boolean isBatchable(GLMapView view) {
-        return false;
+    private void setDoghouse(final Doghouse dh) {
+        runOnGLThread(new Runnable() {
+            @Override
+            public void run() {
+                if (_doghouse != null)
+                    _doghouse.unregisterDoghouseChangeListener(GLDogHouse.this);
+                _doghouse = dh;
+                if (_doghouse != null)
+                    _doghouse.registerDoghouseChangeListener(GLDogHouse.this);
+            }
+        });
+    }
+
+    @Override
+    protected HitTestResult hitTestImpl(MapRenderer3 renderer,
+            HitTestQueryParameters params) {
+        return bounds.intersects(params.bounds)
+                ? new HitTestResult(subject, params.geo)
+                : null;
     }
 
     private void computeGeoBounds(GeoPoint[] points) {
@@ -563,10 +577,9 @@ public class GLDogHouse extends AbstractGLMapItem2 implements
         }
 
         bounds.set(south, west, north, east);
-        synchronized (_lock) {
-            if (_doghouse != null && points != null) {
-                _doghouse.setPoints(points);
-            }
+
+        if (_doghouse != null && points != null) {
+            _doghouse.setPoints(points);
         }
         dispatchOnBoundsChanged();
     }

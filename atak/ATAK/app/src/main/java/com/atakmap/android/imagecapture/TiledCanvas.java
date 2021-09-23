@@ -40,6 +40,11 @@ public class TiledCanvas extends Canvas {
     private static final String TAG = "TiledCanvas";
     private static final int ARGB = 4;
 
+    // For tracking progress when working with multiple tiles
+    public interface ProgressCallback {
+        void onProgress(int progress, int max);
+    }
+
     protected final File _file;
     protected final int _fullWidth;
     protected final int _fullHeight;
@@ -312,12 +317,13 @@ public class TiledCanvas extends Canvas {
     /**
      * Run post-processing drawing on the entire image (1 tile at a time)
      * Result is automatically saved back to the original image
-     * This is meant to be run once
+     * NOTE: This is meant to be run once per canvas.
+     *
      * @param postDraw The post-processor
+     * @param callback Progress callback
      * @return True if successful
      */
-    public boolean postDraw(CapturePP postDraw,
-            ImageCapturePP.ProgressCallback callback) {
+    public boolean postDraw(CapturePP postDraw, ProgressCallback callback) {
         if (!_valid || postDraw == null)
             return false;
         if (_postDrawn)
@@ -333,7 +339,7 @@ public class TiledCanvas extends Canvas {
             // Copy data
             ByteBuffer byteData = Unsafe.allocateDirect(_tileWidth
                     * _tileHeight * ARGB);
-            int prog = 0;
+            int prog = 0, total = getTileCount();
             for (int y = 0; y < _fullHeight; y += _tileHeight) {
                 for (int x = 0; x < _fullWidth; x += _tileWidth) {
                     int tw = Math.min(_tileWidth, _fullWidth - x), th = Math
@@ -369,7 +375,7 @@ public class TiledCanvas extends Canvas {
                         continue;
                     }
                     if (callback != null)
-                        callback.onProgress(++prog);
+                        callback.onProgress(++prog, total);
                 }
             }
             Unsafe.free(byteData);
@@ -379,6 +385,18 @@ public class TiledCanvas extends Canvas {
             if (ds != null)
                 ds.delete();
         }
+    }
+
+    /**
+     * Run post-processing drawing on the entire image (1 tile at a time)
+     * Result is automatically saved back to the original image
+     * NOTE: This is meant to be run once per canvas.
+     *
+     * @param postDraw The post-processor
+     * @return True if successful
+     */
+    public boolean postDraw(CapturePP postDraw) {
+        return postDraw(postDraw, null);
     }
 
     /**

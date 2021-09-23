@@ -10,6 +10,7 @@ import com.atakmap.android.hierarchy.HierarchyListItem;
 import com.atakmap.android.hierarchy.HierarchyListItem2;
 import com.atakmap.android.hierarchy.action.Delete;
 import com.atakmap.android.hierarchy.action.Export;
+import com.atakmap.android.hierarchy.action.GroupDelete;
 import com.atakmap.android.hierarchy.action.Search;
 import com.atakmap.android.hierarchy.action.Visibility;
 import com.atakmap.android.hierarchy.action.Visibility2;
@@ -41,7 +42,7 @@ public class MapGroupHierarchyListItem extends AbstractHierarchyListItem2
         implements
         MapGroup.OnGroupListChangedListener,
         MapGroup.OnItemListChangedListener,
-        Visibility2, Delete, Search, Export {
+        Visibility2, GroupDelete, Search, Export {
 
     private static final String TAG = "MapGroupHierarchyListItem";
 
@@ -286,26 +287,24 @@ public class MapGroupHierarchyListItem extends AbstractHierarchyListItem2
     // Delete
 
     @Override
-    public boolean delete() {
-        Log.d(TAG, "delete " + this.group.getFriendlyName());
+    public List<Delete> getDeleteActions() {
 
-        // Remove filtered children
-        List<Delete> actions = getChildActions(Delete.class);
-        if (!actions.isEmpty())
-            Log.d(TAG, "Removing " + actions.size()
-                    + " items from " + getTitle());
-        boolean ret = actions.isEmpty();
-        for (Delete del : actions)
-            ret |= del.delete();
+        // Item deletion actions
+        List<Delete> actions = super.getDeleteActions();
 
         // Delete non-permanent group if it's completely empty
-        if (!this.group.getMetaBoolean("permaGroup", false)
-                && this.group.getParentGroup() != null
-                && this.group.getItemCount() == 0
-                && this.group.getGroupCount() == 0)
-            ret |= this.group.getParentGroup().removeGroup(this.group);
-
-        return ret;
+        actions.add(new Delete() {
+            @Override
+            public boolean delete() {
+                if (!group.getMetaBoolean("permaGroup", false)
+                        && group.getParentGroup() != null
+                        && group.getItemCount() == 0
+                        && group.getGroupCount() == 0)
+                    group.getParentGroup().removeGroup(group);
+                return true;
+            }
+        });
+        return actions;
     }
 
     /**************************************************************************/

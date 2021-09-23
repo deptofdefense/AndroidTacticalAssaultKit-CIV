@@ -293,15 +293,4 @@ public class SimpleRectangle extends Polyline {
     public GeoPointMetaData getCenter() {
         return center;
     }
-
-    @Override
-    public boolean testOrthoHit(int xpos, int ypos, GeoPoint point,
-            MapView view) {
-        boolean retVal = false;
-        if (minimumBoundingBox != null) {
-            retVal = minimumBoundingBox.contains(point);
-        }
-        return retVal;
-    }
-
 }

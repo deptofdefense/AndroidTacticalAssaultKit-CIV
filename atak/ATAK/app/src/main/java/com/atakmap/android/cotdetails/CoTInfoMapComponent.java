@@ -19,16 +19,12 @@ import com.atakmap.android.maps.MapEvent;
 import com.atakmap.android.maps.MapEventDispatcher;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
-import com.atakmap.android.util.AttachmentManager;
-import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
-import com.atakmap.coremap.log.Log;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -159,23 +155,6 @@ public class CoTInfoMapComponent extends DropDownMapComponent {
 
         fObserver.startWatching();
 
-    }
-
-    /**
-     * @return markers with attachments as MapItems
-     * @deprecated - Use {@link AttachmentManager#findAttachmentItems} instead
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public MapItem[] getMarkersWithAttachments() {
-
-        synchronized (markerAttachment) {
-            Collection<MapItem> set = markerAttachment.values();
-            MapItem[] mi = new MapItem[set.size()];
-            Log.d(TAG, "getMarkersWithAttachments called: " + set.size());
-            set.toArray(mi);
-            return mi;
-        }
     }
 
     /**

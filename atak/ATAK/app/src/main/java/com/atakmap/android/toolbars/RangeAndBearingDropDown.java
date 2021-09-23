@@ -1,8 +1,6 @@
 
 package com.atakmap.android.toolbars;
 
-import java.util.UUID;
-
 import com.atakmap.android.contact.ContactPresenceDropdown;
 import com.atakmap.android.cotdetails.extras.ExtraDetailsLayout;
 import com.atakmap.android.drawing.details.GenericDetailsView;
@@ -28,7 +26,6 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.ConversionFactors;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
-import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
@@ -70,35 +67,35 @@ public class RangeAndBearingDropDown extends DropDownReceiver implements
     protected RemarksLayout _remarksEditText;
 
     protected ImageButton _colorButton;
-    private Button _elevationButton;
+    protected Button _elevationButton;
     protected ImageButton _sendButton;
 
-    private ImageButton _reverseButton;
+    protected ImageButton _reverseButton;
 
-    private LinearLayout _startPointButton;
-    private LinearLayout _endPointButton;
+    protected LinearLayout _startPointButton;
+    protected LinearLayout _endPointButton;
 
-    private ImageButton _rbPanTo;
+    protected ImageButton _rbPanTo;
 
-    private ImageView _startPointIcon;
-    private ImageView _endPointIcon;
+    protected ImageView _startPointIcon;
+    protected ImageView _endPointIcon;
 
-    private TextView _startPointLabel;
-    private TextView _endPointLabel;
+    protected TextView _startPointLabel;
+    protected TextView _endPointLabel;
 
     // eta and speed group
-    private ViewGroup _etaParent;
-    private TextView _speedTitle;
-    private EditText _speedEditText;
+    protected ViewGroup _etaParent;
+    protected TextView _speedTitle;
+    protected EditText _speedEditText;
     private TextView _etaTitle;
-    private TextView _etaText;
+    protected TextView _etaText;
     private boolean _showEta;
 
-    private ExtraDetailsLayout _extrasLayout;
+    protected ExtraDetailsLayout _extrasLayout;
 
-    private int _paddingValue;
+    protected int _paddingValue;
 
-    private RangeAndBearingTableHandler rabtable;
+    protected RangeAndBearingTableHandler rabtable;
 
     private CoordinateFormat _coordinateFormat;
     private RouteRangeAndBearingWrapper _tmpRoute;
@@ -233,6 +230,13 @@ public class RangeAndBearingDropDown extends DropDownReceiver implements
         });
 
         _remarksEditText = _dropDownView.findViewById(R.id.remarksLayout);
+        _remarksEditText.addTextChangedListener(new AfterTextChangedWatcher() {
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (_rabItem != null)
+                    _rabItem.setRemarks(s.toString());
+            }
+        });
 
         _colorButton = _dropDownView
                 .findViewById(R.id.colorButton);
@@ -347,29 +351,9 @@ public class RangeAndBearingDropDown extends DropDownReceiver implements
 
         // Send Range and Bearing line
         else if (v == _sendButton) {
-            // Need to make a copy without any connection to markers
-            // otherwise linkage is messed up
-            // We also can't just send the attached markers because there's
-            // no easy way to determine if a given marker is send-able
-
-            String remarks = _remarksEditText.getText();
-            String title = _nameEditText.getText().toString();
-
-            RangeAndBearingEndpoint pt1 = new RangeAndBearingEndpoint(
-                    _rabItem.getPoint1(), UUID.randomUUID().toString());
-            RangeAndBearingEndpoint pt2 = new RangeAndBearingEndpoint(
-                    _rabItem.getPoint2(), UUID.randomUUID().toString());
-            RangeAndBearingMapItem sendRab = new RangeAndBearingMapItem(
-                    pt1, pt2, getMapView(), title,
-                    _rabItem.getUID(), _rabItem.getRangeUnits(),
-                    _rabItem.getBearingUnits(), _rabItem.getNorthReference(),
-                    _rabItem.getStrokeColor(), false);
-            sendRab.setMetaString("remarks", remarks);
-            CotEvent event = RangeAndBearingCotEventSpi.createCotEvent(
-                    getMapView(), sendRab);
             AtakBroadcast.getInstance().sendBroadcast(new Intent(
                     ContactPresenceDropdown.SEND_LIST)
-                            .putExtra("com.atakmap.contact.CotEvent", event));
+                            .putExtra("targetUID", _rabItem.getUID()));
         }
 
         // View elevation profile
@@ -437,7 +421,7 @@ public class RangeAndBearingDropDown extends DropDownReceiver implements
         _extrasLayout.setItem(_rabItem);
     }
 
-    private void populateLocationWidgets() {
+    protected void populateLocationWidgets() {
         getMapView().post(new Runnable() {
             @Override
             public void run() {
@@ -709,7 +693,7 @@ public class RangeAndBearingDropDown extends DropDownReceiver implements
         }
     }
 
-    private double convertSpeedToMps(double speed) {
+    protected double convertSpeedToMps(double speed) {
         if (Double.isNaN(speed)) {
             return speed;
         }

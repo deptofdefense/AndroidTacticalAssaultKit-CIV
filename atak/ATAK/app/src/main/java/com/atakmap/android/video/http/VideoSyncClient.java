@@ -8,6 +8,7 @@ import android.os.Bundle;
 import com.atakmap.android.http.rest.HTTPRequestManager;
 import com.atakmap.android.http.rest.NetworkOperationManager;
 import com.atakmap.android.http.rest.operation.NetworkOperation;
+import com.atakmap.android.maps.MapView;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.android.video.ConnectionEntry;
 import com.atakmap.android.video.VideoListDialog;
@@ -40,8 +41,6 @@ public class VideoSyncClient implements RequestManager.RequestListener {
      */
     private final Context _context;
     private final VideoXMLHandler _xmlHandler;
-
-    private VideoListDialog.VideoSelectionCallback queryCallback;
     private VideoPostCallback postCallback;
 
     private int curNotificationId = 85000;
@@ -74,13 +73,10 @@ public class VideoSyncClient implements RequestManager.RequestListener {
      * when aliases are selected. 
      * 
      * @param serverUrl - the URL of the server
-     * @param callback - the callback to send the selected aliases to
      */
-    public void query(String serverUrl,
-            VideoListDialog.VideoSelectionCallback callback) {
+    public void query(String serverUrl) {
 
         try {
-            this.queryCallback = callback;
             GetVideoListRequest request = new GetVideoListRequest(serverUrl,
                     curNotificationId++);
             if (request == null || !request.isValid()) {
@@ -203,25 +199,22 @@ public class VideoSyncClient implements RequestManager.RequestListener {
                     b.setPositiveButton(R.string.ok, null);
                     b.show();
                 } else {
-                    if (queryCallback == null)
-                        queryCallback = new VideoListDialog.VideoSelectionCallback() {
-                            @Override
-                            public void onSelection(
-                                    HashSet<ConnectionEntry> selected) {
-                                VideoManager.getInstance().addEntries(
-                                        new ArrayList<>(selected));
-                            }
-
-                            @Override
-                            public void onSelection(ConnectionEntry selected) {
-                            }
-                        };
-
                     //select videos
-                    VideoListDialog.selectVideos(
-                            _context, _context.getString(R.string.video_text6),
-                            connectionEntries,
-                            queryCallback);
+                    MapView mv = MapView.getMapView();
+                    if (mv != null) {
+                        new VideoListDialog(mv).show(
+                                _context.getString(R.string.video_text6),
+                                connectionEntries, true,
+                                new VideoListDialog.Callback() {
+                                    @Override
+                                    public void onVideosSelected(
+                                            List<ConnectionEntry> selected) {
+                                        VideoManager.getInstance().addEntries(
+                                                new ArrayList<>(new HashSet<>(
+                                                        selected)));
+                                    }
+                                });
+                    }
                 }
             } else {
                 if (resultData == null) {

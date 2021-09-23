@@ -2,7 +2,6 @@
 package com.atakmap.android.maps.graphics;
 
 import android.graphics.Color;
-import android.graphics.PointF;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 
@@ -13,6 +12,7 @@ import com.atakmap.annotations.IncubatingApi;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
+import com.atakmap.coremap.maps.coords.Vector2D;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.math.MathUtils;
@@ -24,6 +24,8 @@ import com.atakmap.math.Vector3D;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLNinePatch;
 import com.atakmap.opengl.GLText;
+
+import java.util.List;
 
 /** @deprecated DO NOT USE, interim code consolidation pending label manager */
 @IncubatingApi(since = "4.3")
@@ -219,7 +221,7 @@ public final class GLSegmentFloatingLabel {
                 float zmax = (float) Math.min(startPoint.z, endPoint.z);
 
                 // obtain the bounds of the current view
-                RectF _view = GLArrow2.getWidgetViewF(ortho);
+                RectF view = GLArrow2.getWidgetViewF(ortho);
 
                 int ptIdxStart = pts.length - 2;
                 int ptIdxEnd = pts.length - 1;
@@ -228,71 +230,75 @@ public final class GLSegmentFloatingLabel {
                 // if one point intersects, draw the text to be the midline between the point
                 // inside the view and the intersection point.
 
-                final boolean containsSP = Rectangle.contains(_view.left,
-                        _view.bottom, _view.right, _view.top, startPoint.x,
+                final boolean containsSP = Rectangle.contains(view.left,
+                        view.bottom, view.right, view.top, startPoint.x,
                         startPoint.y);
-                final boolean containsEP = Rectangle.contains(_view.left,
-                        _view.bottom, _view.right, _view.top, endPoint.x,
+                final boolean containsEP = Rectangle.contains(view.left,
+                        view.bottom, view.right, view.top, endPoint.x,
                         endPoint.y);
                 if (!containsSP || !containsEP) {
-                    PointF[] ip = GLMapItem._getIntersectionPoint(_view,
-                            new PointF((float) startPoint.x,
-                                    (float) startPoint.y),
-                            new PointF((float) endPoint.x, (float) endPoint.y));
 
-                    if (ip[0] != null || ip[1] != null) {
+                    Vector2D[] viewPoly = {
+                            new Vector2D(view.left, view.top),
+                            new Vector2D(view.right, view.top),
+                            new Vector2D(view.right, view.bottom),
+                            new Vector2D(view.left, view.bottom),
+                            new Vector2D(view.left, view.top)
+                    };
+                    List<Vector2D> ip = Vector2D
+                            .segmentIntersectionsWithPolygon(
+                                    new Vector2D(startPoint.x, startPoint.y),
+                                    new Vector2D(endPoint.x, endPoint.y),
+                                    viewPoly);
+
+                    if (!ip.isEmpty()) {
                         // fill in any missing endpoints
-                        if (ip[0] == null && containsSP)
-                            ip[0] = new PointF((float) startPoint.x,
-                                    (float) startPoint.y);
-                        else if (ip[0] == null && containsEP)
-                            ip[0] = new PointF((float) endPoint.x,
-                                    (float) endPoint.y);
 
-                        if (ip[1] == null && containsEP)
-                            ip[1] = new PointF((float) endPoint.x,
-                                    (float) endPoint.y);
-                        else if (ip[1] == null && containsSP)
-                            ip[1] = new PointF((float) startPoint.x,
-                                    (float) startPoint.y);
-
-                        if (MathUtils.distance(ip[0].x, ip[0].y, startPoint.x,
-                                startPoint.y) > MathUtils.distance(ip[1].x,
-                                        ip[1].y, startPoint.x, startPoint.y)) {
-                            PointF swap = ip[0];
-                            ip[0] = ip[1];
-                            ip[1] = swap;
+                        if (ip.size() == 1) {
+                            if (containsSP)
+                                ip.add(new Vector2D(startPoint.x,
+                                        startPoint.y));
+                            else
+                                ip.add(new Vector2D(endPoint.x, endPoint.y));
                         }
 
                         // compute midpoint of intersecting segment
-                        if (ip[0] != null && ip[1] != null) {
-                            final double ipd = MathUtils.distance(ip[0].x,
-                                    ip[0].y, ip[1].x, ip[1].y);
-                            final double ipdx = (ip[1].x - ip[0].x) / ipd;
-                            final double ipdy = (ip[1].y - ip[0].y) / ipd;
+                        Vector2D p1 = ip.get(0);
+                        Vector2D p2 = ip.get(1);
 
-                            xmid = (float) (ip[0].x
-                                    + (ipdx * ipd * _segmentPositionWeight));
-                            ymid = (float) (ip[0].y
-                                    + (ipdy * ipd * _segmentPositionWeight));
+                        if (MathUtils.distance(p1.x, p1.y, startPoint.x,
+                                startPoint.y) > MathUtils.distance(p2.x, p2.y,
+                                        startPoint.x, startPoint.y)) {
+                            Vector2D swap = p1;
+                            p1 = p2;
+                            p2 = swap;
                         }
+
+                        double ipd = MathUtils.distance(p1.x, p1.y, p2.x, p2.y);
+                        double ipdx = (p2.x - p1.x) / ipd;
+                        double ipdy = (p2.y - p1.y) / ipd;
+
+                        xmid = (float) (p1.x
+                                + (ipdx * ipd * _segmentPositionWeight));
+                        ymid = (float) (p1.y
+                                + (ipdy * ipd * _segmentPositionWeight));
                     }
                 }
 
                 // apply some padding
-                if (Rectangle.contains(_view.left, _view.bottom, _view.right,
-                        _view.top, xmid, ymid)) {
+                if (Rectangle.contains(view.left, view.bottom, view.right,
+                        view.top, xmid, ymid)) {
                     float pad = 16f;
                     float padx = (_textWidth / 2f) + pad;
                     float pady = (_textHeight / 2f) + pad;
-                    if (xmid - padx < _view.left)
+                    if (xmid - padx < view.left)
                         xmid = padx;
-                    else if (xmid + padx > _view.right)
-                        xmid = _view.right - padx;
-                    if (ymid - pady < _view.bottom)
+                    else if (xmid + padx > view.right)
+                        xmid = view.right - padx;
+                    if (ymid - pady < view.bottom)
                         ymid = pady;
-                    else if (ymid + pady > _view.top)
-                        ymid = _view.top - pady;
+                    else if (ymid + pady > view.top)
+                        ymid = view.top - pady;
                 }
 
                 if (_clampToGround) {

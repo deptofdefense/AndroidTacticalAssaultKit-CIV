@@ -34,6 +34,8 @@ import com.atakmap.android.maps.MapView;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+
+import com.atakmap.annotations.FortifyFinding;
 import com.atakmap.coremap.log.Log;
 
 import java.io.File;
@@ -552,10 +554,8 @@ public class PluginSpinner extends Spinner {
         }
 
         @Override
+        @FortifyFinding(finding = "Android Bad Practice: Missing Receiver Permission", rational = "This class is a facade for a real context so it must implement 1:1 the methods being wrapped.  The application does not call this directly")
         public void sendBroadcast(Intent intent) {
-            // Fortify has flagged this as a Android Bad Practice: Missing Receiver Permission
-            // This class is a facade for a real context so it must implement 1:1 the methods
-            // being wrapped.    The application does not call this directly.
             c.sendBroadcast(intent);
         }
 
@@ -588,13 +588,11 @@ public class PluginSpinner extends Spinner {
         }
 
         @Override
+        @FortifyFinding(finding = "Android Bad Practice: Missing Receiver Permission", rational = "This class is a facade for a real context so it must implement 1:1 the methods being wrapped.  The application does not call this directly")
         public void sendOrderedBroadcast(@NonNull Intent intent,
                 String receiverPermission, BroadcastReceiver resultReceiver,
                 Handler scheduler, int initialCode, String initialData,
                 Bundle initialExtras) {
-            // Fortify has flagged this as a Android Bad Practice: Missing Receiver Permission
-            // This class is a facade for a real context so it must implement 1:1 the methods
-            // being wrapped.    The application does not call this directly.
             c.sendOrderedBroadcast(intent, receiverPermission, resultReceiver,
                     scheduler, initialCode, initialData, initialExtras);
         }
@@ -616,10 +614,8 @@ public class PluginSpinner extends Spinner {
         @SuppressWarnings({
                 "MissingPermission"
         })
+        @FortifyFinding(finding = "Android Bad Practice: Sticky Broadcast", rational = "This class is a facade for a real context so it must implement 1:1 the methods being wrapped.  The application does not call this directly")
         public void sendStickyBroadcast(Intent intent) {
-            // Fortify has flagged this as a Android Bad Practice: Sticky Broadcast
-            // This class is a facade for a real context so it must implement 1:1 the methods
-            // being wrapped.    The application does not call this directly.
             c.sendStickyBroadcast(intent);
         }
 
@@ -635,12 +631,10 @@ public class PluginSpinner extends Spinner {
         @SuppressWarnings({
                 "MissingPermission"
         })
+        @FortifyFinding(finding = "Android Bad Practice: Sticky Broadcast", rational = "This class is a facade for a real context so it must implement 1:1 the methods being wrapped.  The application does not call this directly")
         public void sendStickyOrderedBroadcast(Intent intent,
                 BroadcastReceiver resultReceiver, Handler scheduler,
                 int initialCode, String initialData, Bundle initialExtras) {
-            // Fortify has flagged this as a Android Bad Practice: Sticky Broadcast
-            // This class is a facade for a real context so it must implement 1:1 the methods
-            // being wrapped.    The application does not call this directly.
             c.sendStickyOrderedBroadcast(intent, resultReceiver, scheduler,
                     initialCode, initialData, initialExtras);
         }
@@ -676,11 +670,9 @@ public class PluginSpinner extends Spinner {
         }
 
         @Override
+        @FortifyFinding(finding = "Android Bad Practice: Missing Receiver Permission", rational = "This class is a facade for a real context so it must implement 1:1 the methods being wrapped.  The application does not call this directly")
         public Intent registerReceiver(BroadcastReceiver receiver,
                 IntentFilter filter) {
-            // Fortify has flagged this as a Android Bad Practice: Missing Broadcaster Permission
-            // This class is a facade for a real context so it must implement 1:1 the methods
-            // being wrapped.    The application does not call this directly.
             return c.registerReceiver(receiver, filter);
         }
 
@@ -742,10 +734,8 @@ public class PluginSpinner extends Spinner {
         }
 
         @Override
+        @FortifyFinding(finding = "Android Bad Practice: Android Permission Check", rational = "This class is a facade for a real context so it must implement 1:1 the methods being wrapped.  The application does not call this directly")
         public int checkCallingOrSelfPermission(@NonNull String permission) {
-            // Fortify has flagged this as a Android Bad Practice: Android Permission Check
-            // This class is a facade for a real context so it must implement 1:1 the methods
-            // being wrapped.    The application does not call this directly.
             return c.checkCallingOrSelfPermission(permission);
         }
 
@@ -791,10 +781,8 @@ public class PluginSpinner extends Spinner {
         }
 
         @Override
+        @FortifyFinding(finding = "Android Bad Practice: Android Permission Check", rational = "This class is a facade for a real context so it must implement 1:1 the methods being wrapped.  The application does not call this directly")
         public int checkCallingOrSelfUriPermission(Uri uri, int modeFlags) {
-            // Fortify has flagged this as a Android Bad Practice: Android Permission Check
-            // This class is a facade for a real context so it must implement 1:1 the methods
-            // being wrapped.    The application does not call this directly.
             return c.checkCallingOrSelfUriPermission(uri, modeFlags);
         }
 

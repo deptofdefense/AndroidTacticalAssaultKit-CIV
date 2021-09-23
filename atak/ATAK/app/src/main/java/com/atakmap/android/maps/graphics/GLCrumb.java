@@ -270,6 +270,8 @@ public class GLCrumb extends GLPointMapItem2 implements
         this.transformedVerts2 = null;
     }
 
+    // XXX - why isn't this using the super implementation?
+
     @Override
     public void onPointChanged(PointMapItem item) {
         final GeoPoint p = item.getPoint();
@@ -284,6 +286,13 @@ public class GLCrumb extends GLPointMapItem2 implements
                 final double W = point.getLongitude() - .0001;
 
                 bounds.set(N, W, S, E);
+                // lollipop bottom
+                bounds.setMinAltitude(DEFAULT_MIN_ALT);
+                // assume if point is above 9000m it is above terrain
+                bounds.setMaxAltitude(Math.max(
+                        Double.isNaN(point.getAltitude()) ? point.getAltitude()
+                                : 0d,
+                        DEFAULT_MAX_ALT));
 
                 // IF YOU NEED TO, remove it and re-add it
                 // if outside bounds of node

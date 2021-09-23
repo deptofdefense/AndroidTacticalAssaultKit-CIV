@@ -28,6 +28,19 @@ public class DangerCloseCalculator implements Runnable,
 
     public static final String TAG = "DangerCloseCalculator";
 
+    public interface CustomFilter {
+        /**
+         * Ability to define a custom danger close filter for a plugin to implement.
+         * @param target the target
+         * @param mapItem the map item to consider
+         * @param distance the distance from
+         * @param bearing the bearing from
+         * @return true if the item is considered danger close.
+         */
+        boolean accept(MapItem target, MapItem mapItem, double distance,
+                double bearing);
+    }
+
     /**
      * Map listener to the hostile target being monitored
      */
@@ -48,6 +61,8 @@ public class DangerCloseCalculator implements Runnable,
     private static boolean expandedDangerClose = false;
 
     private static DangerCloseCalculator _instance;
+
+    private static CustomFilter customFilter;
 
     /**
      * Store information about an item that is "danger close" to a given hostile
@@ -247,6 +262,14 @@ public class DangerCloseCalculator implements Runnable,
     }
 
     /**
+     * Sets a custom filter for the DangerClose calculator.
+     * @param filter the filter to be used.
+     */
+    public void setCustomFilter(CustomFilter filter) {
+        customFilter = filter;
+    }
+
+    /**
      * Get list of Danger Close alerts
      * @return returns a list of alerts
      */
@@ -344,9 +367,20 @@ public class DangerCloseCalculator implements Runnable,
         // Target is a surface-to-air threat
         final boolean airDefense = target.getType().startsWith("a-h-G-U-C-D");
 
+        final CustomFilter localCustomFilter = customFilter;
         //find self marker
         final PointMapItem self = MapView.getMapView().getSelfMarker();
-        if (!airDefense && self.getGroup() != null
+        if (localCustomFilter != null) {
+
+            final double d = target.getPoint().distanceTo(self.getPoint());
+            final double b = target.getPoint().bearingTo(self.getPoint());
+            if (localCustomFilter.accept(target, self, d, b)) {
+                closestObject = self;
+                closestDistance = self.getPoint().distanceTo(target.getPoint());
+                list.add(new DangerCloseAlert(target, self, d, b));
+            }
+
+        } else if (!airDefense && self.getGroup() != null
                 && self.getPoint().isValid()) {
 
             //initialize closest with self
@@ -372,6 +406,25 @@ public class DangerCloseCalculator implements Runnable,
             @Override
             public boolean onMapItem(final PointMapItem mapItem) {
                 final String type = mapItem.getType();
+
+                // If a custom filter has been installed, utilize that instead of the
+                // default implementation.
+                if (localCustomFilter != null) {
+                    final double d = target.getPoint().distanceTo(
+                            mapItem.getPoint());
+                    final double b = target.getPoint().bearingTo(
+                            mapItem.getPoint());
+                    if (localCustomFilter.accept(target, mapItem, d, b)) {
+                        list.add(new DangerCloseAlert(target, mapItem, d, b));
+                        if (d < closestDistance) {
+                            //this is the new closest item
+                            closestDistance = d;
+                            closestObject = mapItem;
+                        }
+                    }
+
+                    return false;
+                }
 
                 // Friendlies
                 boolean isCorrectTypePrefix = type.startsWith("a-f");
@@ -421,7 +474,7 @@ public class DangerCloseCalculator implements Runnable,
      * @param gp the point used for searching against.
      * TODO: use the method Chris described for finding the closest.
      */
-    public static synchronized PointMapItem find(final GeoPoint gp) {
+    private static synchronized PointMapItem find(final GeoPoint gp) {
 
         // suggest new way, not able to get the wild card to work exactly right (tried both % and *).
         //       final MapItem friendly = _mapGroup.deepFindClosestItem(gp, "type", "a-f-G-%");
@@ -465,4 +518,5 @@ public class DangerCloseCalculator implements Runnable,
         }
 
     };
+
 }

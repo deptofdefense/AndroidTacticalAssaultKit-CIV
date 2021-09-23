@@ -69,7 +69,7 @@ abstract class AbstractSheetHierarchyListItem extends AbstractHierarchyListItem2
 
     @Override
     public String getTitle() {
-        return _item.getName();
+        return _item.getTitle();
     }
 
     @Override
@@ -237,7 +237,7 @@ abstract class AbstractSheetHierarchyListItem extends AbstractHierarchyListItem2
         TextView size = v.findViewById(R.id.export_size);
 
         msg.setText(_context.getString(R.string.export_finished_message1,
-                item.getName()));
+                item.getTitle()));
         path.setText(FileSystemUtils.prettyPrint(file));
         size.setText(MathUtils.GetLengthString(IOProviderFactory.length(file)));
 

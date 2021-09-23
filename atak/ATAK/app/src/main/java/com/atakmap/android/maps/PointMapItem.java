@@ -3,7 +3,6 @@ package com.atakmap.android.maps;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
-import com.atakmap.map.layer.feature.Feature.AltitudeMode;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -23,9 +22,6 @@ public abstract class PointMapItem extends MapItem {
     private GeoPointMetaData gpm = new GeoPointMetaData();
 
     private double _height, _radius;
-
-    // Altitude rendering mode
-    private AltitudeMode _altitudeMode = AltitudeMode.Absolute;
 
     // Breadcrumb trails
     private CrumbTrail crumbTrail;
@@ -183,26 +179,6 @@ public abstract class PointMapItem extends MapItem {
             setMetaDouble("volume_height", _height);
             onPointChanged();
         }
-    }
-
-    /**
-     * Set the altitude rendering mode
-     * See {@link AltitudeMode} for possible values
-     * @param altitudeMode Altitude mode
-     */
-    public void setAltitudeMode(AltitudeMode altitudeMode) {
-        if (_altitudeMode != altitudeMode) {
-            _altitudeMode = altitudeMode;
-            onPointChanged();
-        }
-    }
-
-    /**
-     * Get the altitude rendering mode
-     * @return Altitude mode
-     */
-    public AltitudeMode getAltitudeMode() {
-        return _altitudeMode;
     }
 
     /**

@@ -101,6 +101,8 @@ public class NonEmptyEditTextDialog implements EditText.OnClickListener {
                 return false;
             }
         });
+
+        et.requestFocus();
     }
 
 }

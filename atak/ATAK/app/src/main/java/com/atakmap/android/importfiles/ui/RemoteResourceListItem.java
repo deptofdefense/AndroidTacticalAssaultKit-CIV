@@ -19,6 +19,8 @@ import com.atakmap.android.data.URIContentManager;
 import com.atakmap.android.hierarchy.HierarchyListItem;
 import com.atakmap.android.hierarchy.action.Action;
 import com.atakmap.android.hierarchy.action.Delete;
+import com.atakmap.android.hierarchy.action.Visibility;
+import com.atakmap.android.hierarchy.action.Visibility2;
 import com.atakmap.android.hierarchy.items.AbstractHierarchyListItem2;
 import com.atakmap.android.importexport.ImportExportMapComponent;
 import com.atakmap.android.importexport.send.SendDialog;
@@ -35,6 +37,7 @@ import com.atakmap.coremap.log.Log;
 import java.io.File;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class RemoteResourceListItem extends AbstractHierarchyListItem2
@@ -294,7 +297,12 @@ public class RemoteResourceListItem extends AbstractHierarchyListItem2
 
     @Override
     public <T extends Action> T getAction(Class<T> clazz) {
-        URIContentHandler handler = getHandler();
+        // handle visibility, will cover generic handler processing as
+        // `handler` is the underlying content
+        final Visibility vis = getVisibilityHandler();
+        if (clazz.isInstance(vis))
+            return clazz.cast(vis);
+        final URIContentHandler handler = getHandler();
         if (clazz.isInstance(handler) && handler.isActionSupported(clazz))
             return clazz.cast(handler);
         return super.getAction(clazz);
@@ -313,11 +321,76 @@ public class RemoteResourceListItem extends AbstractHierarchyListItem2
     }
 
     private URIContentHandler getHandler() {
-        String path = _resource.getLocalPath();
+        return getHandler(_resource);
+    }
+
+    private static URIContentHandler getHandler(RemoteResource resource) {
+        String path = resource.getLocalPath();
         if (!FileSystemUtils.isEmpty(path))
             return URIContentManager.getInstance().getHandler(
                     new File(FileSystemUtils
                             .sanitizeWithSpacesAndSlashes(path)));
         return null;
+    }
+
+    private Visibility getVisibilityHandler() {
+        ArrayList<Visibility> vis = new ArrayList<>();
+        getVisibility(_resource, vis);
+        if (vis.isEmpty())
+            return null;
+        else if (vis.size() == 1)
+            return vis.get(0);
+        else
+            return new VisibilityMultiplexer(vis);
+    }
+
+    private static void getVisibility(RemoteResource resource,
+            Collection<Visibility> visibility) {
+        URIContentHandler h = getHandler(resource);
+        if (h instanceof Visibility)
+            visibility.add((Visibility) h);
+        for (RemoteResource child : resource.getChildren())
+            getVisibility(child, visibility);
+    }
+
+    final static class VisibilityMultiplexer implements Visibility2 {
+        Collection<Visibility> _items;
+
+        VisibilityMultiplexer(Collection<Visibility> items) {
+            _items = items;
+        }
+
+        @Override
+        public int getVisibility() {
+            int vis = 0;
+            int semi = 0;
+            for (Visibility item : _items) {
+                if (item instanceof Visibility2) {
+                    final int val = ((Visibility2) item).getVisibility();
+                    // mark fully visible
+                    vis += (val == Visibility2.VISIBLE) ? 1 : 0;
+                    // mark semi-visible
+                    semi += (val == Visibility2.SEMI_VISIBLE) ? 1 : 0;
+                } else {
+                    vis += item.isVisible() ? 1 : 0;
+                }
+            }
+            // XXX - we are treating as binary for the sake of nested KML
+            // network links that may return "invisible" if they contain no
+            // features and instead only specify nesting
+            return (vis + semi) > 0 ? VISIBLE : INVISIBLE;
+        }
+
+        @Override
+        public boolean setVisible(boolean visible) {
+            for (Visibility item : _items)
+                item.setVisible(visible);
+            return true;
+        }
+
+        @Override
+        public boolean isVisible() {
+            return (getVisibility() != Visibility2.INVISIBLE);
+        }
     }
 }

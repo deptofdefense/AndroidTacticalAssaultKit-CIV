@@ -3,11 +3,8 @@ package com.atakmap.android.maps.graphics;
 
 import android.util.Pair;
 
-import com.atakmap.android.maps.CrumbTrail;
 import com.atakmap.android.maps.MapItem;
-import com.atakmap.android.maps.MetaMapPoint;
-import com.atakmap.android.maps.MetaShape;
-import com.atakmap.android.maps.SensorFOV;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.MapRenderer;
 
@@ -18,6 +15,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * @deprecated Use {@link GLMapGroup2}
+ */
+@Deprecated
+@DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
 public final class GLMapGroup {
 
     public static final String TAG = "GLMapGroup";
@@ -25,7 +27,8 @@ public final class GLMapGroup {
     private GLMapGroup() {
     }
 
-    private static Class lookupGLClass(Class itemClass) {
+    private static Class<? extends GLMapItem2> lookupGLClass(
+            Class<?> itemClass) {
         Class<?> glClass = null;
 
         try {
@@ -60,19 +63,24 @@ public final class GLMapGroup {
         }
 
         // Check if it's a GLMapItem
-        if (glClass != null && !GLMapItem.class.isAssignableFrom(glClass)) {
+        if (glClass != null && !GLMapItem2.class.isAssignableFrom(glClass)) {
             glClass = null;
             Log.e(TAG,
                     "GL class was not a subclass of GLMapItem for item of class "
                             + itemClass.getName());
         }
 
-        return glClass;
+        return (Class<? extends GLMapItem2>) glClass;
     }
 
-    static final Map<Class<? extends MapItem>, Class<? extends GLMapItem>> glClasses = new HashMap<>();
-    static final Map<Class<? extends GLMapItem>, Constructor<?>> glCtors = new HashMap<>();
+    static final Map<Class<? extends MapItem>, Class<? extends GLMapItem2>> glClasses = new HashMap<>();
+    static final Map<Class<? extends GLMapItem2>, Constructor<?>> glCtors = new HashMap<>();
 
+    /**
+     * @deprecated Use {@link GLMapGroup2#DEFAULT_GLMAPITEM_SPI3}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
     public final static GLMapItemSpi2 DEFAULT_GLMAPITEM_SPI2 = new GLMapItemSpi2() {
 
         @Override
@@ -82,28 +90,19 @@ public final class GLMapGroup {
         }
 
         @Override
-        public GLMapItem create(Pair<MapRenderer, MapItem> arg) {
+        public GLMapItem2 create(Pair<MapRenderer, MapItem> arg) {
             final MapRenderer surface = arg.first;
             final MapItem item = arg.second;
-
-            if (item instanceof SensorFOV)
-                return new GLSensorFOV(surface, (SensorFOV) item);
-            else if (item instanceof MetaMapPoint || item instanceof MetaShape
-                    || item instanceof CrumbTrail)
-                // Meta items don't have a graphical representation themselves, since they manage
-                // other
-                // map items or similar
-                return null;
 
             return this.reflect(surface, item);
         }
 
-        private synchronized GLMapItem reflect(MapRenderer surface,
+        private synchronized GLMapItem2 reflect(MapRenderer surface,
                 MapItem item) {
             // Automatically try to find the GL class if it isn't one of the core map items but
             // something added by another component
             Class<? extends MapItem> itemClass = item.getClass();
-            Class<? extends GLMapItem> glClass = null;
+            Class<? extends GLMapItem2> glClass = null;
 
             Class<?> currentClass = itemClass;
             // If class is cached, use it
@@ -134,7 +133,7 @@ public final class GLMapGroup {
                 }
 
                 try {
-                    return (GLMapItem) ctor.newInstance(surface, item);
+                    return (GLMapItem2) ctor.newInstance(surface, item);
                 } catch (InstantiationException ignored) {
                 } catch (IllegalAccessException ignored) {
                 } catch (InvocationTargetException ignored) {

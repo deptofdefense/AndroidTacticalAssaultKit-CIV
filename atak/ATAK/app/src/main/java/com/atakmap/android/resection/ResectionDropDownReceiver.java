@@ -42,6 +42,8 @@ public class ResectionDropDownReceiver extends DropDownReceiver
     public static final String SET_LANDMARK = "com.atakmap.android.resection.SET_LANDMARK";
     public static final String SET_BEARING = "com.atakmap.android.resection.SET_BEARING";
 
+    private ResectionMapComponent.BackButtonCallback backButtonCallback = null;
+
     private final MapView _mapView;
     private final Context _context;
     private final ResectionMapManager _manager;
@@ -53,6 +55,7 @@ public class ResectionDropDownReceiver extends DropDownReceiver
 
     ResectionDropDownReceiver(MapView mapView) {
         super(mapView);
+        setRetain(true);
         _mapView = mapView;
         _context = mapView.getContext();
         _manager = new ResectionMapManager(mapView);
@@ -166,7 +169,7 @@ public class ResectionDropDownReceiver extends DropDownReceiver
                         callsign, m.getTitle()));
                 d.setTargetPoint(m.getPoint());
                 d.setTag(item);
-                d.show(item.getMetaDouble("bearing", 0), _adapter);
+                d.show(item.getMetaDouble("landmarkBearing", 0), _adapter);
                 break;
             }
 
@@ -292,13 +295,37 @@ public class ResectionDropDownReceiver extends DropDownReceiver
         }
     }
 
+    /**
+     * Shows the available location estimates in the drop down
+     */
+    protected void showEstimatesDropDown(View view,
+            ResectionMapComponent.BackButtonCallback callback) {
+        backButtonCallback = callback;
+        if (isTablet())
+            showDropDown(view, DropDownReceiver.FIVE_TWELFTHS_WIDTH,
+                    DropDownReceiver.FULL_HEIGHT,
+                    DropDownReceiver.FULL_WIDTH,
+                    DropDownReceiver.FIVE_TWELFTHS_HEIGHT);
+        else
+            showDropDown(view, DropDownReceiver.HALF_WIDTH,
+                    DropDownReceiver.FULL_HEIGHT,
+                    DropDownReceiver.FULL_WIDTH, DropDownReceiver.HALF_HEIGHT);
+    }
+
     @Override
     protected boolean onBackButtonPressed() {
+        if (backButtonCallback != null) {
+            backButtonCallback.backButtonPressed();
+        }
+
         // TODO: Should we only fire this callback explicitly with the resection button?
         if (isVisible() && resectionResultCallback != null) {
             ResectionLocationEstimate estimate = new ResectionLocationEstimate();
             estimate.setSource(getName());
-            estimate.setPoint(_manager.getIntersectionPoint());
+
+            GeoPoint point = _manager.getIntersectionPoint();
+            estimate.setPoint(point);
+
             resectionResultCallback.result(this, estimate);
             resectionResultCallback = null;
         }

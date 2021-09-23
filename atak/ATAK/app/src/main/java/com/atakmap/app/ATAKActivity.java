@@ -194,6 +194,7 @@ public class ATAKActivity extends MapActivity implements
 
         SystemComponentLoader.initializeEncryption(this);
         SystemComponentLoader.initializeFlavor(this);
+        SystemComponentLoader.initializeRaptorApi(this);
 
         setWarningShown();
 
@@ -2828,8 +2829,8 @@ public class ATAKActivity extends MapActivity implements
             final String encryptorName = SystemComponentLoader
                     .getEncryptionComponentName();
             if (encryptorName != null) {
-                final TextView encryptionText = ((TextView) splashView
-                        .findViewById(R.id.encryption));
+                final TextView encryptionText = splashView
+                        .findViewById(R.id.encryption);
                 encryptionText.setText(getString(R.string.dar_encryptor_message,
                         encryptorName));
                 encryptionText.setVisibility(View.VISIBLE);

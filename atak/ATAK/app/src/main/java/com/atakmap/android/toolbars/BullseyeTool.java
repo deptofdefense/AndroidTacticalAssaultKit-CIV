@@ -19,8 +19,6 @@ import android.view.View;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
-import com.atakmap.android.elev.dt2.Dt2ElevationModel;
-
 import com.atakmap.android.drawing.mapItems.DrawingCircle;
 import com.atakmap.android.gui.CoordDialogView;
 import com.atakmap.android.ipc.AtakBroadcast;
@@ -32,6 +30,7 @@ import com.atakmap.android.maps.MapItem.OnGroupChangedListener;
 import com.atakmap.android.maps.MapItem.OnVisibleChangedListener;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
+import com.atakmap.android.maps.Marker.AugmentedKeyholeInfo;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.PointMapItem.OnPointChangedListener;
 import com.atakmap.android.toolbar.ButtonTool;
@@ -45,8 +44,12 @@ import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.conversions.SpanUtilities;
 import com.atakmap.coremap.cot.event.CotDetail;
+import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.NorthReference;
+import com.atakmap.map.elevation.ElevationManager;
+import com.atakmap.spatial.file.export.KMZFolder;
+import com.ekito.simpleKML.model.Folder;
 
 /**
  * TODO: Clean up bullseyes the same way we did with drawing circles
@@ -56,15 +59,16 @@ import com.atakmap.coremap.maps.coords.NorthReference;
 public class BullseyeTool extends ButtonTool implements
         MapEventDispatcher.MapEventDispatchListener {
 
+    private static final String TAG = "BullseyeTool";
     public static final String TOOL_IDENTIFIER = "com.atakmap.android.toolbars.BullseyeTool";
     public static final String BULLSEYE_COT_TYPE = "u-r-b-bullseye";
     public static final int MAX_RADIUS = 1500000;
 
     protected final Context _context;
-    private GeoPointMetaData centerLoc = null;
-    private GeoPointMetaData edgeLoc = null;
-    private Marker centerMarker = null;
-    private Marker edgeMarker = null;
+    protected GeoPointMetaData centerLoc = null;
+    protected GeoPointMetaData edgeLoc = null;
+    protected Marker centerMarker = null;
+    protected Marker edgeMarker = null;
 
     BullseyeTool(MapView mapView, ImageButton button) {
         super(mapView, button, TOOL_IDENTIFIER);
@@ -177,12 +181,10 @@ public class BullseyeTool extends ButtonTool implements
         centerMarker.setType(BULLSEYE_COT_TYPE);
         centerMarker.setMetaBoolean("archive", true);
         centerMarker.setMetaString("how", "h-g-i-g-o");
-        centerMarker.setTouchable(true);
         centerMarker.setMetaBoolean("ignoreOffscreen", true);
         centerMarker.setMovable(true);
         if (coordFmt != null) {
             centerMarker.setMetaString("coordFormat", coordFmt);
-            centerMarker.notifyMetadataChanged("coordFormat");
         }
         centerMarker.setMetaString("entry", "user");
         _mapView.getRootGroup().findMapGroup("Range & Bearing")
@@ -237,6 +239,7 @@ public class BullseyeTool extends ButtonTool implements
         } else {
             centerMarker.setMetaBoolean("bullseyeOverlay", true);
         }
+        centerMarker.setAugmentedKeyholeInfo(aki);
         AngleOverlayShape aos = new AngleOverlayShape(bullseyeUID);
         aos.setCenter(centerMarker.getGeoPointMetaData());
         aos.setRadius(radiusInMeters, Span.METER);
@@ -421,6 +424,7 @@ public class BullseyeTool extends ButtonTool implements
         centerMarker.addOnPointChangedListener(centerMoveListener);
         centerMarker.addOnGroupChangedListener(centerGroupChangeListener);
         centerMarker.addOnVisibleChangedListener(centerVisibilityListener);
+        centerMarker.setAugmentedKeyholeInfo(aki);
 
         if (centerMarker.getType().equals(BULLSEYE_COT_TYPE))
             rabGroup.addItem(aos);
@@ -509,14 +513,11 @@ public class BullseyeTool extends ButtonTool implements
                         // always look up the elevation since the point has been moved
                         // ATAK-7066 If Bullseye center location is changed in Details, elevation is not updated
 
-                        gp = Dt2ElevationModel.getInstance().queryPoint(
-                                gp.get().getLatitude(),
-                                gp.get().getLongitude());
+                        gp = ElevationManager.getElevationMetadata(gp.get());
 
                         aosCenterMarker.setMetaString("coordFormat",
                                 builderView.second.getCoordFormat()
                                         .getDisplayName());
-                        aosCenterMarker.notifyMetadataChanged("coordFormat");
                         Intent showDetails = new Intent();
                         showDetails.setAction(
                                 "com.atakmap.android.maps.SHOW_DETAILS");
@@ -666,4 +667,54 @@ public class BullseyeTool extends ButtonTool implements
         TextContainer.getInstance().displayPrompt(_context
                 .getString(stringId));
     }
+
+    private static AngleOverlayShape getBullseyeShape(Marker m) {
+        MapItem mi = MapView.getMapView()
+                .getMapItem(m.getMetaString("bullseyeUID", null));
+        return mi instanceof AngleOverlayShape ? (AngleOverlayShape) mi : null;
+    }
+
+    /**
+     * Used to attach bullseye shape to a marker when exporting to KML/KMZ
+     */
+    private static final AugmentedKeyholeInfo aki = new AugmentedKeyholeInfo() {
+        @Override
+        public Folder toKml(Folder folder, Marker m) {
+            AngleOverlayShape bullseye = getBullseyeShape(m);
+            if (bullseye == null)
+                return folder;
+
+            try {
+                Folder bFolder = (Folder) bullseye.toObjectOf(Folder.class,
+                        null);
+                if (bFolder != null) {
+                    folder.getFeatureList().addAll(bFolder.getFeatureList());
+                    folder.getStyleSelector()
+                            .addAll(bFolder.getStyleSelector());
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to export bullseye to KML", e);
+            }
+
+            return folder;
+        }
+
+        @Override
+        public KMZFolder toKmz(KMZFolder folder, Marker m) {
+            AngleOverlayShape bullseye = getBullseyeShape(m);
+            if (bullseye == null)
+                return folder;
+
+            try {
+                KMZFolder bFolder = (KMZFolder) bullseye
+                        .toObjectOf(KMZFolder.class, null);
+                if (bFolder != null)
+                    folder.getFeatureList().add(bFolder);
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to export bullseye to KMZ", e);
+            }
+
+            return folder;
+        }
+    };
 }

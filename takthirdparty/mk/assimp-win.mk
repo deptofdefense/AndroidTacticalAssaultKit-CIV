@@ -7,10 +7,10 @@ assimp_local_implibfile=$(assimp_local_srcdir)/$(assimp_builddir)/code/assimp.li
 assimp_out_implib=$(OUTDIR)/lib/$(assimp_implibfile)
 
 .PHONY: assimp_build
-assimp_build: $(assimp_local_srcdir)
+assimp_build: cmake_check $(assimp_local_srcdir)
 	cd $(assimp_local_srcdir)/$(assimp_builddir)               &&     \
 	    $(VS_SETUP)                                                   \
-              \"`cygpath -m $(ASSIMP_CMAKE)`\" -G \"NMake Makefiles\"     \
+              \"`cygpath -m $(CMAKE)`\" -G \"NMake Makefiles\"            \
 	          -DCMAKE_BUILD_TYPE=Release                              \
                   -DCMAKE_INSTALL_PREFIX=../../../                        \
                   -DLIBRARY_SUFFIX=                                       \

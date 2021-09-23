@@ -111,7 +111,8 @@ public class GeoFenceListModel extends AbstractHierarchyListItem2
 
     @Override
     public String getTitle() {
-        String title = ATAKUtilities.getDisplayName(ATAKUtilities.findAssocShape(_item));
+        String title = ATAKUtilities
+                .getDisplayName(ATAKUtilities.findAssocShape(_item));
         if (FileSystemUtils.isEmpty(title))
             title = GeoFenceReceiver.GEO_FENCE;
 
@@ -217,7 +218,9 @@ public class GeoFenceListModel extends AbstractHierarchyListItem2
             b.setTitle(R.string.confirm_delete);
             b.setMessage(_context.getString(
                     R.string.geofence_overlay_fenceitem_deletebtn_alert_inquiry,
-                    ATAKUtilities.getDisplayName(ATAKUtilities.findAssocShape(_item)), getChildCount()));
+                    ATAKUtilities.getDisplayName(
+                            ATAKUtilities.findAssocShape(_item)),
+                    getChildCount()));
             b.setPositiveButton(R.string.dismiss_alerts,
                     new DialogInterface.OnClickListener() {
                         @Override
@@ -550,7 +553,7 @@ public class GeoFenceListModel extends AbstractHierarchyListItem2
                         //m.setMetaString("entry", "user");
                         breachMarker.setMetaBoolean("nevercot", true);
                         breachMarker.setMetaBoolean("editable", false);
-                        breachMarker.setMetaBoolean("movable", true);
+                        breachMarker.setMovable(true);
                         breachMarker.setMetaBoolean("removable", true);
                         breachMarker.setMetaString("how", "m-g");
                         String title = _context.getString(
@@ -559,7 +562,8 @@ public class GeoFenceListModel extends AbstractHierarchyListItem2
                                         R.string.entered_lower)
                                         : _context.getString(
                                                 R.string.exited_lower)),
-                                ATAKUtilities.getDisplayName(ATAKUtilities.findAssocShape(_fenceShape)),
+                                ATAKUtilities.getDisplayName(ATAKUtilities
+                                        .findAssocShape(_fenceShape)),
                                 timeString);
                         breachMarker.setTitle(title);
                         breachMarker.setMetaString("callsign", title);
@@ -572,7 +576,10 @@ public class GeoFenceListModel extends AbstractHierarchyListItem2
                                                         : " exited")
                                                 + " Geo Fence '"
                                                 +
-                                                ATAKUtilities.getDisplayName(ATAKUtilities.findAssocShape(_fenceShape))
+                                                ATAKUtilities.getDisplayName(
+                                                        ATAKUtilities
+                                                                .findAssocShape(
+                                                                        _fenceShape))
                                                 + "' at "
                                                 + KMLUtil.KMLDateTimeFormatter
                                                         .get()
@@ -709,7 +716,9 @@ public class GeoFenceListModel extends AbstractHierarchyListItem2
                     R.string.geofence_listmodel_longclick_message,
                     _alert.isEntered() ? _context.getString(R.string.entered)
                             : _context.getString(R.string.exited),
-                    ATAKUtilities.getDisplayName(ATAKUtilities.findAssocShape(_fenceShape)), timeDiff,
+                    ATAKUtilities.getDisplayName(
+                            ATAKUtilities.findAssocShape(_fenceShape)),
+                    timeDiff,
                     KMLUtil.KMLDateTimeFormatter.get().format(new Date(_alert
                             .getTimestamp()))));
             b.setPositiveButton(R.string.dismiss,

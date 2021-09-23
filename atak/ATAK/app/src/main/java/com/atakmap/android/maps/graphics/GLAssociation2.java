@@ -26,6 +26,7 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.MapRenderer3;
+import com.atakmap.map.hittest.HitTestResult;
 import com.atakmap.map.layer.control.SurfaceRendererControl;
 import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.geometry.Envelope;
@@ -39,6 +40,7 @@ import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.map.opengl.GLAntiMeridianHelper;
 import com.atakmap.map.opengl.GLLabelManager;
 import com.atakmap.map.opengl.GLMapView;
+import com.atakmap.map.hittest.HitTestQueryParameters;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.Matrix;
 import com.atakmap.math.PointD;
@@ -98,6 +100,7 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
     private static final float div_2 = 1f / 2f;
     private final GLLabelManager _labelManager;
     private final GLMapView _glMapView;
+    private Envelope _geomBounds;
 
     public GLAssociation2(MapRenderer surface, Association subject) {
         super(surface, subject, GLMapView.RENDER_PASS_SPRITES
@@ -159,6 +162,7 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
         onAssociationStyleChanged(association);
         onAssociationColorChanged(association);
         onAssociationStrokeWeightChanged(association);
+        onAssociationTextChanged(association);
         _setEndPoint(0, _points[0], true);
     }
 
@@ -299,7 +303,9 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
     @Override
     public void onSecondAssociationItemChanged(Association association,
             PointMapItem prevItem) {
-        prevItem.removeOnPointChangedListener(_secondItemMovedListener);
+        if (prevItem != null)
+            prevItem.removeOnPointChangedListener(_secondItemMovedListener);
+
         final PointMapItem secondItem = association.getSecondItem();
         if (secondItem != null) {
             secondItem.addOnPointChangedListener(_secondItemMovedListener);
@@ -328,6 +334,9 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
             freeExtrusionBuffers();
         }
         implInvalid = labelInvalid = _extrudeInvalid = true;
+
+        updateBoundsZ();
+        dispatchOnBoundsChanged();
     }
 
     @Override
@@ -371,6 +380,9 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
                 _clampToGround = clampToGround;
                 implInvalid = true;
                 labelInvalid = true;
+
+                updateBoundsZ();
+                dispatchOnBoundsChanged();
             }
         });
     }
@@ -748,7 +760,7 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
 
         final boolean valid = (_points[0] != null && _points[1] != null);
 
-        LineString ls = new LineString(3);
+        final LineString ls = new LineString(3);
         if (_points[0] != null)
             ls.addPoint(_points[0].getLongitude(), _points[0].getLatitude(),
                     getHae(_points[0]));
@@ -795,6 +807,9 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
                     bounds.getCenter(_extrusionCentroid);
                     _extrusionCentroidSrid = -1;
 
+                    _geomBounds = ls.getEnvelope();
+                    updateBoundsZ();
+
                     dispatchOnBoundsChanged();
                 }
 
@@ -837,4 +852,34 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
             _updateItemPoint(1, item);
         }
     };
+
+    @Override
+    protected HitTestResult hitTestImpl(MapRenderer3 renderer,
+            HitTestQueryParameters params) {
+        HitTestResult result = impl.hitTest(renderer, params);
+        return result != null ? new HitTestResult(subject, result) : null;
+    }
+
+    private void updateBoundsZ() {
+        double minZ = _geomBounds != null ? _geomBounds.minZ : Double.NaN;
+        double maxZ = _geomBounds != null ? _geomBounds.maxZ : Double.NaN;
+
+        if (_clampToGround) {
+            // geometry is clamped to ground/always surface; assume maximum and minimum surface
+            // altitudes
+            minZ = DEFAULT_MIN_ALT;
+            maxZ = DEFAULT_MAX_ALT;
+        } else {
+            // no additional interpretation
+        }
+
+        // apply extrusion. This is not strict, however, it should be
+        // sufficient to cover the various permutations.
+        if (_hasHeight) {
+            maxZ += _height;
+        }
+
+        bounds.setMinAltitude(minZ);
+        bounds.setMaxAltitude(maxZ);
+    }
 }

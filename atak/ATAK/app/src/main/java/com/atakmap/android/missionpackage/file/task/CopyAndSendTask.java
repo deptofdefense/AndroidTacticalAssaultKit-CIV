@@ -563,7 +563,7 @@ public class CopyAndSendTask extends MissionPackageBaseTask {
                     mpUploadDone(false, null);
                     NotificationUtil.getInstance().postNotification(
                             notifierId,
-                            R.drawable.sync_export,
+                            R.drawable.sync_error,
                             NotificationUtil.RED,
                             context.getString(R.string.failed_to_post_package,
                                     transferName),

@@ -14,6 +14,12 @@ import com.atakmap.android.maps.graphics.GLMapItem2;
 import com.atakmap.android.maps.graphics.GLMapItemSpi3;
 import com.atakmap.android.maps.graphics.GLPointMapItem2;
 import com.atakmap.android.maps.graphics.GLMarker2;
+
+import com.atakmap.map.hittest.HitRect;
+import com.atakmap.map.hittest.HitTestResult;
+import com.atakmap.map.hittest.HitTestQueryParameters;
+import com.atakmap.map.MapRenderer3;
+
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.opengl.GLMapBatchable2;
@@ -133,6 +139,13 @@ public class GLSpecialMarker extends GLPointMapItem2
         GLES20FixedPipeline.glPopMatrix();
 
     }
+
+    @Override
+    protected HitTestResult hitTestImpl(MapRenderer3 renderer,
+            HitTestQueryParameters params) {
+        return markerRenderer.hitTest(renderer, params);
+    }
+
 
     /**************************************************************************/
 

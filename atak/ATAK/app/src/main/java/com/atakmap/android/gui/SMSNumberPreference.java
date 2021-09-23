@@ -29,7 +29,7 @@ public class SMSNumberPreference extends DialogPreference {
     public static final String TAG = "PanEditTextPreference";
 
     private static Context appContext;
-    private static ArrayList<String> numbers = new ArrayList<>();
+    private static final ArrayList<String> numbers = new ArrayList<>();
 
     /**
      * For plugins we are REQUIRED to set the application context to the
@@ -65,7 +65,7 @@ public class SMSNumberPreference extends DialogPreference {
                     });
             final LayoutInflater inflater = LayoutInflater.from(appContext);
             final View mainView = inflater.inflate(R.layout.sms_manager, null);
-            updateView((LinearLayout) mainView.findViewById(R.id.number_list));
+            updateView(mainView.findViewById(R.id.number_list));
             Button b = mainView.findViewById(R.id.addSMS);
             final EditText numberField = mainView
                     .findViewById(R.id.enterNumber);

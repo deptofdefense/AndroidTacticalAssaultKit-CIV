@@ -10,7 +10,6 @@ import com.atakmap.android.importfiles.sort.ImportResolver;
 import com.atakmap.android.importfiles.task.ImportFilesTask;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.missionpackage.event.MissionPackageEventProcessor;
-import com.atakmap.android.update.AppVersionUpgrade;
 import com.atakmap.comms.CommsMapComponent.ImportResult;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -229,10 +228,7 @@ public class MissionPackageExtractor implements IMissionPackageExtractor {
                         + file.getParent());
         }
 
-        // now be sure filename is not already taken
-        // Also make sure if a legacy location is used, translate it to the new location
-        // com.atakmap.map -> atak
-        String filepath = AppVersionUpgrade.translate(file.getAbsolutePath());
+        String filepath = file.getAbsolutePath();
         if (IOProviderFactory.exists(file)) {
             if (renameIfExists) {
                 filepath = FileSystemUtils.getRandomFilepath(filepath);

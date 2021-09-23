@@ -28,12 +28,14 @@ import com.atakmap.android.dropdown.DropDownReceiver;
 import com.atakmap.android.editableShapes.EditablePolyline;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.DeconflictionAdapter.DeconflictionType;
+import com.atakmap.android.maps.hittest.MapItemResultFilter;
 import com.atakmap.android.menu.MenuCapabilities;
 import com.atakmap.android.routes.Route;
 import com.atakmap.android.toolbars.RangeAndBearingMapItem;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.DeveloperOptions;
 import com.atakmap.app.R;
+import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
@@ -44,12 +46,15 @@ import com.atakmap.map.MapSceneModel;
 import com.atakmap.map.elevation.ElevationManager;
 
 import com.atakmap.map.layer.control.ClampToGroundControl;
+import com.atakmap.map.hittest.HitTestQueryParameters;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.Plane;
 import com.atakmap.math.PointD;
 import com.atakmap.math.Vector3D;
 import com.atakmap.util.Visitor;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import java.util.ArrayList;
@@ -67,7 +72,14 @@ public class MapTouchController implements OnTouchListener,
 
     public static final String TAG = "MapTouchController";
 
+    // Maximum number of items that can be tapped at once
     public static final int MAXITEMS = 24;
+
+    // Meta string keys used to link items to their parent shape
+    private static final String[] SHAPE_UID_KEYS = {
+            "shapeUID",
+            EditablePolyline.getUIDKey()
+    };
 
     /**
      * Relative density threshold between the current camera focus and the
@@ -313,7 +325,6 @@ public class MapTouchController implements OnTouchListener,
                 .setPoint(new PointF(event.getX(), event.getY()));
         Bundle scaleExtras = new Bundle();
         scaleExtras.putParcelable("originalFocus", _originalFocusPoint);
-        ;
         eventBuilder.setExtras(scaleExtras);
         eventDispatcher.dispatch(eventBuilder.build());
     }
@@ -550,7 +561,11 @@ public class MapTouchController implements OnTouchListener,
         final GeoPoint geo = _originalFocusPoint;
 
         _downHitItem = null;
-        SortedSet<MapItem> hitItems = _fetchOrthoHitItems(x, y, geo);
+
+        //long start = System.currentTimeMillis();
+        SortedSet<MapItem> hitItems = _fetchOrthoHitItems(event, MAXITEMS);
+        //Log.d(TAG, "Hit test took " + (System.currentTimeMillis() - start) + " ms");
+
         hitItems = filterItems(hitItems, false);
         if (hitItems != null && !hitItems.isEmpty())
             _downHitItem = hitItems.first();
@@ -602,12 +617,9 @@ public class MapTouchController implements OnTouchListener,
 
             boolean longPress = true;
 
-            final GeoPoint geo = _mapView
-                    .inverse(x, y, MapView.InverseMode.RayCast).get();
-
-            MapItem hitItem = _fetchOrthoHit(x, y, geo);
-            SortedSet<MapItem> hitItems = filterItems(
-                    _fetchOrthoHitItems(x, y, geo), true);
+            MapItem hitItem = null;
+            SortedSet<MapItem> hitItems = _fetchOrthoHitItems(event, MAXITEMS);
+            hitItems = filterItems(hitItems, true);
             if (hitItems != null && hitItems.size() == 1)
                 hitItem = hitItems.first();
             if (hitItems != null && hitItems.size() > 1) {
@@ -710,13 +722,11 @@ public class MapTouchController implements OnTouchListener,
 
         if (hitItems != null && hitItems.size() > 1) {
             Iterator<MapItem> iter = hitItems.iterator();
-            List<String> uidList = new ArrayList<>();
-            List<String> shapeList = new ArrayList<>();
-            List<RangeAndBearingMapItem> rabLines = new ArrayList<>();
-            while (iter.hasNext()) {
+            Set<String> uidList = new HashSet<>();
+            iterLoop: while (iter.hasNext()) {
                 MapItem hitItem = iter.next();
-                String filterUID = hitItem.getUID();
                 String type = hitItem.getType();
+                String uid = hitItem.getUID();
                 //Log.d(TAG, "touched: " + type);
 
                 // Exclude items with no defined type
@@ -740,43 +750,54 @@ public class MapTouchController implements OnTouchListener,
                     continue;
                 }
 
-                // Route waypoint selected - add route to excluded shape list
-                if (type.equals("b-m-p-w")) {
-                    MapItem shape = ATAKUtilities.findAssocShape(hitItem);
-                    if (shape instanceof EditablePolyline)
-                        shapeList.add(shape.getUID());
-                }
-
-                // Remove route if contained in excluded shape list
-                else if (hitItem instanceof EditablePolyline
-                        && shapeList.contains(hitItem.getUID())) {
-                    iter.remove();
-                    continue;
+                // Part of shape selected - filter out other items with the same
+                // shape UID
+                for (String uidKey : SHAPE_UID_KEYS) {
+                    String shapeUID = hitItem.getMetaString(uidKey, null);
+                    if (!FileSystemUtils.isEmpty(shapeUID)
+                            && !shapeUID.equals(uid)) {
+                        if (isDuplicateUID(shapeUID, uidList, iter))
+                            continue iterLoop;
+                        break;
+                    }
                 }
 
                 // Avoid selecting both shape and its center marker
-                else if (hitItem instanceof AnchoredMapItem) {
+                if (hitItem instanceof AnchoredMapItem) {
                     PointMapItem centerMarker = ((AnchoredMapItem) hitItem)
                             .getAnchorItem();
-                    if (centerMarker != null)
-                        filterUID = centerMarker.getUID();
+                    if (centerMarker != null && isDuplicateUID(
+                            centerMarker.getUID(), uidList, iter))
+                        continue;
                 }
 
                 // Avoid selecting both the line and its endpoint
-                else if (hitItem instanceof PointMapItem
-                        && hitItem.hasMetaValue("rabUUID"))
-                    rabLines.addAll(RangeAndBearingMapItem.getUsers(
-                            (PointMapItem) hitItem));
+                if (hitItem instanceof PointMapItem
+                        && hitItem.hasMetaValue("rabUUID")) {
+                    List<RangeAndBearingMapItem> rabs = RangeAndBearingMapItem
+                            .getUsers((PointMapItem) hitItem);
+                    for (RangeAndBearingMapItem rab : rabs)
+                        uidList.add(rab.getUID());
+                }
 
                 // remove item if UID is already in list
-                if (uidList.contains(filterUID))
-                    iter.remove();
-                else
-                    uidList.add(filterUID);
+                isDuplicateUID(uid, uidList, iter);
             }
-            hitItems.removeAll(rabLines);
         }
         return hitItems;
+    }
+
+    // Check if a UID has already been added to a list and remove it from the
+    // iterator if it has
+    private boolean isDuplicateUID(String uid, Set<String> uidList,
+            Iterator<MapItem> iter) {
+        if (uidList.contains(uid)) {
+            iter.remove();
+            return true;
+        } else {
+            uidList.add(uid);
+            return false;
+        }
     }
 
     private class DeconflictionOnStateListener implements
@@ -939,7 +960,7 @@ public class MapTouchController implements OnTouchListener,
             if (shapeCenter == null)
                 shapeCenter = GeoPointMetaData.wrap(GeoPoint.ZERO_POINT);
 
-            String focusPoint = shapeCenter.get().toStringRepresentation();
+            GeoPoint focusPoint = shapeCenter.get();
 
             // For routes focus on the starting point instead
             if (item instanceof Route) {
@@ -949,17 +970,15 @@ public class MapTouchController implements OnTouchListener,
                             ? route.getNumPoints() - 1
                             : 0;
                     if (route.getPoint(focusIndex) != null)
-                        focusPoint = route.getPoint(focusIndex).get()
-                                .toStringRepresentation();
+                        focusPoint = route.getPoint(focusIndex).get();
                     if (!route.hasMetaValue("menu"))
-                        route.setMetaString("menu", "menus/b-m-r.xml");
+                        route.setRadialMenu("menus/b-m-r.xml");
                 }
             }
 
             if (select) {
                 // Make sure the radial opens on the focus point
-                item.setMetaString("menu_point", focusPoint);
-                ((Shape) item).setTouchPoint(shapeCenter.get());
+                item.setClickPoint(focusPoint);
 
                 // Avoid potential crash in case the edit menu is still in use
                 item.setMetaInteger("hit_index", 0);
@@ -1100,11 +1119,7 @@ public class MapTouchController implements OnTouchListener,
                                     MapItem item = tracks.get(position);
                                     // Restore touch points
                                     GeoPoint gp = touchPoints.get(position);
-                                    if (item instanceof Shape && gp != null) {
-                                        ((Shape) item).setTouchPoint(gp);
-                                        item.setMetaString("menu_point",
-                                                gp.toStringRepresentation());
-                                    }
+                                    item.setClickPoint(gp);
                                     action(type, item, event);
                                 }
                             });
@@ -1148,20 +1163,40 @@ public class MapTouchController implements OnTouchListener,
         // bad!
     }
 
-    private MapItem _fetchOrthoHit(float x, float y, GeoPoint geo) {
-        updateNadirClamp();
-        return _mapView.getRootGroup().deepHitTest((int) x, (int) y,
-                geo,
-                _mapView);
+    private MapItem _fetchOrthoHit(MotionEvent event) {
+        SortedSet<MapItem> results = _fetchOrthoHitItems(event, 1);
+        return results != null && !results.isEmpty() ? results.first() : null;
     }
 
     // RC/AML/2015-01-20: Check which tracks were hit and return a sorted set containing them.
-    private SortedSet<MapItem> _fetchOrthoHitItems(float x, float y,
-            GeoPoint geo) {
+    protected SortedSet<MapItem> _fetchOrthoHitItems(MotionEvent event,
+            int limit) {
         updateNadirClamp();
-        return _mapView.getRootGroup().deepHitTestItems((int) x, (int) y,
-                geo,
-                _mapView);
+
+        // TODO 4.5: Better calculation for touch size/rectangle
+        //  MotionEvent.getSize() is not a reliable value for hit area
+        //  For now default to 16dpi
+        float size = 16 * _mapView.getResources().getDisplayMetrics().density;
+        /*double size = event.getSize();
+        int height = _mapView.getHeight();
+        double touchMajor = event.getTouchMajor();
+        double touchMinor = event.getTouchMinor();
+        double toolMajor = event.getToolMajor();
+        double toolMinor = event.getToolMinor();
+        Log.d(TAG, "Size = " + size
+                + ", touchMajor = " + touchMajor + ", touchMinor = " + touchMinor
+                + ", toolMajor = " + toolMajor + ", toolMinor = " + toolMinor
+                + ", height = " + height);
+        InputDevice.MotionRange range1 = event.getDevice().getMotionRange(MotionEvent.AXIS_X);
+        InputDevice.MotionRange range2 = event.getDevice().getMotionRange(MotionEvent.AXIS_Y);*/
+
+        HitTestQueryParameters params = new HitTestQueryParameters(
+                _mapView.getGLSurface(),
+                event.getX(), event.getY(), size,
+                MapRenderer2.DisplayOrigin.UpperLeft);
+        params.limit = limit;
+        params.resultFilter = new MapItemResultFilter();
+        return _mapView.getRootGroup().deepHitTest(_mapView, params);
     }
 
     @Override
@@ -1639,10 +1674,7 @@ public class MapTouchController implements OnTouchListener,
             cancelMotionEvents();
             return false;
         }
-        float x = event.getX();
-        float y = event.getY();
-        MapItem hitItem = _fetchOrthoHit(x, y,
-                _mapView.inverse(x, y, MapView.InverseMode.RayCast).get());
+        MapItem hitItem = _fetchOrthoHit(event);
         if (hitItem != null) {
             onItemDoubleTap(hitItem, event);
         } else {

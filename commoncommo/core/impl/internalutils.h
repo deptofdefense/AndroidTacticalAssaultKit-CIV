@@ -65,6 +65,7 @@ class InternalUtils
 {
 public:
     static void logprintf(CommoLogger *logger, CommoLogger::Level level, const char *format, ...);
+    static void logprintf(CommoLogger* logger, CommoLogger::Level level, CommoLogger::Type type, void* detail, const char* format, ...);
     static std::string hwAddrAsString(const HwAddress *addr, netinterfaceenums::NetInterfaceAddressMode addrMode);
     static std::string sizeToString(size_t s);
     static std::string uint64ToString(uint64_t v);
@@ -145,6 +146,8 @@ public:
 
 private:
     InternalUtils() {};
+
+    static void logprintfImpl(CommoLogger* logger, CommoLogger::Level level, CommoLogger::Type type, void* detail, const char* format, va_list vl);
 };
 
 struct InternalContactUID : public ContactUID

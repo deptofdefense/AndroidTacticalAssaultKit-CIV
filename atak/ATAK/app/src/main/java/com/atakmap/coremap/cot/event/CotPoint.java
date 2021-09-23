@@ -22,6 +22,21 @@ public class CotPoint implements Parcelable {
     public static final double UNKNOWN = 9999999;
 
     /**
+     * Constant for decimating the latitude and longitude for 7 digits of precision (nanometer)
+     */
+    private static final double PRECISION_7 = 10000000;
+
+    /**
+     * Constant for decimating the altitude for 4 digits of precision (nanometer)
+     */
+    private static final double PRECISION_4 = 1000;
+
+    /**
+     * Constant for decimating the le/ce for 1 digits of precision (centimeter)
+     */
+    private static final double PRECISION_1 = 10;
+
+    /**
      * Point where latitude, longitude, and height above ellipsoid equal UNKNOWN_ALTITUDE. Linear
      * error and circular error are UNKNOWN_CE90, UNKNOWN_LE90.
      */
@@ -120,15 +135,15 @@ public class CotPoint implements Parcelable {
      */
     public void buildXml(Appendable b) throws IOException {
         b.append("<point lat='");
-        b.append(String.valueOf(_lat));
+        b.append(String.valueOf(decimate(_lat, PRECISION_7)));
         b.append("' lon='");
-        b.append(String.valueOf(_lon));
+        b.append(String.valueOf(decimate(_lon, PRECISION_7)));
         b.append("' hae='");
-        b.append(String.valueOf(_hae));
+        b.append(String.valueOf(decimate(_hae, PRECISION_4)));
         b.append("' ce='");
-        b.append(String.valueOf(((int) (_ce * 10) / 10f))); // only 1 digit of precision
+        b.append(String.valueOf(decimate(_ce, PRECISION_1)));
         b.append("' le='");
-        b.append(String.valueOf(((int) (_le * 10) / 10f))); // only 1 digit of precision
+        b.append(String.valueOf(decimate(_le, PRECISION_1)));
         b.append("' />");
     }
 
@@ -191,6 +206,33 @@ public class CotPoint implements Parcelable {
 
     public String toString() {
         return "" + _lat + ", " + _lon + ", " + _hae + ", " + _ce + ", " + _le;
+    }
+
+    /**
+     * Returns a decimated string representation of a GeoPoint that mimics the precision defined in
+     * LocationMapComponent.
+     * @param pt the geopoint to decimate so that it is 7 digits of precision for the lat and lon and 4
+     * digits of precision for altitude.
+     * @return string representation of a geopoint in lat,lon,altHae
+     */
+    public static String decimate(final GeoPoint pt) {
+        double lat = decimate(pt.getLatitude(), PRECISION_7);
+        double lon = decimate(pt.getLongitude(), PRECISION_7);
+
+        if (!pt.isAltitudeValid())
+            return lat + "," + lon;
+
+        double alt = decimate(EGM96.getHAE(pt), PRECISION_4);
+        return lat + "," + lon + "," + alt;
+    }
+
+    /**
+     * Decimate a double based on the provided precision.
+     * @param val the value to decimate
+     * @param precision the precision to use.
+     */
+    private static double decimate(final double val, final double precision) {
+        return Math.round(val * precision) / precision;
     }
 
     @Override

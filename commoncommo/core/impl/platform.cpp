@@ -1110,7 +1110,7 @@ InterfaceEnumerator::InterfaceEnumerator(CommoLogger* logger,
 {
 #if !defined(WIN32) && !defined(__APPLE__)
     if (addrMode != netinterfaceenums::MODE_PHYS_ADDR) {
-        logger->log(CommoLogger::LEVEL_ERROR, "Address modes other than physical address are not supported on non-win32, non-Apple platforms");
+        InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Address modes other than physical address are not supported on non-win32, non-Apple platforms");
         throw SocketException();
     }
 #endif
@@ -1166,7 +1166,7 @@ void InterfaceEnumerator::rescanInterfaces()
                 break;
             default:
                 // Some sort of error
-                logger->log(CommoLogger::LEVEL_ERROR, "Failed to get system hardware interfaces list.");
+                InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Failed to get system hardware interfaces list.");
                 return;
         }
     } while (!context->win32AddrList && context->win32AddrListBufSize < WIN32_ADDR_LIST_MAX_SIZE);
@@ -1206,7 +1206,7 @@ void InterfaceEnumerator::rescanInterfaces()
 
 #else 
     if (getifaddrs(&context->addrList) != 0) {
-        logger->log(CommoLogger::LEVEL_ERROR, "Failed to get system hardware interfaces list.");
+        InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Failed to get system hardware interfaces list.");
         return;
     }
 
@@ -1223,7 +1223,7 @@ void InterfaceEnumerator::rescanInterfaces()
         struct sockaddr_ll* sdl = (struct sockaddr_ll *)interfaces->ifa_addr;
         std::string ifname(interfaces->ifa_name);
         if (ifToHw.find(ifname) != ifToHw.end()) {
-            logger->log(CommoLogger::LEVEL_DEBUG, "Multiple link-level interfaces with same name!");
+            InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, "Multiple link-level interfaces with same name!");
         } else {
             HwAddress *hwAddr = new InternalHwAddress((uint8_t *)sdl->sll_addr, sdl->sll_halen);
             ifToHw[ifname] = hwAddr;

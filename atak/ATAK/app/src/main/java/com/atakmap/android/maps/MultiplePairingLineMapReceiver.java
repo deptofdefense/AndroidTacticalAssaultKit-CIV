@@ -55,6 +55,7 @@ public class MultiplePairingLineMapReceiver {
         Bundle extras = intent.getExtras();
 
         String uid = extras.getString("startingUID");
+        final boolean clampToGround = extras.getBoolean("clampToGround");
 
         if (extras.containsKey("color")) {
             lineColor = extras.getInt("color", Color.WHITE);
@@ -87,7 +88,8 @@ public class MultiplePairingLineMapReceiver {
                         final String lineText = text;
                         final int color = lineColor;
                         final int style = lineStyle;
-                        _addLink(pmi1, pmi2, dipUID, text, color, lineStyle);
+                        _addLink(pmi1, pmi2, dipUID, text, color, lineStyle,
+                                clampToGround);
                         pmi1.addOnVisibleChangedListener(
                                 new MapItem.OnVisibleChangedListener() {
 
@@ -107,7 +109,8 @@ public class MultiplePairingLineMapReceiver {
                                                     && pmi2.getGroup() != null)
                                                 _addLink(pmi1, pmi2, dipUID,
                                                         lineText,
-                                                        color, style);
+                                                        color, style,
+                                                        clampToGround);
                                             else {
                                                 if (pmi1.getGroup() == null) {
                                                     pmi1.removeOnVisibleChangedListener(
@@ -136,7 +139,8 @@ public class MultiplePairingLineMapReceiver {
                                                     && pmi2.getGroup() != null)
                                                 _addLink(pmi1, pmi2, dipUID,
                                                         lineText,
-                                                        color, style);
+                                                        color, style,
+                                                        clampToGround);
                                             else {
                                                 if (pmi2.getGroup() == null) {
                                                     pmi2.removeOnVisibleChangedListener(
@@ -246,9 +250,7 @@ public class MultiplePairingLineMapReceiver {
                         _mapView.getMapEventDispatcher().popListeners();
                     }
                 }
-
             }
-
         }
     };
 
@@ -316,6 +318,11 @@ public class MultiplePairingLineMapReceiver {
 
     private void _addLink(PointMapItem start, PointMapItem end, String dipUID,
             String text, int color, int style) {
+        _addLink(start, end, dipUID, text, color, style, false);
+    }
+
+    private void _addLink(PointMapItem start, PointMapItem end, String dipUID,
+            String text, int color, int style, boolean clamp) {
         if (start == null || end == null)
             return;
 
@@ -332,7 +339,7 @@ public class MultiplePairingLineMapReceiver {
         link.assoc.setStrokeWeight(3d);
         if (text != null && text.length() > 0)
             link.assoc.setText(text);
-
+        link.assoc.setClampToGround(clamp);
         link.assoc.setStyle(style);
         _linkGroup.addItem(link.assoc);
         //Log.d(TAG, "Adding link for DIP: " + dipUID);

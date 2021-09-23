@@ -2,7 +2,7 @@
 <menu
     buttonBg='bgs/button.xml'
     buttonRadius='65'
-    buttonSpan='90'
+    buttonSpan='72'
     buttonWidth='90'>
 
         <button
@@ -13,6 +13,10 @@
         <button
             icon='icons/details.png'
             onClick='actions/showdetails_multipolyline.xml' />
+
+        <button icon='icons/clamp.png'
+            onClick='actions/clamp_toggle.xml'
+            selected='${clampedToGround}'/>
 
         <button
             icon='icons/3d_free_look.png'

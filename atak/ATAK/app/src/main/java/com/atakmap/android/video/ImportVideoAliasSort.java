@@ -7,6 +7,7 @@ import android.util.Pair;
 
 import com.atakmap.android.importfiles.sort.ImportResolver;
 import com.atakmap.android.video.manager.VideoManager;
+import com.atakmap.android.video.manager.VideoXMLHandler;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProvider;
@@ -30,6 +31,7 @@ public class ImportVideoAliasSort extends ImportResolver {
     private static final String MIME_TYPE = "application/xml";
 
     private final Context _context;
+    private final VideoXMLHandler _xmlHandler = new VideoXMLHandler();
 
     public ImportVideoAliasSort(Context context) {
         super(".xml", null, true, true);
@@ -71,7 +73,7 @@ public class ImportVideoAliasSort extends ImportResolver {
         try {
             byte[] encoded = FileSystemUtils.read(file);
             String xml = new String(encoded, FileSystemUtils.UTF8_CHARSET);
-            imported = StreamManagementUtils.deserialize(xml);
+            imported = _xmlHandler.parse(xml);
         } catch (Exception e) {
             Log.d(TAG, "Failed to read video links XML: " + file, e);
         }

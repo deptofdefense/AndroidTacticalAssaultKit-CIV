@@ -22,7 +22,7 @@ public class SPIMarkerImporter extends MarkerImporter {
         if (item.getGroup() == null) {
             item.setMetaBoolean("archive", false);
             item.setMetaBoolean("removable", true);
-            item.setMetaBoolean("movable", false);
+            item.setMovable(false);
             item.setMetaBoolean("editable", false);
         } else {
             MapItem center = findItem(item.getUID() + ".rangeRing");

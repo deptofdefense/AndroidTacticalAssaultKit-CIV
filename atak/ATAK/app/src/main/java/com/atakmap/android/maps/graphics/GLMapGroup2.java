@@ -3,7 +3,6 @@ package com.atakmap.android.maps.graphics;
 
 import android.util.Pair;
 
-import com.atakmap.android.editableShapes.GLMultipolyline;
 import com.atakmap.android.maps.Arrow;
 import com.atakmap.android.maps.Association;
 import com.atakmap.android.maps.AxisOfAdvance;
@@ -14,9 +13,12 @@ import com.atakmap.android.maps.Ellipse;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.Marker;
-import com.atakmap.android.maps.MultiPolyline;
+import com.atakmap.android.maps.MetaMapPoint;
+import com.atakmap.android.maps.MetaShape;
 import com.atakmap.android.maps.Polyline;
+import com.atakmap.android.maps.SensorFOV;
 import com.atakmap.android.maps.SimpleRectangle;
+import com.atakmap.android.toolbars.RangeAndBearingMapItem;
 import com.atakmap.android.track.crumb.Crumb;
 import com.atakmap.android.widgets.AutoSizeAngleOverlayShape;
 import com.atakmap.coremap.log.Log;
@@ -328,8 +330,18 @@ public final class GLMapGroup2 implements MapGroup.OnItemListChangedListener,
             final MapRenderer surface = arg.first;
             final MapItem item = arg.second;
 
+            // Item is flagged not to render
+            // Useful for parent map items that render using children items
+            if (item.hasMetaValue("ignoreRender")
+                    || item instanceof MetaMapPoint
+                    || item instanceof MetaShape)
+                return null;
+
             if (item instanceof Marker)
                 return new GLMarker2(surface, (Marker) item);
+            else if (item instanceof RangeAndBearingMapItem)
+                return new GLRangeAndBearingMapItem(surface,
+                        (RangeAndBearingMapItem) item);
             else if (item instanceof Arrow)
                 return new GLArrow2(surface, (Arrow) item);
             else if (item instanceof Association)
@@ -346,15 +358,15 @@ public final class GLMapGroup2 implements MapGroup.OnItemListChangedListener,
                 return new GLRectangle(surface, (SimpleRectangle) item);
             else if (item instanceof Ellipse)
                 return new GLEllipse(surface, (Ellipse) item);
-            else if (item instanceof MultiPolyline)
-                return new GLMultipolyline(surface, (MultiPolyline) item);
             else if (item instanceof AxisOfAdvance)
                 return new GLAxisOfAdvance(surface, (AxisOfAdvance) item);
             else if (item instanceof Doghouse)
                 return new GLDogHouse(surface, (Doghouse) item);
             else if (item instanceof AutoSizeAngleOverlayShape)
-                return new GLAngleOverlay2(surface,
+                return GLAngleOverlay2Compat.newInstance(surface,
                         (AutoSizeAngleOverlayShape) item);
+            else if (item instanceof SensorFOV)
+                return new GLSensorFOV(surface, (SensorFOV) item);
 
             return this.reflect(surface, item);
         }

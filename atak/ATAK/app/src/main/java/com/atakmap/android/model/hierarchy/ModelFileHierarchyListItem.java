@@ -321,15 +321,6 @@ public class ModelFileHierarchyListItem extends AbstractHierarchyListItem2
     }
 
     @Override
-    public void onListVisible(HierarchyListAdapter om, boolean visible) {
-    }
-
-    @Override
-    public boolean onBackButton(HierarchyListAdapter om, boolean deviceBack) {
-        return false;
-    }
-
-    @Override
     public int getVisibility() {
         FeatureDataStore2.FeatureQueryParameters params = getQueryParams();
         params.visibleOnly = true;

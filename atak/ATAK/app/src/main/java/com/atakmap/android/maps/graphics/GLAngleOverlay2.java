@@ -18,6 +18,7 @@ import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.NorthReference;
+import com.atakmap.coremap.maps.coords.Vector2D;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.MapRenderer3;
 import com.atakmap.map.elevation.ElevationManager;
@@ -40,15 +41,16 @@ import com.atakmap.util.Visitor;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.List;
 
-final class GLAngleOverlay2 extends GLShape2 implements
+class GLAngleOverlay2 extends GLShape2 implements
         Shape.OnPointsChangedListener,
         AutoSizeAngleOverlayShape.OnPropertyChangedListener {
 
     static final float LINE_WIDTH = (float) Math
             .ceil(1f * MapView.DENSITY);
-    static final int DIRECTION_IN_COLOR = 0x7FFF0000;
-    static final int DIRECTION_OUT_COLOR = 0x7F00FF00;
+    static int DIRECTION_IN_COLOR = 0x7FFF0000;
+    static int DIRECTION_OUT_COLOR = 0x7F00FF00;
 
     final static float OVERLAY_OFFSET = 40;
     final static float OVERLAY_HASH_LENGTH = 20;
@@ -70,10 +72,10 @@ final class GLAngleOverlay2 extends GLShape2 implements
 
     final AutoSizeAngleOverlayShape sw;
 
-    private final float[] _textPoint = new float[2];
-    private final boolean isAutoSize;
+    protected final float[] _textPoint = new float[2];
+    protected final boolean isAutoSize;
 
-    private Polyline[] thirtyHash;
+    protected Polyline[] thirtyHash;
     private GLPolyline[] glthirtyHash;
     private Polyline directionArrow;
     private GLPolyline gldirectionArrow;
@@ -81,9 +83,9 @@ final class GLAngleOverlay2 extends GLShape2 implements
     private GLBatchLineString gloutlineCircle;
     private GLBatchLineString[] glcardinals;
     private GLBatchLineString[] glticks;
-    private Marker centerMarker;
+    protected Marker centerMarker;
     private GLMarker2 glcenterMarker;
-    private double radiusMeters;
+    protected double radiusMeters;
     private boolean initialized;
     private double halfTickRadiusMeters;
     private boolean lastSurface;
@@ -143,7 +145,7 @@ final class GLAngleOverlay2 extends GLShape2 implements
         sw.removeOnPropertyChangedListener(this);
     }
 
-    private void init(GLMapView ortho) {
+    protected void init(GLMapView ortho) {
         if (initialized)
             return;
         initialized = true;
@@ -294,7 +296,7 @@ final class GLAngleOverlay2 extends GLShape2 implements
         return null;
     }
 
-    private void _projectVerts(final GLMapView ortho) {
+    protected void _projectVerts(final GLMapView ortho) {
         if (this.invalid) {
             offsetAngle = sw.getOffsetAngle();
             final int color = sw.isShowingEdgeToCenter() ? DIRECTION_IN_COLOR
@@ -709,7 +711,8 @@ final class GLAngleOverlay2 extends GLShape2 implements
     /**
      * find the location the label should be placed and the angle it should be rotated.
      */
-    private void buildLabelEdgeVisible(GLMapView ortho, final PointF startVert,
+    protected void buildLabelEdgeVisible(GLMapView ortho,
+            final PointF startVert,
             final PointD endVert) {
 
         GLText _label = GLText.getInstance(MapView.getDefaultTextFormat());
@@ -720,9 +723,9 @@ final class GLAngleOverlay2 extends GLShape2 implements
         final float p1x = (float) endVert.x;
         final float p1y = (float) endVert.y;
 
-        float xmin = (p0x < p1x) ? p0x : p1x;
+        float xmin = Math.min(p0x, p1x);
         float ymin = (p0x < p1x) ? p0y : p1y;
-        float xmax = (p0x > p1x) ? p0x : p1x;
+        float xmax = Math.max(p0x, p1x);
         float ymax = (p0x > p1x) ? p0y : p1y;
 
         if (p0x == p1x) {
@@ -730,53 +733,53 @@ final class GLAngleOverlay2 extends GLShape2 implements
             ymin = Math.min(p0y, p1y);
         }
 
-        PointF modStartVert = new PointF(xmin, ymin);
-        PointF modEndVert = new PointF(xmax, ymax);
+        Vector2D modStartVert = new Vector2D(xmin, ymin);
+        Vector2D modEndVert = new Vector2D(xmax, ymax);
 
         //shrink the view bounds to allow room to show the full label
-        double halfLabelHeight = (_label.getStringHeight() + 12) / 2d;
-        RectF _view = this.getWidgetViewWithoutActionbarF();
-        _view.bottom += halfLabelHeight;
-        _view.left += halfLabelHeight;
-        _view.top -= halfLabelHeight;
-        _view.right -= halfLabelHeight;
-        PointF[] ip = GLMapItem._getIntersectionPoint(_view, modStartVert,
-                modEndVert);
+        double labelPadding = (_label.getStringHeight() + 12) / 2d;
+        RectF view = this.getWidgetViewWithoutActionbarF();
+        view.bottom += labelPadding;
+        view.left += labelPadding;
+        view.top -= labelPadding;
+        view.right -= labelPadding;
+        Vector2D[] viewPoly = {
+                new Vector2D(view.left, view.top),
+                new Vector2D(view.right, view.top),
+                new Vector2D(view.right, view.bottom),
+                new Vector2D(view.left, view.bottom),
+                new Vector2D(view.left, view.top)
+        };
+        List<Vector2D> ip = Vector2D.segmentIntersectionsWithPolygon(
+                modStartVert, modEndVert, viewPoly);
 
         //if no intersection point is found return NAN
-        if (ip == null || (ip[1] == null && ip[0] == null)) {
+        if (ip.isEmpty()) {
             _textPoint[0] = Float.NaN;
             _textPoint[1] = Float.NaN;
             return;
         }
 
         //if one intersection point was found use that point
-        if (ip[1] != null && ip[0] == null) {
-            _textPoint[0] = ip[1].x;
-            _textPoint[1] = ip[1].y;
-            return;
-        } else if (ip[0] != null && ip[1] == null) {
-            _textPoint[0] = ip[0].x;
-            _textPoint[1] = ip[0].y;
+        if (ip.size() == 1) {
+            Vector2D p = ip.get(0);
+            _textPoint[0] = (float) p.x;
+            _textPoint[1] = (float) p.y;
             return;
         }
 
-        PointF p1 = new PointF(ip[0].x, ip[0].y);
-        PointF p2 = new PointF(ip[1].x, ip[1].y);
+        Vector2D p1 = ip.get(0);
+        Vector2D p2 = ip.get(1);
 
         //attempt to find the closest intersection point to the outside of the spoke
-        Double dist0 = Math.sqrt((Math.abs(p1.x - endVert.x) * Math.abs(p1.x
-                - endVert.x))
-                + (Math.abs(p1.y - endVert.y) * Math.abs(p1.y - endVert.y)));
-        Double dist1 = Math.sqrt((Math.abs(p2.x - endVert.x) * Math.abs(p2.x
-                - endVert.x))
-                + (Math.abs(p2.y - endVert.y) * Math.abs(p2.y - endVert.y)));
+        double dist0 = Math.hypot(p1.x - endVert.x, p1.y - endVert.y);
+        double dist1 = Math.hypot(p2.x - endVert.x, p2.y - endVert.y);
         if (dist0 <= dist1) {
-            _textPoint[0] = ip[0].x;
-            _textPoint[1] = ip[0].y;
+            _textPoint[0] = (float) p1.x;
+            _textPoint[1] = (float) p1.y;
         } else {
-            _textPoint[0] = ip[1].x;
-            _textPoint[1] = ip[1].y;
+            _textPoint[0] = (float) p2.x;
+            _textPoint[1] = (float) p2.y;
         }
 
     }
@@ -807,7 +810,7 @@ final class GLAngleOverlay2 extends GLShape2 implements
                                 Angle.DEGREE, Angle.MIL) + "mils"
                                 + azimuth
                         : "360" + Angle.DEGREE_SYMBOL + azimuth;
-                rotation = !sw.isShowingEdgeToCenter() ? 0 + roundedOffsetAngle
+                rotation = !sw.isShowingEdgeToCenter() ? roundedOffsetAngle
                         : 180 + roundedOffsetAngle;
             } else {
                 final int degrees = !sw.isShowingEdgeToCenter() ? i * 30
@@ -826,7 +829,7 @@ final class GLAngleOverlay2 extends GLShape2 implements
         }
     }
 
-    private void drawThirtyHashMarks(GLMapView ortho) {
+    protected void drawThirtyHashMarks(GLMapView ortho) {
         if (glthirtyHash == null)
             return;
         for (GLPolyline i : glthirtyHash)
@@ -906,7 +909,7 @@ final class GLAngleOverlay2 extends GLShape2 implements
         }
     }
 
-    private RectF getWidgetViewWithoutActionbarF() {
+    protected RectF getWidgetViewWithoutActionbarF() {
         // Could be in half or third display of dropdown, so use the offset;
         float right = ((GLMapView) this.context).focusx * 2;
         // Could be in portrait mode as well, so change the bottom accordingly

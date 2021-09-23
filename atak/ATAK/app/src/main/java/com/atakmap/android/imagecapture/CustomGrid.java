@@ -20,6 +20,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.PointMapItem.OnPointChangedListener;
+import com.atakmap.android.tilecapture.imagery.ImageryCapturePP;
 import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.ConversionFactors;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -398,11 +399,9 @@ public class CustomGrid extends AbstractLayer implements Capturable {
         } else {
             if (_centerMarker == null) {
                 _centerMarker = new Marker(getName() + "_marker");
-                _centerMarker.setTouchable(true);
-                _centerMarker.setClickable(true);
                 _centerMarker.setMetaString("callsign", "MGRS Grid");
                 _centerMarker.setMetaBoolean("addToObjList", false);
-                _centerMarker.setMetaBoolean("movable", true);
+                _centerMarker.setMovable(true);
                 _centerMarker.setMetaBoolean("removable", true);
                 _centerMarker.setMetaString("iconUri", "icons/grid_center.png");
                 _centerMarker.setMetaString("menu", "menus/grid_center.xml");
@@ -872,7 +871,7 @@ public class CustomGrid extends AbstractLayer implements Capturable {
      * Draw fitted grid to canvas
      * @param cap Capture post-processor
      */
-    public synchronized void drawFittedGrid(ImageCapturePP cap) {
+    public synchronized void drawFittedGrid(ImageryCapturePP cap) {
         if (!isValid() || !isVisible())
             return;
         Canvas can = cap.getCanvas();
@@ -884,9 +883,16 @@ public class CustomGrid extends AbstractLayer implements Capturable {
         paint.setColor(cap.getThemeColor(getColor()));
         paint.setStrokeWidth(getStrokeWeight() * lineWeight);
 
+        GeoBounds cb = cap.getBounds();
+        GeoPoint bl = new GeoPoint(cb.getSouth(), cb.getWest());
+        GeoPoint br = new GeoPoint(cb.getSouth(), cb.getEast());
+        GeoPoint tl = new GeoPoint(cb.getNorth(), cb.getWest());
+        double hRange = bl.distanceTo(br);
+        double vRange = bl.distanceTo(tl);
+
         // Draw grid lines
-        double rangeX = cap.getHorizontalRange() / getSpacing();
-        double rangeY = cap.getVerticalRange() / getSpacing();
+        double rangeX = hRange / getSpacing();
+        double rangeY = vRange / getSpacing();
         int colCount = (int) Math.ceil(rangeX);
         int rowCount = (int) Math.ceil(rangeY);
         float celSize = (float) (cap.getWidth() / rangeX);
@@ -963,8 +969,7 @@ public class CustomGrid extends AbstractLayer implements Capturable {
     }
 
     public synchronized void removeOnChangedListener(OnChangedListener ocl) {
-        if (_listeners.contains(ocl))
-            _listeners.remove(ocl);
+        _listeners.remove(ocl);
     }
 
     public interface OnChangedListener {

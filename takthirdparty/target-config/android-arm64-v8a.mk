@@ -83,6 +83,13 @@ mrsid_BINLIBPATH=lib/arm64-v8a
 gdal_CFLAGS_generic=-DKDU_MAJOR_VERSION=6
 gdal_CXXFLAGS_generic=$(gdal_CFLAGS_generic)
 
+assimp_CONFIG_EX=-DCMAKE_SYSTEM_NAME=Android                    \
+    -DCMAKE_SYSTEM_VERSION=$(ANDROID_API_LEVEL)                 \
+    -DCMAKE_ANDROID_STL_TYPE=gnustl_shared                      \
+    -DCMAKE_ANDROID_ARCH_ABI=$(ANDROID_ABI)                     \
+    -DCMAKE_ANDROID_STANDALONE_TOOLCHAIN=$(call PATH_CYGSAFE,$(OUTDIR)/toolchain)
+
+
 curl_LIBS=-lstdc++ -lm -llog
 proj_LIBS=-lstdc++ -lm -llog
 expat_LIBS=-lstdc++ -lm -llog

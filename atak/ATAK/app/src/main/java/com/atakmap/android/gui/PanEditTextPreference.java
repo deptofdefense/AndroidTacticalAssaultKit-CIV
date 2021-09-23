@@ -115,7 +115,7 @@ public class PanEditTextPreference extends EditTextPreference {
         if (dialog != null) {
             // use the plugin context to resolve the name
             try {
-                Integer resId = otherAttributes.get("name");
+                Integer resId = otherAttributes.get("title");
                 if (resId != null)
                     dialog.setTitle(pContext.getString(resId));
             } catch (Exception ignored) {

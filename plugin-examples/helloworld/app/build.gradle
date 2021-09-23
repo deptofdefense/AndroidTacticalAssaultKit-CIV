@@ -6,13 +6,14 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
- buildscript {
+buildscript {
+
     ext.PLUGIN_VERSION = "1.0"
-    ext.ATAK_VERSION = "4.3.1"
+    ext.ATAK_VERSION = "4.4.0"
 
-    def takdevVersion = '2.2.0'
+    def takdevVersion = '2.+'
 
-    ext.getValueFromPropertiesFile = { propFile, key ->
+    def getValueFromPropertiesFile = { propFile, key ->
         if(!propFile.isFile() || !propFile.canRead())
             return null
         def prop = new Properties()
@@ -43,9 +44,8 @@
     ext.takdevPlugin = getProperty('takdev.plugin', "${rootDir}/../../atak-gradle-takdev.jar")
 
     repositories {
-        jcenter()
-        google()
         mavenCentral()
+        google()
         mavenLocal()
         maven {
             url "https://jitpack.io"
@@ -66,14 +66,14 @@
             classpath files(takdevPlugin)
         }
     }
+}
 
- }
 
 allprojects {
     repositories {
-        jcenter()
-        google()
         mavenCentral()
+        google()
+
         mavenLocal()
         maven {
             url "https://jitpack.io"
@@ -83,7 +83,6 @@ allprojects {
 
 apply plugin: 'com.android.application'
 apply plugin: 'atak-takdev-plugin'
-
 
 dependencies {
 
@@ -163,7 +162,6 @@ android {
           abortOnError true
       }
 
-
     signingConfigs {
         debug {
             def kf = project.getValueFromPropertiesFile(project.rootProject.file('local.properties'), 'takDebugKeyFile')
@@ -196,7 +194,6 @@ android {
             if (kp != null) keyPassword kp
         }
     }
-
 
     buildTypes {
         debug {
@@ -296,6 +293,10 @@ android {
         gov {
             dimension "application"
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".CIV"]  // CIV API with possible distributiion restrictions (see PluginTemplate)
+        }
+        swe {
+            dimension "application"
+            manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".SWE"]
         }
         natosof {
             dimension "application"

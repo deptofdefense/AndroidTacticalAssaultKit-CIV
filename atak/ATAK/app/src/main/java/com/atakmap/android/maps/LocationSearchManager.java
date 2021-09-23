@@ -1,8 +1,10 @@
 
 package com.atakmap.android.maps;
 
-import com.atakmap.android.overlay.MapOverlay;
-import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.android.hierarchy.HierarchyListItem;
+import com.atakmap.coremap.maps.coords.GeoBounds;
+import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.coremap.maps.coords.MutableGeoBounds;
 
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -15,7 +17,7 @@ import java.util.TreeSet;
 public final class LocationSearchManager {
 
     private static final Set<LocationSearch> searchEngines = Collections
-            .newSetFromMap(new IdentityHashMap<LocationSearch, Boolean>());
+            .newSetFromMap(new IdentityHashMap<>());
 
     private LocationSearchManager() {
     }
@@ -28,13 +30,13 @@ public final class LocationSearchManager {
         searchEngines.remove(search);
     }
 
-    public static synchronized SortedSet<Location> find(String searchTerms) {
-        SortedSet<Location> retval = new TreeSet<>();
+    public static synchronized SortedSet<ILocation> find(String searchTerms) {
+        SortedSet<ILocation> retval = new TreeSet<>();
 
-        SortedMap<Float, Location> results;
+        SortedMap<Float, ILocation> results;
         for (LocationSearch search : searchEngines) {
             results = search.findLocation(searchTerms);
-            for (Map.Entry<Float, Location> entry : results.entrySet())
+            for (Map.Entry<Float, ILocation> entry : results.entrySet())
                 retval.add(
                         new RankedLocation(entry.getValue(), entry.getKey()));
         }
@@ -42,12 +44,12 @@ public final class LocationSearchManager {
         return retval;
     }
 
-    private final static class RankedLocation implements Location,
+    private final static class RankedLocation implements ILocation,
             Comparable<RankedLocation> {
-        private final Location filter;
+        private final ILocation filter;
         private final float confidence;
 
-        RankedLocation(Location filter, float confidence) {
+        RankedLocation(ILocation filter, float confidence) {
             this.filter = filter;
             this.confidence = confidence;
         }
@@ -79,37 +81,32 @@ public final class LocationSearchManager {
         }
 
         @Override
-        public int compareTo(RankedLocation arg0) {
-            if (this.confidence > arg0.confidence)
+        public int compareTo(RankedLocation other) {
+            if (this.confidence > other.confidence)
                 return -1;
-            else if (this.confidence < arg0.confidence)
+            else if (this.confidence < other.confidence)
                 return 1;
-            // XXX - compare overlay and UID as well
-            return this.getFriendlyName().compareTo(arg0.getFriendlyName());
-        }
-
-        boolean equals(RankedLocation arg0) {
-            return compareTo(arg0) == 0;
-        }
-
-        @Override
-        public GeoPointMetaData getLocation() {
-            return this.filter.getLocation();
-        }
-
-        @Override
-        public String getFriendlyName() {
-            return this.filter.getFriendlyName();
+            if (this.filter instanceof HierarchyListItem) {
+                if (other.filter instanceof HierarchyListItem) {
+                    String t1 = ((HierarchyListItem) this.filter).getTitle();
+                    String t2 = ((HierarchyListItem) other.filter).getTitle();
+                    return t1 != null && t2 != null ? t1.compareTo(t2)
+                            : (t1 != null ? -1 : 0);
+                }
+                return -1;
+            } else if (other.filter instanceof HierarchyListItem)
+                return 1;
+            return 0;
         }
 
         @Override
-        public String getUID() {
-            return this.filter.getUID();
+        public GeoPoint getPoint(GeoPoint point) {
+            return this.filter.getPoint(point);
         }
 
         @Override
-        public MapOverlay getOverlay() {
-            return this.filter.getOverlay();
+        public GeoBounds getBounds(MutableGeoBounds bounds) {
+            return this.filter.getBounds(bounds);
         }
     }
 }

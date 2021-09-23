@@ -228,7 +228,7 @@ public class KMZExportMarshal extends KMLExportMarshal {
             if (zos != null) {
                 try {
                     zos.closeEntry();
-                } catch (IOException e) {
+                } catch (IOException ignored) {
                 }
             }
         }
