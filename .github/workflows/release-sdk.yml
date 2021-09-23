@@ -29,6 +29,8 @@ jobs:
         sudo apt-get install cmake
         sudo apt-get install swig
         sudo apt-get install tclsh
+        sudo apt-get install python3-pip
+        pip3 install --upgrade conan
         sudo apt-get clean
         echo "ANDROID_COMPILE_SDK=29" >> $GITHUB_ENV
         echo "ANDROID_BUILD_TOOLS=29.0.3" >> $GITHUB_ENV
