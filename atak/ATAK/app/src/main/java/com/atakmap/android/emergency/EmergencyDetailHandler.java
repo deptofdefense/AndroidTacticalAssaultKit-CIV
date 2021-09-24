@@ -69,7 +69,7 @@ public class EmergencyDetailHandler extends CotDetailHandler {
             item.setEditable(false);
             item.setMetaString("menu", "menus/alert_menu.xml");
 
-            item.setMetaBoolean("movable", false);
+            item.setMovable(false);
 
             AtakBroadcast.getInstance().sendBroadcast(new Intent(
                     EmergencyAlertReceiver.ALERT_EVENT)

@@ -4,6 +4,7 @@
 
 #include "cloudio.h"
 #include "urlrequestmanager.h"
+#include "commothread.h"
 #include <libxml/parser.h>
 #include <set>
 #include <vector>
@@ -336,7 +337,7 @@ private:
     CommoLogger *logger;
     URLRequestManager *urlManager;
     
-    PGSC::Thread::Mutex clientsMutex;
+    thread::Mutex clientsMutex;
     std::set<InternalCloudClient *> clients;
 
     friend struct InternalCloudClient;

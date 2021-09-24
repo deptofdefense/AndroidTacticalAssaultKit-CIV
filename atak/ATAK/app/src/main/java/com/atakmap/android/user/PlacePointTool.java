@@ -559,7 +559,7 @@ public class PlacePointTool {
 
             // Full mutability
             m.setMetaBoolean("editable", true);
-            m.setMetaBoolean("movable", true);
+            m.setMovable(true);
             m.setMetaBoolean("removable", true);
             m.setMetaString("how", how);
             return m;

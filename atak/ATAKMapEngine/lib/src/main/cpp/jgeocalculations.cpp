@@ -68,12 +68,19 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_coremap_maps_coords_GeoCalculations_m
         return NewGeoPoint(*env, midpoint.latitude, midpoint.longitude);
     }
 }
-JNIEXPORT jobject JNICALL Java_com_atakmap_coremap_maps_coords_GeoCalculations_pointAtDistance
+JNIEXPORT jobject JNICALL Java_com_atakmap_coremap_maps_coords_GeoCalculations_pointAtDistance__DDDDI
   (JNIEnv *env, jclass clazz, jdouble lat, jdouble lng, jdouble azimuth, jdouble distance, jint flags)
 {
     const GeoPoint2 a(lat, lng);
     GeoPoint2 result = GeoPoint2_pointAtDistance(GeoPoint2(lat, lng), azimuth, distance, false);
     return NewGeoPoint(*env, result.latitude, result.longitude);
+}
+JNIEXPORT jobject JNICALL Java_com_atakmap_coremap_maps_coords_GeoCalculations_pointAtDistance__DDDDDDI
+  (JNIEnv *env, jclass clazz, jdouble lat, jdouble lng, jdouble alt, jdouble azimuth, jdouble distance, jdouble inclination, jint flags)
+{
+    const GeoPoint2 a(lat, lng);
+    GeoPoint2 result = GeoPoint2_pointAtDistance(GeoPoint2(lat, lng, alt, AltitudeReference::HAE), azimuth, distance, inclination, false);
+    return NewGeoPoint(*env, result.latitude, result.longitude, result.altitude);
 }
 
 namespace

@@ -9,9 +9,8 @@
 #include "commologger.h"
 #include "fileioprovider.h"
 #include "fileioprovidertracker.h"
+#include "commothread.h"
 
-#include <Mutex.h>
-#include <Cond.h>
 #include "curl/curl.h"
 
 #include "openssl/ssl.h"
@@ -192,7 +191,7 @@ private:
 
     // New transfers initialized but not yet started
     std::map<int, IOContext *> notRunningRequests;
-    PGSC::Thread::Mutex notRunningRequestsMutex;
+    thread::Mutex notRunningRequestsMutex;
     
     // New transfers that have been started but not picked up by io thread yet
     std::deque<IOContext *> ioRequests;
@@ -200,14 +199,14 @@ private:
     // even if holding lock
     std::map<int, IOContext *> ioCurRequests;
     // These protect the above 2
-    PGSC::Thread::Mutex ioRequestsMutex;
-    PGSC::Thread::CondVar ioRequestsMonitor;
+    thread::Mutex ioRequestsMutex;
+    thread::CondVar ioRequestsMonitor;
 
     // Status dispatch queue
     typedef std::pair<URLRequestIO *, URLIOUpdate *> StatusUpdate;
     std::deque<StatusUpdate> statusUpdates;
-    PGSC::Thread::Mutex statusUpdatesMutex;
-    PGSC::Thread::CondVar statusUpdatesMonitor;
+    thread::Mutex statusUpdatesMutex;
+    thread::CondVar statusUpdatesMonitor;
     bool statusThreadWaiting;
 
     

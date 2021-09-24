@@ -4,7 +4,7 @@ package com.atakmap.net;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import com.atakmap.annotations.DeprecatedApi;
+import com.atakmap.comms.NetConnectString;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.foxykeep.datadroid.requestmanager.Request;
 
@@ -13,36 +13,37 @@ public class CertificateSigningRequest implements Parcelable {
     private static final String TAG = "CertifiateCSRRequest";
 
     private final String server;
+    private final String connectString;
     private final String username;
     private final String password;
     private final boolean hasTruststore;
-
-    /**
-     * @deprecated Certificate Enrollment only stores certificates with the connection
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    private boolean saveAsDefault;
 
     private boolean getProfile;
     private final String CSR;
     private final boolean allowAllHostnames;
 
     public CertificateSigningRequest(
-            String server, String username, String password,
-            boolean hasTruststore, boolean saveAsDefault,
+            String connectString, String username, String password,
+            boolean hasTruststore,
             boolean allowAllHostnames, String CSR) {
-        this.server = server;
+
+        NetConnectString ncs = NetConnectString.fromString(connectString);
+        this.server = ncs.getHost();
+
+        this.connectString = connectString;
         this.username = username;
         this.password = password;
         this.hasTruststore = hasTruststore;
-        this.saveAsDefault = saveAsDefault;
         this.allowAllHostnames = allowAllHostnames;
         this.CSR = CSR;
     }
 
     public boolean isValid() {
         return !FileSystemUtils.isEmpty(server);
+    }
+
+    public String getConnectString() {
+        return connectString;
     }
 
     public String getServer() {
@@ -59,15 +60,6 @@ public class CertificateSigningRequest implements Parcelable {
 
     public boolean hasTruststore() {
         return hasTruststore;
-    }
-
-    /*
-        @deprecated Certificate Enrollment only stores certificates with the connection
-    */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public boolean getSaveAsDefault() {
-        return saveAsDefault;
     }
 
     public String getCSR() {
@@ -98,10 +90,10 @@ public class CertificateSigningRequest implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         if (isValid()) {
             dest.writeString(server);
+            dest.writeString(connectString);
             dest.writeString(username);
             dest.writeString(password);
             dest.writeByte((byte) (hasTruststore ? 1 : 0));
-            dest.writeByte((byte) (saveAsDefault ? 1 : 0));
             dest.writeByte((byte) (getProfile ? 1 : 0));
             dest.writeByte((byte) (allowAllHostnames ? 1 : 0));
             dest.writeString(CSR);
@@ -123,10 +115,10 @@ public class CertificateSigningRequest implements Parcelable {
 
     protected CertificateSigningRequest(Parcel in) {
         server = in.readString();
+        connectString = in.readString();
         username = in.readString();
         password = in.readString();
         hasTruststore = in.readByte() != 0;
-        saveAsDefault = in.readByte() != 0;
         getProfile = in.readByte() != 0;
         allowAllHostnames = in.readByte() != 0;
         CSR = in.readString();

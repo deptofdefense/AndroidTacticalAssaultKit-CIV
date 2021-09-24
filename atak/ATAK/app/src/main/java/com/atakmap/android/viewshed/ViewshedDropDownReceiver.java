@@ -299,9 +299,20 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
      * @param inflater - the inflater to use to inflate the layout
      * @return - the view for the Heat Map tab
      */
-    private View getHeatmapView(LayoutInflater inflater) {
+    private View getHeatmapView(final LayoutInflater inflater) {
 
         View hmView = inflater.inflate(R.layout.heatmap_view, null);
+
+        final Spinner overlayType = hmView
+                .findViewById(R.id.heatmapOverlay_spinner);
+        final ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                inflater.getContext(), R.layout.spinner_text_view_dark);
+        adapter.setDropDownViewResource(
+                android.R.layout.simple_spinner_dropdown_item);
+        adapter.addAll(
+                inflater.getContext().getString(R.string.heatmap),
+                inflater.getContext().getString(R.string.terrainslope));
+        overlayType.setAdapter(adapter);
 
         showHideHeatmapCB = hmView.findViewById(R.id.showHeatmap_cb);
 
@@ -353,24 +364,22 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
             public void onProgressChanged(SeekBar seekBar, int progress,
                     boolean fromUser) {
                 //there is a bug when the intensity is set to 100, so to avoid it set 99 as the max
-                if (fromUser) {
-                    if (progress == 100) {
-                        prefs.edit()
-                                .putString(
-                                        ElevationOverlaysMapComponent.PREFERENCE_COLOR_INTENSITY_KEY,
-                                        String.valueOf(99))
-                                .apply();
-                    } else {
-                        prefs.edit()
-                                .putString(
-                                        ElevationOverlaysMapComponent.PREFERENCE_COLOR_INTENSITY_KEY,
-                                        String.valueOf(progress))
-                                .apply();
-                    }
-
-                    //update the percentage editText
-                    intensityPercentageET.setText(String.valueOf(progress));
+                if (progress == 100) {
+                    prefs.edit()
+                            .putString(
+                                    ElevationOverlaysMapComponent.PREFERENCE_COLOR_INTENSITY_KEY,
+                                    String.valueOf(99))
+                            .apply();
+                } else {
+                    prefs.edit()
+                            .putString(
+                                    ElevationOverlaysMapComponent.PREFERENCE_COLOR_INTENSITY_KEY,
+                                    String.valueOf(progress))
+                            .apply();
                 }
+
+                //update the percentage editText
+                intensityPercentageET.setText(String.valueOf(progress));
             }
         });
 
@@ -401,6 +410,7 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
                 "50");
         int saturation = Integer.parseInt(satPref);
 
+        final View satLayout = hmView.findViewById(R.id.heatmap_sat_layout);
         final EditText satPercentageET = hmView
                 .findViewById(R.id.sat_et);
         satPercentageET.setFilters(new InputFilter[] {
@@ -464,6 +474,7 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
                 ElevationOverlaysMapComponent.PREFERENCE_COLOR_VALUE_KEY, "50");
         int value = Integer.parseInt(valPref);
 
+        final View valLayout = hmView.findViewById(R.id.heatmap_val_layout);
         final EditText valPercentageET = hmView
                 .findViewById(R.id.val_et);
         valPercentageET.setFilters(new InputFilter[] {
@@ -543,6 +554,8 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
         } catch (NumberFormatException nfe) {
             Log.d(TAG, "Invalid X sample rate");
         }
+        final View sampleLayout = hmView
+                .findViewById(R.id.heatmap_samplerate_layout);
         final SeekBar sampleSeek = hmView
                 .findViewById(R.id.sample_seek);
         sampleSeek.setProgress(sampleValue);
@@ -579,6 +592,52 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
             }
         });
 
+        overlayType.setOnItemSelectedListener(
+                new AdapterView.OnItemSelectedListener() {
+                    @Override
+                    public void onItemSelected(AdapterView<?> adapterView,
+                            View view, int pos, long id) {
+                        final Object v = adapterView.getAdapter().getItem(pos);
+                        prefs.edit()
+                                .putString(
+                                        ElevationOverlaysMapComponent.PREFERENCE_MODE_KEY,
+                                        (String) v)
+                                .apply();
+                        final boolean extendedSettingsEnabled = inflater
+                                .getContext().getString(R.string.heatmap)
+                                .equals(v);
+
+                        satLayout.setVisibility(
+                                extendedSettingsEnabled ? View.VISIBLE
+                                        : View.GONE);
+                        valLayout.setVisibility(
+                                extendedSettingsEnabled ? View.VISIBLE
+                                        : View.GONE);
+                        sampleLayout.setVisibility(
+                                extendedSettingsEnabled ? View.VISIBLE
+                                        : View.GONE);
+                    }
+
+                    @Override
+                    public void onNothingSelected(AdapterView<?> adapterView) {
+                    }
+                });
+        // default to heatmap
+        switch (ElevationOverlaysMapComponent.getHeatMapMode()) {
+            case Elevation:
+                overlayType.setSelection(adapter.getPosition(
+                        inflater.getContext().getString(R.string.heatmap)));
+                break;
+            case TerrainSlope:
+                overlayType.setSelection(adapter.getPosition(inflater
+                        .getContext().getString(R.string.terrainslope)));
+                break;
+            default:
+                overlayType.setSelection(adapter.getPosition(
+                        inflater.getContext().getString(R.string.heatmap)));
+                break;
+        }
+
         return hmView;
     }
 
@@ -597,12 +656,7 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
                 ViewShedReceiver.VIEWSHED_PREFERENCE_COLOR_INTENSITY_KEY, "50");
 
         //intensity check to ensure user doesn't place invisible viewsheds
-        int intensityValue;
-        if (Integer.parseInt(opPref) < 10) {
-            intensityValue = 10;
-        } else {
-            intensityValue = Integer.parseInt(opPref);
-        }
+        int intensityValue = Math.max(Integer.parseInt(opPref), 10);
 
         sampleView = vsView.findViewById(R.id.viewshedLineSample_view);
         viewshedOpts = vsView.findViewById(R.id.viewshedOpts_view);
@@ -1857,13 +1911,13 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
                 contourGenButton.setVisibility(View.GONE);
                 contourProgress.setProgress(progress);
                 contourProgressBarTextView.setText(
-                        String.format("%s%%", String.valueOf(progress)));
+                        String.format("%s%%", progress));
             } else {
                 _contourGenTableRow.setVisibility(View.GONE);
                 contourGenButton.setVisibility(View.VISIBLE);
                 contourProgress.setProgress(0);
                 contourProgressBarTextView.setText(
-                        String.format("%s%%", String.valueOf(progress)));
+                        String.format("%s%%", progress));
             }
         }
     }

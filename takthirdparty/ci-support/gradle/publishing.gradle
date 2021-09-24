@@ -1,0 +1,62 @@
+apply from: 'gradle/versions.gradle'
+
+publishing {
+    repositories {
+        maven {
+            name = 'TakMaven'
+            credentials {
+                username System.getenv('ARTIFACTORY_PUBLISH_USER')
+                password System.getenv('ARTIFACTORY_PUBLISH_PASSWORD')
+            }
+            url = System.getenv('ARTIFACTORY_MAVEN_URL_V2')
+        }
+            }
+    publications {
+        ttpRuntimeWin64(MavenPublication) {
+            group = 'gov.tak.thirdparty'
+            artifactId = 'takthirdparty-rt-win64'
+            version = "$ttpDistVersion"
+            artifact "$buildDir/runtimeLibs/takthirdparty-rt-win64-${ttpDistVersion}.jar"
+        }
+        ttpRuntimeLinux64(MavenPublication) {
+            group = 'gov.tak.thirdparty'
+            artifactId = 'takthirdparty-rt-linux64'
+            version = "$ttpDistVersion"
+            artifact "$buildDir/runtimeLibs/takthirdparty-rt-linux64-${ttpDistVersion}.jar"
+        }
+        ttpRuntimeMacOs64(MavenPublication) {
+            group = 'gov.tak.thirdparty'
+            artifactId = 'takthirdparty-rt-macos64'
+            version = "$ttpDistVersion"
+            artifact "$buildDir/runtimeLibs/takthirdparty-rt-macos64-${ttpDistVersion}.jar"
+        }
+        ttpRuntimeAndroid(MavenPublication) {
+            group = 'gov.tak.thirdparty'
+            artifactId = 'takthirdparty'
+            version = "$ttpDistVersion"
+            artifact "$buildDir/outputs/aar/takthirdparty-release.aar"
+        }
+        gdalJarCrossplatform(MavenPublication) {
+            group = 'gov.tak.thirdparty'
+            artifactId = 'gdal'
+            version = "$ttpDistVersion"
+            artifact("$rootDir/../linux-amd64-release/java/gdal.jar") {
+                classifier 'tak'
+            }
+        }
+        gdalDataJarCrossplatform(MavenPublication) {
+            group = 'gov.tak.thirdparty'
+            artifactId = 'gdaldata'
+            version = "$ttpDistVersion"
+            artifact "$rootDir/../linux-amd64-release/java/gdaldata.jar"
+        }
+        jassimpJarCrossplatform(MavenPublication) {
+            group = 'gov.tak.thirdparty'
+            artifactId = 'jassimp'
+            version = "$ttpDistVersion"
+            artifact("$rootDir/../linux-amd64-release/java/jassimp.jar") {
+                classifier 'tak'
+            }
+        }
+    }
+}

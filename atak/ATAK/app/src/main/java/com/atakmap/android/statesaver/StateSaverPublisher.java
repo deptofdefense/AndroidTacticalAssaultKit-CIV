@@ -9,7 +9,6 @@ import android.util.Pair;
 import com.atakmap.android.cot.CotMapComponent;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapView;
-import com.atakmap.android.maps.Marker;
 import com.atakmap.coremap.concurrent.NamedThreadFactory;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -124,14 +123,7 @@ public class StateSaverPublisher implements Runnable {
                             extras.putBoolean("visible", vis);
                             extras.putLong("lastUpdateTime", lastUpdateTime);
 
-                            if (json != null && json.length() > 0) {
-                                Marker m = Marker.toMarker(json);
-                                if (m != null)
-                                    Log.d(TAG,
-                                            "restored marker: " + m.getUID());
-                            } else {
-                                dispatchEvent(res, extras);
-                            }
+                            dispatchEvent(res, extras);
                         } catch (Exception e) {
                             Log.d(TAG,
                                     "unexpected error occurred reading from the database");

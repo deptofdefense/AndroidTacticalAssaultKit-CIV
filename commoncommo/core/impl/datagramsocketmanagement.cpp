@@ -1,8 +1,7 @@
 #include "commologger.h"
 #include "datagramsocketmanagement.h"
 #include "internalutils.h"
-#include <RWMutex.h>
-#include <Lock.h>
+#include "commothread.h"
 #include <string.h>
 
 using namespace atakmap::commoncommo;
@@ -51,9 +50,9 @@ DatagramSocketManagement::DatagramSocketManagement(CommoLogger *logger,
         unicastBroadcastContexts(),
         interfaceContexts(),
         socketContexts(),
-        interfaceMutex(PGSC::Thread::TERW_Fair),
+        interfaceMutex(thread::RWMutex::Policy_Fair),
         txSocket(NULL),
-        globalRxMutex(PGSC::Thread::TERW_Fair),
+        globalRxMutex(thread::RWMutex::Policy_Fair),
         rxSelector(),
         rxNeedsRebuild(false),
         globalTxMutex(),
@@ -112,10 +111,8 @@ DatagramSocketManagement::~DatagramSocketManagement()
 
 void DatagramSocketManagement::setEnableAddressReuse(bool en)
 {
-    PGSC::Thread::WriteLockPtr rxLock(NULL, NULL);
-    PGSC::Thread::WriteLock_create(rxLock, globalRxMutex);
-    PGSC::Thread::WriteLockPtr interfaceLock(NULL, NULL);
-    PGSC::Thread::WriteLock_create(interfaceLock, interfaceMutex);
+    thread::WriteLock rxLock(globalRxMutex);
+    thread::WriteLock interfaceLock(interfaceMutex);
 
     if (en == reuseAddress)
         return;
@@ -136,11 +133,9 @@ void DatagramSocketManagement::setEnableAddressReuse(bool en)
 
 void DatagramSocketManagement::setMulticastLoopbackEnabled(bool en)
 {
-    PGSC::Thread::LockPtr txLock(NULL, NULL);
-    PGSC::Thread::Lock_create(txLock, globalTxMutex);
+    thread::Lock txLock(globalTxMutex);
     
-    PGSC::Thread::WriteLockPtr interfaceLock(NULL, NULL);
-    PGSC::Thread::WriteLock_create(interfaceLock, interfaceMutex);
+    thread::WriteLock interfaceLock(interfaceMutex);
 
     if (en == mcastLoop)
         return;
@@ -171,8 +166,7 @@ void DatagramSocketManagement::setRxTimeoutSecs(int seconds)
     if (seconds < 0)
         seconds = DEFAULT_RX_NO_DATA_REBUILD_TIME;
     {
-        PGSC::Thread::WriteLockPtr ifLock(NULL, NULL);
-        PGSC::Thread::WriteLock_create(ifLock, interfaceMutex);
+        thread::WriteLock ifLock(interfaceMutex);
         noDataTimeoutSecs = seconds;
     }
 }
@@ -180,19 +174,17 @@ void DatagramSocketManagement::setRxTimeoutSecs(int seconds)
 
 void DatagramSocketManagement::setTTL(int ttl)
 {
-    PGSC::Thread::LockPtr txLock(NULL, NULL);
-    PGSC::Thread::Lock_create(txLock, txQueueMutex);
+    thread::Lock txLock(txQueueMutex);
     this->ttl = ttl;
 }
 
 
 void DatagramSocketManagement::protoLevelChange(int newVersion)
 {
-    PGSC::Thread::LockPtr txLock(NULL, NULL);
-    PGSC::Thread::Lock_create(txLock, txQueueMutex);
+    thread::Lock txLock(txQueueMutex);
     protoVersion = newVersion;
     nextBroadcastTime = CommoTime::ZERO_TIME;
-    txQueueMonitor.broadcast(*txLock);
+    txQueueMonitor.broadcast(txLock);
 }
 
 
@@ -206,8 +198,7 @@ void DatagramSocketManagement::setCryptoKeys(const uint8_t *authKey,
                                              const uint8_t *cryptoKey)
 {
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, rxQueueMutex);
+        thread::Lock lock(rxQueueMutex);
         
         if (rxCrypto) {
             delete rxCrypto;
@@ -217,8 +208,7 @@ void DatagramSocketManagement::setCryptoKeys(const uint8_t *authKey,
             rxCrypto = new MeshNetCrypto(logger, cryptoKey, authKey);
     }
     {
-        PGSC::Thread::LockPtr txLock(NULL, NULL);
-        PGSC::Thread::Lock_create(txLock, globalTxMutex);
+        thread::Lock txLock(globalTxMutex);
         
         if (txCrypto) {
             delete txCrypto;
@@ -241,18 +231,16 @@ void DatagramSocketManagement::threadStopSignal(size_t threadNum)
     switch (threadNum) {
     case TX_THREADID:
         {
-            PGSC::Thread::LockPtr lock(NULL, NULL);
-            PGSC::Thread::Lock_create(lock, txQueueMutex);
-            txQueueMonitor.broadcast(*lock);
+            thread::Lock lock(txQueueMutex);
+            txQueueMonitor.broadcast(lock);
             break;
         }
     case RX_THREADID:
         break;
     case RX_QUEUE_THREADID:
         {
-            PGSC::Thread::LockPtr lock(NULL, NULL);
-            PGSC::Thread::Lock_create(lock, rxQueueMutex);
-            rxQueueMonitor.broadcast(*lock);
+            thread::Lock lock(rxQueueMutex);
+            rxQueueMonitor.broadcast(lock);
             break;
         }
     }
@@ -262,44 +250,40 @@ void DatagramSocketManagement::threadStopSignal(size_t threadNum)
 void DatagramSocketManagement::interfaceUp(
         const HwAddress* addr, const NetAddress* netAddr)
 {
-    PGSC::Thread::ReadLockPtr lock(NULL, NULL);
-    PGSC::Thread::ReadLock_create(lock, interfaceMutex);
+    thread::ReadLock lock(interfaceMutex);
     try {
         InterfaceContext *ctx = interfaceContexts.at(addr);
         if (ctx->netAddr) {
-            logger->log(CommoLogger::LEVEL_ERROR, "Interface up for already up interface? Ignoring");
+            InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Interface up for already up interface? Ignoring");
             return;
         } else {
-            PGSC::Thread::LockPtr slock(NULL, NULL);
-            PGSC::Thread::Lock_create(slock, ctx->stateMutex);
+            thread::Lock slock(ctx->stateMutex);
             ctx->netAddr = NetAddress::duplicateAddress(netAddr);
             fireIfaceStatus(ctx, true);
         }
         // Flag for rebuild on receive thread
         rxNeedsRebuild = true;
     } catch (std::out_of_range &) {
-        logger->log(CommoLogger::LEVEL_ERROR, "Interface up for unknown interface?");
+        InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Interface up for unknown interface?");
     }
 }
 
 void DatagramSocketManagement::interfaceDown(
         const HwAddress* addr)
 {
-    PGSC::Thread::ReadLockPtr lock(NULL, NULL);
-    PGSC::Thread::ReadLock_create(lock, interfaceMutex);
+    thread::ReadLock lock(interfaceMutex);
     try {
         InterfaceContext *ctx = interfaceContexts.at(addr);
         if (ctx->netAddr) {
-            PGSC::Thread::LockPtr slock(NULL, NULL);
-            PGSC::Thread::Lock_create(slock, ctx->stateMutex);
+            thread::Lock slock(ctx->stateMutex);
             delete ctx->netAddr;
             ctx->netAddr = NULL;
             fireIfaceStatus(ctx, false);
         } else {
-            logger->log(CommoLogger::LEVEL_ERROR, "Interface down for already down interface? Ignoring");
+            InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Interface down for already down interface? Ignoring");
         }
     } catch (std::out_of_range &) {
-        logger->log(CommoLogger::LEVEL_ERROR, "Interface down for unknown interface?");
+        InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Interface down for unknown interface?");
     }
 }
 
@@ -340,8 +324,7 @@ PhysicalNetInterface* DatagramSocketManagement::addBroadcastInterface(
         const HwAddress* hwAddress, const CoTMessageType* types, size_t nTypes,
         const char* addr, int destPort)
 {
-    PGSC::Thread::WriteLockPtr lock(NULL, NULL);
-    PGSC::Thread::WriteLock_create(lock, interfaceMutex);
+    thread::WriteLock lock(interfaceMutex);
     // Do we have this interface yet?
     const HwAddress *hwAddr = hwAddress;
     InterfaceContext *ctx;
@@ -381,12 +364,9 @@ PhysicalNetInterface* DatagramSocketManagement::addBroadcastInterface(
 CommoResult DatagramSocketManagement::removeBroadcastInterface(
         PhysicalNetInterface* iface)
 {
-    PGSC::Thread::WriteLockPtr rxLock(NULL, NULL);
-    PGSC::Thread::WriteLock_create(rxLock, globalRxMutex);
-    PGSC::Thread::LockPtr txLock(NULL, NULL);
-    PGSC::Thread::Lock_create(txLock, globalTxMutex);
-    PGSC::Thread::WriteLockPtr interfaceLock(NULL, NULL);
-    PGSC::Thread::WriteLock_create(interfaceLock, interfaceMutex);
+    thread::WriteLock rxLock(globalRxMutex);
+    thread::Lock txLock(globalTxMutex);
+    thread::WriteLock interfaceLock(interfaceMutex);
     
     BroadcastContext *bcastIface = (BroadcastContext *)iface;
 
@@ -426,8 +406,7 @@ PhysicalNetInterface* DatagramSocketManagement::addInboundInterface(
         const HwAddress* hwAddress, int port, const char** mcastAddrs,
         size_t nMcastAddrs, bool generic)
 {
-    PGSC::Thread::WriteLockPtr lock(NULL, NULL);
-    PGSC::Thread::WriteLock_create(lock, interfaceMutex);
+    thread::WriteLock lock(interfaceMutex);
     // Do we have this interface yet?
     const HwAddress *hwAddr = hwAddress;
     InterfaceContext *ctx;
@@ -481,12 +460,9 @@ PhysicalNetInterface* DatagramSocketManagement::addInboundInterface(
 CommoResult DatagramSocketManagement::removeInboundInterface(
         PhysicalNetInterface* iface)
 {
-    PGSC::Thread::WriteLockPtr rxLock(NULL, NULL);
-    PGSC::Thread::WriteLock_create(rxLock, globalRxMutex);
-    PGSC::Thread::LockPtr txLock(NULL, NULL);
-    PGSC::Thread::Lock_create(txLock, globalTxMutex);
-    PGSC::Thread::WriteLockPtr interfaceLock(NULL, NULL);
-    PGSC::Thread::WriteLock_create(interfaceLock, interfaceMutex);
+    thread::WriteLock rxLock(globalRxMutex);
+    thread::Lock txLock(globalTxMutex);
+    thread::WriteLock interfaceLock(interfaceMutex);
 
     InterfaceMap::iterator imapIter = interfaceContexts.find(iface->addr);
     if (imapIter == interfaceContexts.end())
@@ -556,49 +532,43 @@ void DatagramSocketManagement::sendDatagram(
         const CoTMessage *msg,
         int protoVersion) COMMO_THROW (std::invalid_argument)
 {
-    PGSC::Thread::LockPtr qlock(NULL, NULL);
-    PGSC::Thread::Lock_create(qlock, txQueueMutex);
+    thread::Lock qlock(txQueueMutex);
     txQueue.push_front(TxQueueItem(dest, msg, protoVersion));
-    txQueueMonitor.broadcast(*qlock);
+    txQueueMonitor.broadcast(qlock);
 }
 
 void DatagramSocketManagement::sendMulticast(const CoTMessage *msg) COMMO_THROW (std::invalid_argument)
 {
-    PGSC::Thread::LockPtr qlock(NULL, NULL);
-    PGSC::Thread::Lock_create(qlock, txQueueMutex);
+    thread::Lock qlock(txQueueMutex);
     txQueue.push_front(TxQueueItem(msg));
-    txQueueMonitor.broadcast(*qlock);
+    txQueueMonitor.broadcast(qlock);
 }
 
 void DatagramSocketManagement::addDatagramReceiver(
         DatagramListener* receiver)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    PGSC::Thread::Lock_create(lock, listenerMutex);
+    thread::Lock lock(listenerMutex);
     listeners.insert(receiver);
 }
 
 void DatagramSocketManagement::removeDatagramReceiver(
         DatagramListener* receiver)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    PGSC::Thread::Lock_create(lock, listenerMutex);
+    thread::Lock lock(listenerMutex);
     listeners.erase(receiver);
 }
 
 void DatagramSocketManagement::addInterfaceStatusListener(
         InterfaceStatusListener *listener)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    PGSC::Thread::Lock_create(lock, ifaceListenerMutex);
+    thread::Lock lock(ifaceListenerMutex);
     ifaceListeners.insert(listener);
 }
 
 void DatagramSocketManagement::removeInterfaceStatusListener(
         InterfaceStatusListener *listener)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    PGSC::Thread::Lock_create(lock, ifaceListenerMutex);
+    thread::Lock lock(ifaceListenerMutex);
     ifaceListeners.erase(listener);
 }
 
@@ -620,8 +590,7 @@ void DatagramSocketManagement::fireIfaceStatusImpl(
 void DatagramSocketManagement::fireIfaceStatus(
         InterfaceContext *ctx, bool up)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    PGSC::Thread::Lock_create(lock, ifaceListenerMutex);
+    thread::Lock lock(ifaceListenerMutex);
     RxCtxSet::iterator rxIter;
     for (rxIter = ctx->recvContexts.begin(); rxIter != ctx->recvContexts.end(); ++rxIter) {
         RecvUnicastContext *rxCtx = *rxIter;
@@ -674,12 +643,10 @@ void DatagramSocketManagement::recvThreadProcess()
     int rebuildTimeoutSecs;
 
     while (!threadShouldStop(RX_THREADID)) {
-        PGSC::Thread::ReadLockPtr lock(NULL, NULL);
-        PGSC::Thread::ReadLock_create(lock, globalRxMutex);
+        thread::ReadLock lock(globalRxMutex);
 
         {
-            PGSC::Thread::ReadLockPtr ifLock(NULL, NULL);
-            PGSC::Thread::ReadLock_create(ifLock, interfaceMutex);
+            thread::ReadLock ifLock(interfaceMutex);
             
             rebuildTimeoutSecs = noDataTimeoutSecs;
 
@@ -705,8 +672,11 @@ void DatagramSocketManagement::recvThreadProcess()
                             delete bindAddr;
                             socketContext->lastRxTime = CommoTime::now();
                         } catch (SocketException &) {
+                            CommoLogger::NetworkDetail detail{ curPort };
                             InternalUtils::logprintf(logger,
-                                    CommoLogger::LEVEL_WARNING,
+                                    CommoLogger::LEVEL_ERROR,
+                                    CommoLogger::TYPE_NETWORK,
+                                    &detail,
                                     "Unable to create listening UDP socket on port %d", curPort);
                             delete bindAddr;
                             continue;
@@ -723,8 +693,7 @@ void DatagramSocketManagement::recvThreadProcess()
 
                             InterfaceMap::iterator ifIter = interfaceContexts.find(*curPosIter);
                             InterfaceContext *ifCtx = ifIter->second;
-                            PGSC::Thread::LockPtr slock(NULL, NULL);
-                            PGSC::Thread::Lock_create(slock, ifCtx->stateMutex);
+                            thread::Lock slock(ifCtx->stateMutex);
                             if (ifCtx->netAddr) {
                                 RecvUnicastContext findByPort(curPort);
                                 RecvUnicastContext *rxUniCtx = *(ifCtx->recvContexts.find(&findByPort));
@@ -739,7 +708,7 @@ void DatagramSocketManagement::recvThreadProcess()
                     } catch (SocketException &) {
                         // Kill the socket and we'll try again as
                         // all the joins we try should've succeeded
-                        logger->log(CommoLogger::LEVEL_ERROR, "Error joining mcast group - will rebuild socket");
+                        InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Error joining mcast group - will rebuild socket");
                         killRXSocket(socketContext);
                         continue;
                     }
@@ -765,7 +734,7 @@ void DatagramSocketManagement::recvThreadProcess()
 
         } catch (SocketException &) {
             // odd. Force a rebuild
-            logger->log(CommoLogger::LEVEL_ERROR, "datagram rx select failed");
+            InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "datagram rx select failed");
             killAllSockets = true;
         }
 
@@ -807,13 +776,12 @@ void DatagramSocketManagement::recvThreadProcess()
 
                         // Now push on to queue
                         {
-                            PGSC::Thread::LockPtr qLock(NULL, NULL);
-                            PGSC::Thread::Lock_create(qLock, rxQueueMutex);
+                            thread::Lock qLock(rxQueueMutex);
                             rxQueue.push_front(RxQueueItem(rxAddr, 
                                                            rxCtx->endpointStr,
                                                            rxCtx->generic, 
                                                            rxBuf, len));
-                            rxQueueMonitor.broadcast(*qLock);
+                            rxQueueMonitor.broadcast(qLock);
                         }
                     } while (true);
                     
@@ -843,18 +811,16 @@ void DatagramSocketManagement::recvThreadProcess()
 void DatagramSocketManagement::recvQueueThreadProcess()
 {
     while (!threadShouldStop(RX_QUEUE_THREADID)) {
-        PGSC::Thread::LockPtr qLock(NULL, NULL);
-        PGSC::Thread::Lock_create(qLock, rxQueueMutex);
+        thread::Lock qLock(rxQueueMutex);
         if (rxQueue.empty()) {
-            rxQueueMonitor.wait(*qLock);
+            rxQueueMonitor.wait(qLock);
             continue;
         }
 
         RxQueueItem qItem = rxQueue.back();
         rxQueue.pop_back();
         if (qItem.generic) {
-            PGSC::Thread::LockPtr listenerLock(NULL, NULL);
-            PGSC::Thread::Lock_create(listenerLock, listenerMutex);
+            thread::Lock listenerLock(listenerMutex);
             std::set<DatagramListener *>::iterator iter;
             for (iter = listeners.begin(); iter != listeners.end(); ++iter) {
                 DatagramListener *l = *iter;
@@ -872,8 +838,7 @@ void DatagramSocketManagement::recvQueueThreadProcess()
                         throw std::invalid_argument("Decryption failed");
                 }
                 TakMessage msg(logger, data, dataLen, true, true);
-                PGSC::Thread::LockPtr listenerLock(NULL, NULL);
-                PGSC::Thread::Lock_create(listenerLock, listenerMutex);
+                thread::Lock listenerLock(listenerMutex);
                 std::set<DatagramListener *>::iterator iter;
                 for (iter = listeners.begin(); iter != listeners.end(); ++iter) {
                     DatagramListener *l = *iter;
@@ -881,7 +846,8 @@ void DatagramSocketManagement::recvQueueThreadProcess()
                 }
             } catch (std::invalid_argument &e) {
                 // Drop this item
-                InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Invalid CoT Message received; dropping (%s)", e.what());
+                CommoLogger::ParsingDetail detail{ data, dataLen, e.what(), qItem.endpointId.c_str() };
+                InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, CommoLogger::TYPE_PARSING, &detail, "Invalid CoT Message received; dropping (%s)", e.what());
             }
             if (decrypted)
                 delete[] data;
@@ -897,8 +863,7 @@ bool DatagramSocketManagement::checkTXSocket(InterfaceContext *ctx, std::string 
     NetAddress *netAddr;
     if (ctx) {
         sockPtr = &ctx->outboundSocket;
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, ctx->stateMutex);
+        thread::Lock lock(ctx->stateMutex);
         if (!ctx->netAddr)
             return false;
 
@@ -934,8 +899,7 @@ void DatagramSocketManagement::outQueueThreadProcess()
     int localProtoVersion;
     while (!threadShouldStop(TX_THREADID)) {
         {
-            PGSC::Thread::LockPtr qLock(NULL, NULL);
-            PGSC::Thread::Lock_create(qLock, txQueueMutex);
+            thread::Lock qLock(txQueueMutex);
             CommoTime nowTime = CommoTime::now();
 
             int64_t wakeMillis = 0;
@@ -950,22 +914,19 @@ void DatagramSocketManagement::outQueueThreadProcess()
             if (!wakeMillis) {
                 txQueue.push_front(TxQueueItem());
             } else if (txQueue.empty()) {
-                txQueueMonitor.wait(*qLock, wakeMillis);
+                txQueueMonitor.wait(qLock, wakeMillis);
                 continue;
             }
         }
         {
-            PGSC::Thread::LockPtr txLock(NULL, NULL);
-            PGSC::Thread::Lock_create(txLock, globalTxMutex);
+            thread::Lock txLock(globalTxMutex);
             std::map<InterfaceContext *, DestInfo> destPairs;
             TxQueueItem qitem;
             CoTMessageType cotType;
             {
-                PGSC::Thread::ReadLockPtr ifaceLock(NULL, NULL);
-                PGSC::Thread::ReadLock_create(ifaceLock, interfaceMutex);
+                thread::ReadLock ifaceLock(interfaceMutex);
                 {
-                    PGSC::Thread::LockPtr qLock(NULL, NULL);
-                    PGSC::Thread::Lock_create(qLock, txQueueMutex);
+                    thread::Lock qLock(txQueueMutex);
                     if (txQueue.empty())
                         continue;
                     qitem = txQueue.back();
@@ -1146,7 +1107,7 @@ void DatagramSocketManagement::outQueueThreadProcess()
                             }
                         }
                     } catch (SocketException &) {
-                        logger->log(CommoLogger::LEVEL_ERROR, "Socket error sending UDP message");
+                        InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Socket error sending UDP message");
                         delete *sock;
                         *sock = NULL;
                         break;

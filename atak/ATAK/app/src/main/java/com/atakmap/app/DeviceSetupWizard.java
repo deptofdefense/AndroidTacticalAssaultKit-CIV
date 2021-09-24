@@ -10,6 +10,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.preference.PreferenceManager;
 
 import com.atakmap.android.cot.CotMapComponent;
 import com.atakmap.android.gui.TileButtonDialog;
@@ -22,7 +23,6 @@ import com.atakmap.app.preferences.ToolsPreferenceFragment;
 import com.atakmap.comms.CotService;
 import com.atakmap.comms.NetConnectString;
 import com.atakmap.comms.TAKServer;
-import com.atakmap.comms.app.CotStreamListActivity;
 import com.atakmap.comms.app.CredentialsDialog;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
@@ -108,7 +108,7 @@ class DeviceSetupWizard implements CredentialsDialog.Callback {
         d.addButton(r.getDrawable(R.drawable.ic_menu_import_file),
                 r.getString(R.string.preferences_text4372));
         d.addButton(r.getDrawable(R.drawable.ic_menu_network),
-                r.getString(R.string.networkPreferences));
+                r.getString(R.string.quick_connect));
         d.addButton(r.getDrawable(R.drawable.ic_menu_settings),
                 r.getString(R.string.more_settings));
         d.show(title, message, true, _context.getString(R.string.done));
@@ -136,14 +136,11 @@ class DeviceSetupWizard implements CredentialsDialog.Callback {
                             new Intent(
                                     "com.atakmap.android.importfiles.IMPORT_FILE"));
                 } else if (which == 4) {
-                    //Network
-                    if (CotMapComponent.hasServer()) {
-                        //display servers
-                        _context.startActivity(new Intent(_context,
-                                CotStreamListActivity.class));
-                    } else {
-                        MyPreferenceFragment.promptNetwork(_context);
-                    }
+                    // launch Quick Connect enrollment dialog
+                    CertificateEnrollmentClient.getInstance().enroll(
+                            MapView.getMapView().getContext(),
+                            null, null, null, null,
+                            null, true);
                 } else if (which == 5) {
                     //open settings
                     AtakBroadcast.getInstance().sendBroadcast(
@@ -170,13 +167,19 @@ class DeviceSetupWizard implements CredentialsDialog.Callback {
             return;
         }
 
+        SharedPreferences sharedPreferences = PreferenceManager
+                .getDefaultSharedPreferences(_context);
+        int renewCertBeforeExpirationDays = sharedPreferences.getInt(
+                "renew_cert_before_expiration_days", -1);
+        Log.d(TAG, "renewCertBeforeExpirationDays "
+                + renewCertBeforeExpirationDays);
+
         for (Properties properties : cotStreamProperties) {
 
             final String desc = properties
                     .getProperty("description", "");
             boolean isEnabled = !properties
                     .getProperty("enabled", "1").equals("0");
-            ;
             boolean useAuth = !properties
                     .getProperty("useAuth", "0").equals("0");
             final String connectString = properties
@@ -188,10 +191,6 @@ class DeviceSetupWizard implements CredentialsDialog.Callback {
                     .equals("0");
             final Long expiration = Long.parseLong(
                     properties.getProperty(TAKServer.EXPIRATION_KEY, "-1"));
-
-            if (!isEnabled) {
-                continue;
-            }
 
             NetConnectString ncs = NetConnectString.fromString(connectString);
 
@@ -230,8 +229,18 @@ class DeviceSetupWizard implements CredentialsDialog.Callback {
                     AtakCertificateDatabase.CertificateValidity validity = AtakCertificateDatabase
                             .checkValidity(clientCert,
                                     clientCertCredentials.password);
-                    if (validity == null || !validity.isValid()) {
+                    if (validity == null) {
                         launchEnrollment = true;
+                    } else {
+                        Log.d(TAG, validity.toString() + ", " +
+                                validity.daysRemaining() + " days remaining");
+
+                        if (!validity.isValid() ||
+                                (renewCertBeforeExpirationDays != -1 &&
+                                        !validity.isValid(
+                                                renewCertBeforeExpirationDays))) {
+                            launchEnrollment = true;
+                        }
                     }
 
                     //

@@ -1,15 +1,20 @@
 
 package com.atakmap.android.gui;
 
-import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Environment;
 import androidx.annotation.NonNull;
+
+import android.provider.MediaStore;
+import android.provider.MediaStore.Images.Thumbnails;
+import android.provider.MediaStore.Images.ImageColumns;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -19,6 +24,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -28,13 +34,22 @@ import android.widget.Toast;
 
 import com.atakmap.android.filesystem.ResourceFile;
 import com.atakmap.android.filesystem.ResourceFile.MIMEType;
+import com.atakmap.android.icons.IconsMapAdapter;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.math.MathUtils;
 import com.atakmap.android.util.ATAKUtilities;
+import com.atakmap.android.vehicle.model.icon.PendingDrawable;
 import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
+import com.atakmap.coremap.concurrent.NamedThreadFactory;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
@@ -53,19 +68,19 @@ import com.atakmap.coremap.io.DefaultIOProvider;
 import com.atakmap.coremap.io.IOProvider;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
-import com.atakmap.coremap.log.Log;
 
 import java.util.TimeZone;
 
 //Based on code from
 //https://github.com/mburman/Android-File-Explore
 
-public class ImportFileBrowser extends LinearLayout {
+public class ImportFileBrowser extends LinearLayout implements
+        AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener {
 
     private static final String TAG = "ImportFileBrowser";
 
     /*************************** PRIVATE FIELDS **************************/
-    private String[] _extensions;
+    private final Set<String> _extensions = new HashSet<>();
     private String _userStartDirectory;
     private File _retFile;
     private View _up, _newFolder;
@@ -82,6 +97,20 @@ public class ImportFileBrowser extends LinearLayout {
     protected ArrayAdapter<FileItem> _adapter;
     protected boolean _directoryEmpty;
     protected IOProvider ioProvider = IOProviderFactoryProxy.INSTANCE;
+    protected final Map<String, Integer> _dirCounts = new HashMap<>();
+
+    protected final FilenameFilter _fileFilter = new FilenameFilter() {
+        @Override
+        public boolean accept(File dir, String fileName) {
+            String ext = StringUtils.substringAfterLast(fileName, ".");
+            File f = new File(dir, fileName);
+            return ioProvider.canRead(f) && (_testExtension(ext)
+                    || ioProvider.isDirectory(f));
+        }
+    };
+
+    protected final ExecutorService _thumbLoader = Executors.newFixedThreadPool(
+            5, new NamedThreadFactory("ThumbLoadPool"));
 
     /*************************** PUBLIC FIELDS **************************/
     public static final String WILDCARD = "*";
@@ -225,7 +254,16 @@ public class ImportFileBrowser extends LinearLayout {
      * @param extensions
      */
     public void setExtensionTypes(String[] extensions) {
-        _extensions = extensions;
+        _extensions.clear();
+        for (String ext : extensions) {
+            if (ext.equals(WILDCARD)) {
+                // Wildcard means no filtering
+                // Leave extensions empty
+                _extensions.clear();
+                return;
+            }
+            _extensions.add(ext.toLowerCase(LocaleUtil.getCurrent()));
+        }
     }
 
     /** @deprecated Use {@link #getModifiedDate(Long)} */
@@ -288,22 +326,10 @@ public class ImportFileBrowser extends LinearLayout {
         MapView mv = MapView.getMapView();
         Context ctx = mv != null ? mv.getContext() : getContext();
         _fileList.clear();
+        _dirCounts.clear();
         if (ioProvider.exists(_path) && ioProvider.canRead(_path)) {
-            FilenameFilter filter = new FilenameFilter() {
-                @Override
-                public boolean accept(File dir, String fileName) {
-                    File sel = new File(dir, fileName);
-                    String ext = StringUtils.substringAfterLast(fileName, ".");
-                    if (ext != null && isFile(sel)) {
-                        return (_testExtension(ext.toLowerCase(LocaleUtil
-                                .getCurrent())))
-                                && ioProvider.canRead(sel);
-                    }
-                    return ioProvider.canRead(sel)
-                            && ioProvider.isDirectory(sel);
-                }
-            };
-            File[] fList = listFiles(_path, filter);
+            File[] fList = listFiles(_path, _fileFilter);
+
             _directoryEmpty = false;
 
             if (fList != null) {
@@ -323,6 +349,11 @@ public class ImportFileBrowser extends LinearLayout {
                                 icon = new BitmapDrawable(
                                         ctx.getResources(), b);
                         }
+
+                        // Setup pending drawable for image thumbnail load later
+                        if (IconsMapAdapter.IconFilenameFilter.accept(null,
+                                f.getName()))
+                            icon = new PendingDrawable(icon);
                     }
                     _fileList.add(createItem(f.getName(), icon, type));
                 }
@@ -363,15 +394,8 @@ public class ImportFileBrowser extends LinearLayout {
     }
 
     protected boolean _testExtension(String ext) {
-        // No extensions specified - default to allow all
-        if (FileSystemUtils.isEmpty(_extensions))
-            return true;
-
-        for (String e : _extensions) {
-            if (e.equals(WILDCARD) || e.equalsIgnoreCase(ext))
-                return true;
-        }
-        return false;
+        return _extensions.isEmpty() || _extensions.contains(
+                ext.toLowerCase(LocaleUtil.getCurrent()));
     }
 
     protected void _scrollListToTop() {
@@ -395,6 +419,16 @@ public class ImportFileBrowser extends LinearLayout {
         _updateCurrentDirectoryTextView();
 
         _scrollListToTop();
+    }
+
+    protected int _getFileCount(File dir) {
+        Integer childCount = _dirCounts.get(dir.getName());
+        if (childCount == null) {
+            String[] children = ioProvider.list(dir, _fileFilter);
+            childCount = children != null ? children.length : 0;
+            _dirCounts.put(dir.getName(), childCount);
+        }
+        return childCount;
     }
 
     /*************************** PRIVATE METHODS **************************/
@@ -457,8 +491,11 @@ public class ImportFileBrowser extends LinearLayout {
     protected void _initFileListView() {
         ListView list = this
                 .findViewById(R.id.importBrowserFileItemList);
-        if (list != null)
+        if (list != null) {
             list.setAdapter(_adapter);
+            list.setOnItemClickListener(this);
+            list.setOnItemLongClickListener(this);
+        }
     }
 
     protected void _returnFile(File file) {
@@ -550,35 +587,132 @@ public class ImportFileBrowser extends LinearLayout {
         });
     }
 
+    /**
+     * Get a thumbnail from the Android thumbnail cache
+     * @param file Image file to query
+     * @return Thumbnail bitmap or null if not found
+     */
+    private Bitmap getThumbnail(File file) {
+        ContentResolver cr = getContext().getContentResolver();
+        try (Cursor c = cr.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                new String[] {
+                        MediaStore.MediaColumns._ID
+                },
+                MediaStore.MediaColumns.DATA + "=?",
+                new String[] {
+                        file.getAbsolutePath()
+                }, null)) {
+            if (c != null && c.moveToNext())
+                return Thumbnails.getThumbnail(cr,
+                        c.getLong(c.getColumnIndexOrThrow(ImageColumns._ID)),
+                        Thumbnails.MINI_KIND, null);
+        }
+        return null;
+    }
+
+    /**
+     * Load a thumbnail into the specified pending icon
+     * @param fileItem File item
+     */
+    protected void loadThumbnail(final FileItem fileItem) {
+
+        // Needs to have a pending drawable
+        Drawable dr = fileItem.iconDr;
+        if (!(dr instanceof PendingDrawable))
+            return;
+
+        final PendingDrawable icon = (PendingDrawable) dr;
+        final File file = new File(_path, fileItem.file);
+
+        // Icon no longer requires load or is already loading
+        if (!icon.isPending() || fileItem.iconLoading)
+            return;
+
+        fileItem.iconLoading = true;
+
+        // Get thumbnail on thumbnail loader thread pool
+        final MapView mv = MapView.getMapView();
+        _thumbLoader.execute(new Runnable() {
+            @Override
+            public void run() {
+                final Bitmap thumb = getThumbnail(file);
+                if (mv == null)
+                    return;
+
+                // Update icon on UI thread, which automatically calls
+                // notifyDataSetChanged() for the adapter it's attached to
+                // TODO: There's still an issue where some icons won't refresh
+                //  even after calling notifyDataSetChanged(). Possibly
+                //  a refresh issue in the drawable itself.
+                mv.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        fileItem.iconLoading = false;
+                        if (thumb != null)
+                            icon.setBitmap(thumb);
+                    }
+                });
+            }
+        });
+    }
+
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view, int position,
+            long id) {
+        ViewHolder holder = view.getTag() instanceof ViewHolder
+                ? (ViewHolder) view.getTag()
+                : null;
+        if (holder == null || holder.item == null)
+            return;
+
+        // Select file or enter directory
+        _currFile = holder.item.file;
+        File sel = new File(_path, _currFile);
+        if (holder.item.type == FileItem.DIRECTORY) {
+            if (ioProvider.canRead(sel)) {
+                _pathDirsList.add(_currFile);
+                _path = new File(sel + "");
+                _loadFileList();
+                _adapter.notifyDataSetChanged();
+                _updateCurrentDirectoryTextView();
+
+                _scrollListToTop();
+            }
+        } else {
+            if (!_directoryEmpty) {
+                _returnFile(sel);
+            }
+        }
+    }
+
+    @Override
+    public boolean onItemLongClick(AdapterView<?> parent, View view,
+            int position, long id) {
+        return false;
+    }
+
     /*************************** PROTECTED CLASSES **************************/
 
     public static class FileItem {
-        public final String file;
-        public final Drawable iconDr;
-        public static final int FILE = 0x1;
-        public static final int DIRECTORY = 0x1 << 1;
-        public final int type;
 
-        @Deprecated
-        @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-        public final int icon;
+        public static final int FILE = 1;
+        public static final int DIRECTORY = 1 << 1;
+
+        // The file name (path not included)
+        public final String file;
+
+        // Icon drawable
+        public final Drawable iconDr;
+
+        // Whether the icon is busy being loaded
+        protected boolean iconLoading;
+
+        // FILE or DIRECTORY
+        public final int type;
 
         public FileItem(String file, Drawable icon, Integer type) {
             this.file = file;
             this.iconDr = icon;
-            this.icon = 0;
-            this.type = type;
-        }
-
-        /**
-         * @deprecated Use {@link #FileItem(String, Drawable, Integer)}
-         */
-        @Deprecated
-        @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-        public FileItem(String file, Integer icon, Integer type) {
-            this.file = file;
-            this.icon = icon;
-            this.iconDr = null;
             this.type = type;
         }
 
@@ -586,7 +720,6 @@ public class ImportFileBrowser extends LinearLayout {
         public String toString() {
             return file;
         }
-
     }
 
     /*************************** PRIVATE CLASSES **************************/
@@ -608,6 +741,13 @@ public class ImportFileBrowser extends LinearLayout {
         }
     }
 
+    private static class ViewHolder {
+        FileItem item;
+        Button icon;
+        TextView txtFilename;
+        TextView txtModifiedDate;
+    }
+
     /**
      * 
      */
@@ -621,13 +761,6 @@ public class ImportFileBrowser extends LinearLayout {
             this.context = context;
         }
 
-        /* private view holder class */
-        private class ViewHolder {
-            Button icon;
-            TextView txtFilename;
-            TextView txtModifiedDate;
-        }
-
         @NonNull
         @Override
         public View getView(int position, View convertView,
@@ -635,11 +768,9 @@ public class ImportFileBrowser extends LinearLayout {
             ViewHolder holder;
             final FileItem fileItem = getItem(position);
 
-            LayoutInflater mInflater = (LayoutInflater) context
-                    .getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
             if (convertView == null) {
-                convertView = mInflater.inflate(
-                        R.layout.import_file_browser_fileitem, null);
+                convertView = LayoutInflater.from(context).inflate(
+                        R.layout.import_file_browser_fileitem, parent, false);
                 holder = new ViewHolder();
                 holder.txtFilename = convertView
                         .findViewById(R.id.importBrowserFileName);
@@ -651,6 +782,8 @@ public class ImportFileBrowser extends LinearLayout {
             } else
                 holder = (ViewHolder) convertView.getTag();
 
+            holder.item = fileItem;
+
             File f = new File(_path, fileItem.file);
             holder.txtFilename.setText(f.getName());
             if (ioProvider.exists(f))
@@ -660,18 +793,15 @@ public class ImportFileBrowser extends LinearLayout {
                 holder.txtModifiedDate.setText("");
 
             Drawable drawable = fileItem.iconDr;
-            if (drawable == null && fileItem.icon != 0) {
-                try {
-                    drawable = context.getDrawable(fileItem.icon);
-                } catch (Exception e) {
-                    Log.e(TAG, "Failed to find icon for " + fileItem.file
-                            + ": " + e.getMessage());
-                }
+            holder.icon.setCompoundDrawablesWithIntrinsicBounds(null, drawable,
+                    null, null);
+
+            // Load pending thumbnail icon if needed
+            if (IconsMapAdapter.IconFilenameFilter.accept(null, f.getName())) {
+                drawable.setCallback(holder.icon);
+                loadThumbnail(fileItem);
             }
 
-            holder.icon.setCompoundDrawablesWithIntrinsicBounds(null, drawable,
-                    null,
-                    null);
             if (fileItem.type == FileItem.FILE) {
                 if (ioProvider.exists(f))
                     holder.icon.setText(
@@ -681,56 +811,16 @@ public class ImportFileBrowser extends LinearLayout {
                     holder.txtModifiedDate.setText("");
                 }
             } else {
-                FilenameFilter filter = new FilenameFilter() {
-                    @Override
-                    public boolean accept(File dir, String fileName) {
-                        File sel = new File(dir, fileName);
-                        String ext = StringUtils.substringAfterLast(fileName,
-                                ".");
-                        if (isFile(sel)) {
-                            return (_testExtension(ext))
-                                    && ioProvider.canRead(sel);
-                        }
-                        return ioProvider.canRead(sel)
-                                && ioProvider.isDirectory(sel);
-                    }
-                };
-                String[] children = ioProvider.list(f, filter);
-                if (children == null || children.length < 1) {
+                int childCount = _getFileCount(f);
+                if (childCount == 0)
                     holder.icon.setText("");
-                } else {
-                    holder.icon.setText(String.format(LocaleUtil.getCurrent(),
-                            getContext()
-                                    .getString(R.string.items),
-                            children.length));
-                }
+                else
+                    holder.icon.setText(getContext().getString(
+                            R.string.items, childCount));
             }
 
             // handle user clicks
             holder.icon.setClickable(false);
-            convertView.setOnClickListener(new OnClickListener() {
-
-                @Override
-                public void onClick(View v) {
-                    _currFile = fileItem.file;
-                    File sel = new File(_path, _currFile);
-                    if (ioProvider.isDirectory(sel)) {
-                        if (ioProvider.canRead(sel)) {
-                            _pathDirsList.add(_currFile);
-                            _path = new File(sel + "");
-                            _loadFileList();
-                            _adapter.notifyDataSetChanged();
-                            _updateCurrentDirectoryTextView();
-
-                            _scrollListToTop();
-                        }
-                    } else {
-                        if (!_directoryEmpty) {
-                            _returnFile(sel);
-                        }
-                    }
-                }
-            });
             return convertView;
         }
     }

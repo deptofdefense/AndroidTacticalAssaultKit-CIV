@@ -278,7 +278,7 @@ public class MissionPackageConfiguration implements Parcelable {
     private void readFromParcel(Parcel in) {
         int count = in.readInt();
         for (int cur = 0; cur < count; cur++) {
-            setParameter((NameValuePair) in.readParcelable(NameValuePair.class
+            setParameter(in.readParcelable(NameValuePair.class
                     .getClassLoader()));
         }
     }

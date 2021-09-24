@@ -5,6 +5,12 @@ import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
 
+import com.atakmap.annotations.FortifyFinding;
+import com.atakmap.comms.NetConnectString;
+import com.atakmap.comms.TAKServer;
+import com.atakmap.comms.TAKServerListener;
+import com.atakmap.comms.http.TakHttpClient;
+import com.atakmap.comms.http.TakHttpResponse;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.net.AtakAuthenticationHandlerHTTP;
 import javax.net.ssl.TrustManager;
@@ -12,6 +18,7 @@ import com.atakmap.net.CertificateManager;
 
 import java.io.FileInputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.io.InputStream;
@@ -37,12 +44,12 @@ import com.ekito.simpleKML.model.NetworkLink;
 import com.foxykeep.datadroid.requestmanager.Request;
 import com.foxykeep.datadroid.requestmanager.RequestManager;
 
+import org.apache.http.client.methods.HttpGet;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -110,7 +117,7 @@ public class KMLNetworkLinkDownloader extends NetworkLinkDownloader {
         // The UID should be based on the name + URL instead of randomly generated
         // or else this will create tons of duplicate directories when auto-refresh is on
         String uid = UUID.nameUUIDFromBytes((resource.getName()
-                + resource.getUrl()).getBytes(StandardCharsets.UTF_8))
+                + resource.getUrl()).getBytes(FileSystemUtils.UTF8_CHARSET))
                 .toString();
         File tmpDir = new File(
                 FileSystemUtils.getItem(FileSystemUtils.TMP_DIRECTORY), uid);
@@ -175,28 +182,66 @@ public class KMLNetworkLinkDownloader extends NetworkLinkDownloader {
 
                         RemoteResourceRequest request = (RemoteResourceRequest) r;
 
-                        URL url = new URL(request.getUrl());
-                        URLConnection conn = url.openConnection();
-                        conn.setRequestProperty("User-Agent", "TAK");
-                        conn.setUseCaches(true);
-                        conn.setConnectTimeout(10000);
-                        conn.setReadTimeout(30000);
-                        setAcceptAllVerifier(conn);
-
-                        conn = processRedirect(conn);
-
-                        // support authenticated connections
                         InputStream input;
-                        if (conn instanceof HttpURLConnection) {
-                            AtakAuthenticationHandlerHTTP.Connection connection;
-                            connection = AtakAuthenticationHandlerHTTP
-                                    .makeAuthenticatedConnection(
-                                            (HttpURLConnection) conn, 3);
-                            conn = connection.conn;
-                            input = connection.stream;
+
+                        final String urlStr = r.getUrl();
+                        URI uri = new URI(urlStr);
+                        String host = uri.getHost();
+
+                        boolean hostIsTakServer = false;
+
+                        TAKServer[] servers = TAKServerListener.getInstance()
+                                .getConnectedServers();
+                        if (servers != null) {
+                            for (TAKServer server : servers) {
+                                NetConnectString netConnectString = NetConnectString
+                                        .fromString(
+                                                server.getConnectString());
+                                if (netConnectString.getHost()
+                                        .equalsIgnoreCase(host)) {
+                                    hostIsTakServer = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (hostIsTakServer &&
+                                urlStr.toLowerCase(LocaleUtil.getCurrent())
+                                        .startsWith("https")
+                                &&
+                                uri.getPort() == 8443) {
+
+                            String baseUrl = "https://" + uri.getHost() + ":"
+                                    + uri.getPort();
+                            TakHttpClient client = TakHttpClient
+                                    .GetHttpClient(baseUrl);
+                            HttpGet httpget = new HttpGet(urlStr);
+                            TakHttpResponse response = client.execute(httpget);
+
+                            input = response.getEntity().getContent();
                         } else {
-                            conn.connect();
-                            input = conn.getInputStream();
+                            URL url = new URL(request.getUrl());
+                            URLConnection conn = url.openConnection();
+                            conn.setRequestProperty("User-Agent", "TAK");
+                            conn.setUseCaches(true);
+                            conn.setConnectTimeout(10000);
+                            conn.setReadTimeout(30000);
+                            setAcceptAllVerifier(conn);
+
+                            conn = processRedirect(conn);
+
+                            // support authenticated connections
+                            if (conn instanceof HttpURLConnection) {
+                                AtakAuthenticationHandlerHTTP.Connection connection;
+                                connection = AtakAuthenticationHandlerHTTP
+                                        .makeAuthenticatedConnection(
+                                                (HttpURLConnection) conn, 3);
+                                conn = connection.conn;
+                                input = connection.stream;
+                            } else {
+                                conn.connect();
+                                input = conn.getInputStream();
+                            }
                         }
 
                         File fout = new File(request.getDir(),
@@ -248,6 +293,7 @@ public class KMLNetworkLinkDownloader extends NetworkLinkDownloader {
      * @return the redirected connection
      * @throws IOException interactions with the connection failed.
      */
+    @FortifyFinding(finding = "Server-Side Request Forgery", rational = "FortifyFinding flags this as a Server-Side Request Forgery but the URL containing the KML file has rediected us to a new site. This protection should be part of the network management / firewall and is too broad scoped for the application.")
     private URLConnection processRedirect(URLConnection conn)
             throws IOException {
         URLConnection retval = conn;
@@ -283,12 +329,7 @@ public class KMLNetworkLinkDownloader extends NetworkLinkDownloader {
                     int connectionTimeout = conn.getConnectTimeout();
                     int readTimeout = conn.getReadTimeout();
 
-                    /**
-                     * Fortify flags this as a Server-Side Request Forgery
-                     * but the URL containing the KML file has rediected us to a new site.
-                     * This protection should be part of the network management / firewall and 
-                     * is too broad scoped for the application.
-                     */
+                    // server side forgery described in FortifyAPI annotation
                     retval = new URL(newUrl)
                             .openConnection();
                     retval.setRequestProperty("User-Agent", userAgent);

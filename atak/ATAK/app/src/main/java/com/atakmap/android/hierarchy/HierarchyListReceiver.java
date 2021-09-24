@@ -9,6 +9,10 @@ import android.content.DialogInterface;
 import android.content.Intent;
 
 import com.atakmap.android.gui.TileButtonDialog;
+import com.atakmap.android.gui.TileButtonDialog.TileButton;
+import com.atakmap.android.hierarchy.filters.AuthorFilter;
+import com.atakmap.android.hierarchy.filters.AutoSendFilter;
+import com.atakmap.android.importexport.ExportDialog;
 import com.atakmap.android.importexport.send.SendDialog;
 import com.atakmap.android.util.AfterTextChangedWatcher;
 import com.atakmap.android.util.SimpleItemSelectedListener;
@@ -21,7 +25,6 @@ import com.atakmap.android.hierarchy.items.MapItemUser;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
-import android.os.Environment;
 import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.text.Editable;
@@ -46,19 +49,15 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.atakmap.android.cot.CotMapAdapter;
 import com.atakmap.android.dropdown.DropDown.OnStateListener;
 import com.atakmap.android.dropdown.DropDownReceiver;
-import com.atakmap.android.gui.ImportFileBrowserDialog;
 import com.atakmap.android.hierarchy.action.GoTo;
 import com.atakmap.android.hierarchy.action.Visibility;
 import com.atakmap.android.hierarchy.filters.FOVFilter;
 import com.atakmap.android.importexport.ExportMarshal;
-import com.atakmap.android.importexport.ExportMarshalAdapter;
 import com.atakmap.android.importexport.ExporterManager;
-import com.atakmap.android.importexport.ExporterManager.ExportMarshalMetadata;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
@@ -73,20 +72,19 @@ import com.atakmap.android.tools.ActionBarReceiver;
 import com.atakmap.android.tools.ActionBarView;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
-import com.atakmap.spatial.file.GpxFileSpatialDb;
-import com.atakmap.spatial.file.KmlFileSpatialDb;
 import com.atakmap.spatial.file.ShapefileSpatialDb;
 
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import com.atakmap.coremap.locale.LocaleUtil;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
@@ -142,6 +140,7 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
     protected ImageView checkAll;
     private int checkAllState;
     protected CheckBox showAll;
+    protected ImageButton filterBtn;
     protected ListView listView;
     protected ImageButton backBtn;
     protected ImageButton hierarchyClearBtn;
@@ -195,6 +194,10 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
         // Show all
         showAll = titleBar.findViewById(R.id.showAll_cb);
         showAll.setOnCheckedChangeListener(this);
+
+        // Bottom-right filter configuration button
+        filterBtn = titleBar.findViewById(R.id.filter_btn);
+        filterBtn.setOnClickListener(this);
 
         // Bottom-right [X] button
         titleBar.findViewById(R.id.close_hmv).setOnClickListener(this);
@@ -486,9 +489,7 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
             // Check if list needs to handle back button
             if (i instanceof HierarchyListStateListener &&
                     ((HierarchyListStateListener) i).onBackButton(adapter,
-                            false)
-                    || i instanceof HierarchyListItem2 &&
-                            ((HierarchyListItem2) i).onBackButtonPressed(false))
+                            false))
                 return;
 
             // Focus on the button in order to hide the soft keyboard
@@ -515,6 +516,11 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
         else if (id == R.id.selectAll_cb) {
             adapter.setItemChecked(adapter.getCurrentList(true),
                     this.checkAllState == HierarchyListAdapter.UNCHECKED);
+        }
+
+        // User-selected filters
+        else if (id == R.id.filter_btn) {
+            promptUserFilters();
         }
 
         // Toggle search mode
@@ -571,17 +577,99 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
                     // External handler
                     HierarchyListUserSelect handler = externalHandlers
                             .get(which - 1);
-                    adapter.setSelectHandler(handler);
-                    setCurrentMode(HIERARCHY_MODE.MULTISELECT);
+                    setSelectHandler(handler);
                 } else if (which == externalHandlers.size() + 1) {
                     // Delete items mode
                     HierarchyListUserDelete hlud = new HierarchyListUserDelete();
                     hlud.setCloseHierarchyWhenComplete(false);
-                    adapter.setSelectHandler(hlud);
-                    setCurrentMode(HIERARCHY_MODE.MULTISELECT);
+                    setSelectHandler(hlud);
                 }
             }
         });
+    }
+
+    /**
+     * Set the current select handler
+     * @param selectHandler Select handler
+     */
+    public void setSelectHandler(HierarchyListUserSelect selectHandler) {
+        if (selectHandler == null) {
+            adapter.clearHandler();
+            return;
+        }
+        adapter.setSelectHandler(selectHandler);
+        if (selectHandler.isMultiSelect())
+            setCurrentMode(HIERARCHY_MODE.MULTISELECT);
+        else
+            setCurrentMode(HIERARCHY_MODE.TOOL_SELECT);
+    }
+
+    /**
+     * Prompt the user to toggle temporary filters in Overlay Manager
+     * TODO: Possibly allow for plugins to add filters here
+     */
+    private void promptUserFilters() {
+        if (adapter == null)
+            return;
+
+        // Map existing filters by class so we can quickly check if they're
+        // enabled or not
+        List<HierarchyListFilter> filters = adapter.getUserFilters();
+        final Map<Class<? extends HierarchyListFilter>, HierarchyListFilter> filterMap = new HashMap<>();
+        final Map<Class<? extends HierarchyListFilter>, TileButton> btnMap = new HashMap<>();
+
+        TileButtonDialog d = new TileButtonDialog(_mapView, true);
+        btnMap.put(AutoSendFilter.class, d.addButton(
+                R.drawable.ic_broadcast_cot, R.string.auto_send));
+        btnMap.put(AuthorFilter.class, d.addButton(
+                R.drawable.ic_user, R.string.self_authored));
+
+        // Toggle buttons on for existing filters
+        for (HierarchyListFilter filter : filters) {
+            filterMap.put(filter.getClass(), filter);
+            TileButton tb = btnMap.get(filter.getClass());
+            if (tb != null)
+                tb.setSelected(true);
+        }
+
+        d.setOnClickListener(new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                HierarchyListFilter filter;
+                SortAlphabet sort = new SortAlphabet();
+                if (which == 0) {
+                    filter = filterMap.get(AutoSendFilter.class);
+                    if (filter == null)
+                        filter = new AutoSendFilter(sort);
+                } else if (which == 1) {
+                    filter = filterMap.get(AuthorFilter.class);
+                    if (filter == null)
+                        filter = new AuthorFilter(sort, MapView.getDeviceUid());
+                } else {
+                    dialog.dismiss();
+                    return;
+                }
+
+                Class<? extends HierarchyListFilter> cl = filter.getClass();
+                boolean enable = !filterMap.containsKey(cl);
+                TileButton tb = btnMap.get(cl);
+                if (tb != null)
+                    tb.setSelected(enable);
+
+                if (adapter != null) {
+                    if (enable) {
+                        adapter.addUserFilter(filter);
+                        filterMap.put(cl, filter);
+                    } else {
+                        adapter.removeUserFilter(filter);
+                        filterMap.remove(cl);
+                    }
+                    setViewToMode();
+                }
+            }
+        });
+        d.setCancelText(R.string.ok);
+        d.show(R.string.toggle_filters, true);
     }
 
     @Override
@@ -616,8 +704,8 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
         } else if (!adapter.isRootList()) {
             // if in a sub menu, go back
             HierarchyListItem curList = adapter.getCurrentList(true);
-            if (curList != null && _navList != null && curList.getUID()
-                    .equals(_navList)) {
+            if (curList != null && _navList != null
+                    && _navList.equals(curList.getUID())) {
                 if (buttonId == 0) {
                     // Device back button hit on the nav list
                     if (mode == HIERARCHY_MODE.NONE)
@@ -734,118 +822,18 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
     }
 
     protected void exportPrompt() {
-        List<ExportMarshalMetadata> exportTypes = ExporterManager
-                .getExporterTypes();
-        if (exportTypes == null || exportTypes.size() < 1) {
-            Toast.makeText(_context, "No exporters registered",
-                    Toast.LENGTH_SHORT).show();
-            Log.w(TAG,
-                    "Failed to export selected items, no exporters registered");
-            return;
-        }
-
-        ExportMarshalMetadata[] metaArray = new ExportMarshalMetadata[exportTypes
-                .size()];
-        exportTypes.toArray(metaArray);
-        final ExportMarshalAdapter exportAdapter = new ExportMarshalAdapter(
-                _context,
-                R.layout.exportdata_item, metaArray);
-
-        LayoutInflater inflater = LayoutInflater.from(_context);
-        LinearLayout layout = (LinearLayout) inflater.inflate(
-                R.layout.exportdata_list, _mapView, false);
-        ListView listView = layout.findViewById(R.id.exportDataList);
-        //final CheckBox narrowByGeoRegion = (CheckBox) layout
-        //        .findViewById(R.id.exportDataByGeoRegionChk);
-        listView.setAdapter(exportAdapter);
-
-        AlertDialog.Builder b = new AlertDialog.Builder(_context);
-        b.setIcon(R.drawable.export_menu_default);
-        b.setTitle(R.string.selection_export_dialogue);
-        b.setView(layout);
-        b.setPositiveButton(R.string.previous_export_dialogue,
-                new DialogInterface.OnClickListener() {
-
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-
-                        final String startDirectory;
-                        File exportDir = FileSystemUtils
-                                .getItem(FileSystemUtils.EXPORT_DIRECTORY);
-
-                        if (exportDir != null
-                                && IOProviderFactory.exists(exportDir)
-                                && IOProviderFactory.isDirectory(exportDir))
-                            startDirectory = exportDir.getAbsolutePath();
-                        else
-                            startDirectory = Environment
-                                    .getExternalStorageDirectory().getPath();
-
-                        ImportFileBrowserDialog.show(_context.getString(
-                                R.string.select_file_to_send),
-                                startDirectory, new String[] {
-                                        GpxFileSpatialDb.GPX_CONTENT_TYPE
-                                                .toLowerCase(LocaleUtil
-                                                        .getCurrent()),
-                                        KmlFileSpatialDb.KML_TYPE,
-                                        KmlFileSpatialDb.KMZ_TYPE,
-                                        ShapefileSpatialDb.SHP_TYPE
-                        },
-                                new ImportFileBrowserDialog.DialogDismissed() {
-                                    @Override
-                                    public void onFileSelected(File file) {
-                                        sendFile(file);
-                                    }
-
-                                    @Override
-                                    public void onDialogClosed() {
-                                        //do nothing
-                                    }
-
-                                }, _context);
-                    }
-                });
-        b.setNegativeButton(R.string.cancel, null);
-
-        final AlertDialog bd = b.create();
-        listView.setOnItemClickListener(new OnItemClickListener() {
-
+        ExportDialog d = new ExportDialog(_mapView);
+        d.setCallback(new ExportDialog.Callback() {
             @Override
-            public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
-                    long arg3) {
-                bd.dismiss();
-
-                ExportMarshalMetadata meta = exportAdapter.getItem(arg2);
-                if (meta == null || FileSystemUtils.isEmpty(meta.getType())) {
-                    Toast.makeText(_context, "Failed to export selected items",
-                            Toast.LENGTH_SHORT).show();
-                    Log.w(TAG,
-                            "Failed to export selected items, no type selected");
-                    return;
-                }
-
-                //go ahead and select items
-                final ExportMarshal marshal = ExporterManager.findExporter(
-                        _context, meta.getType());
-                if (marshal == null) {
-                    Toast.makeText(_context,
-                            "Failed to export selected items",
-                            Toast.LENGTH_SHORT).show();
-                    Log.w(TAG,
-                            "Failed to export selected items, no Export Marshal available");
-                    return;
-                }
-
-                // export
+            public void onExporterSelected(ExportMarshal marshal) {
                 HierarchyListUserExport hlue = new HierarchyListUserExport(
                         marshal, null);
                 adapter.setSelectHandler(hlue);
-                setCurrentMode(HIERARCHY_MODE.MULTISELECT);
+                setCurrentMode(
+                        HierarchyListReceiver.HIERARCHY_MODE.MULTISELECT);
             }
         });
-
-        bd.show();
+        d.show();
     }
 
     protected void sendFile(File file) {
@@ -1125,6 +1113,9 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
         boolean showAll = !prefs.getBoolean(FOVFilter.PREF, false);
         if (this.showAll.isChecked() != showAll)
             this.showAll.setChecked(showAll);
+
+        // Update filter button selected state
+        filterBtn.setSelected(!adapter.getUserFilters().isEmpty());
 
         View customView = null;
         HIERARCHY_MODE mode = this.mode;
@@ -1592,9 +1583,7 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
             // Check if list needs to handle back button
             if (i instanceof HierarchyListStateListener &&
                     ((HierarchyListStateListener) i).onBackButton(_adapter,
-                            true)
-                    || i instanceof HierarchyListItem2 &&
-                            ((HierarchyListItem2) i).onBackButtonPressed(true))
+                            true))
                 return true;
 
             // Default device back button behavior

@@ -58,7 +58,7 @@ public abstract class ExportFileTask extends ProgressTask {
 
     @Override
     protected void onCancelled() {
-        toast(R.string.export_cancelled_for, _item.getName());
+        toast(R.string.export_cancelled_for, _item.getTitle());
         for (File f : getOutputFiles()) {
             if (f != null && IOProviderFactory.exists(f))
                 FileSystemUtils.delete(f);

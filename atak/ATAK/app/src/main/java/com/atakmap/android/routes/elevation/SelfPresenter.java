@@ -3,7 +3,6 @@ package com.atakmap.android.routes.elevation;
 
 import android.content.SharedPreferences;
 
-import com.atakmap.android.elev.dt2.Dt2ElevationModel;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.routes.elevation.model.UnitConverter;
@@ -17,6 +16,7 @@ import com.atakmap.coremap.maps.conversion.EGM96;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.map.elevation.ElevationManager;
 
 import org.achartengine.model.XYSeries;
 
@@ -131,8 +131,8 @@ public class SelfPresenter {
                                         self.getPoint());
                         if (dist < minDist && dist < _MINIMUN_METER_RANGE) {
                             minDist = dist;
-                            pointDistance = _distance[i] + UnitConverter.Meter
-                                    .toFeet(DistanceCalculations
+                            pointDistance = UnitConverter.Meter
+                                    .toFeet(_distance[i] + DistanceCalculations
                                             .calculateRange(_geoPoint[i].get(),
                                                     p.get()));
                             selfPoint = p;
@@ -159,14 +159,13 @@ public class SelfPresenter {
                         String altRef = _prefs.getString(
                                 "alt_display_pref", "MSL");
 
-                        GeoPointMetaData gpm = Dt2ElevationModel.getInstance()
-                                .queryPoint(selfPoint.get().getLatitude(),
-                                        selfPoint.get().getLongitude());
+                        if (!selfPoint.get().isAltitudeValid())
+                            selfPoint = ElevationManager.getElevationMetadata(
+                                    selfPoint.get());
 
                         double alt = selfPoint.get().getAltitude();
                         if (altRef.equals("MSL"))
-                            alt = EGM96.getMSL(
-                                    selfPoint.get());
+                            alt = EGM96.getMSL(selfPoint.get());
 
                         double fpElevation = selfPoint.get().isAltitudeValid()
                                 ? SpanUtilities

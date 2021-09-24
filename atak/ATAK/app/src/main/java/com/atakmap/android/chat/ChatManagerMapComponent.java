@@ -304,7 +304,6 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
 
         String conversationId = message.getString("conversationId",
                 GeoChatService.DEFAULT_CHATROOM_NAME);
-        ;
         String conversationName = message.getString("conversationName",
                 conversationId);
 
@@ -480,7 +479,7 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
             _chatBroadcastContact.addConnector(new GeoChatConnector(ncs));
         }
 
-        TadilJContactDatabase db = TadilJContactDatabase.getInstance(_context);
+        TadilJContactDatabase db = TadilJContactDatabase.getInstance();
         TadilJContact.updateChatConnector(NetConnectString.fromString(address
                 + ":" + port
                 + ":udp"), db);

@@ -15,8 +15,13 @@ import com.atakmap.android.importexport.Importer;
 import com.atakmap.android.importfiles.sort.ImportInPlaceResolver;
 import com.atakmap.android.importfiles.sort.ImportResolver;
 import com.atakmap.android.ipc.AtakBroadcast;
+import com.atakmap.android.maps.DeepMapItemQuery;
+import com.atakmap.android.maps.DefaultMapGroup;
+import com.atakmap.android.maps.MapGroup;
+import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.MapView.RenderStack;
+import com.atakmap.android.maps.hittest.DeepHitTestControlQuery;
 import com.atakmap.android.overlay.MapOverlay;
 import com.atakmap.android.overlay.MapOverlayParent;
 import com.atakmap.android.util.NotificationUtil;
@@ -32,13 +37,19 @@ import com.atakmap.coremap.io.DatabaseInformation;
 import com.atakmap.coremap.io.IOProvider;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.coremap.maps.coords.GeoBounds;
+import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.database.DatabaseIface;
 import com.atakmap.database.StatementIface;
 import com.atakmap.map.gpkg.GeoPackage;
+import com.atakmap.map.hittest.HitTestControl;
+import com.atakmap.map.hittest.HitTestQueryParameters;
 import com.atakmap.map.layer.Layer;
+import com.atakmap.map.layer.Layer2;
 import com.atakmap.map.layer.MultiLayer;
 import com.atakmap.map.layer.MultiLayer.OnLayersChangedListener;
-import com.atakmap.map.layer.feature.FeatureLayer;
+import com.atakmap.map.layer.feature.Adapters;
+import com.atakmap.map.layer.feature.FeatureLayer3;
 import com.atakmap.map.layer.feature.gpkg.GeoPackageFeatureDataStore;
 
 import java.io.File;
@@ -46,9 +57,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -71,7 +87,7 @@ public class GeoPackageImporter implements Importer {
     private final MapView mapView;
     private final String parentName;
     private final String iconURI;
-    private final MapOverlayParent parentOverlay;
+    private final GeoPackageMapOverlayParent parentOverlay;
     private MultiLayer parentLayer;
 
     private boolean isDisposed;
@@ -89,8 +105,7 @@ public class GeoPackageImporter implements Importer {
         this.parentName = layerName;
         this.iconURI = iconURI;
         this.contentResolver = new GeoPackageContentResolver(view);
-        this.parentOverlay = new MapOverlayParent(mapView, parentName,
-                parentName, iconURI, -1, false);
+        this.parentOverlay = new GeoPackageMapOverlayParent();
         mapView.getMapOverlayManager().addFilesOverlay(parentOverlay);
         URIContentManager.getInstance().registerResolver(contentResolver);
         isDisposed = false;
@@ -492,7 +507,7 @@ public class GeoPackageImporter implements Importer {
     //  PRIVATE METHODS
     //==================================
 
-    private void addOverlay(FeatureLayer layer) {
+    private void addOverlay(FeatureLayer3 layer) {
         parentOverlay.add(new GeoPackageMapOverlay(mapView.getContext(),
                 layer, iconURI));
     }
@@ -513,8 +528,8 @@ public class GeoPackageImporter implements Importer {
                             @Override
                             public void onLayerAdded(MultiLayer parent,
                                     Layer layer) {
-                                if (layer instanceof FeatureLayer) {
-                                    addOverlay((FeatureLayer) layer);
+                                if (layer instanceof FeatureLayer3) {
+                                    addOverlay((FeatureLayer3) layer);
                                 }
                             }
 
@@ -530,8 +545,8 @@ public class GeoPackageImporter implements Importer {
                             public void onLayerRemoved(MultiLayer parent,
                                     Layer layer) {
                                 removeOverlay(layer.getName());
-                                if (layer instanceof FeatureLayer) {
-                                    ((FeatureLayer) layer).getDataStore()
+                                if (layer instanceof FeatureLayer3) {
+                                    ((FeatureLayer3) layer).getDataStore()
                                             .dispose();
                                 }
                             }
@@ -552,8 +567,8 @@ public class GeoPackageImporter implements Importer {
             final long e = SystemClock.elapsedRealtime();
             Log.d(TAG, "Loaded Geopackage " + packageFile.getName() + " in "
                     + (e - s) + "ms");
-            FeatureLayer layer = new FeatureLayer(packageFile.getName(),
-                    dataStore);
+            FeatureLayer3 layer = new FeatureLayer3(packageFile.getName(),
+                    Adapters.adapt(dataStore));
 
             getParentLayer().addLayer(layer);
 
@@ -596,5 +611,139 @@ public class GeoPackageImporter implements Importer {
         MapOverlay existingOverlay = parentOverlay.remove(packageName);
         if (existingOverlay != null)
             mapView.getMapOverlayManager().removeOverlay(existingOverlay);
+    }
+
+    private class GeoPackageMapOverlayParent extends MapOverlayParent {
+
+        private final DefaultMapGroup mapGroup;
+        private final GeoPackageMapItemQuery queryFunc;
+        private final List<DeepMapItemQuery> childQueries = new ArrayList<>();
+
+        GeoPackageMapOverlayParent() {
+            super(mapView, parentName, parentName, iconURI, -1, false);
+            this.queryFunc = new GeoPackageMapItemQuery();
+            this.mapGroup = new DefaultMapGroup(getName());
+            this.mapGroup.setMetaBoolean("customRenderer", true);
+        }
+
+        @Override
+        public MapGroup getRootGroup() {
+            return this.mapGroup;
+        }
+
+        @Override
+        public DeepMapItemQuery getQueryFunction() {
+            return this.queryFunc;
+        }
+
+        @Override
+        public boolean add(MapOverlay overlay) {
+            childQueries.add(overlay.getQueryFunction());
+            return super.add(overlay);
+        }
+
+        @Override
+        public void remove(MapOverlay overlay) {
+            super.remove(overlay);
+            childQueries.remove(overlay.getQueryFunction());
+        }
+
+        @Override
+        public MapOverlay remove(String id) {
+            MapOverlay overlay = super.remove(id);
+            if (overlay != null)
+                childQueries.remove(overlay.getQueryFunction());
+            return overlay;
+        }
+
+        @Override
+        public void clear() {
+            super.clear();
+            childQueries.clear();
+        }
+    }
+
+    /**
+     * This map item query redirects to several children queries since each
+     * geopackage gets its own overlay/map group
+     */
+    private class GeoPackageMapItemQuery
+            implements DeepMapItemQuery, DeepHitTestControlQuery {
+
+        @Override
+        public MapItem deepFindItem(Map<String, String> metadata) {
+            for (DeepMapItemQuery query : parentOverlay.childQueries) {
+                MapItem ret = query.deepFindItem(metadata);
+                if (ret != null)
+                    return ret;
+            }
+            return null;
+        }
+
+        @Override
+        public List<MapItem> deepFindItems(Map<String, String> metadata) {
+            List<MapItem> ret = new ArrayList<>();
+            for (DeepMapItemQuery query : parentOverlay.childQueries) {
+                List<MapItem> items = query.deepFindItems(metadata);
+                if (items != null)
+                    ret.addAll(items);
+            }
+            return ret;
+        }
+
+        @Override
+        public MapItem deepFindClosestItem(GeoPoint location, double threshold,
+                Map<String, String> metadata) {
+            for (DeepMapItemQuery query : parentOverlay.childQueries) {
+                MapItem ret = query.deepFindClosestItem(location, threshold,
+                        metadata);
+                if (ret != null)
+                    return ret;
+            }
+            return null;
+        }
+
+        @Override
+        public Collection<MapItem> deepFindItems(GeoPoint location,
+                double radius, Map<String, String> metadata) {
+            List<MapItem> ret = new ArrayList<>();
+            for (DeepMapItemQuery query : parentOverlay.childQueries) {
+                Collection<MapItem> items = query.deepFindItems(location,
+                        radius, metadata);
+                if (items != null)
+                    ret.addAll(items);
+            }
+            return ret;
+        }
+
+        @Override
+        public Collection<MapItem> deepFindItems(GeoBounds bounds,
+                Map<String, String> metadata) {
+            List<MapItem> ret = new ArrayList<>();
+            for (DeepMapItemQuery query : parentOverlay.childQueries) {
+                Collection<MapItem> items = query.deepFindItems(bounds,
+                        metadata);
+                if (items != null)
+                    ret.addAll(items);
+            }
+            return ret;
+        }
+
+        @Override
+        public SortedSet<MapItem> deepHitTest(MapView mapView,
+                HitTestQueryParameters params,
+                Map<Layer2, Collection<HitTestControl>> controls) {
+            SortedSet<MapItem> ret = new TreeSet<>(
+                    MapItem.ZORDER_HITTEST_COMPARATOR);
+            for (DeepMapItemQuery query : parentOverlay.childQueries) {
+                if (query instanceof DeepHitTestControlQuery) {
+                    SortedSet<MapItem> items = ((DeepHitTestControlQuery) query)
+                            .deepHitTest(mapView, params, controls);
+                    if (items != null)
+                        ret.addAll(items);
+                }
+            }
+            return ret;
+        }
     }
 }

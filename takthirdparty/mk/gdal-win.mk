@@ -5,9 +5,11 @@ endif
 gdal_libfile=gdal200.$(LIB_SHAREDSUFFIX)
 gdal_local_libfile=$(OUTDIR)/$(gdal_local_srcdir)/$(gdal_libfile)
 gdal_out_lib=$(OUTDIR)/lib/$(gdal_libfile)
-gdal_local_csharplibs=$(foreach ilib,gdalconst gdaljni ogrjni osrjni,$(OUTDIR)/$(gdal_local_srcdir)/swig/java/$(LIB_PREFIX)$(ilib)$(LIB_SHAREDSUFFIX))
-gdal_out_csharplibs=$(foreach ilib,gdalconst gdaljni ogrjni osrjni,$(OUTDIR)/lib/$(LIB_PREFIX)$(ilib)$(LIB_SHAREDSUFFIX))
-gdal_out_javalibs=$(gdal_out_csharplibs)
+gdal_local_csharplibs=$(foreach ilib,gdalconst gdal ogr osr,$(OUTDIR)/$(gdal_local_srcdir)/swig/csharp/$(LIB_PREFIX)$(ilib)_csharp$(LIB_SHAREDSUFFIX) $(OUTDIR)/$(gdal_local_srcdir)/swig/csharp/$(LIB_PREFIX)$(ilib)_wrap$(LIB_SHAREDSUFFIX))
+gdal_out_csharplibs=$(foreach ilib,gdalconst gdal ogr osr,$(OUTDIR)/lib/$(LIB_PREFIX)$(ilib)_csharp$(LIB_SHAREDSUFFIX) $(OUTDIR)/lib/$(LIB_PREFIX)$(ilib)_wrap$(LIB_SHAREDSUFFIX))
+gdal_local_javalibs=$(foreach ilib,gdalalljni,$(OUTDIR)/$(gdal_local_srcdir)/swig/java/$(LIB_PREFIX)$(ilib)$(LIB_SHAREDSUFFIX))
+gdal_out_javalibs=$(foreach ilib,gdalalljni,$(OUTDIR)/lib/$(LIB_PREFIX)$(ilib)$(LIB_SHAREDSUFFIX))
+gdal_extra_swiglibs=$(gdal_out_csharplibs)
 include mk/gdal-common.mk
 
 
@@ -16,10 +18,10 @@ gdalkdu_rd_suffix_debug=D
 gdalkdu_rd_suffix=$(gdalkdu_rd_suffix_$(BUILD_TYPE))
 
 gdal_kdu_yes=KAKDIR='$(OUTDIR_WIN)\\kdu'                                     \
-KAKLIB='$(OUTDIR_WIN)\\kdu\\lib_$(gdal_win_arch)\\kdu_v64$(gdalkdu_rd_suffix).lib' \
+KAKLIB='$(OUTDIR_WIN)\\kdu_bin\\lib_$(gdal_win_arch)\\kdu_v64$(gdalkdu_rd_suffix).lib' \
 KAKCFLAGS="/DKDU_MAJOR_VERSION=6"                                            \
-KAKSRC='$(OUTDIR_WIN)\\kdu'                                                  \
-KAKOBJDIR='$(OUTDIR_WIN)\\kdu\v6_generated_$(gdal_win_arch)'                 \
+KAKSRC='$(OUTDIR_WIN)\\kdu_bin'                                                  \
+KAKOBJDIR='$(OUTDIR_WIN)\\kdu_bin\v6_generated_$(gdal_win_arch)'                 \
 
 gdal_kdu=$(gdal_kdu_$(GDAL_USE_KDU))
 
@@ -85,7 +87,7 @@ gdal_nmake_msvcver=$(gdal_nmake_msvcver_$(VS_VER_MSB))
 
 # This is phony because we always want to be invoking gdal make to be sure
 # the files are up to date;  it knows if anything needs to be done
-.PHONY: gdal_build gdal_csharp
+.PHONY: gdal_build gdal_csharp gdal_java
 gdal_build: $(OUTDIR)/$(gdal_local_srcdir)
 	cd $(OUTDIR)/$(gdal_local_srcdir) &&                             \
 	    $(gdal_config)                                               \
@@ -104,11 +106,20 @@ gdal_csharp: $(OUTDIR)/$(gdal_local_srcdir)
 	    $(gdal_config)                                               \
 	    $(VS_SETUP) nmake /f makefile.vc $(gdal_nmake_msvcver) csharp
 
+gdal_java: $(OUTDIR)/$(gdal_local_srcdir)
+	cd $(OUTDIR)/$(gdal_local_srcdir)/swig &&                        \
+	    $(gdal_config)                                               \
+	    $(VS_SETUP) nmake /f makefile.vc $(gdal_nmake_msvcver) java
+	cd $(OUTDIR)/$(gdal_local_srcdir)/swig/java && ant
+
 $(gdal_local_libfile): gdal_build
 	@echo "gdal built"
 
 $(gdal_local_csharplibs): gdal_csharp
 	@echo "gdal csharp Bindings built"
+
+$(gdal_local_javalibs): gdal_java
+	@echo "gdal java Bindings built"
 
 $(gdal_out_lib): $(gdal_local_libfile)
 	cd $(OUTDIR)/$(gdal_local_srcdir) &&                             \
@@ -117,6 +128,11 @@ $(gdal_out_lib): $(gdal_local_libfile)
 
 $(gdal_out_csharplibs): $(gdal_local_csharplibs)
 	cd $(OUTDIR)/$(gdal_local_srcdir)/swig/csharp &&                 \
+	    $(gdal_config)                                               \
+	    $(VS_SETUP) nmake /f makefile.vc $(gdal_nmake_msvcver) install
+
+$(gdal_out_javalibs): $(gdal_local_javalibs)
+	cd $(OUTDIR)/$(gdal_local_srcdir)/swig/java &&                 \
 	    $(gdal_config)                                               \
 	    $(VS_SETUP) nmake /f makefile.vc $(gdal_nmake_msvcver) install
 

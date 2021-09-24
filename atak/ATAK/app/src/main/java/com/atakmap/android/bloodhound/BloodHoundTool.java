@@ -9,7 +9,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Point;
+import android.graphics.PointF;
 import android.os.Bundle;
 
 import com.atakmap.android.bloodhound.ui.BloodHoundNavWidget;
@@ -17,6 +17,7 @@ import com.atakmap.android.bloodhound.ui.BloodHoundRouteWidget;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 
+import android.preference.PreferenceManager;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -121,6 +122,10 @@ public class BloodHoundTool extends ButtonTool implements
     private PointMapItem _startItem = null;
     private PointMapItem _endItem = null;
 
+    private final SharedPreferences navPrefs;
+    private boolean oldKeyGuardSetting;
+    private boolean oldScreenLockSetting;
+
     private boolean running = false;
     private boolean manuallyClosed = true;
 
@@ -187,6 +192,14 @@ public class BloodHoundTool extends ButtonTool implements
         super(mapView, button, TOOL_IDENTIFIER);
 
         _prefs = new BloodHoundPreferences(mapView);
+
+        navPrefs = PreferenceManager.getDefaultSharedPreferences(mapView
+                .getContext());
+        // set up the default state of the key guard and the screen lock
+        this.oldKeyGuardSetting = navPrefs.getBoolean("atakDisableKeyguard",
+                false);
+        this.oldScreenLockSetting = navPrefs.getBoolean("atakScreenLock",
+                false);
 
         _bloodHoundHUD = bloodHoundHUD;
         _bloodHoundHUD.setToolbarButton(this);
@@ -313,6 +326,21 @@ public class BloodHoundTool extends ButtonTool implements
     @Override
     public void setActive(boolean active) {
         super.setActive(running);
+
+        if (active) {
+            // set up the default state of the key guard and the screen lock
+            this.oldKeyGuardSetting = navPrefs.getBoolean("atakDisableKeyguard",
+                    false);
+            this.oldScreenLockSetting = navPrefs.getBoolean("atakScreenLock",
+                    false);
+            navPrefs.edit().putBoolean("atakDisableKeyguard", true)
+                    .putBoolean("atakScreenLock", true).apply();
+        } else {
+            navPrefs.edit()
+                    .putBoolean("atakDisableKeyguard", oldKeyGuardSetting)
+                    .putBoolean("atakScreenLock", oldScreenLockSetting).apply();
+
+        }
         Log.d(TAG, "bloodhound setActive:" + running);
         if (_amd != null) {
             _amd.setSelected(active);
@@ -517,20 +545,20 @@ public class BloodHoundTool extends ButtonTool implements
             //Now look for spoi_uid. Not sure what this impacts
             parentItem = _mapView.getRootGroup().deepFindItem("spoi_uid",
                     spiItem.getUID());
+            String pCallSign;
             if (parentItem != null) {
-                String pCallSign = parentItem.getMetaString("callsign", null);
+                pCallSign = parentItem.getMetaString("callsign", null);
                 if (pCallSign == null)
                     pCallSign = parentItem.getUID();
                 //Log.d(TAG, "Found spoi_uid parent: " + parentItem.getUID() + ", callsign=" + pCallSign);
-                spiItem.setMetaString("parent_callsign", pCallSign);
             } else {
                 //otherwise just use SPI callsign, if none exists use the UID as label
-                String pCallSign = spiItem.getMetaString("callsign", "SPI-"
+                pCallSign = spiItem.getMetaString("callsign", "SPI-"
                         + spiItem.getUID());
 
                 //Log.w(TAG, "Couldn't determine parent of " + spiItem.getUID() + ", using callsign: " + pCallSign);
-                spiItem.setMetaString("parent_callsign", pCallSign);
             }
+            spiItem.setMetaString("parent_callsign", pCallSign);
         }
 
         //now sort based on distance from self
@@ -656,7 +684,7 @@ public class BloodHoundTool extends ButtonTool implements
                                 ((PointMapItem) item).getPoint());
                     }
 
-                    String title = getDisplayLabel(item, da);
+                    final String title = getDisplayLabel(item, da);
                     if (ret instanceof TextView)
                         ((TextView) ret).setText(title);
                     return ret;
@@ -827,7 +855,7 @@ public class BloodHoundTool extends ButtonTool implements
             public void onMapEvent(MapEvent event) {
                 String type = event.getType();
                 if (MapEvent.MAP_CLICK.equals(type)) {
-                    Point p = event.getPoint();
+                    PointF p = event.getPointF();
                     GeoPointMetaData gp = _mapView.inverse(p.x, p.y,
                             AtakMapView.InverseMode.RayCast);
                     PointMapItem pmi = new PlacePointTool.MarkerCreator(gp)

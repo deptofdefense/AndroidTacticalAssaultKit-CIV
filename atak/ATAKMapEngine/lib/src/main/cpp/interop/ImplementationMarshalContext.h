@@ -96,7 +96,8 @@ namespace TAKEngineJNI {
                 code = Pointer_get(value, env, msourcePtr);
                 TE_CHECKRETURN_CODE(code);
                 // intern native-to-managed
-                nativeImplToManagedWrapper[value.get()] = env.NewWeakGlobalRef(obj);
+                if(nativeImplToManagedWrapper.find(value.get()) == nativeImplToManagedWrapper.end())
+                    nativeImplToManagedWrapper[value.get()] = env.NewWeakGlobalRef(obj);
                 return TAK::Engine::Util::TE_Ok;
             } while(false);
 

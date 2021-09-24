@@ -491,10 +491,7 @@ public class TargetBubbleReceiver extends BroadcastReceiver implements
 
         int threeQuartersHeight = 3 * mapView.getHeight() / 4;
         int threeQuartersWidth = 3 * mapView.getWidth() / 4;
-        squareSide = threeQuartersHeight;
-        if (threeQuartersWidth < threeQuartersHeight) {
-            squareSide = threeQuartersWidth;
-        }
+        squareSide = Math.min(threeQuartersWidth, threeQuartersHeight);
         exitReticle.orientationChanged();
         cancelReticle.orientationChanged();
 

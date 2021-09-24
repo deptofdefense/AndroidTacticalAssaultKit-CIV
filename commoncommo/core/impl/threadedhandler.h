@@ -1,8 +1,7 @@
 #ifndef IMPL_THREADEDHANDLER_H_
 #define IMPL_THREADEDHANDLER_H_
 
-#include <Thread.h>
-#include <Mutex.h>
+#include "commothread.h"
 #include "commoutils.h"
 #include <vector>
 #include <string>
@@ -37,12 +36,12 @@ private:
     {
         size_t id;
         ThreadedHandler *owner;
-        PGSC::Thread::ThreadPtr thread;
-        PGSC::Thread::Mutex stateMutex;
+        thread::ThreadPtr thread;
+        thread::Mutex stateMutex;
         std::string name;
         bool shouldStop;
 
-        ThreadContext(size_t id, ThreadedHandler *owner, const char *name) : id(id), owner(owner), thread(NULL, NULL), name(name ? name : ""), shouldStop(false) {};
+        ThreadContext(size_t id, ThreadedHandler *owner, const char *name) : id(id), owner(owner), thread(), name(name ? name : ""), shouldStop(false) {};
         void start();
         void stop();
     private:

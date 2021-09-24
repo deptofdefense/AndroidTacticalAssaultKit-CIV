@@ -2,7 +2,6 @@
 package com.atakmap.android.maps.graphics;
 
 import android.graphics.Color;
-import android.graphics.Rect;
 import android.graphics.Typeface;
 
 import com.atakmap.android.maps.MapItem;
@@ -10,13 +9,13 @@ import com.atakmap.android.maps.MapTextFormat;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.Marker.OnIconChangedListener;
-import com.atakmap.android.maps.Marker.OnMarkerHitBoundsChangedListener;
 import com.atakmap.android.maps.Marker.OnStateChangedListener;
 import com.atakmap.android.maps.Marker.OnStyleChangedListener;
 import com.atakmap.android.maps.Marker.OnSummaryChangedListener;
 import com.atakmap.android.maps.Marker.OnTitleChangedListener;
 import com.atakmap.android.maps.Marker.OnTrackChangedListener;
 import com.atakmap.android.maps.PointMapItem;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.maps.assets.Icon;
@@ -24,7 +23,10 @@ import com.atakmap.coremap.maps.assets.Icon;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.MapRenderer3;
 import com.atakmap.map.RenderContext;
+import com.atakmap.map.hittest.HitRect;
+import com.atakmap.map.hittest.HitTestResult;
 import com.atakmap.map.layer.control.ClampToGroundControl;
 import com.atakmap.map.layer.feature.Feature.AltitudeMode;
 import com.atakmap.map.layer.feature.geometry.Point;
@@ -33,7 +35,10 @@ import com.atakmap.map.opengl.GLMapBatchable2;
 import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
+import com.atakmap.map.hittest.HitTestQueryParameters;
 import com.atakmap.math.MathUtils;
+import com.atakmap.math.PointD;
+import com.atakmap.math.Rectangle;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLRenderBatch;
 import com.atakmap.opengl.GLRenderBatch2;
@@ -41,12 +46,10 @@ import com.atakmap.opengl.GLText;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.ArrayList;
 
 public class GLMarker2 extends GLPointMapItem2 implements
         OnIconChangedListener,
         OnStateChangedListener, OnTitleChangedListener,
-        OnMarkerHitBoundsChangedListener,
         OnTrackChangedListener,
         OnStyleChangedListener,
         OnSummaryChangedListener,
@@ -61,6 +64,7 @@ public class GLMarker2 extends GLPointMapItem2 implements
 
     private final static double DEFAULT_MIN_RENDER_SCALE = (1.0d / 100000.0d);
 
+    private final Marker _subject;
     private int state;
     private GLIcon _icon;
     private int _iconVisibility;
@@ -69,22 +73,20 @@ public class GLMarker2 extends GLPointMapItem2 implements
     private int _labelOffX = 0;
     private int _labelOffY = 0;
     private float _labelOffZ = 0f;
+    private final PointD _point = new PointD();
     private GLLabelManager.VerticalAlignment _labelVAlign = GLLabelManager.VerticalAlignment.Bottom;
     private int _textColor;
     private String _text = "";
-    private int _extraLines = 0;
-    private final ArrayList<String> _linesArray = new ArrayList<>();
+    private final HitRect _hitRect = new HitRect();
     private ByteBuffer _borderVerts;
     private float _heading = 0f;
     private double _height = 0d; // height in meters
     private int _style;
     private int _color = Color.WHITE;
-    private float _marqueeOffset = 0f;
-    private long _marqueeTimer = 0;
     private GLImage _alertImage;
-    private int textRenderFlag = Marker.TEXT_STATE_DEFAULT;
-    private boolean displayLabel; // set by isBatchable,
-                                  // used by batch()
+    private int textRenderFlag;
+    private boolean _labelVisible;
+
     private int _labelTextSize;
     private final Typeface _labelTypeface;
 
@@ -92,7 +94,7 @@ public class GLMarker2 extends GLPointMapItem2 implements
     private static ByteBuffer tiltLineBuffer = null;
     private static long tiltLineBufferPtr = 0L;
 
-    private GLLabelManager _labelManager;
+    private final GLLabelManager _labelManager;
     private String _extraLinesText;
 
     private boolean _nadirClamp;
@@ -101,6 +103,7 @@ public class GLMarker2 extends GLPointMapItem2 implements
 
     public GLMarker2(MapRenderer surface, Marker subject) {
         super(surface, subject, GLMapView.RENDER_PASS_SPRITES);
+        _subject = subject;
         state = subject.getState();
         textRenderFlag = subject.getTextRenderFlag();
         _verts = new GLTriangle.Fan(2, 4);
@@ -116,7 +119,6 @@ public class GLMarker2 extends GLPointMapItem2 implements
 
     private void initState(Marker subject) {
         final Icon icon = subject.getIcon();
-        final Rect hitBounds = subject.getMarkerHitBounds();
         final String title = getTitle(subject);
         final String extraLines = getExtraLines(subject);
         final float heading = (float) subject.getTrackHeading();
@@ -132,6 +134,12 @@ public class GLMarker2 extends GLPointMapItem2 implements
         runOnGLThread(new Runnable() {
             @Override
             public void run() {
+                // Selection highlight box
+                _borderVerts = GLTriangle.Strip.createBuffer(
+                        GLTriangle.Strip.createRectangle(-32, -32, 64, 64,
+                                null),
+                        _borderVerts);
+
                 textRenderFlag = trf;
 
                 _height = height;
@@ -139,7 +147,6 @@ public class GLMarker2 extends GLPointMapItem2 implements
                 refreshLabel(title, extraLines);
 
                 _updateIcon(icon, state);
-                _setBoarderVerts(hitBounds);
                 _setHeading(heading);
                 _style = style;
 
@@ -185,7 +192,7 @@ public class GLMarker2 extends GLPointMapItem2 implements
         });
     }
 
-    private boolean ensureLabel() {
+    private boolean ensureLabel(GLMapView view) {
         if (_labelID == GLLabelManager.NO_ID) {
             _labelID = _labelManager.addLabel();
             MapTextFormat mapTextFormat = new MapTextFormat(_labelTypeface,
@@ -197,9 +204,8 @@ public class GLMarker2 extends GLPointMapItem2 implements
             _labelManager.setVerticalAlignment(_labelID, _labelVAlign);
             _labelManager.setDesiredOffset(_labelID, _labelOffX, _labelOffY,
                     _labelOffZ);
-            boolean labelVisible = this.displayLabel && this.visible &&
-                    (this.textRenderFlag & Marker.TEXT_STATE_NEVER_SHOW) == 0;
-            _labelManager.setVisible(_labelID, labelVisible);
+            _labelManager.setVisible(_labelID,
+                    _labelVisible = shouldDrawLabel(view));
             _labelManager.setAltitudeMode(_labelID, getAltitudeMode());
             _labelManager.setPriority(_labelID, _labelPriority);
             return true;
@@ -217,7 +223,7 @@ public class GLMarker2 extends GLPointMapItem2 implements
     }
 
     private void updateLabelVisibility(GLMapView view) {
-        if (ensureLabel()) {
+        if (ensureLabel(view)) {
             // label was newly created, init geometry, text, etc.
             if (_text != null && !_text.isEmpty()) {
                 String fullText = _text;
@@ -232,13 +238,9 @@ public class GLMarker2 extends GLPointMapItem2 implements
         // if the displayLables preference is checked display the text if
         // the marker requested to always have the text show or if the scale is zoomed in enough
 
-        if (shouldDrawLabel(view) != displayLabel) {
-            displayLabel = !(displayLabel);
-            boolean labelVisible = this.visible &&
-                    displayLabel &&
-                    (this.textRenderFlag & Marker.TEXT_STATE_NEVER_SHOW) == 0;
-            _labelManager.setVisible(_labelID, labelVisible);
-        }
+        boolean labelVisible = shouldDrawLabel(view);
+        if (labelVisible != _labelVisible)
+            _labelManager.setVisible(_labelID, _labelVisible = labelVisible);
 
         int offx = 0;
         int offy = 0;
@@ -318,6 +320,29 @@ public class GLMarker2 extends GLPointMapItem2 implements
         }
     }
 
+    private void updateHitRect() {
+        float x = (float) _point.x;
+        float y = (float) _point.y;
+        float w = 0, h = 0;
+        if (_icon != null && _iconVisibility != Marker.ICON_GONE) {
+            // Icon is visible - use icon dimensions
+            w = _icon.getWidth();
+            h = _icon.getHeight();
+        } else if (_labelID != GLLabelManager.NO_ID) {
+            // Icon is not visible - use the label dimensions
+            Rectangle r = new Rectangle();
+            _labelManager.getSize(_labelID, r);
+            _hitRect.set((float) r.X,
+                    (float) r.Y,
+                    (float) (r.X + r.Width),
+                    (float) (r.Y + r.Height));
+            return;
+        }
+        w /= 2;
+        h /= 2;
+        _hitRect.set(x - w, y - h, x + w, y + h);
+    }
+
     @Override
     public void startObserving() {
         final Marker marker = (Marker) this.subject;
@@ -326,7 +351,6 @@ public class GLMarker2 extends GLPointMapItem2 implements
         marker.addOnStateChangedListener(this);
         marker.addOnTitleChangedListener(this);
         marker.addOnSummaryChangedListener(this);
-        marker.addOnMarkerHitBoundsChangedListener(this);
         marker.addOnTrackChangedListener(this);
         marker.addOnStyleChangedListener(this);
         marker.addOnLabelSizeChangedListener(this);
@@ -344,7 +368,6 @@ public class GLMarker2 extends GLPointMapItem2 implements
         marker.removeOnStateChangedListener(this);
         marker.removeOnTitleChangedListener(this);
         marker.removeOnSummaryChangedListener(this);
-        marker.removeOnMarkerHitBoundsChangedListener(this);
         marker.removeOnTrackChangedListener(this);
         marker.removeOnStyleChangedListener(this);
         marker.removeOnLabelSizeChangedListner(this);
@@ -431,7 +454,6 @@ public class GLMarker2 extends GLPointMapItem2 implements
             public void run() {
                 textRenderFlag = trf;
                 // toggle `displayLabel` to force state reset
-                displayLabel = !displayLabel;
                 state = sstate;
                 setTextColor(textColor);
 
@@ -448,10 +470,6 @@ public class GLMarker2 extends GLPointMapItem2 implements
             @Override
             public void run() {
                 refreshLabel(title, extraLines);
-
-                // Need to re-center in case there's a summary
-                if (_extraLines > 0)
-                    onSummaryChanged(marker);
             }
         });
     }
@@ -513,37 +531,6 @@ public class GLMarker2 extends GLPointMapItem2 implements
                 Color.blue(color) / 255f, Color.alpha(color) / 255f);
     }
 
-    /**
-     * Function to parse the string, splits the string on newline char's else the string will remain
-     * one big long string
-     * 
-     * @param text - The string to parse
-     */
-    private void parseText(String text) {
-        _extraLines = 0;
-        _linesArray.clear();
-        if (FileSystemUtils.isEmpty(text))
-            return;
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < text.length(); i++) {
-            char c = text.charAt(i);
-            sb.append(c);
-            // If we hit a new line char
-            if (c == '\n') {
-                sb.deleteCharAt(sb.length() - 1);
-                // Store what we currently have
-                _linesArray.add(sb.toString());
-                _extraLines += 1;
-                // Get ready to read chars until the next newline
-                sb.delete(0, sb.length());
-            }
-        }
-        if (sb.length() > 0) {
-            _extraLines += 1;
-            _linesArray.add(sb.toString());
-        }
-    }
-
     private void _buildArrow() {
 
         float tip = (float) Math.ceil(20f * MapView.DENSITY);
@@ -588,12 +575,14 @@ public class GLMarker2 extends GLPointMapItem2 implements
         // Check if we need to update the points based on if the map is tilted
         checkNadirClamp(ortho);
 
-        float[] pos = getDrawPosition(ortho);
-        float xpos = pos[0], ypos = pos[1], zpos = pos[2];
+        updateDrawPosition(ortho);
+        float xpos = (float) _point.x;
+        float ypos = (float) _point.y;
+        float zpos = (float) _point.z;
 
         // draw a line segment from the center of the point into the earth's
         // surface
-        if (shouldDrawLollipop(ortho, zpos)) {
+        if (shouldDrawLollipop(ortho)) {
             final double terrain = validateLocalElevation(ortho);
             double anchorEl = Math.min(terrain, 0d);
             ortho.scratch.geo.set(
@@ -601,33 +590,59 @@ public class GLMarker2 extends GLPointMapItem2 implements
                             * ortho.elevationScaleFactor);
 
             ortho.scene.forward(ortho.scratch.geo, ortho.scratch.pointD);
-            float xsurface = (float) ortho.scratch.pointD.x;
-            float ysurface = (float) ortho.scratch.pointD.y;
-            float zsurface = (float) ortho.scratch.pointD.z;
+            float x1 = (float) ortho.scratch.pointD.x;
+            float y1 = (float) ortho.scratch.pointD.y;
+            float z1 = (float) ortho.scratch.pointD.z;
 
-            if (tiltLineBuffer == null) {
-                tiltLineBuffer = Unsafe.allocateDirect(24);
-                tiltLineBuffer.order(ByteOrder.nativeOrder());
-                tiltLineBufferPtr = Unsafe.getBufferPointer(tiltLineBuffer);
+            float x0 = xpos;
+            float y0 = ypos;
+            float z0 = zpos;
+
+            // if the lollipop end is behind the camera, recompute to avoid
+            // rendering artifacts as non perspective adjusted coordinates
+            // get mirrored
+            if (zpos >= 1f) {
+                // get camera position in LLA
+                ortho.currentPass.scene.mapProjection.inverse(
+                        ortho.currentPass.scene.camera.location,
+                        ortho.scratch.geo);
+                // compute lollipop top at camera height
+                ortho.scratch.geo.set(latitude, longitude,
+                        ortho.scratch.geo.getAltitude()
+                                - ortho.currentPass.scene.camera.nearMeters);
+                ortho.currentPass.scene.forward(ortho.scratch.geo,
+                        ortho.scratch.pointD);
+                x0 = (float) ortho.scratch.pointD.x;
+                y0 = (float) ortho.scratch.pointD.y;
+                z0 = (float) ortho.scratch.pointD.z;
             }
 
-            Unsafe.setFloats(tiltLineBufferPtr + 0, xpos, ypos, zpos);
-            Unsafe.setFloats(tiltLineBufferPtr + 12, xsurface, ysurface,
-                    zsurface);
+            if (z0 < 1f && z1 < 1f) {
+                if (tiltLineBuffer == null) {
+                    tiltLineBuffer = Unsafe.allocateDirect(24);
+                    tiltLineBuffer.order(ByteOrder.nativeOrder());
+                    tiltLineBufferPtr = Unsafe.getBufferPointer(tiltLineBuffer);
+                }
 
-            GLES20FixedPipeline.glColor4f(Color.red(_color) / 255f,
-                    Color.green(_color) / 255f,
-                    Color.blue(_color) / 255f,
-                    Color.alpha(_color) / 255f);
-            GLES20FixedPipeline.glLineWidth(2f);
-            GLES20FixedPipeline
-                    .glEnableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
-            GLES20FixedPipeline.glVertexPointer(3,
-                    GLES20FixedPipeline.GL_FLOAT, 0, tiltLineBuffer);
-            GLES20FixedPipeline
-                    .glDrawArrays(GLES20FixedPipeline.GL_LINES, 0, 2);
-            GLES20FixedPipeline
-                    .glDisableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
+                Unsafe.setFloats(tiltLineBufferPtr + 0, x0, y0, z0);
+                Unsafe.setFloats(tiltLineBufferPtr + 12, x1, y1, z1);
+
+                GLES20FixedPipeline.glColor4f(Color.red(_color) / 255f,
+                        Color.green(_color) / 255f,
+                        Color.blue(_color) / 255f,
+                        Color.alpha(_color) / 255f);
+                GLES20FixedPipeline.glLineWidth(2f);
+                GLES20FixedPipeline
+                        .glEnableClientState(
+                                GLES20FixedPipeline.GL_VERTEX_ARRAY);
+                GLES20FixedPipeline.glVertexPointer(3,
+                        GLES20FixedPipeline.GL_FLOAT, 0, tiltLineBuffer);
+                GLES20FixedPipeline
+                        .glDrawArrays(GLES20FixedPipeline.GL_LINES, 0, 2);
+                GLES20FixedPipeline
+                        .glDisableClientState(
+                                GLES20FixedPipeline.GL_VERTEX_ARRAY);
+            }
         }
 
         GLES20FixedPipeline.glPushMatrix();
@@ -725,6 +740,7 @@ public class GLMarker2 extends GLPointMapItem2 implements
         }
 
         updateLabelVisibility(ortho);
+        updateHitRect();
 
         GLES20FixedPipeline.glPopMatrix();
     }
@@ -738,7 +754,7 @@ public class GLMarker2 extends GLPointMapItem2 implements
         }
     }
 
-    private float[] getDrawPosition(GLMapView ortho) {
+    private void updateDrawPosition(GLMapView ortho) {
         ortho.scratch.geo.set(this.latitude,
                 ortho.idlHelper.wrapLongitude(this.longitude));
 
@@ -760,24 +776,18 @@ public class GLMarker2 extends GLPointMapItem2 implements
             alt += height;
 
         ortho.scratch.geo.set(alt);
-        forward(ortho, ortho.scratch.geo, ortho.scratch.pointD, 0d, terrain);
-        float[] pos = {
-                (float) ortho.scratch.pointD.x,
-                (float) ortho.scratch.pointD.y,
-                (float) ortho.scratch.pointD.z
-        };
+        forward(ortho, ortho.scratch.geo, _point, 0d, terrain);
         if (ortho.drawTilt > 0d) {
             // move up ~5 pixels from surface
             // ypos += 5;
             // move up half icon height
             if (_icon != null && _iconVisibility != Marker.ICON_GONE) {
-                pos[1] += (_icon.getHeight() / 2d)
+                _point.y += (_icon.getHeight() / 2d)
                         * Math.sin(Math.toRadians(ortho.currentScene.drawTilt));
-                pos[2] += -0.00025d
+                _point.z += -0.00025d
                         * Math.cos(Math.toRadians(ortho.currentScene.drawTilt));
             }
         }
-        return pos;
     }
 
     /**
@@ -790,7 +800,8 @@ public class GLMarker2 extends GLPointMapItem2 implements
         // Text empty or labels set to never show
         if (textRenderFlag == Marker.TEXT_STATE_NEVER_SHOW
                 || !GLMapSurface.SETTING_displayLabels
-                || FileSystemUtils.isEmpty(_text))
+                || FileSystemUtils.isEmpty(_text)
+                || !this.visible)
             return false;
 
         // Always show label
@@ -816,11 +827,10 @@ public class GLMarker2 extends GLPointMapItem2 implements
     /**
      * Check if we should draw the altitude "lollipop" under the marker
      * @param ortho Map view
-     * @param zpos Marker z-position
      * @return True to draw lollipop stick
      */
-    private boolean shouldDrawLollipop(GLMapView ortho, float zpos) {
-        if ( (!getLollipopsVisible() && ortho.drawTilt > 0)  || zpos >= 1f)
+    private boolean shouldDrawLollipop(GLMapView ortho) {
+        if ((!getLollipopsVisible() && ortho.drawTilt > 0))
             return false;
         return ortho.currentScene.drawTilt > 0d
                 || ortho.currentPass.scene.camera.perspective && !_nadirClamp;
@@ -857,13 +867,8 @@ public class GLMarker2 extends GLPointMapItem2 implements
         // if the displayLables preference is checked display the text if
         // the marker requested to always have the text show or if the scale is zoomed in enough
 
-        if (shouldDrawLabel(ortho)) {
-            if (_text.length() > 0)
-                textureCount += 2;
-            // Don't know what textureCount does but apparently we need to add to it here
-            if (_extraLines > 0)
-                textureCount += 2;
-        }
+        if (shouldDrawLabel(ortho))
+            textureCount += 2;
 
         return (textureCount <= GLRenderBatch.getBatchTextureUnitLimit());
     }
@@ -885,12 +890,14 @@ public class GLMarker2 extends GLPointMapItem2 implements
 
         long deltaTime = view.animationDelta;
 
-        float[] pos = getDrawPosition(view);
-        float xpos = pos[0], ypos = pos[1], zpos = pos[2];
+        updateDrawPosition(view);
+        float xpos = (float) _point.x;
+        float ypos = (float) _point.y;
+        float zpos = (float) _point.z;
 
         // draw a line segment from the center of the point into the earth's
         // surface
-        if (shouldDrawLollipop(view, zpos)) {
+        if (shouldDrawLollipop(view)) {
             final double terrain = validateLocalElevation(view);
             double anchorEl = Math.min(terrain, 0d);
             view.scratch.geo.set(
@@ -898,17 +905,42 @@ public class GLMarker2 extends GLPointMapItem2 implements
                             * view.elevationScaleFactor);
 
             view.scene.forward(view.scratch.geo, view.scratch.pointD);
-            float xsurface = (float) view.scratch.pointD.x;
-            float ysurface = (float) view.scratch.pointD.y;
-            float zsurface = (float) view.scratch.pointD.z;
+            float x1 = (float) view.scratch.pointD.x;
+            float y1 = (float) view.scratch.pointD.y;
+            float z1 = (float) view.scratch.pointD.z;
 
-            batch.setLineWidth(2f);
-            batch.batch(xpos, ypos, zpos,
-                    xsurface, ysurface, zsurface,
-                    Color.red(_color) / 255f,
-                    Color.green(_color) / 255f,
-                    Color.blue(_color) / 255f,
-                    Color.alpha(_color) / 255f);
+            float x0 = xpos;
+            float y0 = ypos;
+            float z0 = zpos;
+
+            // if the lollipop end is behind the camera, recompute to avoid
+            // rendering artifacts as non perspective adjusted coordinates
+            // get mirrored
+            if (z0 >= 1f) {
+                // get camera position in LLA
+                view.currentPass.scene.mapProjection.inverse(
+                        view.currentPass.scene.camera.location,
+                        view.scratch.geo);
+                // compute lollipop top at camera height
+                view.scratch.geo.set(latitude, longitude,
+                        view.scratch.geo.getAltitude()
+                                - view.currentPass.scene.camera.nearMeters);
+                view.currentPass.scene.forward(view.scratch.geo,
+                        view.scratch.pointD);
+                x0 = (float) view.scratch.pointD.x;
+                y0 = (float) view.scratch.pointD.y;
+                z0 = (float) view.scratch.pointD.z;
+            }
+
+            if (z0 < 1f && z1 < 1f) {
+                batch.setLineWidth(2f);
+                batch.batch(x0, y0, z0,
+                        x1, y1, z1,
+                        Color.red(_color) / 255f,
+                        Color.green(_color) / 255f,
+                        Color.blue(_color) / 255f,
+                        Color.alpha(_color) / 255f);
+            }
         }
 
         if (_icon != null && _iconVisibility == Marker.ICON_VISIBLE) {
@@ -951,6 +983,7 @@ public class GLMarker2 extends GLPointMapItem2 implements
         }
 
         updateLabelVisibility(view);
+        updateHitRect();
     }
 
     private void _setHeading(float heading) {
@@ -1018,21 +1051,12 @@ public class GLMarker2 extends GLPointMapItem2 implements
         }
     }
 
-    private void _setBoarderVerts(Rect rect) {
-        _borderVerts = GLTriangle.Strip.createBuffer(
-                GLTriangle.Strip.createRectangle(-32, -32, 64, 64, null),
-                _borderVerts);
-    }
-
-    @Override
+    /**
+     * @deprecated No longer used (never actually used in the first place)
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
     public void onMarkerHitBoundsChanged(Marker marker) {
-        final Rect rect = marker.getMarkerHitBounds(null);
-        context.queueEvent(new Runnable() {
-            @Override
-            public void run() {
-                _setBoarderVerts(rect);
-            }
-        });
     }
 
     // XXX - from GLMapSurface
@@ -1052,7 +1076,55 @@ public class GLMarker2 extends GLPointMapItem2 implements
             public void run() {
                 _height = height;
                 refreshLabelGeometry();
+
+                synchronized (bounds) {
+                    updateBoundsZ();
+                }
+                dispatchOnBoundsChanged();
             }
         });
     }
+
+    @Override
+    protected HitTestResult hitTestImpl(MapRenderer3 renderer,
+            HitTestQueryParameters params) {
+        if (!_hitRect.isEmpty() && _hitRect.intersects(params.rect))
+            return new HitTestResult(_subject, params.geo);
+        return null;
+    }
+
+    @Override
+    protected void updateBoundsZ() {
+        double minAlt = Math.min(DEFAULT_MIN_ALT, altHae - 10d); // lollipop bottom
+        double maxAlt = altHae + 10d;
+        if (!Double.isNaN(_height))
+            maxAlt += _height;
+        if (Double.isNaN(altHae)) {
+            minAlt = Double.NaN;
+            maxAlt = Double.NaN;
+        } else {
+            switch (getAltitudeMode()) {
+                case Absolute:
+                    //
+                    maxAlt = Math.max(DEFAULT_MAX_ALT, altHae);
+                    break;
+                case Relative:
+                    // offset from min/max surface altitudes
+                    minAlt += DEFAULT_MIN_ALT;
+                    maxAlt += DEFAULT_MAX_ALT;
+                    break;
+                case ClampToGround:
+                    minAlt = DEFAULT_MIN_ALT + _height;
+                    maxAlt = DEFAULT_MAX_ALT + _height;
+                    break;
+                default:
+                    minAlt = Double.NaN;
+                    maxAlt = Double.NaN;
+                    break;
+            }
+        }
+        bounds.setMinAltitude(minAlt);
+        bounds.setMaxAltitude(maxAlt);
+    }
+
 }

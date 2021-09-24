@@ -26,7 +26,6 @@ import android.widget.TabWidget;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.atakmap.android.elev.dt2.Dt2ElevationModel;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.user.geocode.GeocodeManager;
 import com.atakmap.android.user.geocode.GeocodingTask;
@@ -49,6 +48,7 @@ import java.text.DecimalFormat;
 
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.map.elevation.ElevationManager;
 
 /**
  * 
@@ -69,7 +69,6 @@ public class CoordDialogView extends LinearLayout implements
 
     private TabHost _host;
     private Result _result = Result.INVALID;
-    private Dt2ElevationModel _dem;
 
     private String _currElevMSL = "";
     private GeoPointMetaData _currPoint;
@@ -339,7 +338,7 @@ public class CoordDialogView extends LinearLayout implements
         if (_currPoint != null) {
             final String p = CoordinateFormatUtilities.formatToString(
                     _currPoint.get(), _currFormat);
-            final String a = AltitudeUtilities.format(_currPoint, _prefs);
+            final String a = AltitudeUtilities.format(_currPoint);
 
             return p + "\n" + a;
         } else {
@@ -388,8 +387,8 @@ public class CoordDialogView extends LinearLayout implements
         GeoPointMetaData point = _getPoint();
         if (point != null) {
             // pull the elevation and make sure it is in MSL
-            GeoPointMetaData altHAE = _dem.queryPoint(point.get().getLatitude(),
-                    point.get().getLongitude());
+            GeoPointMetaData altHAE = ElevationManager
+                    .getElevationMetadata(point.get());
             double alt = EGM96.getMSL(altHAE.get());
             if (altHAE.get().isAltitudeValid()) {
                 altVal = _formatElevation(SpanUtilities.convert(alt,
@@ -1050,7 +1049,6 @@ public class CoordDialogView extends LinearLayout implements
         }
         _dtedButton = findViewById(R.id.coordDialogDtedButton);
         _dtedButton.setOnClickListener(this);
-        _dem = Dt2ElevationModel.getInstance();
         _updateElev();
         _updatePoint();
 

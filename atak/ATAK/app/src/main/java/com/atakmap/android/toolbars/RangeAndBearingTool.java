@@ -1,6 +1,7 @@
 
 package com.atakmap.android.toolbars;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageButton;
@@ -11,6 +12,7 @@ import com.atakmap.android.maps.MapEventDispatcher;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.Shape;
 import com.atakmap.android.toolbar.ButtonTool;
@@ -31,6 +33,7 @@ public class RangeAndBearingTool extends ButtonTool implements
 
     private PointMapItem _pt1;
     private PointMapItem _pt2;
+    private Marker _startPt;
 
     private final MapGroup _rabGroup;
 
@@ -54,6 +57,7 @@ public class RangeAndBearingTool extends ButtonTool implements
             _rabGroup.clearGroups();*/
         _pt1 = null;
         _pt2 = null;
+        _startPt = null;
     }
 
     @Override
@@ -67,8 +71,11 @@ public class RangeAndBearingTool extends ButtonTool implements
                 _pt1 = (PointMapItem) endpoint;
             else if (endpoint instanceof Shape) {
                 GeoPoint touchPoint = ((Shape) endpoint).findTouchPoint();
-                if (touchPoint != null)
-                    _pt1 = createRabEndpoint(GeoPointMetaData.wrap(touchPoint));
+                if (touchPoint != null) {
+                    GeoPointMetaData point = GeoPointMetaData.wrap(touchPoint);
+                    _pt1 = createRabEndpoint(point);
+                    createStartMarker(point);
+                }
             }
         }
 
@@ -113,16 +120,13 @@ public class RangeAndBearingTool extends ButtonTool implements
 
         // if the tool got canceled, clean up
         if (!_complete) {
-
-            if (_pt1 != null) {
-                _rabGroup.removeItem(_pt1);
-            }
-
-            if (_pt2 != null) {
-                _rabGroup.removeItem(_pt2);
-            }
-
+            _rabGroup.removeItem(_pt1);
+            _rabGroup.removeItem(_pt2);
         }
+
+        if (_startPt != null)
+            _startPt.removeFromGroup();
+        _startPt = null;
 
         _mapView.getMapTouchController().setToolActive(false);
         _mapView.getMapEventDispatcher().clearListeners();
@@ -151,15 +155,7 @@ public class RangeAndBearingTool extends ButtonTool implements
         switch (event.getType()) {
             case MapEvent.MAP_CLICK:
             case MapEvent.MAP_LONG_PRESS:
-                if (_pt1 == null) {
-                    _pt1 = createRabEndpoint(point);
-                    TextContainer.getInstance().closePrompt();
-                    prompt(R.string.rb_measure_prompt);
-                } else if (_pt2 == null) {
-                    _pt2 = createRabEndpoint(point);
-                    makeRabWidget();
-                    requestEndTool();
-                }
+                selectPoint(point);
                 break;
 
             case MapEvent.ITEM_CLICK: {
@@ -193,15 +189,7 @@ public class RangeAndBearingTool extends ButtonTool implements
                     }
                 } else if (item instanceof Shape) {
                     // Shape selected from deconfliction menu
-                    if (_pt1 == null) {
-                        _pt1 = createRabEndpoint(point);
-                        TextContainer.getInstance().closePrompt();
-                        prompt(R.string.rb_measure_prompt);
-                    } else if (_pt2 == null) {
-                        _pt2 = createRabEndpoint(point);
-                        makeRabWidget();
-                        requestEndTool();
-                    }
+                    selectPoint(point);
                 } else {
                     // Tell the event dispatcher we didn't handle the item click, so that it can be
                     // handled as a map click!
@@ -232,10 +220,34 @@ public class RangeAndBearingTool extends ButtonTool implements
             return null;
         RangeAndBearingEndpoint pt = new RangeAndBearingEndpoint(
                 gp, UUID.randomUUID().toString());
-        pt.setClickable(true);
         pt.setMetaString("menu", "menus/rab_endpoint_menu.xml");
         _rabGroup.addItem(pt);
         return pt;
+    }
+
+    private void createStartMarker(GeoPointMetaData gp) {
+        if (_startPt != null)
+            _startPt.removeFromGroup();
+        _startPt = new Marker(gp, UUID.randomUUID().toString());
+        _startPt.setType("shape_marker");
+        _startPt.setShowLabel(false);
+        _startPt.setClickable(false);
+        _startPt.setMetaBoolean("addToObjList", false);
+        _startPt.toggleMetaData("nevercot", true);
+        _startPt.setColor(Color.RED);
+        _rabGroup.addItem(_startPt);
+    }
+
+    private void selectPoint(GeoPointMetaData point) {
+        if (_pt1 == null) {
+            _pt1 = createRabEndpoint(point);
+            createStartMarker(point);
+            prompt(R.string.rb_measure_prompt);
+        } else if (_pt2 == null) {
+            _pt2 = createRabEndpoint(point);
+            makeRabWidget();
+            requestEndTool();
+        }
     }
 
     synchronized protected void prompt(int stringId) {

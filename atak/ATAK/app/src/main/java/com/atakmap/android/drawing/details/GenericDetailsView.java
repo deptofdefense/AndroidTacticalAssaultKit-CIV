@@ -51,6 +51,7 @@ import com.atakmap.android.toolbar.ToolListener;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.android.util.AfterTextChangedWatcher;
 import com.atakmap.android.util.Undoable;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.Span;
@@ -249,7 +250,11 @@ public abstract class GenericDetailsView extends RelativeLayout implements
      * @param heightU The new height in preferred units (display value)
      */
     protected void heightSelected(double heightM, Span unit, double heightU) {
-        // Map item may not have a modifiable height
+        if (_item != null)
+            _item.setHeight(heightM);
+        if (_heightButton != null)
+            _heightButton.setText(SpanUtilities.format(heightU, unit, 2));
+        _unitPrefs.setAltitudeUnits(unit);
     }
 
     protected void createHeightDialog(final MapItem item, int titleId,
@@ -257,7 +262,7 @@ public abstract class GenericDetailsView extends RelativeLayout implements
         if (item == null)
             return;
         double heightM = item.getHeight();
-        Span heightUnit = getUnitSpan(item);
+        Span heightUnit = _unitPrefs.getAltitudeUnits();
         if (acceptableValues == null) {
             acceptableValues = Span.values();
         }
@@ -385,14 +390,16 @@ public abstract class GenericDetailsView extends RelativeLayout implements
         AtakBroadcast.getInstance().sendBroadcast(contactList);
     }
 
+    /**
+     * Get the height unit for a map item
+     * @param item Map item
+     * @return Height unit span
+     * @deprecated Use {@link UnitPreferences#getAltitudeUnits()} instead
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.6")
     protected static Span getUnitSpan(MapItem item) {
-        if (item != null) {
-            Span unit = Span.findFromValue(item.getMetaInteger("height_unit",
-                    Span.FOOT.getValue()));
-            if (unit != null)
-                return unit;
-        }
-        return Span.FOOT;
+        return new UnitPreferences(MapView.getMapView()).getAltitudeUnits();
     }
 
     /**
@@ -475,6 +482,7 @@ public abstract class GenericDetailsView extends RelativeLayout implements
                 return false;
             }
         });
+        input.requestFocus();
         return true;
     }
 
@@ -502,6 +510,39 @@ public abstract class GenericDetailsView extends RelativeLayout implements
                             public void onClick(DialogInterface dialog,
                                     int which) {
                                 _unitPrefs.setAreaSystem(which);
+                                if (r != null)
+                                    r.run();
+                            }
+                        });
+                AlertDialog dialog = builder.create();
+                dialog.show();
+            }
+        });
+    }
+
+    /**
+     * Given a button from one of the detail views, set up the alert dialog that allows
+     * one to pick the appropriate format of the area.
+     * @param b button to set up.
+     * @param r action to take when the selection is make
+     */
+    protected void setupLengthButton(final Button b, final Runnable r) {
+        b.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(
+                        getContext());
+                builder.setTitle("Select Length Display");
+                // TODO - extract as a string array
+                String[] choices = new String[] {
+                        "Feet/Miles", "Meters/Kilometers", "Nautical Miles",
+                };
+                builder.setItems(choices,
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog,
+                                    int which) {
+                                _unitPrefs.setRangeSystem(which);
                                 if (r != null)
                                     r.run();
                             }

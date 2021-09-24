@@ -23,6 +23,7 @@ public class VideoViewLayer {
     final RelativeLayout.LayoutParams rlp;
     final MetadataCallback mcb;
 
+    private boolean alwaysOn;
     MediaMetadataDecoder decoder;
     MediaProcessor processor;
     ConnectionEntry entry;
@@ -134,10 +135,45 @@ public class VideoViewLayer {
         this.v = v;
         this.rlp = rlp;
         this.mcb = mcb;
+        this.alwaysOn = true;
     }
 
+    /**
+     * Construct a Video View Layer with a provided identifier and the view to be drawn over the
+     * top of the video being played.
+     * @param id the id of the video view
+     * @param v the view
+     * @param rlp the layout parameters for the view
+     * @param alwaysOn if the view needs to be explicitly defined in the layers intent string array
+     *                 extra (false) or if it is always going to be shown (true).
+     */
+    public VideoViewLayer(final String id, final View v,
+            final RelativeLayout.LayoutParams rlp,
+            final boolean alwaysOn) {
+        this(id, v, rlp, null);
+        this.alwaysOn = alwaysOn;
+    }
+
+    /**
+     * Construct a Video View Layer with a provided identifier and the view to be drawn over the
+     * top of the video being played.
+     * @param id the id of the video view
+     * @param v the view
+     * @param rlp the layout parameters for the view
+     */
     public VideoViewLayer(final String id, final View v,
             final RelativeLayout.LayoutParams rlp) {
-        this(id, v, rlp, null);
+        this(id, v, rlp, true);
+    }
+
+    /**
+     * Return true if the layer is always on .   In the case that the layer is not always on,
+     * it will need to be explicity requested in order to be shown.  See the intent used to
+     * launch the video with the extra intent.getStringArrayExtra("layers");
+     * @return true if the layer is always on or false if the layer needs to be explitly mentioned
+     * in the layers string array.
+     */
+    public boolean isAlwaysOn() {
+        return alwaysOn;
     }
 }

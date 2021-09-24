@@ -1,0 +1,48 @@
+
+apply plugin: 'maven-publish'
+
+// configure publications
+def mavenPublishUrl = getProperty(project, "maven.publish.url", "http://localhost")
+def mavenPublishUser = getProperty(project, "maven.publish.user", "invalid")
+def mavenPublishPassword = getProperty(project, "maven.publish.password", "invalid")
+
+publishing {
+    publications {
+        if (isJavaKernelBuild && !skipPublications.contains('java')) {
+            jar(MavenPublication) {
+                from components.java
+                afterEvaluate { artifactId = project.archivesBaseName }
+            }
+        }
+
+        if (isAndroidKernelBuild && !skipPublications.contains('android')) {
+
+            def baseAarPath = "$buildDir/outputs/aar/${project.archivesBaseName}"
+
+            aar(MavenPublication) {
+                project.android.buildTypes.all { buildType ->
+                    artifact("${baseAarPath}-${buildType.name}.aar") { classifier buildType.name }
+
+                    // Add task dependencies for specific build type
+                    project.afterEvaluate {
+                        def bundleTaskName = "bundle${buildType.name.capitalize()}Aar"
+
+                        publishAarPublicationToMavenLocal.dependsOn bundleTaskName
+                        publishAarPublicationToMavenRepository.dependsOn bundleTaskName
+                    }
+                }
+
+                afterEvaluate { artifactId = project.archivesBaseName }
+            }
+        }
+    }
+    repositories {
+        maven {
+            url mavenPublishUrl
+            credentials {
+                username = mavenPublishUser
+                password = mavenPublishPassword
+            }
+        }
+    }
+}

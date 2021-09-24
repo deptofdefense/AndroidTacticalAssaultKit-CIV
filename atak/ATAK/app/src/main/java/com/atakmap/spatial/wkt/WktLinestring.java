@@ -1,13 +1,13 @@
 
 package com.atakmap.spatial.wkt;
 
-import com.atakmap.android.elev.dt2.Dt2ElevationModel;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.Polyline;
 import com.atakmap.android.maps.Shape;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.map.elevation.ElevationManager;
 import com.atakmap.map.layer.feature.ogr.style.FeatureStyle;
 
 import java.nio.ByteBuffer;
@@ -27,8 +27,7 @@ public class WktLinestring extends WktGeometry {
 
     static GeoPointMetaData getPoint(final double lat, final double lon) {
         try {
-            Dt2ElevationModel _dem = Dt2ElevationModel.getInstance();
-            return _dem.queryPoint(lat, lon);
+            return ElevationManager.getElevationMetadata(lat, lon, null);
         } catch (Exception e) {
             return GeoPointMetaData.wrap(new GeoPoint(lat, lon));
         }

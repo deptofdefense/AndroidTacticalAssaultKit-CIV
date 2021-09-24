@@ -569,7 +569,6 @@ public class Route extends EditablePolyline {
 
         setTitle(routeName);
         setColor(color);
-        setClickable(true);
         setMetaString("assocSetUID", uid);
 
         setMetaString("callsign", routeName);
@@ -696,7 +695,7 @@ public class Route extends EditablePolyline {
         if (editable) {
             pmi.setMetaString("menu",
                     getMetaString("editMenu", "menus/waypoint_edit.xml"));
-            pmi.setMetaBoolean("movable", true);
+            pmi.setMovable(true);
             pmi.setMetaBoolean("removable", true);
             pmi.setMetaBoolean("drag", true);
         } else {
@@ -909,7 +908,7 @@ public class Route extends EditablePolyline {
                         item.setVisible(visible);
                     }
                     item.setMetaInteger("color", getColor());
-                    item.setTouchable(isTouchable());
+                    item.setClickable(getClickable());
                     if (addWaypointsToGroup && item.getGroup() == null)
                         waypointGroup.addItem(item);
                     addListeners(item);
@@ -1121,7 +1120,7 @@ public class Route extends EditablePolyline {
                 this.waypoints.add(item);
                 if (isAutomaticName(item.getMetaString("callsign", null)))
                     item.setMetaString("callsign", getNextWaypointName());
-                item.setTouchable(isTouchable());
+                item.setClickable(getClickable());
 
                 // Listen for marker name change events so we can re-validate the waypoint names.
                 this.mapView.getMapEventDispatcher().addMapItemEventListener(
@@ -1250,7 +1249,7 @@ public class Route extends EditablePolyline {
         if (firstPoint != null && isAutomaticName(firstPoint.getMetaString(
                 "callsign", null))) {
             firstPoint.setMetaString("callsign", firstCPName);
-            firstPoint.setTouchable(isTouchable());
+            firstPoint.setClickable(getClickable());
             if (firstPoint instanceof Marker)
                 firstPoint.setTitle(firstCPName);
             pointsToRefresh.add(firstPoint);
@@ -1259,7 +1258,7 @@ public class Route extends EditablePolyline {
         if (lastPoint != null && isAutomaticName(lastPoint.getMetaString(
                 "callsign", null))) {
             lastPoint.setMetaString("callsign", lastCPName);
-            lastPoint.setTouchable(isTouchable());
+            lastPoint.setClickable(getClickable());
             if (lastPoint instanceof Marker)
                 lastPoint.setTitle(lastCPName);
             pointsToRefresh.add(lastPoint);
@@ -1860,7 +1859,7 @@ public class Route extends EditablePolyline {
             return false;
 
         // Now compare each point that make up the route.
-        Integer indexBoxed;
+        int indexBoxed;
         for (int i = 0; i < route1._points.size(); i++) {
             indexBoxed = i;
             GeoPoint point1 = route1._points.get(indexBoxed).get();

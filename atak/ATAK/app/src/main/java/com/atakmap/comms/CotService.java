@@ -340,14 +340,16 @@ public class CotService implements OnSharedPreferenceChangeListener,
 
             // retrieve the certificates. look for a connection specific cert
             trustStore = CotService.getCertificateDatabase()
-                    .getCertificateForTypeAndServer(
+                    .getCertificateForTypeAndServerAndPort(
                             AtakCertificateDatabaseIFace.TYPE_TRUST_STORE_CA,
-                            connectParts[0]);
+                            connectParts[0],
+                            Integer.valueOf(connectParts[1]));
             clientCert = CotService
                     .getCertificateDatabase()
-                    .getCertificateForTypeAndServer(
+                    .getCertificateForTypeAndServerAndPort(
                             AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE,
-                            connectParts[0]);
+                            connectParts[0],
+                            Integer.valueOf(connectParts[1]));
 
             boolean useConnectionTrustStore = trustStore != null;
             boolean useConnectionClientCert = clientCert != null;
@@ -466,7 +468,8 @@ public class CotService implements OnSharedPreferenceChangeListener,
 
             if (!hadError) {
                 //if we made it this far, validate the certificates for this connection
-                validateCert(connectParts[0], output);
+                validateCert(connectParts[0], Integer.valueOf(connectParts[1]),
+                        output);
             }
 
             if (!hadError)
@@ -513,14 +516,15 @@ public class CotService implements OnSharedPreferenceChangeListener,
      * does disable or affect connection attempts
      *
      * @param hostname the host name to validate
+     * @param port the port to validate
      * @param b the bundle used to return the results of the validation process
      */
-    private void validateCert(String hostname, Bundle b) {
+    private void validateCert(String hostname, int port, Bundle b) {
         Log.d(TAG, "Validating certificate for: " + hostname);
 
         //check if certificate is valid
         AtakCertificateDatabase.CertificateValidity validity = TLSUtils
-                .validateCert(hostname);
+                .validateCert(hostname, port);
         if (validity == null) {
             Log.w(TAG, "Cert invalid for: " + hostname);
             TLSUtils.promptCertificateError(context, hostname,
@@ -568,7 +572,7 @@ public class CotService implements OnSharedPreferenceChangeListener,
      * Allows for removal of a streaming connection based on it's connect string or 
      * wild card "**" to remove all streams.
      */
-    void removeStreaming(final String connectString, boolean soft) {
+    public void removeStreaming(final String connectString, boolean soft) {
 
         if (connectString.equals("**")) {
             final File[] configs = IOProviderFactory
@@ -971,17 +975,19 @@ public class CotService implements OnSharedPreferenceChangeListener,
 
         NetConnectString ncs = NetConnectString.fromString(connectString);
         String server = ncs.getHost();
+        int port = ncs.getPort();
 
         getAuthenticationDatabase().invalidateForType(
                 AtakAuthenticationCredentials.TYPE_COT_SERVICE,
                 server);
 
-        getCertificateDatabase().deleteCertificateForTypeAndServer(
+        getCertificateDatabase().deleteCertificateForTypeAndServerAndPort(
                 AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE,
-                server);
+                server, port);
 
-        getCertificateDatabase().deleteCertificateForTypeAndServer(
-                AtakCertificateDatabaseIFace.TYPE_TRUST_STORE_CA, server);
+        getCertificateDatabase().deleteCertificateForTypeAndServerAndPort(
+                AtakCertificateDatabaseIFace.TYPE_TRUST_STORE_CA,
+                server, port);
 
         getAuthenticationDatabase().invalidateForType(
                 AtakAuthenticationCredentials.TYPE_clientPassword, server);

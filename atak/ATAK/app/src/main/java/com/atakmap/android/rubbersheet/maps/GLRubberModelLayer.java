@@ -19,6 +19,7 @@ import com.atakmap.map.layer.model.Model;
 import com.atakmap.map.layer.opengl.GLAsynchronousLayer2;
 import com.atakmap.map.opengl.GLMapRenderable2;
 import com.atakmap.map.opengl.GLMapView;
+import com.atakmap.map.hittest.LayerHitTestControl;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,7 +33,7 @@ public class GLRubberModelLayer extends
         GLAsynchronousLayer2<Collection<GLMapRenderable2>>
         implements MapGroup.OnItemListChangedListener,
         GLMapItem2.OnVisibleChangedListener,
-        GLMapItem2.OnBoundsChangedListener {
+        GLMapItem2.OnBoundsChangedListener, LayerHitTestControl {
 
     private final static String TAG = "GLRubberModelLayer";
 
@@ -58,11 +59,13 @@ public class GLRubberModelLayer extends
                 register((RubberModel) item);
         }
         _group.addOnItemListChangedListener(this);
+        renderContext.registerControl(_modelLayer, this);
     }
 
     @Override
     public void stop() {
         super.stop();
+        renderContext.unregisterControl(_modelLayer, this);
         _group.removeOnItemListChangedListener(this);
         _drawList.clear();
         for (MapItem item : _group.getItems()) {
@@ -168,6 +171,7 @@ public class GLRubberModelLayer extends
         long id = mdl.getSerialId();
         if (_modelList.get(id) == null) {
             GLRubberModel glMDL = createGLModel(mdl);
+            glMDL.startObserving();
             glMDL.addVisibleListener(this);
             glMDL.addBoundsListener(this);
             _modelList.put(id, glMDL);
@@ -230,5 +234,10 @@ public class GLRubberModelLayer extends
     @Override
     public void onBoundsChanged(GLMapItem2 item, GeoBounds bounds) {
         invalidate();
+    }
+
+    @Override
+    public synchronized Collection<?> getHitTestList() {
+        return getRenderList();
     }
 }

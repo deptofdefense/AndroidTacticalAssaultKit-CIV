@@ -3,10 +3,8 @@ package com.atakmap.android.cot;
 
 import android.os.Bundle;
 
-import com.atakmap.android.cot.detail.CotDetailManager;
 import com.atakmap.android.cotdelete.CotDeleteEventMarshal;
 import com.atakmap.android.emergency.EmergencyDetailHandler;
-import com.atakmap.android.geofence.data.GeoFence;
 import com.atakmap.android.importexport.ImporterManager;
 import com.atakmap.android.maps.DefaultMapGroup;
 import com.atakmap.android.maps.MapGroup;
@@ -244,7 +242,7 @@ public class CotMapAdapter {
             return ImportResult.FAILURE;
         } else if (type.startsWith("t")
                 && !type.equals("t-k-d")
-                && !type.equals(GeoFence.COT_TYPE)
+                && !type.equals("t-x-a-m-Geofence") // permanently ignore
                 && !type.equals(
                         CotDeleteEventMarshal.COT_TASK_DISPLAY_DELETE_TYPE)
                 && !type.equals("t-s-v-e")) {
@@ -258,21 +256,6 @@ public class CotMapAdapter {
             //defer to ImporterManager
             return processCotEvent(event, extra);
         }
-    }
-
-    /**
-     * Register a marker detail handler for the given detail element name
-     * @deprecated Use {@link CotDetailManager#registerHandler(String, MarkerDetailHandler)}
-     *
-     * @param detailName Detail element name
-     * @param handler Marker detail handler
-     * Use {@link CotDetailManager#registerHandler(String, MarkerDetailHandler)} instead
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public void setMarkerDetailHandler(String detailName,
-            MarkerDetailHandler handler) {
-        CotDetailManager.getInstance().registerHandler(detailName, handler);
     }
 
     @Deprecated

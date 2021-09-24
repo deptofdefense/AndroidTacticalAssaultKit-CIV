@@ -1,7 +1,6 @@
 
 package com.atakmap.android.preference;
 
-import com.atakmap.android.elev.dt2.Dt2ElevationModel;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.Angle;
@@ -14,6 +13,7 @@ import com.atakmap.coremap.maps.conversion.EGM96;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.NorthReference;
+import com.atakmap.map.elevation.ElevationManager;
 
 /**
  * Unit preferences helper class
@@ -103,7 +103,7 @@ public class UnitPreferences extends AtakPreferences {
     }
 
     public void setBearingUnits(Angle units) {
-        set(BEARING_UNITS, units.getValue());
+        set(BEARING_UNITS, String.valueOf(units.getValue()));
     }
 
     /**
@@ -113,6 +113,10 @@ public class UnitPreferences extends AtakPreferences {
     public Span getAltitudeUnits() {
         int system = get(ALTITUDE_UNITS, Span.ENGLISH);
         return system == 0 ? Span.FOOT : Span.METER;
+    }
+
+    public void setAltitudeUnits(Span unit) {
+        set(ALTITUDE_UNITS, String.valueOf(unit.getType()));
     }
 
     /**
@@ -127,7 +131,7 @@ public class UnitPreferences extends AtakPreferences {
     }
 
     public void setNorthReference(NorthReference ref) {
-        set(NORTH_REFERENCE, ref.getValue());
+        set(NORTH_REFERENCE, String.valueOf(ref.getValue()));
     }
 
     /**
@@ -162,10 +166,8 @@ public class UnitPreferences extends AtakPreferences {
 
         GeoPoint point = pointMD.get();
         if (get("alt_display_agl", false)) {
-            //attempt to pull new elev from DTED
-            Dt2ElevationModel dem = Dt2ElevationModel.getInstance();
-            GeoPointMetaData groundElev = dem.queryPoint(point.getLatitude(),
-                    point.getLongitude());
+            GeoPointMetaData groundElev = ElevationManager
+                    .getElevationMetadata(point);
             if (groundElev.get().isValid()) {
                 double altM = EGM96.getAGL(point,
                         groundElev.get().getAltitude());

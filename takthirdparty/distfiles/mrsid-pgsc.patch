@@ -1,0 +1,12 @@
+--- mrsid.pristine/raster/include/lt_platform.h       2020-07-24 03:48:56.858773700 +0000
++++ mrsid/include/lt_platform.h 2020-07-24 03:37:50.700000000 +0000
+@@ -37,7 +37,7 @@
+ #define LT_PLATFORM_H
+ 
+ /* Check Compiler */
+-#if (defined(__GNUC__) || defined(__GNUG__)) && (3 <= __GNUC__ && __GNUC__ <= 5)
++#if (defined(__GNUC__) || defined(__GNUG__)) && (3 <= __GNUC__)
+    #define LT_COMPILER_GNU 1
+ 
+    #if defined(__GNUC__)
+

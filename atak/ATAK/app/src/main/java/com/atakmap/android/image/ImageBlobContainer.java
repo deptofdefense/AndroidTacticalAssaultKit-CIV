@@ -6,6 +6,7 @@ import java.net.URLDecoder;
 
 import org.apache.sanselan.formats.tiff.TiffImageMetadata;
 
+import com.atakmap.android.hashtags.view.RemarksLayout;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -22,7 +23,6 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -178,7 +178,7 @@ public class ImageBlobContainer
                 .findViewById(R.id.image_date_text);
         final TextView titleText = layout
                 .findViewById(R.id.image_title_text);
-        final EditText caption = layout
+        final RemarksLayout caption = layout
                 .findViewById(R.id.image_caption);
 
         // Markup not support for non-file images

@@ -5,6 +5,7 @@
 #include "internalutils.h"
 #include "netinterface.h"
 #include "platform.h"
+#include "commothread.h"
 
 #include <string>
 #include <stdexcept>
@@ -216,9 +217,9 @@ public:
               bool reuseAddr = false, bool mcastLooping = false) COMMO_THROW (SocketException);
     ~UdpSocket();
 
-    // 'source' is the NetAddress of the received data;
+    // 'source' is the (optional, can be NULL) NetAddress of the received data;
     // pointed-to value on entry is ignored.
-    // Filled with new-allocated NetAddress. Caller owns.
+    // If non-NULL, filled with new-allocated NetAddress. Caller owns.
     // data is pre-allocated data buffer of size indicated in 'len'.
     // The received data is copied to data and 'len' is set to the
     // resulting length. If data buffer is too small, parts of the received data
@@ -253,6 +254,8 @@ public:
 
     void mcastLeave(CommoLogger *logger, const NetAddress *ifaceAddr, const NetAddress *mcastAddr) COMMO_THROW (SocketException);
 
+    // Obtain a copy of the locally bound network address
+    NetAddress *getBoundAddr();
 
 private:
     // Checks the given NetAddress to see if its family
@@ -267,6 +270,69 @@ private:
 };
 
 
+/**
+ * Holds an internal socket that can be used in the read portion of a 
+ * select() call and provides convenience methods to send small bits of 
+ * arbitrary data to the socket to make it readable and wake the select
+ * on demand.  The socket listens on loopback to prevent outside interference.
+ * This class handles multiple threads being interrupters, but expects
+ * only a single thread performing socket drains.
+ */
+class SelectInterrupter
+{
+public:
+    /**
+     * Throws if the internal socket cannot be created for any reason
+     */
+    SelectInterrupter() COMMO_THROW (SocketException);
+    ~SelectInterrupter();
+    
+    /**
+     * Send a small data packet to the internal socket to trigger
+     * any select() waiting on it for read to wake and internally
+     * increment the number of active interrupt triggers.
+     * Each thread triggering an interrupt is expected to untrigger when
+     * no longer needed.
+     * This is safe to be called by multiple threads.
+     */
+    void trigger();
+
+    /**
+     * Untrigger the interrupt status.  This removes one held interrupt trigger.
+     * If this was the last triggered interrupt, any thread waiting for
+     * interrupt status to clear will be released.
+     * This is safe to invoke by multiple threads.
+     */    
+    void untrigger();
+
+    /**
+     * Check if interrupted and, if so, wait for the interrupt status
+     * to clear completely (all active triggers removed).
+     */
+    void waitUntilUntriggered();
+
+    /**
+     * Read all data on the socket and discard it.  This is not safe
+     * for use by multiple threads.
+     */
+    void drain();
+    
+    /**
+     * Obtain a pointer to the internal socket for use when doing select()
+     * on it.  Returned socket is valid for the lifetime of this object.
+     */
+    Socket *getSocket();
+
+private:
+    COMMO_DISALLOW_COPY(SelectInterrupter);
+
+    NetAddress *localAddr;
+    UdpSocket *socket;
+    uint8_t dataBuf[16];
+
+    int interruptCount;
+    thread::Monitor monitor;
+};
 
 
 

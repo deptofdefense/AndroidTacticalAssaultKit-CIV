@@ -242,7 +242,8 @@ public abstract class MapItemImporter extends CotEventTypeImporter {
                 NOTIFICATION_ID.getNotificationId(), getNotificationIcon(item),
                 NotificationUtil.WHITE, title, ticker, msg,
                 new Intent(FocusBroadcastReceiver.FOCUS)
-                        .putExtra("uid", item.getUID()),
+                        .putExtra("uid", item.getUID())
+                        .putExtra("immediateUnfocus", true),
                 true);
     }
 }

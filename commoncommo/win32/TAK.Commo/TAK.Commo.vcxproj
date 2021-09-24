@@ -125,13 +125,13 @@
       <AdditionalUsingDirectories>$(WindowsSDK_WindowsMetadata);$(AdditionalUsingDirectories)</AdditionalUsingDirectories>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <DisableSpecificWarnings>28204</DisableSpecificWarnings>
-      <AdditionalIncludeDirectories>..\..\..\raster\takthirdparty\builds\win32-debug\PGSC_Utils\include;..\..\..\raster\takthirdparty\builds\win32-debug\include\libxml2;..\..\..\raster\takthirdparty\builds\win32-release\include;..\..\core\include;$(ProjectDir)\..\..\core\include;$(ProjectDir)\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\takthirdparty\builds\win32-debug\PGSC_Utils\include;..\..\..\takthirdparty\builds\win32-debug\include\libxml2;..\..\..\takthirdparty\builds\win32-release\include;..\..\core\include;$(ProjectDir)\..\..\core\include;$(ProjectDir)\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <AdditionalDependencies>iphlpapi.lib;libmicrohttpd-dll.lib;Threads.lib;libcurl.lib;libxml2.lib;ssleay32.lib;libeay32.lib;ws2_32.lib;WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\raster\takthirdparty\builds\win32-release\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\takthirdparty\builds\win32-release\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

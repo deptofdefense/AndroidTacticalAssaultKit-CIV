@@ -375,15 +375,12 @@ public class TelestrationTool extends Tool {
                 _drawingShape.setPoints(_geoPoints
                         .toArray(new GeoPointMetaData[0]));
                 _drawingShape.setMovable(true);
-                _drawingShape.setMetaBoolean("moveable", true);
                 _multiPolyline.add(_drawingShape);
                 _multiPolyline.setStrokeWeight(_prefs.getStrokeWeight());
                 _multiPolyline.setMetaString("entry", "user");
                 //Remove the duplicate that we have been rendering up until now
                 _mapGroup.removeItem(_duplicateShape);
                 _mapGroup.addItem(_multiPolyline);
-                _multiPolyline.persist(_mapView.getMapEventDispatcher(), null,
-                        this.getClass());
                 undoStack.push(_drawingShape);
 
             }
@@ -397,7 +394,7 @@ public class TelestrationTool extends Tool {
         super.onToolEnd();
 
         //If they started the tool but didn't draw anything
-        if (_multiPolyline.get_lines().size() == 0) {
+        if (_multiPolyline.isEmpty()) {
             //Remove the group as it is empty
             _mapGroup.removeItem(_multiPolyline);
         } else {

@@ -25,6 +25,14 @@ public class ShapefileContentResolver extends SpatialDbContentResolver {
     }
 
     @Override
+    public void addHandler(File f) {
+        // The underlying zip file is required to query feature sets properly
+        if (f instanceof ZipVirtualFile)
+            f = ((ZipVirtualFile) f).getZipFile();
+        super.addHandler(f);
+    }
+
+    @Override
     protected ShapefileContentHandler createHandler(File file,
             List<Long> featureSetIds, Envelope bounds) {
         if (file instanceof ZipVirtualFile) {

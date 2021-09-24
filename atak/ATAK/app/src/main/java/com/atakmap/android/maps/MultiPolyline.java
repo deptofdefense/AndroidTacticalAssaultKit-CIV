@@ -15,14 +15,15 @@ import com.atakmap.android.importexport.ExportFilters;
 import com.atakmap.android.importexport.Exportable;
 import com.atakmap.android.missionpackage.export.MissionPackageExportWrapper;
 import com.atakmap.android.routes.RouteGpxIO;
+import com.atakmap.android.util.ATAKUtilities;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.cot.event.CotDetail;
 import com.atakmap.coremap.cot.event.CotEvent;
-import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
-import com.atakmap.coremap.maps.coords.MutableGeoBounds;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
+import com.atakmap.map.layer.feature.Feature.AltitudeMode;
 import com.atakmap.spatial.file.export.GPXExportWrapper;
 import com.atakmap.spatial.file.export.KMZFolder;
 import com.atakmap.spatial.file.export.OGRFeatureExportWrapper;
@@ -32,21 +33,18 @@ import com.ekito.simpleKML.model.Folder;
 import org.gdal.ogr.ogr;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
+/**
+ * A polyline containing multiple children lines
+ */
 public class MultiPolyline extends DrawingShape implements Exportable {
 
-    private String _shapeMarkerType;
     private static final String TAG = "Multi-Polyline";
-    private final MapGroup childItemMapGroup;
-    private List<DrawingShape> _lines;
+
     private final MapView _mapView;
-    private final MapGroup mapGroup;
-    private final String _uid;
-    private final Object lock = new Object();
-    private final MutableGeoBounds _scratchBounds = new MutableGeoBounds(0, 0,
-            0, 0);
+    private String _shapeMarkerType;
+    private final List<DrawingShape> _lines = new ArrayList<>();
 
     /**
      * Constructor that sets up all the menus, types, and metadata for the object
@@ -56,22 +54,15 @@ public class MultiPolyline extends DrawingShape implements Exportable {
      */
     public MultiPolyline(MapView mapView, MapGroup mapGroup, final String uid) {
         super(mapView, mapGroup, uid);
-        this.childItemMapGroup = mapGroup.addGroup();
-        this._mapView = mapView;
-        this._uid = uid;
-        this.setClickable(true);
-        this.setMovable(true);
-        this.mapGroup = mapGroup;
-        setMetaString("menu", getShapeMenu());
-        this.setShapeMenu("menus/multipolyline_shape_menu.xml");
-        this.setMetaString("iconUri", "android.resource://"
-                + mapView.getContext().getPackageName()
-                + "/" + R.drawable.multipolyline);
-        this.setMetaBoolean("moveable", true);
+        _mapView = mapView;
+        setType("u-d-f-m");
+        setMovable(true);
+        setRadialMenu(getShapeMenu());
+        setShapeMenu("menus/multipolyline_shape_menu.xml");
+        setMetaString("iconUri", ATAKUtilities.getResourceUri(
+                R.drawable.multipolyline));
         setMetaBoolean("archive", true);
-        _lines = new ArrayList<>();
-        //this.setMarkerPointType("shape");
-        this.setType("u-d-f-m");
+        toggleMetaData("ignoreRender", true);
     }
 
     /**
@@ -85,46 +76,7 @@ public class MultiPolyline extends DrawingShape implements Exportable {
             List<DrawingShape> lines,
             final String uid) {
         this(mapView, mapGroup, uid);
-        this._lines = lines;
-    }
-
-    public String UID() {
-        return _uid;
-    }
-
-    @Override
-    public void setTitle(final String title) {
-        super.setTitle(title);
-        synchronized (lock) {
-            for (DrawingShape ds : _lines)
-                ds.setTitle(title);
-        }
-    }
-
-    @Override
-    public void toggleMetaData(String key, boolean value) {
-        super.toggleMetaData(key, value);
-        if (key.equals("labels_on")) {
-            synchronized (lock) {
-                for (DrawingShape ds : _lines)
-                    ds.toggleMetaData(key, value);
-            }
-        }
-    }
-
-    //Various getters/setters for variables
-
-    @Override
-    public MapGroup getChildMapGroup() {
-        return this.childItemMapGroup;
-    }
-
-    public MapView getView() {
-        return this._mapView;
-    }
-
-    public MapGroup getMapGroup() {
-        return this.mapGroup;
+        setLines(lines);
     }
 
     @Override
@@ -145,12 +97,34 @@ public class MultiPolyline extends DrawingShape implements Exportable {
         return "u-d-f-m";
     }
 
+    /**
+     * Set the lines used by this multi-polyline
+     * @param lines List of lines to set
+     */
     public void setLines(List<DrawingShape> lines) {
-        synchronized (lock) {
-            this._lines = lines;
+        List<DrawingShape> removed;
+        synchronized (_lines) {
+            removed = new ArrayList<>(_lines);
+            _lines.clear();
+            if (lines != null) {
+                _lines.addAll(lines);
+                removed.removeAll(lines);
+            }
         }
+        refresh();
         setPoints();
-        toggleMetaData("labels_on", hasMetaValue("labels_on"));
+        for (DrawingShape ds : removed)
+            onLineRemoved(ds);
+    }
+
+    /**
+     * Simple getter to return all of the lines associated with this multi-polyline
+     * @return an array list of drawing shapes
+     */
+    public List<DrawingShape> getLines() {
+        synchronized (_lines) {
+            return new ArrayList<>(_lines);
+        }
     }
 
     /**
@@ -159,62 +133,20 @@ public class MultiPolyline extends DrawingShape implements Exportable {
      */
     public void setPoints() {
         List<GeoPointMetaData> all = new ArrayList<>();
-        synchronized (lock) {
-            for (DrawingShape shape : _lines) {
-                all.addAll(shape._points);
-                shape.setHeight(getHeight());
-                shape.setHeightStyle(HEIGHT_STYLE_POLYGON
-                        | HEIGHT_STYLE_OUTLINE_SIMPLE);
-            }
+        for (DrawingShape shape : getLines()) {
+            all.addAll(shape._points);
+            shape.setHeight(getHeight());
+            shape.setHeightStyle(HEIGHT_STYLE_POLYGON
+                    | HEIGHT_STYLE_OUTLINE_SIMPLE);
         }
         super.setPoints(all.toArray(new GeoPointMetaData[0]));
     }
 
-    @Override
-    public void setHeight(double height) {
-        super.setHeight(height);
-        synchronized (lock) {
-            for (DrawingShape shape : _lines)
-                shape.setHeight(height);
-        }
-    }
-
     public void move(GeoPointMetaData oldPoint, GeoPointMetaData newPoint) {
-        List<DrawingShape> moveRefresh = new ArrayList<>();
-        synchronized (lock) {
-            for (DrawingShape ds : this._lines) {
-                ds.moveClosedSet(oldPoint, newPoint);
-                moveRefresh.add(ds);
-            }
-            //Set the multi-polyline's points and refresh
-            setPoints();
-        }
-        for (DrawingShape ds : moveRefresh)
-            ds.refresh(mapView.getMapEventDispatcher(), null, getClass());
-        refresh(mapView.getMapEventDispatcher(), null, getClass());
-    }
-
-    @Override
-    public boolean testOrthoHit(int xpos, int ypos, GeoPoint point,
-            MapView view) {
-        if (!isTouchable())
-            return false;
-        synchronized (lock) {
-            for (DrawingShape shape : _lines) {
-                if (shape.testOrthoHit(xpos, ypos, point, view)) {
-                    GeoPoint gp = shape.findTouchPoint();
-                    setMetaString("hit_type", shape.getMetaString(
-                            "hit_type", null));
-                    setMetaInteger("hit_index", shape.getMetaInteger(
-                            "hit_index", 0));
-                    setMetaString("menu", getShapeMenu());
-                    setMetaString("menu_point", gp.toString());
-                    setTouchPoint(gp);
-                    return true;
-                }
-            }
-        }
-        return false;
+        for (DrawingShape ds : getLines())
+            ds.moveClosedSet(oldPoint, newPoint);
+        //Set the multi-polyline's points
+        setPoints();
     }
 
     @Override
@@ -227,7 +159,7 @@ public class MultiPolyline extends DrawingShape implements Exportable {
         // If the entire multi-polyline is made up of 1 color, use that
         // Otherwise use white
         Integer lastColor = null;
-        List<DrawingShape> lines = get_lines();
+        List<DrawingShape> lines = getLines();
         for (DrawingShape ds : lines) {
             int color = ds.getStrokeColor();
             if (lastColor != null && color != lastColor)
@@ -238,25 +170,24 @@ public class MultiPolyline extends DrawingShape implements Exportable {
     }
 
     /**
-     * Simple getter to return all of the lines associated with this multi-polyline
-     * @return an array list of drawing shapes
+     * Check if this multi-polyline has no sub-lines attached to it
+     * @return True if this line is empty
      */
-    public List<DrawingShape> get_lines() {
-        List<DrawingShape> retval;
-        synchronized (lock) {
-            retval = new ArrayList<>(_lines);
+    public boolean isEmpty() {
+        synchronized (_lines) {
+            return _lines.isEmpty();
         }
-        return retval;
     }
 
     /**
      * A function to remove a drawing shape from the multi-polyline object
      * @param ds - The drawing shape to remove
      */
-    public void removeItem(DrawingShape ds) {
-        synchronized (lock) {
+    public void removeLine(DrawingShape ds) {
+        synchronized (_lines) {
             _lines.remove(ds);
         }
+        onLineRemoved(ds);
         setPoints();
     }
 
@@ -264,139 +195,99 @@ public class MultiPolyline extends DrawingShape implements Exportable {
      * Function that adds a drawing shape to the list
      * @param ds - Drawing shape to add
      */
-    public void add(DrawingShape ds) {
+    public void addLine(DrawingShape ds) {
         if (ds == null)
             return;
-        synchronized (lock) {
+        synchronized (_lines) {
             _lines.add(ds);
         }
+        refresh(ds);
         setPoints();
-        ds.toggleMetaData("labels_on", hasMetaValue("labels_on"));
     }
 
-    /**
-     * Function for removing a drawing shape from the multi-polyline object
-     * based on a point that was pressed on the screen
-     * @param p - The point of the screen that was touched
-     */
-    public void removeItem(Point p) {
-        int _currentX = p.x;
-        int _currentY = p.y;
-        GeoPoint _geoPoint = _mapView.inverse(_currentX,
-                _currentY, MapView.InverseMode.RayCast).get();
-        boolean changed = false;
-        synchronized (lock) {
-            Iterator<DrawingShape> dsIte = this._lines.iterator();
-            while (dsIte.hasNext()) {
-                DrawingShape ds = dsIte.next();
-                //For every individual line see if the user touched it
-                if (ds.testOrthoHit(_currentX, _currentY, _geoPoint,
-                        _mapView)) {
-                    //If they did hit it remove it
-                    dsIte.remove();
-                    changed = true;
-                }
-            }
-        }
-        // Refresh points
-        if (changed)
-            setPoints();
-        //Refresh because that seems like the standard
-        this.refresh(this.mapView.getMapEventDispatcher(), null,
-                this.getClass());
+    @Override
+    public void setTitle(final String title) {
+        super.setTitle(title);
+        refresh();
+    }
+
+    @Override
+    public void toggleMetaData(String key, boolean value) {
+        super.toggleMetaData(key, value);
+        if (key.equals("labels_on"))
+            refresh();
     }
 
     @Override
     public void setStrokeWeight(double strokeWeight) {
         super.setStrokeWeight(strokeWeight);
-        synchronized (lock) {
-            for (DrawingShape ds : this._lines) {
-                ds.setStrokeWeight(strokeWeight);
-            }
-        }
+        refresh();
     }
 
     @Override
     public void setMovable(boolean movable) {
         super.setMovable(movable);
-
-        synchronized (lock) {
-            if (this._lines == null)
-                return;
-
-            //Loop through the iterator
-            for (DrawingShape ds : this._lines) {
-                ds.setMovable(movable);
-            }
-        }
+        refresh();
     }
 
-    /**
-     * A function that looks through all of the individual lines in this object
-     * sees if the user touched it, and if so change that lines color
-     * @param color - The color to set a line to
-     * @param p - The point on the screen the user touched
-     */
-    public void setColor(final int color, final Point p) {
-        int _currentX = p.x;
-        int _currentY = p.y;
-        GeoPoint _geoPoint = _mapView.inverse(_currentX,
-                _currentY, MapView.InverseMode.RayCast).get();
-
-        List<DrawingShape> updateList = new ArrayList<>();
-        synchronized (lock) {
-            //Loop through the iterator
-            for (DrawingShape ds : this._lines) {
-                int _alpha = ds.getFillColor() >>> 24;
-                //See if the user hit the line
-                if (ds.testOrthoHit(_currentX, _currentY, _geoPoint,
-                        _mapView)) {
-                    //If they did set the color
-                    ds.setStrokeColor(color);
-                    ds.setFillColor(Color.argb(_alpha, Color.red(color),
-                            Color.green(color), Color.blue(color)));
-
-                    updateList.add(ds);
-                }
-            }
-        }
-
-        // do not fire the refresh in the synchronization block
-        for (DrawingShape ds : updateList)
-            ds.refresh(this.mapView.getMapEventDispatcher(), null,
-                    this.getClass());
-
-        //Refresh because thats what we do
-        this.refresh(this.mapView.getMapEventDispatcher(), null,
-                this.getClass());
-    }
-
-    /**
-     * Function to get the bounds of the multi-polyline object. Simply gets
-     * the bounds of each individual line and adds them up
-     * @param bounds bounds to add
-     * @return GeoBounds object representing the bounds of the multi-polyline object
-     */
     @Override
-    public GeoBounds getBounds(MutableGeoBounds bounds) {
-        //Loop through individual lines
-        double west = 180, east = -180, north = -90, south = 90;
-        synchronized (lock) {
-            for (DrawingShape shape : _lines) {
-                shape.getBounds(_scratchBounds);
-                west = Math.min(west, _scratchBounds.getWest());
-                south = Math.min(south, _scratchBounds.getSouth());
-                east = Math.max(east, _scratchBounds.getEast());
-                north = Math.max(north, _scratchBounds.getNorth());
-            }
-        }
-        this.minimumBoundingBox.set(north, west, south, east);
+    public void setAltitudeMode(AltitudeMode altitudeMode) {
+        super.setAltitudeMode(altitudeMode);
+        refresh();
+    }
 
-        if (bounds != null) {
-            bounds.set(this.minimumBoundingBox);
-            return bounds;
+    @Override
+    public void setHeight(double height) {
+        super.setHeight(height);
+        refresh();
+    }
+
+    @Override
+    public void onVisibleChanged() {
+        super.onVisibleChanged();
+        refresh();
+    }
+
+    /**
+     * Refresh line metadata so it matches the parent line
+     * @param line Line to refresh metadata for
+     */
+    private void refresh(DrawingShape line) {
+        if (line.getGroup() != getChildMapGroup())
+            getChildMapGroup().addItem(line);
+        line.setTitle(getTitle());
+        line.setMovable(getMovable());
+        line.setVisible(getVisible());
+        line.setStrokeWeight(getStrokeWeight());
+        line.setAltitudeMode(getAltitudeMode());
+        line.setHeight(getHeight());
+        line.setClickable(getClickable());
+        line.setLineStyle(getLineStyle());
+        line.toggleMetaData("labels_on", hasMetaValue("labels_on"));
+        line.setMetaString("shapeUID", getUID());
+        line.setMetaBoolean("addToObjList", false);
+        line.setShapeMenu(getShapeMenu());
+    }
+
+    private void refresh(List<DrawingShape> lines) {
+        for (DrawingShape line : lines)
+            refresh(line);
+    }
+
+    /**
+     * Refresh metadata on all lines to match parent
+     */
+    private void refresh() {
+        if (_lines == null)
+            return;
+        synchronized (_lines) {
+            refresh(_lines);
         }
-        return new GeoBounds(this.minimumBoundingBox);
+    }
+
+    private void onLineRemoved(DrawingShape ds) {
+        if (ds.getGroup() == getChildMapGroup())
+            getChildMapGroup().removeItem(ds);
     }
 
     /**
@@ -424,7 +315,7 @@ public class MultiPolyline extends DrawingShape implements Exportable {
 
         // For each of the lines in the multipolyline add there toCot string as a link
 
-        synchronized (lock) {
+        synchronized (_lines) {
             for (DrawingShape line : _lines) {
                 line.setTitle(getTitle());
                 CotDetail link = new CotDetail("link");
@@ -487,7 +378,7 @@ public class MultiPolyline extends DrawingShape implements Exportable {
 
     @Override
     protected Folder toKml() {
-        synchronized (lock) {
+        synchronized (_lines) {
             String title = getTitle();
             if (title == null)
                 title = TAG;
@@ -527,7 +418,7 @@ public class MultiPolyline extends DrawingShape implements Exportable {
         List<GpxTrackSegment> trkseg = new ArrayList<>();
         t.setSegments(trkseg);
 
-        synchronized (lock) {
+        synchronized (_lines) {
             for (DrawingShape line : _lines) {
                 GpxTrackSegment seg = new GpxTrackSegment();
                 trkseg.add(seg);
@@ -551,7 +442,7 @@ public class MultiPolyline extends DrawingShape implements Exportable {
     private OGRFeatureExportWrapper toOgrGeometry() {
         List<OGRFeatureExportWrapper.NamedGeometry> geomList = new ArrayList<>();
         String name = getTitle() + " line ";
-        synchronized (lock) {
+        synchronized (_lines) {
             for (int i = 0; i < _lines.size(); i++) {
                 DrawingShape line = _lines.get(i);
                 double unwrap = 0;
@@ -583,7 +474,7 @@ public class MultiPolyline extends DrawingShape implements Exportable {
         // Store forward returns for each line
         Bundle data = new Bundle();
         int lineNum = 0;
-        synchronized (lock) {
+        synchronized (_lines) {
             for (DrawingShape line : _lines) {
                 Bundle lineData = line.preDrawCanvas(capture);
                 data.putSerializable("line" + (lineNum++),
@@ -597,7 +488,7 @@ public class MultiPolyline extends DrawingShape implements Exportable {
     @Override
     public void drawCanvas(CapturePP cap, Bundle data) {
         // Draw each line
-        synchronized (lock) {
+        synchronized (_lines) {
             for (int i = 0; i < data.getInt("lineCount", 0)
                     && i < _lines.size(); i++) {
                 Bundle lineData = new Bundle();
@@ -606,5 +497,77 @@ public class MultiPolyline extends DrawingShape implements Exportable {
                 _lines.get(i).drawCanvas(cap, lineData);
             }
         }
+    }
+
+    /* Deprecated methods */
+
+    /**
+     * @deprecated Use {@link #addLine(DrawingShape)}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
+    public void add(DrawingShape ds) {
+        addLine(ds);
+    }
+
+    /**
+     * @deprecated Use {@link #removeLine(DrawingShape)}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
+    public void removeItem(DrawingShape ds) {
+        removeLine(ds);
+    }
+
+    /**
+     * @deprecated Use {@link #getUID()}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
+    public String UID() {
+        return getUID();
+    }
+
+    /**
+     * @deprecated Use {@link MapView#getMapView()}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
+    public MapView getView() {
+        return _mapView;
+    }
+
+    /**
+     * @deprecated Use {@link #getGroup()}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
+    public MapGroup getMapGroup() {
+        return getGroup();
+    }
+
+    /**
+     * @deprecated Use {@link #getLines()}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
+    public List<DrawingShape> get_lines() {
+        return getLines();
+    }
+
+    /**
+     * @deprecated Call {@link DrawingShape#setColor(int)} on line instead
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
+    public void setColor(final int color, final Point p) {
+    }
+
+    /**
+     * @deprecated Call {@link #removeLine(DrawingShape)} on line instead
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
+    public void removeItem(Point p) {
     }
 }

@@ -68,6 +68,7 @@ import com.atakmap.android.maps.PanZoomReceiver;
 import com.atakmap.android.maps.tilesets.mobac.WebMapLayer;
 import com.atakmap.android.util.NotificationIdRecycler;
 import com.atakmap.android.util.NotificationUtil;
+import com.atakmap.annotations.FortifyFinding;
 import com.atakmap.app.R;
 import com.atakmap.app.system.ResourceUtil;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -172,10 +173,8 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
 
     // Ability to read preferences to load username, password and domain for a site
     private final static String ONLINE_USERNAME = "online.username.";
-    /**
-     * Fortify has flagged this as Password Management: Hardcoded Password
-     * this is only a key.
-     */
+
+    @FortifyFinding(finding = "Password Management: Hardcoded Password", rational = "This is only a key and not a password")
     private final static String ONLINE_PASSWORD = "online.password.";
     private final static String ONLINE_DOMAIN = "online.domain.";
 
@@ -1542,7 +1541,7 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
                                 for (CheckBox cb : checkboxes) {
                                     if (cb.isChecked()) {
                                         Service layer = addedLayers
-                                                .get((String) cb
+                                                .get(cb
                                                         .getTag());
                                         if (layer != null)
                                             layerList.add(layer);
@@ -1569,7 +1568,7 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
                                     for (CheckBox cb : checkboxes) {
                                         if (cb.isChecked()) {
                                             Service layer = addedLayers
-                                                    .get((String) cb
+                                                    .get(cb
                                                             .getTag());
                                             doAddMapLayer(layer);
                                         }

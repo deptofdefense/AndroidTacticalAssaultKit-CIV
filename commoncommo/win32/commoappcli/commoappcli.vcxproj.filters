@@ -22,7 +22,7 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="commoappcli.h">
-      <Filter>Source Files</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

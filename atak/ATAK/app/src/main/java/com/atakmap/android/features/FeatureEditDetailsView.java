@@ -32,14 +32,16 @@ import com.atakmap.android.maps.SqliteMapDataRef;
 import com.atakmap.android.user.ExpandableGridView;
 import com.atakmap.android.user.icon.IconsetAdapterBase;
 import com.atakmap.android.util.ATAKUtilities;
-import com.atakmap.android.util.LimitingThread;
 import com.atakmap.android.util.SimpleSeekBarChangeListener;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
+import com.atakmap.coremap.concurrent.NamedThreadFactory;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.FeatureCursor;
 import com.atakmap.map.layer.feature.FeatureDataStore;
+import com.atakmap.map.layer.feature.FeatureDataStore.FeatureQueryParameters;
 import com.atakmap.map.layer.feature.style.BasicFillStyle;
 import com.atakmap.map.layer.feature.style.BasicStrokeStyle;
 import com.atakmap.map.layer.feature.style.CompositeStyle;
@@ -50,8 +52,16 @@ import com.atakmap.math.MathUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+/**
+ * The drop-down view used to edit feature styles
+ */
 public class FeatureEditDetailsView extends LinearLayout {
 
     private final static String TAG = "FeatureEditDetailsView";
@@ -75,24 +85,19 @@ public class FeatureEditDetailsView extends LinearLayout {
 
     private ArrayList<IconsetAdapterBase> _userIconsetAdapters;
 
+    private boolean _initialized = false;
+
+    // Update requests that are busy being executed
+    private final Map<Integer, UpdateRequest> _updatesBusy = new HashMap<>();
+
+    // Copied to update thread
+    private long _fid = -1;
+    private long[] _fsids = null;
+    private FeatureDataStore _db;
     private IconPointStyle _iconStyle;
     private BasicStrokeStyle _strokeStyle;
     private BasicFillStyle _fillStyle;
     private CompositeStyle _compositeStyle;
-
-    private long _fid = -1;
-    private String[] _fsids = null;
-    private FeatureDataStore _db;
-    boolean _initialized = false;
-
-    private final LimitingThread _featureUpdateWorker = new LimitingThread(
-            TAG + "WorkerThread",
-            new Runnable() {
-                @Override
-                public void run() {
-                    _updateStyles();
-                }
-            });
 
     public FeatureEditDetailsView(Context context) {
         super(context);
@@ -123,24 +128,18 @@ public class FeatureEditDetailsView extends LinearLayout {
      * @param title The title that will be displayed on the view.
      * @param db The FeatureDataStore that will be used for getting/editing features.
      */
-    public void setItems(String[] fsids, String title, FeatureDataStore db) {
+    public void setItems(long[] fsids, String title, FeatureDataStore db) {
         _clearMapItems();
         _fsids = fsids;
         _db = db;
         int visibleFlags = 0;
-        FeatureCursor cursor = null;
-        try {
-            cursor = _queryFeatures();
+        try (FeatureCursor cursor = _db.queryFeatures(getQueryParameters())) {
             while (cursor.moveToNext()) {
                 visibleFlags |= _addStyleFromFeature(cursor.get());
             }
         } catch (Exception e) {
             Log.e(TAG, "Failed to query features");
-        } finally {
-            if (cursor != null) {
-                cursor.close();
             }
-        }
         _setDefaultStyles();
         _init();
         _title.setText(title);
@@ -159,14 +158,13 @@ public class FeatureEditDetailsView extends LinearLayout {
         _db = db;
         _fid = fid;
         Feature feature = _db.getFeature(_fid);
-
         if (feature == null) {
             // TODO: Exit cleanly in this scenario
             return;
         }
 
-        _fsids = new String[] {
-                Long.toString(feature.getFeatureSetId())
+        _fsids = new long[] {
+                feature.getFeatureSetId()
         };
         int visibleFlags = _addStyleFromFeature(feature);
         _setDefaultStyles();
@@ -176,6 +174,18 @@ public class FeatureEditDetailsView extends LinearLayout {
 
         _resetVisibleUI();
         _setVisibleElements(visibleFlags);
+    }
+
+    /**
+     * @deprecated Use {@link #setItems(long[], String, FeatureDataStore)}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
+    public void setItems(String[] fsids, String title, FeatureDataStore db) {
+        long[] ids = new long[fsids.length];
+        for (int i = 0; i < ids.length; i++)
+            ids[i] = Long.parseLong(fsids[i]);
+        setItems(ids, title, db);
     }
 
     private int _addStyleFromFeature(Feature feature) {
@@ -221,19 +231,15 @@ public class FeatureEditDetailsView extends LinearLayout {
         }
     }
 
-    private FeatureCursor _queryFeatures() {
-        FeatureDataStore.FeatureQueryParameters params = new FeatureDataStore.FeatureQueryParameters();
-        params.order = Collections.singleton(
-                FeatureDataStore.FeatureQueryParameters.GeometryType.INSTANCE);
+    private FeatureQueryParameters getQueryParameters() {
+        FeatureQueryParameters params = new FeatureQueryParameters();
         params.featureSetIds = new ArrayList<>();
-        for (String fsid : _fsids) {
-            params.featureSetIds.add(Long.parseLong(fsid));
-        }
-        if (_fid != -1) {
+        for (long fsid : _fsids)
+            params.featureSetIds.add(fsid);
+        if (_fid != -1)
             params.featureIds = Collections.singleton(_fid);
+        return params;
         }
-        return _db.queryFeatures(params);
-    }
 
     private void _clearMapItems() {
         _fid = -1;
@@ -463,7 +469,7 @@ public class FeatureEditDetailsView extends LinearLayout {
         _compositeStyle = new CompositeStyle(new Style[] {
                 _strokeStyle, _fillStyle
         });
-        _featureUpdateWorker.exec();
+        requestUpdate();
     }
 
     private void _updateOpacity(int percent) {
@@ -472,7 +478,7 @@ public class FeatureEditDetailsView extends LinearLayout {
         _compositeStyle = new CompositeStyle(new Style[] {
                 _strokeStyle, _fillStyle
         });
-        _featureUpdateWorker.exec();
+        requestUpdate();
     }
 
     private void _updateColor(int color) {
@@ -480,48 +486,134 @@ public class FeatureEditDetailsView extends LinearLayout {
         _iconStyle = new IconPointStyle(color, _iconStyle.getIconUri());
         _strokeStyle = new BasicStrokeStyle(color,
                 _strokeStyle.getStrokeWidth());
-        int fillColor = (color & 0xFFFFFF)
+
+        int fillColor;
+        if (_fillStyle != null)
+            fillColor = (color & 0xFFFFFF)
                 | (_fillStyle.getColor() & 0xFF000000);
+        else
+            fillColor = (color & 0xFFFFFF);
+
         if (_opacitySeekBar.getVisibility() == VISIBLE)
             _opacitySeekBar.setProgress(Color.alpha(fillColor));
         _fillStyle = new BasicFillStyle(fillColor);
         _compositeStyle = new CompositeStyle(new Style[] {
                 _strokeStyle, _fillStyle
         });
-        _featureUpdateWorker.exec();
+        requestUpdate();
     }
 
     private void _updateIcon(String iconImageUri) {
         _iconStyle = new IconPointStyle(_iconStyle.getColor(), iconImageUri);
-        _featureUpdateWorker.exec();
+        requestUpdate();
     }
 
-    private void _updateStyles() {
-        FeatureCursor cursor = null;
-        try {
-            cursor = _queryFeatures();
-            while (cursor.moveToNext()) {
-                Feature feature = cursor.get();
-                Style style = feature.getStyle();
-                if (style instanceof IconPointStyle) {
-                    _db.updateFeature(feature.getId(), _iconStyle);
-                } else if (style instanceof BasicStrokeStyle) {
-                    _db.updateFeature(feature.getId(), _strokeStyle);
-                } else if (style instanceof BasicFillStyle) {
-                    _db.updateFeature(feature.getId(), _fillStyle);
-                } else if (style instanceof CompositeStyle) {
-                    _db.updateFeature(feature.getId(), _compositeStyle);
+    private void requestUpdate() {
+        final UpdateRequest req = new UpdateRequest(_db, getQueryParameters(),
+                _compositeStyle, _fillStyle, _strokeStyle, _iconStyle);
+
+        // Add update request and cancel existing
+        synchronized (_updatesBusy) {
+            int code = req.hashCode();
+            UpdateRequest existing = _updatesBusy.get(code);
+            if (existing != null)
+                existing.cancel();
+            _updatesBusy.put(code, req);
+        }
+
+        // Send update request to update pool
+        updateThreads.execute(new Runnable() {
+            @Override
+            public void run() {
+                req.run();
+                synchronized (_updatesBusy) {
+                    int code = req.hashCode();
+                    UpdateRequest existing = _updatesBusy.get(code);
+                    if (existing == req)
+                        _updatesBusy.remove(code);
                 }
             }
-        } catch (Exception e) {
-            Log.d(TAG, "Failed to update color");
-        } finally {
-            if (cursor != null) {
-                cursor.close();
+        });
+    }
+
+    /* Feature update thread */
+
+    private final ExecutorService updateThreads = Executors
+            .newFixedThreadPool(8, new NamedThreadFactory(
+                    TAG + "WorkerThread"));
+
+    private static class UpdateRequest implements Runnable {
+
+        private final FeatureDataStore _db;
+        private final FeatureQueryParameters _params;
+        private final Style[] _styles;
+        private boolean _canceled;
+
+        UpdateRequest(FeatureDataStore db, FeatureQueryParameters params,
+                Style... styles) {
+            _db = db;
+            _params = params;
+            _styles = styles;
+        }
+
+        public void cancel() {
+            _canceled = true;
+        }
+
+        @Override
+        public void run() {
+            // TODO: Support for bulk updateFeatures - see ATAK-15042
+            //  For large feature sets containing around 1000 items this is a very
+            //  slow loop that can take 5-10 minutes to finish.
+            try (FeatureCursor cursor = _db.queryFeatures(_params)) {
+            while (cursor.moveToNext()) {
+                    if (_canceled)
+                        return;
+
+                Feature feature = cursor.get();
+                Style style = feature.getStyle();
+
+                    // Update applicable style
+                    for (Style s : _styles) {
+                        if (s != null && s.getClass().isInstance(style)) {
+                            _db.updateFeature(feature.getId(), s);
+                            break;
+                }
             }
+
+                    // Sleep for 15ms to leave the database lock open for a bit
+                    // Otherwise UI lockup can occur when querying this database elsewhere
+                    Thread.sleep(15);
+                }
+        } catch (Exception e) {
+                Log.d(TAG, "Failed to update style", e);
+        } finally {
             _db.refresh();
         }
     }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
+            UpdateRequest that = (UpdateRequest) o;
+            return Objects.equals(_db.getUri(), that._db.getUri())
+                    && Objects.equals(_params.featureSetIds,
+                            that._params.featureSetIds)
+                    && Objects.equals(_params.featureIds,
+                            that._params.featureIds);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(_db.getUri(), _params.featureSetIds,
+                    _params.featureIds);
+        }
+    }
+
+    /* Icon adapters */
 
     private class IconsetAdapter extends IconsetAdapterBase {
         private final AdapterView.OnItemClickListener _onClickListener = new AdapterView.OnItemClickListener() {

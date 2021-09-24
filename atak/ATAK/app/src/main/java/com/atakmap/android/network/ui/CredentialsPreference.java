@@ -18,6 +18,7 @@ import android.view.WindowManager;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.TextView;
 import com.atakmap.android.gui.PanPreference;
 
 import com.atakmap.android.ipc.AtakBroadcast;
@@ -45,6 +46,8 @@ public class CredentialsPreference extends DialogPreference {
     protected String credentialsType = AtakAuthenticationCredentials.TYPE_UNKNOWN;
     private static Context appContext;
     private final Context pContext;
+
+    protected boolean passwordOnly = false;
 
     /**
      * For plugins we are REQUIRED to set the application context to the
@@ -76,6 +79,9 @@ public class CredentialsPreference extends DialogPreference {
             if (attr.equalsIgnoreCase("credentialsType")) {
                 //Log.i(TAG, "credentialsType = " + val);
                 credentialsType = val;
+            } else if (attr.equalsIgnoreCase("passwordOnly")) {
+                if (Boolean.parseBoolean(val))
+                    passwordOnly = true;
             }
         }
     }
@@ -94,6 +100,9 @@ public class CredentialsPreference extends DialogPreference {
             if (attr.equalsIgnoreCase("credentialsType")) {
                 //Log.i(TAG, "credentialsType = " + val);
                 credentialsType = val;
+            } else if (attr.equalsIgnoreCase("passwordOnly")) {
+                if (Boolean.parseBoolean(val))
+                    passwordOnly = true;
             }
         }
     }
@@ -108,6 +117,12 @@ public class CredentialsPreference extends DialogPreference {
                 .getCredentials(credentialsType);
 
         final EditText username = view.findViewById(R.id.txt_name);
+        if (passwordOnly) {
+            final TextView txtlabel = view.findViewById(R.id.txt_label);
+            txtlabel.setVisibility(View.GONE);
+            username.setVisibility(View.GONE);
+        }
+
         final EditText pwdText = view.findViewById(R.id.password);
 
         final CheckBox checkBox = view.findViewById(R.id.password_checkbox);

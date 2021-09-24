@@ -55,17 +55,17 @@ mrsid_BINLIBPATH=lib
 
 gdal_CFLAGS_generic=-DKDU_MAJOR_VERSION=6
 gdal_CXXFLAGS_generic=$(gdal_CFLAGS_generic)
-gdal_NO_JAVA=true
 
 curl_LIBS=
 proj_LIBS=
 libkml_LIBS=
 # tbb needed for mrsid dsdk
-gdal_LIBS=-L$(OUTDIR)/lib -Wl,-rpath=$(OUTDIR)/lib -lssl -lcrypto -ldl -ltbb
+gdal_LIBS=-L$(OUTDIR)/lib -Wl,-rpath=$(OUTDIR)/lib -Wl,-rpath=$(OUTDIR)/lib/ogdi -lssl -lcrypto -ldl -ltbb
 
 gdal_LDFLAGS=-rpath=$(OUTDIR)/lib
 
 libxml2_installtargets=install
 
 commoncommo_BUILDJAVA=yes
+commoncommo_ANT_FLAGS=-Dnative-init=internal
 libspatialite_LIBS=-ldl -lpthread -lm -lstdc++

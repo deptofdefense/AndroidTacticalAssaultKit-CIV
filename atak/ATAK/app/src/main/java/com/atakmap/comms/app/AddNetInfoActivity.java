@@ -80,6 +80,25 @@ public class AddNetInfoActivity extends MetricActivity {
         return addressText;
     }
 
+    private Integer getPort() {
+        // validate port text
+        EditText portEditText = findViewById(R.id.add_port);
+        String portText = portEditText.getEditableText()
+                .toString();
+        int portNumber;
+        try {
+            portNumber = Integer.parseInt(portText);
+            if (portNumber > 65535)
+                throw new Exception();
+        } catch (final Exception ex) {
+            String message = "Port is invalid";
+            showErrorDialog(message);
+            return null;
+        }
+
+        return portNumber;
+    }
+
     private String getConnectionString() {
 
         final String addressText = getAddress();
@@ -95,20 +114,13 @@ public class AddNetInfoActivity extends MetricActivity {
             return null;
         }
 
-        // validate port text
-        EditText portEditText = findViewById(R.id.add_port);
-        String portText = portEditText.getEditableText()
-                .toString();
-        int portNumber;
-        try {
-            portNumber = Integer.parseInt(portText);
-            if (portNumber > 65535)
-                throw new Exception();
-        } catch (final Exception ex) {
+        final Integer portNumber = getPort();
+        if (portNumber == null) {
             String message = "Port is invalid";
             showErrorDialog(message);
             return null;
         }
+
         final String retval = addressText + ":" + portNumber + ":" + getProto();
         NetConnectString ncs = NetConnectString.fromString(retval);
         if (ncs != null) {
@@ -522,13 +534,13 @@ public class AddNetInfoActivity extends MetricActivity {
 
                             // clear out certs that may have been stored with this connection
                             AtakCertificateDatabase
-                                    .deleteCertificateForServer(
+                                    .deleteCertificateForServerAndPort(
                                             AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE,
-                                            server);
+                                            server, getPort());
                             AtakCertificateDatabase
-                                    .deleteCertificateForServer(
+                                    .deleteCertificateForServerAndPort(
                                             AtakCertificateDatabaseIFace.TYPE_TRUST_STORE_CA,
-                                            server);
+                                            server, getPort());
 
                             // clear out cert passwords that may have been stored with this connection
                             AtakAuthenticationDatabase
@@ -753,8 +765,10 @@ public class AddNetInfoActivity extends MetricActivity {
                         }
 
                         String server = getAddress();
-                        AtakCertificateDatabase.saveCertificateForServer(type,
-                                server, contents);
+                        Integer port = getPort();
+                        AtakCertificateDatabase.saveCertificateForServerAndPort(
+                                type,
+                                server, port, contents);
                         CertificateManager.invalidate(server);
                         if (c != null)
                             c.fileSelected(file);

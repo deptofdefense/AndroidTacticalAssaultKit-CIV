@@ -153,7 +153,8 @@ public class TAKServerListener {
             if (pNCS != null && !FileSystemUtils.isEmpty(pNCS.getHost())
                     && !FileSystemUtils.isEmpty(pNCS.getProto())
                     && proto.equals(pNCS.getProto())
-                    && host.equals(pNCS.getHost())) {
+                    && host.equals(pNCS.getHost())
+                    && ncs.getPort() == pNCS.getPort()) {
                 synchronized (_serverMap) {
                     _serverMap.put(serverStr, server);
                 }

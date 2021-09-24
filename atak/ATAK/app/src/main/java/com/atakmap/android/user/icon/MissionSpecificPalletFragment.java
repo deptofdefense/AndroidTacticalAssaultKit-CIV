@@ -162,8 +162,8 @@ public class MissionSpecificPalletFragment extends Fragment implements
         sensorButtonLayout.setOnClickListener(buttonClickListener);
         opButtonLayout.setOnClickListener(buttonClickListener);
 
-        subView = (LinearLayout) v.findViewById(R.id.subtypeView);
-        subViewAlt = (LinearLayout) v.findViewById(R.id.subtypeViewAlt);
+        subView = v.findViewById(R.id.subtypeView);
+        subViewAlt = v.findViewById(R.id.subtypeViewAlt);
 
         new BattlePositionLayoutHandler(inflater, subView,
                 this);

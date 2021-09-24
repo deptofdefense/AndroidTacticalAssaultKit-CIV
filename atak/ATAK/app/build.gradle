@@ -23,8 +23,8 @@ import java.util.regex.Pattern
 
 buildscript {
 
-    ext.ATAK_VERSION = "4.3.1"
-    ext.ATAK_VERSION_SUBMINOR = ".9"
+    ext.ATAK_VERSION = "4.4.0"
+    ext.ATAK_VERSION_SUBMINOR = ".0"
 
     ext.jacocoVersion = '0.8.5'
 
@@ -57,7 +57,6 @@ buildscript {
     ext.mavenPassword = getProperty('maven.password', 'invalid')
 
     repositories {
-        jcenter()
         google()
         mavenCentral()
         mavenLocal()
@@ -81,7 +80,6 @@ buildscript {
 allprojects {
     repositories {
         google()
-        jcenter()
         mavenCentral()
         mavenLocal()
         maven {
@@ -115,7 +113,7 @@ dependencies {
      // paradigm that google has moved towards with breaking up the original 
      // android support libraries.  
 
-     implementation 'androidx.fragment:fragment:1.3.0'
+     implementation 'androidx.fragment:fragment:1.3.4'
      implementation 'androidx.exifinterface:exifinterface:1.3.2'
      implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.0.0'
 
@@ -126,7 +124,7 @@ dependencies {
      androidTestImplementation 'androidx.test.espresso:espresso-intents:3.3.0'
      androidTestImplementation 'androidx.test.ext:junit:1.1.2'
 
-     androidTestImplementation "org.mockito:mockito-core:3.3.0"
+     androidTestImplementation "org.mockito:mockito-core:3.7.0"
      androidTestImplementation 'org.powermock:powermock-module-junit4:2.0.2'
      androidTestImplementation 'org.powermock:powermock-api-mockito2:2.0.2'
      androidTestImplementation 'org.powermock:powermock-core:2.0.2'
@@ -140,7 +138,6 @@ dependencies {
     configurations {
         testImplementation.extendsFrom androidTestImplementation
     }
-
 }
 
 // Attempt to get a suitable version name for the plugin based on
@@ -273,7 +270,7 @@ android {
             dimension "application"
             applicationIdSuffix = ".civ"
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".CIV"]
-            buildConfigField 'String', 'REDEPLOY_VERSION', '"430a"'
+            buildConfigField 'String', 'REDEPLOY_VERSION', '"440a"'
             ndk { abiFilters "armeabi-v7a", "arm64-v8a", "x86" }
         }
 
@@ -447,6 +444,20 @@ android {
     touch('ATAKMapEngine/lib/src/main/jniLibs/x86/libtakengine.so')
     touch('ATAKMapEngine/lib/src/main/jniLibs/x86/libgdal.so')
     touch('ATAKMapEngine/lib/src/main/jniLibs/x86/libspatialite.so')
+}
+
+// `takkernel` dependencies declared after the `android` block so that all
+// build types are declared
+dependencies {
+    if (findProject(':takkernel')) {
+        implementation project(':takkernel:annotation')
+        implementation project(':takkernel:port')
+    } else {
+        debugImplementation 'gov.tak.kernel:takkernel-aar:0.0.0:debug@aar'
+        sdkImplementation 'gov.tak.kernel:takkernel-aar:0.0.0:debug@aar'
+        odkImplementation 'gov.tak.kernel:takkernel-aar:0.0.0:release@aar'
+        releaseImplementation 'gov.tak.kernel:takkernel-aar:0.0.0:release@aar'
+    }
 }
 
 // NDK build external dependency install

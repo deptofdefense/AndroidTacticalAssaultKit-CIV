@@ -379,6 +379,7 @@ public class DropDownManager extends BroadcastReceiver {
                 Log.d(TAG,
                         "removing a drop down that was not visible, but on the stack: "
                                 + remove);
+                remove.clearFragment();
                 boolean b = rightSideStack.remove(remove);
                 if (!b) {
                     Log.d(TAG,
@@ -450,6 +451,7 @@ public class DropDownManager extends BroadcastReceiver {
                                         + rightSide.getBackStackCount());
                     }
                 } else {
+
                     rightSide.popBackStackImmediate();
                 }
 

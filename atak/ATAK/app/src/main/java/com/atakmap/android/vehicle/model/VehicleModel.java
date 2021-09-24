@@ -134,7 +134,7 @@ public class VehicleModel extends RubberModel implements Capturable,
 
     public VehicleModel(VehicleModelData data) {
         super(data);
-        getCenterMarker().setPoint(data.center);
+        setCenterPoint(data.center);
         setType(COT_TYPE);
         setSharedModel(true);
         showLines(false);
@@ -306,7 +306,6 @@ public class VehicleModel extends RubberModel implements Capturable,
     public boolean setShowOutline(boolean outline) {
         if (showOutline() != outline) {
             toggleMetaData("outline", outline);
-            notifyMetadataChanged("outline");
             return true;
         }
         return false;
@@ -350,13 +349,6 @@ public class VehicleModel extends RubberModel implements Capturable,
                 break;
         }
         setMetaString(UserIcon.IconsetPath, iconPath);
-    }
-
-    @Override
-    protected boolean orthoHitModel(int x, int y, GeoPoint point,
-            MapView view) {
-        return showOutline() && orthoHitOutline(x, y, view)
-                || super.orthoHitModel(x, y, point, view);
     }
 
     private boolean orthoHitOutline(int x, int y, MapView view) {
@@ -427,7 +419,6 @@ public class VehicleModel extends RubberModel implements Capturable,
                 point.getLatitude(), point.getLongitude(), null);
         point.set(alt);
         setTouchPoint(point);
-        setMetaString("menu_point", point.toString());
         return true;
     }
 

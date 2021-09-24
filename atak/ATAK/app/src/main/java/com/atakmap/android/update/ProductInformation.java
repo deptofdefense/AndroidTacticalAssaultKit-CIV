@@ -64,7 +64,8 @@ public class ProductInformation {
                 final ProductType type) {
             if (type == ProductType.plugin &&
                     (pkgName.startsWith("com.atakmap.app.flavor.")
-                            || pkgName.startsWith("com.atakmap.app.encryption.")))
+                            || pkgName
+                                    .startsWith("com.atakmap.app.encryption.")))
                 return ProductType.systemplugin;
             return type;
         }

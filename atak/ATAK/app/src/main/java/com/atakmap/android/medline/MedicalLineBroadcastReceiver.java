@@ -172,7 +172,7 @@ public class MedicalLineBroadcastReceiver
         mark.setMetaString("callsign", callsign);
         mark.setMetaBoolean("removable", true);
         mark.setMetaBoolean("editable", true);
-        mark.setMetaBoolean("movable", true);
+        mark.setMovable(true);
         if (extras.containsKey("archive"))
             mark.setMetaBoolean("archive", extras.getBoolean("archive"));
         // TODO: add line number that must be changed in the actions xml

@@ -4,26 +4,33 @@ package com.atakmap.android.missionpackage.ui;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import com.atakmap.android.gui.TileButtonDialog;
 import com.atakmap.android.hierarchy.HierarchyListAdapter;
 import com.atakmap.android.hierarchy.HierarchyListItem;
+import com.atakmap.android.hierarchy.HierarchyListReceiver;
+import com.atakmap.android.hierarchy.HierarchyListUserDelete;
 import com.atakmap.android.hierarchy.action.Action;
 import com.atakmap.android.hierarchy.action.Delete;
 import com.atakmap.android.hierarchy.action.Export;
+import com.atakmap.android.hierarchy.action.GroupDelete;
 import com.atakmap.android.hierarchy.action.Search;
 import com.atakmap.android.hierarchy.action.Visibility;
 import com.atakmap.android.hierarchy.action.Visibility2;
 import com.atakmap.android.hierarchy.items.AbstractHierarchyListItem2;
 import com.atakmap.android.importexport.ExportFilters;
 import com.atakmap.android.importexport.FormatNotSupportedException;
+import com.atakmap.android.layers.RegionShapeTool;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.math.MathUtils;
 import com.atakmap.android.missionpackage.MissionPackageMapComponent;
@@ -32,6 +39,7 @@ import com.atakmap.android.missionpackage.MissionPackageUtils;
 import com.atakmap.android.missionpackage.api.MissionPackageApi;
 import com.atakmap.android.missionpackage.file.MissionPackageManifest;
 import com.atakmap.android.missionpackage.file.task.MissionPackageBaseTask;
+import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
@@ -47,7 +55,7 @@ import java.util.Set;
 
 public class MissionPackageHierarchyListItem extends
         AbstractHierarchyListItem2 implements Visibility2, Search,
-        Delete, Export, View.OnClickListener {
+        GroupDelete, Export, View.OnClickListener {
 
     private static final String TAG = "MissionPackageHierarchyListItem";
 
@@ -271,8 +279,12 @@ public class MissionPackageHierarchyListItem extends
         }
 
         // Delete package
-        else if (i == R.id.delete)
-            deleteConfirm();
+        else if (i == R.id.delete) {
+            if (v.getParent() == _overlay.getHeaderView())
+                promptDeleteContents();
+            else
+                promptDeletePackage();
+        }
     }
 
     @Override
@@ -289,6 +301,10 @@ public class MissionPackageHierarchyListItem extends
         View create = header.findViewById(R.id.create);
         create.setOnClickListener(this);
         setViz(create, true);
+
+        View delete = header.findViewById(R.id.delete);
+        delete.setOnClickListener(this);
+        setViz(delete, true);
 
         setViz(header.findViewById(R.id.download), false);
         setViz(header.findViewById(R.id.changes), false);
@@ -332,13 +348,16 @@ public class MissionPackageHierarchyListItem extends
     }
 
     @Override
-    public boolean delete() {
-        List<Delete> actions = getChildActions(Delete.class);
-        boolean ret = !actions.isEmpty();
-        for (Delete del : actions)
-            ret &= del.delete();
-        if (_group != null && _group.getItems().isEmpty())
-            _overlay.deletePackage(_group, false, true);
+    public List<Delete> getDeleteActions() {
+        List<Delete> ret = super.getDeleteActions();
+        ret.add(new Delete() {
+            @Override
+            public boolean delete() {
+                if (_group != null && _group.getItems().isEmpty())
+                    _overlay.deletePackage(_group, false, true);
+                return true;
+            }
+        });
         return ret;
     }
 
@@ -375,16 +394,29 @@ public class MissionPackageHierarchyListItem extends
         return retval;
     }
 
-    private void deleteConfirm() {
-        AlertDialog.Builder b = new AlertDialog.Builder(_context);
-        b.setTitle(R.string.confirm_delete);
-        b.setMessage(
+    private void promptDeletePackage() {
+        TileButtonDialog d = new TileButtonDialog(_mapView);
+        d.setTitle(R.string.delete_mission_package);
+        d.setMessage(
                 R.string.mission_package_delete_package_and_remove_package_contents);
-        b.setNegativeButton(R.string.cancel, null);
-        b.setPositiveButton(R.string.remove_contents,
-                new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface d, int w) {
+        d.addButton(R.drawable.ic_missionpackage_delete,
+                R.string.leave_contents);
+        d.addButton(R.drawable.ic_overlays_delete, R.string.remove_contents);
+        d.setOnClickListener(new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                if (which == -1)
+                    return;
+                switch (which) {
+
+                    // Remove package and leave contents alone
+                    case 0: {
+                        delete(true);
+                        break;
+                    }
+
+                    // Remove contents along with package
+                    case 1: {
                         AlertDialog.Builder b = new AlertDialog.Builder(
                                 _context);
                         b.setTitle(R.string.confirm_delete);
@@ -401,17 +433,54 @@ public class MissionPackageHierarchyListItem extends
                                     }
                                 });
                         b.show();
+                        break;
                     }
-                });
-        b.setNeutralButton(R.string.leave_contents,
-                new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface d, int w) {
-                        Log.d(TAG, "Deleting package: " + _group);
-                        delete(true);
+                }
+            }
+        });
+        d.show(true);
+    }
+
+    private void promptDeleteContents() {
+        TileButtonDialog d = new TileButtonDialog(_mapView);
+        d.setTitle(R.string.delete_contents);
+        d.setMessage(R.string.select_deletion_method);
+        d.addButton(R.drawable.ic_overlays_delete, R.string.multiselect);
+        d.addButton(R.drawable.ic_lasso, R.string.lasso);
+        d.setOnClickListener(new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                if (which == -1)
+                    return;
+                switch (which) {
+
+                    // Multi-select through OM
+                    case 0: {
+                        HierarchyListUserDelete hlud = new HierarchyListUserDelete();
+                        hlud.setCloseHierarchyWhenComplete(false);
+                        HierarchyListReceiver.getInstance()
+                                .setSelectHandler(hlud);
+                        break;
                     }
-                });
-        b.show();
+
+                    // Remove content using lasso
+                    case 1: {
+                        Bundle b = new Bundle();
+                        b.putSerializable("mode", RegionShapeTool.Mode.LASSO);
+                        Intent cb = new Intent(
+                                MissionPackageReceiver.MISSIONPACKAGE_REMOVE_LASSO);
+                        cb.putExtra(
+                                MissionPackageApi.INTENT_EXTRA_MISSIONPACKAGEMANIFEST_UID,
+                                _group.getManifest().getUID());
+                        b.putParcelable("callback", cb);
+                        ToolManagerBroadcastReceiver.getInstance().startTool(
+                                RegionShapeTool.TOOL_ID, b);
+                        break;
+                    }
+                }
+            }
+        });
+        d.show(true);
     }
 
     private void delete(boolean singleDelete) {

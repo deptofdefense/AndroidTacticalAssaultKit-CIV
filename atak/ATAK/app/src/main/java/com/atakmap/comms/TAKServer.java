@@ -4,6 +4,7 @@ package com.atakmap.comms;
 import android.os.Bundle;
 
 import com.atakmap.android.http.rest.ServerVersion;
+import com.atakmap.annotations.FortifyFinding;
 import com.atakmap.comms.app.CotPortListActivity;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
@@ -29,8 +30,7 @@ public class TAKServer {
     public static final String ENROLL_FOR_CERT_KEY = "enrollForCertificateWithTrust";
     public static final String EXPIRATION_KEY = "expiration";
 
-    // Fortify has flagged this as Password Management: Hardcoded Password
-    // this is only a key.
+    @FortifyFinding(finding = "Password Management: Hardcoded Password", rational = "This is only a key and not a password")
     public static final String PASSWORD_KEY = "password";
     public static final String CACHECREDS_KEY = "cacheCreds";
     public static final String ISSTREAM_KEY = "isStream";
@@ -45,6 +45,10 @@ public class TAKServer {
                     "Cannot construct CotPort with empty/null connnectString");
         }
         this.data = new Bundle(bundle);
+    }
+
+    public TAKServer(TAKServer other) {
+        this(other.getData());
     }
 
     @Override

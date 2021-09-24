@@ -4,17 +4,23 @@ package com.atakmap.android.maps;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.preference.PreferenceManager;
+
 import androidx.annotation.NonNull;
 
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
-import com.atakmap.coremap.conversions.*;
-import com.atakmap.coremap.locale.LocaleUtil;
+import com.atakmap.coremap.conversions.Angle;
+import com.atakmap.coremap.conversions.AngleUtilities;
+import com.atakmap.coremap.conversions.Span;
+import com.atakmap.coremap.conversions.SpanUtilities;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.coremap.maps.coords.NorthReference;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Locale;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public final class Doghouse extends Polyline implements
@@ -115,7 +121,8 @@ public final class Doghouse extends Polyline implements
     private double _noseShift;
     private final float _maxScale;
     private final int _sizeSegment;
-    private boolean _showNorthReference;
+    private NorthReference _northReference;
+    private boolean _isTablet;
 
     private final ConcurrentLinkedQueue<DoghouseChangeListener> _listeners;
 
@@ -127,13 +134,17 @@ public final class Doghouse extends Polyline implements
                 UUID.randomUUID().toString());
         setType("Doghouse");
         setTitle("Doghouse");
-        setClickable(true);
+
+        _isTablet = MapView
+                .getMapView()
+                .getContext()
+                .getResources()
+                .getBoolean(R.bool.isTablet);
 
         _prefs = PreferenceManager
                 .getDefaultSharedPreferences(MapView.getMapView().getContext());
-        _showNorthReference = _prefs.getBoolean("doghouseShowNorthReference",
-                true);
 
+        _northReference = getNorthReferencePreference();
         // initialize the metadata holder to have null for all types
         for (DoghouseFields key : DoghouseFields.values()) {
             setMetaString(key.toString(), BLANK);
@@ -202,6 +213,21 @@ public final class Doghouse extends Polyline implements
         _prefs.registerOnSharedPreferenceChangeListener(this);
         _listeners = new ConcurrentLinkedQueue<>();
         setMetaString("menu", "menus/doghouse_menu.xml");
+        setClickable(false);
+    }
+
+    private NorthReference getNorthReferencePreference() {
+        String northPref = _prefs.getString(
+                DoghouseReceiver.NORTH_REFERENCE_KEY,
+                String.valueOf(NorthReference.MAGNETIC.getValue()));
+        switch (northPref) {
+            case "0":
+                return NorthReference.TRUE;
+            case "1":
+                return NorthReference.MAGNETIC;
+            default:
+                return NorthReference.GRID;
+        }
     }
 
     /**
@@ -211,12 +237,6 @@ public final class Doghouse extends Polyline implements
     public void updateNose() {
         _noseShift = _prefs.getFloat(DoghouseReceiver.PERCENT_ALONG_LEG, 0.5f);
         _nose = computeNosePosition(_noseShift);
-    }
-
-    @Override
-    public boolean testOrthoHit(int x, int y, GeoPoint point, MapView view) {
-        return this.minimumBoundingBox.contains(point)
-                && this.getVisible();
     }
 
     public String getData(int index) {
@@ -370,12 +390,7 @@ public final class Doghouse extends Polyline implements
     }
 
     public int getFontOffset() {
-        boolean isTablet = MapView
-                .getMapView()
-                .getContext()
-                .getResources()
-                .getBoolean(R.bool.isTablet);
-        return isTablet ? 14 : 0;
+        return _isTablet ? 14 : 0;
     }
 
     public int getTotalTranslation() {
@@ -409,15 +424,14 @@ public final class Doghouse extends Polyline implements
             case DoghouseReceiver.DISTANCE_FROM_LEG:
                 _distanceFromLeg = prefs.getInt(key, _distanceFromLeg);
                 break;
-            case DoghouseReceiver.SHOW_NORTH_REF:
-                _showNorthReference = prefs.getBoolean(key, true);
+            case DoghouseReceiver.NORTH_REFERENCE_KEY:
+                _northReference = getNorthReferencePreference();
                 setBearingToNext();
                 break;
             default:
                 // swallow anything else
                 return;
         }
-
         fireOnDoghouseChanged();
     }
 
@@ -461,13 +475,26 @@ public final class Doghouse extends Polyline implements
                 Integer.toString(_turnpointId));
     }
 
+    /**
+     * converts the bearing from 1 route point to the next by users current north reference preference
+     */
     private void setBearingToNext() {
         _bearingToNext = _source.get().bearingTo(_target.get());
-        double bearingMag = convertTrueToMagnetic(_bearingToNext);
+        double bearingMag;
+        if (_northReference == NorthReference.MAGNETIC) {
+            bearingMag = ATAKUtilities.convertFromTrueToMagnetic(_source.get(),
+                    _bearingToNext);
+        } else if (_northReference == NorthReference.TRUE) {
+            bearingMag = ATAKUtilities.convertFromMagneticToTrue(_source.get(),
+                    _bearingToNext);
+        } else {
+            bearingMag = ATAKUtilities.computeGridConvergence(_source.get(),
+                    _target.get());
+        }
         String bearingRepr = formatBearingString(bearingMag);
         setMetaString(
-                DoghouseFields.BEARING_TO_NEXT.toString(),
-                bearingRepr);
+                DoghouseFields.BEARING_TO_NEXT.toString(), bearingRepr);
+
     }
 
     private void setDistanceToNext() {
@@ -476,15 +503,22 @@ public final class Doghouse extends Polyline implements
         setMetaString(DoghouseFields.DISTANCE_TO_NEXT.toString(), distanceRepr);
     }
 
-    private double convertTrueToMagnetic(double bearingTrue) {
-        return ATAKUtilities.convertFromTrueToMagnetic(_source.get(),
-                bearingTrue);
-    }
-
     private String formatBearingString(double bearing) {
-        return _showNorthReference
-                ? AngleUtilities.format(bearing, Angle.DEGREE, 0) + "M"
-                : String.format(LocaleUtil.getCurrent(), "%.0f", bearing);
+        String type;
+        int decimalPlaces = 0;
+        switch (_northReference) {
+            case MAGNETIC:
+                type = "M";
+                break;
+            case TRUE:
+                type = "T";
+                break;
+            default:
+                type = "G";
+                decimalPlaces = 3;
+        }
+        return AngleUtilities.format(bearing, Angle.DEGREE, decimalPlaces)
+                + type;
     }
 
     private String formatDistanceString(double distance) {

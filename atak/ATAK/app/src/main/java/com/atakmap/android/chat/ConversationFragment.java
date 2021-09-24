@@ -36,13 +36,13 @@ import android.widget.Toast;
 
 import com.atakmap.android.chat.ModePicker.ModeUpdateListener;
 import com.atakmap.android.ipc.AtakBroadcast;
-import com.atakmap.android.maps.Location;
+import com.atakmap.android.maps.ILocation;
 import com.atakmap.android.maps.MapTouchController;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.app.R;
 import com.atakmap.coremap.log.Log;
 
-import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 
 import java.util.ArrayList;
@@ -168,8 +168,10 @@ public class ConversationFragment extends Fragment implements
         if (!acksAvailable)
             toAddOrAck.acked = true;
 
-        if (isVisible())
+        if (isVisible() && !toAddOrAck.read) {
             toAddOrAck.read = true;
+            GeoChatService.getInstance().sendReadStatus(toAddOrAck);
+        }
 
         return getLineAdapter().addOrAckChatLine(toAddOrAck);
     }
@@ -300,7 +302,7 @@ public class ConversationFragment extends Fragment implements
         final Contact target = getTarget();
         panTo.setVisibility(target instanceof MapItemUser
                 && ((MapItemUser) target).getMapItem() != null
-                || target instanceof Location
+                || target instanceof ILocation
                 || (target != null && target.getAction(GoTo.class) != null)
                         ? View.VISIBLE
                         : View.GONE);
@@ -532,10 +534,10 @@ public class ConversationFragment extends Fragment implements
             else if (target instanceof MapItemUser)
                 MapTouchController.goTo(((MapItemUser) target).getMapItem(),
                         false);
-            else if (target instanceof Location) {
-                GeoPointMetaData point = ((Location) target).getLocation();
-                if (point.get().isValid() && getMapView() != null)
-                    getMapView().getMapController().panTo(point.get(), false);
+            else if (target instanceof ILocation) {
+                GeoPoint point = ((ILocation) target).getPoint(null);
+                if (point.isValid() && getMapView() != null)
+                    getMapView().getMapController().panTo(point, false);
             }
         }
 

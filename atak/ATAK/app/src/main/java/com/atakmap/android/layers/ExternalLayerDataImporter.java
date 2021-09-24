@@ -7,15 +7,18 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.Xml;
 
+import com.atakmap.android.filesystem.ResourceFile;
 import com.atakmap.android.gdal.layers.KmzLayerInfoSpi;
 import com.atakmap.android.importexport.ImportReceiver;
 import com.atakmap.android.importexport.Importer;
 import com.atakmap.android.importexport.ImporterManager;
+import com.atakmap.android.model.ModelImporter;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.comms.CommsMapComponent.ImportResult;
 import com.atakmap.io.ZipVirtualFile;
+import com.atakmap.map.layer.model.ModelInfoFactory;
 import com.atakmap.map.layer.raster.LocalRasterDataStore;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.spatial.file.KmlFileSpatialDb;
@@ -123,20 +126,23 @@ public class ExternalLayerDataImporter implements Importer {
                 LayersNotificationManager.notifyImportComplete(file, success);
         }
 
-        // Import vector parts of the GRG if there are any
+        // Import vector and 3D parts of the GRG if there are any
         if (success && FileSystemUtils.checkExtension(file, "kmz")) {
 
             // XXX - Hack for ATAK-14355
             // If the GRG is only made up of a ground overlays (no other
             // vector elements) then don't import as a KMZ
             if (!isSimpleGRG(file)) {
-                Importer kmzImporter = ImporterManager.findImporter(
-                        KmlFileSpatialDb.KML_CONTENT_TYPE,
+
+                // Import vector portions of KMZ
+                importFileAs(file, KmlFileSpatialDb.KML_CONTENT_TYPE,
                         KmlFileSpatialDb.KMZ_FILE_MIME_TYPE);
-                if (kmzImporter != null)
-                    kmzImporter.importData(Uri.fromFile(file),
-                            KmlFileSpatialDb.KMZ_FILE_MIME_TYPE, null);
             }
+
+            // Import as 3D model if found (.dae format)
+            if (ModelInfoFactory.isSupported(Uri.fromFile(file)))
+                importFileAs(file, ModelImporter.CONTENT_TYPE,
+                        ResourceFile.UNKNOWN_MIME_TYPE);
         }
 
         return success ? ImportResult.SUCCESS : ImportResult.FAILURE;
@@ -158,12 +164,10 @@ public class ExternalLayerDataImporter implements Importer {
 
         // Remove from KMZ handler as well
         if (FileSystemUtils.checkExtension(file, "kmz")) {
-            Importer kmzImporter = ImporterManager.findImporter(
-                    KmlFileSpatialDb.KML_CONTENT_TYPE,
+            deleteFileAs(file, KmlFileSpatialDb.KML_CONTENT_TYPE,
                     KmlFileSpatialDb.KMZ_FILE_MIME_TYPE);
-            if (kmzImporter != null)
-                kmzImporter.deleteData(Uri.fromFile(file),
-                        KmlFileSpatialDb.KMZ_FILE_MIME_TYPE);
+            deleteFileAs(file, ModelImporter.CONTENT_TYPE,
+                    ResourceFile.UNKNOWN_MIME_TYPE);
         }
 
         return true;
@@ -264,5 +268,21 @@ public class ExternalLayerDataImporter implements Importer {
                 }
             }
         }
+    }
+
+    private static void importFileAs(File file, String contentType,
+            String mimeType)
+            throws IOException {
+        Importer importer = ImporterManager.findImporter(contentType, mimeType);
+        if (importer != null)
+            importer.importData(Uri.fromFile(file), mimeType, null);
+    }
+
+    private static void deleteFileAs(File file, String contentType,
+            String mimeType)
+            throws IOException {
+        Importer importer = ImporterManager.findImporter(contentType, mimeType);
+        if (importer != null)
+            importer.deleteData(Uri.fromFile(file), mimeType);
     }
 }

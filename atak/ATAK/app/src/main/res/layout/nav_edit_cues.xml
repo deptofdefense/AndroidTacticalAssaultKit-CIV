@@ -138,6 +138,7 @@
             android:inputType="textMultiLine"
             android:gravity="center"
             android:hint="@string/custom_cue"
+            android:imeOptions="flagNoFullscreen|actionDone"
             android:maxLines="20" />
 
     </LinearLayout>

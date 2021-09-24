@@ -162,7 +162,6 @@ public class RangeAndBearingReceiver extends BroadcastReceiver {
                                         .toString());
                         point1.setMetaString("menu",
                                 "menus/rab_endpoint_menu.xml");
-                        point1.setClickable(true);
                         RangeAndBearingMapComponent.getGroup().addItem(point1);
                         RangeAndBearingEndpoint point2 = new RangeAndBearingEndpoint(
                                 rb
@@ -172,7 +171,6 @@ public class RangeAndBearingReceiver extends BroadcastReceiver {
                                         .toString());
                         point2.setMetaString("menu",
                                 "menus/rab_endpoint_menu.xml");
-                        point2.setClickable(true);
                         RangeAndBearingMapComponent.getGroup().addItem(point2);
                         RangeAndBearingMapItem newRABLine = RangeAndBearingMapItem
                                 .createOrUpdateRABLine(

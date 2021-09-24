@@ -47,6 +47,7 @@
     <string name="cache_creds_username">Cache username</string>
     <string name="cache_creds_both">Cache credentials</string>
     <string name="no_more_data">no more map data this direction</string>
+    <string name="retry">Retry</string>
     <string name="cancel">Cancel</string>
     <string name="dump_upload">Upload</string>
     <string name="placeholder_title" translatable="false">PLACEHOLDER</string>
@@ -173,7 +174,7 @@
     <string name="dropdown_width" translatable="false">2</string>
 
     <string name="contact_list_button_select_all">Select All</string>
-    <string name="contact_list_button_deselect_all">Clear All</string>
+    <string name="contact_list_button_deselect_all">Deselect All</string>
     <string name="contact_list_button_share">Send</string>
     <string name="contact_list_child_default_text" translatable="false">@string/callsign_parenths</string>
     <string name="contact_list_button_send_to_all">Broadcast</string>
@@ -1656,6 +1657,7 @@
     <string name="password2">Password</string>
     <string name="username_colon">Username:</string>
     <string name="password_colon">Password:</string>
+    <string name="address_colon">Address:</string>
     <string name="knots">" knots"</string>
     <string name="prone">Prone</string>
     <string name="include_attachments">Include Attachments?</string>
@@ -2050,7 +2052,7 @@
     <string name="none_lower">None</string>
     <string name="direction">"Direction "</string>
     <string name="direction_no_colon">"Direction"</string>
-    <string name="unselect_all">Unselect All</string>
+    <string name="unselect_all">Deselect All</string>
     <string name="kts">kts</string>
     <string name="in">In</string>
     <string name="tool_tip">Tool is open underneath the current tool.</string>
@@ -2640,6 +2642,7 @@
     <!--Elevation Tools-->
     <string name="heatmap">Heatmap</string>
     <string name="viewshed">Viewshed</string>
+    <string name="terrainslope">Terrain Slope</string>
     <string name="hide_viewshed">Remove Viewshed</string>
     <string name="select_viewshed">Select Viewshed</string>
     <string name="no_marker_set">No Marker Set</string>
@@ -2666,7 +2669,7 @@
     <string name="x_resolution_summ">Number of elevation samples to take along the x-axis</string>
     <string name="y_resolution">Y Resolution</string>
     <string name="y_resolution_summ">Number of elevation samples to take along the y-axis</string>
-    <string name="show_heatmap">Show Heatmap</string>
+    <string name="show_heatmap">Show </string>
     <string name="dted">DTED:\u0020</string>
     <string name="level_1">Level 1</string>
     <string name="sample_rate">Sample Rate</string>
@@ -2680,7 +2683,7 @@
     <string name="rel_gradient">REL GRADIENT</string>
     <string name="show_circle">Circular\nViewshed</string>
     <string name="show_circle2">Circular Viewshed</string>
-    
+    <string name="show_terrainslope">Show Terrain Slope</string>
 
     <!--Overlay Manager-->
     <string name="overlay_manager">Overlay Manager</string>
@@ -3669,6 +3672,8 @@
     <string translatable="false" name="repeater_geofence_breached">Geo-fence Breached</string>
     <string translatable="false" name="repeater_in_contact">In Contact</string>
     <string name="enroll_for_client_certificate">Enroll for Client Certificate</string>
+    <string name="tak_server_quick_connect">TAK Server Quick Connect</string>
+    <string name="quick_connect">Quick Connect</string>
     <string name="triple_dash" translatable="false">---</string>
     <string name="availability_colon">Availability:</string>
     <string name="md5" translatable="false">MD5</string>
@@ -3763,6 +3768,7 @@
     <string name="actionbar_radiocontrols">Radio Controls</string>
     <string name="actionbar_missionpackage">Data Package</string>
     <string name="actionbar_importmanager">Import Manager</string>
+    <string name="actionbar_channels">Channels</string>
     <string name="actionbar_emergency">Emergency</string>
     <string name="actionbar_clearcontent">Clear Content</string>
     <string name="actionbar_brightness">Brightness</string>
@@ -4339,13 +4345,13 @@
     <string name="resection_update_location_title">Update location?</string>
     <string name="resection_update_location_message">Do you want to update your location to the resection estimate?\nLocation: %s</string>
     <string name="resection_estimate_label">Provider: %1$s\nLocation: %2$s\nConfidence: %3$s</string>
-    <string name="resection_select_estimates_prompt_title">Select which location estimates to use</string>
+    <string name="resection_select_estimates_prompt_title">Select which location estimate to use</string>
     <string name="resection_run_another_title">Run another Resection tool?</string>
     <string name="resection_run_another_message">Do you want to run another Resection tool to get another estimate?</string>
-    <string name="resection_no_estimates_selected">No estimates were selected--unable to compute a location</string>
+    <string name="resection_no_estimates_selected">No estimate was selected</string>
 
     <string name="invalid_cot_address">Invalid output encountered, make sure the address does not contain the protocol or port</string>
-    <string name="image_overlay_hud">Image Overlay HUD</string>
+    <string name="image_overlay_hud">Image Overlay</string>
     <string name="image_overlay_warning">This option will permanently overlay metadata onto the image. Continue?</string>
     <string name="kml_network_link">KML Network Link</string>
     <string name="kml_links_added_msg">Added %d KML network links</string>
@@ -4391,4 +4397,19 @@
     <string name="legacy_altitude_rendering">Enhanced Depth Perception</string>
     <string name="disable_parallax_viewing">Enhances visualization of depth when looking straight down.</string>
     <string name="lollipop_description">Draws a line to the exact point on the ground represented by the item.</string>
+    <string name="self_authored">Self-Authored</string>
+    <string name="toggle_filters">Toggle Filters</string>
+    <string name="enter_caption_button">Tap the Edit button to enter caption</string>
+    <string name="deleting_dted_files">Deleting %s files&#8230;</string>
+    <string name="refreshing">Refreshing&#8230;</string>
+    <string name="select_deletion_method">Select deletion method:</string>
+    <string name="no_content_selectable">No content can be selected</string>
+    <string name="delete_contents">Delete Contents</string>
+    <string name="select_lasso_action">Select Lasso Action</string>
+    <string name="lasso_select">Lasso Select</string>
+    <string name="checked_abbr">Chk</string>
+    <string name="perimeter">Perimeter</string>
+    <string name="circumference">Circumference</string>
+    <string name="length">Length</string>
+    <string name="bulk_feature_edit_limit_msg">Bulk editing of more than 500 features is not supported.</string>
 </resources>

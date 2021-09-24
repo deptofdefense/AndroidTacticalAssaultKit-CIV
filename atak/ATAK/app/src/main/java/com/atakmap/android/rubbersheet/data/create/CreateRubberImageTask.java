@@ -143,7 +143,7 @@ public class CreateRubberImageTask extends AbstractCreationTask {
         RubberImage rs = RubberImage.create(_mapView, data);
         if (rs != null) {
             if (!FileSystemUtils.isEmpty(label))
-                rs.setName(label.trim());
+                rs.setTitle(label.trim());
             rs.setLoadState(LoadState.SUCCESS);
         }
         return rs;

@@ -1,0 +1,116 @@
+apply from: 'gradle/versions.gradle'
+
+task jarTtpDistWin64RuntimeLibs(type: Jar) {
+    group = 'Build'
+    description = 'Assembles a JAR containing the TTP runtime libraries for Windows x64.'
+
+    archiveBaseName = 'takthirdparty-rt-win64'
+    archiveVersion = ttpDistVersion
+    destinationDirectory = file("$buildDir/runtimeLibs")
+
+    into('libs/win64') {
+        from "$rootDir/../win64-release/lib"
+        include '*.dll'
+    }
+}
+
+task jarTtpDistLinux64RuntimeLibs(type: Jar) {
+    group = 'Build'
+    description = 'Assembles a JAR containing the TTP runtime libraries for Linux x64.'
+
+    archiveBaseName = 'takthirdparty-rt-linux64'
+    archiveVersion = ttpDistVersion
+    destinationDirectory = file("$buildDir/runtimeLibs")
+
+    into('libs/linux64') {
+        from "$rootDir/../linux-amd64-release/lib"
+        include '*.so'
+    }
+}
+
+task jarTtpDistMacOs64RuntimeLibs(type: Jar) {
+    group = 'Build'
+    description = 'Assembles a JAR containing the TTP runtime libraries for MacOS x64.'
+
+    archiveBaseName = 'takthirdparty-rt-macos64'
+    archiveVersion = ttpDistVersion
+    destinationDirectory = file("$buildDir/runtimeLibs")
+
+    into('libs/macos64') {
+        from "$rootDir/../macos-64-release/lib"
+        include '*.dylib'
+    }
+}
+
+task createAndroidSourceSet(type: Copy) {
+    group = 'Build'
+    description = 'Dynamically creates the Android native library source-sets required to build takthirdparty.aar. Assumes ' +
+            'that the Android ttp-dist libraries have been built and placed in the root of the repo.'
+
+    destinationDir = file("$rootDir")
+    includeEmptyDirs = false
+
+    // Define input paths.
+    def arm64LibsPath = "$rootDir/../android-arm64-v8a-release/lib"
+    def armEabiLibsPath = "$rootDir/../android-armeabi-v7a-release/lib"
+    def x86LibsPath = "$rootDir/../android-x86-release/lib"
+
+    // Define output paths.
+    def jniLibsSourceSetPath = 'src/main/jniLibs'
+    def arm64SourceSetPath = "$jniLibsSourceSetPath/arm64-v8a"
+    def armEabiSourceSetPath = "$jniLibsSourceSetPath/armeabi-v7a"
+    def x86SourceSetPath = "$jniLibsSourceSetPath/x86"
+
+    inputs.files(fileTree(arm64LibsPath), fileTree(armEabiLibsPath), fileTree(x86LibsPath))
+            .withPropertyName('sourceLibs')
+    outputs.files(fileTree(arm64SourceSetPath), fileTree(armEabiSourceSetPath), fileTree(x86SourceSetPath))
+            .withPropertyName('targetLibs')
+
+    //Copy Assimp and GDAL JARs.
+    from("$rootDir/../android-arm64-v8a-release/java") {
+        into 'libs'
+        include '*.jar'
+    }
+
+    // Copy arm64-v8a libraries into their own source-set.
+    from("$arm64LibsPath") {
+        into "$arm64SourceSetPath"
+        include '*.so'
+    }
+    from("$arm64LibsPath/ogdi") {
+        into "$arm64SourceSetPath"
+        include 'libogdi.so'
+    }
+
+    // Copy armeabi-v7a libraries into their own source-set.
+    from("$armEabiLibsPath") {
+        into "$armEabiSourceSetPath"
+        include '*.so'
+    }
+    from("$armEabiLibsPath/ogdi") {
+        into "$armEabiSourceSetPath"
+        include 'libogdi.so'
+    }
+
+    // Copy x86 libraries into their own source-set.
+    from("$x86LibsPath") {
+        into "$x86SourceSetPath"
+        include '*.so'
+    }
+    from("$x86LibsPath/ogdi") {
+        into "$x86SourceSetPath"
+        include 'libogdi.so'
+    }
+
+    // Copy AndroidManifest.xml into jniLibs source-set, as it's required to build the final AAR.
+    from("$rootDir/gradle/resources/AndroidManifest.xml") {
+        into 'src/main'
+    }
+}
+
+task cleanAndroidSourceSet(type: Delete) {
+    group = 'Build'
+    description = 'Cleans the Android jniLibs source-set dynamically created by task createAndroidSourceSet.'
+
+    delete 'src', 'libs'
+}

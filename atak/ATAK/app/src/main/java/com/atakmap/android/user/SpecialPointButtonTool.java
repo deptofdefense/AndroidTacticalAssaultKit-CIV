@@ -301,10 +301,8 @@ public abstract class SpecialPointButtonTool extends Tool {
             _marker.setMetaString("menu", menu);
             _marker.setMetaString("deleteAction", deleteAction);
             _marker.setMetaBoolean("removable", false);
-            _marker.setMarkerHitBounds(-32, -32, 32, 32);
             _marker.setMetaDouble("minRenderScale", Double.MAX_VALUE);
             _marker.setMetaBoolean("extendedElevationDisplay", true);
-            _marker.setClickable(true);
 
         }
 

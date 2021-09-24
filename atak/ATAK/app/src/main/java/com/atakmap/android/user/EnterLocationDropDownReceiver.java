@@ -61,7 +61,6 @@ import com.atakmap.android.user.icon.MissionSpecificPallet;
 import com.atakmap.android.user.icon.SpotMapPallet;
 import com.atakmap.android.user.icon.UserIconPallet;
 import com.atakmap.android.user.icon.UserIconPalletFragment;
-import com.atakmap.android.user.icon.VehiclePallet;
 import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -304,9 +303,6 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
 
         pallets.add(new SpotMapPallet());
         Log.d(TAG, "Adding SpotMapPallet");
-
-        pallets.add(new VehiclePallet());
-        Log.d(TAG, "Adding VehiclePallet");
 
         List<UserIconSet> iconsets = UserIconDatabase.instance(
                 getMapView().getContext()).getIconSets(true, false);

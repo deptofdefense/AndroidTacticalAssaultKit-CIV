@@ -19,7 +19,6 @@ import android.widget.Toast;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.preference.AtakPreferences;
 import com.atakmap.android.video.manager.VideoManager;
-import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
@@ -229,64 +228,5 @@ public class VideoListDialog {
         TextView alias;
         TextView url;
         CheckBox selected;
-    }
-
-    // Deprecated methods/callback - ugly and not as intuitive
-
-    /**
-     * @deprecated create own instance instead
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public static boolean selectVideo(Context context, String message,
-            List<ConnectionEntry> videoConnections,
-            final VideoSelectionCallback callback) {
-        MapView mv = MapView.getMapView();
-        if (mv == null)
-            return false;
-        return new VideoListDialog(mv).show(message, videoConnections, false,
-                new Callback() {
-                    @Override
-                    public void onVideosSelected(
-                            List<ConnectionEntry> selected) {
-                        if (selected == null)
-                            return;
-                        callback.onSelection(selected.get(0));
-                    }
-                });
-    }
-
-    /**
-     * @deprecated create own instance instead
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public static boolean selectVideos(Context context, String message,
-            List<ConnectionEntry> videoConnections,
-            final VideoSelectionCallback callback) {
-        MapView mv = MapView.getMapView();
-        if (mv == null)
-            return false;
-        return new VideoListDialog(mv).show(message, videoConnections, true,
-                new Callback() {
-                    @Override
-                    public void onVideosSelected(
-                            List<ConnectionEntry> selected) {
-                        callback.onSelection(new HashSet<>(selected));
-                    }
-                });
-    }
-
-    /**
-     * @deprecated Exclusive dependency of static methods, will remove removed
-     *             when static methods are removed
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public interface VideoSelectionCallback {
-
-        void onSelection(HashSet<ConnectionEntry> selected);
-
-        void onSelection(ConnectionEntry selected);
     }
 }

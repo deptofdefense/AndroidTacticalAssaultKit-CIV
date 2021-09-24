@@ -13,9 +13,8 @@ import com.atakmap.android.hierarchy.action.GoTo;
 import com.atakmap.android.hierarchy.action.Visibility;
 import com.atakmap.android.hierarchy.items.AbstractChildlessListItem;
 import com.atakmap.android.ipc.AtakBroadcast;
-import com.atakmap.android.maps.Location;
+import com.atakmap.android.maps.ILocation;
 import com.atakmap.android.menu.MapMenuReceiver;
-import com.atakmap.android.overlay.MapOverlay;
 import com.atakmap.android.user.FocusBroadcastReceiver;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
@@ -24,6 +23,7 @@ import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.coremap.maps.coords.MutableGeoBounds;
 import com.atakmap.map.layer.feature.Adapters;
 import com.atakmap.map.layer.feature.DataStoreException;
 import com.atakmap.map.layer.feature.Feature;
@@ -44,7 +44,7 @@ import java.util.Set;
 
 public class FeatureHierarchyListItem extends
         AbstractChildlessListItem implements GoTo,
-        Visibility, Location, Delete, View.OnClickListener {
+        Visibility, ILocation, Delete, View.OnClickListener {
 
     private final FeatureDataStore2 spatialDb;
     private final long fid;
@@ -227,6 +227,11 @@ public class FeatureHierarchyListItem extends
     }
 
     @Override
+    public String getUID() {
+        return String.valueOf(this.fid);
+    }
+
+    @Override
     public <T extends Action> T getAction(Class<T> clazz) {
         // XXX - legacy guard -- need to find out why we would get null bounds?
         if (clazz.equals(GoTo.class) && this.bounds == null)
@@ -266,10 +271,10 @@ public class FeatureHierarchyListItem extends
     @Override
     public void onClick(View v) {
         if (v.getId() == R.id.editButton) {
-            // TODO: Prompt to edit feature
             Intent i = new Intent(FeatureEditDropdownReceiver.SHOW_EDIT);
             i.putExtra("fid", this.fid);
             i.putExtra("title", this.getTitle());
+            i.putExtra("databaseUri", this.spatialDb.getUri());
             AtakBroadcast.getInstance().sendBroadcast(i);
         }
     }
@@ -330,27 +335,24 @@ public class FeatureHierarchyListItem extends
     /**************************************************************************/
 
     @Override
-    public GeoPointMetaData getLocation() {
-        GeoPoint location = GeoPoint.createMutable();
+    public GeoPoint getPoint(GeoPoint point) {
+        GeoPoint location = point != null ? point : GeoPoint.createMutable();
         location.set(Double.NaN, Double.NaN);
         location.set(altitude.get().getAltitude());
         if (this.bounds != null)
             this.bounds.getCenter(location);
-        return GeoPointMetaData.wrap(location);
+        return location;
     }
 
     @Override
-    public String getFriendlyName() {
-        return this.getTitle();
-    }
-
-    @Override
-    public String getUID() {
-        return uid;
-    }
-
-    @Override
-    public MapOverlay getOverlay() {
-        return null;
+    public GeoBounds getBounds(MutableGeoBounds bounds) {
+        if (bounds != null) {
+            if (this.bounds != null)
+                bounds.set(this.bounds);
+            else
+                bounds.clear();
+            return bounds;
+        }
+        return this.bounds;
     }
 }

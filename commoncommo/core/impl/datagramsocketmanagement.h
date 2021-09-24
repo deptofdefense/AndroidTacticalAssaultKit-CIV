@@ -10,10 +10,10 @@
 #include "commoresult.h"
 #include "commotime.h"
 #include "cryptoutil.h"
+#include "commothread.h"
 #include <set>
 #include <map>
 #include <deque>
-#include <RWMutex.h>
 
 namespace atakmap {
 namespace commoncommo {
@@ -139,7 +139,7 @@ private:
         std::set<BroadcastContext *> broadcastContexts;
 
         NetAddress *netAddr;
-        PGSC::Thread::Mutex stateMutex;
+        thread::Mutex stateMutex;
 
         UdpSocket *outboundSocket;
 
@@ -214,7 +214,7 @@ private:
     std::set<BroadcastContext *> unicastBroadcastContexts;
     InterfaceMap interfaceContexts;
     SharedSocketMap socketContexts;
-    PGSC::Thread::RWMutex interfaceMutex;
+    thread::RWMutex interfaceMutex;
 
     UdpSocket *txSocket;
 
@@ -229,31 +229,31 @@ private:
     // Mutex, lock starvation of the "writing" calls was seen with the "read"
     // portion never giving up the mutex effectively (on some platforms,
     // notably Linux)
-    PGSC::Thread::RWMutex globalRxMutex;
+    thread::RWMutex globalRxMutex;
     NetSelector rxSelector;
     bool rxNeedsRebuild;
     // Protects all tx sockets across all interfaces
-    PGSC::Thread::Mutex globalTxMutex;
+    thread::Mutex globalTxMutex;
 
     // RX Queue - new items on front
     std::deque<RxQueueItem> rxQueue;
-    PGSC::Thread::Mutex rxQueueMutex;
-    PGSC::Thread::CondVar rxQueueMonitor;
+    thread::Mutex rxQueueMutex;
+    thread::CondVar rxQueueMonitor;
 
     // TX Queue - new items on front
     std::deque<TxQueueItem> txQueue;
-    PGSC::Thread::Mutex txQueueMutex;
-    PGSC::Thread::CondVar txQueueMonitor;
+    thread::Mutex txQueueMutex;
+    thread::CondVar txQueueMonitor;
 
     CommoTime nextBroadcastTime;
 
     // Listeners
     std::set<DatagramListener *> listeners;
-    PGSC::Thread::Mutex listenerMutex;
+    thread::Mutex listenerMutex;
 
     // Interface status listeners
     std::set<InterfaceStatusListener *> ifaceListeners;
-    PGSC::Thread::Mutex ifaceListenerMutex;
+    thread::Mutex ifaceListenerMutex;
 
     MeshNetCrypto *rxCrypto;  // lock on rxQueueMutex
     MeshNetCrypto *txCrypto;  // lock on globalTxMutex

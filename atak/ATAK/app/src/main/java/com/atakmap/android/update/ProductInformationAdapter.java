@@ -428,7 +428,8 @@ public class ProductInformationAdapter extends BaseAdapter {
             holder.status.setVisibility(View.VISIBLE);
         }
 
-        if (app.productType == ProductInformation.ProductType.plugin) {
+        if (app.productType == ProductInformation.ProductType.plugin &&
+                AppMgmtUtils.isInstalled(_context, app.getPackageName())) {
             final int message;
 
             if (AtakPluginRegistry.verifyTrust(_context, app.packageName)) {
@@ -440,6 +441,7 @@ public class ProductInformationAdapter extends BaseAdapter {
                         _context.getDrawable(R.drawable.untrusted));
                 message = R.string.not_officially_signed;
             }
+
             holder.trusted.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -456,6 +458,7 @@ public class ProductInformationAdapter extends BaseAdapter {
         } else {
             holder.trusted.setImageDrawable(
                     _context.getDrawable(R.drawable.disabled_trust));
+            holder.trusted.setOnClickListener(null);
         }
 
         //now populate update availability
@@ -1216,14 +1219,14 @@ public class ProductInformationAdapter extends BaseAdapter {
         if (FileSystemUtils.isEmpty(temp)) {
             descView.setVisibility(View.GONE);
             setTextView(
-                    ((TextView) detailView
-                            .findViewById(R.id.app_mgmt_product_desc)),
+                    detailView
+                            .findViewById(R.id.app_mgmt_product_desc),
                     "");
         } else {
             descView.setVisibility(View.VISIBLE);
             setTextView(
-                    ((TextView) detailView
-                            .findViewById(R.id.app_mgmt_product_desc)),
+                    detailView
+                            .findViewById(R.id.app_mgmt_product_desc),
                     temp);
         }
 
@@ -1343,8 +1346,8 @@ public class ProductInformationAdapter extends BaseAdapter {
                 : (app.getPlatform().toString() + " " + app.getProductType()
                         .toString());
         setTextView(
-                ((TextView) detailView
-                        .findViewById(R.id.app_mgmt_product_platform)),
+                detailView
+                        .findViewById(R.id.app_mgmt_product_platform),
                 temp);
 
         temp = "";
@@ -1353,16 +1356,16 @@ public class ProductInformationAdapter extends BaseAdapter {
         if (app.getRevision() != AppMgmtUtils.APP_NOT_INSTALLED)
             temp += " (" + app.getRevision() + ")";
         setTextView(
-                ((TextView) detailView
-                        .findViewById(R.id.app_mgmt_product_version)),
+                detailView
+                        .findViewById(R.id.app_mgmt_product_version),
                 temp);
 
         temp = "";
         if (app.hasFileSize())
             temp = MathUtils.GetLengthString(app.getFileSize());
         setTextView(
-                ((TextView) detailView
-                        .findViewById(R.id.app_mgmt_product_size)),
+                detailView
+                        .findViewById(R.id.app_mgmt_product_size),
                 temp);
 
         temp = app.getDescription();
@@ -1371,14 +1374,14 @@ public class ProductInformationAdapter extends BaseAdapter {
         if (FileSystemUtils.isEmpty(temp)) {
             descView.setVisibility(View.GONE);
             setTextView(
-                    ((TextView) detailView
-                            .findViewById(R.id.app_mgmt_product_desc)),
+                    detailView
+                            .findViewById(R.id.app_mgmt_product_desc),
                     "");
         } else {
             descView.setVisibility(View.VISIBLE);
             setTextView(
-                    ((TextView) detailView
-                            .findViewById(R.id.app_mgmt_product_desc)),
+                    detailView
+                            .findViewById(R.id.app_mgmt_product_desc),
                     temp);
         }
 
@@ -1447,17 +1450,17 @@ public class ProductInformationAdapter extends BaseAdapter {
         }
 
         setTextView(
-                ((TextView) detailView
-                        .findViewById(R.id.app_mgmt_product_installedVersion)),
+                detailView
+                        .findViewById(R.id.app_mgmt_product_installedVersion),
                 temp);
         if (app.isInstalled()) {
             String currentTakRequirement = AtakPluginRegistry
                     .getPluginApiVersion(_context, app.getPackageName(), false);
             if (FileSystemUtils.isEmpty(currentTakRequirement)) {
                 setTextView(
-                        ((TextView) detailView
+                        detailView
                                 .findViewById(
-                                        R.id.app_mgmt_product_installed_takreq)),
+                                        R.id.app_mgmt_product_installed_takreq),
                         "NA");
                 ((ImageView) detailView
                         .findViewById(
@@ -1469,9 +1472,9 @@ public class ProductInformationAdapter extends BaseAdapter {
                         app.getPackageName(), currentTakRequirement);
 
                 setTextView(
-                        ((TextView) detailView
+                        detailView
                                 .findViewById(
-                                        R.id.app_mgmt_product_installed_takreq)),
+                                        R.id.app_mgmt_product_installed_takreq),
                         currentTakRequirement);
                 ((ImageView) detailView
                         .findViewById(
@@ -1483,9 +1486,9 @@ public class ProductInformationAdapter extends BaseAdapter {
             }
         } else {
             setTextView(
-                    ((TextView) detailView
+                    detailView
                             .findViewById(
-                                    R.id.app_mgmt_product_installed_takreq)),
+                                    R.id.app_mgmt_product_installed_takreq),
                     "");
             detailView.findViewById(
                     R.id.app_mgmt_product_installed_takreq_compatible)
@@ -1496,8 +1499,8 @@ public class ProductInformationAdapter extends BaseAdapter {
         temp = app.getOsRequirement() < 0 ? ""
                 : (androidValueOf(app.getOsRequirement()));
         setTextView(
-                ((TextView) detailView
-                        .findViewById(R.id.app_mgmt_product_osreq)),
+                detailView
+                        .findViewById(R.id.app_mgmt_product_osreq),
                 temp);
         ((ImageView) detailView
                 .findViewById(R.id.app_mgmt_product_osreq_compatible))
@@ -1507,8 +1510,8 @@ public class ProductInformationAdapter extends BaseAdapter {
                                         : R.drawable.importmgr_status_yellow);
 
         setTextView(
-                ((TextView) detailView
-                        .findViewById(R.id.app_mgmt_product_takreq)),
+                detailView
+                        .findViewById(R.id.app_mgmt_product_takreq),
                 app.getTakRequirement());
         ((ImageView) detailView
                 .findViewById(R.id.app_mgmt_product_takreq_compatible))
@@ -1535,12 +1538,12 @@ public class ProductInformationAdapter extends BaseAdapter {
             temp = app.getParent().getRepoType();
         }
         setTextView(
-                ((TextView) detailView
-                        .findViewById(R.id.app_mgmt_product_repo)),
+                detailView
+                        .findViewById(R.id.app_mgmt_product_repo),
                 temp);
         setTextView(
-                ((TextView) detailView
-                        .findViewById(R.id.app_mgmt_product_package)),
+                detailView
+                        .findViewById(R.id.app_mgmt_product_package),
                 app.getPackageName());
 
         //matches getView() logic above

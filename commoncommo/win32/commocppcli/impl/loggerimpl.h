@@ -14,7 +14,7 @@ namespace TAK {
             public:
                 LoggerImpl(TAK::Commo::ICommoLogger ^logger);
 
-                virtual void log(atakmap::commoncommo::CommoLogger::Level level, const char *message);
+                virtual void log(atakmap::commoncommo::CommoLogger::Level level, atakmap::commoncommo::CommoLogger::Type type, const char* message, void* data) override;
 
             private:
                 gcroot<TAK::Commo::ICommoLogger ^> loggerCLI;

@@ -39,7 +39,7 @@ public class GenericPoint {
         m.setMetaString("callsign", title);
         m.setMetaString("entry", "user");
         m.setType("u-d-p");
-        m.setMetaBoolean("movable", true);
+        m.setMovable(true);
         m.setMetaInteger("color", Color.WHITE);
         m.setMetaString("how", "h-g-i-g-o");
         return m;

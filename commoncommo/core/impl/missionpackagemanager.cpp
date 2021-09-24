@@ -1,6 +1,6 @@
 #include "missionpackagemanager.h"
 #include "fileioprovider.h"
-#include <Lock.h>
+#include "commothread.h"
 #include <utility>
 #include <sstream>
 #include <string.h>
@@ -8,6 +8,7 @@
 
 using namespace atakmap::commoncommo;
 using namespace atakmap::commoncommo::impl;
+using namespace atakmap::commoncommo::impl::thread;
 
 
 namespace {
@@ -256,10 +257,9 @@ void MissionPackageManager::messageReceivedImpl(
                 msg->getFileTransferAckSenderUid(),
                 msg->getFileTransferAckSize());
 
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, txAcksMutex);
+        Lock lock(txAcksMutex);
         txAcks.push_front(ack);
-        txAcksMonitor.broadcast(*lock);
+        txAcksMonitor.broadcast(lock);
 
         return;
     }
@@ -270,11 +270,10 @@ void MissionPackageManager::messageReceivedImpl(
 
     CoTFileTransferRequest *dupReq = new CoTFileTransferRequest(*xferReq);
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, rxRequestsMutex);
+        Lock lock(rxRequestsMutex);
         rxRequests.push_front(RxRequestDeque::value_type(streamingEndpoint, 
                                                          dupReq));
-        rxRequestsMonitor.broadcast(*lock);
+        rxRequestsMonitor.broadcast(lock);
     }
 }
 
@@ -283,15 +282,13 @@ void MissionPackageManager::messageReceivedImpl(
 
 void MissionPackageManager::setCallsign(const char *sign)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    PGSC::Thread::Lock_create(lock, callsignMutex);
+    Lock lock(callsignMutex);
     ourCallsign = sign;
 }
 
 void MissionPackageManager::setMPTransferSettings(const MPTransferSettings &settings)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    PGSC::Thread::Lock_create(lock, txTransfersMutex);
+    Lock lock(txTransfersMutex);
     
     xferSettings = settings;
 }
@@ -299,8 +296,7 @@ void MissionPackageManager::setMPTransferSettings(const MPTransferSettings &sett
 void MissionPackageManager::setLocalPort(int localPort)
         COMMO_THROW (std::invalid_argument)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    PGSC::Thread::Lock_create(lock, txTransfersMutex);
+    Lock lock(txTransfersMutex);
     
     InternalUtils::logprintf(logger, CommoLogger::LEVEL_INFO, "Changing local web server port to %d from current %d", localPort, webPort);
     if (localPort == webPort)
@@ -347,8 +343,7 @@ void MissionPackageManager::setLocalPort(int localPort)
 
 void MissionPackageManager::setLocalHttpsPort(int localPort)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    PGSC::Thread::Lock_create(lock, txTransfersMutex);
+    Lock lock(txTransfersMutex);
     
     InternalUtils::logprintf(logger, CommoLogger::LEVEL_INFO, "Changing local https server port to %d from current %d", localPort, httpsProxyPort);
     if (localPort == httpsProxyPort)
@@ -408,8 +403,7 @@ atakmap::commoncommo::CommoResult MissionPackageManager::sendFileInit(
 
     // Sort destinations by gone, tak servers, and local
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, txTransfersMutex);
+        Lock lock(txTransfersMutex);
 
         std::vector<const ContactUID *> ret;
         std::map<std::string, std::vector<const InternalContactUID *> *> streamToContacts;
@@ -518,8 +512,7 @@ atakmap::commoncommo::CommoResult MissionPackageManager::uploadFileInit(
     }
     
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, txTransfersMutex);
+        Lock lock(txTransfersMutex);
 
         TxTransferContext *txCtx = new TxTransferContext(this, 
                 nextTxId++,
@@ -544,8 +537,7 @@ atakmap::commoncommo::CommoResult MissionPackageManager::uploadFileInit(
 atakmap::commoncommo::CommoResult MissionPackageManager::sendFileStart(
                        int xferId)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    PGSC::Thread::Lock_create(lock, txTransfersMutex);
+    Lock lock(txTransfersMutex);
     
     // Try to find this transfer
     TxTransferMap::iterator iter;
@@ -560,8 +552,7 @@ atakmap::commoncommo::CommoResult MissionPackageManager::sendFileStart(
 
     // Give any new uploads to the upload thread
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, uploadRequestsMutex);
+        Lock lock(uploadRequestsMutex);
         std::set<TxUploadContext *>::iterator upIter;
         for (upIter = txCtx->uploadCtxs.begin(); upIter != txCtx->uploadCtxs.end(); ++upIter) {
             TxUploadContext *upCtx = *upIter;
@@ -586,7 +577,7 @@ atakmap::commoncommo::CommoResult MissionPackageManager::sendFileStart(
                                         0));
             }
         }
-        uploadRequestsMonitor.broadcast(*lock);
+        uploadRequestsMonitor.broadcast(lock);
     }
 
     // Send CoT for local transfers
@@ -743,30 +734,26 @@ void MissionPackageManager::threadStopSignal(
     switch (threadNum) {
     case RX_THREADID:
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, rxRequestsMutex);
-        rxRequestsMonitor.broadcast(*lock);
+        Lock lock(rxRequestsMutex);
+        rxRequestsMonitor.broadcast(lock);
         break;
     }
     case TX_THREADID:
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, txAcksMutex);
-        txAcksMonitor.broadcast(*lock);
+        Lock lock(txAcksMutex);
+        txAcksMonitor.broadcast(lock);
         break;
     }
     case TX_UPLOAD_THREADID:
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, uploadRequestsMutex);
-        uploadRequestsMonitor.broadcast(*lock);
+        Lock lock(uploadRequestsMutex);
+        uploadRequestsMonitor.broadcast(lock);
         break;
     }
     case EVENT_THREADID:
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, eventQueueMutex);
-        eventQueueMonitor.broadcast(*lock);
+        Lock lock(eventQueueMutex);
+        eventQueueMonitor.broadcast(lock);
         break;
     }
     }
@@ -803,8 +790,7 @@ void MissionPackageManager::uploadThreadProcess()
 
     while (!threadShouldStop(TX_UPLOAD_THREADID)) {
         {
-            PGSC::Thread::LockPtr lock(NULL, NULL);
-            PGSC::Thread::Lock_create(lock, uploadRequestsMutex);
+            Lock lock(uploadRequestsMutex);
             while (!uploadRequests.empty()) {
                 TxUploadContext *ctx = uploadRequests.back();
                 uploadRequests.pop_back();
@@ -832,11 +818,10 @@ void MissionPackageManager::uploadThreadProcess()
         if (uploadingRequests.empty()) {
             // Nap time - wait until a new request arrives
             while (!threadShouldStop(TX_UPLOAD_THREADID)) {
-                PGSC::Thread::LockPtr lock(NULL, NULL);
-                PGSC::Thread::Lock_create(lock, uploadRequestsMutex);
+                Lock lock(uploadRequestsMutex);
                 if (!uploadRequests.empty())
                     break;
-                uploadRequestsMonitor.wait(*lock);
+                uploadRequestsMonitor.wait(lock);
             }
             continue;
         }
@@ -1167,6 +1152,7 @@ void MissionPackageManager::uploadThreadInitCtx(TxUploadContext *upCtx) COMMO_TH
         CURL_CHECK(curl_easy_setopt(upCtx->curlCtx, CURLOPT_CONNECTTIMEOUT, (long)upCtx->owner->settings.getConnTimeoutSec()));
         CURL_CHECK(curl_easy_setopt(upCtx->curlCtx, CURLOPT_LOW_SPEED_LIMIT, 10L));
         CURL_CHECK(curl_easy_setopt(upCtx->curlCtx, CURLOPT_LOW_SPEED_TIME, (long)upCtx->owner->settings.getXferTimeoutSec()));
+        CURL_CHECK(curl_easy_setopt(upCtx->curlCtx, CURLOPT_FORBID_REUSE, 1L));
     } catch (std::invalid_argument &e) {
         curl_easy_cleanup(upCtx->curlCtx);
         upCtx->curlCtx = NULL;
@@ -1227,8 +1213,7 @@ void MissionPackageManager::uploadThreadUploadCompleted(TxUploadContext *upCtx, 
                 upCtx->bytesTransferred));
     } else {
         // on success, send out CoT; insert acksToIds and outstanding acks
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, txTransfersMutex);
+        Lock lock(txTransfersMutex);
 
         for (iter = upCtx->contacts->begin(); iter != upCtx->contacts->end(); iter++) {
             queueEvent(MPStatusEvent::createTxProgress(upCtx->owner->id,
@@ -1266,8 +1251,7 @@ void MissionPackageManager::uploadThreadUploadCompleted(TxUploadContext *upCtx, 
     }
 
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, txTransfersMutex);
+        Lock lock(txTransfersMutex);
         // in either case, remove upload from the owning txtransfercontext
         upCtx->owner->uploadCtxs.erase(upCtx);
         if (upCtx->owner->isDone()) {
@@ -1355,10 +1339,9 @@ void MissionPackageManager::transmitThreadProcess()
     while (!threadShouldStop(TX_THREADID)) {
         TxAckInfo *ackInfo;
         {
-            PGSC::Thread::LockPtr lock(NULL, NULL);
-            PGSC::Thread::Lock_create(lock, txAcksMutex);
+            Lock lock(txAcksMutex);
             if (txAcks.empty()) {
-                txAcksMonitor.wait(*lock);
+                txAcksMonitor.wait(lock);
                 continue;
             }
 
@@ -1369,8 +1352,7 @@ void MissionPackageManager::transmitThreadProcess()
         const InternalContactUID *transferDest = NULL;
         int txId = 0;
         {
-            PGSC::Thread::LockPtr lock(NULL, NULL);
-            PGSC::Thread::Lock_create(lock, txTransfersMutex);
+            Lock lock(txTransfersMutex);
             TxAcksMap::iterator iter = acksToIds.find(ackInfo->uid);
             if (iter != acksToIds.end()) {
                 txId = iter->second;
@@ -1494,8 +1476,7 @@ void MissionPackageManager::receiveThreadProcess()
 
     while (!threadShouldStop(RX_THREADID)) {
         {
-            PGSC::Thread::LockPtr lock(NULL, NULL);
-            PGSC::Thread::Lock_create(lock, rxRequestsMutex);
+            Lock lock(rxRequestsMutex);
             while (!rxRequests.empty()) {
                 RxRequestDeque::reference v = rxRequests.back();
                 newRequests.push_back(v);
@@ -1634,8 +1615,7 @@ void MissionPackageManager::receiveThreadProcess()
                          NULL);
 
             {
-                PGSC::Thread::LockPtr lock(NULL, NULL);
-                PGSC::Thread::Lock_create(lock, callsignMutex);
+                Lock lock(callsignMutex);
                 InternalUtils::urlAppendParam(ftc->curlCtx, &url,
                                               "receiver", ourCallsign.c_str());
             }
@@ -1655,6 +1635,7 @@ void MissionPackageManager::receiveThreadProcess()
             curl_easy_setopt(ftc->curlCtx, CURLOPT_XFERINFODATA,
                                         ftc);
             curl_easy_setopt(ftc->curlCtx, CURLOPT_NOPROGRESS, 0L);
+            curl_easy_setopt(ftc->curlCtx, CURLOPT_FORBID_REUSE, 1L);
             ftc->curlErrBuf[0] = 0;
 
             if (url.length() > 6 && url.substr(0, 6) == "https:") {
@@ -1681,8 +1662,7 @@ void MissionPackageManager::receiveThreadProcess()
             // Nap time - wait until next retry time, if any, or forever
             // until a new request arrives
             while (!threadShouldStop(RX_THREADID)) {
-                PGSC::Thread::LockPtr lock(NULL, NULL);
-                PGSC::Thread::Lock_create(lock, rxRequestsMutex);
+                Lock lock(rxRequestsMutex);
                 if (!rxRequests.empty())
                     break;
                 if (earliestTime) {
@@ -1691,9 +1671,9 @@ void MissionPackageManager::receiveThreadProcess()
                         break;
                     int64_t millis = dt.getSeconds() * 1000;
                     millis += dt.getMillis();
-                    rxRequestsMonitor.wait(*lock, millis);
+                    rxRequestsMonitor.wait(lock, millis);
                 } else
-                    rxRequestsMonitor.wait(*lock);
+                    rxRequestsMonitor.wait(lock);
             }
             continue;
         }
@@ -1881,8 +1861,7 @@ std::string MissionPackageManager::getLocalUrl(int transferId)
 
     std::string url = ss.str();
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, callsignMutex);
+        Lock lock(callsignMutex);
 
         csLocal = ourCallsign;
     }
@@ -1959,8 +1938,7 @@ int MissionPackageManager::webThreadAccessHandlerCallback(
             int xferId = InternalUtils::intFromString(file);
             std::string fileString;
             {
-                PGSC::Thread::LockPtr lock(NULL, NULL);
-                PGSC::Thread::Lock_create(lock, txTransfersMutex);
+                Lock lock(txTransfersMutex);
                 TxTransferMap::iterator iter = txTransfers.find(xferId);
                 if (iter == txTransfers.end())
                     throw std::invalid_argument("Unknown transfer id");
@@ -2017,10 +1995,9 @@ void MissionPackageManager::eventThreadProcess()
     while (!threadShouldStop(EVENT_THREADID)) {
         MPStatusEvent *event;
         {
-            PGSC::Thread::LockPtr lock(NULL, NULL);
-            PGSC::Thread::Lock_create(lock, eventQueueMutex);
+            Lock lock(eventQueueMutex);
             if (eventQueue.empty()) {
-                eventQueueMonitor.wait(*lock);
+                eventQueueMonitor.wait(lock);
                 continue;
             }
 
@@ -2041,11 +2018,10 @@ void MissionPackageManager::eventThreadProcess()
 
 void MissionPackageManager::queueEvent(MPStatusEvent *event)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    PGSC::Thread::Lock_create(lock, eventQueueMutex);
+    Lock lock(eventQueueMutex);
 
     eventQueue.push_front(event);
-    eventQueueMonitor.broadcast(*lock);
+    eventQueueMonitor.broadcast(lock);
 }
 
 

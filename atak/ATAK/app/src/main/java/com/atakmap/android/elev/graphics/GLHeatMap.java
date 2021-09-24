@@ -7,7 +7,7 @@ import android.os.SystemClock;
 import android.util.Pair;
 
 import com.atakmap.android.elev.HeatMapOverlay;
-import com.atakmap.android.elev.dt2.Dt2ElevationModel;
+import com.atakmap.android.elev.dt2.Dt2ElevationData;
 import com.atakmap.android.elev.dt2.Dt2FileWatcher;
 import com.atakmap.app.DeveloperOptions;
 import com.atakmap.coremap.conversions.ConversionFactors;
@@ -745,7 +745,7 @@ public class GLHeatMap extends GLAsynchronousMapRenderable<HeatMapParams>
     /** MIL-PRF-89020A 3.11.3.1 */
     private static float getDtedHeight(short s) {
         // note that cast of Double.NaN to float results in Float.NaN
-        return (float) Dt2ElevationModel.interpretSample(s);
+        return (float) Dt2ElevationData.interpretSample(s);
     }
 
     private static boolean isElevValid(float value) {

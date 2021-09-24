@@ -10,7 +10,13 @@ import com.atakmap.android.dropdown.DropDown;
 import com.atakmap.android.dropdown.DropDownReceiver;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.app.R;
+import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.map.layer.feature.DataSourceFeatureDataStore;
+import com.atakmap.map.layer.feature.FeatureDataStore;
+import com.atakmap.map.layer.feature.PersistentDataSourceFeatureDataStore;
+import com.atakmap.map.layer.feature.PersistentDataSourceFeatureDataStore2;
+
+import java.io.File;
 
 public class FeatureEditDropdownReceiver extends DropDownReceiver
         implements DropDown.OnStateListener {
@@ -37,17 +43,34 @@ public class FeatureEditDropdownReceiver extends DropDownReceiver
     @Override
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
-        long fid = intent.getLongExtra("fid", 0);
-        String[] fsids = intent.getStringArrayExtra("fsids");
+        long fid = intent.getLongExtra("fid", -1);
+        long[] fsids = intent.getLongArrayExtra("fsids");
         String title = intent.getStringExtra("title");
+        String dbUri = intent.getStringExtra("databaseUri");
+
         if (action == null)
             return;
+
+        FeatureDataStore db = _spatialDb;
+
+        // Find the database that's specified
+        if (dbUri != null && !dbUri.equals(_spatialDb.getUri())) {
+            File dbFile = FileSystemUtils.getFile(dbUri);
+            if (FileSystemUtils.isFile(dbFile)) {
+                try {
+                    db = new PersistentDataSourceFeatureDataStore2(dbFile);
+                } catch (Exception e) {
+                    db = new PersistentDataSourceFeatureDataStore(dbFile);
+                }
+            } else
+                return;
+        }
+
         if (action.equals(SHOW_EDIT)) {
-            if (fsids != null) {
-                _view.setItems(fsids, title, _spatialDb);
-            } else {
-                _view.setItem(fid, title, _spatialDb);
-            }
+            if (fsids != null)
+                _view.setItems(fsids, title, db);
+            else
+                _view.setItem(fid, title, db);
             setRetain(true);
             showDropDown(_view, THIRD_WIDTH, FULL_HEIGHT, FULL_WIDTH,
                     HALF_HEIGHT, this);

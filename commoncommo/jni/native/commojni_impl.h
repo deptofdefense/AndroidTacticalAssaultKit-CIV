@@ -4,8 +4,7 @@
 #include "commojni_common.h"
 #include "commo.h"
 
-#include <Mutex.h>
-
+#include <mutex>
 #include <set>
 #include <map>
 
@@ -75,7 +74,7 @@ namespace commoncommo {
         CommoLoggerJNI(JNIEnv *env, jobject jlogger) COMMO_THROW (int);
         static void destroy(JNIEnv *env, CommoLoggerJNI *logger);
 
-        virtual void log(Level level, const char *message);
+        virtual void log(Level level, Type type, const char* message, void* detail) override;
         
         static bool reflectionInit(JNIEnv *env);
         static void reflectionRelease(JNIEnv *env);
@@ -86,8 +85,14 @@ namespace commoncommo {
         jglobalobjectref jlogger;
         
         static jmethodID jmethod_log;
+        static jclass jclass_networkDetail;
+        static jmethodID jmethod_networkDetailCtor;
+        static jclass jclass_parsingDetail;
+        static jmethodID jmethod_parsingDetailCtor;
         static const int NUM_LOGGER_LEVELS = 5;
+        static const int NUM_LOGGER_TYPES = 3;
         static jglobalobjectref nativeLevelsToJava[NUM_LOGGER_LEVELS];
+        static jglobalobjectref nativeTypesToJava[NUM_LOGGER_TYPES];
     };
 
 
@@ -209,7 +214,7 @@ namespace commoncommo {
     {
     public:
         InterfaceStatusListenerJNI(JNIEnv *env, jobject jifaceListener,
-                                   PGSC::Thread::Mutex *ifaceMapMutex,
+                                   std::mutex *ifaceMapMutex,
                                    NetInterfaceMap *ifaceMap) COMMO_THROW (int);
         static void destroy(JNIEnv *env, InterfaceStatusListenerJNI *iface);
         
@@ -228,7 +233,7 @@ namespace commoncommo {
         void interfaceChange(NetInterface *iface, jmethodID jmethodUpDown);
 
         jglobalobjectref jifaceListener;
-        PGSC::Thread::Mutex *ifaceMapMutex;
+        std::mutex *ifaceMapMutex;
         NetInterfaceMap *ifaceMap;
 
         static jmethodID jmethod_ifaceUp;
@@ -513,26 +518,26 @@ namespace commoncommo {
 public:
         CommoLoggerJNI *logger;
 
-        PGSC::Thread::Mutex ifaceListenersMutex;
+        std::mutex ifaceListenersMutex;
         std::set<InterfaceStatusListenerJNI *> ifaceListeners;
 
-        PGSC::Thread::Mutex contactListenersMutex;
+        std::mutex contactListenersMutex;
         std::set<ContactListenerJNI *> contactListeners;
 
-        PGSC::Thread::Mutex cotListenersMutex;
+        std::mutex cotListenersMutex;
         std::set<CoTListenerJNI *> cotListeners;
 
-        PGSC::Thread::Mutex genericListenersMutex;
+        std::mutex genericListenersMutex;
         std::set<GenericDataListenerJNI *> genericListeners;
 
-        PGSC::Thread::Mutex cotFailListenersMutex;
+        std::mutex cotFailListenersMutex;
         std::set<CoTFailListenerJNI *> cotFailListeners;
 
-        PGSC::Thread::Mutex netInterfaceMapMutex;
+        std::mutex netInterfaceMapMutex;
         NetInterfaceMap netInterfaceMap;
         
         typedef std::map<CloudClient *, std::pair<CloudIOJNI *, jglobalobjectref> > CloudclientMap;
-        PGSC::Thread::Mutex cloudclientMapMutex;
+        std::mutex cloudclientMapMutex;
         CloudclientMap cloudclientMap;
         
         static jclass jclass_physnetiface;

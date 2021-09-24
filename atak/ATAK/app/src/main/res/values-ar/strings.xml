@@ -2156,6 +2156,7 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
     <!--ادوات الارتفاع  -->
     <string name="heatmap">خارطة الحراره </string>
     <string name="viewshed">مجال الرؤيا </string>
+  <string name="terrainslope">Terrain Slope</string>
     <string name="hide_viewshed">إخفاء مجال الرؤيا</string>
     <string name="no_marker_set">لم تُضبَط علامة</string>
     <string name="none">لاشئ </string>
@@ -2176,7 +2177,7 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
     <string name="x_resolution_summ">الرقم لعيينات الارتفاع تاخذ على طول س  </string>
     <string name="y_resolution"> دقة ص </string>
     <string name="y_resolution_summ"> الرقم لعيينات الارتفاع تاخذ على طول ص</string>
-    <string name="show_heatmap">إظهار خارطة الحراره</string>
+  <string name="show_heatmap">إظهار </string>
     <string name="dted">DTED\:  </string>
     <string name="level_1">المستوى 1</string>
     <string name="sample_rate">معدل أخذ العيينات</string>
@@ -2188,6 +2189,7 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
     <string name="visible">مرئي</string>
     <string name="abs_gradient">تدرج مطلق </string>
     <string name="rel_gradient">تدرج نسبي </string>
+  <string name="show_terrainslope">Show Terrain Slope</string>
     <!--مدير التراكب  -->
     <string name="overlay_manager">ادارة ملق المهام</string>
     <string name="process">المُعامِل</string>
@@ -3856,15 +3858,15 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
     <string name="resection_update_location_title">Update location?</string>
     <string name="resection_update_location_message">Do you want to update your location to the resection estimate?\nLocation: %s</string>
     <string name="resection_estimate_label">Provider: %1$s\nLocation: %2$s\nConfidence: %3$s</string>
-    <string name="resection_select_estimates_prompt_title">Select which location estimates to use</string>
+  <string name="resection_select_estimates_prompt_title">Select which location estimate to use</string>
     <string name="resection_run_another_title">Run another Resection tool?</string>
     <string name="resection_run_another_message">Do you want to run another Resection tool to get another estimate?</string>
-    <string name="resection_no_estimates_selected">No estimates were selected--unable to compute a location</string>
+  <string name="resection_no_estimates_selected">No estimate was selected</string>
     <string name="resection_classic_tool_description">Classic resection. Takes lines of bearing from observer\'s point to 2 or more landmarks</string>
     <string name="resection_classic_tool_ideal_conditions">When there are landmarks you are able to identify and match to the map. Highest accuracy when angle between landmarks approaches 90 degrees</string>
     <string name="resection_classic_tool_relative_accuracy">Dependent upon how accurately the landmarks and relative bearings are identified</string>
     <string name="invalid_cot_address">Invalid output encountered, make sure the address does not contain the protocol or port</string>
-    <string name="image_overlay_hud">Image Overlay HUD</string>
+  <string name="image_overlay_hud">Image Overlay</string>
     <string name="image_overlay_warning">This option will permanently overlay metadata onto the image. Continue?</string>
     <string name="kml_network_link">KML Network Link</string>
     <string name="kml_links_added_msg">Added %d KML network links</string>
@@ -3903,4 +3905,24 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
   <string name="legacy_altitude_rendering">Enhanced Depth Perception</string>
   <string name="disable_parallax_viewing">Enhances visualization of depth when looking straight down.</string>
   <string name="lollipop_description">Draws a line to the exact point on the ground represented by the item.</string>
+  <string name="self_authored">Self-Authored</string>
+  <string name="toggle_filters">Toggle Filters</string>
+  <string name="actionbar_channels">Channels</string>
+    <string name="enter_caption_button">Tap the Edit button to enter caption</string>
+    <string name="deleting_dted_files">Deleting %s files&#8230;</string>
+    <string name="refreshing">Refreshing&#8230;</string>
+  <string name="address_colon">Address:</string>
+  <string name="tak_server_quick_connect">TAK Server Quick Connect</string>
+  <string name="quick_connect">Quick Connect</string>
+  <string name="retry">Retry</string>
+    <string name="select_deletion_method">Select deletion method:</string>
+    <string name="no_content_selectable">No content can be selected</string>
+  <string name="delete_contents">Delete Contents</string>
+    <string name="select_lasso_action">Select Lasso Action</string>
+  <string name="lasso_select">Lasso Select</string>
+    <string name="checked_abbr">Chk</string>
+    <string name="perimeter">Perimeter</string>
+  <string name="circumference">Circumference</string>
+  <string name="length">Length</string>
+    <string name="bulk_feature_edit_limit_msg">Bulk editing of more than 500 features is not supported.</string>
 </resources>

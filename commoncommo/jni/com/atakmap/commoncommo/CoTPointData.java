@@ -4,6 +4,10 @@ package com.atakmap.commoncommo;
  * Identifies a geographic point in/destined for a CoT message.
  */
 public class CoTPointData {
+    static {
+        NativeInitializer.initialize();
+    }
+
     public final double lat;
     public final double lon;
     public final double hae;

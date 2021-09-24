@@ -26,10 +26,10 @@ public class MissionPackagePreferenceFragment extends AtakPreferenceFragment {
                 .setValidIntegerRange(0, 65535);
         ((PanEditTextPreference) findPreference(
                 "filesharingConnectionTimeoutSecs"))
-                        .setValidIntegerRange(1, 900);
+                        .setValidIntegerRange(10, 900);
         ((PanEditTextPreference) findPreference(
                 "filesharingTransferTimeoutSecs"))
-                        .setValidIntegerRange(1, 900);
+                        .setValidIntegerRange(10, 900);
     }
 
     @Override

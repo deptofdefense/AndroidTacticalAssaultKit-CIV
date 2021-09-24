@@ -38,6 +38,10 @@ public class AttachmentExportWrapper {
             _exports.addAll(folder.getExports());
     }
 
+    /**
+     * Returns a boolean based on the size of the export list.
+     * @return true if the number of exports is 0 or false if the number of exports is greater than 0.
+     */
     public boolean isEmpty() {
         return FileSystemUtils.isEmpty(_exports);
     }

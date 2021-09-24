@@ -1,8 +1,6 @@
 
 package com.atakmap.android.importexport;
 
-import com.atakmap.android.cot.MarkerDetailHandler;
-import com.atakmap.android.cot.detail.CotDetailHandler;
 import com.atakmap.android.cot.detail.CotDetailManager;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.Marker;
@@ -59,18 +57,6 @@ public class CotEventFactory {
     /* Deprecated functionality */
 
     /**
-     * Register MarkerDetailHandlers for creating specialized detail sections
-     * within default CotEvent.
-    
-     * @param handler is the detailhandler associated with parsing the detail.
-     * @deprecated See {@link CotDetailManager#registerHandler(CotDetailHandler)}
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public static void addMarkerDetailHandler(MarkerDetailHandler handler) {
-    }
-
-    /**
      * XXX: This method that should be broken apart to use the SPI system. 
      *
      * DO NOT ADD TO IT.
@@ -78,7 +64,7 @@ public class CotEventFactory {
      * @deprecated
      **/
     @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = false, removeAt = "4.4")
+    @DeprecatedApi(since = "4.1", forRemoval = false)
     private static CotEvent createDefaultEvent(final Marker marker) {
         CotEvent cotEvent = new CotEvent();
 

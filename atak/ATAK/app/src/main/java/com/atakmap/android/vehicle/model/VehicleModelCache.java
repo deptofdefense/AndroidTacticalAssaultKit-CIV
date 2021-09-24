@@ -5,6 +5,7 @@ import com.atakmap.android.math.MathUtils;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.math.PointD;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -300,6 +301,11 @@ public class VehicleModelCache {
 
         // Generate vehicle info
         JSONObject catMeta = readFileJSON(catFile, false);
+        if (catMeta == null) {
+            Log.e(TAG, "Failed to read category file: " + catFile);
+            return ret;
+        }
+
         String catName = catMeta.getString("category");
         JSONArray vehicles = catMeta.getJSONArray("vehicles");
         for (int i = 0; i < vehicles.length(); i++) {
@@ -312,7 +318,16 @@ public class VehicleModelCache {
                 // assets later
                 FileSystemUtils.delete(vehFile);
             }
-            ret.add(new VehicleModelInfo(catName, name, vehFile));
+
+            // Optional correction offset
+            PointD offset = null;
+            if (vehicle.has("offset")) {
+                JSONArray arr = vehicle.getJSONArray("offset");
+                offset = new PointD(arr.getDouble(0), arr.getDouble(1),
+                        arr.getDouble(2));
+            }
+
+            ret.add(new VehicleModelInfo(catName, name, vehFile, offset));
         }
 
         return ret;

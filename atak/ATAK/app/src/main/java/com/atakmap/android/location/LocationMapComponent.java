@@ -11,7 +11,6 @@ import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.PointF;
-import android.graphics.Rect;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -36,7 +35,6 @@ import android.view.Display;
 import android.view.Surface;
 import android.view.WindowManager;
 
-import com.atakmap.android.elev.dt2.Dt2ElevationModel;
 import com.atakmap.android.gui.HintDialogHelper;
 import com.atakmap.android.icons.Icon2525cIconAdapter;
 import com.atakmap.android.ipc.AtakBroadcast;
@@ -71,6 +69,7 @@ import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.map.AtakMapController;
 import com.atakmap.map.CameraController;
 import com.atakmap.map.MapRenderer3;
+import com.atakmap.map.elevation.ElevationManager;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -267,7 +266,6 @@ public class LocationMapComponent extends AbstractMapComponent implements
             lastHighSpeed = SystemClock.elapsedRealtime() - VALID_TIME;
             _locationMarker.setMetaBoolean("driving", false);
             setDrivingWidgetVisible(false);
-            _locationMarker.notifyMetadataChanged("driving");
             using = false;
 
             reset = true;
@@ -297,7 +295,6 @@ public class LocationMapComponent extends AbstractMapComponent implements
                         setDrivingWidgetVisible(false);
 
                     _locationMarker.setMetaBoolean("driving", use);
-                    _locationMarker.notifyMetadataChanged("driving");
 
                     using = use;
                 }
@@ -1534,8 +1531,8 @@ public class LocationMapComponent extends AbstractMapComponent implements
 
         } else {
             try {
-                final Dt2ElevationModel dem = Dt2ElevationModel.getInstance();
-                GeoPointMetaData gpm = dem.queryPoint(locLat, locLon);
+                GeoPointMetaData gpm = ElevationManager.getElevationMetadata(
+                        locLat, locLon, null);
                 alt = gpm.get().getAltitude();
                 altSrc = gpm.getAltitudeSource();
             } catch (Exception e) {
@@ -1675,33 +1672,24 @@ public class LocationMapComponent extends AbstractMapComponent implements
                     .addOnTrackChangedListener(_trackChangedListener);
             _locationMarker
                     .addOnPointChangedListener(new OnPointChangedListener() {
-                        final Dt2ElevationModel dem = Dt2ElevationModel
-                                .getInstance();
 
                         @Override
                         public void onPointChanged(PointMapItem item) {
 
                             // movable empty is false
-                            if (item.getMetaBoolean("movable", false)) {
+                            if (item.getMovable()) {
                                 // User moved point, use that location until
                                 // GPS comes back
-                                GeoPoint newPoint;
-                                try {
-                                    Log.d(TAG, "looking up the altitude for: "
-                                            + item.getPoint());
-                                    newPoint = dem.queryPoint(
-                                            item.getPoint().getLatitude(), item
-                                                    .getPoint()
-                                                    .getLongitude())
-                                            .get();
 
-                                } catch (Exception e) {
-                                    newPoint = item.getPoint();
-                                }
+                                Log.d(TAG, "looking up the altitude for: "
+                                        + item.getPoint());
+                                GeoPointMetaData newPoint = ElevationManager
+                                        .getElevationMetadata(item.getPoint());
+
                                 _mapView.getMapData().putBoolean(
                                         "fakeLocationAvailable", true);
                                 _mapView.getMapData().putParcelable(
-                                        "fakeLocation", newPoint);
+                                        "fakeLocation", newPoint.get());
                                 _mapView.getMapData().putLong(
                                         "fakeLocationTime", 0);
                             }
@@ -1712,10 +1700,8 @@ public class LocationMapComponent extends AbstractMapComponent implements
             _locationMarker.setMetaInteger("color", Color.BLUE);
 
             _locationMarker.setMetaString("menu", "menus/self_menu.xml");
-            // _locationMarker.setMetaBoolean("movable", false); // empty is false
+            // _locationMarker.setMovable(false); // empty is false
             _locationMarker.setZOrder(Double.NEGATIVE_INFINITY);
-            _locationMarker.setMarkerHitBounds(new Rect(-32, -32, 32, 32));
-            _locationMarker.setClickable(true);
 
             DocumentedIntentFilter filter = new DocumentedIntentFilter();
             filter.addAction("com.atakmap.android.map.action.TOGGLE_GPS_ERROR");
@@ -2059,7 +2045,7 @@ public class LocationMapComponent extends AbstractMapComponent implements
         boolean reportAsap = _locationMarker.getMetaString("how", "h-e")
                 .equals("m-g");
 
-        _locationMarker.setMetaBoolean("movable", true);
+        _locationMarker.setMovable(true);
         _locationMarker.setMetaString("how", "h-e");
         _locationMarker.removeMetaData("Speed");
 

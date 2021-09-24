@@ -24,14 +24,12 @@ import com.atakmap.android.missionpackage.api.MissionPackageApi;
 import com.atakmap.android.missionpackage.event.MissionPackageShapefileHandler;
 import com.atakmap.android.missionpackage.file.MissionPackageManifest;
 import com.atakmap.android.util.NotificationUtil;
-import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.spatial.file.KmlFileSpatialDb;
 import com.atakmap.spatial.file.ShapefileSpatialDb;
-import com.atakmap.spatial.file.export.SHPExportMarshal;
 
 import java.io.File;
 import java.io.IOException;
@@ -325,86 +323,6 @@ public abstract class ExportFileMarshal extends ExportMarshal {
                 });
         b.setNegativeButton(R.string.done, null);
         b.show();
-    }
-
-    /**
-     * Ask user which protocol, and then send file
-     * Note, this could be extracted into plugin(s) and fully integrated with contact list
-     * so any file type could be sent to a supported server type
-     * @deprecated - Please use {@link SendDialog} instead
-     * 
-     * @param context
-     * @param contentType
-     * @param iconId
-     * @param file
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public static void promptSendFile(final Context context,
-            final String contentType,
-            final String mimeType, final int iconId, File file) {
-
-        //special case for SHP file
-        if (ShapefileSpatialDb.SHP_CONTENT_TYPE.equalsIgnoreCase(contentType)
-                &&
-                file.getName().toLowerCase(LocaleUtil.getCurrent())
-                        .endsWith(ShapefileSpatialDb.SHP_TYPE)) {
-            try {
-                File zip = SHPExportMarshal.zipShapefile(file);
-                if (FileSystemUtils.isFile(zip)) {
-                    Log.d(TAG,
-                            "Zipped shapefile to send: "
-                                    + zip.getAbsolutePath());
-                    file = zip;
-                } else {
-                    Log.w(TAG,
-                            "Failed to zip shapefile to send: "
-                                    + file.getAbsolutePath());
-                }
-            } catch (IOException e) {
-                Log.w(TAG,
-                        "Failed to zip shapefile to send: "
-                                + file.getAbsolutePath(),
-                        e);
-            }
-        }
-
-        final File fFile = file;
-
-        /**
-         * TODO: Allow tools e.g. Enterprise Sync Tool to register for sending files types
-         * Probably want tighter integration with ImportExportMapComponent
-         */
-        final CharSequence[] items = {
-                (context.getString(R.string.tak_contact)),
-                context.getString(R.string.ftp),
-                context.getString(R.string.choose_app)
-        };
-        new AlertDialog.Builder(context)
-                .setTitle(R.string.select_protocol)
-                .setIcon(iconId)
-                .setItems(items, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int item) {
-                        switch (item) {
-                            case 0: {//ATAK contact
-                                ExportFileMarshal.sendFile(context,
-                                        contentType, fFile, true, null);
-                            }
-                                break;
-                            case 1: {//FTP
-                                sendFTP(context, contentType, mimeType, fFile);
-                            }
-                                break;
-                            case 2: {//Choose app via ACTION_SEND
-                                send3rdParty(context, contentType, mimeType,
-                                        fFile);
-                            }
-                                break;
-                        }
-                    }
-                })
-                .setNegativeButton(R.string.cancel, null).show();
     }
 
     public static void send3rdParty(Context context, String contentType,

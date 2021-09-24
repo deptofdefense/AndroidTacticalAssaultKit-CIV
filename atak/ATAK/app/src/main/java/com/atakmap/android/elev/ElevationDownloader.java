@@ -31,6 +31,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import java.text.NumberFormat;
 import java.util.BitSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -253,10 +254,16 @@ class ElevationDownloader implements AtakMapView.OnMapMovedListener {
             ((Activity) context).runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
+                    if (max == -1) {
+                        setIndeterminate(dialog, true);
+                    } else {
+                        setIndeterminate(dialog, false);
+                        dialog.setMax(100);
+                        dialog.setProgress(
+                                (int) Math
+                                        .floor((progress / (float) max) * 100));
+                    }
                     dialog.setMessage(message);
-                    dialog.setMax(100);
-                    dialog.setProgress(
-                            (int) Math.floor((progress / (float) max) * 100));
                 }
             });
         }
@@ -307,6 +314,9 @@ class ElevationDownloader implements AtakMapView.OnMapMovedListener {
                             return;
                     }
                     os.flush();
+                    setProgress(-1, -1, "Decompressing: " + name
+                            + "(" + count
+                            + " of " + listView.getCheckedItemCount() + ")");
                     FileSystemUtils.unzip(
                             new File(dstPathZip.getAbsolutePath()),
                             dstPathZip.getParentFile(), true);
@@ -342,6 +352,20 @@ class ElevationDownloader implements AtakMapView.OnMapMovedListener {
                     }
                 }
             });
+        }
+    }
+
+    private static void setIndeterminate(ProgressDialog dialog,
+            boolean isIndeterminate) {
+        dialog.setIndeterminate(isIndeterminate);
+        if (isIndeterminate) {
+            dialog.setProgressNumberFormat(null);
+            dialog.setProgressPercentFormat(null);
+        } else {
+            dialog.setProgressNumberFormat("%1d/%2d");
+            NumberFormat percentInstance = NumberFormat.getPercentInstance();
+            percentInstance.setMaximumFractionDigits(0);
+            dialog.setProgressPercentFormat(percentInstance);
         }
     }
 

@@ -161,7 +161,34 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
                 android:layout_row="3"
+                android:layout_column="0"
+                android:layout_columnSpan="1"
+                android:layout_rowSpan="1"
+                android:text="@string/circumference"
+                android:textColor="@color/heading_yellow"
+                android:textSize="@dimen/draper_font" />
+
+            <Button
+                android:id="@+id/circumferenceText"
+                android:layout_height="wrap_content"
+                android:layout_width="0dip"
+                style="@style/darkButton" android:padding="6dp"
+                android:gravity="center"
+                android:layout_row="3"
+                android:layout_column="1"
+                android:layout_columnSpan="3"
+                android:layout_rowSpan="1"
+                android:layout_gravity="fill_horizontal"
+                android:text="@string/space"
+                android:textSize="@dimen/draper_title_font"
+                android:textColor="#FFF" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_row="4"
                 android:layout_column="0"
                 android:layout_columnSpan="1"
                 android:layout_rowSpan="1"
@@ -175,7 +202,7 @@
                 android:layout_width="50dip"
                 android:layout_gravity="fill_horizontal"
                 android:layout_height="wrap_content"
-                android:layout_row="3"
+                android:layout_row="4"
                 android:layout_column="1"
                 android:layout_columnSpan="1"
                 android:layout_rowSpan="1"
@@ -184,7 +211,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_row="3"
+                android:layout_row="4"
                 android:layout_column="2"
                 android:layout_columnSpan="1"
                 android:layout_rowSpan="1"
@@ -197,7 +224,7 @@
                 style="@style/darkButton" android:padding="6dp"
                 android:layout_width="0dip"
                 android:layout_height="wrap_content"
-                android:layout_row="3"
+                android:layout_row="4"
                 android:layout_column="3"
                 android:layout_columnSpan="1"
                 android:layout_rowSpan="1"
@@ -213,7 +240,7 @@
                 android:layout_height="wrap_content"
                 android:layout_column="0"
                 android:layout_columnSpan="4"
-                android:layout_row="4"
+                android:layout_row="5"
                 android:layout_rowSpan="1"
                 android:checked="true"
                 android:text="@string/show_labels" />
@@ -222,7 +249,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
-                android:layout_row="5"
+                android:layout_row="6"
                 android:layout_column="0"
                 android:layout_columnSpan="1"
                 android:layout_rowSpan="1"
@@ -238,17 +265,18 @@
                 style="@style/darkButton"
                 android:src="@drawable/color_rectangle"
                 android:padding="@dimen/auto_margin"
-                android:layout_row="5"
+                android:layout_row="6"
                 android:layout_column="1"
                 android:layout_columnSpan="1"
                 android:layout_rowSpan="1" />
 
             <RelativeLayout
+                android:id="@+id/drawingShapeTransparencyView"
                 android:layout_height="wrap_content"
                 android:layout_width="0dip"
                 android:layout_gravity="fill_horizontal"
                 android:layout_marginEnd="@dimen/auto_margin"
-                android:layout_row="5"
+                android:layout_row="6"
                 android:layout_column="2"
                 android:layout_columnSpan="2"
                 android:layout_rowSpan="1">
@@ -260,8 +288,7 @@
                     android:layout_alignParentStart="true"
                     android:text="@string/zero_percent"
                     android:textColor="#FFF"
-                    android:textSize="@dimen/draper_small_font"
-                     />
+                    android:textSize="@dimen/draper_small_font" />
 
                 <TextView
                     android:id="@+id/drawingCircleTransparencyText"
@@ -271,8 +298,7 @@
                     android:layout_centerHorizontal="true"
                     android:text="@string/fifty_percent"
                     android:textColor="#FFF"
-                    android:textSize="@dimen/draper_small_font"
-                     />
+                    android:textSize="@dimen/draper_small_font" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -294,27 +320,26 @@
                     android:progress="255" />
             </RelativeLayout>
 
-
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_column="0"
                 android:layout_columnSpan="1"
                 android:layout_gravity="center_vertical"
-                android:layout_row="6"
+                android:layout_row="7"
                 android:layout_rowSpan="1"
                 android:text="@string/line_thickness"
                 android:textColor="@color/heading_yellow"
                 android:textSize="@dimen/draper_font" />
+
             <RelativeLayout
-                android:id="@+id/drawingShapeTransparencyView"
                 android:layout_width="0dip"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="@dimen/auto_margin"
                 android:layout_column="2"
                 android:layout_columnSpan="2"
                 android:layout_gravity="fill_horizontal"
-                android:layout_row="6"
+                android:layout_row="7"
                 android:layout_rowSpan="1" >
 
                 <TextView
@@ -326,7 +351,7 @@
                     android:text="@string/thin"
                     android:textColor="#FFF"
                     android:textSize="@dimen/draper_small_font"
-                     />
+                    />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -336,7 +361,7 @@
                     android:text="@string/thick"
                     android:textColor="#FFF"
                     android:textSize="@dimen/draper_small_font"
-                     />
+                    />
 
                 <SeekBar
                     android:id="@+id/drawingShapeStrokeSeek"
@@ -352,7 +377,7 @@
                 android:id="@+id/remarksLayout"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_row="7"
+                android:layout_row="8"
                 android:layout_column="0"
                 android:layout_columnSpan="4"
                 android:layout_rowSpan="1"

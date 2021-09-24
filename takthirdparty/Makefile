@@ -6,14 +6,13 @@ TARGET=
 # default to release build
 BUILD_TYPE=release
 
-# Default off, force opt in
-GDAL_USE_KDU=no
+# Default on, force opt out
+GDAL_USE_KDU=yes
 gdal_kdu_pkg_yes=kdu
 gdal_kdu_pkg=$(gdal_kdu_pkg_$(GDAL_USE_KDU))
 
-GDAL_USE_MRSID=no
-gdal_mrsid_pkg_yes=mrsid
-gdal_mrsid_pkg=$(gdal_mrsid_pkg_$(GDAL_USE_MRSID))
+# Default off, force opt in
+GDAL_USE_TTP_ZLIB=no
 
 # Dist file directory
 DISTFILESDIR:=$(shell pwd)/distfiles
@@ -43,6 +42,18 @@ VS_SETUP=$(VS_SETUP_$(TARGET))
 # additional work
 VS_VER_MSB=v140
 
+# Set CMAKE. For windows host, a specific path is used, removing need for
+# entry in PATH.
+# For non-windows hosts, expect in path.
+# For either, CMAKE=... on invocation can be used to override.
+ifeq ($(PLATFORM),win32)
+    # Use shell function as wildcard function does not handle spaces in
+    # paths well
+    CMAKE="$(shell if [ -x "/cygdrive/c/Program Files (x86)/CMake/bin/cmake.exe" ] ; then echo "/cygdrive/c/Program Files (x86)/CMake/bin/cmake.exe" ; elif [ -x "/cygdrive/c/Program Files/CMake/bin/cmake.exe" ] ; then echo "/cygdrive/c/Program Files/CMake/bin/cmake.exe" ; fi )"
+else
+    CMAKE=cmake
+endif
+
 # All packages shared across gdal and spatialite
 ALL_PACKAGES_gspatial_shared=geos proj sqlite
 # All packages shared across commo and gdal
@@ -52,9 +63,9 @@ ALL_PACKAGES_allshared=zlib
 # Packages used by everything except pri...
 ALL_PACKAGES_shared=libiconv libxml2 openssl
 # All the packages, in build order
-ALL_PACKAGES_commoncommo=protobuf pgscthread libmicrohttpd commoncommo
+ALL_PACKAGES_commoncommo=protobuf libmicrohttpd commoncommo
 packages_commoncommo-$(TARGET):=$(ALL_PACKAGES_allshared) $(ALL_PACKAGES_shared) $(ALL_PACKAGES_cshared) $(ALL_PACKAGES_commoncommo)
-ALL_PACKAGES_gdal=$(gdal_kdu_pkg) pdfium $(gdal_mrsid_pkg) expat ogdi libkml gdal
+ALL_PACKAGES_gdal=$(gdal_kdu_pkg) pdfium mrsid expat ogdi libkml gdal
 packages_gdal-$(TARGET):=$(ALL_PACKAGES_allshared) $(ALL_PACKAGES_shared) $(ALL_PACKAGES_cshared) $(ALL_PACKAGES_gspatial_shared) $(ALL_PACKAGES_gdal)
 ALL_PACKAGES_spatialite=libspatialite
 packages_spatialite-$(TARGET):=$(ALL_PACKAGES_allshared) $(ALL_PACKAGES_shared) $(ALL_PACKAGES_gspatial_shared) $(ALL_PACKAGES_spatialite)
@@ -65,13 +76,13 @@ packages_assimp-$(TARGET):=$(ALL_PACKAGES_allshared) $(ALL_PACKAGES_assimp)
 ALL_PACKAGES=$(ALL_PACKAGES_shared) $(ALL_PACKAGES_allshared) $(ALL_PACKAGES_gspatial_shared) $(ALL_PACKAGES_cshared) $(ALL_PACKAGES_commoncommo) $(ALL_PACKAGES_gdal) $(ALL_PACKAGES_spatialite) $(ALL_PACKAGES_pri) $(ALL_PACKAGES_assimp)
 packages-$(TARGET):=$(ALL_PACKAGES)
 
-.PHONY: help usage prebuild build build_pri build_gdal build_commoncommo build_spatialite build_assimp veryclean clean
+.PHONY: help usage prebuild build build_pri build_gdal build_commoncommo build_spatialite build_assimp veryclean clean cmake_check
 help:
-	@echo "Usage: make TARGET=targetname [ BUILD_TYPE=debug | release ] [ GDAL_USE_KDU=no | yes ] [GDAL_USE_MRSID=no | yes ] < build | build_gdal | build_commoncommo | build_spatialite | build_pri | build_assimp | clean | veryclean >"
+	@echo "Usage: make TARGET=targetname [ BUILD_TYPE=debug | release ] [ GDAL_USE_KDU=yes | no ] [ GDAL_USE_TTP_ZLIB=yes | no ] < build | build_gdal | build_commoncommo | build_spatialite | build_pri | build_assimp | clean | veryclean >"
 	@echo "Option defaults:"
 	@echo "    BUILD_TYPE:   release"
-	@echo "    GDAL_USE_KDU: no"
-	@echo "    GDAL_USE_MRSID: no"
+	@echo "    GDAL_USE_KDU: yes"
+	@echo "    GDAL_USE_TTP_ZLIB: no"
 	@echo "Known targets:"
 	@for i in $(sort $(basename $(notdir $(wildcard target-config/*.mk)))) ; do echo "    $$i" ; done
 usage: help
@@ -151,9 +162,10 @@ tag:
 	git tag "$(TTP_TAG)"
 	cd ../gdal && git tag "$(TTP_TAG)"
 	cd ../commoncommo && git tag "$(TTP_TAG)"
-	cd ../pgscthread && git tag "$(TTP_TAG)"
 	cd ../pri && git tag "$(TTP_TAG)"
 	if [ "$(GDAL_USE_KDU)" = "yes" ] ; then cd ../kdu && cvs tag "$(TTP_TAG)" ; fi
 	@echo "Repositories tagged.  For git repos, be sure to go do a push now!"
 
+cmake_check:
+	@$(CMAKE) --version >/dev/null || ( echo "ERROR - CMake not installed or incorrect version" >&2 ; false )
 

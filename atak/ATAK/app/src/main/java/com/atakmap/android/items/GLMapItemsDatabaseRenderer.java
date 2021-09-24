@@ -1,12 +1,12 @@
 
 package com.atakmap.android.items;
 
+import com.atakmap.android.maps.graphics.GLMapItem2;
 import com.atakmap.coremap.log.Log;
 
 import android.util.Pair;
 
 import com.atakmap.android.maps.MapItem;
-import com.atakmap.android.maps.graphics.GLMapItem;
 import com.atakmap.android.maps.graphics.GLMapItemFactory;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.MapRenderer;
@@ -15,7 +15,7 @@ import com.atakmap.map.layer.opengl.GLLayer;
 import com.atakmap.map.layer.opengl.GLLayer2;
 import com.atakmap.map.layer.opengl.GLLayerFactory;
 import com.atakmap.map.layer.opengl.GLLayerSpi2;
-import com.atakmap.map.opengl.GLAsynchronousMapRenderable;
+import com.atakmap.map.opengl.GLAsynchronousMapRenderable2;
 import com.atakmap.map.opengl.GLMapView;
 
 import java.util.Collection;
@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 public class GLMapItemsDatabaseRenderer extends
-        GLAsynchronousMapRenderable<Collection<MapItem>> implements
+        GLAsynchronousMapRenderable2<Collection<MapItem>> implements
         MapItemsDatabase.ContentListener, GLLayer {
 
     public final static GLLayerSpi2 SPI = new GLLayerSpi2() {
@@ -48,7 +48,7 @@ public class GLMapItemsDatabaseRenderer extends
 
     protected final MapItemsDatabaseLayer subject;
     protected final MapItemsDatabase database;
-    private Map<MapItem, GLMapItem> renderableList;
+    private Map<MapItem, GLMapItem2> renderableList;
     protected final MapRenderer renderContext;
 
     GLMapItemsDatabaseRenderer(MapRenderer surface,
@@ -66,14 +66,24 @@ public class GLMapItemsDatabaseRenderer extends
     // GL Asynchronous Map Renderable
 
     @Override
-    public void draw(GLMapView view) {
-        if (!this.subject.isVisible())
-            return;
-        super.draw(view);
+    public int getRenderPass() {
+        return GLMapView.RENDER_PASS_SURFACE;
     }
 
     @Override
-    protected Collection<GLMapItem> getRenderList() {
+    public void draw(GLMapView view, int renderPass) {
+        if (!this.subject.isVisible())
+            return;
+        super.draw(view, renderPass);
+    }
+
+    @Override
+    public void draw(GLMapView view) {
+        draw(view, getRenderPass());
+    }
+
+    @Override
+    protected Collection<GLMapItem2> getRenderList() {
         return this.renderableList.values();
     }
 
@@ -99,16 +109,16 @@ public class GLMapItemsDatabaseRenderer extends
     }
 
     @Override
-    protected boolean updateRenderableReleaseLists(
+    protected boolean updateRenderList(ViewState state,
             Collection<MapItem> pendingData) {
-        Map<MapItem, GLMapItem> swap = new TreeMap<>(
+        Map<MapItem, GLMapItem2> swap = new TreeMap<>(
                 MapItem.ZORDER_RENDER_COMPARATOR);
 
-        GLMapItem renderable;
+        GLMapItem2 renderable;
         for (MapItem item : pendingData) {
             renderable = this.renderableList.remove(item);
             if (renderable == null) {
-                renderable = GLMapItemFactory.create2(this.renderContext, item);
+                renderable = GLMapItemFactory.create3(this.renderContext, item);
                 if (renderable == null)
                     continue;
                 renderable.startObserving();
@@ -117,14 +127,14 @@ public class GLMapItemsDatabaseRenderer extends
             swap.put(item, renderable);
         }
 
-        final Collection<GLMapItem> releaseList = this.renderableList.values();
+        final Collection<GLMapItem2> releaseList = this.renderableList.values();
         this.renderableList = swap;
-        for (GLMapItem glitem : releaseList)
+        for (GLMapItem2 glitem : releaseList)
             glitem.stopObserving();
         this.renderContext.queueEvent(new Runnable() {
             @Override
             public void run() {
-                for (GLMapItem renderable : releaseList)
+                for (GLMapItem2 renderable : releaseList)
                     renderable.release();
                 releaseList.clear();
             }
@@ -133,10 +143,7 @@ public class GLMapItemsDatabaseRenderer extends
     }
 
     @Override
-    protected void query(
-            GLAsynchronousMapRenderable.ViewState state,
-            Collection<MapItem> result) {
-
+    protected void query(ViewState state, Collection<MapItem> result) {
         MapItemsDatabase.MetaDataHolderCursor<MapItem> cursor = null;
         try {
             cursor = this.database.queryItems(new GeoPoint(state.northBound,

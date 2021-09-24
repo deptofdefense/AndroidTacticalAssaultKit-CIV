@@ -5,14 +5,15 @@
 #include "libxml/tree.h"
 #include "curl/curl.h"
 
-#include <Mutex.h>
-#include <Lock.h>
+#include <mutex>
 
-#include <string.h>
+#include <string>
 #include <stdint.h>
+#include <cstring>
 
 using namespace atakmap::jni::commoncommo;
 
+typedef std::lock_guard<std::mutex> CommoLock;
 
 /**********************************************************************/
 // Global impl methods
@@ -54,7 +55,12 @@ bool atakmap::jni::commoncommo::checkEnum(JNIEnv *env,
 // CommoLoggerJNI
 
 jmethodID CommoLoggerJNI::jmethod_log = NULL;
+jclass CommoLoggerJNI::jclass_networkDetail = NULL;
+jmethodID CommoLoggerJNI::jmethod_networkDetailCtor = NULL;
+jclass CommoLoggerJNI::jclass_parsingDetail = NULL;
+jmethodID CommoLoggerJNI::jmethod_parsingDetailCtor = NULL;
 jglobalobjectref CommoLoggerJNI::nativeLevelsToJava[NUM_LOGGER_LEVELS];
+jglobalobjectref CommoLoggerJNI::nativeTypesToJava[NUM_LOGGER_TYPES];
 
 
 CommoLoggerJNI::CommoLoggerJNI(JNIEnv *env, jobject jlogger) COMMO_THROW (int) :
@@ -74,7 +80,7 @@ void CommoLoggerJNI::destroy(JNIEnv *env, CommoLoggerJNI *logger)
     delete logger;
 }
 
-void CommoLoggerJNI::log(Level level, const char *message)
+void CommoLoggerJNI::log(Level level, Type type, const char* message, void* data)
 {
     JNIEnv *env = NULL;
     LocalJNIEnv localEnv(&env);
@@ -82,13 +88,50 @@ void CommoLoggerJNI::log(Level level, const char *message)
         return;
     
     jobject jlevel = nativeLevelsToJava[level];
+    jobject jtype = nativeTypesToJava[type];
     jstring jmessage = env->NewStringUTF(message);
     if (!jmessage)
         return;
-    
-    env->CallVoidMethod(jlogger, jmethod_log, jlevel, jmessage);
-}
 
+    jobject jdetail = nullptr;
+
+    if (type == Type::TYPE_PARSING) {
+        const auto parsing_detail = static_cast<ParsingDetail*>(data);
+        if (parsing_detail != nullptr) {
+            jbyteArray jbytes = env->NewByteArray(parsing_detail->messageLen);
+            if (!jbytes) {
+                env->ExceptionClear();
+                return;
+            }
+            jstring jerror = env->NewStringUTF(parsing_detail->errorDetailString);
+            jstring jremoteEndpoint = env->NewStringUTF(parsing_detail->rxIfaceEndpointId);
+
+            env->SetByteArrayRegion(jbytes, 0, parsing_detail->messageLen, (const jbyte*)parsing_detail->messageData);
+
+            jdetail = env->NewObject(jclass_parsingDetail,
+                jmethod_parsingDetailCtor,
+                jbytes,
+                jerror,
+                jremoteEndpoint);
+            if (!jdetail)
+                // continue with no detail
+                env->ExceptionClear();
+        }
+    }
+    else if (type == Type::TYPE_NETWORK) {
+        const auto network_detail = static_cast<NetworkDetail*>(data);
+        if (network_detail != nullptr) {
+            jdetail = env->NewObject(jclass_networkDetail,
+                jmethod_networkDetailCtor,
+                network_detail->port);
+            if (!jdetail)
+                // continue with no detail
+                env->ExceptionClear();
+        }
+    }
+
+    env->CallVoidMethod(jlogger, jmethod_log, jlevel, jtype, jmessage, jdetail);
+}
 
 bool CommoLoggerJNI::reflectionInit(JNIEnv *env)
 {
@@ -100,12 +143,31 @@ bool CommoLoggerJNI::reflectionInit(JNIEnv *env)
     jmethodID method_levelName;
     jmethodID method_levelValue;
     jsize numVals;
+    jclass class_log_type;
+    jobjectArray jtypeVals;
+    jmethodID method_typeValues;
+    jmethodID method_typeName;
+    jmethodID method_typeValue;
+    jsize numTypes;
     
     memset(nativeLevelsToJava, 0, sizeof(nativeLevelsToJava));
+    memset(nativeTypesToJava, 0, sizeof(nativeTypesToJava));
 
     LOOKUP_CLASS(class_log, COMMO_PACKAGE "CommoLogger", true);
     LOOKUP_CLASS(class_log_level, COMMO_PACKAGE "CommoLogger$Level", true);
-    LOOKUP_METHOD(jmethod_log, class_log, "log", "(L" COMMO_PACKAGE "CommoLogger$Level;Ljava/lang/String;)V");
+    LOOKUP_CLASS(class_log_type, COMMO_PACKAGE "CommoLogger$Type", true);
+    LOOKUP_METHOD(jmethod_log, class_log, "log", "(L" COMMO_PACKAGE "CommoLogger$Level;L" COMMO_PACKAGE "CommoLogger$Type;Ljava/lang/String;L" COMMO_PACKAGE "CommoLogger$LoggingDetail;)V");
+
+    LOOKUP_CLASS(jclass_networkDetail,
+        COMMO_PACKAGE "CommoLogger$NetworkDetail", false);
+    LOOKUP_METHOD(jmethod_networkDetailCtor, jclass_networkDetail,
+        "<init>",
+        "(I)V");
+    LOOKUP_CLASS(jclass_parsingDetail,
+        COMMO_PACKAGE "CommoLogger$ParsingDetail", false);
+    LOOKUP_METHOD(jmethod_parsingDetailCtor, jclass_parsingDetail,
+        "<init>",
+        "([BLjava/lang/String;Ljava/lang/String;)V");
 
     // Build mapping of native levels to java levels
     LOOKUP_STATIC_METHOD(method_levelValues, class_log_level, "values", "()[L" COMMO_PACKAGE "CommoLogger$Level;");
@@ -137,6 +199,36 @@ bool CommoLoggerJNI::reflectionInit(JNIEnv *env)
     ret = ret && CHECK_LEVEL(INFO);
     ret = ret && CHECK_LEVEL(ERROR);
 #undef CHECK_LEVEL
+    if (!ret)
+        goto cleanup;
+
+    // Build mapping of native types to java levels
+    LOOKUP_STATIC_METHOD(method_typeValues, class_log_type, "values", "()[L" COMMO_PACKAGE "CommoLogger$Type;");
+    jtypeVals = (jobjectArray)env->CallStaticObjectMethod(class_log_type, method_typeValues);
+    if (env->ExceptionOccurred())
+        goto cleanup;
+
+    numTypes = env->GetArrayLength(jtypeVals);
+
+    if (numTypes != NUM_LOGGER_TYPES)
+        goto cleanup;
+
+    LOOKUP_METHOD(method_typeName, class_log_type, "name", "()Ljava/lang/String;");
+    LOOKUP_METHOD(method_typeValue, class_log_type, "ordinal", "()I");
+
+#define CHECK_TYPE(type) checkEnum(env, method_typeName,                    \
+                                      method_typeValue,                     \
+                                      jtypeVals, numTypes,                  \
+                                      #type,                                \
+                                      nativeTypesToJava,                    \
+                                      PASTE(CommoLogger::TYPE_, type),      \
+                                      PASTE(CommoLogger::TYPE_, type))      \
+
+    ret = true;
+    ret = ret && CHECK_TYPE(GENERAL);
+    ret = ret && CHECK_TYPE(PARSING);
+    ret = ret && CHECK_TYPE(NETWORK);
+#undef CHECK_TYPE
 
 cleanup:
     return ret;
@@ -148,6 +240,11 @@ void CommoLoggerJNI::reflectionRelease(JNIEnv *env)
         if (nativeLevelsToJava[i])
             env->DeleteGlobalRef(nativeLevelsToJava[i]);
         nativeLevelsToJava[i] = NULL;
+    }
+    for (int i = 0; i < NUM_LOGGER_TYPES; ++i) {
+        if (nativeTypesToJava[i])
+            env->DeleteGlobalRef(nativeTypesToJava[i]);
+        nativeTypesToJava[i] = NULL;
     }
 }
 
@@ -698,7 +795,7 @@ jglobalobjectref InterfaceStatusListenerJNI::nativeErrCodesToJava[NUM_IFACE_ERRC
 
 InterfaceStatusListenerJNI::InterfaceStatusListenerJNI(JNIEnv *env,
                                        jobject jifaceListener,
-                                       PGSC::Thread::Mutex *ifaceMapMutex,
+                                       std::mutex *ifaceMapMutex,
                                        NetInterfaceMap *ifaceMap) COMMO_THROW (int) :
            JNIObjWrapper(), InterfaceStatusListener(), jifaceListener(NULL),
            ifaceMapMutex(ifaceMapMutex), ifaceMap(ifaceMap)
@@ -728,8 +825,7 @@ void InterfaceStatusListenerJNI::interfaceChange(NetInterface *iface,
 
     jobject jiface = NULL;
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        Lock_create(lock, *ifaceMapMutex);
+        CommoLock lock(*ifaceMapMutex);
         NetInterfaceMap::iterator iter = ifaceMap->find(iface);
         if (iter == ifaceMap->end())
             return;
@@ -760,8 +856,7 @@ void InterfaceStatusListenerJNI::interfaceError(NetInterface *iface,
 
     jobject jiface = NULL;
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        Lock_create(lock, *ifaceMapMutex);
+        CommoLock lock(*ifaceMapMutex);
         NetInterfaceMap::iterator iter = ifaceMap->find(iface);
         if (iter == ifaceMap->end())
             return;
@@ -1347,8 +1442,7 @@ bool CommoJNI::addIfaceStatusListener(JNIEnv *env, jobject jifaceListener)
 {
     InterfaceStatusListenerJNI *newListener = NULL;
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        Lock_create(lock, ifaceListenersMutex);
+        CommoLock lock(ifaceListenersMutex);
 
         std::set<InterfaceStatusListenerJNI *>::iterator iter;
         for (iter = ifaceListeners.begin(); iter != ifaceListeners.end(); ++iter) {
@@ -1369,8 +1463,7 @@ bool CommoJNI::addIfaceStatusListener(JNIEnv *env, jobject jifaceListener)
     }
     // then add it
     if (commo->addInterfaceStatusListener(newListener) != COMMO_SUCCESS) {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        Lock_create(lock, ifaceListenersMutex);
+        CommoLock lock(ifaceListenersMutex);
         ifaceListeners.erase(newListener);
         InterfaceStatusListenerJNI::destroy(env, newListener);
         return false;
@@ -1382,8 +1475,7 @@ bool CommoJNI::removeIfaceStatusListener(JNIEnv *env, jobject jifaceListener)
 {
     InterfaceStatusListenerJNI *listener = NULL;
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        Lock_create(lock, ifaceListenersMutex);
+        CommoLock lock(ifaceListenersMutex);
 
         std::set<InterfaceStatusListenerJNI *>::iterator iter;
         for (iter = ifaceListeners.begin(); iter != ifaceListeners.end(); ++iter) {
@@ -1407,8 +1499,7 @@ bool CommoJNI::addContactListener(JNIEnv *env, jobject jcontactListener)
 {
     ContactListenerJNI *newListener = NULL;
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        Lock_create(lock, contactListenersMutex);
+        CommoLock lock(contactListenersMutex);
 
         std::set<ContactListenerJNI *>::iterator iter;
         for (iter = contactListeners.begin(); iter != contactListeners.end(); ++iter) {
@@ -1427,8 +1518,7 @@ bool CommoJNI::addContactListener(JNIEnv *env, jobject jcontactListener)
     }
     // then add it
     if (commo->addContactPresenceListener(newListener) != COMMO_SUCCESS) {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        Lock_create(lock, contactListenersMutex);
+        CommoLock lock(contactListenersMutex);
         contactListeners.erase(newListener);
         ContactListenerJNI::destroy(env, newListener);
         return false;
@@ -1440,8 +1530,7 @@ bool CommoJNI::removeContactListener(JNIEnv *env, jobject jcontactListener)
 {
     ContactListenerJNI *listener = NULL;
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        Lock_create(lock, contactListenersMutex);
+        CommoLock lock(contactListenersMutex);
 
         std::set<ContactListenerJNI *>::iterator iter;
         for (iter = contactListeners.begin(); iter != contactListeners.end(); ++iter) {
@@ -1465,8 +1554,7 @@ bool CommoJNI::addCoTListener(JNIEnv *env, jobject jcotListener)
 {
     CoTListenerJNI *newListener = NULL;
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        Lock_create(lock, cotListenersMutex);
+        CommoLock lock(cotListenersMutex);
 
         std::set<CoTListenerJNI *>::iterator iter;
         for (iter = cotListeners.begin(); iter != cotListeners.end(); ++iter) {
@@ -1485,8 +1573,7 @@ bool CommoJNI::addCoTListener(JNIEnv *env, jobject jcotListener)
     }
     // then add it
     if (commo->addCoTMessageListener(newListener) != COMMO_SUCCESS) {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        Lock_create(lock, cotListenersMutex);
+        CommoLock lock(cotListenersMutex);
         cotListeners.erase(newListener);
         CoTListenerJNI::destroy(env, newListener);
         return false;
@@ -1498,8 +1585,7 @@ bool CommoJNI::removeCoTListener(JNIEnv *env, jobject jcotListener)
 {
     CoTListenerJNI *listener = NULL;
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        Lock_create(lock, cotListenersMutex);
+        CommoLock lock(cotListenersMutex);
 
         std::set<CoTListenerJNI *>::iterator iter;
         for (iter = cotListeners.begin(); iter != cotListeners.end(); ++iter) {
@@ -1523,8 +1609,7 @@ bool CommoJNI::addGenericListener(JNIEnv *env, jobject jgenericListener)
 {
     GenericDataListenerJNI *newListener = NULL;
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        Lock_create(lock, genericListenersMutex);
+        CommoLock lock(genericListenersMutex);
 
         std::set<GenericDataListenerJNI *>::iterator iter;
         for (iter = genericListeners.begin(); iter != genericListeners.end(); ++iter) {
@@ -1543,8 +1628,7 @@ bool CommoJNI::addGenericListener(JNIEnv *env, jobject jgenericListener)
     }
     // then add it
     if (commo->addGenericDataListener(newListener) != COMMO_SUCCESS) {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        Lock_create(lock, genericListenersMutex);
+        CommoLock lock(genericListenersMutex);
         genericListeners.erase(newListener);
         GenericDataListenerJNI::destroy(env, newListener);
         return false;
@@ -1556,8 +1640,7 @@ bool CommoJNI::removeGenericListener(JNIEnv *env, jobject jgenericListener)
 {
     GenericDataListenerJNI *listener = NULL;
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        Lock_create(lock, genericListenersMutex);
+        CommoLock lock(genericListenersMutex);
 
         std::set<GenericDataListenerJNI *>::iterator iter;
         for (iter = genericListeners.begin(); iter != genericListeners.end(); ++iter) {
@@ -1581,8 +1664,7 @@ bool CommoJNI::addCoTSendFailureListener(JNIEnv *env, jobject jcotFailListener)
 {
     CoTFailListenerJNI *newListener = NULL;
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        Lock_create(lock, cotFailListenersMutex);
+        CommoLock lock(cotFailListenersMutex);
 
         std::set<CoTFailListenerJNI *>::iterator iter;
         for (iter = cotFailListeners.begin(); 
@@ -1602,8 +1684,7 @@ bool CommoJNI::addCoTSendFailureListener(JNIEnv *env, jobject jcotFailListener)
     }
     // then add it
     if (commo->addCoTSendFailureListener(newListener) != COMMO_SUCCESS) {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        Lock_create(lock, cotFailListenersMutex);
+        CommoLock lock(cotFailListenersMutex);
         cotFailListeners.erase(newListener);
         CoTFailListenerJNI::destroy(env, newListener);
         return false;
@@ -1616,8 +1697,7 @@ bool CommoJNI::removeCoTSendFailureListener(JNIEnv *env,
 {
     CoTFailListenerJNI *listener = NULL;
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        Lock_create(lock, cotFailListenersMutex);
+        CommoLock lock(cotFailListenersMutex);
 
         std::set<CoTFailListenerJNI *>::iterator iter;
         for (iter = cotFailListeners.begin();
@@ -1656,8 +1736,7 @@ jobject CommoJNI::wrapPhysicalNetInterface(JNIEnv *env,
         
     // add to map of objs
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        Lock_create(lock, netInterfaceMapMutex);
+        CommoLock lock(netInterfaceMapMutex);
         netInterfaceMap.insert(NetInterfaceMap::value_type(iface, ret));
     }
     return ret;
@@ -1681,8 +1760,7 @@ jobject CommoJNI::wrapTcpNetInterface(JNIEnv *env,
         
     // add to map of objs
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        Lock_create(lock, netInterfaceMapMutex);
+        CommoLock lock(netInterfaceMapMutex);
         netInterfaceMap.insert(NetInterfaceMap::value_type(iface, ret));
     }
     return ret;
@@ -1709,8 +1787,7 @@ jobject CommoJNI::wrapStreamingNetInterface(JNIEnv *env,
         
     // add to map of objs
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        Lock_create(lock, netInterfaceMapMutex);
+        CommoLock lock(netInterfaceMapMutex);
         netInterfaceMap.insert(NetInterfaceMap::value_type(iface, ret));
     }
     return ret;
@@ -1719,8 +1796,7 @@ jobject CommoJNI::wrapStreamingNetInterface(JNIEnv *env,
 
 void CommoJNI::unwrapNetInterface(JNIEnv *env, NetInterface *iface)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    Lock_create(lock, netInterfaceMapMutex);
+        CommoLock lock(netInterfaceMapMutex);
     NetInterfaceMap::iterator iter =
         netInterfaceMap.find(iface);
     if (iter == netInterfaceMap.end())
@@ -1746,8 +1822,7 @@ jobject CommoJNI::wrapCloudClient(JNIEnv *env,
         
     // add to map of objs
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        Lock_create(lock, cloudclientMapMutex);
+        CommoLock lock(cloudclientMapMutex);
         cloudclientMap.insert(CloudclientMap::value_type(client, 
                  std::pair<CloudIOJNI *, jglobalobjectref>(cloudiojni, ret)));
     }
@@ -1757,8 +1832,7 @@ jobject CommoJNI::wrapCloudClient(JNIEnv *env,
 
 void CommoJNI::unwrapCloudClient(JNIEnv *env, CloudClient *client)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    Lock_create(lock, cloudclientMapMutex);
+    CommoLock lock(cloudclientMapMutex);
     CloudclientMap::iterator iter =
         cloudclientMap.find(client);
     if (iter == cloudclientMap.end())

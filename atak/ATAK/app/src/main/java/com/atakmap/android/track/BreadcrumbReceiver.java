@@ -294,7 +294,7 @@ public class BreadcrumbReceiver extends BroadcastReceiver implements
                         ATAKUtilities.getResourceUri(
                                 com.atakmap.app.R.drawable.ic_track));
                 persistentSelfPolyline.setMetaBoolean("removable", false);
-                persistentSelfPolyline.setMetaBoolean("movable", false);
+                persistentSelfPolyline.setMovable(false);
                 persistentSelfPolyline.setMetaBoolean("touchable", false);
                 persistentSelfPolyline.setMetaBoolean("ignoreMenu", true);
                 persistentSelfPolyline.setStrokeColor(Color.BLUE);

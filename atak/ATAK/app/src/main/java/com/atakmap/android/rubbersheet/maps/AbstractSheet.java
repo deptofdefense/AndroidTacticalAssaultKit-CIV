@@ -50,9 +50,8 @@ public abstract class AbstractSheet extends DrawingRectangle {
         setMetaBoolean("nevercot", true);
         MapGroup mg = getChildMapGroup();
         mg.setMetaString("uid", getUID());
-        setName(mg.getFriendlyName());
+        setTitle(mg.getFriendlyName());
         setFilled(false);
-        setClickable(true);
         setVisible(data.visible);
     }
 
@@ -104,9 +103,7 @@ public abstract class AbstractSheet extends DrawingRectangle {
                 GeoPointMetaData.wrap(corners[1]),
                 GeoPointMetaData.wrap(corners[2]),
                 GeoPointMetaData.wrap(corners[3]));
-        PointMapItem anchor = getCenterMarker();
-        if (anchor != null)
-            anchor.setPoint(center);
+        setCenterPoint(center);
     }
 
     @Override

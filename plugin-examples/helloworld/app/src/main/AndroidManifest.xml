@@ -13,7 +13,8 @@
 
   
         <provider android:name="com.javacodegeeks.android.contentprovidertest.BirthProvider"
-            android:authorities="com.javacodegeeks.provider.Birthday">
+            android:authorities="com.javacodegeeks.provider.Birthday"
+            android:exported="true">
         </provider>
 
         <service

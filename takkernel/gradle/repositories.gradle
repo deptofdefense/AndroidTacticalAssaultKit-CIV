@@ -1,0 +1,5 @@
+repositories {
+    google()
+    mavenLocal()
+    mavenCentral()
+}

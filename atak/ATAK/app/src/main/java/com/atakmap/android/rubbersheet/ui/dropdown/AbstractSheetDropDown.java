@@ -182,7 +182,7 @@ public abstract class AbstractSheetDropDown extends DropDownReceiver
             @Override
             public void afterTextChanged(Editable et) {
                 if (_item != null)
-                    _item.setName(et.toString());
+                    _item.setTitle(et.toString());
             }
         });
         _remarksLayout.addTextChangedListener(new AfterTextChangedWatcher() {
@@ -198,7 +198,7 @@ public abstract class AbstractSheetDropDown extends DropDownReceiver
         if (_root == null || _item == null || !isVisible())
             return;
 
-        _nameTxt.setText(_item.getName());
+        _nameTxt.setText(_item.getTitle());
 
         refreshCenter();
         refreshArea();

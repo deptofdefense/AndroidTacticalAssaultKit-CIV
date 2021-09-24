@@ -1,0 +1,42 @@
+buildscript {
+    repositories {
+        gradlePluginPortal()
+        google()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:4.2.0'
+    }
+}
+
+apply plugin: 'com.android.library'
+apply plugin: 'maven-publish'
+
+apply from: 'gradle/publishing.gradle'
+apply from: 'gradle/artifactAssembly.gradle'
+
+// Ensure the Android jniLibs source-set is dynamically created before assembling the AAR, and that the source-set is
+// cleaned after AAR assembly.
+tasks.preBuild.dependsOn createAndroidSourceSet
+tasks.assemble.finalizedBy cleanAndroidSourceSet
+
+android {
+    compileSdkVersion 29
+    libraryVariants.all { variant ->
+        variant.outputs.each { output ->
+            output.outputFileName = "takthirdparty-${variant.name}.aar"
+        }
+    }
+}
+
+repositories {
+    google()
+    mavenCentral()
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+}
+
+wrapper {
+    gradleVersion = '6.8.1'
+}

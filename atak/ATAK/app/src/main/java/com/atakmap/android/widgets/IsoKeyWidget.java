@@ -113,9 +113,9 @@ public class IsoKeyWidget extends MapWidget2 {
             ret[1] = "(ft msl)";
         } else if (SharedDataModel.isoCalculating) {
             String progress = String
-                    .valueOf((int) ((float) (SharedDataModel.isoProgress
+                    .valueOf((int) (SharedDataModel.isoProgress
                             / (SharedDataModel.isoScaleMarks * 2f + 3f)
-                            * 100f)));
+                            * 100f));
             if (mode.equals(SharedDataModel.VISIBLE))
                 ret[1] = progress + "%";
         }

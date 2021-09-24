@@ -33,6 +33,15 @@
         android:background="@drawable/overlay_title_background"/>
 
     <ImageButton
+        android:id="@+id/delete"
+        android:layout_width="@dimen/dropdown_bottom_bar_height"
+        android:layout_height="@dimen/dropdown_bottom_bar_height"
+        android:padding="@dimen/auto_space_big"
+        android:src="@drawable/ic_menu_delete"
+        android:scaleType="fitXY"
+        android:background="@drawable/overlay_title_background"/>
+
+    <ImageButton
         android:id="@+id/download"
         android:layout_width="@dimen/dropdown_bottom_bar_height"
         android:layout_height="@dimen/dropdown_bottom_bar_height"

@@ -3,6 +3,7 @@
         <action>com.atakmap.android.maps.CLAMP_TOGGLE</action>
         <extras>
             <string key='uid'>${uid}</string>
+            <string key='shapeUID'>${shapeUID}</string>
         </extras>
     </broadcast>
     <broadcast>

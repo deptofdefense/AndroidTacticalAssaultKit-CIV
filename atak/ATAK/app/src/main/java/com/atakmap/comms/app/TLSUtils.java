@@ -536,6 +536,54 @@ public class TLSUtils {
         }
     }
 
+    /**
+     * Validate client cert stored for specified connection
+     *
+     * @param hostname
+     * @param port
+     * @return
+     */
+    public static AtakCertificateDatabase.CertificateValidity validateCert(
+            final String hostname, final int port) {
+        if (FileSystemUtils.isEmpty(hostname)) {
+            Log.w(TAG, "validateCert invalid hostname");
+            return null;
+        }
+
+        Log.d(TAG, "Checking cert validity for: " + hostname);
+
+        byte[] clientCert = AtakCertificateDatabase
+                .getCertificateForServerAndPort(
+                        AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE,
+                        hostname, port);
+        AtakAuthenticationCredentials clientCertCredentials = AtakAuthenticationDatabase
+                .getCredentials(
+                        AtakAuthenticationCredentials.TYPE_clientPassword,
+                        hostname);
+
+        if (clientCert == null) {
+            clientCert = AtakCertificateDatabase
+                    .getCertificate(
+                            AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE);
+            clientCertCredentials = AtakAuthenticationDatabase
+                    .getCredentials(
+                            AtakAuthenticationCredentials.TYPE_clientPassword);
+        }
+
+        if (clientCert != null
+                && clientCertCredentials != null
+                &&
+                !FileSystemUtils
+                        .isEmpty(clientCertCredentials.password)) {
+
+            return AtakCertificateDatabase.checkValidity(clientCert,
+                    clientCertCredentials.password);
+        } else {
+            Log.w(TAG, "Cert not found for: " + hostname);
+            return null;
+        }
+    }
+
     public static void promptCertificateError(final Context context,
             final String host, final String message,
             final boolean interactive) {

@@ -13,10 +13,7 @@
 #include "cotmessage.h"
 #include "resolverqueue.h"
 #include "internalutils.h"
-
-#include <Mutex.h>
-#include <RWMutex.h>
-#include <Cond.h>
+#include "commothread.h"
 
 #include "openssl/ssl.h"
 
@@ -306,14 +303,14 @@ private:
     SSL_CTX *sslCtx;
 
     ContextMap contexts;
-    PGSC::Thread::RWMutex contextMutex;
+    thread::RWMutex contextMutex;
 
     bool ioNeedsRebuild;
     ContextSet upContexts;
-    PGSC::Thread::Mutex upMutex;
+    thread::Mutex upMutex;
     ContextSet downContexts;
     bool downNeedsRebuild;
-    PGSC::Thread::Mutex downMutex;
+    thread::Mutex downMutex;
     // resolutionContexts protected by contextMutex write lock
     ResolverMap resolutionContexts;
     
@@ -321,14 +318,14 @@ private:
     std::string myPingUid;
 
     RxQueue rxQueue;
-    PGSC::Thread::Mutex rxQueueMutex;
-    PGSC::Thread::CondVar rxQueueMonitor;
+    thread::Mutex rxQueueMutex;
+    thread::CondVar rxQueueMonitor;
 
     std::set<InterfaceStatusListener *> ifaceListeners;
-    PGSC::Thread::Mutex ifaceListenersMutex;
+    thread::Mutex ifaceListenersMutex;
 
     std::set<StreamingMessageListener *> listeners;
-    PGSC::Thread::Mutex listenersMutex;
+    thread::Mutex listenersMutex;
 
     COMMO_DISALLOW_COPY(StreamingSocketManagement);
     void connectionThreadProcess();

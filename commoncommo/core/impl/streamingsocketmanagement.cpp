@@ -1,7 +1,7 @@
 #define __STDC_LIMIT_MACROS
 #include "streamingsocketmanagement.h"
 #include "takmessage.h"
-#include <Lock.h>
+#include "commothread.h"
 #include "libxml/tree.h"
 
 #include <sstream>
@@ -14,6 +14,7 @@
 
 using namespace atakmap::commoncommo;
 using namespace atakmap::commoncommo::impl;
+using namespace atakmap::commoncommo::impl::thread;
 
 
 namespace {
@@ -57,7 +58,7 @@ StreamingSocketManagement::StreamingSocketManagement(CommoLogger *logger,
         connTimeoutSec(DEFAULT_CONN_TIMEOUT_SECONDS),
         monitor(true),
         sslCtx(NULL),
-        contexts(), contextMutex(PGSC::Thread::TERW_Fair),
+        contexts(), contextMutex(RWMutex::Policy_Fair),
         ioNeedsRebuild(false),
         upContexts(), upMutex(),
         downContexts(), downNeedsRebuild(false), downMutex(),
@@ -160,8 +161,7 @@ StreamingNetInterface *StreamingSocketManagement::addStreamingInterface(
     epString = getEndpointString(addr, port, connType);
 
     {
-        PGSC::Thread::WriteLockPtr lock(NULL, NULL);
-        WriteLock_create(lock, contextMutex);
+        WriteLock lock(contextMutex);
         ContextMap::iterator iter = contexts.find(epString);
         if (iter != contexts.end()) {
             InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR,
@@ -183,8 +183,7 @@ StreamingNetInterface *StreamingSocketManagement::addStreamingInterface(
                     "Streaming interface %s added with pre-resolved IP string", epString.c_str());
 
             // Already resolved - go straight to connection
-            PGSC::Thread::LockPtr downLock(NULL, NULL);
-            Lock_create(downLock, downMutex);
+            Lock downLock(downMutex);
             downContexts.insert(ctx);
         } else {
             // Needs name resolution
@@ -210,8 +209,7 @@ done:
 CommoResult StreamingSocketManagement::removeStreamingInterface(
         StreamingNetInterface *iface)
 {
-    PGSC::Thread::WriteLockPtr lock(NULL, NULL);
-    WriteLock_create(lock, contextMutex);
+    WriteLock lock(contextMutex);
 
     // Try to erase context from the master list
     std::string s(iface->remoteEndpointId, iface->remoteEndpointLen);
@@ -226,14 +224,12 @@ CommoResult StreamingSocketManagement::removeStreamingInterface(
 
     // Remove from up, down, or resolution list, whichever it is in
     {
-        PGSC::Thread::LockPtr uLock(NULL, NULL);
-        Lock_create(uLock, upMutex);
+        Lock uLock(upMutex);
         if (upContexts.erase(ctx) == 1)
             ioNeedsRebuild = true;
     }
     {
-        PGSC::Thread::LockPtr dLock(NULL, NULL);
-        Lock_create(dLock, downMutex);
+        Lock dLock(downMutex);
         if (downContexts.erase(ctx) == 1)
             downNeedsRebuild = true;
     }
@@ -245,8 +241,7 @@ CommoResult StreamingSocketManagement::removeStreamingInterface(
 
     // Remove any reference in the rxQueue
     {
-        PGSC::Thread::LockPtr rxqlock(NULL, NULL);
-        Lock_create(rxqlock, rxQueueMutex);
+        Lock rxqlock(rxQueueMutex);
         RxQueue::iterator iter = rxQueue.begin();
         while (iter != rxQueue.end()) {
             if (iter->ctx == ctx) {
@@ -300,16 +295,14 @@ void StreamingSocketManagement::resetConnection(ConnectionContext *ctx, CommoTim
 void StreamingSocketManagement::addInterfaceStatusListener(
         InterfaceStatusListener* listener)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    Lock_create(lock, ifaceListenersMutex);
+    Lock lock(ifaceListenersMutex);
     ifaceListeners.insert(listener);
 }
 
 void StreamingSocketManagement::removeInterfaceStatusListener(
         InterfaceStatusListener* listener)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    Lock_create(lock, ifaceListenersMutex);
+    Lock lock(ifaceListenersMutex);
     ifaceListeners.erase(listener);
 }
 
@@ -333,8 +326,7 @@ std::string StreamingSocketManagement::getEndpointString(
 
 void StreamingSocketManagement::fireInterfaceChange(ConnectionContext *ctx, bool up)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    Lock_create(lock, ifaceListenersMutex);
+    Lock lock(ifaceListenersMutex);
     std::set<InterfaceStatusListener *>::iterator iter;
     for (iter = ifaceListeners.begin(); iter != ifaceListeners.end(); ++iter) {
         InterfaceStatusListener *listener = *iter;
@@ -348,8 +340,7 @@ void StreamingSocketManagement::fireInterfaceChange(ConnectionContext *ctx, bool
 void StreamingSocketManagement::fireInterfaceErr(ConnectionContext *ctx,
                               netinterfaceenums::NetInterfaceErrorCode errCode)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    Lock_create(lock, ifaceListenersMutex);
+    Lock lock(ifaceListenersMutex);
     std::set<InterfaceStatusListener *>::iterator iter;
     for (iter = ifaceListeners.begin(); iter != ifaceListeners.end(); ++iter) {
         InterfaceStatusListener *listener = *iter;
@@ -378,8 +369,7 @@ void StreamingSocketManagement::setMonitor(bool en)
 
 void StreamingSocketManagement::configSSLForConnection(std::string streamingEndpoint, SSL_CTX *sslCtx) COMMO_THROW (std::invalid_argument)
 {
-    PGSC::Thread::ReadLockPtr lock(NULL, NULL);
-    ReadLock_create(lock, contextMutex);
+    ReadLock lock(contextMutex);
     ContextMap::iterator iter = contexts.find(streamingEndpoint);
     if (iter == contexts.end())
         throw std::invalid_argument("Invalid stream endpoint - interface has been removed/disabled");
@@ -413,8 +403,7 @@ void StreamingSocketManagement::configSSLForConnection(std::string streamingEndp
 
 bool StreamingSocketManagement::isEndpointSSL(std::string streamingEndpoint) COMMO_THROW (std::invalid_argument)
 {
-    PGSC::Thread::ReadLockPtr lock(NULL, NULL);
-    ReadLock_create(lock, contextMutex);
+    ReadLock lock(contextMutex);
     ContextMap::iterator iter = contexts.find(streamingEndpoint);
     if (iter == contexts.end())
         throw std::invalid_argument("Invalid stream endpoint - interface has been removed/disabled");
@@ -425,8 +414,7 @@ bool StreamingSocketManagement::isEndpointSSL(std::string streamingEndpoint) COM
 
 NetAddress *StreamingSocketManagement::getAddressForEndpoint(std::string endpoint) COMMO_THROW (std::invalid_argument)
 {
-    PGSC::Thread::ReadLockPtr lock(NULL, NULL);
-    ReadLock_create(lock, contextMutex);
+    ReadLock lock(contextMutex);
     ContextMap::iterator iter = contexts.find(endpoint);
     if (iter == contexts.end())
         throw std::invalid_argument("Invalid stream endpoint - interface has been removed/disabled");
@@ -445,8 +433,7 @@ void StreamingSocketManagement::sendMessage(
         std::string streamingEndpoint, const CoTMessage *msg)
                 COMMO_THROW (std::invalid_argument)
 {
-    PGSC::Thread::ReadLockPtr lock(NULL, NULL);
-    ReadLock_create(lock, contextMutex);
+    ReadLock lock(contextMutex);
     ContextMap::iterator iter = contexts.find(streamingEndpoint);
     if (iter == contexts.end())
         throw std::invalid_argument("Invalid stream endpoint - interface has been removed/disabled");
@@ -454,8 +441,7 @@ void StreamingSocketManagement::sendMessage(
     ConnectionContext *ctx = iter->second;
 
     {
-        PGSC::Thread::LockPtr upLock(NULL, NULL);
-        Lock_create(upLock, upMutex);
+        Lock upLock(upMutex);
         if (upContexts.find(ctx) == upContexts.end())
             throw std::invalid_argument("Specified streaming interface is down");
 
@@ -479,10 +465,8 @@ void StreamingSocketManagement::sendBroadcast(
     CoTMessageType type = msg->getType();
 
 
-    PGSC::Thread::ReadLockPtr lock(NULL, NULL);
-    ReadLock_create(lock, contextMutex);
-    PGSC::Thread::LockPtr upLock(NULL, NULL);
-    Lock_create(upLock, upMutex);
+    ReadLock lock(contextMutex);
+    Lock upLock(upMutex);
 
     ContextSet::iterator iter;
     for (iter = upContexts.begin(); iter != upContexts.end(); ++iter) {
@@ -504,16 +488,14 @@ void StreamingSocketManagement::sendBroadcast(
 void StreamingSocketManagement::addStreamingMessageListener(
         StreamingMessageListener* listener)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    Lock_create(lock, listenersMutex);
+    Lock lock(listenersMutex);
     listeners.insert(listener);
 }
 
 void StreamingSocketManagement::removeStreamingMessageListener(
         StreamingMessageListener* listener)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    Lock_create(lock, listenersMutex);
+    Lock lock(listenersMutex);
     listeners.erase(listener);
 }
 
@@ -547,9 +529,8 @@ void StreamingSocketManagement::threadStopSignal(
         break;
     case RX_QUEUE_THREADID:
     {
-        PGSC::Thread::LockPtr rxLock(NULL, NULL);
-        Lock_create(rxLock, rxQueueMutex);
-        rxQueueMonitor.broadcast(*rxLock);
+        Lock rxLock(rxQueueMutex);
+        rxQueueMonitor.broadcast(rxLock);
         break;
     }
     case CONN_MGMT_THREADID:
@@ -666,8 +647,7 @@ void StreamingSocketManagement::connectionThreadProcess()
     while (!threadShouldStop(CONN_MGMT_THREADID)) {
         // Hold this the entire iteration, preventing any of our
         // in-use contexts from being destroyed.
-        PGSC::Thread::ReadLockPtr ctxLock(NULL, NULL);
-        ReadLock_create(ctxLock, contextMutex);
+        ReadLock ctxLock(contextMutex);
 
         ContextSet newlyConnectedCtxs;
 
@@ -676,8 +656,7 @@ void StreamingSocketManagement::connectionThreadProcess()
         // again, start the connection attempt.
         ContextSet::iterator ctxIter;
         {
-            PGSC::Thread::LockPtr lock(NULL, NULL);
-            Lock_create(lock, downMutex);
+            Lock lock(downMutex);
             for (ctxIter = downContexts.begin(); ctxIter != downContexts.end(); ++ctxIter) {
                 ConnectionContext *ctx = *ctxIter;
                 CommoTime nowTime = CommoTime::now();
@@ -764,7 +743,7 @@ void StreamingSocketManagement::connectionThreadProcess()
                 // Weird to get an error here, unless your name is Solaris
                 // which will apparently error on select() for sockets in error
                 // state.  Anyway, if this happens restart all of them
-                logger->log(CommoLogger::LEVEL_ERROR, "Error from tcp connection select() - retrying connections");
+                InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Error from tcp connection select() - retrying connections");
                 CommoTime rTime = CommoTime::now() + CONN_RETRY_SECONDS;
                 for (ctxIter = pendingContexts.begin(); ctxIter != pendingContexts.end(); ++ctxIter) {
                     ConnectionContext *ctx = *ctxIter;
@@ -843,8 +822,7 @@ void StreamingSocketManagement::connectionThreadProcess()
 
         if (!newlyConnectedCtxs.empty()) {
             {
-                PGSC::Thread::LockPtr lock(NULL, NULL);
-                Lock_create(lock, downMutex);
+                Lock lock(downMutex);
                 // Pull each from the down list
                 for (ctxIter = newlyConnectedCtxs.begin(); ctxIter != newlyConnectedCtxs.end(); ++ctxIter)
                     downContexts.erase(*ctxIter);
@@ -854,8 +832,7 @@ void StreamingSocketManagement::connectionThreadProcess()
                 fireInterfaceChange(*ctxIter, true);
 
             {
-                PGSC::Thread::LockPtr lock(NULL, NULL);
-                Lock_create(lock, upMutex);
+                Lock lock(upMutex);
                 CommoTime now = CommoTime::now();
                 for (ctxIter = newlyConnectedCtxs.begin(); ctxIter != newlyConnectedCtxs.end(); ++ctxIter) {
                     InternalUtils::logprintf(logger, CommoLogger::LEVEL_INFO, "Stream connection to %s is up!", (*ctxIter)->remoteEndpoint.c_str());
@@ -958,8 +935,7 @@ void StreamingSocketManagement::ioThreadProcess()
     NetSelector selector;
 
     while (!threadShouldStop(IO_THREADID)) {
-        PGSC::Thread::ReadLockPtr ctxLock(NULL, NULL);
-        ReadLock_create(ctxLock, contextMutex);
+        ReadLock ctxLock(contextMutex);
 
         ContextSet errorSet;
         ContextSet::iterator ctxIter;
@@ -969,8 +945,7 @@ void StreamingSocketManagement::ioThreadProcess()
         bool txNeedsRebuild = false;
 
         {
-            PGSC::Thread::LockPtr upLock(NULL, NULL);
-            Lock_create(upLock, upMutex);
+            Lock upLock(upMutex);
 
             // If list of contexts has externally changed, don't use existing
             // socket sets or txSet.  Just rebuild everything
@@ -1052,7 +1027,7 @@ void StreamingSocketManagement::ioThreadProcess()
                 } catch (SocketException &) {
                     // Socket error. Queue for going to down state.
                     fireInterfaceErr(ctx, netinterfaceenums::ERR_IO);
-                    logger->log(CommoLogger::LEVEL_ERROR, "Error sending tcp data");
+                    InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Error sending tcp data");
                     errorSet.insert(ctx);
                 }
 
@@ -1079,7 +1054,7 @@ void StreamingSocketManagement::ioThreadProcess()
             try {
                 selector.doSelect(100);
             } catch (SocketException &) {
-                logger->log(CommoLogger::LEVEL_ERROR, "Error from tcp io select()?");
+                InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Error from tcp io select()?");
                 fireInterfaceErr(ctx, netinterfaceenums::ERR_OTHER);
                 errorSet.insert(rxSet.begin(), rxSet.end());
             }
@@ -1154,8 +1129,7 @@ void StreamingSocketManagement::ioThreadProcess()
 
         if (!errorSet.empty()) {
             {
-                PGSC::Thread::LockPtr lock(NULL, NULL);
-                Lock_create(lock, upMutex);
+                Lock lock(upMutex);
                 // remove all in errorSet from up, killing sockets and
                 // expunging txQueue
                 for (ctxIter = errorSet.begin(); ctxIter != errorSet.end(); ctxIter++) {
@@ -1170,8 +1144,7 @@ void StreamingSocketManagement::ioThreadProcess()
 
             {
                 // Move to down list
-                PGSC::Thread::LockPtr lock(NULL, NULL);
-                Lock_create(lock, downMutex);
+                Lock lock(downMutex);
                 downContexts.insert(errorSet.begin(), errorSet.end());
             }
             // Make certain to reset everything!
@@ -1183,8 +1156,7 @@ void StreamingSocketManagement::ioThreadProcess()
 
 void StreamingSocketManagement::sendPing(ConnectionContext *ctx)
 {
-    PGSC::Thread::LockPtr uplock(NULL, NULL);
-    Lock_create(uplock, upMutex);
+    Lock uplock(upMutex);
     CoTMessage *msg = new CoTMessage(logger, myPingUid);
     try {
         ctx->txQueue.push_front(TxQueueItem(ctx, msg, ctx->txQueueProtoVersion));
@@ -1196,8 +1168,7 @@ void StreamingSocketManagement::sendPing(ConnectionContext *ctx)
 void StreamingSocketManagement::convertTxToProtoVersion(ConnectionContext *ctx,
                                                         int protoVersion)
 {
-    PGSC::Thread::LockPtr upLock(NULL, NULL);
-    Lock_create(upLock, upMutex);
+    Lock upLock(upMutex);
     
     TxQueue::iterator iter;
     for (iter = ctx->txQueue.begin(); iter != ctx->txQueue.end(); )
@@ -1256,8 +1227,7 @@ bool StreamingSocketManagement::protoNegotiation(ConnectionContext *ctx,
             if (vs.count(1)) {
                 // We support version 1 - tell server
                 {
-                    PGSC::Thread::LockPtr uplock(NULL, NULL);
-                    Lock_create(uplock, upMutex);
+                    Lock uplock(upMutex);
                     CoTMessage *rmsg = new CoTMessage(logger, 
                                                       msg->getEventUid(), 1);
                     try {
@@ -1330,17 +1300,17 @@ bool StreamingSocketManagement::dispatchRxMessage(ConnectionContext *ctx,
         
         // Discard if it is a pong or control message, else post it
         if (!msg->isPong() && msg->getTakControlType() == TakControlType::TYPE_NONE) {
-            PGSC::Thread::LockPtr qLock(NULL, NULL);
-            Lock_create(qLock, rxQueueMutex);
+            Lock qLock(rxQueueMutex);
 
             rxQueue.push_back(RxQueueItem(ctx, msg));
-            rxQueueMonitor.broadcast(*qLock);
+            rxQueueMonitor.broadcast(qLock);
         } else {
             delete msg;
         }
     } catch (std::invalid_argument &e) {
         std::string s((const char *)ctx->rxBuf + ctx->rxBufStart, len);
-        InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Invalid CoT message received from stream: {%s} -- %s", s.c_str(), e.what() == NULL ? "" : e.what());
+        CommoLogger::ParsingDetail detail{ ctx->rxBuf + ctx->rxBufStart, len, e.what() == NULL ? "" : e.what(), ctx->remoteEndpoint.c_str() };
+        InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, CommoLogger::TYPE_PARSING, &detail, "Invalid CoT message received from stream: {%s} -- %s", s.c_str(), e.what() == NULL ? "" : e.what());
     }
     
     return ret;
@@ -1494,10 +1464,9 @@ void StreamingSocketManagement::recvQueueThreadProcess()
         RxQueueItem qitem;
         std::string endpoint;
         {
-            PGSC::Thread::LockPtr rxLock(NULL, NULL);
-            Lock_create(rxLock, rxQueueMutex);
+            Lock rxLock(rxQueueMutex);
             if (rxQueue.empty()) {
-                rxQueueMonitor.wait(*rxLock);
+                rxQueueMonitor.wait(rxLock);
                 continue;
             }
 
@@ -1515,8 +1484,7 @@ void StreamingSocketManagement::recvQueueThreadProcess()
         // this library
         qitem.msg->setEndpoint(ENDPOINT_STREAMING, "");
         
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        Lock_create(lock, listenersMutex);
+        Lock lock(listenersMutex);
         std::set<StreamingMessageListener *>::iterator iter;
         for (iter = listeners.begin(); iter != listeners.end(); ++iter) {
             StreamingMessageListener *listener = *iter;
@@ -1538,8 +1506,7 @@ void StreamingSocketManagement::resolutionAttemptFailed(
     // Acquire the lock and be certain our context is still valid.
     // If so, send out an error indication.
     {
-        PGSC::Thread::ReadLockPtr ctxLock(NULL, NULL);
-        ReadLock_create(ctxLock, contextMutex);
+        ReadLock ctxLock(contextMutex);
         ConnectionContext *resolveMeContext = NULL;
 
         ResolverMap::iterator iter = resolutionContexts.find(id);
@@ -1572,8 +1539,7 @@ bool StreamingSocketManagement::resolutionComplete(
     // We grab the global context lock in read mode because the
     // context will be moved between lists.
     {
-        PGSC::Thread::ReadLockPtr ctxLock(NULL, NULL);
-        ReadLock_create(ctxLock, contextMutex);
+        ReadLock ctxLock(contextMutex);
         ConnectionContext *resolveMeContext = NULL;
 
         ResolverMap::iterator iter = resolutionContexts.find(request);
@@ -1588,8 +1554,7 @@ bool StreamingSocketManagement::resolutionComplete(
 
             // If the context is valid still, move it to down list
             {
-                PGSC::Thread::LockPtr lock(NULL, NULL);
-                Lock_create(lock, downMutex);
+                Lock lock(downMutex);
                 resolveMeContext->resolverRequest = NULL;
                 downContexts.insert(resolveMeContext);
             }

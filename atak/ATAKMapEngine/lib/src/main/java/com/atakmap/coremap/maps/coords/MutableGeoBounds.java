@@ -6,6 +6,10 @@ public class MutableGeoBounds extends GeoBounds {
         super(a, b);
     }
 
+    public MutableGeoBounds() {
+        this(0, 0, 0, 0);
+    }
+
     public MutableGeoBounds(double lat0, double lng0, double lat1,
             double lng1) {
         super(lat0, lng0, lat1, lng1);
@@ -24,6 +28,8 @@ public class MutableGeoBounds extends GeoBounds {
         this.setImpl(other.getSouth(), other.getWest(), other.getNorth(),
                 other.getEast());
         this.setWrap180(other._wrap180);
+        this.setMinAltitude(other._minAltitude);
+        this.setMaxAltitude(other._maxAltitude);
     }
 
     public void set(GeoPoint[] pts, boolean wrap180) {

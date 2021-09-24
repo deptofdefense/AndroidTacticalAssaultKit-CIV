@@ -148,7 +148,7 @@
     <string name="supportPreferences">지원 기본 설정</string>
     <string name="gpsPreferences">GPS 아이콘 환경 설정</string>
     <string name="contact_list_button_select_all">모두 선택</string>
-    <string name="contact_list_button_deselect_all">모두 지우기</string>
+  <string name="contact_list_button_deselect_all">모두 선택 취소</string>
     <string name="contact_list_button_share">보내기</string>
     <string name="contact_list_button_send_to_all">방송</string>
     <string name="disp_pref_title">디스플레이 기본 설정</string>
@@ -2081,6 +2081,7 @@
     <string name="no_image_editors">설치 된 이미지 편집기 없음</string>
     <string name="heatmap">히트 맵</string>
     <string name="viewshed">가시 구역</string>
+  <string name="terrainslope">Terrain Slope</string>
     <string name="hide_viewshed">가시 구역 제거</string>
     <string name="select_viewshed">가시 구역 선택</string>
     <string name="no_marker_set">표식 세트 없음</string>
@@ -2105,7 +2106,7 @@
     <string name="x_resolution_summ">X-축을 따라 가져갈 고도 샘플 수</string>
     <string name="y_resolution">Y 해상도</string>
     <string name="y_resolution_summ">Y-축을 따라 가져갈 고도 샘플 수</string>
-    <string name="show_heatmap">히트 맵 표시</string>
+  <string name="show_heatmap"> 표시</string>
     <string name="dted">DTED</string>
     <string name="level_1">레벨 1</string>
     <string name="sample_rate">샘플 속도</string>
@@ -2119,6 +2120,7 @@
     <string name="rel_gradient">REL 그라데이션</string>
     <string name="show_circle">가시 구역\n원형</string>
     <string name="show_circle2">가시 구역 원형</string>
+  <string name="show_terrainslope">Show Terrain Slope</string>
     <string name="overlay_manager">오버레이 관리자</string>
     <string name="process">프로세스</string>
     <string name="select_all_om">모두 선택</string>
@@ -3723,15 +3725,15 @@
     <string name="resection_update_location_title">Update location?</string>
     <string name="resection_update_location_message">Do you want to update your location to the resection estimate?\nLocation: %s</string>
     <string name="resection_estimate_label">Provider: %1$s\nLocation: %2$s\nConfidence: %3$s</string>
-    <string name="resection_select_estimates_prompt_title">Select which location estimates to use</string>
+  <string name="resection_select_estimates_prompt_title">Select which location estimate to use</string>
     <string name="resection_run_another_title">Run another Resection tool?</string>
     <string name="resection_run_another_message">Do you want to run another Resection tool to get another estimate?</string>
-    <string name="resection_no_estimates_selected">No estimates were selected--unable to compute a location</string>
+  <string name="resection_no_estimates_selected">No estimate was selected</string>
     <string name="resection_classic_tool_description">Classic resection. Takes lines of bearing from observer\'s point to 2 or more landmarks</string>
     <string name="resection_classic_tool_ideal_conditions">When there are landmarks you are able to identify and match to the map. Highest accuracy when angle between landmarks approaches 90 degrees</string>
     <string name="resection_classic_tool_relative_accuracy">Dependent upon how accurately the landmarks and relative bearings are identified</string>
     <string name="invalid_cot_address">Invalid output encountered, make sure the address does not contain the protocol or port</string>
-    <string name="image_overlay_hud">Image Overlay HUD</string>
+  <string name="image_overlay_hud">Image Overlay</string>
     <string name="image_overlay_warning">This option will permanently overlay metadata onto the image. Continue?</string>
     <string name="kml_network_link">KML Network Link</string>
     <string name="kml_links_added_msg">Added %d KML network links</string>
@@ -3770,4 +3772,24 @@
   <string name="legacy_altitude_rendering">Enhanced Depth Perception</string>
   <string name="disable_parallax_viewing">Enhances visualization of depth when looking straight down.</string>
   <string name="lollipop_description">Draws a line to the exact point on the ground represented by the item.</string>
+  <string name="self_authored">Self-Authored</string>
+  <string name="toggle_filters">Toggle Filters</string>
+  <string name="actionbar_channels">Channels</string>
+    <string name="enter_caption_button">Tap the Edit button to enter caption</string>
+    <string name="deleting_dted_files">Deleting %s files&#8230;</string>
+    <string name="refreshing">Refreshing&#8230;</string>
+  <string name="address_colon">Address:</string>
+  <string name="tak_server_quick_connect">TAK Server Quick Connect</string>
+  <string name="quick_connect">Quick Connect</string>
+  <string name="retry">Retry</string>
+    <string name="select_deletion_method">Select deletion method:</string>
+    <string name="no_content_selectable">No content can be selected</string>
+    <string name="delete_contents">Delete Contents</string>
+    <string name="select_lasso_action">Select Lasso Action</string>
+  <string name="lasso_select">Lasso Select</string>
+    <string name="checked_abbr">Chk</string>
+    <string name="perimeter">Perimeter</string>
+    <string name="circumference">Circumference</string>
+  <string name="length">Length</string>
+    <string name="bulk_feature_edit_limit_msg">Bulk editing of more than 500 features is not supported.</string>
 </resources>

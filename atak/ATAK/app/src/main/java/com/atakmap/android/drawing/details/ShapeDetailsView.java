@@ -55,6 +55,9 @@ public class ShapeDetailsView extends GenericDetailsView implements
     private TextView _shapeAreaLabel;
     private Button _shapeAreaTF;
 
+    private TextView _shapePerimeterLabel;
+    private Button _shapePerimeterTF;
+
     private DrawingShape _shape;
     private Marker _center;
 
@@ -123,6 +126,7 @@ public class ShapeDetailsView extends GenericDetailsView implements
         _sendExportView.setVisibility(VISIBLE);
         _shapeEditView.setVisibility(GONE);
         updateArea();
+        updatePerimeterOrLength();
     }
 
     /**
@@ -137,6 +141,10 @@ public class ShapeDetailsView extends GenericDetailsView implements
         _centerButton = findViewById(R.id.drawingShapeCenterButton);
         _shapeAreaLabel = findViewById(R.id.drawingShapeAreaLabel);
         _shapeAreaTF = findViewById(R.id.shapeAreaText);
+
+        _shapePerimeterLabel = findViewById(R.id.drawingShapePerimeterLabel);
+        _shapePerimeterTF = findViewById(R.id.shapePerimeterText);
+
         _heightButton = findViewById(R.id.drawingShapeHeightButton);
         _colorButton = findViewById(R.id.drawingShapeColorButton);
         /*
@@ -232,6 +240,7 @@ public class ShapeDetailsView extends GenericDetailsView implements
             _centerButton.setEnabled(false);
             _shapeAreaLabel.setVisibility(View.GONE);
             _shapeAreaTF.setVisibility(View.GONE);
+            updatePerimeterOrLength();
             _center = null;
         } else {
             _center = _shape.getMarker();
@@ -261,11 +270,12 @@ public class ShapeDetailsView extends GenericDetailsView implements
             _shapeAreaLabel.setVisibility(View.VISIBLE);
             _shapeAreaTF.setVisibility(View.VISIBLE);
             updateArea();
+            updatePerimeterOrLength();
         }
         onPointChanged(_center);
 
         double height = _shape.getHeight();
-        Span unit = getUnitSpan(_shape);
+        Span unit = _unitPrefs.getAltitudeUnits();
         if (!Double.isNaN(height)) {
             _heightButton.setText(SpanUtilities.format(height, Span.METER,
                     unit));
@@ -279,6 +289,12 @@ public class ShapeDetailsView extends GenericDetailsView implements
         setupAreaButton(_shapeAreaTF, new Runnable() {
             public void run() {
                 updateArea();
+            }
+        });
+
+        setupLengthButton(_shapePerimeterTF, new Runnable() {
+            public void run() {
+                updatePerimeterOrLength();
             }
         });
     }
@@ -333,13 +349,38 @@ public class ShapeDetailsView extends GenericDetailsView implements
         });
     }
 
-    private void updateArea() {
-        int areaUnits = _unitPrefs.getAreaSystem();
+    private void updatePerimeterOrLength() {
+        final double range = _shape.getPerimeterOrLength();
+        final int rangeSystem = _unitPrefs.getRangeSystem();
+        if (_shape.isClosed())
+            _shapePerimeterLabel.setText(R.string.perimeter);
+        else
+            _shapePerimeterLabel.setText(R.string.length);
+        if (Double.isNaN(range)) {
+            _shapePerimeterTF.setVisibility(View.GONE);
+            _shapePerimeterLabel.setVisibility(View.GONE);
+        } else {
+            _shapePerimeterTF.setVisibility(View.VISIBLE);
+            _shapePerimeterLabel.setVisibility(View.VISIBLE);
+            _shapePerimeterTF.setText(
+                    SpanUtilities.formatType(rangeSystem, range, Span.METER,
+                            false));
+        }
+    }
 
-        _shapeAreaTF.setText("(" + AreaUtilities.formatArea(areaUnits,
-                AreaUtilities.calcShapeArea(
-                        _shape.getPoints()),
-                Area.METER2) + ")");
+    private void updateArea() {
+        final int areaUnits = _unitPrefs.getAreaSystem();
+        final double area = _shape.getArea();
+
+        if (Double.isNaN(area)) {
+            _shapeAreaTF.setVisibility(View.GONE);
+            _shapeAreaLabel.setVisibility(View.GONE);
+        } else {
+            _shapeAreaLabel.setVisibility(View.VISIBLE);
+            _shapeAreaTF.setVisibility(View.VISIBLE);
+            _shapeAreaTF.setText("(" + AreaUtilities.formatArea(areaUnits, area,
+                    Area.METER2) + ")");
+        }
     }
 
     private void _updateColorButtonDrawable() {
@@ -432,9 +473,7 @@ public class ShapeDetailsView extends GenericDetailsView implements
     @Override
     protected void heightSelected(final double height, final Span u,
             final double h) {
-        _shape.setHeight(height);
-        _shape.setMetaInteger("height_unit", u.getValue());
-        _heightButton.setText(SpanUtilities.format(h, u, 2));
+        super.heightSelected(height, u, h);
         if (_center != null)
             _center.setHeight(height);
     }

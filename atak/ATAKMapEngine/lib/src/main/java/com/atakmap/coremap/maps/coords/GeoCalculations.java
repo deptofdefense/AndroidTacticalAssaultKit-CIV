@@ -2,6 +2,7 @@
 package com.atakmap.coremap.maps.coords;
 
 import com.atakmap.annotations.DeprecatedApi;
+import com.atakmap.coremap.conversions.ConversionFactors;
 import com.atakmap.coremap.maps.conversion.EGM96;
 
 /**
@@ -552,6 +553,30 @@ public final class GeoCalculations {
                 distance, 0);
     }
 
+
+    /**
+     * Computes the destination point from the {@linkplain GeoPoint starting point}, given an
+     * azimuth and distance in the direction of the destination point.
+     *
+     * <P>The <code>distance</code> parameter ALWAYS represents surface distance, whether or not
+     * the <code>inclination</code> is <code>NAN</code>. This means that for computing slant points,
+     * <code>distance</code> does not equal the <I>slant range</I>.
+     *
+     * @param src Starting point of the calculation.
+     * @param azimuth Azimuth in degrees (True North)
+     * @param distance Surface distance between the start and destination point in meters
+     * @param inclination from start point, <code>NAN</code> for surface only computation
+     * @return Destination point, if the point is antipodal from the starting point then the
+     *         calculation could be off. Attempts to calculate the altitude from inclination.
+     */
+    public static GeoPoint pointAtDistance(GeoPoint src, double azimuth,
+                                           double distance, double inclination) {
+
+        return pointAtDistance(src.getLatitude(), src.getLongitude(), src.getAltitude(), azimuth,
+                distance, inclination, 0);
+    }
+
+
     public static GeoPoint pointAtDistance(GeoPoint src, GeoPoint dst,
             double weight) {
         final double srcLat = src.getLatitude();
@@ -630,4 +655,7 @@ public final class GeoCalculations {
 
     static native GeoPoint pointAtDistance(double lat, double lng,
             double azimuth, double distance, int flags);
+
+    static native GeoPoint pointAtDistance(double lat, double lng, double alt,
+            double azimuth, double distance, double inclination, int flags);
 }

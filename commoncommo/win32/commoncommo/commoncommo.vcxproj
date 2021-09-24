@@ -21,7 +21,7 @@
   <ItemGroup>
     <CustomBuild Include="..\..\core\impl\protobuf\*.proto">
       <Message>Running protoc compiler</Message>
-      <Command Condition="'$(Platform)'=='x64'">$(ProjectDir)\..\..\..\takthirdparty\builds\win64-$(Configuration)\host-protobuf\bin\protoc.exe -I=$(ProjectDir)\..\..\core\impl\protobuf --cpp_out=$(ProjectDir)\..\..\core\impl\protobuf $(ProjectDir)\%(Identity)</Command>
+      <Command Condition="'$(Platform)'=='x64'">$(ProjectDir)\..\..\..\takthirdparty\builds\win64-$(Configuration)\bin\protoc.exe -I=$(ProjectDir)\..\..\core\impl\protobuf --cpp_out=$(ProjectDir)\..\..\core\impl\protobuf $(ProjectDir)\%(Identity)</Command>
       <Command Condition="'$(Platform)'=='Win32'">$(ProjectDir)\..\..\..\takthirdparty\builds\win32-$(Configuration)\host-protobuf\bin\protoc.exe -I=$(ProjectDir)\..\..\core\impl\protobuf --cpp_out=$(ProjectDir)\..\..\core\impl\protobuf $(ProjectDir)\%(Identity)</Command>
       <Outputs>$(ProjectDir)\..\..\core\impl\protobuf\%(Filename).pb.h;$(ProjectDir)\..\..\core\impl\protobuf\%(Filename).pb.cc</Outputs>
     </CustomBuild>
@@ -40,6 +40,7 @@
     <ClInclude Include="..\..\core\impl\netsocket.h" />
     <ClInclude Include="..\..\core\impl\plaintextfileIOProvider.h" />
     <ClInclude Include="..\..\core\impl\platform.h" />
+    <ClInclude Include="..\..\core\impl\platformthread.h" />
     <ClInclude Include="..\..\core\impl\protobuf.h" />
     <ClInclude Include="..\..\core\impl\protobuf\cotevent.pb.h" />
     <ClInclude Include="..\..\core\impl\resolverqueue.h" />
@@ -47,7 +48,9 @@
     <ClInclude Include="..\..\core\impl\streamingsocketmanagement.h" />
     <ClInclude Include="..\..\core\impl\takmessage.h" />
     <ClInclude Include="..\..\core\impl\tcpsocketmanagement.h" />
+    <ClInclude Include="..\..\core\impl\commothread.h" />
     <ClInclude Include="..\..\core\impl\threadedhandler.h" />
+    <ClInclude Include="..\..\core\impl\versionimpl.h" />
     <ClInclude Include="..\..\core\include\cloudio.h" />
     <ClInclude Include="..\..\core\include\commo.h" />
     <ClInclude Include="..\..\core\include\commologger.h" />
@@ -76,6 +79,7 @@
     <ClCompile Include="..\..\core\impl\netsocket.cpp" />
     <ClCompile Include="..\..\core\impl\plaintextfileIOProvider.cpp" />
     <ClCompile Include="..\..\core\impl\platform.cpp" />
+    <ClCompile Include="..\..\core\impl\platformthread.cpp" />
     <ClCompile Include="..\..\core\impl\protobuf\contact.pb.cc">
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4800;4146;4290;4251;4351;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4800;4146;4290;4251;4351;%(DisableSpecificWarnings)</DisableSpecificWarnings>
@@ -141,38 +145,54 @@
     <ClCompile Include="..\..\core\impl\streamingsocketmanagement.cpp" />
     <ClCompile Include="..\..\core\impl\takmessage.cpp" />
     <ClCompile Include="..\..\core\impl\tcpsocketmanagement.cpp" />
+    <ClCompile Include="..\..\core\impl\commothread.cpp" />
     <ClCompile Include="..\..\core\impl\threadedhandler.cpp" />
     <ClCompile Include="..\..\core\impl\urlrequestmanager.cpp" />
+    <ClCompile Include="..\..\core\impl\versionimpl.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{08D9B98F-3B9E-4233-8217-B7BBBFF476E8}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>commoncommo</RootNamespace>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(WindowsTargetPlatformVersion)'=='' And '$(VisualStudioVersion)'!='14.0'">
+    <!-- Latest Target Version property -->
+    <LatestTargetPlatformVersion>$([Microsoft.Build.Utilities.ToolLocationHelper]::GetLatestSDKTargetPlatformVersion('Windows', '10.0'))</LatestTargetPlatformVersion>
+    <WindowsTargetPlatformVersion Condition="'$(WindowsTargetPlatformVersion)' == ''">$(LatestTargetPlatformVersion)</WindowsTargetPlatformVersion>
+    <TargetPlatformVersion>$(WindowsTargetPlatformVersion)</TargetPlatformVersion>
+  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)'=='14.0'">v140</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)'=='15.0'">v141</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)'=='16.0'">v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)'=='14.0'">v140</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)'=='15.0'">v141</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)'=='16.0'">v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)'=='14.0'">v140</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)'=='15.0'">v141</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)'=='16.0'">v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)'=='14.0'">v140</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)'=='15.0'">v141</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)'=='16.0'">v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -209,16 +229,16 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;_USRDLL;COMMONCOMMO_EXPORTS;PROTOBUF_USE_DLLS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\raster\takthirdparty\builds\win32-debug\include\libxml2;..\..\..\raster\takthirdparty\builds\win32-debug\include;..\..\core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;$(CommoBuildId);_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;_USRDLL;COMMONCOMMO_EXPORTS;PROTOBUF_USE_DLLS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\takthirdparty\builds\win32-debug\include\libxml2;..\..\..\takthirdparty\builds\win32-debug\include;..\..\core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DisableSpecificWarnings>4290;4251;4351;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\..\..\raster\takthirdparty\builds\win32-debug\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ws2_32.lib;libcurl_debug.lib;libxml2.lib;libmicrohttpd-dll_d.lib;pgscthread.lib;libssl.lib;libcrypto.lib;libprotobuf-lite.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\takthirdparty\builds\win32-debug\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ws2_32.lib;libcurl_debug.lib;libxml2.lib;libmicrohttpd-dll_d.lib;libssl.lib;libcrypto.lib;libprotobuf-lited.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>
@@ -230,16 +250,16 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;_USRDLL;COMMONCOMMO_EXPORTS;PROTOBUF_USE_DLLS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\raster\takthirdparty\builds\win64-debug\include\libxml2;..\..\..\raster\takthirdparty\builds\win64-debug\include;..\..\core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;$(CommoBuildId);_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;_USRDLL;COMMONCOMMO_EXPORTS;PROTOBUF_USE_DLLS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\takthirdparty\builds\win64-debug\include\libxml2;..\..\..\takthirdparty\builds\win64-debug\include;..\..\core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DisableSpecificWarnings>4290;4251;4351;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\..\..\raster\takthirdparty\builds\win64-debug\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ws2_32.lib;libcurl_debug.lib;libxml2.lib;libmicrohttpd-dll_d.lib;pgscthread.lib;libssl.lib;libcrypto.lib;libprotobuf-lite.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\takthirdparty\builds\win64-debug\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ws2_32.lib;libcurl_debug.lib;libxml2.lib;libmicrohttpd-dll_d.lib;libssl.lib;libcrypto.lib;libprotobuf-lited.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>
@@ -253,7 +273,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;NDEBUG;_WINDOWS;_USRDLL;PROTOBUF_USE_DLLS;COMMONCOMMO_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;$(CommoBuildId);_CRT_SECURE_NO_WARNINGS;NDEBUG;_WINDOWS;_USRDLL;PROTOBUF_USE_DLLS;COMMONCOMMO_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\..\takthirdparty\builds\win32-release\include\libxml2;..\..\..\takthirdparty\builds\win32-release\include;..\..\core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DisableSpecificWarnings>4290;4251;4351;%(DisableSpecificWarnings)</DisableSpecificWarnings>
@@ -264,7 +284,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>..\..\..\takthirdparty\builds\win32-release\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ws2_32.lib;libcurl.lib;libxml2.lib;libmicrohttpd-dll.lib;pgscthread.lib;libssl.lib;libcrypto.lib;libprotobuf-lite.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;libcurl.lib;libxml2.lib;libmicrohttpd-dll.lib;libssl.lib;libcrypto.lib;libprotobuf-lite.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>
@@ -278,7 +298,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;NDEBUG;_WINDOWS;_USRDLL;PROTOBUF_USE_DLLS;COMMONCOMMO_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;$(CommoBuildId);_CRT_SECURE_NO_WARNINGS;NDEBUG;_WINDOWS;_USRDLL;PROTOBUF_USE_DLLS;COMMONCOMMO_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\..\takthirdparty\builds\win64-release\include\libxml2;..\..\..\takthirdparty\builds\win64-release\include;..\..\core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DisableSpecificWarnings>4290;4251;4351;%(DisableSpecificWarnings)</DisableSpecificWarnings>
@@ -289,7 +309,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>..\..\..\takthirdparty\builds\win64-release\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ws2_32.lib;libcurl.lib;libxml2.lib;libmicrohttpd-dll.lib;pgscthread.lib;libssl.lib;libcrypto.lib;libprotobuf-lite.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;libcurl.lib;libxml2.lib;libmicrohttpd-dll.lib;libssl.lib;libcrypto.lib;libprotobuf-lite.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>

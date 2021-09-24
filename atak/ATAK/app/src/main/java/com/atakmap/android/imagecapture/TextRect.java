@@ -85,6 +85,7 @@ public class TextRect extends RectF {
                 continue;
             _paint.setTypeface(line.getTypeface());
             RectF lineRect = getTextBounds(_paint, line.toString());
+            line.setBounds(lineRect);
             this.right = Math.max(this.right, lineRect.width());
             _lineHeight = Math.max(_lineHeight, lineRect.height());
         }
@@ -219,12 +220,12 @@ public class TextRect extends RectF {
 
     public static class TextLine {
 
-        private String _line;
-        private List<TextSeg> _segs;
+        private final String _line;
+        private final List<TextSeg> _segs;
         private Typeface _typeface;
+        private RectF _bounds;
 
         public TextLine(String line) {
-            _line = "";
             _segs = new ArrayList<>();
             _typeface = Typeface.DEFAULT;
             int last = 0, startTag;
@@ -261,9 +262,10 @@ public class TextRect extends RectF {
                 _segs.add(new TextSeg(line.substring(last), null));
             }
 
-            for (TextSeg seg : _segs) {
-                _line += seg.toString();
-            }
+            StringBuilder sb = new StringBuilder();
+            for (TextSeg seg : _segs)
+                sb.append(seg.toString());
+            _line = sb.toString();
         }
 
         public void setTypeface(Typeface tf) {
@@ -274,16 +276,31 @@ public class TextRect extends RectF {
             return _typeface;
         }
 
+        public void setBounds(RectF bounds) {
+            _bounds = bounds;
+        }
+
+        public RectF getBounds() {
+            return _bounds;
+        }
+
         public void draw(Canvas can, Paint paint, float x, float y,
                 float weight, int borderColor) {
             int defColor = paint.getColor();
             paint.setTypeface(_typeface);
             Paint.Align align = paint.getTextAlign();
+
+            // Offset start position of X based on width
             float startX = x;
             if (align == Paint.Align.CENTER)
                 startX = x - paint.measureText(_line) / 2;
             else if (align == Paint.Align.RIGHT)
                 startX = x - paint.measureText(_line);
+
+            // Account for non-zero baseline
+            if (_bounds != null)
+                y -= _bounds.bottom;
+
             paint.setTextAlign(Paint.Align.LEFT);
             for (TextSeg seg : _segs) {
                 String str = seg.toString();

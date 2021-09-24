@@ -1,8 +1,6 @@
 
 package com.atakmap.android.util;
 
-import android.graphics.Rect;
-
 import com.atakmap.android.icons.IconsMapAdapter;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapView;
@@ -41,13 +39,11 @@ public class PointOfInterest {
         Marker mi = (Marker) mapView.getMapItem(spiUID);
         if (mi == null) {
             Marker blankMarker = new Marker(GeoPoint.ZERO_POINT, spiUID);
-            blankMarker.setClickable(true);
             blankMarker.setZOrder(-2000d);
-            blankMarker.setMarkerHitBounds(new Rect(-32, -32, 32, 32));
             blankMarker.setMetaString("callsign", mapView.getContext()
                     .getString(R.string.poi_title));
             blankMarker.setMetaBoolean("editable", false);
-            blankMarker.setMetaBoolean("movable", false);
+            blankMarker.setMovable(false);
             blankMarker.setMetaBoolean("removable", true);
             blankMarker.setType("b-m-p-s-p-i");
             IconsMapAdapter iconAdapter = new IconsMapAdapter(

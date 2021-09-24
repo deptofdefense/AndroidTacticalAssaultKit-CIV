@@ -12,7 +12,6 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.plugintemplate.plugin.R;
 import com.atakmap.android.dropdown.DropDown.OnStateListener;
 import com.atakmap.android.dropdown.DropDownReceiver;
-import android.widget.Button;
 
 import com.atakmap.coremap.log.Log;
 
@@ -59,7 +58,7 @@ public class PluginTemplateDropDownReceiver extends DropDownReceiver implements
 
             Log.d(TAG, "showing plugin drop down");
             showDropDown(templateView, HALF_WIDTH, FULL_HEIGHT, FULL_WIDTH,
-                    HALF_HEIGHT, false);
+                    HALF_HEIGHT, false, this);
         }
     }
 

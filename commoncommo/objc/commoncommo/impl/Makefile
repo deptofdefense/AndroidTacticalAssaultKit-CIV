@@ -21,7 +21,7 @@ clean:
 	rm -f $(OBJS) libcommoncommoobjc.dylib libcommoncommoobjc.a
 
 CURL_CONF := $(TAKTHIRDPARTYDIR)/bin/curl-config
-commo_extra_libs=-lxml2 -lssl -lcrypto $(shell $(CURL_CONF) --libs) -lprotobuf-lite -lmicrohttpd -lpgscthread -liconv
+commo_extra_libs=-lxml2 -lssl -lcrypto $(shell $(CURL_CONF) --libs) -lprotobuf-lite -lmicrohttpd -liconv
 
 libcommoncommoobjc.dylib: CXXFLAGS += -fPIC 
 libcommoncommoobjc.dylib: $(OBJS)

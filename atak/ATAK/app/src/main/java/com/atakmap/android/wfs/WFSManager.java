@@ -424,8 +424,7 @@ public final class WFSManager implements MapOverlay2, DeepMapItemQuery {
 
             this.uri = uri;
 
-            if (!this.supportedActions.contains(Delete.class))
-                this.supportedActions.add(Delete.class);
+            this.supportedActions.add(Delete.class);
         }
 
         @Override

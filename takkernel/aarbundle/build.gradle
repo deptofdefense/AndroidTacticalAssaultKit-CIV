@@ -1,0 +1,38 @@
+// publications are only for Android
+ext.skipPublications = ['java']
+
+// default source sets
+
+if (isAndroidKernelBuild) {
+
+    dependencies {
+        releaseImplementation fileTree(include: '*-release.jar', dir: "libs")
+        debugImplementation fileTree(include: '*-debug.jar', dir: "libs")
+    }
+
+    android.buildTypes.all { buildType ->
+        ['port', 'annotation'].forEach { subProj ->
+            def capBuildType = buildType.name.capitalize()
+            def taskName = "copy${capBuildType}${subProj.capitalize()}Lib"
+            def dependency = ":${subProj}:assemble${capBuildType}"
+
+            logger.info "Create $taskName --> $dependency"
+
+            task "$taskName"(type: Copy) {
+                dependsOn "$dependency"
+                from "${project(":$subProj").buildDir}/intermediates/aar_main_jar/${buildType.name}/"
+                include 'classes.jar'
+                rename('classes.jar', "takkernel-${subProj}-${buildType.name}.jar")
+                into 'libs'
+
+                duplicatesStrategy 'include' // always overwrite
+            }
+
+            project.afterEvaluate { preBuild.dependsOn taskName }
+        }
+    }
+
+    clean {
+        delete 'libs'
+    }
+}

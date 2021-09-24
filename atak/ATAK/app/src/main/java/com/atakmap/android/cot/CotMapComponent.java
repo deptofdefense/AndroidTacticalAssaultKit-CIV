@@ -5,7 +5,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
-import com.atakmap.android.cot.detail.CotDetailHandler;
 import com.atakmap.android.cot.detail.CotDetailManager;
 import com.atakmap.android.cot.detail.PrecisionLocationHandler;
 import com.atakmap.android.cot.detail.TakVersionDetailHandler;
@@ -23,7 +22,6 @@ import com.atakmap.android.contact.ContactConnectorManager;
 import com.atakmap.android.contact.ContactDetailDropdown;
 import com.atakmap.android.contact.ContactListAdapter;
 import com.atakmap.android.contact.ContactListDetailHandler;
-import com.atakmap.android.contact.ContactListIntentReceiver;
 import com.atakmap.android.contact.ContactPresenceDropdown;
 import com.atakmap.android.contact.ContactStatusReceiver;
 import com.atakmap.android.contact.Contacts;
@@ -258,10 +256,6 @@ public class CotMapComponent extends AbstractMapComponent implements
         // Create the ContactListDetailHandler's for each UI element that needs them
         contactHandler = new ContactListDetailHandler(contacts,
                 "ContactAdapter");
-
-        // Register the ContactListDetailHandler's for
-        // intents from ATAK plugins (e.g., to add a contact to the list)
-        ContactListIntentReceiver.instance().addReceiver(contactHandler);
 
         // Map group adapter (mostly deprecated)
         _adapter = new CotMapAdapter(view);
@@ -634,23 +628,6 @@ public class CotMapComponent extends AbstractMapComponent implements
 
     public static CotMapComponent getInstance() {
         return _instance;
-    }
-
-    /**
-     * Register MarkerDetailHandlers for handling Detail sections within
-     * CoT. If no detail handler is registered, the detail is ignored when
-     * recieved by the system.   Registration of a handler 
-     * object more than once is disallowed.
-     *
-     * @param name is the name of the detail to be handled.
-     * @param handler the detailhandler associated with parsing the detail.
-     * @deprecated Use {@link CotDetailManager#registerHandler(CotDetailHandler)}
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public void setMarkerDetailHandler(final String name,
-            final MarkerDetailHandler handler) {
-        _adapter.setMarkerDetailHandler(name, handler);
     }
 
     public ContactConnectorManager getContactConnectorMgr() {

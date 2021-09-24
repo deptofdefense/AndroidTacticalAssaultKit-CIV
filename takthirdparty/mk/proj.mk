@@ -18,8 +18,8 @@ $(proj_configtouchfile): $(proj_srctouchfile)
 		./configure                                  \
 		$(CONFIGURE_TARGET)                          \
 		$(CONFIGURE_$(BUILD_TYPE))                   \
-		--enable-shared                              \
-		--disable-static                             \
+		--disable-shared                              \
+		--enable-static                             \
 		--without-jni                                \
 		--prefix=$(OUTDIR_CYGSAFE)
 	touch $@

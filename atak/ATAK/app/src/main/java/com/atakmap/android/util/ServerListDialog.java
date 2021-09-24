@@ -14,7 +14,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.atakmap.android.maps.MapView;
-import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.app.SettingsActivity;
 import com.atakmap.app.preferences.NetworkConnectionPreferenceFragment;
@@ -135,7 +134,7 @@ public class ServerListDialog {
      */
     @Deprecated
     public static void selectServer(Context context, String message,
-            CotPort[] servers, final ServerSelectCallback callback) {
+            CotPort[] servers, final Callback callback) {
         MapView mv = MapView.getMapView();
         if (mv == null)
             return;
@@ -150,15 +149,6 @@ public class ServerListDialog {
                     callback.onSelected(cp);
             }
         });
-    }
-
-    /**
-     * @deprecated Pass {@link Callback instead}
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public interface ServerSelectCallback {
-        void onSelected(CotPort server);
     }
 
     public static String getBaseUrl(TAKServer server) {

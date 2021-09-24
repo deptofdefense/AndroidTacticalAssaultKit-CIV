@@ -31,6 +31,6 @@ public class MvtContentHandler extends SpatialDbContentHandler {
 
     @Override
     public Drawable getIcon() {
-        return _context.getDrawable(R.drawable.ic_shapefile);
+        return _context.getDrawable(R.drawable.ic_mvt);
     }
 }
