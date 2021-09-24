@@ -18,7 +18,8 @@ BUILDTYPE=Release
 # Pick *one* of these.
 #SYSTEM=win64
 #SYSTEM=win32
-SYSTEM=android
+#SYSTEM=android
+SYSTEM=macos
 
 # Android API level (SYSTEM=android only)
 API_LEVEL=21
@@ -230,6 +231,48 @@ if [ "$SYSTEM" = "android" ] ; then
     tar cfz $i.tar.gz pdfium || fail "Failed to tar up results for $i"
     cd pdfium || fail
   done
+elif [ "$SYSTEM" = "macos" ] ; then
+  sed -e 's,x86_64 i386,x86_64,' pdfium.xcodeproj/project.pbxproj > pdfium.xcodeproj/project.pbxproj.tmp && mv pdfium.xcodeproj/project.pbxproj.tmp pdfium.xcodeproj/project.pbxproj || fail "error updating proj"
+  sed -e 's,stdlib=libstdc++,stdlib=libc++,' pdfium.xcodeproj/project.pbxproj > pdfium.xcodeproj/project.pbxproj.tmp && mv pdfium.xcodeproj/project.pbxproj.tmp pdfium.xcodeproj/project.pbxproj || fail "error updating proj"
+
+  xcodebuild -configuration Release_x64 \
+  -target pdfium \
+  -target fdrm \
+  -target fpdfdoc \
+  -target fpdfapi \
+  -target fpdftext \
+  -target fxcodec \
+  -target fxcrt \
+  -target fxge \
+  -target fxedit \
+  -target pdfwindow \
+  -target formfiller || fail "xcodebuild failed"
+
+  cd third_party
+
+  sed -e 's,x86_64 i386,x86_64,' third_party.xcodeproj/project.pbxproj > third_party.xcodeproj/project.pbxproj.tmp && mv third_party.xcodeproj/project.pbxproj.tmp third_party.xcodeproj/project.pbxproj || fail "error updating proj"
+  sed -e 's,stdlib=libstdc++,stdlib=libc++,' third_party.xcodeproj/project.pbxproj > third_party.xcodeproj/project.pbxproj.tmp && mv third_party.xcodeproj/project.pbxproj.tmp third_party.xcodeproj/project.pbxproj || fail "error updating proj"
+
+  xcodebuild -configuration Release_x64 \
+  -target bigint \
+  -target freetype \
+  -target fx_agg \
+  -target fx_lcms2 \
+  -target fx_zlib \
+  -target pdfium_base \
+  -target fx_libjpeg \
+  -target fx_libopenjpeg || fail "xcodebuild failed"
+
+  cd ..
+  rm -rf "lib" || fail
+  mkdir "lib" || fail
+  cp xcodebuild/${BUILDTYPE}_x64/*.a lib/ || fail
+  rm -rf xcodebuild/${BUILDTYPE}_x64
+
+  cd .. || fail
+  rm -f ${SYSTEM}-64.tar.gz
+  tar cfz ${SYSTEM}-64.tar.gz pdfium || fail "Failed to tar up results"
+
 else
 
   case "$SYSTEM" in

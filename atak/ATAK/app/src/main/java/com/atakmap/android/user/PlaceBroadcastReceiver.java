@@ -16,7 +16,7 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
  * @deprecated use MarkerCreator to create and place markers
  */
 @Deprecated
-@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
+@DeprecatedApi(since = "4.1", forRemoval = false)
 public class PlaceBroadcastReceiver extends BroadcastReceiver {
 
     public static final String TAG = "PlaceBroadcastReceiver";
@@ -32,12 +32,12 @@ public class PlaceBroadcastReceiver extends BroadcastReceiver {
      * @param context the context
      * @param intent the intent
      *
-     * Do Not Use "com.atakmap.android.maps.PLACE" instead use MarkerCreator to create and place
-     * your markers.  This should only be used by the radial menu actions.
+     * DO NOT use "com.atakmap.android.maps.PLACE" instead use  MarkerCreator to create 
+     * and place your markers.  This should only be used by the radial menu actions.
      * @deprecated use MarkerCreator to create and place markers
      */
     @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
+    @DeprecatedApi(since = "4.1", forRemoval = false)
     @Override
     public void onReceive(Context context, Intent intent) {
         if ("com.atakmap.android.maps.PLACE".equals(intent.getAction())) {

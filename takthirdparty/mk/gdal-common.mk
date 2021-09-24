@@ -20,7 +20,7 @@ $(OUTDIR)/$(gdal_local_srcdir):
 	rm -rf $(OUTDIR)/$(gdal_local_srcdir)/.git
 	cd $(OUTDIR)/$(gdal_local_srcdir) && chmod 755 configure
 
-gdal: $(gdal_out_lib) $(if $(gdal_NO_JAVA),,$(gdal_out_javalibs))
+gdal: $(gdal_out_lib) $(if $(gdal_NO_JAVA),,$(gdal_out_javalibs)) $(gdal_extra_swiglibs)
 
 gdal_clean:
 	rm -rf $(OUTDIR)/$(gdal_local_srcdir)

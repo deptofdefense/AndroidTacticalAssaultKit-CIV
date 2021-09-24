@@ -8,6 +8,7 @@ import java.net.NoRouteToHostException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.atakmap.net.AsynchronousInetAddressResolver;
 
@@ -20,25 +21,29 @@ public class CustomMobacMapSource extends AbstractMobacMapSource {
     private final String[] serverParts;
     private final boolean invertYCoordinate;
     private int serverPartIdx;
-    private boolean checkConnectivity;
+    private AtomicBoolean checkConnectivity;
     private boolean disconnected;
-    private boolean authFailed;
+    private AtomicBoolean authFailed;
 
     private boolean firstDnsLookup;
 
     public CustomMobacMapSource(String name, int srid, int tileSize, int minZoom, int maxZoom, String type,
-            String url, String[] serverParts, int backgroundColor, boolean invertYCoordinate) {
-        super(name, srid, tileSize, minZoom, maxZoom, type);
+                                String url, String[] serverParts, int backgroundColor, boolean invertYCoordinate) {
+        this(name, srid, tileSize, minZoom, maxZoom, type, url, serverParts, backgroundColor, invertYCoordinate, 0L);
+    }
+    public CustomMobacMapSource(String name, int srid, int tileSize, int minZoom, int maxZoom, String type,
+            String url, String[] serverParts, int backgroundColor, boolean invertYCoordinate, long refreshInterval) {
+        super(name, srid, tileSize, minZoom, maxZoom, type, refreshInterval);
 
         this.url = url;
         this.serverParts = serverParts;
         this.invertYCoordinate = invertYCoordinate;
         this.serverPartIdx = 0;
-        this.checkConnectivity = true;
+        this.checkConnectivity = new AtomicBoolean(true);
         this.disconnected = false;
 
         this.firstDnsLookup = true;
-        this.authFailed = false;
+        this.authFailed = new AtomicBoolean(false);
     }
 
     protected String getUrl(int zoom, int x, int y) {
@@ -88,13 +93,13 @@ public class CustomMobacMapSource extends AbstractMobacMapSource {
     }
 
     @Override
-    public synchronized void clearAuthFailed() {
-        this.authFailed = false;
+    public void clearAuthFailed() {
+        this.authFailed.set(false);
     }
 
     @Override
-    public synchronized void checkConnectivity() {
-        this.checkConnectivity = !this.authFailed;
+    public void checkConnectivity() {
+        this.checkConnectivity.set(!this.authFailed.get());
     }
 
     @Override
@@ -106,9 +111,9 @@ public class CustomMobacMapSource extends AbstractMobacMapSource {
         //System.out.println("shb: " + this.getUrl(zoom,x,y));
 
         synchronized (this) {
-            if (this.authFailed) {
+            if (this.authFailed.get()) {
                 throw new IOException("Not authorized");
-            } else if (this.checkConnectivity) {
+            } else if (this.checkConnectivity.getAndSet(false)) {
                 this.disconnected = true;
                 final InetAddress resolved;
                 if (this.dnsCheck == null)
@@ -123,7 +128,6 @@ public class CustomMobacMapSource extends AbstractMobacMapSource {
                     this.dnsCheck = null;
                     throw e;
                 } finally {
-                    this.checkConnectivity = false;
                     this.firstDnsLookup = false;
                 }
                 if (resolved == null)
@@ -142,15 +146,11 @@ public class CustomMobacMapSource extends AbstractMobacMapSource {
         } catch (IOException e) {
             if ((conn instanceof HttpURLConnection)
                     && isBadAccess(((HttpURLConnection) conn).getResponseCode() ))
-                synchronized (this) { 
-                    this.authFailed = true;
-                }
+                this.authFailed.set(true);
             throw e;
         }
     }
     private static boolean isBadAccess(int status) {
         return (status == HttpURLConnection.HTTP_UNAUTHORIZED || status == HttpURLConnection.HTTP_FORBIDDEN);
     }
-
-
 }

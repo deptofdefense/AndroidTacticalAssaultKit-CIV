@@ -44,7 +44,6 @@ public class DrawingShape extends EditablePolyline implements ParentMapItem {
         super(mapView, uid);
         this.childItemMapGroup = mapGroup.addGroup();
         this.childItemMapGroup.setMetaString("shapeUID", uid);
-        this.setClickable(true);
         setMetaBoolean("editable", true);
         setMetaString("menu", getShapeMenu());
         this.setShapeMenu("menus/drawing_shape_geofence_menu.xml");
@@ -123,12 +122,13 @@ public class DrawingShape extends EditablePolyline implements ParentMapItem {
             m.setType(getMarkerPointType());
             m.setMetaBoolean("drag", false);
             m.setMetaBoolean("editable", true);
+            m.setMovable(getMovable());
 
             // always hide these types of waypoints on the objects list
             m.setMetaBoolean("addToObjList", false);
             m.setMetaString("how", "h-g-i-g-o"); // don't autostale it
 
-            m.setMetaString("menu", getShapeMenu());
+            m.setRadialMenu(getShapeMenu());
             m.setColor(getStrokeColor());
             m.setMetaString(getUIDKey(), getUID());
             setShapeMarker(m);
@@ -165,6 +165,7 @@ public class DrawingShape extends EditablePolyline implements ParentMapItem {
             marker.setHeight(height);
     }
 
+    @Override
     public void setMovable(boolean movable) {
         super.setMovable(movable);
         Marker sm = getShapeMarker();
@@ -383,7 +384,7 @@ public class DrawingShape extends EditablePolyline implements ParentMapItem {
     public double getArea() {
         if (!isClosed())
             return Double.NaN;
-        
+
         return AreaUtilities.calcShapeArea(getPoints());
     }
 

@@ -14,8 +14,6 @@ import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import androidx.annotation.NonNull;
 
-import com.atakmap.annotations.DeprecatedApi;
-
 /**
  *
  * Thanks to http://stackoverflow.com/questions/18156477/how-to-make-an-icon-in-the-action-bar-with-the-number-of-notification
@@ -141,17 +139,6 @@ public class BadgeDrawable extends Drawable {
     }
 
     /**
-     * Sets the preferred size of the badge text
-     * @param textSize the text size as a Float, default is set in null is passed in.
-     * @deprecated Text size is automatically calculated based on the size of
-     * the drawable and the count being displayed
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public void setTextSize(Float textSize) {
-    }
-
-    /**
      * Sets the count on a Badge given a count and a presence color.
      * @param presenceColor the presence color as an integer representation of Color.
      */
@@ -167,16 +154,6 @@ public class BadgeDrawable extends Drawable {
             _connectPaint.setStyle(Paint.Style.FILL);
         }
 
-    }
-
-    /**
-     * Ensure text size is always a ratio of the final drawable height
-     * @param fixed True to fix, false to use set text size
-     * @deprecated This is performed by default
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    void setFixedTextSize(boolean fixed) {
     }
 
     @Override

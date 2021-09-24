@@ -1,0 +1,81 @@
+apply from: configProject.file('gradle/repositories.gradle')
+
+if (isJavaKernelBuild) {
+    apply plugin: 'java-library' // apply the Java plugin
+
+    sourceSets {
+        main {
+            // add default location for java specific sourceset
+            java.srcDirs 'src/jre/java'
+        }
+    }
+
+    test {
+        useJUnit()
+        maxHeapSize = '1G'
+    }
+} else if (isAndroidKernelBuild) {
+    apply plugin: 'com.android.library' // apply the Android plugin
+
+    // basic android library configuration
+    android {
+        compileSdkVersion project.androidCompileSdkVersion
+        buildToolsVersion project.androidBuildToolsVersion
+
+        buildTypes {
+            sdk {}
+            odk {}
+            debug {}
+            release {}
+        }
+
+        defaultConfig {
+            targetSdkVersion project.androidTargetSdkVersion
+            minSdkVersion project.androidMinSdkVersion
+
+            versionCode project.versionCode
+            versionName "${project.version}"
+        }
+
+        compileOptions {
+            sourceCompatibility JavaVersion.VERSION_1_8
+            targetCompatibility JavaVersion.VERSION_1_8
+        }
+
+        // create a default manifest
+        def manifestFile = project.file('src/android/AndroidManifest.xml')
+
+        if (!manifestFile.exists()) {
+            manifestFile.getParentFile().mkdirs()
+            manifestFile.text = """
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          package="gov.tak.kernel.${project.name}" >
+</manifest>
+"""
+        }
+
+        // note that `sourceSets` closure is _within_ the `android` closure for Android builds
+        sourceSets {
+            main {
+                // specify the manifest
+                manifest.srcFile 'src/android/AndroidManifest.xml'
+                // add default location for android specific sourceset
+                java.srcDirs 'src/android/java'
+            }
+            test {
+                java.srcDirs 'src/main/test'
+            }
+        }
+    }
+}
+
+// Customize our archive basename, which defines the resulting publication artifactId
+project.archivesBaseName = "${rootProject.name}-${project.name}"
+
+dependencies {
+    // Use JUnit test framework
+    testImplementation("junit:junit:${junitVersion}")
+}
+
+// configure the build dir for the kernel build target (e.g. `build/android` or `build/java`)
+project.buildDir = new File(buildDir, kernelBuildTarget)

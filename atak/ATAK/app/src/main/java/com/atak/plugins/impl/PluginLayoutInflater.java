@@ -105,7 +105,8 @@ public class PluginLayoutInflater {
             if (f != null) {
                 f.setAccessible(true);
                 final Map sConstructorMap = (Map) f.get(null);
-                sConstructorMap.clear();
+                if (sConstructorMap != null)
+                    sConstructorMap.clear();
             }
             //Log.d(TAG, "cleared out the constructor map");
         } catch (Exception e) {

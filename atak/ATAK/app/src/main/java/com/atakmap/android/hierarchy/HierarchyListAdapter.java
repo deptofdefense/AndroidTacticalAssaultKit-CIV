@@ -4,7 +4,6 @@ package com.atakmap.android.hierarchy;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.PorterDuff;
@@ -24,14 +23,12 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.atakmap.android.features.FeatureSetHierarchyListItem;
 import com.atakmap.android.hashtags.util.HashtagUtils;
 import com.atakmap.android.hashtags.HashtagSearch;
 import com.atakmap.android.hashtags.HashtagContent;
 import com.atakmap.android.hierarchy.HierarchyListUserSelect.ButtonMode;
 import com.atakmap.android.hierarchy.action.Action;
 import com.atakmap.android.hierarchy.action.Actions;
-import com.atakmap.android.hierarchy.action.GoTo;
 import com.atakmap.android.hierarchy.action.Search;
 import com.atakmap.android.hierarchy.action.Visibility;
 import com.atakmap.android.hierarchy.action.Visibility2;
@@ -44,13 +41,9 @@ import com.atakmap.android.hierarchy.HierarchyListItem.SortAlphabet;
 import com.atakmap.android.hierarchy.HierarchyListItem.SortDistanceFrom;
 import com.atakmap.android.hierarchy.items.AbstractHierarchyListItem;
 import com.atakmap.android.hierarchy.items.AbstractHierarchyListItem2;
-import com.atakmap.android.hierarchy.items.MapItemHierarchyListItem;
 import com.atakmap.android.hierarchy.items.MapItemUser;
-import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.ILocation;
-import com.atakmap.android.maps.Location;
 import com.atakmap.android.maps.LocationSearchManager;
-import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
@@ -61,7 +54,6 @@ import com.atakmap.android.overlay.MapOverlay2;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.util.AltitudeUtilities;
 import com.atakmap.android.util.LimitingThread;
-import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.Angle;
 import com.atakmap.coremap.conversions.AngleUtilities;
@@ -193,6 +185,10 @@ public class HierarchyListAdapter extends BaseAdapter implements
     // Default post-refresh filter which hides empty lists
     private final EmptyListFilter emptyListFilter = new EmptyListFilter();
 
+    // Filters that are enabled via the filter button in the bottom
+    // of the drop-down
+    private final List<HierarchyListFilter> userFilters = new ArrayList<>();
+
     // Search parameters
     protected SearchResults searchResults;
     protected String searchTerms;
@@ -288,6 +284,7 @@ public class HierarchyListAdapter extends BaseAdapter implements
             this.active = false;
             this.initiating = false;
             this.filterFOV = false;
+            this.userFilters.clear();
             this.refreshThread.dispose(false);
             this.uiRefreshThread.dispose(false);
             this.searchThread.dispose(false);
@@ -363,36 +360,15 @@ public class HierarchyListAdapter extends BaseAdapter implements
         @Override
         public Set<HierarchyListItem> find(String term) {
             // XXX - Is this even used?
-            SortedSet<Location> results = LocationSearchManager.find(term);
+            SortedSet<ILocation> results = LocationSearchManager.find(term);
 
             //tree set uses the comparator to determine equality/duplicates
             SortedSet<HierarchyListItem> retval = new TreeSet<>(
                     MENU_ITEM_COMP);
 
-            final MapGroup rootGroup = mapView.getRootGroup();
-
-            Map<String, String> meta = new HashMap<>();
-
-            MapItem impl;
-            HierarchyListItem item;
-            for (Location hit : results) {
-                item = null;
-                if (hit.getUID() != null) {
-                    meta.put("uid", hit.getUID());
-                    impl = rootGroup.deepFindItem(meta);
-
-                    if (impl != null)
-                        item = new MapItemHierarchyListItem(mapView, impl);
-                }
-
-                if (item == null) {
-                    Log.w(TAG, "Failed to find MapItem for search hit "
-                            + hit.getFriendlyName()
-                            + " (" + hit.getUID() + ")");
-                    item = new LocationHierarchyListItem(hit);
-                }
-
-                retval.add(item);
+            for (ILocation hit : results) {
+                if (hit instanceof HierarchyListItem)
+                    retval.add((HierarchyListItem) hit);
             }
 
             if (model == null)
@@ -404,7 +380,7 @@ public class HierarchyListAdapter extends BaseAdapter implements
                 if (!(s instanceof HierarchyListItem))
                     continue;
 
-                item = (HierarchyListItem) s;
+                HierarchyListItem item = (HierarchyListItem) s;
                 String title = item.getTitle();
 
                 // Search overlay descendants
@@ -560,6 +536,38 @@ public class HierarchyListAdapter extends BaseAdapter implements
         }
     }
 
+    /**
+     * Add a user-selected filter to be used during refresh
+     * @param filter Item filter
+     */
+    void addUserFilter(HierarchyListFilter filter) {
+        synchronized (userFilters) {
+            userFilters.add(filter);
+        }
+        refreshList();
+    }
+
+    /**
+     * Remove a user-selected filter
+     * @param filter
+     */
+    void removeUserFilter(HierarchyListFilter filter) {
+        synchronized (userFilters) {
+            userFilters.remove(filter);
+        }
+        refreshList();
+    }
+
+    /**
+     * Get all user-selected filters
+     * @return Filter list
+     */
+    List<HierarchyListFilter> getUserFilters() {
+        synchronized (userFilters) {
+            return new ArrayList<>(this.userFilters);
+        }
+    }
+
     @Override
     public void notifyDataSetChanged() {
         ((Activity) this.mapView.getContext()).runOnUiThread(new Runnable() {
@@ -655,7 +663,7 @@ public class HierarchyListAdapter extends BaseAdapter implements
                 }
                 showingLocationItem = false;
                 for (HierarchyListItem item : newItems) {
-                    if (item instanceof ILocation || item instanceof Location) {
+                    if (item instanceof ILocation) {
                         showingLocationItem = true;
                         break;
                     }
@@ -699,8 +707,7 @@ public class HierarchyListAdapter extends BaseAdapter implements
 
         // Compatibility with feature sets
         if (item instanceof EmptyListItem
-                && (this.currentList instanceof FeatureSetHierarchyListItem
-                        || !isGetChildrenSupported(this.currentList)))
+                && !isGetChildrenSupported(this.currentList))
             item = this.currentList.getChildAt(position);
 
         return item;
@@ -1008,17 +1015,12 @@ public class HierarchyListAdapter extends BaseAdapter implements
      * @return True to show location description, false otherwise
      */
     protected boolean adaptLocationItem(HierarchyListItem item) {
-        if (!(item instanceof ILocation) && !(item instanceof Location))
+        if (!(item instanceof ILocation))
             return false;
 
-        final GeoPointMetaData loc;
-
-        if (item instanceof ILocation) {
-            GeoPoint gp = GeoPoint.createMutable();
-            ((ILocation) item).getPoint(gp);
-            loc = GeoPointMetaData.wrap(gp);
-        } else
-            loc = ((Location) item).getLocation();
+        GeoPoint gp = GeoPoint.createMutable();
+        ((ILocation) item).getPoint(gp);
+        final GeoPointMetaData loc = GeoPointMetaData.wrap(gp);
 
         item.setLocalData("latitude", loc.get().getLatitude());
         item.setLocalData("longitude", loc.get().getLongitude());
@@ -1561,7 +1563,7 @@ public class HierarchyListAdapter extends BaseAdapter implements
         boolean gcSupported = isGetChildrenSupported(list);
         if (isList2 && gcSupported)
             children = ((AbstractHierarchyListItem2) list).getChildren();
-        else if (isList2 || list instanceof FeatureSetHierarchyListItem) {
+        else if (isList2) {
             // XXX - Use placeholder list since retrieving all children is VERY inefficient
             children = new ArrayList<>();
             int childCount = list.getChildCount();
@@ -1918,24 +1920,6 @@ public class HierarchyListAdapter extends BaseAdapter implements
     }
 
     /**
-     * Get the name of this map item
-     * TODO: Also consolidate ATAKUtilities.getDisplayName
-     * @param mapItem Map item
-     * @param devCallsign Device callsign (optional; null to ignore)
-     * @param devUID Device UID (optional; null to ignore)
-     * @param baseGroup Parent map group (usually root group)
-     * @return Map item title
-     *
-     * @deprecated Just use {@link ATAKUtilities#getDisplayName(MapItem)} instead
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public static String getTitleFromMapItem(MapItem mapItem,
-            String devCallsign, String devUID, MapGroup baseGroup) {
-        return ATAKUtilities.getDisplayName(mapItem);
-    }
-
-    /**
      * Toggle the green background highlight on an item
      *
      * @param item Item to toggle
@@ -1975,11 +1959,23 @@ public class HierarchyListAdapter extends BaseAdapter implements
         Sort sort = HierarchyListReceiver.findSort(this.currentList,
                 this.curSort);
 
-        filters.add(this.filterFOV ? new FOVFilter(
-                new FOVFilter.MapState(this.mapView), sort)
-                : new HierarchyListFilter(sort));
+        // "Show All" FOV filtering
+        if (this.filterFOV)
+            filters.add(new FOVFilter(mapView));
+
+        // Other user filters
+        synchronized (this.userFilters) {
+            filters.addAll(this.userFilters);
+        }
+
+        // Select handler (export mode, delete mode, etc.)
         if (this.userSelectHandler != null)
             filters.add(this.userSelectHandler);
+
+        // Make sure current sort mode is set on all filters
+        for (HierarchyListFilter filter : filters)
+            filter.sort = sort;
+
         this.currFilter = new MultiFilter(sort, filters);
     }
 
@@ -2170,9 +2166,6 @@ public class HierarchyListAdapter extends BaseAdapter implements
         private GeoPointMetaData getLocation(HierarchyListItem item) {
             if (item instanceof ILocation) {
                 return GeoPointMetaData.wrap(((ILocation) item).getPoint(null));
-            } else if (item instanceof Location) {
-                GeoPointMetaData point = ((Location) item).getLocation();
-                return point;
             } else if (item instanceof MapItemUser) {
                 MapItem mp = ((MapItemUser) item).getMapItem();
                 if (mp != null) {
@@ -2385,6 +2378,45 @@ public class HierarchyListAdapter extends BaseAdapter implements
         }
     };
 
+    // The sort method is used for the top-level list to sort in descending order
+    public final static Comparator<HierarchyListItem> MENU_ITEM_COMP_DESC = new Comparator<HierarchyListItem>() {
+        @Override
+        public int compare(HierarchyListItem lhs, HierarchyListItem rhs) {
+            final int lhsPreferredIndex = lhs.getPreferredListIndex();
+            final int rhsPreferredIndex = rhs.getPreferredListIndex();
+            if (lhsPreferredIndex >= 0 && rhsPreferredIndex >= 0) {
+                int retval = rhsPreferredIndex - lhsPreferredIndex;
+                if (retval != 0)
+                    return retval;
+            } else if (rhsPreferredIndex >= 0) {
+                return -1;
+            } else if (lhsPreferredIndex >= 0) {
+                return 1;
+            }
+            final String lhsTitle = lhs.getTitle();
+            final String rhsTitle = rhs.getTitle();
+            if (rhsTitle == null)
+                return 1;
+            else if (lhsTitle == null)
+                return -1;
+            //return result if titles don't match
+            int comp = rhsTitle.compareToIgnoreCase(lhsTitle);
+            if (comp != 0)
+                return comp;
+
+            //finally fall back on UID to settle it
+            final String lhsUID = lhs.getUID();
+            final String rhsUiD = rhs.getUID();
+            if (lhsUID == null && rhsUiD == null)
+                return 0;
+            if (rhsUiD == null)
+                return 1;
+            else if (lhsUID == null)
+                return -1;
+            return rhsUiD.compareToIgnoreCase(lhsUID);
+        }
+    };
+
     /**
      * The list used to display search results
      */
@@ -2455,89 +2487,6 @@ public class HierarchyListAdapter extends BaseAdapter implements
 
         @Override
         public boolean hideIfEmpty() {
-            return true;
-        }
-    }
-
-    /**
-     * Generic list item used to represent a location
-     * XXX - Is this ever used?
-     */
-    private static class LocationHierarchyListItem extends
-            AbstractHierarchyListItem
-            implements GoTo {
-
-        private final Location _impl;
-
-        LocationHierarchyListItem(Location impl) {
-            _impl = impl;
-        }
-
-        @Override
-        public String getTitle() {
-            return _impl.getFriendlyName();
-        }
-
-        @Override
-        public int getChildCount() {
-            return 0;
-        }
-
-        @Override
-        public int getDescendantCount() {
-            return 0;
-        }
-
-        @Override
-        public HierarchyListItem getChildAt(int index) {
-            return null;
-        }
-
-        @Override
-        public boolean isChildSupported() {
-            return false;
-        }
-
-        @Override
-        public String getIconUri() {
-            return null;
-        }
-
-        @Override
-        public <T extends Action> T getAction(Class<T> clazz) {
-            if (clazz.equals(GoTo.class))
-                return clazz.cast(this);
-            return null;
-        }
-
-        @Override
-        public Object getUserObject() {
-            return _impl;
-        }
-
-        @Override
-        public View getExtraView() {
-            return null;
-        }
-
-        @Override
-        public Sort refresh(Sort sort) {
-            return sort;
-        }
-
-        /*********************************************************************/
-        // Action Go To
-
-        @Override
-        public boolean goTo(boolean select) {
-            GeoPointMetaData zoomLoc = _impl.getLocation();
-            Intent intent = new Intent(
-                    "com.atakmap.android.maps.ZOOM_TO_LAYER");
-            intent.putExtra("point", zoomLoc.get().toString());
-
-            // broadcast intent
-            AtakBroadcast.getInstance().sendBroadcast(intent);
-
             return true;
         }
     }

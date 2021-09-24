@@ -76,7 +76,6 @@ public class ForceXDetailHandler extends CotDetailHandler {
                 ell.setMetaBoolean("removable", true);
                 ell.setMetaBoolean("addToObjList", false);
 
-                ell.setClickable(true);
                 //marker.setMetaBoolean("addToObjList", false);
 
                 marker.setMovable(false);

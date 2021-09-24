@@ -11,7 +11,6 @@ import android.content.Intent;
 
 import com.atakmap.android.elev.dt2.Dt2OutlineMapOverlay;
 import com.atakmap.android.elev.dt2.Dt2ElevationData;
-import com.atakmap.android.elev.dt2.Dt2ElevationModel;
 import com.atakmap.android.elev.dt2.Dt2MosaicDatabase;
 import com.atakmap.android.maps.AbstractMapComponent;
 import com.atakmap.android.maps.MapEvent;
@@ -115,10 +114,8 @@ public class ElevationMapComponent extends AbstractMapComponent {
             final GeoPoint gp = item.getPoint();
             if (gp != null && item.getGroup() != null
                     && !gp.isAltitudeValid()) {
-                GeoPointMetaData gpm = Dt2ElevationModel.getInstance()
-                        .queryPoint(
-                                gp.getLatitude(),
-                                gp.getLongitude());
+                GeoPointMetaData gpm = ElevationManager
+                        .getElevationMetadata(gp);
 
                 if (gpm.get().isAltitudeValid()) {
                     GeoPoint newgp = new GeoPoint(gp.getLatitude(),

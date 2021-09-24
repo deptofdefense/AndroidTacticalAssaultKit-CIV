@@ -86,6 +86,10 @@ public class SpotMapReceiver extends DropDownReceiver implements
                 }
             } else if (!isClosed())
                 closeDropDown();
+
+            // Make sure to cleanup existing marker before changing to new marker
+            cleanup(true);
+
             _item = marker;
             _showPointDetails(_item);
         }
@@ -136,7 +140,7 @@ public class SpotMapReceiver extends DropDownReceiver implements
 
                     // Full mutability
                     marker.setMetaBoolean("editable", true);
-                    marker.setMetaBoolean("movable", true);
+                    marker.setMovable(true);
                     marker.setMetaBoolean("removable", true);
                 } else {
                     marker.setPoint(location);

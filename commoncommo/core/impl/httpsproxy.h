@@ -8,10 +8,6 @@
 #include "netsocket.h"
 #include "threadedhandler.h"
 
-#include <Mutex.h>
-#include <RWMutex.h>
-#include <Cond.h>
-
 #include <openssl/ssl.h>
 
 

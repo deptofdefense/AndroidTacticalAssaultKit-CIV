@@ -10,11 +10,13 @@ import android.os.Bundle;
 
 import com.atakmap.android.imagecapture.Capturable;
 import com.atakmap.android.imagecapture.CapturePP;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
+import com.atakmap.map.layer.feature.Feature.AltitudeMode;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -203,6 +205,7 @@ public abstract class Shape extends MapItem implements Capturable {
     protected Shape(final long serialId, final MetaDataHolder metadata,
             final String uid) {
         super(serialId, metadata, uid);
+        setAltitudeMode(AltitudeMode.ClampToGround);
     }
 
     @Override
@@ -475,20 +478,28 @@ public abstract class Shape extends MapItem implements Capturable {
         return pm;
     }
 
-    /**
-     * Look for the last touched point on the shape
-     * @return The last geo point that was touched
-     */
-    public GeoPoint findTouchPoint() {
-        GeoPoint touchPoint = GeoPoint.parseGeoPoint(
-                getMetaString("last_touch",
-                        getMetaString("menu_point", null)));
+    @Override
+    public GeoPoint getClickPoint() {
+        GeoPoint touchPoint = super.getClickPoint();
         return touchPoint == null ? getCenter().get() : touchPoint;
     }
 
-    public void setTouchPoint(GeoPoint gp) {
-        if (gp != null)
-            setMetaString("last_touch", gp.toStringRepresentation());
+    /**
+     * @deprecated {@link #getClickPoint()}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
+    public GeoPoint findTouchPoint() {
+        return getClickPoint();
+    }
+
+    /**
+     * @deprecated {@link #setClickPoint(GeoPoint)}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
+    public void setTouchPoint(GeoPoint point) {
+        setClickPoint(point);
     }
 
     /**
@@ -561,6 +572,14 @@ public abstract class Shape extends MapItem implements Capturable {
      * @return the area in meters or double NaN is area is not implemented or in the case of an unclosed shape.
      */
     public double getArea() {
+        return Double.NaN;
+    }
+
+    /**
+     * Returns the perimeter of a shape if closed otherwise will return the length of
+     * of the open shape from start to end.
+     */
+    public double getPerimeterOrLength() {
         return Double.NaN;
     }
 

@@ -26,6 +26,7 @@
       <ActionMenu ref='asset://actionbar/items/radiocontrols.xml' preferredMenu='actionBar'/>
       <ActionMenu ref='asset://actionbar/items/missionpackage.xml' preferredMenu='actionBar'/>
       <ActionMenu ref='asset://actionbar/items/importmanager.xml' preferredMenu='actionBar'/>
+      <ActionMenu ref='asset://actionbar/items/lasso.xml' preferredMenu='actionBar'/>
       <ActionMenu ref='asset://actionbar/items/emergency.xml' preferredMenu='actionBar'/>
       <ActionMenu ref='asset://actionbar/items/clearcontent.xml' preferredMenu='overflow'/>
       <ActionMenu ref='asset://actionbar/items/brightness.xml' preferredMenu='overflow'/>

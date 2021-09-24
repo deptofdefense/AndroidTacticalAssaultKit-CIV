@@ -1,8 +1,8 @@
 #include "httpsproxy.h"
 #include "missionpackage.h"
 #include "commotime.h"
+#include "commothread.h"
 
-#include <Lock.h>
 #include <set>
 #include <openssl/err.h>
 #include <string.h>
@@ -10,6 +10,7 @@
 
 using namespace atakmap::commoncommo;
 using namespace atakmap::commoncommo::impl;
+using namespace atakmap::commoncommo::impl::thread;
 
 
 namespace {
@@ -154,11 +155,13 @@ private:
 
     // Mutex protects changes from external caller and use by IO thread
     // during normal processing.
-    PGSC::Thread::RWMutex ioMutex;
+    RWMutex ioMutex;
     // Used to coordinate serverSocket's validity and sleep/waits
     // when socket is down/not able to be created.
-    PGSC::Thread::Mutex mutex;
-    PGSC::Thread::CondVar monitor;
+    Mutex mutex;
+    CondVar monitor;
+
+    SelectInterrupter *interrupter;
     
 
     // http port to proxy to on 127.0.0.1
@@ -255,6 +258,7 @@ CommoResult HttpsProxy::setServerParams(int localPort,
     STACK_OF(X509) *caCerts;
     int nCaCerts;
     
+    InternalUtils::logprintf(logger, CommoLogger::LEVEL_INFO, "https proxy - changing port to %d", localPort);
     ioCtx->shutdown();
     
     if (localPort == MP_LOCAL_PORT_DISABLE)
@@ -346,9 +350,10 @@ void HttpsProxy::ioThreadProcess()
 
 HttpsProxy::IOThreadContext::IOThreadContext(CommoLogger *logger) : 
         logger(logger),
-        ioMutex(PGSC::Thread::TERW_Fair),
+        ioMutex(RWMutex::Policy_Fair),
         mutex(),
         monitor(),
+        interrupter(NULL),
         localHttpPort(MP_LOCAL_PORT_DISABLE),
         localHttpsPort(MP_LOCAL_PORT_DISABLE),
         serverSocket(),
@@ -370,6 +375,12 @@ HttpsProxy::IOThreadContext::IOThreadContext(CommoLogger *logger) :
             "Cannot create SSL Context! Https proxy will not be available (details: %s)",
             ebuf);
     }
+    try {
+        interrupter = new SelectInterrupter();
+    } catch (SocketException &) {
+        InternalUtils::logprintf(logger, CommoLogger::LEVEL_WARNING,
+            "Cannot create selector interrupter - some config changes may be slow");
+    }
 }
 
 
@@ -380,22 +391,24 @@ HttpsProxy::IOThreadContext::~IOThreadContext()
         SSL_CTX_free(sslCtx);
         sslCtx = NULL;
     }
+    if (interrupter) {
+        delete interrupter;
+        interrupter = NULL;
+    }
 }
 
 
 void HttpsProxy::IOThreadContext::signalStop()
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    PGSC::Thread::Lock_create(lock, mutex);
+    Lock lock(mutex);
     stopSignalled = true;
-    monitor.broadcast(*lock);
+    monitor.broadcast(lock);
 }
 
 
 bool HttpsProxy::IOThreadContext::waitForServerReady()
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    PGSC::Thread::Lock_create(lock, mutex);
+    Lock lock(mutex);
     while (!stopSignalled) {
         if (serverSocketListening)
             return true;
@@ -414,7 +427,7 @@ bool HttpsProxy::IOThreadContext::waitForServerReady()
         
         // Either not enough info/disabled or socket create failed
         // Sleep for retry or until new info comes in or we're done
-        monitor.wait(*lock, SERVER_RETRY_TIME_MS);
+        monitor.wait(lock, SERVER_RETRY_TIME_MS);
     }
     
     return false;
@@ -423,13 +436,16 @@ bool HttpsProxy::IOThreadContext::waitForServerReady()
 
 void HttpsProxy::IOThreadContext::shutdown()
 {
-    PGSC::Thread::WriteLockPtr ioLock(NULL, NULL);
-    PGSC::Thread::WriteLock_create(ioLock, ioMutex);
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    PGSC::Thread::Lock_create(lock, mutex);
+    if (interrupter)
+        interrupter->trigger();
+    WriteLock ioLock(ioMutex);
+    Lock lock(mutex);
     terminateServerSocket();
     
     localHttpsPort = MP_LOCAL_PORT_DISABLE;
+
+    if (interrupter)
+        interrupter->untrigger();
 }
 
 
@@ -460,10 +476,11 @@ bool HttpsProxy::IOThreadContext::setServerParams(int newLocalPort,
     if (!sslCtx)
         return false;
     
-    PGSC::Thread::WriteLockPtr ioLock(NULL, NULL);
-    PGSC::Thread::WriteLock_create(ioLock, ioMutex);
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    PGSC::Thread::Lock_create(lock, mutex);
+    if (interrupter)
+        interrupter->trigger();
+
+    WriteLock ioLock(ioMutex);
+    Lock lock(mutex);
     
     // Clear this before we continue on; if anything fails here,
     // having this cleared prevents the IO thread from trying to
@@ -473,6 +490,10 @@ bool HttpsProxy::IOThreadContext::setServerParams(int newLocalPort,
     if (serverSocket != nullptr)
         terminateServerSocket();
     
+    if (interrupter)
+        // Release here before any potential return
+        interrupter->untrigger();
+
     if (newLocalPort <= 0 || newLocalPort > 65535)
         return false;
 
@@ -488,7 +509,7 @@ bool HttpsProxy::IOThreadContext::setServerParams(int newLocalPort,
     
     // Success - update params and notify iothread in case it was waiting       
     localHttpsPort = newLocalPort;
-    monitor.broadcast(*lock);
+    monitor.broadcast(lock);
 
     return true;
 }
@@ -524,16 +545,22 @@ bool HttpsProxy::IOThreadContext::listenServerSocket()
 void HttpsProxy::IOThreadContext::setLocalHttpPort(int port)
         COMMO_THROW (std::invalid_argument)
 {
+    InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, "https proxy local port connection to http server changing from %d to %d", localHttpPort, port);
+
     if (port != MP_LOCAL_PORT_DISABLE && (port <= 0 || port > 65535))
         throw std::invalid_argument("");
 
-    PGSC::Thread::WriteLockPtr ioLock(NULL, NULL);
-    PGSC::Thread::WriteLock_create(ioLock, ioMutex);
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    PGSC::Thread::Lock_create(lock, mutex);
+    if (interrupter)
+        interrupter->trigger();
+
+    WriteLock ioLock(ioMutex);
+    Lock lock(mutex);
     localHttpPort = port;
     if (port != MP_LOCAL_PORT_DISABLE)
-        monitor.broadcast(*lock);
+        monitor.broadcast(lock);
+
+    if (interrupter)
+        interrupter->untrigger();
 }
  
                                     
@@ -543,16 +570,24 @@ void HttpsProxy::IOThreadContext::setConnTimeoutSec(int connTimeoutSec)
     if (connTimeoutSec < MIN_CONN_TIMEOUT_SEC)
         throw std::invalid_argument("");
 
-    PGSC::Thread::WriteLockPtr ioLock(NULL, NULL);
-    PGSC::Thread::WriteLock_create(ioLock, ioMutex);
+    if (interrupter)
+        interrupter->trigger();
+
+    WriteLock ioLock(ioMutex);
     this->connTimeoutSeconds = connTimeoutSec;
+
+    if (interrupter)
+        interrupter->untrigger();
 }
 
 
 void HttpsProxy::IOThreadContext::process()
 {
-    PGSC::Thread::ReadLockPtr ioLock(NULL, NULL);
-    PGSC::Thread::ReadLock_create(ioLock, ioMutex);
+    // Wait for clear interrupt before acquiring io lock
+    if (interrupter)
+        interrupter->waitUntilUntriggered();
+
+    ReadLock ioLock(ioMutex);
     bool fatalError = false;
 
     if (!serverSocketListening)
@@ -566,6 +601,10 @@ void HttpsProxy::IOThreadContext::process()
 
         // Always reading server socket        
         readSockets.push_back(serverSocket.get());
+        
+        // Always reading interrupter
+        if (interrupter)
+            readSockets.push_back(interrupter->getSocket());
         
         for (auto iter = connections.begin();
                   iter != connections.end(); iter++) {
@@ -603,7 +642,7 @@ void HttpsProxy::IOThreadContext::process()
     }
     
     try {
-        if (!selector.doSelect(500))
+        if (!selector.doSelect(5000))
             // timeout
             return;
     } catch (SocketException &) {
@@ -693,6 +732,12 @@ void HttpsProxy::IOThreadContext::process()
                 } // else errored, don't add
             } while (true);
         }
+        
+        // And finally drain the interrupter
+        if (interrupter &&
+                selector.getLastReadState(interrupter->getSocket()) == 
+                        NetSelector::READABLE)
+            interrupter->drain();
     }
     
     if (fatalError)

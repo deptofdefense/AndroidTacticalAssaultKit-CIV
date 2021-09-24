@@ -278,7 +278,7 @@ public class MapItemSelectTool extends Tool implements
                     // Create selection highlight marker
                     Marker selector = new Marker(TOOL_NAME + "_selector"
                             + _selectors.size());
-                    selector.setTouchable(false);
+                    selector.setClickable(false);
                     selector.setIcon(_selectorIcon);
                     selector.setZOrder(Double.NEGATIVE_INFINITY);
                     selector.setMetaBoolean("ignoreFocus", false);
@@ -288,7 +288,6 @@ public class MapItemSelectTool extends Tool implements
                     selector.setMetaBoolean("ignoreOffscreen", true);
                     selector.setMetaBoolean("addToObjList", false);
                     selector.setMetaBoolean("preciseMove", true);
-                    selector.setMarkerHitBounds(-32, -32, 32, 32);
                     selector.setClickable(false);
                     selector.setPoint(gp);
                     selector.setVisible(true);

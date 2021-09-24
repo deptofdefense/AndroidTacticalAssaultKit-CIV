@@ -9,9 +9,6 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Shape;
 import com.atakmap.android.user.FilterMapOverlay;
 import com.atakmap.android.util.ATAKUtilities;
-import com.atakmap.annotations.DeprecatedApi;
-import com.atakmap.coremap.conversions.Span;
-import com.atakmap.coremap.conversions.SpanUtilities;
 import com.atakmap.coremap.cot.event.CotDetail;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.log.Log;
@@ -32,14 +29,6 @@ import com.atakmap.coremap.maps.coords.GeoPointMetaData;
  */
 public class GeoFence {
     private static final String TAG = "GeoFence";
-
-    /**
-     * @deprecated . Used prior to ATAK 3.8. See {@link com.atakmap.android.geofence.data.GeoFenceDetailHandler}
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public static final String COT_TYPE = "t-x-a-m-Geofence";
-    private static final String COT_HOW = "h-g-i-g-o";
 
     public static final int DEFAULT_ENTRY_RADIUS_KM = 160;
     public static final int MAX_ENTRY_RADIUS_KM = 5000;
@@ -150,13 +139,6 @@ public class GeoFence {
         if (Double.isNaN(height) || Double.compare(height, 0) == 0)
             return Double.NaN;
 
-        // Height isn't always in meters
-        Span heightUnit = Span.findFromValue(item.getMetaInteger(
-                "height_unit", Span.FOOT.getValue()));
-        if (heightUnit == null)
-            heightUnit = Span.FOOT;
-        height = SpanUtilities.convert(height, heightUnit, Span.METER);
-
         GeoPointMetaData center;
         if (item instanceof PointMapItem)
             center = ((PointMapItem) item).getGeoPointMetaData();
@@ -178,10 +160,10 @@ public class GeoFence {
      * ctor
      * creates fence based on height of the provided shape
      *
-     * @param mapItem
-     * @param tracking
-     * @param trigger
-     * @param monitoredTypes
+     * @param mapItem the map item to fence on
+     * @param tracking if it is currently being considered
+     * @param trigger the trigger for the geofence
+     * @param monitoredTypes the monitor type
      * @param rangeKM (kilometers)
      */
     public GeoFence(final MapItem mapItem, final boolean tracking,
@@ -274,12 +256,16 @@ public class GeoFence {
      * Number of KM to monitor (radius from shape center point)
      * for TriggerTypes.Entry. Used at initiation of monitoring to determine which map items to track
      *
-     * @return
+     * @return the number of kilometers
      */
     public int getRangeKM() {
         return _rangeKM;
     }
 
+    /**
+     * Set the maximum range for consideration of any of the tests (enter or exit)
+     * @param rangeKM the range in kilometers
+     */
     public void setRangeKM(int rangeKM) {
         if (rangeKM < 1) {
             Log.w(TAG, "Using default Entry radius for: " + rangeKM);
@@ -335,10 +321,7 @@ public class GeoFence {
         if (_trigger == null)
             return false;
 
-        if (_monitoredTypes == null)
-            return false;
-
-        return true;
+        return _monitoredTypes != null;
     }
 
     /**
@@ -409,7 +392,7 @@ public class GeoFence {
             trigger = Trigger.Entry;
         }
 
-        MonitoredTypes monitoredTypes = MonitoredTypes.All;
+        MonitoredTypes monitoredTypes;
         try {
             monitoredTypes = MonitoredTypes.valueOf(monitoredString);
         } catch (Exception e) {
@@ -426,7 +409,7 @@ public class GeoFence {
             rangeKM = GeoFence.MAX_ENTRY_RADIUS_KM;
         }
 
-        GeoPointMetaData center = null;
+        GeoPointMetaData center;
         if (mapItem instanceof PointMapItem)
             center = ((PointMapItem) mapItem).getGeoPointMetaData();
         else
@@ -473,7 +456,7 @@ public class GeoFence {
         String minElevationMHAE = geofence.getAttribute("minElevation"); //if not present, will set to default
         String maxElevationMHAE = geofence.getAttribute("maxElevation"); //if not present, will set to default
 
-        Trigger trigger = Trigger.Entry;
+        Trigger trigger;
         try {
             trigger = Trigger.valueOf(triggerString);
         } catch (Exception e) {
@@ -481,7 +464,7 @@ public class GeoFence {
             trigger = Trigger.Entry;
         }
 
-        MonitoredTypes monitoredTypes = MonitoredTypes.All;
+        MonitoredTypes monitoredTypes;
         try {
             monitoredTypes = MonitoredTypes.valueOf(monitoredString);
         } catch (Exception e) {
@@ -489,7 +472,7 @@ public class GeoFence {
             monitoredTypes = MonitoredTypes.All;
         }
 
-        int rangeKM = GeoFence.DEFAULT_ENTRY_RADIUS_KM;
+        int rangeKM;
         try {
             //Convert from Meters to KM
             rangeKM = Integer.parseInt(boundingSphere) / 1000;

@@ -9,6 +9,7 @@ import com.atakmap.android.cot.importer.MapItemImporter;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.vehicle.VehicleShape;
 import com.atakmap.android.vehicle.model.VehicleModel;
 import com.atakmap.android.vehicle.model.VehicleModelCache;
 import com.atakmap.android.vehicle.model.VehicleModelInfo;
@@ -47,7 +48,7 @@ public class VehicleModelImporter extends MapItemImporter {
 
     public VehicleModelImporter(MapView mapView, MapGroup vehicleGroup) {
         super(mapView, vehicleGroup, new HashSet<>(Arrays.asList(
-                VehicleModel.COT_TYPE, OVERHEAD_TYPE)));
+                VehicleModel.COT_TYPE, VehicleShape.COT_TYPE, OVERHEAD_TYPE)));
     }
 
     @Override
@@ -55,6 +56,8 @@ public class VehicleModelImporter extends MapItemImporter {
             Bundle extras) {
         if (existing != null && !(existing instanceof VehicleModel))
             return ImportResult.FAILURE;
+
+        String type = cot.getType();
 
         VehicleModel veh = (VehicleModel) existing;
 
@@ -69,10 +72,27 @@ public class VehicleModelImporter extends MapItemImporter {
         String category = modelAttr.getAttribute("category");
         String outline = modelAttr.getAttribute("outline");
 
+        if (type.equals(VehicleShape.COT_TYPE)) {
+
+            // Vehicle shapes stored the model name in the "value" attribute
+            name = modelAttr.getAttribute("value");
+
+            // Outline always on
+            outline = "true";
+
+            // Make sure fill is empty so model doesn't show up half transparent
+            CotDetail fc = cot.findDetail("fillColor");
+            CotDetail sc = cot.findDetail("strokeColor");
+            if (fc != null && sc != null)
+                fc.setAttribute("value", String.valueOf(
+                        parseColor(sc.getAttribute("value"),
+                                VehicleShape.DEFAULT_STROKE) & 0xFFFFFF));
+        }
+
         VehicleModelInfo info;
 
-        // Overhead marker conversion
-        if (cot.getType().equals(OVERHEAD_TYPE))
+        // Vehicle shape and overhead marker conversion
+        if (type.equals(OVERHEAD_TYPE) || type.equals(VehicleShape.COT_TYPE))
             info = findModel(name);
         else
             info = VehicleModelCache.getInstance().get(category, name);

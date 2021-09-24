@@ -59,6 +59,7 @@ public class RectangleDetailsView extends GenericDetailsView implements
     private Button _undoButton;
     private Button _endButton;
     private Button _areaTF;
+    private Button _perimeterTF;
     private CheckBox _tacticalCB;
 
     private ImageButton _sendButton;
@@ -93,8 +94,8 @@ public class RectangleDetailsView extends GenericDetailsView implements
                 _centerButton.setText(_unitPrefs.formatPoint(
                         _rect.getCenter(), true));
 
-                double rectL = _rect.getLength();
-                double rectW = _rect.getWidth();
+                final double rectL = _rect.getLength();
+                final double rectW = _rect.getWidth();
 
                 int areaUnits = _unitPrefs.getAreaSystem();
 
@@ -105,8 +106,15 @@ public class RectangleDetailsView extends GenericDetailsView implements
                 final String w = SpanUtilities.formatType(spanUnits,
                         rectW, Span.METER);
                 _areaTF.setText("(" + l + " x " + w + ")\n" +
-                        AreaUtilities.formatArea(areaUnits, rectW * rectL,
+                        AreaUtilities.formatArea(areaUnits, _rect.getArea(),
                                 Area.METER2));
+
+                int rangeSystem = _unitPrefs.getRangeSystem();
+                double range = _rect.getPerimeterOrLength();
+
+                _perimeterTF.setText(
+                        SpanUtilities.formatType(rangeSystem, range, Span.METER,
+                                false));
             }
         });
     }
@@ -222,6 +230,7 @@ public class RectangleDetailsView extends GenericDetailsView implements
                 .findViewById(R.id.drawingRectEndEditingButton);
 
         _areaTF = this.findViewById(R.id.rectAreaText);
+        _perimeterTF = this.findViewById(R.id.rectPerimeterText);
 
         _tacticalCB.setChecked(_rect.showTacticalOverlay());
         _tacticalCB.setOnCheckedChangeListener(this);
@@ -287,7 +296,7 @@ public class RectangleDetailsView extends GenericDetailsView implements
         _colorButton.setOnClickListener(this);
 
         double height = _rect.getHeight();
-        Span unit = getUnitSpan(_rect);
+        Span unit = _unitPrefs.getAltitudeUnits();
         if (!Double.isNaN(height)) {
             _heightButton.setText(SpanUtilities.format(height, Span.METER,
                     unit));
@@ -343,6 +352,12 @@ public class RectangleDetailsView extends GenericDetailsView implements
         attachmentManager.setMapItem(_rect);
 
         setupAreaButton(_areaTF, new Runnable() {
+            public void run() {
+                updateStats();
+            }
+        });
+
+        setupLengthButton(_perimeterTF, new Runnable() {
             public void run() {
                 updateStats();
             }
@@ -457,14 +472,6 @@ public class RectangleDetailsView extends GenericDetailsView implements
         createHeightDialog(_rect, R.string.enter_rectangle_height, new Span[] {
                 Span.METER, Span.YARD, Span.FOOT
         });
-    }
-
-    @Override
-    protected void heightSelected(double height, Span u, double h) {
-        // This is always saved as a string in feet for some reason
-        _rect.setHeight(height);
-        _rect.setMetaInteger("height_unit", u.getValue());
-        _heightButton.setText(SpanUtilities.format(h, u, 2));
     }
 
     @Override

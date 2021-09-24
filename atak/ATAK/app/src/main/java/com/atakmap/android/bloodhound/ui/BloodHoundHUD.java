@@ -28,7 +28,7 @@ import org.apache.commons.lang.StringUtils;
 public class BloodHoundHUD extends TextWidget
         implements MapWidget.OnLongPressListener {
 
-    private static final String TAG = "com.atakmap.android.bloodhound.ui_components.BloodHoundHUD";
+    private static final String TAG = "BloodHoundHUD";
 
     private final BloodHoundPreferences _prefs;
     private final MapView _mapView;

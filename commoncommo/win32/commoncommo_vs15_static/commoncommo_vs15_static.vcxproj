@@ -122,7 +122,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <CompileAsWinRT>false</CompileAsWinRT>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\..\raster\takthirdparty\builds\win32-release\PGSC_Utils\include;..\..\..\raster\takthirdparty\builds\win32-release\include\libxml2;..\..\..\raster\takthirdparty\builds\win32-release\include;..\..\core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\takthirdparty\builds\win32-release\PGSC_Utils\include;..\..\..\takthirdparty\builds\win32-release\include\libxml2;..\..\..\takthirdparty\builds\win32-release\include;..\..\core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;UWP;HAVE_STRUCT_TIMESPEC;CURL_STATICLIB;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -136,7 +136,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <CompileAsWinRT>false</CompileAsWinRT>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\..\raster\takthirdparty\builds\win32-release\PGSC_Utils\include;..\..\..\raster\takthirdparty\builds\win32-release\include\libxml2;..\..\..\raster\takthirdparty\builds\win32-release\include;..\..\core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\takthirdparty\builds\win32-release\PGSC_Utils\include;..\..\..\takthirdparty\builds\win32-release\include\libxml2;..\..\..\takthirdparty\builds\win32-release\include;..\..\core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;UWP;HAVE_STRUCT_TIMESPEC;CURL_STATICLIB;_CRT_SECURE_NO_WARNINGS;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -150,7 +150,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <CompileAsWinRT>false</CompileAsWinRT>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\..\raster\takthirdparty\builds\win32-release\PGSC_Utils\include;..\..\..\raster\takthirdparty\builds\win32-release\include\libxml2;..\..\..\raster\takthirdparty\builds\win32-release\include;..\..\core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\takthirdparty\builds\win32-release\PGSC_Utils\include;..\..\..\takthirdparty\builds\win32-release\include\libxml2;..\..\..\takthirdparty\builds\win32-release\include;..\..\core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;UWP;HAVE_STRUCT_TIMESPEC;CURL_STATICLIB;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -164,7 +164,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <CompileAsWinRT>false</CompileAsWinRT>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\..\raster\takthirdparty\builds\win32-release\PGSC_Utils\include;..\..\..\raster\takthirdparty\builds\win32-release\include\libxml2;..\..\..\raster\takthirdparty\builds\win32-release\include;..\..\core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\takthirdparty\builds\win32-release\PGSC_Utils\include;..\..\..\takthirdparty\builds\win32-release\include\libxml2;..\..\..\takthirdparty\builds\win32-release\include;..\..\core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;UWP;HAVE_STRUCT_TIMESPEC;CURL_STATICLIB;_CRT_SECURE_NO_WARNINGS;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -178,7 +178,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <CompileAsWinRT>false</CompileAsWinRT>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\..\raster\takthirdparty\builds\win32-release\PGSC_Utils\include;..\..\..\raster\takthirdparty\builds\win32-release\include\libxml2;..\..\..\raster\takthirdparty\builds\win32-release\include;..\..\core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\takthirdparty\builds\win32-release\PGSC_Utils\include;..\..\..\takthirdparty\builds\win32-release\include\libxml2;..\..\..\takthirdparty\builds\win32-release\include;..\..\core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;UWP;HAVE_STRUCT_TIMESPEC;CURL_STATICLIB;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -192,7 +192,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <CompileAsWinRT>false</CompileAsWinRT>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\..\..\raster\takthirdparty\builds\win32-release\PGSC_Utils\include;..\..\..\raster\takthirdparty\builds\win32-release\include\libxml2;..\..\..\raster\takthirdparty\builds\win32-release\include;..\..\core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\takthirdparty\builds\win32-release\PGSC_Utils\include;..\..\..\takthirdparty\builds\win32-release\include\libxml2;..\..\..\takthirdparty\builds\win32-release\include;..\..\core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;UWP;HAVE_STRUCT_TIMESPEC;CURL_STATICLIB;_CRT_SECURE_NO_WARNINGS;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>

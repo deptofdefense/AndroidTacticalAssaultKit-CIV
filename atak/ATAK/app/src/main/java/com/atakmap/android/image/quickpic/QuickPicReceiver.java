@@ -306,7 +306,7 @@ public class QuickPicReceiver extends BroadcastReceiver {
                         Map<String, Object> extras = new HashMap<>();
                         ExifHelper.getExtras(exif, extras);
                         if (!extras.isEmpty())
-                            ExifHelper.putExtras(exif, extras, tos);
+                            ExifHelper.putExtras(extras, tos);
                         // Save image
                         ExifHelper.saveExifOutput(tos, f);
                     }

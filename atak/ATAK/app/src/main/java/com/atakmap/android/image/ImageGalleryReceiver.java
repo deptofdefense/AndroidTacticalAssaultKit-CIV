@@ -46,7 +46,6 @@ import com.atakmap.android.tools.menu.ActionBroadcastData;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.util.AfterTextChangedWatcher;
 import com.atakmap.android.util.AttachmentManager;
-import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.ATAKActivity;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -65,7 +64,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import com.atakmap.map.layer.feature.geometry.Envelope;
-import com.atakmap.spatial.file.FileOverlayContentHandler;
 
 import android.database.Cursor;
 import android.database.DataSetObserver;
@@ -1321,52 +1319,6 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
                     + dataUri + " to " + outFile, e);
             return false;
         }
-    }
-
-    /**
-     * Get a feature's bounds given its associated file
-     * @param f Feature file
-     * @return Feature envelope or null if not found
-     *
-     * @deprecated Use {@link URIContentManager#getHandler(File)} instead
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public static Envelope getFeatureBounds(File f) {
-        URIContentHandler h = URIContentManager.getInstance().getHandler(f);
-        if (!(h instanceof FileOverlayContentHandler))
-            return null;
-        GeoBounds b = ((FileOverlayContentHandler) h).getBounds(null);
-        if (b == null)
-            return null;
-        return new Envelope(b.getWest(), b.getSouth(), 0,
-                b.getEast(), b.getNorth(), 0);
-    }
-
-    /**
-     * Find a raster feature envelope from the map overlays
-     * @param f Associated file
-     * @return Feature object
-     *
-     * @deprecated Use {@link URIContentManager#getHandler(File)} instead
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public static Envelope findRasterFeatureBounds(File f) {
-        return getFeatureBounds(f);
-    }
-
-    /**
-     * Get feature bounds for a vector-based feature (KML, SHP, etc.)
-     * @param f Feature file
-     * @return Feature set boundaries (no more than 100 points processed)
-     *
-     * @deprecated Use {@link URIContentManager#getHandler(File)} instead
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public static Envelope findVectorFeatureBounds(File f) {
-        return getFeatureBounds(f);
     }
 
     /**

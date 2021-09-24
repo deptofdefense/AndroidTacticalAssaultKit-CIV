@@ -32,7 +32,6 @@ public class RouteCache {
     }
 
     public synchronized void invalidate(String id) {
-        if (cache.containsKey(id))
-            cache.remove(id);
+        cache.remove(id);
     }
 }

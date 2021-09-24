@@ -13,9 +13,7 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.Layer;
-import com.atakmap.map.layer.feature.FeatureDataStore;
-import com.atakmap.map.layer.feature.FeatureLayer;
-import com.atakmap.map.layer.feature.gpkg.GeoPackageFeatureDataStore;
+import com.atakmap.map.layer.feature.FeatureLayer3;
 import com.atakmap.map.layer.feature.opengl.GLBatchGeometryFeatureDataStoreRenderer;
 import com.atakmap.map.layer.opengl.GLLayer2;
 import com.atakmap.map.layer.opengl.GLLayerFactory;
@@ -38,16 +36,13 @@ public class GeopackageMapComponent extends AbstractMapComponent {
         GLLayerFactory.register(new GLLayerSpi2() {
             @Override
             public GLLayer2 create(Pair<MapRenderer, Layer> arg) {
-                if (!(arg.second instanceof FeatureLayer)) {
+                if (!(arg.second instanceof FeatureLayer3))
                     return null;
-                }
-
-                FeatureLayer layer = (FeatureLayer) arg.second;
-                FeatureDataStore dataStore = layer.getDataStore();
-                if (!(dataStore instanceof GeoPackageFeatureDataStore))
+                FeatureLayer3 layer = (FeatureLayer3) arg.second;
+                if (!layer.getDataStore().getUri().endsWith(".gpkg"))
                     return null;
-                return new GLBatchGeometryFeatureDataStoreRenderer(
-                        arg.first, layer);
+                return new GLBatchGeometryFeatureDataStoreRenderer(arg.first,
+                        layer);
             }
 
             @Override

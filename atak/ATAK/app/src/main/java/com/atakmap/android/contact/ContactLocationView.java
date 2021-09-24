@@ -13,6 +13,7 @@ import android.widget.TextView;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import android.widget.LinearLayout;
 import com.atakmap.android.cotdetails.ExtendedInfoView;
+import com.atakmap.android.preference.UnitPreferences;
 import com.atakmap.coremap.conversions.Angle;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.NorthReference;
@@ -24,7 +25,6 @@ import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.user.TLECategory;
 import com.atakmap.android.util.ATAKUtilities;
-import com.atakmap.android.util.AltitudeUtilities;
 import com.atakmap.android.util.SpeedFormatter;
 import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.CoordinateFormat;
@@ -35,11 +35,9 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 
-public class ContactLocationView extends ContactDetailView implements
-        OnSharedPreferenceChangeListener {
+public class ContactLocationView extends ContactDetailView {
 
     public static final String TAG = "ContactLocationView";
-    private CoordinateFormat _cFormat;
 
     private Button _coordButton;
     private ImageButton _panButton;
@@ -57,7 +55,10 @@ public class ContactLocationView extends ContactDetailView implements
     private TextView _courseText;
     private TextView _contactInfoRangeBearingTitle;
 
-    private int _northReference;
+    private UnitPreferences _prefs;
+    private CoordinateFormat _cFormat;
+    private NorthReference _northReference;
+    private Angle _bearingUnits;
 
     private LinearLayout _extendedCotInfo;
 
@@ -215,52 +216,28 @@ public class ContactLocationView extends ContactDetailView implements
     }
 
     @Override
-    public void onSharedPreferenceChanged(
-            final SharedPreferences sp,
-            final String key) {
-        if (key.equals("rab_north_ref_pref")) {
-            _northReference = Integer
-                    .parseInt(_prefs.getString("rab_north_ref_pref",
-                            String.valueOf(
-                                    NorthReference.MAGNETIC.getValue())));
-        }
-    }
-
-    @Override
     public void init(final MapView mapView, final SharedPreferences prefs,
             ContactDetailDropdown parent) {
         super.init(mapView, prefs, parent);
 
-        _prefs.registerOnSharedPreferenceChangeListener(_sharedPrefsListener);
-        _northReference = Integer
-                .parseInt(_prefs.getString("rab_north_ref_pref",
-                        String.valueOf(NorthReference.MAGNETIC.getValue())));
-        _cFormat = CoordinateFormat.find(_prefs.getString(
-                "coord_display_pref",
-                mapView.getContext().getString(
-                        R.string.coord_display_pref_default)));
+        _prefs = new UnitPreferences(mapView);
+        _prefs.registerListener(_sharedPrefsListener);
+        _updatePreferences();
     }
 
-    private final SharedPreferences.OnSharedPreferenceChangeListener _sharedPrefsListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
+    private final OnSharedPreferenceChangeListener _sharedPrefsListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
         @Override
         public void onSharedPreferenceChanged(
                 final SharedPreferences sp,
                 final String key) {
-
-            if (key.equals("coord_display_pref")) {
-                _cFormat = CoordinateFormat.find(sp.getString(
-                        key,
-                        _mapView.getContext().getString(
-                                R.string.coord_display_pref_default)));
-            }
+            _updatePreferences();
         }
     };
 
     private void _updatePreferences() {
-        _cFormat = CoordinateFormat.find(_prefs.getString(
-                "coord_display_pref",
-                _mapView.getContext().getString(
-                        R.string.coord_display_pref_default)));
+        _cFormat = _prefs.getCoordinateFormat();
+        _northReference = _prefs.getNorthReference();
+        _bearingUnits = _prefs.getBearingUnits();
 
         if (_cFormat == null)
             _cFormat = CoordinateFormat.MGRS;
@@ -367,8 +344,7 @@ public class ContactLocationView extends ContactDetailView implements
     void onPointChanged(final PointMapItem item) {
         final String p = CoordinateFormatUtilities.formatToString(
                 _marker.getPoint(), _cFormat);
-        final String a = AltitudeUtilities.format(_marker.getPoint(),
-                _prefs);
+        final String a = _prefs.formatAltitude(_marker.getPoint());
 
         _mapView.post(new Runnable() {
             @Override
@@ -399,13 +375,18 @@ public class ContactLocationView extends ContactDetailView implements
         double orientation = m.getTrackHeading();
         if (!Double.isNaN(orientation)) {
             String unit = "T";
-            if (_northReference != 0) { // NORTH_REFERENCE_TRUE=0, NORTH_REFERENCE_MAGNETIC=1,
-                // NORTH_REFERENCE_GRID=2
+            if (_northReference == NorthReference.MAGNETIC) {
                 orientation = ATAKUtilities.convertFromTrueToMagnetic(
                         m.getPoint(), orientation);
                 unit = "M";
+            } else if (_northReference == NorthReference.GRID) {
+                orientation -= ATAKUtilities.computeGridConvergence(
+                        m.getPoint(), orientation, 1);
+                unit = "G";
             }
-            orientationString = AngleUtilities.format(orientation)
+            orientation = AngleUtilities.wrapDeg(orientation);
+            orientationString = AngleUtilities.format(orientation,
+                    _bearingUnits)
                     + unit;
         }
 

@@ -5,7 +5,6 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 
 import com.atakmap.android.maps.MapTextFormat;
-import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.map.AtakMapView;
 
@@ -126,20 +125,6 @@ public class TextWidget extends MapWidget2 {
 
     public void setText(CharSequence text) {
         setText(text == null ? "" : text.toString());
-    }
-
-    /**
-     * Set the size of the text container
-     * To be removed - redundant to setSize and unnecessary since size is
-     * now calculated automatically based on text
-     * @deprecated Use {@link #setSize(float, float)}
-     * @param width Bounds width
-     * @param height Bounds height
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public void setTextBounds(float width, float height) {
-        setSize(width, height);
     }
 
     public void setColor(int color) {

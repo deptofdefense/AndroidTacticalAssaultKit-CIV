@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="horizontal"
@@ -24,15 +25,29 @@
         android:textSize="@dimen/draper_title_font"
         android:textColor="#FFF"
         android:singleLine="true"
-        android:ellipsize="middle"/>
-    
-    <TextView 
-        android:id="@+id/importManagerBrowserFileInfo"
+        android:ellipsize="middle"
+        tools:text="File name"/>
+
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="@dimen/auto_margin"
-        android:textSize="@dimen/draper_title_font"
-        android:textColor="#FFF"/>
+        android:orientation="vertical"
+        android:gravity="end">
+        <TextView
+            android:id="@+id/importManagerBrowserFileInfo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/draper_title_font"
+            android:textColor="@color/white"
+            tools:text="100 KB"/>
+        <TextView
+            android:id="@+id/importManagerBrowserDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/draper_font"
+            android:textColor="@color/light_gray"
+            tools:text="2021-01-01"/>
+    </LinearLayout>
     
     <CheckBox
         android:id="@+id/importManagerBrowserFileSelected"

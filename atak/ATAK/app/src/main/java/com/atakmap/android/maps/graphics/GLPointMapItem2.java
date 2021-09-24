@@ -1,6 +1,7 @@
 
 package com.atakmap.android.maps.graphics;
 
+import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.PointMapItem.OnPointChangedListener;
 import com.atakmap.map.layer.control.LollipopControl;
@@ -12,7 +13,8 @@ import com.atakmap.map.layer.feature.Feature.AltitudeMode;
 import com.atakmap.map.opengl.GLMapView;
 
 public abstract class GLPointMapItem2 extends AbstractGLMapItem2 implements
-        OnPointChangedListener, LollipopControl {
+        OnPointChangedListener, LollipopControl,
+        MapItem.OnAltitudeModeChangedListener {
 
     public GeoPoint point;
     protected double latitude;
@@ -41,6 +43,7 @@ public abstract class GLPointMapItem2 extends AbstractGLMapItem2 implements
                     final double W = point.getLongitude() - .0001;
 
                     bounds.set(N, W, S, E);
+                    updateBoundsZ();
                 }
                 dispatchOnBoundsChanged();
             }
@@ -66,6 +69,7 @@ public abstract class GLPointMapItem2 extends AbstractGLMapItem2 implements
         super.startObserving();
         this.onPointChanged(pointItem);
         pointItem.addOnPointChangedListener(this);
+        pointItem.addOnAltitudeModeChangedListener(this);
     }
 
     @Override
@@ -73,6 +77,7 @@ public abstract class GLPointMapItem2 extends AbstractGLMapItem2 implements
         final PointMapItem pointItem = (PointMapItem) this.subject;
         super.stopObserving();
         pointItem.removeOnPointChangedListener(this);
+        pointItem.removeOnAltitudeModeChangedListener(this);
     }
 
     /**
@@ -94,8 +99,7 @@ public abstract class GLPointMapItem2 extends AbstractGLMapItem2 implements
         final GeoPoint p = item.getPoint();
         if (!p.isValid())
             return;
-        final AltitudeMode altitudeMode = item.getAltitudeMode();
-        this.context.queueEvent(new Runnable() {
+        runOnGLThread(new Runnable() {
             @Override
             public void run() {
                 point = p;
@@ -108,7 +112,6 @@ public abstract class GLPointMapItem2 extends AbstractGLMapItem2 implements
                     altitude = Double.NaN;
                     altHae = GeoPoint.UNKNOWN;
                 }
-                altMode = altitudeMode;
                 // invalidate cached terrain value
                 terrainVersion = ~terrainVersion;
                 synchronized (bounds) {
@@ -118,9 +121,26 @@ public abstract class GLPointMapItem2 extends AbstractGLMapItem2 implements
                     final double W = point.getLongitude() - .0001;
 
                     bounds.set(N, W, S, E);
+                    updateBoundsZ();
                 }
                 dispatchOnBoundsChanged();
 
+            }
+        });
+    }
+
+    @Override
+    public void onAltitudeModeChanged(final AltitudeMode altitudeMode) {
+        runOnGLThread(new Runnable() {
+            @Override
+            public void run() {
+                altMode = altitudeMode;
+                terrainVersion = ~terrainVersion;
+
+                synchronized (bounds) {
+                    updateBoundsZ();
+                }
+                dispatchOnBoundsChanged();
             }
         });
     }
@@ -131,5 +151,36 @@ public abstract class GLPointMapItem2 extends AbstractGLMapItem2 implements
      */
     protected AltitudeMode getAltitudeMode() {
         return altMode != null ? altMode : AltitudeMode.Absolute;
+    }
+
+    protected void updateBoundsZ() {
+        double minAlt = altHae - 10d;
+        double maxAlt = altHae + 10d;
+        if (Double.isNaN(altHae)) {
+            minAlt = Double.NaN;
+            maxAlt = Double.NaN;
+        } else {
+            switch (getAltitudeMode()) {
+                case Absolute:
+                    //
+                    maxAlt = Math.max(DEFAULT_MAX_ALT, altHae);
+                    break;
+                case Relative:
+                    // offset from min/max surface altitudes
+                    minAlt += DEFAULT_MIN_ALT;
+                    maxAlt += DEFAULT_MAX_ALT;
+                    break;
+                case ClampToGround:
+                    minAlt = DEFAULT_MIN_ALT;
+                    maxAlt = DEFAULT_MAX_ALT;
+                    break;
+                default:
+                    minAlt = Double.NaN;
+                    maxAlt = Double.NaN;
+                    break;
+            }
+        }
+        bounds.setMinAltitude(minAlt);
+        bounds.setMaxAltitude(maxAlt);
     }
 }

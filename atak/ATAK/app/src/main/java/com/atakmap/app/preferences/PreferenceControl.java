@@ -493,7 +493,7 @@ public class PreferenceControl implements ConnectionListener {
                                 .get("enrollForCertificateWithTrust" + j));
 
                 String exp = mapping.get(TAKServer.EXPIRATION_KEY + j);
-                Long expiration = exp == null ? -1 : Long.parseLong(exp);
+                long expiration = exp == null ? -1 : Long.parseLong(exp);
 
                 Bundle data = new Bundle();
                 data.putString("description", description);

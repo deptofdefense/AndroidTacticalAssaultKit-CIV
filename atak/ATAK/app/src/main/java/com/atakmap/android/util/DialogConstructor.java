@@ -88,5 +88,6 @@ public class DialogConstructor {
                     return false;
             }
         });
+        o.requestFocus();
     }
 }

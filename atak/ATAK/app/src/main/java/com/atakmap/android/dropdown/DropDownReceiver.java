@@ -159,7 +159,7 @@ public abstract class DropDownReceiver extends BroadcastReceiver {
 
         // an invisible hair if a drop down registers a MapItem to indicate selection.
 
-        crosshair.setTouchable(false);
+        crosshair.setClickable(false);
         crosshair.setZOrder(Double.NEGATIVE_INFINITY);
         crosshair.setMetaBoolean("ignoreFocus", false);
         crosshair.setMetaBoolean("toggleDetails", true);
@@ -168,7 +168,6 @@ public abstract class DropDownReceiver extends BroadcastReceiver {
         crosshair.setMetaBoolean("ignoreOffscreen", true);
         crosshair.setMetaBoolean("addToObjList", false);
         crosshair.setMetaBoolean("preciseMove", true);
-        crosshair.setMarkerHitBounds(-32, -32, 32, 32);
         crosshair.setClickable(false);
         crosshair.setVisible(false);
         crosshair.setPoint(GeoPoint.ZERO_POINT);
@@ -335,6 +334,10 @@ public abstract class DropDownReceiver extends BroadcastReceiver {
             @Override
             public void run() {
 
+                // Existing drop-down must be closed first before showing it again
+                if (!isClosed())
+                    DropDownManager.getInstance().closeDropDown(_dropDown);
+
                 _dropDown = new DropDown(contentView, ignoreBackButton,
                         DropDownReceiver.this);
                 _dropDown.setSwitchable(switchable);
@@ -350,7 +353,6 @@ public abstract class DropDownReceiver extends BroadcastReceiver {
                     public void onDropDownSelectionRemoved() {
                         if (stateListener != null)
                             stateListener.onDropDownSelectionRemoved();
-
                     }
 
                     @Override
@@ -376,10 +378,10 @@ public abstract class DropDownReceiver extends BroadcastReceiver {
                         if ((_dropDown != null)
                                 && (_dropDown.getFragment() != null)) {
                             try {
-                                _backstack = 0;
                                 _fragmentManager.beginTransaction()
                                         .remove(_dropDown.getFragment())
                                         .commit();
+                                _backstack = 0;
                             } catch (IllegalStateException e) {
                                 // see the Fragment Manager warning at the top
                                 Log.d(TAG, "state loss fragment for: " + this,
@@ -480,6 +482,10 @@ public abstract class DropDownReceiver extends BroadcastReceiver {
 
             @Override
             public void run() {
+
+                if (!isClosed())
+                    DropDownManager.getInstance().closeDropDown(_dropDown);
+
                 _dropDown = new DropDown(fragment, ignoreBackButton,
                         DropDownReceiver.this);
                 _dropDown.setSwitchable(switchable);
@@ -516,10 +522,10 @@ public abstract class DropDownReceiver extends BroadcastReceiver {
 
                         if (_dropDown.getFragment() != null) {
                             try {
-                                _backstack = 0;
                                 _fragmentManager.beginTransaction()
                                         .remove(_dropDown.getFragment())
                                         .commit();
+                                _backstack = 0;
                             } catch (IllegalStateException e) {
                                 // see the Fragment Manager warning at the top
                                 Log.d(TAG, "state loss fragment for: " + this,
@@ -690,12 +696,11 @@ public abstract class DropDownReceiver extends BroadcastReceiver {
      */
     private boolean fragmentReplaceTransaction(final int id,
             final Fragment frag) {
-        _backstack++;
         try {
             _fragmentManager.beginTransaction()
                     .replace(id, frag).addToBackStack(null).commit();
+            _backstack++;
             return true;
-
         } catch (IllegalStateException e) {
             // see the Fragment Manager warning at the top
             Log.d(TAG, "state loss fragment for: " + this, e);
@@ -764,13 +769,31 @@ public abstract class DropDownReceiver extends BroadcastReceiver {
      * @return true if there was something popped, false if otherwise.
      */
     boolean popBackStackImmediate() {
-        _backstack--;
         try {
-            return _fragmentManager.popBackStackImmediate();
+            if (_fragmentManager.popBackStackImmediate()) {
+                _backstack--;
+                return true;
+            }
         } catch (IllegalStateException e) {
             // see the Fragment Manager warning at the top
             Log.d(TAG, "state loss fragment for: " + this, e);
-            return true;
+        }
+        return false;
+    }
+
+    /**
+     * In the case that the drop down is not on the top of the stack it will continue to exist
+     * in the Fragment Manager.    Need to remove it out completely.
+     * NOTE:
+     */
+    void clearFragment() {
+        try {
+            _fragmentManager.beginTransaction().detach(_dropDown.getFragment())
+                    .commitAllowingStateLoss();
+            //_fragmentManager.beginTransaction().remove(_dropDown.getFragment()).commitAllowingStateLoss();
+        } catch (Exception e) {
+            Log.e(TAG,
+                    "error removing fragment for: " + _dropDown.getFragment());
         }
     }
 

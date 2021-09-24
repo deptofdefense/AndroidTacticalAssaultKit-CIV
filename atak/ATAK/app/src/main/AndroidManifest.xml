@@ -299,15 +299,7 @@
             android:configChanges="orientation"
             android:screenOrientation="behind" />
         <activity
-            android:name="com.atakmap.comms.app.CotManagerTabActivity"
-            android:configChanges="orientation"
-            android:screenOrientation="behind" />
-        <activity
             android:name="com.atakmap.comms.app.CotInputsListActivity"
-            android:configChanges="orientation"
-            android:screenOrientation="behind" />
-        <activity
-            android:name="com.atakmap.comms.app.CotObjectsListActivity"
             android:configChanges="orientation"
             android:screenOrientation="behind" />
         <activity

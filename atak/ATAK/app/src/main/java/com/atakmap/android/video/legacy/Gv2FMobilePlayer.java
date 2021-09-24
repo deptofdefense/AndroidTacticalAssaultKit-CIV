@@ -389,7 +389,7 @@ public class Gv2FMobilePlayer extends MetricActivity
                     public void onProgressChanged(SeekBar seekBar, int progress,
                             boolean fromUser) {
                         if (fromUser) {
-                            long posAct = processor.setTime((long) seekBar
+                            long posAct = processor.setTime(seekBar
                                     .getProgress());
                         }
                     }
@@ -579,56 +579,56 @@ public class Gv2FMobilePlayer extends MetricActivity
         metadataMap = new HashMap<>();
         metadataMap
                 .put(DecodedMetadataItem.MetadataItemIDs.METADATA_ITEMID_SENSOR_TRUE_ALTITUDE,
-                        (TextView) findViewById(
+                        findViewById(
                                 R.id.AircraftAltitudeValueView));
 
         //        metadataMap.put(DecodedMetadataItem.MetadataItemIDs.METADATA_ITEMID_PLATFORM_DESIGNATION,
         //                (TextView) findViewById(R.id.AircraftDesignationValueView));
         metadataMap
                 .put(DecodedMetadataItem.MetadataItemIDs.METADATA_ITEMID_PLATFORM_TAIL_NUMBER,
-                        (TextView) findViewById(R.id.AircraftTailValueView));
+                        findViewById(R.id.AircraftTailValueView));
 
         metadataMap
                 .put(DecodedMetadataItem.MetadataItemIDs.METADATA_ITEMID_ALT_PLATFORM_HEADING,
-                        (TextView) findViewById(R.id.AircraftHeadingValueView));
+                        findViewById(R.id.AircraftHeadingValueView));
         metadataMap
                 .put(DecodedMetadataItem.MetadataItemIDs.METADATA_ITEMID_PLATFORM_PITCH_ANGLE,
-                        (TextView) findViewById(R.id.AircraftPitchValueView));
+                        findViewById(R.id.AircraftPitchValueView));
         metadataMap
                 .put(DecodedMetadataItem.MetadataItemIDs.METADATA_ITEMID_SENSOR_LATITUDE,
-                        (TextView) findViewById(
+                        findViewById(
                                 R.id.AircraftLatitudeValueView));
         metadataMap
                 .put(DecodedMetadataItem.MetadataItemIDs.METADATA_ITEMID_SENSOR_LONGITUDE,
-                        (TextView) findViewById(
+                        findViewById(
                                 R.id.AircraftLongitudeValueView));
         metadataMap
                 .put(DecodedMetadataItem.MetadataItemIDs.METADATA_ITEMID_FRAME_CENTER_LATITUDE,
-                        (TextView) findViewById(R.id.TargetLatitudeValueView));
+                        findViewById(R.id.TargetLatitudeValueView));
         metadataMap
                 .put(DecodedMetadataItem.MetadataItemIDs.METADATA_ITEMID_FRAME_CENTER_LONGITUDE,
-                        (TextView) findViewById(R.id.TargetLongitudeValueView));
+                        findViewById(R.id.TargetLongitudeValueView));
         metadataMap
                 .put(DecodedMetadataItem.MetadataItemIDs.METADATA_ITEMID_GROUND_RANGE,
-                        (TextView) findViewById(R.id.TargetRangeValueView));
+                        findViewById(R.id.TargetRangeValueView));
         metadataMap
                 .put(
                         DecodedMetadataItem.MetadataItemIDs.METADATA_ITEMID_IMAGE_COORDINATE_SYSTEM,
-                        (TextView) findViewById(R.id.TargetCoordSysValueView));
+                        findViewById(R.id.TargetCoordSysValueView));
         metadataMap
                 .put(DecodedMetadataItem.MetadataItemIDs.METADATA_ITEMID_IMAGE_SOURCE_SENSOR,
-                        (TextView) findViewById(R.id.SensorDeviceValueView));
+                        findViewById(R.id.SensorDeviceValueView));
         metadataMap
                 .put(DecodedMetadataItem.MetadataItemIDs.METADATA_ITEMID_SENSOR_HORIZONTAL_FIELD_OF_VIEW,
-                        (TextView) findViewById(R.id.SensorHFOVValueView));
+                        findViewById(R.id.SensorHFOVValueView));
         metadataMap
                 .put(
                         DecodedMetadataItem.MetadataItemIDs.METADATA_ITEMID_SENSOR_VERTICAL_FIELD_OF_VIEW,
-                        (TextView) findViewById(R.id.SensorVFOVValueView));
+                        findViewById(R.id.SensorVFOVValueView));
         metadataMap
                 .put(
                         DecodedMetadataItem.MetadataItemIDs.METADATA_ITEMID_SENSOR_RELATIVE_ROLL_ANGLE,
-                        (TextView) findViewById(R.id.SensorRollValueView));
+                        findViewById(R.id.SensorRollValueView));
 
         formatMap = new HashMap<>();
         formatMap

@@ -32,3 +32,5 @@ mrsid_BINBUNDLE=$(mrsid_BINBUNDLE_$(VS_VER_MSB))
 mrsid_BINLIBPATH=lib/
 
 libxml2_installtargets=install
+
+commoncommo_ANT_FLAGS=-Dnative-init=internal

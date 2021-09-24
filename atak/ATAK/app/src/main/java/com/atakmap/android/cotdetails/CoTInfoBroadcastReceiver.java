@@ -178,7 +178,11 @@ public class CoTInfoBroadcastReceiver extends DropDownReceiver implements
                 setSelected(targetPMI, "asset:/icons/outline.png");
                 final boolean success = civ.setMarker(targetPMI);
 
-                if (!isVisible() && success) {
+                if (isClosed() && success) {
+                    showDropDown(civ, THREE_EIGHTHS_WIDTH, FULL_HEIGHT,
+                            FULL_WIDTH,
+                            HALF_HEIGHT, this);
+                } else if (!isVisible() && success) {
                     if (DropDownManager.getInstance().isTopDropDown(this)) {
                         // Hidden but not closed - un-hide pane
                         DropDownManager.getInstance().unHidePane();
@@ -188,9 +192,7 @@ public class CoTInfoBroadcastReceiver extends DropDownReceiver implements
                         pending = targetPMI;
 
                         setRetain(true);
-                        showDropDown(civ, THREE_EIGHTHS_WIDTH, FULL_HEIGHT,
-                                FULL_WIDTH,
-                                HALF_HEIGHT, this);
+                        closeDropDown();
                     }
                 }
 
@@ -315,6 +317,10 @@ public class CoTInfoBroadcastReceiver extends DropDownReceiver implements
         if (pending != null) {
             civ.setMarker(pending);
             pending = null;
+
+            showDropDown(civ, THREE_EIGHTHS_WIDTH, FULL_HEIGHT,
+                    FULL_WIDTH,
+                    HALF_HEIGHT, this);
         }
     }
 

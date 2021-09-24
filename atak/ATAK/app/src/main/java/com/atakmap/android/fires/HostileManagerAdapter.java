@@ -24,7 +24,7 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
 import com.atakmap.coremap.conversions.AngleUtilities;
-import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.coremap.maps.coords.GeoPoint;
 
 import com.atakmap.android.util.ATAKUtilities;
 
@@ -100,34 +100,31 @@ class HostileManagerAdapter extends BaseAdapter {
                 _list.get(position));
         if (item != null) {
 
-            GeoPointMetaData point = item.getLocation();
+            GeoPoint point = item.getPoint(null);
             CoordinateFormat cf = CoordinateFormat.find("MGRS");
 
             titleTV.setText(item.getTitle());
             titleTV.setTextColor(item.getTextColor());
             positionTV.setText(
-                    CoordinateFormatUtilities.formatToString(point.get(),
-                            cf));
+                    CoordinateFormatUtilities.formatToString(point, cf));
             positionTV
                     .setText(new StringBuilder().append("4/6:     ")
-                            .append(AltitudeUtilities.format(point.get(),
+                            .append(AltitudeUtilities.format(point,
                                     prefs))
                             .append("   ")
                             .append(CoordinateFormatUtilities.formatToString(
-                                    point.get(),
-                                    cf))
+                                    point, cf))
                             .toString());
             cfTV.setText("    8:     " + item.getClosestFriendly());
 
-            final double dist = point.get()
-                    .distanceTo(mv.getSelfMarker().getPoint());
+            final double dist = point.distanceTo(mv.getSelfMarker().getPoint());
             if (dist < 100000) {
-                final double bearing = point.get()
+                final double bearing = point
                         .bearingTo(mv.getSelfMarker().getPoint());
                 ccaTV.setText("CCF:  " +
                         AngleUtilities
                                 .format(ATAKUtilities.convertFromTrueToMagnetic(
-                                        point.get(), bearing))
+                                        point, bearing))
                         +
                         " " + Math.round(dist) + "m");
             }

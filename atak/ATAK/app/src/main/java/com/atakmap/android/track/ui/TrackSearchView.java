@@ -35,6 +35,7 @@ import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.util.DatePickerFragment;
 import com.atakmap.android.util.ServerListDialog;
 import com.atakmap.app.R;
+import com.atakmap.comms.TAKServer;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.comms.app.CotPortListActivity;
@@ -327,10 +328,10 @@ public class TrackSearchView extends LinearLayout implements
                 ServerListDialog.selectServer(getContext(),
                         getContext().getString(R.string.select_track_server),
                         _dropDown.getServers(),
-                        new ServerListDialog.ServerSelectCallback() {
+                        new ServerListDialog.Callback() {
                             @Override
                             public void onSelected(
-                                    CotPortListActivity.CotPort server) {
+                                    TAKServer server) {
                                 if (server == null) {
                                     Log.d(TAG, "No configured server selected");
                                     return;

@@ -3,7 +3,6 @@ package com.atakmap.spatial.wkt;
 
 import android.graphics.Rect;
 
-import com.atakmap.android.elev.dt2.Dt2ElevationModel;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.coremap.log.Log;
@@ -11,6 +10,7 @@ import com.atakmap.coremap.maps.assets.Icon;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.map.elevation.ElevationManager;
 import com.atakmap.map.layer.feature.ogr.style.FeatureStyle;
 
 import java.nio.ByteBuffer;
@@ -47,8 +47,7 @@ public class WktPoint extends WktGeometry {
 
     static GeoPointMetaData getPoint(final double lat, final double lon) {
         try {
-            Dt2ElevationModel _dem = Dt2ElevationModel.getInstance();
-            return _dem.queryPoint(lat, lon);
+            return ElevationManager.getElevationMetadata(lat, lon, null);
         } catch (Exception e) {
             return GeoPointMetaData.wrap(new GeoPoint(lat, lon));
         }
@@ -67,8 +66,6 @@ public class WktPoint extends WktGeometry {
 
         m.setType("u-d-wkt");
         m.setMetaString("menu", "menus/immutable_point.xml");
-        m.setMarkerHitBounds(new Rect(-32, -32, 32, 32));
-        m.setClickable(true);
         if (name != null) {
             m.setTitle(name);
 

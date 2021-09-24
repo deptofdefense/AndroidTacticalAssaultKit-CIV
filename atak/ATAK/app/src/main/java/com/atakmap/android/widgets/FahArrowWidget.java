@@ -284,7 +284,7 @@ public class FahArrowWidget extends ShapeWidget implements
                 _target.getPoint());
         int bearing = (int) Math.round(da[1]);
         double diff = ATAKUtilities.convertFromTrueToMagnetic(
-                _target.getPoint(), (double) bearing)
+                _target.getPoint(), bearing)
                 - _fahAngle;
         if (diff < 0) {
             diff = 360 + diff;
@@ -637,30 +637,33 @@ public class FahArrowWidget extends ShapeWidget implements
 
     public static class Item extends Shape {
 
+        private final MapView mapView;
         private final FahArrowWidget arrow;
         private final GLWidgetsMapComponent.WidgetTouchHandler touchListener;
 
         public Item(MapView view) {
             super(UUID.randomUUID().toString());
 
+            this.mapView = view;
             this.arrow = new FahArrowWidget(view);
             this.setZOrder(Double.NEGATIVE_INFINITY);
             LayoutWidget w = new LayoutWidget();
             w.addWidget(this.arrow);
             this.touchListener = new GLWidgetsMapComponent.WidgetTouchHandler(
                     view, w);
-
+            setClickable(true);
         }
 
-        public void setTouchable(boolean t) {
+        @Override
+        public void setClickable(boolean t) {
 
             // potentially ben previously added by addition into a group
-            this.arrow._mapView.removeOnTouchListener(this.touchListener);
+            mapView.removeOnTouchListener(this.touchListener);
 
             if (t)
-                this.arrow._mapView.addOnTouchListenerAt(1, this.touchListener);
+                mapView.addOnTouchListenerAt(1, this.touchListener);
             else
-                this.arrow._mapView.removeOnTouchListener(this.touchListener);
+                mapView.removeOnTouchListener(this.touchListener);
 
             arrow.setTouchable(t);
         }
@@ -694,16 +697,15 @@ public class FahArrowWidget extends ShapeWidget implements
 
             // make sure that the touch listener does not get added too many 
             // times.
-            this.arrow._mapView.removeOnTouchListener(this.touchListener);
+            mapView.removeOnTouchListener(this.touchListener);
 
             if (added) {
                 // only add the touch listener if it is touchable
                 if (arrow.getTouchable()) {
-                    this.arrow._mapView.addOnTouchListenerAt(1,
-                            this.touchListener);
+                    mapView.addOnTouchListenerAt(1, this.touchListener);
                 }
             } else
-                this.arrow._mapView.removeOnTouchListener(this.touchListener);
+                mapView.removeOnTouchListener(this.touchListener);
         }
     }
 }

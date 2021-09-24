@@ -1,0 +1,14 @@
+// Gradle script to declare our external dependency versions
+ext {
+    // android platform dependencies
+    androidBuildToolsVersion  = '29.0.3'
+    androidCompileSdkVersion = 29
+    androidMinSdkVersion = 21
+    androidTargetSdkVersion = 29
+    androidToolsBuildGradleVersion = '4.0.2'
+
+    // general dependencies
+    guavaVersion = '27.0.1-jre'
+    joglVersion = '2.3.2'
+    junitVersion = '4.12'
+}

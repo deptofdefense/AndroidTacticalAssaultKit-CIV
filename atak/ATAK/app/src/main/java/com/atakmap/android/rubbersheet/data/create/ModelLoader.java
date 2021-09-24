@@ -39,6 +39,7 @@ public class ModelLoader implements ModelSpi.Callback {
     private final ModelProjection _projection;
     private final Callback _callback;
 
+    private Matrix _transformMat;
     private int _totalModels = 1;
     private int _modelProgress = 0;
 
@@ -52,6 +53,15 @@ public class ModelLoader implements ModelSpi.Callback {
 
     public ModelLoader(RubberModelData data, Callback cb) {
         this(data.file, data.subModel, data.projection, cb);
+    }
+
+    /**
+     * Set the transform matrix to be applied to the model after center alignment
+     * with the ground
+     * @param transformMat Transform matrix
+     */
+    public void setTransform(Matrix transformMat) {
+        _transformMat = transformMat;
     }
 
     public boolean load() {
@@ -168,6 +178,10 @@ public class ModelLoader implements ModelSpi.Callback {
                 // Center the model with the bottom level to the ground
                 if (needsCenter)
                     trInfo.localFrame.translate(offset.x, offset.y);
+
+                // Apply transform matrix if specified
+                if (_transformMat != null)
+                    trInfo.localFrame.concatenate(_transformMat);
 
                 // TODO: maybe use the new aabb of the transformed model to find the location offset
                 model = Models.transform(info, model, trInfo,

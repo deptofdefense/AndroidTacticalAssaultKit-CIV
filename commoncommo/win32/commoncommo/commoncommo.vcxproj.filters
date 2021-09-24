@@ -113,6 +113,15 @@
     <ClInclude Include="..\..\core\impl\fileioprovidertracker.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\core\impl\versionimpl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\core\impl\platformthread.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\core\impl\commothread.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\core\impl\commo.cpp">
@@ -208,7 +217,16 @@
     <ClCompile Include="..\..\core\impl\plaintextfileIOProvider.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\core\impl\fileioproviderfactory.cpp">
+    <ClCompile Include="..\..\core\impl\fileioprovidertracker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\impl\versionimpl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\impl\platformthread.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\impl\commothread.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -303,9 +321,6 @@
     <CustomBuild Include="..\..\core\impl\protobuf\takmessage.proto" />
     <CustomBuild Include="..\..\core\impl\protobuf\takv.proto" />
     <CustomBuild Include="..\..\core\impl\protobuf\track.proto" />
-    <CustomBuild Include="..\..\core\impl\protobuf\contact.proto">
-      <Filter>Source Files\protobuf</Filter>
-    </CustomBuild>
     <CustomBuild Include="..\..\core\impl\protobuf\cotevent.proto" />
     <CustomBuild Include="..\..\core\impl\protobuf\detail.proto" />
     <CustomBuild Include="..\..\core\impl\protobuf\group.proto" />
@@ -387,27 +402,6 @@
     <CustomBuild Include="..\..\core\impl\protobuf\takmessage.proto" />
     <CustomBuild Include="..\..\core\impl\protobuf\takv.proto" />
     <CustomBuild Include="..\..\core\impl\protobuf\track.proto" />
-    <CustomBuild Include="..\..\core\impl\protobuf\cotevent.proto" />
-    <CustomBuild Include="..\..\core\impl\protobuf\detail.proto" />
-    <CustomBuild Include="..\..\core\impl\protobuf\group.proto" />
-    <CustomBuild Include="..\..\core\impl\protobuf\precisionlocation.proto" />
-    <CustomBuild Include="..\..\core\impl\protobuf\status.proto" />
-    <CustomBuild Include="..\..\core\impl\protobuf\takcontrol.proto" />
-    <CustomBuild Include="..\..\core\impl\protobuf\takmessage.proto" />
-    <CustomBuild Include="..\..\core\impl\protobuf\takv.proto" />
-    <CustomBuild Include="..\..\core\impl\protobuf\track.proto" />
-    <CustomBuild Include="..\..\core\impl\protobuf\cotevent.proto" />
-    <CustomBuild Include="..\..\core\impl\protobuf\detail.proto" />
-    <CustomBuild Include="..\..\core\impl\protobuf\group.proto" />
-    <CustomBuild Include="..\..\core\impl\protobuf\precisionlocation.proto" />
-    <CustomBuild Include="..\..\core\impl\protobuf\status.proto" />
-    <CustomBuild Include="..\..\core\impl\protobuf\takcontrol.proto" />
-    <CustomBuild Include="..\..\core\impl\protobuf\takmessage.proto" />
-    <CustomBuild Include="..\..\core\impl\protobuf\takv.proto" />
-    <CustomBuild Include="..\..\core\impl\protobuf\track.proto" />
-    <CustomBuild Include="..\..\core\impl\protobuf\contact.proto">
-      <Filter>Source Files\protobuf</Filter>
-    </CustomBuild>
     <CustomBuild Include="..\..\core\impl\protobuf\cotevent.proto" />
     <CustomBuild Include="..\..\core\impl\protobuf\detail.proto" />
     <CustomBuild Include="..\..\core\impl\protobuf\group.proto" />
@@ -525,6 +519,24 @@
     <CustomBuild Include="..\..\core\impl\protobuf\takmessage.proto" />
     <CustomBuild Include="..\..\core\impl\protobuf\takv.proto" />
     <CustomBuild Include="..\..\core\impl\protobuf\track.proto" />
+    <CustomBuild Include="..\..\core\impl\protobuf\*.proto" />
+    <CustomBuild Include="..\..\core\impl\protobuf\*.proto" />
+    <CustomBuild Include="..\..\core\impl\protobuf\*.proto" />
+    <CustomBuild Include="..\..\core\impl\protobuf\*.proto" />
+    <CustomBuild Include="..\..\core\impl\protobuf\*.proto" />
+    <CustomBuild Include="..\..\core\impl\protobuf\*.proto" />
+    <CustomBuild Include="..\..\core\impl\protobuf\*.proto" />
+    <CustomBuild Include="..\..\core\impl\protobuf\*.proto" />
+    <CustomBuild Include="..\..\core\impl\protobuf\*.proto" />
+    <CustomBuild Include="..\..\core\impl\protobuf\*.proto" />
+    <CustomBuild Include="..\..\core\impl\protobuf\*.proto" />
+    <CustomBuild Include="..\..\core\impl\protobuf\*.proto" />
+    <CustomBuild Include="..\..\core\impl\protobuf\*.proto" />
+    <CustomBuild Include="..\..\core\impl\protobuf\*.proto" />
+    <CustomBuild Include="..\..\core\impl\protobuf\*.proto" />
+    <CustomBuild Include="..\..\core\impl\protobuf\*.proto" />
+    <CustomBuild Include="..\..\core\impl\protobuf\*.proto" />
+    <CustomBuild Include="..\..\core\impl\protobuf\*.proto" />
     <CustomBuild Include="..\..\core\impl\protobuf\*.proto" />
     <CustomBuild Include="..\..\core\impl\protobuf\*.proto" />
     <CustomBuild Include="..\..\core\impl\protobuf\*.proto" />

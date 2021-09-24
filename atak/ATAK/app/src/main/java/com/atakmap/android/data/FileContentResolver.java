@@ -137,6 +137,11 @@ public class FileContentResolver implements URIContentResolver,
         List<FileContentHandler> handlers = getHandlers();
         List<URIContentHandler> ret = new ArrayList<>();
         for (FileContentHandler h : handlers) {
+
+            // Visibility filter
+            if (params.visibleOnly && !h.isVisible())
+                continue;
+
             // Name/title filter
             if (params.name != null && !h.getTitle().matches(params.name))
                 continue;

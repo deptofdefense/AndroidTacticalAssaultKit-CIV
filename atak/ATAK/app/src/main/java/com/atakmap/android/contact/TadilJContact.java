@@ -2,6 +2,7 @@
 package com.atakmap.android.contact;
 
 import android.content.SharedPreferences;
+import android.graphics.drawable.Drawable;
 
 import com.atakmap.android.chat.ChatManagerMapComponent;
 import com.atakmap.android.maps.MapView;
@@ -84,10 +85,9 @@ public class TadilJContact extends IndividualContact {
     }
 
     @Override
-    public String getIconUri() {
-        return "android.resource://"
-                + MapView.getMapView().getContext().getPackageName()
-                + "/" + R.drawable.tadilj_link;
+    public Drawable getIconDrawable() {
+        return MapView.getMapView().getContext()
+                .getDrawable(R.drawable.tadilj_link);
     }
 
     @Override

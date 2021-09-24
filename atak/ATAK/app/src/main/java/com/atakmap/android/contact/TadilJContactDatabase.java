@@ -2,12 +2,10 @@
 package com.atakmap.android.contact;
 
 import android.content.ContentValues;
-import android.content.Context;
 import android.database.sqlite.SQLiteException;
 import android.widget.Toast;
 
 import com.atakmap.android.maps.MapView;
-import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProvider;
 import com.atakmap.coremap.io.IOProviderFactory;
@@ -72,14 +70,6 @@ public class TadilJContactDatabase extends SQLiteOpenHelper {
     private static TadilJContactDatabase _instance = null;
 
     private final File databaseFile;
-
-    /** @deprecated use {@link #getInstance()} */
-    @Deprecated
-    @DeprecatedApi(since = "4.1.1", forRemoval = true, removeAt = "4.4")
-    public static TadilJContactDatabase getInstance(
-            Context context) {
-        return getInstance();
-    }
 
     synchronized public static TadilJContactDatabase getInstance() {
         if (_instance == null) {

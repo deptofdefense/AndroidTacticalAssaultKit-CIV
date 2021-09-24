@@ -2,7 +2,7 @@
 zlib - 1.2.11
 libiconv - 1.15
 openssl - 1.1.1g
-curl - 7.61.1
+curl - 7.62.0
 proj - 4.9.1
 expat - 2.1.0
 libkml - 1.3
@@ -23,6 +23,41 @@ protobuf - cpp-3.5.1
 pdfium - pre-built (see below instructions) from 
          https://github.com/rouault/pdfium
          (rev b5009c4df5aa4ff923ede1c5deba1aa4be43199b)
+
+
+*** Mr. SID binary bundles in mrsid/ directory:
+
+linux-amd64.tar.gz:  
+MrSID_DSDK-9.5.4.4703-rhel6.x86-64.gcc482.tar.gz
+(rearranged and extraneous files removed)
+
+android.tar.gz:
+MrSID_DSDK-9.5.4.4709-android.universal.gcc49.tar.gz
+
+ios.tar.gz:
+MrSID_DSDK-9.5.1.4427-ios90.universal.clang70.tar.gz
+(9.5.4 builds have an unresolvable symbol in them and cannot be used)
+(rearranged and extraneous files removed)
+
+macOS-64.tar.gz
+MrSID_DSDK-9.5.4.4709-darwin16.universal.clang80.tar.gz
+(rearranged and extraneous files removed)
+
+win32.zip:
+MrSID_DSDK-9.5.4.4709-win32-vc12.zip
+(rearranged and extraneous files removed)
+
+win32-v140.zip:
+MrSID_DSDK-9.5.4.4709-win32-vc14.zip
+(rearranged and extraneous files removed)
+
+win64.zip:
+MrSID_DSDK-9.5.4.4709-win64-vc12.zip
+(rearranged and extraneous files removed)
+
+win64-v140.zip:
+MrSID_DSDK-9.5.4.4709-win64-vc14.zip
+(rearranged and extraneous files removed)
 
 
 *** pthreads binary bundle:
@@ -53,6 +88,13 @@ libspatialite-pgsc.patch - Android compatibility for package's autoconf
                      rint() implementation inclusion
                    Fix iconv use on ios
                    Add android arm64 to autoconf
+                   Change makefiles to handle building for android on windows
+                     (cygwin path translations)
+                   Change configure's libtool generation to account for android
+                     being built under cygwin (path translations to native
+                     windows when invoking android tools)
+                   Fix detection of LD when running on a windows/cygwin
+                       build host and crossing for Android.
 libiconv-pgsc.patch - Fix detection of LD when running on a windows/cygwin
                    build host and crossing for Android.  Fixes broken line
                    endings during configure runs and deriving vars for libtool

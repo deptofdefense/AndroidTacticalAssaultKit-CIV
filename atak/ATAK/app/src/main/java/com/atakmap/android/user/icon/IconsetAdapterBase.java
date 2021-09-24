@@ -22,7 +22,7 @@ import java.util.List;
 public abstract class IconsetAdapterBase extends BaseAdapter {
     private static final String TAG = "UserIconsetAdapter";
 
-    class ViewHolder {
+    static class ViewHolder {
         ImageView image;
     }
 

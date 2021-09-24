@@ -4,7 +4,6 @@ PROTOC := $(TAKTHIRDPARTYDIR)/host-protobuf/bin/protoc
 RANLIB = ranlib
 # For mac
 PUBINCDIR := ../include
-PGSCTHREAD := $(TAKTHIRDPARTYDIR)/pgscthread
 
 PROTOBUFDIR=protobuf
 PROTOFILES=$(subst .proto,,$(subst $(PROTOBUFDIR)/,,$(wildcard $(PROTOBUFDIR)/*.proto)))
@@ -21,14 +20,16 @@ endef
 $(foreach pf,$(PROTOFILES),$(eval $(call protorule,$(pf))))
 
 
-OBJS := cloudiomanager.o commo.o commotime.o contactmanager.o cotmessage.o   \
-        cryptoutil.o                                                         \
+OBJS := cloudiomanager.o commo.o commothread.o commotime.o contactmanager.o  \
+        cotmessage.o cryptoutil.o                                            \
         datagramsocketmanagement.o httpsproxy.o hwifscanner.o                \
         internalutils.o missionpackagemanager.o netsocket.o platform.o       \
+        platformthread.o                                                     \
         resolverqueue.o simplefileiomanager.o                                \
         streamingsocketmanagement.o takmessage.o                             \
         tcpsocketmanagement.o                                                \
         threadedhandler.o urlrequestmanager.o                                \
+        versionimpl.o                                                        \
         plaintextfileioprovider.o fileioprovidertracker.o                    \
         $(PROTOOBJS)                                                         \
 
@@ -39,24 +40,30 @@ CXXFLAGS += $(COMMO_CXXFLAGS) -I$(PUBINCDIR)                                 \
             -I$(TAKTHIRDPARTYDIR)/include -g -Wall -Werror                   \
             -fstack-protector-all -std=c++11
 
-.PHONY: clean all static protogen
+.PHONY: clean all static protogen buildstampgen
 .DEFAULT_GOAL=all
 all: libcommoncommo.so
-static: libcommoncommo.a
+static: buildstampgen libcommoncommo.a
 protogen: $(foreach pf,$(PROTOFILES),$(PROTOBUFDIR)/$(pf).pb.cc)
+BSTAMPFILE=.bstamp
+buildstampgen:
+	@git rev-parse --short=8 HEAD | tr -d '\n' > $(BSTAMPFILE).new
+	@if [ `git status --porcelain --untracked-files=no | wc -l` -gt 0 ] ; then echo -n "withlocaldevchanges" >> $(BSTAMPFILE).new ; fi
+	@( [ -e "$(BSTAMPFILE)" ] && cmp -s $(BSTAMPFILE) $(BSTAMPFILE).new ) || mv $(BSTAMPFILE).new $(BSTAMPFILE)
+	@rm -f $(BSTAMPFILE).new
 
 clean:
 	rm -f $(OBJS) libcommoncommo.so libcommoncommo.a                     \
 	      $(PROTOBUFDIR)/*.h $(PROTOBUFDIR)/*.cc
 
 libcommoncommo.so: CXXFLAGS += -fPIC
-libcommoncommo.so: $(OBJS)
-	$(CXX) $(CXXFLAGS) -shared -o $@ $^ -L$(TAKTHIRDPARTYDIR)/lib        \
+libcommoncommo.so: buildstampgen $(OBJS)
+	$(CXX) $(CXXFLAGS) -shared -o $@ $(OBJS) -L$(TAKTHIRDPARTYDIR)/lib        \
 	        -lxml2 -lssl -lcrypto                                        \
-	        -lpgscthread -lmicrohttpd -lprotobuf-lite
+	        -lmicrohttpd -lprotobuf-lite
 
-libcommoncommo.a: $(OBJS)
-	$(AR) rc $@ $^
+libcommoncommo.a: buildstampgen $(OBJS)
+	$(AR) rc $@ $(OBJS)
 	$(RANLIB) $@
 
 
@@ -80,6 +87,8 @@ deps-commologger_h                 = $(deps-commoutils_h)                    \
                                      $(PUBINCDIR)/commologger.h
 deps-commoresult_h                 = $(PUBINCDIR)/commoresult.h
 deps-commoutils_h                  = $(PUBINCDIR)/commoutils.h
+deps-commoversion_h                = $(BSTAMPFILE)                           \
+                                     $(PUBINCDIR)/commoversion.h
 
 deps-contactuid_h                  = $(deps-commoutils_h)                    \
                                      $(PUBINCDIR)/contactuid.h
@@ -105,6 +114,7 @@ deps-simplefileio_h                = $(deps-commoutils_h)                    \
 # Impl source deps
 deps-cloudiomanager_h              = $(deps-cloudio_h)                       \
                                      $(deps-urlrequestmanager_h)             \
+                                     $(deps-commothread_h)                   \
                                      cloudiomanager.h
 deps-cloudiomanager_cpp            = $(deps-cloudiomanager_h)                \
                                      cloudiomanager.cpp
@@ -122,7 +132,14 @@ deps-commo_cpp                     = $(deps-commo_h)                         \
                                      $(deps-httpsproxy_h)                    \
                                      $(deps-simplefileiomanager_h)           \
                                      $(deps-cloudiomanager_h)                \
+                                     $(deps-commothread_h)                   \
                                      commo.cpp
+
+deps-commothread_h                 = $(deps-commoutils_h)                    \
+                                     commothread.h
+deps-commothread_cpp               = $(deps-commothread_h)                   \
+                                     $(deps-platformthread_h)                \
+                                     commothread.cpp
 
 deps-commotime_h                   = commotime.h $(deps-internalutils_h)
 deps-commotime_cpp                 = $(deps-commotime_h)                     \
@@ -131,6 +148,7 @@ deps-commotime_cpp                 = $(deps-commotime_h)                     \
 
 deps-contactmanager_h              = $(deps-commologger_h)                   \
                                      $(deps-contactuid_h)                    \
+                                     $(deps-commothread_h)                   \
                                      $(deps-commotime)                       \
                                      $(deps-netinterface_h)                  \
                                      $(deps-netsocket_h)                     \
@@ -142,6 +160,7 @@ deps-contactmanager_h              = $(deps-commologger_h)                   \
                                      $(deps-internalutils_h)                 \
                                      contactmanager.h
 deps-contactmanager_cpp            = $(deps-contactmanager_h)                \
+                                     $(deps-commothread_h)                   \
                                      contactmanager.cpp
 
 deps-cotmessage_h                  = $(deps-cotmessageio_h)                  \
@@ -170,12 +189,14 @@ deps-datagramsocketmanagement_h    = $(deps-netsocket_h)                     \
                                      $(deps-cotmessage_h)                    \
                                      $(deps-takmessage_h)                    \
                                      $(deps-commoresult_h)                   \
+                                     $(deps-commothread_h)                   \
                                      $(deps-commotime_h)                     \
                                      $(deps-cryptoutil_h)                    \
                                      datagramsocketmanagement.h
 deps-datagramsocketmanagement_cpp  = $(deps-datagramsocketmanagement_h)      \
                                      $(deps-internalutils_h)                 \
                                      $(deps-commologger_h)                   \
+                                     $(deps-commothread_h)                   \
                                      datagramsocketmanagement.cpp
 
 deps-httpsproxy_h                  = $(deps-internalutils_h)                 \
@@ -187,6 +208,7 @@ deps-httpsproxy_h                  = $(deps-internalutils_h)                 \
                                      httpsproxy.h
 deps-httpsproxy_cpp                = $(deps-httpsproxy_h)                    \
                                      $(deps-missionpackage_h)                \
+                                     $(deps-commothread_h)                   \
                                      $(deps-commotime_h)                     \
                                      httpsproxy.cpp
 
@@ -194,10 +216,12 @@ deps-hwifscanner_h                 = $(deps-netinterface_h)                  \
                                      $(deps-netsocket_h)                     \
                                      $(deps-threadedhandler_h)               \
                                      $(deps-commologger_h)                   \
+                                     $(deps-commothread_h)                   \
                                      $(deps-internalutils_h)                 \
                                      $(deps-platform_h)                      \
                                      hwifscanner.h
 deps-hwifscanner_cpp               = $(deps-hwifscanner_h)                   \
+                                     $(deps-commothread_h)                   \
                                      $(deps-internalutils_h)                 \
                                      hwifscanner.cpp
 
@@ -222,11 +246,13 @@ deps-missionpackagemanager_h       = $(deps-missionpackage_h)                \
                                      $(deps-tcpsocketmanagement_h)           \
                                      $(deps-streamingsocketmanagement_h)     \
                                      $(deps-hwifscanner_h)                   \
+                                     $(deps-commothread_h)                   \
                                      $(deps-commotime_h)                     \
                                      $(deps-fileioprovider_h)                \
                                      $(deps-fileioprovidertracker_h)         \
                                      missionpackagemanager.h
 deps-missionpackagemanager_cpp     = $(deps-missionpackagemanager_h)         \
+                                     $(deps-commothread_h)                   \
                                      $(deps-fileioprovider_h)                \
                                      missionpackagemanager.cpp
 
@@ -234,6 +260,7 @@ deps-netsocket_h                   = $(deps-commoutils_h)                    \
                                      $(deps-netinterface_h)                  \
                                      $(deps-internalutils_h)                 \
                                      $(deps-platform_h)                      \
+                                     $(deps-commothread_h)                   \
                                      netsocket.h
 deps-netsocket_cpp                 = $(deps-netsocket_h)                     \
                                      netsocket.cpp
@@ -247,17 +274,25 @@ deps-platform_cpp                  = $(deps-platform_h)                      \
                                      $(deps-netsocket_h)                     \
                                      platform.cpp
 
+deps-platformthread_h              = $(deps-commothread_h)                   \
+                                     $(deps-commoutils_h)                    \
+                                     platformthread.h
+deps-platformthread_cpp            = $(deps-platformthread_h)                \
+                                     platformthread.cpp
+
 deps-protobuf_h                    = $(PROTOHDRS)                            \
                                      protobuf.h
 
 deps-resolverqueue_h               = $(deps-commologger_h)                   \
                                      $(deps-commoutils_h)                    \
                                      $(deps-netinterface_h)                  \
+                                     $(deps-commothread_h)                   \
                                      $(deps-commotime_h)                     \
                                      $(deps-netsocket_h)                     \
                                      $(deps-threadedhandler_h)               \
                                      resolverqueue.h
 deps-resolverqueue_cpp             = $(deps-resolverqueue_h)                 \
+                                     $(deps-commothread_h)                   \
                                      $(deps-internalutils_h)                 \
                                      resolverqueue.cpp
 
@@ -267,10 +302,12 @@ deps-simplefileiomanager_h         = $(deps-simplefileio_h)                  \
                                      $(deps-internalutils_h)                 \
                                      $(deps-threadedhandler_h)               \
                                      $(deps-commologger_h)                   \
+                                     $(deps-commothread_h)                   \
                                      $(deps-fileioprovider_h)                \
                                      $(deps-fileioprovidertracker_h)         \
                                      simplefileiomanager.h
 deps-simplefileiomanager_cpp       = $(deps-simplefileiomanager_h)           \
+                                     $(deps-commothread_h)                   \
                                      $(deps-internalutils_h)                 \
                                      $(deps-platform_h)                      \
                                      $(deps-fileioprovider_h)                \
@@ -281,6 +318,7 @@ deps-streamingsocketmanagement_h   = $(deps-commoutils_h)                    \
                                      $(deps-netinterface_h)                  \
                                      $(deps-commologger_h)                   \
                                      $(deps-commoresult_h)                   \
+                                     $(deps-commothread_h)                   \
                                      $(deps-commotime_h)                     \
                                      $(deps-netsocket_h)                     \
                                      $(deps-threadedhandler_h)               \
@@ -289,6 +327,7 @@ deps-streamingsocketmanagement_h   = $(deps-commoutils_h)                    \
                                      $(deps-internalutils_h)                 \
                                      streamingsocketmanagement.h
 deps-streamingsocketmanagement_cpp = $(deps-streamingsocketmanagement_h)     \
+                                     $(deps-commothread_h)                   \
                                      $(deps-takmessage_h)                    \
                                      streamingsocketmanagement.cpp
 
@@ -306,18 +345,22 @@ deps-tcpsocketmanagement_h         = $(deps-netsocket_h)                     \
                                      $(deps-cotmessage_h)                    \
                                      $(deps-commoresult_h)                   \
                                      $(deps-commologger_h)                   \
+                                     $(deps-commothread_h)                   \
                                      $(deps-commotime_h)                     \
                                      $(deps-resolverqueue_h)                 \
                                      $(deps-cryptoutil_h)                    \
                                      tcpsocketmanagement.h
 deps-tcpsocketmanagement_cpp       = $(deps-tcpsocketmanagement_h)           \
                                      $(deps-takmessage_h)                    \
+                                     $(deps-commothread_h)                   \
                                      $(deps-internalutils_h)                 \
                                      tcpsocketmanagement.cpp
 
 deps-threadedhandler_h             = $(deps-commoutils_h)                    \
+                                     $(deps-commothread_h)                   \
                                      threadedhandler.h
 deps-threadedhandler_cpp           = $(deps-threadedhandler_h)               \
+                                     $(deps-commothread_h)                   \
                                      threadedhandler.cpp
 
 deps-urlrequestmanager_h           = $(deps-simplefileio_h)                  \
@@ -325,15 +368,22 @@ deps-urlrequestmanager_h           = $(deps-simplefileio_h)                  \
                                      $(deps-internalutils_h)                 \
                                      $(deps-threadedhandler_h)               \
                                      $(deps-commologger_h)                   \
+                                     $(deps-commothread_h)                   \
                                      $(deps-fileioprovider_h)                \
                                      $(deps-fileioprovidertracker_h)         \
                                      urlrequestmanager.h
 deps-urlrequestmanager_cpp         = $(deps-urlrequestmanager_h)             \
+                                     $(deps-commothread_h)                   \
                                      $(deps-internalutils_h)                 \
                                      $(deps-platform_h)                      \
                                      $(deps-fileioprovider_h)                \
                                      $(deps-fileioprovidertracker_h)         \
                                      urlrequestmanager.cpp
+
+deps-versionimpl_h                 = versionimpl.h
+deps-versionimpl_cpp               = $(deps-versionimpl_h)                   \
+                                     $(deps-commoversion_h)                  \
+                                     versionimpl.cpp
 
 deps-fileioprovider_h              = $(PUBINCDIR)/fileioprovider.h
 
@@ -353,6 +403,7 @@ deps-fileioprovidertracker_cpp     = $(deps-fileioprovidertracker_h)         \
 
 cloudiomanager.o:                    $(deps-cloudiomanager_cpp)
 commo.o:                             $(deps-commo_cpp)
+commothread.o:                       $(deps-commothread_cpp)
 commotime.o:                         $(deps-commotime_cpp)
 contactmanager.o:                    $(deps-contactmanager_cpp)
 cotmessage.o:                        $(deps-cotmessage_cpp)
@@ -364,6 +415,7 @@ internalutils.o:                     $(deps-internalutils_cpp)
 missionpackagemanager.o:             $(deps-missionpackagemanager_cpp)
 netsocket.o:                         $(deps-netsocket_cpp)
 platform.o:                          $(deps-platform_cpp)
+platformthread.o:                    $(deps-platformthread_cpp)
 resolverqueue.o:                     $(deps-resolverqueue_cpp)
 simplefileiomanager.o:               $(deps-simplefileiomanager_cpp)
 streamingsocketmanagement.o:         $(deps-streamingsocketmanagement_cpp)
@@ -371,5 +423,7 @@ takmessage.o:                        $(deps-takmessage_cpp)
 tcpsocketmanagement.o:               $(deps-tcpsocketmanagement_cpp)
 threadedhandler.o:                   $(deps-threadedhandler_cpp)
 urlrequestmanager.o:                 $(deps-urlrequestmanager_cpp)
+versionimpl.o: CXXFLAGS += -DCOMMO_BUILD_STAMP=\""$(shell cat $(BSTAMPFILE))"\"
+versionimpl.o:                       $(deps-versionimpl_cpp)
 plaintextfileioprovider.o:           $(deps-plaintextfileioprovider_cpp)
 fileioprovidertracker.o:             $(deps-fileioprovidertracker_cpp)

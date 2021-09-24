@@ -40,7 +40,7 @@ public class TelephoneConnector extends Connector {
 
     static String format11(String phoneNumber) {
         return String.format("%s (%s) %s-%s",
-                phoneNumber.substring(0, 1),
+                phoneNumber.charAt(0),
                 phoneNumber.substring(1, 4),
                 phoneNumber.substring(4, 7),
                 phoneNumber.substring(7, 11));

@@ -152,6 +152,18 @@ public class CotDetail implements Parcelable {
     }
 
     /**
+     * Get the first child detail with the given name
+     * This is a shortcut method for {@link #getFirstChildByName(int, String)}
+     * which is more verbose
+     *
+     * @param name Detail name
+     * @return CoT detail or null if not found
+     */
+    public CotDetail getChild(String name) {
+        return getFirstChildByName(0, name);
+    }
+
+    /**
      * Get a list of this CoT's children
      * This is much faster than calling {@link #getChild(int)} in a loop
      *

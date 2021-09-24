@@ -33,8 +33,8 @@ public class RangeAndBearingMapComponent extends AbstractMapComponent {
     private RangeAndBearingReceiver _rabReceiver;
     private BroadcastReceiver lineUnPinReceiver;
     protected RangeAndBearingDropDown _rabLineDropDown;
-    private BullseyeDropDownReceiver _rabBullseyeDropDown;
-    private RangeAndBearingCircleDropDown _rabCircleDropDown;
+    protected BullseyeDropDownReceiver _rabBullseyeDropDown;
+    protected RangeAndBearingCircleDropDown _rabCircleDropDown;
     private static MapGroup _rabGroup;
     private BroadcastReceiver toggle_loc;
     private final List<MapItemImporter> _importers = new ArrayList<>();

@@ -1,14 +1,15 @@
 
 package com.atakmap.android.features;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.CursorWindow;
 import android.net.Uri;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.Toast;
 
 import com.atakmap.android.data.URIContentHandler;
 import com.atakmap.android.data.URIContentManager;
@@ -21,7 +22,7 @@ import com.atakmap.android.hierarchy.action.GoTo;
 import com.atakmap.android.hierarchy.action.Search;
 import com.atakmap.android.hierarchy.action.Send;
 import com.atakmap.android.hierarchy.action.Visibility;
-import com.atakmap.android.hierarchy.items.AbstractHierarchyListItem;
+import com.atakmap.android.hierarchy.items.AbstractHierarchyListItem2;
 import com.atakmap.android.importexport.ExportFileMarshal;
 import com.atakmap.android.importexport.ExportFilters;
 import com.atakmap.android.importexport.FormatNotSupportedException;
@@ -59,7 +60,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
+public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem2
         implements View.OnClickListener, View.OnLongClickListener,
         Visibility, Search, Delete, Export {
 
@@ -231,6 +232,7 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
         this.window = new CursorWindow(null);
         this.window.setNumColumns(NUM_WINDOW_COLUMNS);
         this.window.setStartPosition(0);
+        this.asyncRefresh = false;
     }
 
     private void prepareQueryParams(
@@ -269,6 +271,11 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
     @Override
     public String getTitle() {
         return this.title;
+    }
+
+    @Override
+    public String getUID() {
+        return String.valueOf(this.entry.fsid);
     }
 
     @Override
@@ -449,19 +456,17 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
 
     @Override
     public Object getUserObject() {
-        return Long.valueOf(entry.fsid);
+        return entry.fsid;
     }
 
-    // TODO 4.4: Utilize AbstractHierarchyListItem2.getExtraView(row, parent)
-    //  for better performance
     @Override
-    public View getExtraView() {
+    public View getExtraView(View row, ViewGroup parent) {
         final File file = this.getGroupFile();
         if (file == null)
             return null;
 
         // Get/create view holder
-        FeatureExtraHolder h = FeatureExtraHolder.get(null, null);
+        FeatureExtraHolder h = FeatureExtraHolder.get(row, parent);
         if (h == null)
             return null;
 
@@ -471,13 +476,15 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
                 ? View.VISIBLE
                 : View.GONE);
 
-        h.edit.setVisibility(
-                this.contentType.equals(MvtSpatialDb.MVT_CONTENT_TYPE)
+        h.edit.setVisibility(this.contentType == null
+                || this.contentType.equals(MvtSpatialDb.MVT_CONTENT_TYPE)
                         ? View.GONE
                         : View.VISIBLE);
 
-        h.send.setVisibility(fh != null && fh.isActionSupported(Send.class)
-                || FileSystemUtils.isFile(file) ? View.VISIBLE : View.GONE);
+        h.send.setVisibility(this.contentType != null
+                && (fh != null && fh.isActionSupported(Send.class)
+                        || FileSystemUtils.isFile(file)) ? View.VISIBLE
+                                : View.GONE);
 
         h.pan.setOnClickListener(this);
         h.edit.setOnClickListener(this);
@@ -487,29 +494,29 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
     }
 
     @Override
-    public Sort refresh(final Sort sort) {
-        MapView mv = MapView.getMapView();
-        if (mv == null)
-            return sort;
-        ((Activity) mv.getContext()).runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                // Call this on UI thread so the window is synced up correctly
-                Sort s = sort;
-                if (order != s) {
-                    if (!(s instanceof SortDistanceFrom)
-                            || featureChildCount >= MAX_DISTANCE_SORT)
-                        s = new SortAlphabet();
-                    order = s;
-                    window.clear();
-                    window.setNumColumns(NUM_WINDOW_COLUMNS);
+    protected void refreshImpl() {
+        // Call this on UI thread so the window is synced up correctly
+        Sort s = this.filter.sort;
+        if (order != s) {
+            if (!(s instanceof SortDistanceFrom)
+                    || featureChildCount >= MAX_DISTANCE_SORT)
+                s = new SortAlphabet();
+            order = s;
+            window.clear();
+            window.setNumColumns(NUM_WINDOW_COLUMNS);
 
-                    if (listener != null)
-                        listener.notifyDataSetChanged();
-                }
-            }
-        });
-        return sort;
+            notifyListener();
+        }
+    }
+
+    @Override
+    public boolean isGetChildrenSupported() {
+        return false;
+    }
+
+    @Override
+    public boolean hideIfEmpty() {
+        return false;
     }
 
     @Override
@@ -564,9 +571,13 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
 
         // Send file
         else if (id == R.id.sendButton) {
+            if (this.contentType == null)
+                return;
+
             MapView mv = MapView.getMapView();
             if (mv == null)
                 return;
+
             if (handler != null && handler.isActionSupported(Send.class))
                 ((Send) handler).promptSend();
             else
@@ -577,21 +588,27 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
 
         // Edit features
         else if (id == R.id.editButton) {
-            // collect the fsids from the current list item or any children it may have
-            String[] uidArray;
-            if (this.entry.fsid == 0) {
-                ArrayList<String> fsids = new ArrayList<>();
-                for (long fsid : this.entry.childFsids) {
-                    fsids.add(Long.toString(fsid));
-                }
-                uidArray = fsids.toArray(new String[0]);
-            } else {
-                uidArray = new String[] {
-                        Long.toString(this.entry.fsid)
-                };
+            // 500 feature limit
+            if (getDescendantCount() > 500) {
+                Toast.makeText(context,
+                        R.string.bulk_feature_edit_limit_msg,
+                        Toast.LENGTH_LONG).show();
+                return;
             }
+
+            // collect the fsids from the current list item or any children it may have
+            long[] idArray;
+            if (this.entry.fsid == 0) {
+                int i = 0;
+                idArray = new long[this.entry.childFsids.size()];
+                for (long fsid : this.entry.childFsids)
+                    idArray[i++] = fsid;
+            } else
+                idArray = new long[] {
+                        this.entry.fsid
+                };
             Intent i = new Intent(FeatureEditDropdownReceiver.SHOW_EDIT);
-            i.putExtra("fsids", uidArray);
+            i.putExtra("fsids", idArray);
             i.putExtra("title", this.title);
             AtakBroadcast.getInstance().sendBroadcast(i);
         }
@@ -599,6 +616,9 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
 
     @Override
     public boolean onLongClick(View view) {
+        if (this.contentType == null)
+            return false;
+
         final File fileToSend = this.getGroupFile();
         if (fileToSend == null) {
             Log.w(TAG, "Unable to send file");
@@ -715,8 +735,12 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
                         + file.getAbsolutePath());
         Intent deleteIntent = new Intent();
         deleteIntent.setAction(ImportExportMapComponent.ACTION_DELETE_DATA);
-        deleteIntent.putExtra(ImportReceiver.EXTRA_CONTENT, this.contentType);
-        deleteIntent.putExtra(ImportReceiver.EXTRA_MIME_TYPE, this.mimeType);
+        if (this.contentType != null)
+            deleteIntent.putExtra(ImportReceiver.EXTRA_CONTENT,
+                    this.contentType);
+        if (this.mimeType != null)
+            deleteIntent.putExtra(ImportReceiver.EXTRA_MIME_TYPE,
+                    this.mimeType);
         deleteIntent.putExtra(ImportReceiver.EXTRA_URI, Uri.fromFile(file)
                 .toString());
         AtakBroadcast.getInstance().sendBroadcast(deleteIntent);

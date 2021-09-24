@@ -11,10 +11,8 @@
 #include "tcpsocketmanagement.h"
 #include "threadedhandler.h"
 #include "takmessage.h"
+#include "commothread.h"
 #include "internalutils.h"
-#include <Mutex.h>
-#include <Cond.h>
-#include <RWMutex.h>
 
 #include <stdexcept>
 #include <map>
@@ -162,7 +160,7 @@ struct ContactState
     // true for a "known" endpoint; 
     // not configured/found via discovery, only via API
     bool knownEndpoint;
-    PGSC::Thread::Mutex mutex;
+    thread::Mutex mutex;
 };
 
 
@@ -287,10 +285,10 @@ private:
     StreamingSocketManagement *streamMgmt;
     typedef std::map<const ContactUID *, ContactState *, ContactUIDComp> ContactMap;
     ContactMap contacts;
-    PGSC::Thread::RWMutex contactMapMutex;
+    thread::RWMutex contactMapMutex;
     
-    PGSC::Thread::Mutex protoVMutex;
-    PGSC::Thread::CondVar protoVMonitor; // Fire when dirty set = true
+    thread::Mutex protoVMutex;
+    thread::CondVar protoVMonitor; // Fire when dirty set = true
     // lock protoVMutex for next 2
     int protoVersion;
     bool protoVDirty;
@@ -298,12 +296,12 @@ private:
     bool preferStreaming;
 
     std::set<ContactPresenceListener *> listeners;
-    PGSC::Thread::Mutex listenerMutex;
+    thread::Mutex listenerMutex;
     
     // Newest at front, oldest at back
     std::deque<std::pair<InternalContactUID *, bool> > eventQueue;
-    PGSC::Thread::Mutex eventQueueMutex;
-    PGSC::Thread::CondVar eventQueueMonitor;
+    thread::Mutex eventQueueMutex;
+    thread::CondVar eventQueueMonitor;
 
 
     void fireContactPresenceChange(const ContactUID *c, bool present);

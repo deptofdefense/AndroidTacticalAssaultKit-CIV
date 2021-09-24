@@ -3,7 +3,6 @@ package com.atakmap.android.drawing.details;
 
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
 import android.graphics.drawable.ShapeDrawable;
 import android.util.AttributeSet;
 import android.view.View;
@@ -26,7 +25,6 @@ import com.atakmap.android.gui.RangeAndBearingTableHandler;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapEvent;
 import com.atakmap.android.maps.MapEventDispatcher;
-import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.MultiPolyline;
 import com.atakmap.android.maps.PointMapItem;
@@ -49,7 +47,7 @@ public class MultiPolylineDetailsView extends GenericDetailsView implements
     private int _color;
     private final Context _context;
     private boolean _listeningToMap = false;
-    private DrawingShape _shape;
+    private MultiPolyline _shape;
 
     public MultiPolylineDetailsView(Context context) {
         super(context);
@@ -66,7 +64,7 @@ public class MultiPolylineDetailsView extends GenericDetailsView implements
         if (!(item instanceof DrawingShape))
             return false;
         super.setItem(mapView, item);
-        _shape = (DrawingShape) item;
+        _shape = (MultiPolyline) item;
         _color = _shape.getColor();
         _init();
         return true;
@@ -186,7 +184,7 @@ public class MultiPolylineDetailsView extends GenericDetailsView implements
                 true));
 
         double height = _shape.getHeight();
-        Span unit = getUnitSpan(_shape);
+        Span unit = _unitPrefs.getAltitudeUnits();
         if (!Double.isNaN(height)) {
             _heightButton.setText(SpanUtilities.format(height, Span.METER,
                     unit));
@@ -369,15 +367,7 @@ public class MultiPolylineDetailsView extends GenericDetailsView implements
     protected void _onColorSelected(int color, String label) {
         _drawPrefs.setShapeColor(color);
 
-        if (_shape instanceof MultiPolyline) {
-            _color = color;
-        } else {
-            _color = color;
-            _drawPrefs.setFillAlpha(_alpha);
-            _shape.setFillColor(Color.argb(_alpha, Color.red(color),
-                    Color.green(color), Color.blue(color)));
-            _shape.setColor(color);
-        }
+        _color = color;
         _updateColorButtonDrawable();
     }
 
@@ -393,7 +383,8 @@ public class MultiPolylineDetailsView extends GenericDetailsView implements
             _mapView.getMapEventDispatcher().pushListeners();
             _clearExtraListeners();
             //Add out own listener
-            _mapView.getMapEventDispatcher().addMapEventListener(colorListener);
+            _mapView.getMapEventDispatcher().addMapEventListener(
+                    MapEvent.ITEM_CLICK, colorListener);
             _listeningToMap = true;
         }
     }
@@ -433,14 +424,16 @@ public class MultiPolylineDetailsView extends GenericDetailsView implements
 
         //Capture the event
         if (event.getType().equals(MapEvent.ITEM_CLICK)) {
-            MultiPolyline multiPolyline = (MultiPolyline) _shape;
-            synchronized (this) {
+
+            MapItem item = event.getItem();
+            MapItem parent = ATAKUtilities.findAssocShape(item);
+            if (item instanceof DrawingShape && parent == _shape) {
+
                 //Remove the item that the user pressed
-                multiPolyline.removeItem(event.getPoint());
-                if (multiPolyline.get_lines().size() == 0) {
+                _shape.removeLine((DrawingShape) item);
+                if (_shape.isEmpty()) {
                     //The user deleted the last line, remove the entire group
-                    MapGroup mg = multiPolyline.getMapGroup();
-                    mg.removeItem(multiPolyline);
+                    _shape.removeFromGroup();
                     _onDoneDeleting();
 
                     //Close the dropdown if the last line is removed
@@ -461,13 +454,11 @@ public class MultiPolylineDetailsView extends GenericDetailsView implements
     final MapEventDispatcher.MapEventDispatchListener colorListener = new MapEventDispatcher.MapEventDispatchListener() {
         @Override
         public void onMapEvent(MapEvent event) {
-            if (event.getType().equals(MapEvent.ITEM_CLICK)) {
-                //Get the line that was clicked
-                MultiPolyline mp = (MultiPolyline) _shape;
-                synchronized (this) {
-                    //Set that lines color
-                    mp.setColor(_color, event.getPoint());
-                }
+            MapItem item = event.getItem();
+            MapItem parent = ATAKUtilities.findAssocShape(item);
+            if (item instanceof DrawingShape && parent == _shape) {
+                DrawingShape ds = (DrawingShape) item;
+                ds.setColor(_color);
             }
         }
     };
@@ -478,10 +469,6 @@ public class MultiPolylineDetailsView extends GenericDetailsView implements
     protected void _onDeleteSelected() {
         if (!_listeningToMap) {
 
-            Intent intent = new Intent();
-            intent.setAction("com.atakmal.android.maps.DRAWING_DETAILS");
-            intent.putExtra("uid", _shape.getUID());
-            AtakBroadcast.getInstance().sendBroadcast(intent);
             //Prompt the user so they know what they need to do
             TextContainer.getTopInstance().displayPrompt(
                     "Tap individual lines to delete them");
@@ -567,17 +554,6 @@ public class MultiPolylineDetailsView extends GenericDetailsView implements
         createHeightDialog(_shape, R.string.enter_shape_height, new Span[] {
                 Span.METER, Span.YARD, Span.FOOT
         });
-    }
-
-    /**
-     * Set's some text for the heigh field?
-     */
-    @Override
-    protected void heightSelected(double height, Span u, double h) {
-        // This is always saved as a string in feet for some reason
-        _shape.setHeight(height);
-        _shape.setMetaInteger("height_unit", u.getValue());
-        _heightButton.setText(SpanUtilities.format(h, u, 2));
     }
 
     @Override

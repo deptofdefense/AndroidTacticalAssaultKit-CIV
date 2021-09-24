@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
@@ -152,7 +151,7 @@ public abstract class Contact extends AbstractHierarchyListItem2 {
     /**
      * Get color of presence indicator, or null if not applicable
      *
-     * @return
+     * @return the integer representing the color of the presence indicator
      */
     public Integer getPresenceColor() {
         return null;
@@ -163,16 +162,6 @@ public abstract class Contact extends AbstractHierarchyListItem2 {
     @Override
     public String getUID() {
         return contactUUID;
-    }
-
-    /**
-     * @deprecated Use {@link #getUID()} instead
-     * @return Unique ID for the Contact instance
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public String getUid() {
-        return getUID();
     }
 
     @Override

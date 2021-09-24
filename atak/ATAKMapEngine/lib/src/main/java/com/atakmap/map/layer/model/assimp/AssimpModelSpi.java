@@ -116,6 +116,9 @@ public class AssimpModelSpi implements ModelSpi {
                 for (AiMesh mesh : meshes) {
                     if(callback != null && callback.isCanceled())
                         break;
+                    // skip empty meshes
+                    if(mesh.getNumVertices() == 0)
+                        continue;
                     addMesh(modelInfo, file, new HashMap<String, int[]>(), builders, modelBuilder, scene, 0, mesh, null, new int[]{0, scene.getNumMeshes()}, false, callback);
                 }
             }
@@ -203,6 +206,8 @@ public class AssimpModelSpi implements ModelSpi {
                     builder.addMesh(meshIds[i]+1, accumulated);
                 } else {
                     AiMesh mesh = meshes.get(meshIds[i]);
+                    if(mesh.getNumVertices() == 0)
+                        continue;
                     addMesh(modelInfo, file, meshVertCount, builders, builder, scene, meshIds[i], mesh, accumulated, meshProgress, isInstanced, callback);
                     meshDataPushed[meshIds[i]] = true;
                 }

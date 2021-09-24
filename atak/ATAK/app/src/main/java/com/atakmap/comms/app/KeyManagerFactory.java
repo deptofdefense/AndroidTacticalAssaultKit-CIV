@@ -5,6 +5,7 @@ import android.content.Context;
 import android.util.Pair;
 
 import com.atakmap.comms.CotStreamListener;
+import com.atakmap.comms.NetConnectString;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.net.AtakAuthenticationCredentials;
 import com.atakmap.net.AtakAuthenticationDatabase;
@@ -156,4 +157,106 @@ public class KeyManagerFactory implements KeyManagerFactoryIFace {
             return null;
         }
     }
+
+    @Override
+    public KeyManager[] getKeyManagers(NetConnectString netConnectString) {
+
+        try {
+            KeyManager[] keyManagers = keyManagerCache
+                    .get(netConnectString.toString());
+            if (keyManagers != null) {
+                return keyManagers;
+            }
+
+            //
+            // look for connection specific certs first
+            //
+            byte[] clientCert = AtakCertificateDatabase
+                    .getAdapter()
+                    .getCertificateForTypeAndServerAndPort(
+                            AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE,
+                            netConnectString.getHost(),
+                            netConnectString.getPort());
+
+            // TODO need to pull by server and port
+            AtakAuthenticationCredentials clientCertCredentials = AtakAuthenticationDatabase
+                    .getAdapter()
+                    .getCredentialsForType(
+                            AtakAuthenticationCredentials.TYPE_clientPassword,
+                            netConnectString.getHost());
+
+            if (clientCert == null) {
+                Pair<byte[], String> results = AtakCertificateDatabase
+                        .getAdapter()
+                        .getCertificateForIPaddressAndPort(
+                                AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE,
+                                netConnectString.getHost(),
+                                netConnectString.getPort());
+
+                if (results != null && results.first != null
+                        && results.second != null) {
+                    clientCert = results.first;
+                    String server = results.second;
+
+                    clientCertCredentials = AtakAuthenticationDatabase
+                            .getAdapter()
+                            .getCredentialsForType(
+                                    AtakAuthenticationCredentials.TYPE_clientPassword,
+                                    server);
+                }
+            }
+
+            //
+            // try getting the default certs
+            //
+            if (clientCert == null) {
+                clientCert = AtakCertificateDatabase
+                        .getAdapter()
+                        .getCertificateForType(
+                                AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE);
+                clientCertCredentials = AtakAuthenticationDatabase
+                        .getAdapter()
+                        .getCredentialsForType(
+                                AtakAuthenticationCredentials.TYPE_clientPassword);
+            }
+
+            if (clientCert == null) {
+                throw new RuntimeException(
+                        "Please re-import your client certificate");
+            }
+
+            if (clientCertCredentials == null
+                    || clientCertCredentials.password == null
+                    || clientCertCredentials.password.length() == 0) {
+                throw new RuntimeException(
+                        "Please re-enter your client certificate password");
+            }
+
+            //
+            // load the cert into a key stores
+            //
+            InputStream clientIn;
+            KeyStore client = KeyStore.getInstance("PKCS12");
+            clientIn = new ByteArrayInputStream(clientCert);
+            client.load(clientIn, clientCertCredentials.password.toCharArray());
+            clientIn.close();
+
+            //
+            // get key managers for the keystore
+            //
+            javax.net.ssl.KeyManagerFactory kmf = javax.net.ssl.KeyManagerFactory
+                    .getInstance(
+                            javax.net.ssl.KeyManagerFactory
+                                    .getDefaultAlgorithm());
+            kmf.init(client, clientCertCredentials.password.toCharArray());
+            keyManagers = kmf.getKeyManagers();
+
+            return keyManagers;
+
+        } catch (Exception e) {
+            Log.e(TAG, "Exception in getKeyManagers! " + e.getMessage());
+            return null;
+        }
+    }
+
 }

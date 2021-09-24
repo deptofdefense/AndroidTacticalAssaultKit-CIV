@@ -5,6 +5,7 @@ import android.widget.BaseAdapter;
 
 import com.atakmap.android.hierarchy.HierarchyListFilter;
 import com.atakmap.android.hierarchy.HierarchyListItem;
+import com.atakmap.android.hierarchy.items.LayerHierarchyListItem;
 import com.atakmap.android.maps.DeepMapItemQuery;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapView;
@@ -56,7 +57,7 @@ public class DeveloperTools extends AbstractMapOverlay2 {
         return null;
     }
 
-    final class DevTools extends DevToolGroup {
+    static final class DevTools extends DevToolGroup {
         public DevTools(MapView view) {
             super("Developer Tools", "DeveloperTools");
 
@@ -199,5 +200,5 @@ public class DeveloperTools extends AbstractMapOverlay2 {
                 }
             });
         }
-    };
+    }
 }

@@ -249,9 +249,12 @@ public class MedLineView implements PointMapItem.OnPointChangedListener {
 
         marker.addOnPointChangedListener(this);
         updateLocation();
-        loadData();
+
         zMistView.setMarker(marker);
         hlzView.setMarker(marker);
+
+        loadData();
+
         return true;
     }
 
@@ -1329,6 +1332,8 @@ public class MedLineView implements PointMapItem.OnPointChangedListener {
             if (marker.getMetaString("epw", null) != null) {
                 if (!first)
                     sBuilder.append(", ");
+                if (first)
+                    first = false;
 
                 sBuilder.append(marker.getMetaString("epw", null));
                 sBuilder.append("xE");
@@ -1657,7 +1662,8 @@ public class MedLineView implements PointMapItem.OnPointChangedListener {
     }
 
     public String getMarkedBy() {
-        if (m_BtnLineSeven.getSelectedValue().contains("Other")) {
+        String val = m_BtnLineSeven.getSelectedValue();
+        if (val != null && val.contains("Other")) {
             StringBuilder sb = new StringBuilder();
             sb.append(m_BtnLineSeven.getSelectedValue());
             sb.append(System.getProperty("line.separator"));

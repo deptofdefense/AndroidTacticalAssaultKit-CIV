@@ -102,6 +102,10 @@ public class BloodHoundLinkManager {
         update(false);
     }
 
+    /**
+     * Remove a link provided a Range and Bearing Map Item
+     * @param line the link line to remove
+     */
     public void removeLink(RangeAndBearingMapItem line) {
         if (line != null)
             removeLink(line.getUID());

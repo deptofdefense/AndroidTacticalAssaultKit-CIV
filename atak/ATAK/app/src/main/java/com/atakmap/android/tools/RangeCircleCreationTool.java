@@ -7,10 +7,7 @@ import com.atakmap.android.drawing.mapItems.DrawingCircle;
 import com.atakmap.android.drawing.tools.CircleCreationTool;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapView;
-import com.atakmap.android.maps.Marker;
 import com.atakmap.android.toolbars.RangeCircle;
-import com.atakmap.android.util.Rings;
-import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 
 public class RangeCircleCreationTool extends CircleCreationTool {
@@ -49,15 +46,5 @@ public class RangeCircleCreationTool extends CircleCreationTool {
         circle.setMetaString("entry", "user");
         _mapGroup.addItem(circle);
         circle.persist(_mapView.getMapEventDispatcher(), null, getClass());
-    }
-
-    /**
-     * @deprecated Circles are no longer marker-centric
-     * Create a new {@link RangeCircle} instead
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public static Rings getRingsFromMarker(MapView mapView, Marker marker) {
-        return null;
     }
 }

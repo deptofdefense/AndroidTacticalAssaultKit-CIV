@@ -10,12 +10,33 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content" >
 
-        <CheckBox
-            android:id="@+id/showHeatmap_cb"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:text="@string/show_heatmap" />
+            android:layout_marginBottom="2dp"
+            android:layout_marginTop="2dp"
+            android:gravity="start"
+            android:orientation="horizontal"
+            android:paddingBottom="3dp"
+            android:paddingTop="3dp" >
+
+            <CheckBox
+                android:id="@+id/showHeatmap_cb"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:text="@string/show_heatmap"
+                android:paddingEnd="@dimen/auto_margin2"/>
+
+            <Spinner
+                android:textColor="@color/white"
+                android:padding="6dp" style="@style/darkButton"
+                android:id="@+id/heatmapOverlay_spinner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingBottom="0dp"
+                android:paddingTop="0dp" />
+        </LinearLayout>
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -88,6 +109,7 @@
     </LinearLayout>
 
     <LinearLayout
+        android:id="@+id/heatmap_sat_layout"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="2dp"
@@ -135,6 +157,7 @@
     </LinearLayout>
 
     <LinearLayout
+        android:id="@+id/heatmap_val_layout"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="2dp"
@@ -181,6 +204,7 @@
     </LinearLayout>
 
     <LinearLayout
+        android:id="@+id/heatmap_samplerate_layout"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="2dp"

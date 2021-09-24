@@ -23,4 +23,15 @@
         <attr name="mixedInput" format="boolean"/>
         <attr name="clickableTags" format="boolean"/>
     </declare-styleable>
+
+    <declare-styleable name="RemarksLayout">
+        <attr name="labelVisibility" format="string"/>
+        <attr name="dialogHint" format="string"/>
+        <attr name="android:hint" format="string"/>
+        <attr name="android:contentDescription" format="string"/>
+        <attr name="android:minLines" format="integer"/>
+        <attr name="android:maxLines" format="integer"/>
+        <attr name="android:ellipsize" format="integer"/>
+        <attr name="android:gravity" format="integer"/>
+    </declare-styleable>
 </resources>

@@ -5,17 +5,26 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import com.atakmap.android.dropdown.DropDownMapComponent;
 import com.atakmap.android.gui.TileButtonDialog;
+import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
+import com.atakmap.android.location.LocationMapComponent;
+import com.atakmap.android.maps.MapData;
+import com.atakmap.android.maps.MapGroup;
+import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.maps.Marker;
+import com.atakmap.android.maps.Shape;
+import com.atakmap.android.user.PlacePointTool;
+import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
-import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
 import android.app.AlertDialog;
@@ -26,12 +35,16 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -43,11 +56,14 @@ public class ResectionMapComponent extends DropDownMapComponent {
     private static ResectionMapComponent _instance;
 
     private Context context;
+    private MapView _mapView;
     private final Map<ResectionWorkflow, TileButtonDialog.TileButton> rwfList = new HashMap<>();
     private TileButtonDialog tileButtonDialog;
     private ResectionDropDownReceiver _defaultWorkflow;
 
-    private final ResectionReconciliationViewModel resectionViewModel = new ResectionReconciliationViewModel();
+    private final List<ResectionLocationEstimate> locationEstimates = new ArrayList<>();
+    private int selectedEstimateIndex = 0;
+    private static final String RESULT_GROUP_NAME = "Resection Estimate Results";
     private final ResectionWorkflowResultHandler resectionWorkflowResultHandler = new ResectionWorkflowResultHandler();
 
     @Override
@@ -55,6 +71,7 @@ public class ResectionMapComponent extends DropDownMapComponent {
             final MapView view) {
 
         this.context = context;
+        this._mapView = view;
         _resectionWorkflowReceiver = new ResectionWorkflowReceiver(view);
 
         DocumentedIntentFilter filter = new DocumentedIntentFilter();
@@ -81,8 +98,9 @@ public class ResectionMapComponent extends DropDownMapComponent {
     }
 
     /**
-     * Get the ResectionMapComponent in order to register additional
-     * or unregister new Resectioning or Denied GPS workflows.
+     * Get the ResectionMapComponent in order to register additional or unregister new Resectioning
+     * or Denied GPS workflows.
+     * 
      * @return the ResectionMapComponent
      */
     public static ResectionMapComponent getInstance() {
@@ -91,6 +109,7 @@ public class ResectionMapComponent extends DropDownMapComponent {
 
     /**
      * Installs a resectioning workflow with the system.
+     * 
      * @param icon the icon used when the selection dialog is shown.
      * @param txt the text that appears under the icon.
      * @param rwf the resectioning workflow.
@@ -198,6 +217,7 @@ public class ResectionMapComponent extends DropDownMapComponent {
 
     /**
      * Removes a resectioning workflow with the system.
+     * 
      * @param rwf the resectioning workflow to remove
      */
     synchronized public void removeResectionWorkflow(
@@ -220,12 +240,10 @@ public class ResectionMapComponent extends DropDownMapComponent {
             tileButtonDialog = new TileButtonDialog(view);
 
             /**
-            TileButtonDialog.TileButton tb = tileButtonDialog
-                    .createButton(
-                            context.getResources()
-                                    .getDrawable(R.drawable.resection),
-                            context.getString(R.string.resection_workflow));
-            **/
+             * TileButtonDialog.TileButton tb = tileButtonDialog .createButton(
+             * context.getResources() .getDrawable(R.drawable.resection),
+             * context.getString(R.string.resection_workflow));
+             **/
         }
 
         @Override
@@ -233,7 +251,7 @@ public class ResectionMapComponent extends DropDownMapComponent {
             String action = intent.getAction();
             if (action != null && action.equals(RESECTION_WORKFLOW)) {
                 // Fresh round so clear out all of our old location estimates
-                resectionViewModel.clearEstimates();
+                locationEstimates.clear();
 
                 // If we only have 1 work flow available, just launch it. Otherwise put up the
                 // chooser for the user to pick
@@ -253,15 +271,14 @@ public class ResectionMapComponent extends DropDownMapComponent {
      * Handler class for dealing with location estimates coming in from Resection Workflows.
      */
     public class ResectionWorkflowResultHandler
-            implements OnResectionResult, ReconciliationEvents {
+            implements OnResectionResult, BackButtonCallback {
         public ResectionWorkflowResultHandler() {
-            resectionViewModel
-                    .registerListener(ResectionWorkflowResultHandler.this);
         }
 
         /**
          * Builds an Alert Dialog for asking the user if they want to change their location to the
          * resection estimate.
+         * 
          * @param estimate Location estimate from resectioning
          * @return The dialog itself
          */
@@ -287,8 +304,30 @@ public class ResectionMapComponent extends DropDownMapComponent {
                                 @Override
                                 public void onClick(DialogInterface dialog,
                                         int which) {
-                                    MapView.getMapView().getSelfMarker()
-                                            .setPoint(estimate.getPoint());
+                                    final MapData data = _mapView.getMapData();
+                                    final GeoPoint gp = estimate.getPoint();
+                                    data.putString("locationSourcePrefix",
+                                            "resection");
+                                    data.putBoolean(
+                                            "resectionLocationAvailable", true);
+                                    data.putParcelable("resectionLocation", gp);
+                                    // only keep it valid for a very short period of time //
+                                    data.putLong("resectionLocationTime",
+                                            SystemClock.elapsedRealtime()
+                                                    - 5000);
+                                    data.putString("resectionLocationSource",
+                                            "Resection Estimation");
+                                    data.putString(
+                                            "resectionLocationSourceColor",
+                                            "#FFAFFF00");
+
+                                    Intent gpsReceived = new Intent();
+                                    gpsReceived
+                                            .setAction(
+                                                    "com.atakmap.android.map.WR_GPS_RECEIVED");
+                                    AtakBroadcast.getInstance()
+                                            .sendBroadcast(gpsReceived);
+
                                 }
                             })
                     .create();
@@ -314,77 +353,8 @@ public class ResectionMapComponent extends DropDownMapComponent {
             }
 
             return context.getString(R.string.resection_estimate_label,
-                    estimate.getSource(),
-                    getPointLabel(estimate.getPoint()), confidenceLabel);
-        }
-
-        /**
-         * Assembles a dialog that will help the user select which resection location estimates
-         * they'd like to combine.
-         * @return The constructed dialog
-         */
-        private AlertDialog buildEstimateSelectionDialog() {
-
-            Log.d(TAG, "Selecting location estimates to use from a total of "
-                    + resectionViewModel.getEstimates().size());
-
-            // Build our list of choices
-            String[] choices = new String[resectionViewModel.getEstimates()
-                    .size()];
-            for (int i = 0; i < resectionViewModel.getEstimates().size(); i++) {
-                choices[i] = buildEstimateLabel(
-                        resectionViewModel.getEstimates().get(i));
-            }
-
-            final List<Integer> selectedEstimateIndices = new ArrayList<>();
-
-            AlertDialog dlg = new AlertDialog.Builder(context)
-                    .setTitle(R.string.resection_select_estimates_prompt_title)
-                    .setMultiChoiceItems(choices, null,
-                            new DialogInterface.OnMultiChoiceClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog,
-                                        int which, boolean isChecked) {
-                                    Log.d(TAG,
-                                            "check state change on choice index "
-                                                    + which);
-
-                                    if (isChecked) {
-                                        selectedEstimateIndices.add(which);
-                                    } else if (selectedEstimateIndices
-                                            .contains(which)) {
-                                        selectedEstimateIndices
-                                                .remove(Integer.valueOf(which));
-                                    }
-                                }
-                            })
-                    .setPositiveButton(R.string.ok,
-                            new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog,
-                                        int which) {
-                                    List<ResectionLocationEstimate> selectedEstimates = new ArrayList<>(
-                                            selectedEstimateIndices.size());
-                                    for (Integer index : selectedEstimateIndices) {
-                                        selectedEstimates.add(resectionViewModel
-                                                .getEstimates().get(index));
-                                    }
-
-                                    resectionViewModel.estimatesSelected(
-                                            selectedEstimates);
-                                }
-                            })
-                    .setNegativeButton(R.string.cancel,
-                            new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog,
-                                        int which) {
-                                    dialog.dismiss();
-                                }
-                            })
-                    .create();
-
-            return dlg;
+                    estimate.getSource(), getPointLabel(estimate.getPoint()),
+                    confidenceLabel);
         }
 
         @Override
@@ -395,13 +365,12 @@ public class ResectionMapComponent extends DropDownMapComponent {
                 return;
             }
 
-            Log.d(TAG,
-                    "Got a location estimate back of "
-                            + estimate.getPoint().getLatitude()
-                            + "," + estimate.getPoint().getLongitude()
-                            + " from " + rwf.getName());
+            Log.d(TAG, "Got a location estimate back of "
+                    + estimate.getPoint().getLatitude()
+                    + "," + estimate.getPoint().getLongitude()
+                    + " from " + rwf.getName());
 
-            resectionViewModel.addEstimate(estimate);
+            locationEstimates.add(estimate);
 
             if (rwfList.size() == 1) {
                 AlertDialog dlg = buildResultDialog(estimate);
@@ -420,22 +389,17 @@ public class ResectionMapComponent extends DropDownMapComponent {
                                             int which) {
                                         // If we only have one estimate available, then no need to pick
                                         // which one to use as there IS only one
-                                        if (resectionViewModel.getEstimates()
-                                                .size() == 1) {
-                                            resectionViewModel
-                                                    .estimatesSelected(
-                                                            resectionViewModel
-                                                                    .getEstimates());
+                                        if (locationEstimates.size() == 1) {
+                                            finalizeEstimateSelection(
+                                                    locationEstimates.get(0));
                                         } else {
                                             Log.d(TAG,
                                                     "component available estimate size: "
-                                                            + resectionViewModel
-                                                                    .getEstimates()
+                                                            + locationEstimates
                                                                     .size());
 
                                             // Figure out which of our location estimates we should use
-                                            AlertDialog selectionDlg = buildEstimateSelectionDialog();
-                                            selectionDlg.show();
+                                            showResultSelection();
                                         }
                                     }
                                 })
@@ -453,86 +417,143 @@ public class ResectionMapComponent extends DropDownMapComponent {
             }
         }
 
-        @Override
-        public void estimatesSelected(
-                List<ResectionLocationEstimate> estimates) {
-            ResectionLocationEstimate estimate = null;
+        private void showResultSelection() {
+            String[] choices = new String[locationEstimates.size()];
+            for (int i = 0; i < locationEstimates.size(); i++) {
+                choices[i] = buildEstimateLabel(locationEstimates.get(i));
+            }
 
-            if (estimates == null || estimates.isEmpty()) {
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(context,
+                    R.layout.three_line_list_item, choices);
+
+            View v = LayoutInflater.from(context).inflate(
+                    R.layout.resection_result_select, null,
+                    false);
+
+            ListView list = v.findViewById(R.id.resection_result_list);
+            list.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
+            list.setAdapter(adapter);
+
+            list.setItemChecked(0, true);
+            drawEstimatesToMap();
+            panAndZoomToEstimates();
+
+            list.setOnItemClickListener(new ListView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view,
+                        int position, long id) {
+                    selectedEstimateIndex = position;
+                    ResectionLocationEstimate estimate = locationEstimates
+                            .get(selectedEstimateIndex);
+                    drawEstimatesToMap();
+                    Shape errorBounds = estimate.getErrorBounds();
+
+                    GeoPoint[] points;
+                    if (errorBounds != null) {
+                        points = errorBounds.getPoints();
+                    } else {
+                        points = new GeoPoint[1];
+                        points[0] = estimate.getPoint();
+                    }
+                    ATAKUtilities.scaleToFit(_mapView, points,
+                            _mapView.getWidth(), _mapView.getHeight());
+                }
+            });
+
+            v.findViewById(R.id.resection_result_cancel)
+                    .setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            finalizeEstimateSelection(null);
+                            _defaultWorkflow.closeDropDown();
+                        }
+                    });
+
+            v.findViewById(R.id.resection_result_ok)
+                    .setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            finalizeEstimateSelection(
+                                    locationEstimates
+                                            .get(selectedEstimateIndex));
+                            _defaultWorkflow.closeDropDown();
+                        }
+                    });
+
+            _defaultWorkflow.showEstimatesDropDown(v, this);
+        }
+
+        private void panAndZoomToEstimates() {
+            List<MapItem> shapes = new ArrayList<>();
+            for (ResectionLocationEstimate estimate : locationEstimates) {
+                Shape errorBounds = estimate.getErrorBounds();
+                if (errorBounds != null) {
+                    shapes.add(errorBounds);
+                }
+            }
+
+            ATAKUtilities.scaleToFit(_mapView, shapes.toArray(new MapItem[0]),
+                    _mapView.getWidth(),
+                    _mapView.getHeight());
+        }
+
+        private void drawEstimatesToMap() {
+            MapGroup mg = _mapView.getRootGroup()
+                    .findMapGroup(RESULT_GROUP_NAME);
+            if (mg == null) {
+                mg = _mapView.getRootGroup().addGroup(RESULT_GROUP_NAME);
+            }
+
+            for (ResectionLocationEstimate estimate : locationEstimates) {
+                Shape errorBounds = estimate.getErrorBounds();
+                if (errorBounds != null) {
+                    mg.addItem(errorBounds);
+                }
+
+                Marker marker = new PlacePointTool.MarkerCreator(
+                        estimate.getPoint())
+                                .setUid(UUID.randomUUID().toString())
+                                .setCallsign("Estimate (" + estimate.getSource()
+                                        + ")")
+                                .setType("b-m-p-s-m")
+                                .showCotDetails(false)
+                                .placePoint();
+
+                mg.addItem(marker);
+            }
+        }
+
+        private void removeEstimatesFromMap() {
+            MapGroup resultGroup = _mapView.getRootGroup()
+                    .findMapGroup(RESULT_GROUP_NAME);
+            if (resultGroup == null)
+                return;
+            resultGroup.getParentGroup().removeGroup(resultGroup);
+        }
+
+        private void finalizeEstimateSelection(
+                ResectionLocationEstimate estimate) {
+            removeEstimatesFromMap();
+            if (estimate == null) {
                 Toast.makeText(context,
                         R.string.resection_no_estimates_selected,
                         Toast.LENGTH_LONG).show();
-                Log.d(TAG, "No estimates selected for use");
-
-                return;
-            } else if (estimates.size() == 1) {
-                estimate = estimates.get(0);
+                Log.d(TAG, "No estimate selected for use");
             } else {
-                GeoPoint[] extremes = new GeoPoint[estimates.size()];
-                for (int i = 0; i < estimates.size(); i++) {
-                    extremes[i] = estimates.get(i).getPoint();
-                }
-
-                GeoPoint average = GeoCalculations.computeAverage(extremes);
-                estimate = new ResectionLocationEstimate();
-                estimate.setPoint(average);
-                estimate.setSource("Multiple");
+                buildResultDialog(estimate).show();
             }
+        }
 
-            AlertDialog acceptGuessDlg = buildResultDialog(estimate);
-            acceptGuessDlg.show();
+        @Override
+        public void backButtonPressed() {
+            finalizeEstimateSelection(null);
         }
     }
 
     /**
-     * Holds view state related to reconciling which resection location estimates to use.
+     * For canceling the estimate selection process on a back button press in the DropDown
      */
-    private static class ResectionReconciliationViewModel {
-        private final List<ReconciliationEvents> eventListener = new ArrayList<ReconciliationEvents>();
-        private final List<ResectionLocationEstimate> availableEstimates = new ArrayList<>();
-
-        public void addEstimate(ResectionLocationEstimate estimate) {
-            availableEstimates.add(estimate);
-        }
-
-        public void clearEstimates() {
-            availableEstimates.clear();
-        }
-
-        public List<ResectionLocationEstimate> getEstimates() {
-            return availableEstimates;
-        }
-
-        public void registerListener(ReconciliationEvents listener) {
-            eventListener.add(listener);
-        }
-
-        public void unregisterListener(ReconciliationEvents listener) {
-            eventListener.remove(listener);
-        }
-
-        /**
-         * Signals that the resectioning estimates that should be reconciled together have been
-         * selected. Notifies all registered ReconciliationEvent listeners.
-         * @param estimates The estimates that should be reconciled together
-         */
-        public void estimatesSelected(
-                List<ResectionLocationEstimate> estimates) {
-
-            for (ReconciliationEvents listener : eventListener) {
-                listener.estimatesSelected(estimates);
-            }
-        }
-    }
-
-    /**
-     * Interface for communicating events from ResectionReconciliationViewModel.
-     */
-    private interface ReconciliationEvents {
-        /**
-         * Fired when resection location estimates have been selected for reconciliation.
-         * @param estimates The estimates that should be reconciled together
-         */
-        void estimatesSelected(List<ResectionLocationEstimate> estimates);
+    public interface BackButtonCallback {
+        void backButtonPressed();
     }
 }

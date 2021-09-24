@@ -6,6 +6,7 @@ import android.util.Base64;
 
 import com.atakmap.android.maps.assets.MapAssets;
 
+import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.util.zip.IoUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -14,7 +15,6 @@ import org.xml.sax.SAXException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -64,7 +64,7 @@ public class ConfigLoader<T> {
                     configEnvironment);
         } else {
             return loadFromConfig(new ByteArrayInputStream(
-                    resource.getBytes(StandardCharsets.UTF_8)),
+                    resource.getBytes(FileSystemUtils.UTF8_CHARSET)),
                     configEnvironment);
         }
     }

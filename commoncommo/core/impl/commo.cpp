@@ -12,11 +12,10 @@
 #include "simplefileiomanager.h"
 #include "cloudiomanager.h"
 #include "cryptoutil.h"
+#include "commothread.h"
+#include "versionimpl.h"
 
 #include <string.h>
-#include <Mutex.h>
-#include <Cond.h>
-#include <Lock.h>
 #include <memory>
 
 #include <deque>
@@ -58,8 +57,7 @@ public:
 
     CommoResult addCoTMessageListener(CoTMessageListener *listener)
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, listenerMutex);
+        thread::Lock lock(listenerMutex);
         if (!listeners.insert(listener).second)
             return COMMO_ILLEGAL_ARGUMENT;
         return COMMO_SUCCESS;
@@ -67,8 +65,7 @@ public:
 
     CommoResult removeCoTMessageListener(CoTMessageListener *listener)
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, listenerMutex);
+        thread::Lock lock(listenerMutex);
         if (listeners.erase(listener) != 1)
             return COMMO_ILLEGAL_ARGUMENT;
         return COMMO_SUCCESS;
@@ -76,8 +73,7 @@ public:
 
     CommoResult addGenericDataListener(GenericDataListener *listener)
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, listenerMutex);
+        thread::Lock lock (listenerMutex);
         if (!genListeners.insert(listener).second)
             return COMMO_ILLEGAL_ARGUMENT;
         return COMMO_SUCCESS;
@@ -85,8 +81,7 @@ public:
 
     CommoResult removeGenericDataListener(GenericDataListener *listener)
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, listenerMutex);
+        thread::Lock lock(listenerMutex);
         if (genListeners.erase(listener) != 1)
             return COMMO_ILLEGAL_ARGUMENT;
         return COMMO_SUCCESS;
@@ -94,9 +89,8 @@ public:
 
     virtual void threadStopSignal(size_t threadNum)
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, queueMutex);
-        queueMonitor.broadcast(*lock);
+        thread::Lock lock(queueMutex);
+        queueMonitor.broadcast(lock);
     }
 
     virtual void threadEntry(size_t threadNum)
@@ -104,18 +98,16 @@ public:
         while (!threadShouldStop(threadNum)) {
             QItem *qitem;
             {
-                PGSC::Thread::LockPtr lock(NULL, NULL);
-                PGSC::Thread::Lock_create(lock, queueMutex);
+                thread::Lock lock(queueMutex);
                 if (queue.empty()) {
-                    queueMonitor.wait(*lock);
+                    queueMonitor.wait(lock);
                     continue;
                 }
                 qitem = queue.back();
                 queue.pop_back();
             }
             {
-                PGSC::Thread::LockPtr lock(NULL, NULL);
-                PGSC::Thread::Lock_create(lock, listenerMutex);
+                thread::Lock lock(listenerMutex);
                 if (qitem->generic) {
                     std::set<GenericDataListener *>::iterator iter;
                     for (iter = genListeners.begin(); iter != genListeners.end(); ++iter) {
@@ -143,7 +135,7 @@ public:
             message->serialize(&data);
         } catch (std::invalid_argument &) {
             // Can't serialize this message - give up.
-            logger->log(CommoLogger::LEVEL_DEBUG, "Unserializable CoT message?");
+            InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, "Unserializable CoT message?");
             return;
         }
         // Copy endpoint, if provided
@@ -154,10 +146,9 @@ public:
         }
         
         {
-            PGSC::Thread::LockPtr lock(NULL, NULL);
-            PGSC::Thread::Lock_create(lock, queueMutex);
+            thread::Lock lock(queueMutex);
             queue.push_front(new QItem(data, epCopy));
-            queueMonitor.broadcast(*lock);
+            queueMonitor.broadcast(lock);
         }
     }
     
@@ -173,10 +164,9 @@ public:
         strcpy(epCopy, endpointId->c_str());
         
         {
-            PGSC::Thread::LockPtr lock(NULL, NULL);
-            PGSC::Thread::Lock_create(lock, queueMutex);
+            thread::Lock lock(queueMutex);
             queue.push_front(new QItem(dataCopy, length, epCopy));
-            queueMonitor.broadcast(*lock);
+            queueMonitor.broadcast(lock);
         }
     }
 
@@ -203,8 +193,7 @@ public:
 
     CommoResult addInterfaceStatusListener(InterfaceStatusListener *listener)
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, ifaceListenersMutex);
+        thread::Lock lock(ifaceListenersMutex);
         if (!ifaceListeners.insert(listener).second)
             return COMMO_ILLEGAL_ARGUMENT;
         return COMMO_SUCCESS;
@@ -212,8 +201,7 @@ public:
 
     CommoResult removeInterfaceStatusListener(InterfaceStatusListener *listener)
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, ifaceListenersMutex);
+        thread::Lock lock(ifaceListenersMutex);
         if (ifaceListeners.erase(listener) != 1)
             return COMMO_ILLEGAL_ARGUMENT;
         return COMMO_SUCCESS;
@@ -221,8 +209,7 @@ public:
 
     virtual void interfaceUp(NetInterface *iface)
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, ifaceListenersMutex);
+        thread::Lock lock(ifaceListenersMutex);
         std::set<InterfaceStatusListener *>::iterator iter;
         for (iter = ifaceListeners.begin(); iter != ifaceListeners.end(); ++iter) {
             InterfaceStatusListener *listener = *iter;
@@ -232,8 +219,7 @@ public:
 
     virtual void interfaceDown(NetInterface *iface)
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, ifaceListenersMutex);
+        thread::Lock lock(ifaceListenersMutex);
         std::set<InterfaceStatusListener *>::iterator iter;
          for (iter = ifaceListeners.begin(); iter != ifaceListeners.end(); ++iter) {
              InterfaceStatusListener *listener = *iter;
@@ -243,8 +229,7 @@ public:
 
     virtual void interfaceError(NetInterface *iface, netinterfaceenums::NetInterfaceErrorCode err)
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, ifaceListenersMutex);
+        thread::Lock lock(ifaceListenersMutex);
         std::set<InterfaceStatusListener *>::iterator iter;
          for (iter = ifaceListeners.begin(); iter != ifaceListeners.end(); ++iter) {
              InterfaceStatusListener *listener = *iter;
@@ -280,15 +265,15 @@ private:
     };
 
     CommoLogger *logger;
-    PGSC::Thread::Mutex queueMutex;
-    PGSC::Thread::CondVar queueMonitor;
+    thread::Mutex queueMutex;
+    thread::CondVar queueMonitor;
     std::deque<QItem *> queue;
-    PGSC::Thread::Mutex listenerMutex;
+    thread::Mutex listenerMutex;
     std::set<CoTMessageListener *> listeners;
     std::set<GenericDataListener *> genListeners;
 
     std::set<InterfaceStatusListener *> ifaceListeners;
-    PGSC::Thread::Mutex ifaceListenersMutex;
+    thread::Mutex ifaceListenersMutex;
 };
 
 
@@ -372,8 +357,7 @@ struct CommoImpl
     };
 
     void setupMPIO(MissionPackageIO *missionPackageIO) COMMO_THROW (std::invalid_argument) {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, mpMutex);
+        thread::Lock lock(mpMutex);
         if (missionPkgMgmt)
             throw std::invalid_argument("Already initialized");
         missionPkgMgmt = new MissionPackageManager(logger, contactMgmt,
@@ -390,24 +374,21 @@ struct CommoImpl
     }
 
     void enableSimpleIO(SimpleFileIO *simpleIO) COMMO_THROW (std::invalid_argument) {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, mpMutex);
+        thread::Lock lock(mpMutex);
         if (simpleIOMgmt)
             throw std::invalid_argument("Already initialized");
         simpleIOMgmt = new SimpleFileIOManager(logger, simpleIO, this->providerTracker);
     }
 
     void setCallsign(const char *cs) {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, mpMutex);
+        thread::Lock lock(mpMutex);
         ourCallsign = cs;
         if (missionPkgMgmt)
             missionPkgMgmt->setCallsign(cs);
     }
     
     void copyMPSettings() {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, mpMutex);
+        thread::Lock lock(mpMutex);
         if (missionPkgMgmt) {
             missionPkgMgmt->setMPTransferSettings(mpSettings);
             try {
@@ -419,16 +400,14 @@ struct CommoImpl
     }
 
     void registerFileIOProvider(std::shared_ptr<FileIOProvider>& ioProvider) {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, mpMutex);
+        thread::Lock lock(mpMutex);
         if (providerTracker) {
             providerTracker->registerProvider(ioProvider);
         }
     }
 
     void deregisterFileIOProvider(const FileIOProvider& ioProvider) {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, mpMutex);
+        thread::Lock lock(mpMutex);
         if (providerTracker) {
             providerTracker->deregisterProvider(ioProvider);
         }
@@ -445,7 +424,7 @@ struct CommoImpl
     StreamingSocketManagement *streamMgmt;
     ContactManager *contactMgmt;
     CoTListenerManagement *listenerMgmt;
-    PGSC::Thread::Mutex mpMutex;
+    thread::Mutex mpMutex;
     MissionPackageManager *missionPkgMgmt;
     HttpsProxy *httpsProxy;
     SimpleFileIOManager *simpleIOMgmt;
@@ -530,10 +509,10 @@ void Commo::deregisterFileIOProvider(const FileIOProvider& provider)
 
 void Commo::setWorkaroundQuirks(int quirksMask) {
     if (quirksMask & QUIRK_MAGTAB) {
-        impl->logger->log(CommoLogger::LEVEL_INFO, "Magtab Quirk enabled");
+        InternalUtils::logprintf(impl->logger, CommoLogger::LEVEL_INFO, "Magtab Quirk enabled");
         impl->dgMgmt->setMagtabWorkaroundEnabled(true);
     } else {
-        impl->logger->log(CommoLogger::LEVEL_INFO, "Magtab Quirk disabled");
+        InternalUtils::logprintf(impl->logger, CommoLogger::LEVEL_INFO, "Magtab Quirk disabled");
         impl->dgMgmt->setMagtabWorkaroundEnabled(false);
     }
 }
@@ -665,8 +644,7 @@ int Commo::getBroadcastProto()
 CommoResult Commo::setMissionPackageLocalPort(int localWebPort)
 {
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, impl->mpMutex);
+        thread::Lock lock(impl->mpMutex);
         InternalUtils::logprintf(impl->logger, CommoLogger::LEVEL_DEBUG, "Checking MP %p for port set", impl->missionPkgMgmt);
 
         if (!impl->missionPkgMgmt)
@@ -749,8 +727,7 @@ CommoResult Commo::setMissionPackageLocalHttpsParams(int port,
                            size_t certLen, const char *certPass)
 {
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, impl->mpMutex);
+        thread::Lock lock(impl->mpMutex);
 
         if (!impl->missionPkgMgmt)
             return COMMO_ILLEGAL_ARGUMENT;
@@ -990,8 +967,7 @@ CommoResult Commo::simpleFileTransferInit(int *xferId,
                                       const char *localFileName)
 {
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, impl->mpMutex);
+        thread::Lock lock(impl->mpMutex);
         if (!impl->simpleIOMgmt)
             return COMMO_ILLEGAL_ARGUMENT;
     }
@@ -1016,8 +992,7 @@ CommoResult Commo::simpleFileTransferInit(int *xferId,
 CommoResult Commo::simpleFileTransferStart(int xferId)
 {
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, impl->mpMutex);
+        thread::Lock lock(impl->mpMutex);
         if (!impl->simpleIOMgmt)
             return COMMO_ILLEGAL_ARGUMENT;
     }
@@ -1055,8 +1030,7 @@ CommoResult Commo::sendMissionPackageInit(int *xferId, ContactList *destinations
                                       const char *name)
 {
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, impl->mpMutex);
+        thread::Lock lock(impl->mpMutex);
         if (!impl->missionPkgMgmt)
             return COMMO_ILLEGAL_ARGUMENT;
     }
@@ -1072,8 +1046,7 @@ CommoResult Commo::sendMissionPackageInit(int *xferId,
                                       const char *fileName)
 {
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, impl->mpMutex);
+        thread::Lock lock(impl->mpMutex);
         if (!impl->missionPkgMgmt)
             return COMMO_ILLEGAL_ARGUMENT;
     }
@@ -1086,8 +1059,7 @@ CommoResult Commo::sendMissionPackageInit(int *xferId,
 CommoResult Commo::sendMissionPackageStart(int xferId)
 {
     {
-        PGSC::Thread::LockPtr lock(NULL, NULL);
-        PGSC::Thread::Lock_create(lock, impl->mpMutex);
+        thread::Lock lock(impl->mpMutex);
         if (!impl->missionPkgMgmt)
             return COMMO_ILLEGAL_ARGUMENT;
     }
@@ -1186,3 +1158,7 @@ void Commo::takmessageFree(char *takmessage)
     delete[] takmessage;
 }
 
+const char *Commo::getVersionString()
+{
+    return impl::getVersionString();
+}

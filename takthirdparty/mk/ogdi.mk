@@ -37,6 +37,7 @@ ogdi_build: $(ogdi_configtouchfile)
 			CC="$(CC)"                                   \
 			CPP="$(CPP)"                                 \
 			CXX="$(CXX)"                                 \
+			MKINSTALLDIR="mkdir -p"                      \
 			SHLIB_LD="$(CC)"                             \
 			RANLIB="$(RANLIB)"                           \
 			LD="$(CC)"
@@ -53,6 +54,7 @@ $(ogdi_out_lib): $(ogdi_src_lib)
 			CPP="$(CPP)"                                 \
 			CXX="$(CXX)"                                 \
 			SHLIB_LD="$(CC)"                             \
+			MKINSTALLDIR="mkdir -p"                      \
 			LD="$(CC)"                                   \
 		mkinstalldirs="mkdir -p"                             \
 		install

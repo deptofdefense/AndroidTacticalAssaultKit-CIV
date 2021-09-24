@@ -63,20 +63,9 @@ public final class Cesium3DTilesModelInfoSpi implements ModelInfoSpi {
 
         // fallback on File test
         File f = FileSystemUtils.getFile(uriString);
-        if(FileSystemUtils.checkExtension(f, "zip") ||
-                FileSystemUtils.checkExtension(f, "3tz")) {
-            try {
-                f = new ZipVirtualFile(f);
-            } catch(Throwable ignored) {}
+        final File tilesetJson = getTilesetJson(f, true);
+        return (tilesetJson != null);
         }
-        if(!IOProviderFactory.isDirectory(f))
-            return false; // XXX - workaround for ATAK-12324
-        else if(f instanceof ZipVirtualFile)
-            f = new ZipVirtualFile(f, "tileset.json");
-        else
-            f = new File(f, "tileset.json");
-        return IOProviderFactory.exists(f) && f.getName().equals("tileset.json");
-    }
 
     @Override
     public Set<ModelInfo> create(String s) {
@@ -130,16 +119,10 @@ public final class Cesium3DTilesModelInfoSpi implements ModelInfoSpi {
         }
 
         if (IOProviderFactory.isDirectory(f)) {
-            if(f instanceof ZipVirtualFile) {
-                try {
-                    f = new ZipVirtualFile(f, "tileset.json");
-                } catch(Throwable t) {
-                    return null;
+            final File tilesetJson = getTilesetJson(f, true);
+            if(tilesetJson != null)
+                f = tilesetJson;
                 }
-            } else {
-                f = new File(f, "tileset.json");
-            }
-        }
         if (!IOProviderFactory.exists(f) || !f.getName().equals("tileset.json"))
             return null;
 
@@ -214,4 +197,39 @@ public final class Cesium3DTilesModelInfoSpi implements ModelInfoSpi {
         return Collections.singleton(info);
     }
 
+    private static File getTilesetJson(File f, boolean recurseOnZip) {
+        if(FileSystemUtils.checkExtension(f, "zip") ||
+                FileSystemUtils.checkExtension(f, "3tz")) {
+            try {
+                f = new ZipVirtualFile(f);
+            } catch(Throwable ignored) {}
+        }
+        // attempt to recurse if flag is set and source is a zip file
+        final boolean recurse = (recurseOnZip && f instanceof ZipVirtualFile);
+        // locate the `tileset.json` file
+        File tilesetJson;
+        if(!IOProviderFactory.isDirectory(f))
+            return null; // XXX - workaround for ATAK-12324
+        else if(f instanceof ZipVirtualFile)
+            tilesetJson = new ZipVirtualFile(f, "tileset.json");
+        else
+            tilesetJson = new File(f, "tileset.json");
+        if(!IOProviderFactory.exists(tilesetJson) && recurse) {
+            // recurse 1 level if `tileset.json` was not found at root
+            File[] children = IOProviderFactory.listFiles(f);
+            if(children != null) {
+                for (File c : children) {
+                    tilesetJson = getTilesetJson(c, false);
+                    if(tilesetJson != null)
+                        break;
+                }
+            }
+        }
+
+        if (tilesetJson == null)
+            return null;
+
+        return (IOProviderFactory.exists(tilesetJson) &&
+                tilesetJson.getName().equals("tileset.json")) ? tilesetJson : null;
+    }
 }

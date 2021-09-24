@@ -17,8 +17,8 @@ import android.widget.Toast;
 
 import com.atakmap.android.contact.Contact;
 import com.atakmap.android.contact.Contacts;
-import com.atakmap.android.maps.MapView;
 import com.atakmap.app.R;
+import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
@@ -32,10 +32,6 @@ import java.util.List;
 class ConversationListAdapter extends BaseAdapter {
 
     private static final String TAG = "ConversationListAdapter";
-    private static final String DISPLAY_NAME_FOR_MY_MESSAGES = MapView
-            .getMapView().getContext().getString(R.string.chat_text18);
-    private static final String COPIED_TO_CLIPBOARD = MapView
-            .getMapView().getContext().getString(R.string.copied_to_clipboard);
 
     private static final long MILLIS_TIME_LIMIT = 60000; // one minute
     private final SimpleDateFormat timeOnlyFormat = new SimpleDateFormat(
@@ -44,6 +40,8 @@ class ConversationListAdapter extends BaseAdapter {
             "MM/dd/yyyy", LocaleUtil.getCurrent());
     private final Context mContext;
     private final List<ChatLine> chatLines = new ArrayList<>();
+
+    private ChatLine latestSelfMsg, latestSelfChain;
 
     ConversationListAdapter(final Context context) {
         mContext = context;
@@ -80,7 +78,7 @@ class ConversationListAdapter extends BaseAdapter {
         ViewHolder holder;
         if (convertView == null) {
             convertView = LayoutInflater
-                    .from(MapView.getMapView().getContext())
+                    .from(mContext)
                     .inflate(R.layout.conversation_item, parent, false);
             holder = new ViewHolder();
             final ViewHolder fholder = holder;
@@ -89,16 +87,15 @@ class ConversationListAdapter extends BaseAdapter {
                 public boolean onLongClick(View v) {
                     if (fholder.message == null)
                         return true;
-                    android.content.ClipboardManager clipboard = (android.content.ClipboardManager) MapView
-                            .getMapView().getContext()
+                    android.content.ClipboardManager clipboard = (android.content.ClipboardManager) mContext
                             .getSystemService(Context.CLIPBOARD_SERVICE);
                     if (clipboard != null) {
                         android.content.ClipData clip = android.content.ClipData
                                 .newPlainText("Copied Text", fholder.message
                                         .getText().toString());
                         clipboard.setPrimaryClip(clip);
-                        Toast.makeText(MapView.getMapView().getContext(),
-                                COPIED_TO_CLIPBOARD, Toast.LENGTH_SHORT).show();
+                        Toast.makeText(mContext, R.string.copied_to_clipboard,
+                                Toast.LENGTH_SHORT).show();
                     }
                     return true;
                 }
@@ -110,7 +107,8 @@ class ConversationListAdapter extends BaseAdapter {
                     .findViewById(R.id.timestamp);
             holder.sender = convertView.findViewById(R.id.sender);
             holder.message = convertView.findViewById(R.id.message);
-            holder.ackBar = convertView.findViewById(R.id.status);
+            holder.status = convertView.findViewById(R.id.status);
+            holder.sendProgress = convertView.findViewById(R.id.sendProgress);
             holder.sentSuccessfully = convertView
                     .findViewById(R.id.messageSent);
             holder.date = convertView.findViewById(R.id.date);
@@ -144,7 +142,7 @@ class ConversationListAdapter extends BaseAdapter {
                 holder.sender.setTextAppearance(mContext, R.style.SendLabel);
                 holder.timestampHolder.setGravity(Gravity.END);
                 holder.message.setGravity(Gravity.END);
-                holder.sender.setText(DISPLAY_NAME_FOR_MY_MESSAGES);
+                holder.sender.setText(R.string.chat_text18);
             } else { // Received by this device...
                 holder.timestamp.setText("(" + timeAsString(chat.timeReceived)
                         + ") ");
@@ -160,6 +158,21 @@ class ConversationListAdapter extends BaseAdapter {
                         "%s: ", callsign));
             }
 
+            // Set the Size of the text
+            holder.sender.setTextSize(15);
+            holder.timestamp.setTextSize(10);
+
+            // Message delivery status
+            if (chat == latestSelfChain && latestSelfMsg != null
+                    && latestSelfMsg.status != ChatLine.Status.NONE) {
+                holder.status.setImageResource(
+                        latestSelfMsg.status == ChatLine.Status.DELIVERED
+                                ? R.drawable.chat_message_delivered
+                                : R.drawable.chat_message_read);
+                holder.status.setVisibility(View.VISIBLE);
+            } else
+                holder.status.setVisibility(View.GONE);
+
             holder.message.setText(chat.message);
             if (isChatFirstForDay(chat, lastChat)
                     && chat.getTimeSentOrReceived() != null) {
@@ -169,37 +182,33 @@ class ConversationListAdapter extends BaseAdapter {
                 holder.dateTableRow.setVisibility(View.GONE);
             }
 
-            // Set the Size of the text
-            holder.sender.setTextSize(15);
-            holder.timestamp.setTextSize(10);
-
             // don't display name/time if same as previous message
             if (lineShouldBeAppendedTo(lastChat, chat)) {
                 holder.timestampHolder.setVisibility(View.GONE);
                 holder.timestamp.setVisibility(View.GONE);
                 holder.sender.setVisibility(View.GONE);
-                holder.ackBar.setVisibility(View.GONE);
+                holder.sendProgress.setVisibility(View.GONE);
             } else {
                 holder.timestampHolder.setVisibility(View.VISIBLE);
                 holder.timestamp.setVisibility(View.VISIBLE);
                 holder.sender.setVisibility(View.VISIBLE);
-                holder.ackBar.setVisibility(View.VISIBLE);
+                holder.sendProgress.setVisibility(View.VISIBLE);
             }
 
             // display/hide progress spinner
             if (chat.timeReceived == null) {
                 if (chat.acked) {
-                    holder.ackBar.setVisibility(View.GONE);
+                    holder.sendProgress.setVisibility(View.GONE);
                 } else {
                     // Spin until I get an ACK
                     holder.sentSuccessfully.setVisibility(View.GONE);
-                    holder.ackBar.setVisibility(View.VISIBLE);
-                    holder.ackBar.setIndeterminate(true);
+                    holder.sendProgress.setVisibility(View.VISIBLE);
+                    holder.sendProgress.setIndeterminate(true);
                 }
             } else {
                 // Not applicable for received messages
                 holder.sentSuccessfully.setVisibility(View.GONE);
-                holder.ackBar.setVisibility(View.GONE);
+                holder.sendProgress.setVisibility(View.GONE);
             }
 
         }
@@ -237,24 +246,23 @@ class ConversationListAdapter extends BaseAdapter {
     }
 
     /**
-     * Add or ack a chatline.
+     * Add or acknowledged a chatline.
      * 
-     * @param toAddOrAck the chaiteline to check
-     * @return true if added, false if acked
+     * @param line The chat line to check
+     * @return true if added, false if acknowledged
      */
-    boolean addOrAckChatLine(ChatLine toAddOrAck) {
+    boolean addOrAckChatLine(ChatLine line) {
         // Check if it already exists
-        for (ChatLine line : chatLines) {
+        for (ChatLine l : chatLines) {
             // Check message-id and sendersName (old ATAK just used an incrementing message ID)
-            if (toAddOrAck.messageId != null
-                    && toAddOrAck.messageId.equals(line.messageId)) {
+            if (FileSystemUtils.isEquals(line.messageId, l.messageId)) {
                 // Ack it if it does exist
-                ackChatLine(line);
+                ackChatLine(line, l);
                 return false;
             }
         }
         // Add it if it doesn't exist
-        addChatLine(toAddOrAck);
+        addChatLine(line);
         return true;
     }
 
@@ -286,10 +294,16 @@ class ConversationListAdapter extends BaseAdapter {
     void markAllRead() {
 
         String conversationId = "";
+        ChatLine newestIncoming = null;
         for (ChatLine line : chatLines) {
-            line.read = true;
-            conversationId = line.conversationId;
+            if (!line.read) {
+                if (!line.isSelfChat())
+                    newestIncoming = line;
+                line.read = true;
+                conversationId = line.conversationId;
+            }
         }
+        GeoChatService.getInstance().sendReadStatus(newestIncoming);
         if (conversationId != null && !conversationId.isEmpty()) {
             notifyContactListAdapter(conversationId);
             notifyDataSetChanged();
@@ -303,16 +317,18 @@ class ConversationListAdapter extends BaseAdapter {
     void markSingleRead(String messageId) {
 
         String conversationId = "";
+        ChatLine match = null;
         for (ChatLine line : chatLines) {
             //find the message we need to mark read
-            if (line != null)
-                if (line.messageId != null)
-                    if (line.messageId.equals(messageId)) {
-                        line.read = true;
-                        conversationId = line.conversationId;
-                        break;
-                    }
+            if (line != null
+                    && FileSystemUtils.isEquals(line.messageId, messageId)) {
+                match = line;
+                line.read = true;
+                conversationId = line.conversationId;
+                break;
+            }
         }
+        GeoChatService.getInstance().sendReadStatus(match);
         if (conversationId != null && !conversationId.isEmpty()) {
             //update attached adapter
             notifyContactListAdapter(conversationId);
@@ -357,9 +373,10 @@ class ConversationListAdapter extends BaseAdapter {
         }
     }
 
-    private void ackChatLine(ChatLine toAck) {
-        Log.d(TAG, "acking message: " + toAck.messageId);
-        toAck.acked = true;
+    private void ackChatLine(ChatLine src, ChatLine dst) {
+        Log.d(TAG, "Updating message: " + src.messageId);
+        dst.acked = true;
+        dst.status = src.status;
         notifyDataSetChanged();
     }
 
@@ -382,14 +399,15 @@ class ConversationListAdapter extends BaseAdapter {
     }
 
     private static class ViewHolder {
-        LinearLayout timestampHolder = null;
-        public TextView timestamp = null;
-        public TextView sender = null;
-        public TextView message = null;
-        ProgressBar ackBar = null;
-        ImageView sentSuccessfully = null;
-        public TextView date = null;
-        TableRow dateTableRow = null;
+        LinearLayout timestampHolder;
+        TextView timestamp;
+        TextView sender;
+        TextView message;
+        ImageView status;
+        ProgressBar sendProgress;
+        ImageView sentSuccessfully;
+        TextView date;
+        TableRow dateTableRow;
     }
 
     private static boolean lineShouldBeAppendedTo(ChatLine lastLine,
@@ -433,5 +451,21 @@ class ConversationListAdapter extends BaseAdapter {
         if (convId != null && !convId.isEmpty())
             notifyContactListAdapter(convId);
         notifyDataSetChanged();
+    }
+
+    @Override
+    public void notifyDataSetChanged() {
+        ChatLine last = null, latest = null, latestChain = null;
+        for (ChatLine line : chatLines) {
+            if (line.isSelfChat()) {
+                if (!lineShouldBeAppendedTo(last, line))
+                    latestChain = line;
+                latest = line;
+            }
+            last = line;
+        }
+        this.latestSelfMsg = latest;
+        this.latestSelfChain = latestChain;
+        super.notifyDataSetChanged();
     }
 }

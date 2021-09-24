@@ -216,7 +216,7 @@ public class Contacts implements MapEventDispatcher.MapEventDispatchListener {
      * @return get a contact given the unique identifier.
      */
     public Contact getContactByUuid(final String uuid) {
-        if (uuid == null || uuid.isEmpty())
+        if (FileSystemUtils.isEmpty(uuid))
             return null;
 
         if (this.rootGroup != null

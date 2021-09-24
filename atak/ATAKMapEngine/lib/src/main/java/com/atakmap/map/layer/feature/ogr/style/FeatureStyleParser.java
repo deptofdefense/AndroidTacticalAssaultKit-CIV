@@ -16,6 +16,7 @@ import com.atakmap.map.layer.feature.style.IconPointStyle;
 import com.atakmap.map.layer.feature.style.LabelPointStyle;
 
 public class FeatureStyleParser {
+    private static final String TAG = "FeatureStyleParser";
 
     private static int STATE_TOOL_NAME = 0;
     private static int STATE_PARAM_NAME = 1;
@@ -47,11 +48,16 @@ public class FeatureStyleParser {
 
         int[] pidx = new int[1];
 
-        DrawingTool tool;
+        DrawingTool tool = null;
 
         style = null;
         do {
-            tool = parseTool(ogrStyle, pidx);
+            try {
+                tool = parseTool(ogrStyle, pidx);
+            } catch (Throwable t) {
+                Log.w(TAG, "Invalid tool string encountered when parsing style, terminating parse and returning partial style", t);
+                break;
+            }
             if (tool == null)
                 break;
             // XXX - very simple translation from OGR style. need to account for

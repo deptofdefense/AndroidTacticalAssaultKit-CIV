@@ -11,10 +11,12 @@ import transapps.geom.Projection;
 /*
  * Wrapper class for the implementation that carries the real ATAK MapView through to to plugins using
  * the transapps MapView class.     The two are not related.
- * @deprecated Implementatino detail. Class will be refactored to package private and renamed
+ * @deprecated implementation detail. Class will be refactored to package private and renamed
+ * The removal was bumped to 4.5 since it will require refactoring all plugins by migrating all
+ * implement Lifecycle -> extends AbstractLifecycle to reduce as much boilerplate code.
  */
 @Deprecated
-@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
+@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.5")
 final public class AtakMapView implements transapps.mapi.MapView {
     public static final String TAG = "AtakMapView";
 

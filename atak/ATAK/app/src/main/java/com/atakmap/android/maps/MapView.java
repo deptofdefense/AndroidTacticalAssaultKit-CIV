@@ -16,10 +16,8 @@ import android.view.MotionEvent;
 import android.view.View;
 
 import com.atakmap.android.devtools.DeveloperTools;
-import com.atakmap.android.elev.dt2.Dt2ElevationModel;
 import com.atakmap.android.items.GLMapItemsDatabaseRenderer;
 import com.atakmap.android.location.LocationMapComponent;
-import com.atakmap.android.maps.graphics.GLMapGroup;
 import com.atakmap.android.maps.graphics.GLMapGroup2;
 import com.atakmap.android.maps.graphics.GLMapItemFactory;
 import com.atakmap.android.maps.graphics.GLRootMapGroupLayer;
@@ -325,7 +323,6 @@ public class MapView extends AtakMapView {
             System.setProperty("USE_GENERIC_EGL_CONFIG", "true");
         super.initGLSurface();
 
-        GLMapItemFactory.registerSpi(GLMapGroup.DEFAULT_GLMAPITEM_SPI2);
         GLMapItemFactory.registerSpi(GLMapGroup2.DEFAULT_GLMAPITEM_SPI3);
 
         GLLayerFactory.register(GLRootMapGroupLayer.SPI2);
@@ -873,9 +870,9 @@ public class MapView extends AtakMapView {
         final double _latitude = center.get().getLatitude();
         final double _longitude = center.get().getLongitude();
 
-        final Dt2ElevationModel dem = Dt2ElevationModel.getInstance();
         try {
-            return dem.queryPoint(_latitude, _longitude);
+            return ElevationManager.getElevationMetadata(_latitude, _longitude,
+                    null);
         } catch (Exception e) {
             // error occurred, just get the point without elevation.
             return getPoint();

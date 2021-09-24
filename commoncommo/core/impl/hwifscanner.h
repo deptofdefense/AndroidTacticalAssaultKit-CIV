@@ -4,7 +4,7 @@
 #include "internalutils.h"
 #include "netinterface.h"
 #include "netsocket.h"
-#include <Cond.h>
+#include "commothread.h"
 #include "commologger.h"
 #include "threadedhandler.h"
 #include "platform.h"
@@ -77,9 +77,9 @@ private:
     InterfaceEnumerator ifEnum;
     std::set<HWIFScannerListener *> listeners;
     std::map<const HwAddress *, NetAddress *, HwComp> interfaceStateMap;
-    PGSC::Thread::Mutex interfaceStateMutex;
-    PGSC::Thread::CondVar interfaceStateMonitor;
-    PGSC::Thread::Mutex listenerMutex;
+    thread::Mutex interfaceStateMutex;
+    thread::CondVar interfaceStateMonitor;
+    thread::Mutex listenerMutex;
 
 
 

@@ -42,7 +42,7 @@
         android:layout_height="wrap_content"
         android:background="#77000000">
         <!-- LinearLayout required for background (otherwise text underline is covered) -->
-        <com.atakmap.android.hashtags.view.HashtagEditText
+        <com.atakmap.android.hashtags.view.RemarksLayout
             android:id="@+id/image_caption"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -51,10 +51,11 @@
             android:ellipsize="end"
             android:minLines="1"
             android:maxLines="2"
-            android:hint="@string/enter_caption"
+            android:hint="@string/enter_caption_button"
+            android:contentDescription="@string/enter_image_caption"
             android:inputType="textMultiLine|textCapSentences|textNoSuggestions"
-            atak:mixedInput="true"
-            atak:clickableTags="true"/>
+            atak:dialogHint=""
+            atak:labelVisibility="gone"/>
     </LinearLayout>
 
     <RelativeLayout

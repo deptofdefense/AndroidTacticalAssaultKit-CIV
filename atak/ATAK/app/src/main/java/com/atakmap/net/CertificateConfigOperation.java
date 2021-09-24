@@ -34,6 +34,7 @@ import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
 import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLPeerUnverifiedException;
 
 public class CertificateConfigOperation extends HTTPOperation {
 
@@ -50,6 +51,10 @@ public class CertificateConfigOperation extends HTTPOperation {
     public static final String PARAM_CONFIG_RESPONSE_SERVER_CERTS = com.atakmap.net.CertificateConfigOperation.class
             .getName()
             + ".PARAM_CONFIG_RESPONSE_SERVER_CERTS";
+
+    public static final String PARAM_CONFIG_RESPONSE_PEER_UNVERIFIED = com.atakmap.net.CertificateConfigOperation.class
+            .getName()
+            + ".PARAM_CONFIG_RESPONSE_PEER_UNVERIFIED";
 
     @Override
     public Bundle execute(Context context, Request request)
@@ -92,18 +97,18 @@ public class CertificateConfigOperation extends HTTPOperation {
             Bundle output = new Bundle();
             output.putParcelable(PARAM_CONFIG_REQUEST, configRequest);
 
-            boolean hostnameMismatch = false;
+            boolean sslError = false;
 
             try {
                 response = httpClient.execute(httpget, credentials);
-
+            } catch (SSLPeerUnverifiedException sslPeerUnverifiedException) {
+                sslError = true;
+                output.putBoolean(PARAM_CONFIG_RESPONSE_PEER_UNVERIFIED, true);
             } catch (SSLException sslException) {
-
-                // TODO is there a better way to identify the exception?
                 final String message = sslException.getMessage();
                 if (message != null && message
                         .contains("hostname in certificate didn't match")) {
-                    hostnameMismatch = true;
+                    sslError = true;
                     if (sslSocketFactory == null)
                         throw sslException;
                     serverCerts = sslSocketFactory.getServerCerts();
@@ -116,7 +121,7 @@ public class CertificateConfigOperation extends HTTPOperation {
                 }
             }
 
-            if (!hostnameMismatch) {
+            if (!sslError) {
                 response.verifyOk();
                 HttpEntity resEntity = response.getEntity();
                 String config = EntityUtils.toString(resEntity);
@@ -256,11 +261,10 @@ public class CertificateConfigOperation extends HTTPOperation {
                 "-----END CERTIFICATE REQUEST-----", "");
 
         CertificateSigningRequest csr = new CertificateSigningRequest(
-                initialRequest.getServer(),
+                initialRequest.getConnectString(),
                 initialRequest.getUsername(),
                 initialRequest.getPassword(),
                 initialRequest.hasTruststore(),
-                initialRequest.getSaveAsDefault(),
                 initialRequest.getAllowAllHostnames(),
                 signingRequest);
 

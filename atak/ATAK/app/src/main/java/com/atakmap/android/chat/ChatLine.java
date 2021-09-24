@@ -3,11 +3,17 @@ package com.atakmap.android.chat;
 
 import android.os.Bundle;
 
+import com.atakmap.android.maps.MapView;
+import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 
 import java.util.Date;
 
 public class ChatLine {
+
+    private static final String TAG = "ChatLine";
+
     public String conversationId = null;
     public String conversationName = null;
     public String protocol = null;
@@ -18,9 +24,32 @@ public class ChatLine {
     public String senderName = null;
     public String message = null;
     public String messageId = null;
+    public Status status = Status.NONE;
+    public String[] destinations = null;
+
+    // XXX - Deprecate now that "status" field exists?
     public boolean acked = false;
     public transient boolean read = false;
-    public String[] destinations = null;
+
+    public enum Status {
+        NONE(null),
+        DELIVERED("b-t-f-d"),
+        READ("b-t-f-r");
+
+        public final String cotType;
+
+        Status(String cotType) {
+            this.cotType = cotType;
+        }
+
+        public static Status forCotType(String type) {
+            for (Status r : values()) {
+                if (r.cotType != null && r.cotType.equals(type))
+                    return r;
+            }
+            return NONE;
+        }
+    }
 
     /**
      * Typically, only one of these is set, so get the one that is not null. Returns NULL if both
@@ -31,12 +60,9 @@ public class ChatLine {
     }
 
     public String toString() {
-        return "("
-                + (timeReceived == null
-                        ? new Date(timeSent).toString()
-                        : new Date(timeReceived).toString())
-                + ") "
-                + senderUid + ": " + message;
+        Long time = getTimeSentOrReceived();
+        String timestamp = time != null ? ("(" + new Date(time) + ") ") : "";
+        return timestamp + senderUid + ": " + message;
     }
 
     /**
@@ -68,8 +94,21 @@ public class ChatLine {
         ret.message = chatBundle.getString("message");
         ret.messageId = chatBundle.getString("messageId");
         ret.destinations = getDestinations(chatBundle);
+        ret.status = getMessageStatus(chatBundle);
         ret.read = chatBundle.getBoolean("read", false);
         return ret;
+    }
+
+    private static Status getMessageStatus(Bundle bundle) {
+        String status = bundle.getString("status");
+        if (FileSystemUtils.isEmpty(status))
+            return Status.NONE;
+        try {
+            return Status.valueOf(status);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to parse message status: " + status);
+            return Status.NONE;
+        }
     }
 
     private static String[] getDestinations(final Bundle chatBundle) {
@@ -97,6 +136,7 @@ public class ChatLine {
         ret.putString("messageId", messageId);
         ret.putString("senderUid", senderUid);
         ret.putString("message", message);
+        ret.putString("status", status.name());
         if (timeReceived != null) // need to do this for Longs because they will
                                   // be auto-boxed
             ret.putLong("receiveTime", timeReceived);
@@ -107,4 +147,11 @@ public class ChatLine {
         return ret;
     }
 
+    /**
+     * Check if this chat message belongs to the local user
+     * @return True if the chat message is from the local user
+     */
+    boolean isSelfChat() {
+        return FileSystemUtils.isEquals(this.senderUid, MapView.getDeviceUid());
+    }
 }

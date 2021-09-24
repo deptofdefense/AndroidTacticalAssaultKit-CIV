@@ -21,6 +21,7 @@ import com.atakmap.coremap.maps.coords.NorthReference;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
+import com.atakmap.math.MathUtils;
 import com.atakmap.math.PointD;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLNinePatch;
@@ -29,7 +30,7 @@ import com.atakmap.opengl.GLText;
 import java.util.ArrayList;
 
 /**
- * @deprecated Use {@link com.atakmap.android.maps.graphics.GLAutoSizeAngleOverlay2}
+ * @deprecated Use {@link com.atakmap.android.maps.graphics.GLAngleOverlay2}
  */
 @Deprecated
 @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
@@ -109,12 +110,12 @@ public class GLAutoSizeAngleOverlay extends GLShape implements
     }
 
     @Override
-    public void draw(GLMapView ortho) {
-        if (!sw.getVisible())
+    public void draw(GLMapView ortho, int renderPass) {
+        if (!sw.getVisible() || !MathUtils.hasBits(renderPass, getRenderPass()))
             return;
         this.ortho = ortho;
 
-        //before redrawing, check to see if the screen has moved or if 
+        //before redrawing, check to see if the screen has moved or if
         //the center of the overlay has changed
         if (drawVersion != ortho.drawVersion || invalid) {
             if (invalid)
@@ -267,7 +268,7 @@ public class GLAutoSizeAngleOverlay extends GLShape implements
     }
 
     /**
-     * 
+     *
      * @param startVert
      * @param text  The <B>non-localized</B> text.
      * @param rotation
@@ -287,7 +288,7 @@ public class GLAutoSizeAngleOverlay extends GLShape implements
         _textPoint[0] += xOffset;
         _textPoint[1] += yOffset;
 
-        GLNinePatch _ninePatch = GLRenderGlobals.get(this.renderContext)
+        GLNinePatch _ninePatch = GLRenderGlobals.get(this.context)
                 .getMediumNinePatch();
 
         final float labelWidth = _label.getStringWidth(text);
@@ -736,14 +737,14 @@ public class GLAutoSizeAngleOverlay extends GLShape implements
     public void onPointsChanged(Shape s) {
         final GeoBounds newBounds = sw.getBounds(null);
         final GeoPoint newCenter = sw.getCenter().get();
-        renderContext.queueEvent(new Runnable() {
+        runOnGLThread(new Runnable() {
             @Override
             public void run() {
                 //if the subject has changed locations
                 centerMoved = !centerGP.equals(newCenter);
                 centerGP = newCenter;
                 bounds.set(newBounds);
-                OnBoundsChanged();
+                dispatchOnBoundsChanged();
                 invalid = true;
             }
         });

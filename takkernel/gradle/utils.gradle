@@ -1,0 +1,25 @@
+ext.getValueFromPropertiesFile = { propFile, key ->
+    if(!propFile.isFile() || !propFile.canRead())
+        return null
+    def prop = new Properties()
+    def reader = propFile.newReader()
+    try {
+        prop.load(reader)
+    } finally {
+        reader.close()
+    }
+    return prop.get(key)
+}
+
+/**
+ * Returns the value of the named property if it is defined, else the specified
+ * default. Project properties are always evaluated first, followed by
+ * `local.properties` defined in the project root.
+ */
+ext.getProperty = { project, name, defValue ->
+    def prop = project.properties[name] ?:
+            getValueFromPropertiesFile(project.rootProject.file('local.properties'), name)
+    return (null == prop) ? defValue : prop
+}
+
+

@@ -14,9 +14,8 @@
 #include "commologger.h"
 #include "fileioprovider.h"
 #include "fileioprovidertracker.h"
+#include "commothread.h"
 
-#include <Mutex.h>
-#include <Cond.h>
 #include "curl/curl.h"
 #include "microhttpd.h"
 
@@ -320,7 +319,7 @@ private:
     HWIFScanner *hwIfScanner;
     const ContactUID *ourContactUID;
     std::string ourCallsign;
-    PGSC::Thread::Mutex callsignMutex;
+    thread::Mutex callsignMutex;
 
     MPTransferSettings xferSettings;
 
@@ -332,8 +331,8 @@ private:
     typedef std::deque<std::pair<std::string, CoTFileTransferRequest *>>
                                                               RxRequestDeque;
     RxRequestDeque rxRequests;
-    PGSC::Thread::Mutex rxRequestsMutex;
-    PGSC::Thread::CondVar rxRequestsMonitor;
+    thread::Mutex rxRequestsMutex;
+    thread::CondVar rxRequestsMonitor;
 
     // local filename -> context
     typedef std::map<std::string, FileTransferContext *> RxTransferMap;
@@ -350,7 +349,7 @@ private:
     // Map txtransfercontext's themselves can only be destroyed
     // by TxThread.
     TxTransferMap txTransfers;
-    PGSC::Thread::Mutex txTransfersMutex;
+    thread::Mutex txTransfersMutex;
 
     typedef std::map<std::string, int> TxAcksMap;
     // Protected also by txTransfersMutex
@@ -361,13 +360,13 @@ private:
     // acks received, to be processed by TX thread
     // uid's of the acks
     std::deque<TxAckInfo *> txAcks;
-    PGSC::Thread::Mutex txAcksMutex;
-    PGSC::Thread::CondVar txAcksMonitor;
+    thread::Mutex txAcksMutex;
+    thread::CondVar txAcksMonitor;
 
     // New uploads initiated but not picked up by upload thread yet
     std::deque<TxUploadContext *> uploadRequests;
-    PGSC::Thread::Mutex uploadRequestsMutex;
-    PGSC::Thread::CondVar uploadRequestsMonitor;
+    thread::Mutex uploadRequestsMutex;
+    thread::CondVar uploadRequestsMonitor;
 
 
     CURLM *uploadCurlMultiCtx;
@@ -378,8 +377,8 @@ private:
 
     // Events to be fired by event thread in order
     std::deque<MPStatusEvent *> eventQueue;
-    PGSC::Thread::Mutex eventQueueMutex;
-    PGSC::Thread::CondVar eventQueueMonitor;
+    thread::Mutex eventQueueMutex;
+    thread::CondVar eventQueueMonitor;
 
 
     static CURLcode curlSslCtxSetupRedir(CURL *curl, void *sslctx, void *privData);

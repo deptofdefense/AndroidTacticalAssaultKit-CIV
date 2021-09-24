@@ -46,13 +46,18 @@ public class FocusBroadcastReceiver extends BroadcastReceiver {
             switch (action) {
                 case "com.atakmap.android.maps.FOCUS":
                     _focus(context, intent);
+
+                    // this is different than the FOCUS_UNFOCUS because it does not call
+                    // CLOSE_DROPDOWN and utilize the same machinery that the MapItemImporter
+                    // relies upon
+                    if (intent.getBooleanExtra("immediateUnfocus", false))
+                        _unfocus(context, intent);
                     break;
                 case "com.atakmap.android.maps.UNFOCUS":
                 case "com.atakmap.android.maps.UNFOCUS_FOR_FINE_ADJUST":
                     _unfocus(context, intent);
                     break;
-                case "com.atakmap.android.maps.FOCUS_UNFOCUS": { // Courtesy of
-                    // Andrew
+                case "com.atakmap.android.maps.FOCUS_UNFOCUS": { // Courtesy of Andrew
                     Intent i = new Intent();
                     i.setAction("com.atakmap.android.maps.CLOSE_DROPDOWN");
                     AtakBroadcast.getInstance().sendBroadcast(i);

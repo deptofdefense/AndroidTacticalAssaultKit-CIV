@@ -1,6 +1,37 @@
 diff -U 10 -r ogdi-3.2.0-pristine/config/common.mak.in ogdi/config/common.mak.in
 --- ogdi-3.2.0-pristine/config/common.mak.in	2008-05-27 20:05:49.000000000 -0400
 +++ ogdi/config/common.mak.in	2019-01-16 15:27:54.342669400 -0500
+@@ -44,26 +44,29 @@
+
+ #
+ # Default definitions
+ #
+
+ ifndef CFG
+ CFG = release
+ endif
+
+ ifndef TARGET
+-TARGET = $(shell uname)
++TARGET = @OGDI_TARGET@
++# TARGET = $(shell uname)
+ ifeq ($(TARGET), GNU/kFreeBSD)
+ TARGET = Linux
+ endif
+ endif
+
++SHLIB_EXT      = @shlib_ext@
++
+ #
+ # Standard location of external components (not maintained
+ # by LAS)
+ #
+
+
+ #
+ # Standard location of compiled component libraries
+ #
+
 @@ -225,26 +225,20 @@
  
  ifeq ($(TARGETGEN),$(DYNAGEN))
@@ -31,7 +62,36 @@ diff -U 10 -r ogdi-3.2.0-pristine/config/common.mak.in ogdi/config/common.mak.in
 diff -U 10 -r ogdi-3.2.0-pristine/config/unix.mak ogdi/config/unix.mak
 --- ogdi-3.2.0-pristine/config/unix.mak	2008-01-07 15:11:17.000000000 -0500
 +++ ogdi/config/unix.mak	2019-01-16 15:27:54.358269400 -0500
-@@ -84,25 +84,24 @@
+@@ -35,21 +35,20 @@
+ MKINSTALLDIR	= $(TOPDIR)/config/mkinstalldirs
+ 
+ #
+ # File name extensions
+ #
+ APP_EXT		=
+ ARCH_EXT	= a
+ LIB_PREFIX	= lib
+ LIB_SUFFIX	=
+ OBJ_EXT		= o
+-SHLIB_EXT	= so
+ 
+ #
+ # Command switches
+ #
+ DEFINE_SW	= -D
+ INCL_SW		= -I
+ LIB_SW		= $(subst :, -l,:)
+ LINK_SW		= -L
+ 
+ ifeq ($(CFG),debug)
+@@ -77,32 +76,31 @@
+ DL_LINKLIB	= 
+ 
+ LIBC_LINKLIB	= -lc
+ 
+ #
+ # make rules
+ #
  $(ARCHGEN): $(OBJECTS)
  	@echo Making archive file: $@
  	$(AR) $@ $^ 
@@ -58,7 +118,7 @@ diff -U 10 -r ogdi-3.2.0-pristine/config/unix.mak ogdi/config/unix.mak
  
  
  
- 
+  
 diff -U 10 -r ogdi-3.2.0-pristine/config/win32.mak ogdi/config/win32.mak
 --- ogdi-3.2.0-pristine/config/win32.mak	2016-07-11 06:14:46.000000000 -0400
 +++ ogdi/config/win32.mak	2019-01-16 15:27:54.358269400 -0500
@@ -119,30 +179,113 @@ diff -U 10 -r ogdi-3.2.0-pristine/config/win32.mak ogdi/config/win32.mak
 diff -U 10 -r ogdi-3.2.0-pristine/configure ogdi/configure
 --- ogdi-3.2.0-pristine/configure	2016-07-19 08:17:07.000000000 -0400
 +++ ogdi/configure	2019-01-16 15:27:54.358269400 -0500
-@@ -2071,9 +2071,9 @@
+@@ -646,20 +646,21 @@
+ OBJEXT
+ EXEEXT
+ ac_ct_CC
+ CPPFLAGS
+ LDFLAGS
+ CFLAGS
+ CC
+ OGDI_MINOR
+ OGDI_MAJOR
+ OGDI_VERSION
++OGDI_TARGET
+ target_alias
+ host_alias
+ build_alias
+ LIBS
+ ECHO_T
+ ECHO_N
+ ECHO_C
+ DEFS
+ mandir
+ localedir
+@@ -676,20 +677,21 @@
+ sharedstatedir
+ sysconfdir
+ datadir
+ datarootdir
+ libexecdir
+ sbindir
+ bindir
+ program_transform_name
+ prefix
+ exec_prefix
++shlib_ext
+ PACKAGE_URL
+ PACKAGE_BUGREPORT
+ PACKAGE_STRING
+ PACKAGE_VERSION
+ PACKAGE_TARNAME
+ PACKAGE_NAME
+ PATH_SEPARATOR
+ SHELL'
+ ac_subst_files=''
+ ac_user_opts='
+@@ -2055,32 +2057,47 @@
+ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
+
+ OGDI_VERSION=3.2.0
+ OGDI_MAJOR=3
+ OGDI_MINOR=2
+
++case "xx-$host_alias" in
++    xx-*-android*)
++        OGDI_TARGET=Linux
++        ;;
++    *)
++        OGDI_TARGET="`uname`"
++        ;;
++esac
+
+-
++case `uname` in
++  Darwin|darwin)
++    shlib_ext=dylib
++    ;;
++  *)
++    shlib_ext=so
++    ;;
++esac
+
+
+
+ if test "$TOPDIR" = "" ; then
    as_fn_error $? "Required TOPDIR environment variable not set, see README." "$LINENO" 5
  fi
- 
+
 -if test "$OS" = "Windows_NT" ; then
 -  as_fn_error $? "Please don't use configure for Windows, see README." "$LINENO" 5
 -fi
 +#if test "$OS" = "Windows_NT" ; then
 +#  as_fn_error $? "Please don't use configure for Windows, see README." "$LINENO" 5
 +#fi
- 
+
  ac_ext=c
  ac_cpp='$CPP $CPPFLAGS'
-@@ -3794,20 +3794,24 @@
+ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ ac_compiler_gnu=$ac_cv_c_compiler_gnu
+ if test -n "$ac_tool_prefix"; then
+   # Extract the first word of "${ac_tool_prefix}gcc", so it can be a program name with args.
+ set dummy ${ac_tool_prefix}gcc; ac_word=$2
+ { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+@@ -3794,20 +3811,24 @@
    fi
- 
+
    if test -r $with_proj/lib/libproj.so ; then
      PROJ_LIB=$with_proj/lib/libproj.so
      echo "checking for $PROJ_LIB ... found"
- 
+
    elif test -r $with_proj/lib/libproj.a ; then
      PROJ_LIB=$with_proj/lib/libproj.a
      echo "checking for $PROJ_LIB ... found"
- 
+
 +  elif test -r $with_proj/lib/libproj.dylib ; then
 +    PROJ_LIB=$with_proj/lib/libproj.dylib
 +    echo "checking for $PROJ_LIB ... found"
@@ -150,16 +293,23 @@ diff -U 10 -r ogdi-3.2.0-pristine/configure ogdi/configure
    else
      as_fn_error $? "Unable to find $with_proj/lib/libproj.{so,a}" "$LINENO" 5
    fi
- 
+
    PROJ_SETTING=external
- 
+
  fi
- 
- 
+
+
  # Check whether --with-projlib was given.
-@@ -5374,7 +5374,12 @@
- 
- 
+@@ -5363,14 +5384,19 @@
+   # would make configure fail if this is the last instruction.
+   $ac_cs_success || as_fn_exit 1
+ fi
+ if test -n "$ac_unrecognized_opts" && test "$enable_option_checking" != no; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: unrecognized options: $ac_unrecognized_opts" >&5
+ $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
+ fi
+
+
  target=`uname`
 -if test "$target" = "GNU/kFreeBSD" ; then
 -  target=Linux
@@ -750,3 +900,28 @@ diff -U 10 -r ogdi-3.2.0-pristine/vpflib/vpftidx.c ogdi/vpflib/vpftidx.c
  
  int32 read_thematic_index_header ( ThematicIndexHeader *h,
                                               FILE *ifp );
+--- ogdi-3.2.0-pristine/makefile	2016-07-11 06:14:46.000000000 -0400
++++ ogdi/makefile	2021-06-01 11:58:19.692642150 -0400
+@@ -13,21 +13,21 @@
+ EXTRA_INSTALL_TARGETS	=	mk_nonlocal_install_dirs
+ 
+ ifeq ($(TARGET),win32)
+ IGNORE := $(shell sed "s/@OGDI_MAJOR@/3/" < $(TOPDIR)/config/common.mak.in | sed "s/@OGDI_MINOR@/2/" > $(TOPDIR)/config/common.mak)
+ endif
+ include $(TOPDIR)/config/common.mak
+  
+ #
+ # Sub-directories that need to be built
+ #
+-subdirs	= external vpflib ogdi contrib
++subdirs	= external vpflib ogdi
+ 
+ ifneq ($(PROJ_SETTING),external)
+ subdirs := proj $(subdirs) 
+ endif
+ 
+ #
+ # Default target to build everything in all sub-directories
+ #
+ all: $(subdirs) 
+ 

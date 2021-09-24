@@ -6,14 +6,14 @@ import android.content.SharedPreferences;
 import com.atakmap.android.features.FeatureDataStoreDeepMapItemQuery;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
-import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.layer.feature.Feature;
-import com.atakmap.map.layer.feature.FeatureLayer;
+import com.atakmap.map.layer.feature.FeatureLayer3;
 import com.atakmap.map.layer.raster.AbstractDataStoreRasterLayer2;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
 import com.atakmap.map.layer.raster.LocalRasterDataStore;
 import com.atakmap.map.layer.raster.RasterDataStore;
 import com.atakmap.map.layer.raster.RasterLayer2;
+import com.atakmap.map.hittest.HitTestQueryParameters;
 
 import java.io.File;
 import java.util.Collections;
@@ -27,7 +27,7 @@ public class GRGDeepMapItemQuery extends FeatureDataStoreDeepMapItemQuery
     private final RasterLayer2 grgLayer;
     private final RasterDataStore grgDataStore;
 
-    public GRGDeepMapItemQuery(FeatureLayer layer,
+    public GRGDeepMapItemQuery(FeatureLayer3 layer,
             AbstractDataStoreRasterLayer2 grgDataStore) {
         super(layer);
 
@@ -79,19 +79,11 @@ public class GRGDeepMapItemQuery extends FeatureDataStoreDeepMapItemQuery
     }
 
     @Override
-    public synchronized MapItem deepHitTest(int xpos, int ypos, GeoPoint point,
-            MapView view) {
+    public synchronized SortedSet<MapItem> deepHitTest(MapView mapView,
+            HitTestQueryParameters params) {
         if (!this.hitTestEnabled)
             return null;
-        return super.deepHitTest(xpos, ypos, point, view);
-    }
-
-    @Override
-    public synchronized SortedSet<MapItem> deepHitTestItems(int xpos, int ypos,
-            GeoPoint point, MapView view) {
-        if (!this.hitTestEnabled)
-            return null;
-        return super.deepHitTestItems(xpos, ypos, point, view);
+        return super.deepHitTest(mapView, params);
     }
 
     /**************************************************************************/

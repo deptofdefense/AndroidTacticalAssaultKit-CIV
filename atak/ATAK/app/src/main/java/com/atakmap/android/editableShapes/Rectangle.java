@@ -7,7 +7,6 @@ import android.graphics.Color;
 
 import com.atakmap.android.drawing.DrawingPreferences;
 import com.atakmap.android.drawing.mapItems.DrawingRectangle;
-import com.atakmap.android.elev.dt2.Dt2ElevationModel;
 import com.atakmap.android.importexport.handlers.ParentMapItem;
 import com.atakmap.android.maps.AnchoredMapItem;
 import com.atakmap.android.maps.Association;
@@ -21,7 +20,6 @@ import com.atakmap.android.maps.Polyline;
 import com.atakmap.android.maps.Shape;
 import com.atakmap.android.preference.UnitPreferences;
 import com.atakmap.android.util.EditAction;
-import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.conversions.SpanUtilities;
 
@@ -77,6 +75,7 @@ public abstract class Rectangle extends AssociationSet
     private boolean _tacticalOverlay;
     private boolean _showLines = true;
     private final UnitPreferences _unitPrefs;
+    private boolean _ignoreCenterChange;
     protected final MutableGeoBounds _bounds = new MutableGeoBounds(0, 0, 0, 0);
 
     /************************ CONSTRUCTORS ****************************/
@@ -92,12 +91,12 @@ public abstract class Rectangle extends AssociationSet
         this.setType(getCotType());
         this.setTitle(_childMapGroup.getFriendlyName());
         this.setMetaBoolean("editable", true);
+        setMovable(true);
         DrawingPreferences drawPrefs = new DrawingPreferences(mv);
         this.setColor(drawPrefs.getShapeColor());
         this.setFillColor(drawPrefs.getFillColor());
         this.setStrokeWeight(drawPrefs.getStrokeWeight());
-        this.setMetaString("menu", getMenuPath());
-        this.setClickable(true);
+        this.setRadialMenu(getMenuPath());
         this.setMetaString("iconUri", "asset://icons/rectangle.png");
         this.setStyle(Shape.STYLE_STROKE_MASK | Shape.STYLE_FILLED_MASK
                 | Polyline.STYLE_CLOSED_MASK);
@@ -238,10 +237,12 @@ public abstract class Rectangle extends AssociationSet
             // Update the center marker
             PointMapItem pmi = getAnchorItem();
             if (pmi != null) {
+                _ignoreCenterChange = true;
                 if (manualEntry)
                     pmi.setPoint(newPoint);
                 else
                     setPoint(pmi, newPoint);
+                _ignoreCenterChange = false;
             }
 
             this.onPointsChanged();
@@ -279,8 +280,7 @@ public abstract class Rectangle extends AssociationSet
      * Given a GeoPoint, construct a new GeoPoint with an altitude.
      */
     static private GeoPointMetaData fillAltitude(final GeoPointMetaData p) {
-        final Dt2ElevationModel dem = Dt2ElevationModel.getInstance();
-        return dem.queryPoint(p.get().getLatitude(), p.get().getLongitude());
+        return ElevationManager.getElevationMetadata(p.get());
     }
 
     /**
@@ -447,8 +447,8 @@ public abstract class Rectangle extends AssociationSet
             _center.setHeight(getHeight());
         } else {
             setCenterPoint(_center.getGeoPointMetaData());
-            _center.addOnPointChangedListener(this);
         }
+            _center.addOnPointChangedListener(this);
         _center.addOnGroupChangedListener(this);
     }
 
@@ -462,6 +462,8 @@ public abstract class Rectangle extends AssociationSet
      * @param point Center point
      */
     public void setCenterPoint(GeoPointMetaData point) {
+        _ignoreCenterChange = true;
+
         // Update center marker position
         Marker center = getCenterMarker();
         if (center != null && !center.getPoint().equals(point.get()))
@@ -471,6 +473,8 @@ public abstract class Rectangle extends AssociationSet
         GeoPointMetaData oldPoint = computeCenter();
         if (!oldPoint.equals(point))
             move(oldPoint, point);
+
+        _ignoreCenterChange = false;
     }
 
     @Override
@@ -534,31 +538,17 @@ public abstract class Rectangle extends AssociationSet
             _center.refresh(MapView.getMapView().getMapEventDispatcher(), null,
                     this.getClass());
         }
+        for (Association a : _lines) {
+            a.setTitle(title);
+            a.getMarker().setTitle(title);
+            a.getFirstItem().setTitle(title);
+            a.getSecondItem().setTitle(title);
+    }
     }
 
     @Override
     public String getTitle() {
         return this.getMetaString("shapeName", "Rectangle");
-    }
-
-    /**
-     * @param name The name for this {@link Rectangle}
-     * @deprecated Just use {@link #setTitle(String)} instead
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public void setName(String name) {
-        setTitle(name);
-    }
-
-    /**
-     * @return The name of this {@link Rectangle}
-     * @deprecated Just use {@link #getTitle()} instead
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public String getName() {
-        return getTitle();
     }
 
     /**
@@ -670,6 +660,7 @@ public abstract class Rectangle extends AssociationSet
             if (_filledShape == null) {
                 _filledShape = new Polyline(UUID.randomUUID().toString());
                 _filledShape.setMetaBoolean("addToObjList", false);
+                _filledShape.setClickable(false);
                 _childMapGroup.addItem(_filledShape);
             }
             _filledShape.setPoints(points, 0, Math.min(4, points.length));
@@ -740,6 +731,15 @@ public abstract class Rectangle extends AssociationSet
         super.onVisibleChanged();
     }
 
+    @Override
+    public void setClickable(boolean state) {
+        super.setClickable(state);
+        for (Association a : _lines)
+            a.setClickable(state);
+        if (_center != null)
+            _center.setClickable(state);
+    }
+
     /**
      * @param m Side Marker of this {@link Rectangle}.
      * @return Index of the side that corresponds to this Marker. If not part of this
@@ -767,13 +767,6 @@ public abstract class Rectangle extends AssociationSet
         super.setMovable(movable);
         if (_center != null)
             _center.setMovable(movable);
-    }
-
-    @Override
-    public void setClickable(boolean clickable) {
-        super.setClickable(clickable);
-        if (_center != null)
-            _center.setClickable(clickable);
     }
 
     @Override
@@ -838,7 +831,7 @@ public abstract class Rectangle extends AssociationSet
 
     @Override
     public void onPointChanged(PointMapItem item) {
-        if (item == _center && !isCenterShapeMarker())
+        if (item == _center && !_ignoreCenterChange)
             setCenterPoint(item.getGeoPointMetaData());
     }
 
@@ -982,7 +975,6 @@ public abstract class Rectangle extends AssociationSet
     }
 
     public void removeOnMovedListener(OnMoveListener l) {
-        if (_onMoveListeners.contains(l))
             _onMoveListeners.remove(l);
     }
 
@@ -1248,6 +1240,11 @@ public abstract class Rectangle extends AssociationSet
         a.setLink(Association.LINK_LINE);
         a.setClickable(false);
         a.setType(this.getAssocType());
+        a.setRadialMenu(getMenuPath());
+        a.setClickable(getClickable());
+        a.setMetaBoolean("editable", getMetaBoolean("editable", true));
+        a.setMetaString("shapeUID", getUID());
+        a.setTitle(getTitle());
         return a;
     }
 
@@ -1255,7 +1252,7 @@ public abstract class Rectangle extends AssociationSet
         Marker m = new Marker(point, UUID.randomUUID().toString());
         m.setMetaString("entry", ""); // can't modify these via DTED because the extra calculations
                                       // mess with the ignoring of the onpointchangedlistener
-        m.setMetaBoolean("movable", true);
+        m.setMovable(getMovable());
         m.setType(getCornerPointType());
         m.setMetaString("how", "h-g-i-g-o");
         m.setMetaString(getUIDKey(), getUID());
@@ -1263,6 +1260,8 @@ public abstract class Rectangle extends AssociationSet
         m.setMetaBoolean("nevercot", true);
         m.setVisible(_editable);
         m.setZOrder(getZOrder() + Z_ORDER_MARKERS);
+        m.setShowLabel(false);
+        m.setTitle(getTitle());
         return m;
     }
 
@@ -1271,7 +1270,7 @@ public abstract class Rectangle extends AssociationSet
         m.setMetaString("entry", ""); // can't modify these via DTED because the extra calculations
                                       // mess with the ignoring of the onpointchangedlistener
         m.setMetaBoolean("editable", false);
-        m.setMetaBoolean("movable", true);
+        m.setMovable(getMovable());
         m.setType(getSideMarkerType());
         m.setMetaString("how", "h-g-i-g-o");
         m.setMetaString(getUIDKey(), getUID());
@@ -1279,6 +1278,8 @@ public abstract class Rectangle extends AssociationSet
         m.setMetaBoolean("nevercot", true);
         m.setVisible(_editable);
         m.setZOrder(getZOrder() + Z_ORDER_MARKERS);
+        m.setShowLabel(false);
+        m.setTitle(getTitle());
         return m;
     }
 
@@ -1296,7 +1297,8 @@ public abstract class Rectangle extends AssociationSet
         m.setMetaBoolean("addToObjList", false);
         m.setMetaString("shapeName", getTitle());
         m.setMetaBoolean("nevercot", true);
-        m.setMetaString("menu", getMenuPath());
+        m.setMovable(getMovable());
+        m.setRadialMenu(getMenuPath());
         m.setZOrder(getZOrder() + Z_ORDER_MARKERS);
         m.setColor(getColor());
         //m.refresh(mapView.getMapEventDispatcher(), null);
@@ -1340,26 +1342,6 @@ public abstract class Rectangle extends AssociationSet
                 _center.toggleMetaData("labels_on", on);
         }
         super.toggleMetaData(key, on);
-    }
-
-    // Test all of the lines of this Rectangle for a hit
-    @Override
-    public boolean testOrthoHit(int xpos, int ypos, GeoPoint point,
-            MapView view) {
-        // Touchable/visible
-        if (!isTouchable() || !_showLines)
-            return false;
-
-        // Hit test on lines
-        for (Association a : _lines) {
-            if (a.testOrthoHit(xpos, ypos, point, view)) {
-                setTouchPoint(a.findTouchPoint());
-                setMetaString("menu_point",
-                        a.getMetaString("menu_point", null));
-                return true;
-            }
-        }
-        return false;
     }
 
     private final PointMapItem.OnPointChangedListener sideListener = new PointMapItem.OnPointChangedListener() {
@@ -1836,5 +1818,10 @@ public abstract class Rectangle extends AssociationSet
     @Override
     public double getArea() {
         return getLength() * getWidth();
+    }
+
+    @Override
+    public double getPerimeterOrLength() {
+        return 2 * getLength() + 2 * getWidth();
     }
 }

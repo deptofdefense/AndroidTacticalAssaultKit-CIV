@@ -1275,6 +1275,7 @@ public class ActionBarReceiver extends BroadcastReceiver {
                     menuItem.setIcon(icon);
                 }
                 menuItem.setShowAsAction(showAs);
+
                 View view = menuItem.getActionView();
                 if (view != null) {
                     view.setOnClickListener(actionBarListener);
@@ -1375,11 +1376,13 @@ public class ActionBarReceiver extends BroadcastReceiver {
             return icon;
         }
 
-        if (icon instanceof BitmapDrawable) {
+        // XXX - Icons do not need to be scaled up because the action bar height
+        // automatically scales the icons already
+        /*if (icon instanceof BitmapDrawable) {
             Bitmap bitmap = ((BitmapDrawable) icon).getBitmap();
             int size = bitmap.getWidth();
             //match the action bar height scaling done by ATAKActivity
-            int scaledsize = Math.round(((float) size) * SCALE_FACTOR);
+            int scaledsize = Math.round(((float) size) * iconScale);
             if (scaledsize > size) {
                 icon = new BitmapDrawable(context.getResources(),
                         Bitmap.createScaledBitmap(bitmap, scaledsize,
@@ -1390,7 +1393,8 @@ public class ActionBarReceiver extends BroadcastReceiver {
             if (cache && !(orig instanceof LayerDrawable)) {
                 largeIconCache.put(orig, icon);
             }
-        }
+        }*/
+
         return icon;
     }
 

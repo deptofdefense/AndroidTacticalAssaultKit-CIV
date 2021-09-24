@@ -15,14 +15,17 @@ import android.widget.ExpandableListAdapter;
 import android.widget.ExpandableListView;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.atakmap.android.data.FileContentHandler;
 import com.atakmap.android.data.URIContentHandler;
 import com.atakmap.android.data.URIContentManager;
+import com.atakmap.android.data.URIFilter;
 import com.atakmap.android.data.URIHelper;
 import com.atakmap.android.data.URIQueryParameters;
 import com.atakmap.android.drawing.mapItems.DrawingShape;
 import com.atakmap.android.hierarchy.filters.FOVFilter;
+import com.atakmap.android.maps.ILocation;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.PointMapItem;
@@ -44,7 +47,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Dialog for selecting which content to include from a lasso selection
@@ -69,6 +71,7 @@ public class LassoSelectionDialog implements DialogInterface.OnDismissListener {
     private final LayoutInflater _inflater;
 
     private DrawingShape _lasso;
+    private URIFilter _filter;
     private Callback _callback;
     private ImageView _selectAllIcon;
     private View _selectAllBtn;
@@ -92,6 +95,16 @@ public class LassoSelectionDialog implements DialogInterface.OnDismissListener {
     }
 
     /**
+     * Set the URI-based filter for accepting content in the lasso
+     * @param filter URI filter
+     * @return Dialog
+     */
+    public LassoSelectionDialog setFilter(URIFilter filter) {
+        _filter = filter;
+        return this;
+    }
+
+    /**
      * Set the callback to be invoked when the selection is finished
      * @param cb Callback
      * @return Dialog
@@ -108,6 +121,17 @@ public class LassoSelectionDialog implements DialogInterface.OnDismissListener {
         if (_lasso == null)
             return;
 
+        // Find map items and files within lasso
+        ContentMap contentMap = buildContents();
+
+        // If there's nothing we can select then stop
+        if (contentMap.isEmpty()) {
+            _lasso.removeFromGroup();
+            Toast.makeText(_context, R.string.no_content_selectable,
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+
         View v = LayoutInflater.from(_context).inflate(
                 R.layout.lasso_selection_dialog, _mapView, false);
 
@@ -115,7 +139,7 @@ public class LassoSelectionDialog implements DialogInterface.OnDismissListener {
         _selectAllIcon = v.findViewById(R.id.select_all_icon);
 
         _list = v.findViewById(R.id.list);
-        _list.setAdapter(_adapter = new LassoSelectionAdapter(buildContents()));
+        _list.setAdapter(_adapter = new LassoSelectionAdapter(contentMap));
 
         AlertDialog.Builder b = new AlertDialog.Builder(_context);
         b.setTitle(R.string.select_items);
@@ -138,9 +162,9 @@ public class LassoSelectionDialog implements DialogInterface.OnDismissListener {
             _lasso.removeFromGroup();
     }
 
-    private Map<String, List<ContentEntry>> buildContents() {
+    private ContentMap buildContents() {
 
-        Map<String, List<ContentEntry>> ret = new HashMap<>();
+        ContentMap ret = new ContentMap();
 
         // Get bounds and closed area vectors
         GeoPoint[] points = _lasso.getPoints();
@@ -192,6 +216,11 @@ public class LassoSelectionDialog implements DialogInterface.OnDismissListener {
             }
 
             ContentEntry e = new ContentEntry(mi);
+
+            // Check if filter accepts this content
+            if (!acceptContent(e))
+                continue;
+
             if (mi instanceof PointMapItem)
                 markers.add(e);
             else if (mi instanceof VehicleModel)
@@ -207,6 +236,7 @@ public class LassoSelectionDialog implements DialogInterface.OnDismissListener {
         // Gather URI-based content
         URIQueryParameters params = new URIQueryParameters();
         params.fov = new FOVFilter(bounds);
+        params.visibleOnly = true;
         List<URIContentHandler> handlers = URIContentManager.getInstance()
                 .query(params);
 
@@ -218,6 +248,19 @@ public class LassoSelectionDialog implements DialogInterface.OnDismissListener {
                 continue;
 
             ContentEntry e = new ContentEntry(h, f);
+
+            // Check if filter accepts this content
+            if (!acceptContent(e))
+                continue;
+
+            // If the bounds of this content exceed the bounds of the lasso
+            // then it's likely this wasn't intentionally selected
+            // Set selected to false by default
+            if (h instanceof ILocation) {
+                GeoBounds hBounds = ((ILocation) h).getBounds(null);
+                if (!bounds.contains(hBounds))
+                    e.selected = false;
+            }
 
             if (h instanceof FileContentHandler) {
                 String cType = ((FileContentHandler) h).getContentType();
@@ -236,6 +279,37 @@ public class LassoSelectionDialog implements DialogInterface.OnDismissListener {
         ret.put(_context.getString(R.string.files), files);
 
         return ret;
+    }
+
+    /**
+     * Check if the filter accepts some content
+     *
+     * @param e Content entry
+     * @return True if filter isn't set or the content is deemed acceptable
+     */
+    private boolean acceptContent(ContentEntry e) {
+        return _filter == null || _filter.accept(e.uri);
+    }
+
+    /**
+     * Maps contents by group names
+     */
+    private static class ContentMap
+            extends HashMap<String, List<ContentEntry>> {
+
+        @Override
+        public boolean isEmpty() {
+            if (super.isEmpty())
+                return true;
+
+            // Check lists too
+            for (List<ContentEntry> list : values()) {
+                if (!list.isEmpty())
+                    return false;
+            }
+
+            return true;
+        }
     }
 
     /**
@@ -348,7 +422,7 @@ public class LassoSelectionDialog implements DialogInterface.OnDismissListener {
 
         private final List<GroupEntry> _groups;
 
-        LassoSelectionAdapter(Map<String, List<ContentEntry>> groups) {
+        LassoSelectionAdapter(ContentMap groups) {
             _groups = new ArrayList<>();
             List<String> names = new ArrayList<>(groups.keySet());
             Collections.sort(names, SORT_NAME);

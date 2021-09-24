@@ -1670,12 +1670,29 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
         addMultiLayer.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                String fp = FileSystemUtils.getRoot().getPath() + "/multi.png";
-                File file = new File(fp);
-                if (!file.exists()) {
-                    toast("file: " + fp
+                File f = FileSystemUtils.getItem("tools/helloworld/logo.png");
+                f.getParentFile().mkdir();
+                FileOutputStream fos = null;
+                try {
+                    fos = new FileOutputStream(f);
+                    if (FileSystemUtils.assetExists(pluginContext,
+                            "logo.png")) {
+                        FileSystemUtils.copyFromAssets(pluginContext,
+                                "logo.png",
+                                fos);
+                    }
+                } catch (Exception e) {
+                    toast("file: " + f
                             + " does not exist, please create it before trying this example");
+                    Log.e(TAG, "error exracting: " + f);
                     return;
+
+                } finally {
+                    if (fos != null)
+                        try {
+                            fos.close();
+                        } catch (Exception ignored) {
+                        }
                 }
                 synchronized (HelloWorldDropDownReceiver.this) {
                     if ((exampleMultiLayers == null)
@@ -1695,7 +1712,7 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
                                     String.format(
                                             "HelloWorld Test Multi Layer %4d",
                                             altitude),
-                                    fp, ul, ur, lr, ll);
+                                    f.getAbsolutePath(), ul, ur, lr, ll);
                             if (exampleMultiLayer != null) {
                                 exampleMultiLayers.put(altitude,
                                         exampleMultiLayer);

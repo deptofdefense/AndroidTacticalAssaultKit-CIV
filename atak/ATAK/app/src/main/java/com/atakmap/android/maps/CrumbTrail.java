@@ -100,7 +100,8 @@ public class CrumbTrail extends MapItem implements FOVFilter.Filterable,
     private void init() {
         this.setClickable(false);
         this.setMetaBoolean("addToObjList", false);
-        this.setMetaBoolean("movable", false);
+        this.setMovable(false);
+        this.toggleMetaData("ignoreRender", true);
 
         this.crumbItemChangedListener = new CrumbItemChangedListener();
 

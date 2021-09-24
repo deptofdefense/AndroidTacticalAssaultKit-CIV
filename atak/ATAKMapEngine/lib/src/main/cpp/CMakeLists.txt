@@ -22,9 +22,11 @@ set (atakjni_COMMON_SRCS
     jdatatype.cpp
     jdrginfo.cpp
     jegm96.cpp
+    jelevationheatmaplayer.cpp
     jelevationmanager.cpp
     jelevationsourcemanager.cpp
     jelmgrterrainrenderservice.cpp
+    jenginelibrary.cpp
     jfeature.cpp
     jfrustum.cpp
     jgdallibrary.cpp
@@ -69,6 +71,7 @@ set (atakjni_COMMON_SRCS
     jnativerunnable.cpp
     josrutils.cpp
     jprojectionfactory.cpp
+    jqmesourcemanager.cpp
     jqueryimpl.cpp
     jrendercontextinterop.cpp
     jstatementimpl.cpp
@@ -77,7 +80,9 @@ set (atakjni_COMMON_SRCS
     jpersistentdatasourcefeaturedatastore2.cpp
     jpersistentrasterdatastore.cpp
     jskirt.cpp
+    jterrainslopelayer.cpp
     jtessellate.cpp
+    jtilecoord.cpp
     jvertexdatalayout.cpp
     vsi_jfile.cpp
 
@@ -105,6 +110,8 @@ set (atakjni_COMMON_SRCS
     interop/elevation/ManagedElevationSource.cpp
     interop/feature/Interop.cpp
     interop/feature/ManagedFeatureDataSource2.cpp
+    interop/formats/quantizedmesh/Interop.cpp
+    interop/formats/quantizedmesh/ManagedQMESourceLayer.cpp
     interop/java/JNICollection.cpp
     interop/java/JNIEnum.cpp
     interop/java/JNILocalRef.cpp
@@ -205,7 +212,7 @@ set (atakjni_WINDOWS_LIBS
 set (atakjni_COMMON_INCS
     .
     ${TTP_DIR}/include
-    ${TE_DIR}/mapengine/sdk/src
+    ${TE_DIR}/takengine/src/main/cpp
     ${TE_DIR}/thirdparty
     ${TE_DIR}/include/json
 )

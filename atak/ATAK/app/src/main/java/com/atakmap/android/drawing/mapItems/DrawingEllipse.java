@@ -71,8 +71,7 @@ public class DrawingEllipse extends Shape implements AnchoredMapItem,
         _childGroup.setMetaString("shapeUID", uid);
         setType(COT_TYPE);
         setMetaBoolean("removable", true);
-        setMetaBoolean("movable", true);
-        setClickable(true);
+        setMovable(true);
         setMetaString("iconUri", ATAKUtilities.getResourceUri(
                 mapView.getContext(), R.drawable.ic_circle));
         setStyle(DEFAULT_STYLE);
@@ -123,6 +122,7 @@ public class DrawingEllipse extends Shape implements AnchoredMapItem,
         if (center != null && isCenterShapeMarker()) {
             center.setTitle(getTitle());
             center.setZOrder(zOrder - 1);
+            center.setClickable(getClickable());
             if (strokeColor != center.getMetaInteger("color", Color.WHITE)) {
                 center.setMetaInteger("color", strokeColor);
                 center.refresh(_mapView.getMapEventDispatcher(),
@@ -133,6 +133,10 @@ public class DrawingEllipse extends Shape implements AnchoredMapItem,
         List<Ellipse> rings = getEllipses();
         double zInc = 1d / rings.size();
         for (Ellipse e : rings) {
+            e.setTitle(getTitle());
+            e.setRadialMenu(getRadialMenuPath());
+            e.toggleMetaData("editable", getEditable());
+            e.setClickable(getClickable());
             e.setCenter(_center);
             e.setStyle(getStyle());
             e.setStrokeColor(getStrokeColor());
@@ -140,7 +144,6 @@ public class DrawingEllipse extends Shape implements AnchoredMapItem,
             e.setFillColor(getFillColor());
             e.setZOrder(zOrder += zInc);
             e.setMetaBoolean("addToObjList", false);
-            e.setClickable(false);
             if (e.getGroup() == null)
                 _childGroup.addItem(e);
         }
@@ -156,6 +159,12 @@ public class DrawingEllipse extends Shape implements AnchoredMapItem,
     protected void onVisibleChanged() {
         _childGroup.setVisible(getVisible());
         super.onVisibleChanged();
+    }
+
+    @Override
+    public void setClickable(boolean touchable) {
+        super.setClickable(touchable);
+        refresh();
     }
 
     /**
@@ -204,7 +213,7 @@ public class DrawingEllipse extends Shape implements AnchoredMapItem,
             // Create the default shape marker
             marker = new Marker(getCenter(), UUID.randomUUID().toString());
             marker.setType("shape_marker");
-            marker.setMetaString("menu", "menus/default_item.xml");
+            marker.setRadialMenu("menus/default_item.xml");
             marker.setMetaBoolean("nevercot", true);
             marker.setMetaBoolean("removable", true);
             _childGroup.addItem(marker);
@@ -317,27 +326,6 @@ public class DrawingEllipse extends Shape implements AnchoredMapItem,
     public void setStrokeWeight(double weight) {
         super.setStrokeWeight(weight);
         refresh();
-    }
-
-    /**
-     * Redirect hit detection to the rings
-     */
-    @Override
-    public boolean testOrthoHit(int xpos, int ypos, GeoPoint point,
-            MapView view) {
-        GeoPoint touch = null;
-        for (Ellipse ellipse : getEllipses()) {
-            if (ellipse.testOrthoHit(xpos, ypos, point, view)) {
-                touch = ellipse.findTouchPoint();
-                break;
-            }
-        }
-        if (touch != null) {
-            setTouchPoint(touch);
-            setMetaString("menu_point", touch.toString());
-            return true;
-        }
-        return false;
     }
 
     @Override

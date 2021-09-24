@@ -3,6 +3,9 @@ package com.atakmap.android.elev;
 
 import android.content.Context;
 import android.content.Intent;
+
+import com.atakmap.android.hierarchy.action.Actions;
+import com.atakmap.android.hierarchy.items.LayerHierarchyListItem;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
@@ -11,14 +14,22 @@ import android.widget.Toast;
 import com.atakmap.android.elev.graphics.GLHeatMap;
 import com.atakmap.android.elev.graphics.SharedDataModel;
 import com.atakmap.android.maps.AbstractMapComponent;
+import com.atakmap.android.maps.CardLayer;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.overlay.MapOverlay2;
+import com.atakmap.android.overlay.MapOverlayBuilder;
 import com.atakmap.android.viewshed.ContourLinesOverlay;
 import com.atakmap.android.widgets.IsoKeyWidget;
 import com.atakmap.android.widgets.LinearLayoutWidget;
 import com.atakmap.android.widgets.RootLayoutWidget;
+import com.atakmap.app.R;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.AtakMapView;
+import com.atakmap.map.MapRenderer3;
 import com.atakmap.map.layer.Layer;
+import com.atakmap.map.layer.ProxyLayer;
+import com.atakmap.map.layer.control.SurfaceRendererControl;
+import com.atakmap.map.layer.elevation.TerrainSlopeLayer;
 import com.atakmap.map.layer.opengl.GLLayerFactory;
 
 import java.util.List;
@@ -26,6 +37,25 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ElevationOverlaysMapComponent extends AbstractMapComponent
         implements MapView.OnMapViewResizedListener {
+
+    public enum HeatMapMode {
+        Elevation(R.string.heatmap),
+        TerrainSlope(R.string.terrainslope);
+
+        final int id;
+
+        private HeatMapMode(int id) {
+            this.id = id;
+        }
+
+        static HeatMapMode findById(int id) {
+            for (HeatMapMode m : values()) {
+                if (m.id == id)
+                    return m;
+            }
+            return null;
+        }
+    }
 
     public static final String PREFERENCE_VISIBLE_KEY = "prefs_dted_visible";
     public static final String PREFERENCE_COLOR_SATURATION_KEY = "prefs_dted_color_saturation";
@@ -41,6 +71,7 @@ public class ElevationOverlaysMapComponent extends AbstractMapComponent
     public static final int PREFERENCE_Y_RES_DEFAULT = 200;
     public static final int PREFERENCE_Y_RES_MAX = 500;
     public static final int PREFERENCE_MAX_VALUE = 100;
+    public static final String PREFERENCE_MODE_KEY = "prefs_heatmap_mode";
 
     private final SharedPreferences.OnSharedPreferenceChangeListener _prefsListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
         @Override
@@ -50,7 +81,8 @@ public class ElevationOverlaysMapComponent extends AbstractMapComponent
                     || key.equals(PREFERENCE_COLOR_VALUE_KEY)
                     || key.equals(PREFERENCE_COLOR_INTENSITY_KEY)
                     || key.equals(PREFERENCE_X_RES_KEY)
-                    || key.equals(PREFERENCE_Y_RES_KEY)) {
+                    || key.equals(PREFERENCE_Y_RES_KEY)
+                    || key.equals(PREFERENCE_MODE_KEY)) {
                 _setPrefs(sharedPreferences);
             }
         }
@@ -60,10 +92,13 @@ public class ElevationOverlaysMapComponent extends AbstractMapComponent
     public static final String ELEVATION_WIDGET = "ElevationWidget";
     private static HeatMapOverlay heatMapOverlay;
     private static ContourLinesOverlay contourLinesOverlay;
+    private static TerrainSlopeLayer terrainSlopeOverlay;
     private IsoKeyWidget _keyWidget;
     private MapView _mapView;
     private SharedPreferences prefs;
     private final AtomicBoolean disposed = new AtomicBoolean(true);
+    private static CardLayer overlayLayer;
+    private MapOverlay2 overlay;
 
     @Override
     public void onCreate(Context context, Intent intent, MapView view) {
@@ -76,12 +111,19 @@ public class ElevationOverlaysMapComponent extends AbstractMapComponent
         prefs.registerOnSharedPreferenceChangeListener(_prefsListener);
 
         heatMapOverlay = new HeatMapOverlay();
-        _setPrefs(prefs);
+        terrainSlopeOverlay = new TerrainSlopeLayer("Terrain Slope Angle");
+
+        overlayLayer = new CardLayer("Heatmap Overlay");
+        overlayLayer.add(heatMapOverlay,
+                context.getString(HeatMapMode.Elevation.id));
+        overlayLayer.add(terrainSlopeOverlay,
+                context.getString(HeatMapMode.TerrainSlope.id));
 
         // only respond to visibility preference on startup
-        heatMapOverlay.setVisible(
+        overlayLayer.setVisible(
                 prefs.getBoolean(PREFERENCE_VISIBLE_KEY, false));
 
+        _setPrefs(prefs);
         refreshPersistedState();
 
         RootLayoutWidget root = (RootLayoutWidget) _mapView.getComponentExtra(
@@ -101,7 +143,7 @@ public class ElevationOverlaysMapComponent extends AbstractMapComponent
 
         SharedDataModel.getInstance().isoDisplayMode = SharedDataModel.RELATIVE;
 
-        heatMapOverlay
+        overlayLayer
                 .addOnLayerVisibleChangedListener(
                         new HeatMapOverlay.OnLayerVisibleChangedListener() {
                             @Override
@@ -110,10 +152,32 @@ public class ElevationOverlaysMapComponent extends AbstractMapComponent
                                         .toggleOverlay();
                             }
                         });
+        overlayLayer
+                .addOnProxySubjectChangedListener(
+                        new ProxyLayer.OnProxySubjectChangedListener() {
+                            @Override
+                            public void onProxySubjectChanged(
+                                    ProxyLayer overlay) {
+                                ElevationOverlaysMapComponent.this
+                                        .toggleHeatmapLegend();
+                            }
+                        });
 
         this.toggleOverlay();
 
-        _mapView.getMapOverlayManager().addOtherOverlay(heatMapOverlay);
+        overlay = new MapOverlayBuilder()
+                .setIdentifier(ElevationOverlaysMapComponent.class.getName())
+                .setName(overlayLayer.getName())
+                .setListItem(Actions.ACTION_VISIBILITY,
+                        new LayerHierarchyListItem(overlayLayer,
+                                "android.resource://"
+                                        + MapView.getMapView().getContext()
+                                                .getPackageName()
+                                        + "/" +
+                                        R.drawable.ic_overlay_dted,
+                                false))
+                .build();
+        _mapView.getMapOverlayManager().addOtherOverlay(overlay);
 
         // add the viewshed receiver
         final ViewShedReceiver viewShedReceiver = ViewShedReceiver
@@ -172,6 +236,11 @@ public class ElevationOverlaysMapComponent extends AbstractMapComponent
         // remove the layer
         _mapView.removeLayer(
                 MapView.RenderStack.MAP_SURFACE_OVERLAYS,
+                terrainSlopeOverlay);
+
+        // remove the layer
+        _mapView.removeLayer(
+                MapView.RenderStack.MAP_SURFACE_OVERLAYS,
                 contourLinesOverlay);
         contourLinesOverlay.dispose();
     }
@@ -186,29 +255,31 @@ public class ElevationOverlaysMapComponent extends AbstractMapComponent
 
     /**************************************************************************/
 
+    private void toggleHeatmapLegend() {
+        _keyWidget.setVisible(overlayLayer.isVisible()
+                && overlayLayer.get() == heatMapOverlay);
+    }
+
     private void toggleOverlay() {
-        if (!heatMapOverlay.isVisible()) {
-            _keyWidget.setVisible(false);
+        if (!overlayLayer.isVisible()) {
             _mapView.post(new Runnable() {
                 @Override
                 public void run() {
                     _mapView.removeLayer(
                             MapView.RenderStack.MAP_SURFACE_OVERLAYS,
-                            heatMapOverlay);
+                            overlayLayer);
                 }
             });
         } else {
-            /////////////////////////////////////////////////////
-            // add ISO widget
-            _keyWidget.setVisible(true);
             _mapView.post(new Runnable() {
                 @Override
                 public void run() {
                     _mapView.addLayer(MapView.RenderStack.MAP_SURFACE_OVERLAYS,
-                            heatMapOverlay);
+                            overlayLayer);
                 }
             });
         }
+        toggleHeatmapLegend();
     }
 
     private void _setPrefs(final SharedPreferences prefs) {
@@ -267,14 +338,53 @@ public class ElevationOverlaysMapComponent extends AbstractMapComponent
 
         heatMapOverlay.setColorComponents(saturation, value, intensity);
         heatMapOverlay.setResolution(xSampleResolution, ySampleResolution);
+
+        terrainSlopeOverlay.setAlpha(intensity);
+
+        HeatMapMode mode = HeatMapMode.Elevation;
+        try {
+            final Context context = _mapView.getContext();
+            String v = prefs.getString(PREFERENCE_MODE_KEY,
+                    _mapView.getContext().getString(HeatMapMode.Elevation.id));
+            for (HeatMapMode m : HeatMapMode.values()) {
+                if (context.getString(m.id).equals(v)) {
+                    mode = m;
+                    break;
+                }
+            }
+        } catch (Throwable t) {
+            Log.d(TAG, "error parsing heatmap mode value key", t);
+        }
+        setHeatMapMode(mode);
+
+        refreshMap();
     }
 
     public static void setHeatMapVisible(boolean visible) {
-        heatMapOverlay.setVisible(visible);
+        overlayLayer.setVisible(visible);
     }
 
     public static boolean isHeatMapVisible() {
-        return heatMapOverlay.isVisible();
+        return overlayLayer.isVisible();
+    }
+
+    public static void setHeatMapMode(HeatMapMode mode) {
+        if (mode == null)
+            return;
+        overlayLayer.show(MapView.getMapView().getContext().getString(mode.id));
+        refreshMap();
+    }
+
+    public static HeatMapMode getHeatMapMode() {
+        // default to heatmap
+        if (overlayLayer == null)
+            return HeatMapMode.Elevation;
+        if (overlayLayer.get() == heatMapOverlay)
+            return HeatMapMode.Elevation;
+        else if (overlayLayer.get() == terrainSlopeOverlay)
+            return HeatMapMode.TerrainSlope;
+        else
+            return HeatMapMode.Elevation;
     }
 
     public static void setContourLinesVisible(boolean visible) {
@@ -308,6 +418,16 @@ public class ElevationOverlaysMapComponent extends AbstractMapComponent
     public static void refreshHeatmap() {
         heatMapOverlay.setResolution(heatMapOverlay.getSampleResolutionX(),
                 heatMapOverlay.getSampleResolutionY());
+    }
+
+    private static void refreshMap() {
+        final MapRenderer3 renderer = MapView.getMapView().getRenderer3();
+        if (renderer != null) {
+            final SurfaceRendererControl ctrl = renderer
+                    .getControl(SurfaceRendererControl.class);
+            if (ctrl != null)
+                ctrl.markDirty();
+        }
     }
 
 }

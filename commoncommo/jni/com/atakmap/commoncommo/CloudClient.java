@@ -23,6 +23,9 @@ import java.io.File;
  */
 public class CloudClient {
 
+    // NOTE: native initialization not required as `CloudClient` may only be
+    // externally instantiated through `Commo`
+
     private long nativePtr;
     private long nativeIOPtr;
     

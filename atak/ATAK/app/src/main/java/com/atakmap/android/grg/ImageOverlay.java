@@ -1,12 +1,9 @@
 
 package com.atakmap.android.grg;
 
-import android.graphics.PointF;
-
 import com.atakmap.android.importexport.ExportFilters;
 import com.atakmap.android.importexport.Exportable;
 import com.atakmap.android.importexport.FormatNotSupportedException;
-import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Shape;
 import com.atakmap.android.missionpackage.export.MissionPackageExportWrapper;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -26,7 +23,6 @@ public class ImageOverlay extends Shape implements Exportable {
     private static final String TAG = "ImageOverlay";
 
     private final DatasetDescriptor layerInfo;
-    private boolean bEnableMapTouch;
 
     ImageOverlay(DatasetDescriptor layerInfo, final String uid,
             boolean bEnableTouch) {
@@ -34,8 +30,7 @@ public class ImageOverlay extends Shape implements Exportable {
         this.layerInfo = layerInfo;
 
         this.setZOrder(3d + this.layerInfo.getMaxResolution(null));
-        this.bEnableMapTouch = bEnableTouch;
-        this.setClickable(true);
+        this.setClickable(bEnableTouch);
         setMetaBoolean("editable", false);
         setMetaString("fileUri", this.layerInfo.getUri());
         setMetaString("menu", "menus/grg_menu.xml");
@@ -58,50 +53,7 @@ public class ImageOverlay extends Shape implements Exportable {
     }
 
     public void enableMapTouch(boolean b) {
-        bEnableMapTouch = b;
-    }
-
-    // placed here for 3.2
-    // TODO: relocate
-    private final MutableGeoBounds scratchBounds = new MutableGeoBounds(0, 0,
-            0, 0);
-    private final PointF scratch_lr = new PointF();
-    private final PointF scratch_ul = new PointF();
-
-    private boolean testOrthoHit(int xpos, int ypos, MapView view,
-            GeoBounds _bounds) {
-
-        float hitRadius = getHitRadius(view);
-        scratch_ul.x = xpos - hitRadius;
-        scratch_ul.y = ypos - hitRadius;
-
-        scratch_lr.x = xpos + hitRadius;
-        scratch_lr.y = ypos + hitRadius;
-
-        final GeoPoint ul = view.inverse(scratch_ul,
-                MapView.InverseMode.RayCast).get();
-        final GeoPoint lr = view.inverse(scratch_lr,
-                MapView.InverseMode.RayCast).get();
-
-        scratchBounds.set(ul, lr);
-
-        return _bounds.intersects(scratchBounds) &&
-                (!_bounds.contains(ul) || !_bounds.contains(lr));
-    }
-
-    @Override
-    public boolean testOrthoHit(final int xpos, final int ypos,
-            final GeoPoint point, final MapView view) {
-        if (!bEnableMapTouch) {
-            return false;
-        }
-        final GeoBounds bounds = getBounds(null);
-        boolean retVal = testOrthoHit(xpos, ypos, view, bounds);
-        if (retVal) {
-            setMetaString("menu_point", point.toString());
-            setTouchPoint(point);
-        }
-        return retVal;
+        setClickable(b);
     }
 
     @Override

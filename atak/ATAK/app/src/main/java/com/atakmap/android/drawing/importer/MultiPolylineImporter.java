@@ -53,7 +53,7 @@ public class MultiPolylineImporter extends EditablePolylineImporter {
             CotEvent e = CotEvent.parse(linkLine);
             //Parse the lines COT message
             // This also adds it to our lines list
-            imp.importMapItem(null, e, extras);
+            imp.importMapItem(findItem(e), e, extras);
         }
 
         String title = CotUtils.getCallsign(event);
@@ -66,9 +66,6 @@ public class MultiPolylineImporter extends EditablePolylineImporter {
                     event.getUID());
         }
         mp.setLines(lines);
-
-        if (mp != null)
-            mp.setPoints();
 
         return super.importMapItem(mp, event, extras);
     }

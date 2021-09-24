@@ -19,13 +19,14 @@ import com.atakmap.android.hierarchy.HierarchyListItem;
 import com.atakmap.android.hierarchy.HierarchyListItem2;
 import com.atakmap.android.hierarchy.action.Action;
 import com.atakmap.android.hierarchy.action.Delete;
+import com.atakmap.android.hierarchy.action.GroupDelete;
 import com.atakmap.android.hierarchy.action.Search;
 import com.atakmap.android.hierarchy.action.Visibility;
 import com.atakmap.android.hierarchy.action.Visibility2;
 import com.atakmap.android.hierarchy.filters.EmptyListFilter;
 import com.atakmap.android.hierarchy.filters.FOVFilter;
 import com.atakmap.android.hierarchy.filters.MultiFilter;
-import com.atakmap.android.maps.Location;
+import com.atakmap.android.maps.ILocation;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.util.ATAKUtilities;
@@ -186,11 +187,6 @@ public abstract class AbstractHierarchyListItem2 implements
     }
 
     @Override
-    public boolean onBackButtonPressed(boolean deviceBack) {
-        return false;
-    }
-
-    @Override
     public View getExtraView() {
         return null;
     }
@@ -297,7 +293,7 @@ public abstract class AbstractHierarchyListItem2 implements
         for (HierarchyListItem item : children) {
             if (item == null)
                 continue;
-            if (item instanceof Location || item instanceof MapItemUser) {
+            if (item instanceof ILocation || item instanceof MapItemUser) {
                 sortModes.add(distSort);
                 break;
             }
@@ -369,12 +365,36 @@ public abstract class AbstractHierarchyListItem2 implements
         return ret;
     }
 
+    /**
+     * Execute all delete actions defined in this class
+     * @return True if all deletes executed successfully
+     */
     public boolean delete() {
-        List<Delete> actions = getChildActions(Delete.class);
-        boolean ret = !actions.isEmpty();
-        for (Delete del : actions)
-            ret &= del.delete();
+        // Get the list of delete actions
+        List<Delete> actions = getDeleteActions();
+
+        // Nothing to execute
+        if (FileSystemUtils.isEmpty(actions))
+            return true;
+
+        // Execute delete actions and track success
+        boolean ret = true;
+        for (Delete delete : actions)
+            ret &= delete.delete();
+
         return ret;
+    }
+
+    /**
+     * Get the list of delete actions in this class
+     *
+     * Meant to serve as a default implementation of
+     * {@link GroupDelete#getDeleteActions()}
+     *
+     * @return List of delete actions
+     */
+    public List<Delete> getDeleteActions() {
+        return getChildActions(Delete.class);
     }
 
     public Set<HierarchyListItem> find(String terms) {
@@ -514,6 +534,8 @@ public abstract class AbstractHierarchyListItem2 implements
         } else {
             if (sort instanceof SortAlphabet)
                 order = HierarchyListAdapter.MENU_ITEM_COMP;
+            else if (sort instanceof SortAlphabetDesc)
+                order = HierarchyListAdapter.MENU_ITEM_COMP_DESC;
             else
                 order = new HierarchyListAdapter.ItemDistanceComparator(
                         (HierarchyListItem.SortDistanceFrom) sort);

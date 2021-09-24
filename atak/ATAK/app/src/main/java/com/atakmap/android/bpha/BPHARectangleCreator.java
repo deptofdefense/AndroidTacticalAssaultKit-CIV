@@ -10,8 +10,11 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.maps.coords.Ellipsoid;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.coremap.maps.coords.MGRSPoint;
+import com.atakmap.coremap.maps.coords.MutableMGRSPoint;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,48 +37,47 @@ public class BPHARectangleCreator {
                 point.get(),
                 CoordinateFormat.MGRS);
 
-        final int easting = nearest100(pad5(mgrs[2]));
-        final int northing = nearest100(pad5(mgrs[3]));
-
-        mgrs[2] = "" + easting;
-        mgrs[3] = "" + northing;
-
-        GeoPoint gp = CoordinateFormatUtilities.convert(mgrs,
-                CoordinateFormat.MGRS);
-        if (gp == null)
+        if (mgrs == null)
             return null;
+
+        mgrs[2] = nearest100(mgrs[2]);
+        mgrs[3] = nearest100(mgrs[3]);
+
+        final MGRSPoint centerPoint = MGRSPoint.decode(mgrs[0], mgrs[1],
+                mgrs[2], mgrs[3], Ellipsoid.WGS_84, null);
+
+        int eastingOffset = 500 * columns;
+        int northingOffset = 500 * rows;
+
+        // lower left
+        final MutableMGRSPoint ll = new MutableMGRSPoint(centerPoint);
+        ll.offset(-1 * eastingOffset, -1 * northingOffset);
+
+        // lower right
+        final MutableMGRSPoint lr = new MutableMGRSPoint(centerPoint);
+        lr.offset(eastingOffset, -1 * northingOffset);
+
+        // upper right
+        final MutableMGRSPoint ur = new MutableMGRSPoint(centerPoint);
+        ur.offset(eastingOffset, northingOffset);
+
+        // upper left
+        final MutableMGRSPoint ul = new MutableMGRSPoint(centerPoint);
+        ul.offset(-1 * eastingOffset, northingOffset);
 
         MapGroup group = getGroup();
         MapGroup childGroup = group.addGroup(_createTitle());
         DrawingRectangle.Builder builder = new DrawingRectangle.Builder(
                 childGroup, Rectangle.Builder.Mode.THREE_POINTS);
 
-        point = GeoPointMetaData.wrap(gp);
-
-        int eastingOffset = 500 * columns;
-        int northingOffset = 500 * rows;
-
-        String[] scratch = new String[] {
-                mgrs[0], mgrs[1], mgrs[2], mgrs[3]
-        };
-
         // first point upper left
-        scratch[2] = "" + (easting - eastingOffset);
-        scratch[3] = "" + (northing + northingOffset);
-        GeoPoint firstPoint = CoordinateFormatUtilities.convert(scratch,
-                CoordinateFormat.MGRS);
+        GeoPoint firstPoint = ul.toUTMPoint(null).toGeoPoint();
 
         // second point upper right
-        scratch[2] = "" + (easting + eastingOffset);
-        scratch[3] = "" + (northing + northingOffset);
-        GeoPoint secondPoint = CoordinateFormatUtilities.convert(scratch,
-                CoordinateFormat.MGRS);
+        GeoPoint secondPoint = ur.toUTMPoint(null).toGeoPoint();
 
         // third point lower right
-        scratch[2] = "" + (easting + eastingOffset);
-        scratch[3] = "" + (northing - northingOffset);
-        GeoPoint thirdPoint = CoordinateFormatUtilities.convert(scratch,
-                CoordinateFormat.MGRS);
+        GeoPoint thirdPoint = lr.toUTMPoint(null).toGeoPoint();
 
         builder.setFirstPoint(GeoPointMetaData.wrap(firstPoint));
         builder.setSecondPoint(GeoPointMetaData.wrap(secondPoint));
@@ -156,24 +158,17 @@ public class BPHARectangleCreator {
     }
 
     /**
-     * Pads out the MGRS easting or westing so that it is only 5 digits of precision.
+     * Pads out the MGRS easting or westing so that it is only 5 digits of precision
+     * and in addition floors the data to the nearest 100 per the MGRS guidance
      * @param s the input mgrs.
-     * @return the 5 digit MGRS easting or westing
+     * @return the 5 digit MGRS easting or westing floored to the nearest 100.
      */
-    private static int pad5(String s) {
+    private static String nearest100(String s) {
         final int len = s.length();
         for (int i = len; i < 6; ++i)
             s = s + "0";
-        return Integer.parseInt(s.substring(0, 5));
-    }
+        return s.substring(0, 3) + "00";
 
-    /**
-     * Rounds a value to the nearest 100.
-     * @param val the value to round.
-     * @return the rounded value
-     */
-    private static int nearest100(int val) {
-        return (int) (Math.ceil(val / 100.0)) * 100;
     }
 
 }

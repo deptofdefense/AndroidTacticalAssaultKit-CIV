@@ -8,10 +8,13 @@ mrsid_libfile=$(LIB_PREFIX)lridsdk.$(LIB_SHAREDSUFFIX)
 mrsid_srcdir=mrsid
 mrsid_bundletouchfile=$(OUTDIR)/$(mrsid_srcdir)/.unpacked
 mrsid_out_lib=$(OUTDIR)/lib/$(mrsid_libfile)
+mrsid_patch=$(DISTFILESDIR)/mrsid-pgsc.patch
 
 $(mrsid_bundletouchfile): $(mrsid_BINBUNDLE)
 	rm -rf $(OUTDIR)/$(mrsid_srcdir)
 	$(if $(findstring .zip,$(suffix $(mrsid_BINBUNDLE))),unzip -d $(OUTDIR),tar -x -C $(OUTDIR) -z -f) $<
+	# dos2unix to patch cleanly
+	dos2unix $(OUTDIR)/$(mrsid_srcdir)/include/lt_platform.h
 	$(if $(mrsid_patch),cd $(OUTDIR)/$(mrsid_srcdir) && patch -p1 < $(mrsid_patch),true)
 	touch $@
 

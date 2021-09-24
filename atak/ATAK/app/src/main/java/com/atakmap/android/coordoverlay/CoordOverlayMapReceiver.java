@@ -422,15 +422,11 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
                                 false) && point != null) {
                             // pull terrain
                             double t = ElevationManager.getElevation(
-                                    point.get().getLatitude(),
-                                    point.get().getLongitude(), DTM_FILTER,
-                                    el.terrain);
+                                    point.get(), DTM_FILTER, el.terrain);
 
                             // pull surface
                             double s = ElevationManager.getElevation(
-                                    point.get().getLatitude(),
-                                    point.get().getLongitude(), DSM_FILTER,
-                                    el.surface);
+                                    point.get(), DSM_FILTER, el.surface);
 
                         }
                     }
@@ -728,23 +724,24 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
         if (displayRB && distance > 0) {
 
             double bearingDisplay = bearing;
-            while (bearingDisplay < 0)
-                bearingDisplay += 360.0d;
 
             String rangeString = SpanUtilities.formatType(rangeSystem,
                     distance, Span.METER);
 
-            String bearingString;
+            String northStr = "T";
 
-            if (northRef == NorthReference.TRUE) {
-                bearingString = AngleUtilities.format(bearingDisplay,
-                        bearingUnits) + "T";
-            } else {
-                double bearingM = ATAKUtilities.convertFromTrueToMagnetic(
+            if (northRef == NorthReference.MAGNETIC) {
+                bearingDisplay = ATAKUtilities.convertFromTrueToMagnetic(
                         point, bearingDisplay);
-                bearingString = AngleUtilities.format(bearingM, bearingUnits)
-                        + "M";
+                northStr = "M";
+            } else if (northRef == NorthReference.GRID) {
+                bearingDisplay -= ATAKUtilities.computeGridConvergence(
+                        point, bearingDisplay, distance);
+                northStr = "G";
             }
+            bearingDisplay = AngleUtilities.wrapDeg(bearingDisplay);
+            String bearingString = AngleUtilities.format(bearingDisplay,
+                    bearingUnits) + northStr;
 
             lineColors[lineNum++] = -1;
             retval.append("\n");
@@ -785,13 +782,18 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
             double orientation = heading;
             if (!Double.isNaN(orientation)) {
                 String unit = "T";
-                if (northRef != NorthReference.TRUE) {
+                if (northRef == NorthReference.MAGNETIC) {
                     orientation = ATAKUtilities.convertFromTrueToMagnetic(
                             point, orientation);
                     unit = "M";
+                } else if (northRef == NorthReference.GRID) {
+                    orientation -= ATAKUtilities.computeGridConvergence(point,
+                            orientation, 1);
+                    unit = "G";
                 }
-                orientationString = AngleUtilities.format(orientation)
-                        + unit;
+                orientation = AngleUtilities.wrapDeg(orientation);
+                orientationString = AngleUtilities.format(orientation,
+                        bearingUnits) + unit;
                 if (orientation < 10)
                     orientationString = "  " + orientationString;
                 else if (orientation < 100)

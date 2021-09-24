@@ -19,15 +19,15 @@ import java.util.UUID;
 import com.atakmap.android.hashtags.HashtagManager;
 import com.atakmap.android.hashtags.attachments.AttachmentContent;
 import com.atakmap.android.hashtags.util.HashtagUtils;
-import com.atakmap.android.hashtags.view.HashtagEditText;
+import com.atakmap.android.hashtags.view.RemarksLayout;
 import com.atakmap.android.image.quickpic.QuickPicReceiver;
-import com.atakmap.android.imagecapture.CapturePrefs;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.missionpackage.file.MissionPackageConfiguration;
 import com.atakmap.android.missionpackage.file.MissionPackageContent;
 import com.atakmap.android.preference.UnitPreferences;
 import com.atakmap.android.user.PlacePointTool;
 import com.atakmap.android.util.ATAKUtilities;
+import com.atakmap.android.util.AfterTextChangedWatcher;
 import com.atakmap.android.util.FileProviderHelper;
 import com.atakmap.android.util.SimpleItemSelectedListener;
 import com.atakmap.android.attachment.DeleteAfterSendCallback;
@@ -81,12 +81,11 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.text.Editable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
-import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.AdapterView;
 import android.widget.ImageButton;
@@ -675,58 +674,19 @@ public class ImageDropDownReceiver
             }
         });
 
-        final EditText caption = view.findViewById(R.id.image_caption);
+        final RemarksLayout caption = view.findViewById(R.id.image_caption);
 
-        caption.setFocusableInTouchMode(true);
-        caption.setFocusable(false);
-
-        caption.setOnClickListener(new OnClickListener() {
+        caption.addTextChangedListener(new AfterTextChangedWatcher() {
             @Override
-            public void onClick(View v) {
-                final HashtagEditText captionInput = new HashtagEditText(
-                        context);
-                captionInput.setMixedInput(true);
-                captionInput.setText(caption.getText().toString());
-                captionInput.setTextSize(18);
-                AlertDialog.Builder b = new AlertDialog.Builder(context);
-                if (_context.getResources().getBoolean(R.bool.isTablet)
-                        || CapturePrefs.inPortraitMode())
-                    b.setTitle(R.string.enter_image_caption);
-                b.setCancelable(false);
-                b.setPositiveButton(R.string.ok,
-                        new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog,
-                                    int id) {
-                                // Update caption text
-                                final String newCaption = captionInput
-                                        .getTextString();
-                                caption.setText(newCaption);
-                                // Update exif
-                                new Thread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        updateImageDescription(newCaption);
-                                    }
-                                }, TAG + "-UpdateCaption").start();
-                            }
-                        });
-                b.setNegativeButton(R.string.cancel, null);
-                b.setView(captionInput);
-                b.show();
-                captionInput.post(new Runnable() {
+            public void afterTextChanged(Editable s) {
+                // Update exif
+                final String newCaption = s.toString();
+                new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        // Bring up keyboard
-                        captionInput.requestFocusFromTouch();
-                        captionInput
-                                .setSelection(captionInput.getText().length());
-                        InputMethodManager imm = (InputMethodManager) _context
-                                .getSystemService(Context.INPUT_METHOD_SERVICE);
-                        imm.showSoftInput(captionInput,
-                                InputMethodManager.SHOW_IMPLICIT);
+                        updateImageDescription(newCaption);
                     }
-                });
+                }, TAG + "-UpdateCaption").start();
             }
         });
 
@@ -972,7 +932,7 @@ public class ImageDropDownReceiver
         TiffOutputSet tos = null;
 
         if (isNITF) {
-            bmp = ImageContainer.readNITF(file, context.getResources());
+            bmp = ImageContainer.readNITF(file);
             if (bmp != null) {
                 int inWidth = bmp.getWidth();
                 int inHeight = bmp.getHeight();

@@ -1,7 +1,9 @@
 
 package com.atakmap.android.medline;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.util.AttributeSet;
 import android.view.View;
 import android.widget.Button;
@@ -138,9 +140,24 @@ public class ZMistView extends LinearLayout {
         remove.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                remove(id);
-                loadData();
-                setCount();
+                final AlertDialog.Builder builder = new AlertDialog.Builder(
+                        _context);
+                builder.setTitle(R.string.delete2);
+                builder.setIcon(R.drawable.ic_menu_delete_32);
+                builder.setMessage(_context.getString(
+                        R.string.are_you_sure_delete2, "ZMIST" + id));
+                builder.setPositiveButton(R.string.delete2,
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog,
+                                    int which) {
+                                remove(id);
+                                loadData();
+                                setCount();
+
+                            }
+                        }).setNegativeButton(R.string.cancel, null);
+                builder.show();
             }
         });
 

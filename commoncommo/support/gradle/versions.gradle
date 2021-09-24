@@ -1,0 +1,26 @@
+ext.getCommonCommoVersion = { ->
+    def commoversion = project.file('../core/include/commoversion.h')
+    if(!commoversion.exists())
+        throw new GradleException('core/commoversion.h is required for version number')
+    def commoMajor = 'invalid'
+    def commoMinor = 'invalid'
+    def commoPatch = 'invalid'
+
+    commoversion.withReader { reader ->
+        def line
+        while((line = reader.readLine()) != null) {
+            if(line.matches('#define COMMO_MAJOR \\d+')) {
+                commoMajor = line.trim().substring(20)
+            } else if(line.matches('#define COMMO_MINOR \\d+')) {
+                commoMinor = line.trim().substring(20)
+            } else if(line.matches('#define COMMO_PATCH \\d+')) {
+                commoPatch = line.trim().substring(20)
+            }
+        }
+    }
+    return commoMajor + '.' + commoMinor + '.' + commoPatch
+}
+
+ext {
+    commoncommoVersion = getCommonCommoVersion()
+}

@@ -161,7 +161,7 @@
   <string name="advancedloggingPreferences">Pr&#xE9;f&#xE9;rences de journalisation avanc&#xE9;es</string>
   <string name="gpsPreferences">Pr&#xE9;f&#xE9;rences d\'ic&#xF4;ne GPS</string>
   <string name="contact_list_button_select_all">Tout s&#xE9;lectionner</string>
-  <string name="contact_list_button_deselect_all">Tout effacer</string>
+  <string name="contact_list_button_deselect_all">Tout d&#xE9;selectionner</string>
   <string name="contact_list_button_share">Envoyer</string>
   <string name="contact_list_button_send_to_all">Diffuser</string>
   <string name="disp_pref_title">Pr&#xE9;f&#xE9;rence d\'Affichage</string>
@@ -2404,6 +2404,7 @@
   <!--Elevation Tools-->
   <string name="heatmap">Carte de chaleur</string>
   <string name="viewshed">Champ de vision</string>
+  <string name="terrainslope">Terrain Slope</string>
   <string name="hide_viewshed">Supprimer le champ de vision</string>
   <string name="select_viewshed">S&#xE9;lectionnez le champ de vision</string>
   <string name="no_marker_set">Pas de marqueur</string>
@@ -2430,7 +2431,7 @@
   <string name="x_resolution_summ">Nombre d\'&#xE9;chantillons d\'&#xE9;l&#xE9;vation &#xE0; pr&#xE9;lever le long de l\'axe des x</string>
   <string name="y_resolution">Et r&#xE9;solution</string>
   <string name="y_resolution_summ">Nombre d\'&#xE9;chantillons d\'&#xE9;l&#xE9;vation &#xE0; pr&#xE9;lever le long de l\'axe y</string>
-  <string name="show_heatmap">Afficher la carte thermique</string>
+  <string name="show_heatmap">Afficher </string>
   <string name="dted">DTED:\u0020</string>
   <string name="level_1">Niveau 1</string>
   <string name="sample_rate">Taux d\'&#xE9;chantillonnage</string>
@@ -2444,6 +2445,7 @@
   <string name="rel_gradient">REL GRADIENT</string>
   <string name="show_circle">Circulaire\nVue d\'ensemble</string>
   <string name="show_circle2">Champ de vision circulaire</string>
+  <string name="show_terrainslope">Show Terrain Slope</string>
   <!--Overlay Manager-->
   <string name="overlay_manager">Gestionnaire de superposition</string>
   <string name="process">Processus</string>
@@ -3834,15 +3836,15 @@
   <string name="resection_update_location_title">Update location?</string>
   <string name="resection_update_location_message">Do you want to update your location to the resection estimate?\nLocation: %s</string>
   <string name="resection_estimate_label">Provider: %1$s\nLocation: %2$s\nConfidence: %3$s</string>
-  <string name="resection_select_estimates_prompt_title">Select which location estimates to use</string>
+  <string name="resection_select_estimates_prompt_title">Select which location estimate to use</string>
   <string name="resection_run_another_title">Run another Resection tool?</string>
   <string name="resection_run_another_message">Do you want to run another Resection tool to get another estimate?</string>
-  <string name="resection_no_estimates_selected">No estimates were selected--unable to compute a location</string>
+  <string name="resection_no_estimates_selected">No estimate was selected</string>
   <string name="resection_classic_tool_description">Classic resection. Takes lines of bearing from observer\'s point to 2 or more landmarks</string>
   <string name="resection_classic_tool_ideal_conditions">When there are landmarks you are able to identify and match to the map. Highest accuracy when angle between landmarks approaches 90 degrees</string>
   <string name="resection_classic_tool_relative_accuracy">Dependent upon how accurately the landmarks and relative bearings are identified</string>
   <string name="invalid_cot_address">Invalid output encountered, make sure the address does not contain the protocol or port</string>
-  <string name="image_overlay_hud">Image Overlay HUD</string>
+  <string name="image_overlay_hud">Image Overlay</string>
   <string name="image_overlay_warning">This option will permanently overlay metadata onto the image. Continue?</string>
   <string name="kml_network_link">KML Network Link</string>
   <string name="kml_links_added_msg">Added %d KML network links</string>
@@ -3881,4 +3883,24 @@
   <string name="legacy_altitude_rendering">Enhanced Depth Perception</string>
   <string name="disable_parallax_viewing">Enhances visualization of depth when looking straight down.</string>
   <string name="lollipop_description">Draws a line to the exact point on the ground represented by the item.</string>
+  <string name="self_authored">Self-Authored</string>
+  <string name="toggle_filters">Toggle Filters</string>
+  <string name="actionbar_channels">Channels</string>
+    <string name="enter_caption_button">Tap the Edit button to enter caption</string>
+    <string name="deleting_dted_files">Deleting %s files&#8230;</string>
+    <string name="refreshing">Refreshing&#8230;</string>
+  <string name="address_colon">Address:</string>
+  <string name="tak_server_quick_connect">TAK Server Quick Connect</string>
+  <string name="quick_connect">Quick Connect</string>
+  <string name="retry">Retry</string>
+    <string name="select_deletion_method">Select deletion method:</string>
+    <string name="no_content_selectable">No content can be selected</string>
+  <string name="delete_contents">Delete Contents</string>
+    <string name="select_lasso_action">Select Lasso Action</string>
+  <string name="lasso_select">Lasso Select</string>
+    <string name="checked_abbr">Chk</string>
+    <string name="perimeter">Perimeter</string>
+  <string name="circumference">Circumference</string>
+  <string name="length">Length</string>
+    <string name="bulk_feature_edit_limit_msg">Bulk editing of more than 500 features is not supported.</string>
 </resources>

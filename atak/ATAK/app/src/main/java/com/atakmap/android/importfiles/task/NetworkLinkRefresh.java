@@ -53,7 +53,7 @@ public class NetworkLinkRefresh {
                 filename);
         if (taskPair != null) {
             // Skip update if nothing has changed
-            NetworkLinkRefreshTask task = (NetworkLinkRefreshTask) taskPair.first;
+            NetworkLinkRefreshTask task = taskPair.first;
             if (task._seconds == res.getRefreshSeconds())
                 return;
 

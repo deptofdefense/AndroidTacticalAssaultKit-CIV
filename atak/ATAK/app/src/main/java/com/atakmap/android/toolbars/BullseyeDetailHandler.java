@@ -85,7 +85,7 @@ public class BullseyeDetailHandler extends CotDetailHandler {
                 BullseyeTool.BULLSEYE_COT_TYPE)) {
             marker.setMetaString("callsign", detail.getAttribute("title"));
             marker.setMetaDouble("minRenderScale", Double.MAX_VALUE);
-            marker.setTouchable(true);
+            marker.setClickable(true);
             marker.setMetaBoolean("ignoreOffscreen", true);
             marker.setMovable(true);
             MapView.getMapView().getRootGroup().findMapGroup(

@@ -10,6 +10,7 @@ import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.ResolveException
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
+import java.io.ByteArrayOutputStream
 
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
@@ -41,6 +42,12 @@ class TakDevPlugin implements Plugin<Project> {
     }
 
     void apply(Project project) {
+
+        project.ext.devkitVersion = getLocalOrProjectProperty(project, 'takrepo.devkit.version', 'devkitVersion', project.ATAK_VERSION)
+        if (0 > versionComparator(project.devkitVersion, '4.2.0')) {
+            throw new GradleException("Incompatible takdev version. This plugin should be major version 1 to support ${project.devkitVersion}")
+        }
+
         verbose = getLocalOrProjectProperty(project, 'takdev.verbose', null, 'false').equals('true')
 
         String appVariant = VariantType.APPLICATION == getVariantType(project) ? 'true' : 'false'
@@ -49,7 +56,6 @@ class TakDevPlugin implements Plugin<Project> {
         // Consuming gradle project already handles 'isDevKitEnabled', 'takrepoUrl', 'takrepoUser' and 'takrepoPassword'
         project.ext.mavenOnly = getLocalOrProjectProperty(project, 'takrepo.force', 'mavenOnly', 'false').equals('true')
         project.ext.snapshot = getLocalOrProjectProperty(project, 'takrepo.snapshot', 'snapshot', 'true').equals('true')
-        project.ext.devkitVersion = getLocalOrProjectProperty(project, 'takrepo.devkit.version', 'devkitVersion', project.ATAK_VERSION)
         project.ext.sdkPath = getLocalOrProjectProperty(project, 'sdk.path', 'sdkPath', "${project.rootDir}/sdk")
         project.ext.takdevProduction = getLocalOrProjectProperty(project, 'takdev.production', 'takdevProduction', 'false').equals('true')
         project.ext.takdevNoApp = getLocalOrProjectProperty(project, 'takdev.noapp', 'takdevNoApp', libVariant).equals('true')
@@ -57,13 +63,12 @@ class TakDevPlugin implements Plugin<Project> {
         project.ext.takdevConTestVersion = getLocalOrProjectProperty(project, 'takdev.contest.version', 'takdevConTestVersion', project.devkitVersion)
         project.ext.takdevConTestPath = getLocalOrProjectProperty(project, 'takdev.contest.path', 'takdevConTestPath', "${project.rootDir}/espresso")
 
-        def haveRemoteRepo = !((null == project.takrepoUrl) || (null == project.takrepoUser) || (null == project.takrepoPassword))
-
+        // Ideally, the isDevKitEnabled variable should be renamed, as it indicates whether we're using a remote repository.
+        // However, there are now a number of plugins that have this variable name through deep copies of plugintemplate
         debugPrintln("isDevKitEnabled => ${project.isDevKitEnabled()}")
         debugPrintln("takrepo URL option => ${project.takrepoUrl}")
         debugPrintln("takrepo user option => ${project.takrepoUser}")
         debugPrintln("mavenOnly option => ${project.mavenOnly}")
-        debugPrintln("haveRemoteRepo => ${haveRemoteRepo}")
         debugPrintln("snapshot option => ${project.snapshot}")
         debugPrintln("devkitVersion option => ${project.devkitVersion}")
         debugPrintln("sdkPath option => ${project.sdkPath}")
@@ -74,7 +79,7 @@ class TakDevPlugin implements Plugin<Project> {
         debugPrintln("connected test path => ${project.takdevConTestPath}")
 
         if (project.mavenOnly) {
-            if (haveRemoteRepo) {
+            if (project.isDevKitEnabled) {
                 configureMaven(project)
             } else {
                 throw new GradleException("No remote repo available to configure TAK DevKit as mavenOnly")
@@ -86,7 +91,7 @@ class TakDevPlugin implements Plugin<Project> {
                 tuple = getOfflineDevKit(project)
             }
             if (null == tuple) {
-                if (haveRemoteRepo) {
+                if (project.isDevKitEnabled) {
                     println("Configuring Maven TAK plugin build")
                     configureMaven(project)
                 } else {
@@ -101,15 +106,60 @@ class TakDevPlugin implements Plugin<Project> {
 
         // define tasks
         addTasks(project)
+        addUtilities(project)
     }
 
-    void addTasks(Project project) {
+    static void addTasks(Project project) {
         project.ext.getTargetVersion = project.tasks.register('getTargetVersion', DefaultTask) {
             group 'metadata'
             description 'Gets this plugin\'s targeted ATAK version'
             doLast {
                 println(project.devkitVersion)
             }
+        }
+    }
+
+    static String getGitInfo(Project project, List arg_list) throws Exception {
+        def info = ""
+        new ByteArrayOutputStream().withStream { os ->
+            project.exec {
+                executable = 'git'
+                args = arg_list
+                standardOutput = os
+                ignoreExitValue = true
+            }
+            info = os.toString().trim()
+        }
+        return info
+    }
+
+    static void addUtilities(project) {
+
+        // Attempt to get a suitable version name for the plugin based on
+        // either a git or svn repository
+        project.ext.getVersionName = {
+            def version = "1"
+            try {
+                version = getGitInfo(project, ['rev-parse', '--short=8', 'HEAD'])
+                println("versionName[git]: $version")
+            } catch (Exception ignored) {
+                println("error occured, using version of $version")
+            }
+            return version
+        }
+
+        // Attempt to get a suitable version code for the plugin based on
+        // either a git or svn repository
+        project.ext.getVersionCode = {
+            def revision = 1
+            try {
+                String outputAsString = getGitInfo(project, ['show', '-s', '--format=%ct'])
+                revision = outputAsString.toInteger()
+                println("version[git]: $revision")
+            } catch (Exception ignored) {
+                println("error occured, using revision of $revision")
+            }
+            return revision
         }
     }
 
@@ -185,11 +235,19 @@ class TakDevPlugin implements Plugin<Project> {
                 project.dependencies.add("${variant.name}AndroidTestCompileClasspath", dep)
             }
 
+            def mappingName = "proguard-${variant.flavorName}-${variant.buildType.name}-mapping.txt"
+            def mappingFqn = tuple.mapping.absolutePath
+
+            def preBuildProvider = project.tasks.named("pre${variant.name.capitalize()}Build")
+            preBuildProvider.configure({
+                doFirst {
+                    System.setProperty("atak.proguard.mapping", mappingFqn)
+                }
+            })
+
             def compileProvider = project.tasks.named("compile${variant.name.capitalize()}JavaWithJavac")
             compileProvider.configure({
                 doFirst {
-                    def mappingName = "proguard-${variant.flavorName}-${variant.buildType.name}-mapping.txt"
-                    def mappingFqn = tuple.mapping.absolutePath
                     if (new File(mappingFqn).exists()) {
                         project.copy {
                             from mappingFqn
@@ -205,7 +263,6 @@ class TakDevPlugin implements Plugin<Project> {
                         project.file(mappingFqn).text = ""
                         println("${variant.name} => WARNING: no mapping file could be established, obfuscating just the plugin to work with the development core")
                     }
-                    System.setProperty("atak.proguard.mapping", mappingFqn)
                 }
             })
 
@@ -237,8 +294,6 @@ class TakDevPlugin implements Plugin<Project> {
     }
 
     void configureMaven(Project project) {
-
-        println("Configuring Maven TakDev plugin build")
 
         // add the maven repo as a dependency
         MavenArtifactRepository takrepo = project.repositories.maven({
@@ -379,12 +434,20 @@ class TakDevPlugin implements Plugin<Project> {
                 })
             }
 
+            def mappingName = "proguard-${devFlavor}-${devType}-mapping.txt"
+            def mappingFqn = "${project.buildDir}/${mappingName}"
+
+            def preBuildProvider = project.tasks.named("pre${variant.name.capitalize()}Build")
+            preBuildProvider.configure({
+                doFirst {
+                    System.setProperty("atak.proguard.mapping", mappingFqn)
+                }
+            })
+
             def compileProvider = project.tasks.named("compile${variant.name.capitalize()}JavaWithJavac")
             compileProvider.configure({
                 doFirst {
                     // Proguard mapping; flavor specific
-                    def mappingName = "proguard-${devFlavor}-${devType}-mapping.txt"
-                    def mappingFqn = "${project.buildDir}/${mappingName}"
                     project.copy {
                         from mappingConfiguration
                         into project.buildDir
@@ -393,8 +456,6 @@ class TakDevPlugin implements Plugin<Project> {
                             return mappingName
                         }
                     }
-
-                    System.setProperty("atak.proguard.mapping", mappingFqn)
                 }
             })
 
@@ -570,5 +631,37 @@ class TakDevPlugin implements Plugin<Project> {
         }
 
         return components
+    }
+
+    // taken from https://gist.github.com/founddrama/971284 with changes
+    static int versionComparator(String a, String b) {
+        def VALID_TOKENS = /._/
+        a = a.tokenize(VALID_TOKENS)
+        b = b.tokenize(VALID_TOKENS)
+
+        for (i in 0..<Math.max(a.size(), b.size())) {
+            if (i == a.size()) {
+                return b[i].isInteger() ? -1 : 1
+            } else if (i == b.size()) {
+                return a[i].isInteger() ? 1 : -1
+            }
+
+            if (a[i].isInteger() && b[i].isInteger()) {
+                int c = (a[i] as int) <=> (b[i] as int)
+                if (c != 0) {
+                    return c
+                }
+            } else if (a[i].isInteger()) {
+                return 1
+            } else if (b[i].isInteger()) {
+                return -1
+            } else {
+                int c = a[i] <=> b[i]
+                if (c != 0) {
+                    return c
+                }
+            }
+        }
+        return 0
     }
 }

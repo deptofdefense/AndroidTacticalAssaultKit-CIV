@@ -21,7 +21,6 @@ import com.atakmap.coremap.log.Log;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
@@ -331,7 +330,7 @@ public class BluetoothManager {
             } finally {
                 is.close();
             }
-            String menuString = new String(data, StandardCharsets.UTF_8);
+            String menuString = new String(data, FileSystemUtils.UTF8_CHARSET);
 
             BluetoothDevicesConfig btConfig = BluetoothDevicesConfig
                     .getConfiguredDevices(menuString);

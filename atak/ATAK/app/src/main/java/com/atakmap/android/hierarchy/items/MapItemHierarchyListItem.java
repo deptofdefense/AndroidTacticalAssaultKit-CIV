@@ -22,28 +22,25 @@ import com.atakmap.android.importexport.Exportable;
 import com.atakmap.android.importexport.FormatNotSupportedException;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.AnchoredMapItem;
-import com.atakmap.android.maps.Location;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapTouchController;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.Shape;
-import com.atakmap.android.overlay.MapOverlay;
 import com.atakmap.android.tools.AtakLayerDrawableUtil;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
-import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
 
 import java.util.ArrayList;
 import java.util.Collection;
 
 public class MapItemHierarchyListItem extends AbstractChildlessListItem
-        implements Visibility, GoTo, Delete, ILocation, Location, Export,
+        implements Visibility, GoTo, Delete, ILocation, Export,
         MapItemUser, HashtagContent {
 
     public static final String TAG = "MapItemHierarchyListItem";
@@ -82,7 +79,7 @@ public class MapItemHierarchyListItem extends AbstractChildlessListItem
             this.item.setMetaBoolean("overlay_manager_select", true);
         // Focus and bring up radial
         if (!MapTouchController.goTo(this.item, select)) {
-            GeoPoint zoomLoc = getLocation().get();
+            GeoPoint zoomLoc = getPoint(null);
             Intent intent = new Intent(
                     "com.atakmap.android.maps.ZOOM_TO_LAYER");
             intent.putExtra("point", zoomLoc.toString());
@@ -115,6 +112,11 @@ public class MapItemHierarchyListItem extends AbstractChildlessListItem
     @Override
     public String getTitle() {
         return ATAKUtilities.getDisplayName(this.item);
+    }
+
+    @Override
+    public String getUID() {
+        return this.item.getUID();
     }
 
     @Override
@@ -176,39 +178,6 @@ public class MapItemHierarchyListItem extends AbstractChildlessListItem
             } else
                 return new GeoBounds(lat, lng, lat, lng);
         }
-    }
-
-    @Override
-    public GeoPointMetaData getLocation() {
-        GeoPointMetaData loc;
-        if (this.item instanceof Shape) {
-            loc = ((Shape) this.item).getCenter();
-        } else if (this.item instanceof PointMapItem) {
-            loc = ((PointMapItem) this.item).getGeoPointMetaData();
-        } else if (this.item instanceof AnchoredMapItem) {
-            loc = ((AnchoredMapItem) this.item).getAnchorItem()
-                    .getGeoPointMetaData();
-        } else {
-            loc = GeoPointMetaData.wrap(GeoPoint.ZERO_POINT);
-        }
-
-        return loc;
-    }
-
-    @Override
-    public String getFriendlyName() {
-        return this.getTitle();
-    }
-
-    @Override
-    public String getUID() {
-        return this.item.getUID();
-    }
-
-    @Override
-    public MapOverlay getOverlay() {
-        // XXX -
-        return null;
     }
 
     @Override

@@ -74,7 +74,7 @@ class EditablePolylineMoveTool extends Tool {
                 MapItem item = event.getItem();
 
                 // if it is not movable - do not allow it to move
-                if (!item.getMetaBoolean("movable", true))
+                if (!item.getMovable())
                     return;
 
                 String type = item.getType();

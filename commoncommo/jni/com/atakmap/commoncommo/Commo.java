@@ -22,8 +22,28 @@ import java.util.List;
  * openssl, and libcurl. openssl must be initialized to support use by multiple
  * threads. A method is provided here to do a compatible, default set of
  * initialization calls to these libraries.
+ *
+ * Since Commo 1.3.0, Java bindings for Commo may be built to load and
+ * initialize native libraries automatically. This behavior, which is entirely
+ * dictated at build time of the Commo library itself, replaces the need
+ * to manually load and intialize libraries at the application level with
+ * an automatic invocation of such when relevant public classes of the Commo
+ * library are loaded. When using Commo configured in this manner, it is
+ * assumed that all such native libraries for commo itself and all dependencies
+ * will remain loaded, initialized, and valid for the lifetime of commo
+ * use by the process.
+ * Note also that the current auto-loading mechanism does not have a way
+ * to catch and report errors to the using application. For applications
+ * desiring greater control over library handling and error reporting, 
+ * a build depending on the manual loading described in the prior paragraph
+ * should be used by the application.
  */
 public class Commo {
+
+    static {
+        NativeInitializer.initialize();
+    }
+
     /**
      * Value to pass to setMissionPackageLocalPort to indicate that
      * the local mission package serving web server should be disabled
@@ -92,6 +112,9 @@ public class Commo {
      * This is a convenience - the application may do the third party library
      * initialization itself instead. Refer to external commo documentation for
      * more about how to do this.
+     * Note that if commo is built for automatic internal initialization, this
+     * function should not be invoked as the necessary initialization will 
+     * have already been completed.
      * @throws CommoException if initialization fails
      */
     public static synchronized void initThirdpartyNativeLibraries() throws CommoException {

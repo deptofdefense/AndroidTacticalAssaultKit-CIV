@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.os.Bundle;
+import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.text.InputType;
 import android.view.LayoutInflater;
@@ -212,6 +213,18 @@ public class TrackHistoryDropDown extends DropDownReceiver implements
 
     public static void promptNewTrack(final SharedPreferences prefs,
             final MapView mapView, final boolean showDetails) {
+
+        // This method must be called on the UI thread
+        if (Thread.currentThread() != Looper.getMainLooper().getThread()) {
+            mapView.post(new Runnable() {
+                @Override
+                public void run() {
+                    promptNewTrack(prefs, mapView, showDetails);
+                }
+            });
+            return;
+        }
+
         if (!prefs.getBoolean("toggle_log_tracks", true)) {
             Toast.makeText(
                     mapView.getContext(),
@@ -302,9 +315,16 @@ public class TrackHistoryDropDown extends DropDownReceiver implements
                 title, BreadcrumbReceiver.DEFAULT_LINE_STYLE,
                 mapView.getDeviceCallsign(), MapView.getDeviceUid(), true);
 
-        Toast.makeText(mapView.getContext(),
-                mapView.getContext().getString(R.string.new_track_segment),
-                Toast.LENGTH_LONG).show();
+        mapView.post(new Runnable() {
+            @Override
+            public void run() {
+
+                Toast.makeText(mapView.getContext(),
+                        mapView.getContext()
+                                .getString(R.string.new_track_segment),
+                        Toast.LENGTH_LONG).show();
+            }
+        });
 
         if (showDetails)
             AtakBroadcast.getInstance().sendBroadcast(
@@ -1095,9 +1115,10 @@ public class TrackHistoryDropDown extends DropDownReceiver implements
                         _context.getString(
                                 R.string.select_server),
                         servers,
-                        new ServerListDialog.ServerSelectCallback() {
+                        new ServerListDialog.Callback() {
                             @Override
-                            public void onSelected(CotPort server) {
+                            public void onSelected(
+                                    com.atakmap.comms.TAKServer server) {
                                 if (server == null) {
                                     Log.d(TAG, "No configured server selected");
                                     return;

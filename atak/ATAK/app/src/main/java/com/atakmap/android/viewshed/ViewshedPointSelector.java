@@ -220,7 +220,7 @@ public class ViewshedPointSelector implements
                 "Viewshed " + vsdNum);
         vsdMarker.setMetaString("entry", "user");
         vsdMarker.setMetaBoolean("nevercot", true);
-        vsdMarker.setMetaBoolean("movable", true);
+        vsdMarker.setMovable(true);
         vsdMarker.setMetaBoolean("removable", true);
         vsdMarker.setMetaBoolean("preciseMove", true);
         vsdMarker.setMetaString("how", "h-g-i-g-o");

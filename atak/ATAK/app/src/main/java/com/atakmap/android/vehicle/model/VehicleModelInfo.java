@@ -19,6 +19,8 @@ import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.layer.model.Model;
 import com.atakmap.map.layer.model.ModelInfo;
+import com.atakmap.math.Matrix;
+import com.atakmap.math.PointD;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -47,6 +49,7 @@ public class VehicleModelInfo implements ModelLoader.Callback {
     // Loaded on init
     public final File file;
     public final String category, name, fileName;
+    public final PointD offset;
 
     // Loaded on demand
     private ModelInfo info;
@@ -60,7 +63,8 @@ public class VehicleModelInfo implements ModelLoader.Callback {
     private final PendingDrawable icon;
     private boolean iconBusy;
 
-    public VehicleModelInfo(String category, String name, File file) {
+    public VehicleModelInfo(String category, String name, File file,
+            PointD offset) {
         this.file = file;
         String fName = file.getName();
         int dotIdx = fName.lastIndexOf('.');
@@ -68,6 +72,7 @@ public class VehicleModelInfo implements ModelLoader.Callback {
             fName = fName.substring(0, dotIdx);
         this.fileName = fName;
         this.name = name;
+        this.offset = offset;
 
         if (category == null) {
             File dir = file.getParentFile();
@@ -90,13 +95,16 @@ public class VehicleModelInfo implements ModelLoader.Callback {
         this.icon = new PendingDrawable(placeholder);
     }
 
+    public VehicleModelInfo(String category, String name, File file) {
+        this(category, name, file, null);
+    }
+
     public synchronized void dispose() {
         if (this.model != null)
             this.model.dispose();
         this.model = null;
         this.info = null;
         this.loaded = false;
-
     }
 
     public String getUID() {
@@ -269,10 +277,19 @@ public class VehicleModelInfo implements ModelLoader.Callback {
             }
         }
 
+        // Build transformation matrix if an offset was specified
+        Matrix transform = null;
+        if (this.offset != null) {
+            // Values are negated so that X = right, Y = forward, and Z = up
+            transform = Matrix.getTranslateInstance(-this.offset.x,
+                    -this.offset.y, -this.offset.z);
+        }
+
         // Load the model data
         Log.d(TAG, "Loading vehicle model: " + file);
         ModelLoader loader = new ModelLoader(this.file, null,
                 ModelProjection.ENU_FLIP_YZ, this);
+        loader.setTransform(transform);
         loader.load();
 
         // Finished

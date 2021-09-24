@@ -7,6 +7,7 @@ import android.content.Intent;
 import com.atakmap.android.contact.ContactPresenceDropdown;
 import android.os.Bundle;
 
+import com.atakmap.android.chat.ChatLine.Status;
 import com.atakmap.android.contact.Contact;
 import com.atakmap.android.contact.Contacts;
 import com.atakmap.android.contact.GroupContact;
@@ -83,158 +84,225 @@ public final class GeoChatService implements
 
     @Override
     public void onCotEvent(CotEvent cotEvent, Bundle bundle) {
-        if (isGeoChat(cotEvent)) {
-            //Log.d(TAG, "CoT Event with Bundle: " + bundle);
+        if (!isGeoChat(cotEvent))
+            return;
 
-            try {
+        //Log.d(TAG, "CoT Event with Bundle: " + bundle);
 
-                ChatMessageParser parser = new ChatMessageParser(_mapView);
-                parser.parseCotEvent(cotEvent);
-                bundle.putAll(parser.getBundle());
-                String senderUid = bundle.getString("senderUid");
-
-                if (bundle.getBoolean("tadilj")) {
-                    // Ignore TADIL-J messages that weren't sent to us
-                    if (senderUid == null)
-                        return;
-                    // Otherwise create one-way contact
-                    String convName = bundle.getString("conversationName");
-                    String convId = bundle.getString("conversationId");
-                    Contact tc = Contacts.getInstance()
-                            .getContactByUuid(convId);
-                    Contact group = Contacts.getInstance()
-                            .getContactByUuid("TadilJGroup");
-                    if (tc == null && group instanceof GroupContact) {
-                        tc = new TadilJContact(convName, convId);
-                        tc.getExtras().putBoolean("editable", false);
-                        Contacts.getInstance().addContact((GroupContact) group,
-                                tc);
-                    }
-                }
-
-                if (senderUid == null
-                        || senderUid.isEmpty()
-                        || Contacts.getInstance()
-                                .getContactByUuid(senderUid) == null) {
-                    //Sender isn't publishing their SA message
-                    String senderString = bundle.getString("from");
-                    String senderIp = null;
-                    /*int senderPort = -1;*/
-                    if (senderString != null && !senderString.isEmpty()) {
-                        String[] parts = senderString.split(":");
-                        senderIp = parts[0];
-                        /*try {
-                            senderPort = Integer.parseInt(parts[1]);
-                        } catch (Exception e) {
-                            Log.w(TAG, "Couldn't parse port!");
-                        }*/
-                    }
-
-                    else
-                        Log.e(TAG,
-                                "Received message from unknown sender.  Possibly through the TAK server");
-                    CotDetail detail = cotEvent.getDetail();
-                    if (senderUid == null) {
-                        for (int i = 0; i < detail.childCount(); i++) {
-                            CotDetail child = detail.getChild(i);
-                            if (child.getElementName().equals("link")) { //Find the link element
-                                if (child.getAttribute("relation")
-                                        .equals("p-p")) {
-                                    senderUid = child.getAttribute("uid"); //And grab the UID
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    if (senderIp != null && senderUid != null
-                            && !senderUid.equals(MapView.getDeviceUid())) {
-                        String senderCallsign = bundle
-                                .getString("senderCallsign");
-                        String senderName = bundle
-                                .getString("senderName");
-
-                        if (FileSystemUtils.isEmpty(senderCallsign)
-                                && senderName != null) {
-                            senderCallsign = senderName;
-                        }
-                        if (FileSystemUtils.isEmpty(senderCallsign)) {
-                            senderCallsign = senderUid;
-                        }
-
-                        if (senderUid.isEmpty()) {
-                            senderUid = bundle.getString("senderCallsign");
-                        }
-
-                        IndividualContact sender;
-
-                        if (senderIp.startsWith("224")) {
-                            int port = 17012;
-                            sender = new IndividualContact(
-                                    senderCallsign,
-                                    senderUid,
-                                    new NetConnectString("udp", senderIp,
-                                            port));
-                        } else {
-                            int port = 4242;
-                            sender = new IndividualContact(
-                                    senderCallsign,
-                                    senderUid,
-                                    new NetConnectString("tcp", senderIp,
-                                            port));
-                        }
-                        Contacts.getInstance().addContact(sender);
-                        //Make sure the chats go to the right place
-                        bundle.putString("senderUid", senderUid);
-                        String convId = bundle.getString("conversationId");
-                        if (convId == null || convId
-                                .equals(MapView.getDeviceUid()))
-                            bundle.putString("conversationId", senderUid);
-                    }
-                }
-
-                //Log.d(TAG, "Persist Chat message: " + chatMessageBundle);
-                chatDb.addChat(bundle);
-                sendToUiLayer(bundle);
-
-                //Log.d(TAG, "bundle contents\n" + bundle);
-
-            } catch (InvalidChatMessageException e) {
-                Log.e(TAG, "Couldn't derive chat event from CoT: " + cotEvent,
-                        e);
+        // Update delivery receipt for the message with the given UID
+        Status status = Status.forCotType(cotEvent.getType());
+        if (status != Status.NONE) {
+            Bundle b = chatDb.getChatMessage(cotEvent.getUID());
+            if (b == null) {
+                Log.e(TAG,
+                        "Received receipt for unknown chat message with UID: "
+                                + cotEvent.getUID());
+                return;
             }
+            ChatLine line = ChatLine.fromBundle(b);
+            if (line.status.ordinal() >= status.ordinal()) {
+                // The status update we received is a lower/equal state to the
+                // current status - ignore
+                return;
+            }
+            b.putString("status", status.name());
+            chatDb.addChat(b);
+            sendToUiLayer(b);
+            return;
+        }
+
+        try {
+            ChatMessageParser parser = new ChatMessageParser(_mapView);
+            parser.parseCotEvent(cotEvent);
+            bundle.putAll(parser.getBundle());
+            String senderUid = bundle.getString("senderUid");
+            String convId = bundle.getString("conversationId");
+
+            if (bundle.getBoolean("tadilj")) {
+                // Ignore TADIL-J messages that weren't sent to us
+                if (senderUid == null)
+                    return;
+                // Otherwise create one-way contact
+                String convName = bundle.getString("conversationName");
+                Contact tc = Contacts.getInstance()
+                        .getContactByUuid(convId);
+                Contact group = Contacts.getInstance()
+                        .getContactByUuid("TadilJGroup");
+                if (tc == null && group instanceof GroupContact) {
+                    tc = new TadilJContact(convName, convId);
+                    tc.getExtras().putBoolean("editable", false);
+                    Contacts.getInstance().addContact((GroupContact) group,
+                            tc);
+                }
+            }
+
+            Contact sender = Contacts.getInstance().getContactByUuid(senderUid);
+
+            if (sender == null) {
+                //Sender isn't publishing their SA message
+                String senderString = bundle.getString("from");
+                String senderIp = null;
+                /*int senderPort = -1;*/
+                if (senderString != null && !senderString.isEmpty()) {
+                    String[] parts = senderString.split(":");
+                    senderIp = parts[0];
+                    /*try {
+                        senderPort = Integer.parseInt(parts[1]);
+                    } catch (Exception e) {
+                        Log.w(TAG, "Couldn't parse port!");
+                    }*/
+                }
+
+                else
+                    Log.e(TAG,
+                            "Received message from unknown sender.  Possibly through the TAK server");
+                if (senderUid == null) {
+                    CotDetail link = cotEvent.findDetail("link");
+                    if (link != null && FileSystemUtils.isEquals(
+                            link.getAttribute("relation"), "p-p"))
+                        senderUid = link.getAttribute("uid");
+                }
+                if (senderIp != null && senderUid != null
+                        && !senderUid.equals(MapView.getDeviceUid())) {
+                    String senderCallsign = bundle
+                            .getString("senderCallsign");
+                    String senderName = bundle
+                            .getString("senderName");
+
+                    if (FileSystemUtils.isEmpty(senderCallsign)
+                            && senderName != null) {
+                        senderCallsign = senderName;
+                    }
+                    if (FileSystemUtils.isEmpty(senderCallsign)) {
+                        senderCallsign = senderUid;
+                    }
+
+                    if (senderUid.isEmpty()) {
+                        senderUid = bundle.getString("senderCallsign");
+                    }
+
+                    if (senderIp.startsWith("224")) {
+                        int port = 17012;
+                        sender = new IndividualContact(
+                                senderCallsign,
+                                senderUid,
+                                new NetConnectString("udp", senderIp,
+                                        port));
+                    } else {
+                        int port = 4242;
+                        sender = new IndividualContact(
+                                senderCallsign,
+                                senderUid,
+                                new NetConnectString("tcp", senderIp,
+                                        port));
+                    }
+                    Contacts.getInstance().addContact(sender);
+                    //Make sure the chats go to the right place
+                    bundle.putString("senderUid", senderUid);
+                    if (convId == null || convId.equals(MapView.getDeviceUid()))
+                        bundle.putString("conversationId", senderUid);
+                }
+            }
+
+            // if the chat message has been delivered go ahead and respond back to the sender
+            if (sender instanceof IndividualContact && FileSystemUtils.isEquals(
+                    bundle.getString("conversationId"), senderUid)) {
+                bundle.putString("status", Status.DELIVERED.name());
+                sendStatusMessage(bundle, Status.DELIVERED,
+                        (IndividualContact) sender);
+            }
+
+            //Log.d(TAG, "Persist Chat message: " + bundle);
+            chatDb.addChat(bundle);
+            sendToUiLayer(bundle);
+
+            //Log.d(TAG, "bundle contents\n" + bundle);
+
+        } catch (InvalidChatMessageException e) {
+            Log.e(TAG, "Couldn't derive chat event from CoT: " + cotEvent,
+                    e);
         }
     }
 
-    private void sendToUiLayer(Bundle chatMessageBundle) {
-        //Log.d(TAG, "Sending Chat message to UI layer: " + chatMessageBundle);
-        Intent gotNewChat = new Intent();
-        gotNewChat.setAction("com.atakmap.android.chat.NEW_CHAT_MESSAGE");
-        gotNewChat.putExtra("id", chatMessageBundle.getLong("id"));
-        gotNewChat.putExtra("groupId", chatMessageBundle.getLong("groupId"));
-        gotNewChat.putExtra("conversationId",
-                chatMessageBundle.getString("conversationId"));
-        AtakBroadcast.getInstance().sendBroadcast(gotNewChat);
-
-        // Refresh chat drop-down (if it's open)
-        AtakBroadcast.getInstance().sendBroadcast(new Intent(
-                ContactPresenceDropdown.REFRESH_LIST));
+    /**
+     * Only to be used as a shortcut for the Chat Line to generate a READ receipt.
+     * Receipts are NOT sent for chat messages that are either null, belong
+     * to the local user, or are part of a group chat (convo ID must equal sender ID).
+     * @param line Chat line
+     */
+    void sendReadStatus(ChatLine line) {
+        if (line != null && !line.isSelfChat() && line.messageId != null
+                && line.senderUid != null
+                && line.senderUid.equals(line.conversationId)) {
+            Contact contact = Contacts.getInstance()
+                    .getContactByUuid(line.senderUid);
+            if (contact instanceof IndividualContact)
+                sendStatusMessage(line.toBundle(), Status.READ,
+                        (IndividualContact) contact);
+        }
     }
 
     /**
-     * @return CotEvent from the info in chatMessage Bundle
-     * @param chatMessage conversationId -> String (reference this to send messages) messageId ->
-     *            String (uuid for this message) protocol -> String (e.g., xmpp, geochat, etc.) type
-     *            -> String (relevant info about the message type) conversationName -> String
-     *            (display name for conversation) receiveTime -> Long (time message was received)
-     *            senderName -> String (display name for sender) message -> String (text sent as
-     *            message) callsign -> String (this device's callsign) deviceType -> String (this
-     *            device's CoT type) uid -> String (this device's CoT uid)
+     * Provide a delivery response for a given chat message
+     * @param chatBundle Contains chat message data (including message UID)
+     * @param sender the individual contact to respond back to
      */
-    private CotEvent bundleToCot(Bundle chatMessage) {
-        //Log.d(TAG, "Converting Bundle to CoT Event.");
+    private void sendStatusMessage(Bundle chatBundle, Status receipt,
+            IndividualContact sender) {
 
-        CotEvent cotEvent;
+        MapView mv = MapView.getMapView();
+        if (mv == null)
+            return;
 
+        // Don't send empty status or message to self
+        if (receipt == Status.NONE || sender.getUID().equals(
+                MapView.getDeviceUid()))
+            return;
+
+        // Message UID is required
+        String messageId = chatBundle.getString("messageId");
+        if (FileSystemUtils.isEmpty(messageId))
+            return;
+
+        CotEvent cotEvent = new CotEvent();
+
+        cotEvent.setType(receipt.cotType);
+        cotEvent.setUID(messageId);
+
+        CoordinatedTime time = new CoordinatedTime();
+        cotEvent.setTime(time);
+        cotEvent.setStart(time);
+        cotEvent.setStale(time.addDays(1));
+
+        cotEvent.setVersion("2.0");
+        cotEvent.setHow("m-g");
+
+        // Reverse sender and receiver
+        String toUID = sender.getUID();
+        String selfUID = MapView.getDeviceUid();
+        chatBundle = new Bundle(chatBundle);
+        chatBundle.putString("senderUid", selfUID);
+        chatBundle.putString("senderCallsign", mv.getDeviceCallsign());
+        chatBundle.putString("uid", selfUID);
+        chatBundle.putStringArray("destinations", new String[] {
+                toUID
+        });
+        chatBundle.putString("deviceType", mv.getMapData()
+                .getString("deviceType"));
+        chatBundle.putString("parent", Contacts.getInstance().getRootGroup()
+                .getUID());
+        addSendDetails(chatBundle, cotEvent);
+
+        CotMapComponent.getExternalDispatcher().dispatchToContact(
+                cotEvent, sender);
+    }
+
+    /**
+     * Add CoT details required for sending CoT messages
+     * @param chatMessage Chat message bundle
+     * @param cotEvent CoT event to add to
+     */
+    private void addSendDetails(Bundle chatMessage, CotEvent cotEvent) {
         String from = chatMessage.getString("senderUid");
         if (from == null)
             from = "Android";
@@ -255,25 +323,10 @@ public final class GeoChatService implements
             room = DEFAULT_CHATROOM_NAME;
         if (id == null)
             id = UUID.randomUUID().toString();
-        String message = chatMessage.getString("message");
-        if (message == null)
-            message = "";
         String messageId = chatMessage.getString("messageId");
         if (messageId == null)
             messageId = UUID.randomUUID().toString();
 
-        cotEvent = new CotEvent();
-
-        cotEvent.setType("b-t-f");
-        cotEvent.setUID("GeoChat." + from + "." + id + "." + messageId);
-
-        CoordinatedTime time = new CoordinatedTime();
-        cotEvent.setTime(time);
-        cotEvent.setStart(time);
-        cotEvent.setStale(time.addDays(1));
-
-        cotEvent.setVersion("2.0");
-        cotEvent.setHow("h-g-i-g-o");
         if (_prefs.getBoolean("dispatchLocationCotExternal", true)) {
             if (_prefs.getBoolean("dispatchLocationHidden", false)) {
                 cotEvent.setPoint(CotPoint.ZERO);
@@ -291,6 +344,7 @@ public final class GeoChatService implements
 
         CotDetail __chat = new CotDetail("__chat");
         __chat.setAttribute("id", id);
+        __chat.setAttribute("messageId", messageId);
 
         String[] dests = chatMessage.getStringArray("destinations");
         if (dests == null) {
@@ -335,6 +389,70 @@ public final class GeoChatService implements
         link.setAttribute("relation", "p-p");
         detail.addChild(link);
 
+        CotDetail __serverdestination = new CotDetail("__serverdestination");
+        __serverdestination.setAttribute("destinations", connectionSettings);
+        detail.addChild(__serverdestination);
+    }
+
+    private void sendToUiLayer(Bundle chatMessageBundle) {
+        //Log.d(TAG, "Sending Chat message to UI layer: " + chatMessageBundle);
+        Intent gotNewChat = new Intent();
+        gotNewChat.setAction("com.atakmap.android.chat.NEW_CHAT_MESSAGE");
+        gotNewChat.putExtra("id", chatMessageBundle.getLong("id"));
+        gotNewChat.putExtra("groupId", chatMessageBundle.getLong("groupId"));
+        gotNewChat.putExtra("conversationId",
+                chatMessageBundle.getString("conversationId"));
+        AtakBroadcast.getInstance().sendBroadcast(gotNewChat);
+
+        // Refresh chat drop-down (if it's open)
+        AtakBroadcast.getInstance().sendBroadcast(new Intent(
+                ContactPresenceDropdown.REFRESH_LIST));
+    }
+
+    /**
+     * @return CotEvent from the info in chatMessage Bundle
+     * @param chatMessage conversationId -> String (reference this to send messages) messageId ->
+     *            String (uuid for this message) protocol -> String (e.g., xmpp, geochat, etc.) type
+     *            -> String (relevant info about the message type) conversationName -> String
+     *            (display name for conversation) receiveTime -> Long (time message was received)
+     *            senderName -> String (display name for sender) message -> String (text sent as
+     *            message) callsign -> String (this device's callsign) deviceType -> String (this
+     *            device's CoT type) uid -> String (this device's CoT uid)
+     */
+    private CotEvent bundleToCot(Bundle chatMessage) {
+        //Log.d(TAG, "Converting Bundle to CoT Event.");
+
+        CotEvent cotEvent = new CotEvent();
+
+        cotEvent.setType("b-t-f");
+
+        CoordinatedTime time = new CoordinatedTime();
+        cotEvent.setTime(time);
+        cotEvent.setStart(time);
+        cotEvent.setStale(time.addDays(1));
+
+        cotEvent.setVersion("2.0");
+        cotEvent.setHow("h-g-i-g-o");
+
+        String from = chatMessage.getString("senderUid");
+        if (from == null)
+            from = "Android";
+        String id = chatMessage.getString("conversationId");
+        if (id == null)
+            id = UUID.randomUUID().toString();
+        String message = chatMessage.getString("message");
+        if (message == null)
+            message = "";
+        String messageId = chatMessage.getString("messageId");
+        if (messageId == null)
+            messageId = UUID.randomUUID().toString();
+
+        cotEvent.setUID("GeoChat." + from + "." + id + "." + messageId);
+
+        // Add details required for sending
+        addSendDetails(chatMessage, cotEvent);
+
+        String[] dests = chatMessage.getStringArray("destinations");
         CotDetail remarks = new CotDetail("remarks");
         remarks.setAttribute("source", "BAO.F.ATAK." + from);
         for (String dest : dests) {
@@ -349,11 +467,7 @@ public final class GeoChatService implements
         }
         remarks.setAttribute("time", time.toString());
         remarks.setInnerText(message);
-        detail.addChild(remarks);
-
-        CotDetail __serverdestination = new CotDetail("__serverdestination");
-        __serverdestination.setAttribute("destinations", connectionSettings);
-        detail.addChild(__serverdestination);
+        cotEvent.getDetail().addChild(remarks);
 
         //Log.d(TAG, "chat: " + cotEvent);
 

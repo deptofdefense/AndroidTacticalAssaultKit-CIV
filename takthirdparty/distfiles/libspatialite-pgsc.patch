@@ -1,6 +1,6 @@
 --- libspatialite.pristine/src/gaiaaux/gg_utf8.c	2018-02-26 14:52:34.000000000 -0500
 +++ libspatialite/src/gaiaaux/gg_utf8.c	2018-02-26 14:55:25.000000000 -0500
-@@ -69,7 +69,18 @@
+@@ -69,7 +69,21 @@
  #include <localcharset.h>
  #endif /* end localcharset */
  #else /* not MINGW32 - WIN32 */
@@ -8,6 +8,9 @@
 +#if defined(__APPLE__) && defined(__MACH__) // Apple OSX and iOS (Darwin)
 + #include <TargetConditionals.h>
 + #if TARGET_IPHONE_SIMULATOR == 1 || TARGET_OS_IPHONE == 1
++  #ifndef __APPLE_IOS__
++  #define __APPLE_IOS__
++  #endif
 +  // iOS
 +  #include <iconv.h>
 +  #include <langinfo.h>
@@ -20,12 +23,12 @@
  #include <iconv.h>
  #include <localcharset.h>
  #else /* neither Mac OsX nor Android */
-@@ -99,7 +99,7 @@
+@@ -88,7 +102,7 @@
  #if defined(__MINGW32__) || defined(_WIN32)
      return locale_charset ();
  #else /* not MINGW32 - WIN32 */
 -#if defined(__APPLE__) || defined(__ANDROID__)
-+#if defined(__ANDROID__)
++#if !defined(__APPLE_IOS__) && (defined(__APPLE__) || defined(__ANDROID__))
      return locale_charset ();
  #else /* neither Mac OsX nor Android */
      return nl_langinfo (CODESET);
@@ -91,6 +94,36 @@ diff -ur libspatialite.pristine/src/gaiageo/gg_shape.c libspatialite/src/gaiageo
  	      | -openstep* | -oskit* | -conix* | -pw32* | -nonstopux* \
 --- libspatialite.pristine/configure	2015-09-07 09:56:45.000000000 -0400
 +++ libspatialite/configure	2017-08-25 17:31:19.797256942 -0400
+@@ -734,6 +734,7 @@
+ VERSION
+ PACKAGE
+ CYGPATH_W
++CYGPATH_M
+ am__isrc
+ INSTALL_DATA
+ INSTALL_SCRIPT
+@@ -2975,8 +2976,10 @@
+ if test -z "$CYGPATH_W"; then
+   if (cygpath --version) >/dev/null 2>/dev/null; then
+     CYGPATH_W='cygpath -w'
++    CYGPATH_M='cygpath -m'
+   else
+     CYGPATH_W=echo
++    CYGPATH_M=echo
+   fi
+ fi
+ 
+@@ -6726,8 +6729,8 @@
+   # Check if gcc -print-prog-name=ld gives a path.
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+-  case $host in
+-  *-*-mingw*)
++  case $build in
++  *-*-mingw*|*-*-cygwin*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
 @@ -12467,22 +12467,30 @@
  # No shared lib support for Linux oldld, aout, or coff.
  linux*oldld* | linux*aout* | linux*coff*)
@@ -124,6 +157,17 @@ diff -ur libspatialite.pristine/src/gaiageo/gg_shape.c libspatialite/src/gaiageo
  else
    lt_cv_shlibpath_overrides_runpath=no
      save_LDFLAGS=$LDFLAGS
+@@ -13766,8 +13777,8 @@
+   # Check if gcc -print-prog-name=ld gives a path.
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+-  case $host in
+-  *-*-mingw*)
++  case $build in
++  *-*-mingw*|*-*-cygwin*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
 @@ -16304,22 +16312,30 @@
  # No shared lib support for Linux oldld, aout, or coff.
  linux*oldld* | linux*aout* | linux*coff*)
@@ -157,6 +201,15 @@ diff -ur libspatialite.pristine/src/gaiageo/gg_shape.c libspatialite/src/gaiageo
  else
    lt_cv_shlibpath_overrides_runpath=no
      save_LDFLAGS=$LDFLAGS
+@@ -17357,7 +17376,7 @@
+ 
+ 
+ # exporting the TARGET_CPU string
+-splite_cpu=`$CC -dumpmachine`
++splite_cpu=`$CC -dumpmachine | tr -d '\r'`
+ cat >>confdefs.h <<_ACEOF
+ #define TARGET_CPU "$splite_cpu"
+ _ACEOF
 @@ -18040,7 +18040,7 @@
          fi
    fi
@@ -413,3 +466,95 @@ diff -ubr libspatialite.pristine/src/spatialite/spatialite.c libspatialite/src/s
  static double
  rint (double x)
  {
+diff -ur libspatialite.pristine/src/Makefile.in libspatialite/src/Makefile.in
+--- libspatialite.pristine/src/Makefile.in	2015-09-07 09:56:46.000000000 -0400
++++ libspatialite/src/Makefile.in	2021-05-28 17:27:26.286244700 -0400
+@@ -137,13 +137,14 @@
+ am__installdirs = "$(DESTDIR)$(libdir)"
+ LTLIBRARIES = $(lib_LTLIBRARIES)
+ am__DEPENDENCIES_1 =
+-libspatialite_la_DEPENDENCIES = ./gaiaaux/libgaiaaux.la \
+-	./gaiaexif/libgaiaexif.la ./gaiageo/libgaiageo.la \
+-	./geopackage/libgeopackage.la ./spatialite/libsplite.la \
+-	./shapefiles/libshapefiles.la ./dxf/libdxf.la ./md5/libmd5.la \
+-	./control_points/libcontrol_points.la ./srsinit/libsrsinit.la \
+-	./connection_cache/libconnection_cache.la \
+-	./virtualtext/libvirtualtext.la ./wfs/libwfs.la \
++abs_builddir_cyg=$(shell $(CYGPATH_M) $(abs_builddir))
++libspatialite_la_DEPENDENCIES = $(abs_builddir_cyg)/gaiaaux/libgaiaaux.la \
++	$(abs_builddir_cyg)/gaiaexif/libgaiaexif.la $(abs_builddir_cyg)/gaiageo/libgaiageo.la \
++	$(abs_builddir_cyg)/geopackage/libgeopackage.la $(abs_builddir_cyg)/spatialite/libsplite.la \
++	$(abs_builddir_cyg)/shapefiles/libshapefiles.la $(abs_builddir_cyg)/dxf/libdxf.la $(abs_builddir_cyg)/md5/libmd5.la \
++	$(abs_builddir_cyg)/control_points/libcontrol_points.la $(abs_builddir_cyg)/srsinit/libsrsinit.la \
++	$(abs_builddir_cyg)/connection_cache/libconnection_cache.la \
++	$(abs_builddir_cyg)/virtualtext/libvirtualtext.la $(abs_builddir_cyg)/wfs/libwfs.la \
+ 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+ 	$(am__DEPENDENCIES_1)
+ am__dirstamp = $(am__leading_dot)dirstamp
+@@ -157,13 +158,13 @@
+ 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+ 	$(AM_CFLAGS) $(CFLAGS) $(libspatialite_la_LDFLAGS) $(LDFLAGS) \
+ 	-o $@
+-mod_spatialite_la_DEPENDENCIES = ./gaiaaux/gaiaaux.la \
+-	./gaiaexif/gaiaexif.la ./gaiageo/gaiageo.la \
+-	./geopackage/geopackage.la ./spatialite/splite.la \
+-	./shapefiles/shapefiles.la ./dxf/dxf.la ./md5/md5.la \
+-	./control_points/control_points.la ./srsinit/srsinit.la \
+-	./connection_cache/connection_cache.la \
+-	./virtualtext/virtualtext.la ./wfs/wfs.la \
++mod_spatialite_la_DEPENDENCIES = $(abs_builddir_cyg)/gaiaaux/gaiaaux.la \
++	$(abs_builddir_cyg)/gaiaexif/gaiaexif.la $(abs_builddir_cyg)/gaiageo/gaiageo.la \
++	$(abs_builddir_cyg)/geopackage/geopackage.la $(abs_builddir_cyg)/spatialite/splite.la \
++	$(abs_builddir_cyg)/shapefiles/shapefiles.la $(abs_builddir_cyg)/dxf/dxf.la $(abs_builddir_cyg)/md5/md5.la \
++	$(abs_builddir_cyg)/control_points/control_points.la $(abs_builddir_cyg)/srsinit/srsinit.la \
++	$(abs_builddir_cyg)/connection_cache/connection_cache.la \
++	$(abs_builddir_cyg)/virtualtext/virtualtext.la $(abs_builddir_cyg)/wfs/wfs.la \
+ 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+ 	$(am__DEPENDENCIES_1)
+ am_mod_spatialite_la_OBJECTS =  \
+@@ -297,6 +298,7 @@
+ CXXDEPMODE = @CXXDEPMODE@
+ CXXFLAGS = @CXXFLAGS@
+ CYGPATH_W = @CYGPATH_W@
++CYGPATH_M = @CYGPATH_M@
+ DEFS = @DEFS@
+ DEPDIR = @DEPDIR@
+ DLLTOOL = @DLLTOOL@
+@@ -426,24 +428,24 @@
+ AM_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I$(top_srcdir)
+ lib_LTLIBRARIES = libspatialite.la mod_spatialite.la
+ libspatialite_la_SOURCES = versioninfo/version.c
+-libspatialite_la_LIBADD = ./gaiaaux/libgaiaaux.la \
+-	./gaiaexif/libgaiaexif.la ./gaiageo/libgaiageo.la \
+-	./geopackage/libgeopackage.la ./spatialite/libsplite.la \
+-	./shapefiles/libshapefiles.la ./dxf/libdxf.la ./md5/libmd5.la \
+-	./control_points/libcontrol_points.la ./srsinit/libsrsinit.la \
+-	./connection_cache/libconnection_cache.la \
+-	./virtualtext/libvirtualtext.la ./wfs/libwfs.la @LIBXML2_LIBS@ \
++libspatialite_la_LIBADD = $(abs_builddir_cyg)/gaiaaux/libgaiaaux.la \
++	$(abs_builddir_cyg)/gaiaexif/libgaiaexif.la $(abs_builddir_cyg)/gaiageo/libgaiageo.la \
++	$(abs_builddir_cyg)/geopackage/libgeopackage.la $(abs_builddir_cyg)/spatialite/libsplite.la \
++	$(abs_builddir_cyg)/shapefiles/libshapefiles.la $(abs_builddir_cyg)/dxf/libdxf.la $(abs_builddir_cyg)/md5/libmd5.la \
++	$(abs_builddir_cyg)/control_points/libcontrol_points.la $(abs_builddir_cyg)/srsinit/libsrsinit.la \
++	$(abs_builddir_cyg)/connection_cache/libconnection_cache.la \
++	$(abs_builddir_cyg)/virtualtext/libvirtualtext.la $(abs_builddir_cyg)/wfs/libwfs.la @LIBXML2_LIBS@ \
+ 	$(am__append_1) $(am__append_2) $(am__append_3)
+ @ANDROID_FALSE@@MINGW_FALSE@libspatialite_la_LDFLAGS = -version-info 8:0:1
+ @ANDROID_TRUE@@MINGW_FALSE@libspatialite_la_LDFLAGS = -version-info 8:0:1
+ @MINGW_TRUE@libspatialite_la_LDFLAGS = -version-info 4:3:0 -no-undefined
+ mod_spatialite_la_SOURCES = versioninfo/version.c
+-mod_spatialite_la_LIBADD = ./gaiaaux/gaiaaux.la ./gaiaexif/gaiaexif.la \
+-	./gaiageo/gaiageo.la ./geopackage/geopackage.la \
+-	./spatialite/splite.la ./shapefiles/shapefiles.la ./dxf/dxf.la \
+-	./md5/md5.la ./control_points/control_points.la \
+-	./srsinit/srsinit.la ./connection_cache/connection_cache.la \
+-	./virtualtext/virtualtext.la ./wfs/wfs.la @LIBXML2_LIBS@ \
++mod_spatialite_la_LIBADD = $(abs_builddir_cyg)/gaiaaux/gaiaaux.la $(abs_builddir_cyg)/gaiaexif/gaiaexif.la \
++	$(abs_builddir_cyg)/gaiageo/gaiageo.la $(abs_builddir_cyg)/geopackage/geopackage.la \
++	$(abs_builddir_cyg)/spatialite/splite.la $(abs_builddir_cyg)/shapefiles/shapefiles.la $(abs_builddir_cyg)/dxf/dxf.la \
++	$(abs_builddir_cyg)/md5/md5.la $(abs_builddir_cyg)/control_points/control_points.la \
++	$(abs_builddir_cyg)/srsinit/srsinit.la $(abs_builddir_cyg)/connection_cache/connection_cache.la \
++	$(abs_builddir_cyg)/virtualtext/virtualtext.la $(abs_builddir_cyg)/wfs/wfs.la @LIBXML2_LIBS@ \
+ 	$(am__append_4) $(am__append_5) $(am__append_6)
+ mod_spatialite_la_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I. \
+ 	-DLOADABLE_EXTENSION

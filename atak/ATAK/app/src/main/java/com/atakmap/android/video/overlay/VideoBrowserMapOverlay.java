@@ -13,7 +13,6 @@ import android.widget.Toast;
 import com.atakmap.android.hierarchy.HierarchyListAdapter;
 import com.atakmap.android.hierarchy.HierarchyListFilter;
 import com.atakmap.android.hierarchy.HierarchyListItem;
-import com.atakmap.android.hierarchy.action.Delete;
 import com.atakmap.android.image.ImageGalleryReceiver;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.DeepMapItemQuery;
@@ -154,7 +153,7 @@ public class VideoBrowserMapOverlay extends AbstractMapOverlay2
                                 return;
                             VideoSyncClient client = new VideoSyncClient(
                                     _context);
-                            client.query(server.getURL(false), null);
+                            client.query(server.getURL(false));
                         }
                     });
         }
@@ -220,15 +219,6 @@ public class VideoBrowserMapOverlay extends AbstractMapOverlay2
         @Override
         public View getHeaderView() {
             return _listHeader;
-        }
-
-        @Override
-        public boolean delete() {
-            List<Delete> actions = getChildActions(Delete.class);
-            boolean ret = !actions.isEmpty();
-            for (Delete del : actions)
-                ret &= del.delete();
-            return ret;
         }
     }
 }

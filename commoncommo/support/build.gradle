@@ -1,0 +1,11 @@
+plugins {
+    id 'java'
+    id 'maven-publish'
+}
+
+apply from: 'gradle/publishing.gradle'
+apply from: 'gradle/artifactAssembly.gradle'
+
+wrapper {
+    gradleVersion = '5.4.1'
+}

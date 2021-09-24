@@ -15,8 +15,10 @@ import com.atakmap.android.util.ATAKConstants;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.R;
 import com.atakmap.comms.CommsMapComponent;
+import com.atakmap.comms.TAKServer;
 import com.atakmap.comms.app.CredentialsDialog;
 import com.atakmap.comms.NetConnectString;
+import com.atakmap.comms.app.EnrollmentDialog;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.foxykeep.datadroid.requestmanager.Request;
@@ -26,11 +28,13 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 
 public class CertificateEnrollmentClient implements
-        RequestManager.RequestListener, CredentialsDialog.Callback {
+        RequestManager.RequestListener, CredentialsDialog.Callback,
+        EnrollmentDialog.Callback {
 
     public enum CertificateEnrollmentStatus {
         SUCCESS,
         BAD_CREDENTIALS,
+        QUICK_CONNECT_ERROR,
         ERROR
     }
 
@@ -80,6 +84,15 @@ public class CertificateEnrollmentClient implements
             final Long expiration,
             CertificateEnrollmentCompleteCallback certificateEnrollmentCompleteCallback,
             final boolean getProfile) {
+        enroll(context, desc, connectString, cacheCreds, expiration,
+                certificateEnrollmentCompleteCallback, getProfile, false);
+    }
+
+    public void enroll(final Context context, final String desc,
+            final String connectString, final String cacheCreds,
+            final Long expiration,
+            CertificateEnrollmentCompleteCallback certificateEnrollmentCompleteCallback,
+            final boolean getProfile, final boolean isQuickConnect) {
         this.context = context;
         this.getProfile = getProfile;
         this.certificateEnrollmentCompleteCallback = certificateEnrollmentCompleteCallback;
@@ -100,47 +113,61 @@ public class CertificateEnrollmentClient implements
             }
         });
 
-        NetConnectString ncs = NetConnectString.fromString(connectString);
+        if (connectString != null) {
+            NetConnectString ncs = NetConnectString.fromString(connectString);
 
-        if (ncs == null) {
-            Log.e(TAG, "could not enroll for a bad connectString: "
-                    + connectString, new Exception());
-            return;
-        }
+            if (ncs == null) {
+                Log.e(TAG, "could not enroll for a bad connectString: "
+                        + connectString, new Exception());
+                return;
+            }
 
-        // clear out any current client cert for this server
-        AtakCertificateDatabase.deleteCertificateForServer(
-                AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE,
-                ncs.getHost());
+            // clear out any current client cert for this server
+            AtakCertificateDatabase.deleteCertificateForServerAndPort(
+                    AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE,
+                    ncs.getHost(), ncs.getPort());
 
-        AtakAuthenticationCredentials credentials = AtakAuthenticationDatabase
-                .getCredentials(
-                        AtakAuthenticationCredentials.TYPE_COT_SERVICE,
-                        ncs.getHost());
+            AtakAuthenticationCredentials credentials = AtakAuthenticationDatabase
+                    .getCredentials(
+                            AtakAuthenticationCredentials.TYPE_COT_SERVICE,
+                            ncs.getHost());
 
-        String username = null;
-        String password = null;
+            final String username;
+            final String password;
 
-        if (credentials != null) {
-            username = credentials.username;
-            password = credentials.password;
-        }
+            if (credentials != null) {
+                username = credentials.username;
+                password = credentials.password;
+            } else {
+                username = null;
+                password = null;
+            }
 
-        if (username == null || FileSystemUtils.isEmpty(username) ||
-                password == null || FileSystemUtils.isEmpty(password)) {
-            view.post(new Runnable() {
-                @Override
-                public void run() {
-                    CredentialsDialog.createCredentialDialog(
-                            desc, connectString, "", "", cacheCreds, expiration,
-                            context, CertificateEnrollmentClient.this);
-                }
-            });
+            if (FileSystemUtils.isEmpty(username)
+                    || FileSystemUtils.isEmpty(password)) {
+                view.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        CredentialsDialog.createCredentialDialog(
+                                desc, connectString,
+                                FileSystemUtils.isEmpty(username) ? ""
+                                        : username,
+                                FileSystemUtils.isEmpty(password) ? ""
+                                        : password,
+                                cacheCreds, expiration,
+                                context, CertificateEnrollmentClient.this);
+                    }
+                });
+            } else {
+                CertificateConfigRequest request = new CertificateConfigRequest(
+                        connectString, cacheCreds, desc, username, password,
+                        expiration);
+                request.setQuickConnect(isQuickConnect);
+                verifyTrust(request);
+            }
         } else {
-            CertificateConfigRequest request = new CertificateConfigRequest(
-                    connectString, cacheCreds, desc, username, password,
-                    expiration);
-            verifyTrust(request);
+            EnrollmentDialog.createEnrollmentDialog(null, null, null,
+                    context, CertificateEnrollmentClient.this);
         }
     }
 
@@ -171,7 +198,6 @@ public class CertificateEnrollmentClient implements
                             AtakCertificateDatabaseIFace.TYPE_TRUST_STORE_CA,
                             request.getServer());
 
-            request.setSaveAsDefault(false);
             request.setHasTruststore(truststore != null);
             request.setAllowAllHostnames(truststore != null);
             executeConfigRequest(request);
@@ -288,15 +314,17 @@ public class CertificateEnrollmentClient implements
             if (request
                     .getRequestType() == CertificateEnrollmentClient.REQUEST_TYPE_CERTIFICATE_CONFIG) {
 
+                CertificateConfigRequest certificateConfigRequest = (CertificateConfigRequest) request
+                        .getParcelable(
+                                CertificateConfigOperation.PARAM_CONFIG_REQUEST);
+
+                boolean sslError = false;
+                String message = null;
+
                 Bundle certBundle = resultData.getBundle(
                         CertificateConfigOperation.PARAM_CONFIG_RESPONSE_SERVER_CERTS);
                 if (certBundle != null) {
-                    showProgress(false);
-                    CertificateConfigRequest certificateConfigRequest = (CertificateConfigRequest) request
-                            .getParcelable(
-                                    CertificateConfigOperation.PARAM_CONFIG_REQUEST);
-                    certificateConfigRequest.setAllowAllHostnames(true);
-
+                    sslError = true;
                     StringBuilder serverDNs = new StringBuilder();
                     List<X509Certificate> serverCerts = CertificateManager
                             .certBundleToArray(certBundle);
@@ -308,19 +336,40 @@ public class CertificateEnrollmentClient implements
                                 x509Certificate.getSubjectDN().getName());
                     }
 
-                    String message = ("The hostname in the certificate does not match. "
+                    message = ("The hostname in the certificate does not match. "
                             +
                             "Expected to see a certificate for "
                             + certificateConfigRequest.getServer()) +
                             ". But the server responded with " + serverDNs;
 
-                    final AlertDialog dialog = new AlertDialog.Builder(context)
-                            .setIcon(ATAKConstants
-                                    .getIconId())
-                            .setTitle(R.string.server_auth_error)
-                            .setMessage(message)
-                            .setPositiveButton(R.string.ok, null).create();
-                    dialog.show();
+                } else if (resultData.getBoolean(
+                        CertificateConfigOperation.PARAM_CONFIG_RESPONSE_PEER_UNVERIFIED)) {
+                    sslError = true;
+                    message = "The TAK Server's identity could not be verified";
+                }
+
+                if (sslError) {
+
+                    showProgress(false);
+
+                    if (certificateConfigRequest.getQuickConnect()) {
+                        CommsMapComponent.getInstance().getCotService()
+                                .removeStreaming(certificateConfigRequest
+                                        .getConnectString(), false);
+                        showAlertDialog(message,
+                                CertificateEnrollmentStatus.QUICK_CONNECT_ERROR,
+                                certificateConfigRequest);
+                    } else {
+                        final AlertDialog dialog = new AlertDialog.Builder(
+                                context)
+                                        .setIcon(ATAKConstants
+                                                .getIconId())
+                                        .setTitle(R.string.server_auth_error)
+                                        .setMessage(message)
+                                        .setPositiveButton(R.string.ok, null)
+                                        .create();
+                        dialog.show();
+                    }
                 }
 
             } else if (request
@@ -351,19 +400,24 @@ public class CertificateEnrollmentClient implements
                 + detail);
 
         CertificateConfigRequest certificateConfigRequest = null;
+        if (request
+                .getRequestType() == CertificateEnrollmentClient.REQUEST_TYPE_CERTIFICATE_CONFIG) {
+            certificateConfigRequest = (CertificateConfigRequest) request
+                    .getParcelable(
+                            CertificateConfigOperation.PARAM_CONFIG_REQUEST);
+        }
 
         String message = appCtx.getString(R.string.enroll_client_failure);
         CertificateEnrollmentClient.CertificateEnrollmentStatus status = CertificateEnrollmentStatus.ERROR;
         if (ce.getStatusCode() == 401) {
             message = appCtx.getString(R.string.invalid_credentials);
             status = CertificateEnrollmentStatus.BAD_CREDENTIALS;
-
-            if (request
-                    .getRequestType() == CertificateEnrollmentClient.REQUEST_TYPE_CERTIFICATE_CONFIG) {
-                certificateConfigRequest = (CertificateConfigRequest) request
-                        .getParcelable(
-                                CertificateConfigOperation.PARAM_CONFIG_REQUEST);
-            }
+        } else if (certificateConfigRequest != null
+                && certificateConfigRequest.getQuickConnect()) {
+            status = CertificateEnrollmentStatus.QUICK_CONNECT_ERROR;
+            CommsMapComponent.getInstance().getCotService()
+                    .removeStreaming(
+                            certificateConfigRequest.getConnectString(), false);
         }
 
         NotificationUtil.getInstance().postNotification(
@@ -386,6 +440,23 @@ public class CertificateEnrollmentClient implements
     public void onRequestDataError(final Request request) {
         Log.e(TAG, "CertificateEnrollmentRequest Failed - Data Error");
 
+        CertificateConfigRequest certificateConfigRequest = null;
+        if (request
+                .getRequestType() == CertificateEnrollmentClient.REQUEST_TYPE_CERTIFICATE_CONFIG) {
+            certificateConfigRequest = (CertificateConfigRequest) request
+                    .getParcelable(
+                            CertificateConfigOperation.PARAM_CONFIG_REQUEST);
+        }
+
+        CertificateEnrollmentClient.CertificateEnrollmentStatus status = CertificateEnrollmentStatus.ERROR;
+        if (certificateConfigRequest != null
+                && certificateConfigRequest.getQuickConnect()) {
+            status = CertificateEnrollmentStatus.QUICK_CONNECT_ERROR;
+            CommsMapComponent.getInstance().getCotService()
+                    .removeStreaming(
+                            certificateConfigRequest.getConnectString(), false);
+        }
+
         NotificationUtil.getInstance().postNotification(
                 NotificationUtil.GeneralIcon.NETWORK_ERROR.getID(),
                 NotificationUtil.RED,
@@ -399,13 +470,30 @@ public class CertificateEnrollmentClient implements
 
         showProgress(false);
         showAlertDialog(appCtx.getString(R.string.enroll_client_failure),
-                CertificateEnrollmentStatus.ERROR, null);
+                status, null);
     }
 
     @Override
     public void onRequestCustomError(Request request, Bundle resultData) {
         Log.e(TAG, "CertificateEnrollmentRequest Failed - Custom Error");
 
+        CertificateConfigRequest certificateConfigRequest = null;
+        if (request
+                .getRequestType() == CertificateEnrollmentClient.REQUEST_TYPE_CERTIFICATE_CONFIG) {
+            certificateConfigRequest = (CertificateConfigRequest) request
+                    .getParcelable(
+                            CertificateConfigOperation.PARAM_CONFIG_REQUEST);
+        }
+
+        CertificateEnrollmentClient.CertificateEnrollmentStatus status = CertificateEnrollmentStatus.ERROR;
+        if (certificateConfigRequest != null
+                && certificateConfigRequest.getQuickConnect()) {
+            status = CertificateEnrollmentStatus.QUICK_CONNECT_ERROR;
+            CommsMapComponent.getInstance().getCotService()
+                    .removeStreaming(
+                            certificateConfigRequest.getConnectString(), false);
+        }
+
         NotificationUtil.getInstance().postNotification(
                 NotificationUtil.GeneralIcon.NETWORK_ERROR.getID(),
                 NotificationUtil.RED,
@@ -419,7 +507,7 @@ public class CertificateEnrollmentClient implements
 
         showProgress(false);
         showAlertDialog(appCtx.getString(R.string.enroll_client_failure),
-                CertificateEnrollmentStatus.ERROR, null);
+                status, null);
     }
 
     private void showProgress(final boolean show) {
@@ -450,11 +538,20 @@ public class CertificateEnrollmentClient implements
         String title = status == CertificateEnrollmentStatus.SUCCESS
                 ? appCtx.getString(R.string.enroll_client_success_title)
                 : appCtx.getString(R.string.enroll_client_failure_title);
+
+        boolean isQuickConnectError = certificateConfigRequest != null
+                && certificateConfigRequest.getQuickConnect()
+                && status != CertificateEnrollmentStatus.SUCCESS;
+
+        String positiveButtonText = isQuickConnectError
+                ? appCtx.getString(R.string.retry)
+                : appCtx.getString(R.string.ok);
+
         AlertDialog.Builder alertDialog = new AlertDialog.Builder(context)
                 .setIcon(com.atakmap.android.util.ATAKConstants.getIconId())
                 .setTitle(title)
                 .setMessage(message)
-                .setPositiveButton(appCtx.getString(R.string.ok),
+                .setPositiveButton(positiveButtonText,
                         new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog,
@@ -463,6 +560,16 @@ public class CertificateEnrollmentClient implements
                                     certificateEnrollmentCompleteCallback
                                             .onCertificateEnrollmentComplete(
                                                     status);
+                                } else if (isQuickConnectError) {
+                                    EnrollmentDialog.createEnrollmentDialog(
+                                            certificateConfigRequest
+                                                    .getServer(),
+                                            certificateConfigRequest
+                                                    .getUsername(),
+                                            certificateConfigRequest
+                                                    .getPassword(),
+                                            context,
+                                            CertificateEnrollmentClient.this);
                                 } else if (status == CertificateEnrollmentStatus.BAD_CREDENTIALS
                                         &&
                                         certificateConfigRequest != null) {
@@ -491,14 +598,51 @@ public class CertificateEnrollmentClient implements
                             }
                         });
 
+        if (isQuickConnectError) {
+            alertDialog.setNegativeButton(R.string.cancel, null);
+        }
+
         try {
             alertDialog.show();
         } catch (Exception e) {
             // if enrollment does not complete on time and the preference activity has been closed, 
             // just continue on with the application and do not error out.
             Log.e(TAG,
-                    "error occured and the preference activity has been closed prior to the enrollment completing",
+                    "error occurred and the preference activity has been closed prior to the enrollment completing",
                     e);
         }
+    }
+
+    public void onEnrollmentOk(Context context, String address,
+            String cacheCreds,
+            String description,
+            String username, String password, Long expiration) {
+        Log.d(TAG, "in onEnrollmentOk");
+
+        // save the credentials
+        AtakAuthenticationDatabase.saveCredentials(
+                AtakAuthenticationCredentials.TYPE_COT_SERVICE,
+                address, username, password, expiration);
+
+        // build up a connectString using the default port
+        String connectString = address + ":8089:ssl";
+
+        // create the TAKServer
+        Bundle bundle = new Bundle();
+        bundle.putString(TAKServer.CONNECT_STRING_KEY, connectString);
+        bundle.putString(TAKServer.DESCRIPTION_KEY, description);
+        bundle.putBoolean(TAKServer.ENROLL_FOR_CERT_KEY, true);
+        TAKServer takServer = new TAKServer(bundle);
+
+        // add the streaming connection
+        CommsMapComponent.getInstance().getCotService().addStreaming(takServer);
+
+        // launch the enrollment process
+        enroll(context, description, connectString,
+                cacheCreds, expiration, null, true, true);
+    }
+
+    public void onEnrollmentCancel() {
+        Log.d(TAG, "in onEnrollmentCancel");
     }
 }

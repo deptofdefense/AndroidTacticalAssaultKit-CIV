@@ -5,7 +5,6 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
@@ -24,12 +23,13 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
 import android.view.ViewGroup.LayoutParams;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import com.atakmap.android.hashtags.view.HashtagEditText;
+import com.atakmap.android.hashtags.view.RemarksLayout;
 import com.atakmap.android.image.nitf.NITFHelper;
 import com.atakmap.android.math.MathUtils;
 import com.atakmap.android.util.ATAKUtilities;
@@ -39,7 +39,6 @@ import com.atakmap.android.image.nitf.NITFReader;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.SensorFOV;
 import com.atakmap.android.util.AltitudeUtilities;
-import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.concurrent.NamedThreadFactory;
 import com.atakmap.coremap.conversions.CoordinateFormat;
@@ -360,18 +359,6 @@ public abstract class ImageContainer implements OnTouchListener,
     }
 
     /**
-     * @deprecated Use {@link #readNITF(File)} directly
-     * @param nitfFile
-     * @param res - unused
-     * @return
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public static Bitmap readNITF(File nitfFile, Resources res) {
-        return readNITF(nitfFile);
-    }
-
-    /**
      * Tries to set the current image to one having the supplied UID.
      * Returns true if the attempt is successful.
      *
@@ -503,7 +490,7 @@ public abstract class ImageContainer implements OnTouchListener,
         // Skip if the view has already been closed
         if (disposed || layout == null)
             return;
-        final HashtagEditText caption = layout.findViewById(R.id.image_caption);
+        final RemarksLayout caption = layout.findViewById(R.id.image_caption);
         layout.findViewById(R.id.markupImage).setEnabled(false);
         File dir = bmpFile.getParentFile();
         String name = bmpFile.getName().toLowerCase(LocaleUtil.getCurrent());
@@ -542,7 +529,7 @@ public abstract class ImageContainer implements OnTouchListener,
                     .findViewById(R.id.image_location_text);
             final TextView dateText = layout
                     .findViewById(R.id.image_date_text);
-            final HashtagEditText caption = layout
+            final RemarksLayout caption = layout
                     .findViewById(R.id.image_caption);
             final ImageButton overlayBtn = layout.findViewById(
                     R.id.markupImage);
@@ -595,7 +582,7 @@ public abstract class ImageContainer implements OnTouchListener,
                     .findViewById(R.id.image_location_text);
             final TextView dateText = layout
                     .findViewById(R.id.image_date_text);
-            final HashtagEditText caption = layout
+            final RemarksLayout caption = layout
                     .findViewById(R.id.image_caption);
 
             // Update date time text and image caption, if available
@@ -923,17 +910,17 @@ public abstract class ImageContainer implements OnTouchListener,
      * @param tv Text view
      * @param txt Text to set (null to hide text view)
      */
-    private void setText(final TextView tv, final String txt) {
+    private void setText(final View tv, final String txt) {
         if (tv == null)
             return;
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 if (txt != null) {
-                    if (tv instanceof HashtagEditText)
-                        ((HashtagEditText) tv).setText(txt);
-                    else
-                        tv.setText(txt);
+                    if (tv instanceof RemarksLayout)
+                        ((RemarksLayout) tv).setText(txt);
+                    else if (tv instanceof EditText)
+                        ((EditText) tv).setText(txt);
                     tv.setVisibility(View.VISIBLE);
                 } else {
                     tv.setVisibility(View.GONE);

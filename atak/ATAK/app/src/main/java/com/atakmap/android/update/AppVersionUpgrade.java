@@ -18,7 +18,6 @@ import com.atakmap.android.importfiles.ui.ImportManagerView;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.missionpackage.MissionPackageReceiver;
 import com.atakmap.android.video.VideoBrowserDropDownReceiver;
-import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.app.BuildConfig;
 import com.atakmap.app.preferences.GeocoderPreferenceFragment;
@@ -399,26 +398,6 @@ public class AppVersionUpgrade {
 
     public static void migrate(String oldFile, String newFile) {
         FileSystemUtils.migrate(oldFile, newFile);
-    }
-
-    /**
-     * Given a Stringified path, attempts to migrate the old path to the new path.
-     * @deprecated Old path is sufficiently old that support will be dropped
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public static String translate(String path) {
-        if (path.indexOf(FileSystemUtils.OLD_ATAK_ROOT_DIRECTORY) > 0) {
-            Log.e(TAG, "old root directory found in: " + path);
-            String newpath = path.replace(
-                    FileSystemUtils.OLD_ATAK_ROOT_DIRECTORY,
-                    FileSystemUtils.ATAK_ROOT_DIRECTORY);
-            Log.e(TAG, "translating to: " + newpath);
-            return newpath;
-        } else {
-            return path;
-        }
-
     }
 
     private static boolean shuffleDirsLayers() {

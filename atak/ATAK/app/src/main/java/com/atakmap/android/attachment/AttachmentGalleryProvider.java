@@ -33,15 +33,30 @@ public class AttachmentGalleryProvider extends GalleryContentProvider {
 
     @Override
     public List<GalleryItem> getItems() {
+        // TODO: More efficient way of grabbing all map items and associated files
+        //  The current method loops through all attachment directories, lists
+        //  all the files in each directory, then looks up the associated map items,
+        //  then list all the files in each directory a 2nd time.
+        //  File I/O calls (especially listing) are not cheap performance-wise
         List<MapItem> items = AttachmentManager.findAttachmentItems(
                 _mapView.getRootGroup());
 
         //now gather list of attachments for each marker
         List<GalleryItem> attachments = new ArrayList<>();
         for (MapItem m : items) {
+
+            // Skip invisible map items (see ATAK-14894)
+            if (!m.getVisible())
+                continue;
+
+            // Get all attachment files for this map item
             List<File> files = AttachmentManager.getAttachments(m.getUID());
+
+            // No attachments - skip
             if (FileSystemUtils.isEmpty(files))
                 continue;
+
+            // Add attachment files
             for (File attachment : files) {
                 //skip child directories
                 if (!FileSystemUtils.isFile(attachment)

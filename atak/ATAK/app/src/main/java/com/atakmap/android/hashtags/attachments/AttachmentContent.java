@@ -71,7 +71,11 @@ public class AttachmentContent implements HashtagContent, GoTo, Delete,
         if (ImageContainer.JPEG_FilenameFilter.accept(dir, name)) {
             TiffImageMetadata exif = ExifHelper.getExifMetadata(_file);
             if (exif != null) {
-                point = ExifHelper.getLocation(exif);
+                try {
+                    point = ExifHelper.getLocation(exif);
+                } catch (Exception ignored) {
+                    // has EXIF data bug the values are not what sanselan is expecting
+                }
                 caption = ExifHelper.getString(exif,
                         TiffConstants.TIFF_TAG_IMAGE_DESCRIPTION, "");
             }

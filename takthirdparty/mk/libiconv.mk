@@ -19,8 +19,8 @@ $(libiconv_configtouchfile): $(libiconv_srctouchfile)
 		./configure                                      \
 		$(CONFIGURE_TARGET)                              \
 		$(CONFIGURE_$(BUILD_TYPE))                       \
-		--enable-shared                                  \
-		--disable-static                                 \
+		--disable-shared                                  \
+		--enable-static                                 \
 		--prefix=$(OUTDIR_CYGSAFE)
 	touch $@
 

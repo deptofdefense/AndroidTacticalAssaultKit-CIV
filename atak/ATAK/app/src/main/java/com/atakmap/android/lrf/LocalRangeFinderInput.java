@@ -9,10 +9,10 @@ import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Point;
-import android.graphics.Rect;
 
 import com.atakmap.android.util.DragMarkerHelper;
 import com.atakmap.app.system.ResourceUtil;
+import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.maps.conversion.GeomagneticField;
 import android.preference.PreferenceManager;
 import android.widget.Toast;
@@ -53,7 +53,6 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -156,8 +155,8 @@ public class LocalRangeFinderInput implements Runnable, RangeFinderAction,
         _formerSelf.setMetaString("callsign", "origin");
         _formerSelf.setIcon(_originIcon);
         _formerSelf.setClickable(false);
-        _formerSelf.setTouchable(false);
-        _formerSelf.setMetaBoolean("movable", false);
+        _formerSelf.setClickable(false);
+        _formerSelf.setMovable(false);
         _formerSelf.setMetaBoolean("removable", false);
         _formerSelf.setMetaBoolean("addToObjList", false);
         _formerSelf.setZOrder(-2000d);
@@ -249,11 +248,9 @@ public class LocalRangeFinderInput implements Runnable, RangeFinderAction,
 
         if (mi == null) {
             Marker blankMarker = new Marker(GeoPoint.ZERO_POINT, spiUID);
-            blankMarker.setClickable(true);
             blankMarker.setZOrder(-2000d);
-            blankMarker.setMarkerHitBounds(new Rect(-32, -32, 32, 32));
             blankMarker.setMetaBoolean("editable", false);
-            blankMarker.setMetaBoolean("movable", false);
+            blankMarker.setMovable(false);
             blankMarker.setMetaBoolean("removable", true);
             blankMarker.setType("b-m-p-s-p-i");
             blankMarker.setMetaString("how", "h-e");
@@ -553,7 +550,8 @@ public class LocalRangeFinderInput implements Runnable, RangeFinderAction,
                 pmi.setVisible(false);
 
                 String input = new String(receivePacket.getData(), 0,
-                        receivePacket.getLength(), StandardCharsets.UTF_8);
+                        receivePacket.getLength(),
+                        FileSystemUtils.UTF8_CHARSET);
                 Log.i(TAG, "receive: " + input);
                 String[] tokens = input.split(",");
 

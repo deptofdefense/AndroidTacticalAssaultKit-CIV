@@ -1,7 +1,8 @@
 #include "threadedhandler.h"
-#include <Lock.h>
+#include "commothread.h"
 
 using namespace atakmap::commoncommo::impl;
+using namespace atakmap::commoncommo::impl::thread;
 
 
 ThreadedHandler::ThreadedHandler(size_t nThreads, const char **names) : contexts()
@@ -48,18 +49,16 @@ void* ThreadedHandler::threadEntry(void *ctxv)
 
 void ThreadedHandler::ThreadContext::start()
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    PGSC::Thread::Lock_create(lock, stateMutex);
-    PGSC::Thread::ThreadCreateParams params;
+    Lock lock(stateMutex);
+    Thread::CreateParams params;
     params.name = name;
-    PGSC::Thread::Thread_start(thread, ThreadedHandler::threadEntry, this, params);
+    Thread::start(thread, ThreadedHandler::threadEntry, this, params);
 }
 
 
 void ThreadedHandler::ThreadContext::stop()
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    PGSC::Thread::Lock_create(lock, stateMutex);
+    Lock lock(stateMutex);
     if (thread) {
         shouldStop = true;
         owner->threadStopSignal(id);

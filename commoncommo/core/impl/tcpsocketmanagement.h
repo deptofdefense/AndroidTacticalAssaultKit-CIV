@@ -9,10 +9,10 @@
 #include "commotime.h"
 #include "resolverqueue.h"
 #include "cryptoutil.h"
+#include "commothread.h"
 #include <set>
 #include <map>
 #include <deque>
-#include <RWMutex.h>
 
 namespace atakmap {
 namespace commoncommo {
@@ -212,33 +212,33 @@ private:
 
     TxCtxSet txContexts;
     bool txNeedsRebuild;
-    PGSC::Thread::Mutex txMutex;
+    thread::Mutex txMutex;
     
     ResolverReqMap resolverContexts;
-    PGSC::Thread::Mutex resolverContextsMutex;
+    thread::Mutex resolverContextsMutex;
 
 
     // RX Queue - new items on front
     std::deque<RxQueueItem> rxQueue;
-    PGSC::Thread::Mutex rxQueueMutex;
-    PGSC::Thread::CondVar rxQueueMonitor;
+    thread::Mutex rxQueueMutex;
+    thread::CondVar rxQueueMonitor;
 
     // TX Error Queue - new items on front
     std::deque<TxErrQueueItem> txErrQueue;
-    PGSC::Thread::Mutex txErrQueueMutex;
-    PGSC::Thread::CondVar txErrQueueMonitor;
+    thread::Mutex txErrQueueMutex;
+    thread::CondVar txErrQueueMonitor;
 
     // Listeners
     std::set<TcpMessageListener *> listeners;
-    PGSC::Thread::Mutex listenerMutex;
+    thread::Mutex listenerMutex;
 
     // Error Listeners
     std::set<CoTSendFailureListener *> txErrListeners;
-    PGSC::Thread::Mutex txErrListenerMutex;
+    thread::Mutex txErrListenerMutex;
 
     // Interface status listeners
     std::set<InterfaceStatusListener *> ifaceListeners;
-    PGSC::Thread::Mutex ifaceListenerMutex;
+    thread::Mutex ifaceListenerMutex;
 
 
     // Protects all IO sockets across all contexts (aka the big select() mutex)
@@ -252,7 +252,7 @@ private:
     // Mutex, lock starvation of the "writing" calls was seen with the "read"
     // portion never giving up the mutex effectively (on some platforms,
     // notably Linux)
-    PGSC::Thread::RWMutex globalIOMutex;
+    thread::RWMutex globalIOMutex;
 
     NetSelector selector;
 

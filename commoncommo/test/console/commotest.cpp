@@ -3,7 +3,6 @@
 
 #include "libxml/tree.h"
 #include "libxml/xmlerror.h"
-#include <Lock.h>
 #include "openssl/ssl.h"
 #include "openssl/crypto.h"
 #include "curl/curl.h"
@@ -37,6 +36,11 @@ namespace {
             "WARNING",
             "INFO",
             "ERROR"
+    };
+    const char* TYPE_STRINGS[] = {
+            "GENERAL",
+            "PARSING",
+            "NETWORK"
     };
 
 
@@ -220,7 +224,7 @@ void test::CommoTest::run(int argc, char *argv[])
         do_help(argv[0]);
         return;
     }
-    
+
     if (argc < 4 || ((argc - 4) % 2) != 0) {
         fprintf(stderr, "Usage: %s <uid> <callsign> <output directory> { <wait-seconds> <command> } ... \n", argv[0]);
         fprintf(stderr, "       %s -h for full help listing\n", argv[0]);
@@ -244,7 +248,7 @@ void test::CommoTest::run(int argc, char *argv[])
         return;
     }
     
-
+	fprintf(logFile, "Running against commo version %s\n", Commo::getVersionString());
 
     ContactUID mycommouid((const uint8_t *)myUID.c_str(), myUID.length());
     commo = new Commo(this, &mycommouid, myCallsign.c_str());
@@ -854,19 +858,17 @@ streamerr:
 
 void test::CommoTest::contactAdded(const ContactUID *c)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    Lock_create(lock, contactMutex);
+    std::lock_guard<std::mutex> lock(contactMutex);
     std::string s((const char * const)c->contactUID, c->contactUIDLen);
     contactList.insert(s);
     contactsMenuDirty = true;
     s.insert(0, "Contact Added: ");
-    log(LEVEL_INFO, s.c_str());
+    log(LEVEL_INFO, TYPE_GENERAL, s.c_str(), nullptr);
 }
 
 void test::CommoTest::contactRemoved(const ContactUID* c)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    Lock_create(lock, contactMutex);
+    std::lock_guard<std::mutex> lock(contactMutex);
     std::string s((const char * const)c->contactUID, c->contactUIDLen);
     std::set<std::string>::iterator iter = contactList.find(s);
     if (iter != contactList.end()) {
@@ -874,14 +876,15 @@ void test::CommoTest::contactRemoved(const ContactUID* c)
         contactsMenuDirty = true;
     }
     s.insert(0, "Contact Removed: ");
-    log(LEVEL_INFO, s.c_str());
+    log(LEVEL_INFO, TYPE_GENERAL, s.c_str(), nullptr);
 }
 
-void test::CommoTest::log(Level level, const char* message)
+void test::CommoTest::log(Level level, Type type, const char* message, void* data)
 {
     std::string s(LEVEL_STRINGS[level]);
+    std::string t(TYPE_STRINGS[type]);
     std::string time(getTimeString());
-    fprintf(logFile, "[%s] %s: %s\n", s.c_str(), time.c_str(), message);
+    fprintf(logFile, "[%s-%s] %s: %s\n", s.c_str(), t.c_str(), time.c_str(), message);
     fflush(logFile);
 }
 
@@ -900,7 +903,7 @@ void test::CommoTest::genericDataReceived(const uint8_t *data, size_t length, co
         ss << std::setw(2) << (int)data[i];
     ss << "}";
     std::string s = ss.str();
-    log(LEVEL_INFO, s.c_str());
+    log(LEVEL_INFO, TYPE_GENERAL, s.c_str(), nullptr);
 }
 
 void test::CommoTest::cotMessageReceived(const char* msg, const char *rxIfaceEndpointId)

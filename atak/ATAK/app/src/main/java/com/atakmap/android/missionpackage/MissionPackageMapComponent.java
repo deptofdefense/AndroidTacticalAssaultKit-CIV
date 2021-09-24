@@ -30,6 +30,7 @@ import com.atakmap.android.missionpackage.file.MissionPackageFileIO;
 import com.atakmap.android.missionpackage.file.MissionPackageManifest;
 import com.atakmap.android.missionpackage.http.datamodel.MissionPackageQueryResult;
 import com.atakmap.android.missionpackage.lasso.LassoContentProvider;
+import com.atakmap.android.missionpackage.lasso.LassoSelectionReceiver;
 import com.atakmap.android.missionpackage.ui.MissionPackageMapOverlay;
 import com.atakmap.android.missionpackage.ui.MissionPackagePreferenceFragment;
 import com.atakmap.android.widgets.AbstractWidgetMapComponent;
@@ -90,6 +91,7 @@ public class MissionPackageMapComponent extends AbstractWidgetMapComponent
     private SharedPreferences _prefs;
 
     private Context _context;
+    private MapView _mapView;
 
     private boolean _enabled; // User can enable or disable via settings
     private boolean _stillStarting;
@@ -104,6 +106,7 @@ public class MissionPackageMapComponent extends AbstractWidgetMapComponent
 
     private MissionPackageConnectorHandler _connectorHandler;
     private LassoContentProvider _lassoProvider;
+    private LassoSelectionReceiver _lassoReceiver;
 
     public static MissionPackageMapComponent getInstance() {
         return _self;
@@ -113,6 +116,7 @@ public class MissionPackageMapComponent extends AbstractWidgetMapComponent
     protected void onCreateWidgets(Context context, Intent intent,
             MapView mapView) {
         _self = this;
+        _mapView = mapView;
         _context = context;
         _stillStarting = true;
 
@@ -262,6 +266,15 @@ public class MissionPackageMapComponent extends AbstractWidgetMapComponent
                                 "The TAK server connect net connect string",
                                 true, String.class),
                 });
+        fileShareFilter.addAction(
+                MissionPackageReceiver.MISSIONPACKAGE_REMOVE_LASSO,
+                "Intent to remove contents from a Data Package using a shape",
+                new DocumentedExtra[] {
+                        new DocumentedExtra(
+                                MissionPackageApi.INTENT_EXTRA_MISSIONPACKAGEMANIFEST_UID,
+                                "Data package UID", false),
+                        new DocumentedExtra("uid", "The UID of the shape")
+                });
 
         AtakBroadcast.getInstance()
                 .registerReceiver(_receiver, fileShareFilter);
@@ -349,8 +362,9 @@ public class MissionPackageMapComponent extends AbstractWidgetMapComponent
         // thread...
         new DefaultHttpClient(new BasicHttpParams());
 
-        // Lasso content provider
+        // Lasso tool and content provider
         _lassoProvider = new LassoContentProvider(mapView);
+        _lassoReceiver = new LassoSelectionReceiver(mapView, _lassoProvider);
     }
 
     private void finishStartup() {
@@ -382,9 +396,13 @@ public class MissionPackageMapComponent extends AbstractWidgetMapComponent
 
     public boolean checkFileSharingEnabled() {
         if (!isEnabled()) {
+            _mapView.post(new Runnable() {
+                public void run() {
             Toast.makeText(_context,
                     R.string.mission_package_file_sharing_is_disabled,
                     Toast.LENGTH_LONG).show();
+                }
+            });
             return false;
         }
         return true;
@@ -404,15 +422,13 @@ public class MissionPackageMapComponent extends AbstractWidgetMapComponent
         // start web server
         boolean success = enableCommsFileSharing();
         if (!success) {
-            try {
-                Toast.makeText(_context,
-                        R.string.mission_package_failed_to_enable_file_sharing,
-                        Toast.LENGTH_SHORT).show();
-            } catch (Exception e) {
-                // unable to toast off of the UI thread and this is a patch
-                // since correcting it would change the mapping too much that
-                // is only for 4.3.1.
-            }
+            _mapView.post(new Runnable() {
+                public void run() {
+                    Toast.makeText(_context,
+                            R.string.mission_package_failed_to_enable_file_sharing,
+                            Toast.LENGTH_SHORT).show();
+                }
+            });
         }
         _enabled = success;
         return success;
@@ -432,11 +448,15 @@ public class MissionPackageMapComponent extends AbstractWidgetMapComponent
         Log.i(TAG, "Disabling File Sharing");
         disableCommsFileSharing();
 
-        if (notifyUser)
+        if (notifyUser) {
+            _mapView.post(new Runnable() {
+                public void run() {
             Toast.makeText(_context,
                     R.string.mission_package_file_sharing_disabled,
                     Toast.LENGTH_SHORT).show();
-
+                }
+            });
+        }
         _enabled = false;
     }
 
@@ -488,6 +508,9 @@ public class MissionPackageMapComponent extends AbstractWidgetMapComponent
 
         if (_lassoProvider != null)
             _lassoProvider.dispose();
+
+        if (_lassoReceiver != null)
+            _lassoReceiver.dispose();
 
         AtakBroadcast.getInstance().unregisterReceiver(toolreceiver);
         //AtakBroadcast.getInstance().unregisterReceiver(compCreatedRec);

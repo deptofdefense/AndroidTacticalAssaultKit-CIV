@@ -42,7 +42,7 @@ public class AbstractSheetData {
 
     public AbstractSheetData(AbstractSheet rs) {
         // The name of the rubber sheet
-        this.label = rs.getName();
+        this.label = rs.getTitle();
 
         // Remarks
         this.remarks = rs.getMetaString("remarks", null);

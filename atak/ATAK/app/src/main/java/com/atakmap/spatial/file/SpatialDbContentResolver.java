@@ -128,6 +128,7 @@ public abstract class SpatialDbContentResolver extends FileContentResolver {
         FOVFilter.MapState ms = params.fov.getMapState();
         FeatureQueryParameters fp = new FeatureQueryParameters();
         fp.limit = 1;
+        fp.visibleOnly = params.visibleOnly;
         fp.spatialFilter = new FeatureQueryParameters.RegionSpatialFilter(
                 ms.upperLeft, ms.lowerRight);
         for (URIContentHandler h : handlers) {

@@ -57,10 +57,7 @@ JNIEXPORT void JNICALL Java_com_atakmap_math_Matrix_transform
     
     Matrix2 *xform = JLONG_TO_INTPTR(Matrix2, ptr);
 
-    TAKErr code = xform->transform(&p, p);
-    if(ATAKMapEngineJNI_checkOrThrow(env, code))
-        return;
-
+    p = xform->transform(p);
     env->SetDoubleField(jdst, pointD_x, p.x);
     env->SetDoubleField(jdst, pointD_y, p.y);
     env->SetDoubleField(jdst, pointD_z, p.z);

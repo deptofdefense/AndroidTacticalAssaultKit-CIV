@@ -4,6 +4,9 @@ package com.atakmap.android.hashtags.view;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.res.TypedArray;
+import android.text.Editable;
+import android.text.TextUtils.TruncateAt;
 import android.text.TextWatcher;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
@@ -12,10 +15,13 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import com.atakmap.android.imagecapture.CapturePrefs;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.app.R;
+
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Layout that includes remarks and hashtags using the same visual style as
@@ -23,12 +29,17 @@ import com.atakmap.app.R;
  */
 public class RemarksLayout extends LinearLayout {
 
+    private static final String TAG = "RemarksLayout";
+
     // Maximum number of allowed characters
     private static final int MAX_LENGTH = 5000;
 
-    private final HashtagEditText _remarks;
-    private final ImageButton _editBtn;
-    private String _rawText = "";
+    protected TextView _label;
+    protected HashtagEditText _remarks;
+    protected ImageButton _editBtn;
+    protected String _rawText = "";
+    private String _dialogHint;
+    private final ConcurrentLinkedQueue<TextWatcher> _textChangedListeners = new ConcurrentLinkedQueue<>();
 
     public RemarksLayout(Context context) {
         this(context, null);
@@ -47,12 +58,74 @@ public class RemarksLayout extends LinearLayout {
             int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
 
+        createLayout(context);
+
+        final TypedArray a = context.obtainStyledAttributes(attrs,
+                R.styleable.RemarksLayout, 0, 0);
+
+        int minLines = a.getInt(R.styleable.RemarksLayout_android_minLines, -1);
+        if (minLines >= 0)
+            _remarks.setMinLines(minLines);
+
+        int maxLines = a.getInt(R.styleable.RemarksLayout_android_maxLines, -1);
+        if (maxLines >= 0)
+            _remarks.setMaxLines(maxLines);
+
+        int ellipsize = a.getInt(R.styleable.RemarksLayout_android_ellipsize,
+                -1);
+        switch (ellipsize) {
+            case 1:
+                _remarks.setEllipsize(TruncateAt.START);
+                break;
+            case 2:
+                _remarks.setEllipsize(TruncateAt.MIDDLE);
+                break;
+            case 3:
+                _remarks.setEllipsize(TruncateAt.END);
+                break;
+            case 4:
+                _remarks.setEllipsize(TruncateAt.MARQUEE);
+                break;
+        }
+
+        int gravity = a.getInt(R.styleable.RemarksLayout_android_gravity, -1);
+        if (gravity >= 0)
+            _remarks.setGravity(gravity);
+
+        String hint = a.getString(R.styleable.RemarksLayout_android_hint);
+        String contentDesc = a.getString(
+                R.styleable.RemarksLayout_android_contentDescription);
+        _dialogHint = a.getString(R.styleable.RemarksLayout_dialogHint);
+
+        _remarks.setHint(hint);
+        _remarks.setContentDescription(contentDesc);
+
+        String viz = a.getString(R.styleable.RemarksLayout_labelVisibility);
+        if (viz != null) {
+            switch (viz) {
+                case "visible":
+                    _label.setVisibility(View.VISIBLE);
+                    break;
+                case "invisible":
+                    _label.setVisibility(View.INVISIBLE);
+                    break;
+                case "gone":
+                    _label.setVisibility(View.GONE);
+                    break;
+            }
+        }
+
+        a.recycle();
+    }
+
+    protected void createLayout(Context context) {
         setOrientation(VERTICAL);
         LayoutInflater inf = LayoutInflater.from(context);
         LinearLayout ll = (LinearLayout) inf.inflate(R.layout.remarks_layout,
                 this, false);
         addView(ll);
 
+        _label = findViewById(R.id.label);
         _remarks = findViewById(R.id.remarks);
         _editBtn = findViewById(R.id.edit_remarks);
         _editBtn.setOnClickListener(new OnClickListener() {
@@ -79,11 +152,24 @@ public class RemarksLayout extends LinearLayout {
         _remarks.setHint(hint);
     }
 
+    /**
+     * Add text changed listener that's called whenever the user changes the
+     * remarks text (this is NOT triggered by automatic changes)
+     * @param watcher Text watcher
+     */
     public void addTextChangedListener(TextWatcher watcher) {
-        _remarks.addTextChangedListener(watcher);
+        _textChangedListeners.add(watcher);
     }
 
-    private void promptEditText() {
+    /**
+     * Remove text changed listener
+     * @param watcher Text watcher
+     */
+    public void removeTextChangedListener(TextWatcher watcher) {
+        _textChangedListeners.remove(watcher);
+    }
+
+    protected void promptEditText() {
         MapView mv = MapView.getMapView();
         if (mv == null)
             return;
@@ -91,7 +177,7 @@ public class RemarksLayout extends LinearLayout {
         final HashtagEditText input = new HashtagEditText(getContext());
         input.setMixedInput(true);
         input.setText(_rawText);
-        input.setHint(_remarks.getHint());
+        input.setHint(_dialogHint != null ? _dialogHint : _remarks.getHint());
         input.setInputType(_remarks.getInputType());
         input.setImeOptions(_remarks.getImeOptions());
         input.setSelection(_rawText.length());
@@ -110,6 +196,9 @@ public class RemarksLayout extends LinearLayout {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         setText(input.getTextString());
+                        Editable newText = _remarks.getText();
+                        for (TextWatcher tw : _textChangedListeners)
+                            tw.afterTextChanged(newText);
                     }
                 });
         b.setNegativeButton(R.string.cancel, null);
@@ -121,6 +210,7 @@ public class RemarksLayout extends LinearLayout {
                     WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE |
                             WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
         d.show();
+        input.requestFocus();
     }
 
     @Override

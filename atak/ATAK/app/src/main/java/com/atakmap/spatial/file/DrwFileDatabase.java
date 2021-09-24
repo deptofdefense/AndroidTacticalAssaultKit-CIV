@@ -3,10 +3,8 @@ package com.atakmap.spatial.file;
 
 import android.content.Context;
 import android.graphics.Color;
-import android.graphics.Rect;
 
 import com.atakmap.android.editableShapes.EditablePolyline;
-import com.atakmap.android.elev.dt2.Dt2ElevationModel;
 import com.atakmap.android.maps.AxisOfAdvance;
 import com.atakmap.android.maps.Ellipse;
 import com.atakmap.android.maps.MapGroup;
@@ -25,6 +23,7 @@ import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.map.elevation.ElevationManager;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.healthmarketscience.jackcess.Database;
 import com.healthmarketscience.jackcess.DatabaseBuilder;
@@ -65,8 +64,6 @@ public class DrwFileDatabase extends
     private static final int MONEY_GREEN = Color.rgb(180, 220, 180);
     private static final int SKY_BLUE = Color.rgb(160, 200, 255);
     private static final int CREAM = Color.rgb(255, 240, 240);
-    private static final Dt2ElevationModel _dem = Dt2ElevationModel
-            .getInstance();
 
     public DrwFileDatabase(Context context, MapView view) {
         super(DATABASE_FILE, context, view);
@@ -270,7 +267,7 @@ public class DrwFileDatabase extends
             }
         };
         shp.setMetaBoolean("removable", false);
-        shp.setTouchable(true);
+        shp.setClickable(true);
         shp.setClickable(true);
         ArrayList<GeoPointMetaData> pts = new ArrayList<>(2);
 
@@ -426,7 +423,6 @@ public class DrwFileDatabase extends
         final SimpleRectangle shp = new SimpleRectangle(
                 UUID.randomUUID().toString());
         shp.setMetaString("menu", "menus/immutable_shape.xml");
-        shp.setClickable(true);
         String title = "";
 
         String colorString = "255";
@@ -503,8 +499,6 @@ public class DrwFileDatabase extends
             ArrayList<Map<String, Object>> shapeRows) {
         final Marker shp = new Marker(UUID.randomUUID().toString());
         shp.setMetaString("menu", "menus/immutable_point.xml");
-        shp.setMarkerHitBounds(new Rect(-32, -32, 32, 32));
-        shp.setClickable(true);
         String colorString = "255";
 
         for (int i = 0; i < shapeRows.size(); i++) {
@@ -550,7 +544,7 @@ public class DrwFileDatabase extends
         }
 
         try {
-            return _dem.queryPoint(lat, lon);
+            return ElevationManager.getElevationMetadata(lat, lon, null);
         } catch (Exception e) {
             return GeoPointMetaData.wrap(new GeoPoint(lat, lon));
         }

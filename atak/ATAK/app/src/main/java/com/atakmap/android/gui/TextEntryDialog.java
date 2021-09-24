@@ -19,7 +19,6 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.atakmap.android.maps.MapView;
-import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 
 /**
@@ -50,12 +49,7 @@ public class TextEntryDialog {
      * <p/>
      * Implementors of Predicate which may cause side effects upon evaluation are
      * strongly encouraged to state this fact clearly in their API documentation.
-     *
-     * @deprecated Use {@code java.util.function.Predicate} instead.
-     *             This must not be used outside frameworks/base/test-runner.
      */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public interface Predicate<T> {
         boolean apply(T t);
     }

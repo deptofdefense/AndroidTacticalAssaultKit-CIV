@@ -16,4 +16,7 @@ public class URIQueryParameters {
 
     // Spatial FOV filter
     public FOVFilter fov;
+
+    // Visible content only
+    public boolean visibleOnly;
 }

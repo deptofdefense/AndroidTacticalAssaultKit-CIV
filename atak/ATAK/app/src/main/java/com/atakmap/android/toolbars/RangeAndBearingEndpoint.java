@@ -1,17 +1,11 @@
 
 package com.atakmap.android.toolbars;
 
-import android.graphics.PointF;
-
 import com.atakmap.android.maps.MapEvent;
 import com.atakmap.android.maps.MapEventDispatcher;
 import com.atakmap.android.maps.MapItem;
-import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.MetaMapPoint;
-import com.atakmap.coremap.maps.coords.GeoBounds;
-import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
-import com.atakmap.math.Rectangle;
 
 public class RangeAndBearingEndpoint extends MetaMapPoint implements
         MapEventDispatcher.OnMapEventListener {
@@ -34,19 +28,6 @@ public class RangeAndBearingEndpoint extends MetaMapPoint implements
 
     static public void setTool(RangeAndBearingEndpointMoveTool tool) {
         _tool = tool;
-    }
-
-    @Override
-    public boolean testOrthoHit(int xpos, int ypos, GeoPoint point,
-            MapView view) {
-        if (_parent == null || !_parent.getVisible())
-            return false;
-        float hitRadius = getHitRadius(view);
-        PointF xy = view
-                .forward(view.getRenderElevationAdjustedPoint(getPoint()));
-        return Rectangle.contains(xpos - hitRadius, ypos - hitRadius,
-                xpos + hitRadius, ypos + hitRadius,
-                xy.x, xy.y);
     }
 
     @Override

@@ -312,8 +312,8 @@ public class ATAKConstants {
         final String encryptorName = SystemComponentLoader
                 .getEncryptionComponentName();
         if (encryptorName != null) {
-            final TextView encryptionText = ((TextView) v
-                    .findViewById(R.id.encryption));
+            final TextView encryptionText = v
+                    .findViewById(R.id.encryption);
             encryptionText.setText(context
                     .getString(R.string.dar_encryptor_message, encryptorName));
             encryptionText.setVisibility(View.VISIBLE);

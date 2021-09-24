@@ -13,11 +13,11 @@ include mk/gdal-common.mk
 
 gdal_configtouchfile=$(OUTDIR)/$(gdal_local_srcdir)/.configured
 
-gdal_kdu_yes=--with-kakadu=$(call PATH_CYGSAFE,$(OUTDIR)/kdu)
+gdal_kdu_yes=--with-kakadu=$(call PATH_CYGSAFE,$(OUTDIR)/kdu_bin)
 gdal_kdu=$(gdal_kdu_$(GDAL_USE_KDU))
 
-gdal_mrsid_yes=--with-mrsid=$(OUTDIR_CYGSAFE)                              \
-gdal_mrsid=$(gdal_mrsid_$(GDAL_USE_MRSID))
+gdal_ttp_zlib_yes=--with-libz=$(call PATH_CYGSAFE,$(OUTDIR))
+gdal_ttp_zlib=$(gdal_ttp_zlib_$(GDAL_USE_TTP_ZLIB))
 
 
 $(gdal_configtouchfile): $(OUTDIR)/$(gdal_local_srcdir)/configure
@@ -37,12 +37,14 @@ $(gdal_configtouchfile): $(OUTDIR)/$(gdal_local_srcdir)/configure
 		$(gdal_kdu)                                                 \
 		--with-libkml=$(OUTDIR_CYGSAFE)                             \
 		--with-expat=$(OUTDIR_CYGSAFE)                              \
-		$(gdal_mrsid)                                               \
+		--with-mrsid=$(OUTDIR_CYGSAFE)                              \
 		--with-curl=$(OUTDIR)/bin/curl-config                       \
 		--with-xml2=$(OUTDIR)/libxml2/xml2-config                   \
 		--with-geos=$(OUTDIR)/bin/geos-config                       \
 		--with-sqlite3=$(OUTDIR_CYGSAFE)                            \
-		--with-ogdi=$(OUTDIR_CYGSAFE)                               \
+        --with-ogdi=$(OUTDIR_CYGSAFE)                               \
+		--with-proj=$(OUTDIR_CYGSAFE)                               \
+		$(gdal_ttp_zlib)                                            \
 		--without-lerc                                              \
 		--with-pdfium=$(OUTDIR_CYGSAFE)/pdfium                      \
 		--with-pdfium-extra-lib-for-test=                           \
@@ -61,6 +63,7 @@ gdal_java: $(OUTDIR)/$(gdal_local_srcdir) $(gdal_configtouchfile)
 		$(if $(SWIG),SWIG="$(call PATH_CYGSAFE,$(SWIG))",)       \
 		$(if $(gdal_KILL_JAVA_INCLUDE),JAVA_INCLUDE="",)         \
 		BINDINGS=java                                            \
+		JAVA_HOME=$(JAVA_HOME) \
 		build
 
 gdal_java_data:

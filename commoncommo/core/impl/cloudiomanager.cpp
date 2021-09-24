@@ -481,8 +481,7 @@ CommoResult CloudIOManager::createCloudClient(
         
 
         {
-            PGSC::Thread::LockPtr lock(NULL, NULL);
-            PGSC::Thread::Lock_create(lock, clientsMutex);
+            thread::Lock lock(clientsMutex);
             clients.insert(client);
         }
         *result = client;
@@ -494,8 +493,7 @@ CommoResult CloudIOManager::createCloudClient(
 
 CommoResult CloudIOManager::destroyCloudClient(CloudClient *client)
 {
-    PGSC::Thread::LockPtr lock(NULL, NULL);
-    PGSC::Thread::Lock_create(lock, clientsMutex);
+    thread::Lock lock(clientsMutex);
     InternalCloudClient *iclient = (InternalCloudClient *)client;
 
     if (clients.erase(iclient) != 1)
