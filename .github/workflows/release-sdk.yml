@@ -27,6 +27,7 @@ jobs:
         sudo apt-get install patch
         sudo apt-get install make
         sudo apt-get install cmake
+        sudo apt-get install ninja-build
         sudo apt-get install swig
         sudo apt-get install tclsh
         sudo apt-get install python3-pip
@@ -72,6 +73,13 @@ jobs:
             (cd lib && (find . -maxdepth 1 -type f -not -name "*.so" -print0 | xargs -0 -I {} rm -f {})) ; \
             popd ; \
         done
+    - name: set up CMake
+      run: |
+       wget --quiet --tries=0 --output-document=cmake-3.14.7.tar.gz https://cmake.org/files/v3.14/cmake-3.14.7-Linux-x86_64.tar.gz;
+       gzip -d cmake-3.14.7.tar.gz;
+       tar xf cmake-3.14.7.tar;
+       rm -rf cmake-3.14.7.tar;
+       echo "CMAKE_HOME=$PWD/cmake-3.14.7-Linux-x86_64" >> $GITHUB_ENV
     - name: install ATAK SDK keystore
       env:
           ANDROID_KEYSTORE_FILE: ${{ secrets.SDK_KEYSTORE_FILE }}
@@ -96,6 +104,7 @@ jobs:
     - name: assemble ATAK APK
       run: |
         cd atak
+        echo "cmake.dir=$CMAKE_HOME" >> local.properties
         rm -rf ATAK/app/build
         bash ./gradlew assembleCivSdk
     - name: generate ATAK CIV SDK package
