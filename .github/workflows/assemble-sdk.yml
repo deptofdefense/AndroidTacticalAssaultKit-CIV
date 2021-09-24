@@ -57,6 +57,13 @@ jobs:
        unzip -qq  android-ndk.zip;
        echo "ANDROID_NDK_HOME=$PWD/android-ndk-r${NDK_VERSION}" >> $GITHUB_ENV
        echo "ANDROID_NDK=$PWD/android-ndk-r${NDK_VERSION}" >> $GITHUB_ENV
+    - name: set up CMake
+      run: |
+       wget --quiet --tries=0 --output-document=cmake-3.14.7.tar.gz https://cmake.org/files/v3.14/cmake-3.14.7-Linux-x86_64.tar.gz;
+       gzip -d cmake-3.14.7.tar.gz;
+       tar xf cmake-3.14.7.tar;
+       rm -rf cmake-3.14.7.tar;
+       echo "CMAKE_HOME=$PWD/cmake-3.14.7-Linux-x86_64" >> $GITHUB_ENV
     - name: Build Dependencies
       run: |
         pushd .
@@ -88,6 +95,7 @@ jobs:
     - name: Assemble ATAK APK
       run: |
         cd atak
+        echo "cmake.dir=$CMAKE_HOME" >> local.properties
         rm -rf ATAK/app/build
         bash ./gradlew assembleCivSdk
     - name: generate ATAK CIV SDK package
