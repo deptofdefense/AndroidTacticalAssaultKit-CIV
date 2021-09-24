@@ -24,6 +24,7 @@ jobs:
         sudo apt-get install patch
         sudo apt-get install make
         sudo apt-get install cmake
+        sudo apt-get install ninja-build
         sudo apt-get install swig
         sudo apt-get install tclsh
         sudo apt-get install python3-pip
