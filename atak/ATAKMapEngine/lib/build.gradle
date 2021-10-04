@@ -312,7 +312,7 @@ task installDepends {
                     include 'libproj.so'
                     include 'libspatialite.so'
                 }
-                from("../../../takthirdparty/builds/android-${arch}-release/lib/ogdi") {
+                from("../../../takthirdparty/builds/android-${aarch}-release/lib/ogdi") {
                     include 'libogdi.so'
                 }
 
