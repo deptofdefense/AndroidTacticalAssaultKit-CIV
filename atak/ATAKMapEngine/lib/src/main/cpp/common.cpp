@@ -303,8 +303,6 @@ JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved)
     for(entry = classRefMap().begin(); entry != classRefMap().end(); entry++)
         env->DeleteGlobalRef(entry->second);
     classRefMap().clear();
-
-    vm = NULL;
 }
 
 
