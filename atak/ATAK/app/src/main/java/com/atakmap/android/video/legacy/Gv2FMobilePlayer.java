@@ -19,6 +19,7 @@ import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import com.atakmap.android.metrics.activity.MetricActivity;
+import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.android.video.ConnectionEntry;
 import com.atakmap.app.R;
 import com.atakmap.comms.NetworkDeviceManager;
@@ -81,6 +82,8 @@ public class Gv2FMobilePlayer extends MetricActivity
 
     /** Temporary file directory to use. */
     private static final String TEMP_DIR = "VidActivityTmp";
+
+    private static final int NOTIFICATION_ID = 13213;
 
     private MediaProcessor processor;
 
@@ -440,6 +443,7 @@ public class Gv2FMobilePlayer extends MetricActivity
             // Can be null if we get a MediaException during onCreate() and
             // are getting here whilst showing the dialog
             processor.start();
+            sendNotification(true);
             final ImageButton pausePlay = findViewById(
                     R.id.PlayPauseBID);
             pausePlay.post(new Runnable() {
@@ -476,6 +480,7 @@ public class Gv2FMobilePlayer extends MetricActivity
 
             timeBarUpdater.removeCallbacks(timeBarUpdaterMethod);
         }
+        removeNotification();
     }
 
     @Override
@@ -533,10 +538,12 @@ public class Gv2FMobilePlayer extends MetricActivity
             mProcessor.stop();
             mProcessor.setRate(1.0f);
             pausePlay.setImageResource(R.drawable.playforeground);
+            sendNotification(false);
         } else {
             mProcessor.setRate(1.0f);
             mProcessor.start();
             pausePlay.setImageResource(R.drawable.pauseforeground);
+            sendNotification(true);
         }
 
     }
@@ -855,4 +862,24 @@ public class Gv2FMobilePlayer extends MetricActivity
         }
     };
 
+    private void sendNotification(boolean isPlaying) {
+        if (isPlaying) {
+            NotificationUtil.getInstance().postNotification(NOTIFICATION_ID,
+                    R.drawable.green_full,
+                    NotificationUtil.GREEN,
+                    getString(R.string.video_text56),
+                    getString(R.string.playing), null, false);
+        } else {
+            NotificationUtil.getInstance().postNotification(NOTIFICATION_ID,
+                    R.drawable.red_full,
+                    NotificationUtil.RED,
+                    getString(R.string.video_text56),
+                    getString(R.string.stopped), null, false);
+        }
+
+    }
+
+    private void removeNotification() {
+        NotificationUtil.getInstance().clearNotification(NOTIFICATION_ID);
+    }
 }
