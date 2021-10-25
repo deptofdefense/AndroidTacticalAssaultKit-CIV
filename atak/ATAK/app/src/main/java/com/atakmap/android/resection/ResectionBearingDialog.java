@@ -247,7 +247,7 @@ public class ResectionBearingDialog implements View.OnClickListener,
             b += (v == _addBtn ? 5 : -5);
             if (b > 360)
                 b -= 360;
-            else if (b < 0)
+            else if (b < -360)
                 b += 360;
             _bearingTxt.setText(_df.format(b));
         }
