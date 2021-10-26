@@ -10,6 +10,8 @@ import android.content.Intent;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import android.widget.Toast;
 
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import com.atakmap.android.bluetooth.BluetoothDevicesConfig.BluetoothDeviceConfig;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapView;
@@ -461,6 +463,13 @@ public class BluetoothManager {
                     Log.w(TAG, "Unable to start BT Low Energy scan");
                 }
             });
+        }
+
+        // if the user disabled Bluetooth during LE scan, bail out
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        if (!prefs.getBoolean("atakControlBluetooth", false)) {
+            Log.i(TAG, "user disabled bluetooth");
+            return;
         }
 
         Set<BluetoothDevice> devices = adapter.getBondedDevices();
