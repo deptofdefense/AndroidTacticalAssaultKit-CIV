@@ -351,7 +351,7 @@ public class KMLNetworkLinkDownloader extends NetworkLinkDownloader {
         if (connection instanceof javax.net.ssl.HttpsURLConnection) {
             try {
                 javax.net.ssl.SSLContext sc = javax.net.ssl.SSLContext
-                        .getInstance("SSL");
+                        .getInstance("TLSv1.2");
                 sc.init(null,
                         new TrustManager[] {
                                 CertificateManager.SelfSignedAcceptingTrustManager

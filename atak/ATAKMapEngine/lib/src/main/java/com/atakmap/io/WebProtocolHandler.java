@@ -180,7 +180,7 @@ public class WebProtocolHandler implements ProtocolHandler {
                     HttpsURLConnection scon = (HttpsURLConnection)con;
                     X509TrustManager trustManager = callbacks.getTrustManager();
                     if (trustManager != null) {
-                        javax.net.ssl.SSLContext sslContext = javax.net.ssl.SSLContext.getInstance("SSL");
+                        javax.net.ssl.SSLContext sslContext = javax.net.ssl.SSLContext.getInstance("TLSv1.2");
                         sslContext.init(null, new TrustManager[]{trustManager}, new java.security.SecureRandom());
                         scon.setSSLSocketFactory(sslContext.getSocketFactory());
                     } else {
