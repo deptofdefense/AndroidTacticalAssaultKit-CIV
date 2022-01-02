@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Be verbose
+set -x
+
+# Make sure you enter the directory that contains this script.
+# The rest of the script requires this as the starting point.
+pushd $(dirname $(readlink -f $0))
+
 (cd ../takengine && mkdir thirdparty)
 
 (cd .. && \
@@ -46,7 +53,8 @@ wait
 
 rm -rf ~/.conan
 conan profile new default --detect
-conan profile update settings.compiler.version=8 default
+# This is unecessary if the default is detected above
+#conan profile update settings.compiler.version=8 default
 
 # install TTP conan packages
 pushd ../takthirdparty
@@ -147,3 +155,4 @@ pushd ../khronos
 conan export-pkg . -f
 popd
 
+popd
