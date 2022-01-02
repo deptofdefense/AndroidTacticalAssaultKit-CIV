@@ -1,0 +1,3 @@
+[submodule "stl-soft"]
+	path = stl-soft
+	url = https://github.com/synesissoftware/STLSoft-1.9.git
