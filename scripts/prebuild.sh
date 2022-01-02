@@ -121,10 +121,6 @@ conan export-pkg . -s arch=x86 -s os=Android -s os.api_level=29 -s compiler.vers
 
 popd
 
-
-# STL-soft
-(cd .. && git clone --depth 1 https://github.com/synesissoftware/STLSoft-1.9.git stl-soft)
-
 cp stl-soft-conanfile.py ../stl-soft/conanfile.py
 pushd ../stl-soft
 conan export-pkg . -f
