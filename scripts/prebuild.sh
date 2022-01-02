@@ -14,8 +14,8 @@ tar xf ./depends/assimp-4.0.1-mod.tar.gz         -C ../ &
 tar xf ./depends/gdal-2.4.4-mod.tar.gz           -C ../ &
 tar xf ./depends/tinygltf-2.4.1-mod.tar.gz       -C takengine/thirdparty &
 tar xf ./depends/tinygltfloader-0.9.5-mod.tar.gz -C takengine/thirdparty &
-tar xf ./depends/libLAS-1.8.2-mod.tar.gz &
-tar xf ./depends/LASzip-3.4.3-mod.tar.gz &
+tar xf ../depends/libLAS-1.8.2-mod.tar.gz        -C ../ &
+tar xf ../depends/LASzip-3.4.3-mod.tar.gz        -C ../ &
 wait
 
 # Make the third party parts in parallel
