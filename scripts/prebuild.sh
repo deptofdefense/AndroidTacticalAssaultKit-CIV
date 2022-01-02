@@ -5,13 +5,13 @@ set -x
 
 # Make sure you enter the directory that contains this script.
 # The rest of the script requires this as the starting point.
-pushd $(dirname $(readlink -f $0))/..
+pushd $(dirname $(readlink -f $0))
 
-mkdir -p takengine/thirdparty
+mkdir -p ../takengine/thirdparty
 
 # Extract everything in parallel
-tar xf ./depends/assimp-4.0.1-mod.tar.gz &
-tar xf ./depends/gdal-2.4.4-mod.tar.gz &
+tar xf ./depends/assimp-4.0.1-mod.tar.gz         -C ../ &
+tar xf ./depends/gdal-2.4.4-mod.tar.gz           -C ../ &
 tar xf ./depends/tinygltf-2.4.1-mod.tar.gz       -C takengine/thirdparty &
 tar xf ./depends/tinygltfloader-0.9.5-mod.tar.gz -C takengine/thirdparty &
 tar xf ./depends/libLAS-1.8.2-mod.tar.gz &
@@ -19,19 +19,19 @@ tar xf ./depends/LASzip-3.4.3-mod.tar.gz &
 wait
 
 # Make the third party parts in parallel
-make -C takthirdparty \
+make -C ../takthirdparty \
 	TARGET=android-armeabi-v7a GDAL_USE_KDU=no \
 	build_spatialite \
 	build_commoncommo \
 	build_gdal \
 	build_assimp &
-make -C takthirdparty \
+make -C ../takthirdparty \
 	TARGET=android-arm64-v8a GDAL_USE_KDU=no \
 	build_spatialite \
 	build_commoncommo \
 	build_gdal \
 	build_assimp &
-make -C takthirdparty \
+make -C ../takthirdparty \
 	TARGET=android-x86 GDAL_USE_KDU=no \
 	build_spatialite \
 	build_commoncommo \
@@ -47,12 +47,9 @@ conan profile new default --detect
 # install TTP conan packages
 pushd ../takthirdparty
 # add links to builds to the root
-unlink android-armeabi-v7a-release
-unlink android-arm64-v8a-release
-unlink android-x86-release
-ln -s builds/android-armeabi-v7a-release android-armeabi-v7a-release
-ln -s builds/android-arm64-v8a-release android-arm64-v8a-release
-ln -s builds/android-x86-release android-x86-release
+ln -sf builds/android-armeabi-v7a-release android-armeabi-v7a-release
+ln -sf builds/android-arm64-v8a-release android-arm64-v8a-release
+ln -sf builds/android-x86-release android-x86-release
 
 cd ci-support
 # install the packages locally
