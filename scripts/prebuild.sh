@@ -5,50 +5,38 @@ set -x
 
 # Make sure you enter the directory that contains this script.
 # The rest of the script requires this as the starting point.
-pushd $(dirname $(readlink -f $0))
+pushd $(dirname $(readlink -f $0))/..
 
-(cd ../takengine && mkdir thirdparty)
+mkdir -p takengine/thirdparty
 
-(cd .. && \
-	gzip -d ./depends/assimp-4.0.1-mod.tar.gz && \
-	cp depends/assimp-4.0.1-mod.tar . && \
-	tar xf assimp-4.0.1-mod.tar)
-(cd .. && \
-        gzip -d ./depends/gdal-2.4.4-mod.tar.gz && \
-        cp depends/gdal-2.4.4-mod.tar . && \
-        tar xf gdal-2.4.4-mod.tar)
-(cd .. && \
-	gzip -d ./depends/tinygltf-2.4.1-mod.tar.gz && \
-	cp depends/tinygltf-2.4.1-mod.tar takengine/thirdparty &&
-	cd takengine/thirdparty && tar xf tinygltf-2.4.1-mod.tar)
-(cd .. && \
-	gzip -d ./depends/tinygltfloader-0.9.5-mod.tar.gz && \
-	cp depends/tinygltfloader-0.9.5-mod.tar takengine/thirdparty &&
-	cd takengine/thirdparty && tar xf tinygltfloader-0.9.5-mod.tar)
-(cd .. && \
-        gzip -d ./depends/libLAS-1.8.2-mod.tar.gz && \
-        cp depends/libLAS-1.8.2-mod.tar . && \
-        tar xf libLAS-1.8.2-mod.tar)
-(cd .. && \
-        gzip -d ./depends/LASzip-3.4.3-mod.tar.gz && \
-        cp depends/LASzip-3.4.3-mod.tar . && \
-        tar xf LASzip-3.4.3-mod.tar)
+# Extract everything in parallel
+tar xf ./depends/assimp-4.0.1-mod.tar.gz &
+tar xf ./depends/gdal-2.4.4-mod.tar.gz &
+tar xf ./depends/tinygltf-2.4.1-mod.tar.gz       -C takengine/thirdparty &
+tar xf ./depends/tinygltfloader-0.9.5-mod.tar.gz -C takengine/thirdparty &
+tar xf ./depends/libLAS-1.8.2-mod.tar.gz &
+tar xf ./depends/LASzip-3.4.3-mod.tar.gz &
+wait
 
-(cd ../takthirdparty && make TARGET=android-armeabi-v7a GDAL_USE_KDU=no \
+# Make the third party parts in parallel
+make -C takthirdparty \
+	TARGET=android-armeabi-v7a GDAL_USE_KDU=no \
 	build_spatialite \
 	build_commoncommo \
 	build_gdal \
-	build_assimp) &
-(cd ../takthirdparty && make TARGET=android-arm64-v8a GDAL_USE_KDU=no \
+	build_assimp &
+make -C takthirdparty \
+	TARGET=android-arm64-v8a GDAL_USE_KDU=no \
 	build_spatialite \
 	build_commoncommo \
 	build_gdal \
-	build_assimp) &
-(cd ../takthirdparty && make TARGET=android-x86 GDAL_USE_KDU=no \
+	build_assimp &
+make -C takthirdparty \
+	TARGET=android-x86 GDAL_USE_KDU=no \
 	build_spatialite \
 	build_commoncommo \
 	build_gdal \
-	build_assimp) &
+	build_assimp &
 wait
 
 rm -rf ~/.conan
