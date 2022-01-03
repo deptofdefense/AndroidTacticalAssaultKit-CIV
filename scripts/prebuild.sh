@@ -64,13 +64,11 @@ conan export-pkg . -s arch=x86 -s os=Android -s os.api_level=29 -f
 ./gradlew publishTtpRuntimeAndroidPublicationToMavenLocal
 popd
 
-# install tinygltf conan packages
 pushd ../takengine/thirdparty/tinygltf
-conan export-pkg . -f
-popd
-
 # install tinygltf conan packages
-pushd ../takengine/thirdparty/tinygltfloader
+conan export-pkg . -f
+# install tinygltf conan packages
+cd ../tinygltfloader
 conan export-pkg . -f
 popd
 
