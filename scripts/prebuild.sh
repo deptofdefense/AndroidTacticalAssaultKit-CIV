@@ -20,18 +20,21 @@ wait
 
 # Make the third party parts in parallel
 make -C ../takthirdparty \
+    -j `nproc` \
 	TARGET=android-armeabi-v7a GDAL_USE_KDU=no \
 	build_spatialite \
 	build_commoncommo \
 	build_gdal \
 	build_assimp &
 make -C ../takthirdparty \
+    -j `nproc` \
 	TARGET=android-arm64-v8a GDAL_USE_KDU=no \
 	build_spatialite \
 	build_commoncommo \
 	build_gdal \
 	build_assimp &
 make -C ../takthirdparty \
+    -j `nproc` \
 	TARGET=android-x86 GDAL_USE_KDU=no \
 	build_spatialite \
 	build_commoncommo \
