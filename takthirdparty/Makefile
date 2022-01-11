@@ -126,34 +126,59 @@ $(TARGET_OUTDIR):
 prebuild: $(TARGET_OUTDIR) $($(TARGET)_prep)
 
 build: BUILD_GOAL = build
-build: $(TARGET_OUTDIR) $($(TARGET)_prep) $(foreach pkg,$(packages-$(TARGET)),$(pkg))
+build_stage_1: $(TARGET_OUTDIR) $($(TARGET)_prep)
+build_stage_2: $(foreach pkg,$(packages-$(TARGET)),$(pkg))
+build_stage_2: build_stage_1
+build: build_stage_1 build_stage_2
 	@echo "Done! Debug: $(BUILD_DEBUG)"
 
 build_gdal: BUILD_GOAL = build_gdal
-build_gdal: $(TARGET_OUTDIR) $($(TARGET)_prep) $(foreach pkg,$(packages_gdal-$(TARGET)),$(pkg))
+build_gdal_stage_1: $(TARGET_OUTDIR) $($(TARGET)_prep)
+build_gdal_stage_2: $(foreach pkg,$(packages_gdal-$(TARGET)),$(pkg))
+build_gdal_stage_2: build_gdal_stage_1
+build_gdal: build_gdal_stage_1 build_gdal_stage_2
 	@echo "Done! Debug: $(BUILD_DEBUG)"
 
 build_spatialite: BUILD_GOAL = build_spatialite
-build_spatialite: $(TARGET_OUTDIR) $($(TARGET)_prep) $(foreach pkg,$(packages_spatialite-$(TARGET)),$(pkg))
+build_spatialite_stage_1: $(TARGET_OUTDIR) $($(TARGET)_prep)
+build_spatialite_stage_2: $(foreach pkg,$(packages_spatialite-$(TARGET)),$(pkg))
+build_spatialite_stage_2: build_spatialite_stage_1
+build_spatialite: build_spatialite_stage_1 build_spatialite_stage_2
 	@echo "Done! Debug: $(BUILD_DEBUG)"
 
 build_commoncommo: BUILD_GOAL = build_commoncommo
-build_commoncommo: $(TARGET_OUTDIR) $($(TARGET)_prep) $(foreach pkg,$(packages_commoncommo-$(TARGET)),$(pkg))
+build_commoncommo_stage_1: $(TARGET_OUTDIR) $($(TARGET)_prep)
+build_commoncommo_stage_2: $(foreach pkg,$(packages_commoncommo-$(TARGET)),$(pkg))
+build_commoncommo_stage_2: build_commoncommo_stage_1
+build_commoncommo: build_commoncommo_stage_1 build_commoncommo_stage_2
 	@echo "Done! Debug: $(BUILD_DEBUG)"
 
 build_pri: BUILD_GOAL = build_pri
-build_pri: $(TARGET_OUTDIR) $($(TARGET)_prep) $(foreach pkg,$(packages_pri-$(TARGET)),$(pkg))
+build_pri_stage_1: $(TARGET_OUTDIR) $($(TARGET)_prep)
+build_pri_stage_2: $(foreach pkg,$(packages_pri-$(TARGET)),$(pkg))
+build_pri_stage_2: build_pri_stage_1
+build_pri: build_pri_stage_1 build_pri_stage_2
 	@echo "Done! Debug: $(BUILD_DEBUG)"
   
 build_assimp: BUILD_GOAL = build_assimp
-build_assimp: $(TARGET_OUTDIR) $($(TARGET)_prep) $(foreach pkg,$(packages_assimp-$(TARGET)),$(pkg))
+build_assimp_stage_1: $(TARGET_OUTDIR) $($(TARGET)_prep)
+build_assimp_stage_2: $(foreach pkg,$(packages_assimp-$(TARGET)),$(pkg))
+build_assimp_stage_2: build_assimp_stage_1
+build_assimp: build_assimp_stage_1 build_assimp_stage_2
 	@echo "Done! Debug: $(BUILD_DEBUG)"
 
 veryclean: $($(TARGET)_veryclean)
 	rm -rf $(TARGET_OUTDIR)
 
 clean: $($(TARGET)_clean) $(foreach pkg,$(packages-$(TARGET)),$(pkg)_clean)
-	
+
+
+.PHONY: prebuild_atak
+prebuild_atak:
+	$(MAKE) build_spatialite
+	$(MAKE) build_commoncommo
+	$(MAKE) build_gdal
+	$(MAKE) build_assimp
 
 endif
 
