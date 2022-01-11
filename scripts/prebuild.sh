@@ -41,8 +41,8 @@ wait
 
 rm -rf ~/.conan
 conan profile new default --detect
-# This is unecessary if the default is detected above
-#conan profile update settings.compiler.version=8 default
+# This step is required to ensure conan package IDs are consistent between prebuild and build steps
+conan profile update settings.compiler.version=8 default
 
 # install TTP conan packages
 pushd ../takthirdparty
