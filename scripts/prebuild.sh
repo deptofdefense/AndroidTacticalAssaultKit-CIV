@@ -21,22 +21,13 @@ wait
 # Make the third party parts in parallel
 make -C ../takthirdparty \
 	TARGET=android-armeabi-v7a GDAL_USE_KDU=no \
-	build_spatialite \
-	build_commoncommo \
-	build_gdal \
-	build_assimp &
+	prebuild_atak &
 make -C ../takthirdparty \
 	TARGET=android-arm64-v8a GDAL_USE_KDU=no \
-	build_spatialite \
-	build_commoncommo \
-	build_gdal \
-	build_assimp &
+	prebuild_atak &
 make -C ../takthirdparty \
 	TARGET=android-x86 GDAL_USE_KDU=no \
-	build_spatialite \
-	build_commoncommo \
-	build_gdal \
-	build_assimp &
+	prebuild_atak &
 wait
 
 rm -rf ~/.conan
