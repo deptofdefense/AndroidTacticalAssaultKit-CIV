@@ -1,5 +1,10 @@
 # Version History
 
+## 4.4.0.1
+
+* Bug Fixes
+  * Fix chat receipts showing up as chat messages in older version of ATAK
+
 ## 4.4.0.0
 
 * Bug Fixes

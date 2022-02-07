@@ -291,7 +291,7 @@ public final class GeoChatService implements
                 .getString("deviceType"));
         chatBundle.putString("parent", Contacts.getInstance().getRootGroup()
                 .getUID());
-        addSendDetails(chatBundle, cotEvent);
+        addSendDetails("__chatreceipt", chatBundle, cotEvent);
 
         CotMapComponent.getExternalDispatcher().dispatchToContact(
                 cotEvent, sender);
@@ -299,10 +299,11 @@ public final class GeoChatService implements
 
     /**
      * Add CoT details required for sending CoT messages
+     * @param chatElemName The name of the main chat element
      * @param chatMessage Chat message bundle
      * @param cotEvent CoT event to add to
      */
-    private void addSendDetails(Bundle chatMessage, CotEvent cotEvent) {
+    private void addSendDetails(String chatElemName, Bundle chatMessage, CotEvent cotEvent) {
         String from = chatMessage.getString("senderUid");
         if (from == null)
             from = "Android";
@@ -342,7 +343,7 @@ public final class GeoChatService implements
         CotDetail detail = new CotDetail("detail");
         cotEvent.setDetail(detail);
 
-        CotDetail __chat = new CotDetail("__chat");
+        CotDetail __chat = new CotDetail(chatElemName);
         __chat.setAttribute("id", id);
         __chat.setAttribute("messageId", messageId);
 
@@ -450,7 +451,7 @@ public final class GeoChatService implements
         cotEvent.setUID("GeoChat." + from + "." + id + "." + messageId);
 
         // Add details required for sending
-        addSendDetails(chatMessage, cotEvent);
+        addSendDetails("__chat", chatMessage, cotEvent);
 
         String[] dests = chatMessage.getStringArray("destinations");
         CotDetail remarks = new CotDetail("remarks");
