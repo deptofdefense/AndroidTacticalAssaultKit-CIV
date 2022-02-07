@@ -100,7 +100,7 @@ public class VehicleModelAssetUtils {
         try {
             FileSystemUtils.copyStream(is,
                     IOProviderFactory.getOutputStream(f));
-            return IOProviderFactory.exists(f);
+            return IOProviderFactory.exists(f) && IOProviderFactory.length(f) > 0;
         } catch (Exception e) {
             Log.e(TAG, "Failed to copy asset to file: " + f, e);
         }

@@ -1,5 +1,15 @@
 # Version History
 
+## 4.4.0.2
+
+* Bug Fixes
+  * only allow for text entry without newlines during callsign entry
+  * fix tile query issues with imagery capture for GRG Builder and other plugins
+  * break out and allow the port to be specified during enrollment, fixing a hard crash
+  * toggle the channels checkbox when the user clicks anywhere in the list item
+  * vehicle model load failsafe where if the vehicle is 0 length file, it will reload it from the apk
+  * fix occasional hard crash when hit testing rubbersheet models
+
 ## 4.4.0.1
 
 * Bug Fixes

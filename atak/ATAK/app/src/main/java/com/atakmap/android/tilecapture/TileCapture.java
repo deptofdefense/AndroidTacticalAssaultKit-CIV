@@ -10,7 +10,6 @@ import com.atakmap.android.data.URIScheme;
 import com.atakmap.android.layers.RasterUtils;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.graphics.GLCapture;
-import com.atakmap.android.math.MathUtils;
 import com.atakmap.android.tilecapture.imagery.ImageryCaptureTask;
 import com.atakmap.android.tilecapture.reader.BitmapReader;
 import com.atakmap.android.tilecapture.reader.DatasetTileReader;
@@ -516,30 +515,25 @@ public class TileCapture extends DatasetTileReader {
         }
     }
 
+    /**
+     * Calculate level given a quad and image size
+     * @param quad Geopoint quad (clockwise starting from upper-left point)
+     * @param minDim Minimum image size
+     * @param captureRes Capture resolution
+     * @return Level
+     */
     public int calculateLevel(GeoPoint[] quad, int minDim, int captureRes) {
         if (quad == null || quad.length != 4)
             return 0;
 
-        // Determine proper level for the grid extents
-        double minSpan = Double.MAX_VALUE;
-        DatasetProjection2 proj = getProjection();
-        PointD last = new PointD(0, 0, 0);
-        proj.groundToImage(quad[3], last);
-        for (int i = 0; i < 4; i++) {
-            PointD p = new PointD(0, 0, 0);
-            proj.groundToImage(quad[i], p);
-            minSpan = Math.min(minSpan, Math.hypot(p.x - last.x,
-                    p.y - last.y));
-            last = p;
-        }
+        // Compute GSD for the quad and divide by capture resolution
+        double gsd = DatasetDescriptor.computeGSD(minDim, minDim,
+                quad[0], quad[1], quad[2], quad[3]);
+        double scale = _gsd / (gsd / captureRes);
+        double level = Math.max((Math.log(1.0d / scale)
+                / Math.log(2.0)) + _levelTransitionAdj, 0d);
 
-        int minTileSize = Math.min(getTileWidth(), getTileHeight());
-        float tilesPerLevel = (float) minDim / minTileSize;
-        float numMapTiles = (float) minSpan / minTileSize;
-        double levelDbl = MathUtils.log2(numMapTiles)
-                - MathUtils.log2(tilesPerLevel)
-                - MathUtils.log2(captureRes);
-        return Math.max(0, (int) Math.ceil(levelDbl));
+        return (int) Math.ceil(level);
     }
 
     public int getLevel(TileCaptureParams params) {

@@ -680,8 +680,8 @@ public class CustomGrid extends AbstractLayer implements Capturable {
 
     private synchronized GeoPoint getPoint(int pointIdx) {
         return new GeoPoint(
-                Unsafe.getDouble(_pointPtr + pointIdx * 16 + 8),
-                Unsafe.getDouble(_pointPtr + pointIdx * 16));
+                Unsafe.getDouble(_pointPtr + pointIdx * 24 + 8),
+                Unsafe.getDouble(_pointPtr + pointIdx * 24));
     }
 
     /**

@@ -259,19 +259,22 @@ public class GLRubberModel extends AbstractGLMapItem2 implements
         if (!MathUtils.hasBits(renderPass, getRenderPass()))
             return;
 
-        // Mark scene used for hit-testing as dirty/unusable
-        _scene = null;
+        MapSceneModel scene = null;
+        try {
+            // Do not render
+            if (!shouldRender())
+                return;
 
-        // Do not render
-        if (!shouldRender())
-            return;
+            // Update map forwards
+            updateDrawVersion(view);
 
-        // Update map forwards
-        updateDrawVersion(view);
-
-        // Only draw model if we have some decent level of detail
-        if (!_noLod && drawModel(view))
-            _scene = view.currentScene.scene;
+            // Only draw model if we have some decent level of detail
+            if (!_noLod && drawModel(view))
+                scene = view.currentScene.scene;
+        } finally {
+            // Update scene used for hit-testing
+            _scene = scene;
+        }
     }
 
     protected boolean shouldRender() {
@@ -396,7 +399,8 @@ public class GLRubberModel extends AbstractGLMapItem2 implements
             HitTestQueryParameters params) {
 
         // Model isn't being rendered
-        if (_scene == null)
+        final MapSceneModel scene = _scene;
+        if (scene == null)
             return null;
 
         final GLMesh[] meshes;
@@ -412,7 +416,7 @@ public class GLRubberModel extends AbstractGLMapItem2 implements
         GeoPoint geo = GeoPoint.createMutable();
         for (GLMesh mesh : meshes) {
             // XXX - need to find closest hit
-            if (mesh.hitTest(_scene, params.point.x, params.point.y, geo)) {
+            if (mesh.hitTest(scene, params.point.x, params.point.y, geo)) {
                 retval = new HitTestResult(_subject, geo);
                 break;
             }
