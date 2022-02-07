@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.locale.LocaleUtil;
 import java.util.Map;
 import java.util.Set;
@@ -29,6 +31,13 @@ import com.atakmap.util.Filter;
 import com.atakmap.util.Quadtree;
 import com.atakmap.util.WildCard;
 
+/**
+ * @deprecated  use {@link com.atakmap.map.layer.feature.datastore.FeatureSetDatabase} or
+ *              {@link com.atakmap.map.layer.feature.datastore.FeatureSetDatabase2}; construct with
+ *              <code>null</code> path/file
+ */
+@Deprecated
+@DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
 public class RuntimeFeatureDataStore extends AbstractFeatureDataStore {
 
     private final static Comparator<String> INDEX_KEY_STRING_COMPARATOR = new Comparator<String>() {
@@ -210,6 +219,12 @@ public class RuntimeFeatureDataStore extends AbstractFeatureDataStore {
             recordsNames = params.featureNames.size();
             Set<FeatureRecord> features;
             for(String name : params.featureNames) {
+                final boolean isWildcard = (name != null) && (name.indexOf('%') >= 0);
+                if(isWildcard) {
+                    // wildcard query, we'll check all
+                    recordsNames = featureIdIndex.size();
+                    break;
+                }
                 features = this.featureNameIndex.get(name);
                 if(features == null)
                     continue;
@@ -339,14 +354,22 @@ public class RuntimeFeatureDataStore extends AbstractFeatureDataStore {
                 retval.addAll(features);
             }
         } else if(applyNames && recordsNames == minRecords) {
+            applyNames = false;
+
             Set<FeatureRecord> features;
             for(String name : params.featureNames) {
+                final boolean isWildcard = (name != null) && (name.indexOf('%') >= 0);
+                if(isWildcard) {
+                    // will need to brute-force using the wildcards
+                    retval.addAll(this.featureIdIndex.values());
+                    applyNames = true;
+                    break;
+                }
                 features = this.featureNameIndex.get(name);
                 if(features == null)
                     continue;
                 retval.addAll(features);
             }
-            applyNames = false;
         } else {
             retval.addAll(this.featureIdIndex.values());
         }
@@ -1173,16 +1196,18 @@ public class RuntimeFeatureDataStore extends AbstractFeatureDataStore {
                 }
 
                 final int firstIdx = arg.indexOf(wildcardChar);
+                final boolean singleWildcard = (arg.lastIndexOf(wildcardChar) != firstIdx);
+                final boolean startsWith = singleWildcard && (firstIdx == 0);
+                final boolean endsWith = singleWildcard && (firstIdx == arg.length()-1);
+
                 if(firstIdx < 0) {
                     this.literal.add(arg.toLowerCase(LocaleUtil.getCurrent()));
-                } else if(arg.lastIndexOf(wildcardChar) != firstIdx) {
-                    this.regex.add(WildCard.wildcardAsRegex(arg.toLowerCase(LocaleUtil.getCurrent())));
-                } else if(firstIdx == 0) {
+                } else if(startsWith) {
                     this.startsWith.add(arg.toLowerCase(LocaleUtil.getCurrent()).substring(1));
-                } else if(firstIdx == arg.length()-1) {
+                } else if(endsWith) {
                     this.endsWith.add(arg.toLowerCase(LocaleUtil.getCurrent()).substring(0, arg.length()-1));
                 } else {
-                    throw new IllegalStateException();
+                    this.regex.add(WildCard.wildcardAsRegex(arg.toLowerCase(LocaleUtil.getCurrent())));
                 }
             }
         }

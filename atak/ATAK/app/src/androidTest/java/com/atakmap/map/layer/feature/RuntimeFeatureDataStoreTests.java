@@ -13,6 +13,8 @@ import junit.framework.Assert;
 
 import org.junit.Test;
 
+import java.util.Collections;
+
 public class RuntimeFeatureDataStoreTests extends ATAKInstrumentedTest {
     @Test
     public void query_with_spatial_filter_updated_point() {
@@ -82,5 +84,38 @@ public class RuntimeFeatureDataStoreTests extends ATAKInstrumentedTest {
         retval.endBulkModification(true);
 
         Assert.assertEquals(1, retval.queryFeaturesCount(params));
+    }
+
+    @Test
+    public void atak15243() {
+        RuntimeFeatureDataStore ds = new RuntimeFeatureDataStore();
+        final FeatureSet fs = ds.insertFeatureSet("provider", "type", "name", Double.MAX_VALUE, 0d, true);
+        ds.insertFeature(fs.id, "Test%3a", new Point(0, 0), null, new AttributeSet(), false);
+        ds.insertFeature(fs.id, "TestX3a", new Point(0, 0), null, new AttributeSet(), false);
+        ds.insertFeature(fs.id, "TestABC3a", new Point(0, 0), null, new AttributeSet(), false);
+
+        FeatureCursor result;
+
+        result = null;
+        try {
+            FeatureDataStore.FeatureQueryParameters params = new FeatureDataStore.FeatureQueryParameters();
+            params.featureNames = Collections.singleton("Test\\%3a");
+            final int count = ds.queryFeaturesCount(params);
+            Assert.assertEquals(1, count);
+        } finally {
+            if(result != null)
+                result.close();
+        }
+
+        result = null;
+        try {
+            FeatureDataStore.FeatureQueryParameters params = new FeatureDataStore.FeatureQueryParameters();
+            params.featureNames = Collections.singleton("Test%3a");
+            final int count = ds.queryFeaturesCount(params);
+            Assert.assertEquals(3, count);
+        } finally {
+            if(result != null)
+                result.close();
+        }
     }
 }

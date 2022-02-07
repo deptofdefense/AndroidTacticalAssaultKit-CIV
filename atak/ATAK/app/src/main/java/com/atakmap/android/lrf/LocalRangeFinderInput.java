@@ -643,6 +643,15 @@ public class LocalRangeFinderInput implements Runnable, RangeFinderAction,
                 }
             });
         }
+        if (Double.isNaN(distance)) {
+            toastMessage("the range finder failed to provide a distance", Toast.LENGTH_SHORT);
+            return;
+        }
+
+        if (Double.isNaN(zAngle)) {
+            toastMessage("the range finder failed to provide an inclination", Toast.LENGTH_SHORT);
+            return;
+        }
 
         if (Double.isNaN(azimuth)) {
             toastMessage(context.getString(

@@ -14,6 +14,7 @@ import java.util.TreeMap;
 
 import android.util.Pair;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.database.FilteredRowIterator;
@@ -41,6 +42,12 @@ import com.atakmap.util.Filter;
 import com.atakmap.util.Quadtree;
 import com.atakmap.util.WildCard;
 
+/**
+ * @deprecated  use {@link com.atakmap.map.layer.feature.datastore.FeatureSetDatabase2};
+ *              construct with <code>null</code> path/file
+ */
+@Deprecated
+@DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
 public class RuntimeFeatureDataStore2 extends AbstractFeatureDataStore3 {
 
     private final static FeatureDataStore2.FeatureQueryParameters EMPTY_FEATURE_PARAMS = new FeatureDataStore2.FeatureQueryParameters();
@@ -226,6 +233,12 @@ public class RuntimeFeatureDataStore2 extends AbstractFeatureDataStore3 {
             recordsNames = params.names.size();
             Set<FeatureRecord> features;
             for(String name : params.names) {
+                final boolean isWildcard = (name != null) && (name.indexOf('%') >= 0);
+                if(isWildcard) {
+                    // wildcard query, we'll check all
+                    recordsNames = featureIdIndex.size();
+                    break;
+                }
                 features = this.featureNameIndex.get(name);
                 if(features == null)
                     continue;
@@ -333,14 +346,22 @@ public class RuntimeFeatureDataStore2 extends AbstractFeatureDataStore3 {
                 retval.addAll(features);
             }
         } else if(applyNames && recordsNames == minRecords) {
+            applyNames = false;
+
             Set<FeatureRecord> features;
             for(String name : params.names) {
+                final boolean isWildcard = (name != null) && (name.indexOf('%') >= 0);
+                if(isWildcard) {
+                    // will need to brute-force using the wildcards
+                    retval.addAll(this.featureIdIndex.values());
+                    applyNames = true;
+                    break;
+                }
                 features = this.featureNameIndex.get(name);
                 if(features == null)
                     continue;
                 retval.addAll(features);
             }
-            applyNames = false;
         } else {
             retval.addAll(this.featureIdIndex.values());
         }
@@ -1019,16 +1040,18 @@ public class RuntimeFeatureDataStore2 extends AbstractFeatureDataStore3 {
             
             for(String arg : args) {
                 final int firstIdx = arg.indexOf(wildcardChar);
+                final boolean singleWildcard = (arg.lastIndexOf(wildcardChar) != firstIdx);
+                final boolean startsWith = singleWildcard && (firstIdx == 0);
+                final boolean endsWith = singleWildcard && (firstIdx == arg.length()-1);
+
                 if(firstIdx < 0) {
                     this.literal.add(arg.toLowerCase(LocaleUtil.getCurrent()));
-                } else if(arg.lastIndexOf(wildcardChar) != firstIdx) {
-                    this.regex.add(WildCard.wildcardAsRegex(arg.toLowerCase(LocaleUtil.getCurrent())));
-                } else if(firstIdx == 0) {
+                } else if(startsWith) {
                     this.startsWith.add(arg.toLowerCase(LocaleUtil.getCurrent()).substring(1));
-                } else if(firstIdx == arg.length()-1) {
+                } else if(endsWith) {
                     this.endsWith.add(arg.toLowerCase(LocaleUtil.getCurrent()).substring(0, arg.length()-1));
                 } else {
-                    throw new IllegalStateException();
+                    this.regex.add(WildCard.wildcardAsRegex(arg.toLowerCase(LocaleUtil.getCurrent())));
                 }
             }
         }
