@@ -1,5 +1,10 @@
 # Version History
 
+## 4.4.0.4
+
+* Bug Fix
+  * correction to allow for Network Monitor to handle detection of 2 PRC 163/167's.
+
 ## 4.4.0.3
 
 * Bug Fixes
