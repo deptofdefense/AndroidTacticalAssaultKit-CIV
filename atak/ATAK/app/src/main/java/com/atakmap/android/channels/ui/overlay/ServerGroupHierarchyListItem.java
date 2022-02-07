@@ -150,6 +150,12 @@ public class ServerGroupHierarchyListItem extends AbstractHierarchyListItem2
                         }
                     });
 
+            holder.groupListItemParent
+                    .setOnClickListener((v) -> {
+                fHolder.visibilityCheckbox.setChecked(
+                        !fHolder.visibilityCheckbox.isChecked());
+            });
+
             holder.title.setText(getTitle());
             if (serverGroup.getDescription() != null) {
                 holder.desc.setText(serverGroup.getDescription());

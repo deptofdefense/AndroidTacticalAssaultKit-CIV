@@ -15,7 +15,7 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:gravity="start"
-        android:inputType="textMultiLine|textCapSentences|textNoSuggestions"
+        android:inputType="textUri|textNoSuggestions"
         android:minLines="1"
         android:textSize="@dimen/draper_title_font"/>
 

@@ -269,10 +269,11 @@ public class VehicleModelInfo implements ModelLoader.Callback {
             return;
 
         // Copy the file from assets if we haven't already
-        if (!IOProviderFactory.exists(file)) {
+        if (!IOProviderFactory.exists(file) || IOProviderFactory.length(file) == 0) {
             Log.d(TAG, "Copying vehicle model from assets: " + file.getName());
             if (!VehicleModelAssetUtils.copyAssetToFile(file)) {
                 Log.e(TAG, "Failed to find model file: " + file);
+                FileSystemUtils.delete(file);
                 return;
             }
         }
@@ -290,7 +291,11 @@ public class VehicleModelInfo implements ModelLoader.Callback {
         ModelLoader loader = new ModelLoader(this.file, null,
                 ModelProjection.ENU_FLIP_YZ, this);
         loader.setTransform(transform);
-        loader.load();
+        if (!loader.load()) {
+            Log.e(TAG, "Failed to load vehicle model: " + file);
+            FileSystemUtils.delete(file);
+            return;
+        }
 
         // Finished
         this.loaded = this.info != null && this.model != null;

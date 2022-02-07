@@ -561,9 +561,12 @@ public class CertificateEnrollmentClient implements
                                             .onCertificateEnrollmentComplete(
                                                     status);
                                 } else if (isQuickConnectError) {
+
+                                    NetConnectString ncs = NetConnectString.fromString(
+                                            certificateConfigRequest.getConnectString());
+
                                     EnrollmentDialog.createEnrollmentDialog(
-                                            certificateConfigRequest
-                                                    .getServer(),
+                                            ncs.getHost() + ":" + ncs.getPort(),
                                             certificateConfigRequest
                                                     .getUsername(),
                                             certificateConfigRequest
@@ -619,13 +622,30 @@ public class CertificateEnrollmentClient implements
             String username, String password, Long expiration) {
         Log.d(TAG, "in onEnrollmentOk");
 
+        String host = "";
+        int port = 8089;
+
+        if (address.contains("://")) {
+            address = address.substring(address.indexOf("://") + 3);
+        }
+        String[] split = address.split(":");
+
+        host = split[0];
+        if (split.length > 1) {
+            try {
+                port = Integer.parseInt(split[1]);
+            } catch (Exception e) {
+                Log.e(TAG, "bad port supplied: " + port);
+            }
+        }
+
         // save the credentials
         AtakAuthenticationDatabase.saveCredentials(
                 AtakAuthenticationCredentials.TYPE_COT_SERVICE,
-                address, username, password, expiration);
+                host, username, password, expiration);
 
         // build up a connectString using the default port
-        String connectString = address + ":8089:ssl";
+        String connectString = host + ":" + port + ":ssl";
 
         // create the TAKServer
         Bundle bundle = new Bundle();

@@ -4,6 +4,7 @@ package com.atakmap.android.layers;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -29,6 +30,22 @@ import android.content.SharedPreferences;
 public final class RasterUtils {
 
     private static final String TAG = "RasterUtils";
+
+    // Sort datasets by GSD ascending
+    private static final Comparator<DatasetDescriptor> SORT_GSD = new Comparator<DatasetDescriptor>() {
+        @Override
+        public int compare(DatasetDescriptor d1, DatasetDescriptor d2) {
+            if (d1 instanceof ImageDatasetDescriptor && d2 instanceof ImageDatasetDescriptor) {
+                double g1 = getGSD((ImageDatasetDescriptor) d1);
+                double g2 = getGSD((ImageDatasetDescriptor) d2);
+                return Double.compare(g1, g2);
+            } else if (d1 instanceof ImageDatasetDescriptor)
+                return -1;
+            else if (d2 instanceof ImageDatasetDescriptor)
+                return 1;
+            return 0;
+        }
+    };
 
     /**
      * Query currently loaded imagery
@@ -61,11 +78,12 @@ public final class RasterUtils {
 
         // Setup query
         boolean mobile = layer instanceof MobileImageryRasterLayer2;
+        String selected = layer.getSelection();
         LocalRasterDataStore db = LayersMapComponent.getLayersDatabase();
 
         // Filter to mobile imagery if the mobile tab is selected
         if (mobile) {
-            params.names = Collections.singleton(layer.getSelection());
+            params.names = Collections.singleton(selected);
             params.providers = Collections.singleton("mobac");
         }
 
@@ -80,7 +98,8 @@ public final class RasterUtils {
                 if (visibleOnly) {
                     boolean visible = false;
                     for (String type : d.getImageryTypes()) {
-                        if (layer.isVisible(type)) {
+                        if (layer.isVisible(type) && (selected == null
+                                || selected.equals(type))) {
                             visible = true;
                             break;
                         }
@@ -94,6 +113,10 @@ public final class RasterUtils {
         } catch (Exception e) {
             Log.e(TAG, "Failed to query datasets", e);
         }
+
+        // Sort datasets by highest to lowest resolution
+        // TODO: Support for non-ImageDatasetDescriptor sorting
+        Collections.sort(ret, SORT_GSD);
 
         return ret;
     }
@@ -194,5 +217,11 @@ public final class RasterUtils {
         Collection<String> selections = layer.getSelectionOptions();
         for (String opt : selections)
             layer.setVisible(opt, deviants.contains(opt) != visibleByDefault);
+    }
+
+    private static double getGSD(ImageDatasetDescriptor desc) {
+        return DatasetDescriptor.computeGSD(desc.getWidth(), desc.getHeight(),
+                desc.getUpperLeft(), desc.getUpperRight(),
+                desc.getLowerRight(), desc.getLowerLeft());
     }
 }
