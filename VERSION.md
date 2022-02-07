@@ -1,5 +1,14 @@
 # Version History
 
+## 4.4.0.3
+
+* Bug Fixes
+  * address  hit back button in Import Manager to navigate up to "/storage". Note now no child directories or files listed
+  * Update video libraries to 20210812 Addresses issue outlined in when in rare situations during buffered * streaming, video playback could freeze
+  * in the case of distance or inclination being NaN, toast and do not continue
+  * fix logic for wildcard searches where wildcard character is not first or last
+  * protect against the possibility that the MapRenderer3 can be null causing a crash
+
 ## 4.4.0.2
 
 * Bug Fixes

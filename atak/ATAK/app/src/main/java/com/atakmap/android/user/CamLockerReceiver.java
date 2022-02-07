@@ -299,8 +299,15 @@ public class CamLockerReceiver extends BroadcastReceiver implements
             item.removeOnPointChangedListener(this);
             return;
         }
+
+        final MapRenderer3 renderer = _mapView.getRenderer3();
+
+        // ATAK-15238
+        if (renderer == null)
+            return;
+
         if (!suppressSnapback()) {
-            MapSceneModel sm = _mapView.getRenderer3().getMapSceneModel(false,
+            MapSceneModel sm = renderer.getMapSceneModel(false,
                     MapRenderer2.DisplayOrigin.UpperLeft);
             GeoPoint focuslla = GeoPoint.createMutable();
             float focusx = sm.focusx;
@@ -347,7 +354,7 @@ public class CamLockerReceiver extends BroadcastReceiver implements
 
             // no notification
             CameraController.Interactive.panTo(
-                    _mapView.getRenderer3(),
+                    renderer,
                     focuslla,
                     focusx,
                     focusy,

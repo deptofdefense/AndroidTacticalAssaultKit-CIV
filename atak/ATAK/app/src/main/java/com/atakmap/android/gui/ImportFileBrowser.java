@@ -9,6 +9,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Environment;
 import androidx.annotation.NonNull;
 
@@ -366,6 +367,9 @@ public class ImportFileBrowser extends LinearLayout implements
             } else {
                 Collections.sort(_fileList, new FileItemComparator());
             }
+        } else {
+            _fileList.add(createItem("Permission Denied - Unable to Read Directory Contents", null,
+                    FileItem.FILE));
         }
     }
 
@@ -413,6 +417,7 @@ public class ImportFileBrowser extends LinearLayout implements
     }
 
     protected void _navigateUpOneDirectory() {
+
         _loadDirectoryUp();
         _loadFileList();
         _adapter.notifyDataSetChanged();
@@ -481,6 +486,14 @@ public class ImportFileBrowser extends LinearLayout implements
     private void _loadDirectoryUp() {
         if (_pathDirsList.size() <= 1)
             return;
+
+        if (Build.VERSION.SDK_INT >= 30) {
+            if (_pathDirsList.get(1).equals("storage") && _pathDirsList.size() == 3)
+                return;
+        }
+
+
+
         String s = _pathDirsList.remove(_pathDirsList.size() - 1);
         int lastIndex = _path.toString().lastIndexOf(s);
         if (lastIndex > -1)
