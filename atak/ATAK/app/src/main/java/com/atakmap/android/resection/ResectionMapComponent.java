@@ -33,6 +33,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.SystemClock;
@@ -166,7 +167,7 @@ public class ResectionMapComponent extends DropDownMapComponent {
                     txtRequiredHardware.setText(requiredHardware);
                 }
 
-                // Scale our icon if necessary
+                // Figure our icon scaling
                 float targetDimPixels = 32f
                         * context.getResources().getDisplayMetrics().density;
                 float width = icon.getIntrinsicWidth();
@@ -177,7 +178,19 @@ public class ResectionMapComponent extends DropDownMapComponent {
                 int newX = (int) (width * scaleX);
                 int newY = (int) (height * scaleY);
 
-                Bitmap bitmap = ((BitmapDrawable) icon).getBitmap();
+                /*
+                Although it would be nice to just cast our Drawable to a BitmapDrawable and then
+                call .getBitmap() on it, our drawable may not be a BitmapDrawable. For instance,
+                it would be an AdaptiveIconDrawable, in which case, we would crash. Therefore, it is
+                safer for us to build a bitmap ourselves and then draw the Drawable to that bitmap.
+                */
+                Bitmap bitmap = Bitmap.createBitmap(icon.getIntrinsicWidth(),
+                        icon.getIntrinsicHeight(),
+                        Bitmap.Config.ARGB_8888);
+                Canvas canvas = new Canvas(bitmap);
+                icon.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+                icon.draw(canvas);
+
                 BitmapDrawable bIcon = new BitmapDrawable(
                         context.getResources(),
                         Bitmap.createScaledBitmap(bitmap, newX, newY, true));

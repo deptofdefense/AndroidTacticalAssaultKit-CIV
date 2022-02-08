@@ -10,6 +10,7 @@ import android.content.Intent;
 import com.atakmap.android.drawing.DrawingPreferences;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import android.graphics.Color;
+import android.graphics.PointF;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.ShapeDrawable;
 import android.graphics.drawable.shapes.RectShape;
@@ -352,16 +353,17 @@ public class TelestrationTool extends Tool {
 
                 //simplification is controlled by a threshold value (in degrees).  Points that deviate from the
                 //    topology of the line that are within the threshold are eliminated
-                int _pixels = PIXELS;
+                float dp = _context.getResources().getDisplayMetrics().density;
+                GeoPoint p1 = _duplicateShape.getCenter().get();
+                PointF pt = _mapView.forward(p1);
+                GeoPoint p2 = _mapView.inverse(pt.x + dp, pt.y + dp).get();
+                double threshX = Math.abs(p1.getLongitude() - p2.getLongitude());
+                double threshY = Math.abs(p1.getLatitude() - p2.getLatitude());
+                double threshold = Math.min(threshX, threshY);
 
-                final double _threshold = ((_mapView.getMapResolution()
-                        / 111000d)
-                        * _pixels);
-
-                //TODO test different values and shapes to find optimized threshold value
                 List<GeoPoint> gpts = (List<GeoPoint>) _spatialCalculator
                         .simplify(
-                                GeoPointMetaData.unwrap(_geoPoints), _threshold,
+                                GeoPointMetaData.unwrap(_geoPoints), threshold,
                                 true);
 
                 // valid simplification, rewrap and continue forward

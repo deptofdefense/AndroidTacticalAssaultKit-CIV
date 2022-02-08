@@ -19,6 +19,7 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPoint.AltitudeReference;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.map.CameraController;
+import com.atakmap.map.MapCamera;
 
 /**
  * Rotation tool for models
@@ -112,12 +113,23 @@ public class RubberModelEditTool extends RubberSheetEditTool {
                     _startTilt = p;
                     return;
                 }
+
+                // Get the current altitude
                 GeoPoint c = _center.get();
                 double alt = c.getAltitude();
                 if (Double.isNaN(alt))
                     alt = 0;
-                double newAlt = alt + ((_startTilt.y - p.y)
-                        * _mapView.getMapResolution());
+
+                // Measure distance between camera and model
+                MapCamera camera = _mapView.getSceneModel().camera;
+                double dist = Math.sqrt(
+                        Math.pow(camera.location.x - camera.target.x, 2)
+                        + Math.pow(camera.location.y - camera.target.y, 2)
+                        + Math.pow(camera.location.z - camera.target.z, 2));
+
+                // Modify altitude based on distance from camera
+                // Note: This is not a hard calculation. More of a rule of thumb.
+                double newAlt = alt + ((_startTilt.y - p.y) * Math.sqrt(dist));
                 _model.setAltitude(newAlt, c.getAltitudeReference());
             }
 

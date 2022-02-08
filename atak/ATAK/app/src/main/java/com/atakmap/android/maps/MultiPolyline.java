@@ -207,8 +207,12 @@ public class MultiPolyline extends DrawingShape implements Exportable {
 
     @Override
     public void setTitle(final String title) {
+        final String prevTitle = getTitle();
         super.setTitle(title);
-        refresh();
+
+        // only call refresh if the title actually changes
+        if (!title.equals(prevTitle))
+            refresh();
     }
 
     @Override

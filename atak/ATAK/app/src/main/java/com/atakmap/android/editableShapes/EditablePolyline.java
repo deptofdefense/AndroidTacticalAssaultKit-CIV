@@ -1565,6 +1565,11 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
         return "assocSetUID";
     }
 
+    /**
+     * Returns the title of the editable polyline.
+     * @return the title
+     */
+    @Override
     public String getTitle() {
         return _title;
     }

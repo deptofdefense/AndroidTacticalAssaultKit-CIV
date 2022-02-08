@@ -140,7 +140,7 @@ public abstract class AtakPreferenceFragment extends PreferenceFragment {
 
         Preference p = super.findPreference(key);
         if (p == null)
-            p = allkeys.get(key);
+            p = allkeys.get(key.toString());
         return p;
     }
 
@@ -191,9 +191,24 @@ public abstract class AtakPreferenceFragment extends PreferenceFragment {
             final String hidePref = "hidePreferenceItem_" + key;
             if (_mainControlPrefs.getBoolean(hidePref, false)) {
                 try {
+                    //Log.d(TAG, "removing: " + p.getKey());
                     removePreference(p);
                 } catch (Exception e) {
                     Log.e(TAG, "error occurred hiding: " + key);
+                }
+            }
+
+
+            String dependsOnKey = p.getDependency();
+            if (dependsOnKey != null) {
+                final String dependsHidePref = "hidePreferenceItem_" + dependsOnKey;
+                if (_mainControlPrefs.getBoolean(dependsHidePref, false)) {
+                    //Log.d(TAG, "removing dependency: " + key);
+                    try {
+                        removePreference(p);
+                    } catch (Exception e) {
+                        Log.e(TAG, "error occurred hiding dependent preference: " + key);
+                    }
                 }
             }
         }
@@ -603,7 +618,7 @@ public abstract class AtakPreferenceFragment extends PreferenceFragment {
                 context.getString(summaryResourceId),
                 parentSummary,
                 context.getDrawable(drawableResourceId),
-                Arrays.asList(context.getString(summaryResourceId)));
+                Collections.singletonList(context.getString(summaryResourceId)));
 
         retval.add(parent);
         try {
@@ -660,7 +675,7 @@ public abstract class AtakPreferenceFragment extends PreferenceFragment {
                 pref.getTitle(),
                 parentSummary,
                 pref.getIcon(),
-                Arrays.asList(pref.getTitle()));
+                Collections.singletonList(pref.getTitle()));
         retval.add(parent);
 
         index(retval, pref.getKey(),

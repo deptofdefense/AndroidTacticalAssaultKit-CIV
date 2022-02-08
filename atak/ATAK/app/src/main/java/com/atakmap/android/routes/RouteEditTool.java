@@ -6,6 +6,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Point;
+import android.graphics.PointF;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -587,9 +588,14 @@ public class RouteEditTool extends EditablePolylineEditTool implements
 
                 // Simplify geometry
                 float dp = _context.getResources().getDisplayMetrics().density;
-                double thresh = (_mapView.getMapResolution() / 111000d) * dp;
+                GeoPoint p1 = _drawShape.getCenter().get();
+                PointF pt = _mapView.forward(p1);
+                GeoPoint p2 = _mapView.inverse(pt.x + dp, pt.y + dp).get();
+                double threshX = Math.abs(p1.getLongitude() - p2.getLongitude());
+                double threshY = Math.abs(p1.getLatitude() - p2.getLatitude());
+                double threshold = Math.min(threshX, threshY);
                 Collection<GeoPoint> simplified = _spatialCalculator.simplify(
-                        _drawShape.getPoints(), thresh,
+                        _drawShape.getPoints(), threshold,
                         true);
                 List<GeoPoint> newPoints = new ArrayList<>();
                 if (simplified != null) {
