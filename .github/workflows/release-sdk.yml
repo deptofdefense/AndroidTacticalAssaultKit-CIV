@@ -71,6 +71,7 @@ jobs:
        echo "ANDROID_NDK=$PWD/android-ndk-r${NDK_VERSION}" >> $GITHUB_ENV
     - name: build dependencies
       run: |
+        git submodule update --init --recursive
         pushd .
         cd scripts
         bash ./prebuild.sh

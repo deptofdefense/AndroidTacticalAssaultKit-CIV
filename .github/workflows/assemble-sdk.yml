@@ -78,6 +78,7 @@ jobs:
        echo "CMAKE_HOME=$PWD/cmake-3.14.7-Linux-x86_64" >> $GITHUB_ENV
     - name: Build Dependencies
       run: |
+        git submodule update --init --recursive
         pushd .
         cd scripts
         bash ./prebuild.sh
