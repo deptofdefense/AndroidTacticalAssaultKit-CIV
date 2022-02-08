@@ -223,8 +223,10 @@ public class FeatureEditDetailsView extends LinearLayout {
         if (_strokeStyle == null) {
             _strokeStyle = new BasicStrokeStyle(Color.WHITE, 1);
         }
-        if (_compositeStyle == null) {
+        if (_fillStyle == null) { 
             _fillStyle = new BasicFillStyle(Color.WHITE);
+        }
+        if (_compositeStyle == null) {
             _compositeStyle = new CompositeStyle(new Style[] {
                     _strokeStyle, _fillStyle
             });

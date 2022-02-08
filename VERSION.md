@@ -1,5 +1,13 @@
 # Version History
 
+## 4.4.0.6
+
+* Bug Fixes
+  * do not continually call setTitle if the title is already set on MultiPolyline causing a crash
+  * ensure that fillStyle cannot be null (Playstore Crash Log)
+  * if a preference has a dependency on a hidden preference, then also hide the preference otherwise ATAK will crash
+  * fix map scale bar so that it accurately reflects distance
+
 ## 4.4.0.5
 
 * Bug Fix

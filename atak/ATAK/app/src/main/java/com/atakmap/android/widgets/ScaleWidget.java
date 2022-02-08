@@ -1,14 +1,15 @@
 
 package com.atakmap.android.widgets;
 
+import android.graphics.PointF;
+
 import com.atakmap.android.maps.MapTextFormat;
 import com.atakmap.android.maps.MapView;
-import com.atakmap.coremap.conversions.ConversionFactors;
 import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.conversions.SpanUtilities;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.AtakMapView;
-import com.atakmap.map.projection.ECEFProjection;
 import com.atakmap.opengl.GLText;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -81,56 +82,49 @@ public class ScaleWidget extends ShapeWidget implements
     private void refresh() {
         String oldText = _text;
 
-        double mercatorscale;
-        if (_mapView.getProjection()
-                .getSpatialReferenceID() == ECEFProjection.INSTANCE
-                        .getSpatialReferenceID()) {
-            // 3D globe projection - scale is taken care of by the resolution
-            mercatorscale = 1;
-        } else {
-            // Default mercator scale
-            mercatorscale = Math.cos(_mapView.getLatitude() /
-                    ConversionFactors.DEGREES_TO_RADIANS);
-            if (mercatorscale < 0.0001)
-                mercatorscale = 0.0001;
-        }
-
-        //System.out.println("SHB: latitude: " + latitude + " mercatorscale:" + mercatorscale);
-        //System.out.println("SHB: actual scale: " + scale + " corrected scale:" + (scale / mercatorscale));
-        //System.out.println("SHB: scale meters per inch" + ((scale * mercatorscale) * dpi));
-
         float barWidth = _xdpi;
-        double meters = _mapView.getMapResolution() * mercatorscale;
-        if (_useRounding) {
-            double maxWidth = Math.max(_xdpi, _maxWidth - _padding[LEFT]
+        if (_useRounding)
+            barWidth = Math.max(_xdpi, _maxWidth - _padding[LEFT]
                     - _padding[RIGHT]);
-            meters *= maxWidth;
 
-            String text = SpanUtilities.formatType(_rangeUnits, meters,
-                    Span.METER);
-            Span displayUnit = Span.findFromAbbrev(text
-                    .substring(text.lastIndexOf(" ") + 1));
-            if (displayUnit == null)
-                displayUnit = Span.METER;
+        PointF pt = getAbsolutePosition();
+        float x = pt.x + _padding[LEFT];
+        float y = pt.y + _height / 2;
 
-            double converted = SpanUtilities.convert(meters,
-                    Span.METER, displayUnit);
-            int decimalPlaces = converted < 1 ? (int) Math.ceil(-Math
-                    .log10(converted)) : 0;
-            double exp10 = SpanUtilities.convert(Math.pow(10, Math.floor(
-                    Math.log10(converted))), displayUnit, Span.METER);
-            barWidth = (float) (maxWidth * (exp10 / meters));
-            _text = SpanUtilities.formatType(_rangeUnits, exp10, Span.METER,
-                    decimalPlaces);
-        } else {
-            meters *= _xdpi;
-            _text = SpanUtilities.formatType(_rangeUnits, meters, Span.METER);
+        GeoPoint p1 = _mapView.inverse(x, y).get();
+        GeoPoint p2 = _mapView.inverse(x + barWidth, y).get();
+
+        boolean valid = p1.isValid() && p2.isValid();
+        if (valid) {
+            double meters = p1.distanceTo(p2);
+            if (_useRounding) {
+                String text = SpanUtilities.formatType(_rangeUnits, meters,
+                        Span.METER);
+                Span displayUnit = Span.findFromAbbrev(text
+                        .substring(text.lastIndexOf(" ") + 1));
+                if (displayUnit == null)
+                    displayUnit = Span.METER;
+
+                double converted = SpanUtilities.convert(meters,
+                        Span.METER, displayUnit);
+                int decimalPlaces = converted < 1 ? (int) Math.ceil(-Math
+                        .log10(converted)) : 0;
+                double exp10 = SpanUtilities.convert(Math.pow(10, Math.floor(
+                        Math.log10(converted))), displayUnit, Span.METER);
+                barWidth = (float) (barWidth * (exp10 / meters));
+                meters = exp10 + 1e-6;
+                _text = SpanUtilities.formatType(_rangeUnits, meters, Span.METER,
+                        decimalPlaces);
+            } else {
+                _text = SpanUtilities.formatType(_rangeUnits, meters, Span.METER);
+            }
+            _text = GLText.localize(_text);
+
+            if (_text.startsWith("0 "))
+                _text = "<1 " + _text.substring(2);
         }
-        _text = GLText.localize(_text);
 
-        if (_text.startsWith("0 "))
-            _text = "<1 " + _text.substring(2);
-
+        setVisible(valid);
         setSize(barWidth, _mapTextFormat.measureTextHeight(_text));
         if (!FileSystemUtils.isEquals(_text, oldText)) {
             for (OnTextChangedListener l : _onTextChanged)
@@ -145,20 +139,7 @@ public class ScaleWidget extends ShapeWidget implements
 
     @Override
     public void onMapMoved(AtakMapView mapView, boolean animate) {
-        double scale = mapView.getMapResolution();
-        final double latitude = mapView.getLatitude();
-
-        // account for the scale not changed and also that there has not been
-        // a wide shift in latitude.
-
-        if ((Double.compare(scale, _lastScale) == 0)
-                && (_lastLatitude == (int) latitude))
-            return;
-
         refresh();
-
-        _lastScale = scale;
-        _lastLatitude = (int) latitude;
     }
 
     public interface OnTextChangedListener {

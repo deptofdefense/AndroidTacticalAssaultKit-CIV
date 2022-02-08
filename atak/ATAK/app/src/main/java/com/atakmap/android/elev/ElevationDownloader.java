@@ -467,6 +467,9 @@ class ElevationDownloader implements AtakMapView.OnMapMovedListener {
             @Override
             public void run() {
 
+                if (!_active)
+                    return;
+
                 // Check if the user is still focused over the AOI
                 // and the downloader is still active
                 int[] b = getDownloadBounds(_mapView.getBounds());
