@@ -49,11 +49,11 @@ using namespace atakmap::renderer;
 #define TERRAIN_LEVEL 8
 #define NUM_TILE_FETCH_WORKERS 4u
 #define MAX_LEVEL 21.0
-#define USE_SSE_SELECT 1
 // observation is that total mesh size has an upper limit around 300 tiles, but
 // is most frequently circa 150-200 tiles. queue limit of 225 would assume that
 // we are loading circa 75% of the upper-limit mesh.
 #define MAX_TILE_QUEUE_SIZE 225u
+#define DERIVE_TILE_ENABLED true
 
 namespace
 {
@@ -71,7 +71,6 @@ namespace
         return (T(0) < val) - (val < T(0));
     }
 
-    double estimateResolution(const GeoPoint2 &focus, const MapSceneModel2 &cmodel, const Envelope2 &bounds, GeoPoint2 *pclosest) NOTHROWS;
     double computeSSE(const MapSceneModel2 &scene, const Envelope2 &aabbWGS84_, const double geometricError) NOTHROWS
     {
         const int srid = scene.projection->getSpatialReferenceID();
@@ -104,55 +103,6 @@ namespace
         // project geometric error
         const double lambda = (scene.height / 2.0) / tan((scene.camera.fov / 2.0) / 180.0 * M_PI);
         return lambda * (geometricError / d);
-    }
-    std::size_t computeTargetLevelImpl(const GeoPoint2 &focus, const MapSceneModel2 &view, const Envelope2 &bounds, const double adj) NOTHROWS
-    {
-        if (std::min(fabs(bounds.minY), fabs(bounds.maxY)) > 84.0)
-            return 0u;
-        const double gsd = estimateResolution(focus, view, bounds, nullptr) * adj;
-        auto level = (std::size_t)MathUtils_clamp(atakmap::raster::osm::OSMUtils::mapnikTileLeveld(gsd, 0.0), 0.0, MAX_LEVEL);
-
-        // XXX - experimental
-        if (false) {
-            // check up to 8 neighbors, only allowing a step of one level with any neighbor
-            const double dlat = (bounds.maxY - bounds.minY);
-            const double dlng = (bounds.maxX - bounds.minX);
-            const bool top = bounds.maxY < 90.0;
-            const bool bottom = bounds.minY > -90.0;
-            if (top) {
-                double maxY = bounds.maxY + dlat;
-                for (int i = -1; i <= 1; i++) {
-                    const double minX = bounds.minX + (i*dlng);
-                    Envelope2 nbounds(minX, maxY-dlat, minX+dlng, maxY);
-                    const double top_gsd = estimateResolution(focus, view, bounds, nullptr) * 8.0;
-                    const auto nlevel = (std::size_t)MathUtils_clamp(atakmap::raster::osm::OSMUtils::mapnikTileLeveld(top_gsd, 0.0), 0.0, MAX_LEVEL);
-                    if (nlevel > level)
-                        level = nlevel - 1u;
-                }
-            }
-            // center, skipping self
-            for (int i = -1; i <= 1; i += 2) {
-                const double minX = bounds.minX + (i*dlng);
-                Envelope2 nbounds(minX, bounds.minY, minX+dlng, bounds.maxY);
-                const double center_gsd = estimateResolution(focus, view, bounds, nullptr) * 8.0;
-                const auto nlevel = (std::size_t)MathUtils_clamp(atakmap::raster::osm::OSMUtils::mapnikTileLeveld(center_gsd, 0.0), 0.0, MAX_LEVEL);
-                if (nlevel > level)
-                    level = nlevel - 1u;
-            }
-            if (bottom) {
-                double maxY = bounds.maxY - dlat;
-                for (int i = -1; i <= 1; i++) {
-                    const double minX = bounds.minX + (i*dlng);
-                    Envelope2 nbounds(minX, maxY-dlat, minX+dlng, maxY);
-                    const double bottom_gsd = estimateResolution(focus, view, bounds, nullptr) * 8.0;
-                    const auto nlevel = (std::size_t)MathUtils_clamp(atakmap::raster::osm::OSMUtils::mapnikTileLeveld(bottom_gsd, 0.0), 0.0, 16.0);
-                    if (nlevel > level)
-                        level = nlevel - 1u;
-                }
-            }
-        }
-
-        return level;
     }
     std::size_t getNumEdgeVertices(const std::size_t numPostsLat, const std::size_t numPostsLng) NOTHROWS
     {
@@ -355,7 +305,6 @@ namespace
 
     TAKErr fetch(std::shared_ptr<TerrainTile> &value, double *els, const double resolution, const Envelope2 &mbb, const int srid, const std::size_t numPostsLat, const std::size_t numPostsLng, const MemBuffer2 &edgeIndices, const bool fetchEl, const bool constrainQueryRes, const bool fillWithHiRes, BlockPoolAllocator &allocator, PoolAllocator<TerrainTile> &tileAllocator) NOTHROWS;
     TAKErr derive(std::shared_ptr<TerrainTile> &value, const Envelope2 &mbb, const int srid, const std::size_t numPostsLat, const std::size_t numPostsLng, const MemBuffer2 &edgeIndices, const TerrainTile &deriveFrom, BlockPoolAllocator &allocator, PoolAllocator<TerrainTile> &tileAllocator) NOTHROWS;
-    double estimateResolution(const GeoPoint2 &focus, const MapSceneModel2 &scene, const double ullat, const double ullng, const double lrlat, const double lrlng, GeoPoint2 *closest) NOTHROWS;
     TAKErr subscribeOnContentChangedListener(void *opaque, ElevationSource &src) NOTHROWS;
 }
 
@@ -719,7 +668,7 @@ void *ElMgrTerrainRenderService::requestWorkerThread(void *opaque)
             TAK::Engine::Feature::Envelope2 aabbWCS(owner.roots[i]->bounds);
             TAK::Engine::Feature::GeometryTransformer_transform(&aabbWCS, aabbWCS, 4326, srid);
             if(intersects(frustum, aabbWCS, srid, focus.longitude)) {
-                owner.roots[i]->collect(*fetchBuffer, focus, fetch.scene, DeriveSource(), fetch.derive, true);
+                owner.roots[i]->collect(*fetchBuffer, focus, fetch.scene, DeriveSource(), fetch.derive, DERIVE_TILE_ENABLED);
             } else {
                 // no intersection
                 if(!owner.roots[i]->tile.get()) {
@@ -995,7 +944,6 @@ bool ElMgrTerrainRenderService::QuadNode::needsFetch(const std::weak_ptr<QuadNod
 
 bool ElMgrTerrainRenderService::QuadNode::collect(ElMgrTerrainRenderService::WorldTerrain &value, const GeoPoint2 &focus, const MapSceneModel2 &scene, DeriveSource deriveFrom, const bool allowDerive, const bool allowFetch) NOTHROWS
 {
-#if USE_SSE_SELECT
     struct {
         bool operator()(const MapSceneModel2 &s, const std::size_t l, const Envelope2 &b) NOTHROWS
         {
@@ -1036,24 +984,19 @@ bool ElMgrTerrainRenderService::QuadNode::collect(ElMgrTerrainRenderService::Wor
     } shouldRecurse;
 
     if(shouldRecurse(scene, this->level, this->bounds)) {
-#else
-    const double selectResAdj = (MapSceneModel2_getCameraMode() == MapCamera2::Scale) ? service.nodeSelectResolutionAdjustment : service.nodeSelectResolutionAdjustment / 2.0;
-    const std::size_t target_level = computeTargetLevelImpl(
-        focus,
-        scene,
-        this->bounds,
-        selectResAdj);
-    if(target_level > this->level) {
-#endif
-
         const double centerX = (this->bounds.minX+this->bounds.maxX)/2.0;
         const double centerY = (this->bounds.minY+this->bounds.maxY)/2.0;
 
+        const Envelope2 boundsll(bounds.minX, bounds.minY, bounds.minZ, centerX, centerY, bounds.maxZ);
+        const Envelope2 boundslr(centerX, bounds.minY, bounds.minZ, bounds.maxX, centerY, bounds.maxZ);
+        const Envelope2 boundsur(centerX, centerY, bounds.minZ, bounds.maxX, bounds.maxY, bounds.maxZ);
+        const Envelope2 boundsul(bounds.minX, centerY, bounds.minZ, centerX, bounds.maxY, bounds.maxZ);
+
         // compute child intersections
-        const bool recurseLL = shouldRecurse(scene, this->level+1u, Envelope2(bounds.minX, bounds.minY, bounds.minZ, centerX, centerY, bounds.maxZ));
-        const bool recurseLR = shouldRecurse(scene, this->level+1u, Envelope2(centerX, bounds.minY, bounds.minZ, bounds.maxX, centerY, bounds.maxZ));
-        const bool recurseUR = shouldRecurse(scene, this->level+1u, Envelope2(centerX, centerY, bounds.minZ, bounds.maxX, bounds.maxY, bounds.maxZ));
-        const bool recurseUL = shouldRecurse(scene, this->level+1u, Envelope2(bounds.minX, centerY, bounds.minZ, centerX, bounds.maxY, bounds.maxZ));
+        const bool recursell = shouldRecurse(scene, this->level+1u, boundsll);
+        const bool recurselr = shouldRecurse(scene, this->level+1u, boundslr);
+        const bool recurseur = shouldRecurse(scene, this->level+1u, boundsur);
+        const bool recurseul = shouldRecurse(scene, this->level+1u, boundsul);
 
         const bool fetchul = needsFetch(ul, value.srid, value.sourceVersion);
         const bool fetchur = needsFetch(ur, value.srid, value.sourceVersion);
@@ -1075,41 +1018,24 @@ bool ElMgrTerrainRenderService::QuadNode::collect(ElMgrTerrainRenderService::Wor
         }
 
         // fetch tile nodes
-        if(fetchll && !fetchingll) {
-            if(!ll.get()) {
-                ll.reset(new QuadNode(service, self, this->srid, this->bounds.minX, this->bounds.minY, centerX, centerY));
-                ll->self = ll;
-            }
-            if(allowFetch)
-                service.enqueue(ll);
-        }
-        if(fetchlr && !fetchinglr) {
-            if(!lr.get()) {
-                lr.reset(new QuadNode(service, self, this->srid, centerX, this->bounds.minY, this->bounds.maxX, centerY));
-                lr->self = lr;
-            }
-            if(allowFetch)
-                service.enqueue(lr);
-        }
-        if(fetchur && !fetchingur) {
-            if(!ur.get()) {
-                ur.reset(new QuadNode(service, self, this->srid, centerX, centerY, this->bounds.maxX, this->bounds.maxY));
-                ur->self = ur;
-            }
-            if(allowFetch)
-                service.enqueue(ur);
-        }
-        if(fetchul && !fetchingul) {
-            if(!ul.get()) {
-                ul.reset(new QuadNode(service, self, this->srid, this->bounds.minX, centerY, centerX, this->bounds.maxY));
-                ul->self = ul;
-            }
-            if(allowFetch)
-                service.enqueue(ul);
-        }
+#define doFetchChild(child) \
+    if(fetch##child && !fetching##child) { \
+        if(!child.get()) { \
+            child.reset(new QuadNode(service, self, this->srid, bounds##child.minX, bounds##child.minY, bounds##child.maxX, bounds##child.maxY)); \
+            child->self = child; \
+        } \
+        if(allowFetch) \
+            service.enqueue(child); \
+    }
+
+        doFetchChild(ll);
+        doFetchChild(lr);
+        doFetchChild(ur);
+        doFetchChild(ul);
+#undef doFetchChild
 
         // only allow recursion if all nodes have been fetched
-        const bool recurseAny = (recurseLL || recurseUL || recurseUR || recurseLR);
+        const bool recurseAny = (recursell || recurseul || recurseur || recurselr);
         const bool recurse = recurseAny &&
                              (((ll.get() && ll->tile.get()) &&
                               (lr.get() && lr->tile.get()) &&
@@ -1146,55 +1072,25 @@ bool ElMgrTerrainRenderService::QuadNode::collect(ElMgrTerrainRenderService::Wor
             }
         }
 
-        if(recurseLL) {
-            if(recurse) {
-                ll->collect(value, focus, scene, deriveFrom, allowDerive, allowFetch && recurseFetch);
-            }
-        } else if(ll.get()) {
-            ll->reset(false);
-            if (recurse) {
-                if (!ll->tile || (deriveFrom.tile && ll->sourceVersion < getDerivedSourceVersion(*ll, deriveFrom)))
-                    ll->derive(value.srid, deriveFrom);
-                value.tiles.push_back(ll->tile);
-            }
-        }
-        if(recurseLR) {
-            if(recurse) {
-                lr->collect(value, focus, scene, deriveFrom, allowDerive, allowFetch && recurseFetch);
-            }
-        } else if(lr.get()) {
-            lr->reset(false);
-            if (recurse) {
-                if (!lr->tile || (deriveFrom.tile && lr->sourceVersion < getDerivedSourceVersion(*lr, deriveFrom)))
-                    lr->derive(value.srid, deriveFrom);
-                value.tiles.push_back(lr->tile);
-            }
-        }
-        if(recurseUR) {
-            if(recurse) {
-                ur->collect(value, focus, scene, deriveFrom, allowDerive, allowFetch && recurseFetch);
-            }
-        } else if(ur.get()) {
-            ur->reset(false);
-            if (recurse) {
-                if (!ur->tile || (deriveFrom.tile && ll->sourceVersion < getDerivedSourceVersion(*ur, deriveFrom)))
-                    ur->derive(value.srid, deriveFrom);
-                value.tiles.push_back(ur->tile);
-            }
-        }
-        if(recurseUL) {
-            if(recurse) {
-                ul->collect(value, focus, scene, deriveFrom, allowDerive, allowFetch && recurseFetch);
-            }
-        } else if(ul.get()) {
-            ul->reset(false);
-            if (recurse) {
-                if (!ul->tile || (deriveFrom.tile && ul->sourceVersion < getDerivedSourceVersion(*ul, deriveFrom)))
-                    ul->derive(value.srid, deriveFrom);
-                value.tiles.push_back(ul->tile);
-            }
-        }
+#define doChildRecurse(child) \
+    if(recurse##child) { \
+        if(recurse) { \
+            child->collect(value, focus, scene, deriveFrom, allowDerive, allowFetch && recurseFetch); \
+        } \
+    } else if(child.get()) { \
+        child->reset(false); \
+        if (recurse) { \
+            if (!child->tile || (deriveFrom.tile && child->sourceVersion < getDerivedSourceVersion(*child, deriveFrom))) \
+                child->derive(value.srid, deriveFrom); \
+            value.tiles.push_back(child->tile); \
+        } \
+    }
 
+        doChildRecurse(ll);
+        doChildRecurse(lr);
+        doChildRecurse(ur);
+        doChildRecurse(ul);
+#undef doRecurseChild
         if(recurse)
             return true;
     }
@@ -1218,7 +1114,9 @@ bool ElMgrTerrainRenderService::QuadNode::collect(ElMgrTerrainRenderService::Wor
             this->derived = false;
         } else {
             // XXX - this is a little goofy
-            service.enqueue(self.lock());
+            auto self_ptr = self.lock();
+            if(self_ptr)
+                service.enqueue(self_ptr);
         }
     }
     if(!this->tile || (derived && deriveFrom.tile && sourceVersion < getDerivedSourceVersion(*this, deriveFrom))) {
@@ -1248,7 +1146,7 @@ void ElMgrTerrainRenderService::QuadNode::derive(const int srid_, const DeriveSo
     {
         Monitor::Lock lock(service.queue.monitor);
         // check for async fetch
-        if (this->tile && this->sourceVersion > deriveFrom.version)
+        if (this->tile && this->sourceVersion >= deriveFrom.version)
             return;
         this->tile = derivedTile;
         this->bounds.minZ = this->tile->aabb_wgs84.minZ;
@@ -1312,7 +1210,6 @@ void ElMgrTerrainRenderService::QuadNode::updateParentZBounds(QuadNode &node) NO
 
 namespace
 {
-    //static GLMapView.TerrainTile fetch(double resolution, Envelope mbb, int srid, int numPostsLat, int numPostsLng, bool fetchEl)
     TAKErr fetch(std::shared_ptr<TerrainTile> &value_, double *els, const double resolution, const Envelope2 &mbb, const int srid, const std::size_t numPostsLat, const std::size_t numPostsLng, const MemBuffer2 &edgeIndices_, const bool fetchEl, const bool constrainQueryRes, const bool fillWithHiRes, BlockPoolAllocator &allocator, PoolAllocator<TerrainTile> &tileAllocator) NOTHROWS
     {
         TAKErr code(TE_Ok);
@@ -1562,7 +1459,7 @@ namespace
                     layout.normal.stride,
                     &edgeIndices,
                     numEdgeVertices,
-                    0.0);
+                    0);
             TE_CHECKRETURN_CODE(code);
         }
 
@@ -1880,7 +1777,7 @@ namespace
                     layout.normal.stride,
                     &edgeIndices,
                     numEdgeVertices,
-                    0.0);
+                    0);
             TE_CHECKRETURN_CODE(code);
         }
 
@@ -1989,105 +1886,6 @@ namespace
                     AABB(TAK::Engine::Math::Point2<double>(aabbWCS.minX - (360.0 * sgn((aabbWCS.minX + aabbWCS.maxX) / 2.0)), aabbWCS.minY, aabbWCS.minZ),
                         TAK::Engine::Math::Point2<double>(aabbWCS.maxX - (360.0 * sgn((aabbWCS.minX + aabbWCS.maxX) / 2.0)), aabbWCS.maxY, aabbWCS.maxZ)))));
     }
-
-    double estimateResolution(const GeoPoint2 &focus, const MapSceneModel2 &cmodel, const Envelope2 &bounds, GeoPoint2 *pclosest) NOTHROWS
-    {
-        if(cmodel.camera.mode == MapCamera2::Perspective) {
-            Matrix2 m(cmodel.camera.projection);
-            m.concatenate(cmodel.camera.modelView);
-            Frustum2 frustum(m);
-            // compute AABB in WCS and check for intersection with the frustum
-            TAK::Engine::Feature::Envelope2 aabbWCS(bounds);
-            const int srid = cmodel.projection->getSpatialReferenceID();
-            TAK::Engine::Feature::GeometryTransformer_transform(&aabbWCS, aabbWCS, 4326, srid);
-            if (!intersects(frustum, aabbWCS, srid, focus.longitude))
-                return atakmap::raster::osm::OSMUtils::mapnikTileResolution(0);
-
-            const TAK::Engine::Math::Point2<double> c((aabbWCS.minX + aabbWCS.maxX) / 2.0,
-                                                      (aabbWCS.minY + aabbWCS.maxY) / 2.0,
-                                                      (aabbWCS.minZ + aabbWCS.maxZ) / 2.0);
-            auto r = Vector2_subtract(TAK::Engine::Math::Point2<double>(aabbWCS.maxX, aabbWCS.maxY, aabbWCS.maxZ), c);
-            r.x *= cmodel.displayModel->projectionXToNominalMeters;
-            r.y *= cmodel.displayModel->projectionYToNominalMeters;
-            r.z *= cmodel.displayModel->projectionZToNominalMeters;
-
-            // compute line-of-sight from camera to tile
-            auto los = Vector2_subtract(c, cmodel.camera.location);
-            if(srid == 4326 && fabs(los.x) > 180.0) {
-                if(los.x > 180.0)       los.x -= 360.0;
-                else if(los.x < -180.0) los.x += 360.0;
-            }
-            los.x *= cmodel.displayModel->projectionXToNominalMeters;
-            los.y *= cmodel.displayModel->projectionYToNominalMeters;
-            los.z *= cmodel.displayModel->projectionZToNominalMeters;
-
-            double gsd = cmodel.gsd;
-            if(!TE_ISNAN(cmodel.camera.agl)) {
-                const double aglgsd = MapSceneModel2_gsd(cmodel.camera.agl, cmodel.camera.fov, cmodel.height);
-                gsd = std::min(cmodel.gsd, aglgsd*2.0);
-            }
-            const double range = MapSceneModel2_range(gsd, cmodel.camera.fov, cmodel.height);
-            const double losd = Vector2_length(los);
-            if (losd <= (Vector2_length(r)+range))
-                return gsd;
-
-            // compute view vector
-            auto vv = Vector2_subtract(cmodel.camera.target, cmodel.camera.location);
-            if(srid == 4326 && fabs(vv.x) > 180.0) {
-                if(vv.x > 180.0)       vv.x -= 360.0;
-                else if(vv.x < -180.0) vv.x += 360.0;
-            }
-            vv.x *= cmodel.displayModel->projectionXToNominalMeters;
-            vv.y *= cmodel.displayModel->projectionYToNominalMeters;
-            vv.z *= cmodel.displayModel->projectionZToNominalMeters;
-
-            // check if tile is behind camera
-            if (Vector2_dot(vv, los) < 0.0)
-                return atakmap::raster::osm::OSMUtils::mapnikTileResolution(0);
-
-            const double gsdAtCentroid = MapSceneModel2_gsd(Vector2_length(los), cmodel.camera.fov, cmodel.height) * 8.0;
-            return gsdAtCentroid;
-        } else {
-            const TAK::Engine::Core::GeoPoint2 tgt(focus);
-            if (atakmap::math::Rectangle<double>::contains(bounds.minX, bounds.minY, bounds.maxX,
-                                                           bounds.maxY, tgt.longitude,
-                                                           tgt.latitude))
-                return cmodel.gsd;
-
-#ifdef __ANDROID__
-            const double sceneHalfWidth = cmodel.width / 2.0;
-            const double sceneHalfHeight = cmodel.height / 2.0;
-#else
-            const double sceneHalfWidth = (double)cmodel.width / 2.0;
-            const double sceneHalfHeight = (double)cmodel.height / 2.0;
-#endif
-            const double sceneRadius = cmodel.gsd * sqrt((sceneHalfWidth * sceneHalfWidth) +
-                                                         (sceneHalfHeight * sceneHalfHeight));
-
-            const TAK::Engine::Core::GeoPoint2 aoiCentroid((bounds.minY + bounds.maxY) / 2.0,
-                                                           (bounds.minX + bounds.maxX) / 2.0);
-            double aoiRadius;
-            {
-                const double uld = TAK::Engine::Core::GeoPoint2_distance(aoiCentroid,
-                                                                         TAK::Engine::Core::GeoPoint2(
-                                                                                 bounds.maxY,
-                                                                                 bounds.minX),
-                                                                         true);
-                const double lrd = TAK::Engine::Core::GeoPoint2_distance(aoiCentroid,
-                                                                         TAK::Engine::Core::GeoPoint2(
-                                                                                 bounds.minY,
-                                                                                 bounds.maxX),
-                                                                         true);
-                aoiRadius = std::max(uld, lrd);
-            }
-            const double d = TAK::Engine::Core::GeoPoint2_distance(aoiCentroid, tgt, true);
-            if ((d - aoiRadius) < sceneRadius)
-                return cmodel.gsd;
-            // observation is that the value returned here really does not matter
-            return cmodel.gsd * pow(2.0, 1.0 + log((d - aoiRadius) - sceneRadius) / log(2.0));
-        }
-    }
-
     TAKErr subscribeOnContentChangedListener(void *opaque, ElevationSource &src) NOTHROWS
     {
         auto *arg = static_cast<SubscribeOnContentChangedListenerBundle *>(opaque);

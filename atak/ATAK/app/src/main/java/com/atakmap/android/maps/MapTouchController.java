@@ -29,6 +29,7 @@ import com.atakmap.android.editableShapes.EditablePolyline;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.DeconflictionAdapter.DeconflictionType;
 import com.atakmap.android.maps.hittest.MapItemResultFilter;
+import com.atakmap.android.menu.MapMenuReceiver;
 import com.atakmap.android.menu.MenuCapabilities;
 import com.atakmap.android.routes.Route;
 import com.atakmap.android.toolbars.RangeAndBearingMapItem;
@@ -1456,12 +1457,13 @@ public class MapTouchController implements OnTouchListener,
                     : _lockedZoomFocus.x;
             focusy = _lockedZoomFocus.y == -1 ? sm.focusy
                     : _lockedZoomFocus.y;
-        } else if (_tiltEnabled == STATE_TILT_ENABLED) {
-            // XXX - if tilt is enabled, force the focus to stick on the
-            //       original focus point. If the instantaneous gesture focus
-            //       is used, the map will slide with the gesture focus point.
-            //       This motion is very intuitive for rotate and zoom, but not
-            //       with tilt
+        } else if (_tiltEnabled == STATE_TILT_ENABLED
+                || MapMenuReceiver.getCurrentItem() != null) {
+            // XXX - if tilt is enabled or the radial is open, force the focus
+            // to stick on the original focus point. If the instantaneous
+            // gesture focus is used, the map will slide with the gesture focus
+            // point. This motion is very intuitive for rotate and zoom, but not
+            // with tilt
             focusx = _originalCenterX;
             focusy = _originalCenterY;
             focusPoint = _centerOnPress;

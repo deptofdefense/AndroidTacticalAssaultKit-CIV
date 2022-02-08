@@ -1,5 +1,11 @@
 # Version History
 
+## 4.4.0.7
+
+* Bug Fixes
+  * do not allow user to pan the map via rotation when the radial is open
+  * Newly loaded terrain doesn't update until ATAK is restarted
+
 ## 4.4.0.6
 
 * Bug Fixes
