@@ -1,5 +1,10 @@
 # Version History
 
+## 4.4.0.5
+
+* Bug Fix
+  * For plugins using ImportFileBrowserDialog - fix case where extensions have not been set, assume wildcard '*'
+
 ## 4.4.0.4
 
 * Bug Fix
