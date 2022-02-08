@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <!--Translation to Polish 202101101900 -->
+  <!--Translation to Polish 202109282200 -->
   <!--General-->
    <string name="of">" z "</string>
    <string name="hide">Ukryj</string>
@@ -50,7 +50,7 @@
    <string name="cancel">Anuluj</string>
    <string name="dump_upload">Przekaż</string>
    <string name="placeholder_title">PLACEHOLDER</string>
-  <string name="reset_hint">"Nie pokazuj tej wskazówki ponownie.\nDla zresetowania wskazówek idź to Ustawienia-&gt;Wsparcie-&gt;Resetuj Wskazówki"</string>
+  <string name="reset_hint">"Nie pokazuj tej wskazówki ponownie.\nDla zresetowania wskazówek idź to Ustawienia->Wsparcie->Resetuj Wskazówki"</string>
    <string name="name">Nazwa</string>
    <string name="center">Środek</string>
    <string name="edge">Krawędź</string>
@@ -113,7 +113,7 @@
    <string name="myUser">Zarządzaj Moim Użytkownikiem</string>
    <string name="mySupport">Wsparcie</string>
    <string name="devicePreferences">Preferencje Urządzenia</string>
-   <string name="reportingPreferences">Preferencjce Raportowania </string>
+  <string name="reportingPreferences">Preferencje Raportowania </string>
    <string name="mediaPreferences">Preferencje Mediów</string>
    <string name="controlPreferences">Preferencje Sterowania</string>
    <string name="morePreferences">Pokaż wszystkie preferencje</string>
@@ -216,7 +216,7 @@
    <string name="voip_assignment_ip">Użyj adresu IP</string>
    <string name="voip_assignment_ip_callsign">Użyj znaku wywoławczego oraz adresu IP</string>
    <string name="emergency_sms">Gdy pole "Wyślij SMS" jest odznaczone a pojawi się alert, na podany numer telefonu zostanie wysłany SMS. </string>
-   <string name="hostileUpdatePreferences">Zarządzanie Wrogami</string>
+  <string name="hostileUpdatePreferences">Automatyczne rozgłaszanie znacznika</string>
    <string name="hostileUpdateSummary">Zmień czas między aktualizacjami nadawanych znaczników. Tę funkcję należy wybrać na stronie szczegółów znacznika. Jeśli wartość jest ustawiona na 0, funkcja jest wyłączona.</string>
    <string name="media">Załączniki</string>
    <string name="attachment_details">Szczegóły załącznika</string>
@@ -806,7 +806,7 @@
    <string name="trackHistoryPreferences">Preferencje śledzenia historii </string>
    <string name="trackHistoryTitleLocal">Wyszukiwanie ścieżki - urządzenie lokalne</string>
    <string name="trackHistoryTitleServer">Wyszukiwanie ścieżki</string>
-   <string name="log_tracks_title">Wyszukiwanie logowania</string>
+  <string name="log_tracks_title">Dziennikuj Ścieżki</string>
    <string name="log_tracks_summ">Rejestruj swoje ścieżki</string>
    <string name="self_track_prefix_title">Prefiks ścieżki</string>
    <string name="self_track_prefix_summ">Prefiks dla segmentów  w historii wyszukiwania</string>
@@ -829,9 +829,9 @@
    <string name="set_bread_crumb_dist_summ">Ustaw, jak daleko musisz się przesunąć przed zostawieniem śladu (domyślnie: 5 metrów)</string>
    <string name="track_number">Numer ścieżki</string>
    <string name="adj_track_crumb_opts">Dostosuj historię trasy oraz opcję śladu</string>
-  <string name="delete_tracks_progress">Kasowanie tracks…</string>
+  <string name="delete_tracks_progress">Kasowanie tracks&#8230;</string>
    <string name="delete_tracks_toast">Skasowano %d trasę/trasy </string>
-  <string name="create_tracks_progress">Tworzenie tracks…</string>
+  <string name="create_tracks_progress">Tworzenie tracks&#8230;</string>
    <string name="create_tracks_toast">Utworzono %d trasę(trasy)</string>
    <string name="publish">Publikuj</string>
   <!-- JumpBridge -->
@@ -1011,7 +1011,7 @@
   <!--Maps & Favorites-->
    <string name="select_area_prompt">Kliknij lewy górny róg</string>
    <string name="select_area_prompt2">Kliknij prawy dolny róg</string>
-   <string name="region_select_route_prompt">Kliknij punkty na trasie, dla których chcesz otworzyć okno sterowania.</string>
+  <string name="region_select_route_prompt">Kliknij punkty na trasie, dla których chcesz pobrać kafelki.</string>
    <string name="region_shape_select_prompt">Kliknij, aby wybrać kształt rejonu.</string>
    <string name="enable_grg_interact">Włącz interakcję mapy GRG</string>
    <string name="enable_grg_interact_summ">Włącz, aby umożliwić interakcję z GRG na mapie, gdy kontur jest widoczny. Jeśli kontur nie jest widoczny, nie można wchodzić w interakcje z GRG. Jeśli to nieprawda, żadna interakcja nie może wystąpić, nawet jeśli kontur jest widoczny.</string>
@@ -1029,7 +1029,7 @@
    <string name="delete_dialog">Usuń elementy</string>
    <string name="delete_details">Czy na pewno chcesz usunąć wszystkie niezarchiwizowane znaczniki?</string>
    <string name="delete_items_confirmation">Usunięcie obiektów powoduje trwałe usunięcie ich z Twojego urządzenia. Kontynuować?</string>
-  <string name="delete_items_busy">Usuwanie elementów…</string>
+  <string name="delete_items_busy">Usuwanie elementów&#8230;</string>
    <string name="delete_items_failed">Nie udało się usunąć elementów.</string>
    <string name="compute_md5">Oblicz MD5</string>
   <!--Maps & Favorites-->
@@ -1107,7 +1107,7 @@
    <string name="mist_m_gsw_abbr">Pocisk</string>
    <string name="mist_m_gsw">Pocisk / GSW</string>
    <string name="mist_m_burn_abbr">Oparzenia</string>
-  <string name="mist_m_burn">Oparzenia &gt;20%</string>
+  <string name="mist_m_burn">Oparzenia >20%</string>
    <string name="mist_m_cold_abbr">Zimno</string>
    <string name="mist_m_cold">Zimno</string>
    <string name="mist_m_heat_abbr">Gorąco</string>
@@ -1286,7 +1286,7 @@
    <string name="unknown_address">Nieznany adres</string>
    <string name="next_cp">Kolejny:</string>
    <string name="route_remove_end_waypoint_msg">Ostrzeżenie: usunięcie %s poza trybem edycji spowoduje również usunięcie połączonego z nim segmentu. Kontynuować?</string>
-  <string name="route_prepare_send">Przygotowuję do wysłania %s…</string>
+  <string name="route_prepare_send">Przygotowuję do wysłania %s&#8230;</string>
   <!-- Route planner -->
    <string name="route_plan">Zaplanuj trasę</string>
    <string name="route_plan_enter_addresses">Wprowadź adresy:</string>
@@ -1299,7 +1299,7 @@
    <string name="route_plan_select_planner">Wybierz Planowanie trasy</string>
    <string name="route_plan_calculating">Obliczanie trasy</string>
    <string name="route_plan_calculating_msg">Proszę czekać, trwa obliczanie trasy. Niektóre trasy mogą zająć dużo czasu.</string>
-  <string name="route_plan_cancelling">Anulowanie planu trasy …</string>
+  <string name="route_plan_cancelling">Anulowanie planu trasy &#8230;</string>
    <string name="route_plan_manual_entry">Ręczny</string>
    <string name="route_plan_start_address_empty">Adres początkowy nie może być pusty.</string>
    <string name="route_plan_dest_address_empty">Adres docelowy nie może być pusty.</string>
@@ -2366,10 +2366,10 @@
    <string name="local">Lokalny</string>
    <string name="online">online</string>
    <string name="download_limit">Nie można pobrać więcej niż \u0020 %d w jednym zestawie.</string>
-   <string name="download_tiles_min">Nie wybrano płytki do pobrania.</string>
-   <string name="create_new_tileset">Utwórz nowy zestaw płytek </string>
-   <string name="add_to_existing_tileset">Dodaj do istniejącego zestawu płytek</string>
-   <string name="choose_tileset_dest">Wybierz miejsce docelowe zestawu płytek</string>
+  <string name="download_tiles_min">Nie wybrano kafelków do pobrania.</string>
+  <string name="create_new_tileset">Utwórz nowy zestaw kafelków</string>
+  <string name="add_to_existing_tileset">Dodaj do istniejącego zestawu kafelków</string>
+  <string name="choose_tileset_dest">Wybierz miejsce docelowe zestawu kafelków</string>
    <string name="auto_map_select_on">Mapa automatyczna Wybierz Wł.</string>
    <string name="auto_map_select_off">Automatyczna mapa Wybierz Wył</string>
    <string name="could_not_query_wms">Nie można wysłać zapytania do WMS:\u0020</string>
@@ -2380,7 +2380,7 @@
    <string name="layer_name_limit">Nazwy warstw mogą zawierać tylko litery, cyfry, myślniki, podkreślenia i kropki.</string>
    <string name="layer_name_exist">Jest już warstwa o nazwie\u0020</string>
    <string name="download_layer">Pobierz warstwę</string>
-   <string name="no_comp_tileset">Brak kompatybilnych istniejących zestawów płytek</string>
+  <string name="no_comp_tileset">Brak kompatybilnych istniejących zestawów kafelków</string>
    <string name="new_layer">Nowa warstwa</string>
    <string name="failed_to_load_layer">Nie udało się załadować warstwy</string>
    <string name="layer_loading">Ładowanie warstwy</string>
@@ -2391,9 +2391,9 @@
    <string name="visible_on">widoczność: włączone</string>
    <string name="visible_partial">widoczność: częściowe</string>
    <string name="connecting">Łączenie</string>
-   <string name="tiles">Płytki</string>
+  <string name="tiles">Kafelki</string>
    <string name="layers">warstwy\u0020</string>
-   <string name="tilesets_3">(3 zestawy płytek)</string>
+  <string name="tilesets_3">(3 zestawy kafelków)</string>
    <string name="map_source">Źródło mapy</string>
    <string name="select_area">Wybierz obszar</string>
    <string name="download">Pobierz  </string>
@@ -2426,7 +2426,7 @@
   <!--Elevation Tools-->
    <string name="heatmap">Mapa cieplna</string>
    <string name="viewshed">Pole widzenia</string>
-  <string name="terrainslope">Terrain Slope</string>
+  <string name="terrainslope">Nachylenie terenu</string>
    <string name="hide_viewshed">Usuń pole widzenia</string>
    <string name="select_viewshed">Wybierz pole widzenia</string>
    <string name="no_marker_set">Brak zestawu znaczników</string>
@@ -2453,7 +2453,7 @@
    <string name="x_resolution_summ">Liczba próbek wysokości do pobrania wzdłuż osi X.</string>
    <string name="y_resolution">Rozdzielczość Y</string>
    <string name="y_resolution_summ">Liczba próbek wysokości do pobrania wzdłuż osi y</string>
-  <string name="show_heatmap">Pokaż </string>
+  <string name="show_heatmap">Pokaż mapę cieplną</string>
    <string name="dted">DTED:\u0020</string>
    <string name="level_1">Poziom 1</string>
    <string name="sample_rate">Rozdzielczość</string>
@@ -2467,7 +2467,7 @@
    <string name="rel_gradient">REL GRADIENT</string>
    <string name="show_circle">Kołowe pole\nwidzenia </string>
    <string name="show_circle2">Kołowe pole widzenia</string>
-  <string name="show_terrainslope">Show Terrain Slope</string>
+  <string name="show_terrainslope">Pokaż nachylenie terenu</string>
   <!--Overlay Manager-->
    <string name="overlay_manager">Warstwy</string>
    <string name="process">Proces</string>
@@ -2624,7 +2624,7 @@
    <string name="radio_using">"używając: "</string>
    <string name="radio_connecting_ellipses">Łączę ...</string>
    <string name="radio_error_configuring_ethernet">błąd podczas konfigurowania sieci Ethernet…</string>
-   <string name="_network">"Sieć"</string>
+  <string name="_network">" Sieć"</string>
    <string name="radio_physical_connection_controlled_internally">Fizyczne połączenie sieciowe jest kontrolowane wewnętrznie.</string>
    <string name="radio_network_missing">"Brak Sieci"</string>
    <string name="radio_physical_connection_between_rover_and_eud_disappeared">Fizyczne połączenie sieciowe między %s a EUD zniknęło.</string>
@@ -2660,8 +2660,8 @@
    <string name="not_found">Nie znaleziono</string>
    <string name="user2">Użytkownik</string>
    <string name="user_lower">użytkownik</string>
-   <string name="hash">Haszysz</string>
-   <string name="hash_lower">haszysz</string>
+  <string name="hash">Hash</string>
+  <string name="hash_lower">hash</string>
    <string name="available_packages">Dostępne pakiety</string>
    <string name="size3">Rozmiar:</string>
    <string name="size_warning">Ostrzeżenie dotyczące rozmiaru</string>
@@ -2670,7 +2670,7 @@
    <string name="create_new_mission_package">Utwórz nowy %s</string>
    <string name="existing_mission_package">Istniejący %s</string>
    <string name="choose_new_or_existing_mission_package">Wybierz nowy lub istniejący %s</string>
-   <string name="build">Budować</string>
+  <string name="build">Zbuduj</string>
    <string name="mission_package_compressing">Kompresowanie %s, proszę czekać…</string>
    <string name="mission_package_failed_to_create">Nie udało się utworzyć pakietu: %s</string>
    <string name="mission_package_deploying">Wdrażam %s, czekaj…</string>
@@ -2771,7 +2771,7 @@
    <string name="mission_package_max_file_transfer_size_must_be_greater_than_0">Maksymalny rozmiar przesyłania plików musi być większy niż 0, resetowanie do wartości domyślnych: %d</string>
    <string name="mission_package_timeout_must_be_greater_than_0">Limit czasu (%1$d) musi być większy niż 0 i nie większy niż %2$d. Resetowanie do: %3$d</string>
    <string name="mission_package_timeout_must_be_numeric">Limit czasu musi być wartością liczbową resetowaną do: %d</string>
-  <string name="mission_package_file_sharing_is_disabled">Udostępnianie plików jest obecnie wyłączone, włącz je poprzez Ustawienia -&gt; Preferencje narzędzi</string>
+  <string name="mission_package_file_sharing_is_disabled">Udostępnianie plików jest obecnie wyłączone, włącz je poprzez Ustawienia -> Preferencje narzędzi</string>
    <string name="mission_package_no_logs_saved">Brak zapisanych dzienników</string>
    <string name="mission_package_no_map_item_selected">Nie wybrano elementu mapy</string>
    <string name="mission_package_map_item_not_found">Nie znaleziono elementu mapy</string>
@@ -2921,10 +2921,10 @@
    <string name="importmgr_remote_import_cancelled">Anulowano import zdalny</string>
    <string name="importmgr_editing_resource">Edycja zasobu</string>
    <string name="importmgr_auto_refresh_has_been_disabled">Automatyczne odświeżanie zostało zablokowane dla \'%s\'. Dane nie będą automatycznie rozsyłane.</string>
-  <string name="importmgr_auto_refresh_has_been_set">Automatyczne odświeżanie zostało ustawione dla \'%s\'. Naciśnij przycisk pobierania w obszarze Nakładki&gt; Zasoby zdalne, aby rozpocząć przesyłanie strumieniowe danych do urządzenia lokalnego.</string>
-  <string name="importmgr_auto_refresh_interval_has_been_updated">Interwał automatycznego odświeżania został zaktualizowany do %d\' sekund. Naciśnij przycisk pobierania w obszarze Nakładki&gt; Zasoby zdalne, aby rozpocząć przesyłanie strumieniowe danych do urządzenia lokalnego w nowych odstępach czasu.</string>
+  <string name="importmgr_auto_refresh_has_been_set">Automatyczne odświeżanie zostało ustawione dla \'%s\'. Naciśnij przycisk pobierania w obszarze Nakładki> Zasoby zdalne, aby rozpocząć przesyłanie strumieniowe danych do urządzenia lokalnego.</string>
+  <string name="importmgr_auto_refresh_interval_has_been_updated">Interwał automatycznego odświeżania został zaktualizowany do %d\' sekund. Naciśnij przycisk pobierania w obszarze Nakładki> Zasoby zdalne, aby rozpocząć przesyłanie strumieniowe danych do urządzenia lokalnego w nowych odstępach czasu.</string>
    <string name="importmgr_adding_resource">Dodawanie zasobu</string>
-  <string name="importmgr_resource_configuration_has_been_added">Konfiguracja zasobów \'%1$s\' została dodana. Naciśnij przycisk pobierania w obszarze Nakładki &gt; Zasoby zdalne, gdy będziesz gotowy do %2$s</string>
+  <string name="importmgr_resource_configuration_has_been_added">Konfiguracja zasobów \'%1$s\' została dodana. Naciśnij przycisk pobierania w obszarze Nakładki > Zasoby zdalne, gdy będziesz gotowy do %2$s</string>
    <string name="importmgr_begin_streaming_data_to_local_device">Rozpoczynam strumieniowanie danych do lokalnego urządzenia</string>
    <string name="importmgr_download_content_to_local_device">pobierz zawartość na urządzenie lokalne.</string>
    <string name="confirm_cancel">Potwierdź anulację</string>
@@ -2944,7 +2944,7 @@
    <string name="importmgr_invalid_refresh_rate">Nieprawidłowa częstotliwość odświeżania</string>
    <string name="importmgr_specify_valid_refresh_rate_for_resource">Określ dla zasobu prawidłową częstotliwość odświeżania (nie mniej niż %d sekund) </string>
    <string name="importmgr_remote_resource_configuration_received">Odebrano zdalną konfigurację zasobów</string>
-  <string name="download_available_via_import_manager">%s dostępne do pobrania poprzez Nakładki &gt; Zasoby zdalne</string>
+  <string name="download_available_via_import_manager">%s dostępne do pobrania poprzez Nakładki > Zasoby zdalne</string>
    <string name="switch_orientation">Zmień orientację</string>
    <string name="import_manager_only_available_in_landscape">Narzędzie Import Manager jest dostępne tylko w trybie poziomym</string>
    <string name="importmgr_count_items">%d elementów</string>
@@ -3040,11 +3040,11 @@
    <string name="kmz_file">Plik KMZ</string>
    <string name="lpt_file">Plik LPT</string>
    <string name="csv_file">Plik CSV</string>
-  <string name="mvt_file">Mapbox Vector Tiles</string>
+  <string name="mvt_file">Kafelki Mapbox Vector</string>
    <string name="preference_file">Wymagania plik</string>
    <string name="shapefile">Plik kształtu</string>
    <string name="zipped_shapefile">Spakowany Shaperfile</string>
-   <string name="tileset">Zestaw elementów</string>
+  <string name="tileset">Zestaw kafelków</string>
    <string name="user_icon_set">Zestaw ikon użytkownika</string>
    <string name="unable_to_start_bloodhound">Nie można uruchomić narzędzia pogoni, punkt docelowy lub startowy nie jest ustawiony lub ustawiony na to samo.</string>
    <string name="bloodhound_from">Kliknij element mapy, z którego ma być prowadzona pogoń.</string>
@@ -3200,7 +3200,7 @@
    <string name="sir_firmware_warning">Włącz tę opcję tylko wtedy, gdy jesteś podłączony do SIR i komunikacja zrywa się. Jeśli nie jesteś pewien, na dole strony konfiguracji Rover jest wersja oprogramowania układowego. Ponadto numer wersji oprogramowania sprzętowego powinien być wyświetlany w górnej części tego okna dialogowego. Zgłoszono również problemy z oprogramowaniem TRE 1.4.2 po stronie USB Ethernet.</string>
    <string name="rover_sideband_klv">Rover Sideband KLV</string>
    <string name="rover_over_wifi">Sterowanie Rover przez WiFi</string>
-   <string name="hostile_manager">Zarządzanie Wrogami</string>
+  <string name="hostile_manager">Zarządzanie przeciwnikami</string>
    <string name="nineline_text14">Czy chcesz usunąć Line 9 z tego wroga?</string>
    <string name="point_dropper_text39">Kliknij mapę, aby umieścić znaczniki wrogów.</string>
    <string name="laser_basket_prompt4">Kliknij cel. Musi być wrogi.</string>
@@ -3242,7 +3242,7 @@
    <string name="preferences_text110">Częstotliwość raportowania w sekundach (np. raz na 180 sekund podczas postoju) dla niezawodnych protokołów (np. Serwer TAK). Uwaga: inne zdarzenia mogą również wyzwalać raportowanie (np. Zmiana znaku wywoławczego)</string>
    <string name="preferences_text112">Minimalna częstotliwość raportowania w sekundach (np. raz na 20 sekund przy powolnym ruchu) dla zawodnych protokołów (np. Serwer TAK). Uwaga: inne zdarzenia mogą również wyzwalać raportowanie (np. Zmiana znaku wywoławczego)</string>
    <string name="preferences_text114">Maksymalna częstotliwość raportowania w sekundach (np. Co druga sekunda podczas szybkiego ruchu) dla niezawodnych protokołów (np. Serwer TAK). Uwaga: inne zdarzenia mogą również wyzwalać raportowanie (np. Zmiana znaku wywoławczego)</string>
-   <string name="mission_package_toolname">Narzędzie Paczki Danych</string>
+  <string name="mission_package_toolname">Paczki Danych</string>
    <string name="mission_package_prefix">DP</string>
    <string name="missionpackage_control_prefs">Preferencje Paczek Danych</string>
    <string name="adjust_missionpackage_settings">Dostosuj preferencje pakietu danych</string>
@@ -3494,13 +3494,13 @@
    <string name="export_to_missionpackage_name">Nazwa paska narzędzi Pakietu Danych</string>
    <string name="continuous_rendering">Nieprzerwane renderowanie</string>
    <string name="continuous_rendering_summary">Nieprzerwane renderowanieg to starszy model aktualizacji grafiki na ekranie, który został zastąpiony wydajniejszym mechanizmem renderowania. Włącz tę funkcję tylko wtedy, gdy podczas korzystania z oprogramowania zaobserwowano problemy z renderowaniem.</string>
-   <string name="developer_tools">Developer Tools</string>
-   <string name="developer_tools_summary">Enable the Developer Tools in the Overlay Manager</string>
+  <string name="developer_tools">Narzędzia deweloperskie</string>
+  <string name="developer_tools_summary">Odblokuj narzędzie deweloperskie w zarządzaniu warstwami</string>
    <string name="resection_workflow">Procedura Resekcji</string>
    <string name="resection">Resekcja</string>
    <string name="resection_options">Opcje Resekcji</string>
    <string name="actionbar_resection">Resekcja</string>
-  <string name="resection_bearing_title">Kierunek: %1$s -&gt; %2$s</string>
+  <string name="resection_bearing_title">Kierunek: %1$s -> %2$s</string>
    <string name="resection_new_landmark">Nowy punkt orientacyjny</string>
    <string name="no_data_found">brak danych w tym obszarze</string>
    <string name="no_mobile_data_found">nie znaleziono danych mobilnych ani wskaźników</string>
@@ -3595,7 +3595,7 @@
    <string name="rubber_sheet">Nakładki</string>
    <string name="failed_to_read_image">Nie udało się odczytać obrazu: %s</string>
    <string name="read_image_cancelled">Odczytanie obrazu anulowane: %s</string>
-  <string name="creating_rubber_sheet">Tworzenie nakładki dla %s…</string>
+  <string name="creating_rubber_sheet">Tworzenie nakładki dla %s&#8230;</string>
    <string name="remove_rs_msg">Usunąć nakładkę \'%s\'?</string>
    <string name="remove_rs_models_msg">Usunąć modele  %1$d w \'%2$s\'?</string>
    <string name="unable_to_find_sheet">Nie można odnaleźć arkusza.</string>
@@ -3605,13 +3605,13 @@
    <string name="rotate_model_tooltip2">Przesuń dwoma palcami, aby zmienić model terenu.</string>
    <string name="failed_to_export_kmz">Nie udało się wyeksportować KMZ</string>
    <string name="exported_kmz">Wyeksportowane KMZ do %s</string>
-  <string name="exporting_kmz">Eksportowanie \'%s\' do pliku KMZ…</string>
+  <string name="exporting_kmz">Eksportowanie \'%s\' do pliku KMZ&#8230;</string>
    <string name="file_not_supported">Plik nie jest wspierany: %s</string>
    <string name="import_model">Zaimportuj Model 3D</string>
    <string name="import_model_msg">Opcje importowania dla \"%s\":</string>
    <string name="model_projection">Odwzorowanie:</string>
    <string name="model_flip_y_z">Obróć Y/Z</string>
-  <string name="reading_model">Odczyt \'%s\'…</string>
+  <string name="reading_model">Odczyt \'%s\'&#8230;</string>
    <string name="file_does_not_exist">Plik nie istnieje: %s</string>
    <string name="export_cancelled_for">Eksport anulowany dla %s</string>
    <string name="export_finished_title">Eksportowanie Zakończone</string>
@@ -3622,15 +3622,15 @@
    <string name="rectangle_color">Kolor prostokąta</string>
    <string name="failed_to_read_model">Nie udało się odczytać modelu: %s</string>
    <string name="read_model_cancelled">Anulowane odczytywanie modelu: %s</string>
-  <string name="creating_rubber_model">Tworzenie nakładki mapy dla %s…</string>
+  <string name="creating_rubber_model">Tworzenie nakładki mapy dla %s&#8230;</string>
    <string name="remove_model_msg">Usunąć model \'%s\'?</string>
    <string name="failed_to_export_obj">Nie udało się wyeksportować OBJ zip</string>
    <string name="exported_obj">Wyeksportowano plik ZIP OBJ do %s</string>
-  <string name="exporting_obj">Eksport \'%s\' to OBJ file…</string>
-  <string name="compressing_zip">Kompresja \'%s\'…</string>
-  <string name="transforming_model">Transformacja \'%s\'…</string>
+  <string name="exporting_obj">Eksport \'%s\' to OBJ file&#8230;</string>
+  <string name="compressing_zip">Kompresja \'%s\'&#8230;</string>
+  <string name="transforming_model">Transformacja \'%s\'&#8230;</string>
    <string name="version_production_string">Wyprodukowany przez %s</string>
-  <string name="loading_percent">Ładowanie… %d%%</string>
+  <string name="loading_percent">Ładowanie&#8230; %d%%</string>
    <string name="model">Model</string>
    <string name="rotation">Obróć</string>
    <string name="scale">Skala</string>
@@ -3649,7 +3649,7 @@
    <string name="relock">Namierz ponownie</string>
    <string name="layer_details">Szczegóły warstwy</string>
   <!--Splash Screen-->
-  <string name="permission_warning">Ta aplikacja wymaga uprawnień, których wcześniej odmówiono do uruchomienia, wybierz \'Zezwól ręcznie \', aby przejść do ekranu ustawień.\n\nWybierz Uprawnienia -&gt; Włącz wszystkie wymienione uprawnienia</string>
+  <string name="permission_warning">Ta aplikacja wymaga uprawnień, których wcześniej odmówiono do uruchomienia, wybierz \'Zezwól ręcznie \', aby przejść do ekranu ustawień.\n\nWybierz Uprawnienia -> Włącz wszystkie wymienione uprawnienia</string>
    <string name="permit_manually">Zezwól ręcznie</string>
    <string name="stale_item_cleanup">Czas czyszczenia nieaktualnego elementu</string>
    <string name="attempt_disable_media_scanner">Próba wyłączenia skanera nośnika</string>
@@ -3766,7 +3766,7 @@
    <string name="civ_delete_grg">Usuń nakładkę</string>
    <string name="civ_grg_file">Plik Nakładki</string>
    <string name="civ_grg_lowercase">plik nakładki</string>
-   <string name="civ_SPI_prompt">O</string>
+  <string name="civ_SPI_prompt">Dokładność</string>
    <string name="civ_fire_control_prefs">Preferencje Zarządzania Wskażnikami SPI</string>
    <string name="civ_fires_prefs">Preferencje Wskażników SPI</string>
    <string name="civ_adjust_fire_settings">Dostosuj preferencje paska narzędzi wskaźników SPI</string>
@@ -3805,8 +3805,7 @@
    <string name="actionbar_firetools">Wskaźniki SPI</string>
    <!-- possibly unused -->
    <string name="civ_fire_tools_title">Wskaźniki SPI</string>
-    <!-- Even though this is the Distribution statement, we want it to
-         appear at the bottom and not floating above empty text blocks -->
+  <!-- Even though this is the Distribution statement, we want it to appear at the bottom and not floating above empty text blocks -->
    <string name="caseLabel">Oświadczenie Dystrybucyjne A: Zaakceptowane do publicznego wydania; Dystrybucja bez limitu.</string>
     <!-- for filter names -->
    <string name="civ_filter_title_markers">Znacznki</string>
@@ -3849,63 +3848,63 @@
    <string name="resection_classic_tool_ideal_conditions">Gdy istnieją punkty orientacyjne, możesz je zidentyfikować i dopasować do mapy. Najwyższa dokładność, gdy kąt między punktami orientacyjnymi zbliża się do 90 stopni</string>
    <string name="resection_classic_tool_relative_accuracy">Zależna od tego, jak dokładnie zidentyfikowano punkty orientacyjne i namiary względne</string>
    <string name="invalid_cot_address">Napotkano nieprawidłowe dane wyjściowe, upewnij się że adres nie zawiera protokołu ani portu</string>
-  <string name="image_overlay_hud">nakładki obrazu</string>
+  <string name="image_overlay_hud">HUD nakładki obrazu</string>
    <string name="image_overlay_warning">Ta opcja spowoduje trwałe nałożenie metadanych na obraz. Kontyntynuj?</string>
-   <string name="kml_network_link">KML Network Link</string>
-   <string name="kml_links_added_msg">Added %d KML network links</string>
-   <string name="kml_links_added_failed_msg">Failed to add KML network links</string>
-   <string name="import_kml_network_link">Import KML Network Link</string>
+  <string name="kml_network_link">Połączenie sieciowe KML</string>
+  <string name="kml_links_added_msg">Dodane %d połączenie sieciowe KML</string>
+  <string name="kml_links_added_failed_msg">Błąd w dodaniu połączenia sieciowego KML</string>
+  <string name="import_kml_network_link">Importuj połączenie sieciowe KML</string>
     <string name="kml_link_desc">%1$s (%2$d sub-links)</string>
-   <string name="resection_ideal_conditions_label">Ideal Conditions</string>
-   <string name="resection_relative_accuracy_label">Relative Accuracy</string>
-   <string name="resection_details_label">%s Details</string>
-   <string name="polygon_area_prompt">Tap points along the route wish to select.</string>
-    <string name="lasso_area_prompt">Drag to draw lasso around the area of interest.</string>
+  <string name="resection_ideal_conditions_label">Idealne warunki</string>
+  <string name="resection_relative_accuracy_label">Dokładność relatywna</string>
+  <string name="resection_details_label">Szczegóły %s</string>
+  <string name="polygon_area_prompt">Dotknij punktów na trasie, które chcesz wybrać.</string>
+  <string name="lasso_area_prompt">Przeciągnij, aby narysować lasso wokół obszaru zainteresowania. </string>
    <string name="lasso">Lasso</string>
-    <string name="shapes">Shapes</string>
-   <string name="files">Files</string>
-    <string name="android_11_warning">Android 11 Warning</string>
-    <string name="android_11_warning_details">Android 11 restricts the use of GPS in the background.   To continue publishing your location when ATAK is in the background you need to manually grant ATAK the \'Allow all the time\' permission. You can access the Android Location Permission screen by selecting the Allow in Settings prompt when the Device Location\'s Permission screen is displayed.\n\nPlease note - ATAK does not collect GPS information while it is not running.</string>
-    <string name="http_code_message">Error %d - If you believe this is an error and do not have login credentials, click \'Cancel\'.   Please notify the server administrator.</string>
-    <string name="address_blank_error">Address cannot be blank</string>
-    <string name="address_invalid_error">Address is invalid %s</string>
-    <string name="location_perm_warning_1">In order to enable GPS usage while ATAK is running but in the background, you have two chances to enable this.</string>
-    <string name="location_perm_warning_2">WARNING: If you miss these chances, then you will need to do it manually. Android intentionally makes this difficult</string>
-    <string name="location_perm_warning_chance1">Chance 1: Click on \'Allow In Settings\'</string>
-    <string name="location_perm_warning_chance2">Chance 2: Click on \'Allow In Settings\'</string>
-    <string name="select_with_colon">Select:</string>
-    <string name="location_permission_guidance_1">In order to enable GPS usage while ATAK is running but in the background, perform the following steps.</string>
-    <string name="step_one_with_colon">Step 1:</string>
-    <string name="location_permission_step2">Step 2:</string>
-    <string name="location_permission_step3">Step 3:</string>
-    <string name="general_permission_step1">Step 1:</string>
-    <string name="general_permission_step2">Step 2: Review the Denied List</string>
-  <string name="resection_required_data_label">Required Data (e.g., DTED)</string>
-  <string name="resection_required_hardware">Required Hardware (e.g., PLRF)</string>
-  <string name="resection_classic_tool_required_data">No special data required</string>
-  <string name="resection_classic_tool_required_hardware">No special hardware required</string>
-  <string name="lollipop_visibility">Lollipop Visibility when Tilted</string>
-  <string name="legacy_altitude_rendering">Enhanced Depth Perception</string>
-  <string name="disable_parallax_viewing">Enhances visualization of depth when looking straight down.</string>
-  <string name="lollipop_description">Draws a line to the exact point on the ground represented by the item.</string>
-  <string name="self_authored">Self-Authored</string>
-  <string name="toggle_filters">Toggle Filters</string>
-  <string name="actionbar_channels">Channels</string>
-    <string name="enter_caption_button">Tap the Edit button to enter caption</string>
-    <string name="deleting_dted_files">Deleting %s files&#8230;</string>
-    <string name="refreshing">Refreshing&#8230;</string>
-  <string name="address_colon">Address:</string>
-  <string name="tak_server_quick_connect">TAK Server Quick Connect</string>
-  <string name="quick_connect">Quick Connect</string>
-  <string name="retry">Retry</string>
-    <string name="select_deletion_method">Select deletion method:</string>
-    <string name="no_content_selectable">No content can be selected</string>
-    <string name="delete_contents">Delete Contents</string>
-    <string name="select_lasso_action">Select Lasso Action</string>
-  <string name="lasso_select">Lasso Select</string>
+  <string name="shapes">Kształty</string>
+  <string name="files">Pliki</string>
+  <string name="android_11_warning">Ostrzeżenie Android 11</string>
+  <string name="android_11_warning_details">Android 11 ogranicza korzystanie z GPS w tle. Aby kontynuować publikowanie swojej lokalizacji, gdy ATAK działa w tle, musisz ręcznie przyznać ATAK uprawnienie \'Zawsze zezwalaj\'. Możesz uzyskać dostęp do ekranu Zezwolenie na lokalizację systemu Android, wybierając opcję Zezwól w Ustawieniach, gdy wyświetlany jest ekran Zezwolenie na lokalizację urządzenia.\n\nUwaga - ATAK nie zbiera informacji GPS, gdy nie jest uruchomiony.</string>
+  <string name="http_code_message">Błąd %d - Jeśli jesteś przekonany że to błąd i nie masz danych logowania, naciśnij  \'Zakończ\'.   Poinformuj administratora serwera.</string>
+  <string name="address_blank_error">Adres nie może być pusty</string>
+  <string name="address_invalid_error">Adres nie jest prawidłowy %s</string>
+  <string name="location_perm_warning_1">Masz dwie próby włączenia GPS gdy w tle działa ATAK.</string>
+  <string name="location_perm_warning_2">Uwaga: Jeżeli ominiesz te próby, to musisz zmiany wprowadzić manualnie. Android intencjonalnie utrudnia to działanie.</string>
+  <string name="location_perm_warning_chance1">Próba 1:  Zaznacz w \'Zaakceptuj w ustawieniach\'</string>
+  <string name="location_perm_warning_chance2">Próba 2:  Zaznacz w \'Zaakceptuj w ustawieniach\'</string>
+  <string name="select_with_colon">Wybierz:</string>
+  <string name="location_permission_guidance_1">W celu odblokowanie GPS kiedy ATAK jest uruchomiony w tle, wykonaj następujące kroki.</string>
+  <string name="step_one_with_colon">Krok 1:</string>
+  <string name="location_permission_step2">Krok 2:</string>
+  <string name="location_permission_step3">Krok 3:</string>
+  <string name="general_permission_step1">Krok 1:</string>
+  <string name="general_permission_step2">Step2: </string>
+  <string name="resection_required_data_label">Wymagane dane (np. DTED)</string>
+  <string name="resection_required_hardware">Wymagany sprzęt (np. PLRF)</string>
+  <string name="resection_classic_tool_required_data">Specjalne date nie wymagane</string>
+  <string name="resection_classic_tool_required_hardware">Specjalny sprzęt nie wymagany</string>
+  <string name="lollipop_visibility">Widoczność Lollipop przy pochyleniu</string>
+  <string name="legacy_altitude_rendering">Ulepszone postrzeganie głębi</string>
+  <string name="disable_parallax_viewing">Poprawia wizualizację głębi, gdy patrzysz prosto w dół.</string>
+  <string name="lollipop_description">Rysuje linię do dokładnego punktu na ziemi reprezentowanego przez obiekt.</string>
+  <string name="self_authored">Autorstwo własne</string>
+  <string name="toggle_filters">Przełącz filtry</string>
+  <string name="actionbar_channels">Kanały</string>
+  <string name="enter_caption_button">Stuknij przycisk Edytuj, aby wprowadzić podpis</string>
+  <string name="deleting_dted_files">Usuwanie %s plików&#8230;</string>
+  <string name="refreshing">Odswierzanie&#8230;</string>
+  <string name="address_colon">Adres:</string>
+  <string name="tak_server_quick_connect">Szybkie połączenie z serwerem TAK</string>
+  <string name="quick_connect">Szybkie połączenie</string>
+  <string name="retry">Powtórz</string>
+  <string name="select_deletion_method">Wybierz metode kasowania:</string>
+  <string name="no_content_selectable">Nie można wybrać żadnej treści</string>
+  <string name="delete_contents">Kasuj treść</string>
+  <string name="select_lasso_action">Wybierz akcje Lasso</string>
+  <string name="lasso_select">Wybór Lasso</string>
     <string name="checked_abbr">Chk</string>
-    <string name="perimeter">Perimeter</string>
-  <string name="circumference">Circumference</string>
-  <string name="length">Length</string>
-    <string name="bulk_feature_edit_limit_msg">Bulk editing of more than 500 features is not supported.</string>
+  <string name="perimeter">Perymetr</string>
+  <string name="circumference">Obwód</string>
+  <string name="length">Długość</string>
+  <string name="bulk_feature_edit_limit_msg">Edycja zbiorcza ponad 500 elementów nie jest obsługiwana.</string>
 </resources>
