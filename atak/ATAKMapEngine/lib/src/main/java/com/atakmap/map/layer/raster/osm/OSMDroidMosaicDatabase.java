@@ -70,8 +70,8 @@ public class OSMDroidMosaicDatabase extends SQLiteMosaicDatabase {
         TileMatrix.ZoomLevel zLevelMin = new TileMatrix.ZoomLevel();
         zLevelMin.level = osm.minLevel;
         if(srid == 4326) {
-            zLevelMin.pixelSizeX = 180d / (double)(1<<zLevelMin.level);
-            zLevelMin.pixelSizeY = 180d / (double)(1<<zLevelMin.level);
+            zLevelMin.pixelSizeX = 180d / ((double)(1<<zLevelMin.level) * osm.tileWidth);
+            zLevelMin.pixelSizeY = 180d / ((double)(1<<zLevelMin.level) * osm.tileHeight);
         } else {
             zLevelMin.pixelSizeX = OSMUtils.mapnikTileResolution(zLevelMin.level);
             zLevelMin.pixelSizeY = OSMUtils.mapnikTileResolution(zLevelMin.level);
