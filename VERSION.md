@@ -1,5 +1,11 @@
 # Version History
 
+## 4.4.0.11
+
+* Bug Fixes
+  * address issue with Spot Markers not getting properly renamed when done in succession.
+  * prevent a NullPointerException when rendering the label for a Range and Bearing arrow
+
 ## 4.4.0.10
 
 * Bug Fix

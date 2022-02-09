@@ -17,14 +17,13 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.user.PlacePointTool;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
 /**
  * Manage Spot Map intents
- * 
- * 
  */
 public class SpotMapReceiver extends DropDownReceiver implements
         OnStateListener {
@@ -59,6 +58,11 @@ public class SpotMapReceiver extends DropDownReceiver implements
         _item = null;
     }
 
+    /**
+     * @deprecated Use {@link #closeDropDown()} instead
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.5", forRemoval = true, removeAt = "4.8")
     public void closeDrawingDropDown() {
         closeDropDown();
     }
@@ -76,22 +80,32 @@ public class SpotMapReceiver extends DropDownReceiver implements
         if (SPOT_DETAILS.equals(action) && marker != null) {
             // Close other details that are open first, otherwise we'll have
             // overwritten the info it needs to shut down when OnClose is called!
+            boolean close = false;
             if (DropDownManager.getInstance().isTopDropDown(this)) {
                 if (_item != null && _item != marker)
-                    closeDropDown();
+                    close = true;
                 else if (_item == marker) {
                     if (!isVisible())
                         DropDownManager.getInstance().unHidePane();
                     return;
                 }
             } else if (!isClosed())
+                close = true;
+
+            if (close) {
+                // Close the drop-down and show the updated details the next frame
+                final Marker m = marker;
                 closeDropDown();
-
-            // Make sure to cleanup existing marker before changing to new marker
-            cleanup(true);
-
-            _item = marker;
-            _showPointDetails(_item);
+                getMapView().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        _showPointDetails(_item = m);
+                    }
+                });
+            } else {
+                // Show point details immediately
+                _showPointDetails(_item = marker);
+            }
         }
 
         // Toggle marker label
@@ -240,5 +254,4 @@ public class SpotMapReceiver extends DropDownReceiver implements
     public void onDropDownClose() {
         cleanup(true);
     }
-
 }

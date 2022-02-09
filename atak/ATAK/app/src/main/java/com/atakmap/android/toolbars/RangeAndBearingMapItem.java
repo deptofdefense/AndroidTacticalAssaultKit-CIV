@@ -689,6 +689,12 @@ public class RangeAndBearingMapItem extends Arrow implements
     }
 
     private void updateLabel() {
+
+        if (_bearingUnits == null) { 
+               _bearingUnits = Angle.DEGREE;
+        }
+
+
         // This just updates the radial menu - probably shouldn't be here
         setMetaBoolean("degs_t_bool", _bearingUnits == Angle.DEGREE
                 && _northReference == NorthReference.TRUE);
