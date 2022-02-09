@@ -1635,48 +1635,60 @@ public class ATAKActivity extends MapActivity implements
                 ctrl.panZoomTo(location, ZOOM_LEVEL, true);
             }
         } else {
-            double lat = Double.parseDouble(_controlPrefs.getString(
-                    "screenViewLat", "0"));
-            double lon = Double.parseDouble(_controlPrefs.getString(
-                    "screenViewLon", "0"));
-            double alt = Double.parseDouble(_controlPrefs.getString(
-                    "screenViewAlt", "0"));
-            double scale = Double.parseDouble(_controlPrefs.getString(
-                    "screenViewMapScale", "0"));
-            double tilt = Double.parseDouble(_controlPrefs.getString(
-                    "screenViewMapTilt", "0"));
-            boolean enabled3D = _controlPrefs.getBoolean(
-                    "status_3d_enabled", false);
+            try {
+                double lat = Double.parseDouble(_controlPrefs.getString(
+                        "screenViewLat", "0"));
+                double lon = Double.parseDouble(_controlPrefs.getString(
+                        "screenViewLon", "0"));
+                double alt = Double.parseDouble(_controlPrefs.getString(
+                        "screenViewAlt", "0"));
+                double scale = Double.parseDouble(_controlPrefs.getString(
+                        "screenViewMapScale", "0"));
+                double tilt = Double.parseDouble(_controlPrefs.getString(
+                        "screenViewMapTilt", "0"));
+                boolean enabled3D = _controlPrefs.getBoolean(
+                        "status_3d_enabled", false);
 
-            // XXX - this will need to be revisited with subterranean support
+                // XXX - this will need to be revisited with subterranean support
 
-            // if there was no elevation data during the last run and has been
-            // subsequently loaded, adjust the altitude to prevent the camera
-            // from starting underneath the terrain
-            final double localTerrain = ElevationManager.getElevation(lat, lon,
-                    null);
-            if (Double.isNaN(alt) || alt < localTerrain) {
-                if (!Double.isNaN(localTerrain) && localTerrain > 0d)
-                    alt = localTerrain;
-                double gsd = Globe.getMapResolution(_mapView.getDisplayDpi(),
-                        scale);
-                double range = MapSceneModel.range(gsd, 45d,
-                        _mapView.getHeight());
-                scale = Globe.getMapScale(
-                        _mapView.getDisplayDpi(),
-                        MapSceneModel.gsd(range + alt, 45d,
-                                _mapView.getHeight()));
-            }
-            Log.d(TAG, "using saved screen location lat: " + lat + " lon: "
-                    + lon
-                    + " scale: " + scale);
-            if (lat != 0 || lon != 0 || scale != 0) {
-                ctrl.panZoomTo(new GeoPoint(lat, lon, alt), scale, true);
-                if (tilt != 0 && enabled3D)
-                    ctrl.tiltTo(tilt, true);
-            } else {
-                Log.d(TAG, "no location found, go to (0,0)");
-                ctrl.panTo(GeoPoint.ZERO_POINT, true);
+                // if there was no elevation data during the last run and has been
+                // subsequently loaded, adjust the altitude to prevent the camera
+                // from starting underneath the terrain
+                final double localTerrain = ElevationManager.getElevation(lat, lon,
+                        null);
+                if (Double.isNaN(alt) || alt < localTerrain) {
+                    if (!Double.isNaN(localTerrain) && localTerrain > 0d)
+                        alt = localTerrain;
+                    double gsd = Globe.getMapResolution(_mapView.getDisplayDpi(),
+                            scale);
+                    double range = MapSceneModel.range(gsd, 45d,
+                            _mapView.getHeight());
+                    scale = Globe.getMapScale(
+                            _mapView.getDisplayDpi(),
+                            MapSceneModel.gsd(range + alt, 45d,
+                                    _mapView.getHeight()));
+                }
+                Log.d(TAG, "using saved screen location lat: " + lat + " lon: "
+                        + lon
+                        + " scale: " + scale);
+                if (lat != 0 || lon != 0 || scale != 0) {
+                    ctrl.panZoomTo(new GeoPoint(lat, lon, alt), scale, true);
+                    if (tilt != 0 && enabled3D)
+                        ctrl.tiltTo(tilt, true);
+                } else {
+                    Log.d(TAG, "no location found, go to (0,0)");
+                    ctrl.panTo(GeoPoint.ZERO_POINT, true);
+                }
+            } catch (Exception e) {
+                // Issue where developer will migrate backwards to 4.4 without needing to clear
+                // existing preferences. (Keeping the version code the same)
+                _controlPrefs.edit().remove("screenViewLat").
+                        remove("screenViewLon").
+                        remove("screenViewAlt").
+                        remove("screenViewMapScale").
+                        remove("screenViewMapTilt").
+                        remove("status_3d_enabled").apply();
+
             }
         }
 

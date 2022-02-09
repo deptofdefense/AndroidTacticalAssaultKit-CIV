@@ -401,7 +401,6 @@ public class GLModelCaptureRequest implements GLOffscreenCaptureRequest {
                 buf.order(ByteOrder.nativeOrder());
                 GLES30.glReadPixels(0, 0, _width, _height, GLES30.GL_RGBA,
                         GLES30.GL_UNSIGNED_BYTE, buf);
-                Unsafe.free(buf);
 
                 long totalV = 0;
                 int pixelCount = 0;
@@ -418,6 +417,9 @@ public class GLModelCaptureRequest implements GLOffscreenCaptureRequest {
                     totalV += (r + g + b) / 3;
                     pixelCount++;
                 }
+
+                Unsafe.free(buf);
+
                 if (pixelCount > 0)
                     totalV /= pixelCount;
                 setStrokeColor(totalV < 40 ? Color.GRAY : Color.BLACK);
