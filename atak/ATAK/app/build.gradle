@@ -24,7 +24,7 @@ import java.util.regex.Pattern
 buildscript {
 
     ext.ATAK_VERSION = "4.4.0"
-    ext.ATAK_VERSION_SUBMINOR = ".8"
+    ext.ATAK_VERSION_SUBMINOR = ".9"
 
     ext.jacocoVersion = '0.8.5'
 
@@ -72,7 +72,7 @@ buildscript {
         classpath 'com.android.tools.build:gradle:4.0.2'
         classpath "org.jacoco:org.jacoco.core:$jacocoVersion"
         if(isDevKitEnabled()) {
-            classpath 'com.atakmap.gradle:atak-gradle-devkit:3.0.0'
+            classpath 'com.atakmap.gradle:atak-gradle-devkit:3.2.0'
     }
     }
 }

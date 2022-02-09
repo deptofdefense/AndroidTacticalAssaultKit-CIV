@@ -1,9 +1,17 @@
 # Version History
 
+## 4.4.0.9
+
+* Bug Fixes
+  * address crashes within the Vehicle Model Usage on Android 12
+
+* Feature Additions
+  * change WMM2015 with WMM 2020
+
 ## 4.4.0.8
 
 * Bug Fix
-  * fix tile size computation for equirectangular OSMDrop sqlite map data
+  * fix tile size computation for equirectangular OSMDroid sqlite map data
 
 ## 4.4.0.7
 

@@ -342,17 +342,18 @@ public class GLInstancedMesh extends GLInstancedRenderable {
         if (!MathUtils.hasBits(vdl.attributes, attr))
             return null;
         try {
+            // NOTE: assumes float, per `glVertexAttribPointer` definition
+            final int bufSize =
+                    vdlArr.offset + ((_subject.getNumVertices()-1)*vdlArr.stride) + (size*4);
             Buffer buf = _subject.getVertices(attr);
-            buf.position(vdlArr.offset);
             int[] bufID = new int[1];
             GLES30.glGenBuffers(1, bufID, 0);
             GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, bufID[0]);
             GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER,
-                    _subject.getNumVertices()
-                            * vdlArr.stride,
+                    bufSize,
                     buf, GLES30.GL_STATIC_DRAW);
             GLES30.glVertexAttribPointer(idx, size, GLES30.GL_FLOAT, false,
-                    vdlArr.stride, 0);
+                    vdlArr.stride, vdlArr.offset);
             GLES30.glEnableVertexAttribArray(idx);
             GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, 0);
             return bufID;
