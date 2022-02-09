@@ -1,5 +1,10 @@
 # Version History
 
+## 4.4.0.10
+
+* Bug Fix
+  * Prevent Null Pointer crash condition when getting the current IP in a 9 line.
+
 ## 4.4.0.9
 
 * Bug Fixes
