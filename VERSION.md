@@ -1,5 +1,10 @@
 # Version History
 
+## 4.4.0.14
+
+* Bug Fixes
+  * display the angle correctly when showing doghouses.
+
 ## 4.4.0.13
 
 * Bug Fixes
