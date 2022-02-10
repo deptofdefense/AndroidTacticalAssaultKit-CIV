@@ -1,5 +1,10 @@
 # Version History
 
+## 4.4.0.12
+
+* Bug Fix
+  * Difficult time changing range and bearing units specifically feet/meters.
+
 ## 4.4.0.11
 
 * Bug Fixes
