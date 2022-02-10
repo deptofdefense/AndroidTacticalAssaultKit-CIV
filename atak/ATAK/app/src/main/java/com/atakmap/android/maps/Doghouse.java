@@ -7,12 +7,15 @@ import android.preference.PreferenceManager;
 
 import androidx.annotation.NonNull;
 
+import com.atakmap.android.routes.Route;
+import com.atakmap.android.routes.RouteMapReceiver;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.Angle;
 import com.atakmap.coremap.conversions.AngleUtilities;
 import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.conversions.SpanUtilities;
+import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
@@ -92,6 +95,28 @@ public final class Doghouse extends Polyline implements
         public String toString() {
             return _repr;
         }
+    }
+
+    @Override
+    public void setVisible(boolean visible) {
+        //if the current "new" state of the map item is now visible then we must
+        //check to associated route visibility
+        if(visible){
+            //make sure we have the routeUid set inside metadata
+            if(getMetaString("routeUID",null) != null){
+                MapItem item = RouteMapReceiver.getInstance().getRouteGroup().findItem("uid",getMetaString("routeUID",""));
+
+                //make sure its a route and if the route is not visible then dont call super() for updating the map item
+                //in this case the doghouse map items visibility to show, if the route is visible then we just call the super()
+                //which updates the map item to true/false
+                if(item instanceof Route && !item.getVisible()){
+                    return;
+                }
+            }else{
+                Log.w("Doghouse","Warning Doghouse is missing RouteUID metadata this shouldnt happen");
+            }
+        }
+        super.setVisible(visible);
     }
 
     public static final int MAX_FIELDS = 10;
