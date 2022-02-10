@@ -8,6 +8,7 @@ import com.atakmap.coremap.conversions.Area;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
 import com.atakmap.coremap.conversions.Span;
+import com.atakmap.coremap.conversions.SpanUtilities;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.maps.conversion.EGM96;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -60,7 +61,7 @@ public class UnitPreferences extends AtakPreferences {
 
     /**
      * Get preferred range units based on set thresholds
-     * @param range Range value to use as reference
+     * @param range Range value to use as reference (meters)
      * @return Range units
      */
     public Span getRangeUnits(double range) {
@@ -71,6 +72,7 @@ public class UnitPreferences extends AtakPreferences {
                 return Span.KILOMETER;
             return Span.METER;
         } else if (system == Span.ENGLISH) {
+            range = SpanUtilities.convert(range, Span.METER, Span.FOOT);
             int thresh = get(FT_MILES_THRESH, 5280);
             if (range > thresh)
                 return Span.MILE;

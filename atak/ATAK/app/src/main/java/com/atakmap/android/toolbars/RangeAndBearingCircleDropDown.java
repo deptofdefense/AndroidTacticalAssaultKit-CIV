@@ -226,9 +226,18 @@ public class RangeAndBearingCircleDropDown extends DropDownReceiver implements
                         Span selectedUnits = unitsAdapter.getItem(position);
                         if (selectedUnits == null)
                             return;
+
+                        // Convert the radius to the new units selection
+                        double radius = _rabCircle.getRadius();
+                        Span currentUnits = _prefs.getRangeUnits(radius);
+                        radius = SpanUtilities.convert(radius, Span.METER,
+                                currentUnits);
+                        radius = SpanUtilities.convert(radius, selectedUnits,
+                                Span.METER);
+
+                        // Update preferences and circle
                         _prefs.setRangeSystem(selectedUnits.getType());
-                        _rabCircle.refresh();
-                        refresh();
+                        _rabCircle.setRadius(radius);
                     }
                 });
 
