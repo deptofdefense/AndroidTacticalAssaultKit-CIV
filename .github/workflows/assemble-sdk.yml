@@ -97,6 +97,7 @@ jobs:
       run: |
         cd atak
         echo "cmake.dir=$CMAKE_HOME" >> local.properties
+        echo "ndk.dir=$ANDROID_NDK" >> local.properties
         rm -rf ATAK/app/build
         bash ./gradlew assembleCivSdk
     - name: generate ATAK CIV SDK package
