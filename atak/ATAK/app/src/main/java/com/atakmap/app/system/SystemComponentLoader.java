@@ -18,6 +18,8 @@ import com.atakmap.app.BuildConfig;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -244,7 +246,12 @@ public class SystemComponentLoader {
 
             final Class<?> c = pluginClassLoader
                     .loadClass("com.atakmap.android.FlavorComponent");
+
+            if (!ensureAbstractImpl(AbstractSystemComponent.class, c))
+                return;
+
             flavorComponent = (AbstractSystemComponent) c.newInstance();
+
             if (!(flavorComponent instanceof FlavorProvider)) {
                 Log.d(TAG,
                         "flavor does not implement FlavorProvider, this is an error");
@@ -256,6 +263,39 @@ public class SystemComponentLoader {
             Log.d(TAG, "error loading the flavor system component", e);
             flavorComponent = null;
         }
+    }
+
+    /**
+     * Given an implementation of a class and the corresponding abstract class,
+     * ensure that the implementation does provide all of the abstract methods.
+     * This attempts to prevent issues with running obfuscation mismatch.
+     *
+     * For example a obfuscated version of the FlavorPlugin and a non-obfuscated
+     * version of the core.   The only people that should encounter this are
+     * core developers since we also enforce that signing of the system level
+     * plugins and the core must be the same.
+     *
+     * @param abstractClass the abstract class
+     * @param implClass the implementation class
+     * @return returns true if all abstract methods in the abstract class
+     * are provided in the implementation class.
+     */
+    private static boolean ensureAbstractImpl(Class abstractClass,
+            Class implClass) {
+        Method[] methods = abstractClass.getMethods();
+        for (Method method : methods) {
+            if (Modifier.isAbstract(method.getModifiers())) {
+                String s = method.getName();
+                try {
+                    Method m = implClass.getMethod(method.getName(),
+                            method.getParameterTypes());
+                } catch (Throwable e) {
+                    Log.d(TAG, "could not find method: " + method.getName());
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     /**
@@ -302,6 +342,10 @@ public class SystemComponentLoader {
 
             final Class<?> c = pluginClassLoader
                     .loadClass("com.atakmap.android.EncryptionComponent");
+
+            if (!ensureAbstractImpl(AbstractSystemComponent.class, c))
+                return;
+
             encryptionComponent = (AbstractSystemComponent) c.newInstance();
             if (!(encryptionComponent instanceof EncryptionProvider)) {
                 Log.d(TAG,
@@ -355,6 +399,10 @@ public class SystemComponentLoader {
 
             final Class<?> c = pluginClassLoader
                     .loadClass("gov.raptortak.RaptorTakSystemComponent");
+
+            if (!ensureAbstractImpl(AbstractSystemComponent.class, c))
+                return;
+
             raptorApiComponent = (AbstractSystemComponent) c.newInstance();
             raptorApiComponent.setPluginContext(pluginContext);
             raptorApiComponent.setAppContext(context);

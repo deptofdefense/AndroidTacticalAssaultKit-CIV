@@ -1,7 +1,6 @@
 
 package com.atakmap.android.gridlines.graphics;
 
-import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Polyline;
 import com.atakmap.android.maps.graphics.GLPolyline;
 import com.atakmap.android.maps.graphics.GLSegmentFloatingLabel;
@@ -102,8 +101,7 @@ public class GLLatLngZoneOverlay extends GLZonesOverlay {
                     lbl.setTextColor(_red, _green, _blue, 1f);
                     lbl.setBackgroundColor(0f, 0f, 0f, 0.6f);
                     lbl.setRotateToAlign(false);
-                    lbl.setInsets(0f, 0f, 0f,
-                            MapView.getMapView().getActionBarHeight());
+                    lbl.setInsets(0f, 0f, 0f, 0f);
 
                     GeoPoint[] pts = line.getPoints();
                     for (int i = 0; i < pts.length; i++) {
@@ -277,8 +275,7 @@ public class GLLatLngZoneOverlay extends GLZonesOverlay {
                 lbl.setTextColor(_red, _green, _blue, 1f);
                 lbl.setBackgroundColor(0f, 0f, 0f, 0.6f);
                 lbl.setRotateToAlign(false);
-                lbl.setInsets(0f, 0f, 0f,
-                        MapView.getMapView().getActionBarHeight());
+                lbl.setInsets(0f, 0f, 0f, 0f);
 
                 GeoPoint[] pts = line.getPoints();
                 for (int i = 0; i < pts.length; i++) {
@@ -378,10 +375,9 @@ public class GLLatLngZoneOverlay extends GLZonesOverlay {
         if (ortho.scratch.pointD.z >= 1d)
             return false;
 
-        final float actionBarPad = MapView.getMapView().getActionBarHeight();
         final float l = ortho.currentScene.left;
         final float r = ortho.currentScene.right;
-        final float t = ortho.currentScene.top - actionBarPad;
+        final float t = ortho.currentScene.top;
         final float b = ortho.currentScene.bottom;
 
         // quickly filter out any segments that are contained within the viewport

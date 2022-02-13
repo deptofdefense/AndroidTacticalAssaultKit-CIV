@@ -124,7 +124,7 @@ public class RenderFactory {
         private final SurfaceHolder surfaceHolder;
         int dx, dy;
 
-        private VideoFrameConverter converter;
+        private final VideoFrameConverter converter;
         private NativeIntArray output;
         private int outputOffset;
         private int outputStride;

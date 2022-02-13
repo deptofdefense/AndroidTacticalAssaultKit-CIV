@@ -33,8 +33,7 @@ public class Dt2File {
             name = path.substring(parentSlash + 1, lastSlash);
             char ew = Character.toUpperCase(name.charAt(0));
             this.longitude = MathUtils.parseInt(name.substring(1), 0)
-                    * (ew == 'W' ? -1 : 1) + (ew == 'W' ? 1 : 0);
-
+                    * (ew == 'W' ? -1 : 1);
 
         } else {
             this.longitude = 0;

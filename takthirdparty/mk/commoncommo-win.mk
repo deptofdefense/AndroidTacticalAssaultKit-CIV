@@ -39,7 +39,7 @@ commoncommo_build:
 
 
 commoncommo_build_jni:
-	cd $(commoncommo_src)/jni && ant jar
+	cd $(commoncommo_src)/jni && ant $(commoncommo_ANT_FLAGS) jar
 	cd $(commoncommo_src)/core/impl && make buildstampgen &&        \
 	    touch versionimpl.cpp
 	cd $(commoncommo_src)/win32/commoncommojni &&                   \

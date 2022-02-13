@@ -37,20 +37,20 @@ public class DynamicRangeAndBearingTool extends Tool implements
     public static final String TAG = "DynamicRangeAndBearingTool";
     public static final String TOOL_NAME = "dynamic_range_and_bearing_tool";
 
-    private PointMapItem _pt1;
-    private PointMapItem _pt2;
+    protected PointMapItem _pt1;
+    protected PointMapItem _pt2;
     private RangeAndBearingMapItem _rab;
     private final String _rabUUID = UUID.randomUUID().toString();
 
     protected final Context _context;
-    private final MapGroup _rabGroup;
+    protected final MapGroup _rabGroup;
 
     private boolean _complete;
     private ArrayList<ImageButton> _buttons;
 
     private static DynamicRangeAndBearingTool _instance;
 
-    private int pops = 0;
+    protected int pops = 0;
 
     synchronized public static DynamicRangeAndBearingTool getInstance(
             MapView mapView, ImageButton button) {
@@ -214,7 +214,7 @@ public class DynamicRangeAndBearingTool extends Tool implements
         }
     }
 
-    private synchronized void makeRabWidget() {
+    protected synchronized void makeRabWidget() {
         if (_pt1 != null && _pt2 != null) {
             _rab = RangeAndBearingMapItem
                     .createOrUpdateRABLine(_rabUUID, _pt1, _pt2, false);
@@ -303,7 +303,7 @@ public class DynamicRangeAndBearingTool extends Tool implements
                     _pt2, _dragListener);
     }
 
-    private final MapEventDispatcher.OnMapEventListener _dragListener = new MapEventDispatcher.OnMapEventListener() {
+    protected final MapEventDispatcher.OnMapEventListener _dragListener = new MapEventDispatcher.OnMapEventListener() {
         @Override
         public void onMapItemMapEvent(MapItem item, MapEvent event) {
             if (event.getType().equals(MapEvent.ITEM_DRAG_STARTED))
@@ -311,7 +311,7 @@ public class DynamicRangeAndBearingTool extends Tool implements
         }
     };
 
-    private final BroadcastReceiver _backListener = new BroadcastReceiver() {
+    protected final BroadcastReceiver _backListener = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             clearListeners();

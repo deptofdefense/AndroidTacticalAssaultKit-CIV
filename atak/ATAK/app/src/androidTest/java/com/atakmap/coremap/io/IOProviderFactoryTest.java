@@ -1,8 +1,6 @@
 
 package com.atakmap.coremap.io;
 
-import androidx.test.runner.AndroidJUnit4;
-
 import com.atakmap.android.androidtest.ATAKInstrumentedTest;
 import com.atakmap.android.androidtest.util.FileUtils;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -35,6 +33,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+
 /**
  * Test class for IOProviderFactory
  */
@@ -52,7 +52,8 @@ public class IOProviderFactoryTest extends ATAKInstrumentedTest {
                 // very simple implementation that just creates the file in the /sdcard/encrypted
                 // directory.
                 File nf = new File(manglePrefix + f);
-                if (!nf.getParentFile().exists() && ensure)
+                if (nf.getParentFile() != null && !nf.getParentFile().exists()
+                        && ensure)
                     nf.getParentFile().mkdirs();
                 return nf;
             }

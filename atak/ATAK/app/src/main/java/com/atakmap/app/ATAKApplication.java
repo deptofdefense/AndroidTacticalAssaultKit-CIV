@@ -5,6 +5,8 @@ import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.comms.CommsMapComponent;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
@@ -129,7 +131,7 @@ public class ATAKApplication extends Application {
         }
 
         @Override
-        public void uncaughtException(Thread t, Throwable e) {
+        public void uncaughtException(@NonNull Thread t, @NonNull Throwable e) {
             //Log.e(TAG, "uncaughtException", e);
 
             // Stop commo first to prevent native callbacks once JVM starts
@@ -163,7 +165,7 @@ public class ATAKApplication extends Application {
             ActivityLifecycleCallbacks {
 
         @Override
-        public void onActivityCreated(Activity activity,
+        public void onActivityCreated(@NonNull Activity activity,
                 Bundle savedInstanceState) {
         }
 
@@ -182,24 +184,24 @@ public class ATAKApplication extends Application {
         }
 
         @Override
-        public void onActivityPaused(Activity activity) {
+        public void onActivityPaused(@NonNull Activity activity) {
         }
 
         @Override
-        public void onActivityResumed(Activity activity) {
+        public void onActivityResumed(@NonNull Activity activity) {
         }
 
         @Override
-        public void onActivitySaveInstanceState(Activity activity,
-                Bundle savedInstanceState) {
+        public void onActivitySaveInstanceState(@NonNull Activity activity,
+                @NonNull Bundle savedInstanceState) {
         }
 
         @Override
-        public void onActivityStarted(Activity activity) {
+        public void onActivityStarted(@NonNull Activity activity) {
         }
 
         @Override
-        public void onActivityStopped(Activity activity) {
+        public void onActivityStopped(@NonNull Activity activity) {
         }
     }
 

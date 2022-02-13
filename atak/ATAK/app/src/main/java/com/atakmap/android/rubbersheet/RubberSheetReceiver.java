@@ -32,6 +32,7 @@ import com.atakmap.android.targetbubble.TargetBubbleReceiver;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.widgets.SeekBarControl;
+import com.atakmap.android.widgets.SeekBarControlCompat;
 import com.atakmap.app.R;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -143,7 +144,7 @@ public class RubberSheetReceiver extends BroadcastReceiver implements
                     else
                         SeekBarControl.dismiss();
                 }
-                SeekBarControl.show(new SeekBarControl.Subject() {
+                SeekBarControlCompat.show(new SeekBarControl.Subject() {
                     @Override
                     public int getValue() {
                         return (int) ((sheet.getAlpha() / 255f) * 100);

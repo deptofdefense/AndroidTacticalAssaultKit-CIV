@@ -14,6 +14,11 @@ import com.atakmap.android.widgets.MapWidget;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.opengl.GLES20FixedPipeline;
 
+import gov.tak.api.annotation.DeprecatedApi;
+
+/** @deprecated use {@link gov.tak.platform.widgets.opengl.GLArcWidget} */
+@Deprecated
+@DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
 public class GLArcWidget extends GLShapeWidget implements
         OnRadiusChangedListener,
         OnCentralAngleChangedListener,

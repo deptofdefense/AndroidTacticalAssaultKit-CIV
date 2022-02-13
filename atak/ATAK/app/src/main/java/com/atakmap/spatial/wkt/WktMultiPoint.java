@@ -9,7 +9,7 @@ import java.util.List;
 
 public class WktMultiPoint extends WktGeometry {
 
-    List<WktPoint> points;
+    final List<WktPoint> points;
 
     protected WktMultiPoint(List<WktPoint> points) {
         this.points = points;

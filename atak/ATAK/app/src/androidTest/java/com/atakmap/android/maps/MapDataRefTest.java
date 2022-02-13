@@ -13,6 +13,8 @@ public class MapDataRefTest {
                 "asset://");
         final MapDataRef mapDataRefThree = MapDataRef.parseUri(threeSlashUri);
         final MapDataRef mapDataRefTwo = MapDataRef.parseUri(twoSlashUri);
+        Assert.assertNotNull(mapDataRefTwo);
+        Assert.assertNotNull(mapDataRefThree);
         Assert.assertEquals(mapDataRefTwo.toUri(), mapDataRefThree.toUri());
         Assert.assertEquals(mapDataRefTwo.toUri(), twoSlashUri);
     }
@@ -24,6 +26,8 @@ public class MapDataRefTest {
                 "base64://");
         final MapDataRef mapDataRefThree = MapDataRef.parseUri(threeSlashUri);
         final MapDataRef mapDataRefTwo = MapDataRef.parseUri(twoSlashUri);
+        Assert.assertNotNull(mapDataRefTwo);
+        Assert.assertNotNull(mapDataRefThree);
         Assert.assertEquals(mapDataRefTwo.toUri(), mapDataRefThree.toUri());
         Assert.assertEquals(mapDataRefTwo.toUri(), twoSlashUri);
     }

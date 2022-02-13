@@ -8,7 +8,7 @@ include mk/expat-common.mk
 
 expat_win32_dir=$(OUTDIR)/$(expat_srcdir)/win32/bin/$(BUILD_TYPE)
 expat_src_lib=$(expat_win32_dir)/$(expat_libfile)
-expat_windows_patch=$(DISTFILESDIR)/expat-pgsc-winproj.patch
+expat_windows_patch=$(DISTFILESDIR)/expat-pgsc-winproj-$(VS_VER_MSB).patch
 
 
 expat_subdir=lib
@@ -20,9 +20,8 @@ expat_common_flags="/t:build"                                                 \
 
 $(OUTDIR)/$(expat_srcdir)/$(expat_subdir)/$(expat_projfile_cur):              \
 		$(OUTDIR)/$(expat_srcdir)/$(expat_subdir)/$(expat_projfile_old)
-	cd $(OUTDIR)/$(expat_srcdir)/$(expat_subdir) &&                       \
-	    $(VS_SETUP) devenv $(expat_projfile_old) /Upgrade
-	patch -p1 -d $(OUTDIR)/$(expat_srcdir) < $(expat_windows_patch)
+	patch --binary -p1 -d $(OUTDIR)/$(expat_srcdir) < $(expat_windows_patch) || \
+	    (rm -f $(OUTDIR)/$(expat_srcdir)/$(expat_subdir)/$(expat_projfile_cur) ; exit 1 )
 
 
 # This is phony because we always want to be invoking expat make to be sure

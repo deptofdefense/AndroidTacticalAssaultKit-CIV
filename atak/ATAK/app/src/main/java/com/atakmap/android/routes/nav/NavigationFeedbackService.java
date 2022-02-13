@@ -146,7 +146,6 @@ public class NavigationFeedbackService
             navStateManager.setDistanceToVDO(remainingDistance);
         }
 
-        double remainingEta = Double.NaN;
         Marker selfMarker = navigator.getMapView().getSelfMarker();
 
         try {

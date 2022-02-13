@@ -10,8 +10,29 @@
 include(':annotation')
 project(':annotation').projectDir = new File(settingsDir, 'annotation')
 
+include(':engine')
+project(':engine').projectDir = new File(settingsDir, 'engine')
+
 include(':port')
 project(':port').projectDir = new File(settingsDir, 'port')
 
+include(':shared')
+project(':shared').projectDir = new File(settingsDir, 'shared')
+
 include(':aar')
 project(':aar').projectDir = new File(settingsDir, 'aarbundle')
+
+include(':all')
+project(':all').projectDir = new File(settingsDir, 'all')
+
+// projects containing code that is not publicly releasable. these projects are not required to
+// build the core kernel.
+
+if(new File(settingsDir, 'controlled').exists()) {
+    include(':controlled')
+    project(':controlled').projectDir = new File(settingsDir, 'controlled')
+}
+if(new File(settingsDir, 'controlledaarbundle')) {
+    include(':controlledaar')
+    project(':controlledaar').projectDir = new File(settingsDir, 'controlledaarbundle')
+}

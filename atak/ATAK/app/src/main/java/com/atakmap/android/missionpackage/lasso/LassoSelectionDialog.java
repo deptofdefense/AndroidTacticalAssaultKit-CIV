@@ -14,6 +14,7 @@ import android.view.ViewGroup;
 import android.widget.ExpandableListAdapter;
 import android.widget.ExpandableListView;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -24,6 +25,7 @@ import com.atakmap.android.data.URIFilter;
 import com.atakmap.android.data.URIHelper;
 import com.atakmap.android.data.URIQueryParameters;
 import com.atakmap.android.drawing.mapItems.DrawingShape;
+import com.atakmap.android.gui.drawable.CheckBoxDrawable;
 import com.atakmap.android.hierarchy.filters.FOVFilter;
 import com.atakmap.android.maps.ILocation;
 import com.atakmap.android.maps.MapItem;
@@ -42,11 +44,14 @@ import com.atakmap.coremap.maps.coords.Vector2D;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Dialog for selecting which content to include from a lasso selection
@@ -73,7 +78,7 @@ public class LassoSelectionDialog implements DialogInterface.OnDismissListener {
     private DrawingShape _lasso;
     private URIFilter _filter;
     private Callback _callback;
-    private ImageView _selectAllIcon;
+    private CheckBoxDrawable _selectAllIcon;
     private View _selectAllBtn;
     private ExpandableListView _list;
     private LassoSelectionAdapter _adapter;
@@ -136,7 +141,8 @@ public class LassoSelectionDialog implements DialogInterface.OnDismissListener {
                 R.layout.lasso_selection_dialog, _mapView, false);
 
         _selectAllBtn = v.findViewById(R.id.select_all);
-        _selectAllIcon = v.findViewById(R.id.select_all_icon);
+        ImageView selectAll = v.findViewById(R.id.select_all_icon);
+        selectAll.setImageDrawable(_selectAllIcon = new CheckBoxDrawable());
 
         _list = v.findViewById(R.id.list);
         _list.setAdapter(_adapter = new LassoSelectionAdapter(contentMap));
@@ -178,6 +184,7 @@ public class LassoSelectionDialog implements DialogInterface.OnDismissListener {
         List<ContentEntry> markers = new ArrayList<>();
         List<ContentEntry> shapes = new ArrayList<>();
         List<ContentEntry> vehicles = new ArrayList<>();
+        List<ContentEntry> navigation = new ArrayList<>();
         Collection<MapItem> roughItems = _mapView.getRootGroup()
                 .deepFindItems(bounds, null);
 
@@ -221,7 +228,10 @@ public class LassoSelectionDialog implements DialogInterface.OnDismissListener {
             if (!acceptContent(e))
                 continue;
 
-            if (mi instanceof PointMapItem)
+            // Filter into groups
+            if (NAV_TYPES.contains(type))
+                navigation.add(e);
+            else if (mi instanceof PointMapItem)
                 markers.add(e);
             else if (mi instanceof VehicleModel)
                 vehicles.add(e);
@@ -232,6 +242,7 @@ public class LassoSelectionDialog implements DialogInterface.OnDismissListener {
         ret.put(_context.getString(R.string.civ_s2525C), markers);
         ret.put(_context.getString(R.string.vehicles), vehicles);
         ret.put(_context.getString(R.string.shapes), shapes);
+        ret.put(_context.getString(R.string.navigation), navigation);
 
         // Gather URI-based content
         URIQueryParameters params = new URIQueryParameters();
@@ -386,10 +397,20 @@ public class LassoSelectionDialog implements DialogInterface.OnDismissListener {
         }
     }
 
+    private static final Set<String> NAV_TYPES = new HashSet<>(Arrays.asList(
+            "b-m-r", "b-m-p-w-GOTO", "b-m-p-i", "b-m-t-h"));
+
     private static final Comparator<String> SORT_NAME = new Comparator<String>() {
         @Override
         public int compare(String s1, String s2) {
-            return s1.compareTo(s2);
+            return s1.compareToIgnoreCase(s2);
+        }
+    };
+
+    private static final Comparator<ContentEntry> SORT_CONTENT = new Comparator<ContentEntry>() {
+        @Override
+        public int compare(ContentEntry o1, ContentEntry o2) {
+            return o1.title.compareToIgnoreCase(o2.title);
         }
     };
 
@@ -397,6 +418,7 @@ public class LassoSelectionDialog implements DialogInterface.OnDismissListener {
 
         View root;
         ImageView checkbox, icon;
+        CheckBoxDrawable checkboxIcon;
         TextView name, size;
         ContentEntry content;
         GroupEntry group;
@@ -409,13 +431,11 @@ public class LassoSelectionDialog implements DialogInterface.OnDismissListener {
             this.name = this.root.findViewById(R.id.name);
             this.size = this.root.findViewById(R.id.size);
             this.checkbox = this.root.findViewById(R.id.checkbox);
+            this.checkbox.setImageDrawable(
+                    checkboxIcon = new CheckBoxDrawable());
             this.checkbox.setTag(this);
         }
     }
-
-    private static final int NONE_SELECTED = -1,
-            SOME_SELECTED = 0,
-            ALL_SELECTED = 1;
 
     private class LassoSelectionAdapter implements ExpandableListAdapter,
             View.OnClickListener, ExpandableListView.OnChildClickListener {
@@ -428,8 +448,10 @@ public class LassoSelectionDialog implements DialogInterface.OnDismissListener {
             Collections.sort(names, SORT_NAME);
             for (String name : names) {
                 List<ContentEntry> entries = groups.get(name);
-                if (!FileSystemUtils.isEmpty(entries))
+                if (!FileSystemUtils.isEmpty(entries)) {
+                    Collections.sort(entries, SORT_CONTENT);
                     _groups.add(new GroupEntry(name, entries));
+                }
             }
             updateSelectAll();
             _selectAllBtn.setOnClickListener(this);
@@ -451,14 +473,8 @@ public class LassoSelectionDialog implements DialogInterface.OnDismissListener {
          * Update the state of the "Select All" button
          */
         void updateSelectAll() {
-            if (_selectAllIcon == null)
-                return;
-            int state = getSelectAllState();
-            _selectAllIcon.setImageResource(state == ALL_SELECTED
-                    ? R.drawable.btn_check_on
-                    : (state == SOME_SELECTED
-                            ? R.drawable.btn_check_semi
-                            : R.drawable.btn_check_off));
+            if (_selectAllIcon != null)
+                _selectAllIcon.setChecked(getSelectAllState());
         }
 
         /**
@@ -474,10 +490,10 @@ public class LassoSelectionDialog implements DialogInterface.OnDismissListener {
                 if (g.selected > 0)
                     someSelected = true;
             }
-            return allSelected ? ALL_SELECTED
+            return allSelected ? CheckBoxDrawable.CHECKED
                     : (someSelected
-                            ? SOME_SELECTED
-                            : NONE_SELECTED);
+                            ? CheckBoxDrawable.SEMI_CHECKED
+                            : CheckBoxDrawable.UNCHECKED);
         }
 
         @Override
@@ -535,6 +551,7 @@ public class LassoSelectionDialog implements DialogInterface.OnDismissListener {
             List<ContentEntry> contents = group.contents;
             ContentEntry c = contents.get(0);
 
+            setStartMargin(h.checkbox, R.dimen.list_item_title_icon_size);
             h.name.setText(group.name);
             h.icon.setImageDrawable(c.icon);
             h.icon.setColorFilter(c.color, PorterDuff.Mode.MULTIPLY);
@@ -542,11 +559,11 @@ public class LassoSelectionDialog implements DialogInterface.OnDismissListener {
             h.checkbox.setOnClickListener(this);
             h.group = group;
 
-            h.checkbox.setImageResource(group.allSelected()
-                    ? R.drawable.btn_check_on
+            h.checkboxIcon.setChecked(group.allSelected()
+                    ? CheckBoxDrawable.CHECKED
                     : (group.selected > 0
-                            ? R.drawable.btn_check_semi
-                            : R.drawable.btn_check_off));
+                            ? CheckBoxDrawable.SEMI_CHECKED
+                            : CheckBoxDrawable.UNCHECKED));
 
             return h.root;
         }
@@ -561,12 +578,12 @@ public class LassoSelectionDialog implements DialogInterface.OnDismissListener {
 
             ContentEntry c = getChild(groupPos, childPos);
 
+            setStartMargin(h.checkbox, R.dimen.list_item_action_icon_size);
             h.name.setText(c.title);
             h.icon.setImageDrawable(c.icon);
             h.icon.setColorFilter(c.color, PorterDuff.Mode.MULTIPLY);
             h.size.setText(MathUtils.GetLengthString(c.size));
-            h.checkbox.setImageResource(c.selected ? R.drawable.btn_check_on
-                    : R.drawable.btn_check_off);
+            h.checkboxIcon.setChecked(c.selected);
             h.checkbox.setOnClickListener(this);
             h.content = c;
 
@@ -610,7 +627,7 @@ public class LassoSelectionDialog implements DialogInterface.OnDismissListener {
         public void onClick(View v) {
             if (v == _selectAllBtn) {
                 // Select all button
-                boolean none = getSelectAllState() == NONE_SELECTED;
+                boolean none = getSelectAllState() == CheckBoxDrawable.UNCHECKED;
                 for (GroupEntry g : _groups)
                     g.select(none);
             } else {
@@ -638,6 +655,19 @@ public class LassoSelectionDialog implements DialogInterface.OnDismissListener {
         private void refreshView() {
             updateSelectAll();
             _list.invalidateViews();
+        }
+
+        /**
+         * Set the start margin usig a dimension resource
+         * @param v View
+         * @param dimenId Dimension resource ID
+         */
+        private void setStartMargin(View v, int dimenId) {
+            LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) v
+                    .getLayoutParams();
+            lp.setMarginStart(_context.getResources()
+                    .getDimensionPixelSize(dimenId));
+            v.setLayoutParams(lp);
         }
     }
 }

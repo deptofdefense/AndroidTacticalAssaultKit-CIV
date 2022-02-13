@@ -46,6 +46,8 @@ import com.atakmap.coremap.maps.coords.NorthReference;
 import java.text.DecimalFormat;
 
 import com.atakmap.coremap.locale.LocaleUtil;
+import com.atakmap.map.CameraController;
+
 import java.util.UUID;
 
 public class PolarCoordinateReceiver extends BroadcastReceiver implements
@@ -664,7 +666,15 @@ public class PolarCoordinateReceiver extends BroadcastReceiver implements
                         start, end, true);
         rb.setBearingUnits(getBearingUnit());
         rb.setNorthReference(getNorthReference());
-        rb.setRangeUnits(getRangeUnit());
+        try {
+            rb.setRangeUnits(getRangeUnit());
+        } catch (IllegalStateException ise) {
+            Log.e(TAG,
+                    "error setting the range units for a range and bearing arrow: "
+                            + rb.getUID(),
+                    ise);
+        }
+
         if (getGroup() != null) {
             getGroup().addItem(rb);
         }
@@ -793,7 +803,9 @@ public class PolarCoordinateReceiver extends BroadcastReceiver implements
         _prefs.edit().putInt("coord.polar.zoom.method", zoomMethod).apply();
         if (zoomMethod <= 0) {
             //slew to
-            _mapView.getMapController().panTo(point.get(), true);
+            CameraController.Programmatic.panTo(
+                    _mapView.getRenderer3(),
+                    point.get(), true);
         } else {
             //auto zoom
             ATAKUtilities.scaleToFit(_mapView, new GeoPoint[] {

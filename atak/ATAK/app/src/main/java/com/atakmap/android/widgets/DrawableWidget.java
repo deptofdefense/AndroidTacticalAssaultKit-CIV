@@ -10,9 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-/**
- * Widget used for rendering a {@link Drawable}
- */
 public class DrawableWidget extends MapWidget2 {
 
     public interface OnChangedListener {
@@ -60,26 +57,26 @@ public class DrawableWidget extends MapWidget2 {
         return _colorFilter;
     }
 
-    public void addChangeListener(OnChangedListener l) {
+    public void addChangeListener(DrawableWidget.OnChangedListener l) {
         synchronized (_changeListeners) {
             _changeListeners.add(l);
         }
     }
 
-    public void removeChangeListener(OnChangedListener l) {
+    public final void removeChangeListener(DrawableWidget.OnChangedListener l) {
         synchronized (_changeListeners) {
             _changeListeners.remove(l);
         }
     }
 
-    private List<OnChangedListener> getChangeListeners() {
+    private List<DrawableWidget.OnChangedListener> getChangeListeners() {
         synchronized (_changeListeners) {
             return new ArrayList<>(_changeListeners);
         }
     }
 
-    protected void fireChangeListeners() {
-        for (OnChangedListener l : getChangeListeners())
+    public void fireChangeListeners() {
+        for (DrawableWidget.OnChangedListener l : getChangeListeners())
             l.onDrawableChanged(this);
     }
 }

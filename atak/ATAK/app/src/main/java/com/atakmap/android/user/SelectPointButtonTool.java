@@ -82,6 +82,38 @@ public class SelectPointButtonTool extends SpecialPointButtonTool
         return _instance;
     }
 
+    protected SelectPointButtonTool(MapView mapView, ImageButton button) {
+        super(mapView, button, IDENTIFIER);
+        ToolManagerBroadcastReceiver.getInstance().registerTool(IDENTIFIER,
+                this);
+        _iconEnabled = _iconOff = R.drawable.nav_redx;
+        _iconDisabled = R.drawable.nav_redx_locked;
+
+        _rootLayoutWidget = mapView.getRootGroup().findMapGroup("REDX");
+        if (_rootLayoutWidget == null) {
+            _rootLayoutWidget = mapView.getRootGroup().addGroup("REDX");
+        }
+
+        _prefs = PreferenceManager
+                .getDefaultSharedPreferences(mapView.getContext());
+        _prefs.registerOnSharedPreferenceChangeListener(this);
+
+        DocumentedIntentFilter intentFilter = new DocumentedIntentFilter();
+        intentFilter.addAction(REDX_LB);
+        intentFilter.addAction(REDX_FAH);
+        intentFilter.addAction(REDX_SELF);
+        intentFilter.addAction(SPI_SELF);
+        intentFilter.addAction(SPI_FAH);
+        intentFilter.addAction(SPI_LB);
+        AtakBroadcast.getInstance().registerReceiver(br, intentFilter);
+
+    }
+
+    @Override
+    protected String getNavReference() {
+        return "redx.xml";
+    }
+
     protected FahArrowWidget.Item fetchFahArrowWidget(PointMapItem mi) {
         boolean newFah = false;
         FahArrowWidget.Item item;
@@ -158,34 +190,6 @@ public class SelectPointButtonTool extends SpecialPointButtonTool
             _rootLayoutWidget.removeItem(val);
     }
 
-    protected SelectPointButtonTool(MapView mapView, ImageButton button) {
-        super(mapView, button, IDENTIFIER);
-        ToolManagerBroadcastReceiver.getInstance().registerTool(IDENTIFIER,
-                this);
-        _iconEnabled = R.drawable.ic_select_point_enabled;
-        _iconDisabled = R.drawable.ic_select_point_disabled;
-        _iconOff = R.drawable.ic_select_point_off;
-
-        _rootLayoutWidget = mapView.getRootGroup().findMapGroup("REDX");
-        if (_rootLayoutWidget == null) {
-            _rootLayoutWidget = mapView.getRootGroup().addGroup("REDX");
-        }
-
-        _prefs = PreferenceManager
-                .getDefaultSharedPreferences(mapView.getContext());
-        _prefs.registerOnSharedPreferenceChangeListener(this);
-
-        DocumentedIntentFilter intentFilter = new DocumentedIntentFilter();
-        intentFilter.addAction(REDX_LB);
-        intentFilter.addAction(REDX_FAH);
-        intentFilter.addAction(REDX_SELF);
-        intentFilter.addAction(SPI_SELF);
-        intentFilter.addAction(SPI_FAH);
-        intentFilter.addAction(SPI_LB);
-        AtakBroadcast.getInstance().registerReceiver(br, intentFilter);
-
-    }
-
     @Override
     public boolean onToolBegin(Bundle bundle) {
         createMarker("icons/select_point_icon.png", "Red X",
@@ -203,7 +207,7 @@ public class SelectPointButtonTool extends SpecialPointButtonTool
                                 self, _marker, false);
                 rb.setTitle("Self to Red X");
             }
-            rb.setMetaBoolean("nonremovable", true);
+            rb.setMetaBoolean("removable", false);
             _mapView.getRootGroup().addItem(rb);
 
             _marker.addOnVisibleChangedListener(
@@ -342,7 +346,7 @@ public class SelectPointButtonTool extends SpecialPointButtonTool
                                     self, mi, false);
                     String title = mi.getMetaString("title", "");
                     rb.setTitle("Self to " + title);
-                    rb.setMetaBoolean("nonremovable", true);
+                    rb.setMetaBoolean("removable", false);
                     _mapView.getRootGroup().addItem(rb);
                     rb.setVisible(true);
                     mi.setMetaString("self_to_spi", rbUID);

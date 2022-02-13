@@ -34,6 +34,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.missionpackage.export.MissionPackageExportWrapper;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.layer.feature.Adapters;
 import com.atakmap.map.layer.feature.DataStoreException;
@@ -59,6 +60,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem2
         implements View.OnClickListener, View.OnLongClickListener,
@@ -86,8 +88,8 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem2
     private final FeatureDataStore2 spatialDb;
 
     private final String title;
+    private final String uid;
     private Sort order;
-    private final BaseAdapter listener;
     private int featureChildCount;
     private final String contentType;
     private final String mimeType;
@@ -221,6 +223,7 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem2
         this.spatialDb = spatialDb;
         this.entry = entry;
         this.title = getTitle(title);
+        this.uid = getUID(entry);
         this.path = path;
         this.order = order;
         this.listener = listener;
@@ -275,7 +278,7 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem2
 
     @Override
     public String getUID() {
-        return String.valueOf(this.entry.fsid);
+        return this.uid;
     }
 
     @Override
@@ -470,7 +473,7 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem2
         if (h == null)
             return null;
 
-        URIContentHandler fh = URIContentManager.getInstance().getHandler(file);
+        URIContentHandler fh = getHandler(file);
 
         h.pan.setVisibility(fh != null && fh.isActionSupported(GoTo.class)
                 ? View.VISIBLE
@@ -560,8 +563,7 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem2
 
         int id = v.getId();
 
-        URIContentHandler handler = URIContentManager.getInstance()
-                .getHandler(file);
+        URIContentHandler handler = getHandler(file);
 
         // Pan to file
         if (id == R.id.panButton && handler != null
@@ -627,6 +629,13 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem2
 
         return ExportFileMarshal.sendFile(this.context, this.contentType,
                 fileToSend, true, null);
+    }
+
+    private URIContentHandler getHandler(File groupFile) {
+        String cType = contentType;
+        if (cType != null)
+            cType = cType.toUpperCase(LocaleUtil.getCurrent());
+        return URIContentManager.getInstance().getHandler(groupFile, cType);
     }
 
     private File getGroupFile() {
@@ -903,5 +912,25 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem2
             return groupName;
         else
             return groupName.substring(pathIdx);
+    }
+
+    /**
+     * Generate a UUID for a feature set path entry using the folder name
+     * and feature set ID (or child IDs)
+     * @param entry Path entry
+     * @return UUID string
+     */
+    private static String getUID(FeatureDataStorePathUtils.PathEntry entry) {
+        StringBuilder sb = new StringBuilder(entry.folder);
+        if (entry.fsid != FeatureDataStore.FEATURESET_ID_NONE)
+            sb.append("[").append(entry.fsid).append("]");
+        else if (!entry.childFsids.isEmpty()) {
+            sb.append("[");
+            for (long fsid : entry.childFsids)
+                sb.append(fsid).append(",");
+            sb.append("]");
+        }
+        return UUID.nameUUIDFromBytes(sb.toString().getBytes(
+                FileSystemUtils.UTF8_CHARSET)).toString();
     }
 }

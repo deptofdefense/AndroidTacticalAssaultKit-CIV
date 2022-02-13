@@ -1,9 +1,9 @@
 
 package com.atakmap.android.user;
 
-import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
-import android.graphics.Point;
+import android.graphics.PointF;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageButton;
@@ -16,8 +16,12 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.PointMapItem;
+import com.atakmap.android.navigation.NavButtonManager;
+import com.atakmap.android.navigation.models.NavButtonModel;
+import com.atakmap.android.navigation.views.NavView;
 import com.atakmap.android.toolbar.Tool;
 import com.atakmap.android.tools.menu.ActionMenuData;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -26,9 +30,6 @@ import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
-
-import static androidx.core.app.ActivityCompat.invalidateOptionsMenu;
-import static android.view.View.OnLongClickListener;
 
 /**
  * This class is the base for the buttons that have more than an on and off state.  Examples
@@ -49,16 +50,17 @@ public abstract class SpecialPointButtonTool extends Tool {
         ENABLED
     }
 
+    private final Context _context;
     private States _currentState = States.OFF;
 
     protected Marker _marker;
     int _iconEnabled, _iconDisabled, _iconOff;
     private List<ImageButton> _buttons;
-    private ActionMenuData _amd = null; //For action bar items
 
     protected SpecialPointButtonTool(final MapView mapView,
             final ImageButton button, final String identifier) {
         super(mapView, identifier);
+        _context = mapView.getContext();
         if (_buttons == null)
             _buttons = new ArrayList<>();
         if (button != null)
@@ -85,6 +87,10 @@ public abstract class SpecialPointButtonTool extends Tool {
                 MapEvent.ITEM_CLICK, _mapClickListener);
 
         setCurrentState(States.ENABLED);
+
+        if (_marker != null)
+            _marker.setMovable(true);
+
         setIcons();
         return super.onToolBegin(bundle);
     }
@@ -101,6 +107,8 @@ public abstract class SpecialPointButtonTool extends Tool {
             case DISABLED:
             case ENABLED:
                 setCurrentState(States.DISABLED);
+                if (_marker != null)
+                    _marker.setMovable(false);
                 setIcons();
                 break;
         }
@@ -123,7 +131,6 @@ public abstract class SpecialPointButtonTool extends Tool {
             _buttons.clear();
         }
         _buttons = null;
-        _amd = null;
         _buttonClickListener = null;
         _buttonLongClickListener = null;
     }
@@ -145,13 +152,23 @@ public abstract class SpecialPointButtonTool extends Tool {
      * @return  Result of setting.  True indicates success and the ActionMenuData item has
      *          been set.  False indicates that the item was already set and has not been
      *          saved.
+     * @deprecated No longer used - see {@link NavView}
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.5", forRemoval = true, removeAt = "4.8")
     public boolean setActionMenuData(ActionMenuData amd) {
-        _amd = amd;
         return true;
     }
 
-    protected OnLongClickListener _buttonLongClickListener = new OnLongClickListener() {
+    /**
+     * Get the {@link NavButtonModel} reference for this tool
+     * @return Nav button XML reference or null if N/A
+     */
+    protected String getNavReference() {
+        return null;
+    }
+
+    protected View.OnLongClickListener _buttonLongClickListener = new View.OnLongClickListener() {
         @Override
         public boolean onLongClick(View v) {
             exectuteLongClick();
@@ -190,17 +207,14 @@ public abstract class SpecialPointButtonTool extends Tool {
      */
     private void setIcons() {
         int icon = _iconOff;
-        boolean enabled = false;
         boolean selected = false;
         switch (_currentState) {
             case DISABLED:
                 icon = _iconDisabled;
-                enabled = false;
                 selected = true;
                 break;
             case ENABLED:
                 icon = _iconEnabled;
-                enabled = true;
                 selected = true;
                 break;
             default:
@@ -210,10 +224,13 @@ public abstract class SpecialPointButtonTool extends Tool {
             for (ImageButton b : _buttons)
                 b.setImageResource(icon);
         }
-        if (_amd != null) {
-            _amd.setEnabled(enabled);
-            _amd.setSelected(selected);
-            invalidateOptionsMenu((Activity) _mapView.getContext()); //Invalidate for change to show
+        String ref = getNavReference();
+        if (ref != null) {
+            NavButtonModel mdl = NavButtonManager.getInstance()
+                    .getModelByReference(ref);
+            mdl.setSelected(selected);
+            mdl.setSelectedImage(_context.getDrawable(icon));
+            NavButtonManager.getInstance().notifyModelChanged(mdl);
         }
     }
 
@@ -297,7 +314,7 @@ public abstract class SpecialPointButtonTool extends Tool {
             _marker.setMetaString("entry", "user");
             _marker.setMetaBoolean("ignoreOffscreen", false);
             _marker.setMetaBoolean("addToObjList", true);
-            _marker.setMetaBoolean("preciseMove", true);
+            _marker.setMovable(true);
             _marker.setMetaString("menu", menu);
             _marker.setMetaString("deleteAction", deleteAction);
             _marker.setMetaBoolean("removable", false);
@@ -380,7 +397,7 @@ public abstract class SpecialPointButtonTool extends Tool {
                 }
             }
 
-            Point pt = event.getPoint();
+            PointF pt = event.getPointF();
 
             final GeoPointMetaData gp;
 

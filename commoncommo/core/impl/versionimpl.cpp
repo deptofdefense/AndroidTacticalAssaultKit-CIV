@@ -16,3 +16,20 @@ const char *atakmap::commoncommo::impl::getVersionString()
            CV_STR(COMMO_PATCH) "+"
            COMMO_BUILD_STAMP;
 }
+
+namespace atakmap {
+namespace commoncommo {
+namespace impl {
+
+// Version id string that is more unique for symbolic identification
+// of a built binary.
+const char *versionIdString = "CommoVersionId-"
+           CV_STR(COMMO_MAJOR) "."
+           CV_STR(COMMO_MINOR) "."
+           CV_STR(COMMO_PATCH) "+"
+           COMMO_BUILD_STAMP;
+
+}
+}
+}
+

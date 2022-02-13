@@ -144,7 +144,14 @@ public class RangeAndBearingReceiver extends BroadcastReceiver {
                             .getRABLine(id);
                     int units = intent.getIntExtra("units", -1);
                     if (rb != null && units != -1) {
-                        rb.setRangeUnits(units);
+                        try {
+                            rb.setRangeUnits(units);
+                        } catch (IllegalStateException ise) {
+                            Log.e(TAG,
+                                    "error setting the range units for a range and bearing arrow: "
+                                            + rb.getUID(),
+                                    ise);
+                        }
                     }
                 }
                 break;

@@ -1,4 +1,4 @@
-<PersistedActionMenu baseline="true" hideable="false" iconPath="ic_menu_enterlocation"  title="actionbar_pointdropper">
+<PersistedActionMenu baseline="true" hideable="false" iconPath="nav_point_dropper" title="actionbar_pointdropper">
    <ClickData actionType="click">
       <broadcast>
          <action>com.atakmap.android.user.ENTER_LOCATION_DROP_DOWN</action>

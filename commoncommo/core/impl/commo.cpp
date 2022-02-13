@@ -763,8 +763,8 @@ StreamingNetInterface* Commo::addStreamingInterface(
 
 CommoResult Commo::removeStreamingInterface(StreamingNetInterface *iface)
 {
-    std::string ep = iface->remoteEndpointId;
-    CommoResult rc = impl->streamMgmt->removeStreamingInterface(iface);
+    std::string ep;
+    CommoResult rc = impl->streamMgmt->removeStreamingInterface(&ep, iface);
     if (rc == COMMO_SUCCESS)
         impl->contactMgmt->removeStream(ep);
     return rc;

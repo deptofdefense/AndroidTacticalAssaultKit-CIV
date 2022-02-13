@@ -150,7 +150,6 @@
 -keep class com.atakmap.android.gui.PluginSpinner$ContextSensitiveContext {*;}
 
 ########## Chris L will need to review.
--keep class com.atakmap.opengl.** {*;}
 -keepattributes *Annotation*
 -keepattributes Signature
 
@@ -185,7 +184,6 @@
 
 
 ########### for common commo
-#-keep class com.atakmap.comms.** {*;}
 -keep class com.atakmap.commoncommo.** { *; }
 
 -keepclassmembers class * {
@@ -194,7 +192,6 @@
 
 ###### random stuff probably related to native calls:
 -keep class com.atakmap.android.maps.tilesets.TilesetInfo
--keep class com.atakmap.spatial.SpatialPreparedStatement
 
 ###### map components need to be kept
 -keep public class * implements com.atakmap.android.maps.MapComponent
@@ -229,105 +226,16 @@
 # Keep all the ACRA classes
 -keep class org.acra.** { *; }
 
-# Word around for plugin desugaring issue
--keep class com.atakmap.android.drawing.mapItems.DrawingCircle {*;}
--keep class com.atakmap.android.drawing.tools.CircleCreationTool {*;}
-
 # UsbSerial 
 -keep class com.hoho.android.usbserial.** {*;}
-
-# Native code
--keep class com.atakmap.android.maps.MapTextFormat {*;}
--keep class com.atakmap.database.Bindable {*;}
--keep class com.atakmap.database.CursorIface {*;}
--keep class com.atakmap.database.DatabaseIface {*;}
--keep class com.atakmap.database.QueryIface {*;}
--keep class com.atakmap.database.RowIterator {*;}
--keep class com.atakmap.database.StatementIface {*;}
--keep class com.atakmap.interop.NotifyCallback {*;}
--keep class com.atakmap.interop.Pointer {*;}
--keep class com.atakmap.interop.ProgressCallback {*;}
--keep class com.atakmap.io.ProtocolHandler {*;}
--keep class com.atakmap.map.AtakMapView {*;}
--keep class com.atakmap.map.AtakMapView$* {*;}
--keep class com.atakmap.map.AtakMapController {*;}
--keep class com.atakmap.map.AtakMapController$* {*;}
--keep class com.atakmap.map.Globe {*;}
--keep class com.atakmap.map.Globe$* {*;}
--keep class com.atakmap.map.EngineLibrary {*;}
--keep class com.atakmap.map.MapSceneModel {*;}
--keep class com.atakmap.map.RenderContext {*;}
--keep class com.atakmap.map.RenderSurface {*;}
--keep class com.atakmap.map.RenderContextInterop {*;}
--keep class com.atakmap.map.elevation.ElevationChunk {*;}
--keep class com.atakmap.map.elevation.ElevationChunk$* {*;}
--keep class com.atakmap.map.elevation.ElevationSource {*;}
--keep class com.atakmap.map.elevation.ElevationSource$* {*;}
--keep class com.atakmap.map.elevation.ElevationSourceManager {*;}
--keep class com.atakmap.map.elevation.ElevationSourceManager$* {*;}
--keep class com.atakmap.map.elevation.NativeElevationSource {*;}
--keep class com.atakmap.map.elevation.NativeElevationSource$* {*;}
--keep class com.atakmap.map.formats.c3dt.ContentSource {*;}
--keep class com.atakmap.map.formats.c3dt.GLTFBitmap {*;}
--keep class com.atakmap.map.formats.c3dt.GLTF {*;}
--keep class com.atakmap.map.formats.quantizedmesh.QMESourceLayer {*;}
--keep class com.atakmap.map.formats.quantizedmesh.TileExtents {*;}
--keep class com.atakmap.map.gdal.VSIStatBuf {*;}
--keep class com.atakmap.map.gdal.VSIJFileFilesystemHandler {*;}
--keep class com.atakmap.map.layer.Layer {*;}
--keep class com.atakmap.map.layer.Layer$* {*;}
--keep class com.atakmap.map.layer.NativeLayer {*;}
--keep class com.atakmap.map.layer.NativeLayer$* {*;}
--keep class com.atakmap.map.layer.feature.AttributeSet {*;}
--keep class com.atakmap.map.layer.feature.FeatureDataSource {*;}
--keep class com.atakmap.map.layer.feature.FeatureDataSource$* {*;}
--keep class com.atakmap.map.layer.feature.Interop {*;}
--keep class com.atakmap.map.layer.feature.geometry.Envelope {*;}
--keep class com.atakmap.map.layer.feature.geometry.Geometry {*;}
--keep class com.atakmap.map.layer.feature.geometry.Polygon {*;}
--keep class com.atakmap.map.layer.feature.style.Style {*;}
--keep class com.atakmap.map.layer.model.Model {*;}
--keep class com.atakmap.map.layer.model.Mesh {*;}
--keep class com.atakmap.map.layer.model.NativeMesh {*;}
--keep class com.atakmap.map.layer.opengl.GLLayer2 {*;}
--keep class com.atakmap.map.layer.opengl.GLLayer3 {*;}
--keep class com.atakmap.map.layer.opengl.GLLayerSpi2 {*;}
--keep class com.atakmap.map.layer.opengl.NativeGLLayer3 {*;}
--keep class com.atakmap.map.layer.opengl.NativeGLLayerSpi2 {*;}
--keep class com.atakmap.map.opengl.GLAntiMeridianHelper {*;}
--keep class com.atakmap.map.opengl.GLMapRenderable2 {*;}
--keep class com.atakmap.map.opengl.GLMapView {*;}
--keep class com.atakmap.map.opengl.GLMapView$* {*;}
--keep class com.atakmap.map.opengl.NativeGLMapRenderable2 {*;}
--keep class com.atakmap.map.projection.NativeProjection {*;}
--keep class com.atakmap.map.projection.MapProjectionDisplayModel {*;}
--keep class com.atakmap.map.projection.Projection {*;}
--keep class com.atakmap.map.projection.ProjectionFactory {*;}
--keep class com.atakmap.map.projection.ProjectionSpi {*;}
--keep class com.atakmap.math.Frustum {*;}
--keep class com.atakmap.math.GeometryModel {*;}
--keep class com.atakmap.math.Matrix {*;}
--keep class com.atakmap.math.NativeGeometryModel {*;}
--keep class com.atakmap.math.PointD {*;}
--keep class com.atakmap.math.Ray {*;}
--keep class com.atakmap.math.Rectangle {*;}
--keep class com.atakmap.math.Vector3D {*;}
--keep class com.atakmap.map.layer.feature.falconview.FalconViewFeatureDataSource {*;}
-
-# For 4.2.1 to preserve the mapping
-
--keep class com.atakmap.android.missionpackage.MissionPackageReceiver {
-      private static final java.util.List filesToSkip;
-      public static void addFileToSkip(java.io.File);
-}
 
 # make sure jassimp is happy
 -keep class jassimp.** {*;}
 
+-keep,allowobfuscation @interface gov.tak.api.annotation.DontObfuscate
 
-# specifically introduced on the maintenance-4.3 branch to keep the mapping happy
--keepclassmembers class com.atakmap.map.layer.feature.geometry.opengl.GLBatchGeometryRenderer {
-    private ** points;
-    private ** lastPoints;
-
+# Do not strip any method/class that is annotated with @DontObfuscate
+-keep @gov.tak.api.annotation.DontObfuscate class * {*;}
+-keepclassmembers class * {
+    @gov.tak.api.annotation.DontObfuscate *;
 }

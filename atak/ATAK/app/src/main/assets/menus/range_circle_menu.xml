@@ -12,8 +12,7 @@
             onClick='actions/range_circle_edit.xml' />
 
     <button icon='icons/pairing_line.png'
-            onClick='actions/pairingline.xml'
-            selected='${pairingline_on}' />
+            onClick='actions/pairingline.xml'/>
 
     <button icon='icons/label.png'
             onClick='actions/label_toggle.xml'

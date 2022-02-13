@@ -1,7 +1,7 @@
 <filters>
     <filter type='b'>icons/b.png</filter>
     <filter type='b-i'>icons/document.png</filter>
-    <filter type='b-i-x-i'>icons/camera.png</filter>
+    <filter type='b-i-x-i'>icons/b-i-x-i.png</filter>
 
     <filter type='b-a-g'>icons/alarm-geophysical.png</filter>
     <filter type='b-a-o-opn'>icons/alarm-open.png</filter>

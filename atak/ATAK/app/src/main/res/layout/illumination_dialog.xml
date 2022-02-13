@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:imeOptions="flagNoExtractUi"
+    android:orientation="vertical"
+    android:padding="@dimen/auto_space_big">
+
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingBottom="@dimen/auto_space_big">
+
+
+        <CheckBox
+            android:id="@+id/manual_time_entry"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/illum_manual_text"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="40dp"
+            android:textSize="14sp"
+            android:text="@string/illum_manual_summary" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/manual_entry_screen"
+        android:visibility="gone"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:layout_marginStart="10dp"
+        android:orientation="horizontal"
+        android:weightSum="1"
+        android:layout_marginTop="20dp"
+        android:paddingBottom="@dimen/auto_space_big">
+
+        <Button
+            android:id="@+id/pick_date_button"
+            style="@style/darkButton"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight=".3"
+            android:textSize="18sp"
+            android:padding="6dp"
+            android:text="@string/_00_00_00" />
+
+        <Button
+            android:id="@+id/pick_time_button"
+            style="@style/darkButton"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight=".3"
+            android:textSize="18sp"
+            android:padding="6dp"
+            android:text="@string/_00_00_00"/>
+
+
+        <Button
+            android:id="@+id/timezone_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight=".3"
+            android:textSize="18sp"
+            android:padding="6dp"
+            style="@style/darkButton" />
+
+        <Button
+            android:id="@+id/use_current_time_button"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:textSize="18sp"
+            android:layout_marginStart="20dp"
+            android:text="@string/pull_time"
+            android:padding="6dp"
+            style="@style/darkButton" />
+
+
+
+
+    </LinearLayout>
+
+
+</LinearLayout>

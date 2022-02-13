@@ -121,7 +121,7 @@ public class RerouteDialog implements Dialog.OnClickListener {
 
     /**
      * Sets the listener that will receive events from the dialog.
-     * @param listener
+     * @param listener the listener to receive events from the dialog
      */
     public void setListener(
             Dialog.OnClickListener listener) {

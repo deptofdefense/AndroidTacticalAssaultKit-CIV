@@ -20,10 +20,14 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import androidx.annotation.NonNull;
+import gov.tak.api.annotation.DeprecatedApi;
 
 /**
  * OpenGL rendering for drawable widget
+ * @deprecated use {@link gov.tak.platform.widgets.opengl.GLDrawableWidget}
  */
+@Deprecated
+@DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
 public class GLDrawableWidget extends GLWidget2 implements
         DrawableWidget.OnChangedListener, Drawable.Callback {
 

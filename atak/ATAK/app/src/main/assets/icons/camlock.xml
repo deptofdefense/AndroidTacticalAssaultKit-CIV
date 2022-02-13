@@ -1,8 +1,5 @@
-<icon anchor='15,15' size='40,40'>
+<icon anchor='16,16' size='32,32'>
     <state>
-        <image>icons/ic_menu_lock_unlit_inverse.png</image>
-    </state>
-    <state flags='selected'>
-        <image>icons/ic_menu_lock_lit.png</image>
+        <image>icons/lock.png</image>
     </state>
 </icon>

@@ -194,11 +194,9 @@ class GLGridTile {
                     lastDrawVersionM = ortho.drawVersion;
                 }
 
-                final float actionBarPad = MapView.getMapView()
-                        .getActionBarHeight();
                 final float l = ortho.currentScene.left;
                 final float r = ortho.currentScene.right;
-                final float t = ortho.currentScene.top - actionBarPad;
+                final float t = ortho.currentScene.top;
                 final float b = ortho.currentScene.bottom;
 
                 // quickly filter out any segments that are contained within the viewport
@@ -278,8 +276,7 @@ class GLGridTile {
                         glTextEasting.setSegment(new GeoPoint[] {
                                 sw, nw
                         });
-                        glTextEasting.setInsets(0f, 0f, 0f,
-                                MapView.getMapView().getActionBarHeight());
+                        glTextEasting.setInsets(0f, 0f, 0f, 0f);
                     }
                     text = mgrsRef.getEastingDescriptor();
                     if (subResolution == 10000) {
@@ -302,8 +299,7 @@ class GLGridTile {
                         glTextNorthing.setSegment(new GeoPoint[] {
                                 sw, se
                         });
-                        glTextNorthing.setInsets(0f, 0f, 0f,
-                                MapView.getMapView().getActionBarHeight());
+                        glTextNorthing.setInsets(0f, 0f, 0f, 0f);
                     }
                     text = mgrsRef.getNorthingDescriptor();
                     if (subResolution == 10000) {

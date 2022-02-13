@@ -1,0 +1,7 @@
+<PersistedActionMenu baseline="true" hideable="true" iconPath="nav_alert" title="actionbar_emergency">
+   <ClickData actionType="click">
+      <broadcast>
+         <action>com.atakmap.android.emergency.tool</action>
+      </broadcast>
+   </ClickData>
+</PersistedActionMenu>

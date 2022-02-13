@@ -89,10 +89,14 @@ public class RuntimeFeatureDataStoreTests extends ATAKInstrumentedTest {
     @Test
     public void atak15243() {
         RuntimeFeatureDataStore ds = new RuntimeFeatureDataStore();
-        final FeatureSet fs = ds.insertFeatureSet("provider", "type", "name", Double.MAX_VALUE, 0d, true);
-        ds.insertFeature(fs.id, "Test%3a", new Point(0, 0), null, new AttributeSet(), false);
-        ds.insertFeature(fs.id, "TestX3a", new Point(0, 0), null, new AttributeSet(), false);
-        ds.insertFeature(fs.id, "TestABC3a", new Point(0, 0), null, new AttributeSet(), false);
+        final FeatureSet fs = ds.insertFeatureSet("provider", "type", "name",
+                Double.MAX_VALUE, 0d, true);
+        ds.insertFeature(fs.id, "Test%3a", new Point(0, 0), null,
+                new AttributeSet(), false);
+        ds.insertFeature(fs.id, "TestX3a", new Point(0, 0), null,
+                new AttributeSet(), false);
+        ds.insertFeature(fs.id, "TestABC3a", new Point(0, 0), null,
+                new AttributeSet(), false);
 
         FeatureCursor result;
 
@@ -103,7 +107,7 @@ public class RuntimeFeatureDataStoreTests extends ATAKInstrumentedTest {
             final int count = ds.queryFeaturesCount(params);
             Assert.assertEquals(1, count);
         } finally {
-            if(result != null)
+            if (result != null)
                 result.close();
         }
 
@@ -114,7 +118,7 @@ public class RuntimeFeatureDataStoreTests extends ATAKInstrumentedTest {
             final int count = ds.queryFeaturesCount(params);
             Assert.assertEquals(3, count);
         } finally {
-            if(result != null)
+            if (result != null)
                 result.close();
         }
     }

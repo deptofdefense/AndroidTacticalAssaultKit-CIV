@@ -2,21 +2,27 @@
 package com.atakmap.android.widgets;
 
 import android.view.Gravity;
-import android.view.MotionEvent;
 import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
 
 import com.atakmap.android.maps.MapView;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import gov.tak.api.widgets.ILinearLayoutWidget;
+import gov.tak.api.widgets.IMapWidget;
+
 /**
  * Parent widget with functions similar to a LinearLayout view
  */
-public class LinearLayoutWidget extends LayoutWidget implements
+@Deprecated
+@DeprecatedApi(since = "4.4")
+public class LinearLayoutWidget extends LayoutWidget
+        implements ILinearLayoutWidget,
         MapWidget.OnVisibleChangedListener,
         MapWidget2.OnWidgetSizeChangedListener {
 
@@ -141,7 +147,7 @@ public class LinearLayoutWidget extends LayoutWidget implements
     }
 
     @Override
-    public MapWidget seekHit(MotionEvent event, float x, float y) {
+    public MapWidget seekHit(android.view.MotionEvent event, float x, float y) {
         // Ensure the hit is within this layout first
         // LayoutWidget does not perform this check...
         if (isVisible() && super.testHit(x, y))
@@ -165,7 +171,7 @@ public class LinearLayoutWidget extends LayoutWidget implements
             orientation = HORIZONTAL;
         else if (name.endsWith("V"))
             orientation = VERTICAL;
-        for (MapWidget c : getChildWidgets()) {
+        for (IMapWidget c : getChildren()) {
             if (c instanceof LinearLayoutWidget && FileSystemUtils
                     .isEquals(name, c.getName())) {
                 ret = (LinearLayoutWidget) c;
@@ -236,10 +242,10 @@ public class LinearLayoutWidget extends LayoutWidget implements
             height = parentHeight;
 
         float maxW = 0, maxH = 0, totalW = 0, totalH = 0;
-        Collection<MapWidget> children = getChildWidgets();
+        Collection<IMapWidget> children = getChildren();
         List<LinearLayoutWidget> matchParentW = new ArrayList<>();
         List<LinearLayoutWidget> matchParentH = new ArrayList<>();
-        for (MapWidget c : children) {
+        for (IMapWidget c : children) {
             float[] size = MapWidget2.getSize(c, true, true);
             if (c instanceof LinearLayoutWidget) {
                 LinearLayoutWidget llw = (LinearLayoutWidget) c;

@@ -63,9 +63,7 @@ public class ShapeEditTool extends EditablePolylineEditTool {
         } else if (uid != null && found instanceof EditablePolyline) {
             _poly = (EditablePolyline) found;
 
-            _drawingToolsToolbar.setDefaultButtonsVisiblity(Button.GONE);
-
-            _undoButton.setVisibility(Button.VISIBLE);
+            _drawingToolsToolbar.toggleEditButtons(true);
 
             return super.onToolBegin(extras);
         } else {
@@ -79,8 +77,7 @@ public class ShapeEditTool extends EditablePolylineEditTool {
     @Override
     public void onToolEnd() {
         super.onToolEnd();
-        _drawingToolsToolbar.setDefaultButtonsVisiblity(Button.VISIBLE);
-        _undoButton.setVisibility(Button.GONE);
+        _drawingToolsToolbar.toggleEditButtons(false);
 
         _poly.persist(_mapView.getMapEventDispatcher(), null, this.getClass());
     }

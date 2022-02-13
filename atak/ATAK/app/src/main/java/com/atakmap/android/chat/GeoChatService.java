@@ -106,6 +106,14 @@ public final class GeoChatService implements
                 return;
             }
             b.putString("status", status.name());
+
+            // Update receive/read time
+            long time = cotEvent.getTime().getMilliseconds();
+            if (status == Status.DELIVERED)
+                b.putLong("receiveTime", time);
+            else if (status == Status.READ)
+                b.putLong("readTime", time);
+
             chatDb.addChat(b);
             sendToUiLayer(b);
             return;
@@ -303,7 +311,8 @@ public final class GeoChatService implements
      * @param chatMessage Chat message bundle
      * @param cotEvent CoT event to add to
      */
-    private void addSendDetails(String chatElemName, Bundle chatMessage, CotEvent cotEvent) {
+    private void addSendDetails(String chatElemName, Bundle chatMessage,
+            CotEvent cotEvent) {
         String from = chatMessage.getString("senderUid");
         if (from == null)
             from = "Android";

@@ -1,14 +1,29 @@
 // Gradle script to declare our external dependency versions
 ext {
     // android platform dependencies
-    androidBuildToolsVersion  = '29.0.3'
+    androidBuildToolsVersion  = '30.0.2'
     androidCompileSdkVersion = 29
     androidMinSdkVersion = 21
     androidTargetSdkVersion = 29
-    androidToolsBuildGradleVersion = '4.0.2'
+    androidToolsBuildGradleVersion = '4.2.2'
+    androidNdkVersion = '12.1.2977051'
 
     // general dependencies
-    guavaVersion = '27.0.1-jre'
-    joglVersion = '2.3.2'
+    androidPortVersion = '3.0.1'
+    assertjVersion = '3.6.1'
+    avroVersion = '1.9.2'
+    glesJoglCVersion = '1.0.3'
+    gradleCmakePluginVersion = '0.1.0'
+    guavaVersion = '30.0-jre'
+    hibernateCoreVersion = '5.4.25.Final'
+    httpclientVersion = '4.5.12'
+    joglVersion = '2.1.5-01'
+    jsonVersion = '20140107'
     junitVersion = '4.12'
+    libLasVersion = '1.8.2b1'
+    kxmlVersion = '2.3.0'
+    mockitoVersion = '3.+'
+    priVersion = '1.0.0'
+    slf4jApiVersion = '1.7.30'
+    takthirdpartyVersion = '2.5.1'
 }

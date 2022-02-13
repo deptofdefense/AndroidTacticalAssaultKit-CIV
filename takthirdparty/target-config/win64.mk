@@ -26,6 +26,7 @@ libkml_EXTRAPATCHES_PREAC=
 # binbundle has mrsid/ top level directory with include/ under that
 mrsid_BINBUNDLE_v120=$(DISTFILESDIR)/mrsid/win64.zip
 mrsid_BINBUNDLE_v140=$(DISTFILESDIR)/mrsid/win64-v140.zip
+mrsid_BINBUNDLE_v142=$(DISTFILESDIR)/mrsid/win64-v142.zip
 mrsid_BINBUNDLE=$(mrsid_BINBUNDLE_$(VS_VER_MSB))
 # Path within expansion of above where the Mr.Sid library can be found
 # omit mrsid/ initial directory

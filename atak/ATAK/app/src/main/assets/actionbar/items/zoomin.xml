@@ -1,7 +1,0 @@
-<PersistedActionMenu baseline="true" hideable="true" iconPath="ic_menu_plus"  title="actionbar_zoomin">
-   <ClickData actionType="click">
-      <broadcast>
-         <action>com.atakmap.android.map.ZOOM_IN</action>
-      </broadcast>
-   </ClickData>
-</PersistedActionMenu>

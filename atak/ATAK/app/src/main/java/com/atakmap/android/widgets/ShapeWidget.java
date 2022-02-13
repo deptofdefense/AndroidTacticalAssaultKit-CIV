@@ -5,12 +5,18 @@ import android.graphics.Color;
 
 import com.atakmap.android.maps.MapView;
 
+import java.util.IdentityHashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class ShapeWidget extends MapWidget2 {
+import gov.tak.api.widgets.IShapeWidget;
 
-    private final ConcurrentLinkedQueue<OnStrokeColorChangedListener> _onStrokeColorChanged = new ConcurrentLinkedQueue<>();
-    private final ConcurrentLinkedQueue<OnStrokeWeightChangedListener> _onStrokeWeightChanged = new ConcurrentLinkedQueue<>();
+public class ShapeWidget extends MapWidget2 implements IShapeWidget {
+
+    private final ConcurrentLinkedQueue<IShapeWidget.OnStrokeColorChangedListener> _onStrokeColorChanged = new ConcurrentLinkedQueue<>();
+    private final Map<ShapeWidget.OnStrokeColorChangedListener, IShapeWidget.OnStrokeColorChangedListener> _onStrokeColorChangedForwarders = new IdentityHashMap<>();
+    private final ConcurrentLinkedQueue<ShapeWidget.OnStrokeWeightChangedListener> _onStrokeWeightChanged = new ConcurrentLinkedQueue<>();
+
     private int _strokeColor = Color.BLACK;
     private float _strokeWeight = 1f;
 
@@ -18,14 +24,29 @@ public class ShapeWidget extends MapWidget2 {
         void onStrokeColorChanged(ShapeWidget shape);
     }
 
-    public void addOnStrokeColorChangedListener(
-            OnStrokeColorChangedListener l) {
+    @Override
+    public final void addOnStrokeColorChangedListener(
+            IShapeWidget.OnStrokeColorChangedListener l) {
         _onStrokeColorChanged.add(l);
     }
 
-    public void removeOnStrokeColorChangedListener(
-            OnStrokeColorChangedListener l) {
+    public void addOnStrokeColorChangedListener(
+            ShapeWidget.OnStrokeColorChangedListener l) {
+        registerForwardedListener(_onStrokeColorChanged,
+                _onStrokeColorChangedForwarders, l,
+                new StrokeColorChangedForwarder(l));
+    }
+
+    @Override
+    public final void removeOnStrokeColorChangedListener(
+            IShapeWidget.OnStrokeColorChangedListener l) {
         _onStrokeColorChanged.remove(l);
+    }
+
+    public void removeOnStrokeColorChangedListener(
+            ShapeWidget.OnStrokeColorChangedListener l) {
+        unregisterForwardedListener(_onStrokeColorChanged,
+                _onStrokeColorChangedForwarders, l);
     }
 
     public void setStrokeColor(int strokeColor) {
@@ -40,7 +61,7 @@ public class ShapeWidget extends MapWidget2 {
     }
 
     private void onStrokeColorChanged() {
-        for (OnStrokeColorChangedListener l : _onStrokeColorChanged) {
+        for (IShapeWidget.OnStrokeColorChangedListener l : _onStrokeColorChanged) {
             l.onStrokeColorChanged(this);
         }
     }
@@ -76,4 +97,19 @@ public class ShapeWidget extends MapWidget2 {
         }
     }
 
+    private final static class StrokeColorChangedForwarder
+            implements IShapeWidget.OnStrokeColorChangedListener {
+        final ShapeWidget.OnStrokeColorChangedListener _cb;
+
+        StrokeColorChangedForwarder(
+                ShapeWidget.OnStrokeColorChangedListener cb) {
+            _cb = cb;
+        }
+
+        @Override
+        public void onStrokeColorChanged(IShapeWidget shape) {
+            if (shape instanceof ShapeWidget)
+                _cb.onStrokeColorChanged((ShapeWidget) shape);
+        }
+    }
 }

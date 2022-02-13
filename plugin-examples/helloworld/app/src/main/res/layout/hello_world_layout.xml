@@ -383,6 +383,14 @@
                 android:padding="6dp"
                 android:text="Add Shape to Custom Group" />
 
+            <Button
+                android:id="@+id/associations"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Associate Two MapItems on the Map" />
+
             <TextView
                 android:id="@+id/gpsExamples"
                 android:layout_width="match_parent"

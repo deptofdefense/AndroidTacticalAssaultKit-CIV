@@ -7,7 +7,7 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.graphics.AbstractGLMapItem2;
 import com.atakmap.android.maps.graphics.GLMapItem2;
 import com.atakmap.android.maps.graphics.GLMapItemSpi2;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.feature.geometry.Envelope;
@@ -77,15 +77,13 @@ public class GLImageOverlay extends AbstractGLMapItem2 {
 
             double layerGsd = info.getMaxResolution(null);
             Envelope mbb = info.getMinimumBoundingBox();
-            int width = (int) Math.ceil(DistanceCalculations
-                    .metersFromAtSourceTarget(
-                            new GeoPoint((mbb.maxY + mbb.minY) / 2d, mbb.minX),
-                            new GeoPoint((mbb.maxY + mbb.minY) / 2d, mbb.maxX))
+            int width = (int) Math.ceil(GeoCalculations.distanceTo(
+                    new GeoPoint((mbb.maxY + mbb.minY) / 2d, mbb.minX),
+                    new GeoPoint((mbb.maxY + mbb.minY) / 2d, mbb.maxX))
                     / layerGsd);
-            int height = (int) Math.ceil(DistanceCalculations
-                    .metersFromAtSourceTarget(
-                            new GeoPoint(mbb.maxY, (mbb.maxX + mbb.minX) / 2d),
-                            new GeoPoint(mbb.minY, (mbb.maxX + mbb.minX) / 2d))
+            int height = (int) Math.ceil(GeoCalculations.distanceTo(
+                    new GeoPoint(mbb.maxY, (mbb.maxX + mbb.minX) / 2d),
+                    new GeoPoint(mbb.minY, (mbb.maxX + mbb.minX) / 2d))
                     / layerGsd);
 
             this.minMbbGsd = layerGsd / (100.0d / (width * height));

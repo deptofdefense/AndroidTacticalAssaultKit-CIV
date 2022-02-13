@@ -50,6 +50,19 @@ import java.util.SimpleTimeZone;
  *   230394       Date - 23rd of March 1994
  *   003.1,W      Magnetic Variation
  *   *6A          The checksum data, always begins with *
+ * 
+ *    https://www.xj3.nl/dokuwiki/doku.php?id=nmea
+ * 
+ *  After the Magnetic Variation but before the checksum there could be 
+ *  one additional fields
+ * 
+ *    - FAA Mode Indicator 
+ *        A = Autonomous mode
+ *        D = Differential Mode
+ *        E = Estimated (dead-reckoning) mode
+ *        M = Manual Input Mode
+ *        S = Simulated Mode
+ *        N = Data Not Valid
  *
  *  Note that, as of the 2.3 release of NMEA, there is a new field in the RMC sentence at 
  *  the end just prior to the checksum. For more information on this field see here.  
@@ -89,7 +102,7 @@ public class PacketRMC extends Packet implements ContainsPosition,
             data[4] = new WrapperDouble(s[7], "Ground speed");
             data[5] = new WrapperDouble(s[8], "Track angle");
             data[6] = new WrapperDouble("0.0", "Magnetic variation");
-        } else if (s.length == 13) {
+        } else if (s.length == 13 || s.length == 14) {
             Time t = new Time(s[1]);
             data[0] = t;
             Calendar c = new GregorianCalendar(new SimpleTimeZone(0, "GMT"),

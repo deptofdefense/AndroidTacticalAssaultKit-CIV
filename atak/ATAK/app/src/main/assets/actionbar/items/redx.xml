@@ -1,10 +1,10 @@
-<PersistedActionMenu baseline="true" enabledIconPath="ic_menu_select_point_enabled" hideable="true" iconPath="ic_menu_select_point_off"  selectedIconPath="ic_menu_select_point_disabled" title="actionbar_redxtool">
-   <ClickData actionType="click">
+<PersistedActionMenu baseline="true" hideable="true" iconPath="nav_redx" title="actionbar_redxtool">
+   <ClickData actionType="click" dismissMenu="false">
       <broadcast>
          <action>com.atakmap.android.user.REDX_CLICK</action>
       </broadcast>
    </ClickData>
-   <ClickData actionType="longClick">
+   <ClickData actionType="longClick" dismissMenu="false">
       <broadcast>
          <action>com.atakmap.android.user.REDX_LONG_CLICK</action>
       </broadcast>

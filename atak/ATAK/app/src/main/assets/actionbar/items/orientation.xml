@@ -1,4 +1,4 @@
-<PersistedActionMenu baseline="true" hideable="true" iconPath="ic_menu_toggle_orientation"  title="actionbar_orientation">
+<PersistedActionMenu baseline="true" hideable="true" iconPath="nav_orientation" title="actionbar_orientation">
    <ClickData actionType="click">
       <broadcast>
          <action>com.atakmap.android.maps.ORIENTATION_TOGGLE</action>

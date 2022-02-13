@@ -5,8 +5,7 @@
             onClick='actions/showdetails.xml' />
 
     <button icon='icons/pairing_line.png'
-            onClick='actions/pairingline.xml'
-            selected='${pairingline_on}'  />
+            onClick='actions/pairingline.xml' />
 
     <button icon='icons/delete.png'
             onClick='actions/remove.xml'

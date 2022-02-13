@@ -63,8 +63,8 @@ public class ModelFileHierarchyListItem extends AbstractHierarchyListItem2
 
     private final MapView view;
     private final Context context;
-    private FeatureDataStore2 dataStore;
-    private FeatureSet featureSet;
+    private final FeatureDataStore2 dataStore;
+    private final FeatureSet featureSet;
     private String title;
     private int childCount;
     private boolean opened;
@@ -249,7 +249,7 @@ public class ModelFileHierarchyListItem extends AbstractHierarchyListItem2
 
             // Allow the handler to perform the send if available
             URIContentHandler handler = URIContentManager.getInstance()
-                    .getHandler(f);
+                    .getHandler(f, ModelImporter.CONTENT_TYPE);
             if (handler != null && handler.isActionSupported(Send.class)
                     && ((Send) handler).promptSend())
                 return;
@@ -389,7 +389,7 @@ public class ModelFileHierarchyListItem extends AbstractHierarchyListItem2
             return null;
 
         URIContentHandler handler = URIContentManager.getInstance()
-                .getHandler(f);
+                .getHandler(f, ModelImporter.CONTENT_TYPE);
         if (handler != null && handler.isActionSupported(Export.class)
                 && ((Export) handler).isSupported(target))
             return ((Export) handler).toObjectOf(target, filters);

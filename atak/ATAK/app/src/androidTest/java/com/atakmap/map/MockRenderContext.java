@@ -56,11 +56,6 @@ public final class MockRenderContext implements RenderContext {
     }
 
     @Override
-    public void destroyChildContext(RenderContext child) {
-
-    }
-
-    @Override
     public boolean isAttached() {
         return true;
     }
@@ -83,5 +78,11 @@ public final class MockRenderContext implements RenderContext {
     @Override
     public RenderSurface getRenderSurface() {
         return surface;
+    }
+
+    @Override
+    public void destroyChildContext(
+            gov.tak.api.engine.map.RenderContext child) {
+
     }
 }

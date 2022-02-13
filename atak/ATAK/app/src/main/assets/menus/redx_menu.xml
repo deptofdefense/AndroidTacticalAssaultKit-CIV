@@ -30,7 +30,7 @@
             disableSwap='true'
             disableIconSwap='true'
             onClick='actions/move_spi.xml'
-            disabled='!{${preciseMove}}' />
+            disabled='!{${movable}}' />
 
     <button icon='icons/compass_rose.png'
             selected='${hostileBearingCircle}'

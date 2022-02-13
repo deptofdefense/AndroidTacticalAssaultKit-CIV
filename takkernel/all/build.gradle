@@ -1,0 +1,8 @@
+// default source sets
+
+dependencies {
+    api project(':annotation')
+    api project(':port')
+    api project(':engine')
+    api project(':shared')
+}

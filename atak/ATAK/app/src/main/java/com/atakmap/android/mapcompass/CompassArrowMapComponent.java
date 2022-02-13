@@ -17,7 +17,6 @@ import android.graphics.Color;
 import android.graphics.PointF;
 import android.graphics.Typeface;
 import android.preference.PreferenceManager;
-import android.view.Gravity;
 import android.view.MotionEvent;
 
 import com.atakmap.android.gui.HintDialogHelper;
@@ -25,7 +24,6 @@ import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.AbstractMapComponent;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapMode;
-import com.atakmap.android.maps.MapTextFormat;
 import com.atakmap.android.maps.MapTouchController;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
@@ -34,31 +32,22 @@ import com.atakmap.android.menu.MapMenuReceiver;
 import com.atakmap.android.menu.MapMenuWidget;
 import com.atakmap.android.menu.MenuLayoutWidget;
 import com.atakmap.android.model.ModelImporter;
+import com.atakmap.android.navigation.views.NavView;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.widgets.AbstractParentWidget;
 import com.atakmap.android.widgets.DrawableWidget;
 import com.atakmap.android.widgets.LinearLayoutWidget;
-import com.atakmap.android.widgets.MapFocusTextWidget;
 import com.atakmap.android.widgets.MapWidget;
 import com.atakmap.android.widgets.MapWidget.OnClickListener;
 import com.atakmap.android.widgets.MapWidget.OnLongPressListener;
-import com.atakmap.android.widgets.MapWidget2;
 import com.atakmap.android.widgets.RootLayoutWidget;
-import com.atakmap.android.widgets.ScaleWidget;
-import com.atakmap.android.widgets.CenterBeadWidget;
 import com.atakmap.android.widgets.TextWidget;
 import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.AngleUtilities;
-import com.atakmap.coremap.conversions.CoordinateFormat;
-import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.AtakMapView;
-import com.atakmap.android.overlay.Overlay;
-import com.atakmap.android.overlay.OverlayManager;
-import com.atakmap.android.overlay.OverlayManager.OnServiceListener;
-import com.atakmap.android.overlay.Overlay.OnVisibleChangedListener;
 
 import com.atakmap.map.projection.ECEFProjection;
 import com.atakmap.map.projection.EquirectangularMapProjection;
@@ -69,12 +58,17 @@ import java.util.List;
 /**
  * Map component that shows the direction of north using an arrow. 
  * Allows toggle of track up / north up modes by clicking.
+ *
+ * NOTE: This class is currently not in use and is currently kept for reference
+ * purposes.
+ *
+ * For new compass implementation see {@link NavView}
  */
 public class CompassArrowMapComponent extends AbstractMapComponent implements
         Marker.OnTrackChangedListener, OnClickListener,
         OnSharedPreferenceChangeListener, OnLongPressListener,
-        OnServiceListener, AtakMapView.OnMapMovedListener,
-        MapWidget.OnWidgetPointChangedListener, OnVisibleChangedListener,
+        AtakMapView.OnMapMovedListener,
+        MapWidget.OnWidgetPointChangedListener,
         MapView.OnMapProjectionChangedListener,
         AbstractParentWidget.OnWidgetListChangedListener,
         MapMenuEventListener {
@@ -99,15 +93,6 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
     protected TextWidget compassText;
     protected LinearLayoutWidget freeLookWidget;
 
-    // Scale bar
-    protected LinearLayoutWidget tlLayout, brLayout;
-    protected ScaleWidget scale;
-
-    // Center cross-hair
-    protected CenterBeadWidget cb;
-    protected MapFocusTextWidget cbText;
-    protected CoordinateFormat coordMode = CoordinateFormat.MGRS;
-
     private float lastHeading = 0;
     private double lastTilt = 0;
 
@@ -119,7 +104,6 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
 
     private boolean isVisible = false;
     protected SharedPreferences _prefs;
-    private Overlay cbOverlay;
 
     protected TiltLockWidgetController tlwc;
 
@@ -133,6 +117,8 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
      * Obtain the current instance of the CompassArrowMapComponent.
      */
     public static CompassArrowMapComponent getInstance() {
+        if (_instance == null)
+            _instance = new CompassArrowMapComponent();
         return _instance;
     }
 
@@ -144,28 +130,6 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
         this.context = context;
 
         Resources res = context.getResources();
-
-        RootLayoutWidget root = (RootLayoutWidget) view.getComponentExtra(
-                "rootLayoutWidget");
-        LinearLayoutWidget blLayout = root
-                .getLayout(RootLayoutWidget.BOTTOM_LEFT);
-        this.tlLayout = root.getLayout(RootLayoutWidget.TOP_LEFT);
-        this.tlLayout.addOnWidgetPointChangedListener(this);
-        this.brLayout = root.getLayout(RootLayoutWidget.BOTTOM_RIGHT);
-        this.brLayout.addOnWidgetPointChangedListener(this);
-
-        LinearLayoutWidget layoutH = this.tlLayout.getOrCreateLayout("TL_H");
-
-        LinearLayoutWidget layoutV = new LinearLayoutWidget();
-        layoutV.setOrientation(LinearLayoutWidget.VERTICAL);
-        layoutH.addWidgetAt(0, layoutV);
-
-        this.compassLayout = new LinearLayoutWidget();
-        this.compassLayout.setName("Compass Layout");
-        this.compassLayout.setPadding(16f);
-        this.compassLayout.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.TOP);
-        this.compassLayout.setVisible(false);
-        layoutV.addWidgetAt(0, this.compassLayout);
 
         _prefs = PreferenceManager.getDefaultSharedPreferences(context);
         _prefs.registerOnSharedPreferenceChangeListener(this);
@@ -183,36 +147,13 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
         this.compassText.setMargins(0f, 8f, 0f, 0f);
         this.compassLayout.addWidget(this.compassText);
 
-        // Scale bar
-        final MapTextFormat mt = MapView.getTextFormat(Typeface.DEFAULT_BOLD,
-                -2);
-        this.scale = new ScaleWidget(view, mt);
-        this.scale.setName("Map Scale");
-        this.scale.setPadding(8f, 4f, 8f, 4f);
-        this.scale.setMargins(16f, 0f, 16f, 0f);
-
-        boolean scale_vis = _prefs.getBoolean("map_scale_visible", true);
-        boolean scale_rounding = _prefs.getBoolean("map_scale_rounding", false);
-        this.scale.setVisible(scale_vis);
-        this.scale.setRounding(scale_rounding);
-        try {
-            String s = _prefs.getString(
-                    "rab_rng_units_pref",
-                    String.valueOf(Span.METRIC));
-            if (s != null) {
-                int _rangeUnits = Integer.parseInt(s);
-                this.scale.setRangeUnits(_rangeUnits);
-            }
-        } catch (Exception e) {
-            Log.d(TAG, "number format exception occurred", e);
-        }
-        blLayout.addWidgetAt(0, this.scale);
-
-        // Center cross-hair
-        boolean cbVisible = _prefs.getBoolean("map_center_designator", false);
-        this.cb = new CenterBeadWidget();
-        this.cb.setVisible(cbVisible);
-        root.addWidget(this.cb);
+        RootLayoutWidget root = (RootLayoutWidget) view.getComponentExtra(
+                "rootLayoutWidget");
+        LinearLayoutWidget tlLayout = root.getLayout(RootLayoutWidget.TOP_LEFT);
+        LinearLayoutWidget layoutH = tlLayout.getOrCreateLayout("TL_H");
+        LinearLayoutWidget layoutV = new LinearLayoutWidget();
+        layoutV.setOrientation(LinearLayoutWidget.VERTICAL);
+        layoutH.addWidgetAt(0, layoutV);
 
         tlwc = new TiltLockWidgetController(mapView, compass);
         tlwc.setVisible(false);
@@ -233,15 +174,6 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
         dr.addOnClickListener(this);
         this.freeLookWidget.addWidget(dr);
         layoutV.addWidget(this.freeLookWidget);
-
-        // Center coordinate text (corresponds with center cross-hair)
-        this.coordMode = CoordinateFormat.find(_prefs.getString(
-                "coord_display_pref", res.getString(
-                        R.string.coord_display_pref_default)));
-        this.cbText = new MapFocusTextWidget();
-        this.cbText.setMargins(16f, 0f, 0f, 16f);
-        this.cbText.setVisible(cbVisible);
-        blLayout.addWidgetAt(1, this.cbText);
 
         // Add listener for changes to track up / north up map mode
         DocumentedIntentFilter intentFilter = new DocumentedIntentFilter();
@@ -268,17 +200,6 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
         // Add arrow compass to the map
         toggleWidget(true);
 
-        Intent sharedOverlayServiceIntent = new Intent();
-        sharedOverlayServiceIntent
-                .setAction("com.atakmap.android.overlay.SHARED");
-
-        if (!OverlayManager.aquireService(context, sharedOverlayServiceIntent,
-                this)) {
-
-            // try again but embed locally
-            OverlayManager
-                    .aquireService(context, null, this);
-        }
         mapView.addOnMapMovedListener(CompassArrowMapComponent.this);
         onMapMoved(mapView, false);
 
@@ -351,7 +272,6 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
         mapView.removeOnMapMovedListener(CompassArrowMapComponent.this);
         AtakBroadcast.getInstance().unregisterReceiver(orientationReceiver);
         view.removeOnMapMovedListener(this);
-        brLayout.removeOnWidgetPointChangedListener(this);
         compass.removeOnWidgetPointChangedListener(this);
         MapMenuReceiver.getInstance().removeEventListener(this);
     }
@@ -452,8 +372,6 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
         }
     };
 
-    protected Runnable gpsLockCallback = null;
-
     /** 
      * Set the gps lock symbol if the callback r is not null.
      * currently only meched out to allow for the location to receive this dismissal but 
@@ -462,62 +380,18 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
      * 
      */
     synchronized public void setGPSLockAction(final Runnable r) {
-        gpsLockCallback = r;
-        if (r != null && mapMode == MapMode.TRACK_UP) {
-            // show the lock button
-            compass.setMode(MapMode.USER_DEFINED_UP, true);
-            compassText.setText("GPS");
-        } else {
-            compass.setMode(mapMode, lockedHeading);
-        }
-        updateCompassWidget();
+        NavView.getInstance().setGPSLockAction(r);
     }
 
     /**
      * Get the current map mode.
      */
     synchronized public MapMode getMapMode() {
-        return mapMode;
+        return NavView.getInstance().getMapMode();
     }
 
     synchronized public void setMapMode(final MapMode action) {
-        mapView.getMapTouchController().setUserOrientation(false);
-
-        if (action == MapMode.NORTH_UP) {
-            mapMode = MapMode.NORTH_UP;
-            compass.setRotation(0f);
-            mapView.getMapController().rotateTo(0, true);
-        } else if (action == MapMode.TRACK_UP) {
-            mapMode = MapMode.TRACK_UP;
-
-            // Set initial compass heading
-            if (selfItem != null)
-                onTrackChanged(selfItem);
-
-        } else if (action == MapMode.MAGNETIC_UP) {
-            mapMode = MapMode.MAGNETIC_UP;
-
-            // Set initial compass heading
-            if (selfItem != null)
-                onTrackChanged(selfItem);
-        } else if (action == MapMode.USER_DEFINED_UP) {
-            mapMode = MapMode.USER_DEFINED_UP;
-            if (!lockedHeading) {
-                mapView.getMapTouchController()
-                        .setUserOrientation(true);
-            } else if (!Double.isNaN(lockedHeadingValue)) {
-                mapView.getMapController().rotateTo(lockedHeadingValue,
-                        true);
-            }
-            updateDegDisplay(!Double.isNaN(lockedHeadingValue)
-                    ? lockedHeadingValue
-                    : 0.0);
-            onMapMoved(mapView, false);
-        }
-        compass.setMode(mapMode, lockedHeading);
-        if (tlwc != null)
-            tlwc.refresh();
-        updateCompassWidget();
+        NavView.getInstance().setMapMode(action);
     }
 
     @Override
@@ -626,17 +500,6 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
             return;
         }
 
-        synchronized (this) {
-            // tapped to unlock the GPS lock
-            if (gpsLockCallback != null) {
-                gpsLockCallback.run();
-                gpsLockCallback = null;
-                compass.setMode(mapMode, lockedHeading);
-                updateCompassWidget();
-                return;
-            }
-        }
-
         toggleMapMode();
 
         HintDialogHelper.showHint(context,
@@ -727,43 +590,6 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
     public void onSharedPreferenceChanged(
             final SharedPreferences prefs, final String key) {
         switch (key) {
-            case "map_scale_visible":
-                if (scale != null)
-                    scale.setVisible(prefs.getBoolean(key, true) && isVisible);
-                break;
-            case "map_center_designator":
-                boolean visible = prefs.getBoolean(key, true);
-                if (cb != null) {
-                    cb.setVisible(visible);
-                    cbText.setVisible(visible);
-                }
-                cbOverlay.setVisible(visible);
-                onMapMoved(mapView, false);
-                break;
-            case "map_scale_rounding":
-                if (scale != null)
-                    scale.setRounding(prefs.getBoolean(key, false));
-                break;
-            case "rab_rng_units_pref":
-                if (scale != null) {
-                    try {
-                        String s = prefs.getString(key,
-                                String.valueOf(Span.METRIC));
-                        if (s != null) {
-                            scale.setRangeUnits(
-                                    Integer.parseInt(s));
-                        }
-                    } catch (Exception e) {
-                        Log.d(TAG, "number format exception occurred", e);
-                    }
-                }
-                break;
-            case "coord_display_pref":
-                this.coordMode = CoordinateFormat.find(prefs.getString(key,
-                        context.getString(
-                                R.string.coord_display_pref_default)));
-                onMapMoved(mapView, false);
-                break;
             case "dexControls":
                 if (this.tlwc != null)
                     this.tlwc.refresh();
@@ -781,37 +607,14 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
 
     @Override
     public void onWidgetPointChanged(MapWidget widget) {
-        if (widget == brLayout && this.scale != null) {
-            // Prevent scale bar from overlapping bottom-right corner layout
-            float[] m = this.scale.getMargins();
-            this.scale.setMaxWidth(widget.getPointX() - this.scale
-                    .getAbsolutePosition().x - m[MapWidget2.RIGHT]);
-        } else if (widget == tlLayout) {
-            // Keep compass radial around widget
-            MenuLayoutWidget mw = MapMenuReceiver.getMenuWidget();
-            if (mw != null && radialFocus != null
-                    && mw.getMapItem() == radialFocus) {
-                PointF p = compass.getAbsolutePosition();
-                mw.onFocusPointChanged(p.x + compass.getWidth() / 2,
-                        p.y + compass.getHeight() / 2);
-            }
-        }
+
     }
 
     /**
      * Enable Experimental 3-D controls for ATAK
      */
     synchronized public void enable3DControls(boolean enable) {
-        if (enable) {
-            tlwc.setVisible(true);
-            tlwc.setLocked(!_prefs.getBoolean("status_tilt_enabled", true));
-        } else {
-            if (tlwc != null) {
-                tlwc.setVisible(false);
-                tlwc.setLocked(true);
-            }
-        }
-        _prefs.edit().putBoolean("status_3d_enabled", enable).apply();
+        NavView.getInstance().setTiltEnabled(enable);
     }
 
     /**
@@ -820,45 +623,12 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
      * @param enable True to enable
      */
     public void enableSlider(boolean enable) {
-        if (tlwc != null)
-            tlwc.setSliderVisible(enable);
-    }
-
-    @Override
-    public void onOverlayManagerBind(OverlayManager manager) {
-        cbOverlay = manager.registerOverlay("Center Designator");
-        cbOverlay.setVisible(cb.isVisible());
-        cbOverlay.setIconUri("android.resource://"
-                + context.getPackageName() + "/"
-                + R.drawable.ic_center_designator);
-
-        cbOverlay.addOnVisibleChangedListener(this);
-    }
-
-    @Override
-    public void onOverlayManagerUnbind(OverlayManager manager) {
-        cbOverlay.removeOnVisibleChangedListener(this);
-        cbOverlay = null;
-    }
-
-    @Override
-    public void onOverlayVisibleChanged(Overlay overlay) {
-        final boolean current = _prefs.getBoolean("map_center_designator",
-                false);
-        if (current != overlay.getVisible()) {
-            _prefs.edit()
-                    .putBoolean("map_center_designator",
-                            overlay.getVisible())
-                    .apply();
-        }
+        NavView.getInstance().setDexControlsEnabled(enable);
     }
 
     protected synchronized void toggleWidget(boolean show) {
         if (show == isVisible)
             return;
-        if (this.scale != null)
-            this.scale.setVisible(
-                    show && _prefs.getBoolean("map_scale_visible", true));
         if (this.compassLayout != null)
             this.compassLayout.setVisible(show);
         enable3DControls(show && _prefs.getBoolean("status_3d_enabled", false));

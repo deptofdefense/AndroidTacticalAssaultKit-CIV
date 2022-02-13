@@ -207,8 +207,8 @@ public class VideoBrowserMapOverlay extends AbstractMapOverlay2
         }
 
         @Override
-        public Object getUserObject() {
-            return ListModel.this;
+        public ConnectionEntry getUserObject() {
+            return null;
         }
 
         @Override

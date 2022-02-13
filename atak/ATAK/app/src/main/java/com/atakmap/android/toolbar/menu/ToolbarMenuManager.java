@@ -97,14 +97,8 @@ public class ToolbarMenuManager extends BroadcastReceiver {
                             .getPreferredHeight());
 
         if (!this.activePopUpWindow.isShowing()) {
-            int[] loc = new int[2];
-            activeButton.getButton().getLocationOnScreen(loc);
-
-            this.activePopUpWindow.showAtLocation(
-                    this.mapView,
-                    Gravity.TOP | Gravity.LEFT,
-                    loc[0],
-                    y);
+            this.activePopUpWindow.showAsDropDown(activeButton.getButton(),
+                    0, 0, Gravity.TOP | Gravity.RIGHT);
         } else {
             Log.e(TAG, "tried to show menu that wasn't registered: "
                     + identifier);

@@ -48,7 +48,7 @@ public abstract class DeviceProfileCallback
                 // get the initial request that was sent out
                 final DeviceProfileRequest initialRequest = resultData
                         .getParcelable(
-                                DeviceProfileOperation.PARAM_PROFILE_REQEUST);
+                                DeviceProfileOperation.PARAM_PROFILE_REQUEST);
 
                 //clean up internal tracking
                 DeviceProfileClient.getInstance()
@@ -101,7 +101,7 @@ public abstract class DeviceProfileCallback
                 // get the initial request that was sent out
                 final DeviceProfileRequest initialRequest = (DeviceProfileRequest) request
                         .getParcelable(
-                                DeviceProfileOperation.PARAM_PROFILE_REQEUST);
+                                DeviceProfileOperation.PARAM_PROFILE_REQUEST);
 
                 DeviceProfileClient.getInstance()
                         .callbackRecieved(initialRequest, false);
@@ -136,7 +136,7 @@ public abstract class DeviceProfileCallback
                 // get the initial request that was sent out
                 final DeviceProfileRequest initialRequest = (DeviceProfileRequest) request
                         .getParcelable(
-                                DeviceProfileOperation.PARAM_PROFILE_REQEUST);
+                                DeviceProfileOperation.PARAM_PROFILE_REQUEST);
 
                 DeviceProfileClient.getInstance()
                         .callbackRecieved(initialRequest, false);
@@ -170,7 +170,7 @@ public abstract class DeviceProfileCallback
                 // get the initial request that was sent out
                 final DeviceProfileRequest initialRequest = (DeviceProfileRequest) request
                         .getParcelable(
-                                DeviceProfileOperation.PARAM_PROFILE_REQEUST);
+                                DeviceProfileOperation.PARAM_PROFILE_REQUEST);
 
                 DeviceProfileClient.getInstance()
                         .callbackRecieved(initialRequest, false);

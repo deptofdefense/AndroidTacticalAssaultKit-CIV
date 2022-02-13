@@ -123,8 +123,8 @@ public class RoutePlannerView extends LinearLayout implements
 
     // Undo functionality
     private final Stack<EditAction> _undoStack = new Stack<>();
-    private ActionBarView _undoToolbar;
-    private View _undoButton, _drawButton, _endButton;
+    private ActionBarView _toolbar;
+    private View _undoToolbar, _undoCP, _drawButton, _endButton;
 
     // Children views
     private EditText _routeName;
@@ -132,6 +132,7 @@ public class RoutePlannerView extends LinearLayout implements
     protected ImageButton _colorButton;
     private ImageView _routeTypeIcon;
     private TextView _routeType;
+    private TextView _distTotal, _elevTotal;
     private RemarksLayout _remarksLayout;
     private ContactPointAdapter _adapter;
     private ExtraDetailsLayout _extrasLayout;
@@ -182,6 +183,12 @@ public class RoutePlannerView extends LinearLayout implements
         _routePlannerBtn = findViewById(R.id.start_route_planner);
         _routePlannerBtn.setOnClickListener(this);
 
+        // Total distances
+        _distTotal = findViewById(R.id.distance_total);
+        _elevTotal = findViewById(R.id.elevation_total);
+        _undoCP = findViewById(R.id.undoButton);
+        _undoCP.setOnClickListener(this);
+
         // List of control points
         ListView cpList = findViewById(R.id.control_points_list);
         _adapter = new ContactPointAdapter();
@@ -204,15 +211,16 @@ public class RoutePlannerView extends LinearLayout implements
 
         // Initialize undo toolbar
         // The undo stack is shared between edit and non-edit mode
-        _undoToolbar = (ActionBarView) LayoutInflater.from(_context).inflate(
+        _toolbar = (ActionBarView) LayoutInflater.from(_context).inflate(
                 R.layout.route_toolbar_view, _mapView, false);
-        _undoToolbar.setEmbedState(ActionBarView.FLOATING);
-        _undoToolbar.showCloseButton(false);
-        _undoButton = _undoToolbar.findViewById(R.id.undoButton);
-        _undoButton.setOnClickListener(this);
-        _drawButton = _undoToolbar.findViewById(R.id.drawButton);
+        _toolbar.setEmbedState(ActionBarView.FLOATING);
+        _toolbar.setPosition(ActionBarView.TOP_RIGHT);
+        _toolbar.showCloseButton(false);
+        _undoToolbar = _toolbar.findViewById(R.id.undoButton);
+        _undoToolbar.setOnClickListener(this);
+        _drawButton = _toolbar.findViewById(R.id.drawButton);
         _drawButton.setOnClickListener(this);
-        _endButton = _undoToolbar.findViewById(R.id.endButton);
+        _endButton = _toolbar.findViewById(R.id.endButton);
         _endButton.setOnClickListener(this);
         _undoStack.clear();
         _route.setUndoable(this);
@@ -224,7 +232,6 @@ public class RoutePlannerView extends LinearLayout implements
         _prefs.registerOnSharedPreferenceChangeListener(this);
         _receiver.dimRoutes(_route, true, false);
         _active = true;
-        refreshPoints();
         refresh();
 
         HashtagManager.getInstance().registerUpdateListener(this);
@@ -300,7 +307,7 @@ public class RoutePlannerView extends LinearLayout implements
         Bundle bundle = new Bundle();
         bundle.putString("routeUID", _route.getUID());
         bundle.putString("uid", _route.getUID());
-        bundle.putBoolean("ignoreToolbar", false);
+        bundle.putBoolean("ignoreToolbar", true);
         bundle.putBoolean("scaleToFit", false);
         bundle.putBoolean("hidePane", false);
         bundle.putBoolean("handleUndo", false);
@@ -354,7 +361,7 @@ public class RoutePlannerView extends LinearLayout implements
             // Close the undo toolbar
             ActionBarView toolView = ActionBarReceiver.getInstance()
                     .getToolView();
-            if (toolView == _undoToolbar)
+            if (toolView == _toolbar)
                 ActionBarReceiver.getInstance().setToolView(null, false);
             _active = false;
         }
@@ -401,19 +408,16 @@ public class RoutePlannerView extends LinearLayout implements
     public void onRoutePointsChanged(Route route) {
         if (route.isBulkOperation())
             return;
-        refreshPoints();
         refresh();
     }
 
     @Override
     public void onRouteMethodChanged(Route route) {
-        refreshPoints();
         refresh();
     }
 
     @Override
     public void onEditableChanged(EditablePolyline polyline) {
-        refreshPoints();
         refresh();
     }
 
@@ -457,7 +461,7 @@ public class RoutePlannerView extends LinearLayout implements
     public void onClick(View v) {
         int i = v.getId();
 
-        // Undo route edit (outside of edit mode)
+        // Undo route edit
         if (i == R.id.undoButton)
             undo();
 
@@ -477,10 +481,6 @@ public class RoutePlannerView extends LinearLayout implements
         // Start route navigation
         else if (i == R.id.start_nav) {
             DropDownManager.getInstance().closeAllDropDowns();
-
-            AtakBroadcast.getInstance().sendBroadcast(
-                    new Intent(ActionBarReceiver.TOGGLE_ACTIONBAR)
-                            .putExtra("show", true));
 
             Intent routeNavigatorIntent = new Intent(
                     RouteMapReceiver.START_NAV);
@@ -587,8 +587,8 @@ public class RoutePlannerView extends LinearLayout implements
 
     @Override
     public void onItemClick(AdapterView<?> parent, View v, int pos, long id) {
-        if (pos > 0 && pos <= _cps.length)
-            MapTouchController.goTo(_cps[pos - 1], true);
+        if (pos < _cps.length)
+            MapTouchController.goTo(_cps[pos], true);
     }
 
     protected RouteEditTool getEditTool() {
@@ -637,28 +637,31 @@ public class RoutePlannerView extends LinearLayout implements
                                 + "/" + _route.getRouteMethod().iconId));
                 setupRoutePlannerButton(_routePlannerBtn);
                 updateColorButton();
+                _cps = _route.getContactPoints();
                 _adapter.refresh();
 
-                // Update the undo button and toolbar
-                synchronized (_undoStack) {
-                    if (_undoButton != null)
-                        _undoButton.setEnabled(!_undoStack.isEmpty());
-                }
                 RouteEditTool tool = getEditTool();
                 boolean editing = tool != null;
                 _endButton.setVisibility(editing ? View.VISIBLE : View.GONE);
                 _drawButton.setVisibility(editing ? View.VISIBLE : View.GONE);
                 if (tool != null)
                     _drawButton.setSelected(tool.inDrawMode());
+
+                // Toggle toolbar based on editing state
                 ActionBarView toolbar = ActionBarReceiver.getInstance()
                         .getToolView();
-                boolean onTop = editing || !_receiver.isNavigating()
-                        && DropDownManager.getInstance().isTopDropDown(
-                                _dropDown);
-                if (_undoToolbar != toolbar && onTop)
-                    ActionBarReceiver.getInstance().setToolView(_undoToolbar);
-                else if (_undoToolbar == toolbar && !onTop)
+                if (_toolbar != toolbar && editing)
+                    ActionBarReceiver.getInstance().setToolView(_toolbar);
+                else if (_toolbar == toolbar && !editing)
                     ActionBarReceiver.getInstance().setToolView(null, false);
+
+                // Update the undo button and toolbar
+                synchronized (_undoStack) {
+                    _undoToolbar.setEnabled(!_undoStack.isEmpty());
+                    _undoCP.setEnabled(!_undoStack.isEmpty());
+                    _undoCP.setVisibility(editing ? View.INVISIBLE
+                            : View.VISIBLE);
+                }
 
                 _extrasLayout.setItem(_route);
             }
@@ -677,10 +680,6 @@ public class RoutePlannerView extends LinearLayout implements
                 && _routeManager.getCount() > 0;
 
         routePlannerBtn.setVisibility(enabled ? View.VISIBLE : View.INVISIBLE);
-    }
-
-    private void refreshPoints() {
-        _cps = _route.getContactPoints();
     }
 
     protected void updateName() {
@@ -819,12 +818,11 @@ public class RoutePlannerView extends LinearLayout implements
                 }
             }
 
+            _distTotal.setText(_distFmt == Span.METRIC ? distMetString
+                    : distEngString);
+            _elevTotal.setText(gainString);
+
             _details.clear();
-            // Totals
-            _details.add(new String[] {
-                    _context.getString(R.string.total),
-                    distEngString, distMetString, gainString, null
-            });
             if (details != null)
                 _details.addAll(details);
             notifyDataSetChanged();
@@ -836,7 +834,7 @@ public class RoutePlannerView extends LinearLayout implements
         }
 
         @Override
-        public Object getItem(int position) {
+        public String[] getItem(int position) {
             return _details.get(position);
         }
 
@@ -853,49 +851,26 @@ public class RoutePlannerView extends LinearLayout implements
                         R.layout.route_planner_contact_point_row,
                         parent, false);
                 holder = new ViewHolder();
-                holder.title = row.findViewById(R.id.title);
                 holder.name = row.findViewById(R.id.cp_name);
                 holder.dist = row.findViewById(R.id.cp_dist);
                 holder.distEl = row.findViewById(R.id.cp_elevation);
                 holder.dir = row.findViewById(R.id.cp_dir);
-                holder.routePlanner = row
-                        .findViewById(R.id.cp_plan_segment);
+                holder.routePlanner = row.findViewById(R.id.cp_plan_segment);
                 holder.remove = row.findViewById(R.id.cp_remove);
                 row.setTag(holder);
             }
-            holder.distEl.setVisibility(View.GONE);
 
-            String[] data = _details.get(position);
+            String[] data = getItem(position);
 
             holder.name.setText(data[0]);
-            holder.title.setText(data[0]);
-
-            if (position == 0) {
-                holder.name.setVisibility(View.GONE);
-                holder.title.setVisibility(View.VISIBLE);
-            } else {
-                holder.name.setVisibility(View.VISIBLE);
-                holder.title.setVisibility(View.GONE);
-            }
 
             holder.dist.setText(_distFmt == Span.METRIC
                     ? data[2]
                     : data[1]);
             holder.distEl.setText(data[3]);
 
-            if (position == 0) {
-                holder.dir.setVisibility(View.INVISIBLE);
-                holder.routePlanner.setVisibility(View.INVISIBLE);
-                holder.remove.setVisibility(View.INVISIBLE);
-                row.setBackgroundColor(Color.DKGRAY);
-                return row;
-            } else {
-                holder.dir.setVisibility(View.VISIBLE);
-                //holder.routePlanner.setVisibility(View.VISIBLE);
-                setupRoutePlannerButton(holder.routePlanner);
-                holder.remove.setVisibility(View.VISIBLE);
-                row.setBackgroundColor(0);
-            }
+            setupRoutePlannerButton(holder.routePlanner);
+            row.setBackgroundColor(0);
 
             NavigationCue cue = _route.getCueForPoint(data[4]);
             int cueRes = 0;
@@ -905,10 +880,9 @@ public class RoutePlannerView extends LinearLayout implements
             }
             holder.dir.setImageResource(cueRes);
 
-            // Position 0 = Totals row, anything higher is a way-point row
-            if (position > 0 && position <= _cps.length) {
-                RowListener rListener = new RowListener(position - 1);
-                if (position > 1) {
+            if (position < _cps.length) {
+                RowListener rListener = new RowListener(position);
+                if (position > 0) {
                     setupRoutePlannerButton(holder.routePlanner);
                 } else {
                     holder.routePlanner.setVisibility(View.INVISIBLE);
@@ -919,7 +893,6 @@ public class RoutePlannerView extends LinearLayout implements
                 holder.remove.setOnClickListener(rListener);
             }
 
-            holder.remove.setVisibility(View.VISIBLE);
             return row;
         }
 
@@ -1122,7 +1095,6 @@ public class RoutePlannerView extends LinearLayout implements
     }
 
     private static class ViewHolder {
-        TextView title;
         Button name;
         TextView dist, distEl;
         ImageView dir;

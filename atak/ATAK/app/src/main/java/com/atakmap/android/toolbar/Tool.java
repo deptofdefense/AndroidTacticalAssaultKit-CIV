@@ -2,7 +2,7 @@
 package com.atakmap.android.toolbar;
 
 import android.content.Intent;
-import android.graphics.Point;
+import android.graphics.PointF;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.View;
@@ -28,6 +28,7 @@ public abstract class Tool implements OnKeyListener {
     private boolean _active = false;
     protected final MapView _mapView;
     protected String _identifier;
+    protected int _mapListenerCount = 0;
 
     public Tool(final MapView mapView, final String identifier) {
         _mapView = mapView;
@@ -91,6 +92,7 @@ public abstract class Tool implements OnKeyListener {
         }
 
         _mapView.removeOnKeyListener(this);
+        popAllMapListeners();
     }
 
     /**
@@ -195,16 +197,41 @@ public abstract class Tool implements OnKeyListener {
     }
 
     /**
+     * Push a new set of map listeners while tracking the current push count
+     */
+    protected void pushMapListeners() {
+        _mapView.getMapEventDispatcher().pushListeners();
+        _mapListenerCount++;
+    }
+
+    /**
+     * Pop a set of map listeners while tracking the current push count
+     */
+    protected void popMapListeners() {
+        _mapView.getMapEventDispatcher().popListeners();
+        _mapListenerCount--;
+    }
+
+    /**
+     * Pop all map listeners that were pushed with this tool
+     */
+    protected void popAllMapListeners() {
+        while (_mapListenerCount > 0)
+            popMapListeners();
+    }
+
+    /**
      * Helper method that finds a point given a map event (i.e. map click)
      * @param event Map event
      * @return Point or null if not found
+     * TODO: Probably should get the actual touch point of both the terrain and the model as two different things so that the user of this tool can decide what makes the most sense to use.
      */
     protected GeoPointMetaData findPoint(MapEvent event) {
         if (event == null)
             return null;
 
         GeoPointMetaData point = null;
-        Point eventPoint = event.getPoint();
+        PointF eventPoint = event.getPointF();
         String type = event.getType();
 
         MapItem mi = event.getItem();

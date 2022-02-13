@@ -324,10 +324,7 @@ public class GLOffscreenIndicators extends
             final RectF innerRect = new RectF(view._left + haloBorderSize,
                     view._bottom + haloBorderSize,
                     view._right - haloBorderSize,
-                    view._top
-                            - haloBorderSize
-                            - ((GLMapView) renderContext).getSurface()
-                                    .getMapView().getActionBarHeight());
+                    view._top - haloBorderSize);
 
             PointF screenPoint;
             PointF screenCoordsHaloIcon = new PointF();
@@ -376,9 +373,7 @@ public class GLOffscreenIndicators extends
                 if (screenPoint.x >= view._left
                         && screenPoint.x <= view._right
                         && screenPoint.y >= view._bottom
-                        && screenPoint.y <= view._top
-                                - ((GLMapView) renderContext).getSurface()
-                                        .getMapView().getActionBarHeight())
+                        && screenPoint.y <= view._top)
                     continue;
 
                 screenCoordsHaloIcon.x = screenPoint.x;

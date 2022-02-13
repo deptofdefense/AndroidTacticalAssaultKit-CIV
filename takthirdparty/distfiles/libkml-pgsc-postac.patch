@@ -1,27 +1,26 @@
---- Makefile.in  2014-06-06 10:32:54.073155798 -0400
-+++ Makefile.in  2014-06-05 16:58:04.405476487 -0400
-@@ -338,7 +339,7 @@
+--- Makefile.in	2021-09-21 15:26:03.801953500 -0400
++++ Makefile.in	2021-09-21 15:12:56.992609200 -0400
+@@ -351,7 +351,7 @@
  ACLOCAL_AMFLAGS = -I m4
-
+ 
  # Order is important:
 -SUBDIRS = third_party src testdata examples msvc xcode
 +SUBDIRS = third_party src testdata msvc xcode
  EXTRA_DIST = \
-    AUTHORS \
-    COPYING \
-
---- third_party/Makefile.in	2014-06-06 10:32:57.561173094 -0400
-+++ third_party/Makefile.in	2014-06-05 16:48:18.558571429 -0400
-@@ -405,7 +405,7 @@
+ 	AUTHORS \
+ 	COPYING \
+--- third_party/Makefile.in	2021-09-21 15:26:22.358766400 -0400
++++ third_party/Makefile.in	2021-09-21 15:21:27.220391400 -0400
+@@ -443,7 +443,7 @@
  	      -I$(top_srcdir)/third_party/googletest-r108/include
  
  lib_LTLIBRARIES = libminizip.la liburiparser.la
 -noinst_LTLIBRARIES = libgtest.la libgtest_main.la
 +#noinst_LTLIBRARIES = libgtest.la libgtest_main.la
- libminizip_la_SOURCES = \
- 	zlib-1.2.3/contrib/minizip/unzip.c \
- 	zlib-1.2.3/contrib/minizip/ioapi.c \
-@@ -667,10 +667,10 @@
+ minizip_root = zlib-1.2.3
+ minizip = $(minizip_root)/contrib/minizip
+ minizipinc = $(includedir)/kml/third_party/$(minizip)
+@@ -717,10 +717,10 @@
  	  rm -f $${locs}; \
  	}
  $(googletest)/src/$(am__dirstamp):
@@ -34,7 +33,7 @@
  	@: > $(googletest)/src/$(DEPDIR)/$(am__dirstamp)
  $(googletest)/src/gtest.lo: $(googletest)/src/$(am__dirstamp) \
  	$(googletest)/src/$(DEPDIR)/$(am__dirstamp)
-@@ -718,10 +718,10 @@
+@@ -764,10 +764,10 @@
  libminizip.la: $(libminizip_la_OBJECTS) $(libminizip_la_DEPENDENCIES) $(EXTRA_libminizip_la_DEPENDENCIES) 
  	$(AM_V_CCLD)$(libminizip_la_LINK) -rpath $(libdir) $(libminizip_la_OBJECTS) $(libminizip_la_LIBADD) $(LIBS)
  $(uriparser)/lib/$(am__dirstamp):

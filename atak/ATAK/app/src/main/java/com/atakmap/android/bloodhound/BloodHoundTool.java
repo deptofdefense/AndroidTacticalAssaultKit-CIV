@@ -1,7 +1,6 @@
 
 package com.atakmap.android.bloodhound;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.BroadcastReceiver;
@@ -15,7 +14,6 @@ import android.os.Bundle;
 import com.atakmap.android.bloodhound.ui.BloodHoundNavWidget;
 import com.atakmap.android.bloodhound.ui.BloodHoundRouteWidget;
 import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
 
 import android.preference.PreferenceManager;
 import android.view.KeyEvent;
@@ -44,6 +42,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.MetaMapPoint;
 import com.atakmap.android.maps.PointMapItem;
+import com.atakmap.android.navigation.views.NavView;
 import com.atakmap.android.overlay.DefaultMapGroupOverlay;
 import com.atakmap.android.routes.Route;
 import com.atakmap.android.routes.RouteMapReceiver;
@@ -52,10 +51,10 @@ import com.atakmap.android.toolbar.ButtonTool;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.android.toolbar.widgets.TextContainer;
 import com.atakmap.android.toolbars.RangeAndBearingMapItem;
-import com.atakmap.android.tools.ActionBarReceiver;
 import com.atakmap.android.tools.menu.ActionMenuData;
 import com.atakmap.android.user.PlacePointTool;
 import com.atakmap.android.util.ATAKUtilities;
+import com.atakmap.android.util.DisplayManager;
 import com.atakmap.android.util.SimpleItemSelectedListener;
 import com.atakmap.app.R;
 import com.atakmap.app.preferences.ToolsPreferenceFragment;
@@ -88,7 +87,6 @@ import java.util.TimerTask;
 /** Handles the toolbar button for bloodhound */
 public class BloodHoundTool extends ButtonTool implements
         ImageButton.OnLongClickListener,
-        ActionBarReceiver.ActionBarChangeListener,
         SharedPreferences.OnSharedPreferenceChangeListener {
 
     public static final String BLOOD_HOUND = "com.atakmap.android.toolbars.BLOOD_HOUND";
@@ -123,8 +121,6 @@ public class BloodHoundTool extends ButtonTool implements
     private PointMapItem _endItem = null;
 
     private final SharedPreferences navPrefs;
-    private boolean oldKeyGuardSetting;
-    private boolean oldScreenLockSetting;
 
     private boolean running = false;
     private boolean manuallyClosed = true;
@@ -195,11 +191,6 @@ public class BloodHoundTool extends ButtonTool implements
 
         navPrefs = PreferenceManager.getDefaultSharedPreferences(mapView
                 .getContext());
-        // set up the default state of the key guard and the screen lock
-        this.oldKeyGuardSetting = navPrefs.getBoolean("atakDisableKeyguard",
-                false);
-        this.oldScreenLockSetting = navPrefs.getBoolean("atakScreenLock",
-                false);
 
         _bloodHoundHUD = bloodHoundHUD;
         _bloodHoundHUD.setToolbarButton(this);
@@ -257,7 +248,7 @@ public class BloodHoundTool extends ButtonTool implements
                         new BloodHoundPreferenceFragment()));
 
         button.setOnLongClickListener(this);
-        ActionBarReceiver.registerActionBarChangeListener(this);
+
     }
 
     /** Gets a formatted string of the coordinates of the given point
@@ -306,19 +297,6 @@ public class BloodHoundTool extends ButtonTool implements
     }
 
     @Override
-    public boolean actionBarChanged() {
-        _amd = ActionBarReceiver.getMenuItem(_mapView.getContext()
-                .getString(R.string.actionbar_bloodhoundtool));
-        if (_amd != null) {
-            Log.d(TAG, "setting the menu icon based on: " + getActive());
-            boolean retval = _amd.isSelected() != getActive();
-            _amd.setSelected(getActive());
-            return retval;
-        }
-        return false;
-    }
-
-    @Override
     public boolean onToolBegin(Bundle extras) {
         return super.onToolBegin(extras);
     }
@@ -328,25 +306,14 @@ public class BloodHoundTool extends ButtonTool implements
         super.setActive(running);
 
         if (active) {
-            // set up the default state of the key guard and the screen lock
-            this.oldKeyGuardSetting = navPrefs.getBoolean("atakDisableKeyguard",
-                    false);
-            this.oldScreenLockSetting = navPrefs.getBoolean("atakScreenLock",
-                    false);
-            navPrefs.edit().putBoolean("atakDisableKeyguard", true)
-                    .putBoolean("atakScreenLock", true).apply();
+            DisplayManager.acquireTemporaryScreenLock(_mapView,
+                    "BloodHoundTool");
         } else {
-            navPrefs.edit()
-                    .putBoolean("atakDisableKeyguard", oldKeyGuardSetting)
-                    .putBoolean("atakScreenLock", oldScreenLockSetting).apply();
-
+            DisplayManager.releaseTemporaryScreenLock(_mapView,
+                    "BloodHoundTool");
         }
         Log.d(TAG, "bloodhound setActive:" + running);
-        if (_amd != null) {
-            _amd.setSelected(active);
-            ActivityCompat
-                    .invalidateOptionsMenu((Activity) _mapView.getContext());
-        }
+        NavView.getInstance().setButtonSelected("bloodhound.xml", active);
     }
 
     /**
@@ -375,11 +342,6 @@ public class BloodHoundTool extends ButtonTool implements
     private BroadcastReceiver houndReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(final Context context, Intent intent) {
-
-            if (_amd == null) {
-                _amd = ActionBarReceiver.getMenuItem(_mapView.getContext()
-                        .getString(R.string.actionbar_bloodhoundtool));
-            }
 
             if (intent == null || !intent.hasExtra("uid")) {
                 Log.d(TAG, "hound button pressed");
@@ -1067,7 +1029,7 @@ public class BloodHoundTool extends ButtonTool implements
                             _endItem.removeOnGroupChangedListener(linkListener);
                             _endItem.removeOnVisibleChangedListener(
                                     linkListener);
-
+                            _endItem.toggleMetaData("hounding", false);
                         }
 
                         // set to null _startItem and _endItem after both _endItem and _startItem
@@ -1097,6 +1059,7 @@ public class BloodHoundTool extends ButtonTool implements
                 ((Marker) _startItem)
                         .addOnTrackChangedListener(_trackChangedListener);
             _linkGroup.addItem(linkListener.line);
+            linkListener.line.addOnGroupChangedListener(linkListener);
 
             _startItem.addOnPointChangedListener(_pointChangedListener);
             _endItem.addOnPointChangedListener(_pointChangedListener);
@@ -1105,8 +1068,7 @@ public class BloodHoundTool extends ButtonTool implements
             _startItem.addOnGroupChangedListener(linkListener);
             _endItem.addOnGroupChangedListener(linkListener);
 
-            _startItem.setMetaBoolean("pairingline_on", true);
-            _endItem.setMetaBoolean("pairingline_on", true);
+            _endItem.toggleMetaData("hounding", true);
 
             _link = linkListener;
         } catch (Exception ignored) {

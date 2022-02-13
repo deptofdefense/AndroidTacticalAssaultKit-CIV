@@ -89,7 +89,7 @@ class EditablePolylineMoveTool extends Tool {
                     || event.getType().equals(MapEvent.MAP_LONG_PRESS)) {
                 if (_uidMove != null) {
                     GeoPointMetaData newPoint = _mapView.inverseWithElevation(
-                            event.getPoint().x, event.getPoint().y);
+                            event.getPointF().x, event.getPointF().y);
                     _handlePoint(newPoint);
                 }
             } else if (event.getType().equals(MapEvent.ITEM_CLICK)

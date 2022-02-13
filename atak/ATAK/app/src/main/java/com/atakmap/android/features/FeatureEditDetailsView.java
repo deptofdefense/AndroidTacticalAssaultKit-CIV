@@ -139,7 +139,7 @@ public class FeatureEditDetailsView extends LinearLayout {
             }
         } catch (Exception e) {
             Log.e(TAG, "Failed to query features");
-            }
+        }
         _setDefaultStyles();
         _init();
         _title.setText(title);
@@ -223,7 +223,7 @@ public class FeatureEditDetailsView extends LinearLayout {
         if (_strokeStyle == null) {
             _strokeStyle = new BasicStrokeStyle(Color.WHITE, 1);
         }
-        if (_fillStyle == null) { 
+        if (_fillStyle == null) {
             _fillStyle = new BasicFillStyle(Color.WHITE);
         }
         if (_compositeStyle == null) {
@@ -241,7 +241,7 @@ public class FeatureEditDetailsView extends LinearLayout {
         if (_fid != -1)
             params.featureIds = Collections.singleton(_fid);
         return params;
-        }
+    }
 
     private void _clearMapItems() {
         _fid = -1;
@@ -492,7 +492,7 @@ public class FeatureEditDetailsView extends LinearLayout {
         int fillColor;
         if (_fillStyle != null)
             fillColor = (color & 0xFFFFFF)
-                | (_fillStyle.getColor() & 0xFF000000);
+                    | (_fillStyle.getColor() & 0xFF000000);
         else
             fillColor = (color & 0xFFFFFF);
 
@@ -568,31 +568,31 @@ public class FeatureEditDetailsView extends LinearLayout {
             //  For large feature sets containing around 1000 items this is a very
             //  slow loop that can take 5-10 minutes to finish.
             try (FeatureCursor cursor = _db.queryFeatures(_params)) {
-            while (cursor.moveToNext()) {
+                while (cursor.moveToNext()) {
                     if (_canceled)
                         return;
 
-                Feature feature = cursor.get();
-                Style style = feature.getStyle();
+                    Feature feature = cursor.get();
+                    Style style = feature.getStyle();
 
                     // Update applicable style
                     for (Style s : _styles) {
                         if (s != null && s.getClass().isInstance(style)) {
                             _db.updateFeature(feature.getId(), s);
                             break;
-                }
-            }
+                        }
+                    }
 
                     // Sleep for 15ms to leave the database lock open for a bit
                     // Otherwise UI lockup can occur when querying this database elsewhere
                     Thread.sleep(15);
                 }
-        } catch (Exception e) {
+            } catch (Exception e) {
                 Log.d(TAG, "Failed to update style", e);
-        } finally {
-            _db.refresh();
+            } finally {
+                _db.refresh();
+            }
         }
-    }
 
         @Override
         public boolean equals(Object o) {
@@ -663,7 +663,7 @@ public class FeatureEditDetailsView extends LinearLayout {
         private final ArrayList<Integer> _resources;
         private final String _name;
 
-        private AdapterView.OnItemClickListener _onClickListener = new AdapterView.OnItemClickListener() {
+        private final AdapterView.OnItemClickListener _onClickListener = new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view,
                     int position, long id) {

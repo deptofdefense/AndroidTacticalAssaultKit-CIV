@@ -32,7 +32,7 @@ public class MockIOProvider extends IOProvider {
 
         // very simple implementation that just creates the file in the /sdcard/encrypted
         // directory.
-        if (!f.getParentFile().exists() && ensure)
+        if (f.getParentFile() != null && !f.getParentFile().exists() && ensure)
             f.getParentFile().mkdirs();
         return f;
     }

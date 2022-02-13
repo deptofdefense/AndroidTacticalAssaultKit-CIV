@@ -1,0 +1,824 @@
+$Id: types.txt,v 1.5 2010/03/02 17:15:32 mkristan Exp apache $
+
+=====================================================================
+                    The CoT event *type* hierarchy.
+=====================================================================
+
+15-Apr-04 Deconflicted "request" and "reply" types with base schema
+
++------- Current status:
+|             '-' - Defined in the CoT base schema, Event.xsd
+|             'P' - Proposed extension
+|
+V
+
+-       +--- First position, this event describes
+-       |
+-       V
+-
+-       a - Atoms - this event describes an actual "thing"
+-
+-           +--- CoT affiliation of these atoms
+-           |
+-           V
+-
+-           p - Pending
+-           u - Unknown
+-           a - Assumed friend
+-           f - Friend
+-           n - Neutral
+-           s - Suspect
+-           h - Hostile
+-           j - Joker
+-           k - Faker
+-           o - None specified
+NoNoNo      x - Other (DEPRECATED)
+-
+-               +--- Battle dimension
+-               |    Taken from MIL-STD-2525 "Battle Dimension" (upper case)
+-               |
+-               V
+-
+-               P - Space
+-               A - Air
+-               G - Ground
+-               S - Sea Surface
+-               U - Sea Subsurface
+-               X - Other
+-
+-                   +--- Function (dimension specific!)
+-                   |    MIL-STD-2525 function tree fields (Section 1.X)
+-                   |    Note that "SOF" section, 1.X.6 is DISALLOWED
+-                   |
+-                   V
+-                   ...
+-                   U-C-D-M-L-A - AIR DEFENSE MISSILE MOTORIZED (AVENGER)
+-                   ...
+-                   U-C-A-A-A-T - ANTI ARMOR ARMORED TRACKED
+-                   ...
+-
+P Specific extensions to the 'atoms' branch
+P       a-h-G-E-W-M-A-S-<x>-<spec> (surface to air missile)
+P               <x> is seeker type:
+P                   e - electro-optic
+P                   i - infrared
+P                   r - radar
+P                   c - command
+P                   o - other
+P               <spec> is specific missile type
+P                   sa2 - 
+P                   sa6 - 
+P                   sa8 - 
+-
+-       +--- The event describes ...
+-       |
+-       V
+-
+-       b - Bits - Events in the "Bit" group carry meta information
+-                  about raw data sources.  For example, range-doppler
+-                  radar returns or SAR imagery represent classes of
+-                  information that are "bits".  However, tracks
+-                  derived from such sources represent objects on the
+-                  battlespace and this have event type "A-..."
+-
+-                  The intention with the "Bit" type is to facilitate
+-                  the identification of germane information products.
+-                  This hierarchy is not intended to replace more
+-                  detailed domain-specific meta information (such as
+-                  that contained in NITF image headers or the GMTI
+-                  data formats), rather it is intended to provide a
+-                  domain-neutral mechanism for rapid filtering of
+-                  information products.
+-
+-           +--- Dimension
+-           |
+-           V
+-
+-           i - Imagery
+-               e - Electro-optical
+-               i - Infra red
+P               m - map-related (generally raster data)
+P                   t - topographic map
+-               s - SAR
+-               v - video
+P                   r - ready (video source ready to transmit)
+-               ...
+NoNoNo      r - Radar
+NoNoNo          m - MTI data
+P           w - weather
+P               * - MS2525 type tree for section 3.X
+P           a - aggregate (of other CoT events; this is container)
+NoNoNo          t - target package (ala TPG?)
+Exp             n - A node in a hierarchical organization (this node may be a leaf node or an intermediate node)
+P           r - Report
+P               p - Pending
+P               u - Unknown
+P               a - Assumed friend
+P               f - Friend
+P               n - Neutral
+P               s - Suspect
+P               h - Hostile
+P               j - Joker
+P               k - Faker
+P               o - None specified
+P                   I - Signals Intelligence
+P                       * - MS2525 type tree for section 4.X
+P                   O - MOOTW - Military Operations Other Than War
+P                       * - MS2525 type tree for section 5.X
+P           g - Graphic symbol (DEPRECATED!)
+P               p - Pending
+P               u - Unknown
+P               a - Assumed friend
+P               f - Friend
+P               n - Neutral
+P               s - Suspect
+P               h - Hostile
+P               j - Joker
+P               k - Faker
+P               o - None specified
+P                   * - MS2525 type tree for section 2.X
+P                       (Note, these generally don't make sense in CoT
+P                        and are only included for completeness.  Use
+P                        with extreme caution and low expectation!!)
+-                       ...
+-           d - Sensor detection events
+-               s - Seismic
+-               d - Doppler
+-               a - Acoustic
+-               m - Motion (e.g., IR)
+D               n - nuclear (deprecated, use b-c-n instead)
+P               c - CBRNE
+P                   b - bio/chem
+P                       b - biological
+P                       c - chemical
+P                   n - nuclear/radiological
+P                       r - radiation
+P                       n - nuclear
+P                   e - explosive
+P               l - launch
+P                   m - mortar
+P                   b - ballistic
+P               i - impact
+P                   m - mortar
+P                   b - ballistic
+P           l - Alarms
+P               c - CBRNE
+P                   b - bio/chem
+P                       b - biological
+P                       c - chemical
+P                   n - nuclear/radiological
+P                       r - radiation
+P                       n - nuclear
+P                   e - explosive
+P               e - Environmental
+P               f - Fire
+P                   a - Audible
+P               g - Geophysical
+P               h - Medical and Public Health
+P               i - Infrastructure
+P               l - Security
+P                   l - Law Enforcement
+P               m - Meteorological
+P               o - Other
+P               r - Rescue
+P                   s - Safety
+P                   t - Transportation					
+-           m - Mapping
+-               p - Designated point
+P                   w - waypoints
+-                   i - initial points
+P                   c - control points
+P                   t - target point
+NoNoNo              r - rally points
+P                   s - sensor
+P                       p - point
+P                           i - interest (hence b-m-p-s-p-i)
+Exp                             r - radar
+Exp                             i - infra red
+Exp                             e - electro optical
+P               r - route
+Exp             d - Drawing
+Exp             c - Chemlite (a colored digital marker, similar to a real-world chemlite)
+Exp                 g - Green
+Exp                 b - Blue
+Exp                 r - Red
+Exp                 y - Yellow
+-           x - External object (non-cot) (primarily for links)
+-               u - URL
+-                   ...
+-           t - Text
+-               f - Freetext
+-
+-       r - Reservation/Restriction/References
+-                  Events in this category are generally "notices"
+-                  about specific areas.  These events are used for
+-                  deconfliction and conveyance of significant "area"
+-                  conditions.  Generally, the "point" entity will
+-                  describe a conical region that completely encloses
+-                  the affected area.  The details entity will provide
+-                  more specific bounds on precisely the region
+-                  affected.
+-           u - Unsafe (hostile capability)
+-           o - Occupied (e.g., SOF forces on ground)
+-           c - Contaminated - chem/bio/radiological/nuclear event. CBRN, NBC, and ChemBio are other commonly used terms.
+-                              For more detailed types see CoTtypes.xml.
+Exp             x - Experimental (this branch is experimental and may change)
+Exp                 c - chemical
+Exp                 b - biological
+Exp                 r - radiological
+Exp                 n - nuclear
+-           f - Flight restrictions
+-
+-       t - Tasking (requests/orders)
+-                  Events in this category are generalized requests for
+-                  service.  These may be used to request for data
+-                  collection, request mensuration of a specific
+-                  object, order an asset to take action against a
+-                  specific point.  Generally, the "details" entity
+-                  will identify the general or specific entity being
+-                  tasked.
+            +--- Second position, task type
+            |
+            V
+P           a - air
+P               c - close air support
+P                   r - request?  (DEPRECATED)
+P               r - recovery
+P               k - strike
+P               e - electronic warfare
+P               d - air drop
+P               s - SEAD
+            b - subscribe
+P           c - chip (of a raster product)
+P               i - image (parallel tree to "t-s" branch?)
+P                   e - EO: electro-optical 
+P                       cib - common image base (NGA products)
+P                             1  - 1 meter per pixel imagery
+P                             5  - 5 meter per pixel imagery
+P                             10 - 10 meter per pixel imagery
+P
+P           k - Strike
+P               t - Target   (Air crew must check before shooting)
+P               d - Destroy  (All coordinated, shoot at these coordinates)
+P               i - Investigate  (Not cleared to shoot)
+P               e - Request for Effects (I want this target shot, but I don't have approval to say t-k-d)
+?           p - pairing (mission-asset pairing)
+?               s - surveillance (pairing for a surveillance mission)
+?                   i - imagery
+?                      ...
+?               k - Strike
+?                   t - Target   (Air crew must check before shooting)
+?                   d - Destroy  (All coordinated, shoot at these coordinates)
+?                   i - Investigate  (Not cleared to shoot)
+?                      ...
+?               a - air
+?                   c - CAS
+?                   k - strike
+?                   f - refueling
+?               r - recovery (personnel)
+-           s - surveillance
+P               i - imagery desired
+P                   e - EO imagery
+P                   i - IR imagery
+P               v - video surveillance desired
+P                   e - EO imagery
+P                   i - IR imagery
+P               r - Radar surveillance desired
+P               b - blue force (used to request blue SA picture)
+NoNoNo      e - Engage (rest of string is target type, e.g., t-e-a-h-G-E-V) (DEPRECATED!)
+-           m - Mensurate
+P               e - Elevation
+-           x - extended/experimental request
+Exp             a - Application control (e.g., for apps to pass filters, etc.)
+Exp                 c - control (exert some control of receiving the app, e.g. clear)
+Exp                     c - cue (i.e. center map)
+Exp                     d - disable (disable the app's main function, such as routing, or network reliability, ...)
+Exp                     e - enable (enable the app's main function)
+Exp                     r - restart (restart the application)
+Exp                     x - exit (exit/quit the application)
+Exp                 s - sync with peer (application)
+Exp                 p - pull point (general point, no specific guidance)
+Exp                 f - filter object
+Exp                 m - Monitoring
+Exp             t - system control
+Exp                 r - Reboot/Restart
+Exp                 z - Zeroize (ie. hard drive wipe, clear crypto, ...)
+Exp             i - information retrieval
+Exp                 l - <link> dereference
+NoNoNo          f - freetext
+NoNoNo          s - sync with peer (application)
+NoNoNo          j - JTIDS J12.0 mission assignment type
+NoNoNo          m - Monitoring
+Exp             v - Evacuate
+Exp                 m - medical
+Exp             q - Query database/datastore (ex. Query CoT Persistent Database for tracks)
+Exp         o - Field Orders (a generic plan or order to do something.  Can be used by commanders to convey intent to subordinates.)
+Exp             p - OPLAN  - a plan to do something but not an order to carry out the plan
+Exp             o - OPORD  - an order to carry out a plan
+Exp             f - FRAGO  - a change or a subset of a full OPORD
+Exp             w - WARNO  - a warning, or a heads up, that an OPORD or FRAGO is coming
+-           r - Relocate
+D*          z - abort (cancel) a pending request
+P           u - update pending request
+P               z - cancel request
+P               q - query current status (causes resend)
+?           q - query an asset on whether a tasking can be honored
+?               (tasking tree)
+-
+-
+-       c - Capability (applied to an area)
+-           s - Surveillance
+-           r - Rescue
+-           f - Fires (kinetic weapon)
+-               d - Direct fires
+-               i - Indirect fires
+-           l - Logistics (supply)
+-               f - Fuel
+-               ...
+-           c - Communications
+-
+P       y - replY - Event is a response to a tasking
+P          +--- Second position, general classification of response
+P          |
+P          V
+P          a - Ack     - Request was received and queued for processing
+P              r - received (aka "machine ack")
+P              w - queued for processing (aka "wilco")
+P                  d - degraded results expected ("best effort" wilco)
+P          s - Status  - Status update
+P              c - Cancelled (acknowledgment of t-u-z tasking)
+P              r - Review - Request in review
+P              m - MISREP available
+P              i - Imagery Available
+P              p - Planning - Requested service being planed
+P              e - Executing - Request service being executed
+P                  a - Approved
+P                  d - Dissemination
+P                      c - complete
+P
+P          c - Complete - Request processing complete
+P              s - Successful completion of request
+P              f - Request processing failure (cantco)
+P                  a - No available asset
+P                  i - Insufficient info to process request
+P                  b - bad request, (rejected by machine) (CANTPRO)
+P                      v - violates roe/exclusion-zone rules
+P                      a - authorization/authentication failed
+Exp                    n - not understood; service does not understand the request
+P                      p - physically impossible request
+P                  s - Request went stale before completed
+P                  r - Rejected (disapproved by a human)
+P                      c - C2 element
+P                      p - Platform/Pilot (CANTCO)
+NoNoNo             d - request denied (use y-c-f-r?)
+P                  x - cancelled
+P
+
+
+----------------
+1d =  (wdl) (y-a-w)WILCO
+2d =  (wdl) (y-a-w-d)WILCO - DEGRADED PK
+3d =  (wdl) (y-c-f-b)CANNOT PROCESS (CANTPRO)
+6d =  (wdl) (y-c-f-b)CANTPRO - DEGRADED PK
+4d =  (wdl) (y-c-f-b-a)CANTPRO - INVALID CONTROLLER OR IFTU SOURCE
+5d =  (wdl) (y-c-f-b-p)CANTPRO - KINEMATICALLY IMPOSSIBLE
+7d =  (wdl) (y-c-f-b-v)CANTPRO - NO IMPACT EXCLUSION ZONE VIOLATION
+8d =  (wdl) (y-c-f-b-v)CANTPRO - NO FLY EXCLUSION ZONE VIOLATION
+9d =  (wdl) (y-c-f-b)CANTPRO - PAYLOAD
+10d = (wdl) (y-c-f-b)CANTPRO - INCORRECT TARGET TRACK NUMBER
+11d = (wdl) (y-c-f-b)CANTPRO - NO STORED DATA
+12d = (wdl) (y-c-f-b)CANTPRO - NOT IMPLEMENTED
+13d = (wdl) (y-c-f-b)CANTPRO - CAPABILITY FAILED 
+14d = (wdl) (y-c-f-b)CANTPRO - INCORRECT WEAPON TYPE
+
+
+# Weapon type
+AMPLIFY_ 6  
+0d = NO STATEMENT 
+1d = JASSM 
+2d = SDB 
+3d = JDAM 
+4d = MALD - miniature air launched decoy?
+5d = JSOW
+6d = WCMD
+
+
+# Weapon tasking assignments
+0d=No Statement                                             
+1d=Select Preplanned Target N
+40d=Abort - Preplanned                                 
+43d=Exclusion Zone Abort Override                     
+44d to 49d=Undefined                       
+50d=Loiter
+53d=Resume                                       
+61d=Retarget - Fixed                             
+62d=Retarget - Moving/Relocatable                
+63d=Mission Supplement                           
+80d=No Fly Directive                             
+81d=No Impact Directive                          
+83d=EMCON State Change - Transmit Enable         
+84d=EMCON State Change - Radio Silent            
+91d=Proceed with Attack                          
+
+
+
+
+=======================================================================
+                      The CoT event *how* hierarchy.
+=======================================================================
+
+    Hierarchy for how  attribute in base CoT schema
+
+    * how (optional) format = character-character
+        The "how" attribute gives a hint about how the coordinates were
+        generated.  It is used specifically to relay a hint about the
+        types of errors that may be expected in the data and to weight the
+        data in systems that fuse multiple inputs.  For example,
+        coordinates transcribed by humans may have digit transposition,
+        missing or repeated digits, estimated error bounds, etc.  As such,
+        they may require special attention as they propagate through the
+        kill chain (e.g., they may require an additional review).
+        Similarly, machine generated coordinates derived solely from
+        magnetic sources may be subject to known anomalies in certain
+        geographical areas, etc.
+
+            h - human entered or modified (someone typed the coordinates)
+                e - estimated (a swag by the user)
+                c - calculated (user probably calculated value by hand)
+                t - transcribed (from voice, paper, ...)
+                p - cut and paste from another window
+                g-i-g-o - a highly suspect track... e.g., TACP-M ;-)
+
+            m - machine generated
+                g - derived from GPS receiver
+                    n - augmented INS+GPS
+                    d - differential GPS
+                i - mensurated (from imagery)
+                m - magnetic          - derived from magnetic sources
+                n - ins               - derived from inertial navigation system
+                s - simulated         - out of a simulation
+                c - configured        - out of a configuration file
+                r - relayed           - same as m-p
+**              R - radio             - radio positioning system (non GPS)
+                    e - eplrs
+                    p - plrs
+                    d - doppler
+                    v - vhf
+                    t - tadil
+                        a - tadil a
+                        b - tadil b
+                        j - tadil j
+                p - passed            - imported from another system (gateway) w/o pedigree
+                f - fused             - corroborated from multiple sources
+                a - algorithmic       - prediction from an algorithmic tracker
+                l - laser designated  - used laser range finder
+P               v - computed using geometric means
+P                   u - acoustic
+P                   o - optical
+P                   ou - combined acoustic and optical flash
+
+     m-v-.* portion of how tree proposed by Jason Dunham (jdunham@shotspotter.com)
+     in an email thread between Doug R and Mike B during Dec 2007 - Jan 2008.  
+     No objections were raised to the proposal so I added to this file. - mel  
+
+      As with other compound fields, the elements of the how field
+      will be delimited by the field separator character "-".  E.g,
+      A coordinate mensurated from imagery would have a how field of "m-i",
+
+==============================================================================
+                     The CoT event *qos* description
+==============================================================================
+
+    * qos (optional) - digit-character-character as defined below
+        The QoS attribute will determine the preferential treatment events
+        receive as they proceed through the kill chain.  The field has
+        several distinct but related components.
+
+        A "priority" value indicates queuing and processing order for
+        competing events.  At a processing bottleneck (e.g., bandwidth
+        limited link) high priority events will be processed before lower
+        priority events.  Priority determines queuing order at a
+        bottleneck.
+
+            9 - highest (most significant) priority
+            0 - lowest (least significant) priority
+
+        A "overtaking" value indicates how two events for the same uid are
+        reconciled when they "catch up" to one another.  The more recent
+        event (by timestamp) may supersede the older event (deleting the
+        old event) when it catches it, or it may follow the old event so
+        that event order is preserved, or it may be routed independently
+        of previous events.
+
+            r - replace - new event replaces (deletes) old event
+            f - follow  - new event must follow previous events
+            i - independent - new event processed independently of old events
+
+        An "assurance" value indicates how much effort must be placed in
+        delivering this particular event.  Events from sources that
+        continually send updates (blue force tracks) or that are sent for
+        information purposes only require a lower level of delivery
+        effort.  Events that are singletons (sent only once) and are
+        critical require guaranteed delivery.
+
+            g - guaranteed delivery (message never dropped even if
+                delivered late)
+            d - deadline (message dropped only after "stale" time)
+            c - congestion - message dropped when link congestion encountered
+
+         Thus, a valid QoS field looks like:
+
+            qos="1-r-c"
+
+         Note that different events with the same UID may have differing
+         QoS values.  This enables a graceful degradation in the presence
+         of congestion.  For example, a blue force tracker may output a
+         sequence of events with like
+            < ... qos="1-r-c" ... >  <= frequent, low priority updates
+            < ... qos="1-r-c" ... >
+            < ... qos="1-r-c" ... >
+            < ... qos="5-r-d" ... >  <= occasional "push" priority update
+            < ... qos="1-r-c" ... >
+            ...
+            < ... qos="9-r-g" ... >  <= A "Mayday" position report
+
+
+====================================================================
+                  The CoT event *link-type* hierarchy.
+====================================================================
+
+CoT has the concept of event linking.  Two events are related
+(unidirectionally with no cycles permitted) in specific, hierarchical
+ways.  The CoT relation type hierarchy is similar in structure to the
+CoT type hierarchy.  Here is an abbreviated CoT relationship type tree:
+
+          p - parent (of this object)
+              p - producer
+              o - owner
+              m - manager
+              l - leader (commander)
+P             s - source (this object was derived from parent)
+P             t - tasking (references the tasking that elicited this event)
+          c - child (of this object)
+              c - correlated element
+              f - fused element
+              a - alternate element
+P             p - composite element
+          r - refinement (of this object)
+              a - amplification
+              u - url (to be opened in web browser)
+          t - tasking (by this object)
+              o - object of tasking
+              i - indirect object
+              s - subject of tasking
+              p - preposition 
+                  a - at
+                  b - by
+                  w - with
+                  f - from
+                  r - regarding
+                  v - via
+
+Notes on subject, object, indirect object...  (the tasking is the verb)
+       Sam Ate Oranges
+        S   V    O       - (Subject, Verb, Object)
+
+       Fighter deliver this weapon to that target.
+          S       V           O             IO
+
+=======================================================================
+                  The CoT event *weapon* hierarchy.
+=======================================================================
+CoT Weapons Type Hierarchy for Weapon sub-schema under status.
+          (Courtesy of DLARS developers; thanks guys!)
+
+Note that the branches in the weapon tree are not always have single-letters
+E.g., 'b-c-CBU49' is valid.
+
+    +------------------------ 1st position
+    |      +----------------- 2nd position
+    |      |      +---------- 3rd position
+    |      |      |      +--- 4th position
+    |      |      |      |
+    V      V      V      V
+
+    b - Bombs
+           c - Cluster bomb
+                  CBU49 - CBU-49
+                  CBU59 - CBU-59/B ROCKEYE II
+                  CBU87 - CBU-87 CEM
+                  CBU89 - CBU-89 GATOR
+           d - Dumb bomb
+                  MK82 - MK-82 AIR
+                  MK84 - MK-84 AIR
+                  MK36 - MK-26 SEA MINE
+                  MK83 - MK-83 GP 1000 LB
+           s - Smart bomb
+                  l - Laser guided
+                         GBU10MK84 - GBU-10 PAVEWAY I/II (MK-84)
+                         GBU12     - GBU-12 PAVEWAY I/II (MK-82)
+                  g - GPS/INS guided
+                         GBU15 - GBU-15(V)-4B
+                         MK84  - MK-84 LD 2000LB
+                         GBU29 - Joint Direct Attack Munition (JDAM)
+                         GBU30 - Joint Direct Attack Munition (JDAM)
+                         GBU31 - Joint Direct Attack Munition (JDAM)
+                         GBU32 - Joint Direct Attack Munition (JDAM)
+                         WCMD  - Wind Corrected Munition Dispenser (WCMD)
+                         SDB   - Small Diameter Bomb
+    d - Depth charge
+    f - Flare
+    m - Missiles
+           a - Air launched
+                  a - Air to air
+                         AIM54A - "AIM-54 PHOENIX
+                         AIM120 - "AIM-120 AMRAAM
+                  s - Air to surface
+                         AGM45   - AGM-45 SHRIKE
+                         AGM65A  - AGM-65 MAVERICK (TV)
+                         AGM65B  - AGM-65 MAVERICK (TV)
+                         AGM65D  - AGM-65 MAVERICK (IR)
+                         AGM65E  - AGM-65 MAVERICK (LASER MAW)
+                         AGM88   - AGM-88 HARM
+                         AGM114A - AGM-114A Hellfire, the original (no longer purchased)
+                         AGM114B - AGM-114B Hellfire, Navy and Army
+                         AGM114C - AGM-114C Hellfire, improved semiactive laser seeker 
+                         AGM114F - AGM-114F Interim Hellfire, two warheads
+                         AGM114K - AGM-114K Hellfire II, dual warheads
+                         AGM154A - AGM-154A Joint Standoff Weapon [JSOW]
+                         AGM158  - AGM-158 Joint Air to Surface Standoff Missile (JASSM)
+           s - Surface launched
+                  a - Surface to air
+                  s - Surface to surface
+                         j - Javelin (a portable anti-tank weapon)
+    p - Projectiles
+    r - Rockets
+           t - Anti-tank Rocket
+           f - Folding Fin Aerial Rocket
+    t - Torpedos
+    o - Mortar
+           60  - 60mm Mortar
+           80  - 80mm Mortar
+           81  - 81mm Mortar
+           107 - 107mm Mortar
+           120 - 120mm Mortar
+    h - Howitzer
+           105 - 105mm Howitzer
+                  t - Towed
+           155 - 155mm Howitzer
+                  s - Self Propelled
+                  t - Towed
+           203 - 203mm Howitzer
+                  s - Self Propelled
+    c - CoT Type
+           CoT Type atoms hierarchy
+
+    ^      ^      ^      ^
+    |      |      |      |
+    |      |      |      +--- 4th position
+    |      |      +---------- 3rd position
+    |      +----------------- 2nd position
+    +------------------------ 1st position
+
+CoT Type Value 'c':
+
+   To be able to task someone to use any weapon, including the elements in the CoT type
+   hierarchy, we need this 'c' branch.
+
+   For example, the CoT type a-f-G-E-V-A-A-R means Armored Personnel Carrier Recovery.
+   To be able to say "Engage the target using an Armored Personnel Carrier Recovery
+   as the weapon", we would use the engage subschema as follows:
+
+      <engage scl="c-a-f-G-E-V-A-A-R"
+              target="HostileUid" />
+
+Weapon Overview:
+
+   - Rockets are unguided
+   - Missiles are guided, often by a guidance system such as a laser seaker or radar
+
+Howitzer Notes:
+
+   - A self-propelled howitzer is mounted on a tracked or wheeled motor vehicle
+   - A pack howitzer is a relatively light howitzer that is designed to be easily broken
+     down into several pieces
+   - A mountain howitzer is a relatively light howitzer designed for use in mountainous terrain
+   - A siege howitzer is designed to be fired from a mounting on fixed platform of some sort
+   - A field howitzer is mobile enough to accompany a field army on campaign
+
+3 Ways To Describe A Weapon When Engaging A Target:
+
+   1. Using a specific CoT entity as the shooter
+
+         <engage shooter="TheShooterUid"
+                 target="TargetUid" />
+
+   2. Recommending a specific weapon to use against the target
+
+         <engage scl="o-120"
+                 target="TargetUid />
+                 
+   3. Recommending a generic entity (tank, Apache, etc...) to engage the target
+
+         <engage scl="c-a-f-G-E-V-A-A-R"
+                 target="TargetUid" />
+
+Other Weapons Not in the Above Hierarchy:
+
+   - grenades, land mines
+
+   - Other weapons not used here from VMF K02.04 Call for Fire
+
+        Multiple Launch Rocket System
+        Naval Gun
+           5in38
+           5in54
+           16in50
+        20mm Cannon
+        40mm Grenade
+        Bradley Infantry Fighting Vehicle
+        Cavalry Fighting Vehicle
+        5 Inch 62 Naval Gun
+        Naval Gun - Advanced Gun System - AGS
+        Naval Vertical Launching System - VLS
+        Organic Air Assets
+
+-- EXPERIMENTAL -- EXPERIMENTAL -- EXPERIMENTAL -- EXPERIMENTAL -- EXPERIMENTAL -- 
+================================================================================
+                                The CoT marking hierarchy
+                                     (Experimental!!)
+================================================================================
+
+The marking attribute is part of the area subschema.  This area subschema is a
+Cursor On Target subschema to describe a geographic area in more detail.  The
+marking attribute describes the physical marking at this area, such as a panel,
+smoke, or fire.  The format is "type-color".
+
+Valid values for type are:
+
+    p - panel
+    s - smoke
+    f - fire
+
+Valid values for color are:
+
+    red
+    orange
+    yellow
+    green
+    blue
+    purple
+    black
+    white
+    gray
+
+For example:
+
+    type="f"          means fire
+    type="p-red"      means panel-red
+    type="s-yellow"   means smoke-yellow
+
+-- EXPERIMENTAL -- EXPERIMENTAL -- EXPERIMENTAL -- EXPERIMENTAL -- EXPERIMENTAL -- 
+=======================================================================
+                  The CoT event *(sub)system* status hierarchy.
+=======================================================================
+
+(Sub)System Type
+    w - weapon (aside from droppable munitions)
+        g - gun (e.g., 50 cal)
+        t - targeting system
+            l - laser designator
+            p - non-laser pod (e.g., lantrn)
+    s - sensor
+        v - video
+            e - electro-optical
+            i - infrared
+        r - radar
+        m - medical                                 <----- discuss
+            l - life sign detection system
+            9 - 911 device
+            b - Ballistic impact detection sensor
+            f - Fluid intake meter
+            s - Actigraph (sleep sensor)
+            t - Temp sensor
+    n - navigation system
+        g - gps
+        i - ins
+    p - propulsion system
+    c - communication system
+        v - voice
+        d - datalink
+    e - environmental system (fire control, life support...)
+    d - digital processing system
+
+(Sub)System Status
+  o - operational
+      a - active (armed) status
+          t - triggered since last reset
+      s - standby status
+  f - system failure
+      a - absent (system is not installed) (generally not reported)
+      r - reduced (partial) capability
+      t - total failure (no capability)
+          z - zeroized
+

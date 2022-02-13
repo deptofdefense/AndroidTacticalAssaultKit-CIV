@@ -1,4 +1,4 @@
-<PersistedActionMenu baseline="true" hideable="false" iconPath="ic_menu_maps"  title="actionbar_mapsandfavorites">
+<PersistedActionMenu baseline="true" hideable="false" iconPath="nav_maps"  title="actionbar_mapsandfavorites">
    <ClickData actionType="click">
       <broadcast>
          <action>com.atakmap.android.maps.MANAGE_LAYERS</action>

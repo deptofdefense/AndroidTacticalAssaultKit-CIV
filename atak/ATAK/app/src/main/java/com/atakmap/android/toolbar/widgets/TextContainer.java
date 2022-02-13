@@ -4,6 +4,7 @@ package com.atakmap.android.toolbar.widgets;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.MotionEvent;
 
 import com.atakmap.android.maps.MapTextFormat;
@@ -84,6 +85,11 @@ public class TextContainer implements MapWidget.OnClickListener, Runnable,
         LinearLayoutWidget topRight = root
                 .getLayout(RootLayoutWidget.TOP_RIGHT);
         LinearLayoutWidget topEdge = root.getLayout(RootLayoutWidget.TOP_EDGE);
+        LinearLayoutWidget teLayout = new LinearLayoutWidget(
+                LinearLayoutWidget.MATCH_PARENT,
+                LinearLayoutWidget.WRAP_CONTENT,
+                LinearLayoutWidget.VERTICAL);
+        teLayout.setGravity(Gravity.CENTER_HORIZONTAL);
 
         _prefs = PreferenceManager.getDefaultSharedPreferences(
                 _mapView.getContext());
@@ -92,7 +98,8 @@ public class TextContainer implements MapWidget.OnClickListener, Runnable,
         _text.setName("Tooltip Text");
         _text.setMargins(0f, 16f, 0f, 0f);
         _text.setVisible(false);
-        topEdge.addWidget(_text);
+        teLayout.addWidget(_text);
+        topEdge.addWidget(teLayout);
         topEdge.addOnWidgetSizeChangedListener(this);
 
         _widget = new MarkerIconWidget();
@@ -377,7 +384,7 @@ public class TextContainer implements MapWidget.OnClickListener, Runnable,
      * @param text Only close if this text is showing (null to ignore);
      */
     synchronized public void closePrompt(String text) {
-        if (text == null || FileSystemUtils.isEquals(text, _text.getText())) {
+        if (text == null || FileSystemUtils.isEquals(text, _prompt)) {
             displaying = false;
             _text.setVisible(false);
             _widget.setVisible(false);

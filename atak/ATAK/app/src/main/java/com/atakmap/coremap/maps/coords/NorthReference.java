@@ -1,6 +1,10 @@
 
 package com.atakmap.coremap.maps.coords;
 
+import com.atakmap.android.util.ATAKUtilities;
+import com.atakmap.coremap.conversions.Angle;
+import com.atakmap.coremap.conversions.AngleUtilities;
+
 /**
  * 
  */
@@ -73,4 +77,80 @@ public enum NorthReference {
         return null;
     }
 
+    /**
+     * Convert from degrees in one north reference to another
+     *
+     * @param deg Degrees in input north reference
+     * @param point Reference point (used in mag and grid calc)
+     * @param range Range in meters (used in grid calc)
+     * @param from Input north reference
+     * @param to Output north reference
+     * @return Degrees in output north reference
+     */
+    public static double convert(double deg, GeoPoint point, double range,
+            NorthReference from, NorthReference to) {
+
+        // Nothing to do
+        if (from == to)
+            return deg;
+
+        // First convert degrees to true north
+        double trueDeg = deg;
+        switch (from) {
+            case MAGNETIC:
+                trueDeg = ATAKUtilities.convertFromMagneticToTrue(point, deg);
+                break;
+            case GRID:
+                trueDeg += ATAKUtilities.computeGridConvergence(point, trueDeg,
+                        range);
+                break;
+        }
+
+        // Then convert to output reference
+        switch (to) {
+            case MAGNETIC:
+                trueDeg = ATAKUtilities.convertFromTrueToMagnetic(point,
+                        trueDeg);
+                break;
+            case GRID:
+                trueDeg -= ATAKUtilities.computeGridConvergence(point, trueDeg,
+                        range);
+                break;
+        }
+        return AngleUtilities.wrapDeg(trueDeg);
+    }
+
+    /**
+     * Format degrees to a specific north reference
+     *
+     * @param trueDeg Degrees value (true north)
+     * @param point Reference point (used in mag and grid calc)
+     * @param range Range in meters (used in grid calc)
+     * @param units Units for output format
+     * @param northRef North reference
+     * @param decimalPoints Number of decimal points in output format
+     * @return Formatted angle string
+     */
+    public static String format(double trueDeg, GeoPoint point, double range,
+            Angle units, NorthReference northRef, int decimalPoints) {
+        double deg = convert(trueDeg, point, range, NorthReference.TRUE,
+                northRef);
+        return AngleUtilities.format(deg, units, decimalPoints)
+                + northRef.getAbbrev();
+    }
+
+    /**
+     * Format degrees to a specific north reference
+     *
+     * @param trueDeg Degrees value (true north)
+     * @param point Reference point (used in mag and grid calc)
+     * @param units Units for output format
+     * @param northRef North reference
+     * @param decimalPoints Number of decimal points in output format
+     * @return Formatted angle string
+     */
+    public static String format(double trueDeg, GeoPoint point, Angle units,
+            NorthReference northRef, int decimalPoints) {
+        return format(trueDeg, point, 1, units, northRef, decimalPoints);
+    }
 }

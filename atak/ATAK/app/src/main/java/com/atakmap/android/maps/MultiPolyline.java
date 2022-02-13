@@ -20,7 +20,6 @@ import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.cot.event.CotDetail;
 import com.atakmap.coremap.cot.event.CotEvent;
-import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
@@ -212,7 +211,7 @@ public class MultiPolyline extends DrawingShape implements Exportable {
         super.setTitle(title);
 
         // only call refresh if the title actually changes
-        if (!FileSystemUtils.isEquals(title, prevTitle))
+        if (!title.equals(prevTitle))
             refresh();
     }
 

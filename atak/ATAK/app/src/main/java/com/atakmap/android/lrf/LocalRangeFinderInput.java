@@ -163,6 +163,10 @@ public class LocalRangeFinderInput implements Runnable, RangeFinderAction,
 
         calc = new Updater();
 
+        DocumentedIntentFilter filter = new DocumentedIntentFilter();
+        filter.addAction("com.atakmap.android.lrf.TOGGLE_SLIDE");
+        AtakBroadcast.getInstance().registerReceiver(_receiver, filter);
+
         Log.d(TAG, "starting local range finder listening");
         _instance = this;
 
@@ -344,9 +348,9 @@ public class LocalRangeFinderInput implements Runnable, RangeFinderAction,
                             .bearingFromSourceToTarget(
                                     anchorPoint,
                                     mapView.inverse(
-                                            event.getPoint().x,
-                                            event.getPoint().y).get());
-                    double range = DistanceCalculations.calculateRange(
+                                            event.getPointF().x,
+                                            event.getPointF().y).get());
+                    double range = GeoCalculations.distanceTo(
                             anchorPoint, marker.getPoint());
                     final GeoPoint targetPoint = GeoCalculations
                             .pointAtDistance(anchorPoint, bearing, range);
@@ -387,7 +391,7 @@ public class LocalRangeFinderInput implements Runnable, RangeFinderAction,
             rb.setType("rb");
             rb.setZOrder(-1000d);
 
-            rb.setMetaBoolean("nonremovable", true);
+            rb.setMetaBoolean("removable", false);
             rb.setMetaBoolean("addToObjList", false);
 
             final MapGroup _linkGroup = mapView.getRootGroup().findMapGroup(
@@ -472,8 +476,8 @@ public class LocalRangeFinderInput implements Runnable, RangeFinderAction,
                     if (!Double.isNaN(lat) && !Double.isNaN(lon)) {
                         _circle = new Circle();
                         GeoPoint anchorPoint = new GeoPoint(lat, lon);
-                        double range = DistanceCalculations.calculateRange(
-                                anchorPoint, mi.getPoint());
+                        double range = GeoCalculations.distanceTo(anchorPoint,
+                                mi.getPoint());
                         _circle.setRadius(range);
                         _circle.setCenterPoint(
                                 GeoPointMetaData.wrap(anchorPoint));
@@ -528,9 +532,8 @@ public class LocalRangeFinderInput implements Runnable, RangeFinderAction,
 
     @Override
     public void run() {
-        DocumentedIntentFilter filter = new DocumentedIntentFilter();
-        filter.addAction("com.atakmap.android.lrf.TOGGLE_SLIDE");
-        AtakBroadcast.getInstance().registerReceiver(_receiver, filter);
+        cancelled = false;
+
         while (!cancelled) {
             try {
                 if (s == null) {
@@ -545,46 +548,12 @@ public class LocalRangeFinderInput implements Runnable, RangeFinderAction,
                 receivePacket.setLength(receiveData.length);
                 s.receive(receivePacket);
 
-                // received data, clear out the SPI if it is visible
-                Marker pmi = getSPI();
-                pmi.setVisible(false);
-
-                String input = new String(receivePacket.getData(), 0,
+                final String input = new String(receivePacket.getData(), 0,
                         receivePacket.getLength(),
                         FileSystemUtils.UTF8_CHARSET);
-                Log.i(TAG, "receive: " + input);
-                String[] tokens = input.split(",");
 
-                remove();
-                if (tokens.length < 4) {
-                    Log.e(TAG, "bad input received: " + input);
-                } else if (tokens.length < 6) {
-                    if (tokens[3].startsWith("UNKNOWN")) {
-                        toastMessage(
-                                "Unknown message received from the LRF",
-                                Toast.LENGTH_LONG);
-                    } else if (tokens[3].startsWith("COMPASS")) {
-                        toastMessage("Compass error reported from the LRF",
-                                Toast.LENGTH_LONG);
-                    } else if (tokens[3].startsWith("RANGE")) {
-                        toastMessage("Range error reported from the LRF",
-                                Toast.LENGTH_LONG);
-                    } else if (tokens[3].startsWith("MAIN")) {
-                        toastMessage("Computer error reported from the LRF",
-                                Toast.LENGTH_LONG);
-                    }
-                } else {
-                    RangeFinderAction rfa = this;
-                    if (externalAction != null) {
-                        Log.d(TAG, "overriding default behavior of the lrf: "
-                                + externalAction.getClass());
-                        rfa = externalAction;
-                    }
-                    rfa.onRangeFinderInfo(tokens[1],
-                            Double.parseDouble(tokens[3]),
-                            Double.parseDouble(tokens[4]),
-                            Double.parseDouble(tokens[5]));
-                }
+                process(input);
+
             } catch (IOException ioe) {
                 if (!cancelled) {
                     // an IOException occurred and this thread has not yet been cancelled.
@@ -612,8 +581,59 @@ public class LocalRangeFinderInput implements Runnable, RangeFinderAction,
             }
 
         }
-        AtakBroadcast.getInstance().unregisterReceiver(_receiver);
-        AtakBroadcast.getInstance().unregisterReceiver(br);
+
+    }
+
+    /**
+     * This is the primary mechanism for handling all laser range finder data into the system.
+     * Process a laser range finder input in the form of
+     *
+     *      laserRangeFinderUid, time, meters, azimuth, inclination
+     *
+     * or in the case of an error mode
+     *
+     *      laserRangeFinderUid, time, ERROR
+     *
+     * @param input the string in the above format.
+     */
+    public void process(String input) {
+        // received data, clear out the SPI if it is visible
+        Marker pmi = getSPI();
+        pmi.setVisible(false);
+
+        Log.i(TAG, "receive: " + input);
+        String[] tokens = input.split(",");
+
+        remove();
+        if (tokens.length < 4) {
+            Log.e(TAG, "bad input received: " + input);
+        } else if (tokens.length < 6) {
+            if (tokens[3].startsWith("UNKNOWN")) {
+                toastMessage(
+                        "Unknown message received from the LRF",
+                        Toast.LENGTH_LONG);
+            } else if (tokens[3].startsWith("COMPASS")) {
+                toastMessage("Compass error reported from the LRF",
+                        Toast.LENGTH_LONG);
+            } else if (tokens[3].startsWith("RANGE")) {
+                toastMessage("Range error reported from the LRF",
+                        Toast.LENGTH_LONG);
+            } else if (tokens[3].startsWith("MAIN")) {
+                toastMessage("Computer error reported from the LRF",
+                        Toast.LENGTH_LONG);
+            }
+        } else {
+            RangeFinderAction rfa = this;
+            if (externalAction != null) {
+                Log.d(TAG, "overriding default behavior of the lrf: "
+                        + externalAction.getClass());
+                rfa = externalAction;
+            }
+            rfa.onRangeFinderInfo(tokens[1],
+                    Double.parseDouble(tokens[3]),
+                    Double.parseDouble(tokens[4]),
+                    Double.parseDouble(tokens[5]));
+        }
     }
 
     /**
@@ -644,12 +664,14 @@ public class LocalRangeFinderInput implements Runnable, RangeFinderAction,
             });
         }
         if (Double.isNaN(distance)) {
-            toastMessage("the range finder failed to provide a distance", Toast.LENGTH_SHORT);
+            toastMessage("the range finder failed to provide a distance",
+                    Toast.LENGTH_SHORT);
             return;
         }
 
         if (Double.isNaN(zAngle)) {
-            toastMessage("the range finder failed to provide an inclination", Toast.LENGTH_SHORT);
+            toastMessage("the range finder failed to provide an inclination",
+                    Toast.LENGTH_SHORT);
             return;
         }
 
@@ -938,6 +960,13 @@ public class LocalRangeFinderInput implements Runnable, RangeFinderAction,
                 }
             }
         }
+    }
+
+    public void dispose() {
+        _prefs.unregisterOnSharedPreferenceChangeListener(this);
+        AtakBroadcast.getInstance().unregisterReceiver(_receiver);
+        AtakBroadcast.getInstance().unregisterReceiver(br);
+        cancel();
     }
 
 }

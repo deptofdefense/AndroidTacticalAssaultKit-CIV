@@ -23,6 +23,7 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.map.CameraController;
 
 public class JumpBridgeDropDownReceiver extends DropDownReceiver implements
         OnStateListener {
@@ -88,7 +89,8 @@ public class JumpBridgeDropDownReceiver extends DropDownReceiver implements
                         public void onClick(View v) {
 
                             GeoPoint gp = targetPMI.getPoint();
-                            getMapView().getMapController().panTo(gp, false);
+                            CameraController.Programmatic.panTo(
+                                    getMapView().getRenderer3(), gp, false);
 
                         }
                     });

@@ -3,6 +3,7 @@ package com.atakmap.android.maps;
 
 import com.atakmap.android.maps.hittest.DeepHitTestQuery;
 import com.atakmap.android.maps.hittest.RootHitTestQuery;
+import com.atakmap.annotations.ModifierApi;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.hittest.HitTestQueryParameters;
@@ -57,6 +58,9 @@ public final class RootMapGroup extends DefaultMapGroup
      * Stock implementation of searching for a UID.
      */
     @Override
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {
+            "@Nullable", "public"
+    })
     public synchronized MapItem deepFindUID(final String uid) {
         final MapItem byUid = this.uidIndex.get(uid);
         if (byUid != null)

@@ -322,16 +322,38 @@ public class MissionPackageManifest implements Parcelable {
     }
 
     /**
-     * Add specified file to the Mission Package, optionally attach to map item
+     * Add specified file to the data package and optionally attach to a map
+     * item
      *
-     * @param file
-     * @param uid   if non-null, file will be treated as an attachment to a map item with the
-     *              specified UID
-     * @return
+     * @param file File to add
+     * @param contentType Content type of the file (null if N/A)
+     * @param attachedUID Map item UID (null if not an attachment)
+     * @return True if added
      */
-    public boolean addFile(File file, String uid) {
-        return addContent(MissionPackageManifestAdapter
-                .FileToContent(file, uid));
+    public boolean addFile(File file, String contentType, String attachedUID) {
+        MissionPackageContent mc = MissionPackageManifestAdapter
+                .FileToContent(file, attachedUID);
+        if (mc == null)
+            return false;
+
+        // Set import content type
+        if (contentType != null)
+            mc.setParameter(MissionPackageContent.PARAMETER_CONTENT_TYPE,
+                    contentType);
+
+        return addContent(mc);
+    }
+
+    /**
+     * Add specified file to the data package and optionally attach to a map
+     * item
+     *
+     * @param file File to add
+     * @param attachedUID Map item UID (null if not an attachment)
+     * @return True if added
+     */
+    public boolean addFile(File file, String attachedUID) {
+        return addFile(file, null, attachedUID);
     }
 
     public boolean addContent(MissionPackageContent content) {

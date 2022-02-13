@@ -10,8 +10,8 @@ zlib_conf_release=ReleaseWithoutAsm
 zlib_conf_debug=Debug
 zlib_conf=$(zlib_conf_$(BUILD_TYPE))
 
-zlib_projdir_v120=vc12
 zlib_projdir_v140=vc14
+zlib_projdir_v142=vc14
 
 zlib_src_projdir=$(OUTDIR)/$(zlib_srcdir)/contrib/vstudio/$(zlib_projdir_$(VS_VER_MSB))/
 

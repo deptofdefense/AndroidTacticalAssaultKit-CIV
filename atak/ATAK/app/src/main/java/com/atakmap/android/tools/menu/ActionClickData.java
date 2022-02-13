@@ -24,6 +24,12 @@ public class ActionClickData implements Parcelable {
     private String actionType = "";
 
     /**
+     * Whether to dismiss the tool menu when clicked
+     */
+    @Attribute(required = false)
+    private boolean dismissMenu = true;
+
+    /**
      * Action to take when the menu is launched
      */
     @Element
@@ -47,8 +53,21 @@ public class ActionClickData implements Parcelable {
         }
     }
 
+    /**
+     * Get the type of click action
+     * @return Click action
+     */
     public String getActionType() {
         return actionType;
+    }
+
+    /**
+     * Get whether or not this action should dismiss the menu it's part of
+     * if applicable
+     * @return True to dismiss menu
+     */
+    public boolean shouldDismissMenu() {
+        return dismissMenu;
     }
 
     public ActionBroadcastData getBroadcast() {

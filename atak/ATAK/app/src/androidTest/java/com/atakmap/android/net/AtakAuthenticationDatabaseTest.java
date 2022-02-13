@@ -3,18 +3,20 @@ package com.atakmap.android.net;
 
 import android.content.Context;
 
-import androidx.test.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.core.app.ApplicationProvider;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import com.atakmap.android.androidtest.ATAKInstrumentedTest;
 import com.atakmap.net.AtakAuthenticationCredentials;
 import com.atakmap.net.AtakAuthenticationDatabase;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 @RunWith(AndroidJUnit4.class)
@@ -22,7 +24,7 @@ public class AtakAuthenticationDatabaseTest extends ATAKInstrumentedTest {
 
     @Test
     public void storeAndRetrieve() {
-        Context appContext = InstrumentationRegistry.getTargetContext();
+        Context appContext = ApplicationProvider.getApplicationContext();
 
         AtakAuthenticationCredentials aac = AtakAuthenticationDatabase
                 .getCredentials(
@@ -55,6 +57,7 @@ public class AtakAuthenticationDatabaseTest extends ATAKInstrumentedTest {
                 .getCredentials(
                         AtakAuthenticationCredentials.TYPE_APK_DOWNLOADER,
                         "com.atakmap.app.test");
+        Assert.assertNotNull(aac);
         assertEquals("core", aac.password);
         assertEquals("apple", aac.username);
 
@@ -73,8 +76,9 @@ public class AtakAuthenticationDatabaseTest extends ATAKInstrumentedTest {
                 .getCredentials(
                         AtakAuthenticationCredentials.TYPE_APK_DOWNLOADER,
                         "com.atakmap.app.test");
-        assertFalse(aac2.password.equals("core"));
-        assertFalse(aac2.username.equals("apple"));
+        assertNotNull(aac2);
+        assertNotEquals("core", aac2.password);
+        assertNotEquals("apple", aac2.username);
 
     }
 

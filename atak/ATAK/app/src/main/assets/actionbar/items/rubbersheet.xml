@@ -1,4 +1,4 @@
-<PersistedActionMenu baseline="true" hideable="true" iconPath="ic_rubber_sheet"  title="rubber_sheet">
+<PersistedActionMenu baseline="true" hideable="true" iconPath="nav_rubber_sheet"  title="rubber_sheet">
    <ClickData actionType="click">
       <broadcast>
          <action>com.atakmap.android.rubbersheet.SHOW_LIST</action>

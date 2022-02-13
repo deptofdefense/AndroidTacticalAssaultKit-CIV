@@ -9,7 +9,6 @@ import android.util.Xml;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
-import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -126,25 +125,9 @@ public class KmzLayerInfoSpi extends AbstractDatasetDescriptorSpi {
         XmlPullParser parser = null;
         InputStream inputStream = null;
         try {
-            ZipVirtualFile docFile = new ZipVirtualFile(file, "doc.kml");
-            if (!IOProviderFactory.exists(docFile)) {
-                ZipVirtualFile zipFile;
-                try {
-                    zipFile = new ZipVirtualFile(file);
-                    final String[] files = zipFile.list();
-                    if (files != null) {
-                        for (String f : files) {
-                            if (f.toLowerCase(LocaleUtil.getCurrent())
-                                    .endsWith(".kml")) {
-                                docFile = new ZipVirtualFile(file, f);
-                                break;
-                            }
-                        }
-                    }
-                } catch (IllegalArgumentException e) {
-                    Log.d(TAG, "error opening" + file, e);
-                }
-            }
+            ZipVirtualFile docFile = findDocumentKML(file);
+            if (docFile == null)
+                return null;
             inputStream = docFile.openStream();
             parser = Xml.newPullParser();
             parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
@@ -222,26 +205,20 @@ public class KmzLayerInfoSpi extends AbstractDatasetDescriptorSpi {
         InputStream inputStream = null;
         XmlPullParser parser = null;
         try {
-            if (!(kmzFile instanceof ZipVirtualFile)) {
-                kmzFile = new ZipVirtualFile(kmzFile);
-            }
 
             // If we can successfully open the inputstream to doc.kml,
             // and it has the GroundOverlay element, then this is probably a KMZ layer file.
-            ZipVirtualFile docFile = new ZipVirtualFile(kmzFile, "doc.kml");
 
-            // Look for other KML
-            if (!IOProviderFactory.exists(docFile)) {
-                File[] files = IOProviderFactory.listFiles(kmzFile, KML_FILTER);
-                if (files != null) {
-                    for (File f : files) {
-                        if (f instanceof ZipVirtualFile) {
-                            docFile = (ZipVirtualFile) f;
-                            break;
-                        }
-                    }
-                }
+            ZipVirtualFile docFile = null;
+
+            try {
+                docFile = findDocumentKML(kmzFile);
+            } catch (IllegalArgumentException iae) {
+                Log.d(TAG, "not a kmz file: " + kmzFile);
+                return false;
             }
+            if (docFile == null)
+                return false;
 
             inputStream = docFile.openStream();
             parser = Xml.newPullParser();
@@ -731,4 +708,34 @@ public class KmzLayerInfoSpi extends AbstractDatasetDescriptorSpi {
         }
     }
 
+    /**
+     * Given a KMZ file, find the main document KML (doc.kml)
+     * @param kmzFile KMZ file
+     * @return ZIP file pointer to the document KML or null if not found
+     */
+    public static ZipVirtualFile findDocumentKML(File kmzFile) {
+        try {
+            if (!(kmzFile instanceof ZipVirtualFile))
+                kmzFile = new ZipVirtualFile(kmzFile);
+
+            // Primary KML is usually named doc.kml
+            ZipVirtualFile docFile = new ZipVirtualFile(kmzFile, "doc.kml");
+            if (IOProviderFactory.exists(docFile))
+                return docFile;
+
+            // Look for other KML
+            File[] files = IOProviderFactory.listFiles(kmzFile, KML_FILTER);
+            if (files != null) {
+                for (File f : files) {
+                    if (f instanceof ZipVirtualFile)
+                        return (ZipVirtualFile) f;
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to find document KML file", e);
+        }
+
+        // Not found
+        return null;
+    }
 }

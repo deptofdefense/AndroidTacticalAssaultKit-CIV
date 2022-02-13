@@ -8,10 +8,18 @@ import com.atakmap.map.layer.feature.Feature.AltitudeMode;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+/**
+ * An ellipse with a width, length, and angle
+ *
+ * Angle - The "heading" of the ellipse in true north
+ * Length - The diameter of the ellipse that runs parallel to the angle
+ * Width - The diameter of the ellipse that runs perpendicular to the angle
+ */
 public class Ellipse extends Polyline {
+
     private GeoPointMetaData center = new GeoPointMetaData();
-    private double majorRadius = 0d;
-    private double minorRadius = 0d;
+    private double width = 0d;
+    private double length = 0d;
     private double angle = 0d;
     private int fill = 0;
 
@@ -117,7 +125,62 @@ public class Ellipse extends Polyline {
     }
 
     /**
-     * Set the major axis radius
+     * Returns the width (perpendicular diameter) of the ellipse
+     * @return Width in meters
+     */
+    public double getWidth() {
+        return width;
+    }
+
+    /**
+     * Sets the width (perpendicular diameter) of the ellipse
+     * @param width Width in meters
+     */
+    public void setWidth(double width) {
+        if (setWidthImpl(width))
+            recomputePoly();
+    }
+
+    private boolean setWidthImpl(double width) {
+        if (Double.compare(this.width, width) != 0) {
+            this.width = width;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Returns the length (parallel diameter) of the ellipse
+     * @return Length in meters
+     */
+    public double getLength() {
+        return length;
+    }
+
+    /**
+     * Sets the length (parallel diameter) of the ellipse
+     * @param length Length in meters
+     */
+    public void setLength(double length) {
+        if (setLengthImpl(length))
+            recomputePoly();
+    }
+
+    private boolean setLengthImpl(double length) {
+        if (Double.compare(this.length, length) != 0) {
+            this.length = length;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Set the radius of the major axis
+     * The major axis is the longer diameter in the ellipse
+     *
+     * It's recommended to use {@link #setWidth(double)}
+     * or {@link #setLength(double)} instead
+     *
      * @param radius Radius in meters
      */
     public void setMajorRadius(double radius) {
@@ -126,8 +189,11 @@ public class Ellipse extends Polyline {
     }
 
     protected boolean setMajorRadiusImpl(double radius) {
-        if (Double.compare(radius, majorRadius) != 0) {
-            majorRadius = radius;
+        if (Double.compare(radius, getMajorRadius()) != 0) {
+            if (width > length)
+                width = radius * 2;
+            else
+                length = radius * 2;
             return true;
         }
         return false;
@@ -138,11 +204,24 @@ public class Ellipse extends Polyline {
      * @return Radius in meters
      */
     public double getMajorRadius() {
-        return majorRadius;
+        return getMajorAxis() / 2;
     }
 
     /**
-     * Set the minor axius radius
+     * Get the major axis diameter
+     * @return Diameter in meters
+     */
+    public double getMajorAxis() {
+        return Math.max(width, length);
+    }
+
+    /**
+     * Set the radius of the minor axis
+     * The minor axis is the shorter diameter in the ellipse
+     *
+     * It's recommended to use {@link #setWidth(double)}
+     * or {@link #setLength(double)} instead
+     *
      * @param radius Radius in meters
      */
     public void setMinorRadius(double radius) {
@@ -151,8 +230,11 @@ public class Ellipse extends Polyline {
     }
 
     protected boolean setMinorRadiusImpl(double radius) {
-        if (Double.compare(radius, minorRadius) != 0) {
-            minorRadius = radius;
+        if (Double.compare(radius, getMajorRadius()) != 0) {
+            if (width < length)
+                width = radius * 2;
+            else
+                length = radius * 2;
             return true;
         }
         return false;
@@ -163,7 +245,15 @@ public class Ellipse extends Polyline {
      * @return Radius in meters
      */
     public double getMinorRadius() {
-        return minorRadius;
+        return getMinorAxis() / 2;
+    }
+
+    /**
+     * Get the minor axis diameter
+     * @return Diameter in meters
+     */
+    public double getMinorAxis() {
+        return Math.min(width, length);
     }
 
     /**
@@ -195,8 +285,8 @@ public class Ellipse extends Polyline {
      */
     public void setDimensions(double minorRadius, double majorRadius) {
 
-        boolean minorRadiusChanged = setMinorRadiusImpl(minorRadius);
-        boolean majorRadiusChanged = setMajorRadiusImpl(majorRadius);
+        boolean minorRadiusChanged = setWidthImpl(minorRadius * 2);
+        boolean majorRadiusChanged = setLengthImpl(majorRadius * 2);
 
         if (minorRadiusChanged || majorRadiusChanged)
             recomputePoly();
@@ -210,8 +300,8 @@ public class Ellipse extends Polyline {
      */
     public void setDimensions(GeoPointMetaData center, double minorRadius,
             double majorRadius) {
-        boolean minorRadiusChanged = setMinorRadiusImpl(minorRadius);
-        boolean majorRadiusChanged = setMajorRadiusImpl(majorRadius);
+        boolean minorRadiusChanged = setWidthImpl(minorRadius * 2);
+        boolean majorRadiusChanged = setLengthImpl(majorRadius * 2);
         boolean centerChanged = setCenterImpl(center);
 
         if (minorRadiusChanged || majorRadiusChanged || centerChanged)
@@ -220,17 +310,22 @@ public class Ellipse extends Polyline {
 
     /**
      * Sets the dimensions and location of the ellipse using the minor and major values in meters
-     * @param center the center of the elipse
+     *
+     * Based on the CoT Shape Schema, the angle represents the orientation of
+     * the major axis. Therefore the major radius in this context always
+     * corresponds to the length of the ellipse.
+     *
+     * @param center the center of the ellipse
      * @param minorRadius the minor radius in meters
      * @param majorRadius the major radius in meters
      * @param angle the angle of the ellipse in degrees clock wise.
      */
     public void setDimensions(GeoPointMetaData center, double minorRadius,
             double majorRadius, double angle) {
-        boolean minorRadiusChanged = setMinorRadiusImpl(minorRadius);
-        boolean majorRadiusChanged = setMajorRadiusImpl(majorRadius);
-        boolean centerChanged = setCenterImpl(center);
         boolean angleChanged = setAngleImpl(angle);
+        boolean minorRadiusChanged = setWidthImpl(minorRadius * 2);
+        boolean majorRadiusChanged = setLengthImpl(majorRadius * 2);
+        boolean centerChanged = setCenterImpl(center);
 
         if (minorRadiusChanged || majorRadiusChanged || centerChanged
                 || angleChanged)
@@ -310,9 +405,20 @@ public class Ellipse extends Polyline {
         recomputePoly();
     }
 
+    @Override
+    public double getArea() {
+        return getMinorRadius() * getMajorRadius() * Math.PI;
+    }
+
+    @Override
+    public double getPerimeterOrLength() {
+        return Math.PI * 2 * Math.sqrt((Math.pow(getMinorRadius(), 2)
+                + Math.pow(getMajorRadius(), 2)) / 2);
+    }
+
     private void recomputePoly() {
-        if (center == null || !center.get().isValid() || minorRadius < 0
-                || majorRadius < 0)
+        if (center == null || !center.get().isValid() || width < 0
+                || length < 0)
             return;
 
         if (end < start) {
@@ -360,10 +466,12 @@ public class Ellipse extends Polyline {
 
         double alt = center.get().getAltitude();
 
+        double radiusW = width / 2;
+        double radiusL = length / 2;
         for (int i = 0; i < coords.length; i++) {
             double angdev = Math.toRadians((i * 6 + start));
-            double x = Math.cos(angdev) * majorRadius;
-            double y = Math.sin(angdev) * minorRadius;
+            double x = Math.cos(angdev) * radiusL;
+            double y = Math.sin(angdev) * radiusW;
 
             double x2 = angRad_sin * x - angRad_cos * y;
             double y2 = angRad_cos * x + angRad_sin * y;
@@ -383,27 +491,7 @@ public class Ellipse extends Polyline {
         }
     }
 
-    /* DEPRECATED METHODS - When "width" and "height" were used instead */
-
-    /**
-     * Returns the width of the ellipse in meters.
-     * @return the width in meters.
-     * @deprecated Use {@link #getMajorRadius()}
-     */
-    @Deprecated
-    public double getWidth() {
-        return getMajorRadius() * 2;
-    }
-
-    /**
-     * Sets the width of the ellipse.
-     * @param newW the width in meters.
-     * @deprecated Use {@link #setMajorRadius(double)}
-     */
-    @Deprecated
-    public void setWidth(double newW) {
-        setMajorRadius(newW / 2);
-    }
+    /* DEPRECATED METHODS - When "height" was used instead of length */
 
     /**
      * Sets the height and width of the ellipse.   Calling this will reduce the number of full
@@ -414,7 +502,7 @@ public class Ellipse extends Polyline {
      */
     @Deprecated
     public void setHeightWidth(double newH, double newW) {
-        setDimensions(newH / 2, newW / 2);
+        setDimensions(newW / 2, newH / 2);
     }
 
     /**
@@ -429,7 +517,7 @@ public class Ellipse extends Polyline {
     public void setCenterHeightWidth(GeoPointMetaData newCenter,
             double newH,
             double newW) {
-        setDimensions(newCenter, newH / 2, newW / 2);
+        setDimensions(newCenter, newW / 2, newH / 2);
     }
 
     /**
@@ -446,6 +534,6 @@ public class Ellipse extends Polyline {
             double newH,
             double newW,
             double newAngle) {
-        setDimensions(newCenter, newH / 2, newW / 2, newAngle);
+        setDimensions(newCenter, newW / 2, newH / 2, newAngle);
     }
 }

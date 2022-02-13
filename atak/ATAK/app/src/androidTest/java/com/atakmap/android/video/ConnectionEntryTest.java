@@ -141,6 +141,8 @@ public class ConnectionEntryTest extends ATAKInstrumentedTest {
     public void getSource() {
         ConnectionEntry ce = new ConnectionEntry("myalias",
                 "udp://239.255.0.1:2000");
+        Assert.assertEquals(ce.getSource(),
+                ConnectionEntry.Source.LOCAL_STORAGE);
     }
 
     @Test
@@ -177,5 +179,78 @@ public class ConnectionEntryTest extends ATAKInstrumentedTest {
         ConnectionEntry ce = new ConnectionEntry("myalias",
                 "udp://239.255.0.1:2000");
         Assert.assertEquals("239.255.0.1:2000", ConnectionEntry.getURL(ce));
+    }
+
+    @Test
+    public void getRTSPReliableFromUri() {
+        ConnectionEntry ce = new ConnectionEntry("myalias",
+                "rtsp://192.168.1.100:554/axis-media/media.amp?tcp");
+        Assert.assertEquals(1, ce.getRtspReliable());
+        ce = new ConnectionEntry("myalias",
+                "rtsp://192.168.1.100:554/axis-media/media.amp");
+        Assert.assertEquals(0, ce.getRtspReliable());
+    }
+
+    @Test
+    public void getRTSPReliableFromUri2() {
+        ConnectionEntry ce = new ConnectionEntry("myalias",
+                "rtsp://192.168.1.100:554/axis-media/media.amp?joe&tcp");
+        Assert.assertEquals(1, ce.getRtspReliable());
+    }
+
+    @Test
+    public void getRtspGetUserPassFromUri1() {
+        String[] userPassIp = ConnectionEntry.getUserPassIp(
+                "username:password@192.168.1.100:554/axis-media/media.amp");
+        Assert.assertEquals("username", userPassIp[0]);
+        Assert.assertEquals("password", userPassIp[1]);
+        Assert.assertEquals("192.168.1.100", userPassIp[2]);
+    }
+
+    @Test
+    public void getRtspGetUserPassFromUri2() {
+
+        String[] userPassIp = ConnectionEntry.getUserPassIp(
+                "rtsp://username:@192.168.1.100:554/axis-media/media.amp");
+        Assert.assertEquals("username", userPassIp[0]);
+        Assert.assertEquals("", userPassIp[1]);
+        Assert.assertEquals("192.168.1.100", userPassIp[2]);
+    }
+
+    @Test
+    public void getRtspGetUserPassFromUri3() {
+        String[] userPassIp = ConnectionEntry.getUserPassIp(
+                "rtsp://@192.168.1.100:554/axis-media/media.amp");
+        Assert.assertEquals("", userPassIp[0]);
+        Assert.assertEquals("", userPassIp[1]);
+        Assert.assertEquals("192.168.1.100", userPassIp[2]);
+
+    }
+
+    @Test
+    public void getRtspGetUserPassFromUri4() {
+        String[] userPassIp = ConnectionEntry.getUserPassIp(
+                "rtsp://192.168.1.100:554/axis-media/media.amp");
+        Assert.assertEquals("", userPassIp[0]);
+        Assert.assertEquals("", userPassIp[1]);
+        Assert.assertEquals("192.168.1.100", userPassIp[2]);
+
+    }
+
+    @Test
+    public void getRtspGetUserPassFromUri5() {
+        String[] userPassIp = ConnectionEntry.getUserPassIp(
+                "rtsp://:@192.168.1.100:554/axis-media/media.amp");
+        Assert.assertEquals("", userPassIp[0]);
+        Assert.assertEquals("", userPassIp[1]);
+        Assert.assertEquals("192.168.1.100", userPassIp[2]);
+
+    }
+
+    @Test
+    public void connectionEntryFromBadUri() {
+        ConnectionEntry ce = new ConnectionEntry("test",
+                "gopher://eighties-4eva.net/video-stream");
+        Assert.assertEquals(ce.getProtocol().toString(), "raw");
     }
 }

@@ -42,7 +42,7 @@ import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 
 import com.atakmap.coremap.maps.conversion.EGM96;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
@@ -928,8 +928,7 @@ public class ExportTrackHistoryTask extends AsyncTask<Void, String, String> {
                 // if not first or last point, and within close range of previous point, skip it
                 if (!firstPoint && prevPoint != null
                         && !(pointIndex == curPoints.length - 1)) {
-                    if (DistanceCalculations.metersFromAtSourceTarget(
-                            prevPoint,
+                    if (GeoCalculations.distanceTo(prevPoint,
                             curPoints[pointIndex].get()) < toleranceMeters) {
                         skippedPoints++;
                         // Log.d(TAG, "Skipping point " + curPoints[pointIndex].toString() +

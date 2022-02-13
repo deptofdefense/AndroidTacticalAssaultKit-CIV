@@ -11,7 +11,7 @@ import java.util.List;
 
 public class WktPolygon extends WktGeometry {
 
-    List<WktLinestring> lines;
+    final List<WktLinestring> lines;
 
     private WktPolygon(List<WktLinestring> lines) {
         this.lines = lines;

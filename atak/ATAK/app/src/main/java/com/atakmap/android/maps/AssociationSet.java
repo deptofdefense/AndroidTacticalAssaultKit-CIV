@@ -13,8 +13,8 @@ import java.util.List;
 public class AssociationSet extends MetaShape {
 
     private final List<Association> _assocs = new ArrayList<>();
-    private List<GeoPoint> _points = new ArrayList<>();
-    private List<GeoPointMetaData> _metaPoints = new ArrayList<>();
+    private final List<GeoPoint> _points = new ArrayList<>();
+    private final List<GeoPointMetaData> _metaPoints = new ArrayList<>();
     private final MutableGeoBounds _bounds = new MutableGeoBounds(0, 0, 0, 0);
 
     public AssociationSet(String uid) {

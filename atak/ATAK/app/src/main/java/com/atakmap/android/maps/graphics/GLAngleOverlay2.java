@@ -499,7 +499,8 @@ class GLAngleOverlay2 extends GLShape2 implements
                         / ortho.currentScene.drawMapResolution) < ((OVERLAY_OFFSET
                                 + OVERLAY_HASH_LENGTH) * 1.5d))) {
 
-            if (MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SPRITES))
+            if (!isAutoSize && MathUtils.hasBits(renderPass,
+                    GLMapView.RENDER_PASS_SPRITES))
                 drawIcon(ortho);
             return;
         }
@@ -573,7 +574,11 @@ class GLAngleOverlay2 extends GLShape2 implements
         for (int d = 0; d < thirtyHash.length; d++) {
             if (labelPoints[d] == null)
                 labelPoints[d] = new GLSurfaceLabel();
-            labelPoints[d].setLocation(thirtyHash[d].getPoints()[1]);
+            final GeoPoint[] points = thirtyHash[d].getPoints();
+            // Playstore Crash Log: GLAngleOverlay2 ArrayOutOfBoundsException
+            // seems like this could only happen when calling release improperly.
+            if (points.length > 1)
+                labelPoints[d].setLocation(points[1]);
         }
     }
 
@@ -915,9 +920,7 @@ class GLAngleOverlay2 extends GLShape2 implements
         // Could be in portrait mode as well, so change the bottom accordingly
         //float top = this.orthoView.focusy * 2;
         float top = ((GLMapView) this.context).getTop();
-        return new RectF(0f + 20,
-                top - (MapView.getMapView().getActionBarHeight() + 20),
-                right - 20, 0f + 20);
+        return new RectF(0f + 20, top - 20, right - 20, 0f + 20);
     }
 
     static void setGeometry(GLBatchLineString glls, GeoPoint[] pts) {

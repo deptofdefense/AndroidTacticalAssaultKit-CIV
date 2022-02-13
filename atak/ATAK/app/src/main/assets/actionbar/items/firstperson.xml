@@ -1,0 +1,7 @@
+<PersistedActionMenu baseline="true" hideable="true" iconPath="nav_firstperson"  title="actionbar_first_person">
+   <ClickData actionType="click">
+      <broadcast>
+         <action>com.atakmap.android.map.FIRSTPERSON</action>
+      </broadcast>
+   </ClickData>
+</PersistedActionMenu>

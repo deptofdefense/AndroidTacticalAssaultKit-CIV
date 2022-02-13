@@ -6,7 +6,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
-import android.graphics.Point;
+import android.graphics.PointF;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -34,6 +34,7 @@ import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.android.toolbar.widgets.TextContainer;
 import com.atakmap.android.tools.ActionBarReceiver;
 import com.atakmap.android.tools.ActionBarView;
+import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.util.EditAction;
 import com.atakmap.android.util.Undoable;
 import com.atakmap.app.R;
@@ -64,7 +65,7 @@ public class RegionShapeTool extends Tool implements Undoable,
     public enum Mode {
         RECTANGLE(R.drawable.rectangle,
                 R.string.rectangle,
-                R.string.select_area_prompt),
+                R.string.rectangle_corner1_prompt),
         FREE_FORM(R.drawable.sse_shape,
                 R.string.free_form,
                 R.string.polygon_area_prompt),
@@ -105,11 +106,14 @@ public class RegionShapeTool extends Tool implements Undoable,
     protected Intent _callback;
     protected Shape _shape;
     protected DrawingShape _drawShape;
-    protected Point _lastPt;
+    protected PointF _lastPt;
     private Marker _firstPoint;
     protected double _expandDistance;
     protected DrawingRectangle.Builder _builder;
     protected TileButtonDialog _dialog;
+
+    // Rectangle select
+    private GeoPointMetaData _firstCorner, _secondCorner;
 
     public RegionShapeTool(MapView mapView) {
         super(mapView, TOOL_ID);
@@ -160,6 +164,7 @@ public class RegionShapeTool extends Tool implements Undoable,
         _shape = null;
         _drawShape = null;
         _lastPt = null;
+        _firstCorner = _secondCorner = null;
         _expandDistance = 0;
 
         // Prompt to select mode
@@ -328,6 +333,7 @@ public class RegionShapeTool extends Tool implements Undoable,
         if (_mode == Mode.SELECT) {
             if (!e.equals(MapEvent.ITEM_CLICK))
                 return;
+            item = ATAKUtilities.findAssocShape(item);
             if (!(item instanceof Shape)) {
                 Toast.makeText(_context, R.string.cannot_select_item,
                         Toast.LENGTH_SHORT).show();
@@ -350,21 +356,7 @@ public class RegionShapeTool extends Tool implements Undoable,
 
         // Rectangle selection
         else if (_mode == Mode.RECTANGLE) {
-            if (_builder == null) {
-                String name = _context.getString(R.string.select_area);
-                MapGroup grp = _drawingGroup.addGroup(name);
-                grp.setMetaBoolean("addToObjList", false);
-                _builder = new DrawingRectangle.Builder(grp,
-                        DrawingRectangle.Builder.Mode.START_END_CORNERS);
-                _builder.setFirstPoint(point);
-                TextContainer.getInstance().displayPrompt(_context.getString(
-                        R.string.select_area_prompt2));
-            } else {
-                _builder.setSecondPoint(point);
-                _drawingGroup.addItem(_shape = _builder.build());
-                flagTempShape();
-                requestEndTool();
-            }
+            run(new AddPointAction(point));
         }
 
         // Lasso
@@ -376,7 +368,7 @@ public class RegionShapeTool extends Tool implements Undoable,
                     || e.equals(MapEvent.ITEM_DRAG_CONTINUED)) {
 
                 // Prevent redundant points that are too close together
-                Point p = event.getPoint();
+                PointF p = event.getPointF();
                 if (_lastPt != null && _drawShape != null
                         && Math.hypot(p.x - _lastPt.x,
                                 p.y - _lastPt.y) <= _drawShape
@@ -424,6 +416,37 @@ public class RegionShapeTool extends Tool implements Undoable,
                 Color.green(c), Color.blue(c)));
     }
 
+    private void addRectanglePoint(GeoPointMetaData point) {
+        if (point.equals(_firstCorner) || point.equals(_secondCorner)) {
+            Toast.makeText(_context, R.string.same_point_warning,
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (_firstCorner == null) {
+            if (_builder == null) {
+                String name = _context.getString(R.string.select_area);
+                MapGroup grp = _drawingGroup.addGroup(name);
+                grp.setMetaBoolean("addToObjList", false);
+                _builder = new DrawingRectangle.Builder(grp,
+                        DrawingRectangle.Builder.Mode.THREE_POINTS);
+            }
+            _builder.setFirstPoint(point);
+            _firstCorner = point;
+            TextContainer.getInstance().displayPrompt(_context.getString(
+                    R.string.rectangle_corner2_prompt));
+        } else if (_secondCorner == null) {
+            _builder.setSecondPoint(point);
+            _secondCorner = point;
+            TextContainer.getInstance().displayPrompt(_context.getString(
+                    R.string.rectangle_corner3_prompt));
+        } else {
+            _builder.setThirdPoint(point);
+            _drawingGroup.addItem(_shape = _builder.build());
+            flagTempShape();
+            requestEndTool();
+        }
+    }
+
     private class AddPointAction extends EditAction {
 
         private final GeoPointMetaData _point;
@@ -434,24 +457,42 @@ public class RegionShapeTool extends Tool implements Undoable,
 
         @Override
         public boolean run() {
-            addPointToShape(_point);
+            if (_mode == Mode.RECTANGLE)
+                addRectanglePoint(_point);
+            else
+                addPointToShape(_point);
             return true;
         }
 
         @Override
         public void undo() {
-            if (_drawShape == null || _firstPoint == null)
-                return;
-            int numPoints = _drawShape.getNumPoints();
-            if (numPoints > 1)
-                _drawShape.removePoint(numPoints - 1);
-            else {
-                if (_drawShape != null)
-                    _drawingGroup.removeItem(_drawShape);
-                if (_firstPoint != null)
-                    _drawingGroup.removeItem(_firstPoint);
-                _drawShape = null;
-                _firstPoint = null;
+            if (_mode == Mode.RECTANGLE) {
+                // Undo rectangle point
+                int prompt;
+                if (_secondCorner != null) {
+                    _secondCorner = null;
+                    prompt = R.string.rectangle_corner2_prompt;
+                } else if (_firstCorner != null) {
+                    _firstCorner = null;
+                    prompt = R.string.rectangle_corner1_prompt;
+                } else
+                    return;
+                _builder.undo();
+                TextContainer.getInstance().displayPrompt(
+                        _context.getString(prompt));
+            } else if (_drawShape != null && _firstPoint != null) {
+                // Undo polygon point
+                int numPoints = _drawShape.getNumPoints();
+                if (numPoints > 1)
+                    _drawShape.removePoint(numPoints - 1);
+                else {
+                    if (_drawShape != null)
+                        _drawingGroup.removeItem(_drawShape);
+                    if (_firstPoint != null)
+                        _drawingGroup.removeItem(_firstPoint);
+                    _drawShape = null;
+                    _firstPoint = null;
+                }
             }
         }
 

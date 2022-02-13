@@ -27,6 +27,7 @@ CPP=arm-linux-androideabi-cpp
 LD=arm-linux-androideabi-ld
 RANLIB=arm-linux-androideabi-ranlib
 AR=arm-linux-androideabi-ar
+STRIP=arm-linux-androideabi-strip -S
 
 # "host" argument to autoconf-based configure scripts
 # Leave blank for autodetect/non-cross compile

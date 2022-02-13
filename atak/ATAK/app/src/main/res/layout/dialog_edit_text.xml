@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<EditText xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/medium_jungle_green"
+    android:fontFamily="@font/nunito_bold"
+    android:padding="8dp"
+    android:textColor="@color/white"
+    android:textColorHint="@color/ash_gray"
+    android:textSize="14sp"
+    tools:hint="@string/new_map" />

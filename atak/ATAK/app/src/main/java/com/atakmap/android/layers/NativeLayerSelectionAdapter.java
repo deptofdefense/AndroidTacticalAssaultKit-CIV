@@ -191,9 +191,7 @@ class NativeLayerSelectionAdapter extends LayerSelectionAdapter
 
         h.lockBtn.setOnClickListener(this);
 
-        h.vizBtn.setImageResource(layer.isVisible(selection.getName())
-                ? R.drawable.overlay_visible
-                : R.drawable.overlay_not_visible);
+        h.vizIcon.setVisible(layer.isVisible(selection.getName()));
         h.vizBtn.setOnClickListener(this);
 
         return h.root;

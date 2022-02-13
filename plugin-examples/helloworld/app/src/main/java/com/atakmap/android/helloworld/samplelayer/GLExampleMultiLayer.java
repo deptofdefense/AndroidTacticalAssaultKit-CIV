@@ -73,7 +73,7 @@ public class GLExampleMultiLayer extends GLAbstractLayer2 {
         if (frame.texture == null) {
             return;
         }
-        frame.texture.draw(frame.texture.getTexId(), 6, 4, 2,
+        GLTexture.draw(frame.texture.getTexId(), 6, 4, 2,
                 GLES20FixedPipeline.GL_FLOAT,
                 frame.textureCoordinates, 3, GLES20FixedPipeline.GL_FLOAT,
                 frame.vertexCoordinates,

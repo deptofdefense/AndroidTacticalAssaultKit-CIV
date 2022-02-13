@@ -205,6 +205,7 @@ public class LassoSelectionReceiver extends BroadcastReceiver {
                 new DeleteContentsTask(_context, contents).execute();
             }
         });
+        b.setNegativeButton(R.string.cancel, null);
         b.show();
     }
 

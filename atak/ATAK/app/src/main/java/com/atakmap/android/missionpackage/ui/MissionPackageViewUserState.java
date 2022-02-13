@@ -13,7 +13,7 @@ public class MissionPackageViewUserState {
     public MissionPackageViewUserState() {
         this._lastImportDirectory = null;
         this._bLastMapItemViaMapView = false;
-        this._bIncludeAttachments = false;
+        this._bIncludeAttachments = true;
     }
 
     /**

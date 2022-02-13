@@ -239,7 +239,7 @@ public class GLFahArrowWidget extends GLShapeWidget implements
 
     private PointD _arrowCenterUnscaled;
 
-    private SurfaceRendererControl _surfaceCtrl;
+    private final SurfaceRendererControl _surfaceCtrl;
 
     // A static class to define what need buffers need to be updated when a value
     // in the MapWidget subject is changed.
@@ -340,9 +340,7 @@ public class GLFahArrowWidget extends GLShapeWidget implements
         // Could be in portrait mode as well, so change the bottom accordingly
         //float top = this.orthoView.focusy * 2;
         float top = this.orthoView.getTop();
-        return new RectF(0f + 20,
-                top - (MapView.getMapView().getActionBarHeight() + 20),
-                right - 20, 0f + 20);
+        return new RectF(0f + 20, top - 20, right - 20, 0f + 20);
     }
 
     @Override

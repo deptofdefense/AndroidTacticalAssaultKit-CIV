@@ -11,6 +11,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.atakmap.android.gui.drawable.VisibilityDrawable;
 import com.atakmap.app.R;
 
 /**
@@ -23,6 +24,7 @@ public class LayerViewHolder {
     public LinearLayout rangeLayout, filesLayout;
     public TextView title, desc, dlSize, resTxt;
     public ImageView lockBtn, vizBtn, expandBtn;
+    public VisibilityDrawable vizIcon;
     public ImageButton sendBtn;
     public CheckBox outlineBtn;
     public LayerSelection selection;
@@ -55,6 +57,7 @@ public class LayerViewHolder {
             h.resTxt = row.findViewById(R.id.rezTV);
             h.titleLayout.setTag(h);
             h.vizBtn.setTag(h);
+            h.vizBtn.setImageDrawable(h.vizIcon = new VisibilityDrawable());
             h.outlineBtn.setTag(h);
             h.lockBtn.setTag(h);
             h.sendBtn.setTag(h);

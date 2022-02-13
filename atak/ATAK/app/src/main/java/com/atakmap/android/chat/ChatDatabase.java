@@ -45,7 +45,7 @@ import com.atakmap.util.zip.IoUtils;
 
 public class ChatDatabase {
     public static final String TAG = "ChatDatabase";
-    public static final int VERSION = 7;
+    public static final int VERSION = 8;
 
     private static DatabaseIface chatDb;
 
@@ -78,6 +78,7 @@ public class ChatDatabase {
     private static final String STATUS_COL_NAME = "status";
     private static final String RECEIVE_TIME_COL_NAME = "receiveTime";
     private static final String SENT_TIME_COL_NAME = "sentTime";
+    private static final String READ_TIME_COL_NAME = "readTime";
     private static final String SENDER_UID_COL_NAME = "senderUid";
     private static final String MESSAGE_COL_NAME = "message";
 
@@ -104,6 +105,7 @@ public class ChatDatabase {
             new DBColumn(TYPE_COL_NAME, TEXT_COL_TYPE),
             new DBColumn(RECEIVE_TIME_COL_NAME, INTEGER_COL_TYPE),
             new DBColumn(SENT_TIME_COL_NAME, INTEGER_COL_TYPE),
+            new DBColumn(READ_TIME_COL_NAME, INTEGER_COL_TYPE),
             new DBColumn(SENDER_UID_COL_NAME, TEXT_COL_TYPE),
             new DBColumn(MESSAGE_COL_NAME, TEXT_COL_TYPE),
             new DBColumn(CONTACT_CALLSIGN_COL_NAME, TEXT_COL_TYPE),
@@ -205,8 +207,6 @@ public class ChatDatabase {
     private void onCreate(DatabaseIface db) {
         createTable(db, TABLE_CHAT, CHAT_COLS);
         createTable(db, TABLE_GROUPS, GROUP_COLS);
-        db.setVersion(VERSION);
-
     }
 
     private void createTable(DatabaseIface db, String tableName,
@@ -238,17 +238,22 @@ public class ChatDatabase {
                         + GROUP_PARENT + " " + TEXT_COL_TYPE
                         + " DEFAULT ''", null);
             case 6:
-                // Add parent column to groups
+                // Add status column to chat
                 db.execute("ALTER TABLE " + TABLE_CHAT + " ADD COLUMN "
                         + STATUS_COL_NAME + " " + TEXT_COL_TYPE
                         + " DEFAULT ''", null);
-                db.setVersion(VERSION);
+                break;
+            case 7:
+                // Add read time column to chat
+                db.execute("ALTER TABLE " + TABLE_CHAT + " ADD COLUMN "
+                        + READ_TIME_COL_NAME + " " + INTEGER_COL_TYPE, null);
                 break;
             default:
                 db.execute("DROP TABLE IF EXISTS " + TABLE_CHAT, null);
                 db.execute("DROP TABLE IF EXISTS " + TABLE_GROUPS, null);
                 onCreate(db);
         }
+        db.setVersion(VERSION);
     }
 
     void onDowngrade(DatabaseIface db, int oldVersion, int newVersion) {
@@ -256,6 +261,7 @@ public class ChatDatabase {
         db.execute("DROP TABLE IF EXISTS " + TABLE_GROUPS, null);
         // Create tables again
         onCreate(db);
+        db.setVersion(VERSION);
     }
 
     /**

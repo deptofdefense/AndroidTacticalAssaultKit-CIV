@@ -1,8 +1,13 @@
 
 package com.atakmap.android.data;
 
+import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.math.MathUtils;
+
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -18,10 +23,31 @@ public class URIContentManager {
     private static final String TAG = "URIContentManager";
     private static URIContentManager instance;
 
-    private final Set<URIContentResolver> _resolvers = new HashSet<>();
-    private final Set<URIContentListener> _listeners = new HashSet<>();
+    // Sort objects by URIContentPriority
+    private static final Comparator<Object> SORT_PRIORITY = new Comparator<Object>() {
+        @Override
+        public int compare(Object o1, Object o2) {
+            if (o1 instanceof URIContentPriority
+                    && o2 instanceof URIContentPriority) {
+                int p1 = MathUtils.clamp(
+                        ((URIContentPriority) o1).getPriority(),
+                        URIContentPriority.LOWEST, URIContentPriority.HIGHEST);
+                int p2 = MathUtils.clamp(
+                        ((URIContentPriority) o2).getPriority(),
+                        URIContentPriority.LOWEST, URIContentPriority.HIGHEST);
+                return Integer.compare(p2, p1);
+            } else if (o1 instanceof URIContentPriority)
+                return -1;
+            else if (o2 instanceof URIContentPriority)
+                return 1;
+            return 0;
+        }
+    };
+
+    private final List<URIContentResolver> _resolvers = new ArrayList<>();
     private final List<URIContentProvider> _providers = new ArrayList<>();
     private final List<URIContentSender> _senders = new ArrayList<>();
+    private final Set<URIContentListener> _listeners = new HashSet<>();
     private final Map<String, URIContentHandler> _handlers = new HashMap<>();
 
     void dispose() {
@@ -47,6 +73,7 @@ public class URIContentManager {
     public void registerResolver(URIContentResolver res) {
         synchronized (_resolvers) {
             _resolvers.add(res);
+            Collections.sort(_resolvers, SORT_PRIORITY);
         }
     }
 
@@ -60,6 +87,10 @@ public class URIContentManager {
         }
     }
 
+    /**
+     * Get all registered content resolvers
+     * @return List of content resolvers
+     */
     public List<URIContentResolver> getResolvers() {
         synchronized (_resolvers) {
             return new ArrayList<>(_resolvers);
@@ -81,10 +112,49 @@ public class URIContentManager {
         return null;
     }
 
+    /**
+     * Get or create a content handler for a given file
+     * @param file File
+     * @return Content handler or null if none supported
+     */
     public URIContentHandler getHandler(File file) {
+        return getHandler(file, null);
+    }
+
+    /**
+     * Get the content handler for a file
+     * @param file File
+     * @param contentType Content type of the file
+     * @return Content handler
+     */
+    public URIContentHandler getHandler(File file, String contentType) {
+        List<URIContentHandler> handlers = getHandlers(file, contentType);
+        return !FileSystemUtils.isEmpty(handlers) ? handlers.get(0) : null;
+    }
+
+    /**
+     * Get all content handlers for a given file
+     * @param file File
+     * @return List of content handlers
+     */
+    public List<URIContentHandler> getHandlers(File file) {
+        return getHandlers(file, null);
+    }
+
+    private List<URIContentHandler> getHandlers(File file, String contentType) {
+        List<URIContentHandler> handlers = new ArrayList<>();
         if (file == null)
-            return null;
-        return getHandler(null, URIHelper.getURI(file));
+            return handlers;
+        String uri = URIHelper.getURI(file);
+        for (URIContentResolver res : getResolvers()) {
+            URIContentHandler h = res.getHandler(null, uri);
+            if (h != null
+                    && (contentType == null || h instanceof FileContentHandler
+                            && contentType.equals(
+                                    ((FileContentHandler) h).getContentType())))
+                handlers.add(h);
+        }
+        return handlers;
     }
 
     /**
@@ -190,6 +260,7 @@ public class URIContentManager {
     public void registerProvider(URIContentProvider provider) {
         synchronized (_providers) {
             _providers.add(provider);
+            Collections.sort(_providers, SORT_PRIORITY);
         }
     }
 
@@ -237,6 +308,7 @@ public class URIContentManager {
     public void registerSender(URIContentSender sender) {
         synchronized (_senders) {
             _senders.add(sender);
+            Collections.sort(_senders, SORT_PRIORITY);
         }
     }
 

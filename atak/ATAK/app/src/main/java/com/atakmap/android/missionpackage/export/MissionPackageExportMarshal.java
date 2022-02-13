@@ -4,9 +4,11 @@ package com.atakmap.android.missionpackage.export;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.graphics.Typeface;
 import android.text.InputFilter;
 import android.text.InputType;
 import android.text.Spanned;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.CheckBox;
@@ -38,6 +40,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -55,6 +58,7 @@ public class MissionPackageExportMarshal extends ExportMarshal {
     protected final Context context;
     private boolean newPackage;
     private Boolean incAtt;
+    private boolean incChildren = true;
 
     /**
      * White list of group names to export
@@ -156,6 +160,14 @@ public class MissionPackageExportMarshal extends ExportMarshal {
         return MissionPackageExportWrapper.class;
     }
 
+    public boolean isIncChildren() {
+        return incChildren;
+    }
+
+    public void setIncChildren(boolean incChildren) {
+        this.incChildren = incChildren;
+    }
+
     @Override
     public void execute(final List<Exportable> exports)
             throws IOException, FormatNotSupportedException {
@@ -168,16 +180,16 @@ public class MissionPackageExportMarshal extends ExportMarshal {
         MapView mv = MapView.getMapView();
         if (mv == null)
             return;
-
-        final CheckBox attCb = new CheckBox(context);
-        attCb.setText(R.string.include_attachments);
+        View v = LayoutInflater.from(context)
+                .inflate(R.layout.include_attachment, null);
+        final CheckBox attCb = v.findViewById(R.id.include_attachment);
         attCb.setChecked(incAtt == Boolean.TRUE);
 
         TileButtonDialog d = new TileButtonDialog(mv);
         d.setTitle(R.string.choose_new_or_existing_mission_package,
                 context.getString(R.string.mission_package_name));
         d.setIcon(R.drawable.ic_menu_missionpackage);
-        d.setCustomView(attCb);
+        d.setCustomView(v);
 
         d.addButton(R.drawable.ic_menu_missionpackage, R.string.new_text);
         d.addButton(R.drawable.ic_missionpackage_modified, R.string.existing);
@@ -238,6 +250,17 @@ public class MissionPackageExportMarshal extends ExportMarshal {
                 }
             }
 
+            if (incChildren) {
+                MapView mv = MapView.getMapView();
+                MapItemSet itemSet = new MapItemSet();
+                for (String uid : mapItemUIDs) {
+                    findAssociatedItems(mv, uid, itemSet);
+                }
+                if (itemSet.size() > 0) {
+                    mapItemUIDs.addAll(itemSet.keySet());
+                }
+            }
+
             for (String filepath : folder.getFilepaths()) {
                 if (!filepaths.contains(filepath)) {
                     filepaths.add(filepath);
@@ -246,6 +269,65 @@ public class MissionPackageExportMarshal extends ExportMarshal {
         }
 
         return mapItemUIDs.size() > 0 || filepaths.size() > 0;
+    }
+
+    protected void findAssociatedItems(MapView mv, String uid,
+            MapItemSet itemSet) {
+        if (uid == null || itemSet == null)
+            return;
+
+        MapItem item = mv.getRootGroup().deepFindUID(uid);
+        if (item == null || itemSet == null)
+            return;
+
+        // Add the main item itself
+        itemSet.add(item);
+
+        // Child map item UIDs
+        if (item.hasMetaValue("childUIDs")) {
+            ArrayList<String> childUIDs = item
+                    .getMetaStringArrayList("childUIDs");
+            if (childUIDs != null) {
+                for (String childUID : childUIDs) {
+                    if (itemSet.containsKey(childUID))
+                        continue;
+                    findAssociatedItems(mv, childUID, itemSet);
+                }
+            }
+        }
+    }
+
+    /**
+     * List of non-duplicate map items
+     */
+    protected static class MapItemSet extends HashMap<String, MapItem> {
+
+        public MapItemSet(int capacity) {
+            super(capacity);
+        }
+
+        public MapItemSet() {
+            super();
+        }
+
+        public void add(MapItem item) {
+            put(item.getUID(), item);
+        }
+
+        public void addAll(Collection<? extends MapItem> items) {
+            for (MapItem item : items)
+                add(item);
+        }
+
+        public void remove(MapItem item) {
+            if (item != null)
+                remove(item.getUID());
+        }
+
+        public void removeAll(Collection<? extends MapItem> items) {
+            for (MapItem item : items)
+                remove(item);
+        }
     }
 
     @Override

@@ -16,6 +16,7 @@ import com.atakmap.android.maps.MapTextFormat;
 import com.atakmap.android.maps.MetaMapPoint;
 import com.atakmap.android.menu.MapMenuReceiver;
 import com.atakmap.android.menu.MenuLayoutWidget;
+import com.atakmap.android.selfcoordoverlay.SelfCoordOverlayUpdater;
 import com.atakmap.android.util.SpeedFormatter;
 
 import com.atakmap.android.maps.MapGroup;
@@ -53,10 +54,13 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
 import com.atakmap.coremap.maps.coords.NorthReference;
+import com.atakmap.map.CameraController;
 import com.atakmap.map.elevation.ElevationData;
 import com.atakmap.map.elevation.ElevationManager;
 
 import java.util.Arrays;
+
+import androidx.annotation.NonNull;
 
 /**
  * TODO: Outline all expected behavior and rewrite this entire class
@@ -105,11 +109,14 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
     protected Area areaRef;
     protected Span altUnits;
 
-    private SpeedFormatter speedFormatter;
-    private String[] speedUnits;
+    private final SpeedFormatter speedFormatter;
+    private final String[] speedUnits;
 
     private String coordString;
     private Marker radialFocus;
+
+    private TextWidget selfCoordText;
+    private TextWidget.OnTextChangedListener selfCoordChangedListener;
 
     public CoordOverlayMapReceiver(final MapView mapView) {
         _mapView = mapView;
@@ -129,7 +136,7 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
         _positionText.setMargins(0f, 16f, 0f, 0f);
         _positionText.addOnClickListener(this);
         _positionText.setVisible(false);
-        trLayout.addWidgetAt(0, _positionText);
+        trLayout.addChildWidgetAt(0, _positionText);
 
         _prefs = PreferenceManager.getDefaultSharedPreferences(_mapView
                 .getContext());
@@ -170,12 +177,10 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
                     radialFocus.setVisible(false);
                 }
 
+                float inset = 30 * MapView.DENSITY;
                 PointF p = widget.getAbsolutePosition();
-                int height = mapView.getActionBarHeight();
-                if (height == 0)
-                    height = (int) (25 * MapView.DENSITY);
-                p.x += widget.getPointX() + (25 * MapView.DENSITY);
-                p.y += widget.getPointY() + height;
+                p.x += inset;
+                p.y += widget.getHeight() - inset;
 
                 radialFocus.setMetaString("menu",
                         "menus/coord_widget_menu.xml");
@@ -192,6 +197,25 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
         };
         _positionText.addOnLongPressListener(_textLongPressListener);
 
+    }
+
+    /**
+     * Set the self coordinate overlay updater instance used to make updates
+     * to the self marker coordinate text (see ATAK-15612)
+     * @param updater Self coordinate updater
+     */
+    void setSelfCoordOverlayUpdater(SelfCoordOverlayUpdater updater) {
+        selfCoordText = updater.getWidget();
+        if (selfCoordText != null) {
+            selfCoordText.addOnTextChangedListener(
+                    selfCoordChangedListener = new TextWidget.OnTextChangedListener() {
+                        @Override
+                        public void onTextWidgetTextChanged(TextWidget widget) {
+                            if (_activeMarker == self)
+                                updatePointText(self);
+                        }
+                    });
+        }
     }
 
     protected void initUnits() {
@@ -227,6 +251,7 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
     }
 
     void dispose() {
+        selfCoordText.removeOnTextChangedListener(selfCoordChangedListener);
         _mapView.getRootGroup().removeOnItemListChangedListener(this);
         _prefs.unregisterOnSharedPreferenceChangeListener(this);
         if (self != null)
@@ -272,7 +297,8 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
     public void onMapWidgetClick(MapWidget widget, MotionEvent event) {
         if (_pointItem != null) {
             final GeoPoint point = _pointItem.getPoint();
-            _mapView.getMapController().panTo(point, false);
+            CameraController.Programmatic.panTo(
+                    _mapView.getRenderer3(), point, false);
         }
     }
 
@@ -813,10 +839,17 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
         handlePointChange(marker);
     }
 
-    private void handlePointChange(PointMapItem item) {
-        if (item == null)
+    private void handlePointChange(final PointMapItem item) {
+        // Self marker changes are handled in the self coord overlay updater
+        if (item == null || item == _mapView.getSelfMarker()
+                && selfCoordChangedListener != null)
             return;
 
+        updatePointText(item);
+    }
+
+    private void updatePointText(@NonNull
+    final PointMapItem item) {
         GeoPointMetaData point = item.getGeoPointMetaData();
         if (_activePoint != null)
             point = _activePoint;
@@ -879,7 +912,6 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
                 item.getMetaDouble("distance", 0.0d),
                 item.getMetaDouble("bearing", 0.0d),
                 display, speed, heading, estimate, height, area, teamMate, el);
-
     }
 
     private void findDistanceAndBearing(PointMapItem spi, GeoPoint point) {

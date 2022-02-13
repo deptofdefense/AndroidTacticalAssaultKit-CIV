@@ -31,7 +31,7 @@ public abstract class AbstractSystemComponent {
          * Called when setup is complete.
          * @param condition SUCCESSFUL if setup of the encryption plugin was successful.
          */
-        public void setupComplete(int condition);
+        void setupComplete(int condition);
     }
 
     /**
@@ -52,7 +52,7 @@ public abstract class AbstractSystemComponent {
      * @see #load(Callback)
      */
     @Deprecated
-    @DeprecatedApi(since = "4.3.1", forRemoval = true, removeAt = "4.5.0")
+    @DeprecatedApi(since = "4.3.1", forRemoval = true, removeAt = "4.6.0")
     public abstract void load();
 
     /**

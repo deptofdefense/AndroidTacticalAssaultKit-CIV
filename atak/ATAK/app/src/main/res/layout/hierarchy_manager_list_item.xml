@@ -20,6 +20,7 @@
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:layout_gravity="center"
+            android:padding="@dimen/auto_margin"
             android:src="@drawable/btn_check_off"
             android:visibility="gone"/>
         <ImageView
@@ -107,6 +108,33 @@
                     android:minHeight="16dp"/>
                     -->
 
+                    <LinearLayout
+                        android:id="@+id/hierarchy_manager_list_item_ref_view"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="end"
+                        android:orientation="horizontal"
+                        android:visibility="gone">
+                        <TextView
+                            android:id="@+id/hierarchy_manager_list_item_refTitle_label"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:text="To: "
+                            android:textColor="@color/heading_yellow"
+                            android:textSize="11sp" />
+                        <TextView
+                            android:id="@+id/hierarchy_manager_list_item_refTitle_text"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:text=""
+                            android:singleLine="true"
+                            android:maxLength="15"
+                            android:ellipsize="end"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+
                     <TextView
                         android:id="@+id/hierarchy_manager_list_item_dir_text_deg"
                         android:layout_width="wrap_content"
@@ -129,6 +157,7 @@
                         android:layout_gravity="center"
                         android:text="@string/unknown_agl"
                         android:textSize="11sp" />
+
                 </LinearLayout>
 
                 <LinearLayout

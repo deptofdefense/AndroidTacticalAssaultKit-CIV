@@ -84,7 +84,7 @@ public class CustomActionBarFragment extends AtakPreferenceFragment {
                             public boolean onPreferenceClick(
                                     Preference preference) {
                                 showColorPicker(ACTIONBAR_BACKGROUND_COLOR_KEY,
-                                        "#99000000");
+                                        "#000000");
                                 return true;
                             }
                         });
@@ -120,7 +120,7 @@ public class CustomActionBarFragment extends AtakPreferenceFragment {
                                                                 "#FFFFFF");
                                                         resetActionBarPrefs(
                                                                 ACTIONBAR_BACKGROUND_COLOR_KEY,
-                                                                "#B3000000");
+                                                                "#000000");
                                                     }
                                                 })
                                         .setNegativeButton(R.string.no, null);

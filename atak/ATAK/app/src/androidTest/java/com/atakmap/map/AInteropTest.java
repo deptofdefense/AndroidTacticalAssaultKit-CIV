@@ -3,7 +3,6 @@ package com.atakmap.map;
 
 import com.atakmap.android.androidtest.ATAKInstrumentedTest;
 import com.atakmap.interop.Pointer;
-import com.atakmap.map.Interop;
 
 import org.junit.Test;
 

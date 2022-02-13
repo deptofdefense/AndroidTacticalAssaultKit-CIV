@@ -450,13 +450,6 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
             LayoutInflater inflater = LayoutInflater.from(context);
             this.toolbar = (ActionBarView) inflater
                     .inflate(R.layout.image_grid_toolbar, null);
-
-            if (!ActionBarReceiver.nwTimSortFix) {
-                this.toolbar.findViewById(R.id.fillerA)
-                        .setVisibility(View.GONE);
-                this.toolbar.findViewById(R.id.fillerB)
-                        .setVisibility(View.GONE);
-            }
         }
 
         return this.toolbar;
@@ -1061,41 +1054,48 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
             return null;
         }
 
-        // restrict the uris that are valid.
-        final String sURI = contentURI.toString();
-        if (sURI.startsWith("content://com.android.providers.media.documents")
-                || sURI.startsWith(
-                        "content://com.android.providers.downloads.documents")
-                || sURI.startsWith("content://media/external")
-                || sURI.startsWith("content://0@media/external/")
-                || sURI.startsWith(
-                        "content://com.android.externalstorage.documents")) {
-            // nothing at this point
-        } else {
-            // Log.d(TAG, "trying to load content from: " + contentURI);
+        // Restrict the uris that are valid when querying a file path
+        if (field.equals(MediaStore.MediaColumns.DATA)
+                && !isSafeURI(contentURI))
             return null;
-        }
 
-        Cursor cursor = null;
-        try {
-            cursor = context.getContentResolver()
-                    .query(contentURI, null, null, null, null);
+        try (Cursor cursor = context.getContentResolver()
+                .query(contentURI, null, null, null, null)) {
             if (cursor != null) {
                 cursor.moveToFirst();
                 int idx = cursor.getColumnIndex(field);
                 if (idx < 0)
                     return null;
-                return cursor.getString(idx);
+                String data = cursor.getString(idx);
+                if (field.equals(MediaStore.MediaColumns.DISPLAY_NAME)) {
+                    // Make sure the display name doesn't contain any bad data
+                    FileSystemUtils.validityScan(data);
+                }
+                return data;
             }
         } catch (Exception e) {
             Log.w(TAG, "Failed to get field from URI: "
                     + contentURI.toString(), e);
-        } finally {
-            if (cursor != null)
-                cursor.close();
         }
 
         return null;
+    }
+
+    /**
+     * Filter for determining which URIs are safe to query
+     * @param contentURI Content URI
+     * @return True if the URI is safe to query
+     */
+    private static boolean isSafeURI(final Uri contentURI) {
+        final String sURI = contentURI.toString();
+        return sURI
+                .startsWith("content://com.android.providers.media.documents")
+                || sURI.startsWith(
+                        "content://com.android.providers.downloads.documents")
+                || sURI.startsWith("content://media/external")
+                || sURI.startsWith("content://0@media/external/")
+                || sURI.startsWith(
+                        "content://com.android.externalstorage.documents");
     }
 
     private final BroadcastReceiver _activityResultReceiver = new BroadcastReceiver() {

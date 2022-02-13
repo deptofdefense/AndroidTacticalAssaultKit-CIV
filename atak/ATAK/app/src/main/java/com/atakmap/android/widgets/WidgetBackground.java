@@ -6,6 +6,7 @@ import android.net.Uri;
 
 import com.atakmap.android.config.ConfigEnvironment;
 import com.atakmap.android.config.FlagsParser;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.xml.XMLUtils;
 
@@ -24,7 +25,11 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-public class WidgetBackground {
+import gov.tak.api.widgets.IWidgetBackground;
+
+@Deprecated
+@DeprecatedApi(since = "4.4")
+public class WidgetBackground implements IWidgetBackground {
 
     public static final String TAG = "WidgetBackground";
 
@@ -109,18 +114,14 @@ public class WidgetBackground {
     public int getColor(int state) {// gets "highest" state color
         Integer r = _colors.get(0);
 
-        if ((state & AbstractButtonWidget.STATE_PRESSED) > 0) {
-            r = _colors.get(AbstractButtonWidget.STATE_PRESSED);// if it's pressed, use that color
-        } else {
-            int indx = 1;
-            while (indx <= state) {// otherwise, use the state color
-                Integer r2 = _colors.get(indx & state);
-                if (r2 != null) {
-                    r = r2;
-                }
-
-                indx = indx << 1;
+        int indx = 1;
+        while (indx <= state) {// otherwise, use the state color
+            Integer r2 = _colors.get(indx & state);
+            if (r2 != null) {
+                r = r2;
             }
+
+            indx = indx << 1;
         }
 
         // Integer r = _colors.get(state);

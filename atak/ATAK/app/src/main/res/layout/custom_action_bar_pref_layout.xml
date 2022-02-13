@@ -7,31 +7,56 @@
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="3"
-        android:id="@+id/prefFragContain">
-
-    </FrameLayout>
+        android:layout_marginBottom="@dimen/auto_margin"
+        android:id="@+id/prefFragContain"/>
 
     <LinearLayout
         android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:id="@+id/actionBarPreviewLayout">
+        android:gravity="center_horizontal">
 
         <TextView
             android:text="@string/preview"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/textView"
-            android:layout_gravity="center_vertical|center_horizontal"/>
+            android:layout_marginBottom="@dimen/auto_margin"
+            android:textSize="@dimen/draper_title_font"/>
 
-        <ImageView
-            android:src="@drawable/customize_actionbar_placeholder_icon"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/placeholderImageView"
-            android:layout_gravity="center_vertical|center_horizontal"/>
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/nav_button_size"
+                android:src="@drawable/navbar_preview_background"/>
+            <LinearLayout
+                android:id="@+id/preview_buttons"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_centerInParent="true">
+                <ImageButton
+                    android:src="@drawable/nav_bloodhound"
+                    android:layout_margin="0dp"
+                    style="@style/NavButton"/>
+                <ImageButton
+                    android:src="@drawable/nav_redx"
+                    style="@style/NavButton"/>
+                <ImageButton
+                    android:src="@drawable/nav_point_dropper"
+                    style="@style/NavButton"/>
+                <ImageButton
+                    android:src="@drawable/nav_maps"
+                    style="@style/NavButton"/>
+                <ImageButton
+                    android:src="@drawable/nav_overlay_manager"
+                    style="@style/NavButton"/>
+                <ImageButton
+                    android:src="@drawable/nav_power"
+                    style="@style/NavButton"/>
+            </LinearLayout>
+        </RelativeLayout>
     </LinearLayout>
 
 </LinearLayout>

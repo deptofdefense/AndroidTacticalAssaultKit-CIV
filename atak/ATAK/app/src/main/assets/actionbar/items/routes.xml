@@ -1,4 +1,4 @@
-<PersistedActionMenu baseline="true" hideable="true" iconPath="ic_menu_routes"  title="actionbar_routes">
+<PersistedActionMenu baseline="true" hideable="true" iconPath="nav_routes" title="actionbar_routes">
    <ClickData actionType="click">
       <broadcast>
          <action>com.atakmap.android.maps.MANAGE_ROUTES</action>

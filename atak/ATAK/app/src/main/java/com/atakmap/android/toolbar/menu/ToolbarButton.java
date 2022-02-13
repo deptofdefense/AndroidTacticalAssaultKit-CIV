@@ -116,7 +116,7 @@ public class ToolbarButton implements OnGestureListener {
     public void showMenu() {
         if (menuIdentifier != null && menuIdentifier.length() != 0) {
             int[] buttonLocation = new int[2];
-            _button.getLocationOnScreen(buttonLocation);
+            _button.getLocationInWindow(buttonLocation);
             manager.setActiveToolbarButton(this);
             manager.showMenu(menuIdentifier, _button.getLeft(),
                     buttonLocation[1] + _button.getHeight() + 10);

@@ -89,11 +89,13 @@ public abstract class AbstractGeometryTests extends ATAKInstrumentedTest {
     @Test
     public void Geometry_2d_constructor() {
         Geometry g = createTestGeometry(2);
+        Assert.assertNotNull(g);
     }
 
     @Test
     public void Geometry_3d_constructor() {
         Geometry g = createTestGeometry(3);
+        Assert.assertNotNull(g);
     }
 
     @Test
@@ -127,12 +129,12 @@ public abstract class AbstractGeometryTests extends ATAKInstrumentedTest {
     void envelope_test(Geometry g, Envelope truth) {
         Envelope test = g.getEnvelope();
         Assert.assertNotNull(test);
-        Assert.assertTrue(truth.minX == test.minX);
-        Assert.assertTrue(truth.maxX == test.maxX);
-        Assert.assertTrue(truth.minY == test.minY);
-        Assert.assertTrue(truth.maxY == test.maxY);
-        Assert.assertTrue(truth.minZ == test.minZ);
-        Assert.assertTrue(truth.maxZ == test.maxZ);
+        Assert.assertEquals(truth.minX, test.minX, 0.0);
+        Assert.assertEquals(truth.maxX, test.maxX, 0.0);
+        Assert.assertEquals(truth.minY, test.minY, 0.0);
+        Assert.assertEquals(truth.maxY, test.maxY, 0.0);
+        Assert.assertEquals(truth.minZ, test.minZ, 0.0);
+        Assert.assertEquals(truth.maxZ, test.maxZ, 0.0);
     }
 
     // wkb test support

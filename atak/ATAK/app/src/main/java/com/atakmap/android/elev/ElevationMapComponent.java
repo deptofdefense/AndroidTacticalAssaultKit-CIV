@@ -2,13 +2,16 @@
 package com.atakmap.android.elev;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Set;
 
 import android.content.Context;
 import android.content.Intent;
 
+import com.atakmap.android.elev.dt2.Dt2FileWatcher;
 import com.atakmap.android.elev.dt2.Dt2OutlineMapOverlay;
 import com.atakmap.android.elev.dt2.Dt2ElevationData;
 import com.atakmap.android.elev.dt2.Dt2MosaicDatabase;
@@ -25,6 +28,7 @@ import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.map.elevation.ElevationManager;
+import com.atakmap.map.elevation.ElevationSourceManager;
 import com.atakmap.map.formats.srtm.SrtmElevationSource;
 
 public class ElevationMapComponent extends AbstractMapComponent {
@@ -36,6 +40,7 @@ public class ElevationMapComponent extends AbstractMapComponent {
             .newSetFromMap(new IdentityHashMap<Dt2MosaicDatabase, Boolean>());
     private Dt2OutlineMapOverlay _outlineOverlay;
     private ElevationDownloader _downloader;
+    private ElevationContentChangedDispatcher _dt2Content;
 
     @Override
     public void onCreate(Context context, Intent intent, MapView view) {
@@ -56,6 +61,13 @@ public class ElevationMapComponent extends AbstractMapComponent {
 
         ElevationManager.registerDataSpi(Dt2ElevationData.SPI);
 
+        _dt2Content = new ElevationContentChangedDispatcher("DTED");
+        ElevationSourceManager.attach(_dt2Content);
+
+        // Initialize DTED watcher
+        List<File> rootDirs = Arrays.asList(FileSystemUtils.getItems("DTED"));
+        final Dt2FileWatcher dtedWatcher = new Dt2FileWatcher(_mapView,
+                rootDirs);
         String[] dt2paths = findDtedPaths();
         for (String dt2path : dt2paths) {
             Dt2MosaicDatabase db = new Dt2MosaicDatabase();
@@ -71,10 +83,18 @@ public class ElevationMapComponent extends AbstractMapComponent {
             SrtmElevationSource.mountDirectory(new File(srtmPath));
 
         // DTED tile outlines
-        _outlineOverlay = new Dt2OutlineMapOverlay(view);
+        _outlineOverlay = new Dt2OutlineMapOverlay(view, dtedWatcher);
 
         // Automatic DTED downloader
         _downloader = new ElevationDownloader(view);
+
+        dtedWatcher.addListener(new Dt2FileWatcher.Listener() {
+            @Override
+            public void onDtedFilesUpdated() {
+                _dt2Content.contentChanged();
+            }
+        });
+        dtedWatcher.start();
     }
 
     public static String[] findDtedPaths() {
@@ -102,6 +122,7 @@ public class ElevationMapComponent extends AbstractMapComponent {
         }
         dt2dbs.clear();
 
+        ElevationSourceManager.detach(_dt2Content);
         ElevationManager.unregisterDataSpi(Dt2ElevationData.SPI);
         _outlineOverlay.dispose();
         _downloader.dispose();

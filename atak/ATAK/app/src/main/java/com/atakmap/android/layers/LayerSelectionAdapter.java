@@ -9,6 +9,7 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.preference.AtakPreferences;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.layer.feature.FeatureDataStore;
@@ -57,6 +58,7 @@ public abstract class LayerSelectionAdapter extends BaseAdapter implements
     protected final MapView _mapView;
     final ArrayList<LayerSelection> _selections = new ArrayList<>();
     protected final Context _context;
+    protected final AtakPreferences _prefs;
     LayersManagerBroadcastReceiver zoomRec;
     LayersManagerView view;
     final FeatureDataStore outlinesDatastore;
@@ -73,6 +75,7 @@ public abstract class LayerSelectionAdapter extends BaseAdapter implements
 
         _context = context;
         _mapView = mapView;
+        _prefs = new AtakPreferences(_mapView);
 
         this.listeners = Collections
                 .newSetFromMap(

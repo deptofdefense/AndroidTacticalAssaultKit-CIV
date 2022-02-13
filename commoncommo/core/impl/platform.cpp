@@ -1108,12 +1108,6 @@ InterfaceEnumerator::InterfaceEnumerator(CommoLogger* logger,
                 netinterfaceenums::NetInterfaceAddressMode addrMode) COMMO_THROW (SocketException) :
         logger(logger), addrMode(addrMode), context(new InterfaceEnumeratorContext())
 {
-#if !defined(WIN32) && !defined(__APPLE__)
-    if (addrMode != netinterfaceenums::MODE_PHYS_ADDR) {
-        InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Address modes other than physical address are not supported on non-win32, non-Apple platforms");
-        throw SocketException();
-    }
-#endif
 #ifdef __linux__
     context->ioctlSock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
     if (context->ioctlSock == -1)
@@ -1216,30 +1210,32 @@ void InterfaceEnumerator::rescanInterfaces()
  #if defined(__linux__)
   #undef IFACE_ENUM_HWADDR
   #define IFACE_ENUM_HWADDR (InternalHwAddress *)
-    for (struct ifaddrs *interfaces = context->addrList; interfaces != NULL; interfaces = interfaces->ifa_next) {
-        if (!interfaces->ifa_addr || interfaces->ifa_addr->sa_family != AF_PACKET)
-            continue;
-        
-        struct sockaddr_ll* sdl = (struct sockaddr_ll *)interfaces->ifa_addr;
-        std::string ifname(interfaces->ifa_name);
-        if (ifToHw.find(ifname) != ifToHw.end()) {
-            InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, "Multiple link-level interfaces with same name!");
-        } else {
-            HwAddress *hwAddr = new InternalHwAddress((uint8_t *)sdl->sll_addr, sdl->sll_halen);
-            ifToHw[ifname] = hwAddr;
+    if (addrMode == netinterfaceenums::MODE_PHYS_ADDR) {
+        for (struct ifaddrs *interfaces = context->addrList; interfaces != NULL; interfaces = interfaces->ifa_next) {
+            if (!interfaces->ifa_addr || interfaces->ifa_addr->sa_family != AF_PACKET)
+                continue;
+            
+            struct sockaddr_ll* sdl = (struct sockaddr_ll *)interfaces->ifa_addr;
+            std::string ifname(interfaces->ifa_name);
+            if (ifToHw.find(ifname) != ifToHw.end()) {
+                InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, "Multiple link-level interfaces with same name!");
+            } else {
+                HwAddress *hwAddr = new InternalHwAddress((uint8_t *)sdl->sll_addr, sdl->sll_halen);
+                ifToHw[ifname] = hwAddr;
+            }
         }
-    }
 
-    // Replace any *real* hwaddress for ifaces with the names in our
-    // fake address space and insert those fake mappings instead
-    for (size_t i = 0; i < nFakeIfaces; ++i) {
-        std::string iname_str(fakeIfaces[i].ifaceName);
-        iter = ifToHw.find(iname_str);
-        if (iter != ifToHw.end()) {
-            delete IFACE_ENUM_HWADDR iter->second;
-            ifToHw.erase(iter);
+        // Replace any *real* hwaddress for ifaces with the names in our
+        // fake address space and insert those fake mappings instead
+        for (size_t i = 0; i < nFakeIfaces; ++i) {
+            std::string iname_str(fakeIfaces[i].ifaceName);
+            iter = ifToHw.find(iname_str);
+            if (iter != ifToHw.end()) {
+                delete IFACE_ENUM_HWADDR iter->second;
+                ifToHw.erase(iter);
+            }
+            ifToHw[iname_str] = new InternalHwAddress(fakeIfaces[i].fakeAddr, fakeIfaces[i].fakeAddrLen);
         }
-        ifToHw[iname_str] = new InternalHwAddress(fakeIfaces[i].fakeAddr, fakeIfaces[i].fakeAddrLen);
     }
 
 
@@ -1258,64 +1254,72 @@ void InterfaceEnumerator::rescanInterfaces()
         }
 
         const HwAddress *hwAddr = NULL;
-        
-        std::string iname_str(interfaces->ifa_name);
-        iter = ifToHw.find(iname_str);
-        if (iter != ifToHw.end()) {
-            hwAddr = iter->second;
-            ifToHw.erase(iter);
-        }
 
-        if (!hwAddr) {
-            strncpy(ifr.ifr_name, interfaces->ifa_name, IFNAMSIZ - 1);
-            ifr.ifr_name[IFNAMSIZ - 1] = '\0';
-            if (ioctl(context->ioctlSock, SIOCGIFHWADDR, &ifr) == 0) {
-                if (ifr.ifr_hwaddr.sa_family == ARPHRD_ETHER) {
-                    hwAddr = new InternalHwAddress((uint8_t *)ifr.ifr_hwaddr.sa_data, 6);
-                } else {
-                    InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, "%s: Unknown hardware address type (%hd)", ifr.ifr_name, ifr.ifr_hwaddr.sa_family);
-                }
+        if (addrMode == netinterfaceenums::MODE_PHYS_ADDR) {
+            std::string iname_str(interfaces->ifa_name);
+            iter = ifToHw.find(iname_str);
+            if (iter != ifToHw.end()) {
+                hwAddr = iter->second;
+                ifToHw.erase(iter);
             }
-        }
 
-        if (!hwAddr) {
-            std::string fn = "/sys/class/net/";
-            fn += interfaces->ifa_name;
-            fn += "/address";
-            FILE *f = fopen(fn.c_str(), "rb");
-            if (f) {
-                static const size_t maxaddrsize = 1024;
-                uint8_t addrbuf[maxaddrsize];
-                char filebuf[maxaddrsize];
-                size_t n = fread(filebuf, 1, maxaddrsize - 1, f);
-                filebuf[n] = '\0';
-                fclose(f);
-                
-                size_t i = 0;
-                size_t addrlen = 0;
-                while ((n - i) >= sizeof(short)) {
-                    short shrt;
-                    sscanf(filebuf + i, "%2hx", &shrt);
-                    addrbuf[addrlen++] = (uint8_t)shrt;
-                    i += 2;
-                    if (n == i || filebuf[i] == '\n')
-                        break;
-                    if (filebuf[i] != ':') {
-                        addrlen = 0;
-                        break;
+            if (!hwAddr) {
+                strncpy(ifr.ifr_name, interfaces->ifa_name, IFNAMSIZ - 1);
+                ifr.ifr_name[IFNAMSIZ - 1] = '\0';
+                if (ioctl(context->ioctlSock, SIOCGIFHWADDR, &ifr) == 0) {
+                    if (ifr.ifr_hwaddr.sa_family == ARPHRD_ETHER) {
+                        hwAddr = new InternalHwAddress((uint8_t *)ifr.ifr_hwaddr.sa_data, 6);
+                    } else {
+                        InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, "%s: Unknown hardware address type (%hd)", ifr.ifr_name, ifr.ifr_hwaddr.sa_family);
                     }
-                    i++;
+                } else {
+                    InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, "%s: ioctl call has failed %d", ifr.ifr_name, errno);
                 }
-                if (addrlen)
-                    hwAddr = new InternalHwAddress(addrbuf, addrlen);
-            } else {
-                InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, "Failed to open sysfs iface file (%s) to get hwaddr\n", fn.c_str());
             }
-        }
-        
-        if (!hwAddr) {
-            InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, "Failed to get an interface (%s) hardware address", interfaces->ifa_name);
-            continue;
+
+            if (!hwAddr) {
+                std::string fn = "/sys/class/net/";
+                fn += interfaces->ifa_name;
+                fn += "/address";
+                FILE *f = fopen(fn.c_str(), "rb");
+                if (f) {
+                    static const size_t maxaddrsize = 1024;
+                    uint8_t addrbuf[maxaddrsize];
+                    char filebuf[maxaddrsize];
+                    size_t n = fread(filebuf, 1, maxaddrsize - 1, f);
+                    filebuf[n] = '\0';
+                    fclose(f);
+                    
+                    size_t i = 0;
+                    size_t addrlen = 0;
+                    while ((n - i) >= sizeof(short)) {
+                        short shrt;
+                        sscanf(filebuf + i, "%2hx", &shrt);
+                        addrbuf[addrlen++] = (uint8_t)shrt;
+                        i += 2;
+                        if (n == i || filebuf[i] == '\n')
+                            break;
+                        if (filebuf[i] != ':') {
+                            addrlen = 0;
+                            break;
+                        }
+                        i++;
+                    }
+                    if (addrlen)
+                        hwAddr = new InternalHwAddress(addrbuf, addrlen);
+                } else {
+                    InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, "Failed to open sysfs iface file (%s) to get hwaddr", fn.c_str());
+                }
+            }
+            
+            if (!hwAddr) {
+                InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, "Failed to get an interface (%s) hardware address", interfaces->ifa_name);
+                continue;
+            }
+        } else {
+            hwAddr = new InternalHwAddress(
+                                   (const uint8_t *)interfaces->ifa_name,
+                                   strlen(interfaces->ifa_name));
         }
 
 
@@ -1325,30 +1329,30 @@ void InterfaceEnumerator::rescanInterfaces()
 
  #else
     if (addrMode == netinterfaceenums::MODE_PHYS_ADDR) {
-    for (struct ifaddrs *interfaces = context->addrList; interfaces != NULL; interfaces = interfaces->ifa_next) {
-        if (!interfaces->ifa_addr || interfaces->ifa_addr->sa_family != AF_LINK)
-            continue;
+        for (struct ifaddrs *interfaces = context->addrList; interfaces != NULL; interfaces = interfaces->ifa_next) {
+            if (!interfaces->ifa_addr || interfaces->ifa_addr->sa_family != AF_LINK)
+                continue;
 
-        struct sockaddr_dl* sdl = (struct sockaddr_dl *)interfaces->ifa_addr;
-        if (sdl->sdl_alen != 6)
-            continue;
-        std::string ifname(interfaces->ifa_name);
-        if (ifToHw.find(ifname) != ifToHw.end()) {
-            InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, "Multiple link-level interfaces with same name (%s)!", ifname.c_str());
-        } else {
+            struct sockaddr_dl* sdl = (struct sockaddr_dl *)interfaces->ifa_addr;
+            if (sdl->sdl_alen != 6)
+                continue;
+            std::string ifname(interfaces->ifa_name);
+            if (ifToHw.find(ifname) != ifToHw.end()) {
+                InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, "Multiple link-level interfaces with same name (%s)!", ifname.c_str());
+            } else {
   #if 0
-            InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, "Interface %s hwaddress %x%x%x%x%x%x", 
-                         ifname.c_str(), (int)*((uint8_t *)LLADDR(sdl)),
-                         (int)*((uint8_t *)LLADDR(sdl)+1),
-                         (int)*((uint8_t *)LLADDR(sdl)+2),
-                         (int)*((uint8_t *)LLADDR(sdl)+3),
-                         (int)*((uint8_t *)LLADDR(sdl)+4),
-                         (int)*((uint8_t *)LLADDR(sdl)+5));
+                InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, "Interface %s hwaddress %x%x%x%x%x%x", 
+                             ifname.c_str(), (int)*((uint8_t *)LLADDR(sdl)),
+                             (int)*((uint8_t *)LLADDR(sdl)+1),
+                             (int)*((uint8_t *)LLADDR(sdl)+2),
+                             (int)*((uint8_t *)LLADDR(sdl)+3),
+                             (int)*((uint8_t *)LLADDR(sdl)+4),
+                             (int)*((uint8_t *)LLADDR(sdl)+5));
   #endif
-            HwAddress *hwAddr = new HwAddress((uint8_t *)LLADDR(sdl), 6);
-            ifToHw[ifname] = hwAddr;
+                HwAddress *hwAddr = new HwAddress((uint8_t *)LLADDR(sdl), 6);
+                ifToHw[ifname] = hwAddr;
+            }
         }
-    }
     }
 
     for (struct ifaddrs *interfaces = context->addrList; interfaces != NULL; interfaces = interfaces->ifa_next) {

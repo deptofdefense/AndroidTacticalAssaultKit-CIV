@@ -35,7 +35,7 @@ class MigrationShim {
     private static final String TAG = "MigrationShim";
 
     @Deprecated
-    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.6")
     static void onMigration(final Activity activity) {
         final File migrationPackage = new File(
                 Environment.getExternalStorageDirectory(), "atak/.migration");
@@ -50,7 +50,9 @@ class MigrationShim {
                     Log.e(TAG, "unzip failed", ioe);
                 }
             }
-            migrationPackage.delete();
+            if (!migrationPackage.delete()) {
+                Log.e(TAG, "could not delete migration package");
+            }
         } catch (Exception e) {
             Log.e(TAG, "unable to migrate", e);
         }
@@ -81,7 +83,12 @@ class MigrationShim {
                             File dbFile = activity.getDatabasePath(dbName);
 
                             try {
-                                dbFile.getParentFile().mkdirs();
+                                File pFile = dbFile.getParentFile();
+                                if (pFile != null) {
+                                    if (!pFile.mkdirs()) {
+                                        Log.e(TAG, "could not make: " + pFile);
+                                    }
+                                }
                             } catch (Exception ignored) {
                             }
 
@@ -98,20 +105,31 @@ class MigrationShim {
                                     + "GDAL";
 
                             try {
-                                activity.getFilesDir().getParentFile().mkdirs();
+                                File pFile = activity.getFilesDir()
+                                        .getParentFile();
+                                if (pFile != null)
+                                    if (!pFile.mkdirs()) {
+                                        Log.e(TAG, "could not make: " + pFile);
+                                    }
                             } catch (Exception ignored) {
                             }
 
                             File f = new File(gdalDataPath, fileName);
-                            if (!f.getParentFile().exists()
-                                    && !f.getParentFile().mkdirs()) {
-                                //Log.d(TAG, "debug.remove could not create: " + fileName);
-                            } else {
+                            File pFile = f.getParentFile();
+
+                            if (pFile == null) {
+                                Log.e(TAG, "unable to create the parent file");
+                                return;
+                            }
+                            if (pFile.exists() || pFile.mkdirs()) {
                                 //Log.d(TAG, "debug.remove writing: " + fileName);
 
                                 // Path Manipulation as described in the FortifyFinding
                                 FileSystemUtils.copy(is,
                                         new FileOutputStream(f));
+                            } else {
+                                return;
+                                //Log.d(TAG, "debug.remove could not create: " + fileName);
                             }
                         } else if (currentEntry.startsWith("shared_prefs")) {
                             // process the preferences
@@ -124,7 +142,8 @@ class MigrationShim {
                 }
             }
         } finally {
-            zipFile.close();
+            if (zipFile != null)
+                zipFile.close();
         }
     }
 

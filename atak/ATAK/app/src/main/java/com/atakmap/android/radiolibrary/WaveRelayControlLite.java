@@ -56,7 +56,7 @@ public class WaveRelayControlLite
 
     private final static Object lock = new Object();
 
-    private String TAG = "WaveRelayControlLite";
+    private final String TAG = "WaveRelayControlLite";
 
     private final SharedPreferences prefs;
 

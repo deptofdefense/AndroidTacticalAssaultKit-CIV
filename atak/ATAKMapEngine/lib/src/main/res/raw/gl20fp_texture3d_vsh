@@ -1,9 +1,0 @@
-uniform mat4 uProjection;
-uniform mat4 uModelView;
-attribute vec3 aVertexCoords;
-attribute vec2 aTextureCoords;
-varying vec2 vTexPos;
-void main() {
-  vTexPos = aTextureCoords;
-  gl_Position = uProjection * uModelView * vec4(aVertexCoords.xyz, 1.0);
-}

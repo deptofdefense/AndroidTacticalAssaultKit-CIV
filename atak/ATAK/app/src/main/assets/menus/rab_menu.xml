@@ -2,7 +2,7 @@
     
     <button angle='-90'
             icon='icons/delete.png'
-            disabled='${nonremovable}'
+            disabled='!{${removable}}'
             onClick='actions/remove.xml' />
     
     <button icon='icons/details.png'

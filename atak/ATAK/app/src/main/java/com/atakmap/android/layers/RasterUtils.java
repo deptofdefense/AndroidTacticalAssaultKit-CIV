@@ -35,7 +35,8 @@ public final class RasterUtils {
     private static final Comparator<DatasetDescriptor> SORT_GSD = new Comparator<DatasetDescriptor>() {
         @Override
         public int compare(DatasetDescriptor d1, DatasetDescriptor d2) {
-            if (d1 instanceof ImageDatasetDescriptor && d2 instanceof ImageDatasetDescriptor) {
+            if (d1 instanceof ImageDatasetDescriptor
+                    && d2 instanceof ImageDatasetDescriptor) {
                 double g1 = getGSD((ImageDatasetDescriptor) d1);
                 double g2 = getGSD((ImageDatasetDescriptor) d2);
                 return Double.compare(g1, g2);

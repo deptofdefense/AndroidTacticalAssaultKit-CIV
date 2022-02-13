@@ -3,19 +3,22 @@ package com.atakmap.app.preferences;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffColorFilter;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
+import android.widget.ImageButton;
+import android.widget.LinearLayout;
 
+import com.atakmap.android.navigation.views.buttons.NavButtonDrawable;
 import com.atakmap.android.preference.PreferenceSearchIndex;
 import com.atakmap.android.tools.ActionBarReceiver;
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.app.R;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -26,11 +29,11 @@ import com.atakmap.app.R;
 public class ActionBarPreferences extends AtakPreferenceFragment implements
         SharedPreferences.OnSharedPreferenceChangeListener {
 
-    private ImageView placeholderImage;
     private SharedPreferences prefs;
     private CustomActionBarFragment customActionBarFragment;
+    private final List<ImageButton> buttons = new ArrayList<>();
 
-    public static java.util.List<PreferenceSearchIndex> index(Context context) {
+    public static List<PreferenceSearchIndex> index(Context context) {
         return index(context,
                 ActionBarPreferences.class,
                 null,
@@ -86,8 +89,17 @@ public class ActionBarPreferences extends AtakPreferenceFragment implements
                 .commit();
 
         //bind xml variables
-        this.placeholderImage = view
-                .findViewById(R.id.placeholderImageView);
+        buttons.clear();
+        LinearLayout buttonLayout = view.findViewById(R.id.preview_buttons);
+        for (int i = 0; i < buttonLayout.getChildCount(); i++) {
+            View v = buttonLayout.getChildAt(i);
+            if (v instanceof ImageButton) {
+                ImageButton btn = (ImageButton) v;
+                btn.setImageDrawable(new NavButtonDrawable(getActivity(),
+                        btn.getDrawable()));
+                buttons.add((ImageButton) v);
+            }
+        }
 
         applyNewBackground();
         applyNewIconColors();
@@ -95,13 +107,18 @@ public class ActionBarPreferences extends AtakPreferenceFragment implements
 
     public void applyNewIconColors() {
         int newColor = ActionBarReceiver.getUserIconColor();
-        placeholderImage.setColorFilter(new PorterDuffColorFilter(newColor,
-                PorterDuff.Mode.SRC_IN));
+        for (ImageButton btn : buttons) {
+            NavButtonDrawable dr = (NavButtonDrawable) btn.getDrawable();
+            dr.setColor(newColor);
+        }
     }
 
     private void applyNewBackground() {
-        placeholderImage.setBackgroundColor(ActionBarReceiver.getInstance()
-                .getActionBarColor());
+        int newColor = ActionBarReceiver.getInstance().getActionBarColor();
+        for (ImageButton btn : buttons) {
+            NavButtonDrawable dr = (NavButtonDrawable) btn.getDrawable();
+            dr.setShadowColor(newColor);
+        }
     }
 
     /**

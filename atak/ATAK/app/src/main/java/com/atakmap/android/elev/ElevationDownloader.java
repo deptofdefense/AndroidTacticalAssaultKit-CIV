@@ -143,6 +143,9 @@ class ElevationDownloader implements AtakMapView.OnMapMovedListener {
             remoteCoverage = null;
         }
         remote_coverage = remoteCoverage;
+
+        // trigger for an initial download
+        onMapMoved(_mapView, false);
     }
 
     void dispose() {
@@ -212,7 +215,8 @@ class ElevationDownloader implements AtakMapView.OnMapMovedListener {
         final DownloadThread dt = new DownloadThread(context, progressDialog,
                 listView);
 
-        progressDialog.setMessage("Downloading...");
+        progressDialog
+                .setMessage(context.getString(R.string.downloading_message));
         progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
         progressDialog.setCanceledOnTouchOutside(false);
         progressDialog.setButton(_context.getString(R.string.cancel),

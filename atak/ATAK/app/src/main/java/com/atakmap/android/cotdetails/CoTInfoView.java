@@ -77,6 +77,7 @@ import com.atakmap.coremap.conversions.Angle;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.NorthReference;
 import com.atakmap.coremap.conversions.AngleUtilities;
+import com.atakmap.map.CameraController;
 
 import java.util.Date;
 
@@ -379,7 +380,8 @@ public class CoTInfoView extends RelativeLayout
             public void onClick(View v) {
                 if (_marker != null) {
                     GeoPoint gp = _marker.getPoint();
-                    mapView.getMapController().panTo(gp, false);
+                    CameraController.Programmatic.panTo(
+                            mapView.getRenderer3(), gp, false);
                 }
             }
         });
@@ -969,10 +971,8 @@ public class CoTInfoView extends RelativeLayout
         _cotType = type;
 
         final Drawable dr = getPointIcon(_marker, mapView);
-        if (dr != null)
-            _iconButton.setImageDrawable(dr);
-        else
-            _iconButton.setImageDrawable(null); // so the previous marker icon does not show through when there is an error
+        // so the previous marker icon does not show through when there is an error
+        _iconButton.setImageDrawable(dr);
 
         if (_marker instanceof Marker) {
             _iconButton.setColorFilter(_marker.getIconColor(),

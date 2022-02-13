@@ -438,4 +438,13 @@ public class StateSaver extends AbstractMapComponent {
         }
     }
 
+    /**
+     * Query the statesaver using special parameters
+     * @param params Statesaver specific parameters
+     * @return Result cursor
+     */
+    public StateSaverCursor query(StateSaverQueryParameters params) {
+        return new StateSaverCursor(
+                params.executeQuery(getStateSaverDatabase()));
+    }
 }

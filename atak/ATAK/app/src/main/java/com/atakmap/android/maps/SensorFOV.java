@@ -1,6 +1,7 @@
 
 package com.atakmap.android.maps;
 
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -8,14 +9,23 @@ import android.graphics.Path;
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 
 import com.atakmap.android.imagecapture.CanvasHelper;
 import com.atakmap.android.imagecapture.CapturePP;
+import com.atakmap.android.imagecapture.PointA;
+import com.atakmap.android.util.ATAKUtilities;
+import com.atakmap.coremap.conversions.Angle;
+import com.atakmap.coremap.conversions.AngleUtilities;
+import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoBounds;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
+import com.atakmap.coremap.maps.coords.NorthReference;
 import com.atakmap.math.MathUtils;
 
 import java.util.ArrayList;
@@ -25,6 +35,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class SensorFOV extends Shape implements MapItem.OnGroupChangedListener,
         MapItem.OnVisibleChangedListener {
+    private final static String TAG = "SensorFOV";
+
     private Arrow arrow;
 
     private GeoPointMetaData _point = GeoPointMetaData
@@ -32,6 +44,10 @@ public class SensorFOV extends Shape implements MapItem.OnGroupChangedListener,
     private float _azimuth = 0f;
     private float _fov = 45f;
     private float _extent = 100f;
+    private float _rangeLines = 100f;
+    private boolean _labels = false;
+    private String labelL = null;
+    private String labelR = null;
 
     private float _red = 1f;
     private float _green = 1f;
@@ -42,6 +58,7 @@ public class SensorFOV extends Shape implements MapItem.OnGroupChangedListener,
 
     public SensorFOV(final String uid) {
         this(MapItem.createSerialId(), new DefaultMetaDataHolder(), uid);
+        setLabels(false);
         arrow = new Arrow(uid + "_arrow");
         arrow.setMetaBoolean("nevercot", true);
         arrow.setMetaBoolean("addToObjList", false);
@@ -72,6 +89,7 @@ public class SensorFOV extends Shape implements MapItem.OnGroupChangedListener,
     @Override
     public void onVisibleChanged(MapItem item) {
         arrow.setVisible(item.getVisible());
+        onMetricsChanged();
     }
 
     @Override
@@ -100,16 +118,34 @@ public class SensorFOV extends Shape implements MapItem.OnGroupChangedListener,
     }
 
     /**
-     * When setting the metrics that define the sensor, please pay attention to the 
+     * When setting the metrics that define the sensor, please pay attention to the
      * units of the various items:
      * @param azimuth  the azimuth is in Degrees True
      * @param fov field of view in angular degrees
      * @param extent in meters.
      */
     public void setMetrics(float azimuth, float fov, float extent) {
+        this.setMetrics(azimuth, fov, extent, false, 100);
+    }
+
+    /**
+     * When setting the metrics that define the sensor, please pay attention to the 
+     * units of the various items:
+     * @param azimuth  the azimuth is in Degrees True
+     * @param fov field of view in angular degrees
+     * @param extent in meters.
+     * @param bLabels display FoV edges/angles as labels
+     * @param rangeLines spacing for range lines in meters
+     */
+    public void setMetrics(float azimuth, float fov, float extent,
+            boolean bLabels, float rangeLines) {
+        Log.d(TAG, "setMetrics: " + bLabels + ", rangeLines: " + rangeLines);
+
         _azimuth = azimuth;
         _fov = fov;
         _extent = extent;
+        _rangeLines = rangeLines;
+        setLabels(bLabels);
         arrow.setPoint1(_point);
         arrow.setPoint2(GeoPointMetaData
                 .wrap(DistanceCalculations.metersFromAtBearing(_point.get(),
@@ -118,6 +154,61 @@ public class SensorFOV extends Shape implements MapItem.OnGroupChangedListener,
 
         onMetricsChanged();
         this.onPointsChanged();
+    }
+
+    private void setLabels(boolean bLabels) {
+        _labels = bLabels;
+
+        if (_labels) {
+            SharedPreferences prefs = PreferenceManager
+                    .getDefaultSharedPreferences(MapView._mapView.getContext());
+            NorthReference northReference = NorthReference
+                    .findFromValue(Integer.parseInt(prefs
+                            .getString("rab_north_ref_pref",
+                                    String.valueOf(NorthReference.MAGNETIC
+                                            .getValue()))));
+
+            Angle bearingUnits = Angle
+                    .findFromValue(Integer.parseInt(prefs.getString(
+                            "rab_brg_units_pref",
+                            String.valueOf(Angle.DEGREE.getValue()))));
+
+            //set left label
+            double l0 = (_azimuth - _fov / 2);
+            //            if (_northReference == NorthReference.GRID) {
+            //                double gridConvergence = ATAKUtilities
+            //                        .computeGridConvergence(_point1.get(), _point2.get());
+            //                labelL = AngleUtilities.format(AngleUtilities.wrapDeg(
+            //                        _bearing - gridConvergence), _bearingUnits) + "G";
+            //            } else
+            if (northReference == NorthReference.MAGNETIC) {
+                double bearingMag = ATAKUtilities.convertFromTrueToMagnetic(
+                        _point.get(), l0);
+                labelL = AngleUtilities.format(bearingMag, bearingUnits) + "M";
+            } else {
+                labelL = AngleUtilities.format(l0, bearingUnits) + "T";
+            }
+
+            //set right lable
+            l0 = (_azimuth + _fov / 2);
+            //            if (_northReference == NorthReference.GRID) {
+            //                double gridConvergence = ATAKUtilities
+            //                        .computeGridConvergence(_point1.get(), _point2.get());
+            //                labelR = AngleUtilities.format(AngleUtilities.wrapDeg(
+            //                        _bearing - gridConvergence), _bearingUnits) + "G";
+            //            } else
+            if (northReference == NorthReference.MAGNETIC) {
+                double bearingMag = ATAKUtilities.convertFromTrueToMagnetic(
+                        _point.get(), l0);
+                labelR = AngleUtilities.format(bearingMag, bearingUnits) + "M";
+            } else {
+                labelR = AngleUtilities.format(l0, bearingUnits) + "T";
+            }
+        } else {
+            labelL = null;
+            labelR = null;
+        }
+        onMetricsChanged();
     }
 
     public void setAlpha(float alpha) {
@@ -183,6 +274,27 @@ public class SensorFOV extends Shape implements MapItem.OnGroupChangedListener,
 
     public float getExtent() {
         return _extent;
+    }
+
+    public float getRangeLines() {
+        return _rangeLines;
+    }
+
+    public boolean isShowLabels() {
+        return _labels;
+    }
+
+    private boolean isDrawLabels() {
+        return _labels && !FileSystemUtils.isEmpty(labelL)
+                && !FileSystemUtils.isEmpty(labelR);
+    }
+
+    public String getLabelL() {
+        return labelL;
+    }
+
+    public String getLabelR() {
+        return labelR;
     }
 
     public GeoPointMetaData getPoint() {
@@ -273,7 +385,43 @@ public class SensorFOV extends Shape implements MapItem.OnGroupChangedListener,
             if (arrowBundle != null)
                 data.putSerializable("arrow", arrowBundle
                         .getSerializable("points"));
+
+            if (isDrawLabels()) {
+                // Include left label
+                PointF p0 = capture.forward(_point.get());
+                GeoPoint gp1 = DistanceCalculations
+                        .metersFromAtBearing(_point.get(), _extent,
+                                _azimuth - _fov / 2);
+
+                PointF p1 = capture.forward(gp1);
+                MapView mv = MapView.getMapView();
+                GeoPointMetaData c = GeoPointMetaData
+                        .wrap(GeoCalculations.midPointCartesian(_point.get(),
+                                gp1, mv != null
+                                        && mv.isContinuousScrollEnabled()));
+
+                float deg = CanvasHelper.angleTo(p0, p1) + 90;
+                PointA pa = new PointA(capture.forward(c.get()), deg);
+                data.putParcelable("labelPointL", pa);
+
+                // Include right label
+                PointF rp0 = capture.forward(_point.get());
+                GeoPoint rgp1 = DistanceCalculations
+                        .metersFromAtBearing(_point.get(), _extent,
+                                _azimuth + _fov / 2);
+
+                PointF rp1 = capture.forward(rgp1);
+                GeoPointMetaData rc = GeoPointMetaData
+                        .wrap(GeoCalculations.midPointCartesian(_point.get(),
+                                rgp1, mv != null
+                                        && mv.isContinuousScrollEnabled()));
+
+                float rdeg = CanvasHelper.angleTo(rp0, rp1) + 90;
+                PointA rpa = new PointA(capture.forward(rc.get()), rdeg);
+                data.putParcelable("labelPointR", rpa);
+            }
         }
+
         return data;
     }
 
@@ -332,6 +480,22 @@ public class SensorFOV extends Shape implements MapItem.OnGroupChangedListener,
             paint.setStrokeWidth(arrowWidth);
             can.drawPath(path, paint);
             path.reset();
+        }
+
+        if (isDrawLabels()) {
+            // Draw label L
+            PointA labelPoint = data.getParcelable("labelPointL");
+            if (labelPoint != null) { //TODO  && cap.shouldDrawLabel(label, points))
+                cap.drawLabel(labelL, labelPoint);
+            }
+
+            // Draw label R
+            PointA labelPointR = data.getParcelable("labelPointR");
+            if (labelPointR != null) { //TODO  && cap.shouldDrawLabel(label, points))
+                cap.drawLabel(labelR, labelPointR);
+            }
+
+            //TODO draw range lines
         }
     }
 

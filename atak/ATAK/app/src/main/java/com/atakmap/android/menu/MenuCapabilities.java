@@ -6,7 +6,7 @@ import java.util.HashSet;
 
 public class MenuCapabilities {
 
-    private static Set<String> capabilities = new HashSet<>();
+    private static final Set<String> capabilities = new HashSet<>();
 
     /**
      * When using certain core menu radials, there may be a capability that is not 
@@ -17,7 +17,7 @@ public class MenuCapabilities {
         capabilities.add(capability);
     }
 
-    synchronized static boolean contains(final String capability) {
+    public synchronized static boolean contains(final String capability) {
         return capabilities.contains(capability);
     }
 

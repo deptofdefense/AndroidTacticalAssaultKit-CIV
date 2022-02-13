@@ -271,6 +271,7 @@ public class Dt2FileWatcher extends Thread {
         Dt2File d = new Dt2File(path);
         if (d.parent == null)
             return;
+        final boolean updated;
         synchronized (_coverages) {
             List<String> files = getFilesRef(d.level, d.parent);
             if (files != null) {
@@ -282,10 +283,15 @@ public class Dt2FileWatcher extends Thread {
                     _totalFiles--;
                 }
             }
-            _coverages[d.level].set(getCoverageIndex(d.latitude, d.longitude),
-                    exists);
+            final int coverageIndex = getCoverageIndex(d.latitude, d.longitude);
+            final boolean existed = _coverages[d.level].get(coverageIndex);
+            updated = (existed != exists);
+            if (updated)
+                _coverages[d.level].set(coverageIndex, exists);
         }
-        onDtedFilesUpdated();
+        // Dispatch update
+        if (updated)
+            onDtedFilesUpdated();
     }
 
     /**
@@ -442,13 +448,18 @@ public class Dt2FileWatcher extends Thread {
         for (File root : _rootDirs)
             res.add(scan(root));
 
+        boolean updated = false;
         synchronized (_coverages) {
             _totalFiles = res.totalFiles;
             _fileCache.clear();
             _fileCache.putAll(res.files);
             for (int level = 0; level < DTED_LEVELS; level++) {
-                _coverages[level].clear();
-                _coverages[level].or(res.coverages[level]);
+                // Update coverage if changed
+                if (!_coverages[level].equals(res.coverages[level])) {
+                    _coverages[level].clear();
+                    _coverages[level].or(res.coverages[level]);
+                    updated |= true;
+                }
             }
         }
 
@@ -460,7 +471,8 @@ public class Dt2FileWatcher extends Thread {
         }
 
         // Post results so listeners are called on the UI thread
-        onDtedFilesUpdated();
+        if (updated)
+            onDtedFilesUpdated();
     }
 
     private void onDtedFilesUpdated() {

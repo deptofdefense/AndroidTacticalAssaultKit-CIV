@@ -10,13 +10,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 
-import androidx.test.runner.AndroidJUnit4;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 @RunWith(AndroidJUnit4.class)
 public class ElevationSourceManagerTests extends ATAKInstrumentedTest {

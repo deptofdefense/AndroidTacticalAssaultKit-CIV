@@ -4,7 +4,7 @@
         google()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.5.3'
+        classpath 'com.android.tools.build:gradle:4.2.2'
     }
  }
 
@@ -15,16 +15,11 @@ allprojects {
     }
 }
 
-
 apply plugin: 'com.android.library'
-
-dependencies {
-    api fileTree(dir: 'libs', include: '*.jar')
-}
 
 android {
     compileSdkVersion 21
-    buildToolsVersion "29.0.2"
+    buildToolsVersion "30.0.2"
 
 
     sourceSets {
@@ -50,8 +45,21 @@ android {
         // by a similar customization.
         debug.setRoot('build-types/debug')
         release.setRoot('build-types/release')
-
         
     }
 
 }
+
+task deleteOldJar(type: Delete) {
+    delete 'build/lib/android-serial.jar' 
+}
+
+task exportJar(type:Copy) {
+    from('build/intermediates/packaged-classes/release/')
+    into('build/lib/')
+    include('classes.jar')
+    //Rename it
+    rename('classes.jar','android-serial.jar')
+}
+
+exportJar.dependsOn(deleteOldJar, build)

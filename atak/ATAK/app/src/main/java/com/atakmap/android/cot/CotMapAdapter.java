@@ -18,7 +18,6 @@ import com.atakmap.android.user.FilterMapOverlay;
 import com.atakmap.android.user.icon.SpotMapReceiver;
 
 import com.atakmap.android.vehicle.VehicleMapComponent;
-import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.app.system.FlavorProvider;
 import com.atakmap.app.system.SystemComponentLoader;
@@ -256,18 +255,6 @@ public class CotMapAdapter {
             //defer to ImporterManager
             return processCotEvent(event, extra);
         }
-    }
-
-    @Deprecated
-    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
-    public MapView getMapView() {
-        return _mapView;
-    }
-
-    @Deprecated
-    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
-    public MapGroup getCotMapGroup() {
-        return _cotGroup;
     }
 
     /**

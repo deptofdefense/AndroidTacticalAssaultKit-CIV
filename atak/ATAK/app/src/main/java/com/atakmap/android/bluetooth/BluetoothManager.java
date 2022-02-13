@@ -40,6 +40,7 @@ public class BluetoothManager {
 
     private Context context = null;
     private boolean running = false;
+    private boolean interrupt = false;
 
     private final Map<BluetoothDevice, BluetoothCotManager> connectionMap = new HashMap<>();
 
@@ -409,12 +410,29 @@ public class BluetoothManager {
         loadConfig();
     }
 
+    /**
+     * Sets the interrupt flag which can be used by other methods within the Bluetooth
+     * Manager.  Most notably will allow the start() mechanism to break out early.
+     */
+    public void interrupt() {
+        interrupt = true;
+    }
+
+    /**
+     * Start the scanning process.   Once scanning has begun, it will go through a
+     * period of Bluetooth Low Energy Scanning followed by a period of classic bluetooth
+     * scanning.   At any point along the way, if interrupt is called, it will only interrupt
+     * the next stage of scanning.  If interrupt is processed, the user still will need to call
+     * stop before starting again.
+     */
     @SuppressLint({
             "MissingPermission"
     })
     public synchronized void start() {
 
         stop();
+
+        interrupt = false;
 
         Log.d(TAG, "starting the bluetooth scanning process");
         if (running) {
@@ -461,6 +479,10 @@ public class BluetoothManager {
                     Log.w(TAG, "Unable to start BT Low Energy scan");
                 }
             });
+        }
+
+        if (interrupt) {
+            return;
         }
 
         Set<BluetoothDevice> devices = adapter.getBondedDevices();

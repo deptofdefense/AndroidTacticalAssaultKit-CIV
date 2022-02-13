@@ -7,8 +7,12 @@ import android.content.DialogInterface;
 import android.content.Intent;
 
 import com.atakmap.android.data.ClearContentRegistry;
+import com.atakmap.android.data.FileContentResolver;
 import com.atakmap.android.data.URIContentManager;
 import com.atakmap.android.importexport.ImportExportMapComponent;
+import com.atakmap.android.importexport.Importer;
+import com.atakmap.android.importexport.ImporterManager;
+import com.atakmap.android.importfiles.sort.ImportResolver;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 
 import android.content.SharedPreferences;
@@ -27,8 +31,9 @@ import com.atakmap.android.contentservices.ServiceFactory;
 import com.atakmap.android.contentservices.ogc.WMSQuery;
 import com.atakmap.android.contentservices.ogc.WMTSQuery;
 import com.atakmap.android.grg.GRGMapComponent;
-import com.atakmap.android.importexport.ImporterManager;
 import com.atakmap.android.ipc.AtakBroadcast;
+import com.atakmap.android.layers.kmz.KMZContentResolver;
+import com.atakmap.android.layers.kmz.KMZPackageImporter;
 import com.atakmap.android.layers.overlay.MapControlsOverlay;
 import com.atakmap.android.maps.AbstractMapComponent;
 import com.atakmap.android.maps.CardLayer;
@@ -66,11 +71,13 @@ import com.atakmap.math.Rectangle;
 import com.atakmap.android.importfiles.resource.RemoteResourceImporter;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 public class LayersMapComponent extends AbstractMapComponent
@@ -120,13 +127,13 @@ public class LayersMapComponent extends AbstractMapComponent
     private ZoomToLayerReceiver _zoomToLayerReceiver;
     private MapView _mapView;
     private Context _context;
-    private ExternalLayerDataImporter _externalLayerDataImporter;
+    private final List<ImportResolver> _importResolvers = new ArrayList<>();
+    private final List<Importer> _importers = new ArrayList<>();
+    private final List<FileContentResolver> _contentResolvers = new ArrayList<>();
     protected MobileOutlinesDataStore mobileOutlines;
     protected OutlinesFeatureDataStore nativeOutlines;
     private FeatureLayer mobileOutlinesLayer;
     private FeatureLayer nativeOutlinesLayer;
-    private LayerContentResolver _contentResolver;
-    private RemoteResourceImporter _kmlLinkImporter;
 
     public static final String IMPORTER_CONTENT_TYPE = "External Native Data";
     public static final String IMPORTER_DEFAULT_MIME_TYPE = "application/octet-stream";
@@ -223,51 +230,6 @@ public class LayersMapComponent extends AbstractMapComponent
                         new WMSPreferenceFragment()));
     }
 
-    private void tearDownLayers() {
-        if (_layersManagerReceiver != null) {
-            AtakBroadcast.getInstance()
-                    .unregisterReceiver(_layersManagerReceiver);
-            _layersManagerReceiver.dispose();
-            _layersManagerReceiver = null;
-        }
-
-        for (LayerSelectionAdapter adapter : layerToAdapter.values())
-            adapter.dispose();
-        layerToAdapter.clear();
-        _nativeLayersAdapter = null;
-        _mobileLayersAdapter2 = null;
-
-        if (_contentResolver != null)
-            URIContentManager.getInstance()
-                    .unregisterResolver(_contentResolver);
-
-        if (this.rasterLayers != null)
-            this.rasterLayers.removeOnProxySubjectChangedListener(this);
-
-        if (this.nativeOutlinesLayer != null)
-            _mapView.removeLayer(RenderStack.VECTOR_OVERLAYS,
-                    this.nativeOutlinesLayer);
-        if (this.mobileOutlinesLayer != null)
-            _mapView.removeLayer(RenderStack.VECTOR_OVERLAYS,
-                    mobileOutlinesLayer);
-
-        if (this._zoomToLayerReceiver != null)
-            AtakBroadcast.getInstance()
-                    .unregisterReceiver(_zoomToLayerReceiver);
-
-        if (_volumeKeySwitcher != null)
-            _mapView.removeOnKeyListener(_volumeKeySwitcher);
-
-        if (_mapMovedListener != null)
-            _mapView.removeOnMapMovedListener(_mapMovedListener);
-
-        if (_externalLayerDataImporter != null)
-            ImporterManager.unregisterImporter(_externalLayerDataImporter);
-
-        if (this.rasterLayers != null)
-            _mapView.removeLayer(RenderStack.MAP_LAYERS, this.rasterLayers);
-    }
-
     private void buildUpLayers(Context context, MapView view,
             SharedPreferences prefs) {
         initLayersDatabase();
@@ -279,9 +241,11 @@ public class LayersMapComponent extends AbstractMapComponent
         this.mobileLayers2 = new MobileImageryRasterLayer2("Mobile", layersDb,
                 MOBILE_QUERY_PARAMS2, true);
 
-        _contentResolver = new LayerContentResolver(view, layersDb,
-                rasterLayers);
-        URIContentManager.getInstance().registerResolver(_contentResolver);
+        _contentResolvers
+                .add(new LayerContentResolver(view, layersDb, rasterLayers));
+        _contentResolvers.add(new KMZContentResolver(view));
+        for (FileContentResolver resolver : _contentResolvers)
+            URIContentManager.getInstance().registerResolver(resolver);
 
         // add the online/saved layers to the proxy layer
         this.rasterLayers.add(this.nativeLayers);
@@ -392,10 +356,11 @@ public class LayersMapComponent extends AbstractMapComponent
         _volumeKeySwitcher.setEnabled(prefs.getBoolean("volumemapswitcher",
                 true));
 
-        _externalLayerDataImporter = new ExternalLayerDataImporter(context,
-                layersDb,
-                IMPORTER_CONTENT_TYPE, IMPORTER_MIME_TYPES, IMPORTER_HINTS);
-        ImporterManager.registerImporter(_externalLayerDataImporter);
+        _importers.add(new ExternalLayerDataImporter(context, layersDb,
+                IMPORTER_CONTENT_TYPE, IMPORTER_MIME_TYPES, IMPORTER_HINTS));
+        _importers.add(new KMZPackageImporter());
+        for (Importer importer : _importers)
+            ImporterManager.registerImporter(importer);
         // TODO: Marshal for external layers?
 
         _mapView.addLayer(RenderStack.MAP_LAYERS, 0, this.rasterLayers);
@@ -418,8 +383,9 @@ public class LayersMapComponent extends AbstractMapComponent
 
         this.mapControls = new MapControlsOverlay(_mapView);
 
-        ImportExportMapComponent.getInstance().addImporterClass(
-                _kmlLinkImporter = new RemoteResourceImporter(view));
+        _importResolvers.add(new RemoteResourceImporter(view));
+        for (ImportResolver resolver : _importResolvers)
+            ImportExportMapComponent.getInstance().addImporterClass(resolver);
     }
 
     private void _initializeLayers() {
@@ -505,14 +471,24 @@ public class LayersMapComponent extends AbstractMapComponent
 
     @Override
     protected void onDestroyImpl(Context context, MapView view) {
-        URIContentManager.getInstance().unregisterResolver(_contentResolver);
-        _contentResolver.dispose();
+        for (FileContentResolver resolver : _contentResolvers) {
+            URIContentManager.getInstance().unregisterResolver(resolver);
+            resolver.dispose();
+        }
+
+        for (ImportResolver resolver : _importResolvers)
+            ImportExportMapComponent.getInstance()
+                    .removeImporterClass(resolver);
+
+        for (Importer importer : _importers)
+            ImporterManager.unregisterImporter(importer);
 
         this.mapControls.dispose();
 
         ClearContentRegistry.getInstance()
                 .unregisterListener(_layersManagerReceiver.dataMgmtReceiver);
 
+        _layersManagerReceiver.dispose();
         AtakBroadcast.getInstance().unregisterReceiver(_layersManagerReceiver);
         _layersManagerReceiver = null;
 
@@ -536,6 +512,7 @@ public class LayersMapComponent extends AbstractMapComponent
 
         _saveLastViewedLayer(context);
 
+        _mapView.removeOnKeyListener(_volumeKeySwitcher);
         _volumeKeySwitcher = null;
 
         destroyMapViewLayers();
@@ -567,8 +544,7 @@ public class LayersMapComponent extends AbstractMapComponent
         if (this.grgs != null)
             this.grgs.onDestroy(context, view);
 
-        ImportExportMapComponent.getInstance().removeImporterClass(
-                _kmlLinkImporter);
+        _mapView.removeOnMapMovedListener(_mapMovedListener);
     }
 
     private void destroyMapViewLayers() {

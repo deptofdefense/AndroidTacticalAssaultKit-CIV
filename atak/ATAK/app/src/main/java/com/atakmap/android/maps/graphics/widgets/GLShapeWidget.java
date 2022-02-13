@@ -7,6 +7,11 @@ import com.atakmap.android.widgets.ShapeWidget.OnStrokeColorChangedListener;
 import com.atakmap.android.widgets.ShapeWidget.OnStrokeWeightChangedListener;
 import com.atakmap.map.opengl.GLMapView;
 
+import gov.tak.api.annotation.DeprecatedApi;
+
+/** @deprecated use {@link gov.tak.platform.widgets.opengl.GLShapeWidget} */
+@Deprecated
+@DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
 public abstract class GLShapeWidget extends GLWidget2 implements
         OnStrokeColorChangedListener,
         OnStrokeWeightChangedListener {

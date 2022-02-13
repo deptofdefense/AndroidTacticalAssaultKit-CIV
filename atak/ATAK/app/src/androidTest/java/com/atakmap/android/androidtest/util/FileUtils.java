@@ -13,7 +13,7 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-import androidx.test.InstrumentationRegistry;
+import androidx.test.core.app.ApplicationProvider;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -39,13 +39,13 @@ public final class FileUtils {
 
         public static AutoDeleteFile createTempFile() {
             return createTempFile(
-                    InstrumentationRegistry.getTargetContext().getCacheDir(),
+                    ApplicationProvider.getApplicationContext().getCacheDir(),
                     null);
         }
 
         public static AutoDeleteFile createTempFile(String extension) {
             return createTempFile(
-                    InstrumentationRegistry.getTargetContext().getCacheDir(),
+                    ApplicationProvider.getApplicationContext().getCacheDir(),
                     extension);
         }
 
@@ -68,7 +68,7 @@ public final class FileUtils {
 
         public static AutoDeleteFile createTempDir() {
             return createTempDir(
-                    InstrumentationRegistry.getTargetContext().getCacheDir());
+                    ApplicationProvider.getApplicationContext().getCacheDir());
         }
 
         public static AutoDeleteFile createTempDir(File directory) {

@@ -9,12 +9,21 @@ import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.map.AtakMapView;
 
 import java.util.Arrays;
+import java.util.IdentityHashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class TextWidget extends MapWidget2 {
-    private final ConcurrentLinkedQueue<OnTextChangedListener> _onTextChanged = new ConcurrentLinkedQueue<>();
-    private final ConcurrentLinkedQueue<OnColorChangedListener> _onColorChanged = new ConcurrentLinkedQueue<>();
-    private final ConcurrentLinkedQueue<OnHasBackgroundChangedListener> _onHasBackgroundChanged = new ConcurrentLinkedQueue<>();
+import gov.tak.api.commons.graphics.TextFormat;
+import gov.tak.api.widgets.ITextWidget;
+import gov.tak.platform.marshal.MarshalManager;
+
+public class TextWidget extends MapWidget2 implements ITextWidget {
+    private final ConcurrentLinkedQueue<ITextWidget.OnTextChangedListener> _onTextChanged = new ConcurrentLinkedQueue<>();
+    private final Map<TextWidget.OnTextChangedListener, ITextWidget.OnTextChangedListener> _onTextChangedForwarders = new IdentityHashMap<>();
+    private final ConcurrentLinkedQueue<ITextWidget.OnColorChangedListener> _onColorChanged = new ConcurrentLinkedQueue<>();
+    private final Map<TextWidget.OnColorChangedListener, ITextWidget.OnColorChangedListener> _onColorChangedForwarders = new IdentityHashMap();
+    private final ConcurrentLinkedQueue<ITextWidget.OnHasBackgroundChangedListener> _onHasBackgroundChanged = new ConcurrentLinkedQueue<>();
+    private final Map<TextWidget.OnHasBackgroundChangedListener, ITextWidget.OnHasBackgroundChangedListener> _onHasBackgroundChangedForwarders = new IdentityHashMap();
     protected String _text;
     protected int _lineCount = 0;
     private int[] _colors;
@@ -36,30 +45,75 @@ public class TextWidget extends MapWidget2 {
         void onTextWidgetHasBackgroundChanged(TextWidget widget);
     }
 
-    public void addOnTextChangedListener(OnTextChangedListener l) {
+    @Override
+    public final void addOnTextChangedListener(
+            ITextWidget.OnTextChangedListener l) {
         _onTextChanged.add(l);
     }
 
-    public void removeOnTextChangedListener(OnTextChangedListener l) {
+    public void addOnTextChangedListener(TextWidget.OnTextChangedListener l) {
+        registerForwardedListener(_onTextChanged, _onTextChangedForwarders, l,
+                new TextChangedForwarder(l));
+    }
+
+    @Override
+    public final void removeOnTextChangedListener(
+            ITextWidget.OnTextChangedListener l) {
         _onTextChanged.remove(l);
     }
 
-    public void addOnColorChangedListener(OnColorChangedListener l) {
+    public void removeOnTextChangedListener(
+            TextWidget.OnTextChangedListener l) {
+        unregisterForwardedListener(_onTextChanged, _onTextChangedForwarders,
+                l);
+    }
+
+    @Override
+    public final void addOnColorChangedListener(
+            ITextWidget.OnColorChangedListener l) {
         _onColorChanged.add(l);
     }
 
-    public void removeOnColorChangedListener(OnColorChangedListener l) {
+    public void addOnColorChangedListener(TextWidget.OnColorChangedListener l) {
+        registerForwardedListener(_onColorChanged, _onColorChangedForwarders, l,
+                new ColorChangedForwarder(l));
+    }
+
+    @Override
+    public final void removeOnColorChangedListener(
+            ITextWidget.OnColorChangedListener l) {
         _onColorChanged.remove(l);
     }
 
-    public void addOnHasBackgroundChangedListener(
-            OnHasBackgroundChangedListener l) {
+    public void removeOnColorChangedListener(
+            TextWidget.OnColorChangedListener l) {
+        unregisterForwardedListener(_onColorChanged, _onColorChangedForwarders,
+                l);
+    }
+
+    @Override
+    public final void addOnHasBackgroundChangedListener(
+            ITextWidget.OnHasBackgroundChangedListener l) {
         _onHasBackgroundChanged.add(l);
     }
 
-    public void removeOnHasBackgroundChangedListener(
-            OnHasBackgroundChangedListener l) {
+    public void addOnHasBackgroundChangedListener(
+            TextWidget.OnHasBackgroundChangedListener l) {
+        registerForwardedListener(_onHasBackgroundChanged,
+                _onHasBackgroundChangedForwarders, l,
+                new HasBackgroundChangedForwarder(l));
+    }
+
+    @Override
+    public final void removeOnHasBackgroundChangedListener(
+            ITextWidget.OnHasBackgroundChangedListener l) {
         _onHasBackgroundChanged.remove(l);
+    }
+
+    public void removeOnHasBackgroundChangedListener(
+            TextWidget.OnHasBackgroundChangedListener l) {
+        unregisterForwardedListener(_onHasBackgroundChanged,
+                _onHasBackgroundChangedForwarders, l);
     }
 
     public TextWidget(final String text, final MapTextFormat textFormat,
@@ -203,9 +257,15 @@ public class TextWidget extends MapWidget2 {
         return _textFormat;
     }
 
+    @Override
+    public TextFormat getWidgetTextFormat() {
+        return MarshalManager.marshal(_textFormat, MapTextFormat.class,
+                TextFormat.class);
+    }
+
     protected void onTextChanged() {
         recalcSize();
-        for (OnTextChangedListener l : _onTextChanged)
+        for (ITextWidget.OnTextChangedListener l : _onTextChanged)
             l.onTextWidgetTextChanged(this);
     }
 
@@ -228,15 +288,60 @@ public class TextWidget extends MapWidget2 {
     }
 
     private void onColorChanged() {
-        for (OnColorChangedListener l : _onColorChanged) {
+        for (ITextWidget.OnColorChangedListener l : _onColorChanged) {
             l.onTextWidgetColorChanged(this);
         }
     }
 
     private void onHasBackgroundChanged() {
-        for (OnHasBackgroundChangedListener l : _onHasBackgroundChanged) {
+        for (ITextWidget.OnHasBackgroundChangedListener l : _onHasBackgroundChanged) {
             l.onTextWidgetHasBackgroundChanged(this);
         }
     }
 
+    private final static class TextChangedForwarder
+            implements ITextWidget.OnTextChangedListener {
+        final TextWidget.OnTextChangedListener _cb;
+
+        TextChangedForwarder(TextWidget.OnTextChangedListener cb) {
+            _cb = cb;
+        }
+
+        @Override
+        public void onTextWidgetTextChanged(ITextWidget widget) {
+            if (widget instanceof TextWidget)
+                _cb.onTextWidgetTextChanged((TextWidget) widget);
+        }
+    }
+
+    private final static class ColorChangedForwarder
+            implements ITextWidget.OnColorChangedListener {
+        final TextWidget.OnColorChangedListener _cb;
+
+        ColorChangedForwarder(TextWidget.OnColorChangedListener cb) {
+            _cb = cb;
+        }
+
+        @Override
+        public void onTextWidgetColorChanged(ITextWidget widget) {
+            if (widget instanceof TextWidget)
+                _cb.onTextWidgetColorChanged((TextWidget) widget);
+        }
+    }
+
+    private final static class HasBackgroundChangedForwarder
+            implements ITextWidget.OnHasBackgroundChangedListener {
+        final TextWidget.OnHasBackgroundChangedListener _cb;
+
+        HasBackgroundChangedForwarder(
+                TextWidget.OnHasBackgroundChangedListener cb) {
+            _cb = cb;
+        }
+
+        @Override
+        public void onTextWidgetHasBackgroundChanged(ITextWidget widget) {
+            if (widget instanceof TextWidget)
+                _cb.onTextWidgetHasBackgroundChanged((TextWidget) widget);
+        }
+    }
 }

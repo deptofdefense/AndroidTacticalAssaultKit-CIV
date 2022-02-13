@@ -8,9 +8,9 @@ import android.os.Bundle;
 
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
-import com.atakmap.android.rubbersheet.tool.RubberModelEditTool;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.android.util.ATAKUtilities;
+import com.atakmap.android.vehicle.model.VehicleModelEditTool;
 
 /**
  * Receiver for various vehicle-related intents
@@ -27,8 +27,8 @@ public class VehicleMapReceiver extends BroadcastReceiver {
     public VehicleMapReceiver(MapView mapView) {
         _mapView = mapView;
         new VehicleRotationTool(_mapView, null);
-        /*new VehicleModelEditTool(_mapView, VehicleMapComponent
-                .getVehicleGroup(_mapView));*/
+        new VehicleModelEditTool(_mapView, VehicleMapComponent
+                .getVehicleGroup(_mapView));
     }
 
     @Override
@@ -62,7 +62,7 @@ public class VehicleMapReceiver extends BroadcastReceiver {
             // Edit vehicle model
             case EDIT:
                 ToolManagerBroadcastReceiver.getInstance().startTool(
-                        RubberModelEditTool.TOOL_NAME, extras);
+                        VehicleModelEditTool.TOOL_NAME, extras);
                 break;
 
             // Toggle vehicle marker label

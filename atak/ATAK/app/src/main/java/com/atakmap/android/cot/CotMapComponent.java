@@ -76,6 +76,7 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -212,36 +213,40 @@ public class CotMapComponent extends AbstractMapComponent implements
                                 "The name of the contact connector handler to use",
                                 true, String.class)
                 });
+
+        List<DocumentedExtra> sendExtras = new ArrayList<>(Arrays.asList(
+                new DocumentedExtra("targetUID",
+                        "The UID of the map item to send", true, String.class),
+                new DocumentedExtra("targetsUID",
+                        "Array of map item UIDs to send", true, String[].class),
+                new DocumentedExtra("com.atakmap.contact.CotEvent",
+                        "CoT event to send", true, CotEvent.class),
+                new DocumentedExtra(
+                        "com.atakmap.contact.MultipleCotEvents",
+                        "List of CoT events to send", true, ArrayList.class),
+                new DocumentedExtra("sendCallback",
+                        "Intent action to broadcast once contacts are selected and ready to send",
+                        true, String.class),
+                new DocumentedExtra("filename",
+                        "Path to file to send", true, String.class),
+                new DocumentedExtra("disableBroadcast",
+                        "True to hide the broadcast button", true,
+                        Boolean.class)));
         chatPresenceFilter.addAction(ContactPresenceDropdown.SEND_LIST,
                 "Open the contacts list for sending items or files",
-                new DocumentedExtra[] {
-                        new DocumentedExtra("targetUID",
-                                "The UID of the map item to send",
-                                true, String.class),
-                        new DocumentedExtra("targetsUID",
-                                "Array of map item UIDs to send",
-                                true, String[].class),
-                        new DocumentedExtra("com.atakmap.contact.CotEvent",
-                                "CoT event to send",
-                                true, CotEvent.class),
-                        new DocumentedExtra(
-                                "com.atakmap.contact.MultipleCotEvents",
-                                "List of CoT events to send",
-                                true, ArrayList.class),
-                        new DocumentedExtra("sendCallback",
-                                "Intent action to broadcast once contacts are selected and ready to send",
-                                true, String.class),
-                        new DocumentedExtra("filename",
-                                "Path to file to send",
-                                true, String.class),
-                        new DocumentedExtra("disableBroadcast",
-                                "True to hide the broadcast button",
-                                true, Boolean.class)
-                });
+                sendExtras.toArray(new DocumentedExtra[0]));
+
+        sendExtras.add(0, new DocumentedExtra("contactUIDs",
+                "Array of contact UIDs to send to", false, String[].class));
+        chatPresenceFilter.addAction(ContactPresenceDropdown.SEND_TO_CONTACTS,
+                "Send content directly to a given list of contacts",
+                sendExtras.toArray(new DocumentedExtra[0]));
+
         chatPresenceFilter.addAction(ContactPresenceDropdown.GEO_CHAT_LIST,
                 "Opens the contacts list for geo-chat");
         chatPresenceFilter.addAction(ContactPresenceDropdown.REFRESH_LIST,
                 "Refresh the contacts list");
+
         AtakBroadcast.getInstance().registerReceiver(contactPresenceReceiver,
                 chatPresenceFilter);
 

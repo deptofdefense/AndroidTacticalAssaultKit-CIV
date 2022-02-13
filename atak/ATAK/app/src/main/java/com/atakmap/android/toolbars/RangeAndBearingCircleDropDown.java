@@ -61,6 +61,7 @@ import java.text.DecimalFormat;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.map.CameraController;
 
 public class RangeAndBearingCircleDropDown extends DropDownReceiver implements
         OnStateListener, View.OnClickListener,
@@ -576,7 +577,8 @@ public class RangeAndBearingCircleDropDown extends DropDownReceiver implements
                 _rabCircle.setCenterPoint(gp);
                 populateLocationWidgets();
 
-                getMapView().getMapController().panTo(gp.get(), false);
+                CameraController.Programmatic.panTo(
+                        _mapView.getRenderer3(), gp.get(), false);
             }
         });
         b.setNegativeButton(R.string.cancel, null);

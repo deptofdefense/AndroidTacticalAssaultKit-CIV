@@ -1,20 +1,23 @@
 <background>
     <state>
-        <color>#ffffffff</color>
+        <color>#b3000000</color>
     </state>
     <state flags='disabled'>
-        <color>#7f7f7f7f</color>
-    </state>
-    <state flags='disabled|pressed'>
-        <color>#7f7f7f7f</color>
+        <color>#60000000</color>
     </state>
     <state flags='pressed'>
-        <color>#ff7fff7f</color>
+        <color>#ffdad4bc</color>
+    </state>
+    <state flags='pressed|disabled'>
+        <color>#60000000</color>
     </state>
     <state flags='selected'>
-        <color>#ff7fffff</color>
+        <color>#b3dad4bc</color>
     </state>
     <state flags='selected|pressed'>
-        <color>#ff7fff7f</color>
+        <color>#ffdad4bc</color>
+    </state>
+    <state flags='selected|disabled'>
+        <color>#60000000</color>
     </state>
 </background>

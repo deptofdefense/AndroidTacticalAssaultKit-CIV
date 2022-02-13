@@ -4,10 +4,8 @@ package com.atakmap.android.radiolibrary;
 import java.io.File;
 import java.io.IOException;
 import com.atakmap.android.ipc.AtakBroadcast;
-import com.atakmap.annotations.ModifierApi;
 import com.atakmap.coremap.io.DefaultIOProvider;
 import com.atakmap.coremap.log.Log;
-import com.atakmap.comms.NetworkDeviceManager;
 
 import android.content.Context;
 import android.content.Intent;
@@ -21,14 +19,8 @@ public class ControllerPppd extends BroadcastReceiver implements Runnable {
     public static final String TAG = "ControllerPppd";
     Thread t;
     private boolean cancelled = false;
-    @ModifierApi(since = "4.2", target = "4.5", modifiers = {
-            "private", "final"
-    })
-    Context context;
-    @ModifierApi(since = "4.2", target = "4.5", modifiers = {
-            "private", "final"
-    })
-    File root;
+    private final Context context;
+    private final File root;
 
     public ControllerPppd(Context c) {
         context = c;
@@ -56,9 +48,8 @@ public class ControllerPppd extends BroadcastReceiver implements Runnable {
     @Override
     public void run() {
         while (!cancelled) {
-            NetworkInterface nd = NetworkDeviceManager
-                    .getInterface("30:30:70:70:70:30");
             try {
+                NetworkInterface nd = NetworkInterface.getByName("ppp0");
                 if (nd == null || !nd.isUp()) {
                     String s = findDevNode();
 

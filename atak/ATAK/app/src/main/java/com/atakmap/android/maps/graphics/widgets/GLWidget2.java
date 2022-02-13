@@ -6,9 +6,14 @@ import com.atakmap.android.widgets.MapWidget2;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.opengl.GLES20FixedPipeline;
 
+import gov.tak.api.annotation.DeprecatedApi;
+
 /**
  * Map widget with view properties such as width, height, margin, and padding
+ * @deprecated use {@link gov.tak.platform.widgets.opengl.GLWidget}
  */
+@Deprecated
+@DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
 public abstract class GLWidget2 extends GLWidget implements
         MapWidget2.OnWidgetSizeChangedListener {
 

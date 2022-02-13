@@ -14,6 +14,63 @@
  AC_PROG_CPP
  AC_PROG_CXX
 
+--- ./third_party/Makefile.am	2014-06-05 15:57:50.000000000 -0400
++++ ./third_party/Makefile.am	2021-09-21 13:51:47.663954100 -0400
+@@ -8,11 +8,23 @@
+ lib_LTLIBRARIES = libminizip.la liburiparser.la
+ noinst_LTLIBRARIES = libgtest.la libgtest_main.la
+ 
++minizip_root = zlib-1.2.3
++minizip = $(minizip_root)/contrib/minizip
++minizipinc = $(includedir)/kml/third_party/$(minizip)
++libminizipincludedir = $(minizipinc)
++libminizipinclude_HEADERS= \
++	$(minizip)/crypt.h \
++	$(minizip)/ioapi.h \
++	$(minizip)/iowin32.h \
++	$(minizip)/mztools.h \
++	$(minizip)/unzip.h \
++	$(minizip)/zip.h \
++	$(minizip)/zlibextern.h
+ libminizip_la_SOURCES = \
+-	zlib-1.2.3/contrib/minizip/unzip.c \
+-	zlib-1.2.3/contrib/minizip/ioapi.c \
+-	zlib-1.2.3/contrib/minizip/iomem_simple.c \
+-	zlib-1.2.3/contrib/minizip/zip.c
++	$(minizip)/unzip.c \
++	$(minizip)/ioapi.c \
++	$(minizip)/iomem_simple.c \
++	$(minizip)/zip.c
+ libminizip_la_LDFLAGS = -lz
+ 
+ liburiparser_la_SOURCES = \
+@@ -173,16 +185,16 @@
+ 	$(uriparser)/include/uriparser/UriIp4.h \
+ 	zlib-1.2.3/zconf.h \
+ 	zlib-1.2.3/zlib.h \
+-	zlib-1.2.3/contrib/minizip/crypt.h \
+-	zlib-1.2.3/contrib/minizip/ioapi.h \
+-	zlib-1.2.3/contrib/minizip/iowin32.c \
+-	zlib-1.2.3/contrib/minizip/iowin32.h \
+-	zlib-1.2.3/contrib/minizip/miniunz.c \
+-	zlib-1.2.3/contrib/minizip/minizip.c \
+-	zlib-1.2.3/contrib/minizip/mztools.c \
+-	zlib-1.2.3/contrib/minizip/mztools.h \
+-	zlib-1.2.3/contrib/minizip/unzip.h \
+-	zlib-1.2.3/contrib/minizip/zip.h \
++	$(minizip)/crypt.h \
++	$(minizip)/ioapi.h \
++	$(minizip)/iowin32.c \
++	$(minizip)/iowin32.h \
++	$(minizip)/miniunz.c \
++	$(minizip)/minizip.c \
++	$(minizip)/mztools.c \
++	$(minizip)/mztools.h \
++	$(minizip)/unzip.h \
++	$(minizip)/zip.h \
+ 	zlib-1.2.3.win32/bin/minizip.dll \
+ 	zlib-1.2.3.win32/bin/zlib1.dll \
+ 	zlib-1.2.3.win32/lib/minizip.lib \
 Index: src/kml/base/util.h
 ===================================================================
 --- src/kml/base/util.h	(revision 864)

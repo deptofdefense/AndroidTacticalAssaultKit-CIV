@@ -562,8 +562,10 @@ public class CertificateEnrollmentClient implements
                                                     status);
                                 } else if (isQuickConnectError) {
 
-                                    NetConnectString ncs = NetConnectString.fromString(
-                                            certificateConfigRequest.getConnectString());
+                                    NetConnectString ncs = NetConnectString
+                                            .fromString(
+                                                    certificateConfigRequest
+                                                            .getConnectString());
 
                                     EnrollmentDialog.createEnrollmentDialog(
                                             ncs.getHost() + ":" + ncs.getPort(),
@@ -622,7 +624,7 @@ public class CertificateEnrollmentClient implements
             String username, String password, Long expiration) {
         Log.d(TAG, "in onEnrollmentOk");
 
-        String host = "";
+        String host;
         int port = 8089;
 
         if (address.contains("://")) {

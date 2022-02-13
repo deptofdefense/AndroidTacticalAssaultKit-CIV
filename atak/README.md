@@ -1,38 +1,71 @@
 Overview
-====
+===
 
-ATAK is a Moving Map capability for the Android OS.   Respository development should make use of the model as outlined by https://nvie.com/posts/a-successful-git-branching-model/ which closely matches the WinTAK development model.
+ATAK is a Moving Map capability for the Android OS. The moving map capability is based on a 
+core civilian capability that is built first and then flavored with either the military or 
+fms capabilities.  Full development resources can be found at wiki.tak.gov.
 
-The moving map capability is based on a core civilian capability that is built first and then flavored with either the military or fms capabilities.
+ATAK is compiled to use targetSdkVersion 29 but still provide support for the minSdkVersion 21.    Be careful when developing new code within core to make sure that appropriate safeguards are in place that retain system compatibility for minSdkVersion 21.
+
 
 Developer Notes
-====
+===
 
 *Please make sure to read these for solutions to commonly encountered issues*
 
-June 2021 - ATAK *requires* core developer to check out https://git.takmaps.com/core/takkernel as a sibling to the  https://git.takmaps.com/core/atak project or correct configuration of the artifactory settings:
 
-maven.consume.url=https://artifactory.takmaps.com/artifactory/maven
-maven.user=xxxxx@email.info
-maven.password=xxxxxxxxxxxx
+June 2021 
+=========
 
-Failure to do either of these will result in the following error message:
+ATAK *requires* core developer to review the following instructions for setting up the local.properties
+and required tools.  This local.properties file should be placed in the root of the atak repository and 
+the ATAK subfolder and the FlavorPlugin subfolder.
 
-> FAILURE: Build failed with an exception.
-> * What went wrong:
-> Execution failed for task ':app:mergeCivDebugResources'.
-Could not resolve all files for configuration ':app:civDebugRuntimeClasspath'.
->    > Could not resolve gov.tak.kernel:takkernel-aar:0.0.0.
->      Required by:
->          project :app
->          project :app > project :ATAKMapEngine:lib
->       > Could not resolve gov.tak.kernel:takkernel-aar:0.0.0.
->          > Could not get resource 'http://localhost/gov/tak/kernel/takkernel-aar/0.0.0/takkernel-aar-0.0.0.pom'.
->             > Could not GET 'http://localhost/gov/tak/kernel/takkernel-aar/0.0.0/takkernel-aar-0.0.0.pom'.
->                > Connect to localhost:80 [localhost/127.0.0.1, localhost/0:0:0:0:0:0:0:1] failed: Connection refused: connect
+Please review: https://wiki.tak.gov/display/COREDEV/Building+Native+Libraries
 
 
-14 October 2020 - ATAK will *require* core developers using Android Studio to set the Launch Option for ATAK Activity to be manually set.  This is because Android Studio has a difficult time determining if you are running a flavor or unflavored version of ATAK.   Under the Run/Debug configuration for ATAK, please set the Launch Activity to com.atakmap.app.ATAKActivity
+ 1) (only if you are working on takkernel) clone https://git.tak.gov/core/takkernel as a sibling to the 
+    https://git.tak.gov/core/atak project.  If the takkernel project is not cloned, the takkernel aar 
+    used is prebuilt
+
+
+
+
+```
+takRepoMavenUrl=https://artifacts.tak.gov/artifactory/maven
+takRepoConanUrl=https://artifacts.tak.gov/artifactory/api/conan/conan
+takRepoUsername=**username**
+takRepoPassword=**password**
+
+# recommended
+sdk.dir=/opt/android-sdk-linux                  # example path to the android sdk
+ndk.dir=/opt/android-ndk-r12b                   # example path to the android ndk 12b
+cmake.dir=/opt/android-sdk-linux/cmake/3.18.1   # example path to the correct cmake (required at this time)
+
+```
+
+
+Failure to do this will result in the following error message:
+
+	> FAILURE: Build failed with an exception.
+	> * What went wrong:
+	> Execution failed for task ':app:mergeCivDebugResources'.
+	Could not resolve all files for configuration ':app:civDebugRuntimeClasspath'.
+	>    > Could not resolve gov.tak.kernel:takkernel-aar:0.0.0.
+	>      Required by:
+	>          project :app
+	>          project :app > project :ATAKMapEngine:lib
+	>       > Could not resolve gov.tak.kernel:takkernel-aar:0.0.0.
+	>          > Could not get resource 'http://localhost/gov/tak/kernel/takkernel-aar/0.0.0/takkernel-aar-0.0.0.pom'.
+	>             > Could not GET 'http://localhost/gov/tak/kernel/takkernel-aar/0.0.0/takkernel-aar-0.0.0.pom'.
+	>                > Connect to localhost:80 [localhost/127.0.0.1, localhost/0:0:0:0:0:0:0:1] failed: Connection refused: connect
+
+
+
+14 October 2020 
+===============
+
+ ATAK will *require* core developers using Android Studio to set the Launch Option for ATAK Activity to be manually set.  This is because Android Studio has a difficult time determining if you are running a flavor or unflavored version of ATAK.   Under the Run/Debug configuration for ATAK, please set the Launch Activity to com.atakmap.app.ATAKActivity
 
 If you do not do this you will get the following message from Android Studio with a failure to launch ATAK
 
@@ -43,30 +76,6 @@ If you do not do this you will get the following message from Android Studio wit
     Error: Activity class {com.atakmap.app.civ/com.atakmap.app.ATAKActivityCiv} does not exist.
 
 
-05 October 2020 - NDK installation is now required.
-
-04 May 2020 - ATAK is compiled to use targetSdkVersion 29 but still provide support for the minSdkVersion 21.    Be careful when developing new code within core to make sure that appropriate safeguards are in place that retain system compatibility for minSdkVersion 21.
-
-
-20 March 2020 - With gradle 6.0.1, if you are building from the command line and fail to set ANDROID_HOME, the build process will fail with a message similiar to this:
-      
-      * What went wrong:
-          Task 'assembleDebug' not found in root project 'ATAK'.
-
-Please make sure to set the ANDROID_HOME environment variable or create a local.properties file to fix this issue.
-The local.properties file should have the following line:
-sdk.dir=/path/to/android/sdk
-
-
-
-
-
-Code Style
-====
-
-* Android Studio does suggest replacing Anonymous Inner classes with Lambdas - please do not do this.   
-* There is a code formatting that is provided with the repository and is discussed under the Formatting section.
-
 
 
 Requirements for Development
@@ -74,63 +83,42 @@ Requirements for Development
 
 The following tools are required (at a minimum) to compile and deploy ATAK:
 
-- Java Development Kit 1.8 (OpenJDK https://adoptopenjdk.net/)
+- Java Development Kit 1.8 [OpenJDK version 1.8](OpenJDK https://adoptopenjdk.net/)
 - git client 2.19 
 - git-lfs
+- NDK (the version that must be used is NDK 12b).
 
-If you are using the command line to build and deploy ATAK:
+    - Windows: [32bit zip](https://dl.google.com/android/repository/android-ndk-r12b-windows-x86.zip)    [64bit zip](https://dl.google.com/android/repository/android-ndk-r12b-windows-x86_64.zip)
 
-- gradlew
+    - Linux: [zip](https://dl.google.com/android/repository/android-ndk-r12b-linux-x86_64.zip)
 
-If using an IDE:
-
-- Android Studio 
-
-The following is *required* and only useful if you are creating native libraries. 
-The version that must be used is NDK 12b.    
-
-Windows:
-     https://dl.google.com/android/repository/android-ndk-r12b-windows-x86.zip
-     https://dl.google.com/android/repository/android-ndk-r12b-windows-x86_64.zip
-Linux:
-     https://dl.google.com/android/repository/android-ndk-r12b-linux-x86_64.zip
-Mac:
-     https://dl.google.com/android/repository/android-ndk-r12b-darwin-x86_64.zip
+    - Mac: [zip](https://dl.google.com/android/repository/android-ndk-r12b-darwin-x86_64.zip)
+       
 
 
 
-All development should make use of the android-formatting.prefs rules, 
-use LF (Unix) breaks, and should contain sufficient documentation to 
-be used by development team. 
+Code Formatting and Style
+====
 
-Prior to code review or periodically, your code will be stripped of CR's and 
-hard tabs.   It is also a good idea to make use of the code formatting files 
-in the root of the directory.   Automatic code formatting is run on occasion.
+* Android Studio does suggest replacing Anonymous Inner classes with Lambdas - please do not do this.
+
+* There is a code formatting that is provided with the repository and is discussed under the Formatting section.
+
++ Respository development should make use of the model as outlined by 
+  https://nvie.com/posts/a-successful-git-branching-model/ which closely matches the WinTAK 
+  development model.
+
+* All development should make use of the android-formatting.prefs rules, 
+  use LF (Unix) breaks, and should contain sufficient documentation to 
+  be used by development team. 
+
+* Prior to code review or periodically, your code will be stripped of CR's and 
+  hard tabs.   It is also a good idea to make use of the code formatting files 
+  in the root of the directory.   Automatic code formatting is run on occasion.
               
-Consideration of thirdparty libraries need to occur early in a release cycle.  
-Without proper attribution and appropriate review, third party libraries will 
-be removed.
-
-
-What do I have access to
-===
-
-ATAK can be distributed in many forms.    This document attempts to describe the 
-common setup for all of these forms.
-
-1) As an API in a zip file / tar.    This level of access does not require any GIT 
-   access.   The files included in this package are self contained and do make use
-   of the gradle build system.   The atak.apk provided in this package is required 
-   for development of the plugins.
-
-2) SDK Repository Access.   For developers who would like to have access to updates
-   to the SDK when they occur.  This access also allows for access to other community
-   developed plugins for ATAK.   
-
-3) Main Repository Access.   For core access only and not recommended for plugin 
-   development.  
-
-
+* Consideration of thirdparty libraries need to occur early in a release cycle.
+  Without proper attribution and appropriate review, third party libraries will 
+  be removed.
 
 
 Steps for building:
@@ -139,9 +127,9 @@ Steps for building:
 Please see the generalized steps for building as detailed in the ATAK_Plugin_Development_Guide.pdf guide.
 
 
-
 Using an Emulator
 ====
+
 When using an emulator, ATAK might crash due to incompatibilities with the 
 computers graphics card. A few potential work arounds are:
 
@@ -169,70 +157,30 @@ from the command line and passed the -gpu flag with various options--"host" and
 "guest" are likely the most helpful.
 
 
-ATAK
-====
-
-ATAK is a moving map capability that is comprised of several key concepts:
-
-     Tools - Provide a capabilty for interacting with the map on the right hand side of the 
-     screen.   They may or may not have a associated Drop Down component.    Tools are considered
-     a legacy concept.
-
-     DropDowns - All of the right hand functionality within ATAK is achieved by the concept of a 
-     drop down.  A drop down receiver is what is implemented to inject functionality into the 
-     ATAK system. 
-
-     AbstractMapComponent -  An implementation of an AbstractMapComponent is usually used to 
-     create the and manage one or more drop down receivers.   Any implementation of the 
-     AbstractMapComponent is loaded by a XML file in trunk/ATAK/assets/components.xml
-
-     MapView - The map view is the moving map capability within ATAK.    There are many examples 
-     on how Tools and DropDowns make use of the MapView.
-
-     ATAKActivity - This is responsible for the startup, creation, cleanup, and shutdown of ATAK
-     proper.
-
-     AtakBroadcast - Used instead of global usage of sendBroadcast, registerReceiver, unregisterReceiver.
-     If you need to send a system wide intent, use sendSystemBroadcast if required.    
-
-
-A MapComponent is the basic unit of functionality for major functionality within 
-ATAK.   A MapComponent can have one or more DropDownReceivers, Tools, Widgets. 
-Each MapComponent should live in com.atakmap.android at this time and be registered
-in the ATAK/assets/components.xml.   Additionally, if there is a DropDownReceiver, 
-it needs to be registered in the DefaultActionBars.xml file.   Dynamic registration
-of preferences associated with the components will allow for easier maintenance 
-as these certain components are created as "plugins".
-
-
-
-Code Structure
-====
-
-ATAK is comprised of 2 Android projects.
-
-      ATAKMapEngine
-      ATAK
-
-
-ATAK has additional directories 
-
-      doc - documenation relevant to developers.
 
 Plugins
 ===
 
-Plugins for ATAK are additional Android Applications that are built but cannot be run stand alone.   These plugins are built so that at runtime they rely on the internal classes within the ATAK application.  This is done through a special classloader that knows how to join up the missing class files from the plugin application at run time.    During compile time, the plugin only needs to reference the classes using the provided keyword.
+Plugins for ATAK are additional Android Applications that are built but cannot be run stand alone.   
+These plugins are built so that at runtime they rely on the internal classes within the ATAK 
+application.  This is done through a special classloader that knows how to join up the missing 
+class files from the plugin application at run time.    During compile time, the plugin only needs
+to reference the classes using the provided keyword.
 
-HelloWorld Plugin
+HelloWorld Plugin [project](https://git.takmaps.com/samples/helloworld)
 -----------------
 
-A good example of a plugin that does several different tasks is the Helloworld plugin.   This plugin is structured to be very minimalistic and contains a single user experience.   The plugin describes the capabilitities within the assets/plugin.xml file under the plugins/helloworld directory.    The java src code contains comment to guide the developer through the mechanics of how a plugin works.
+A good example of a plugin that does several different tasks is the Helloworld plugin.  
+This plugin is structured to be very minimalistic and contains a single user experience. 
+The plugin describes the capabilitities within the assets/plugin.xml file under the 
+plugins/helloworld directory.    The java src code contains comment to guide the developer 
+through the mechanics of how a plugin works.
  
 Plugin Debugging
 ===
 
-Plugins are not processes.   When deployed to the device, they are just containers that are pulled into the ATAK process space.  
+Plugins are not processes.   When deployed to the device, they are just containers that are pulled 
+into the ATAK process space.  
 1) Set corresponding break points within the plugin code.
 2) You will need to direct Android Studio to attach to an existing process.
      Under the Run menu
@@ -304,9 +252,12 @@ appropriate small icon.
 ATAK provides a com.atakmap.android.gui.PluginSpinner class which is identical 
 to a real android Spinner.
 
-3) Signing a Plugin -  If you choose to develop a plugin, the key alogrithm must be RSA and the Signing Algorithm must be SHA1withRSA.
+3) Signing a Plugin -  If you choose to develop a plugin, the key alogrithm must be RSA and the 
+   Signing Algorithm must be SHA1withRSA.
 
-4) Some plugins will fail to compile using gradle with an obscure ndkStrip error when it contains no native libraries.   Please unset ANDROID_NDK_HOME and/or move it out of the ANDROID_SDK_HOME/NDK directory.   This is an issue with the gradle build system at this time. The specific error message is:
+4) Some plugins will fail to compile using gradle with an obscure ndkStrip error when it contains 
+   no native libraries.   Please unset ANDROID_NDK_HOME and/or move it out of the ANDROID_SDK_HOME/NDK directory.
+   This is an issue with the gradle build system at this time. The specific error message is:
     :transformNativeLibsWithStripDebugSymbolForDebug FAILED
     
     FAILURE: Build failed with an exception.
@@ -413,3 +364,6 @@ To test the App Standby mode with your app:
       2) select "Run Dumpstate/Logcat/Modem Log"
       3) when that finishes select "Copy To SDCARD (Include CP Ramdump)"
       4) the directory under /sdcard/logs should contain a ton of things including the traces or a sub directory should contain the traces
+
+    Pixel devices
+     $ adb bugreport

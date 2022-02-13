@@ -18,6 +18,7 @@ import android.preference.PreferenceCategory;
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
 
+import com.atakmap.android.cot.LRFPreferenceFragment;
 import com.atakmap.os.FileObserver;
 import com.atakmap.android.gui.PanEditTextPreference;
 import com.atakmap.android.ipc.AtakBroadcast;
@@ -106,6 +107,17 @@ public class DevicePreferenceFragment extends AtakPreferenceFragment {
                             @Override
                             public boolean onPreferenceClick(Preference pref) {
                                 showScreen(new NetworkGPSPreferenceFragment());
+                                return true;
+                            }
+                        });
+
+        Preference lrfSettings = findPreference("lrfSettings");
+        lrfSettings
+                .setOnPreferenceClickListener(
+                        new Preference.OnPreferenceClickListener() {
+                            @Override
+                            public boolean onPreferenceClick(Preference pref) {
+                                showScreen(new LRFPreferenceFragment());
                                 return true;
                             }
                         });

@@ -12,7 +12,6 @@ import com.atakmap.android.maps.AbstractMapComponent;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.graphics.GLMapItemFactory;
 import com.atakmap.android.widgets.LayoutWidget;
-import com.atakmap.android.widgets.MapWidget;
 import com.atakmap.android.widgets.RootLayoutWidget;
 import com.atakmap.android.widgets.WidgetsLayer;
 import com.atakmap.coremap.log.Log;
@@ -23,6 +22,9 @@ import com.atakmap.map.opengl.GLMapView;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import gov.tak.api.widgets.IMapWidget;
+import gov.tak.platform.marshal.MarshalManager;
+
 public class GLWidgetsMapComponent extends AbstractMapComponent implements
         AtakMapView.OnActionBarToggledListener {
     private MapView _mapView;
@@ -31,7 +33,6 @@ public class GLWidgetsMapComponent extends AbstractMapComponent implements
     private LayoutWidget _rootLayout;
     private WidgetsLayer _widgetsLayer;
 
-    @Override
     public void onCreate(Context context, Intent intent, MapView view) {
         _mapView = view;
 
@@ -45,23 +46,31 @@ public class GLWidgetsMapComponent extends AbstractMapComponent implements
         _mapView.addOnActionBarToggledListener(this);
         _mapView.addOnTouchListenerAt(0, _touchListener);
 
-        GLWidgetFactory.registerSpi(GLMapFocusTextWidget.SPI);
-        GLWidgetFactory.registerSpi(GLTextWidget.SPI);
         GLWidgetFactory.registerSpi(GLScrollLayoutWidget.SPI);
-        GLWidgetFactory.registerSpi(GLLinearLayoutWidget.SPI);
-        GLWidgetFactory.registerSpi(GLLayoutWidget.SPI);
-
         GLWidgetFactory.registerSpi(GLButtonWidget.SPI);
-        GLWidgetFactory.registerSpi(GLRadialButtonWidget.SPI);
-        GLWidgetFactory.registerSpi(GLMarkerIconWidget.SPI);
-        GLWidgetFactory.registerSpi(GLMarkerDrawableWidget.SPI);
-        GLWidgetFactory.registerSpi(GLDrawableWidget.SPI);
+        GLWidgetFactory.registerSpi(GLMapMenuButtonWidget.SPI);
         GLWidgetFactory.registerSpi(GLArcWidget.SPI);
         GLWidgetFactory.registerSpi(GLIsoKeyWidget.SPI);
-        GLWidgetFactory.registerSpi(GLScaleWidget.SPI);
-        GLWidgetFactory.registerSpi(GLCenterBeadWidget.SPI);
-
         GLMapItemFactory.registerSpi(GLFahArrowWidget.GLITEM_SPI);
+        GLWidgetFactory.registerSpi(GLCenterBeadWidget.SPI);
+        GLWidgetFactory.registerSpi(GLMarkerDrawableWidget.SPI);
+        GLWidgetFactory.registerSpi(GLDrawableWidget.SPI);
+
+        gov.tak.platform.widgets.opengl.GLWidgetFactory.registerSpi(
+                gov.tak.platform.widgets.opengl.GLRadialButtonWidget.SPI);
+        gov.tak.platform.widgets.opengl.GLWidgetFactory
+                .registerSpi(gov.tak.platform.widgets.opengl.GLScaleWidget.SPI);
+        GLWidgetFactory.registerSpi(GLMapFocusTextWidget.SPI);
+        gov.tak.platform.widgets.opengl.GLWidgetFactory.registerSpi(
+                gov.tak.platform.widgets.opengl.GLLinearLayoutWidget.SPI);
+        gov.tak.platform.widgets.opengl.GLWidgetFactory.registerSpi(
+                gov.tak.platform.widgets.opengl.GLLayoutWidget.SPI);
+        gov.tak.platform.widgets.opengl.GLWidgetFactory
+                .registerSpi(gov.tak.platform.widgets.opengl.GLTextWidget.SPI);
+        gov.tak.platform.widgets.opengl.GLWidgetFactory.registerSpi(
+                gov.tak.platform.widgets.opengl.GLMarkerIconWidget.SPI);
+        gov.tak.platform.widgets.opengl.GLWidgetFactory.registerSpi(
+                gov.tak.platform.widgets.opengl.GLCenterBeadWidget.SPI);
 
         _mapView.setComponentExtra("rootLayoutWidget", _rootLayout);
 
@@ -135,12 +144,15 @@ public class GLWidgetsMapComponent extends AbstractMapComponent implements
         }
 
         @Override
-        public boolean onTouch(final View v, final MotionEvent event) {
+        public boolean onTouch(final View v, final MotionEvent aEvent) {
             if (v instanceof MapView && ((MapView) v).getMapTouchController()
                     .isLongPressDragging())
                 // Prevent widgets from interfering with the long-press drag event
                 return false;
-            MapWidget hit = _rootLayout.seekHit(event, event.getX(),
+            final gov.tak.platform.ui.MotionEvent event = MarshalManager
+                    .marshal(aEvent, android.view.MotionEvent.class,
+                            gov.tak.platform.ui.MotionEvent.class);
+            IMapWidget hit = _rootLayout.seekWidgetHit(event, event.getX(),
                     event.getY());
             if (hit == null && _pressedWidget != null
                     && event.getAction() == MotionEvent.ACTION_MOVE) {
@@ -205,14 +217,14 @@ public class GLWidgetsMapComponent extends AbstractMapComponent implements
 
         private final MapView _mapView;
         private final LayoutWidget _rootLayout;
-        private MapWidget _pressedWidget;
+        private IMapWidget _pressedWidget;
         private Timer widTimer;
         private WidTimerTask widTask;
 
         class WidTimerTask extends TimerTask {
             @Override
             public void run() {
-                final MapWidget mw = _pressedWidget;
+                final IMapWidget mw = _pressedWidget;
                 _mapView.post(new Runnable() {
                     @Override
                     public void run() {

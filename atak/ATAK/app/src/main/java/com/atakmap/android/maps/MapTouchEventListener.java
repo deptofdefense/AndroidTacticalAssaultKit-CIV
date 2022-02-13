@@ -1,19 +1,15 @@
 
 package com.atakmap.android.maps;
 
-import com.atakmap.app.R;
+import com.atakmap.android.navigation.views.NavView;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.android.user.PlacePointTool;
 import java.util.UUID;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.PointF;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 
-import com.atakmap.android.gui.HintDialogHelper;
-import com.atakmap.android.ipc.AtakBroadcast;
-import com.atakmap.android.tools.ActionBarReceiver;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
@@ -71,30 +67,7 @@ class MapTouchEventListener implements
             return;
 
         if (MapEvent.MAP_SCALE.equals(event.getType())) {
-            PointF p = event.getPointF();
-            GeoPoint focus = null;
-            Bundle panExtras = event.getExtras();
-            if (panExtras != null)
-                focus = panExtras.getParcelable("originalFocus");
-            if (focus == null) {
-                focus = GeoPoint.createMutable();
-                _mapView.getRenderer3().inverse(new PointD(p.x, p.y), focus,
-                        MapRenderer2.InverseMode.RayCast,
-                        MapRenderer2.HINT_RAYCAST_IGNORE_SURFACE_MESH
-                                | MapRenderer2.HINT_RAYCAST_IGNORE_TERRAIN_MESH,
-                        MapRenderer2.DisplayOrigin.UpperLeft);
-            }
-            // abort camera motion if collision occurs when zooming in
-            final MapRenderer3.CameraCollision collide = (event
-                    .getScaleFactor() > 1d) ? MapRenderer3.CameraCollision.Abort
-                            : MapRenderer3.CameraCollision.AdjustCamera;
-            if (focus != null && focus.isValid())
-                CameraController.Interactive.zoomBy(_mapView.getRenderer3(),
-                        event.getScaleFactor(), focus, p.x, p.y, collide,
-                        false);
-            else
-                CameraController.Interactive.zoomBy(_mapView.getRenderer3(),
-                        event.getScaleFactor(), collide, false);
+            _mapView.getMapTouchController().onScaleEvent(event);
         } else if (MapEvent.MAP_SCROLL.equals(event.getType())) {
             PointF p = event.getPointF();
             do {
@@ -131,21 +104,10 @@ class MapTouchEventListener implements
             CameraController.Interactive.panBy(_mapView.getRenderer3(), p.x,
                     p.y, MapRenderer3.CameraCollision.AdjustFocus, false);
         } else if (MapEvent.MAP_LONG_PRESS.equals(event.getType())) {
-            if (atakTapToggleActionBar) {
-                HintDialogHelper
-                        .showHint(
-                                _mapView.getContext(),
-                                _mapView.getContext().getString(
-                                        R.string.tool_text28),
-                                _mapView.getContext().getString(
-                                        R.string.tool_text29),
-                                "actionbar.display");
-
-                AtakBroadcast.getInstance().sendBroadcast(new Intent(
-                        ActionBarReceiver.TOGGLE_ACTIONBAR));
-            } else if (atakLongPressDropAPoint) {
+            if (atakTapToggleActionBar)
+                NavView.getInstance().toggleButtons();
+            else if (atakLongPressDropAPoint)
                 dropHostile(event);
-            }
         } else if (MapEvent.MAP_DOUBLE_TAP.equals(event.getType())) {
             if (atakDoubleTapToZoom) {
                 PointF p = event.getPointF();

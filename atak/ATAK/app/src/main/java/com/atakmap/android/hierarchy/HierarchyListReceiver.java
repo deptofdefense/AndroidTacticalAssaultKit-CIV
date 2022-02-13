@@ -10,6 +10,7 @@ import android.content.Intent;
 
 import com.atakmap.android.gui.TileButtonDialog;
 import com.atakmap.android.gui.TileButtonDialog.TileButton;
+import com.atakmap.android.gui.drawable.CheckBoxDrawable;
 import com.atakmap.android.hierarchy.filters.AuthorFilter;
 import com.atakmap.android.hierarchy.filters.AutoSendFilter;
 import com.atakmap.android.importexport.ExportDialog;
@@ -138,6 +139,7 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
     private HierarchyListItem selectedItem = null;
     protected View checkAllLayout;
     protected ImageView checkAll;
+    private final CheckBoxDrawable checkAllIcon;
     private int checkAllState;
     protected CheckBox showAll;
     protected ImageButton filterBtn;
@@ -189,6 +191,7 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
 
         // Select all
         checkAll = titleBar.findViewById(R.id.selectAll_cb);
+        checkAll.setImageDrawable(checkAllIcon = new CheckBoxDrawable());
         checkAll.setOnClickListener(this);
 
         // Show all
@@ -983,12 +986,7 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
     public void updateCheckAll(int state) {
         if (this.checkAllState != state) {
             this.checkAllState = state;
-            this.checkAll.setImageResource(
-                    state == HierarchyListAdapter.CHECKED
-                            ? R.drawable.btn_check_on
-                            : (state == HierarchyListAdapter.SEMI_CHECKED
-                                    ? R.drawable.btn_check_semi
-                                    : R.drawable.btn_check_off));
+            this.checkAllIcon.setChecked(state);
         }
     }
 

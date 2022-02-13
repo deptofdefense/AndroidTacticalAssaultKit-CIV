@@ -1,0 +1,7 @@
+<PersistedActionMenu baseline="true" hideable="false" iconPath="nav_plugins" title="actionbar_plugins">
+   <ClickData actionType="click">
+      <broadcast>
+         <action>com.atakmap.android.update.VIEW_APP_MGMT</action>
+      </broadcast>
+   </ClickData>
+</PersistedActionMenu>

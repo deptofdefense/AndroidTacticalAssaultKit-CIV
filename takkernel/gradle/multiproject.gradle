@@ -1,0 +1,20 @@
+/*
+ * Override various utilities for looking up projects
+ */
+
+// Overrides below must be explicitly referenced as extensions
+ext.findProject = { p ->
+    return parent.findProject(p) ?:
+            parent.findProject(":${parent.name}:${p}")
+}
+ext.project = { p ->
+    return ext.findProject(p)
+}
+ext.evaluationDependsOn = { p ->
+    project.evaluationDependsOn(ext.project(p).path)
+}
+
+// Overrides below may be implicitly referenced
+project.dependencies.ext.project = { p ->
+    return ext.findProject(p)
+}

@@ -12,7 +12,7 @@ public interface FlavorProvider extends MapComponentProvider {
 
     /**
      * Modifies the splash screen based on information directly from the flavor.   This will include
-     * the splash screen graphic and the asociated Text.   The provided view is currently the splash
+     * the splash screen graphic and the associated Text.   The provided view is currently the splash
      * screen view instantiated by the core tak application.
      * @param splashView the view to modify
      * @param orientation the orientation of the view

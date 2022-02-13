@@ -1,4 +1,4 @@
-<PersistedActionMenu baseline="true" hideable="true" iconPath="ic_menu_drawing" title="actionbar_drawingtools">
+<PersistedActionMenu baseline="true" hideable="true" iconPath="nav_draw" title="actionbar_drawingtools">
    <ClickData actionType="click">
       <broadcast>
          <action>com.atakmap.android.maps.toolbar.SET_TOOLBAR</action>

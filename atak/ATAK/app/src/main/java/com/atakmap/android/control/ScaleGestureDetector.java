@@ -122,7 +122,7 @@ public class ScaleGestureDetector {
      */
     // for the PH-1, this value needs to be a bit lower (quite a bit lower)
     private static float PRESSURE_THRESHOLD = 0.67f;
-    private static String TAG = "ScaleGestureDetector";
+    private static final String TAG = "ScaleGestureDetector";
 
     private final Context mContext;
     private final OnScaleGestureListener mListener;

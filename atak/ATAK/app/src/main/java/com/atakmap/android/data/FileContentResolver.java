@@ -49,6 +49,16 @@ public class FileContentResolver implements URIContentResolver,
         if (uri == null || !uri.startsWith(URIScheme.FILE))
             return null;
         File f = URIHelper.getFile(uri);
+        return getHandler(f);
+    }
+
+    /**
+     * Get a content handler for a given file
+     *
+     * @param f File
+     * @return File content handler
+     */
+    public FileContentHandler getHandler(File f) {
         if (f == null)
             return null;
 

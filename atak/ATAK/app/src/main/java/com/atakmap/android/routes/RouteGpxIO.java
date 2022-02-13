@@ -16,8 +16,8 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoBounds;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
@@ -225,9 +225,8 @@ public class RouteGpxIO {
 
                     // filter out sufficiently close consecutive points
                     if (previousGeoPoint != null) {
-                        curDistance = DistanceCalculations
-                                .metersFromAtSourceTarget(
-                                        previousGeoPoint, geoPoint);
+                        curDistance = GeoCalculations
+                                .distanceTo(previousGeoPoint, geoPoint);
                         if (curDistance < TOLERANCE_DISTANCE_METERS) {
                             // Log.d(TAG, "Skipping duplicate route point: " + geoPoint.toString());
                             skippedPoints++;
@@ -380,9 +379,8 @@ public class RouteGpxIO {
 
                     // filter out sufficiently close consecutive points
                     if (previousGeoPoint != null) {
-                        curDistance = DistanceCalculations
-                                .metersFromAtSourceTarget(
-                                        previousGeoPoint, geoPoint);
+                        curDistance = GeoCalculations
+                                .distanceTo(previousGeoPoint, geoPoint);
                         if (curDistance < TOLERANCE_DISTANCE_METERS) {
                             // Log.d(TAG, "Skipping duplicate track point: " + geoPoint.toString());
                             skippedPoints++;
@@ -510,7 +508,7 @@ public class RouteGpxIO {
                 GeoPoint wp = convertPoint(waypoint);
                 GeoPoint pt = convertPoint(point);
                 if (wp != null && pt != null) {
-                    if (DistanceCalculations.metersFromAtSourceTarget(wp,
+                    if (GeoCalculations.distanceTo(wp,
                             pt) < RouteKmlIO.CHECKPOINT_TOLERANCE_DISTANCE_METERS)
                         return waypoint;
                 }

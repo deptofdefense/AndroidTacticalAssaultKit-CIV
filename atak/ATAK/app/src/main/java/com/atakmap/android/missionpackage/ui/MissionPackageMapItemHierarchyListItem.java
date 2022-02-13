@@ -50,6 +50,7 @@ import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.assets.Icon;
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.map.CameraController;
 
 import java.io.File;
 import java.util.HashSet;
@@ -346,7 +347,8 @@ class MissionPackageMapItemHierarchyListItem extends
     public boolean goTo(boolean select) {
         if (this._item == null) {
             if (_mapListItem.point != null) {
-                _mapView.getMapController().panTo(_mapListItem.point, true);
+                CameraController.Programmatic.panTo(
+                        _mapView.getRenderer3(), _mapListItem.point, true);
                 AtakBroadcast.getInstance().sendBroadcast(new Intent(
                         MapMenuReceiver.HIDE_MENU));
             } else

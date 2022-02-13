@@ -1,8 +1,0 @@
-<PersistedActionMenu baseline="true" hideable="true" iconPath="ic_cloud"  title="cloud">
-   <ClickData actionType="click">
-      <broadcast>
-         <action>com.atakmap.android.cloud.SHOW_ACTIONS</action>
-         <extras/>
-      </broadcast>
-   </ClickData>
-</PersistedActionMenu>

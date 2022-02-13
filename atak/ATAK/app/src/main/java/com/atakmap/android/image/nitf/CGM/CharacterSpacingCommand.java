@@ -5,7 +5,7 @@ import java.io.DataInput;
 import java.io.IOException;
 
 class CharacterSpacingCommand extends Command {
-    private double additionalInterCharacterSpace;
+    private final double additionalInterCharacterSpace;
 
     CharacterSpacingCommand(int ec, int eid, int l, DataInput in)
             throws IOException {

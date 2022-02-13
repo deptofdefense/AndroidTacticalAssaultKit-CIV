@@ -26,7 +26,7 @@ import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
-import com.atakmap.map.AtakMapController;
+import com.atakmap.map.CameraController;
 import com.atakmap.map.elevation.ElevationManager;
 
 public class FastMGRS {
@@ -151,9 +151,9 @@ public class FastMGRS {
                                 }
 
                                 if (gp != null) {
-                                    AtakMapController ctrl = mapView
-                                            .getMapController();
-                                    ctrl.panTo(gp, false);
+                                    CameraController.Programmatic.panTo(
+                                            mapView.getRenderer3(),
+                                            gp, false);
                                 }
 
                                 if (cb.isChecked() && gp != null) {

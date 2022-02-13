@@ -1,0 +1,38 @@
+--- pri.vanilla/pricpp/pri.vcxproj
++++ pri/pricpp/pri.vcxproj
+@@ -26,7 +26,7 @@
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+     <ConfigurationType>DynamicLibrary</ConfigurationType>
+     <UseDebugLibraries>true</UseDebugLibraries>
+-    <PlatformToolset>v140</PlatformToolset>
++    <PlatformToolset>v142</PlatformToolset>
+     <PRI_ZLIB_LIB Condition=" '$(PRI_ZLIB_LIB)' == '' ">
+     $(ProjectDir)\..\..\raster\takthirdparty\builds\win32-debug\lib\zlibwapi.lib
+   </PRI_ZLIB_LIB>
+@@ -34,7 +34,7 @@
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+     <ConfigurationType>DynamicLibrary</ConfigurationType>
+     <UseDebugLibraries>true</UseDebugLibraries>
+-    <PlatformToolset>v140</PlatformToolset>
++    <PlatformToolset>v142</PlatformToolset>
+     <PRI_ZLIB_LIB Condition=" '$(PRI_ZLIB_LIB)' == '' ">
+     $(ProjectDir)\..\..\raster\takthirdparty\builds\win32-debug\lib\zlibwapi.lib
+   </PRI_ZLIB_LIB>
+@@ -42,7 +42,7 @@
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+     <ConfigurationType>DynamicLibrary</ConfigurationType>
+     <UseDebugLibraries>false</UseDebugLibraries>
+-    <PlatformToolset>v140</PlatformToolset>
++    <PlatformToolset>v142</PlatformToolset>
+     <PRI_ZLIB_LIB Condition=" '$(PRI_ZLIB_LIB)' == '' ">
+     $(ProjectDir)\..\..\raster\takthirdparty\builds\win32-release\lib\zlibwapi.lib
+   </PRI_ZLIB_LIB>
+@@ -50,7 +50,7 @@
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+     <ConfigurationType>DynamicLibrary</ConfigurationType>
+     <UseDebugLibraries>false</UseDebugLibraries>
+-    <PlatformToolset>v140</PlatformToolset>
++    <PlatformToolset>v142</PlatformToolset>
+     <PRI_ZLIB_LIB Condition=" '$(PRI_ZLIB_LIB)' == '' ">
+     $(ProjectDir)\..\..\raster\takthirdparty\builds\win32-release\lib\zlibwapi.lib
+   </PRI_ZLIB_LIB>

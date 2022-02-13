@@ -2,13 +2,11 @@
 
 
     <button angle='-160'
-        icon='icons/copy_icon.png'
-        onClick='actions/coord_copy.xml'
-        selected='${doCopy}'/>
+        icon='icons/copy.png'
+        onClick='actions/coord_copy.xml'/>
 
     <button
-        icon='icons/expand_icon.png'
-        onClick='actions/coord_enlarge.xml'
-        selected='${doEnlarge}'/>
+        icon='icons/expand.png'
+        onClick='actions/coord_enlarge.xml'/>
 
 </menu>

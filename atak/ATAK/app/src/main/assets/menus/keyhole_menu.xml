@@ -9,6 +9,5 @@
             onClick='actions/showdetails_keyhole.xml' />
 
     <button icon='icons/pairing_line.png'
-            onClick='actions/pairingline.xml'
-            selected='${pairingline_on}'  />
+            onClick='actions/pairingline.xml' />
 </menu>

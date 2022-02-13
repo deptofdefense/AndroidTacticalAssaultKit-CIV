@@ -4,6 +4,7 @@ package com.atakmap.android.importexport.send;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
 
+import com.atakmap.android.data.URIContentRecipient;
 import com.atakmap.android.data.URIContentSender;
 import com.atakmap.android.data.URIHelper;
 import com.atakmap.android.data.URIScheme;
@@ -18,6 +19,7 @@ import com.atakmap.android.missionpackage.file.task.CompressionTask;
 import com.atakmap.android.missionpackage.file.task.CopyTask;
 import com.atakmap.android.missionpackage.file.task.MissionPackageBaseTask;
 import com.atakmap.android.preference.AtakPreferences;
+import com.atakmap.android.util.ATAKConstants;
 import com.atakmap.android.util.ServerListDialog;
 import com.atakmap.android.video.ConnectionEntry;
 import com.atakmap.android.video.http.VideoSyncClient;
@@ -28,11 +30,16 @@ import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 
 import java.io.File;
+import java.util.Collections;
+import java.util.List;
+
+import androidx.annotation.NonNull;
 
 /**
  * Send content to a specific TAK server
  */
-public class TAKServerSender extends MissionPackageSender {
+public class TAKServerSender extends MissionPackageSender implements
+        URIContentRecipient.Sender {
 
     private static final String TAG = "TAKServerSender";
 
@@ -50,7 +57,7 @@ public class TAKServerSender extends MissionPackageSender {
 
     @Override
     public Drawable getIcon() {
-        return _context.getDrawable(R.drawable.ic_server_success);
+        return _context.getDrawable(ATAKConstants.getServerConnection(true));
     }
 
     @Override
@@ -64,7 +71,26 @@ public class TAKServerSender extends MissionPackageSender {
     }
 
     @Override
-    public boolean sendContent(String contentURI, Callback callback) {
+    public void selectRecipients(final String contentURI,
+            @NonNull
+            final URIContentRecipient.Callback callback) {
+        promptForServer(new ServerListDialog.Callback() {
+            @Override
+            public void onSelected(TAKServer server) {
+                if (server == null) {
+                    Log.d(TAG, "No server selected");
+                    return;
+                }
+                callback.onSelectRecipients(TAKServerSender.this, contentURI,
+                        Collections.singletonList(new ServerRecipient(server)));
+            }
+        });
+    }
+
+    @Override
+    public boolean sendContent(String contentURI,
+            List<? extends URIContentRecipient> recipients,
+            Callback callback) {
 
         if (contentURI == null)
             return false;
@@ -75,7 +101,7 @@ public class TAKServerSender extends MissionPackageSender {
                 UploadRequest req = new UploadRequest();
                 req.video = entry;
                 req.callback = callback;
-                return req.promptForServer();
+                return req.upload(recipients);
             }
             return false;
         }
@@ -84,11 +110,43 @@ public class TAKServerSender extends MissionPackageSender {
 
     @Override
     public boolean sendMissionPackage(final MissionPackageManifest mpm,
+            List<? extends URIContentRecipient> recipients,
             MissionPackageBaseTask.Callback mpCallback, final Callback cb) {
         UploadRequest req = new UploadRequest();
         req.mpm = mpm;
         req.callback = cb;
-        return req.promptForServer();
+        return req.upload(recipients);
+    }
+
+    @Override
+    public boolean sendMissionPackage(MissionPackageManifest manifest,
+            MissionPackageBaseTask.Callback mpCallback, Callback cb) {
+        return sendMissionPackage(manifest, null, mpCallback, cb);
+    }
+
+    private boolean promptForServer(ServerListDialog.Callback callback) {
+        MissionPackageMapComponent mpcom = MissionPackageMapComponent
+                .getInstance();
+        if (mpcom == null || !mpcom.checkFileSharingEnabled())
+            return false;
+
+        TAKServer[] servers;
+        if (_prefs.get("filesharingAllServers", false))
+            servers = TAKServerListener.getInstance().getServers();
+        else
+            servers = TAKServerListener.getInstance()
+                    .getConnectedServers();
+        ServerListDialog d = new ServerListDialog(_mapView);
+        if (FileSystemUtils.isEmpty(servers)) {
+            Log.w(TAG,
+                    "Cannot Send to server without valid server URL");
+            d.promptNetworkSettings();
+            return false;
+        }
+
+        // Prompt to select server
+        d.show(_context.getString(R.string.select_server), servers, callback);
+        return true;
     }
 
     private class UploadRequest implements ServerListDialog.Callback,
@@ -100,31 +158,6 @@ public class TAKServerSender extends MissionPackageSender {
         boolean isTempManifest;
         TAKServer server;
         URIContentSender.Callback callback;
-
-        boolean promptForServer() {
-            MissionPackageMapComponent mpcom = MissionPackageMapComponent
-                    .getInstance();
-            if (mpcom == null || !mpcom.checkFileSharingEnabled())
-                return false;
-
-            TAKServer[] servers;
-            if (_prefs.get("filesharingAllServers", false))
-                servers = TAKServerListener.getInstance().getServers();
-            else
-                servers = TAKServerListener.getInstance()
-                        .getConnectedServers();
-            ServerListDialog d = new ServerListDialog(_mapView);
-            if (FileSystemUtils.isEmpty(servers)) {
-                Log.w(TAG,
-                        "Cannot Send to server without valid server URL");
-                d.promptNetworkSettings();
-                return false;
-            }
-
-            // Prompt to select server
-            d.show(_context.getString(R.string.select_server), servers, this);
-            return true;
-        }
 
         void upload() {
             if (this.server == null)
@@ -141,6 +174,17 @@ public class TAKServerSender extends MissionPackageSender {
                 VideoSyncClient client = new VideoSyncClient(_context);
                 client.post(this.video, this.server.getURL(false), this);
             }
+        }
+
+        boolean upload(List<? extends URIContentRecipient> recipients) {
+            // Prompt if none selected
+            if (FileSystemUtils.isEmpty(recipients))
+                return promptForServer(this);
+
+            // XXX - Multi-server support? Server select dialog doesn't support this ATM
+            this.server = ((ServerRecipient) recipients.get(0))._server;
+            upload();
+            return true;
         }
 
         @Override
@@ -189,6 +233,22 @@ public class TAKServerSender extends MissionPackageSender {
             if (callback != null)
                 callback.onSentContent(TAKServerSender.this,
                         URIHelper.getURI(video), true);
+        }
+    }
+
+    private class ServerRecipient extends URIContentRecipient {
+
+        private final TAKServer _server;
+
+        ServerRecipient(TAKServer server) {
+            super(server.getDescription(), server.getConnectString());
+            _server = server;
+        }
+
+        @Override
+        public Drawable getIcon() {
+            return _context.getDrawable(ATAKConstants.getServerConnection(
+                    _server.isConnected()));
         }
     }
 }

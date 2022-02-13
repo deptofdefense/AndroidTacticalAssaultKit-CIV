@@ -6,6 +6,7 @@ import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.Shape;
 import com.atakmap.android.routes.Route;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.map.layer.feature.Feature.AltitudeMode;
 
 import java.util.UUID;
 
@@ -52,6 +53,9 @@ public class RouteTrackWrapper extends Route {
                 .randomUUID().toString());
         cp1.setMetaString("callsign", "End");
         this.setMarker(points.length - 1, cp1);
+
+        setAltitudeMode(AltitudeMode.Absolute);
+
         this.updatingPoints = false;
 
         this.onRoutePointsChanged();

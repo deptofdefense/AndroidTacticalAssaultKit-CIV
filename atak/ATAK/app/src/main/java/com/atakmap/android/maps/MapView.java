@@ -28,6 +28,7 @@ import com.atakmap.android.widgets.LayoutWidget;
 import com.atakmap.android.widgets.TextWidget;
 import com.atakmap.android.widgets.WidgetsLayer;
 import com.atakmap.annotations.DeprecatedApi;
+import com.atakmap.annotations.ModifierApi;
 import com.atakmap.app.BuildConfig;
 import com.atakmap.app.DeveloperOptions;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -144,7 +145,7 @@ public class MapView extends AtakMapView {
         this.overlayManager = new MapOverlayManager(this);
 
         _rootGroup = new RootMapGroup();
-        _touchController = MapTouchControllerCompat.getInstance(this);
+        _touchController = new MapTouchController(this);
 
         _rootGroup.addOnGroupListChangedListener(groupListChangedListener);
         _rootGroup.addOnItemListChangedListener(itemListChangedListener);
@@ -559,6 +560,9 @@ public class MapView extends AtakMapView {
      *  getRootGroup().deepFindItemWithDataString("uid", uid) or
      *  getRootGroup().deepFindUID(uid)
      */
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {
+            "@Nullable", "public"
+    })
     public MapItem getMapItem(final String uid) {
         if (uid == null)
             return null;
@@ -955,10 +959,6 @@ public class MapView extends AtakMapView {
      * @return a double representing the maximum tilt for the system.
      */
     public double getMaxMapTilt() {
-        // XXX - Any lower than 85 causes the renderer to throw up
-        if (getMapTouchController().isFreeForm3DEnabled())
-            return 85d;
-
         if (Double.isNaN(maximumTilt))
             maximumTilt = ConfigOptions.getOption("atakmapview.maximum-tilt",
                     com.atakmap.map.MapSceneModel.isPerspectiveCameraEnabled()

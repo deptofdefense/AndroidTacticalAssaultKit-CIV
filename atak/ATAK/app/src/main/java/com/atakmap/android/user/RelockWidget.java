@@ -10,7 +10,6 @@ import android.view.MotionEvent;
 
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapView;
-import com.atakmap.android.menu.MapMenuReceiver;
 import com.atakmap.android.widgets.LinearLayoutWidget;
 import com.atakmap.android.widgets.MapWidget;
 import com.atakmap.android.widgets.MarkerIconWidget;
@@ -99,7 +98,7 @@ public class RelockWidget extends LinearLayoutWidget implements
         timeBar.setWidth(getWidth());
         addWidget(timeBar);
 
-        leftEdgeV.addWidgetAt(0, this);
+        leftEdgeV.addChildWidgetAt(0, this);
     }
 
     private float toDx(float val) {
@@ -165,12 +164,15 @@ public class RelockWidget extends LinearLayoutWidget implements
                 public void run() {
                     setVisible(false);
                     if (!FileSystemUtils.isEmpty(_uid)) {
-                        Intent intent = new Intent();
-                        intent.setAction(MapMenuReceiver.HIDE_MENU);
-                        AtakBroadcast.getInstance().sendBroadcast(intent);
 
-                        intent = new Intent();
-                        intent.setAction(CamLockerReceiver.LOCK_CAM);
+                        AtakBroadcast.getInstance().sendBroadcast(
+                                new Intent("com.atakmap.android.maps.UNFOCUS"));
+                        AtakBroadcast.getInstance().sendBroadcast(new Intent(
+                                "com.atakmap.android.maps.HIDE_DETAILS"));
+                        AtakBroadcast.getInstance().sendBroadcast(new Intent(
+                                "com.atakmap.android.maps.HIDE_MENU"));
+
+                        Intent intent = new Intent(CamLockerReceiver.LOCK_CAM);
                         intent.putExtra("uid", _uid);
                         AtakBroadcast.getInstance().sendBroadcast(intent);
                     }

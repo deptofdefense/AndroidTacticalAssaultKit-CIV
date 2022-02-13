@@ -1,15 +1,23 @@
 
 package com.atakmap.android.widgets;
 
+import gov.tak.platform.ui.MotionEvent;
+
 import com.atakmap.android.config.ConfigEnvironment;
 import com.atakmap.android.config.DataParser;
 
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
+import java.util.IdentityHashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class RadialButtonWidget extends AbstractButtonWidget {
+import gov.tak.api.widgets.IMapWidget;
+import gov.tak.api.widgets.IRadialButtonWidget;
+
+public class RadialButtonWidget extends AbstractButtonWidget
+        implements IRadialButtonWidget {
 
     public interface OnSizeChangedListener {
         void onRadialButtonSizeChanged(RadialButtonWidget button);
@@ -25,8 +33,10 @@ public class RadialButtonWidget extends AbstractButtonWidget {
     private float _span;
     private float _width;
 
-    private final ConcurrentLinkedQueue<OnSizeChangedListener> _onSizeChanged = new ConcurrentLinkedQueue<>();
-    private final ConcurrentLinkedQueue<OnOrientationChangedListener> _onOrientationChanged = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<IRadialButtonWidget.OnSizeChangedListener> _onSizeChanged = new ConcurrentLinkedQueue<>();
+    private final Map<RadialButtonWidget.OnSizeChangedListener, IRadialButtonWidget.OnSizeChangedListener> _onSizeChangedForwarders = new IdentityHashMap<>();
+    private final ConcurrentLinkedQueue<IRadialButtonWidget.OnOrientationChangedListener> _onOrientationChanged = new ConcurrentLinkedQueue<>();
+    private final Map<RadialButtonWidget.OnOrientationChangedListener, IRadialButtonWidget.OnOrientationChangedListener> _onOrientationChangedForwarders = new IdentityHashMap<>();
 
     public RadialButtonWidget() {
         // defaults which are also reflected in DataParser fallbacks
@@ -38,14 +48,14 @@ public class RadialButtonWidget extends AbstractButtonWidget {
 
     public static class Factory extends AbstractButtonWidget.Factory {
         @Override
-        public MapWidget createFromElem(ConfigEnvironment config,
+        public IMapWidget createFromElem(ConfigEnvironment config,
                 Node defNode) {
-            RadialButtonWidget widget = new RadialButtonWidget();
+            IRadialButtonWidget widget = new RadialButtonWidget();
             configAttributes(widget, config, defNode.getAttributes());
             return widget;
         }
 
-        protected void configAttributes(RadialButtonWidget widget,
+        protected void configAttributes(IRadialButtonWidget widget,
                 ConfigEnvironment config,
                 NamedNodeMap attrs) {
             super.configAttributes(widget, config, attrs);
@@ -82,22 +92,53 @@ public class RadialButtonWidget extends AbstractButtonWidget {
         return _width;
     }
 
-    public void addOnSizeChangedListener(OnSizeChangedListener l) {
+    @Override
+    public final void addOnSizeChangedListener(
+            IRadialButtonWidget.OnSizeChangedListener l) {
         _onSizeChanged.add(l);
     }
 
-    public void removeOnSizeChangedListener(OnSizeChangedListener l) {
+    public void addOnSizeChangedListener(
+            RadialButtonWidget.OnSizeChangedListener l) {
+        registerForwardedListener(_onSizeChanged, _onSizeChangedForwarders, l,
+                new SizeChangedForwarder(l));
+    }
+
+    @Override
+    public final void removeOnSizeChangedListener(
+            IRadialButtonWidget.OnSizeChangedListener l) {
         _onSizeChanged.remove(l);
     }
 
-    public void addOnOrientationChangedListener(
-            OnOrientationChangedListener l) {
+    public void removeOnSizeChangedListener(
+            RadialButtonWidget.OnSizeChangedListener l) {
+        unregisterForwardedListener(_onSizeChanged, _onSizeChangedForwarders,
+                l);
+    }
+
+    @Override
+    public final void addOnOrientationChangedListener(
+            IRadialButtonWidget.OnOrientationChangedListener l) {
         _onOrientationChanged.add(l);
     }
 
-    public void removeOnOrientationChangedListener(
-            OnOrientationChangedListener l) {
+    public final void addOnOrientationChangedListener(
+            RadialButtonWidget.OnOrientationChangedListener l) {
+        registerForwardedListener(_onOrientationChanged,
+                _onOrientationChangedForwarders, l,
+                new OrientationChangedForwarder(l));
+    }
+
+    @Override
+    public final void removeOnOrientationChangedListener(
+            IRadialButtonWidget.OnOrientationChangedListener l) {
         _onOrientationChanged.remove(l);
+    }
+
+    public void removeOnOrientationChangedListener(
+            RadialButtonWidget.OnOrientationChangedListener l) {
+        unregisterForwardedListener(_onOrientationChanged,
+                _onOrientationChangedForwarders, l);
     }
 
     public void setOrientation(float angle, float radius) {
@@ -109,7 +150,7 @@ public class RadialButtonWidget extends AbstractButtonWidget {
     }
 
     @Override
-    public MapWidget seekHit(float x, float y) {
+    public MapWidget seekWidgetHit(MotionEvent event, float x, float y) {
         MapWidget hit = null;
 
         float d = (float) Math.sqrt(x * x + y * y);
@@ -140,15 +181,47 @@ public class RadialButtonWidget extends AbstractButtonWidget {
     }
 
     protected void onSizeChanged() {
-        for (OnSizeChangedListener l : _onSizeChanged) {
+        for (IRadialButtonWidget.OnSizeChangedListener l : _onSizeChanged) {
             l.onRadialButtonSizeChanged(this);
         }
     }
 
     protected void onOrientationChanged() {
-        for (OnOrientationChangedListener l : _onOrientationChanged) {
+        for (IRadialButtonWidget.OnOrientationChangedListener l : _onOrientationChanged) {
             l.onRadialButtonOrientationChanged(this);
         }
     }
 
+    private final static class SizeChangedForwarder
+            implements IRadialButtonWidget.OnSizeChangedListener {
+        final RadialButtonWidget.OnSizeChangedListener _cb;
+
+        SizeChangedForwarder(RadialButtonWidget.OnSizeChangedListener cb) {
+            _cb = cb;
+        }
+
+        @Override
+        public void onRadialButtonSizeChanged(IRadialButtonWidget button) {
+            if (button instanceof RadialButtonWidget)
+                _cb.onRadialButtonSizeChanged((RadialButtonWidget) button);
+        }
+    }
+
+    private final static class OrientationChangedForwarder
+            implements IRadialButtonWidget.OnOrientationChangedListener {
+        final RadialButtonWidget.OnOrientationChangedListener _cb;
+
+        OrientationChangedForwarder(
+                RadialButtonWidget.OnOrientationChangedListener cb) {
+            _cb = cb;
+        }
+
+        @Override
+        public void onRadialButtonOrientationChanged(
+                IRadialButtonWidget button) {
+            if (button instanceof RadialButtonWidget)
+                _cb.onRadialButtonOrientationChanged(
+                        (RadialButtonWidget) button);
+        }
+    }
 }

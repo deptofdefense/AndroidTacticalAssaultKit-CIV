@@ -15,7 +15,6 @@ import com.atakmap.coremap.log.Log;
 
 import com.atakmap.coremap.maps.coords.GeoPoint.AltitudeReference;
 
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
@@ -525,7 +524,7 @@ public class RouteKmlIO {
             if (pointGeometry == null)
                 continue;
 
-            if (DistanceCalculations.metersFromAtSourceTarget(
+            if (GeoCalculations.distanceTo(
                     KMLUtil.convertPoint(pointGeometry.getCoordinates()).get(),
                     KMLUtil.convertPoint(
                             point)

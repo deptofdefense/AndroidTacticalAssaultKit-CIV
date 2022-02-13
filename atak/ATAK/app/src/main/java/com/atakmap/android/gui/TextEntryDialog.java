@@ -201,7 +201,8 @@ public class TextEntryDialog {
             _entry.setSelection(initialValue.length());
         }
         _entry.setInputType(InputType.TYPE_CLASS_TEXT);
-        _entry.setImeOptions(EditorInfo.IME_ACTION_DONE);
+        _entry.setImeOptions(
+                EditorInfo.IME_FLAG_NO_FULLSCREEN | EditorInfo.IME_ACTION_DONE);
         _entry.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count,
