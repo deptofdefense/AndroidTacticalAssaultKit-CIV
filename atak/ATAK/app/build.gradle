@@ -445,58 +445,6 @@ dependencies {
      }
 }
 
-// NDK build external dependency install
-task installDepends {
-    doLast {
-        // install TAK Third Party shared objects
-        copy {
-            from('../../../takthirdparty/builds/android-arm64-v8a-release/lib/') {
-                include 'libcommoncommojni.so'
-            }
-
-            into projectDir.getAbsolutePath() + '/src/main/jniLibs/arm64-v8a/'
-
-            // always overwrite
-            duplicatesStrategy 'include'
-        }
-        copy {
-            from('../../../takthirdparty/builds/android-armeabi-v7a-release/lib/') {
-                include 'libcommoncommojni.so'
-            }
-            into projectDir.getAbsolutePath() + '/src/main/jniLibs/armeabi-v7a/'
-
-            // always overwrite
-            duplicatesStrategy 'include'
-        }
-        copy {
-            from('../../../takthirdparty/builds/android-x86-release/lib/') {
-                include 'libcommoncommojni.so'
-            }
-            into projectDir.getAbsolutePath() + '/src/main/jniLibs/x86/'
-
-             // always overwrite
-            duplicatesStrategy 'include'
-        }
-
-        // install TAK Third Party JARs
-        copy {
-            from('../../../takthirdparty/builds/android-x86-release/java/') {
-                include 'jcommoncommo.jar'
-            }
-
-            into projectDir.getAbsolutePath() + '/libs/'
-
-             // always overwrite
-            duplicatesStrategy 'include'
-        }
-    }
-}
-
-android.applicationVariants.all { variant ->
-    // install the TAK Third Party dependencies
-    tasks.getByName("compile${variant.name.capitalize()}JavaWithJavac").dependsOn("installDepends")
-}
-
 // copies over the minified.jar file which contains a completely deobfuscated jar file
 // of all the classes used when running ATAK to include the dependency libraries
 // such as the support libraries.

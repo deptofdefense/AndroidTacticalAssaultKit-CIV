@@ -3442,8 +3442,8 @@
   <string name="thick">Gruba</string>
   <string name="encryption_passphrase_prompt">Wprowadź hasło szyfrowania podane wcześniej podczas konfigurowania szyfrowania danych.</string>
   <string name="passphrase">Hasło</string>
+  <string name="create_encryption_passphrase">Wybierz nowe hasło szyfrowania dla swoich danych.</string>
   <string name="initial_encryption_passphrase">Wybierz nowe hasło szyfrowania dla swoich danych. Po pomyślnej zmianie hasła aplikacja zostanie zamknięta.</string>
-  <string name="initial_encryption_passphrase">Wybierz nowe hasło szyfrowania dla swoich danych.</string>
   <string name="autogenerate">Automatyczne generowanie</string>
   <string name="user_supplied_stronger">Dostarczone przez użytkownika (Silniejsze)</string>
   <string name="ft_mi">stóp/mil</string>
