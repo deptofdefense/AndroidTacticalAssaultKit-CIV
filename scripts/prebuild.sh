@@ -67,7 +67,8 @@ conan export-pkg . -s arch=armv7 -s os=Android -s os.api_level=29 -f
 conan export-pkg . -s arch=x86 -s os=Android -s os.api_level=29 -f
 
 # Install TTP maven package
-./gradlew assemble publishTtpRuntimeAndroidPublicationToMavenLocal
+./gradlew assemble
+./gradlew publishTtpRuntimeAndroidPublicationToMavenLocal
 popd
 
 # install tinygltf conan packages
@@ -122,7 +123,8 @@ conan export-pkg . -s arch=armv7 -s os=Android -s os.api_level=29 -s compiler.ve
 conan export-pkg . -s arch=x86 -s os=Android -s os.api_level=29 -s compiler.version="8" -f
 
 # publish to maven
-./gradlew assemble publishLibLasAndroidPublicationToMavenLocal
+./gradlew assemble
+./gradlew publishLibLasAndroidPublicationToMavenLocal
 
 popd
 
