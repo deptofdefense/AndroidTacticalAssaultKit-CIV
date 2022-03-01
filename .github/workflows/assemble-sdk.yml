@@ -80,6 +80,9 @@ jobs:
             (cd lib && (find . -maxdepth 1 -type f -not -name "*.so" -print0 | xargs -0 -I {} rm -f {})) ; \
             popd ; \
         done
+        
+        echo STATUS
+        git status
     - name: Create Keystore
       run: |
         echo y | $JAVA_HOME/bin/keytool -genkeypair -dname "cn=ATAK CIV, ou=, o=, c=US" -alias $KEYSTORE_ALIAS -keypass $KEYSTORE_KEY_PASSWORD -keystore $HOME/secrets/android_keystore -storepass $KEYSTORE_STORE_PASSWORD -validity 10000
