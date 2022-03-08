@@ -280,6 +280,8 @@ public class ElevationOverlaysMapComponent extends AbstractMapComponent
             });
         }
         toggleHeatmapLegend();
+        prefs.edit().putBoolean(PREFERENCE_VISIBLE_KEY, overlayLayer.isVisible())
+                .apply();
     }
 
     private void _setPrefs(final SharedPreferences prefs) {
