@@ -643,8 +643,9 @@ public class ProductProviderManager extends BroadcastReceiver {
                 _builder.setProgress(100, progress[0].progress, false);
                 _builder.setContentText(progress[0].message);
 
-                _notifyManager.notify(NOTIF_ID,
-                        _builder.build());
+                // commenting out because this causes the UI thread to hang for 1 minute on initial app install
+//                _notifyManager.notify(NOTIF_ID,
+//                        _builder.build());
             }
         }
 

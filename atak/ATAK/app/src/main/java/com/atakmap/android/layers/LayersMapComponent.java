@@ -32,6 +32,7 @@ import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.layers.overlay.MapControlsOverlay;
 import com.atakmap.android.maps.AbstractMapComponent;
 import com.atakmap.android.maps.CardLayer;
+import com.atakmap.android.maps.MapActivity;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.MapView.RenderStack;
 import com.atakmap.android.user.VolumeSwitchManager;
@@ -72,6 +73,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class LayersMapComponent extends AbstractMapComponent
         implements
@@ -154,6 +157,8 @@ public class LayersMapComponent extends AbstractMapComponent
     private WMSQuery wmsq;
     private WMTSQuery wmtsq;
 
+    private static ExecutorService executorService = Executors.newSingleThreadExecutor();
+
     private final OnSharedPreferenceChangeListener controlPrefsChangedListener = new OnSharedPreferenceChangeListener() {
         @Override
         public void onSharedPreferenceChanged(
@@ -171,7 +176,7 @@ public class LayersMapComponent extends AbstractMapComponent
     }
 
     @Override
-    public void onCreate(final Context context, Intent intent, MapView view) {
+    public void onCreate(final Context context, Intent intent, final MapView view) {
 
         final SharedPreferences prefs = PreferenceManager
                 .getDefaultSharedPreferences(context);
@@ -207,7 +212,13 @@ public class LayersMapComponent extends AbstractMapComponent
         _context = context;
         _layerSelections = new HashMap<>();
 
-        buildUpLayers(context, view, prefs);
+        // build up layers on a separate thread since this is an expensive operation (~200ms)
+        executorService.execute(new Runnable() {
+            @Override
+            public void run() {
+                buildUpLayers(context, view, prefs);
+            }
+        });
 
         prefs.registerOnSharedPreferenceChangeListener(this);
         prefs.registerOnSharedPreferenceChangeListener(
@@ -400,21 +411,28 @@ public class LayersMapComponent extends AbstractMapComponent
 
         _mapView.addLayer(RenderStack.MAP_LAYERS, 0, this.rasterLayers);
 
-        // Start layers up when map is resized
-        if (_mapView.getWidth() == 0) {
-            _mapView.addOnMapViewResizedListener(
-                    new AtakMapView.OnMapViewResizedListener() {
-                        @Override
-                        public void onMapViewResized(AtakMapView view) {
-                            if (view.getWidth() != 0 && view.getHeight() != 0) {
-                                _initializeLayers();
-                                _mapView.removeOnMapViewResizedListener(this);
-                            }
-                        }
-                    });
-        } else {
-            _initializeLayers();
-        }
+        _mapView.post(new Runnable() {
+            @Override
+            public void run() {
+                // Start layers up when map is resized
+                if (_mapView.getWidth() == 0) {
+                    _mapView.addOnMapViewResizedListener(
+                            new AtakMapView.OnMapViewResizedListener() {
+                                @Override
+                                public void onMapViewResized(AtakMapView view) {
+                                    if (view.getWidth() != 0 && view.getHeight() != 0) {
+                                        _initializeLayers();
+                                        _mapView.removeOnMapViewResizedListener(this);
+                                    }
+                                }
+                            });
+                } else {
+                    _initializeLayers();
+                }
+
+                mapControls = new MapControlsOverlay(_mapView);
+            }
+        });
 
         this.mapControls = new MapControlsOverlay(_mapView);
 

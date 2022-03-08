@@ -56,7 +56,14 @@ public class StickyHashtags implements Runnable, MapEventDispatchListener {
         _mapView.getMapEventDispatcher().addMapEventListener(
                 MapEvent.ITEM_REMOVED, this);
 
-        _thread.exec();
+        // hack to delay loading of hash tags until after StateSaver comes up
+        // TODO: replace timer with broadcast sent from StateSaver to a receiver here
+        mapView.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                _thread.exec();
+            }
+        }, 200);
     }
 
     public void dispose() {

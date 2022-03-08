@@ -1112,34 +1112,37 @@ public class LocationMapComponent extends AbstractMapComponent implements
                     Log.d(TAG, "gps detected correct mode: " + gpsEnabled);
 
                     if (!gpsEnabled) {
-                        HintDialogHelper
-                                .showHint(
-                                        context,
-                                        context.getString(
-                                                R.string.location_mode_title),
-                                        context.getString(
-                                                R.string.location_mode_desc),
-                                        "gps.device.mode",
-                                        new HintDialogHelper.HintActions() {
-                                            @Override
-                                            public void preHint() {
+                        // hack to show hint dialog after a 5 second delay to prevent ANRs
+                        // during initial app launch
+                        // TODO: replace with broadcast receiver that keys off of plugin map
+                        //       components done loading event
+                        _mapView.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                HintDialogHelper
+                                        .showHint(
+                                                context,
+                                                context.getString(
+                                                        R.string.location_mode_title),
+                                                context.getString(
+                                                        R.string.location_mode_desc),
+                                                "gps.device.mode",
+                                                new HintDialogHelper.HintActions() {
+                                                    @Override
+                                                    public void preHint() {
 
-                                            }
+                                                    }
 
-                                            @Override
-                                            public void postHint() {
-                                                try {
-                                                    final Intent intent = new Intent(
-                                                            Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                                                    _mapView.getContext()
-                                                            .startActivity(
-                                                                    intent);
-                                                } catch (ActivityNotFoundException ane) {
-                                                    Log.d(TAG,
-                                                            "no Settings.ACTION_LOCATION_SOURCE_SETTINGS activity found on this device");
-                                                }
-                                            }
-                                        }, false);
+                                                    @Override
+                                                    public void postHint() {
+                                                        final Intent intent = new Intent(
+                                                                Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                                                        _mapView.getContext()
+                                                                .startActivity(intent);
+                                                    }
+                                                }, false);
+                            }
+                        }, 5000);
                     }
                 }
 

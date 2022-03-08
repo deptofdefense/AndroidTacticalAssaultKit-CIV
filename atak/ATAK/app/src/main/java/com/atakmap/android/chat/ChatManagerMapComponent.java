@@ -49,6 +49,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ChatManagerMapComponent extends AbstractMapComponent implements
         ChatConvoFragCreateWatcher {
@@ -79,6 +81,7 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
     }
 
     static GeoChatService chatService = null;
+    private static ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     private static ChatManagerMapComponent _instance;
 
@@ -1143,7 +1146,14 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
         fragmentMap = new HashMap<>();
         _mapView = view;
         _context = context;
-        chatService = GeoChatService.getInstance();
+
+        // move this operation to a separate thread since it is expensive (~50ms)
+        executorService.execute(new Runnable() {
+            @Override
+            public void run() {
+                chatService = GeoChatService.getInstance();
+            }
+        });
 
         // Get Chat User Preferences
         chatPrefs = PreferenceManager.getDefaultSharedPreferences(context);
@@ -1198,7 +1208,13 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
                                 R.drawable.ic_menu_chat),
                         new ChatPrefsFragment()));
 
-        addPersistedGroups();
+        // move this operation to a separate thread since it is expensive (~50ms)
+        executorService.execute(new Runnable() {
+            @Override
+            public void run() {
+                addPersistedGroups();
+            }
+        });
 
         //Order of operations OK b/c this component starts up after CotMapComponent, per component.xml
         _geoChatHandler = new GeoChatConnectorHandler(_context);

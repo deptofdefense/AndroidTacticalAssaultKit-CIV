@@ -27,6 +27,8 @@ import com.atakmap.map.AtakMapView;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Implements full sized vehicle support that scale correctly with the 
@@ -46,6 +48,7 @@ public class VehicleMapComponent extends AbstractMapComponent {
     private VehicleModelPallet _modelPallet;
     private double _mapRes;
     private AtakMapView.OnMapMovedListener _mapMovedListener;
+    private static final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     @Override
     public void onCreate(Context context, Intent intent, final MapView view) {
@@ -84,7 +87,12 @@ public class VehicleMapComponent extends AbstractMapComponent {
         view.addOnMapMovedListener(_mapMovedListener);
 
         // Load file listing for vehicle models
-        VehicleModelCache.getInstance().rescan();
+        executorService.execute(new Runnable() {
+            @Override
+            public void run() {
+                VehicleModelCache.getInstance().rescan();
+            }
+        });
         _captureService = new GLOffscreenCaptureService();
 
         // 3D vehicle models layer

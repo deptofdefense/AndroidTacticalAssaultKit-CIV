@@ -12,6 +12,7 @@ import java.io.ByteArrayOutputStream;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 
+import com.atakmap.android.maps.MapComponentLoader;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.net.CertificateManager;
@@ -63,6 +64,9 @@ import android.os.Bundle;
 import android.util.Pair;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import com.atakmap.commoncommo.*;
 import com.atakmap.comms.NetworkDeviceManager.NetworkDevice;
 import com.atakmap.android.util.NotificationUtil;
@@ -81,6 +85,8 @@ public class CommsMapComponent extends AbstractMapComponent implements
     private static CommsMapComponent _instance;
 
     private final int SCAN_WAIT = 45 * 1000; // 45 seconds
+
+    private static ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     /**
      *  Status of an import, either one of
@@ -315,7 +321,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
     }
 
     @Override
-    public void onCreate(Context context, Intent intent, MapView view) {
+    public void onCreate(final Context context, Intent intent, final MapView view) {
         httpsCertFile = new File(context.getFilesDir(), "httpscert.p12");
         if (!commoNativeInitComplete) {
             try {
@@ -366,6 +372,16 @@ public class CommsMapComponent extends AbstractMapComponent implements
             Log.d(TAG, "failed to acquired wifi lock...");
         }
 
+        // move all of the networking operations off of the UI thread (~1300 ms)
+        executorService.execute(new Runnable() {
+            @Override
+            public void run() {
+                init(context, view);
+            }
+        });
+    }
+
+    private void init(Context context, MapView view) {
         SharedPreferences prefs = PreferenceManager
                 .getDefaultSharedPreferences(context);
 
@@ -520,6 +536,10 @@ public class CommsMapComponent extends AbstractMapComponent implements
         // TAK server singleton for developer convenience
         this.takServerListener = new TAKServerListener(view);
 
+        // send broadcast event for primary map components done loading
+        Intent intent = new Intent();
+        intent.setAction(MapComponentLoader.PRIMARY_COMPONENTS_LOADED);
+        AtakBroadcast.getInstance().sendBroadcast(intent);
     }
 
     /**

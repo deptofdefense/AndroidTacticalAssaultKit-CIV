@@ -508,6 +508,23 @@ public class ATAKActivity extends MapActivity implements
                     public void onReceive(Context context,
                             Intent intent) {
                         onNewIntent(launchIntent);
+
+                        // MOTO Added
+                        try {
+                            com.atakmap.comms.CotServiceRemote.fireConnect();
+                        } catch (Exception e) {
+                            Log.e(TAG, "error with CotService", e);
+                        }
+
+                        // now that the components are done loading, we can hide the progress dialog
+                        // and show other dialogs
+                        if (progressDialog != null && progressDialog.isShowing()) {
+                            progressDialog.dismiss();
+                            progressDialog = null;
+                        }
+                        setupWizard = new DeviceSetupWizard(
+                                ATAKActivity.this, _mapView, _controlPrefs);
+                        setupWizard.init(false);
                     }
                 }, filter);
 
@@ -562,7 +579,7 @@ public class ATAKActivity extends MapActivity implements
                         + ATAKConstants.getVersionCode() + " starting up...");
         NotificationUtil.getInstance().initialize(this);
 
-        final ProgressDialog progressDialog = ProgressDialog.show(
+        progressDialog = ProgressDialog.show(
                 ATAKActivity.this,
                 getString(R.string.app_name)
                         + getString(R.string.loading),
@@ -673,6 +690,8 @@ public class ATAKActivity extends MapActivity implements
                     @Override
                     public void run() {
 
+                        // call buildATAK() while we are still on a background thread, we want to do as
+                        // much work as possible on this thread (file i/o etc.) to prevent ANRs
                         try {
                             long s = SystemClock.elapsedRealtime();
                             buildATAK();
@@ -682,15 +701,8 @@ public class ATAKActivity extends MapActivity implements
                             setupWizard = new DeviceSetupWizard(
                                     ATAKActivity.this, _mapView, _controlPrefs);
                             setupWizard.init(false);
-
-                        } finally {
-                            progressDialog.dismiss();
-                            try {
-                                com.atakmap.comms.CotServiceRemote
-                                        .fireConnect();
-                            } catch (Exception e) {
-                                Log.e(TAG, "error with CotService", e);
-                            }
+                        } catch (Exception e) {
+                            Log.e(TAG, "error building ATAK", e);
                         }
                     }
                 });
@@ -914,11 +926,25 @@ public class ATAKActivity extends MapActivity implements
         SpatialCalculator.initTmpDir(getApplicationContext());
         FileSystemUtils.cleanup();
 
-        try {
-            loadAssets();
-        } catch (IOException | SAXException e) {
-            Log.e(TAG, "error: ", e);
-        }
+        // must be before loadAssets because it's used by native code called by LocationMapComponent
+        extractPrivateResource("wmm_cof", "world-magnetic-model-file");
+
+        // switch to UI thread to load assets and ensure their lifecycle methods (onCreate) are
+        // invoked from the appropriate thread
+        _mapView.post(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    long s = SystemClock.elapsedRealtime();
+                    loadAssets();
+                    long e = SystemClock.elapsedRealtime();
+
+                    Log.i(TAG, "load assets in " + (e - s) + "ms");
+                } catch (IOException | SAXException e) {
+                    Log.e(TAG, "error: ", e);
+                }
+            }
+        });
 
         ClearContentTask.setClearContent(_controlPrefs, false);
 
@@ -1000,8 +1026,6 @@ public class ATAKActivity extends MapActivity implements
                 .getItem(FileSystemUtils.SUPPORT_DIRECTORY + File.separatorChar
                         + "cottimedebug"));
 
-        extractPrivateResource("wmm_cof", "world-magnetic-model-file", false);
-
         _unitChangeReceiver = new UnitChangeReceiver(_mapView);
         Log.d(TAG, "Created UnitChangeReceiver");
         DocumentedIntentFilter unitFilter = new DocumentedIntentFilter();
@@ -1066,11 +1090,17 @@ public class ATAKActivity extends MapActivity implements
         _mapView.setContinuousScrollEnabled(
                 _controlPrefs.getBoolean("atakContinuousScrollEnabled", true));
 
-        try {
-            DozeManagement.checkDoze(_mapView.getContext());
-        } catch (Exception e) {
-            Log.d(TAG, "doze check failed");
-        }
+        // check Doze mode on main thread since it has user interaction
+        _mapView.post(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    DozeManagement.checkDoze(_mapView.getContext());
+                } catch (Exception e) {
+                    Log.d(TAG, "doze check failed");
+                }
+            }
+        });
 
         // use the generalized constructor for the FauxNavBar
         fnb = new FauxNavBar(this);
@@ -3254,6 +3284,7 @@ public class ATAKActivity extends MapActivity implements
 
     // Dialog that shows secure deletion process
     private static ProgressDialog secureDeleteDialog = null;
+    private static ProgressDialog progressDialog = null;
     private final static Object lock = new Object();
 
     // don't wait for Secure Delete to finish

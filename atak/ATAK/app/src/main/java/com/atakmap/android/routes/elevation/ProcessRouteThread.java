@@ -162,7 +162,7 @@ public class ProcessRouteThread implements Runnable,
         if (!disposed) {
             disposed = true;
             _prefs.unregisterOnSharedPreferenceChangeListener(this);
-            selfPresenter.stop();
+            selfPresenter.stopProcessing(); // don't block main thread in dispose()
             lThread.dispose(false);
         }
     }

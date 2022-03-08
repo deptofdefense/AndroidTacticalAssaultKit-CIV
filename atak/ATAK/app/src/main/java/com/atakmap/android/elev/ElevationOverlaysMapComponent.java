@@ -33,6 +33,8 @@ import com.atakmap.map.layer.elevation.TerrainSlopeLayer;
 import com.atakmap.map.layer.opengl.GLLayerFactory;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ElevationOverlaysMapComponent extends AbstractMapComponent
@@ -124,7 +126,14 @@ public class ElevationOverlaysMapComponent extends AbstractMapComponent
                 prefs.getBoolean(PREFERENCE_VISIBLE_KEY, false));
 
         _setPrefs(prefs);
-        refreshPersistedState();
+
+        // move this operation to a separate thread since it is expensive (~600ms)
+        executorService.execute(new Runnable() {
+            @Override
+            public void run() {
+                refreshPersistedState();
+            }
+        });
 
         RootLayoutWidget root = (RootLayoutWidget) _mapView.getComponentExtra(
                 ROOT_LAYOUT_EXTRA);

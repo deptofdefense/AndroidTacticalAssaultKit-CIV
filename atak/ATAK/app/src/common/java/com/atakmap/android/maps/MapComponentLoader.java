@@ -1,6 +1,10 @@
 
 package com.atakmap.android.maps;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+
 import com.atak.plugins.impl.PluginMapComponent;
 import com.atakmap.android.bloodhound.BloodHoundMapComponent;
 import com.atakmap.android.brightness.BrightnessComponent;
@@ -79,15 +83,30 @@ import java.util.List;
  */
 public class MapComponentLoader {
     private static final String TAG = "MapComponentLoader";
+    public static final String PRIMARY_COMPONENTS_LOADED = "com.atakmap.android.maps.PrimaryComponentsLoaded";
 
+    // splitting up into primary and secondary components to control loading sequence
+    private static final List<Class> mapComponentsPrimary = new ArrayList<>();
     private static final List<Class> mapComponents = new ArrayList<>();
 
+    // load the secondary components only after we know the primary components are done loading
+    private static BroadcastReceiver primaryComponentsLoadedReceiver = new BroadcastReceiver() {
+        public void onReceive(final Context c, final Intent intent) {
+            Log.d(TAG, "Primary components done loading");
+            MapActivity mapActivity = (MapActivity) MapView.getMapView().getContext();
+            loadSecondaryMapComponent(mapActivity, 0);
+        }
+    };
+
     static {
+        AtakBroadcast.getInstance().registerReceiver(primaryComponentsLoadedReceiver,
+                new DocumentedIntentFilter(PRIMARY_COMPONENTS_LOADED));
+
         // location needs to be first
-        mapComponents.add(LocationMapComponent.class);
+        mapComponentsPrimary.add(LocationMapComponent.class);
 
         // common communications next
-        mapComponents.add(CommsMapComponent.class);
+        mapComponentsPrimary.add(CommsMapComponent.class);
 
         mapComponents.add(VisibilityMapComponent.class);
         mapComponents.add(BrightnessComponent.class);
@@ -124,7 +143,7 @@ public class MapComponentLoader {
 
         mapComponents.add(LRFMapComponent.class);
         mapComponents.add(FiresMapComponent.class);
-        mapComponents.add(CoordOverlayMapComponent.class);
+        mapComponentsPrimary.add(CoordOverlayMapComponent.class); // used by LocationMapComponent
         mapComponents.add(WarningComponent.class);
         mapComponents.add(GridLinesMapComponent.class);
         mapComponents.add(JumpBridgeMapComponent.class);
@@ -213,20 +232,50 @@ public class MapComponentLoader {
         }
     }
 
-    static void loadMapComponents(MapActivity activity) {
+    static void loadMapComponents(final MapActivity activity) {
+        Log.d(TAG, "Loading primary map components...");
 
         // JSON preference file serialization and reading
         JSONPreferenceControl.getInstance().initDefaults(activity.getMapView());
 
-        for (Class component : mapComponents) {
+        // load primary components first
+        for (Class component : mapComponentsPrimary) {
             try {
                 activity.registerMapComponent(
                         (MapComponent) component.newInstance());
             } catch (Throwable t) {
-                Log.e(TAG, "error loading: " + component, t);
+                Log.e(TAG, "error loading: " + component + ": " + t);
             }
         }
+    }
 
+    private static void loadSecondaryMapComponent(MapActivity activity, int index) {
+        Log.i(TAG, "Loading secondary component at index: " + index);
+        if (index >= mapComponents.size()) {
+            Log.d(TAG, "No more secondary components to load");
+            loadFlavorMapComponents(activity);
+            return;
+        }
+
+        Class component = mapComponents.get(index);
+        MapView.getMapView().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Log.i(TAG, "Loading component " + component.getSimpleName());
+                    activity.registerMapComponent(
+                            (MapComponent) component.newInstance());
+                    Log.i(TAG, "Loaded component " + component.getSimpleName());
+
+                    loadSecondaryMapComponent(activity, index + 1);
+                } catch (Throwable t) {
+                    Log.e(TAG, "error loading: " + component, t);
+                }
+            }
+        }, 50); // delay to keep main thread responsive during loading
+    }
+
+    private static void loadFlavorMapComponents(MapActivity activity) {
         final AbstractSystemComponent[] systemComponents = SystemComponentLoader
                 .getComponents();
         for (AbstractSystemComponent systemComponent : systemComponents) {

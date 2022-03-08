@@ -33,6 +33,8 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class StateSaver extends AbstractMapComponent {
 
@@ -80,6 +82,7 @@ public class StateSaver extends AbstractMapComponent {
     private Thread publishThread = null;
 
     private static StateSaver _instance = null;
+    private static ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     private final Object lock = new Object();
 
@@ -88,10 +91,20 @@ public class StateSaver extends AbstractMapComponent {
             final MapView view) {
 
         this.view = view;
-        synchronized (dbWriteLock) {
-            checkStateSaverDatabaseNoSync();
-        }
+        // state saver DB is an expensive operation (150ms) so move it to a background thread
+        executorService.execute(new Runnable() {
+            @Override
+            public void run() {
+                synchronized (dbWriteLock) {
+                    checkStateSaverDatabaseNoSync();
+                }
 
+                init(context);
+            }
+        });
+    }
+
+    private void init(Context context) {
         view.getMapOverlayManager().addOtherOverlay(
                 new DefaultMapGroupOverlay(view, new DefaultMapGroup(
                         "Saved Entries")));

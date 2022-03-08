@@ -71,6 +71,8 @@ import java.util.List;
 import com.atakmap.coremap.locale.LocaleUtil;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class WktMapComponent extends AbstractMapComponent {
@@ -96,8 +98,9 @@ public class WktMapComponent extends AbstractMapComponent {
      * local reference to track changes.
      */
     private AtomicBoolean providerInvalidatedToken = new AtomicBoolean(false);
+    private static ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-    private void initComponents(Context context, MapView view) {
+    private void initComponents(Context context, final MapView view) {
         FeatureDataSourceContentFactory
                 .register(ShapefileSpatialDb.ZIPPED_SHP_DATA_SOURCE);
         FeatureDataSourceContentFactory
@@ -110,7 +113,13 @@ public class WktMapComponent extends AbstractMapComponent {
 
         ClearContentRegistry.getInstance().registerListener(dataMgmtReceiver);
 
-        refreshPersistedComponents(view);
+        // move to background thread (~400ms)
+        executorService.execute(new Runnable() {
+            @Override
+            public void run() {
+                refreshPersistedComponents(view);
+            }
+        });
 
         // `dataMgmtReceiver` works off the current references, no persisted state
         DocumentedIntentFilter intentFilter = new DocumentedIntentFilter();
@@ -132,7 +141,7 @@ public class WktMapComponent extends AbstractMapComponent {
     }
 
     @Override
-    public void onCreate(Context context, Intent intent, MapView view) {
+    public void onCreate(Context context, Intent intent, final MapView view) {
         Log.d(TAG, "Creating WktMapComponent");
         final Context appCtx = context;
         final MapView mapView = view;
@@ -318,28 +327,25 @@ public class WktMapComponent extends AbstractMapComponent {
         // XXX - open file DBs
         if (this.fileDatabases == null)
             this.fileDatabases = new HashSet<>();
-        // XXX - register details dropdown receiver
-        this.detailsDropdownReceiver = new FeaturesDetailsDropdownReceiver(view,
-                this.spatialDb);
-        DocumentedIntentFilter i = new DocumentedIntentFilter();
-        i.addAction(FeaturesDetailsDropdownReceiver.SHOW_DETAILS,
-                "Show feature details");
-        i.addAction(FeaturesDetailsDropdownReceiver.TOGGLE_VISIBILITY,
-                "Toggle feature visibility");
-        this.registerReceiver(context,
-                detailsDropdownReceiver, i);
 
-        // Register the feature edit dropdown receiver
-        this.featureEditDropdownReceiver = new FeatureEditDropdownReceiver(view,
-                this.spatialDb);
-        DocumentedIntentFilter featureEditDocumentedIntentFilter = new DocumentedIntentFilter();
-        featureEditDocumentedIntentFilter.addAction(
-                FeatureEditDropdownReceiver.SHOW_EDIT,
-                "Show feature edit drop down");
-        this.registerReceiver(context,
-                featureEditDropdownReceiver, featureEditDocumentedIntentFilter);
-        // start background initialization
-        this.backgroundInit(this.spatialDb);
+        // switch back to UI thread since this receiver has a WebView
+        view.post(new Runnable() {
+            @Override
+            public void run() {
+                // XXX - register details dropdown receiver
+                detailsDropdownReceiver = new FeaturesDetailsDropdownReceiver(view,
+                        spatialDb);
+                DocumentedIntentFilter i = new DocumentedIntentFilter();
+                i.addAction(FeaturesDetailsDropdownReceiver.SHOW_DETAILS,
+                        "Show feature details");
+                i.addAction(FeaturesDetailsDropdownReceiver.TOGGLE_VISIBILITY,
+                        "Toggle feature visibility");
+                registerReceiver(context,
+                        detailsDropdownReceiver, i);
+                // start background initialization
+                backgroundInit(spatialDb);
+            }
+        });
     }
 
     private void addContentSource(Context context, SpatialDbContentSource src,

@@ -5,6 +5,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -44,10 +48,22 @@ public class AppVersionUpgrade {
 
     public static boolean OVERLAYS_MIGRATED = false;
 
+    private static final ExecutorService executorService = Executors.newSingleThreadExecutor();
+
     /**
      * Provides a central place to run all directory shuffles for components
      */
     public synchronized static void onUpgrade(Context context) {
+        // do the file I/O on a background thread to prevent ANR
+        executorService.execute(new Runnable() {
+            @Override
+            public void run() {
+                upgrade(context);
+            }
+        });
+    }
+
+    private static void upgrade(Context context) {
         Log.d(TAG, "Migrating directories");
         FileSystemUtils.init();
 

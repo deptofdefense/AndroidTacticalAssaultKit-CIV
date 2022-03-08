@@ -72,19 +72,28 @@ public class SelfPresenter {
         }
     }
 
+    /**
+     * Stop processing route info (thread safe)
+     */
     public void stop() {
         synchronized (this) {
-            if (processThread == null)
-                return;
-
-            _running = false;
-            Log.d(TAG, "stopping processing the route information for: "
-                    + title);
-            processThread.interrupt();
-            processThread = null;
-            _geoPoint = new GeoPointMetaData[] {};
+            stopProcessing();
         }
 
+    }
+
+    /**
+     * Stop processing route info (non thread safe)
+     */
+    public void stopProcessing() {
+        if (processThread == null)
+            return;
+
+        _running = false;
+        Log.d(TAG, "stopping processing the route information for: " + title);
+        processThread.interrupt();
+        processThread = null;
+        _geoPoint = new GeoPointMetaData[] {};
     }
 
     /**
