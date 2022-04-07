@@ -1,6 +1,6 @@
 #!/bin/bash
 
-(cd ../takengine && mkdir thirdparty)
+(cd ../takengine && mkdir -p thirdparty)
 
 (cd .. && \
 	gzip -d ./depends/assimp-4.0.1-mod.tar.gz && \
@@ -54,9 +54,9 @@ pushd ../takthirdparty
 unlink android-armeabi-v7a-release
 unlink android-arm64-v8a-release
 unlink android-x86-release
-ln builds/android-armeabi-v7a-release android-armeabi-v7a-release
-ln builds/android-arm64-v8a-release android-arm64-v8a-release
-ln builds/android-x86-release android-x86-release
+ln -s builds/android-armeabi-v7a-release android-armeabi-v7a-release
+ln -s builds/android-arm64-v8a-release android-arm64-v8a-release
+ln -s builds/android-x86-release android-x86-release
 
 echo "#####################################################"
 find builds | grep jar
