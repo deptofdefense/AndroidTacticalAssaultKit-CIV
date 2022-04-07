@@ -58,6 +58,11 @@ ln builds/android-armeabi-v7a-release android-armeabi-v7a-release
 ln builds/android-arm64-v8a-release android-arm64-v8a-release
 ln builds/android-x86-release android-x86-release
 
+echo "#####################################################"
+find builds | grep jar
+find android-x86-release | grep jar
+echo "#####################################################"
+
 cd ci-support
 # install the packages locally
 
@@ -124,6 +129,9 @@ conan export-pkg . -s arch=x86 -s os=Android -s os.api_level=29 -s compiler.vers
 
 # publish to maven
 ./gradlew assemble
+echo "#####################################################"
+find .
+echo "#####################################################"
 ./gradlew publishLibLasAndroidPublicationToMavenLocal
 
 popd
