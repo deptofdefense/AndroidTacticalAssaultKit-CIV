@@ -1,6 +1,6 @@
 #!/bin/bash
 
-(cd ../takengine && mkdir -p thirdparty)
+(cd ../takengine && mkdir thirdparty)
 
 (cd .. && \
 	gzip -d ./depends/assimp-4.0.1-mod.tar.gz && \
@@ -58,11 +58,6 @@ ln -s builds/android-armeabi-v7a-release android-armeabi-v7a-release
 ln -s builds/android-arm64-v8a-release android-arm64-v8a-release
 ln -s builds/android-x86-release android-x86-release
 
-echo "#####################################################"
-find builds | grep jar
-find android-x86-release | grep jar
-echo "#####################################################"
-
 cd ci-support
 # install the packages locally
 
@@ -72,8 +67,7 @@ conan export-pkg . -s arch=armv7 -s os=Android -s os.api_level=29 -f
 conan export-pkg . -s arch=x86 -s os=Android -s os.api_level=29 -f
 
 # Install TTP maven package
-./gradlew assemble
-./gradlew publishTtpRuntimeAndroidPublicationToMavenLocal
+./gradlew assemble publishTtpRuntimeAndroidPublicationToMavenLocal
 popd
 
 # install tinygltf conan packages
@@ -128,11 +122,7 @@ conan export-pkg . -s arch=armv7 -s os=Android -s os.api_level=29 -s compiler.ve
 conan export-pkg . -s arch=x86 -s os=Android -s os.api_level=29 -s compiler.version="8" -f
 
 # publish to maven
-./gradlew assemble
-echo "#####################################################"
-find .
-echo "#####################################################"
-./gradlew publishLibLasAndroidPublicationToMavenLocal
+./gradlew assemble publishLibLasAndroidPublicationToMavenLocal
 
 popd
 

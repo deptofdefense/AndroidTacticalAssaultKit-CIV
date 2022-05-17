@@ -51,9 +51,9 @@ task createAndroidSourceSet(type: Copy) {
     includeEmptyDirs = false
 
     // Define input paths.
-    def arm64LibsPath = "$rootDir/../builds/android-arm64-v8a-release/lib"
-    def armEabiLibsPath = "$rootDir/../builds/android-armeabi-v7a-release/lib"
-    def x86LibsPath = "$rootDir/../builds/android-x86-release/lib"
+    def arm64LibsPath = "$rootDir/../android-arm64-v8a-release/lib"
+    def armEabiLibsPath = "$rootDir/../android-armeabi-v7a-release/lib"
+    def x86LibsPath = "$rootDir/../android-x86-release/lib"
 
     // Define output paths.
     def jniLibsSourceSetPath = 'src/main/jniLibs'
@@ -66,18 +66,8 @@ task createAndroidSourceSet(type: Copy) {
     outputs.files(fileTree(arm64SourceSetPath), fileTree(armEabiSourceSetPath), fileTree(x86SourceSetPath))
             .withPropertyName('targetLibs')
 
-    println("copying JARs from ${rootDir/../builds/android-arm64-v8a-release/java}")
-    def ttpjars = new File("${rootDir/../builds/android-arm64-v8a-release/java}").list()
-    if(ttpjars != null) {
-        for(int i = 0; i < ttpjars.length; i++) {
-            println("copying ${ttpjars[i]}")
-        }
-    } else {
-        println("NO TTPJARS FILES!!!")
-    }
-    
     //Copy Assimp and GDAL JARs.
-    from("$rootDir/../builds/android-arm64-v8a-release/java") {
+    from("$rootDir/../android-arm64-v8a-release/java") {
         into 'libs'
         include '*.jar'
     }
