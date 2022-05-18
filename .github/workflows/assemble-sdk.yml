@@ -5,7 +5,7 @@ on:
 jobs:
   assemble:
     name: Build
-    runs-on: docker
+    runs-on: ubuntu-18.04
     container:
       image: openjdk:8-jdk
 
