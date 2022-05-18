@@ -5,7 +5,9 @@ on:
 jobs:
   assemble:
     name: Build
-    runs-on: openjdk:8-jdk
+    runs-on: docker
+    container:
+      image: openjdk:8-jdk
 
     steps:
     - name: Checkout github repo (+ download lfs dependencies)
