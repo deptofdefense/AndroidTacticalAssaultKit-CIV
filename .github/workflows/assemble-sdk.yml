@@ -47,6 +47,7 @@ jobs:
         echo "KEYSTORE_KEY_PASSWORD=$(apg -a 1 -n 1 -m 16 -x 16 -E '\')" >> $GITHUB_ENV
         mkdir $HOME/secrets
     - name: set up Android SDK
+      shell: bash
       run: |
        wget --quiet --tries=0 --output-document=android-sdk.zip https://dl.google.com/android/repository/sdk-tools-linux-${ANDROID_SDK_TOOLS}.zip;
        unzip -qq -d android-sdk-linux android-sdk.zip;
