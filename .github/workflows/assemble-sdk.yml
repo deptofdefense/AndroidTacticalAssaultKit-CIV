@@ -26,6 +26,7 @@ jobs:
         git lfs checkout
     - name: set environment
       run: |
+        apt -y install ant
         apt -y install apg
         apt -y install dos2unix
         apt -y install autoconf
