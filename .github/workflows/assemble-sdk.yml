@@ -10,28 +10,32 @@ jobs:
       image: openjdk:8-jdk
 
     steps:
-    - name: Checkout github repo (+ download lfs dependencies)
+    - name: Checkout github repo
       uses: actions/checkout@v2
       with:
-        lfs: true
         fetch-depth: 1
     - name: Checkout LFS objects
-      run: git lfs checkout
+      run: |
+        apt update
+        apt -y install git-lfs
+        git lfs install --local
+        git lfs fetch
+        git lfs checkout
     - name: set environment
       run: |
-        sudo apt-get install apg
-        sudo apt-get install dos2unix
-        sudo apt-get install autoconf
-        sudo apt-get install automake
-        sudo apt-get install g++
-        sudo apt-get install libtool
-        sudo apt-get install patch
-        sudo apt-get install make
-        sudo apt-get install cmake
-        sudo apt-get install ninja-build
-        sudo apt-get install swig
-        sudo apt-get install tclsh
-        sudo apt-get install python3-pip
+        apt -y install apg
+        apt -y install dos2unix
+        apt -y install autoconf
+        apt -y install automake
+        apt -y install g++
+        apt -y install libtool
+        apt -y install patch
+        apt -y install make
+        apt -y install cmake
+        apt -y install ninja-build
+        apt -y install swig
+        apt -y install tclsh
+        apt -y install python3-pip
         pip3 install -U pip setuptools
         pip3 install --upgrade conan
         echo "ANDROID_COMPILE_SDK=29" >> $GITHUB_ENV
