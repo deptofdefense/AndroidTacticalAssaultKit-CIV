@@ -122,7 +122,11 @@ conan export-pkg . -s arch=armv7 -s os=Android -s os.api_level=29 -s compiler.ve
 conan export-pkg . -s arch=x86 -s os=Android -s os.api_level=29 -s compiler.version="8" -f
 
 # publish to maven
-./gradlew assemble publishLibLasAndroidPublicationToMavenLocal
+./gradlew assemble
+ls -la build/outputs/aar/
+ls -la build/outputs/
+ls -la build/
+./gradlew publishLibLasAndroidPublicationToMavenLocal
 
 popd
 
