@@ -56,7 +56,7 @@ import java.util.HashSet;
 import java.util.List;
 
 import com.atakmap.coremap.maps.conversion.EGM96;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
@@ -383,9 +383,8 @@ public class GeoFenceReceiver extends BroadcastReceiver implements
             DrawingShape freeform = (DrawingShape) item;
             double furthestRange = 0;
             for (GeoPoint point : freeform.getPoints()) {
-                double distance = DistanceCalculations
-                        .metersFromAtSourceTarget(freeform.getCenter().get(),
-                                point);
+                double distance = GeoCalculations
+                        .distanceTo(freeform.getCenter().get(), point);
                 if (distance > furthestRange) {
                     furthestRange = distance;
                 }

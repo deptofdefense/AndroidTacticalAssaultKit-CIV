@@ -20,6 +20,7 @@ public class ChatLine {
     public String type = null;
     public Long timeReceived = null;
     public Long timeSent = null;
+    public Long timeRead = null;
     public String senderUid = null;
     public String senderName = null;
     public String message = null;
@@ -81,12 +82,9 @@ public class ChatLine {
         ret.conversationName = chatBundle.getString("conversationName");
         ret.protocol = chatBundle.getString("protocol");
         ret.type = chatBundle.getString("type");
-        ret.timeReceived = chatBundle.getLong("receiveTime", -1);
-        if (ret.timeReceived < 0)
-            ret.timeReceived = null;
-        ret.timeSent = chatBundle.getLong("sentTime", -1);
-        if (ret.timeSent < 0)
-            ret.timeSent = null; //possible case for both time sent and recieved being null!
+        ret.timeReceived = getTime(chatBundle, "receiveTime");
+        ret.timeSent = getTime(chatBundle, "sentTime");
+        ret.timeRead = getTime(chatBundle, "readTime");
         if (ret.timeSent == null && ret.timeReceived == null) //just in case
             ret.timeReceived = new CoordinatedTime().getMilliseconds(); //set it to now just to be on the safe side.
         ret.senderUid = chatBundle.getString("senderUid");
@@ -137,14 +135,23 @@ public class ChatLine {
         ret.putString("senderUid", senderUid);
         ret.putString("message", message);
         ret.putString("status", status.name());
-        if (timeReceived != null) // need to do this for Longs because they will
-                                  // be auto-boxed
-            ret.putLong("receiveTime", timeReceived);
-        if (timeSent != null) // need to do this for Longs because they will be
-                              // auto-boxed
-            ret.putLong("sentTime", timeSent);
+        setTime(ret, "receiveTime", timeReceived);
+        setTime(ret, "sentTime", timeSent);
+        setTime(ret, "readTime", timeRead);
         ret.putStringArray("destinations", destinations);
         return ret;
+    }
+
+    private static Long getTime(Bundle chatBundle, String key) {
+        Long ret = chatBundle.getLong(key, -1);
+        if (ret < 0)
+            ret = null;
+        return ret;
+    }
+
+    private static void setTime(Bundle chatBundle, String key, Long value) {
+        if (value != null)
+            chatBundle.putLong(key, value);
     }
 
     /**

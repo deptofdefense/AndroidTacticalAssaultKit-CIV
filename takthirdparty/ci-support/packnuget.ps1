@@ -6,7 +6,10 @@ Remove-Item TTP-Dist -Recurse -Force -ErrorAction 'SilentlyContinue'
 mkdir TTP-Dist
 Set-Location TTP-Dist
 mkdir lib
-Copy-Item ../../win64-release/csharp/*.dll lib
+mkdir build/x64
+Copy-Item ../../win64-release/csharp/*_csharp.dll lib
+Copy-Item ../../win64-release/csharp/*_wrap.dll build/x64
+Copy-Item -Path ../../win64-release/lib/*.dll -Destination build/x64 -Exclude @('charset-1.dll', 'gdalalljni.dll', 'geos.dll', 'lti_dsdk_cdll_9.5.dll')
 
 ((Select-String -Path ../gradle/versions.gradle -Pattern 'ttpDistVersion') -match "\d+\.\d+\.\d+")
 $ttpVersion = $matches[0]
@@ -21,6 +24,17 @@ Add-Content -Path TTP-Dist.nuspec '    <requireLicenseAcceptance>false</requireL
 Add-Content -Path TTP-Dist.nuspec '    <description>TAK Third Party Dist C# Wrapper Libraries</description>'
 Add-Content -Path TTP-Dist.nuspec '  </metadata>'
 Add-Content -Path TTP-Dist.nuspec '</package>'
+
+Set-Content -Path build/TTP-Dist.targets '<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">'
+Add-Content -Path build/TTP-Dist.targets '    <ItemGroup Condition="''$(Platform)'' == ''x64''">'
+Add-Content -Path build/TTP-Dist.targets '        <NativeLibs Include="$(MSBuildThisFileDirectory)x64\*.dll" />'
+Add-Content -Path build/TTP-Dist.targets '        <None Include="@(NativeLibs)">'
+Add-Content -Path build/TTP-Dist.targets '            <Link>%(FileName)%(Extension)</Link>'
+Add-Content -Path build/TTP-Dist.targets '            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>'
+Add-Content -Path build/TTP-Dist.targets '        </None>'
+Add-Content -Path build/TTP-Dist.targets '    </ItemGroup>'
+Add-Content -Path build/TTP-Dist.targets '</Project>'
+
 nuget pack TTP-Dist.nuspec
 $nuPkgFile = 'TTP-Dist.' + $ttpVersion + '.nupkg'
 

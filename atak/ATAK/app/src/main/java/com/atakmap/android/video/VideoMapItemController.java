@@ -15,6 +15,7 @@ import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.conversion.EGM96;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.map.CameraController;
 
 import java.util.UUID;
 
@@ -30,7 +31,7 @@ class VideoMapItemController {
     private Marker frameMarker = null;
     private Association assoc = null;
     private Polyline fourCornersPolygon = null;
-    private GeoPointMetaData[] corners = new GeoPointMetaData[] {
+    private final GeoPointMetaData[] corners = new GeoPointMetaData[] {
             new GeoPointMetaData(), new GeoPointMetaData(),
             new GeoPointMetaData(), new GeoPointMetaData(),
             new GeoPointMetaData()
@@ -117,7 +118,8 @@ class VideoMapItemController {
 
             if (!Double.isNaN(vmd.frameLatitude)
                     && !Double.isNaN(vmd.frameLongitude)) {
-                mapView.getMapController().panTo(
+                CameraController.Programmatic.panTo(
+                        mapView.getRenderer3(),
                         new GeoPoint(vmd.frameLatitude, vmd.frameLongitude),
                         true);
             }
@@ -135,7 +137,12 @@ class VideoMapItemController {
             return;
         }
 
-        if (vmd.frameLatitude == 0d && vmd.frameLongitude == 0d) {
+        // Augment the current visibility test so that if the lat / lon are zero or
+        // the latitude is either -90 or 90 (poles).
+        if (Double.compare(vmd.frameLatitude, -90d) == 0 ||
+                Double.compare(vmd.frameLatitude, 90d) == 0 ||
+                (Double.compare(vmd.frameLatitude, 0d) == 0 &&
+                        Double.compare(vmd.frameLongitude, 0d) == 0)) {
             setFrameMarkerVisible(false);
             return;
         } else {

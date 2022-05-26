@@ -22,7 +22,6 @@ import com.atakmap.android.preference.AtakPreferences;
 import com.atakmap.android.selfcoordoverlay.SelfCoordOverlayUpdater;
 import com.atakmap.android.selfcoordoverlay.SelfCoordOverlayUpdaterCompat;
 import com.atakmap.android.targetbubble.graphics.GLMapTargetBubble;
-import com.atakmap.android.tools.ActionBarReceiver;
 
 import com.atakmap.android.maps.MapTouchController;
 import com.atakmap.android.util.EditAction;
@@ -104,7 +103,7 @@ public class TargetBubbleReceiver extends BroadcastReceiver implements
     /** Relative scale factor of bubble versus basemap */
     private double _relativeScale;
 
-    private boolean barPreviouslyHidden, hidSelfWidget;
+    private boolean hidSelfWidget;
 
     private static TargetBubbleReceiver _instance;
 
@@ -223,7 +222,8 @@ public class TargetBubbleReceiver extends BroadcastReceiver implements
     @Override
     public void onMapWidgetClick(MapWidget widget, MotionEvent event) {
         if (widget == cancelReticle && _editPoint != null) {
-            _mapView.getMapController().panTo(_editPoint.getPoint(), true);
+            CameraController.Programmatic.panTo(
+                    _mapView.getRenderer3(), _editPoint.getPoint(), true);
             _editPoint = null;
         }
         _dismissBubble();
@@ -274,7 +274,6 @@ public class TargetBubbleReceiver extends BroadcastReceiver implements
             _restoreTilt = tilt;
             _restoreTiltEnabled = _mapView.getMapTouchController()
                     .getTiltEnabledState();
-            _enable3D = _prefs.get("status_3d_enabled", false);
         }
         if (tilt != 0) {
             final MapSceneModel sm = _mapView.getRenderer3().getMapSceneModel(
@@ -320,13 +319,6 @@ public class TargetBubbleReceiver extends BroadcastReceiver implements
         }
 
         hidSelfWidget = SelfCoordOverlayUpdaterCompat.showGPSWidget(false);
-
-        barPreviouslyHidden = _mapView.getActionBarHeight() == 0;
-        Intent i = new Intent(ActionBarReceiver.TOGGLE_ACTIONBAR);
-        i.putExtra("show", false);
-        i.putExtra("handle", false);
-        i.putExtra("toolbar", false);
-        AtakBroadcast.getInstance().sendBroadcast(i);
 
         AtakBroadcast.getInstance().sendBroadcast(
                 new Intent(MapMode.NORTH_UP.getIntent()));
@@ -395,7 +387,8 @@ public class TargetBubbleReceiver extends BroadcastReceiver implements
                             return;
                         if (result == CoordDialogView.Result.VALID_CHANGED) {
                             onTargetBubbleDismiss(p);
-                            _mapView.getMapController().panTo(p.get(), true);
+                            CameraController.Programmatic.panTo(
+                                    _mapView.getRenderer3(), p.get(), true);
                         }
                         locDialog.dismiss();
                     }
@@ -600,33 +593,22 @@ public class TargetBubbleReceiver extends BroadcastReceiver implements
             if (type != null) {
                 // allow undo if drawing
                 switch (type) {
-                    case "corner_u-d-r": {
-                        Intent intent = new Intent(
-                                "com.atakmap.android.maps.MANUAL_POINT_RECTANGLE_EDIT");
-                        intent.putExtra("type", "corner_u-d-r");
-                        intent.putExtra("uid", _editPoint.getUID());
-                        intent.putExtra("lat",
-                                String.valueOf(point.get().getLatitude()));
-                        intent.putExtra("lon",
-                                String.valueOf(point.get().getLongitude()));
-                        intent.putExtra("from", "targetBubble");
-                        intent.putExtra("alt",
-                                String.valueOf(point.get().getAltitude()));
-                        AtakBroadcast.getInstance().sendBroadcast(intent);
-                        break;
-                    }
+                    case "corner_u-d-r":
                     case "side_u-d-r": {
+                        GeoPoint pt = point.get();
                         Intent intent = new Intent(
                                 "com.atakmap.android.maps.MANUAL_POINT_RECTANGLE_EDIT");
-                        intent.putExtra("type", "side_u-d-r");
+                        intent.putExtra("type", type);
                         intent.putExtra("uid", _editPoint.getUID());
                         intent.putExtra("lat",
-                                String.valueOf(point.get().getLatitude()));
+                                String.valueOf(pt.getLatitude()));
                         intent.putExtra("lon",
-                                String.valueOf(point.get().getLongitude()));
-                        intent.putExtra("alt",
-                                String.valueOf(point.get().getAltitude()));
+                                String.valueOf(pt.getLongitude()));
                         intent.putExtra("from", "targetBubble");
+                        intent.putExtra("alt",
+                                String.valueOf(pt.getAltitude()));
+                        intent.putExtra("altSrc", point.getAltitudeSource());
+                        intent.putExtra("pointSrc", point.getGeopointSource());
                         AtakBroadcast.getInstance().sendBroadcast(intent);
                         break;
                     }
@@ -652,14 +634,6 @@ public class TargetBubbleReceiver extends BroadcastReceiver implements
 
         if (hidSelfWidget && _prefs.get("show_self_coordinate_overlay", true))
             SelfCoordOverlayUpdater.getInstance().showGPSWidget(true);
-        Intent i = new Intent(ActionBarReceiver.TOGGLE_ACTIONBAR);
-        if (barPreviouslyHidden) {
-            i.putExtra("toolbar", true);
-            i.putExtra("handle", true);
-            i.putExtra("show", false);
-        } else
-            i.putExtra("show", true);
-        AtakBroadcast.getInstance().sendBroadcast(i);
 
         AtakBroadcast.getInstance().sendBroadcast(new Intent(
                 "com.atakmap.android.mapcompass.SHOW"));
@@ -670,7 +644,6 @@ public class TargetBubbleReceiver extends BroadcastReceiver implements
             _mapView.removeLayer(MapView.RenderStack.TARGETING, _bubble);
             _mapView.popStack(MapView.RenderStack.TARGETING);
 
-            _prefs.set("status_3d_enabled", _enable3D);
             _mapView.getMapTouchController().setTiltEnabledState(
                     _restoreTiltEnabled);
             CameraController.Programmatic.tiltTo(
@@ -785,7 +758,8 @@ public class TargetBubbleReceiver extends BroadcastReceiver implements
                         focusPoint.y,
                         MapView.InverseMode.RayCast).get();
             }
-            _mapView.getMapController().panTo(panTo[0], false);
+            CameraController.Programmatic.panTo(
+                    _mapView.getRenderer3(), panTo[0], false);
             _setLocation(_bubble, panTo[0].getLatitude(),
                     panTo[0].getLongitude());
         } else {

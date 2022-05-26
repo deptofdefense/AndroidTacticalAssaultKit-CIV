@@ -99,6 +99,9 @@ public class UserMapComponent extends AbstractMapComponent {
         ToolManagerBroadcastReceiver.getInstance().registerTool(
                 EnterLocationTool.TOOL_NAME, new EnterLocationTool(view));
 
+        // Initialize map click tool
+        new MapClickTool(view);
+
         Collection<FilterMapOverlay> filterOverlays;
         try {
             //wrap "Markers" top level overlay will contain some XML/FilterMapOverlays and some

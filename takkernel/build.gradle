@@ -1,21 +1,30 @@
 buildscript { scriptHandler ->
     apply from: 'gradle/repositories.gradle', to: scriptHandler
+    apply from: 'gradle/utils.gradle', to: project
+    apply from: 'gradle/takrepo.gradle', to: project
     apply from: 'gradle/versions.gradle', to: project
 
+    repositories.addAll(ext.repos)
     dependencies {
         // Only required for Android builds, but doesn't hurt to declare it for all builds
         classpath "com.android.tools.build:gradle:$androidToolsBuildGradleVersion"
+        // `gradle-cmake-plugin` is not required for Android builds and is observed to cause Gradle
+        // sync issues in Android Studio when using the ATAK monorepo configuration; command-line
+        // builds and standalone `takkernel` development in Android Studio are not effected.
+        if(project.findProperty('kernelBuildTarget') != 'android') {
+            classpath "gov.tak.gradle.cmake:gradle-cmake-plugin:$gradleCmakePluginVersion"
+        }
     }
 }
 
 // library version
 
 def majorVersion = 0
-def minorVersion = 0
-def patchVersion = 0
+def minorVersion = 26
+def patchVersion = 2
 
 // Version code for Android builds, you MUST increase this by 1 if you change ANY of the version components above
-ext.versionCode = 1
+ext.versionCode = 55
 
 apply from: 'gradle/buildtype.gradle'
 
@@ -26,6 +35,9 @@ allprojects {
 
 subprojects { subProject ->
     apply from: configProject.file('gradle/buildconfig.gradle'), to: subProject
+    apply from: configProject.file('gradle/takrepo.gradle'), to: subProject
+    apply from: configProject.file('gradle/externalnativebuild.gradle'), to: subProject
+    apply from: configProject.file('gradle/multiproject.gradle'), to: subProject
 
     subProject.afterEvaluate {
         apply from: configProject.file('gradle/publishing.gradle'), to: it

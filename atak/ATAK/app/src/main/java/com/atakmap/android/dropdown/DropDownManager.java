@@ -1,6 +1,7 @@
 
 package com.atakmap.android.dropdown;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -8,13 +9,19 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 
+import com.atakmap.android.dropdown.DropDown.OnStateListener;
 import com.atakmap.android.ipc.AtakBroadcast;
+import com.atakmap.android.maps.MapActivity;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.app.R;
 import com.atakmap.coremap.log.Log;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
+import androidx.annotation.NonNull;
 
 /**
  * All DropDownReceivers should use this class in order to register.
@@ -29,6 +36,9 @@ public class DropDownManager extends BroadcastReceiver {
     // right side stack of drop down receivers
     private final List<DropDownReceiver> rightSideStack = new ArrayList<>();
 
+    // State listeners mapped by association key
+    private final ConcurrentHashMap<String, ConcurrentLinkedQueue<OnStateListener>> keyListeners = new ConcurrentHashMap<>();
+
     private final Object ddrListsLock = new Object();
     private SidePane sidePane;
     private static DropDownManager _instance = null;
@@ -38,14 +48,6 @@ public class DropDownManager extends BroadcastReceiver {
     public static final String SHOW_DROPDOWN = "com.android.arrowmaker.SHOW_DROPDOWN";
 
     protected DropDownManager() {
-        MapView.getMapView().addOnActionBarToggledListener(
-                new MapView.OnActionBarToggledListener() {
-                    @Override
-                    public void onActionBarToggled(boolean showing) {
-                        if (sidePane != null)
-                            sidePane.adjustMargin();
-                    }
-                });
     }
 
     synchronized public static DropDownManager getInstance() {
@@ -60,13 +62,17 @@ public class DropDownManager extends BroadcastReceiver {
      * Used by the Setting Screen so that if the top dropdown has an 
      * associated key in the Tool Preferences then when setting is launched 
      * it will launch the appropriate sub menu.
+     *
+     * Note: Drop-downs marked as transient will be ignored
      */
     synchronized public String getTopDropDownKey() {
-        if (rightSide != null) {
+        if (rightSide != null && !rightSide.isTransient())
             return rightSide.getAssociationKey();
-        } else {
-            return null;
+        for (DropDownReceiver ddr : rightSideStack) {
+            if (!ddr.isTransient())
+                return ddr.getAssociationKey();
         }
+        return null;
     }
 
     /**
@@ -148,7 +154,6 @@ public class DropDownManager extends BroadcastReceiver {
             leftSide._showDropDown();
             sendHideToolbarHandleIntent();
             sidePane.setLeftDropDown(dd);
-            sidePane.adjustMargin();
             sidePane.open();
         } else {
 
@@ -191,7 +196,29 @@ public class DropDownManager extends BroadcastReceiver {
                     }
                     return true;*/
                 }
-                Log.d(TAG, "rightSided retained: " + rightSide.isRetained() +
+
+                // Check if this drop-down should be retained or not
+                boolean retained = rightSide.isRetained();
+
+                // If the drop-down we're opening is transient then don't
+                // close the non-retained drop-down
+                if (ddr.isTransient())
+                    retained = true;
+
+                // If the existing drop-down is transient then it should never
+                // be retained, but we also need to check if the drop-down
+                // below it isn't meant to be retained
+                DropDownReceiver needsClose = null;
+                if (rightSide.isTransient()) {
+                    retained = false;
+                    if (!rightSideStack.isEmpty()) {
+                        DropDownReceiver under = rightSideStack.get(0);
+                        if (!under.isRetained())
+                            needsClose = under;
+                    }
+                }
+
+                Log.d(TAG, "rightSided retained: " + retained +
                         " or ignoreBackButton: "
                         + rightSide.getDropDown().ignoreBackButton());
                 Log.d(TAG, "incoming right side ignoreBackButton: "
@@ -199,7 +226,7 @@ public class DropDownManager extends BroadcastReceiver {
 
                 // retain 
                 if ((rightSide != null)
-                        && (rightSide.isRetained() || rightSide.getDropDown()
+                        && (retained || rightSide.getDropDown()
                                 .ignoreBackButton())) {
                     synchronized (ddrListsLock) {
                         Log.d(TAG, "retaining the drop down on the stack: "
@@ -227,6 +254,10 @@ public class DropDownManager extends BroadcastReceiver {
                     rightSide = null; // set rightSide to null for readability.
                 }
 
+                // Close additional non-retained drop-down that was open
+                // under a transient drop-down
+                if (needsClose != null)
+                    closeDropDown(needsClose.getDropDown());
             }
             rightSide = ddr;
 
@@ -332,23 +363,30 @@ public class DropDownManager extends BroadcastReceiver {
         }
     }
 
+    /**
+     * Close all drop downs.   Should only be used when changing orientations or quitting
+     * the application.
+     */
     public void closeAllDropDowns() {
-
         MapView mv = MapView.getMapView();
-
-        mv.post(new Runnable() {
+        ((MapActivity) mv.getContext()).executeOnActive(new Runnable() {
             @Override
             public void run() {
-                if (leftSide != null)
-                    closeLeftDropDown();
+                mv.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (leftSide != null)
+                            closeLeftDropDown();
 
-                while (rightSide != null)
-                    closeRightDropDown(true, true);
+                        while (rightSide != null)
+                            closeRightDropDown(true, true);
 
-                if (sidePane != null && sidePane.isOpen())
-                    sidePane.close();
+                        if (sidePane != null && sidePane.isOpen())
+                            sidePane.close();
 
-                sidePane = null;
+                        sidePane = null;
+                    }
+                });
             }
         });
     }
@@ -416,7 +454,6 @@ public class DropDownManager extends BroadcastReceiver {
             sendShowToolbarHandleIntent();
             leftSide = null;
             sidePane.setLeftDropDown(null);
-            sidePane.adjustMargin();
         }
     }
 
@@ -582,5 +619,45 @@ public class DropDownManager extends BroadcastReceiver {
         } else {
             sendShowToolbarHandleIntent();
         }
+    }
+
+    /**
+     * Add a drop-down state listener for a given association key
+     * @param assocKey Association key
+     * @param listener Drop-down state listener
+     */
+    public void addStateListener(@NonNull String assocKey,
+            OnStateListener listener) {
+        ConcurrentLinkedQueue<OnStateListener> listeners = keyListeners
+                .get(assocKey);
+        if (listeners == null)
+            keyListeners.put(assocKey,
+                    listeners = new ConcurrentLinkedQueue<>());
+        listeners.add(listener);
+    }
+
+    /**
+     * Remove a drop-down state listener for a given association key
+     * @param assocKey Association key
+     * @param listener Drop-down state listener
+     */
+    public void removeStateListener(@NonNull String assocKey,
+            OnStateListener listener) {
+        ConcurrentLinkedQueue<OnStateListener> listeners = keyListeners
+                .get(assocKey);
+        if (listeners != null)
+            listeners.remove(listener);
+    }
+
+    /**
+     * Get external state listeners for a given association key
+     * @param associationKey Drop-down association key
+     * @return State listeners
+     */
+    List<OnStateListener> getListeners(@NonNull String associationKey) {
+        ConcurrentLinkedQueue<OnStateListener> listeners = keyListeners
+                .get(associationKey);
+        return listeners != null ? new ArrayList<>(listeners)
+                : new ArrayList<>();
     }
 }

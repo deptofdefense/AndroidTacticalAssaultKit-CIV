@@ -3,6 +3,7 @@ package com.atakmap.android.config;
 
 import org.w3c.dom.Node;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -20,25 +21,36 @@ public class PhraseParser {
 
     /**
      * Resolves the element to Bundle.get(key).toString()
-     * 
-     * 
      */
     public static class BundleResolver implements Resolver {
+
+        private final MetaDataHolder _bundle;
+        private final Map<String, Object> _defaults;
+
         public BundleResolver(final MetaDataHolder bundle) {
             _bundle = bundle;
+            _defaults = new HashMap<>();
+        }
+
+        /**
+         * Set the default value for a given parameter
+         * @param key Parameter key
+         * @param defValue Default value
+         */
+        public void setDefault(String key, Object defValue) {
+            _defaults.put(key, defValue);
         }
 
         @Override
         public String resolvePhraseKey(char specialChar, String key) {
             String r = "";
             Object obj = _bundle.get(key);
-            if (obj != null) {
+            if (obj == null)
+                obj = _defaults.get(key);
+            if (obj != null)
                 r = obj.toString();
-            }
             return r;
         }
-
-        private final MetaDataHolder _bundle;
     }
 
     /**
@@ -55,6 +67,20 @@ public class PhraseParser {
         @Override
         public String resolvePhraseKey(char specialChar, String key) {
             return Boolean.toString("".equals(key));
+        }
+    }
+
+    /**
+     * Check if the key is a boolean value and return the inverse of that
+     * value, otherwise return true if the key is empty
+     */
+    public static class InvertBooleanResolver implements Resolver {
+        @Override
+        public String resolvePhraseKey(char specialChar, String key) {
+            if (key.equalsIgnoreCase("true") || key.equalsIgnoreCase("false"))
+                return Boolean.toString(!Boolean.parseBoolean(key));
+            else
+                return Boolean.toString("".equals(key));
         }
     }
 

@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Looper;
@@ -467,9 +468,18 @@ public class MissionPackageMapOverlay extends AbstractMapOverlay2 implements
                 }
             }
 
+            // Allow sorters to filter out other sorters
+            final List<ImportResolver> lir = new ArrayList<>(matchingSorters);
+            for (ImportResolver ir : lir) {
+                if (matchingSorters.contains(ir))
+                    ir.filterFoundResolvers(matchingSorters, file);
+            }
+
+            // Unsupported file
             if (matchingSorters.isEmpty())
                 return;
 
+            // Only one matching sorter left - use that one
             if (matchingSorters.size() == 1) {
                 importFile(content, file, matchingSorters.get(0));
                 return;
@@ -477,7 +487,8 @@ public class MissionPackageMapOverlay extends AbstractMapOverlay2 implements
 
             final MissionPackageContent fContent = content;
             TileButtonDialog d = new TileButtonDialog(_view);
-            d.setTitle(R.string.select_import_type);
+            d.setTitle(R.string.importmgr_select_desired_import_method,
+                    file.getName());
             for (ImportResolver sorter : matchingSorters)
                 d.addButton(sorter.getIcon(), sorter.getDisplayableName());
             d.setOnClickListener(new DialogInterface.OnClickListener() {
@@ -1062,13 +1073,14 @@ public class MissionPackageMapOverlay extends AbstractMapOverlay2 implements
 
     void promptAddItems(final MissionPackageListGroup group) {
 
-        final CheckBox attCb = new CheckBox(_context);
-        attCb.setText(R.string.include_attachments);
+        View v = LayoutInflater.from(_context)
+                .inflate(R.layout.include_attachment, null);
+        final CheckBox attCb = v.findViewById(R.id.include_attachment);
         attCb.setChecked(_userState.isIncludeAttachments());
 
         TileButtonDialog d = new TileButtonDialog(_view);
         d.setTitle(R.string.select_items);
-        d.setCustomView(attCb);
+        d.setCustomView(v);
         d.addButton(R.drawable.select_from_map, R.string.map_select);
         d.addButton(R.drawable.ic_menu_import_file, R.string.file_select);
         d.addButton(R.drawable.select_from_overlay, R.string.overlay_title);

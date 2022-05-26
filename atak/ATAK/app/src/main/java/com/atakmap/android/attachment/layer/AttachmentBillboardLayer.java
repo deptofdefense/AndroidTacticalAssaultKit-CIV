@@ -6,27 +6,46 @@ import android.content.SharedPreferences;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.preference.AtakPreferences;
 import com.atakmap.map.layer.AbstractLayer;
+import com.atakmap.map.layer.control.ClampToGroundControl;
+import com.atakmap.util.Visitor;
 
 public class AttachmentBillboardLayer extends AbstractLayer implements
-        SharedPreferences.OnSharedPreferenceChangeListener {
+        SharedPreferences.OnSharedPreferenceChangeListener,
+        ClampToGroundControl {
 
+    private final MapView _mapView;
     private final AtakPreferences _prefs;
     private GLAttachmentBillboardLayer _glSubject;
+    private boolean _nadirClamp;
 
     public AttachmentBillboardLayer(MapView view) {
         super("Attachment Preview");
+        _mapView = view;
         _prefs = new AtakPreferences(view);
         _prefs.registerListener(this);
+
+        // Initialize nadir clamp value
+        _mapView.getRenderer3().visitControl(null,
+                new Visitor<ClampToGroundControl>() {
+                    @Override
+                    public void visit(ClampToGroundControl ctrl) {
+                        _nadirClamp = ctrl.getClampToGroundAtNadir();
+                    }
+                }, ClampToGroundControl.class);
+
+        _mapView.getRenderer3().registerControl(this, this);
         setVisible(false);
     }
 
     public void dispose() {
+        _mapView.getRenderer3().unregisterControl(this, this);
         _prefs.unregisterListener(this);
     }
 
     void setGLSubject(GLAttachmentBillboardLayer layer) {
         _glSubject = layer;
-        setSelfMarkerDistance(500);
+        onSharedPreferenceChanged(null, "route_billboard_distance_m");
+        onSharedPreferenceChanged(null, "relativeOverlaysScalingRadioList");
     }
 
     /**
@@ -38,9 +57,30 @@ public class AttachmentBillboardLayer extends AbstractLayer implements
             _glSubject.setSelfMarkerDistance(distanceMeters);
     }
 
+    private void setRelativeScaling(float scale) {
+        if (_glSubject != null)
+            _glSubject.setRelativeScaling(scale);
+    }
+
     @Override
     public void onSharedPreferenceChanged(SharedPreferences p, String key) {
+        if (_glSubject == null)
+            return;
+
         if (key.equals("route_billboard_distance_m"))
-            setSelfMarkerDistance(_prefs.get(key, Double.NaN));
+            setSelfMarkerDistance(_prefs.get(key, 500));
+        else if (key.equals("relativeOverlaysScalingRadioList")) {
+            setRelativeScaling((float) _prefs.get(key, 1.0f));
+        }
+    }
+
+    @Override
+    public void setClampToGroundAtNadir(boolean v) {
+        _nadirClamp = v;
+    }
+
+    @Override
+    public boolean getClampToGroundAtNadir() {
+        return _nadirClamp;
     }
 }

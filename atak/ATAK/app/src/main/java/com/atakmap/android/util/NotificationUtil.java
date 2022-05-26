@@ -19,6 +19,7 @@ import com.atakmap.android.metrics.MetricsApi;
 import java.util.HashMap;
 import java.util.Map;
 import java.io.File;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import android.os.Build;
 import android.app.NotificationChannel;
@@ -131,6 +132,8 @@ public class NotificationUtil {
     private int currentNotifyId = DEFAULT_NOTIFY_ID;
 
     private final Map<String, Integer> _notificationMap = new HashMap<>();
+
+    private final ConcurrentLinkedQueue<NotificationListener> notificationListeners = new ConcurrentLinkedQueue<>();
 
     private final Map<Integer, Notification.Builder> builders = new HashMap<>();
 
@@ -700,11 +703,55 @@ public class NotificationUtil {
         }
 
         try {
-            if (nm != null)
+            if (nm != null) {
                 this.nm.notify(notifyId, notification);
+                this.fireNotificationChanged(notifyId, notification);
+            }
         } catch (Exception dse) {
             // catch android.os.DeadSystemException 
             Log.e(TAG, "error", dse);
+        }
+    }
+
+    public interface NotificationListener {
+        /**
+         * Allows for notification listeners from plugins to be registered to listen for notifications
+         * changes.   This will only work with notifications that are posted through the NotificationUtil
+         * class.
+         * @param notificationIdentifier the notification identifier, can be used in conjunction with
+         *                               notification util to cancel or dismiss the notification
+         * @param notification the notification that has changed.   At the time it is processed it
+         *                     may have already been changed or cancelled.
+         */
+        void onNotificationReceived(int notificationIdentifier,
+                Notification notification);
+    }
+
+    /**
+     * Registers a notification listener with the centralized notification class.
+     * @param listener the listener to register
+     */
+    public void registerNotificationListener(NotificationListener listener) {
+        notificationListeners.add(listener);
+    }
+
+    /**
+     * Unregisters a notification listener with the centralized notification class.
+     * @param listener the listener to unregister
+     */
+    public void unregisterNotificationListener(NotificationListener listener) {
+        notificationListeners.remove(listener);
+    }
+
+    private void fireNotificationChanged(int notificationIdentifier,
+            Notification notification) {
+        for (NotificationListener notificationListener : notificationListeners) {
+            try {
+                notificationListener.onNotificationReceived(
+                        notificationIdentifier, notification);
+            } catch (Exception e) {
+                Log.e(TAG, "error notifying: " + notificationListener, e);
+            }
         }
     }
 

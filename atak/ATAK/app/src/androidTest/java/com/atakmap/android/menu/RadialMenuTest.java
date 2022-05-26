@@ -203,6 +203,7 @@ public class RadialMenuTest extends ATAKInstrumentedTest {
                                     .getInstrumentation().getTargetContext();
                             AtakMapView atakMapView = new AtakMapView(
                                     appContext, null);
+
                             MapData mapData = new MapData();
                             MapAssets mapAssets = new MapAssets(appContext);
                             MenuMapAdapter adapter = new MenuMapAdapter();

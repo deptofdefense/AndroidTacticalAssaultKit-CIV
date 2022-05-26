@@ -4,13 +4,13 @@ package com.atakmap.android.importfiles.sort;
 import android.content.Context;
 import android.util.Pair;
 
+import com.atakmap.android.layers.kmz.KMZPackageImporter;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.io.ZipVirtualFile;
 import com.atakmap.map.gdal.VSIFileFileSystemHandler;
-import com.atakmap.map.layer.raster.DatasetDescriptorFactory2;
 import com.atakmap.spatial.file.KmlFileSpatialDb;
 
 import org.gdal.ogr.DataSource;
@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.util.zip.ZipEntry;
+
+import java.util.List;
 import java.util.zip.ZipException;
 import com.atakmap.util.zip.ZipFile;
 
@@ -66,7 +68,9 @@ public class ImportKMZSort extends ImportInPlaceResolver {
             return false;
         }
 
-        if (DatasetDescriptorFactory2.isSupported(file)) {
+        // Skip KMZ files with no vector elements
+        List<String> contentTypes = KMZPackageImporter.getContentTypes(file);
+        if (!contentTypes.contains(KmlFileSpatialDb.KML_CONTENT_TYPE)) {
             Log.d(TAG, "Skipping GRG KMZ: " + file.getAbsolutePath());
             return false;
         }

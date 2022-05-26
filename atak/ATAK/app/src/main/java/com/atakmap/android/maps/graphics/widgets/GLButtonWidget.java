@@ -13,6 +13,11 @@ import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLText;
 
+import gov.tak.api.annotation.DeprecatedApi;
+
+/** @deprecated use {@link gov.tak.platform.widgets.opengl.GLButtonWidget} */
+@Deprecated
+@DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
 public class GLButtonWidget extends GLAbstractButtonWidget implements
         OnSizeChangedListener {
 
@@ -92,7 +97,11 @@ public class GLButtonWidget extends GLAbstractButtonWidget implements
 
     @Override
     public void drawButtonIcon(int iconColor, GLImage image) {
-
+        image.draw(
+                Color.red(iconColor) / 255f,
+                Color.green(iconColor) / 255f,
+                Color.blue(iconColor) / 255f,
+                Color.alpha(iconColor) / 255f);
     }
 
     private GLTriangle.Strip _buildRect(float width, float height,

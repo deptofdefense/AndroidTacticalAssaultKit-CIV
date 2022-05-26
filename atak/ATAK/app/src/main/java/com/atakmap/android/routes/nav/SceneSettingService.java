@@ -6,13 +6,11 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
 import com.atakmap.android.ipc.AtakBroadcast;
-import com.atakmap.android.mapcompass.CompassArrowMapComponent;
 import com.atakmap.android.maps.MapMode;
-import com.atakmap.android.maps.MapView;
+import com.atakmap.android.navigation.views.NavView;
 import com.atakmap.android.routes.Route;
 import com.atakmap.android.routes.RouteMapReceiver;
 import com.atakmap.android.routes.RouteNavigator;
-import com.atakmap.android.tools.ActionBarReceiver;
 import com.atakmap.android.user.CamLockerReceiver;
 
 /**
@@ -32,7 +30,7 @@ public class SceneSettingService implements
     private SharedPreferences preferences;
     private double cachedZOrder;
     private MapMode cachedMapMode;
-    private boolean cachedWasActionBarVisible;
+    private boolean cachedNavVisible;
 
     /*******************************************************************************
      * Methods
@@ -93,13 +91,6 @@ public class SceneSettingService implements
         AtakBroadcast.getInstance().sendBroadcast(orientationIntent);
     }
 
-    private void setActionBarVisibility(MapView mapView, boolean visible) {
-        AtakBroadcast.getInstance().sendBroadcast(
-                new Intent(
-                        ActionBarReceiver.TOGGLE_ACTIONBAR)
-                                .putExtra("show", visible));
-    }
-
     /*******************************************************************************
      * RouteNavigatorListener Interface Implementation
      *******************************************************************************/
@@ -117,19 +108,17 @@ public class SceneSettingService implements
     public void onNavigationStarted(RouteNavigator navigator, Route route) {
         dimRoutes(route, true);
 
+        cachedNavVisible = NavView.getInstance().buttonsVisible();
+        NavView.getInstance().toggleButtons(false);
+
         boolean trackAndLock = preferences.getBoolean(PREF_TRADITIONAL_NAV_MODE,
                 TRADITIONAL_NAV_MODE_DEFAULT);
-
-        cachedWasActionBarVisible = navigator.getMapView()
-                .getActionBarHeight() > 0;
-
-        setActionBarVisibility(navigator.getMapView(), false);
 
         if (trackAndLock) {
             String selfUID = navigator.getMapView().getSelfMarker().getUID();
             setLockActive(selfUID, true);
 
-            cachedMapMode = CompassArrowMapComponent.getInstance().getMapMode();
+            cachedMapMode = NavView.getInstance().getMapMode();
             setOrientationState(MapMode.TRACK_UP);
         }
     }
@@ -138,8 +127,8 @@ public class SceneSettingService implements
     public void onNavigationStopping(RouteNavigator navigator, Route route) {
         dimRoutes(route, false);
 
-        setActionBarVisibility(navigator.getMapView(),
-                cachedWasActionBarVisible);
+        if (!NavView.getInstance().buttonsVisible())
+            NavView.getInstance().toggleButtons(cachedNavVisible);
 
         boolean trackAndLock = preferences.getBoolean(PREF_TRADITIONAL_NAV_MODE,
                 TRADITIONAL_NAV_MODE_DEFAULT);

@@ -76,8 +76,8 @@ public class PlaceHostileTool extends ButtonTool {
                 _container.closePrompt();
             }
             PlacePointTool.MarkerCreator markerCreator = new PlacePointTool.MarkerCreator(
-                    _mapView.inverseWithElevation(event.getPoint().x,
-                            event.getPoint().y));
+                    _mapView.inverseWithElevation(event.getPointF().x,
+                            event.getPointF().y));
 
             markerCreator.setType("a-h-G");
             markerCreator.setHow("h-g-i-g-o");

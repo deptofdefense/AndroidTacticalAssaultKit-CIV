@@ -20,8 +20,7 @@
     
     <button
         icon='icons/pairing_line.png'
-        onClick='actions/pairingline.xml'
-        selected='${pairingline_on}' />
+        onClick='actions/pairingline.xml'/>
         
     <button
         icon='icons/move.png'

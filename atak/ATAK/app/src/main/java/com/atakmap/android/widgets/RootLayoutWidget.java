@@ -7,27 +7,43 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.preference.PreferenceManager;
 import android.view.Gravity;
-import android.view.MotionEvent;
+
+import gov.tak.api.widgets.IMapWidget;
+import gov.tak.platform.marshal.MarshalManager;
 import android.view.View;
 import android.view.ViewConfiguration;
+import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.view.Window;
+import android.widget.LinearLayout;
+import android.widget.LinearLayout.LayoutParams;
 
 import com.atakmap.android.maps.MapView;
-import com.atakmap.android.tools.ActionBarReceiver;
+import com.atakmap.android.navigation.views.NavView;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.ATAKActivity;
 import com.atakmap.app.R;
 import com.atakmap.map.AtakMapView;
 import com.atakmap.math.MathUtils;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class RootLayoutWidget extends LayoutWidget implements
+import gov.tak.api.widgets.IRootLayoutWidget;
+
+@Deprecated
+@DeprecatedApi(since = "4.4")
+public class RootLayoutWidget extends LayoutWidget implements IRootLayoutWidget,
         AtakMapView.OnMapViewResizedListener, View.OnTouchListener,
         MapWidget2.OnWidgetSizeChangedListener,
         SharedPreferences.OnSharedPreferenceChangeListener,
-        View.OnLayoutChangeListener {
+        ViewGroup.OnHierarchyChangeListener {
 
     private static final String TAG = "RootLayoutWidget";
     private static final String PREF_CURVED_SCREEN = "atakAdjustCurvedDisplay";
@@ -51,9 +67,20 @@ public class RootLayoutWidget extends LayoutWidget implements
             0x4000FFFF, 0x40FFFFFF, 0x4000FF00
     };
 
+    /**
+     * Listener for when any root layout widgets have changed position or size
+     */
+    public interface OnLayoutChangedListener {
+
+        /**
+         * Layout has been changed in some way
+         */
+        void onLayoutChanged();
+    }
+
     private final MapView _mapView;
     private final SharedPreferences _prefs;
-    private MapWidget _pressedWidget;
+    private IMapWidget _pressedWidget;
     private Timer widTimer;
     private WidTimerTask widTask;
 
@@ -64,8 +91,16 @@ public class RootLayoutWidget extends LayoutWidget implements
     private final View _ddHandleLS;
     private final View _ddHandlePT;
 
+    // Views that take up space
+    private final List<View> _views = new ArrayList<>();
+    private final Map<View, ViewListener> _viewListeners = new HashMap<>();
+
     private final LinearLayoutWidget[] _layouts = new LinearLayoutWidget[BOTTOM_EDGE
             + 1];
+    private LinearLayoutWidget _ignore;
+
+    // Listeners
+    private final ConcurrentLinkedQueue<OnLayoutChangedListener> _layoutListeners = new ConcurrentLinkedQueue<>();
 
     private class WidTimerTask extends TimerTask {
         @Override
@@ -108,8 +143,8 @@ public class RootLayoutWidget extends LayoutWidget implements
 
         // Get the content view so we can properly adjust for curved display
         try {
-            _content = ((Activity) _mapView.getContext()).getWindow()
-                    .findViewById(Window.ID_ANDROID_CONTENT);
+            Window window = ((Activity) _mapView.getContext()).getWindow();
+            _content = window.findViewById(Window.ID_ANDROID_CONTENT);
         } catch (Exception ignore) {
         }
         boolean defValue = false;
@@ -128,10 +163,19 @@ public class RootLayoutWidget extends LayoutWidget implements
         ATAKActivity act = (ATAKActivity) _mapView.getContext();
         _ddHandleLS = act.findViewById(R.id.sidepanehandle_background);
         _ddHandlePT = act.findViewById(R.id.sidepanehandle_background_portrait);
-        if (_ddHandleLS != null)
-            _ddHandleLS.addOnLayoutChangeListener(this);
-        if (_ddHandlePT != null)
-            _ddHandlePT.addOnLayoutChangeListener(this);
+        addView(_ddHandleLS);
+        addView(_ddHandlePT);
+
+        // The top-right toolbar
+        addView(act.findViewById(R.id.toolbar_drawer));
+
+        // Nav button views
+        NavView navView = NavView.getInstance();
+        for (int i = 0; i < navView.getChildCount(); i++)
+            addView(navView.getChildAt(i));
+
+        // Track newly added/removed views
+        navView.addOnHierarchyChangedListener(this);
     }
 
     /**
@@ -145,13 +189,59 @@ public class RootLayoutWidget extends LayoutWidget implements
                         : null;
     }
 
+    /**
+     * Get the occupied boundaries taken up by views (and optionally widgets)
+     * in the root layout
+     * @param includeWidgets True to include widgets in the result
+     * @return Occupied boundary rectangles
+     */
+    public List<Rect> getOccupiedBounds(boolean includeWidgets) {
+        List<Rect> ret = new ArrayList<>(_views.size() + _layouts.length);
+        for (View v : _views) {
+            if (v.getVisibility() == View.VISIBLE)
+                ret.add(LayoutHelper.getBounds(v));
+        }
+        if (includeWidgets) {
+            for (LinearLayoutWidget w : _layouts) {
+                if (w.isVisible())
+                    ret.add(LayoutHelper.getBounds(w));
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * Get the occupied boundaries taken up by views and widgets
+     * in the root layout
+     * @return Occupied boundary rectangles
+     */
+    public List<Rect> getOccupiedBounds() {
+        return getOccupiedBounds(true);
+    }
+
+    /**
+     * Add listener for when any root widgets are moved or resized
+     * @param l Listener
+     */
+    public void addOnLayoutChangedListener(OnLayoutChangedListener l) {
+        _layoutListeners.add(l);
+    }
+
+    /**
+     * Remove layout changed listener
+     * @param l Listener
+     */
+    public void removeOnLayoutChangedListener(OnLayoutChangedListener l) {
+        _layoutListeners.remove(l);
+    }
+
     @Override
     public void onMapViewResized(AtakMapView view) {
         setSize(view.getWidth(), view.getHeight());
     }
 
     @Override
-    protected void onSizeChanged() {
+    public void onSizeChanged() {
         super.onSizeChanged();
         for (LinearLayoutWidget l : _layouts) {
             if (l != null)
@@ -160,38 +250,41 @@ public class RootLayoutWidget extends LayoutWidget implements
     }
 
     @Override
-    public void onLayoutChange(View v, int left, int top, int right, int bottom,
-            int oldLeft, int oldTop, int oldRight, int oldBottom) {
-        // Drop down handles changed visibility or size
+    public void onChildViewAdded(View parent, View child) {
+        // A view has been added to the nav layout
+        addView(child);
+        onSizeChanged();
+    }
+
+    @Override
+    public void onChildViewRemoved(View parent, View child) {
+        // A view has been removed from the nav layout
+        removeView(child);
         onSizeChanged();
     }
 
     @Override
     public void onWidgetSizeChanged(MapWidget2 widget) {
+        if (widget == _ignore)
+            return;
+
         if (_content != null)
             _usableArea.set(_curvePadding, 0f,
                     _content.getWidth() - _curvePadding,
                     _content.getHeight() - _curvePadding);
+
+        Rect maxBounds = LayoutHelper.getBounds(this);
+        List<Rect> bounds = getOccupiedBounds(false);
+        LayoutHelper layoutHelper = new LayoutHelper(maxBounds, bounds);
 
         LinearLayoutWidget w = (LinearLayoutWidget) widget;
         float[] wMargin = w.getMargins();
         float[] wSize = w.getSize(true, false);
 
         float left = _padding[LEFT] + wMargin[LEFT];
-        float top = _padding[TOP] + wMargin[TOP] + _mapView
-                .getActionBarHeight();
+        float top = _padding[TOP] + wMargin[TOP];
         float right = _width - _padding[RIGHT] - wMargin[RIGHT] - wSize[0];
         float bottom = _height - _padding[BOTTOM] - wMargin[BOTTOM] - wSize[1];
-
-        float[] tlSize = getFullSize(_layouts[TOP_LEFT]);
-        float[] trSize = getFullSize(_layouts[TOP_RIGHT]);
-        float[] blSize = getFullSize(_layouts[BOTTOM_LEFT]);
-        float[] brSize = getFullSize(_layouts[BOTTOM_RIGHT]);
-        float[] bSize = getFullSize(_layouts[BOTTOM_EDGE]);
-
-        // Offset by bottom edge
-        if (w != _layouts[BOTTOM_EDGE])
-            bottom -= bSize[1];
 
         // Offset by right-side drop-down in landscape mode
         if (w == _layouts[RIGHT_EDGE] && _ddHandleLS != null
@@ -202,42 +295,47 @@ public class RootLayoutWidget extends LayoutWidget implements
         if (_ddHandlePT != null && _ddHandlePT.getVisibility() == View.VISIBLE)
             bottom -= _ddHandlePT.getHeight() / 2f;
 
-        // Align layouts
+        // Align layouts while avoiding overlap
+
+        // Top-left corner
         if (w == _layouts[TOP_LEFT]) {
-            w.setPoint(left, top);
+
+            Rect tlRect = getChildrenBounds(w);
+            layoutHelper.add(_layouts[BOTTOM_LEFT]);
+            tlRect = layoutHelper.findBestPosition(tlRect, TOP_LEFT);
+
+            w.setPoint(tlRect.left, tlRect.top);
             onWidgetSizeChanged(_layouts[TOP_EDGE]);
             onWidgetSizeChanged(_layouts[LEFT_EDGE]);
-        } else if (w == _layouts[TOP_RIGHT]) {
-            // Need to add padding to account for  top-right by toolbar handle
-            // and floating action bar
-            // TODO: Convert handle and floating toolbar to widgets?
-            List<Rect> bounds = ActionBarReceiver.getInstance()
-                    .getTopAlignedBounds();
-            float topPadding = 0;
-            float leftPadding = 0;
-            for (Rect r : bounds) {
-                if (r.width() >= _width)
-                    continue;
-                topPadding += r.height();
-                leftPadding = Math.max(leftPadding, r.width() - w.getWidth());
-            }
-            w.setPoint(right, top);
-            w.setPadding(leftPadding, topPadding, 0, 0);
+        }
+
+        // Top-right corner
+        else if (w == _layouts[TOP_RIGHT]) {
+
+            Rect trRect = getChildrenBounds(w);
+            layoutHelper.add(_layouts[BOTTOM_RIGHT]);
+            trRect = layoutHelper.findBestPosition(trRect, TOP_RIGHT);
+
+            // Update widget position and padding
+            w.setPoint(trRect.left, trRect.top);
             onWidgetSizeChanged(_layouts[TOP_EDGE]);
             onWidgetSizeChanged(_layouts[RIGHT_EDGE]);
-        } else if (w == _layouts[BOTTOM_LEFT]) {
-            // Adjust padding based on screen curve (if any)
-            float pad = MathUtils.clamp(Math.min(
-                    _usableArea.left - left,
-                    (bottom + wSize[1]) - _usableArea.bottom),
-                    0, _curvePadding);
+        }
 
-            if (w.setPadding(pad, 0f, 0f, pad))
-                return;
+        // Bottom left corner
+        else if (w == _layouts[BOTTOM_LEFT]) {
+            Rect blRect = getChildrenBounds(w);
+            layoutHelper.add(_layouts[BOTTOM_RIGHT]);
+            layoutHelper.add(_layouts[TOP_LEFT]);
+            layoutHelper.add(_layouts[BOTTOM_EDGE]);
+            blRect = layoutHelper.findBestPosition(blRect, BOTTOM_LEFT);
 
-            w.setPoint(left, bottom);
+            w.setPoint(blRect.left, blRect.top);
             onWidgetSizeChanged(_layouts[LEFT_EDGE]);
-        } else if (w == _layouts[BOTTOM_RIGHT]) {
+        }
+
+        // Bottom right corner
+        else if (w == _layouts[BOTTOM_RIGHT]) {
             // Adjust padding based on screen curve (if any)
             float pad = MathUtils.clamp(Math.min(
                     (right + wSize[0]) - _usableArea.right,
@@ -249,33 +347,69 @@ public class RootLayoutWidget extends LayoutWidget implements
 
             w.setPoint(right, bottom);
             onWidgetSizeChanged(_layouts[RIGHT_EDGE]);
+            onWidgetSizeChanged(_layouts[BOTTOM_EDGE]);
         }
 
         // Top edge - fill area between top-left and top-right layouts
         else if (w == _layouts[TOP_EDGE]) {
-            left += tlSize[0];
-            right += wSize[0] - trSize[0];
-            w.setPoint(left, top);
-            w.setLayoutParams((int) (right - left),
-                    LinearLayoutWidget.WRAP_CONTENT);
+
+            // Get the size of the content we need to fit
+            float[] childrenSize = getChildrenSize(w);
+            int width = (int) childrenSize[0];
+            int height = (int) childrenSize[1];
+
+            // If the children are set to MATCH_PARENT then default to
+            // 1/4 of the screen size
+            if (width <= 0 || width >= _width)
+                width = (int) (_width / 4);
+            if (height <= 0 || height >= _height)
+                height = (int) (_height / 4);
+
+            // Get all possible top-aligned boundaries and sort from top-to-bottom
+            layoutHelper.add(_layouts[TOP_RIGHT]);
+            layoutHelper.add(_layouts[TOP_LEFT]);
+
+            // Find the best placement with bias toward the top-right corner
+            Rect wr = new Rect(0, 0, width, height);
+            wr = layoutHelper.findBestPosition(wr, TOP_EDGE);
+
+            // Calculate the max available width
+            wr = layoutHelper.findMaxWidth(wr);
+
+            // Update position and size while preventing recursion
+            _ignore = w;
+            w.setPoint(wr.left, wr.top);
+            w.setLayoutParams(wr.width(), LayoutParams.WRAP_CONTENT);
+            _ignore = null;
         }
 
         // Left edge - fill area between top-left and bottom-left layouts
         else if (w == _layouts[LEFT_EDGE]) {
-            top += tlSize[1];
-            bottom += wSize[1] - blSize[1];
-            w.setPoint(left, top);
-            w.setLayoutParams(LinearLayoutWidget.WRAP_CONTENT,
-                    (int) (bottom - top));
+            Rect leRect = getChildrenBounds(w);
+
+            layoutHelper.add(_layouts[TOP_LEFT]);
+            layoutHelper.add(_layouts[BOTTOM_LEFT]);
+            layoutHelper.add(_layouts[BOTTOM_EDGE]);
+
+            leRect = layoutHelper.findBestPosition(leRect, LEFT_EDGE);
+            leRect = layoutHelper.findMaxHeight(leRect);
+
+            w.setPoint(leRect.left, leRect.top);
+            w.setLayoutParams(LinearLayoutWidget.WRAP_CONTENT, leRect.height());
         }
 
         // Right edge - fill area between top-right and bottom-right layouts
         else if (w == _layouts[RIGHT_EDGE]) {
-            top += trSize[1];
-            bottom += wSize[1] - brSize[1];
-            w.setPoint(right, top);
-            w.setLayoutParams(LinearLayoutWidget.WRAP_CONTENT,
-                    (int) (bottom - top));
+            Rect reRect = getChildrenBounds(w);
+
+            layoutHelper.add(_layouts[TOP_RIGHT]);
+            layoutHelper.add(_layouts[BOTTOM_RIGHT]);
+
+            reRect = layoutHelper.findBestPosition(reRect, RIGHT_EDGE);
+            reRect = layoutHelper.findMaxHeight(reRect);
+
+            w.setPoint(reRect.left, reRect.top);
+            w.setLayoutParams(LinearLayoutWidget.WRAP_CONTENT, reRect.height());
         }
 
         //Bottom edge - fill full bottom area
@@ -287,26 +421,30 @@ public class RootLayoutWidget extends LayoutWidget implements
             float rPad = MathUtils.clamp(Math.min(
                     (right + wSize[0]) - _usableArea.right, bPad),
                     0, _curvePadding);
-            bPad = Math.max(lPad, rPad);
 
-            if (w.setPadding(lPad, 0f, rPad, bPad))
-                return;
+            Rect beRect = getChildrenBounds(w);
 
-            w.setLayoutParams(LinearLayoutWidget.MATCH_PARENT,
-                    LinearLayoutWidget.WRAP_CONTENT);
-            w.setPoint(left, bottom);
+            layoutHelper.add(_layouts[BOTTOM_RIGHT]);
+
+            beRect = layoutHelper.findBestPosition(beRect, BOTTOM_EDGE);
+            beRect = layoutHelper.findMaxWidth(beRect);
+
+            _ignore = w;
+            w.setPadding(lPad, 0f, rPad, 0f);
+            w.setPoint(beRect.left, beRect.top);
+            w.setLayoutParams(beRect.width(), LinearLayoutWidget.WRAP_CONTENT);
+            _ignore = null;
             onWidgetSizeChanged(_layouts[BOTTOM_LEFT]);
-            onWidgetSizeChanged(_layouts[BOTTOM_RIGHT]);
         }
-    }
 
-    private float[] getFullSize(MapWidget2 w) {
-        float[] p = w.getPadding();
-        float[] m = w.getMargins();
-        return new float[] {
-                w.getWidth() + p[LEFT] + p[RIGHT] + m[LEFT] + m[RIGHT],
-                w.getHeight() + p[TOP] + p[BOTTOM] + m[TOP] + m[BOTTOM]
-        };
+        // Fire layout listeners
+        _mapView.post(new Runnable() {
+            @Override
+            public void run() {
+                for (OnLayoutChangedListener l : _layoutListeners)
+                    l.onLayoutChanged();
+            }
+        });
     }
 
     @Override
@@ -338,14 +476,22 @@ public class RootLayoutWidget extends LayoutWidget implements
     }
 
     @Override
-    public boolean onTouch(View v, MotionEvent event) {
+    public boolean onTouch(View v, android.view.MotionEvent aEvent) {
         if (v instanceof MapView && ((MapView) v).getMapTouchController()
                 .isLongPressDragging())
             // Prevent widgets from interfering with the long-press drag event
             return false;
-        MapWidget hit = seekHit(event, event.getX(), event.getY());
+        final gov.tak.platform.ui.MotionEvent event = MarshalManager.marshal(
+                aEvent, android.view.MotionEvent.class,
+                gov.tak.platform.ui.MotionEvent.class);
+        return handleMotionEvent(event);
+    }
+
+    @Override
+    public boolean handleMotionEvent(gov.tak.platform.ui.MotionEvent event) {
+        IMapWidget hit = seekWidgetHit(event, event.getX(), event.getY());
         if (hit == null && _pressedWidget != null
-                && event.getAction() == MotionEvent.ACTION_MOVE) {
+                && event.getAction() == android.view.MotionEvent.ACTION_MOVE) {
             boolean used = _pressedWidget.onMove(event);
             // If this widget isn't handling move events then get rid of it
             if (!used) {
@@ -365,7 +511,7 @@ public class RootLayoutWidget extends LayoutWidget implements
         }
         if (hit != null) {
             switch (event.getAction()) {
-                case MotionEvent.ACTION_DOWN:
+                case android.view.MotionEvent.ACTION_DOWN:
                     if (_pressedWidget != hit) {
                         hit.onPress(event);
                         _pressedWidget = hit;
@@ -376,7 +522,7 @@ public class RootLayoutWidget extends LayoutWidget implements
                                 ViewConfiguration.getLongPressTimeout());
                     }
                     break;
-                case MotionEvent.ACTION_MOVE:
+                case android.view.MotionEvent.ACTION_MOVE:
                     if (_pressedWidget == hit) {
                         hit.onMove(event);
                     } else {
@@ -384,8 +530,8 @@ public class RootLayoutWidget extends LayoutWidget implements
                         _pressedWidget = hit;
                     }
                     break;
-                case MotionEvent.ACTION_UP:
-                case MotionEvent.ACTION_CANCEL:
+                case android.view.MotionEvent.ACTION_UP:
+                case android.view.MotionEvent.ACTION_CANCEL:
                     hit.onUnpress(event);
                     if (_pressedWidget == hit) {
                         if (widTask != null)
@@ -401,5 +547,105 @@ public class RootLayoutWidget extends LayoutWidget implements
         }
 
         return hit != null;
+    }
+
+    private void addView(View v) {
+        if (v != null) {
+            _views.add(v);
+            _viewListeners.put(v, new ViewListener(v));
+        }
+    }
+
+    private void removeView(View v) {
+        if (v != null) {
+            _views.remove(v);
+            ViewListener l = _viewListeners.remove(v);
+            if (l != null)
+                l.dispose();
+        }
+    }
+
+    /* Static helper methods */
+
+    private static float[] getFullSize(MapWidget2 w) {
+        float[] p = w.getPadding();
+        float[] m = w.getMargins();
+        return new float[] {
+                w.getWidth() + p[LEFT] + p[RIGHT] + m[LEFT] + m[RIGHT],
+                w.getHeight() + p[TOP] + p[BOTTOM] + m[TOP] + m[BOTTOM]
+        };
+    }
+
+    private static float[] getChildrenSize(LinearLayoutWidget w) {
+        float maxW = 0, maxH = 0, totalW = 0, totalH = 0;
+        Collection<IMapWidget> children = w.getChildren();
+        for (IMapWidget c : children) {
+            float[] size = getSize(c, true, true);
+            if (c instanceof LinearLayoutWidget) {
+                LinearLayoutWidget llw = (LinearLayoutWidget) c;
+                if (llw._paramWidth == LayoutParams.MATCH_PARENT)
+                    size[0] = 0;
+                if (llw._paramHeight == LayoutParams.MATCH_PARENT)
+                    size[1] = 0;
+            }
+            maxW = Math.max(maxW, size[0]);
+            maxH = Math.max(maxH, size[1]);
+            totalW += size[0];
+            totalH += size[1];
+        }
+        int orientation = w.getOrientation();
+        float cWidth = orientation == LinearLayout.HORIZONTAL ? totalW : maxW;
+        float cHeight = orientation == LinearLayout.VERTICAL ? totalH : maxH;
+        return new float[] {
+                cWidth, cHeight
+        };
+    }
+
+    private static Rect getChildrenBounds(LinearLayoutWidget w) {
+        float[] childrenSize = getChildrenSize(w);
+        int width = (int) Math.max(1, childrenSize[0]);
+        int height = (int) Math.max(1, childrenSize[1]);
+        return new Rect(0, 0, width, height);
+    }
+
+    private class ViewListener implements View.OnLayoutChangeListener,
+            ViewTreeObserver.OnGlobalLayoutListener {
+
+        private final View _view;
+        //private final String _name;
+        private int _visibility;
+
+        ViewListener(View view) {
+            _view = view;
+            //_name = _mapView.getResources().getResourceName(view.getId());
+            _visibility = view.getVisibility();
+            _view.addOnLayoutChangeListener(this);
+            _view.getViewTreeObserver().addOnGlobalLayoutListener(this);
+        }
+
+        public void dispose() {
+            _view.removeOnLayoutChangeListener(this);
+            _view.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+        }
+
+        @Override
+        public void onLayoutChange(View v, int l, int t, int r, int b,
+                int ol, int ot, int or, int ob) {
+            // Nav views changed position or size
+            if (l != ol || t != ot || r != or || b != ob) {
+                //Log.d(TAG, _name + ": " + l + ", " + t + ", " + r + ", " + b);
+                onSizeChanged();
+            }
+        }
+
+        @Override
+        public void onGlobalLayout() {
+            int visibility = _view.getVisibility();
+            if (visibility != _visibility) {
+                _visibility = visibility;
+                //Log.d(TAG, _name + ": visibility changed = " + visibility);
+                onSizeChanged();
+            }
+        }
     }
 }

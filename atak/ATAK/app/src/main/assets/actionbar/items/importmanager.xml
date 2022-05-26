@@ -1,4 +1,4 @@
-<PersistedActionMenu baseline="true" hideable="true" iconPath="ic_menu_import_file"  title="actionbar_importmanager">
+<PersistedActionMenu baseline="true" hideable="true" iconPath="nav_import" title="actionbar_importmanager">
    <ClickData actionType="click">
       <broadcast>
          <action>com.atakmap.android.importfiles.IMPORT_FILE</action>

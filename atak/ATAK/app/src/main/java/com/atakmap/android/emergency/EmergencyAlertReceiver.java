@@ -173,7 +173,8 @@ public class EmergencyAlertReceiver extends BroadcastReceiver {
 
         @Override
         public String getAlertGroupName() {
-            return "Emergency";
+            return MapView.getMapView().getContext().getString(
+                    R.string.emergency);
         }
     }
 

@@ -254,6 +254,8 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
                 break;
             }
             case "com.atakmap.android.user.GO_TO":
+
+                _callbackIntent = null;
                 goToDialog();
                 break;
         }

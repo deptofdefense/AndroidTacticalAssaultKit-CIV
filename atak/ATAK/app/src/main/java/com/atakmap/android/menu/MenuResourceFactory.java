@@ -14,7 +14,6 @@ import com.atakmap.android.config.PhraseParser;
 import com.atakmap.android.maps.MapData;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.assets.MapAssets;
-import com.atakmap.android.widgets.MapWidget;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.AtakMapView;
 
@@ -28,6 +27,10 @@ import java.util.Map;
 
 import javax.xml.parsers.ParserConfigurationException;
 
+import gov.tak.api.widgets.IMapMenuButtonWidget;
+import gov.tak.api.widgets.IMapMenuWidget;
+import gov.tak.api.widgets.IMapWidget;
+
 public class MenuResourceFactory
         implements MapMenuFactory, XmlResourceResolver {
 
@@ -36,10 +39,9 @@ public class MenuResourceFactory
     private final AtakMapView _mapView;
     private final MenuMapAdapter _adapter;
 
-    private final PhraseParser.Parameters _itemParams;
-    private final PhraseParser.Parameters _mapParams;
+    private final PhraseParser.Parameters _phraseParams;
     private final ConfigEnvironment _baseConfigEnviron;
-    private final ConfigLoader<MapWidget> _menuLoader;
+    private final ConfigLoader<IMapWidget> _menuLoader;
 
     private final Map<String, MapAction> _mapActions;
 
@@ -69,19 +71,19 @@ public class MenuResourceFactory
                         Math.min(mapView.getWidth(),
                                 mapView.getHeight()) * 0.475f));
 
-        // FIXME - this logic should collapse into one set of parameters after ATAK-12556 is resolved
-        _mapParams = new PhraseParser.Parameters();
-        _mapParams.setResolver('@', new PhraseParser.BundleResolver(mapData));
-        // Implementation for map menus is reversed for '?' and '!' characters
-        _mapParams.setResolver('?', new PhraseParser.IsEmptyResolver());
-        _mapParams.setResolver('!', new PhraseParser.NotEmptyResolver());
+        _phraseParams = new PhraseParser.Parameters();
 
-        // item parameters also apply to submenu creation
-        _itemParams = new PhraseParser.Parameters();
-        _itemParams.setResolver('@', new PhraseParser.BundleResolver(mapData));
-        // Implementation below follows the "Item" and "Submenu" logic
-        _itemParams.setResolver('!', new PhraseParser.IsEmptyResolver());
-        _itemParams.setResolver('?', new PhraseParser.NotEmptyResolver());
+        // Replaces metadata keys with their corresponding values in the map metadata
+        _phraseParams.setResolver('@',
+                new PhraseParser.BundleResolver(mapData));
+
+        // If the value is non-empty, return true
+        _phraseParams.setResolver('?', new PhraseParser.NotEmptyResolver());
+
+        // If the value is a boolean, invert the boolean value
+        // Otherwise return true if the value is empty
+        _phraseParams.setResolver('!',
+                new PhraseParser.InvertBooleanResolver());
 
         _mapActions = new HashMap<>();
     }
@@ -89,7 +91,7 @@ public class MenuResourceFactory
     private MapMenuWidget createForMap() {
 
         ConfigEnvironment config = _baseConfigEnviron.buildUpon()
-                .setPhraseParserParameters(_mapParams)
+                .setPhraseParserParameters(_phraseParams)
                 .build();
 
         return resolveMenu("menus/default.xml", config);
@@ -100,9 +102,15 @@ public class MenuResourceFactory
 
         // copy so that map item specialization in this method won't affect the class member params
         final PhraseParser.Parameters params = new PhraseParser.Parameters(
-                _itemParams);
+                _phraseParams);
 
-        params.setResolver('$', new PhraseParser.BundleResolver(mapItem));
+        // Replaces metadata keys with their corresponding values in the item metadata
+        PhraseParser.BundleResolver itemParser = new PhraseParser.BundleResolver(
+                mapItem);
+        itemParser.setDefault("removable", true);
+        itemParser.setDefault("editable", MapItem.EDITABLE_DEFAULT);
+        itemParser.setDefault("movable", MapItem.MOVABLE_DEFAULT);
+        params.setResolver('$', itemParser);
 
         ConfigEnvironment config = _baseConfigEnviron.buildUpon()
                 .setPhraseParserParameters(params)
@@ -145,7 +153,7 @@ public class MenuResourceFactory
     public MapAction resolveAction(final String xmlResource) {
 
         ConfigEnvironment config = _baseConfigEnviron.buildUpon()
-                .setPhraseParserParameters(_itemParams)
+                .setPhraseParserParameters(_phraseParams)
                 .build();
         return resolveAction(xmlResource, config);
     }
@@ -193,7 +201,7 @@ public class MenuResourceFactory
     public MapMenuWidget resolveMenu(final String xmlResource) {
 
         ConfigEnvironment config = _baseConfigEnviron.buildUpon()
-                .setPhraseParserParameters(_itemParams)
+                .setPhraseParserParameters(_phraseParams)
                 .build();
 
         return resolveMenu(xmlResource, config);
@@ -209,7 +217,7 @@ public class MenuResourceFactory
     @Override
     public MapMenuWidget resolveMenu(final String resource,
             final ConfigEnvironment config) {
-        MapWidget widget = null;
+        IMapWidget widget = null;
 
         if (resource == null)
             return null;
@@ -227,22 +235,22 @@ public class MenuResourceFactory
         return menuWidget;
     }
 
-    private void processMenuButtons(MapMenuWidget widget, MapItem item) {
+    private void processMenuButtons(IMapMenuWidget widget, MapItem item) {
 
         SharedPreferences prefs = PreferenceManager
                 .getDefaultSharedPreferences(_mapView.getContext());
 
         for (int buttonIndex = 0; buttonIndex < widget
-                .getChildCount(); ++buttonIndex) {
-            MapWidget wid = widget.getChildAt(buttonIndex);
+                .getChildWidgetCount(); ++buttonIndex) {
+            IMapWidget wid = widget.getChildWidgetAt(buttonIndex);
 
             // Expecting all be menu buttons
-            if (!(wid instanceof MapMenuButtonWidget))
+            if (!(wid instanceof IMapMenuButtonWidget))
                 continue;
-            MapMenuButtonWidget menuButton = (MapMenuButtonWidget) wid;
+            IMapMenuButtonWidget menuButton = (IMapMenuButtonWidget) wid;
 
             //peek at submenu, get list of enabled sub buttons
-            MapMenuWidget submWidget = menuButton.getSubmenuWidget();
+            IMapMenuWidget submWidget = menuButton.getSubmenu();
 
             // Widget failed to load
             if (submWidget == null)
@@ -252,15 +260,15 @@ public class MenuResourceFactory
             processMenuButtons(submWidget, item);
 
             // store resolved submenu in button widget
-            menuButton.setSubmenuWidget(submWidget);
+            menuButton.setSubmenu(submWidget);
 
-            ArrayList<MapWidget> subbuttons = (ArrayList<MapWidget>) submWidget
-                    .getChildWidgets();
+            ArrayList<IMapWidget> subbuttons = (ArrayList<IMapWidget>) submWidget
+                    .getChildren();
 
-            ArrayList<MapWidget> subbuttonsToRem = new ArrayList<>();
-            for (MapWidget wd : subbuttons) {
-                if (wd instanceof MapMenuButtonWidget) {
-                    MapMenuButtonWidget subButton = ((MapMenuButtonWidget) wd);
+            ArrayList<IMapWidget> subbuttonsToRem = new ArrayList<>();
+            for (IMapWidget wd : subbuttons) {
+                if (wd instanceof IMapMenuButtonWidget) {
+                    IMapMenuButtonWidget subButton = ((IMapMenuButtonWidget) wd);
                     if (menuButton.isDisabled() || subButton.isDisabled()) {
                         subButton.setDisabled(true);
                         subbuttonsToRem.add(wd);
@@ -268,7 +276,7 @@ public class MenuResourceFactory
                 }
             }
             // Remove disabled sub-buttons from processing below
-            for (MapWidget mwtr : subbuttonsToRem) {
+            for (IMapWidget mwtr : subbuttonsToRem) {
                 subbuttons.remove(mwtr);
             }
 
@@ -286,13 +294,13 @@ public class MenuResourceFactory
 
             //if only one available, swap to that
             if (subbuttons.size() == 1) {
-                MapMenuButtonWidget thesubb = (MapMenuButtonWidget) subbuttons
+                IMapMenuButtonWidget thesubb = (IMapMenuButtonWidget) subbuttons
                         .get(0);
                 menuButton.copyAction(thesubb);
             } else {
                 Map<String, Object> submenuMap = item.getMetaMap("submenu_map");
-                for (MapWidget swid : subbuttons) {
-                    MapMenuButtonWidget swidb = (MapMenuButtonWidget) swid;
+                for (IMapWidget swid : subbuttons) {
+                    IMapMenuButtonWidget swidb = (IMapMenuButtonWidget) swid;
                     //swap out button for chosen sub button
                     if (!prefValues.isEmpty()) {
                         // Set default based on matching pref value
@@ -315,10 +323,11 @@ public class MenuResourceFactory
                         }
                     } else if (submenuMap != null) {
                         // Set default based on matching click action
-                        MapAction submenuAction = (MapAction) submenuMap
+                        Object submenuAction = submenuMap
                                 .get(Integer.toString(buttonIndex));
                         if ((null != submenuAction) &&
-                                (submenuAction == swidb.getOnClickAction())) {
+                                (submenuAction == swidb
+                                        .getOnButtonClickHandler())) {
                             menuButton.copyAction(swidb);
                             break;
                         }

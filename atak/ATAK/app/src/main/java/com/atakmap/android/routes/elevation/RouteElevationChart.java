@@ -36,7 +36,7 @@ public class RouteElevationChart extends GraphicalView implements
         OnSeekBarChangeListener {
 
     public static final String _TAG = "RouteElevationChart";
-    List<ChartSelectionListener> _countsListeners = null;
+    final List<ChartSelectionListener> _countsListeners = new ArrayList<>();
     private Paint _paint = null;
     /**
      * Indicates the left margin of chart so that the vertical line can be drawn appropriately.
@@ -68,7 +68,6 @@ public class RouteElevationChart extends GraphicalView implements
 
         this._lineChart = lineChart;
         setupLinePaint();
-        initCountsListeners();
         initPanListener();
         initZoomListener();
     }
@@ -108,7 +107,7 @@ public class RouteElevationChart extends GraphicalView implements
     }
 
     public static class CustomLineChart extends LineChart {
-        private SharedPreferences _prefs;
+        private final SharedPreferences _prefs;
 
         public CustomLineChart(XYMultipleSeriesDataset dataset,
                 XYMultipleSeriesRenderer renderer, Context context) {
@@ -235,10 +234,6 @@ public class RouteElevationChart extends GraphicalView implements
         return super.onTouchEvent(event);
     }
 
-    private void initCountsListeners() {
-        _countsListeners = new ArrayList<>();
-    }
-
     public void addCountsListener(ChartSelectionListener l) {
         _countsListeners.add(l);
     }
@@ -283,7 +278,7 @@ public class RouteElevationChart extends GraphicalView implements
         _paint.setAlpha(200);
     }
 
-    private double[] scratch = new double[2];
+    private final double[] scratch = new double[2];
 
     @Override
     protected void onDraw(final Canvas canvas) {
@@ -443,8 +438,8 @@ public class RouteElevationChart extends GraphicalView implements
     /**
      * Takes an x-value and finds the index of the closest x-value in dataset's series '0'
      * 
-     * @param xVal
-     * @return
+     * @param xVal the x value to use for finding the index of the closest x value in the dataset
+     * @return returns the closes x value in the dataset
      */
     public int getClosestIndexForX(double xVal) {
         int indexToReturn = -1;

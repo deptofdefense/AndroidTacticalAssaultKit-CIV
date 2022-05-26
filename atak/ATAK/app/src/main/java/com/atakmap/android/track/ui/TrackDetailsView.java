@@ -52,6 +52,7 @@ import java.util.Date;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
+import com.atakmap.map.CameraController;
 
 import java.util.TimeZone;
 
@@ -530,7 +531,8 @@ public class TrackDetailsView extends LinearLayout implements
 
     private void zoomToPoint(GeoPoint gp) {
         if (gp != null && gp.isValid())
-            _mapView.getMapController().panTo(gp, true);
+            CameraController.Programmatic.panTo(
+                    _mapView.getRenderer3(), gp, true);
     }
 
     @Override

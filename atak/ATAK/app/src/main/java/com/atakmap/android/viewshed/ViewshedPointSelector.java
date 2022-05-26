@@ -148,8 +148,8 @@ public class ViewshedPointSelector implements
                 //the user chose to move the Viewshed Marker to a point on the map
                 if (event.getItem() == null) {
                     final GeoPointMetaData geoPoint = mapView
-                            .inverseWithElevation(event.getPoint().x,
-                                    event.getPoint().y);
+                            .inverseWithElevation(event.getPointF().x,
+                                    event.getPointF().y);
                     if (!geoPoint.get().isAltitudeValid()) {
                         Toast.makeText(
                                 mapView.getContext(),

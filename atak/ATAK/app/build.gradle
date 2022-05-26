@@ -22,39 +22,16 @@ import java.util.regex.Pattern
 
 
 buildscript {
+    apply from: '../../gradle/takrepo.gradle', to: project
+    apply from: '../../gradle/versions.gradle', to: project
 
-    ext.ATAK_VERSION = "4.4.0"
-    ext.ATAK_VERSION_SUBMINOR = ".15"
-
-    ext.jacocoVersion = '0.8.5'
-
-    ext.getValueFromPropertiesFile = { propFile, key ->
-        if(!propFile.isFile() || !propFile.canRead())
-            return null
-        def prop = new Properties()
-        def reader = propFile.newReader()
-        try {
-            prop.load(reader)
-        } finally {
-            reader.close()
-        }
-        return prop.get(key)
-    }
-
-    ext.getProperty = { name, defValue ->
-        def prop = project.properties[name] ?:
-            getValueFromPropertiesFile(project.rootProject.file('local.properties'), name)
-        return (null == prop) ? defValue : prop
-    }
+    ext.ATAK_VERSION = "4.5.0"
+    ext.ATAK_VERSION_SUBMINOR = ".0"
 
     ext.isDevKitEnabled = { ->
-        return getProperty('maven.consume.url', null) != null
+        return getProperty('takRepoMavenUrl', null) != null &&
+                getProperty('takDevkitEnabled', 'false') == 'true'
     }
-
-    // private maven  artifacts may be resolved through mavenLocal, so idea is to keep the remote configuration well formed but obviously defaulted
-    ext.consumeUrl = getProperty('maven.consume.url', 'http://localhost/')
-    ext.mavenUser = getProperty('maven.user', 'invalid')
-    ext.mavenPassword = getProperty('maven.password', 'invalid')
 
     repositories {
         google()
@@ -65,15 +42,15 @@ buildscript {
             credentials {
                 username = mavenUser
                 password = mavenPassword
-    }
+            }
         }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.0.2'
+        classpath 'com.android.tools.build:gradle:4.2.2'
         classpath "org.jacoco:org.jacoco.core:$jacocoVersion"
         if(isDevKitEnabled()) {
-            classpath 'com.atakmap.gradle:atak-gradle-devkit:3.2.0'
-    }
+            classpath "com.atakmap.gradle:atak-gradle-devkit:${takDevkitVersion}"
+        }
     }
 }
 
@@ -87,7 +64,7 @@ allprojects {
             credentials {
                 username = mavenUser
                 password = mavenPassword
-    }
+            }
         }
     }
 }
@@ -100,7 +77,6 @@ if(isDevKitEnabled()) {
 }
 
 dependencies {
-     implementation project(':ATAKMapEngine:lib')
      implementation fileTree(include: '*.jar', dir: 'libs')
 
      // Move to the minimal required official google offering for androidx
@@ -113,18 +89,20 @@ dependencies {
      // paradigm that google has moved towards with breaking up the original 
      // android support libraries.  
 
-     implementation 'androidx.fragment:fragment:1.3.4'
-     implementation 'androidx.exifinterface:exifinterface:1.3.2'
+     implementation 'androidx.fragment:fragment:1.3.6'
+     implementation 'androidx.exifinterface:exifinterface:1.3.3'
      implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.0.0'
+     implementation 'androidx.lifecycle:lifecycle-process:2.3.1'
 
-     androidTestImplementation 'androidx.test:runner:1.3.0'
-     androidTestImplementation 'androidx.test:rules:1.3.0'
+
+     androidTestImplementation 'androidx.test:runner:1.4.0'
+     androidTestImplementation 'androidx.test:rules:1.4.0'
      androidTestImplementation 'androidx.test.uiautomator:uiautomator:2.2.0'
-     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
-     androidTestImplementation 'androidx.test.espresso:espresso-intents:3.3.0'
-     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
+     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
+     androidTestImplementation 'androidx.test.espresso:espresso-intents:3.4.0'
+     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
 
-     androidTestImplementation "org.mockito:mockito-core:3.7.0"
+     androidTestImplementation "org.mockito:mockito-core:3.12.4"
      androidTestImplementation 'org.powermock:powermock-module-junit4:2.0.2'
      androidTestImplementation 'org.powermock:powermock-api-mockito2:2.0.2'
      androidTestImplementation 'org.powermock:powermock-core:2.0.2'
@@ -238,18 +216,19 @@ def getCurrentFlavor() {
 }
 
 android {
-    compileSdkVersion 29
-    buildToolsVersion "29.0.3"
+    compileSdkVersion 30
+    buildToolsVersion "30.0.2"
     useLibrary 'org.apache.http.legacy'
+
 
     defaultConfig {
 
-        // note that even though the targetSdk is 29, we are still setting the
+        // note that even though the targetSdk is 30, we are still setting the
         // minSdk to 21.    Ensure methods that are chosen exist in 21 or 
         // appropriate checks are in place to allow for correct behavior 
         // on versions 21 and up.
 
-        targetSdkVersion 29   
+        targetSdkVersion 30   
         minSdkVersion 21
         multiDexEnabled true
         applicationId = "com.atakmap.app"
@@ -270,7 +249,8 @@ android {
             dimension "application"
             applicationIdSuffix = ".civ"
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".CIV"]
-            buildConfigField 'String', 'REDEPLOY_VERSION', '"440a"'
+            buildConfigField 'String', 'REDEPLOY_VERSION', '"450b"'
+            buildConfigField 'boolean', 'MESH_NETWORK_DEFAULT','true'
             ndk { abiFilters "armeabi-v7a", "arm64-v8a", "x86" }
         }
 
@@ -278,7 +258,19 @@ android {
             dimension "application"
             applicationIdSuffix = ".civ"
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".CIV"]
-            buildConfigField 'String', 'REDEPLOY_VERSION', '"420a"'
+            buildConfigField 'String', 'REDEPLOY_VERSION', '"450b"'
+            buildConfigField 'boolean', 'MESH_NETWORK_DEFAULT','true'
+            versionNameSuffix "[playstore]"
+            ndk { abiFilters "arm64-v8a" }
+        }
+
+        dmucSmall {
+            dimension "application"
+            applicationIdSuffix = ".civ"
+            manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".CIV"]
+            buildConfigField 'String', 'REDEPLOY_VERSION', '"450b"'
+            buildConfigField 'Boolean', 'MESH_NETWORK_DEFAULT','false'
+            versionNameSuffix "[dmuc]"
             ndk { abiFilters "arm64-v8a" }
         }
 
@@ -384,6 +376,7 @@ android {
             minifyEnabled true
             proguardFile 'proguard-sdk.txt'
             signingConfig signingConfigs.sdk
+            matchingFallbacks = ['debug']
         }
 
         odk {
@@ -392,6 +385,7 @@ android {
             minifyEnabled true
             proguardFile 'proguard-odk.txt'
             signingConfig signingConfigs.sdk
+            matchingFallbacks = ['release']
         }
     }
 
@@ -419,9 +413,6 @@ android {
         civSmall.res.srcDir 'src/civ/res'
         civSmall.assets.srcDir 'src/small/assets'
 
-
-
-
         debug.setRoot('build-types/debug')
         release.setRoot('build-types/release')
         sdk.setRoot('build-types/sdk')
@@ -434,82 +425,24 @@ android {
          // but continue the build even when errors are found:
          abortOnError true
          disable "AppCompatCustomView", "AppCompatResource" 
-     }
-    touch('ATAKMapEngine/lib/src/main/jniLibs/arm64-v8a/libtakengine.so')
-    touch('ATAKMapEngine/lib/src/main/jniLibs/arm64-v8a/libgdal.so')
-    touch('ATAKMapEngine/lib/src/main/jniLibs/arm64-v8a/libspatialite.so')
-    touch('ATAKMapEngine/lib/src/main/jniLibs/armeabi-v7a/libtakengine.so')
-    touch('ATAKMapEngine/lib/src/main/jniLibs/armeabi-v7a/libgdal.so')
-    touch('ATAKMapEngine/lib/src/main/jniLibs/armeabi-v7a/libspatialite.so')
-    touch('ATAKMapEngine/lib/src/main/jniLibs/x86/libtakengine.so')
-    touch('ATAKMapEngine/lib/src/main/jniLibs/x86/libgdal.so')
-    touch('ATAKMapEngine/lib/src/main/jniLibs/x86/libspatialite.so')
+    }
 }
 
 // `takkernel` dependencies declared after the `android` block so that all
 // build types are declared
 dependencies {
-    if (findProject(':takkernel')) {
-        implementation project(':takkernel:annotation')
-        implementation project(':takkernel:port')
-    } else {
-        debugImplementation 'gov.tak.kernel:takkernel-aar:0.0.0:debug@aar'
-        sdkImplementation 'gov.tak.kernel:takkernel-aar:0.0.0:debug@aar'
-        odkImplementation 'gov.tak.kernel:takkernel-aar:0.0.0:release@aar'
-        releaseImplementation 'gov.tak.kernel:takkernel-aar:0.0.0:release@aar'
-    }
-}
 
-// NDK build external dependency install
-task installDepends {
-    doLast {
-        // install TAK Third Party shared objects
-        copy {
-            from('../../../takthirdparty/builds/android-arm64-v8a-release/lib/') {
-                include 'libcommoncommojni.so'
-            }
-
-            into projectDir.getAbsolutePath() + '/src/main/jniLibs/arm64-v8a/'
-
-            // always overwrite
-            duplicatesStrategy 'include'
-        }
-        copy {
-            from('../../../takthirdparty/builds/android-armeabi-v7a-release/lib/') {
-                include 'libcommoncommojni.so'
-            }
-            into projectDir.getAbsolutePath() + '/src/main/jniLibs/armeabi-v7a/'
-
-            // always overwrite
-            duplicatesStrategy 'include'
-        }
-        copy {
-            from('../../../takthirdparty/builds/android-x86-release/lib/') {
-                include 'libcommoncommojni.so'
-            }
-            into projectDir.getAbsolutePath() + '/src/main/jniLibs/x86/'
-
-             // always overwrite
-            duplicatesStrategy 'include'
-        }
-
-        // install TAK Third Party JARs
-        copy {
-            from('../../../takthirdparty/builds/android-x86-release/java/') {
-                include 'jcommoncommo.jar'
-            }
-
-            into projectDir.getAbsolutePath() + '/libs/'
-
-             // always overwrite
-            duplicatesStrategy 'include'
-        }
-    }
-}
-
-android.applicationVariants.all { variant ->
-    // install the TAK Third Party dependencies
-    tasks.getByName("compile${variant.name.capitalize()}JavaWithJavac").dependsOn("installDepends")
+     if(findProject(':takkernel')) {
+         api project(':takkernel:annotation')
+         api project(':takkernel:port')
+         api project(':takkernel:engine')
+         api project(':takkernel:shared')
+     } else {
+          debugApi("gov.tak.kernel:takkernel-aar:${takKernelVersion}:debug@aar") { transitive = true }
+          sdkApi("gov.tak.kernel:takkernel-aar:${takKernelVersion}:debug@aar") { transitive = true }
+          odkApi("gov.tak.kernel:takkernel-aar:${takKernelVersion}:release@aar") { transitive = true }
+          releaseApi("gov.tak.kernel:takkernel-aar:${takKernelVersion}:release@aar") { transitive = true }
+     }
 }
 
 // copies over the minified.jar file which contains a completely deobfuscated jar file
@@ -654,7 +587,6 @@ afterEvaluate {
     }
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // Test Harness using jacoco
 // Note:
@@ -694,12 +626,9 @@ android.applicationVariants.all { variant ->
         def fileFilter = ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**/Manifest*.*', '**/*Test*.*', 'android/**/*.*']
         def debugTree = fileTree(dir: "$project.buildDir/intermediates/javac/${variant.name}", excludes: fileFilter)
         def mainSrc = "$project.projectDir/src/main/java"
-        def ATAKMapEngine_src = new File(project(':ATAKMapEngine:lib').projectDir.toString() + "/src/main/java")
-        def ATAKMapEngine_debugTree = fileTree(dir: new File(project(':ATAKMapEngine:lib').buildDir.toString() +
-                                         "/intermediates/javac/${variant.name}"), excludes: fileFilter)
 
-        sourceDirectories.setFrom(files([mainSrc, ATAKMapEngine_src]))
-        classDirectories.setFrom(files([debugTree, ATAKMapEngine_debugTree]))
+        sourceDirectories.setFrom(files([mainSrc]))
+        classDirectories.setFrom(files([debugTree]))
 
         executionData.setFrom(fileTree(dir: project.buildDir, includes: [
                 "jacoco/test${variant.name.capitalize()}UnitTest.exec", 
@@ -715,16 +644,5 @@ android.applicationVariants.all { variant ->
 configurations.all {
     resolutionStrategy {
         force("org.objenesis:objenesis:2.6")
-    }
-}
-
-
-
-static def touch(String file) {
-    File f = new File(file);
-    if(!f.exists()) {
-        f.getParentFile().mkdirs()
-        f.createNewFile()
-
     }
 }

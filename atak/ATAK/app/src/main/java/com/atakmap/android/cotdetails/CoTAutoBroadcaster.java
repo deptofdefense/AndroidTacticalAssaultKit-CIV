@@ -48,7 +48,6 @@ public class CoTAutoBroadcaster implements
 
     private final MapView _mapView;
     private static CoTAutoBroadcaster _instance;
-    private final Object lock = new Object();
 
     /**
      * Listen to changes to the markers currently being auto broadcasted.
@@ -309,7 +308,7 @@ public class CoTAutoBroadcaster implements
                     Log.e(TAG, "error: ", e);
                 }
             }
-        }, 0, _updateTimeout * 1000);
+        }, 0, _updateTimeout * 1000L);
     }
 
     synchronized private void stopTimer() {

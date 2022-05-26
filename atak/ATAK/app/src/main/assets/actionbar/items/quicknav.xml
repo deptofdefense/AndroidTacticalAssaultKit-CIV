@@ -1,4 +1,4 @@
-<PersistedActionMenu baseline="true" hideable="true" iconPath="ic_menu_goto_nav"  title="actionbar_quicknav">
+<PersistedActionMenu baseline="true" hideable="true" iconPath="nav_quick_nav" title="actionbar_quicknav">
    <ClickData actionType="click">
       <broadcast>
          <action>com.atakmap.android.routes.GOTO_NAV_BEGIN</action>

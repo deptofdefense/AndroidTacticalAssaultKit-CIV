@@ -10,8 +10,8 @@ import com.atakmap.android.androidtest.ATAKInstrumentedTest;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import androidx.test.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.core.app.ApplicationProvider;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -20,7 +20,7 @@ import static org.junit.Assert.assertNull;
 public class UserIconTest extends ATAKInstrumentedTest {
     @Test
     public void UserIcon_GetIconBitmap_random_icon_not_null() {
-        Context appContext = InstrumentationRegistry.getTargetContext();
+        Context appContext = ApplicationProvider.getApplicationContext();
 
         UserIconDatabase db = IconsMapAdapter.initializeUserIconDB(appContext,
                 PreferenceManager.getDefaultSharedPreferences(appContext));
@@ -41,7 +41,7 @@ public class UserIconTest extends ATAKInstrumentedTest {
 
     @Test
     public void UserIcon_GetIconBitmap_bad_path_is_null() {
-        Context appContext = InstrumentationRegistry.getTargetContext();
+        Context appContext = ApplicationProvider.getApplicationContext();
 
         Bitmap bitmap = null;
         try {
@@ -55,7 +55,7 @@ public class UserIconTest extends ATAKInstrumentedTest {
 
     @Test
     public void UserIcon_GetIconBitmap_null_path_is_null() {
-        Context appContext = InstrumentationRegistry.getTargetContext();
+        Context appContext = ApplicationProvider.getApplicationContext();
 
         Bitmap bitmap = null;
         try {

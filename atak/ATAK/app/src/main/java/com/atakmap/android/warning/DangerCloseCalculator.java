@@ -10,6 +10,7 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.menu.MapMenuReceiver;
+import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.DirectionType;
@@ -145,7 +146,8 @@ public class DangerCloseCalculator implements Runnable,
 
         @Override
         public String getAlertGroupName() {
-            return "Danger Close";
+            return MapView.getMapView().getContext().getString(
+                    R.string.danger_close);
         }
 
         @Override

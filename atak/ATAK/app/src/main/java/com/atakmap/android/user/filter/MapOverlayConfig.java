@@ -56,6 +56,7 @@ public class MapOverlayConfig {
     @Attribute(name = "order", required = true)
     private int order;
 
+    @SuppressWarnings("FieldMayBeFinal")
     @Attribute(name = "litmusFilter", required = false)
     private String _litmusFilterString;
 

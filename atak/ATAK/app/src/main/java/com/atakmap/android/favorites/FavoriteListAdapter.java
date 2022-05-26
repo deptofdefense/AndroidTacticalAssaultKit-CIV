@@ -29,6 +29,7 @@ import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.coremap.maps.time.CoordinatedTime;
 
 import java.io.InputStream;
 import java.io.BufferedReader;
@@ -52,7 +53,7 @@ public class FavoriteListAdapter extends BaseAdapter {
     public static final String FAVS = "::ATAK FAVORITES";
     public static final String TAG = "FavoriteListAdapter";
 
-    private final static int VERSION = 6;
+    private final static int VERSION = 7;
 
     protected final List<Favorite> mData;
     public static final String DIRNAME = FileSystemUtils.TOOL_DATA_DIRECTORY
@@ -328,6 +329,9 @@ public class FavoriteListAdapter extends BaseAdapter {
 
                         // parse the line per the version
                         switch (version) {
+                            case 7:
+                                fav = parseVersion7(line);
+                                break;
                             case 6:
                                 fav = parseVersion6(line);
                                 break;
@@ -370,12 +374,14 @@ public class FavoriteListAdapter extends BaseAdapter {
                 return new Favorite(parts[0], gp.getLatitude(),
                         gp.getLongitude(),
                         Double.parseDouble(parts[2]), 0d, 0d,
-                        null, null, false);
+                        null, null, false,
+                        false, CoordinatedTime.currentTimeMillis());
             } else if (parts.length == 4) {
                 return new Favorite(parts[0], gp.getLatitude(),
                         gp.getLongitude(),
                         Double.parseDouble(parts[2]), 0d, 0d,
-                        null, parts[3], true);
+                        null, parts[3], true,
+                        false, CoordinatedTime.currentTimeMillis());
             } else {
                 return null;
             }
@@ -398,7 +404,8 @@ public class FavoriteListAdapter extends BaseAdapter {
             return new Favorite(parts[0], gp.getLatitude(), gp.getLongitude(),
                     Double.parseDouble(parts[2]), 0d, 0d,
                     parts[3], parts[4],
-                    Integer.parseInt(parts[5]) != 0);
+                    Integer.parseInt(parts[5]) != 0,
+                    false, CoordinatedTime.currentTimeMillis());
         } catch (Exception e) {
             Log.d(TAG, "error reading v2 line, skipping: " + line, e);
             return null;
@@ -414,7 +421,8 @@ public class FavoriteListAdapter extends BaseAdapter {
             return new Favorite(parts[0], Double.parseDouble(parts[1]),
                     Double.parseDouble(parts[2]), Double.parseDouble(parts[3]),
                     0d, 0d,
-                    parts[4], parts[5], Integer.parseInt(parts[6]) != 0);
+                    parts[4], parts[5], Integer.parseInt(parts[6]) != 0,
+                    false, CoordinatedTime.currentTimeMillis());
         } catch (Exception e) {
             Log.d(TAG, "error reading v3 line, skipping: " + line, e);
             return null;
@@ -430,7 +438,8 @@ public class FavoriteListAdapter extends BaseAdapter {
             return new Favorite(parts[0], Double.parseDouble(parts[1]),
                     Double.parseDouble(parts[2]), Double.parseDouble(parts[3]),
                     Double.parseDouble(parts[4]), 0d,
-                    parts[5], parts[6], Integer.parseInt(parts[7]) != 0);
+                    parts[5], parts[6], Integer.parseInt(parts[7]) != 0,
+                    false, CoordinatedTime.currentTimeMillis());
         } catch (Exception e) {
             Log.d(TAG, "error reading v4 line, skipping: " + line, e);
             return null;
@@ -446,7 +455,8 @@ public class FavoriteListAdapter extends BaseAdapter {
             return new Favorite(parts[0], Double.parseDouble(parts[1]),
                     Double.parseDouble(parts[2]), Double.parseDouble(parts[3]),
                     Double.parseDouble(parts[4]), Double.parseDouble(parts[5]),
-                    parts[6], parts[7], Integer.parseInt(parts[8]) != 0);
+                    parts[6], parts[7], Integer.parseInt(parts[8]) != 0,
+                    false, CoordinatedTime.currentTimeMillis());
         } catch (Exception e) {
             Log.d(TAG, "error reading v5 line, skipping: " + line, e);
             return null;
@@ -463,9 +473,29 @@ public class FavoriteListAdapter extends BaseAdapter {
                     Double.parseDouble(parts[2]), Double.parseDouble(parts[3]),
                     Double.parseDouble(parts[4]), Double.parseDouble(parts[5]),
                     Double.parseDouble(parts[6]),
-                    parts[7], parts[8], Integer.parseInt(parts[9]) != 0);
+                    parts[7], parts[8], Integer.parseInt(parts[9]) != 0,
+                    false, CoordinatedTime.currentTimeMillis());
         } catch (Exception e) {
-            Log.d(TAG, "error reading v5 line, skipping: " + line, e);
+            Log.d(TAG, "error reading v6 line, skipping: " + line, e);
+            return null;
+        }
+    }
+
+    private static Favorite parseVersion7(final String line) {
+        final String[] parts = line.split(DELIMITER);
+        if (parts.length != 12)
+            return null;
+
+        try {
+            return new Favorite(parts[0], Double.parseDouble(parts[1]),
+                    Double.parseDouble(parts[2]), Double.parseDouble(parts[3]),
+                    Double.parseDouble(parts[4]), Double.parseDouble(parts[5]),
+                    Double.parseDouble(parts[6]),
+                    parts[7], parts[8], Integer.parseInt(parts[9]) != 0,
+                    Integer.parseInt(parts[10]) != 0,
+                    Long.parseLong(parts[11]));
+        } catch (Exception e) {
+            Log.d(TAG, "error reading v7 line, skipping: " + line, e);
             return null;
         }
     }
@@ -514,7 +544,10 @@ public class FavoriteListAdapter extends BaseAdapter {
                         .append(i.rotation).append(DELIMITER)
                         .append(i.layer).append(DELIMITER)
                         .append(i.selection).append(DELIMITER)
-                        .append(i.locked ? "1" : "0").append(DELIMITER);
+                        .append(i.locked ? "1" : "0").append(DELIMITER)
+                        .append(i.illuminationEnabled ? "1" : "0")
+                        .append(DELIMITER)
+                        .append(i.illuminationDateTime).append(DELIMITER);
                 bufferedWriter.write(sBuilder.toString());
                 sBuilder.delete(0, sBuilder.length());
             } while (iter.hasNext());
@@ -535,6 +568,8 @@ public class FavoriteListAdapter extends BaseAdapter {
         public String layer;
         public String selection;
         public boolean locked;
+        public boolean illuminationEnabled;
+        public long illuminationDateTime;
 
         Favorite(final String title,
                 final double latitude,
@@ -544,7 +579,9 @@ public class FavoriteListAdapter extends BaseAdapter {
                 final double rotation,
                 final String layer,
                 final String selection,
-                final boolean locked) {
+                final boolean locked,
+                final boolean illuminationEnabled,
+                final long illuminationDateTime) {
             this(title,
                     latitude,
                     longitude,
@@ -554,7 +591,9 @@ public class FavoriteListAdapter extends BaseAdapter {
                     rotation,
                     layer,
                     selection,
-                    locked);
+                    locked,
+                    illuminationEnabled,
+                    illuminationDateTime);
         }
 
         Favorite(final String title,
@@ -566,7 +605,9 @@ public class FavoriteListAdapter extends BaseAdapter {
                 final double rotation,
                 final String layer,
                 final String selection,
-                final boolean locked) {
+                final boolean locked,
+                final boolean illuminationEnabled,
+                final long illuminationDateTime) {
             this.title = title;
             this.latitude = latitude;
             this.longitude = longitude;
@@ -577,6 +618,8 @@ public class FavoriteListAdapter extends BaseAdapter {
             this.layer = layer;
             this.selection = selection;
             this.locked = locked;
+            this.illuminationEnabled = illuminationEnabled;
+            this.illuminationDateTime = illuminationDateTime;
         }
 
         @Override
@@ -591,6 +634,8 @@ public class FavoriteListAdapter extends BaseAdapter {
             dest.writeString(layer);
             dest.writeString(selection);
             dest.writeByte(locked ? (byte) 1 : (byte) 0);
+            dest.writeByte(illuminationEnabled ? (byte) 1 : (byte) 0);
+            dest.writeLong(illuminationDateTime);
         }
 
         public static final Creator<Favorite> CREATOR = new Creator<Favorite>() {
@@ -616,6 +661,8 @@ public class FavoriteListAdapter extends BaseAdapter {
             layer = in.readString();
             selection = in.readString();
             locked = (in.readByte() != 0);
+            illuminationEnabled = (in.readByte() != 0);
+            illuminationDateTime = in.readLong();
         }
 
         @Override
@@ -663,10 +710,11 @@ public class FavoriteListAdapter extends BaseAdapter {
         @Override
         public String toString() {
             return title + ", " + layer + ", "
-                    + selection + ", " + latitude + ","
+                    + selection + ", " + latitude + ", "
                     + longitude + ", " + altitude + ", "
-                    + zoomLevel + ","
-                    + tilt + ", " + rotation + "," + locked;
+                    + zoomLevel + ", " + tilt + ", "
+                    + rotation + ", " + locked + ", "
+                    + illuminationEnabled + ", " + illuminationDateTime;
         }
     }
 
@@ -716,6 +764,16 @@ public class FavoriteListAdapter extends BaseAdapter {
             final double zoom, final double tilt, double rotation,
             final String layer, final String selection,
             final boolean locked) {
+        add(title, latitude, longitude, altitude, zoom, tilt, rotation, layer,
+                selection, locked, false, System.currentTimeMillis());
+    }
+
+    public void add(final String title, final double latitude,
+            final double longitude, final double altitude,
+            final double zoom, final double tilt, double rotation,
+            final String layer, final String selection,
+            final boolean locked, final boolean illuminationEnabled,
+            final long illuminationDateTime) {
         final String favTitle;
 
         if (title == null || title.length() < 1)
@@ -723,9 +781,9 @@ public class FavoriteListAdapter extends BaseAdapter {
         else
             favTitle = title;
 
-        add(new Favorite(favTitle, latitude, longitude, altitude, zoom,
-                tilt, rotation,
-                layer, selection, locked));
+        add(new Favorite(favTitle, latitude, longitude, altitude, zoom, tilt,
+                rotation, layer,
+                selection, locked, illuminationEnabled, illuminationDateTime));
     }
 
 }

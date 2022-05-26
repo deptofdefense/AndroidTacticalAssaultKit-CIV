@@ -1,0 +1,21 @@
+dependencies {
+    api project(':engine')
+    api project(':annotation')
+    api project(':port')
+
+    testImplementation "org.assertj:assertj-core:$assertjVersion"
+
+    project.plugins.withId('java-library') {
+        // This dependency is found on compile classpath of this component and consumers.
+        api("com.google.guava:guava:${guavaVersion}")
+
+        api "org.jogamp.gluegen:gluegen-rt-main:${joglVersion}"
+        api "org.jogamp.jogl:jogl-all-main:${joglVersion}"
+        api("gov.tak.support:android-port:${androidPortVersion}")
+
+        implementation "org.hibernate:hibernate-core:${hibernateCoreVersion}"
+        implementation "org.apache.avro:avro:${avroVersion}"
+    }
+}
+
+// default source sets

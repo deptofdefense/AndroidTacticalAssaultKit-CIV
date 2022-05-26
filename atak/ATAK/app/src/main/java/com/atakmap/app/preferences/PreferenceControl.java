@@ -34,8 +34,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -172,29 +174,41 @@ public class PreferenceControl implements ConnectionListener {
                             .getBytes(FileSystemUtils.UTF8_CHARSET),
                     Base64.NO_WRAP);
 
-            for (Map.Entry e : keyValuePairs.entrySet()) {
-                Object o = e.getValue();
+            for (Map.Entry<String, ?> e : keyValuePairs.entrySet()) {
                 String key = (String) e.getKey();
-                if (o != null) {
-                    String strClass = keyValuePairs.get(key).getClass()
-                            .toString();
-                    String value = String.valueOf(keyValuePairs.get(key));
+                Object value = e.getValue();
 
-                    if (key.equals("locationCallsign") ||
-                            key.equals("bestDeviceUID") ||
-                            key.equals(k1) || key.equals(k2)) {
-                        // do nothing
-                    } else {
-                        sb.append("<entry key=\"");
-                        sb.append(key.replaceAll("&", "&amp;"));
-                        sb.append("\" class=\"");
-                        sb.append(strClass);
-                        sb.append("\">");
-                        sb.append(value);
-                        sb.append("</entry>\r\n");
-                    }
-                } else {
+                if (value == null) {
                     Log.d(TAG, "null value for key: " + key);
+                    continue;
+                }
+
+                String strClass = value.getClass().toString();
+
+                if (key.equals("locationCallsign") ||
+                        key.equals("bestDeviceUID") ||
+                        key.equals(k1) || key.equals(k2)) {
+                    // do nothing
+                } else {
+                    sb.append("<entry key=\"");
+                    sb.append(key.replaceAll("&", "&amp;"));
+                    sb.append("\" class=\"");
+                    sb.append(strClass);
+                    sb.append("\">");
+
+                    if (value instanceof Set<?>) {
+                        // Store each entry in the set
+                        sb.append("\r\n");
+                        Set<?> set = (Set<?>) value;
+                        for (Object v : set) {
+                            sb.append("<element>");
+                            sb.append(v);
+                            sb.append("</element>\r\n");
+                        }
+                    } else
+                        sb.append(value);
+
+                    sb.append("</entry>\r\n");
                 }
             }
 
@@ -315,142 +329,69 @@ public class PreferenceControl implements ConnectionListener {
      * @return list of keys that were imported.
      */
     public List<String> loadSettings(final File configFile) {
+        Log.d(TAG, "Loading settings: " + configFile.getAbsolutePath());
+
+        try (InputStream is = IOProviderFactory.getInputStream(configFile)) {
+            return loadSettings(is);
+        } catch (SAXException e) {
+            Log.e(TAG, "SAXException while parsing: " + configFile, e);
+        } catch (IOException e) {
+            Log.e(TAG, "IOException while parsing: " + configFile, e);
+        } catch (ParserConfigurationException e) {
+            Log.e(TAG, "ParserConfigurationException while parsing: "
+                    + configFile, e);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to parse: " + configFile, e);
+        }
+
+        return new ArrayList<>();
+    }
+
+    /**
+     * Loads the settings, and optionally performs a connection check to see if the
+     * CotServiceRemote is running (leaving that in as legacy)
+     * @return list of keys that were imported.
+     */
+    public List<String> loadSettings(InputStream is) throws Exception {
         // Do file opening here
 
         List<String> retval = new ArrayList<>();
 
-        Log.d(TAG, "Loading settings: " + configFile.getAbsolutePath());
-
         DocumentBuilderFactory dbf = XMLUtils.getDocumenBuilderFactory();
-
-        Document doc;
-        try (InputStream is = IOProviderFactory.getInputStream(configFile)) {
-            DocumentBuilder db = dbf.newDocumentBuilder();
-            doc = db.parse(is);
-        } catch (SAXException e) {
-            Log.e(TAG,
-                    "SAXException while parsing: "
-                            + configFile.getAbsolutePath(),
-                    e);
-            return retval;
-        } catch (IOException e) {
-            Log.e(TAG,
-                    "IOException while parsing: "
-                            + configFile.getAbsolutePath(),
-                    e);
-            return retval;
-        } catch (ParserConfigurationException e) {
-            Log.e(TAG, "ParserConfigurationException while parsing: "
-                    + configFile.getAbsolutePath(), e);
-            return retval;
-        }
+        DocumentBuilder db = dbf.newDocumentBuilder();
+        Document doc = db.parse(is);
 
         ConnectionHolder[] connections = {
-                new ConnectionHolder("cot_inputs",
-                        new HashMap<String, String>()),
-                new ConnectionHolder("cot_outputs",
-                        new HashMap<String, String>()),
-                new ConnectionHolder("cot_streams",
-                        new HashMap<String, String>())
+                new ConnectionHolder("cot_inputs", new HashMap<>()),
+                new ConnectionHolder("cot_outputs", new HashMap<>()),
+                new ConnectionHolder("cot_streams", new HashMap<>())
         };
 
-        try {
-            Node root = doc.getDocumentElement();
-            NodeList preferences = root.getChildNodes();
-            for (int i = 0; i < preferences.getLength(); i++) {
-                Node preference = preferences.item(i);
-                if (preference.getNodeName().equals("preference")) {
+        Node root = doc.getDocumentElement();
+        NodeList preferences = root.getChildNodes();
+        for (int i = 0; i < preferences.getLength(); i++) {
+            Node preference = preferences.item(i);
+            if (preference.getNodeName().equals("preference")) {
 
-                    String name = preference.getAttributes()
-                            .getNamedItem("name").getNodeValue();
-                    Log.d(TAG, "name=" + name);
+                String name = preference.getAttributes()
+                        .getNamedItem("name").getNodeValue();
+                Log.d(TAG, "name=" + name);
 
-                    switch (name) {
-                        case "cot_inputs":
-                            loadConnectionHolder(connections[0], preference);
-                            break;
-                        case "cot_outputs":
-                            loadConnectionHolder(connections[1], preference);
-                            break;
-                        case "cot_streams":
-                            loadConnectionHolder(connections[2], preference);
-                            break;
-                        default:
-                            if (name.equals("com.atakmap.app_preferences") ||
-                                    name.equals("com.atakmap.civ_preferences")
-                                    ||
-                                    name.equals(
-                                            ("com.atakmap.fvey_preferences"))) {
-
-                                name = DEFAULT_PREFERENCES_NAME;
-
-                                //import legacy prefs using current package
-                                Log.d(TAG, "Fixing up baseline prefs: " + name);
-                            }
-
-                            SharedPreferences pref = _context
-                                    .getSharedPreferences(
-                                            name,
-                                            Context.MODE_PRIVATE);
-                            Editor editor = pref.edit();
-
-                            NodeList items = preference.getChildNodes();
-                            //Log.d(TAG, "#items=" + items.getLength());
-                            for (int j = 0; j < items.getLength(); j++) {
-                                Node entry = items.item(j);
-                                if (entry.getNodeName().equals("entry")) {
-                                    String key = entry.getAttributes()
-                                            .getNamedItem("key").getNodeValue();
-                                    String value = "";
-                                    Node firstChild;
-                                    if ((firstChild = entry
-                                            .getFirstChild()) != null)
-                                        value = firstChild.getNodeValue();
-
-                                    //Log.d(TAG, "key=" + key + " val=" + value);
-
-                                    switch (entry.getAttributes()
-                                            .getNamedItem("class")
-                                            .getNodeValue()) {
-                                        case "class java.lang.String":
-                                            editor.putString(key, value);
-                                            retval.add(key);
-                                            break;
-                                        case "class java.lang.Boolean":
-                                            editor.putBoolean(key,
-                                                    Boolean.parseBoolean(
-                                                            value));
-                                            retval.add(key);
-                                            break;
-                                        case "class java.lang.Integer":
-                                            editor.putInt(key,
-                                                    Integer.parseInt(value));
-                                            retval.add(key);
-                                            break;
-                                        case "class java.lang.Float":
-                                            editor.putFloat(key,
-                                                    Float.parseFloat(value));
-                                            retval.add(key);
-                                            break;
-                                        case "class java.lang.Long":
-                                            editor.putLong(key,
-                                                    Long.parseLong(value));
-                                            retval.add(key);
-                                            break;
-                                        default:
-                                            break;
-                                    }
-                                }
-                                editor.apply();
-                            }
-                            break;
-                    }
+                switch (name) {
+                    case "cot_inputs":
+                        loadConnectionHolder(connections[0], preference);
+                        break;
+                    case "cot_outputs":
+                        loadConnectionHolder(connections[1], preference);
+                        break;
+                    case "cot_streams":
+                        loadConnectionHolder(connections[2], preference);
+                        break;
+                    default:
+                        loadSettings(preference, name, retval);
+                        break;
                 }
             }
-
-        } catch (Exception e) {
-            Log.e(TAG, "Failed to parse: " + configFile.getAbsolutePath(), e);
-            return new ArrayList<>();
         }
 
         CotMapComponent cotMapCompoent = CotMapComponent.getInstance();
@@ -511,21 +452,29 @@ public class PreferenceControl implements ConnectionListener {
                         enrollForCertificateWithTrust);
                 data.putLong(TAKServer.EXPIRATION_KEY, expiration);
 
-                Log.d(TAG, "Loading " + connection.getName()
-                        + " connection " + connectString);
-                switch (connection.getName()) {
-                    case "cot_inputs":
-                        cotMapCompoent.getCotServiceRemote().addInput(
-                                connectString, data);
-                        break;
-                    case "cot_outputs":
-                        cotMapCompoent.getCotServiceRemote().addOutput(
-                                connectString, data);
-                        break;
-                    case "cot_streams":
-                        cotMapCompoent.getCotServiceRemote().addStream(
-                                connectString, data);
-                        break;
+                if (cotMapCompoent != null) {
+                    Log.d(TAG, "Loading " + connection.getName()
+                            + " connection " + connectString);
+                    switch (connection.getName()) {
+                        case "cot_inputs":
+                            cotMapCompoent.getCotServiceRemote().addInput(
+                                    connectString, data);
+                            break;
+                        case "cot_outputs":
+                            cotMapCompoent.getCotServiceRemote().addOutput(
+                                    connectString, data);
+                            break;
+                        case "cot_streams":
+                            cotMapCompoent.getCotServiceRemote().addStream(
+                                    connectString, data);
+                            break;
+                    }
+                } else {
+                    Log.d(TAG,
+                            "CotMapComponent not yet loaded, using temp pref storage for "
+                                    + connection.getName() + " connection "
+                                    + connectString);
+                    saveInputOutput(connection.getName(), connectString, data);
                 }
             }
         }
@@ -534,6 +483,129 @@ public class PreferenceControl implements ConnectionListener {
         prefLoaded.setAction("com.atakmap.app.PREFERENCES_LOADED");
         AtakBroadcast.getInstance().sendBroadcast(prefLoaded);
         return retval;
+    }
+
+    private void loadSettings(Node preference, String name,
+            List<String> retval) {
+        if (name.equals("com.atakmap.app_preferences")
+                || name.equals("com.atakmap.civ_preferences")
+                || name.equals("com.atakmap.fvey_preferences")) {
+
+            name = DEFAULT_PREFERENCES_NAME;
+
+            //import legacy prefs using current package
+            Log.d(TAG, "Fixing up baseline prefs: " + name);
+        }
+
+        SharedPreferences pref = _context.getSharedPreferences(name,
+                Context.MODE_PRIVATE);
+        Editor editor = pref.edit();
+
+        NodeList items = preference.getChildNodes();
+        //Log.d(TAG, "#items=" + items.getLength());
+        for (int i = 0; i < items.getLength(); i++) {
+            Node entry = items.item(i);
+
+            // Skip non-entry elements
+            if (!entry.getNodeName().equals("entry"))
+                continue;
+
+            String key = entry.getAttributes()
+                    .getNamedItem("key").getNodeValue();
+            String value = "";
+            Node firstChild;
+            if ((firstChild = entry
+                    .getFirstChild()) != null)
+                value = firstChild.getNodeValue();
+
+            //Log.d(TAG, "key=" + key + " val=" + value);
+
+            String className = entry.getAttributes()
+                    .getNamedItem("class")
+                    .getNodeValue();
+
+            switch (className) {
+                case "class java.lang.String":
+                    editor.putString(key, value);
+                    retval.add(key);
+                    break;
+                case "class java.lang.Boolean":
+                    editor.putBoolean(key, Boolean.parseBoolean(value));
+                    retval.add(key);
+                    break;
+                case "class java.lang.Integer":
+                    editor.putInt(key, Integer.parseInt(value));
+                    retval.add(key);
+                    break;
+                case "class java.lang.Float":
+                    editor.putFloat(key, Float.parseFloat(value));
+                    retval.add(key);
+                    break;
+                case "class java.lang.Long":
+                    editor.putLong(key, Long.parseLong(value));
+                    retval.add(key);
+                    break;
+                default: {
+                    // Special handling for string sets
+                    if (isSetClass(className)) {
+                        NodeList elements = entry.getChildNodes();
+                        Set<String> valueSet = new HashSet<>();
+                        for (int j = 0; j < elements.getLength(); j++) {
+                            Node el = elements.item(j);
+                            if (!el.getNodeName().equals("element"))
+                                continue;
+                            firstChild = el.getFirstChild();
+                            if (firstChild != null)
+                                valueSet.add(firstChild.getNodeValue());
+                        }
+                        editor.putStringSet(key, valueSet);
+                        retval.add(key);
+                    }
+                    break;
+                }
+            }
+
+            editor.apply();
+        }
+    }
+
+    private int findSavedInputOutputIndex(SharedPreferences prefs,
+            String connectString) {
+        int index = -1;
+        int count = prefs.getInt("count", 0);
+        for (int i = 0; i < count; ++i) {
+            if (connectString
+                    .equals(prefs.getString(TAKServer.CONNECT_STRING_KEY + i,
+                            ""))) {
+                index = i;
+                break;
+            }
+        }
+        return index;
+    }
+
+    private void saveInputOutput(String prefsName, String connectString,
+            Bundle data) {
+        SharedPreferences prefs = _context.getSharedPreferences(prefsName,
+                Context.MODE_PRIVATE);
+
+        SharedPreferences.Editor editor = prefs.edit();
+        int index = findSavedInputOutputIndex(prefs, connectString);
+        if (index == -1) {
+            index = prefs.getInt("count", 0);
+            editor.putInt("count", index + 1);
+            editor.putString(TAKServer.CONNECT_STRING_KEY + index,
+                    connectString);
+        }
+
+        editor.putBoolean("enabled" + index,
+                data.getBoolean("enabled", true));
+        editor.putString("description" + index,
+                data.getString("description"));
+        editor.putBoolean("compress" + index,
+                data.getBoolean("compress", false));
+
+        editor.apply();
     }
 
     // Loads the partial settings
@@ -1027,5 +1099,21 @@ public class PreferenceControl implements ConnectionListener {
     public void onCotServiceDisconnected() {
         connected = false;
 
+    }
+
+    /**
+     * Check if the given classname implements {@link Set}
+     * @param className Class name
+     * @return True if the class implements {@link Set}
+     */
+    private static boolean isSetClass(String className) {
+        try {
+            if (className.startsWith("class "))
+                className = className.substring(6);
+            Class<?> clazz = Class.forName(className);
+            return Set.class.isAssignableFrom(clazz);
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

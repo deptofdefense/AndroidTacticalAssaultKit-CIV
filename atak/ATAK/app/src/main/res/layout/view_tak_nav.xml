@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.atakmap.android.navigation.views.NavView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/transparent">
+
+
+    <ImageView
+        android:id="@+id/tak_nav_menu_button"
+        android:layout_width="@dimen/nav_button_size"
+        android:layout_height="@dimen/nav_button_size"
+        android:layout_below="@id/horizontal_slider"
+        android:layout_toRightOf="@id/vertical_slider"
+        android:padding="0dp"
+        android:src="@drawable/ic_hamburger" />
+
+    <!-- TODO: Buttons should populate based on the number of desired toolbar buttons (not hardcoded in this XML) -->
+
+    <LinearLayout
+        android:id="@+id/tak_nav_buttons"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toEndOf="@id/tak_nav_menu_button"
+        android:layout_below="@id/horizontal_slider"
+        android:orientation="horizontal"
+        android:elevation="4dp">
+
+        <com.atakmap.android.navigation.views.buttons.NavButton
+            android:id="@+id/tak_nav_button_0"
+            style="@style/NavButton"
+            tools:src="@drawable/nav_bloodhound"/>
+
+        <com.atakmap.android.navigation.views.buttons.NavButton
+            android:id="@+id/tak_nav_button_1"
+            style="@style/NavButton"
+            tools:src="@drawable/nav_redx"/>
+
+        <com.atakmap.android.navigation.views.buttons.NavButton
+            android:id="@+id/tak_nav_button_2"
+            style="@style/NavButton"
+            tools:src="@drawable/nav_point_dropper"/>
+
+        <com.atakmap.android.navigation.views.buttons.NavButton
+            android:id="@+id/tak_nav_button_3"
+            style="@style/NavButton"
+            tools:src="@drawable/nav_maps"/>
+
+        <com.atakmap.android.navigation.views.buttons.NavButton
+            android:id="@+id/tak_nav_button_4"
+            style="@style/NavButton"
+            tools:src="@drawable/nav_overlay_manager"/>
+
+        <com.atakmap.android.navigation.views.buttons.NavButton
+            android:id="@+id/tak_nav_button_5"
+            style="@style/NavButton"
+            tools:src="@drawable/nav_power"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/side_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@id/vertical_slider"
+        android:layout_below="@id/tak_nav_menu_button"
+        android:elevation="4dp"
+        android:orientation="vertical">
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <include layout="@layout/dynamic_compass"
+                android:id="@+id/compass"/>
+
+            <ImageButton
+                android:id="@+id/tak_nav_center"
+                android:layout_width="@dimen/nav_button_size"
+                android:layout_height="@dimen/nav_button_size"
+                android:background="@android:color/transparent"
+                android:src="@drawable/nav_lock_on" />
+        </LinearLayout>
+        
+        <com.atakmap.android.navigation.views.buttons.NavZoomButton
+            android:id="@+id/tak_nav_zoom"
+            style="@style/NavZoomButton"
+            android:src="@drawable/nav_zoom"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/tak_nav_tooltip_area"
+        android:layout_width="220dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/tak_nav_menu_button"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
+        android:layout_toEndOf="@id/side_layout"
+        android:alpha="0.75"
+        android:background="@drawable/tooltip_outline"
+        android:orientation="horizontal"
+        android:paddingStart="0dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="8dp"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <TextView
+            android:id="@+id/tak_nav_tooltip_text"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginStart="16dp"
+            android:alpha="1"
+            android:fontFamily="@font/nunito_regular"
+            android:gravity="center"
+            android:text="@string/add_tool_text"
+            android:textAlignment="textStart"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/tak_nav_delete_drag_area"
+        android:layout_width="220dp"
+        android:layout_height="47dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
+        android:layout_below="@id/tak_nav_tooltip_area"
+        android:layout_toEndOf="@id/side_layout"
+        android:background="@drawable/nav_button_drag_background"
+        android:orientation="horizontal"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <ImageView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:layout_weight=".5"
+            android:src="@drawable/nav_delete" />
+    </LinearLayout>
+
+</com.atakmap.android.navigation.views.NavView>

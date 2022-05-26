@@ -1,7 +1,8 @@
 <menu buttonRadius='65' buttonSpan='360' buttonWidth='90' buttonBg='bgs/button.xml'>
 
     <button angle='-90'
-            icon='icons/green_flag.png' 
-            onClick='actions/startgoto.xml' />
+            icon='icons/green_flag_radial.png' 
+            onClick='actions/startgoto.xml'
+            selected='${hounding}'/>
 
 </menu>

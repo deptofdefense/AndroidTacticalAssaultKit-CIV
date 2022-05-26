@@ -33,13 +33,21 @@
         android:summary="Open a nested preference fragment."
         android:title="Sub Preferences" />
 
-    <com.atakmap.android.gui.EncryptedPanEditTextPreference
-        android:title="Certificate Password"
-        android:name="Certificate Password"
-        android:key="myplugin.certificate_password"
-        android:inputType="textPassword"
-        android:defaultValue=""
-        android:summary="Enter in the certificate password if a client side certificate is in use."/>
+    <com.atakmap.android.gui.PanCheckBoxPreference
+        android:key="test3"
+        android:summary="Shows a quick check box example"
+        android:title="Example Check Box"
+        android:defaultValue="true"
+        />
+
+    <com.atakmap.android.gui.PanListPreference
+        android:key="test4"
+        android:summary="Shows a quick list selection example"
+        android:title="Example list selector"
+        android:defaultValue="Italy"
+        android:entries="@array/country_arrays"
+        android:entryValues="@array/country_arrays"
+        />
 
 
 </PreferenceScreen>

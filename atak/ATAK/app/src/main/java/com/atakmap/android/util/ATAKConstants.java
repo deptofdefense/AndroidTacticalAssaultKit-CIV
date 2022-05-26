@@ -16,7 +16,6 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.graphics.drawable.Drawable;
-import com.atakmap.annotations.DeprecatedApi;
 
 import com.atakmap.android.gui.WebViewer;
 import com.atak.plugins.impl.AtakPluginRegistry;
@@ -97,8 +96,10 @@ public class ATAKConstants {
                     try {
                         final String api = SystemComponentLoader
                                 .getFlavorAPI(context);
-                        final int index = api.lastIndexOf(".");
-                        versionBrand = api.substring(index + 1);
+                        if (api != null) {
+                            final int index = api.lastIndexOf(".");
+                            versionBrand = api.substring(index + 1);
+                        }
                     } catch (Exception ignored) {
                     }
                 }
@@ -229,30 +230,12 @@ public class ATAKConstants {
         return versionNameManifest;
     }
 
-    public static String getVersionBrand() {
-        return versionBrand;
-    }
-
     /**
      * Returns the app branding which is the CIV, MIL, etc.
-     * @param context the context to provide as to not used the one produced when ATAKConstracts
-     *                was initialized.  Please use this over the getVersionBrand
-     *                with no arguments.
      * @return the String that describes the brand.
      */
-    @Deprecated
-    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
-    public static String getVersionBrand(Context context) {
-        FlavorProvider fp = SystemComponentLoader.getFlavorProvider();
-        if (fp != null) {
-            try {
-                final String api = SystemComponentLoader.getFlavorAPI(context);
-                final int index = api.lastIndexOf(".");
-                return api.substring(index + 1);
-            } catch (Exception ignored) {
-            }
-        }
-        return context.getString(R.string.app_brand);
+    public static String getVersionBrand() {
+        return versionBrand;
     }
 
     public static String getDeviceOS() {

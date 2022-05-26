@@ -48,30 +48,54 @@ public class Arrow extends Shape {
         super(serialId, metadata, uid);
     }
 
+    /**
+     * The hit radius for the arrow
+     * @param radius the radius in pixels
+     */
     public void setHitRadius(float radius) {
         _hitRadius = radius;
         _hitRadiusSq = radius * radius;
     }
 
+    /**
+     * Get the tail point of the arrow when not rendered in reverse.
+     * @return the point position of the tail.
+     */
     public GeoPointMetaData getPoint1() {
         return _point1;
     }
 
+    /**
+     * Set the tail point of the arrow when not rendered in reverse.
+     * @param p the point for the tail to start at.
+     */
     public void setPoint1(GeoPointMetaData p) {
         _point1 = p;
         update();
     }
 
+    /**
+     * Get the head point of the arrow when not rendered in reverse.
+     * @return the point position of the head.
+     */
     public GeoPointMetaData getPoint2() {
         return _point2;
     }
 
+    /**
+     * Set the head point of the arrow when not rendered in reverse.
+     * @param p the point for the head to point to.
+     */
     public void setPoint2(GeoPointMetaData p) {
         _point2 = p;
         update();
     }
 
-    public void setText(String text) {
+    /**
+     * The text displayed on the arrow.
+     * @param text the text
+     */
+    public void setText(final String text) {
         if (!FileSystemUtils.isEquals(this.text, text)) {
             this.text = text;
             for (OnTextChangedListener l : _onTextChanged)

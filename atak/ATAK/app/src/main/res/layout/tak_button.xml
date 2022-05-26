@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:layout_height="wrap_content"
+    tools:parentTag="android.widget.LinearLayout"
+    tools:style="@style/AtakButton">
+
+    <ImageView
+        android:id="@+id/button_image"
+        android:layout_width="wrap_content"
+        android:layout_height="14dp"
+        android:layout_marginEnd="@dimen/margin_small"
+        android:scaleType="centerInside"
+        android:tint="@color/black"
+        tools:src="@drawable/ic_button_close" />
+
+    <TextView
+        android:id="@+id/button_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/ATAKTextAppearance.Button"
+        android:textColor="@color/black"
+        tools:text="Button Text" />
+</merge>

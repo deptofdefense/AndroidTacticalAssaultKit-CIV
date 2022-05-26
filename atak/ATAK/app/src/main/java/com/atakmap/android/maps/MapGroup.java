@@ -723,6 +723,11 @@ public abstract class MapGroup extends FilterMetaDataHolder implements
         return !_onItemListChanged.isEmpty();
     }
 
+    /**
+     * Removes the given MapItem from this map group, if it is a member.
+     *
+     * If it was not a member, returns normally, without throwing an exception.
+     */
     public final void removeItem(final MapItem item) {
         if (item == null)
             return;

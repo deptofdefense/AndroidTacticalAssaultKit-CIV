@@ -16,6 +16,7 @@ import com.atakmap.android.ipc.DocumentedExtra;
 import com.atakmap.android.layers.RegionShapeTool;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.navigation.views.NavView;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.app.R;
 
@@ -28,6 +29,7 @@ public class LassoContentProvider extends BroadcastReceiver
         implements URIContentProvider {
 
     public static final String CALLBACK_ACTION = "com.atakmap.android.missionpackage.lasso.CALLBACK";
+    private static final String NAV_REF = "lasso.xml";
 
     private final MapView _mapView;
     private final Context _context;
@@ -86,8 +88,10 @@ public class LassoContentProvider extends BroadcastReceiver
         ToolManagerBroadcastReceiver recv = ToolManagerBroadcastReceiver
                 .getInstance();
         recv.startTool(RegionShapeTool.TOOL_ID, b);
-        if (recv.getActiveTool() instanceof RegionShapeTool)
+        if (recv.getActiveTool() instanceof RegionShapeTool) {
             _callback = callback;
+            NavView.getInstance().setButtonSelected(NAV_REF, true);
+        }
         return true;
     }
 
@@ -95,6 +99,8 @@ public class LassoContentProvider extends BroadcastReceiver
     public void onReceive(Context context, Intent intent) {
         if (_callback == null)
             return;
+
+        NavView.getInstance().setButtonSelected(NAV_REF, false);
 
         final Callback cb = _callback;
         _callback = null;

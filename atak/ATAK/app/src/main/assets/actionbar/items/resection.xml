@@ -1,4 +1,4 @@
-<PersistedActionMenu baseline="true" hideable="true" iconPath="ic_resection_compass"  title="actionbar_resection">
+<PersistedActionMenu baseline="true" hideable="true" iconPath="nav_resection" title="actionbar_resection">
    <ClickData actionType="click">
       <broadcast>
          <action>com.atakmap.android.resection.RESECTION_WORKFLOW</action>

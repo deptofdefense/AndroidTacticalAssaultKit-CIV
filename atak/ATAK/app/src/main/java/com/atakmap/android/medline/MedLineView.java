@@ -57,6 +57,7 @@ import java.util.Map;
 
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.map.CameraController;
 
 public class MedLineView implements PointMapItem.OnPointChangedListener {
 
@@ -338,7 +339,9 @@ public class MedLineView implements PointMapItem.OnPointChangedListener {
             public void onClick(View v) {
                 if (marker != null) {
                     GeoPoint gp = marker.getPoint();
-                    _mapView.getMapController().panTo(gp, false);
+                    CameraController.Programmatic.panTo(
+                            _mapView.getRenderer3(),
+                            gp, false);
                 }
             }
         });
@@ -1593,7 +1596,8 @@ public class MedLineView implements PointMapItem.OnPointChangedListener {
                             marker.setPoint(p);
                             updateLocation();
 
-                            _mapView.getMapController().panTo(marker.getPoint(),
+                            CameraController.Programmatic.panTo(
+                                    _mapView.getRenderer3(), marker.getPoint(),
                                     true);
                             locDialog.dismiss();
                         }

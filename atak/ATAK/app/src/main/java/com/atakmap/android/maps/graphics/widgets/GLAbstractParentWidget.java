@@ -2,7 +2,6 @@
 package com.atakmap.android.maps.graphics.widgets;
 
 import com.atakmap.android.widgets.AbstractParentWidget;
-import com.atakmap.android.widgets.AbstractParentWidget.OnWidgetListChangedListener;
 import com.atakmap.android.widgets.MapWidget;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.opengl.GLMapView;
@@ -15,8 +14,13 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import gov.tak.api.annotation.DeprecatedApi;
+
+/** @deprecated use {@link gov.tak.platform.widgets.opengl.GLAbstractParentWidget} */
+@Deprecated
+@DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
 public abstract class GLAbstractParentWidget extends GLWidget2 implements
-        OnWidgetListChangedListener {
+        AbstractParentWidget.OnWidgetListChangedListener {
 
     private final static String TAG = "GLAbstractParentWidget";
 

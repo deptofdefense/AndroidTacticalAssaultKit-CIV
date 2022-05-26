@@ -28,6 +28,7 @@ public class CompressionTask extends MissionPackageBaseTask {
 
     private final MissionPackageBaseTask _followUpTask;
     private final boolean _bDeleteUponError;
+    private boolean _persist;
 
     public CompressionTask(MissionPackageManifest contents,
             MissionPackageReceiver receiver,
@@ -40,6 +41,22 @@ public class CompressionTask extends MissionPackageBaseTask {
         _bDeleteUponError = bDeleteUponError;
     }
 
+    /**
+     * Set whether the data package should be persisted to the local database
+     * If true, the data package will show up within ATAK for this device
+     * If false, the data package zip file will be created without showing up
+     * in the local user's ATAK
+     *
+     * @param persist True to persist
+     */
+    public void setPersist(boolean persist) {
+        _persist = persist;
+    }
+
+    /**
+     * Get the number of chained tasks
+     * @return Task count
+     */
     public int getChainedTaskCount() {
         if (!(_followUpTask instanceof CompressionTask))
             return 1;
@@ -82,7 +99,10 @@ public class CompressionTask extends MissionPackageBaseTask {
     }
 
     private String compressMissionPackage() {
-        return CompressMissionPackage(_manifest, _receiver, this);
+        if (_persist)
+            return CompressMissionPackage(_manifest, _receiver, this);
+        else
+            return buildPackage(_manifest, _receiver, this);
     }
 
     public static String CompressMissionPackage(
@@ -107,10 +127,7 @@ public class CompressionTask extends MissionPackageBaseTask {
             db.insertOrReplace(fileInfo, TABLETYPE.SAVED);
         }
 
-        MissionPackageBuilder builder = new MissionPackageBuilder(progress,
-                contents, receiver
-                        .getMapView().getRootGroup());
-        String retVal = builder.build();
+        String retVal = buildPackage(contents, receiver, progress);
 
         // now that file was written out, set additional data
         if (FileSystemUtils.isFile(contents.getPath())) {
@@ -126,6 +143,15 @@ public class CompressionTask extends MissionPackageBaseTask {
         }
 
         return retVal;
+    }
+
+    private static String buildPackage(
+            MissionPackageManifest contents,
+            MissionPackageReceiver receiver,
+            MissionPackageBuilder.Progress progress) {
+        MissionPackageBuilder builder = new MissionPackageBuilder(progress,
+                contents, receiver.getMapView().getRootGroup());
+        return builder.build();
     }
 
     @Override

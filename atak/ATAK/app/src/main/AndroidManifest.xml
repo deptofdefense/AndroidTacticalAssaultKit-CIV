@@ -54,9 +54,6 @@
          of products from the map -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
-    <!-- Prerequisite of publishing to the playstore starting 05/05/2021 -->
-    <!--uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/-->
-
     <!-- Any app that declares the WRITE_EXTERNAL_STORAGE permission is implicitly 
          granted this permission.  This permission is enforced starting in API level 
          19. Before API level 19, this permission is not enforced and all apps still 
@@ -149,7 +146,24 @@
     <!-- Tell the system this app requires OpenGL ES 3.0. -->
     <uses-feature android:glEsVersion="0x00030000" android:required="true" />
 
+    <!-- Android 11 for accessing the file system as it has traditionally done -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
 
+    <!-- Android 11 required for accessing the phone number of the phone -->
+    <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
+
+
+    <!-- Android 11 for supporting plugins -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
+
+
+    <!-- Allows for the application to find all plugins when QUERY_ALL_PACKAGES is removed -->
+    <queries>
+        <intent>
+            <action android:name="com.atakmap.app.component" />
+        </intent>
+    </queries>
 
 
     <!-- NOTE: The ATAKActivity needs to be run in singleTask mode because of 
@@ -169,7 +183,7 @@
         android:requestLegacyExternalStorage="true"
         android:hardwareAccelerated="true"
         android:label="@string/app_name"
-        android:theme="@style/ATAKTheme"
+        android:theme="@style/ATAKThemeActionBar"
         android:name="com.atakmap.app.ATAKApplication"
         android:icon="@drawable/ic_atak_launcher"
         android:extractNativeLibs="true"
@@ -197,7 +211,7 @@
                                    orientation|screenLayout|screenSize|smallestScreenSize|
                                    touchscreen|uiMode"
             android:label="@string/app_name"
-            android:theme="@style/ATAKThemeActionBarOverlay"
+            android:theme="@style/ATAKTheme"
             android:windowSoftInputMode="adjustPan"
             android:screenOrientation="nosensor">
             <intent-filter>
@@ -354,20 +368,6 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.atakmap.android.update.AppMgmtActivity" />
         </activity>
-        <activity android:name="com.atakmap.android.tools.AllToolsActivity"
-            android:configChanges="orientation"
-            android:screenOrientation="behind" >
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value=".ATAKActivity" />
-        </activity>
-        <activity android:name="com.atakmap.android.tools.AllToolsConfigMenuActivity"
-            android:configChanges="orientation"
-            android:screenOrientation="behind" >
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.atakmap.android.tools.AllToolsActivity" />
-        </activity>
 
         <activity android:name="com.atakmap.android.update.AppMgmtActivity"
             android:uiOptions="splitActionBarWhenNarrow"
@@ -394,14 +394,6 @@
                 <action android:name="com.atakmap.maps.images.REFRESH"/>
             </intent-filter>
         </receiver>
-
-        <activity android:name="com.atak.plugins.impl.ATAKProcessKillActivity" 
-                  android:excludeFromRecents="true" android:stateNotNeeded="true"
-                  android:noHistory="true" 
-                  android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen"
-                  android:configChanges="keyboardHidden|orientation|screenSize"/>
-        <activity-alias android:name="plugins.host.ProcessKillActivity" 
-                        android:targetActivity="com.atak.plugins.impl.ATAKProcessKillActivity"/>
 
         <!-- As of Android 10 the Apache libries are no longer supplied unless this attribute
              is provided -->

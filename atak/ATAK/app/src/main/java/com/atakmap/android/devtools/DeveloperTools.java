@@ -68,6 +68,7 @@ public class DeveloperTools extends AbstractMapOverlay2 {
             _children.add(new DisplayModeHierachyListItem(view.getRenderer3()));
 
             final MapRenderer3 renderer = view.getRenderer3();
+            _children.add(new CameraControls(renderer));
             final SurfaceRendererControl surfaceControl = renderer
                     .getControl(SurfaceRendererControl.class);
             if (surfaceControl != null) {

@@ -1,8 +1,9 @@
-<?xml version="1.0" encoding="utf-8"?>
-<selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:state_enabled="false"
-          android:drawable="@drawable/btn_check_on_disabled" />
-    <item android:state_pressed="true"
-          android:drawable="@drawable/btn_check_on_pressed" />
-    <item android:drawable="@drawable/btn_check_on_default" />
-</selector>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="128dp"
+    android:height="128dp"
+    android:viewportWidth="128"
+    android:viewportHeight="128">
+  <path
+      android:pathData="M17.496,0C7.898,0 0,7.898 0,17.496L0,110.504C0,120.102 7.898,128 17.496,128L110.502,128C120.1,128 128,120.102 128,110.504L128,17.496C128,7.898 120.1,-0 110.502,0L17.496,0zM94.387,39.789L98.221,43.623L102.055,47.457L91.15,58.473C85.154,64.531 73.624,76.153 65.529,84.299L50.811,99.109L38.387,86.795C31.553,80.022 25.984,74.43 26.012,74.369C26.04,74.308 27.859,72.489 30.057,70.326L34.053,66.393L42.242,74.879C46.747,79.546 50.519,83.365 50.623,83.365C50.727,83.365 60.616,73.561 72.6,61.578L94.387,39.789z"
+      android:fillColor="#ffffff"/>
+</vector>

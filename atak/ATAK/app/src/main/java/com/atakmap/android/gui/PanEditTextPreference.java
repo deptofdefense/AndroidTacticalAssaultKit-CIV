@@ -43,7 +43,7 @@ public class PanEditTextPreference extends EditTextPreference {
     private static final int MIN_VALID_WIDTH = 1;
     private static Context appContext;
 
-    private Context pContext;
+    private final Context pContext;
 
     /**
      * For plugins we are REQUIRED to set the application context to the 

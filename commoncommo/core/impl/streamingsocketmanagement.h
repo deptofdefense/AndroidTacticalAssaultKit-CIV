@@ -62,7 +62,7 @@ public:
                                                  const char *username,
                                                  const char *password,
                                                  CommoResult *resultCode);
-    CommoResult removeStreamingInterface(StreamingNetInterface *iface);
+    CommoResult removeStreamingInterface(std::string *endpoint, StreamingNetInterface *iface);
 
     // Configures the given openssl context with ssl parameters associated with
     // the stream identifies by streamingEndpoint.  Throws if the endpoint

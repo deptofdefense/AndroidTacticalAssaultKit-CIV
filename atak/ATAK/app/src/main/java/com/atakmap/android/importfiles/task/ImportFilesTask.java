@@ -10,6 +10,7 @@ import com.atakmap.android.importfiles.sort.ImportAlternateContactSort;
 import com.atakmap.android.importfiles.sort.ImportCertSort;
 import com.atakmap.android.importfiles.sort.ImportCotSort;
 import com.atakmap.android.importfiles.sort.ImportDRWSort;
+import com.atakmap.android.importfiles.sort.ImportDTEDSort;
 import com.atakmap.android.importfiles.sort.ImportGMLSort;
 import com.atakmap.android.importfiles.sort.ImportGMLZSort;
 import com.atakmap.android.importfiles.sort.ImportGPXSort;
@@ -19,6 +20,7 @@ import com.atakmap.android.importfiles.sort.ImportINFZSort;
 import com.atakmap.android.importfiles.sort.ImportJPEGSort;
 import com.atakmap.android.importfiles.sort.ImportJSONPrefSort;
 import com.atakmap.android.importfiles.sort.ImportKMLSort;
+import com.atakmap.android.importfiles.sort.ImportKMZPackageSort;
 import com.atakmap.android.importfiles.sort.ImportKMZSort;
 import com.atakmap.android.importfiles.sort.ImportLPTSort;
 import com.atakmap.android.importfiles.sort.ImportLayersSort;
@@ -35,7 +37,6 @@ import com.atakmap.android.importfiles.sort.ImportTXTSort;
 import com.atakmap.android.importfiles.sort.ImportTilesetSort;
 import com.atakmap.android.importfiles.sort.ImportUserIconSetSort;
 import com.atakmap.android.importfiles.sort.ImportVideoSort;
-import com.atakmap.android.tools.ImportActionBarSort;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
@@ -218,13 +219,14 @@ public class ImportFilesTask extends AsyncTask<Void, Void, Integer> {
 
         sorters.add(new ImportUserIconSetSort(context, validateExt));
 
+        sorters.add(new ImportKMZPackageSort(context, validateExt, copyFile,
+                importInPlace));
         sorters.add(new ImportGRGSort(context, validateExt, copyFile,
                 importInPlace));
         sorters.add(new ImportKMLSort(context, validateExt, copyFile,
                 importInPlace));
         sorters.add(new ImportKMZSort(context, validateExt, copyFile,
                 importInPlace, bKMZStrict));
-        sorters.add(new ImportActionBarSort(context, validateExt, copyFile));
         sorters.add(new ImportTXTSort(context, ".xml", validateExt, copyFile));
         sorters.add(new ImportTXTSort(context, ".txt", validateExt, copyFile));
         sorters.add(new ImportAlternateContactSort(context, validateExt,
@@ -267,6 +269,8 @@ public class ImportFilesTask extends AsyncTask<Void, Void, Integer> {
         sorters.add(new ImportDTEDZSort.ImportDTEDZv2Sort(context, validateExt,
                 copyFile,
                 importInPlace));
+        sorters.add(new ImportDTEDSort(context));
+
         sorters.add(new ImportINFZSort(context, validateExt));
         sorters.add(new ImportAPKSort(context, validateExt));
 

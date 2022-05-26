@@ -76,7 +76,7 @@ class TiltLockWidgetController implements
         leftEdgeV.setGravity(Gravity.TOP);
         leftEdgeV.setLayoutParams(LinearLayoutWidget.WRAP_CONTENT,
                 LinearLayoutWidget.MATCH_PARENT);
-        leftEdgeV.addWidgetAt(0, _sliderWidget);
+        leftEdgeV.addChildWidgetAt(0, _sliderWidget);
         _sliderWidget.addOnPressListener(this);
         _sliderWidget.addOnMoveListener(this);
 

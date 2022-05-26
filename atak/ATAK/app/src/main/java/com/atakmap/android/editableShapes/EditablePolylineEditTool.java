@@ -26,8 +26,8 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
-import com.atakmap.map.AtakMapController;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.map.CameraController;
 
 import java.util.Stack;
 
@@ -265,8 +265,8 @@ public class EditablePolylineEditTool extends ButtonTool
                                 final MapItem item = event.getItem();
                                 GeoPointMetaData gp = _mapView
                                         .inverseWithElevation(
-                                                event.getPoint().x,
-                                                event.getPoint().y);
+                                                event.getPointF().x,
+                                                event.getPointF().y);
                                 if (!gp.get().isValid())
                                     return;
                                 Log.d(TAG,
@@ -341,8 +341,8 @@ public class EditablePolylineEditTool extends ButtonTool
                                             public void onMapEvent(MapEvent e) {
                                                 GeoPointMetaData gp = _mapView
                                                         .inverseWithElevation(
-                                                                e.getPoint().x,
-                                                                e.getPoint().y);
+                                                                e.getPointF().x,
+                                                                e.getPointF().y);
                                                 EditAction act;
                                                 if (insertPoint)
                                                     // Insert new point
@@ -401,7 +401,7 @@ public class EditablePolylineEditTool extends ButtonTool
                 if (twoListenerPushesDeep)
                     return;
                 GeoPointMetaData gp = _mapView.inverseWithElevation(
-                        event.getPoint().x, event.getPoint().y);
+                        event.getPointF().x, event.getPointF().y);
                 if (!gp.get().isValid())
                     return;
                 MapItem mi = event.getItem();
@@ -521,8 +521,8 @@ public class EditablePolylineEditTool extends ButtonTool
                         if (event.getItem() == null) {
                             GeoPointMetaData geoPoint = _mapView
                                     .inverseWithElevation(
-                                            event.getPoint().x,
-                                            event.getPoint().y);
+                                            event.getPointF().x,
+                                            event.getPointF().y);
 
                             EditAction act = _poly.new InsertPointAction(
                                     geoPoint,
@@ -547,8 +547,8 @@ public class EditablePolylineEditTool extends ButtonTool
 
                             GeoPointMetaData geoPoint = _mapView
                                     .inverseWithElevation(
-                                            event.getPoint().x,
-                                            event.getPoint().y);
+                                            event.getPointF().x,
+                                            event.getPointF().y);
 
                             EditAction act = _poly.new InsertPointAction(
                                     geoPoint,
@@ -690,7 +690,6 @@ public class EditablePolylineEditTool extends ButtonTool
     }
 
     private void _scaleToFit(EditablePolyline route, int width, int height) {
-        AtakMapController ctrl = _mapView.getMapController();
 
         int numPoints = route.getNumPoints();
 
@@ -709,8 +708,8 @@ public class EditablePolylineEditTool extends ButtonTool
             Log.e(TAG, "error has occurred computing the center of extremes");
             return;
         }
-
-        ctrl.panTo(center, true);
+        CameraController.Programmatic.panTo(_mapView.getRenderer3(), center,
+                true);
 
         try {
             // get the extremes in pixel-size so we can zoom to that size
@@ -737,7 +736,8 @@ public class EditablePolylineEditTool extends ButtonTool
             }
 
             PointF p = _mapView.forward(center);
-            ctrl.zoomBy(zoomFactor, p.x, p.y, true);
+
+            _mapView.getMapController().zoomBy(zoomFactor, p.x, p.y, true);
         } catch (Exception e) {
             // in the unlikely event that the result of findExtremes produces a value 
             // that is -1, go ahead and just catch the error and trod along.

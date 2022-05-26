@@ -74,10 +74,7 @@ public class ActionBroadcastExtraStringData implements Parcelable {
         if (!FileSystemUtils.isEquals(getKey(), c.getKey()))
             return false;
 
-        if (!FileSystemUtils.isEquals(getValue(), c.getValue()))
-            return false;
-
-        return true;
+        return FileSystemUtils.isEquals(getValue(), c.getValue());
     }
 
     @Override

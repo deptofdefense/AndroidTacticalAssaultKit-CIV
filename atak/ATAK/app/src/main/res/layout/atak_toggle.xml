@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:layout_height="@dimen/toggle_height"
+    tools:layout_width="@dimen/toggle_width"
+    tools:parentTag="android.widget.LinearLayout">
+
+    <ImageButton
+        android:id="@+id/minus"
+        android:layout_width="@dimen/toggle_button_width"
+        android:layout_height="match_parent"
+        android:background="@drawable/toggle_button_left_background"
+        android:padding="@dimen/toggle_button_padding"
+        android:src="@drawable/ic_minus"
+        android:tint="@color/black" />
+
+    <TextView
+        android:id="@+id/toggleValue"
+        android:layout_width="@dimen/toggle_textview_width"
+        android:layout_height="match_parent"
+        android:background="@drawable/toggle_textview_background"
+        android:gravity="center"
+        android:textAppearance="@style/AtakTextAppearance.Header4"
+        android:textColor="@color/white"
+        android:textSize="@dimen/text_size_large"
+        tools:text="2" />
+
+
+    <ImageButton
+        android:id="@+id/plus"
+        android:layout_width="@dimen/toggle_button_width"
+        android:layout_height="match_parent"
+        android:background="@drawable/toggle_button_right_background"
+        android:padding="@dimen/toggle_button_padding"
+        android:src="@drawable/ic_plus"
+        android:tint="@color/black" />
+
+</merge>

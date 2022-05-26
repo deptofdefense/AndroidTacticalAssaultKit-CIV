@@ -1,0 +1,46 @@
+<selector xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item app:state_error="true">
+        <layer-list>
+            <item>
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/deep_carmine_pink" />
+                </shape>
+            </item>
+            <item android:bottom="1dp" android:left="3dp">
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/black" />
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+    <item app:state_entered="true">
+        <layer-list>
+            <item>
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/black" />
+                </shape>
+            </item>
+            <item android:bottom="-2dp" android:right="-4dp" android:top="-4dp">
+                <shape>
+                    <solid android:color="@android:color/transparent" />
+                    <stroke android:width="3dp" android:color="@color/pale_silver" />
+                </shape>
+            </item>
+
+        </layer-list>
+    </item>
+    <item>
+        <layer-list>
+            <item>
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/pale_silver" />
+                </shape>
+            </item>
+            <item android:bottom="1dp">
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/black" />
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+</selector>

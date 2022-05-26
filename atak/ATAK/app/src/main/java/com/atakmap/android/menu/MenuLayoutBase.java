@@ -1,20 +1,25 @@
 
 package com.atakmap.android.menu;
 
+import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Point;
 import android.graphics.PointF;
 import android.preference.PreferenceManager;
 import android.view.MotionEvent;
 
 import com.atakmap.android.action.MapAction;
+import com.atakmap.android.config.ConfigEnvironment;
 import com.atakmap.android.maps.MapData;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.assets.MapAssets;
 import com.atakmap.android.toolbars.RangeAndBearingMapItem;
+import com.atakmap.android.widgets.AbstractButtonWidget;
 import com.atakmap.android.widgets.AbstractParentWidget;
 import com.atakmap.android.widgets.LayoutWidget;
 import com.atakmap.android.widgets.MapWidget;
+import com.atakmap.android.widgets.WidgetIcon;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.AtakMapController;
@@ -26,47 +31,51 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import gov.tak.api.widgets.IMapMenuButtonWidget;
+import gov.tak.api.widgets.IMapMenuWidget;
+import gov.tak.api.widgets.IMapWidget;
+
 public class MenuLayoutBase extends LayoutWidget implements
         AtakMapController.OnFocusPointChangedListener,
         AbstractParentWidget.OnWidgetListChangedListener {
 
     public static final String TAG = "MenuLayoutBase";
+    private static final int DELAY_TIME = 40;
     private static final int RING_PADDING = 5;
-
-    private final AtakMapView _atakMapView;
-    protected MapItem _mapItem;
-    private final List<MapMenuFactory> _factories;
-
-    private final SharedPreferences prefs;
 
     interface MapActionDispatcher {
         void dispatchAction(MapAction mapAction, MapItem mapItem);
     }
 
+    private final AtakMapView _atakMapView;
+    private final Context _context;
+    protected MapItem _mapItem;
+    private final List<MapMenuFactory> _factories;
+    private final SharedPreferences _prefs;
     protected MapActionDispatcher _mapActionDispatcher;
-
-    @Override
-    public void onClick(MotionEvent event) {
-        super.onClick(event);
-        _clearAllMenus();
-    }
 
     MenuLayoutBase(final AtakMapView atakMapView, final MapData mapData,
             final MapAssets assets, final MenuMapAdapter adapter,
             final MapActionDispatcher mapActionDispatcher) {
         _atakMapView = atakMapView;
+        _context = atakMapView.getContext();
         _mapActionDispatcher = mapActionDispatcher;
 
         MenuResourceFactory menuResourceFactory = new MenuResourceFactory(
                 atakMapView, mapData, assets, adapter);
 
-        _factories = Collections
-                .synchronizedList(new LinkedList<MapMenuFactory>());
+        _factories = Collections.synchronizedList(new LinkedList<>());
         _factories.add(menuResourceFactory);
 
-        prefs = PreferenceManager
+        _prefs = PreferenceManager
                 .getDefaultSharedPreferences(_atakMapView
                         .getContext());
+    }
+
+    @Override
+    public void onClick(MotionEvent event) {
+        super.onClick(event);
+        _clearAllMenus();
     }
 
     /**
@@ -89,12 +98,12 @@ public class MenuLayoutBase extends LayoutWidget implements
         return widget;
     }
 
-    protected MapMenuWidget _openSubmenu(MapMenuWidget parent,
-            MapMenuButtonWidget buttonWidget) {
+    protected IMapMenuWidget _openSubmenu(IMapMenuWidget parent,
+            IMapMenuButtonWidget buttonWidget) {
         if ((null == parent) || (null == buttonWidget))
             return null;
 
-        MapMenuWidget submenuWidget = buttonWidget.getSubmenuWidget();
+        IMapMenuWidget submenuWidget = buttonWidget.getSubmenu();
         if (null != submenuWidget) {
             submenuWidget.setPoint(parent.getPointX(), parent.getPointY());
             layoutAsSubmenu(submenuWidget, buttonWidget);
@@ -153,18 +162,19 @@ public class MenuLayoutBase extends LayoutWidget implements
             _mapItem.removeMetaData("overlay_manager_select");
             _mapItem = null;
         }
-        while (getChildCount() > 0) {
-            removeWidgetAt(getChildCount() - 1);
+        while (getChildWidgetCount() > 0) {
+            removeChildWidgetAt(getChildWidgetCount() - 1);
             r = true;
         }
 
         return r;
     }
 
-    private boolean _clearUntilMenu(MapMenuWidget menu) {
+    private boolean _clearUntilMenu(IMapMenuWidget menu) {
         boolean r = false;
-        while (getChildCount() > 0 && getChildAt(getChildCount() - 1) != menu) {
-            removeWidgetAt(getChildCount() - 1);
+        while (getChildWidgetCount() > 0
+                && getChildWidgetAt(getChildWidgetCount() - 1) != menu) {
+            removeChildWidgetAt(getChildWidgetCount() - 1);
             r = true;
         }
         return r;
@@ -192,8 +202,8 @@ public class MenuLayoutBase extends LayoutWidget implements
 
     @Override
     public void onFocusPointChanged(float x, float y) {
-        for (int i = 0; i < getChildCount(); i++) {
-            MapWidget widget = getChildAt(i);
+        for (int i = 0; i < getChildWidgetCount(); i++) {
+            IMapWidget widget = getChildWidgetAt(i);
             if (widget instanceof MapMenuWidget)
                 widget.setPoint(x, y);
         }
@@ -207,27 +217,27 @@ public class MenuLayoutBase extends LayoutWidget implements
      * Controls what actions are to be taken when a MapMenuButtonWidget is pressed.
      */
     protected void _addPressExpanders(final MapMenuWidget menuWidget) {
-        for (int i = 0; i < menuWidget.getChildCount(); ++i) {
-            final MapMenuButtonWidget button = (MapMenuButtonWidget) menuWidget
-                    .getChildAt(i);
+        for (int i = 0; i < menuWidget.getChildWidgetCount(); ++i) {
+            final IMapMenuButtonWidget button = (IMapMenuButtonWidget) menuWidget
+                    .getChildWidgetAt(i);
 
-            button.addOnPressListener(new OnPressListener() {
+            button.addOnPressListener(new IMapWidget.OnPressListener() {
                 @Override
-                public void onMapWidgetPress(MapWidget widget,
-                        MotionEvent event) {
+                public void onMapWidgetPress(IMapWidget widget,
+                        gov.tak.platform.ui.MotionEvent event) {
 
                 }
             });
 
-            button.addOnClickListener(new OnClickListener() {
+            button.addOnClickListener(new IMapWidget.OnClickListener() {
                 @Override
-                public void onMapWidgetClick(MapWidget widget,
-                        MotionEvent event) {
-                    if (null != button.getOnClickAction()) {
-                        MapAction action = button.getOnClickAction();
-                        _mapActionDispatcher.dispatchAction(action, _mapItem);
+                public void onMapWidgetClick(IMapWidget widget,
+                        gov.tak.platform.ui.MotionEvent event) {
+                    if (null != button.getOnButtonClickHandler() && button
+                            .getOnButtonClickHandler().isSupported(_mapItem)) {
+                        button.onButtonClick(_mapItem);
                     } else {
-                        MapMenuWidget submenuWidget = button.getSubmenuWidget();
+                        IMapMenuWidget submenuWidget = button.getSubmenu();
                         if (null != submenuWidget) {
                             _expandPressSubmenu(menuWidget, button);
                         } else if (!button.isDisabled()) {
@@ -237,10 +247,10 @@ public class MenuLayoutBase extends LayoutWidget implements
                 }
             });
 
-            button.addOnLongPressListener(new OnLongPressListener() {
+            button.addOnLongPressListener(new IMapWidget.OnLongPressListener() {
                 @Override
-                public void onMapWidgetLongPress(MapWidget widget) {
-                    MapMenuWidget submenuWidget = button.getSubmenuWidget();
+                public void onMapWidgetLongPress(IMapWidget widget) {
+                    IMapMenuWidget submenuWidget = button.getSubmenu();
                     if (!button.isDisabled() && (null != submenuWidget))
                         _expandPressSubmenu(menuWidget, button);
                 }
@@ -251,34 +261,32 @@ public class MenuLayoutBase extends LayoutWidget implements
     /**
      * Controls what actions are to be taken when a MapMenuButtonWidget is pressed.
      */
-    protected void _addPressExpanders(final MapMenuWidget submenuWidget,
-            final MapMenuButtonWidget parentButton) {
-        for (int i = 0; i < submenuWidget.getChildCount(); ++i) {
+    protected void _addPressExpanders(final IMapMenuWidget submenuWidget,
+            final IMapMenuButtonWidget parentButton) {
+        for (int i = 0; i < submenuWidget.getChildWidgetCount(); ++i) {
             final MapMenuButtonWidget childButton = (MapMenuButtonWidget) submenuWidget
-                    .getChildAt(i);
-
-            if (parentButton.isDisabled())
-                childButton.setDisabled(true);
-
-            final float radius = getChildMenuRadius(submenuWidget,
-                    parentButton);
-            childButton.setOrientation(childButton.getOrientationAngle(),
-                    radius);
-
-            childButton.addOnPressListener(new OnPressListener() {
+                    .getChildWidgetAt(i);
+            childButton.delayShow((i + 1) * DELAY_TIME);
+            childButton.addOnPressListener(new IMapWidget.OnPressListener() {
                 @Override
-                public void onMapWidgetPress(MapWidget widget,
-                        MotionEvent event) {
+                public void onMapWidgetPress(IMapWidget widget,
+                        gov.tak.platform.ui.MotionEvent event) {
+
                 }
             });
 
             final String buttonIndex = Integer.toString(i); // must be final for use in handler below ...
-            childButton.addOnClickListener(new OnClickListener() {
+            childButton.addOnClickListener(new IMapWidget.OnClickListener() {
                 @Override
-                public void onMapWidgetClick(MapWidget widget,
-                        MotionEvent event) {
+                public void onMapWidgetClick(IMapWidget widget,
+                        gov.tak.platform.ui.MotionEvent event) {
                     if (_mapItem == null)
                         return;
+
+                    if (childButton.isBackButton()) {
+                        openMenuOnItem(_mapItem);
+                        return;
+                    }
                     MapAction clickAction = childButton.getOnClickAction();
                     List<String> prefKeys = parentButton.getPrefKeys();
                     List<String> prefValues = childButton.getPrefValues();
@@ -289,12 +297,14 @@ public class MenuLayoutBase extends LayoutWidget implements
                         if (prefsValid) {
 
                             // Apply preferences
+                            SharedPreferences.Editor editor = _prefs.edit();
                             for (int i1 = 0; i1 < prefKeys.size(); i1++) {
                                 String k = prefKeys.get(i1);
                                 String v = prefValues.get(i1);
                                 if (k != null && v != null)
-                                    prefs.edit().putString(k, v).apply();
+                                    editor.putString(k, v);
                             }
+                            editor.apply();
                         }
 
                         if (clickAction != null) {
@@ -316,30 +326,23 @@ public class MenuLayoutBase extends LayoutWidget implements
                     }
                 }
             });
-
-            childButton.addOnLongPressListener(new OnLongPressListener() {
-                @Override
-                public void onMapWidgetLongPress(MapWidget widget) {
-                    _expandPressSubmenu(submenuWidget, childButton);
-                }
-            });
         }
     }
 
-    protected float getChildMenuRadius(final MapMenuWidget submenuWidget,
-            final MapMenuButtonWidget parentButton) {
-        return submenuWidget._buttonRadius
-                + parentButton.getButtonWidth()
+    protected float getChildMenuRadius(final IMapMenuWidget submenuWidget,
+            final IMapMenuButtonWidget parentButton) {
+        return submenuWidget.getInnerRadius() +
+                +parentButton.getButtonWidth()
                 + RING_PADDING;
     }
 
-    protected void _expandPressSubmenu(MapMenuWidget menuWidget,
-            MapMenuButtonWidget parentButton) {
-        MapMenuWidget submenuWidget = _openSubmenu(menuWidget, parentButton);
+    protected void _expandPressSubmenu(IMapMenuWidget menuWidget,
+            IMapMenuButtonWidget parentButton) {
+        IMapMenuWidget submenuWidget = _openSubmenu(menuWidget, parentButton);
         if (submenuWidget != null) {
             _addPressExpanders(submenuWidget, parentButton);
             _clearUntilMenu(menuWidget);
-            addWidget(submenuWidget);
+            addChildWidget(submenuWidget);
         }
     }
 
@@ -374,16 +377,16 @@ public class MenuLayoutBase extends LayoutWidget implements
         return normalized;
     }
 
-    private void orientLayout(final MapMenuWidget menuWidget,
+    private void orientLayout(final IMapMenuWidget menuWidget,
             final float totalWeight) {
         float accumulatedWeight = 0f;
         final float startAngle = menuWidget.getStartAngle();
         final float coveredAngle = menuWidget.getCoveredAngle();
         for (int index = 0, max = menuWidget
-                .getChildCount(); max > index; ++index) {
-            final MapWidget widget = menuWidget.getChildAt(index);
+                .getChildWidgetCount(); max > index; ++index) {
+            final IMapWidget widget = menuWidget.getChildWidgetAt(index);
             // should not throw any class cast exceptions since we screened earlier
-            final MapMenuButtonWidget button = (MapMenuButtonWidget) widget;
+            final IMapMenuButtonWidget button = (IMapMenuButtonWidget) widget;
             final float halfWeight = button.getLayoutWeight() / 2f;
             final float span = coveredAngle * button.getLayoutWeight()
                     / totalWeight;
@@ -405,75 +408,109 @@ public class MenuLayoutBase extends LayoutWidget implements
         }
     }
 
-    private float cullAndWeighButtons(final MapMenuWidget menuWidget,
+    private float cullAndWeighButtons(final IMapMenuWidget menuWidget,
             final boolean cullDisabled) {
         float totalWeight = 0f;
         for (int index = 0, max = menuWidget
-                .getChildCount(); max > index; ++index) {
-            MapWidget widget = menuWidget.getChildAt(index);
-            if (!(widget instanceof MapMenuButtonWidget) ||
+                .getChildWidgetCount(); max > index; ++index) {
+            IMapWidget widget = menuWidget.getChildWidgetAt(index);
+            if (!(widget instanceof IMapMenuButtonWidget) ||
                     (cullDisabled
-                            && (((MapMenuButtonWidget) widget).isDisabled()))) {
-                menuWidget.removeWidgetAt(index);
+                            && (((IMapMenuButtonWidget) widget)
+                                    .isDisabled()))) {
+                menuWidget.removeChildWidgetAt(index);
                 max -= 1;
                 // index will be incremented back to original value, and we'll try again
                 index -= 1;
             } else {
-                totalWeight += ((MapMenuButtonWidget) widget).getLayoutWeight();
+                totalWeight += ((IMapMenuButtonWidget) widget)
+                        .getLayoutWeight();
             }
         }
         return totalWeight;
     }
 
-    protected void layoutAsMenu(MapMenuWidget menuWidget) {
+    protected void layoutAsMenu(IMapMenuWidget menuWidget) {
         final float totalWeight = cullAndWeighButtons(menuWidget, false);
         orientLayout(menuWidget, totalWeight);
     }
 
-    protected void layoutAsSubmenu(MapMenuWidget menuWidget,
-            MapMenuButtonWidget parentButton) {
+    protected void layoutAsSubmenu(IMapMenuWidget menuWidget,
+            IMapMenuButtonWidget parentButton) {
 
-        // get all buttons possible prior to culling, and their unit span
-        float submenuSpan = 0f; // an unreasonable default, but defined.
-        if (menuWidget.getExplicitSizing()) {
-            submenuSpan = menuWidget.getCoveredAngle()
-                    / menuWidget.getChildCount();
-        } else {
-            submenuSpan = parentButton.getButtonSpan();
+        _clearUntilMenu(menuWidget);
 
-            // parentButton's orientation radius appears to be its inner dimension
-            // Size the submenu button for nominally equivalent arc length as its parent
-            final float parentRadius = parentButton.getOrientationRadius();
-            menuWidget.setInnerRadius(parentRadius);
-
-            final float parentWidth = parentButton.getButtonWidth();
-            menuWidget.setButtonWidth(parentWidth);
+        //create back button
+        MapMenuButtonWidget backButton = new MapMenuButtonWidget(_context);
+        backButton.setState(AbstractButtonWidget.STATE_SELECTED);
+        WidgetIcon backIcon = null;
+        ConfigEnvironment.Builder b = new ConfigEnvironment.Builder();
+        ConfigEnvironment ce = b.build();
+        try {
+            backIcon = WidgetIcon.resolveWidgetIcon(ce,
+                    "icons/radial_back.png");
+        } catch (Exception e) {
+            Log.e(TAG,
+                    "error resolving radial_back icon, should not happen in production code",
+                    e);
+            return;
         }
+        // Use the current button at index 0 to set back button parameters
+        MapMenuButtonWidget paramsButton = (MapMenuButtonWidget) menuWidget
+                .getChildWidgetAt(0);
+        WidgetIcon currentIcon = paramsButton.getIcon();
+        WidgetIcon newIcon = new WidgetIcon(backIcon.getIconRef(0),
+                new Point(currentIcon.getAnchorX(),
+                        currentIcon.getAnchorY()),
+                currentIcon.getIconWidth(),
+                currentIcon.getIconHeight());
+
+        backButton.setIcon(newIcon);
+        backButton.setIsBackButton(true);
+        backButton.setLayoutWeight(paramsButton.getLayoutWeight());
+        backButton.setButtonSize(paramsButton.getButtonSpan(),
+                parentButton.getButtonWidth());
+        backButton.setOrientation(paramsButton.getOrientationAngle(),
+                parentButton.getOrientationRadius());
+
+        backButton.setBackground(parentButton.getWidgetBackground());
+        backButton.delayShow(DELAY_TIME);
+        menuWidget.addChildWidgetAt(0, backButton);
 
         // cull before we figure our dimensioning
         final float totalWeight = cullAndWeighButtons(menuWidget, true);
 
-        float coveredAngle = submenuSpan * menuWidget.getChildCount();
+        final float parentOrient = parentButton.getOrientationAngle();
+        final float parentWidth = parentButton.getButtonWidth();
+        // parentButton's orientation radius appears to be its inner dimension
+        // Size the submenu button for nominally equivalent arc length as its parent
+        final float parentRadius = parentButton.getOrientationRadius();
+        float submenuSpan = parentButton.getButtonSpan();
+        float coveredAngle = submenuSpan * menuWidget.getChildWidgetCount();
         if (360f < coveredAngle) {
-            submenuSpan = 360f / menuWidget.getChildCount();
+            submenuSpan = 360f / menuWidget.getChildWidgetCount();
             coveredAngle = 360f;
         }
+        final float startingAngle = normalizeAngle(parentOrient);
+
         menuWidget.setCoveredAngle(coveredAngle);
-
-        final float parentOrient = parentButton.getOrientationAngle();
-        final float startingAngle = normalizeAngle(
-                menuWidget.isClockwiseWinding()
-                        ? parentOrient + (coveredAngle - submenuSpan) / 2f
-                        : parentOrient - (coveredAngle - submenuSpan) / 2f);
         menuWidget.setStartAngle(startingAngle);
-
+        menuWidget.setInnerRadius(parentRadius);
+        menuWidget.setButtonWidth(parentWidth);
+        for (IMapWidget w : menuWidget.getChildren()) {
+            if (w instanceof MapMenuButtonWidget) {
+                MapMenuButtonWidget btn = (MapMenuButtonWidget) w;
+                btn.setButtonSize(btn.getButtonSpan(), parentWidth);
+            }
+        }
         orientLayout(menuWidget, totalWeight);
+        layoutAsMenu(menuWidget);
     }
 
     private MapMenuButtonWidget getSubmenuButton(
             final AbstractParentWidget widget,
             final AbstractParentWidget root) {
-        for (MapWidget childWidget : root.getChildWidgets()) {
+        for (IMapWidget childWidget : root.getChildren()) {
             if (childWidget instanceof MapMenuWidget) {
                 return getSubmenuButton(widget,
                         (AbstractParentWidget) childWidget);
@@ -511,7 +548,7 @@ public class MenuLayoutBase extends LayoutWidget implements
     }
 
     private void removeMenuWidgetFromLayout(MapMenuWidget menuWidget) {
-        for (MapWidget child : menuWidget.getChildWidgets()) {
+        for (IMapWidget child : menuWidget.getChildren()) {
             if (child instanceof MapMenuButtonWidget) {
                 MapMenuButtonWidget buttonWidget = (MapMenuButtonWidget) child;
                 MapMenuWidget submenuWidget = buttonWidget.getSubmenuWidget();

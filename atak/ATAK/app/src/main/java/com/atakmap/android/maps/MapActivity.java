@@ -2,6 +2,7 @@
 package com.atakmap.android.maps;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -43,6 +44,7 @@ public abstract class MapActivity extends MetricFragmentActivity {
     private boolean _isActive;
     private MapAssets _mapAssets;
     private final ConcurrentLinkedQueue<MapComponent> _observers = new ConcurrentLinkedQueue<>();
+    private final List<Runnable> tasks = new ArrayList<>();
 
     private final Object lifecycleTransitionLock = new Object();
 
@@ -139,7 +141,19 @@ public abstract class MapActivity extends MetricFragmentActivity {
                     Log.e(TAG, "error calling onStart for: " + c);
                 }
             }
+
+            // execute any pending tasks that require the activity to be in a started state
+            for (Runnable task : tasks)
+                try {
+                    Log.d(TAG, "running a queued requested task");
+                    task.run();
+                } catch (Exception e) {
+                    Log.e(TAG, "error running task: " + task);
+                }
+            tasks.clear();
+
         }
+
     }
 
     @Override
@@ -383,5 +397,28 @@ public abstract class MapActivity extends MetricFragmentActivity {
      * @return the MapView
      */
     public abstract MapView getMapView();
+
+    /**
+     * Run only when the activity is started (active state) or enqueue it to be run when
+     * the activity is started.
+     * @param task the task to run if the activity is active (ie onStart has been called).
+     */
+    public void executeOnActive(Runnable task) {
+        synchronized (lifecycleTransitionLock) {
+            if (_isActive) {
+                try {
+                    Log.d(TAG, "running a requested task immediately");
+                    task.run();
+                } catch (Exception e) {
+                    Log.e(TAG, "error running task: " + task);
+                }
+            } else {
+                Log.d(TAG,
+                        "request to run a task but the activity is not active");
+                tasks.add(task);
+            }
+        }
+
+    }
 
 }

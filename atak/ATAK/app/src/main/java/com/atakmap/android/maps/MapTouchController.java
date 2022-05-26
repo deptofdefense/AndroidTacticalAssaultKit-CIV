@@ -31,6 +31,7 @@ import com.atakmap.android.maps.DeconflictionAdapter.DeconflictionType;
 import com.atakmap.android.maps.hittest.MapItemResultFilter;
 import com.atakmap.android.menu.MapMenuReceiver;
 import com.atakmap.android.menu.MenuCapabilities;
+import com.atakmap.android.navigation.widgets.FreeLookMapComponent;
 import com.atakmap.android.routes.Route;
 import com.atakmap.android.toolbars.RangeAndBearingMapItem;
 import com.atakmap.android.util.ATAKUtilities;
@@ -90,6 +91,12 @@ public class MapTouchController implements OnTouchListener,
      */
     private static final double PAN_TO_RELATIVE_DENSITY_LIMIT = 0.75d;
 
+    // Tilt states
+    public static final int STATE_TILT_ENABLED = 0;
+    public static final int STATE_MANUAL_TILT_DISABLED = 1;
+    public static final int STATE_PROGRAMATIC_TILT_DISABLED = 2;
+    public static final int STATE_TILT_DISABLED = 3;
+
     private boolean _recentlyZoomed = false;
     private boolean _lockControls = false;
     private boolean _skipDeconfliction = false;
@@ -147,11 +154,17 @@ public class MapTouchController implements OnTouchListener,
     private boolean _gestureDensityThresholdExceededPointFixedCenter;
 
     // internal use for debugging purposes
-    private final boolean zoomEnabled = true;
+    private final boolean _zoomEnabled = true;
 
-    private MapRenderer3 _glglobe;
+    private final MapRenderer3 _glglobe;
 
-    LongTouchDraggerListener longDraggerListener = new LongTouchDraggerListener();
+    private final LongTouchDraggerListener _longDragListener = new LongTouchDraggerListener();
+
+    private boolean _userOrientation = false;
+    private double _originalMapAngle = 0, _originalAngle = 0;
+
+    // Tilt map 3D mode
+    private int _tiltLockState = STATE_TILT_DISABLED;
 
     public void lockControls() {
         _lockControls = true;
@@ -188,10 +201,7 @@ public class MapTouchController implements OnTouchListener,
         ddr = new DeconflictionDropDownReceiver(_mapView);
         ddosl = new DeconflictionOnStateListener();
 
-        _tiltEnabled = STATE_TILT_DISABLED;
-
-        if (DeveloperOptions.getIntOption(
-                "disable-3D-mode", 0) == 0)
+        if (DeveloperOptions.getIntOption("disable-3D-mode", 0) == 0)
             MenuCapabilities.registerSupported("capability.3d");
 
     }
@@ -670,7 +680,7 @@ public class MapTouchController implements OnTouchListener,
             if (longtouchTimer == null) {
                 longtouchTimer = new Timer("MapLongTouchTimer");
             }
-            longDraggerListener.setInitialMotionEvent(event);
+            _longDragListener.setInitialMotionEvent(event);
             if (longPress) {
                 longtouchTimer.schedule(new TimerTask() {
                     @Override
@@ -682,7 +692,7 @@ public class MapTouchController implements OnTouchListener,
                             //Log.d(TAG, "shb: long press ended");
                             _mapView.removeOnTouchListener(
                                     MapTouchController.this);
-                            _mapView.addOnTouchListener(longDraggerListener);
+                            _mapView.addOnTouchListener(_longDragListener);
                             //Log.d(TAG, "shb: transitioned to a new state");
                         }
                     }
@@ -1248,7 +1258,7 @@ public class MapTouchController implements OnTouchListener,
             drawEventDispatcher.dispatch(drawEventBuilder.build());
 
             // Move focus point
-            if (isFreeForm3DEnabled() && _freeFormItem == null)
+            if (isFreeForm3DEnabled() && getFreeForm3DItem() == null)
                 setFreeForm3DEnabled(true);
         }
 
@@ -1270,95 +1280,72 @@ public class MapTouchController implements OnTouchListener,
         return false;
     }
 
-    private boolean _userOrientation = false;
-    private double _originalMapAngle = 0, _originalAngle = 0;
-
-    // Tilt states
-    public static final int STATE_TILT_ENABLED = 0;
-    public static final int STATE_MANUAL_TILT_DISABLED = 1;
-    public static final int STATE_PROGRAMATIC_TILT_DISABLED = 2;
-    public static final int STATE_TILT_DISABLED = 3;
-
-    // Tilt map 3D mode
-    private int _tiltEnabled = STATE_TILT_ENABLED;
-
-    // Free-form 3D mode
-    private boolean _freeForm3DEnabled = false;
-    private GeoPoint _freeFormPoint;
-    private PointMapItem _freeFormItem;
-    private final PointMapItem.OnPointChangedListener _ffPointListener = new PointMapItem.OnPointChangedListener() {
-        @Override
-        public void onPointChanged(PointMapItem item) {
-            if (_freeFormItem == item) {
-                _mapView.getMapController().panTo(item.getPoint(), true);
-                setFreeForm3DPoint(item.getPoint());
-            }
-        }
-    };
-    private MapItem.OnGroupChangedListener _ffRemoveListener = new MapItem.OnGroupChangedListener() {
-        @Override
-        public void onItemAdded(MapItem item, MapGroup group) {
-        }
-
-        @Override
-        public void onItemRemoved(MapItem item, MapGroup group) {
-            if (_freeFormItem == item)
-                setFreeForm3DEnabled(false);
-        }
-    };
-
+    /**
+     * Set whether the user has free control over the map rotation
+     * @param orientation True if user-controlled map rotation enabled
+     */
     public void setUserOrientation(boolean orientation) {
-        _userOrientation = orientation;
+        if (_userOrientation != orientation) {
+            _userOrientation = orientation;
+
+            // Notify rotation lock state changed via map event
+            Bundle extras = new Bundle();
+            extras.putBoolean("locked", !orientation);
+            _mapView.getMapEventDispatcher().dispatch(new MapEvent.Builder(
+                    MapEvent.MAP_ROTATE_LOCK)
+                            .setExtras(extras)
+                            .build());
+        }
     }
 
+    /**
+     * Whether the user has free control over the map rotation
+     * @return True if user-controlled map rotation enabled
+     */
     public boolean isUserOrientationEnabled() {
         return _userOrientation;
     }
 
     /**
-     * Allows for programatic setting of the tilt state.   The 
+     * Allows for programmatic setting of the tilt lock state.   The
      * @param state can either be:
      * STATE_TILT_ENABLED=0, 
      * STATE_MANUAL_TILT_DISABLED=1, 
-     * STATE_PROGRAMATIC_TILT_DISABLED=2, 
+     * STATE_PROGRAMATIC_TILT_DISABLED=2,
      * STATE_TILT_DISABLED=3 
      */
     public void setTiltEnabledState(int state) {
-
-        if (DeveloperOptions.getIntOption(
-                "disable-3D-mode", 0) == 1)
-            return;
-
-        _tiltEnabled = state;
-    }
-
-    public int getTiltEnabledState() {
-        return _tiltEnabled;
-    }
-
-    public void setFreeForm3DEnabled(boolean enabled) {
-
         if (DeveloperOptions.getIntOption("disable-3D-mode", 0) == 1)
             return;
 
-        final MapSceneModel sm = _glglobe.getMapSceneModel(false,
-                MapRenderer2.DisplayOrigin.UpperLeft);
-        final double tilt = 90d + sm.camera.elevation;
-        GeoPointMetaData focus = _mapView.inverseWithElevation(
-                sm.focusx,
-                sm.focusy);
-        GeoPoint ffPoint = _freeFormPoint;
-        if (ffPoint == null)
-            ffPoint = focus.get();
-        _freeForm3DEnabled = enabled;
-        setFreeForm3DPoint(enabled ? focus.get() : null);
-        if (!enabled) {
-            if (getTiltEnabledState() != STATE_TILT_ENABLED)
-                _mapView.getMapController().tiltBy(-tilt, ffPoint, true);
-            if (!isUserOrientationEnabled())
-                _mapView.getMapController().rotateTo(0, true);
-            setFreeForm3DItem(null);
+        if (_tiltLockState != state) {
+            _tiltLockState = state;
+
+            // Notify tilt lock state changed via map event
+            Bundle extras = new Bundle();
+            extras.putInt("state", state);
+            _mapView.getMapEventDispatcher().dispatch(new MapEvent.Builder(
+                    MapEvent.MAP_TILT_LOCK)
+                            .setExtras(extras)
+                            .build());
         }
+    }
+
+    /**
+     * Get the current tilt lock state
+     * @return Tilt lock state
+     */
+    public int getTiltEnabledState() {
+        return _tiltLockState;
+    }
+
+    /**
+     * Set whether 3D free look is enabled
+     * @param enabled True if enabeld
+     */
+    public void setFreeForm3DEnabled(boolean enabled) {
+        if (FreeLookMapComponent.getInstance() != null)
+            FreeLookMapComponent.getInstance().setEnabled(enabled);
     }
 
     /**
@@ -1366,64 +1353,28 @@ public class MapTouchController implements OnTouchListener,
      * @param item Map item
      */
     public void setFreeForm3DItem(MapItem item) {
-
-        // Remove listener on existing point
-        if (_freeFormItem != null) {
-            _freeFormItem.removeOnGroupChangedListener(_ffRemoveListener);
-            _freeFormItem.removeOnPointChangedListener(_ffPointListener);
-        }
-
-        // Associate with anchor item
-        _freeFormItem = getAnchorItem(item);
-
-        if (_freeFormItem != null) {
-            GeoPoint point = _freeFormItem.getPoint();
-            double height = item.getHeight();
-            if (item instanceof Marker && !Double.isNaN(height)) {
-                // Apply height offset to marker
-                point = new GeoPoint(point, GeoPoint.Access.READ_WRITE);
-                double alt = point.getAltitude();
-                if (Double.isNaN(alt))
-                    alt = 0;
-                alt += height;
-                point.set(alt);
-            } else if (item instanceof Shape)
-                point = ((Shape) item).findTouchPoint();
-            if (point != null)
-                setFreeForm3DPoint(point);
-            _freeFormItem.addOnGroupChangedListener(_ffRemoveListener);
-            _freeFormItem.addOnPointChangedListener(_ffPointListener);
-        }
+        if (FreeLookMapComponent.getInstance() != null)
+            FreeLookMapComponent.getInstance().setItem(item);
     }
 
     public PointMapItem getFreeForm3DItem() {
-        return _freeFormItem;
+        return FreeLookMapComponent.getInstance() != null
+                ? FreeLookMapComponent.getInstance().getItem() : null;
     }
 
     public void setFreeForm3DPoint(GeoPoint point) {
-        _freeFormPoint = point;
+        if (FreeLookMapComponent.getInstance() != null)
+            FreeLookMapComponent.getInstance().setPoint(point);
     }
 
     public GeoPoint getFreeForm3DPoint() {
-        return _freeFormPoint;
+        return FreeLookMapComponent.getInstance() != null
+                ? FreeLookMapComponent.getInstance().getPoint() : null;
     }
 
     public boolean isFreeForm3DEnabled() {
-        return _freeForm3DEnabled;
-    }
-
-    private PointMapItem getAnchorItem(MapItem item) {
-        if (item == null)
-            return null;
-        if (item instanceof PointMapItem)
-            return (PointMapItem) item;
-        if (item instanceof AnchoredMapItem)
-            return ((AnchoredMapItem) item).getAnchorItem();
-        return null;
-    }
-
-    private static boolean checkCollide() {
-        return false;
+        return FreeLookMapComponent.getInstance() != null
+                && FreeLookMapComponent.getInstance().isEnabled();
     }
 
     @Override
@@ -1439,8 +1390,9 @@ public class MapTouchController implements OnTouchListener,
                 MapRenderer2.DisplayOrigin.UpperLeft);
 
         GeoPoint focusPoint = _originalFocusPoint;
-        if (_freeFormPoint != null) {
-            focusPoint = _freeFormPoint;
+        GeoPoint ffPoint = getFreeForm3DPoint();
+        if (ffPoint != null) {
+            focusPoint = ffPoint;
             PointF p = _mapView.forward(focusPoint);
             focusx = p.x;
             focusy = p.y;
@@ -1457,7 +1409,7 @@ public class MapTouchController implements OnTouchListener,
                     : _lockedZoomFocus.x;
             focusy = _lockedZoomFocus.y == -1 ? sm.focusy
                     : _lockedZoomFocus.y;
-        } else if (_tiltEnabled == STATE_TILT_ENABLED
+        } else if (_tiltLockState == STATE_TILT_ENABLED
                 || MapMenuReceiver.getCurrentItem() != null) {
             // XXX - if tilt is enabled or the radial is open, force the focus
             // to stick on the original focus point. If the instantaneous
@@ -1472,9 +1424,9 @@ public class MapTouchController implements OnTouchListener,
         // if the focus point is allowed to drift from screenspace focus,
         // ensure that the requested location meets thresholds set for
         // relative density
-        final boolean focusSatisfiesDensityThreshold = (_freeFormPoint != null)
+        final boolean focusSatisfiesDensityThreshold = (ffPoint != null)
                 ||
-                (_tiltEnabled == STATE_TILT_ENABLED) ||
+                (_tiltLockState == STATE_TILT_ENABLED) ||
                 CameraController.Util.computeRelativeDensityRatio(
                         sm,
                         focusx,
@@ -1512,7 +1464,7 @@ public class MapTouchController implements OnTouchListener,
         // passed through to all camera control operations
 
         _mapPressed = false;
-        if (zoomEnabled) {
+        if (_zoomEnabled) {
             // compare camera altitude versus distance to focus and use it to limit zoom
             final double focuslen = MathUtils.distance(
                     sm.camera.target.x
@@ -1546,7 +1498,8 @@ public class MapTouchController implements OnTouchListener,
             Bundle scaleExtras = new Bundle();
             scaleExtras.putParcelable("originalFocus", focusPoint);
             eventBuilder.setExtras(scaleExtras);
-            _mapView.getMapEventDispatcher().dispatch(eventBuilder.build());
+            MapEvent event = eventBuilder.build();
+            _mapView.getMapEventDispatcher().dispatch(event);
         }
         _inGesture = true;
 
@@ -1579,7 +1532,7 @@ public class MapTouchController implements OnTouchListener,
         }
 
         // tilt
-        if (_tiltEnabled == STATE_TILT_ENABLED || isFreeForm3DEnabled()) {
+        if (_tiltLockState == STATE_TILT_ENABLED || isFreeForm3DEnabled()) {
             double tiltBy = 0;
             final MotionEvent e0 = detector.getPreviousEvent();
             final MotionEvent e1 = detector.getEvent();
@@ -1751,6 +1704,39 @@ public class MapTouchController implements OnTouchListener,
         return true;
     }
 
+    /**
+     * Default scale event handling called by {@link MapTouchEventListener}
+     * @param event {@link MapEvent#MAP_SCALE} event
+     */
+    public void onScaleEvent(MapEvent event) {
+        if (event == null || !MapEvent.MAP_SCALE.equals(event.getType()))
+            return;
+        PointF p = event.getPointF();
+        GeoPoint focus = null;
+        Bundle panExtras = event.getExtras();
+        if (panExtras != null)
+            focus = panExtras.getParcelable("originalFocus");
+        if (focus == null) {
+            focus = GeoPoint.createMutable();
+            _mapView.getRenderer3().inverse(new PointD(p.x, p.y), focus,
+                    MapRenderer2.InverseMode.RayCast,
+                    MapRenderer2.HINT_RAYCAST_IGNORE_SURFACE_MESH
+                            | MapRenderer2.HINT_RAYCAST_IGNORE_TERRAIN_MESH,
+                    MapRenderer2.DisplayOrigin.UpperLeft);
+        }
+        // abort camera motion if collision occurs when zooming in
+        final MapRenderer3.CameraCollision collide = (event
+                .getScaleFactor() > 1d) ? MapRenderer3.CameraCollision.Abort
+                        : MapRenderer3.CameraCollision.AdjustCamera;
+        if (focus.isValid())
+            CameraController.Interactive.zoomBy(_mapView.getRenderer3(),
+                    event.getScaleFactor(), focus, p.x, p.y, collide,
+                    false);
+        else
+            CameraController.Interactive.zoomBy(_mapView.getRenderer3(),
+                    event.getScaleFactor(), collide, false);
+    }
+
     private void setDoubleTapDragging(boolean dragging) {
         _mapDoubleTapDrag = dragging;
         _gestureDetector.setIsLongpressEnabled(!_mapDoubleTapDrag);
@@ -1846,7 +1832,8 @@ public class MapTouchController implements OnTouchListener,
         if (!Double.isNaN(localel))
             _originalAgl -= localel;
 
-        if (_freeFormPoint == null) {
+        GeoPoint ffPoint = getFreeForm3DPoint();
+        if (ffPoint == null) {
             // capture focus point on surface
             if (captureCenter) {
                 _centerOnPress.set(Double.NaN, Double.NaN);
@@ -1869,13 +1856,13 @@ public class MapTouchController implements OnTouchListener,
             GeoPoint focus = GeoPoint.createMutable();
             {
                 // create plane at press location
-                PointD startProj = sm.mapProjection.forward(_freeFormPoint,
+                PointD startProj = sm.mapProjection.forward(ffPoint,
                         null);
                 PointD startProjUp = sm.mapProjection
                         .forward(
-                                new GeoPoint(_freeFormPoint.getLatitude(),
-                                        _freeFormPoint.getLongitude(),
-                                        _freeFormPoint.getAltitude() + 100d),
+                                new GeoPoint(ffPoint.getLatitude(),
+                                        ffPoint.getLongitude(),
+                                        ffPoint.getAltitude() + 100d),
                                 null);
 
                 // compute the normal at the start point
@@ -1899,9 +1886,9 @@ public class MapTouchController implements OnTouchListener,
                 // the tangent plane
                 if (sm.inverse(new PointF(gestureFocusX, gestureFocusY), focus,
                         panPlane) != null)
-                    focus.set(_freeFormPoint.getAltitude());
+                    focus.set(ffPoint.getAltitude());
                 else
-                    focus.set(_freeFormPoint);
+                    focus.set(ffPoint);
             }
             _originalFocusPoint.set(focus);
             _centerOnPress.set(focus);

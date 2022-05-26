@@ -1,7 +1,6 @@
 
 package com.atakmap.android.toolbars;
 
-import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -10,18 +9,17 @@ import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import android.view.LayoutInflater;
 import android.widget.ImageButton;
 
-import com.atakmap.android.tools.ActionBarReceiver;
+import com.atakmap.android.navigation.NavButtonManager;
+import com.atakmap.android.navigation.models.NavButtonModel;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.toolbar.IToolbarExtension;
 import com.atakmap.android.toolbar.Tool;
 import com.atakmap.android.toolbar.ToolbarBroadcastReceiver;
 import com.atakmap.android.tools.ActionBarView;
-import com.atakmap.android.tools.menu.ActionMenuData;
 import com.atakmap.android.user.SelectPointButtonTool;
 import com.atakmap.android.user.SpecialPointButtonTool;
 import com.atakmap.app.R;
-import com.atakmap.coremap.log.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,8 +27,7 @@ import java.util.List;
 /**
  *
  */
-public class RangeAndBearingToolbar implements IToolbarExtension,
-        ActionBarReceiver.ActionBarChangeListener {
+public class RangeAndBearingToolbar implements IToolbarExtension {
 
     static public final String TAG = "RangeAndBearingToolbar";
     protected static final String TOOLBAR_NAME = "com.atakmap.android.toolbars.RangeAndBearingToolbar";
@@ -38,8 +35,6 @@ public class RangeAndBearingToolbar implements IToolbarExtension,
     protected static final String REDX_CLICK = "com.atakmap.android.user.REDX_CLICK";
     protected static final String REDX_LONG_CLICK = "com.atakmap.android.user.REDX_LONG_CLICK";
     protected static final String REDX_OFF = "com.atakmap.android.user.REDX_OFF";
-
-    protected static ActionMenuData _amd;
 
     private static RangeAndBearingToolbar _instance;
 
@@ -62,6 +57,7 @@ public class RangeAndBearingToolbar implements IToolbarExtension,
         _toolbarView = (ActionBarView) inflater.inflate(R.layout.rab_toolbar,
                 _mapView,
                 false);
+        _toolbarView.setPosition(ActionBarView.TOP_LEFT);
 
         ImageButton buttonDynamicRangeBearing = _toolbarView
                 .findViewById(R.id.buttonDynamicRangeAndBearing);
@@ -76,7 +72,6 @@ public class RangeAndBearingToolbar implements IToolbarExtension,
                 _mapView);
         RangeAndBearingEndpoint.setTool(rabepTool);
         _spbt = SelectPointButtonTool.getInstance(_mapView, null);
-        _spbt.setActionMenuData(_amd);
         _tools.add(DynamicRangeAndBearingTool.getInstance(_mapView,
                 buttonDynamicRangeBearing));
         _tools.add(new RangeAndBearingTool(_mapView, buttonRangeBearing));
@@ -95,52 +90,6 @@ public class RangeAndBearingToolbar implements IToolbarExtension,
 
         ToolbarBroadcastReceiver.getInstance().registerToolbar(TOOLBAR_NAME,
                 this);
-        ActionBarReceiver.registerActionBarChangeListener(this);
-
-    }
-
-    /**
-     * A notification has been made that the action bar has been updated.
-     * @return true if the state of the action bar menu item is out of date.
-     */
-    @Override
-    public boolean actionBarChanged() {
-        boolean changed = false;
-        // get the new actionBar receiver //
-        _amd = ActionBarReceiver.getMenuItem(
-                _mapView.getContext().getString(R.string.actionbar_redxtool));
-        if (_amd != null) {
-            final MapView view = MapView.getMapView();
-
-            SpecialPointButtonTool.States state = SelectPointButtonTool
-                    .getInstance(view, null).getState();
-            Log.d(TAG, "calling setRedXActionItem: " + _amd + " currentState: "
-                    + state);
-
-            boolean selected = _amd.isSelected();
-            boolean enabled = _amd.isEnabled();
-
-            switch (state) {
-                case DISABLED:
-                    changed = !selected || enabled;
-                    _amd.setSelected(true);
-                    _amd.setEnabled(false);
-                    break;
-                case ENABLED:
-                    changed = !selected || !enabled;
-                    _amd.setSelected(true);
-                    _amd.setEnabled(true);
-                    break;
-                default:
-                    changed = selected || enabled;
-                    _amd.setSelected(false);
-                    _amd.setEnabled(false);
-            }
-        } else {
-            Log.w(TAG, "RED X ActionMenuData not set!");
-        }
-
-        return changed;
 
     }
 
@@ -172,12 +121,6 @@ public class RangeAndBearingToolbar implements IToolbarExtension,
     private final BroadcastReceiver redXListener = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            // lazy instantiation of the red x tool button.
-            if (_amd == null)
-                _amd = ActionBarReceiver.getMenuItem(_mapView.getContext()
-                        .getString(R.string.actionbar_redxtool));
-            _spbt.setActionMenuData(_amd);
-
             String action = intent.getAction();
             SpecialPointButtonTool.States state = SpecialPointButtonTool.States.OFF;
             if (REDX_CLICK.equals(action)) {
@@ -187,24 +130,23 @@ public class RangeAndBearingToolbar implements IToolbarExtension,
             } else if (REDX_OFF.equals(action)) {
                 state = _spbt.off();
             }
-            if (_amd != null) {
-                switch (state) {
-                    case DISABLED:
-                        _amd.setSelected(true);
-                        _amd.setEnabled(false);
-                        break;
-                    case ENABLED:
-                        _amd.setSelected(true);
-                        _amd.setEnabled(true);
-                        break;
-                    default:
-                        _amd.setSelected(false);
-                        _amd.setEnabled(false);
-                }
-                ((Activity) _mapView.getContext()).invalidateOptionsMenu();
-            } else {
-                Log.w(TAG, "RED X ActionMenuData not set!");
+            boolean selected = false, enabled = false;
+            switch (state) {
+                case DISABLED:
+                    selected = true;
+                    enabled = false;
+                    break;
+                case ENABLED:
+                    selected = enabled = true;
+                    break;
             }
+            NavButtonModel mdl = NavButtonManager.getInstance()
+                    .getModelByReference("redx.xml");
+            mdl.setSelected(selected);
+            mdl.setSelectedImage(context.getDrawable(selected && !enabled
+                    ? R.drawable.nav_redx_locked
+                    : R.drawable.nav_redx));
+            NavButtonManager.getInstance().notifyModelChanged(mdl);
         }
     };
 

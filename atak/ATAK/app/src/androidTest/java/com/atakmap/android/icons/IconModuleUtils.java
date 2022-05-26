@@ -1,8 +1,12 @@
 
 package com.atakmap.android.icons;
 
+import static org.junit.Assert.assertNotNull;
+
 import android.content.Context;
 import android.preference.PreferenceManager;
+
+import androidx.test.core.app.ApplicationProvider;
 
 import com.atakmap.android.androidtest.util.RandomUtils;
 import com.atakmap.android.maps.MapDataRef;
@@ -10,13 +14,9 @@ import com.atakmap.android.maps.SqliteMapDataRef;
 
 import java.util.List;
 
-import androidx.test.InstrumentationRegistry;
-
-import static org.junit.Assert.assertNotNull;
-
 public class IconModuleUtils {
     public static String randomIconUri() {
-        Context appContext = InstrumentationRegistry.getTargetContext();
+        Context appContext = ApplicationProvider.getApplicationContext();
 
         UserIconDatabase db = IconsMapAdapter.initializeUserIconDB(appContext,
                 PreferenceManager.getDefaultSharedPreferences(appContext));

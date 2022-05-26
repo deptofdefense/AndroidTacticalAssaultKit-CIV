@@ -30,6 +30,7 @@ import java.util.Map;
 
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.annotations.DeprecatedApi;
 
 /**
  * Contains a network device mapping that is created through an external Network learning
@@ -61,7 +62,11 @@ import com.atakmap.coremap.log.Log;
  * <p>
  * The NetworkDeviceManager can be used in an enabled or disabled state.   In the case that the NetworkDeviceManager
  * is enabled, the network.map file will be loaded and utilized to describe how to use the network interfaces.
+ * @deprecated as of Android 11 the mac address can no longer be used.   Please see NetworkManagerLite
+ * for code that is still used.
  */
+@Deprecated
+@DeprecatedApi(since = "4.5", removeAt = "4.8", forRemoval = true)
 public class NetworkDeviceManager {
 
     public static final String TAG = "NetworkDeviceManager";
@@ -143,13 +148,6 @@ public class NetworkDeviceManager {
             STREAMING_COT_BOTH(4,
                     "streamin_cot_both",
                     "CoT Bidirectional (Streaming)"),
-
-            ISRV_SIR(10, "isrv_sir", "Soldier ISR Receiver (SIR)"),
-            ISRV_TRE(11, "isrv_tre", "Tactical Rover Enhanced (TRE)"),
-            ISRV_ROVER6(12, "isrv_rover6", "Rover 6"),
-            ISRV_VORTEX(13, "isrv_vortex", "Vortex"),
-
-            POCKET_DDL(16, "pocket_ddl", "PocketDDL"),
 
             MPU_METADATA(20, "mpu_metadata", "MPU Metadata GPS/Health Status"),
 
@@ -696,7 +694,9 @@ public class NetworkDeviceManager {
      * @param macaddr is in the format XX:XX:XX:XX:XX:XX
      * @return the stringified IPv4 interface otherwise, null if the mac address does not
      * resolve to a valid IPv4 interface.
+     * @deprecated
      */
+    @Deprecated
     public static String getIPv4Address(final String macaddr) {
         if (macaddr != null) {
             NetworkDevice nd = NetworkDeviceManager.getDevice(macaddr);
@@ -747,7 +747,9 @@ public class NetworkDeviceManager {
      * will be checked to see if it exists in the cache and is up.   This will
      * allow for the return to be a dirty or cached network interface which
      * is only a problem when performing a multicast join.
+     * @deprecated
      */
+    @Deprecated
     static public NetworkInterface getInterface(final String macaddr) {
         return getInterface(macaddr, false);
     }

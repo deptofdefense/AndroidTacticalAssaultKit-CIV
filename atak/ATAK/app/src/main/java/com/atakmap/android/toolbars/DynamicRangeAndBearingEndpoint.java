@@ -3,7 +3,7 @@ package com.atakmap.android.toolbars;
 
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Point;
+import android.graphics.PointF;
 
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapEvent;
@@ -36,7 +36,7 @@ public class DynamicRangeAndBearingEndpoint extends Marker implements
 
     private RangeAndBearingMapItem _parent;
     private int _part;
-    private final Icon _defaultIcon;
+    protected Icon _defaultIcon;
 
     private Runnable postDragAction;
 
@@ -100,7 +100,7 @@ public class DynamicRangeAndBearingEndpoint extends Marker implements
         if (item == this
                 && (event.getType().equals(MapEvent.ITEM_DRAG_STARTED) ||
                         event.getType().equals(MapEvent.ITEM_DRAG_CONTINUED))) {
-            Point pt = event.getPoint();
+            PointF pt = event.getPointF();
             GeoPointMetaData gp;
             if (getParent() != null && getParent().isLocked()) {
                 GeoPoint anchorPoint;
@@ -111,7 +111,7 @@ public class DynamicRangeAndBearingEndpoint extends Marker implements
                 double bearing = DistanceCalculations.bearingFromSourceToTarget(
                         anchorPoint, _mapView.inverse(pt.x, pt.y,
                                 MapView.InverseMode.RayCast).get());
-                double range = DistanceCalculations.calculateRange(anchorPoint,
+                double range = GeoCalculations.distanceTo(anchorPoint,
                         getPoint());
                 gp = GeoPointMetaData
                         .wrap(GeoCalculations.pointAtDistance(anchorPoint,

@@ -229,7 +229,7 @@ class ATAKCrashHandler implements ReportSender {
                 "\"device.manufacturer\":\""
                 + Build.MANUFACTURER + "\",\n" +
                 "\"ACRA.version\":\"4.6.1\",\n" +
-                "\"TAK.brand\":\"" + ATAKConstants.getVersionBrand(context)
+                "\"TAK.brand\":\"" + ATAKConstants.getVersionBrand()
                 + "\",\n" +
                 "\"TAK.version\":\"" + takVersion + "\",\n" +
                 "\"TAK.revision\":\"" + takRev + "\",\n" +

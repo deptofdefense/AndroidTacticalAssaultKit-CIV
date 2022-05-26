@@ -9,8 +9,7 @@
             onClick='actions/showdetails_sse.xml' />
 
     <button icon='icons/pairing_line.png'
-            onClick='actions/pairingline.xml'
-            selected='${pairingline_on}' />
+            onClick='actions/pairingline.xml'/>
 
     <button icon='icons/sse_shape.png' 
              onClick='actions/sse_shape_create.xml' />

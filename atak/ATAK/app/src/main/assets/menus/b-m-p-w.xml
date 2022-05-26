@@ -1,15 +1,15 @@
 <menu buttonRadius='65' buttonSpan='72' buttonWidth='90' buttonBg='bgs/button.xml'>
 
-    <button icon='icons/green_flag.png'
+    <button icon='icons/green_flag_radial.png'
         onClick='actions/startgoto.xml'
+        selected='${hounding}'
         angle='90'/>
 
     <button icon='icons/edit2.png'
         onClick='actions/edit_route.xml' />
 
     <button icon='icons/pairing_line.png'
-        onClick='actions/pairingline.xml'
-        selected='${pairingline_on}' />
+        onClick='actions/pairingline.xml'/>
 
     <button icon='icons/details.png'
             onClick='actions/show_route_for_wp.xml' />

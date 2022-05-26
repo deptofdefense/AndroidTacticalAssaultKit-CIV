@@ -10,7 +10,7 @@ public class ResourceUtil {
      * @param c The context to use when looking up a resource
      * @param resIdCiv the civilian capability resource
      * @param resIdMil the military capability resource
-     * @return
+     * @return the appropriate string for the given state of the system.
      */
     public static String getString(Context c, int resIdCiv, int resIdMil) {
         FlavorProvider fp = SystemComponentLoader.getFlavorProvider();
@@ -25,7 +25,7 @@ public class ResourceUtil {
      * Allow for proper lookup of resource id based on the capabilities of the flavor
      * @param resIdCiv the civilian capability resource
      * @param resIdMil the military capability resource
-     * @return
+     * @return the appropriate string for the given state of the system
      */
     public static int getResource(int resIdCiv, int resIdMil) {
         FlavorProvider fp = SystemComponentLoader.getFlavorProvider();

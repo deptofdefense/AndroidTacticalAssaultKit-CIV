@@ -1,5 +1,3 @@
-apply from: configProject.file('gradle/repositories.gradle')
-
 if (isJavaKernelBuild) {
     apply plugin: 'java-library' // apply the Java plugin
 
@@ -14,6 +12,11 @@ if (isJavaKernelBuild) {
         useJUnit()
         maxHeapSize = '1G'
     }
+
+    task sourcesJar(type: Jar) {
+        archiveClassifier.set('sources')
+        from sourceSets.main.java.srcDirs
+    }
 } else if (isAndroidKernelBuild) {
     apply plugin: 'com.android.library' // apply the Android plugin
 
@@ -23,15 +26,18 @@ if (isJavaKernelBuild) {
         buildToolsVersion project.androidBuildToolsVersion
 
         buildTypes {
-            sdk {}
-            odk {}
             debug {}
             release {}
         }
 
         defaultConfig {
             targetSdkVersion project.androidTargetSdkVersion
+            compileSdkVersion project.androidCompileSdkVersion
             minSdkVersion project.androidMinSdkVersion
+            ndk {
+                ndkVersion "${androidNdkVersion}"
+                abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86'
+            }
 
             versionCode project.versionCode
             versionName "${project.version}"
@@ -61,11 +67,18 @@ if (isJavaKernelBuild) {
                 manifest.srcFile 'src/android/AndroidManifest.xml'
                 // add default location for android specific sourceset
                 java.srcDirs 'src/android/java'
+                // add default location for android JNI libs (shared across all build types)
+                jniLibs.srcDirs 'src/android/jniLibs'
             }
             test {
                 java.srcDirs 'src/main/test'
             }
         }
+    }
+
+    task sourcesJar(type: Jar) {
+        archiveClassifier.set('sources')
+        from android.sourceSets.main.java.srcDirs
     }
 }
 
@@ -75,6 +88,7 @@ project.archivesBaseName = "${rootProject.name}-${project.name}"
 dependencies {
     // Use JUnit test framework
     testImplementation("junit:junit:${junitVersion}")
+    testImplementation "org.mockito:mockito-core:${mockitoVersion}"
 }
 
 // configure the build dir for the kernel build target (e.g. `build/android` or `build/java`)

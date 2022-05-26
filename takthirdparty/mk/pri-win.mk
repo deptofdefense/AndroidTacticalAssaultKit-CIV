@@ -5,11 +5,12 @@ pri_out_lib=$(OUTDIR)/bin/$(pri_libfile)
 
 include mk/pri-common.mk
 
+pri-win_patch=$(DISTFILESDIR)/pri-pgsc-winproj-$(VS_VER_MSB).patch
 pri_local_libfile=$(pri_local_srcdir)/pricpp/$(pri_win_arch_dir)/$(BUILD_TYPE)/$(pri_libfile)
 
 .PHONY: pri_build
 pri_build: $(pri_local_srcdir)
-	cd $(pri_local_srcdir)/pricpp && $(VS_SETUP) devenv pri.vcxproj /upgrade
+	if [ -f $(pri-win_patch) ] ; then patch -p0 -d $(OUTDIR) < $(pri-win_patch) ; fi
 	cd $(pri_local_srcdir)/pricpp && $(VS_SETUP) MSBuild /p:Configuration=$(BUILD_TYPE) /p:PRI_ZLIB_LIB=$(OUTDIR_CYGSAFE)/lib/zlibwapi.lib pri.vcxproj
 
 $(pri_local_libfile): pri_build

@@ -28,7 +28,7 @@ public class Command {
     private final int elementClass;
     private final int elementID;
 
-    private int numArgs;
+    private final int numArgs;
     private Integer[] partitions;
     protected int currentByte;
 

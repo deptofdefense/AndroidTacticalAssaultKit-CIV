@@ -10,7 +10,7 @@ import com.foxykeep.datadroid.requestmanager.Request;
 
 public class CertificateSigningRequest implements Parcelable {
 
-    private static final String TAG = "CertifiateCSRRequest";
+    private static final String TAG = "CertificateCSRRequest";
 
     private final String server;
     private final String connectString;
@@ -130,7 +130,7 @@ public class CertificateSigningRequest implements Parcelable {
     }
 
     /**
-     * Create the request to enroll for a certificate. Used by an asynch HTTP request Android
+     * Create the request to enroll for a certificate. Used by an asynchronous HTTP request Android
      * Service
      *
      * @return The request.

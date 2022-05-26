@@ -14,10 +14,6 @@ static def getValueFromPropertiesFile(File propFile, String key) {
 
 include ':app'
 
-include ':ATAKMapEngine'
-project(':ATAKMapEngine').projectDir = new File(settingsDir, '../ATAKMapEngine')
-include ':ATAKMapEngine:lib'
-
 // if `takkernel` is present, include projects directly
 if((getValueFromPropertiesFile(file('local.properties'), 'takkernel.dependency.forceRemote') != 'true') &&
         new File('../../takkernel').exists()) {
@@ -25,6 +21,8 @@ if((getValueFromPropertiesFile(file('local.properties'), 'takkernel.dependency.f
     includeFlat('takkernel')
     project(':takkernel').projectDir = new File(settingsDir, '../../takkernel')
     include(':takkernel:annotation')
+    include(':takkernel:engine')
     include(':takkernel:port')
+    include(':takkernel:shared')
 }
 

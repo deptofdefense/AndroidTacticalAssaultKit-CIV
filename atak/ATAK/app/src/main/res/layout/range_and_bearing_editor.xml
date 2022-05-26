@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:id="@+id/relativeToLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignStart="@id/relativeMarkerEditText"
+                android:layout_alignParentTop="true"
+                android:layout_marginTop="@dimen/margin_medium"
+                android:layout_marginEnd="@dimen/margin_medium"
+                android:text="@string/relative_to"
+                android:textAppearance="@style/AtakTextAppearance.Header1" />
+
+            <com.atakmap.android.widgets.TakEditText
+                android:id="@+id/relativeMarkerEditText"
+                style="@style/AtakEditTextNew"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/relativeToLabel"
+                android:layout_alignParentStart="true"
+                android:layout_margin="@dimen/margin_medium"
+                android:focusable="false"
+                android:focusableInTouchMode="true"
+                android:inputType="textNoSuggestions"
+                tools:text="R&amp;B Endpoint" />
+
+            <TextView
+                android:id="@+id/polarBearingLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/relativeMarkerEditText"
+                android:layout_alignStart="@id/polarBearingEditText"
+                android:layout_marginTop="@dimen/margin_medium"
+                android:layout_marginEnd="@dimen/margin_medium"
+                android:text="@string/bearing"
+                android:textAppearance="@style/AtakTextAppearance.Header1" />
+
+            <com.atakmap.android.widgets.TakEditText
+                android:id="@+id/polarBearingEditText"
+                style="@style/AtakEditTextNew"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/polarBearingLabel"
+                android:layout_alignParentStart="true"
+                android:layout_margin="@dimen/margin_medium"
+                android:inputType="textNoSuggestions"
+                tools:text="110.4" />
+
+            <LinearLayout
+                android:id="@+id/polarBearingContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/polarBearingEditText"
+                android:orientation="horizontal"
+                android:padding="@dimen/padding_medium">
+
+                <Spinner
+                    android:id="@+id/polarBearingAlignmentSpinner"
+                    style="@style/newSpinnerStyle"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_marginEnd="@dimen/margin_small"
+                    android:layout_weight="1"
+                    android:entries="@array/polar_north_options"
+                    tools:listitem="@layout/spinner_text_view_new" />
+
+                <Spinner
+                    android:id="@+id/polarBearingUnitsSpinner"
+                    style="@style/newSpinnerStyle"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_marginStart="@dimen/margin_small"
+                    android:layout_weight="1"
+                    android:entries="@array/polar_radial_units"
+                    tools:listitem="@layout/spinner_text_view_new" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/polarRangeLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/polarBearingContainer"
+                android:layout_alignStart="@id/polarBearingEditText"
+                android:layout_marginTop="@dimen/margin_medium"
+                android:layout_marginEnd="@dimen/margin_medium"
+                android:text="@string/range"
+                android:textAppearance="@style/AtakTextAppearance.Header1" />
+
+            <LinearLayout
+                android:id="@+id/polarRangeContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/polarRangeLabel"
+                android:orientation="horizontal"
+                android:padding="@dimen/padding_medium">
+
+                <com.atakmap.android.widgets.TakEditText
+                    android:id="@+id/polarRangeEditText"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_marginEnd="@dimen/margin_small"
+                    android:layout_weight="1"
+                    tools:text="23" />
+
+                <Spinner
+                    android:id="@+id/polarRangeUnitsSpinner"
+                    style="@style/newSpinnerStyle"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_marginStart="@dimen/margin_small"
+                    android:layout_weight="1"
+                    android:entries="@array/polar_distance_units"
+                    tools:listitem="@layout/spinner_text_view_new" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/polarInclinationLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/polarRangeContainer"
+                android:layout_alignStart="@id/polarBearingEditText"
+                android:layout_marginTop="@dimen/margin_medium"
+                android:layout_marginEnd="@dimen/margin_medium"
+                android:text="@string/inclination"
+                android:textAppearance="@style/AtakTextAppearance.Header1" />
+
+            <com.atakmap.android.widgets.TakEditText
+                android:id="@+id/polarInclinationEditText"
+                style="@style/AtakEditTextNew"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/polarInclinationLabel"
+                android:layout_alignParentStart="true"
+                android:layout_margin="@dimen/margin_medium"
+                android:focusable="false"
+                android:focusableInTouchMode="true"
+                android:inputType="textNoSuggestions"
+                android:text="0"
+                tools:text="-0.06" />
+        </RelativeLayout>
+    </ScrollView>
+
+    <com.atakmap.android.widgets.TakButton
+        android:id="@+id/movePointButton"
+        style="@style/AtakButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/margin_medium"
+        app:buttonImage="@drawable/ic_center"
+        app:buttonText="Move Point" />
+
+</LinearLayout>

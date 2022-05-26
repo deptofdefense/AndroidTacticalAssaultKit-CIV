@@ -19,7 +19,7 @@ import com.atakmap.coremap.maps.assets.Icon;
  *
  */
 public class NightVisionMapWidget extends MarkerIconWidget implements
-        MarkerIconWidget.OnClickListener, MarkerIconWidget.OnLongPressListener {
+        MapWidget.OnClickListener, MapWidget.OnLongPressListener {
 
     public final static String TAG = "NightVision";
 

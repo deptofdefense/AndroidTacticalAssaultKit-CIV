@@ -4,7 +4,6 @@ package com.atakmap.android.elev;
 import android.view.View;
 import android.widget.BaseAdapter;
 
-import com.atakmap.android.elev.dt2.Dt2FileWatcher;
 import com.atakmap.android.hierarchy.HierarchyListItem;
 import com.atakmap.android.hierarchy.action.Action;
 import com.atakmap.android.hierarchy.action.Actions;
@@ -57,15 +56,6 @@ public class HeatMapOverlay extends AbstractHierarchyListItem implements Layer,
         this.colorChangedListeners = new HashSet<>();
 
         this.visible = false;
-
-        // Refresh heatmap when DTED files have been updated
-        Dt2FileWatcher.getInstance().addListener(new Dt2FileWatcher.Listener() {
-            @Override
-            public void onDtedFilesUpdated() {
-                if (isVisible())
-                    dispatchOnHeatMapResolutionChanged();
-            }
-        });
     }
 
     @Override

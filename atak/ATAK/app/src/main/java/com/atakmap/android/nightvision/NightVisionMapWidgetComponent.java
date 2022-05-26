@@ -23,9 +23,6 @@ import com.atakmap.app.R;
 import com.atakmap.app.preferences.ToolsPreferenceFragment;
 import com.atakmap.coremap.log.Log;
 
-import static com.atakmap.android.maps.MapView._mapView;
-import static com.atakmap.app.preferences.ToolsPreferenceFragment.register;
-
 /**
  *
  * a Map Widget used to display an icon that catches press events and long press events
@@ -84,7 +81,7 @@ public class NightVisionMapWidgetComponent extends AbstractWidgetMapComponent
         widget.addOnClickListener(widget);
         widget.addOnLongPressListener(widget);
         widget.setVisible(false);
-        left.addWidgetAt(0, widget);
+        left.addChildWidgetAt(0, widget);
 
         //wrap map widget for self widget location
         selfWidget = new NightVisionMapWidget(view);
@@ -128,28 +125,31 @@ public class NightVisionMapWidgetComponent extends AbstractWidgetMapComponent
 
     private void testForNightVisionApplication(boolean changeFromInstaller) {
 
-        Resources res = _mapView.getResources();
+        final MapView mapView = MapView.getMapView();
+
+        Resources res = mapView.getResources();
 
         //test the installer for the NV app,
         //if NVG app is installed then post a preference to launch settings if selected
-        if (AppMgmtUtils.isInstalled(_mapView.getContext(),
+        if (AppMgmtUtils.isInstalled(mapView.getContext(),
                 "com.atak.nightvision")) {
             Drawable nvIcon;
             try {
-                nvIcon = (_mapView.getContext().getPackageManager()
+                nvIcon = (mapView.getContext().getPackageManager()
                         .getApplicationIcon("com.atak.nightvision"));
             } catch (PackageManager.NameNotFoundException e) {
                 Log.e(TAG, "error occurred", e);
                 nvIcon = null;
                 //no icon found no icon on preference simple! :)
             }
-            register(new ToolsPreferenceFragment.ToolPreference(
-                    res.getString(
-                            R.string.preferences_access_night_vision_settings),
-                    res.getString(
-                            R.string.preferences_night_vision_settings_summary),
-                    "nv_preferences",
-                    nvIcon, new NightVisionPreferenceFragment()));
+            ToolsPreferenceFragment
+                    .register(new ToolsPreferenceFragment.ToolPreference(
+                            res.getString(
+                                    R.string.preferences_access_night_vision_settings),
+                            res.getString(
+                                    R.string.preferences_night_vision_settings_summary),
+                            "nv_preferences",
+                            nvIcon, new NightVisionPreferenceFragment()));
 
             if (changeFromInstaller)
                 launchNVExternal();
@@ -173,7 +173,7 @@ public class NightVisionMapWidgetComponent extends AbstractWidgetMapComponent
                     || action.equals(ApkUpdateReceiver.APP_REMOVED))) {
                 if (intent.hasExtra("package")) {
                     String s = intent.getStringExtra("package");
-                    if (s.equals("com.atak.nightvision")) {
+                    if (s != null && s.equals("com.atak.nightvision")) {
                         testForNightVisionApplication(true);
                     }
                 }

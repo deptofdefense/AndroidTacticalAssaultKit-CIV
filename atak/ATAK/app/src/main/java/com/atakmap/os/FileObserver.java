@@ -320,7 +320,7 @@ public abstract class FileObserver extends android.os.FileObserver {
         }
     }
 
-    private static ObserverThread s_observerThread;
+    private static final ObserverThread s_observerThread;
 
     static {
         CountDownLatch latch = new CountDownLatch(1);

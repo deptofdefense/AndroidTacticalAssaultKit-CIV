@@ -8,7 +8,7 @@
     <button icon='icons/speech.png'
             onClick='actions/edit_cues.xml' />
             
-    <button icon='icons/middlepoint.png'
+    <button icon='icons/middlepoint_radial.png'
             onClick='actions/add_pt_from_bearing.xml'/>
 
     <button icon='icons/general_entry.png'

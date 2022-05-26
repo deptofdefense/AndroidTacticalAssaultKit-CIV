@@ -12,6 +12,7 @@ import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.location.LocationMapComponent;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.preference.AtakPreferences;
 import com.atakmap.comms.SocketFactory;
 import com.atakmap.coremap.cot.event.CotDetail;
 import com.atakmap.coremap.cot.event.CotEvent;
@@ -53,6 +54,7 @@ public class ExternalGPSInput implements Runnable {
     private boolean closed = false;
 
     private final MapView _mapView;
+    private final AtakPreferences preferences;
 
     private final int _port;
     private DatagramSocket socket;
@@ -68,6 +70,7 @@ public class ExternalGPSInput implements Runnable {
         _port = port;
         _mapView = mapView;
         _instance = this;
+        preferences = new AtakPreferences(mapView.getContext());
     }
 
     public static ExternalGPSInput getInstance() {
@@ -157,7 +160,7 @@ public class ExternalGPSInput implements Runnable {
             }
 
             String msg = null;
-            CotEvent event = null;
+            CotEvent event;
             if (ptnl != null) {
                 if (ptnl.isActive()) {
                     msg = NMEAMessageHelper.createMessage(ptnl, "NW");
@@ -184,6 +187,10 @@ public class ExternalGPSInput implements Runnable {
      * @param event the event
      */
     public void process(CotEvent event) {
+
+        // currently this will only process if the ExternalGPSInput manager is in the run state
+        if (!_listening)
+            return;
 
         if (event == null ||
                 ((event.getCotPoint().getLat() == 0.0 &&

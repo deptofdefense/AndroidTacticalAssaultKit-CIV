@@ -1,0 +1,81 @@
+import java.security.MessageDigest
+
+project.ext.getHash = { s ->
+    try {
+        def digest = MessageDigest.getInstance("SHA-256")
+        def hash = digest.digest(s.getBytes("UTF-8"))
+        return Base64.encoder.encodeToString(hash)
+    } catch(Exception ex) {
+        def toThrow = new GradleException()
+        toThrow.initCause(ex)
+        throw toThrow
+    }
+}
+
+// configure Conan
+task configureConan {
+    group = 'Build'
+    description = 'Configures the Conan repository and credentials to be used when pulling down Conan-based dependencies.'
+
+    doLast {
+        // XXX - fallback on legacy property names, remove support in future version
+        def conanRepoUrl = getProperty(project, 'takRepoConanUrl',
+                getProperty(project, 'conan.consume.url', 'http://localhost'))
+        def conanRepoUser = getProperty(project, 'takRepoUsername',
+                getProperty(project, 'conan.consume.user', 'invalid'))
+        def conanRepoPassword = getProperty(project, 'takRepoPassword',
+                getProperty(project, 'conan.consume.password', 'invalid'))
+
+        // warn use of deprecated properties
+        if (getProperty(project, 'conan.consume.url', null))
+            println('WARNING: \'conan.consume.url\' is deprecated and will be removed in 1.0.0 Update references to \'takRepoConanUrl\'')
+        if (getProperty(project, 'conan.consume.user', null))
+            println('WARNING: \'conan.consume.user\' is deprecated and will be removed in 1.0.0 Update references to \'takRepoUsername\'')
+        if (getProperty(project, 'conan.consume.password', null))
+            println('WARNING: \'conan.consume.password\' is deprecated and will be removed in 1.0.0 Update references to \'takRepoPassword\'')
+
+        if (conanRepoUrl == null || conanRepoUser == null || conanRepoPassword == null) {
+            println("Warning: Conan repo is not configured, using local cache only")
+            return
+        }
+
+        def conanDir = getProperty(project, 'conan.dir', null)
+        def conanCmd = 'conan'
+        if (conanDir != null)
+            conanCmd = (new File(conanDir, conanCmd)).getAbsolutePath()
+
+        def conanVerifySsl = getProperty(project, 'conan.verifySsl', 'True')
+
+        // check for the repo
+        def os = new ByteArrayOutputStream()
+        exec {
+            commandLine conanCmd, 'remote', 'list'
+            standardOutput = os
+        }
+        def remotes = os.toString()
+        if (remotes != null && remotes.contains(conanRepoUrl))
+            return
+
+        def remote = getHash(project.projectDir.getAbsolutePath() + '@' + conanRepoUrl)
+        exec {
+            workingDir rootProject.projectDir
+            commandLine conanCmd, 'config', 'set', 'general.revisions_enabled=1'
+        }
+        exec {
+            workingDir rootProject.projectDir
+            commandLine conanCmd, 'remote', 'add', remote, conanRepoUrl, conanVerifySsl
+        }
+        exec {
+            workingDir rootProject.projectDir
+            commandLine conanCmd, 'user', '-r', remote, '-p', conanRepoPassword, conanRepoUser
+        }
+    }
+}
+
+afterEvaluate {
+    // native build depends on conan configuration
+    def preExternalNativeBuildTask = tasks.findByName('preExternalNativeBuild')
+    if(preExternalNativeBuildTask) {
+        preExternalNativeBuildTask.dependsOn configureConan
+    }
+}

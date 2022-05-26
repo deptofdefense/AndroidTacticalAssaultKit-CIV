@@ -1,4 +1,4 @@
-<PersistedActionMenu baseline="true" hideable="true" iconPath="ic_menu_casevac"  title="actionbar_casevac">
+<PersistedActionMenu baseline="true" hideable="true" iconPath="nav_casevac" title="actionbar_casevac">
    <ClickData actionType="click">
       <broadcast>
          <action>com.atakmap.android.maps.toolbar.BEGIN_TOOL</action>

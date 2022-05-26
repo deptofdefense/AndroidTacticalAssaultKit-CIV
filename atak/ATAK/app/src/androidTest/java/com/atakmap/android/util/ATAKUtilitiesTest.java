@@ -14,8 +14,8 @@ import org.junit.runner.RunWith;
 
 import java.util.UUID;
 
-import androidx.test.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.core.app.ApplicationProvider;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -57,11 +57,35 @@ public class ATAKUtilitiesTest extends ATAKInstrumentedTest {
         Bitmap bitmap = null;
         try {
             bitmap = ATAKUtilities.getUriBitmap(
-                    InstrumentationRegistry.getTargetContext(), result_uri);
+                    ApplicationProvider.getApplicationContext(), result_uri);
             assertNotNull(bitmap);
         } finally {
             if (bitmap != null)
                 bitmap.recycle();
         }
     }
+
+    @Test
+    public void getIconUri_file() {
+
+        assertEquals(
+                "/data/user/0/com.atakmap.app.civ/files/a-f-G-F.25.164845:Friend---IN05-Transmitting.png",
+                ATAKUtilities.getUriPath(
+                        "file:///data/user/0/com.atakmap.app.civ/files/a-f-G-F.25.164845%3AFriend---IN05-Transmitting.png"));
+
+        assertEquals(
+                "/data/user/0/com.atakmap.app.civ/files/a-f-G-F.25.164845:Friend---IN05-Transmitting.png",
+                ATAKUtilities.getUriPath(
+                        "file://data/user/0/com.atakmap.app.civ/files/a-f-G-F.25.164845%3AFriend---IN05-Transmitting.png"));
+
+        assertEquals(
+                "/data/user/0/com.atakmap.app.civ/files/a-f-G-F.25.164845:Friend---IN05-Transmitting.png",
+                ATAKUtilities.getUriPath(
+                        "/data/user/0/com.atakmap.app.civ/files/a-f-G-F.25.164845:Friend---IN05-Transmitting.png"));
+
+        assertEquals("Friend---IN05-Transmitting.png",
+                ATAKUtilities.getUriPath("Friend---IN05-Transmitting.png"));
+
+    }
+
 }

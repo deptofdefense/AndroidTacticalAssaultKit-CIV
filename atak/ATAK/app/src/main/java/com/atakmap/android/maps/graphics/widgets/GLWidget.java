@@ -4,11 +4,20 @@ package com.atakmap.android.maps.graphics.widgets;
 import android.graphics.RectF;
 
 import com.atakmap.android.widgets.MapWidget;
+import com.atakmap.map.MapRenderer2;
 import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.opengl.GLES20FixedPipeline;
 
-public abstract class GLWidget implements
+import gov.tak.api.annotation.DeprecatedApi;
+import gov.tak.api.widgets.opengl.IGLWidget;
+import gov.tak.api.widgets.IMapWidget;
+import gov.tak.platform.marshal.MarshalManager;
+
+/** @deprecated use {@link gov.tak.platform.widgets.opengl.GLWidget} */
+@Deprecated
+@DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
+public abstract class GLWidget implements IGLWidget,
         MapWidget.OnWidgetPointChangedListener,
         MapWidget.OnVisibleChangedListener {
 
@@ -24,13 +33,23 @@ public abstract class GLWidget implements
     }
 
     public void startObserving(MapWidget subject) {
-        subject.addOnWidgetPointChangedListener(this);
-        subject.addOnVisibleChangedListener(this);
+        this.subject.addOnWidgetPointChangedListener(this);
+        this.subject.addOnVisibleChangedListener(this);
     }
 
     public void stopObserving(MapWidget subject) {
-        subject.removeOnWidgetPointChangedListener(this);
-        subject.removeOnVisibleChangedListener(this);
+        this.subject.removeOnWidgetPointChangedListener(this);
+        this.subject.removeOnVisibleChangedListener(this);
+    }
+
+    @Override
+    public final void start() {
+        startObserving(subject);
+    }
+
+    @Override
+    public final void stop() {
+        stopObserving(subject);
     }
 
     @Override
@@ -46,9 +65,35 @@ public abstract class GLWidget implements
         });
     }
 
+    public static gov.tak.platform.widgets.opengl.GLWidget.DrawState drawStateFromFixedPipeline(
+            MapRenderer2 mapSceneRenderer2) {
+        gov.tak.platform.widgets.opengl.GLWidget.DrawState drawState = new gov.tak.platform.widgets.opengl.GLWidget.DrawState(
+                MarshalManager.marshal(
+                        mapSceneRenderer2.getMapSceneModel(true,
+                                mapSceneRenderer2.getDisplayOrigin()),
+                        com.atakmap.map.MapSceneModel.class,
+                        gov.tak.api.engine.map.MapSceneModel.class));
+        drawState.projectionMatrix = new float[16];
+        drawState.modelMatrix = new float[16];
+        GLES20FixedPipeline.glGetFloatv(GLES20FixedPipeline.GL_PROJECTION,
+                drawState.projectionMatrix, 0);
+        GLES20FixedPipeline.glGetFloatv(GLES20FixedPipeline.GL_MODELVIEW,
+                drawState.modelMatrix, 0);
+        return drawState;
+    }
+
     @Override
     public void onVisibleChanged(MapWidget widget) {
         getSurface().requestRender();
+    }
+
+    @Override
+    public void drawWidget(
+            gov.tak.platform.widgets.opengl.GLWidget.DrawState drawState) {
+        GLES20FixedPipeline.glPushMatrix();
+        GLES20FixedPipeline.glLoadMatrixf(drawState.modelMatrix, 0);
+        drawWidget();
+        GLES20FixedPipeline.glPopMatrix();
     }
 
     public void drawWidget() {
@@ -92,4 +137,30 @@ public abstract class GLWidget implements
     protected final MapWidget subject;
     float x, y;
     protected GLMapView orthoView;
+
+    @Override
+    public IMapWidget getSubject() {
+        return subject;
+    }
+
+    @Override
+    public float getX() {
+        return x;
+    }
+
+    @Override
+    public float getY() {
+        return y;
+    }
+
+    @Override
+    public void setX(float x) {
+        this.x = x;
+    }
+
+    @Override
+    public void setY(float y) {
+        this.y = y;
+    }
+
 }

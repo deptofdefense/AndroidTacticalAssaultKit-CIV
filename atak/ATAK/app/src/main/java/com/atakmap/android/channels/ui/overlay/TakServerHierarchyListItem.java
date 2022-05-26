@@ -3,8 +3,8 @@ package com.atakmap.android.channels.ui.overlay;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.util.Log;
-import android.view.View;
 
 import com.atakmap.android.channels.prefs.ChannelsPrefs;
 
@@ -15,7 +15,7 @@ import com.atakmap.android.hierarchy.action.Visibility2;
 import com.atakmap.android.hierarchy.action.Search;
 import com.atakmap.android.hierarchy.items.AbstractHierarchyListItem2;
 import com.atakmap.android.http.rest.ServerGroup;
-import com.atakmap.android.maps.MapView;
+import com.atakmap.app.R;
 import com.atakmap.comms.NetConnectString;
 import com.atakmap.comms.TAKServer;
 import com.atakmap.comms.TAKServerListener;
@@ -35,9 +35,8 @@ public class TakServerHierarchyListItem extends AbstractHierarchyListItem2
 
     private static final String TAG = "ChannelsTakServerHierarchyLI";
 
-    private Context context;
-    private ChannelsOverlayListModel listModel;
-    private ChannelsOverlay overlay;
+    private final Context context;
+    private final ChannelsOverlay overlay;
     private final String host;
 
     public static final String TAK_SERVER_URL_TAG = "TAK_SERVER_URL";
@@ -45,7 +44,6 @@ public class TakServerHierarchyListItem extends AbstractHierarchyListItem2
     public TakServerHierarchyListItem(Context context,
             ChannelsOverlayListModel listModel, String host) {
         this.context = context;
-        this.listModel = listModel;
         this.overlay = (ChannelsOverlay) listModel.getUserObject();
         this.host = host;
 
@@ -87,26 +85,18 @@ public class TakServerHierarchyListItem extends AbstractHierarchyListItem2
 
     @Override
     public String getTitle() {
-        try {
-            TAKServer server = getServer();
-            return server != null ? server.getDescription() : host;
-        } catch (Exception e) {
-            Log.e(TAG, e.getMessage(), e);
-            return null;
-        }
+        TAKServer server = getServer();
+        return server != null ? server.getDescription() : host;
     }
 
     @Override
     public String getDescription() {
-        try {
-            int numGroups = getDescendantCount();
-            return numGroups > 0
-                    ? numGroups + (numGroups == 1 ? " group" : " groups")
-                    : "No groups found";
-        } catch (Exception e) {
-            Log.e(TAG, e.getMessage(), e);
-            return null;
-        }
+        int numGroups = getChildCount();
+        if (numGroups == 0)
+            return context.getString(R.string.no_channels_found);
+        else
+            return context.getString(numGroups == 1 ? R.string.channel_singular
+                    : R.string.channel_plural, numGroups);
     }
 
     @Override
@@ -130,26 +120,11 @@ public class TakServerHierarchyListItem extends AbstractHierarchyListItem2
     }
 
     @Override
-    public View getHeaderView() {
-        View header = overlay.getOverlayHeader();
-        return header;
-    }
-
-    @Override
-    public String getIconUri() {
-        try {
-            TAKServer server = getServer();
-
-            String prefix = "android.resource://"
-                    + MapView.getMapView().getContext().getPackageName() + "/";
-
-            return server != null && server.isConnected()
-                    ? prefix + com.atakmap.app.R.drawable.ic_server_success
-                    : prefix + com.atakmap.app.R.drawable.ic_server_error;
-        } catch (Exception e) {
-            Log.e(TAG, e.getMessage(), e);
-            return null;
-        }
+    public Drawable getIconDrawable() {
+        TAKServer server = getServer();
+        return context.getDrawable(server != null && server.isConnected()
+                ? R.drawable.ic_server_success
+                : R.drawable.ic_server_error);
     }
 
     @Override
@@ -245,9 +220,28 @@ public class TakServerHierarchyListItem extends AbstractHierarchyListItem2
     }
 
     @Override
+    public boolean setVisible(boolean visible) {
+        // Set active state on all groups and post update
+        // Added for ATAK-15221 but was later decided it's not desired behavior
+        /*if (overlay.isConnected(host)) {
+            List<ServerGroupHierarchyListItem> groups = overlay.getServerGroups(host);
+            if (!FileSystemUtils.isEmpty(groups)) {
+                for (ServerGroupHierarchyListItem gItem : groups) {
+                    ServerGroup group = gItem.getUserObject();
+                    if (group != null)
+                        group.setActive(visible);
+                }
+                overlay.setGroups(host);
+                return true;
+            }
+        }*/
+        return false;
+    }
+
+    @Override
     public <T extends Action> T getAction(Class<T> clazz) {
-        if ((clazz.equals(Visibility.class)
-                || clazz.equals(Visibility2.class)))
+        // Disable visibility
+        if (clazz == Visibility.class || clazz == Visibility2.class)
             return null;
         return super.getAction(clazz);
     }

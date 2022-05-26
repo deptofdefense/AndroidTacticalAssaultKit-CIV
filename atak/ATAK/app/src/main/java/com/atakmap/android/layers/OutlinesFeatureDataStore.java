@@ -4,7 +4,7 @@ package com.atakmap.android.layers;
 import androidx.annotation.NonNull;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.AtakMapView;
 import com.atakmap.map.layer.feature.AttributeSet;
@@ -191,21 +191,19 @@ public class OutlinesFeatureDataStore extends RuntimeFeatureDataStore
                             final double screenVerticalExtentMeters = 720.0d
                                     / 96.0d
                                     / 39.37d;
-                            final double lonExtentMeters = DistanceCalculations
-                                    .metersFromAtSourceTarget(
-                                            new GeoPoint(
-                                                    (bounds.maxY + bounds.minY)
-                                                            / 2,
-                                                    bounds.minX),
+                            final double lonExtentMeters = GeoCalculations
+                                    .distanceTo(new GeoPoint(
+                                            (bounds.maxY + bounds.minY)
+                                                    / 2,
+                                            bounds.minX),
                                             new GeoPoint(
                                                     (bounds.maxY + bounds.minY)
                                                             / 2,
                                                     bounds.maxX));
-                            final double latExtentMeters = DistanceCalculations
-                                    .metersFromAtSourceTarget(
-                                            new GeoPoint(bounds.maxY,
-                                                    (bounds.maxX + bounds.minX)
-                                                            / 2),
+                            final double latExtentMeters = GeoCalculations
+                                    .distanceTo(new GeoPoint(bounds.maxY,
+                                            (bounds.maxX + bounds.minX)
+                                                    / 2),
                                             new GeoPoint(bounds.minY,
                                                     (bounds.maxX + bounds.minX)
                                                             / 2));

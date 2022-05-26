@@ -1,6 +1,7 @@
 package com.atakmap.commoncommo;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
 import java.util.Vector;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
@@ -51,10 +52,12 @@ public class Commo {
     public static final int MPIO_LOCAL_PORT_DISABLE = -1;
 
     private static Map<FileIOProvider, Long> ioProviders = new IdentityHashMap<FileIOProvider, Long>();
-
+    
     // XXX - removed due to removal of load function, see below
     //private static boolean nativeLoaded;
     private long nativePtr;
+    
+    private final NetInterfaceAddressMode addrMode;
 
 
     
@@ -127,7 +130,8 @@ public class Commo {
      * Create a new Commo instance with the specified logging implementation,
      * which is required.  The specified UID and callsign will be used
      * to identify this system in outbound messages generated internally
-     * by the library.
+     * by the library. This constructor creates a Commo instance that uses
+     * NetInterfaceAddressMode of PHYS_ADDR.
      *
      * @param logger a CommoLogger implementation used to log all
      *               information from this Commo instance
@@ -139,13 +143,40 @@ public class Commo {
      */
     public Commo(CommoLogger logger, String ourUID, String ourCallsign) throws CommoException
     {
+        this(logger, ourUID, ourCallsign, NetInterfaceAddressMode.PHYS_ADDR);
+    }
+
+
+    /**
+     * Create a new Commo instance with the specified logging implementation,
+     * which is required.  The specified UID and callsign will be used
+     * to identify this system in outbound messages generated internally
+     * by the library. The specified address mode controls how 
+     * addresses for all NetInterfaces managed by this Commo instance
+     * are interpreted.  
+     *
+     * @param logger a CommoLogger implementation used to log all
+     *               information from this Commo instance
+     * @param ourUID string that uniquely identifies this TAK device
+     * @param ourCallsign callsign to use in messages originating from
+     *                    this instance
+     * @param addressMode addressing mode used by NetInterfaces that
+     *                    the new instance will create and manage
+     * @throws IllegalStateException if native libraries have not been loaded
+     * @throws CommoException if any other error occurs
+     */
+    public Commo(CommoLogger logger, String ourUID, String ourCallsign,
+                 NetInterfaceAddressMode addressMode) throws CommoException
+    {
         nativePtr = 0;
+        this.addrMode = addressMode;
         // XXX removed due to removal of internal loads
         //if (!nativeLoaded)
         //    throw new IllegalStateException("Native libraries not loaded");
         if (ourUID == null || ourCallsign == null)
             throw new CommoException("UID and callsign are required");
-        nativePtr = commoCreateNative(logger, ourUID, ourCallsign);
+        nativePtr = commoCreateNative(logger, ourUID, ourCallsign,
+                                      addressMode.getNativeVal());
         if (nativePtr == 0)
             throw new CommoException();
     }
@@ -607,6 +638,8 @@ public class Commo {
     
     /**
      * Add a new outbound broadcast interface.  
+     * This method variant is only usable for Commo instances configured for
+     * physical addressing of net interfaces (see constructor).
      * The local interface address is specified by the
      * hardware (MAC) address in hwAddress.  
      * The types of data routed to this outbound
@@ -629,9 +662,13 @@ public class Commo {
      *                        (but not limited to)
      *                        if mcastAddr does not represent a valid
      *                        multicast address, types does not contain at
-     *                        least one element, or destPort is out of range
+     *                        least one element, destPort is out of range,
+     *                        or this Commo instance's address mode is not
+     *                        PHYS_ADDR
      */
     public PhysicalNetInterface addBroadcastInterface(byte[] hwAddress, CoTMessageType[] types, String mcastAddr, int destPort) throws CommoException {
+        if (addrMode != NetInterfaceAddressMode.PHYS_ADDR)
+            throw new CommoException("Invalid address mode");
         int[] typeInts = new int[types.length];
         int i = 0;
         for (CoTMessageType t : types)
@@ -642,6 +679,62 @@ public class Commo {
 
         PhysicalNetInterface ret = 
             addBroadcastNative(nativePtr, hwAddress, hwAddress.length,
+                               typeInts, typeInts.length, mcastAddr, destPort);
+        if (ret == null)
+            throw new CommoException();
+        return ret;
+    }
+    
+    /**
+     * Add a new outbound broadcast interface.  
+     * This method variant is only usable for Commo instances configured for
+     * name-based addressing of net interfaces (see constructor).
+     * The local interface address is specified by the
+     * name of the interface in interfaceName.
+     * The types of data routed to this outbound
+     * address are specified in "types"; at least one type must be specified.
+     * The multicast destination is specified as a string in 
+     * dotted-decimal notation ("239.1.1.1").
+     * Outbound broadcast messages matching any of the types given will
+     * be sent out this interface to the multicast address specified
+     * to the specified port.
+     * @param interfaceName the name of the local network interface to be used
+     *                  for the broadcast
+     * @param types the CoTMessageType(s) to be sent out this interface
+     * @param mcastAddr the dotted-decimal notation of the
+     *                  destination multicast address
+     * @param destPort the destination port to send broadcasts out on
+     * @return NetInterface object uniquely identifying the added interface.
+     *         Remains valid until it is passed to removeBroadcastInterface.
+     * @throws CommoException if any error occurs, including 
+     *                        (but not limited to)
+     *                        if mcastAddr does not represent a valid
+     *                        multicast address, types does not contain at
+     *                        least one element, destPort is out of range,
+     *                        or if this Commo instance's address mode is not
+     *                        NAME
+     */
+    public PhysicalNetInterface addBroadcastInterface(String interfaceName, CoTMessageType[] types, String mcastAddr, int destPort) throws CommoException {
+        if (addrMode != NetInterfaceAddressMode.NAME)
+            throw new CommoException("Invalid address mode");
+
+        int[] typeInts = new int[types.length];
+        int i = 0;
+        for (CoTMessageType t : types)
+            typeInts[i++] = t.getNativeVal();
+
+        if (mcastAddr == null)
+            throw new CommoException("Broadcast interface mcast address cannot be null");
+
+        byte[] utf8Addr = null;
+        try {
+            utf8Addr = interfaceName.getBytes("UTF-8");
+        } catch (UnsupportedEncodingException ex) {
+            throw new CommoException("UTF-8 encoding not supported by JRE");
+        }
+
+        PhysicalNetInterface ret = 
+            addBroadcastNative(nativePtr, utf8Addr, utf8Addr.length,
                                typeInts, typeInts.length, mcastAddr, destPort);
         if (ret == null)
             throw new CommoException();
@@ -715,6 +808,8 @@ public class Commo {
     
     /**
      * Adds a new inbound listening interface on the specified port.
+     * This method variant is only usable for Commo instances configured for
+     * physical addressing of net interfaces (see constructor).
      * The hwAddress indicates the local interface upon which to listen.
      * If mcastAddrs are given (non-null), each element must be a
      * dotted-decimal notation of a multicast group to listen on; 
@@ -746,14 +841,19 @@ public class Commo {
      *                        any invalid multicast addresses,
      *                        specifying different forGenericData values
      *                        on the same port,
-     *                        or the specified port on the specified interface
-     *                        is already in use.
+     *                        the specified port on the specified interface
+     *                        is already in use,
+     *                        or this Commo instance's interface address mode
+     *                        is not PHYS_ADDR
      */
     public PhysicalNetInterface addInboundInterface(byte[] hwAddress, 
                                           int port, String[] mcastAddrs,
                                           boolean forGenericData)
                                           throws CommoException
     {
+        if (addrMode != NetInterfaceAddressMode.PHYS_ADDR)
+            throw new CommoException("Invalid interface address mode");
+
         int mcaLen = mcastAddrs == null ? 0 : mcastAddrs.length;
         for (int i = 0; i < mcaLen; ++i) {
             if (mcastAddrs[i] == null)
@@ -762,6 +862,75 @@ public class Commo {
     
         PhysicalNetInterface ret = addInboundNative(nativePtr, hwAddress,
                                     hwAddress.length, 
+                                    port, mcastAddrs, mcaLen, forGenericData);
+        if (ret == null)
+            throw new CommoException();
+        return ret;
+    }
+    
+    /**
+     * Adds a new inbound listening interface on the specified port.
+     * This method variant is only usable for Commo instances configured for
+     * name-based addressing of net interfaces (see constructor).
+     * The interfaceName indicates the local interface upon which to listen.
+     * If mcastAddrs are given (non-null), each element must be a
+     * dotted-decimal notation of a multicast group to listen on; 
+     * the library will tell the system it is interested in
+     * the given multicast groups on the specified interfaces.
+     * Depending on the value of forGenericData, the interface will be
+     * expecting to receive CoT messages or any sort of generic data
+     * and be posted to the corresponding type of registered listeners
+     * (CoTMessageListener or GenericDataListener, respectively).
+     * NOTE: Generic and non-generic interfaces cannot be configured 
+     * against different interfaceName-identified interfaces on the same 
+     * port number!
+     * @param interfaceName string representing the interface name of 
+     *                  the local interface to listen on
+     * @param port the port number to listen on
+     * @param mcastAddrs one or more multicast addresses to listen for
+     *              traffic on (in addition to unicasted messages);
+     *              each element is specified in the "dotted decimal" form.
+     *              Can be null or an empty array to indicate that
+     *              the interface is only to be used for unicast data.
+     * @param forGenericData true if interface will expect and post generic
+     *              data to GenericDataListeners or false to expect
+     *              and post CoT messages to CoTMessageListeners
+     * @return PhysicalNetInterface object uniquely identifying the
+     *         added interface.  Remains valid as long as it is
+     *         not passed to removeInboundInterface
+     * @throws CommoException if any error occurs, including but not limited to
+     *                        port out of range, mcastAddrs containing
+     *                        any invalid multicast addresses,
+     *                        specifying different forGenericData values
+     *                        on the same port,
+     *                        the specified port on the specified interface
+     *                        is already in use,
+     *                        or this Commo instance's interface address mode
+     *                        is not NAME
+     */
+    public PhysicalNetInterface addInboundInterface(String interfaceName, 
+                                          int port, String[] mcastAddrs,
+                                          boolean forGenericData)
+                                          throws CommoException
+    {
+        if (addrMode != NetInterfaceAddressMode.NAME)
+            throw new CommoException("Invalid interface address mode");
+
+        int mcaLen = mcastAddrs == null ? 0 : mcastAddrs.length;
+        for (int i = 0; i < mcaLen; ++i) {
+            if (mcastAddrs[i] == null)
+                throw new CommoException("Cannot pass null multicast address for inbound interface");
+        }
+    
+        byte[] utf8Addr = null;
+        try {
+            utf8Addr = interfaceName.getBytes("UTF-8");
+        } catch (UnsupportedEncodingException ex) {
+            throw new CommoException("UTF-8 encoding not supported by JRE");
+        }
+
+        PhysicalNetInterface ret = addInboundNative(nativePtr, utf8Addr,
+                                    utf8Addr.length, 
                                     port, mcastAddrs, mcaLen, forGenericData);
         if (ret == null)
             throw new CommoException();
@@ -849,11 +1018,13 @@ public class Commo {
      * be made with plain TCP, SSL encrypted TCP, or SSL encrypted with
      * server authentication: specifying null for clientCert, trustStore,
      * username, and password results in a plain TCP connection.
-     * Specifying non-null for clientCert requires non-null
+     * Specifying non-null for clientCert requires
      * trustStore to be non-null; this results in an SSL connection.
      * Additionally specifying non-null username and password will result
-     * in an SSL connection that sends a TAK server authentication message
-     * when connecting. Regardless of the type of connection, 
+     * in the SSL connection that sends a TAK server authentication message
+     * when connecting. For non-SSL connections, the username and password are
+     * ignored and no auth message will be sent. Regardless of the type 
+     * of connection, 
      * this Commo instance will attempt to create and restore the
      * server connection as needed until this interface is removed or this
      * Commo object is shutdown.
@@ -1910,7 +2081,7 @@ public class Commo {
 
 
     static native long commoCreateNative(CommoLogger logger, String ourUID,
-                                  String ourCallsign);
+                                  String ourCallsign, int addressMode);
     static native void commoDestroyNative(long nativePtr);
     static native boolean setupMissionPackageIONative(long nativePtr,
                                    MissionPackageIO io);

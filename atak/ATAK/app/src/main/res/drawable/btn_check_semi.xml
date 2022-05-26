@@ -1,8 +1,12 @@
-<?xml version="1.0" encoding="utf-8"?>
-<selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:state_enabled="false"
-          android:drawable="@drawable/btn_check_semi_disabled" />
-    <item android:state_pressed="true"
-          android:drawable="@drawable/btn_check_semi_pressed" />
-    <item android:drawable="@drawable/btn_check_semi_default" />
-</selector>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="128dp"
+    android:height="128dp"
+    android:viewportWidth="128"
+    android:viewportHeight="128">
+  <path
+      android:pathData="m19.863,15.447c-3.005,0.045 -5.417,2.493 -5.418,5.498v87.109c0,3.037 2.463,5.5 5.5,5.5h87.109c4.898,-0.002 7.351,-5.924 3.889,-9.389L23.834,17.057c-1.052,-1.051 -2.484,-1.632 -3.971,-1.609z"
+      android:fillColor="#ffffff"/>
+  <path
+      android:pathData="M17.496,0C7.898,0 0,7.898 0,17.496L0,110.504C0,120.102 7.898,128 17.496,128L110.502,128C120.1,128 128,120.102 128,110.504L128,17.496C128,7.898 120.1,0 110.502,0ZM17.496,10.994h93.006c3.698,0 6.504,2.804 6.504,6.502v93.008c0,3.698 -2.806,6.502 -6.504,6.502L17.496,117.006c-3.698,0 -6.502,-2.804 -6.502,-6.502L10.994,17.496c0,-3.698 2.804,-6.502 6.502,-6.502z"
+      android:fillColor="#ffffff"/>
+</vector>

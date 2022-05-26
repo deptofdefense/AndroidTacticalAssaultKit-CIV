@@ -10,6 +10,7 @@ import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 
 import com.atakmap.android.drawing.mapItems.DrawingCircle;
+import com.atakmap.android.drawing.mapItems.DrawingEllipse;
 import com.atakmap.android.dropdown.DropDownManager;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import android.net.Uri;
@@ -378,18 +379,11 @@ public class DrawingToolsMapReceiver extends DropDownReceiver implements
                                 && DropDownManager.getInstance()
                                         .isTopDropDown(this))
                             DropDownManager.getInstance().unHidePane();
-                    } else if (prevUID != null
-                            && !uid.equals(prevUID)) {
-                        closeDropDown();
+                        if (edit)
+                            _genDetailsView.startEditingMode();
+                    } else
                         showDetails(item, edit);
-                    } else {
-                        showDetails(item, edit);
-                    }
-
                     prevUID = uid;
-
-                    if (edit && _genDetailsView != null)
-                        _genDetailsView.startEditingMode();
                 } else {
                     _item = item;
                     ATAKUtilities.scaleToFit(getMapView(), _item, false,
@@ -460,6 +454,8 @@ public class DrawingToolsMapReceiver extends DropDownReceiver implements
             layoutID = R.layout.generic_point_details_view;
         else if (item instanceof DrawingCircle)
             layoutID = R.layout.circle_details_view;
+        else if (item instanceof DrawingEllipse)
+            layoutID = R.layout.ellipse_details_view;
         else if (item instanceof Rectangle)
             layoutID = R.layout.rectangle_details_view;
         else {
@@ -479,13 +475,19 @@ public class DrawingToolsMapReceiver extends DropDownReceiver implements
                 ? "asset:/icons/outline.png"
                 : "");
 
-        if (edit)
-            gdv.startEditingMode();
-
         showDropDown(gdv, THREE_EIGHTHS_WIDTH, FULL_HEIGHT, FULL_WIDTH,
                 HALF_HEIGHT, this);
 
         _genDetailsView = gdv;
+
+        if (edit) {
+            getMapView().post(new Runnable() {
+                @Override
+                public void run() {
+                    gdv.startEditingMode();
+                }
+            });
+        }
     }
 
     @Override

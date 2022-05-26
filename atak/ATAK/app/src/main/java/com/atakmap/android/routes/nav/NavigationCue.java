@@ -34,8 +34,8 @@ public class NavigationCue {
 
         /**
          * Decodes the TriggerMode from its encoding as a character.
-         * @param val
-         * @return Trigger mode
+         * @param val the encoded character
+         * @return the corresponding trigger mode
          */
         public static TriggerMode fromValue(Character val) {
             if (val == 'd') {
@@ -54,14 +54,14 @@ public class NavigationCue {
     private final String voiceCue;
     private final String textCue;
 
-    private List<ConditionalNavigationCue> _cues = new ArrayList<>();
+    private final List<ConditionalNavigationCue> _cues = new ArrayList<>();
 
     /**
      * Constructs a new Navigation Cue.
      *
-     * @param id
-     * @param voiceCue
-     * @param textCue
+     * @param id the id for the navigation cue
+     * @param voiceCue the voice cue to be spoken
+     * @param textCue the text cue to be displayed
      */
     public NavigationCue(final String id, final String voiceCue,
             final String textCue) {
@@ -73,7 +73,7 @@ public class NavigationCue {
     /**
      * Adds a cue to the NavigationCue.
      * @param triggerMode distance or time
-     * @param triggerValue 
+     * @param triggerValue the trigger value related to the mode
      */
     public void addCue(TriggerMode triggerMode, int triggerValue) {
         _cues.add(new ConditionalNavigationCue(triggerMode, triggerValue));
@@ -89,7 +89,7 @@ public class NavigationCue {
     /**
      * Gets the voice cue associated with this cue.
      *
-     * @return
+     * @return return the voice cue
      */
     public String getVoiceCue() {
         return voiceCue;
@@ -98,7 +98,7 @@ public class NavigationCue {
     /**
      * Gets the text cue associated with this cue.
      *
-     * @return
+     * @return returns the text cue
      */
     public String getTextCue() {
         return textCue;
@@ -107,7 +107,7 @@ public class NavigationCue {
     /**
      * Gets a copy of the map associating departure UIDs to ConditionalNav cues.
      *
-     * @return
+     * @return get all cues
      */
     public List<ConditionalNavigationCue> getCues() {
         return new ArrayList<>(_cues);
@@ -136,7 +136,7 @@ public class NavigationCue {
      *
      * @param newCueId The ID that new cue should have
      * @param cue The cue to create the inverse of
-     * @return
+     * @return the navigation cue reversed.
      */
     public static NavigationCue inverseCue(String newCueId, NavigationCue cue) {
         // Invert the text and voice cues
@@ -146,7 +146,9 @@ public class NavigationCue {
         List<ConditionalNavigationCue> oldConCues = cue.getCues();
 
         NavigationCue newCue = new NavigationCue(newCueId, voiceCue, textCue);
-        newCue._cues = oldConCues;
+
+        newCue._cues.clear();
+        newCue._cues.addAll(oldConCues);
 
         return newCue;
     }

@@ -151,7 +151,7 @@ public class EnrollmentDialog {
             enrollmentBuilder.show();
 
         } catch (Exception e) {
-            Log.e(TAG, "eception in createEnrollmentDialog!", e);
+            Log.e(TAG, "exception in createEnrollmentDialog!", e);
         }
     }
 }

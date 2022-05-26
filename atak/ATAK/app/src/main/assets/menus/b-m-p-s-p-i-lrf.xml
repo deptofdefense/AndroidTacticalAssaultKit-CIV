@@ -35,7 +35,6 @@
             selected='${pairinglineself_on}' />
 
     <button icon='icons/pairing_line.png'
-            onClick='actions/pairingline.xml'
-            selected='${pairingline_on}' />
+            onClick='actions/pairingline.xml'/>
 
 </menu>

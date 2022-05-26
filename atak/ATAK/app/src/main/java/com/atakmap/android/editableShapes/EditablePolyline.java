@@ -333,7 +333,7 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
     protected final int testPointsHit(MapView view, int startIdx, int endIdx,
             RectF hitRect, GeoBounds hitBox) {
         return 0;
-        }
+    }
 
     /**
      * @deprecated use {@link #testLinesHit(MapView, int, int, Vector2D, GeoPoint)}

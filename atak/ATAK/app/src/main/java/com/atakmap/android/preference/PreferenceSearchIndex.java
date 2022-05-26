@@ -51,37 +51,37 @@ public class PreferenceSearchIndex {
      * Self type for index of a preference screen index e.g. Route Preferences
      * Parent type for individual preference index e.g. Route checkpoint reached distance
      */
-    private Class<? extends AtakPreferenceFragment> fragClass;
+    private final Class<? extends AtakPreferenceFragment> fragClass;
 
     /**
      * The parent key, used for tools where the preference needs to be looked up by its toolkey.
      */
-    private String parentKey;
+    private final String parentKey;
 
     /**
      * Unique key of the preference
      */
-    private String key;
+    private final String key;
 
     /**
      * Summary/label of the preference
      */
-    private String summary;
+    private final String summary;
 
     /**
      * Summary/label of the parent preference/screen
      */
-    private String parentSummary;
+    private final String parentSummary;
 
     /**
      * Icon of the preference
      */
-    private Drawable icon;
+    private final Drawable icon;
 
     /**
      * Terms to match on when searching
      */
-    private List<String> terms;
+    private final List<String> terms;
 
     /**
      * Reference to shared preferences underlying datastore

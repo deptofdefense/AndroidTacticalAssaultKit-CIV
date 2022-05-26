@@ -30,8 +30,7 @@
 
 
     <button icon='icons/pairing_line.png'
-            onClick='actions/pairingline.xml'
-            selected='${pairingline_on}' />
+            onClick='actions/pairingline.xml'/>
 
     <button icon='icons/pairing_line_to_self.png'
             onClick='actions/spipairinglineself.xml'
@@ -42,6 +41,6 @@
             disableSwap='true'
             disableIconSwap='true'
             onClick='actions/move_spi.xml'
-            disabled='!{${preciseMove}}' />
+            disabled='!{${movable}}' />
 
 </menu>

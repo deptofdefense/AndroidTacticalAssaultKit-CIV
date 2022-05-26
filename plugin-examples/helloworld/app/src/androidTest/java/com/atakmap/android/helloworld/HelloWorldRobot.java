@@ -97,10 +97,7 @@ public class HelloWorldRobot {
     }
 
     public HelloWorldRobot verifyMarkerDetailsName(String name) {
-        onView(withId(appContext.getResources().getIdentifier(
-                "cotInfoNameEdit",
-                "id",
-                "com.atakmap.app")))
+        onView(withId(com.atakmap.app.R.id.cotInfoNameEdit))
                         .check(matches(withText(name)));
         return this;
     }

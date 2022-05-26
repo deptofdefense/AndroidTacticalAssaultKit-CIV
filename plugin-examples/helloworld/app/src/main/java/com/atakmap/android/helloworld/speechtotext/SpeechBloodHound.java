@@ -72,8 +72,10 @@ public class SpeechBloodHound extends SpeechActivity {
                 }
             }
             for (String s : callsignArray) {
-                if (destArr[i].equalsIgnoreCase(s))
+                if (destArr[i].equalsIgnoreCase(s)) {
                     indexC = i;
+                    break;
+                }
             }
         }
         if (indexR != -1) {

@@ -16,9 +16,9 @@ public final class LayerHierarchyListItem
 
     private final String _title;
     private final String _uid;
-    private Layer _subject;
-    private String _iconUri;
-    private boolean _unwrapProxy;
+    private final Layer _subject;
+    private final String _iconUri;
+    private final boolean _unwrapProxy;
 
     public LayerHierarchyListItem(Layer subject) {
         this(subject, null, true);

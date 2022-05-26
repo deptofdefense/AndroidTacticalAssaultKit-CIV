@@ -35,6 +35,7 @@ import com.atakmap.coremap.maps.conversion.EGM96;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
 import com.atakmap.coremap.log.Log;
+import com.atakmap.map.CameraController;
 
 public class GenericPointDetailsView extends GenericDetailsView implements
         PointMapItem.OnPointChangedListener {
@@ -211,7 +212,8 @@ public class GenericPointDetailsView extends GenericDetailsView implements
                 public void onClick(View v) {
                     if (_point != null) {
                         GeoPoint gp = _point.getPoint();
-                        _mapView.getMapController().panTo(gp, false);
+                        CameraController.Programmatic.panTo(
+                                _mapView.getRenderer3(), gp, false);
                     }
                 }
             });
@@ -346,9 +348,9 @@ public class GenericPointDetailsView extends GenericDetailsView implements
                             _coordButton
                                     .setText(coordView.getFormattedString());
 
-                            dropDown.getMapView()
-                                    .getMapController()
-                                    .panTo(_point.getPoint(), true);
+                            CameraController.Programmatic.panTo(
+                                    dropDown.getMapView().getRenderer3(),
+                                    _point.getPoint(), true);
                         }
                         locDialog.dismiss();
                     }

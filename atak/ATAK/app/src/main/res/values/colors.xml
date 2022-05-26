@@ -15,6 +15,7 @@
     <color name="darker_gray">#121212</color>
     <color name="green">#92a844</color>
     <color name="black_overlay">#ff1f2122</color>
+    <color name="black_overlay_transparent">#C01f2122</color>
 
     <color name="heading_yellow">#dfb228</color>
 
@@ -30,4 +31,42 @@
     <color name="light_blue">#33b5e5</color>
 
     <color name="th_green">#ff00ff00</color>
+
+    <!-- NEW DESIGN -->
+    <color name="black">#000000</color>
+    <color name="pastel_gray">#dad4bc</color>
+    <color name="pale_silver">#cdc8b0</color>
+    <color name="ash_gray">#b4b4b4</color>
+    <color name="atac_beige">#D1CBAF</color>
+    <color name="onyx">#131415</color>
+    <color name="onyx_85">#d8131415</color>
+    <color name="maize">#ffe35e</color>
+    <color name="taupe">#38362f</color>
+    <color name="taupe_gray">#878787</color>
+    <color name="sand">#bbae79</color>
+    <color name="deep_carmine_pink">#f52d2d</color>
+    <color name="icterine">#f9ff54</color>
+    <color name="mint_green">#9dffaf</color>
+    <color name="ufo_green">#3dcf58</color>
+    <color name="light_salmon_pink">#ff9d9d</color>
+    <color name="manatee">#979797</color>
+    <color name="medium_jungle_green">#2b2a2a</color>
+    <color name="trolley_grey">#818181</color>
+    <color name="hansa_yellow">#dec655</color>
+
+    <color name="toolbar_tint">#111111</color>
+    <color name="hilight_yellow">@color/hansa_yellow</color>
+    <color name="listview_divider">@color/manatee</color>
+    <color name="listview_background">#232323</color>
+
+    <color name="button_pressed">@color/taupe</color>
+    <color name="alert">@color/deep_carmine_pink</color>
+    <color name="map_text">@color/icterine</color>
+    <color name="tooltip_text">@color/hansa_yellow</color>
+    <color name="callsign_default">@color/mint_green</color>
+    <color name="callsign_alert">@color/light_salmon_pink</color>
+    <color name="black_tooltip_overlay">#a6000000</color>
+    <color name="text_shadow">#7F000000</color>
+    <color name="bloodhound_info_widget_text_color">#b3ffbe</color>
+    <color name="seekbar_background">#80000000</color>
 </resources>

@@ -131,12 +131,8 @@ public class ModelLoader implements ModelSpi.Callback {
             boolean needsCenter = Math.abs(offset.x) > 0.01
                     || Math.abs(offset.y) > 0.01
                     || Math.abs(offset.z) > 0.01;
-            double width = Math.abs(e.maxX - e.minX);
-            double length = Math.abs(e.maxY - e.minY);
-            double height = Math.abs(e.maxZ - e.minZ);
 
             // Clear out the local frame since we'll be manipulating it anyway
-            Matrix originalLocalFrame = info.localFrame;
             info.localFrame = Matrix.getIdentity();
 
             // Model needs to be transformed

@@ -1,98 +1,98 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent">
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
     <ImageView
-            android:id="@+id/atak_splash_imgView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:src="@drawable/atak_splash"/>
+        android:id="@+id/atak_splash_imgView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:src="@drawable/atak_splash" />
 
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:fadeScrollbars="false"
         android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true">
+        android:layout_centerHorizontal="true"
+        android:fadeScrollbars="false">
 
-    <LinearLayout
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:orientation="vertical"
             android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-            android:orientation="vertical" >
-        <TextView
-            android:id="@+id/statementLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/statementLabel"
-            android:textSize="9sp"
-            android:textColor="#df0917"
-            android:paddingBottom="2dp"/>
-        <TextView
-            android:id="@+id/classificationLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/classificationLabel"
-            android:textSize="14sp"
-            android:textColor="@color/heading_yellow"
-            android:paddingBottom="1dp"/>
-        <TextView
-            android:id="@+id/distributionLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/distributionLabel"
-            android:textSize="9sp"
-            android:textColor="@color/heading_yellow"
-            android:paddingBottom="1dp"/>
-        <TextView
-            android:id="@+id/destructionLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/destructionLabel"
-            android:textSize="9sp"
-            android:textColor="@color/heading_yellow"
-            android:paddingBottom="1dp"/>
-        <TextView
-            android:id="@+id/caseLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/caseLabel"
-            android:textSize="9sp"
-            android:textColor="@color/heading_yellow"
-            android:paddingBottom="1dp"/>
+            android:paddingEnd="12dp">
+
+            <TextView
+                android:id="@+id/statementLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingBottom="2dp"
+                android:text="@string/statementLabel"
+                android:textColor="#df0917"
+                android:textSize="9sp" />
+
+            <TextView
+                android:id="@+id/classificationLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingBottom="1dp"
+                android:text="@string/classificationLabel"
+                android:textColor="@color/heading_yellow"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/distributionLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingBottom="1dp"
+                android:text="@string/distributionLabel"
+                android:textColor="@color/heading_yellow"
+                android:textSize="9sp" />
+
+            <TextView
+                android:id="@+id/destructionLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingBottom="1dp"
+                android:text="@string/destructionLabel"
+                android:textColor="@color/heading_yellow"
+                android:textSize="9sp" />
+
+            <TextView
+                android:id="@+id/caseLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingBottom="1dp"
+                android:text="@string/caseLabel"
+                android:textColor="@color/heading_yellow"
+                android:textSize="9sp" />
 
 
-         <TextView
-                 android:id="@+id/revision"
-                 android:layout_width="wrap_content"
-                 android:layout_height="wrap_content"
-                 android:text=""
-                 android:textColor="@color/heading_yellow" />
-         <TextView
-                 android:id="@+id/encryption"
-                 android:layout_width="wrap_content"
-                 android:layout_height="wrap_content"
-                 android:text=""
-                 android:visibility="gone"
-                 android:textSize="9sp"
-                 android:textColor="@color/white" />
-        <TextView
+            <TextView
+                android:id="@+id/revision"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="@color/heading_yellow" />
+
+            <TextView
                 android:id="@+id/pluginapi"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text=""
-                android:visibility="gone"
-                android:textColor="#d3d3d3" />
-        <TextView
-                 android:id="@+id/makemodel"
-                 android:layout_width="wrap_content"
-                 android:layout_height="wrap_content"
-                 android:text=""
-                 android:visibility="gone"
-                 android:textColor="#d3d3d3" />
-   </LinearLayout>
+                android:textColor="#d3d3d3"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/makemodel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="#d3d3d3"
+                android:visibility="gone" />
+        </LinearLayout>
 
     </ScrollView>
 

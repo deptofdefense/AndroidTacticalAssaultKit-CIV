@@ -90,6 +90,10 @@ public abstract class SpatialDbContentSource implements Importer {
         this.notifyUserAfterImport = true;
     }
 
+    /**
+     * Returns the data base that backs the features.
+     * @return the database for the features.
+     */
     public final DataSourceFeatureDataStore getDatabase() {
         return this.database;
     }

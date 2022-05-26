@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="5dp" >
+
+
+      <CheckBox
+          android:id="@+id/include_attachment"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:textSize="18sp"
+          android:layout_margin="8dp"
+          android:textStyle="bold"
+          android:text="@string/include_attachments_datapackage" />
+
+</LinearLayout>

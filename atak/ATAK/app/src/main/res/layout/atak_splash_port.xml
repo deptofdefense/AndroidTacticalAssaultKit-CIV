@@ -7,7 +7,8 @@
             android:id="@+id/atak_splash_imgView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:src="@drawable/atak_splash_portrait"/>
+            android:scaleType="centerCrop"
+            android:src="@drawable/atak_splash_portrait" />
 
     <ScrollView
         android:layout_width="match_parent"

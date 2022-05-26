@@ -63,16 +63,17 @@ public class Dt2OutlineMapOverlay extends AbstractMapOverlay2 implements
     private ListModel _listModel;
 
     public Dt2OutlineMapOverlay(MapView mapView) {
+        this(mapView, createDtedWatcher(mapView));
+    }
+
+    public Dt2OutlineMapOverlay(MapView mapView, Dt2FileWatcher dtedWatcher) {
         _mapView = mapView;
         _context = mapView.getContext();
         _prefs = new AtakPreferences(mapView);
         _mapView.getMapOverlayManager().addOverlay(this);
 
-        // Initialize DTED watcher
-        List<File> rootDirs = Arrays.asList(FileSystemUtils.getItems("DTED"));
-        _dtedWatcher = new Dt2FileWatcher(mapView, rootDirs);
+        _dtedWatcher = dtedWatcher;
         _dtedWatcher.addListener(this);
-        _dtedWatcher.start();
 
         GLLayerFactory.register(GLDt2OutlineOverlay.SPI);
         _outlineOverlay = new GLDt2OutlineOverlay.Instance(mapView);
@@ -133,6 +134,14 @@ public class Dt2OutlineMapOverlay extends AbstractMapOverlay2 implements
         if (h == 'W' || h == 'S')
             v = -v;
         return v;
+    }
+
+    private static Dt2FileWatcher createDtedWatcher(MapView mapView) {
+        // Initialize DTED watcher
+        List<File> rootDirs = Arrays.asList(FileSystemUtils.getItems("DTED"));
+        Dt2FileWatcher dtedWatcher = new Dt2FileWatcher(mapView, rootDirs);
+        dtedWatcher.start();
+        return dtedWatcher;
     }
 
     private final Comparator<HierarchyListItem> COMP_LIST = new Comparator<HierarchyListItem>() {
@@ -279,7 +288,7 @@ public class Dt2OutlineMapOverlay extends AbstractMapOverlay2 implements
         private final boolean _root;
         private final String _title;
         private final int _level;
-        private int _longitude;
+        private final int _longitude;
         private GeoBounds _bounds;
         private int _childCount;
 

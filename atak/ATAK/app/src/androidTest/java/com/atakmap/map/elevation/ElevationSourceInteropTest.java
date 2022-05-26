@@ -144,7 +144,7 @@ public class ElevationSourceInteropTest extends AInteropTest<ElevationSource> {
         // create object
         final String name = Long.toString(System.currentTimeMillis(), 16);
         final Envelope bounds = new Envelope(1, 2, 3, 4, 5, 6);
-        final Set<ElevationSource.OnContentChangedListener> listeners = new HashSet<ElevationSource.OnContentChangedListener>();
+        final Set<ElevationSource.OnContentChangedListener> listeners = new HashSet<>();
         // create mock source with our desired traits
         ElevationSource mock = new ElevationSource() {
             public String getName() {

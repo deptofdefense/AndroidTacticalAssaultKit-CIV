@@ -42,6 +42,7 @@ import com.atakmap.coremap.conversions.SpanUtilities;
 
 import com.atakmap.android.util.AttachmentManager;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.map.CameraController;
 
 import android.widget.ImageButton;
 
@@ -452,10 +453,9 @@ public class RectangleDetailsView extends GenericDetailsView implements
                             _rect.move(_rect.getCenter(), p, true);
                             _centerButton.setText(coordView
                                     .getFormattedString());
-
-                            dropDown.getMapView()
-                                    .getMapController()
-                                    .panTo(_rect.getCenter().get(), true);
+                            CameraController.Programmatic.panTo(
+                                    dropDown.getMapView().getRenderer3(),
+                                    _rect.getCenter().get(), true);
                         }
                         locDialog.dismiss();
                     }

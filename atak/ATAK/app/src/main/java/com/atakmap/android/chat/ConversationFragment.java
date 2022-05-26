@@ -44,6 +44,7 @@ import com.atakmap.coremap.log.Log;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
+import com.atakmap.map.CameraController;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -536,8 +537,11 @@ public class ConversationFragment extends Fragment implements
                         false);
             else if (target instanceof ILocation) {
                 GeoPoint point = ((ILocation) target).getPoint(null);
-                if (point.isValid() && getMapView() != null)
-                    getMapView().getMapController().panTo(point, false);
+                if (point.isValid() && getMapView() != null) {
+                    CameraController.Programmatic.panTo(
+                            getMapView().getRenderer3(),
+                            point, false);
+                }
             }
         }
 
@@ -549,7 +553,7 @@ public class ConversationFragment extends Fragment implements
             // trim any trailing spaces
             try {
                 msg = msg.replaceFirst("\\s++$", "");
-            } catch (Exception e) {
+            } catch (Exception ignored) {
             }
 
             // Ignore empty message

@@ -47,6 +47,7 @@ import com.atakmap.coremap.conversions.SpanUtilities;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.map.CameraController;
 
 import java.text.DecimalFormat;
 
@@ -505,7 +506,8 @@ public class CircleDetailsView extends GenericDetailsView implements
                         if (result == CoordDialogView.Result.VALID_CHANGED) {
                             _circle.setCenterPoint(p);
                             refresh();
-                            _mapView.getMapController().panTo(p.get(), true);
+                            CameraController.Programmatic.panTo(
+                                    _mapView.getRenderer3(), p.get(), true);
                         }
                         locDialog.dismiss();
                     }

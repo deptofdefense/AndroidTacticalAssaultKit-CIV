@@ -14,6 +14,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Environment;
+import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
 
@@ -58,14 +60,17 @@ public class Permissions {
             // 26 - protection in place
             Manifest.permission.REQUEST_DELETE_PACKAGES,
 
-            // 29 - protection in place
-            Manifest.permission.ACCESS_BACKGROUND_LOCATION,
+            // 26 - protections in place
+            Manifest.permission.READ_PHONE_NUMBERS,
+
             "com.atakmap.app.ALLOW_TEXT_SPEECH",
+
     };
 
     final static String[] locationPermissionsList = new String[] {
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_LOCATION_EXTRA_COMMANDS,
+
             // 29 - protection in place
             Manifest.permission.ACCESS_BACKGROUND_LOCATION,
     };
@@ -88,6 +93,11 @@ public class Permissions {
                             .equals(permission))
                 continue;
 
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O
+                    && Manifest.permission.READ_PHONE_NUMBERS
+                            .equals(permission))
+                continue;
+
             // for this specific flavor, go ahead and do not enable SEND_SMS
             if (BuildConfig.FLAVOR.equalsIgnoreCase("civSmall")
                     && Manifest.permission.SEND_SMS.equals(permission))
@@ -96,38 +106,70 @@ public class Permissions {
             result += a.checkSelfPermission(permission);
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            if (PackageManager.PERMISSION_GRANTED != a
-                    .checkCallingOrSelfPermission(
-                            Manifest.permission.ACCESS_BACKGROUND_LOCATION)) {
-                Log.d(TAG,
-                        "permission not granted for background location listening");
-                showWarning(a);
-                return false;
-            }
-        }
-
         if (result != PackageManager.PERMISSION_GRANTED) {
             Log.d(TAG,
                     "permissions have not been granted for all of the things");
             a.requestPermissions(PermissionsList, REQUEST_ID);
             return false;
         } else {
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                if (PackageManager.PERMISSION_GRANTED != a
+                        .checkCallingOrSelfPermission(
+                                Manifest.permission.ACCESS_BACKGROUND_LOCATION)) {
+                    Log.d(TAG,
+                            "permission not granted for background location listening");
+                    showWarning(a);
+                    return false;
+                }
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                if (!Environment.isExternalStorageManager()) {
+                    showFileSystemWarning(a);
+                    return false;
+                }
+            }
+
             Log.d(TAG, "permissions have been granted for all of the things");
-
-            // This is clunky and probably not needed since it does not seem 
-            // to effect behavior in the application 12/6/2019 SHB
-
-            //if (!Settings.System.canWrite(a.getApplicationContext())) {
-            //    Intent intent = 
-            //         new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, 
-            //                    Uri.parse("package:" + a.getPackageName()));
-            //    a.startActivityForResult(intent, 200);
-            //}
-
             return true;
         }
 
+    }
+
+    @TargetApi(30)
+    private static void showFileSystemWarning(final Activity a) {
+        LayoutInflater li = LayoutInflater.from(a);
+        View v = li.inflate(R.layout.storage_permission_guidance, null);
+
+        final AlertDialog.Builder builder = new AlertDialog.Builder(a);
+        builder.setTitle(R.string.file_system_access_changes);
+        builder.setView(v);
+        builder.setIcon(R.drawable.ic_database);
+        builder.setCancelable(false);
+
+        builder.setPositiveButton(R.string.i_understand,
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        final Uri uri = Uri
+                                .parse("package:" + BuildConfig.APPLICATION_ID);
+                        final Intent intent = new Intent(
+                                Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
+                                uri);
+                        a.startActivityForResult(intent, REQUEST_ID);
+                    }
+                });
+
+        builder.setNegativeButton(R.string.cancel,
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        a.finish();
+                    }
+                });
+
+        builder.show();
     }
 
     @TargetApi(23)
@@ -140,12 +182,12 @@ public class Permissions {
         builder.setIcon(R.drawable.ic_menu_mylocation);
 
         builder.setCancelable(false);
-        builder.setPositiveButton(R.string.ok,
+        builder.setPositiveButton(R.string.i_understand,
                 new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
 
-                        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                             View view = LayoutInflater.from(a)
                                     .inflate(
                                             R.layout.location_permission_warning,
@@ -186,7 +228,7 @@ public class Permissions {
                 R.layout.general_permission_guidance,
                 null);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             final int result = a.checkSelfPermission(
                     Manifest.permission.ACCESS_BACKGROUND_LOCATION);
             if (result != PackageManager.PERMISSION_GRANTED) {
@@ -197,10 +239,10 @@ public class Permissions {
         }
 
         final AlertDialog.Builder builder = new AlertDialog.Builder(a);
-        builder.setTitle("Missing Permissions");
+        builder.setTitle(R.string.required_missing_permissions);
         builder.setView(view);
         builder.setCancelable(false);
-        builder.setPositiveButton(R.string.permit_manually,
+        builder.setPositiveButton(R.string.i_understand,
                 new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
@@ -211,10 +253,16 @@ public class Permissions {
                         Uri uri = Uri.fromParts("package", a.getPackageName(),
                                 null);
                         intent.setData(uri);
-                        a.startActivity(intent);
-                        a.finish();
+                        a.startActivityForResult(intent, REQUEST_ID);
                     }
-                });
+                }).setNegativeButton(R.string.cancel,
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog,
+                                    int which) {
+                                a.finish();
+                            }
+                        });
         builder.show();
     }
 
@@ -264,6 +312,11 @@ public class Permissions {
 
                         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O
                                 && Manifest.permission.REQUEST_DELETE_PACKAGES
+                                        .equals(permissions[i]))
+                            continue;
+
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O
+                                && Manifest.permission.READ_PHONE_NUMBERS
                                         .equals(permissions[i]))
                             continue;
 

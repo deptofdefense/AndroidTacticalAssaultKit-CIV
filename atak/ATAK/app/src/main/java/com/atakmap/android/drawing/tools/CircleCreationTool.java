@@ -24,6 +24,9 @@ import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import java.util.Collection;
 import java.util.UUID;
 
+import gov.tak.api.annotation.DontObfuscate;
+
+@DontObfuscate
 public abstract class CircleCreationTool extends Tool
         implements MapEventDispatchListener {
 

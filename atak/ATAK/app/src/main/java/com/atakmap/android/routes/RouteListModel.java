@@ -1,8 +1,6 @@
 
 package com.atakmap.android.routes;
 
-import android.app.ActionBar;
-import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.PorterDuff;
@@ -30,6 +28,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Toast;
 
 import com.atakmap.android.dropdown.DropDownManager;
+import com.atakmap.android.gui.drawable.VisibilityDrawable;
 import com.atakmap.android.hierarchy.HierarchyListStateListener;
 import com.atakmap.android.maps.MapActivity;
 import com.atakmap.android.maps.MapComponent;
@@ -44,9 +43,9 @@ import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.menu.MapMenuReceiver;
+import com.atakmap.android.navigation.views.NavView;
 import com.atakmap.android.routes.nav.NavigationCue;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
-import com.atakmap.android.tools.ActionBarReceiver;
 import com.atakmap.android.user.FilterMapOverlay;
 import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.CoordinateFormat;
@@ -322,6 +321,8 @@ public class RouteListModel extends FilterMapOverlay.ListModelImpl
                         R.id.hierarchy_manager_list_item_checkbox);
                 h.viz = v.findViewById(
                         R.id.hierarchy_manager_visibility_iv);
+                h.viz.setImageDrawable(h.vizIcon = new VisibilityDrawable());
+                h.viz.setTag(h);
                 h.title = v.findViewById(
                         R.id.hierarchy_manager_list_item_title);
                 h.desc = v.findViewById(
@@ -370,8 +371,7 @@ public class RouteListModel extends FilterMapOverlay.ListModelImpl
             } else {
                 h.checkBox.setVisibility(View.GONE);
                 h.viz.setVisibility(View.VISIBLE);
-                h.viz.setImageResource(isVisible() ? R.drawable.overlay_visible
-                        : R.drawable.overlay_not_visible);
+                h.vizIcon.setVisible(isVisible());
                 h.actions.setVisibility(View.VISIBLE);
             }
             h.actionsLayout.setVisibility(showActions ? View.VISIBLE
@@ -413,10 +413,9 @@ public class RouteListModel extends FilterMapOverlay.ListModelImpl
             if (i1 == R.id.hierarchy_manager_visibility_iv) {
                 boolean viz = !isVisible();
                 HierarchyListAdapter om = getListener();
-                if (om != null) {
-                    ((ImageView) v).setImageResource(viz
-                            ? R.drawable.overlay_visible
-                            : R.drawable.overlay_not_visible);
+                ViewHolder h = (ViewHolder) v.getTag();
+                if (h != null && om != null) {
+                    h.vizIcon.setVisible(viz);
                     om.setVisibleAsync(this, viz);
                 } else {
                     setVisible(viz);
@@ -442,7 +441,7 @@ public class RouteListModel extends FilterMapOverlay.ListModelImpl
                 Intent[] navIntents = new Intent[] {
                         new Intent("com.atakmap.android.maps.HIDE_COORDS"),
                         new Intent(MapMenuReceiver.HIDE_MENU),
-                        new Intent(ActionBarReceiver.TOGGLE_ACTIONBAR)
+                        new Intent(NavView.TOGGLE_BUTTONS)
                                 .putExtra("show", true),
                         new Intent(navAction)
                                 .putExtra("routeUID", getUID())
@@ -505,6 +504,7 @@ public class RouteListModel extends FilterMapOverlay.ListModelImpl
     private static class ViewHolder {
         TextView title, desc;
         ImageView icon, viz;
+        VisibilityDrawable vizIcon;
         CheckBox checkBox;
         View actionsLayout;
         ImageButton actions, details, send, nav, edit, delete, reverse;
@@ -651,7 +651,7 @@ public class RouteListModel extends FilterMapOverlay.ListModelImpl
                 _routePlanOptions, d);
     }
 
-    private boolean _routesVisible = false, _hidActionBar = false;
+    private boolean _routesVisible = false;
 
     @Override
     public String getAssociationKey() {
@@ -663,7 +663,6 @@ public class RouteListModel extends FilterMapOverlay.ListModelImpl
         boolean visible = key != null && key.equals("routePreference");
         if (_routesVisible != visible) {
             _routesVisible = visible;
-            toggleActionBar(!_routesVisible);
         }
     }
 
@@ -679,25 +678,5 @@ public class RouteListModel extends FilterMapOverlay.ListModelImpl
         navTo.putStringArrayListExtra("list_item_paths", overlayPaths);
         navTo.putExtra("isRootList", true);
         return navTo;
-    }
-
-    private boolean toggleActionBar(boolean show) {
-        ActionBar ab = ((Activity) _mapView.getContext()).getActionBar();
-        if (ab != null) {
-            if (_hidActionBar && show && !ab.isShowing()) {
-                // Show action bar
-                AtakBroadcast.getInstance().sendBroadcast(new Intent(
-                        ActionBarReceiver.TOGGLE_ACTIONBAR)
-                                .putExtra("show", true));
-                _hidActionBar = false;
-            } else if (!show && ab.isShowing()) {
-                // Hide action bar
-                AtakBroadcast.getInstance().sendBroadcast(new Intent(
-                        ActionBarReceiver.TOGGLE_ACTIONBAR)
-                                .putExtra("show", false));
-                _hidActionBar = true;
-            }
-        }
-        return _hidActionBar;
     }
 }

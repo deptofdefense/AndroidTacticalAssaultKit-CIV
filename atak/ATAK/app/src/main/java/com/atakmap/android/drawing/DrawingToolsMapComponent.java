@@ -100,6 +100,10 @@ public class DrawingToolsMapComponent extends AbstractWidgetMapComponent {
             // Drawing circles
             _importers.add(new DrawingCircleImporter(view, drawingGroup));
 
+            // Drawing ellipse as a stepchild of circles
+            _importers.add(
+                    new DrawingCircleImporter(view, drawingGroup, "u-d-c-e"));
+
             // Rectangles
             _importers.add(new RectangleImporter(view, drawingGroup));
 

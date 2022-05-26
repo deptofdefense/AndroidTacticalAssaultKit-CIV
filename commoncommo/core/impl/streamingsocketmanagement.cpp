@@ -207,16 +207,20 @@ done:
 }
 
 CommoResult StreamingSocketManagement::removeStreamingInterface(
-        StreamingNetInterface *iface)
+        std::string *endpoint, StreamingNetInterface *iface)
 {
     WriteLock lock(contextMutex);
 
     // Try to erase context from the master list
-    std::string s(iface->remoteEndpointId, iface->remoteEndpointLen);
-    ContextMap::iterator cmIter = contexts.find(s);
-    if (cmIter == contexts.end() || cmIter->second != iface)
+    ContextMap::iterator cmIter = contexts.begin();
+    for (cmIter = contexts.begin(); cmIter != contexts.end(); ++cmIter) {
+        if (cmIter->second == iface)
+            break;
+    }
+    if (cmIter == contexts.end())
         return COMMO_ILLEGAL_ARGUMENT;
-
+    
+    *endpoint = std::string(iface->remoteEndpointId, iface->remoteEndpointLen);
     contexts.erase(cmIter);
 
     // Now we know it was one of ours

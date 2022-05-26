@@ -46,7 +46,7 @@ public abstract class OGRExportMarshal extends ExportFileMarshal {
     //single Shapefile can only store a single feature type
     protected final Map<Pair<String, Integer>, List<NamedGeometry>> geometries;
 
-    private String driverName;
+    private final String driverName;
 
     public OGRExportMarshal(Context context, String contentType,
             String mimeType, String driverName, int iconId) {
@@ -98,8 +98,8 @@ public abstract class OGRExportMarshal extends ExportFileMarshal {
      * This stores features from the specified folder in class member
      * folders to prep for export
      * 
-     * @param layerName
-     * @param featureType
+     * @param layerName the layer name
+     * @param featureType the feature type in the layer
      * @return a list of named geometries
      */
     protected List<NamedGeometry> getOrCreateFeatureList(

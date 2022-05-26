@@ -35,7 +35,7 @@
 
     <string-array name="longpress_map_names">
         <item>Do Nothing</item>
-        <item>Hide or Show ActionBar</item>
+        <item>Toggle the Toolbar</item>
         <item>Drop a Point</item>
     </string-array>
 

@@ -35,7 +35,7 @@ public class GLRootMapGroupLayer implements GLLayer3 {
     private final RootMapGroupLayer subject;
 
     private GLMapGroup2 _rootObserver;
-    private GLQuadtreeNode2 renderer;
+    private final GLQuadtreeNode2 renderer;
 
     public GLRootMapGroupLayer(MapRenderer surface, RootMapGroupLayer subject) {
         this.renderContext = surface;

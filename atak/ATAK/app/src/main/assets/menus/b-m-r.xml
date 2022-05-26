@@ -3,7 +3,7 @@
     <button angle='-90'
             icon='icons/delete.png'
             onClick='actions/remove.xml'
-            disabled='${nonremovable}' />
+            disabled='!{${removable}}' />
 
     <button icon='icons/details.png'
             onClick='actions/show_route.xml' />
@@ -11,7 +11,7 @@
     <button icon='icons/edit2.png'
             onClick='actions/edit_route.xml' />
             
-    <button icon='icons/green_flag.png' 
+    <button icon='icons/green_flag_radial.png'
             onClick='actions/startnav.xml' />
 
     <button icon='icons/label.png'

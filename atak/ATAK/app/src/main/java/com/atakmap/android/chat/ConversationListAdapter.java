@@ -17,6 +17,7 @@ import android.widget.Toast;
 
 import com.atakmap.android.contact.Contact;
 import com.atakmap.android.contact.Contacts;
+import com.atakmap.android.maps.MapView;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.locale.LocaleUtil;
@@ -35,7 +36,7 @@ class ConversationListAdapter extends BaseAdapter {
 
     private static final long MILLIS_TIME_LIMIT = 60000; // one minute
     private final SimpleDateFormat timeOnlyFormat = new SimpleDateFormat(
-            "HH:mm:ss", LocaleUtil.getCurrent());
+            "(HH:mm:ss) ", LocaleUtil.getCurrent());
     private final SimpleDateFormat dateOnlyFormat = new SimpleDateFormat(
             "MM/dd/yyyy", LocaleUtil.getCurrent());
     private final Context mContext;
@@ -135,17 +136,13 @@ class ConversationListAdapter extends BaseAdapter {
             Log.w(TAG, "No chat line for position: " + position);
         } else {
 
-            if (chat.timeReceived == null) { // Sent from this device...
-                holder.timestamp.setText("(" + timeAsString(chat.timeSent)
-                        + ") ");
+            if (chat.senderUid.equals(MapView.getDeviceUid())) { // Sent from this device...
                 holder.timestamp.setTextAppearance(mContext, R.style.SendLabel);
                 holder.sender.setTextAppearance(mContext, R.style.SendLabel);
                 holder.timestampHolder.setGravity(Gravity.END);
                 holder.message.setGravity(Gravity.END);
                 holder.sender.setText(R.string.chat_text18);
             } else { // Received by this device...
-                holder.timestamp.setText("(" + timeAsString(chat.timeReceived)
-                        + ") ");
                 holder.timestamp.setTextAppearance(mContext,
                         R.style.ReceiveLabel);
                 holder.sender.setTextAppearance(mContext, R.style.ReceiveLabel);
@@ -157,6 +154,14 @@ class ConversationListAdapter extends BaseAdapter {
                 holder.sender.setText(String.format(LocaleUtil.getCurrent(),
                         "%s: ", callsign));
             }
+
+            // Timestamp (read -> received -> sent)
+            Long ts = chat.timeSent;
+            if (chat.timeRead != null)
+                ts = chat.timeRead;
+            else if (chat.timeReceived != null)
+                ts = chat.timeReceived;
+            holder.timestamp.setText(timeAsString(ts));
 
             // Set the Size of the text
             holder.sender.setTextSize(15);
@@ -377,6 +382,8 @@ class ConversationListAdapter extends BaseAdapter {
         Log.d(TAG, "Updating message: " + src.messageId);
         dst.acked = true;
         dst.status = src.status;
+        dst.timeReceived = src.timeReceived;
+        dst.timeRead = src.timeRead;
         notifyDataSetChanged();
     }
 
@@ -386,7 +393,8 @@ class ConversationListAdapter extends BaseAdapter {
      * @return String readable time
      */
     synchronized private String timeAsString(Long datetime) {
-        return timeOnlyFormat.format(new Date(datetime));
+        return datetime != null ? timeOnlyFormat.format(new Date(datetime))
+                : "";
     }
 
     /**formats the date to specific format

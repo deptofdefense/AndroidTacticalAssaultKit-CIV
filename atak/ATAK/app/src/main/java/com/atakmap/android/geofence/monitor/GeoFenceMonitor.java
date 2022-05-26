@@ -48,7 +48,7 @@ public abstract class GeoFenceMonitor {
      * List of specific items to track. If empty, then use TrackedTypes.getItems()
      */
     private List<PointMapItem> _itemsToTrack;
-    private List<String> _uidsToTrack;
+    private final List<String> _uidsToTrack;
 
     /**
      * List of dismissed UIDs. Note we remove the UID from _itemsToTrack, but the UID

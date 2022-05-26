@@ -7,6 +7,8 @@ import android.net.Uri;
 import com.atakmap.android.config.ConfigEnvironment;
 import com.atakmap.android.config.FlagsParser;
 import com.atakmap.android.maps.MapDataRef;
+import com.atakmap.android.maps.UriMapDataRef;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.log.Log;
 
 import org.w3c.dom.Document;
@@ -20,99 +22,111 @@ import java.io.InputStream;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.xml.XMLUtils;
 
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.Set;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-public class WidgetIcon implements Cloneable {
+import gov.tak.api.commons.graphics.IIcon;
+import gov.tak.platform.commons.graphics.Icon;
+
+/** @deprecated use {@link gov.tak.platform.commons.graphics.Icon} */
+@Deprecated
+@DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
+public class WidgetIcon implements Cloneable, IIcon {
 
     public static final String TAG = "WidgetIcon";
 
     public WidgetIcon(MapDataRef iconRef, Point anchor, int iconWidth,
             int iconHeight) {
-        _stateRefs.put(0, iconRef);
-        _anchorx = anchor.x;
-        _anchory = anchor.y;
-        _iconWidth = iconWidth;
-        _iconHeight = iconHeight;
+        this(new Icon.Builder()
+                .setImageUri(Icon.STATE_DEFAULT,
+                        iconRef != null ? iconRef.toUri() : null)
+                .setAnchor(anchor.x, anchor.y)
+                .setSize(iconWidth, iconHeight)
+                .build());
     }
 
     public MapDataRef getIconRef(int state) {// gets "highest" state icon
-        MapDataRef r = _stateRefs.get(0);// initially set to default
-        int indx = 1;
-        while (indx <= state) {
-            MapDataRef r2 = _stateRefs.get(indx & state);
-            if (r2 != null) {
-                r = r2;
-            }
-
-            indx = indx << 1;
-        }
-
-        // MapDataRef r = _stateRefs.get(state);
-        // if (r == null) {
-        // r = _stateRefs.get(0);
-        // }
-        return r;
+        final String uri = _impl.getImageUri(state);
+        return (uri != null) ? new UriMapDataRef(uri) : null;
     }
 
+    @Override
+    public final String getImageUri(int state) {// gets "highest" state icon
+        return _impl.getImageUri(state);
+    }
+
+    @Override
+    public final int getColor(int state) {
+        return _impl.getColor(state);
+    }
+
+    @Override
+    public final Set<Integer> getStates() {
+        return _impl.getStates();
+    }
+
+    @Override
     public int getAnchorX() {
-        return _anchorx;
+        return _impl.getAnchorX();
     }
 
+    @Override
     public int getAnchorY() {
-        return _anchory;
+        return _impl.getAnchorY();
     }
 
     public int getIconWidth() {
-        return _iconWidth;
+        return _impl.getWidth();
     }
 
     public int getIconHeight() {
-        return _iconHeight;
+        return _impl.getHeight();
+    }
+
+    @Override
+    public final int getWidth() {
+        return _impl.getWidth();
+    }
+
+    @Override
+    public final int getHeight() {
+        return _impl.getHeight();
     }
 
     public static class Builder {
         public Builder() {
-            _icon = new WidgetIcon();
+            _impl = new Icon.Builder();
         }
 
         public Builder setAnchor(int x, int y) {
-            _icon._anchorx = x;
-            _icon._anchory = y;
+            _impl.setAnchor(x, y);
             return this;
         }
 
         public Builder setSize(int width, int height) {
-            _icon._iconWidth = width;
-            _icon._iconHeight = height;
+            _impl.setSize(width, height);
             return this;
         }
 
         public Builder setImageRef(int state, MapDataRef ref) {
-            _icon._stateRefs.put(state, ref);
+            _impl.setImageUri(state, (ref != null) ? ref.toUri() : null);
             return this;
         }
 
         public WidgetIcon build() {
-            return _icon.clone();
+            return new WidgetIcon(_impl.build());
         }
 
-        private final WidgetIcon _icon;
+        private final Icon.Builder _impl;
     }
 
     @Override
     public WidgetIcon clone() {
-        WidgetIcon icon = new WidgetIcon();
-        icon._anchorx = _anchorx;
-        icon._anchory = _anchory;
-        icon._iconWidth = _iconWidth;
-        icon._iconHeight = _iconHeight;
-        icon._stateRefs = new TreeMap<>(_stateRefs);
-        return icon;
+        // NOTE: `_impl` is immutable
+        return new WidgetIcon(_impl);
     }
 
     public static WidgetIcon resolveWidgetIcon(ConfigEnvironment config,
@@ -233,12 +247,9 @@ public class WidgetIcon implements Cloneable {
         }
     }
 
-    private WidgetIcon() {
+    private WidgetIcon(Icon impl) {
+        _impl = impl;
     }
 
-    private int _anchorx;
-    private int _anchory;
-    private int _iconWidth;
-    private int _iconHeight;
-    private Map<Integer, MapDataRef> _stateRefs = new TreeMap<>();
+    private final Icon _impl;
 }

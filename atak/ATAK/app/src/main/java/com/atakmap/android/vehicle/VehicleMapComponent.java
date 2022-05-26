@@ -16,6 +16,7 @@ import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.user.EnterLocationDropDownReceiver;
+import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.vehicle.model.cot.VehicleModelDetailHandler;
 import com.atakmap.android.vehicle.model.cot.VehicleModelImporter;
 import com.atakmap.android.imagecapture.opengl.GLOffscreenCaptureService;
@@ -74,7 +75,7 @@ public class VehicleMapComponent extends AbstractMapComponent {
             @Override
             public void onMapMoved(AtakMapView view,
                     boolean animate) {
-                double res = view.getMapResolution();
+                double res = ATAKUtilities.getMetersPerPixel();
                 if (_mapRes < 2 && res >= 2 || _mapRes >= 2 && res < 2) {
                     _mapRes = res;
                     updateVehicleDisplay();

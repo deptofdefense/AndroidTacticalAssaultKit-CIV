@@ -10,6 +10,16 @@ import com.atakmap.map.AtakMapView;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.opengl.GLES20FixedPipeline;
 
+import gov.tak.api.annotation.DeprecatedApi;
+import gov.tak.api.engine.map.MapRenderer;
+import gov.tak.api.widgets.IMapWidget;
+import gov.tak.api.widgets.opengl.IGLWidget;
+import gov.tak.api.widgets.opengl.IGLWidgetSpi;
+import gov.tak.platform.marshal.MarshalManager;
+
+/** @deprecated use {@link gov.tak.platform.widgets.opengl.GLCenterBeadWidget} */
+@Deprecated
+@DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
 public class GLCenterBeadWidget extends GLShapeWidget {
 
     GLTriangle.Strip _crossHairLine;
@@ -17,29 +27,7 @@ public class GLCenterBeadWidget extends GLShapeWidget {
     private final CenterBeadWidget sw;
     private final AtakMapView mapView;
 
-    public final static GLWidgetSpi SPI = new GLWidgetSpi() {
-        @Override
-        public int getPriority() {
-            // CenterBeadWidget : MapWidget
-            return 1;
-        }
-
-        @Override
-        public GLWidget create(Pair<MapWidget, GLMapView> arg) {
-            final MapWidget subject = arg.first;
-            final GLMapView orthoView = arg.second;
-            if (subject instanceof CenterBeadWidget) {
-                CenterBeadWidget cbWidget = (CenterBeadWidget) subject;
-                GLCenterBeadWidget glcbWidget = new GLCenterBeadWidget(
-                        cbWidget,
-                        orthoView);
-                glcbWidget.startObserving(cbWidget);
-                return glcbWidget;
-            } else {
-                return null;
-            }
-        }
-    };
+    public final static GLWidgetSpi SPI = new SpiImpl();
 
     public GLCenterBeadWidget(CenterBeadWidget subject, GLMapView orthoView) {
         super(subject, orthoView);
@@ -145,5 +133,45 @@ public class GLCenterBeadWidget extends GLShapeWidget {
     @Override
     public void releaseWidget() {
         stopObserving(subject);
+    }
+
+    private final static class SpiImpl implements GLWidgetSpi, IGLWidgetSpi {
+
+        @Override
+        public IGLWidget create(MapRenderer renderer, IMapWidget widget) {
+            if (!(widget instanceof CenterBeadWidget))
+                return null;
+            final gov.tak.platform.widgets.CenterBeadWidget impl = MarshalManager
+                    .marshal(
+                            (CenterBeadWidget) widget,
+                            CenterBeadWidget.class,
+                            gov.tak.platform.widgets.CenterBeadWidget.class);
+            if (impl == null)
+                return null;
+            return gov.tak.platform.widgets.opengl.GLCenterBeadWidget.SPI
+                    .create(renderer, impl);
+        }
+
+        @Override
+        public int getPriority() {
+            // CenterBeadWidget : MapWidget
+            return 1;
+        }
+
+        @Override
+        public GLWidget create(Pair<MapWidget, GLMapView> arg) {
+            final MapWidget subject = arg.first;
+            final GLMapView orthoView = arg.second;
+            if (subject instanceof CenterBeadWidget) {
+                CenterBeadWidget cbWidget = (CenterBeadWidget) subject;
+                GLCenterBeadWidget glcbWidget = new GLCenterBeadWidget(
+                        cbWidget,
+                        orthoView);
+                glcbWidget.startObserving(cbWidget);
+                return glcbWidget;
+            } else {
+                return null;
+            }
+        }
     }
 }

@@ -13,6 +13,7 @@ import com.atakmap.coremap.maps.assets.Icon;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * UI convenience wrapper around File MissionPackageContent
@@ -72,10 +73,10 @@ public class MissionPackageListFileItem extends MissionPackageListItem {
         File f = new File(getPath());
 
         // Remove content from map via content handler
-        URIContentHandler handler = URIContentManager.getInstance()
-                .getHandler(f);
-        if (handler != null)
-            handler.deleteContent();
+        List<URIContentHandler> handlers = URIContentManager.getInstance()
+                .getHandlers(f);
+        for (URIContentHandler h : handlers)
+            h.deleteContent();
 
         // Delete file
         FileSystemUtils.delete(f);

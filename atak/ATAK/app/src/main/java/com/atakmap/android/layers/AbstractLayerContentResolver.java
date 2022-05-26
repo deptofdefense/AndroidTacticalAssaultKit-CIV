@@ -3,7 +3,6 @@ package com.atakmap.android.layers;
 
 import com.atakmap.android.data.FileContentHandler;
 import com.atakmap.android.data.FileContentResolver;
-import com.atakmap.android.data.URIContentManager;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
@@ -70,7 +69,7 @@ public abstract class AbstractLayerContentResolver extends FileContentResolver
                 removed.remove(path);
         }
         for (FileContentHandler h : removed.values())
-            URIContentManager.getInstance().notifyContentDeleted(h);
+            removeHandler(h.getFile());
 
         // Scan for existing/new handlers
         DatasetDescriptorCursor dc = _rasterDB.queryDatasets();

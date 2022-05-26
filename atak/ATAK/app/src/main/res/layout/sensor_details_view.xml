@@ -63,7 +63,7 @@
                 android:text="@string/point_dropper_text2"
                 android:textColor="#FFF"
                 android:textSize="@dimen/draper_title_font" />
-    
+
             <CheckBox
                 android:id="@+id/fovVisibilityCB"
                 android:layout_width="fill_parent"
@@ -379,6 +379,92 @@
                     android:layout_marginTop="2dp"
                     android:layout_marginEnd="5dp"
                     android:layout_marginStart="5dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/rangeLinesLayout"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="2dp"
+                android:background="@drawable/jm_layout_bg"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:paddingBottom="3dp" >
+
+                <CheckBox
+                    android:id="@+id/labelVisibilityCB"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:checked="false"
+                    android:text="@string/show_fov_labels" />
+
+                <LinearLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal" >
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:textColor="@color/heading_yellow"
+                        android:text="@string/fov_range_line_spacing"
+                        android:textSize="@dimen/draper_font" />
+
+                    <EditText
+                        android:id="@+id/rangeLinesET"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="start"
+                        android:inputType="numberDecimal"
+                        android:maxLength="5"
+                        android:minWidth="70dp"
+                        android:textSize="@dimen/draper_title_font"
+                        android:contentDescription="@string/sensor_range_lines_meters"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:text="@string/m"
+                        android:textColor="#FFF"
+                        android:textSize="@dimen/draper_font"
+                        />
+
+                </LinearLayout>
+
+                <RelativeLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingEnd="5dp" >
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentStart="true"
+                        android:text="@string/_0"
+                        android:textColor="#FFFFFFFF"
+                        android:textSize="@dimen/labelFontSize" />
+
+                    <TextView
+                        android:id="@+id/rangeLineMax"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:text="@string/_15000"
+                        android:textColor="#FFFFFFFF"
+                        android:textSize="@dimen/labelFontSize" />
+                </RelativeLayout>
+
+                <SeekBar
+                    android:id="@+id/rangeLineSeek"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="2dp"
+                    android:layout_marginStart="5dp"
+                    android:layout_marginEnd="5dp"
+                    android:layout_marginTop="2dp" />
             </LinearLayout>
 
             <TableLayout

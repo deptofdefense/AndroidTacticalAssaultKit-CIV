@@ -76,6 +76,9 @@ public class CoTInfoBroadcastReceiver extends DropDownReceiver implements
         dispatcher.addMapEventListener(MapEvent.ITEM_CLICK, this);
         dispatcher.addMapEventListener(MapEvent.ITEM_PERSIST, this);
         dispatcher.addMapEventListener(MapEvent.ITEM_REFRESH, this);
+
+        // Retain this drop-down when another is opened on top of it
+        setRetain(true);
     }
 
     synchronized void register(ExtendedInfoView eiv) {
@@ -191,7 +194,6 @@ public class CoTInfoBroadcastReceiver extends DropDownReceiver implements
                         // clear out the civ.setMarker above.
                         pending = targetPMI;
 
-                        setRetain(true);
                         closeDropDown();
                     }
                 }
@@ -220,8 +222,6 @@ public class CoTInfoBroadcastReceiver extends DropDownReceiver implements
             cotStaleSeconds = 300;
         }
         targetPMI.setMetaInteger("cotDefaultStaleSeconds", cotStaleSeconds);
-
-        setRetain(true);
 
         final String uid = targetPMI.getUID();
 

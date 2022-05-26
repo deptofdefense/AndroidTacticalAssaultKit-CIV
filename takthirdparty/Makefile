@@ -26,21 +26,22 @@ OUTDIR_CYGSAFE:=$(call PATH_CYGSAFE,$(TARGET_OUTDIR))
 OUTDIR_WIN:=$(call PATH_WIN,$(TARGET_OUTDIR))
 
 # MS VC++ build environment setup script
-# VS2013
-#VS_SETUP=$(shell pwd)/mk/vs12_x86.sh
 # VS2015
 VS_SETUP_win32=$(shell pwd)/mk/vs14_x86.sh
 VS_SETUP_win64=$(shell pwd)/mk/vs14_x64.sh
+# VS2019
+#VS_SETUP_win32=$(shell pwd)/mk/vs16_x86.sh
+#VS_SETUP_win64=$(shell pwd)/mk/vs16_x64.sh
 VS_SETUP=$(VS_SETUP_$(TARGET))
 
 # MS VC++ platform toolset version string
-# Use below for VS2013
-#VS_VER_MSB=v120
-# Same, but for VS2015
-# Note also that some packages (gdal at least) have their own settings
-# keyed off of this.  2015 and 2013 are supported but new ones will need
-# additional work
+# Use below for VS2015
 VS_VER_MSB=v140
+# Note also that some packages (gdal at least) have their own settings
+# keyed off of this.  2015 and 2019 are supported but new ones will need
+# additional work
+# VS2019
+# VS_VER_MSB=v142
 
 # Set CMAKE. For windows host, a specific path is used, removing need for
 # entry in PATH.
@@ -55,7 +56,7 @@ else
 endif
 
 # All packages shared across gdal and spatialite
-ALL_PACKAGES_gspatial_shared=geos proj sqlite
+ALL_PACKAGES_gspatial_shared=proj sqlite
 # All packages shared across commo and gdal
 ALL_PACKAGES_cshared=curl
 # All packages shared across all top level builds
@@ -67,7 +68,7 @@ ALL_PACKAGES_commoncommo=protobuf libmicrohttpd commoncommo
 packages_commoncommo-$(TARGET):=$(ALL_PACKAGES_allshared) $(ALL_PACKAGES_shared) $(ALL_PACKAGES_cshared) $(ALL_PACKAGES_commoncommo)
 ALL_PACKAGES_gdal=$(gdal_kdu_pkg) pdfium mrsid expat ogdi libkml gdal
 packages_gdal-$(TARGET):=$(ALL_PACKAGES_allshared) $(ALL_PACKAGES_shared) $(ALL_PACKAGES_cshared) $(ALL_PACKAGES_gspatial_shared) $(ALL_PACKAGES_gdal)
-ALL_PACKAGES_spatialite=libspatialite
+ALL_PACKAGES_spatialite=geos libspatialite
 packages_spatialite-$(TARGET):=$(ALL_PACKAGES_allshared) $(ALL_PACKAGES_shared) $(ALL_PACKAGES_gspatial_shared) $(ALL_PACKAGES_spatialite)
 ALL_PACKAGES_pri=pri
 packages_pri-$(TARGET):=$(ALL_PACKAGES_allshared) $(ALL_PACKAGES_pri)

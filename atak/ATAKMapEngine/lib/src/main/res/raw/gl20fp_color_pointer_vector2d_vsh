@@ -1,9 +1,0 @@
-uniform mat4 uProjection;
-uniform mat4 uModelView;
-attribute vec2 aVertexCoords;
-attribute vec4 aColorPointer;
-varying vec4 vColor;
-void main() {
-  gl_Position = uProjection * uModelView * vec4(aVertexCoords.xy, 0.0, 1.0);
-  vColor = aColorPointer;
-}

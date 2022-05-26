@@ -1,11 +1,10 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/faux_button_landscape"
     android:layout_width="wrap_content"
     android:layout_height="match_parent"
     android:weightSum="3"
-    android:visibility="gone"
     android:layout_marginBottom="30dp"
-    android:orientation="vertical" >
+    android:orientation="vertical"
+    android:background="#000">
     <ImageButton
         android:id="@+id/btn1_landscape"
         android:background="@android:color/transparent"

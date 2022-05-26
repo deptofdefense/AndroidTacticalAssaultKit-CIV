@@ -190,6 +190,7 @@ public class VideoXMLHandler {
         int roverPort = -1;
         boolean ignoreKLV = false;
         String preferredMacAddress = null;
+        String preferredInterfaceAddress = null;
         String path = null;
         int buffer = -1;
         int timeout = 5000;
@@ -231,6 +232,9 @@ public class VideoXMLHandler {
                 case "preferredMacAddress":
                     preferredMacAddress = v;
                     break;
+                case "preferredInterfaceAddress":
+                    preferredInterfaceAddress = v;
+                    break;
                 case "path":
                     path = v;
                     break;
@@ -261,8 +265,10 @@ public class VideoXMLHandler {
                 pass = creds.password;
         }
         ConnectionEntry entry = new ConnectionEntry(alias, address,
-                preferredMacAddress, port, roverPort, path, proto, timeout,
+                port, roverPort, path, proto, timeout,
                 buffer, rtspReliable, pass, source);
+        entry.setMacAddress(preferredMacAddress);
+        entry.setPreferredInterfaceAddress(preferredInterfaceAddress);
         entry.setUID(uid);
         entry.setIgnoreEmbeddedKLV(ignoreKLV);
         return entry;
@@ -295,6 +301,7 @@ public class VideoXMLHandler {
         add(sb, "roverPort", e.getRoverPort());
         add(sb, "ignoreEmbeddedKLV", e.getIgnoreEmbeddedKLV());
         add(sb, "preferredMacAddress", e.getMacAddress());
+        add(sb, "preferredInterfaceAddress", e.getPreferredInterfaceAddress());
         add(sb, "path", e.getPath());
         add(sb, "buffer", e.getBufferTime());
         add(sb, "timeout", e.getNetworkTimeout());

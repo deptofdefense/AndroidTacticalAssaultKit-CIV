@@ -49,6 +49,8 @@ public class DeviceProfileClient {
 
     private SharedPreferences _prefs;
 
+    private Context context;
+
     private static DeviceProfileClient instance = null;
 
     public static synchronized DeviceProfileClient getInstance() {
@@ -56,6 +58,10 @@ public class DeviceProfileClient {
             instance = new DeviceProfileClient();
         }
         return instance;
+    }
+
+    public Context getContext() {
+        return context;
     }
 
     private DeviceProfileClient() {
@@ -73,8 +79,8 @@ public class DeviceProfileClient {
     /**
      * Check if a profile request has been received for the specified tool, since startup
      *
-     * @param tool
-     * @return
+     * @param tool the tools name
+     * @return true if the request has been received for the tool
      */
     public boolean hasProfileBeenReceived(String tool) {
         synchronized (this) {
@@ -94,7 +100,7 @@ public class DeviceProfileClient {
         if (request == null)
             return false;
 
-        DeviceProfileCallback ret = null;
+        DeviceProfileCallback ret;
         synchronized (this) {
             //take care of this also, so we just have to sync once
             if (bSuccess && request.hasTool()) {
@@ -152,6 +158,8 @@ public class DeviceProfileClient {
     private boolean getProfile(Context context,
             DeviceProfileRequest deviceProfileRequest,
             DeviceProfileCallback callback) {
+
+        this.context = context;
 
         if (deviceProfileRequest == null) {
             Log.w(TAG, "getProfile request is null");
@@ -314,6 +322,8 @@ public class DeviceProfileClient {
     public boolean getProfile(Context context, final String server,
             final String tool) {
 
+        this.context = context;
+
         final SharedPreferences prefs = getPrefs(context);
 
         // get our last sync time for this connection
@@ -360,6 +370,9 @@ public class DeviceProfileClient {
      * @return  true if at least one request sent
      */
     public boolean getProfile(Context context, final String tool) {
+
+        this.context = context;
+
         CotMapComponent inst = CotMapComponent.getInstance();
         if (inst == null) {
             Log.w(TAG, "getProfile: No server list available");

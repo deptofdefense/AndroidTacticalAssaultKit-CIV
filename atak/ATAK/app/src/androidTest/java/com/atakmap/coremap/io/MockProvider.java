@@ -31,7 +31,8 @@ public class MockProvider extends IOProvider {
         // very simple implementation that just creates the file in the /sdcard/encrypted
         // directory.
         File nf = new File(basedir, f.getAbsolutePath());
-        if (!nf.getParentFile().exists() && ensure)
+        if (nf.getParentFile() != null && !nf.getParentFile().exists()
+                && ensure)
             nf.getParentFile().mkdirs();
         return nf;
     }

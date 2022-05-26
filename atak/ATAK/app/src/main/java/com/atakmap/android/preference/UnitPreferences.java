@@ -28,6 +28,7 @@ public class UnitPreferences extends AtakPreferences {
     public static final String FT_MILES_THRESH = "rng_feet_display_pref";
     public static final String M_KM_THRESH = "rng_meters_display_pref";
     public static final String AREA_SYSTEM = "area_display_pref";
+    public static final String ALTITUDE_REFERENCE = "alt_display_pref";
     public static final String ALTITUDE_UNITS = "alt_unit_pref";
 
     public UnitPreferences(MapView mapView) {
@@ -109,6 +110,14 @@ public class UnitPreferences extends AtakPreferences {
     }
 
     /**
+     * Get the current altitude reference for display
+     * @return Altitude reference (MSL, HAE, or AGL)
+     */
+    public String getAltitudeReference() {
+        return get(ALTITUDE_REFERENCE, "MSL");
+    }
+
+    /**
      * Get the preferred altitude units
      * @return Preferred altitude span
      */
@@ -180,7 +189,7 @@ public class UnitPreferences extends AtakPreferences {
             }
         } else {
             //just use fixed MSL or HAE based on prefs
-            String altRef = get("alt_display_pref", "MSL");
+            String altRef = getAltitudeReference();
             if (altRef.equals("MSL"))
                 ret = EGM96.formatMSL(point, altUnits);
             else

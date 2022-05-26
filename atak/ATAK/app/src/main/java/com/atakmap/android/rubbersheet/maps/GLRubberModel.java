@@ -17,7 +17,6 @@ import com.atakmap.map.layer.control.ColorControl;
 import com.atakmap.map.layer.model.Mesh;
 import com.atakmap.map.layer.model.Model;
 import com.atakmap.map.layer.model.ModelInfo;
-import com.atakmap.map.layer.model.Models;
 import com.atakmap.map.layer.model.opengl.GLMesh;
 import com.atakmap.map.layer.model.opengl.MaterialManager;
 import com.atakmap.map.opengl.GLMapView;
@@ -82,10 +81,6 @@ public class GLRubberModel extends AbstractGLMapItem2 implements
     // Subject was released
     protected boolean _released;
 
-    // Used to update the model's altitude offset, so it's rendered at the correct altitude
-    protected boolean _updateAltitudeOffset;
-    protected double _altitudeOffset;
-
     // Last scene used to render the model (used for hit testing)
     protected MapSceneModel _scene;
 
@@ -102,8 +97,6 @@ public class GLRubberModel extends AbstractGLMapItem2 implements
         File texDir = new File(RubberSheetManager.DIR, _subject.getUID());
         _matManager = new MaterialManager(_renderCtx,
                 new TextureLoader(_renderCtx, texDir, 4096));
-        _updateAltitudeOffset = true;
-        _altitudeOffset = Double.NaN;
     }
 
     @Override
@@ -196,7 +189,6 @@ public class GLRubberModel extends AbstractGLMapItem2 implements
         if (_modelInfo == null || _model == null)
             return;
 
-        _updateAltitudeOffset = true;
         // Translate the center by the model offset in meters
         GeoPoint center = _subject.getCenterPoint();
         double[] scale = _subject.getModelScale();
@@ -283,20 +275,6 @@ public class GLRubberModel extends AbstractGLMapItem2 implements
     }
 
     protected void onDrawVersionChanged(GLMapView view) {
-        // Update the model anchor point
-        if (Double.isNaN(_altitudeOffset)) {
-            PointD anchorPoint = Models.findAnchorPoint(_model);
-            PointD base = _matrix.transform(anchorPoint, null);
-            _altitudeOffset = (view.getTerrainMeshElevation(base.y, base.x)
-                    - anchorPoint.z)
-                    - (view.getTerrainMeshElevation(_anchorPoint.getLatitude(),
-                            _anchorPoint.getLongitude()));
-        }
-        if (_updateAltitudeOffset) {
-            _modelInfo.localFrame.translate(0, 0, _altitudeOffset);
-            _updateAltitudeOffset = false;
-        }
-
         forward(view, _anchorPoint, _modelAnchorPoint);
 
         // Check if it's worth rendering the model from our current view

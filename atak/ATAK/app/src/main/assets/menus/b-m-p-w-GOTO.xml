@@ -5,10 +5,11 @@
             onClick='actions/remove.xml' />
 
     <button icon='icons/details.png'
-        onClick='actions/showdetails.xml' />
+            onClick='actions/showdetails.xml' />
 
-    <button icon='icons/green_flag.png'
-            onClick='actions/startgoto.xml' />
+   <button icon='icons/green_flag_radial.png'
+            onClick='actions/startgoto.xml'
+            selected='${hounding}'/>
 
     <button icon='icons/move.png'
             submenu='menus/mgrs_entry_submenu.xml'

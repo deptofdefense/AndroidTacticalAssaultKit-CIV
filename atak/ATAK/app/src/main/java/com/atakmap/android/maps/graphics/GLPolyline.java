@@ -88,7 +88,7 @@ public class GLPolyline extends GLShape2 implements
     private Typeface _labelTypeface;
     private static final float div_2 = 1f / 2f;
     protected static final double div_180_pi = 180d / Math.PI;
-    private List<SegmentLabel> _segmentLabels = new ArrayList<>();
+    private final List<SegmentLabel> _segmentLabels = new ArrayList<>();
     private boolean _segmentLabelsDirty = true;
     private SegmentLabel _floatingLabel = null;
     private SegmentLabel _centerLabel = null;
@@ -130,8 +130,8 @@ public class GLPolyline extends GLShape2 implements
     private int _extrudeMode;
     private boolean _extrudeCrossesIDL;
     private int _extrudePrimaryHemi;
-    private GeoPoint _extrusionCentroid = GeoPoint.createMutable();
-    private PointD _extrusionCentroidProj = new PointD(0d, 0d, 0d);
+    private final GeoPoint _extrusionCentroid = GeoPoint.createMutable();
+    private final PointD _extrusionCentroidProj = new PointD(0d, 0d, 0d);
     private int _extrusionCentroidSrid = -1;
     private int _extrusionTerrainVersion = -1;
     /**
@@ -1369,8 +1369,7 @@ public class GLPolyline extends GLShape2 implements
         float right = ((GLMapView) ctx).focusx * 2;
         // Could be in portrait mode as well, so change the bottom accordingly
         float top = ((GLMapView) ctx).focusy * 2;
-        return new RectF(0f, top - MapView.getMapView().getActionBarHeight(),
-                right, 0);
+        return new RectF(0f, top, right, 0);
     }
 
     /**

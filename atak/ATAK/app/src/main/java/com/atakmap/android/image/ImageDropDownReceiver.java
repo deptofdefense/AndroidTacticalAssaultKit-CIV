@@ -16,15 +16,21 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
+import com.atakmap.android.contact.IndividualContact;
+import com.atakmap.android.data.URIContentRecipient;
+import com.atakmap.android.data.URIContentSender;
+import com.atakmap.android.data.URIHelper;
 import com.atakmap.android.hashtags.HashtagManager;
 import com.atakmap.android.hashtags.attachments.AttachmentContent;
 import com.atakmap.android.hashtags.util.HashtagUtils;
 import com.atakmap.android.hashtags.view.RemarksLayout;
 import com.atakmap.android.image.quickpic.QuickPicReceiver;
+import com.atakmap.android.imagecapture.TiledCanvas;
+import com.atakmap.android.importexport.send.MissionPackageSender;
+import com.atakmap.android.importexport.send.SendDialog;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.missionpackage.file.MissionPackageConfiguration;
 import com.atakmap.android.missionpackage.file.MissionPackageContent;
-import com.atakmap.android.preference.UnitPreferences;
 import com.atakmap.android.user.PlacePointTool;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.util.AfterTextChangedWatcher;
@@ -32,7 +38,6 @@ import com.atakmap.android.util.FileProviderHelper;
 import com.atakmap.android.util.SimpleItemSelectedListener;
 import com.atakmap.android.attachment.DeleteAfterSendCallback;
 import com.atakmap.android.contact.Contact;
-import com.atakmap.android.contact.ContactPresenceDropdown;
 import com.atakmap.android.contact.Contacts;
 import com.atakmap.android.image.nitf.NITFHelper;
 import com.atakmap.android.maps.MapItem;
@@ -43,10 +48,11 @@ import com.atakmap.android.missionpackage.file.NameValuePair;
 import com.atakmap.android.util.AttachmentManager;
 import com.atakmap.android.video.manager.VideoFileWatcher;
 import com.atakmap.app.ATAKActivity;
-import com.atakmap.coremap.conversions.Span;
+import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 
+import com.atakmap.coremap.maps.coords.NorthReference;
 import com.atakmap.util.zip.IoUtils;
 import org.apache.sanselan.formats.tiff.TiffImageMetadata;
 import org.apache.sanselan.formats.tiff.constants.TiffConstants;
@@ -92,6 +98,8 @@ import android.widget.ImageButton;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import androidx.annotation.Nullable;
+
 public class ImageDropDownReceiver
         extends DropDownReceiver
         implements OnStateListener {
@@ -112,7 +120,6 @@ public class ImageDropDownReceiver
     public static final String IMAGE_SELECT_RESOLUTION = "com.atakmap.maps.images.SELECT_RESOLUTION";
 
     private static final String ACTION_EDIT = "com.atakmap.maps.images.EDIT";
-    private static final String ACTION_OVERLAY = "com.atakmap.android.image.OVERLAY_HUD";
     private static final int ACTION_OVERLAY_ID = 42376;
 
     public static final FilenameFilter ImageFileFilter = new FilenameFilter() {
@@ -336,29 +343,47 @@ public class ImageDropDownReceiver
                     }
                 }
             } else if (action.equals(IMAGE_SELECT_RESOLUTION)) {
-                String[] contactUIDs = intent.getStringArrayExtra("sendTo");
                 String f = intent.getStringExtra("filepath");
+                if (FileSystemUtils.isEmpty(f))
+                    return;
+
+                final File file = new File(f);
+                final String[] contactUIDs = intent
+                        .getStringArrayExtra("sendTo");
                 if (FileSystemUtils.isEmpty(contactUIDs)) {
-                    // Must select contacts before prompting for resolution
-                    Intent sendList = new Intent(
-                            ContactPresenceDropdown.SEND_LIST)
-                                    .putExtra("uid", newUID)
-                                    .putExtra("filepath", f)
-                                    .putExtra("sendCallback",
-                                            IMAGE_SELECT_RESOLUTION)
-                                    .putExtra("disableBroadcast", true);
-                    AtakBroadcast.getInstance().sendBroadcast(sendList);
+                    promptSendFile(file, newUID);
                     return;
                 }
-                //Prompt for selection of resolution.
-                _uid = newUID;
-                if (FileSystemUtils.isFile(f))
-                    decideImageType(new File(f), contactUIDs);
 
+                // Legacy send to contacts
+                final MapItem item = _mapView.getMapItem(newUID);
+                if (FileSystemUtils.isFile(file)) {
+                    // Convert contacts to recipients for compatibility
+                    IndividualContact[] contacts = Contacts.getInstance()
+                            .getIndividualContactsByUuid(
+                                    Arrays.asList(contactUIDs));
+                    List<ContactRecipient> recipients = new ArrayList<>(
+                            contacts.length);
+                    for (IndividualContact ic : contacts)
+                        recipients.add(new ContactRecipient(ic));
+
+                    // Decide if we should prompt for resolution
+                    decideImageType(file, item, recipients, null);
+                }
             }
         } catch (Exception e) {
             Log.e(TAG, "Failed to process " + intent.getAction() + " intent",
                     e);
+        }
+    }
+
+    private static class ContactRecipient extends URIContentRecipient {
+
+        private final IndividualContact contact;
+
+        ContactRecipient(IndividualContact ic) {
+            super(ic.getName(), ic.getUID());
+            contact = ic;
         }
     }
 
@@ -432,10 +457,15 @@ public class ImageDropDownReceiver
     /**
      * Select new image size for sending over network
      * @param file Image file
-     * @param contactUIDs Contact UIDs to send file to
+     * @param item Attached map item
+     * @param recipients Recipients to send file to
+     * @param sender Content sender itnerface
      */
     private void confirmImageResize(final File file,
-            final String[] contactUIDs) {
+            @Nullable
+            final MapItem item,
+            final List<? extends URIContentRecipient> recipients,
+            final URIContentSender sender) {
         final String[] sizeValues = {
                 _context.getString(R.string.original_size),
                 _context.getString(R.string.large_size),
@@ -480,7 +510,7 @@ public class ImageDropDownReceiver
                                 File img = resizeImageFile(file,
                                         spinner.getSelectedItemPosition(),
                                         _context);
-                                if (!sendImage(img, contactUIDs))
+                                if (!sendImage(img, item, recipients, sender))
                                     Toast.makeText(_context,
                                             R.string.failed_to_send_file,
                                             Toast.LENGTH_LONG).show();
@@ -494,9 +524,14 @@ public class ImageDropDownReceiver
     /**
      * Decide image type before sending file
      * @param file File to send
-     * @param contactUIDs Contact UIDs to send file to
+     * @param item Attached map item (if applicable)
+     * @param recipients Recipients to send file to
+     * @param sender Interface to use for sending the compressed file
      */
-    private void decideImageType(final File file, final String[] contactUIDs) {
+    private void decideImageType(final File file, @Nullable
+    final MapItem item,
+            final List<? extends URIContentRecipient> recipients,
+            final URIContentSender sender) {
         if (ImageContainer.NITF_FilenameFilter.accept(file.getParentFile(),
                 file.getName())) {
             final String[] sizeValues = {
@@ -540,16 +575,18 @@ public class ImageDropDownReceiver
                                 public void onClick(DialogInterface dialog,
                                         int id) {
                                     if (spinner.getSelectedItemPosition() == 1)
-                                        confirmImageResize(file, contactUIDs);
+                                        confirmImageResize(file, item,
+                                                recipients, sender);
                                     else
-                                        sendImage(file, contactUIDs);
+                                        sendImage(file, item, recipients,
+                                                sender);
                                     dialog.dismiss();
                                 }
                             })
                     .setNegativeButton(R.string.cancel, null)
                     .show();
         } else
-            confirmImageResize(file, contactUIDs);
+            confirmImageResize(file, item, recipients, sender);
     }
 
     /**
@@ -623,7 +660,7 @@ public class ImageDropDownReceiver
                     setRetain(true);
                     // Bring up image resize confirmation dialog
                     //decideImageType(context, imageFile);
-                    openSendList(imageFile);
+                    promptSendFile(imageFile, _uid);
                 }
             }
         });
@@ -664,9 +701,11 @@ public class ImageDropDownReceiver
                 b.setPositiveButton(R.string.yes,
                         new DialogInterface.OnClickListener() {
                             @Override
-                            public void onClick(DialogInterface dialog,
-                                    int which) {
-                                promptMarkupImage();
+                            public void onClick(DialogInterface d, int w) {
+                                if (!applyMarkup())
+                                    Toast.makeText(_context,
+                                            R.string.failed_to_apply_image_overlay,
+                                            Toast.LENGTH_LONG).show();
                             }
                         });
                 b.setNegativeButton(R.string.cancel, null);
@@ -696,8 +735,7 @@ public class ImageDropDownReceiver
                 //If the intent specifies no functionality just display the image for viewing
                 setVisible(editImageButton, !noFunctionality
                         && isAppInstalled(ACTION_EDIT));
-                setVisible(markupImgBtn, !noFunctionality
-                        && isAppInstalled(ACTION_OVERLAY));
+                setVisible(markupImgBtn, !noFunctionality);
                 setVisible(sendButton, !noFunctionality);
             }
         });
@@ -759,21 +797,67 @@ public class ImageDropDownReceiver
                     ACTION_OVERLAY_ID);
     }
 
-    private void promptMarkupImage() {
-        // Edit image using given units/references
-        // See ATAK-14059
-        UnitPreferences prefs = new UnitPreferences(_mapView);
+    /**
+     * Overlay HUD on an existing image
+     */
+    private boolean applyMarkup() {
+        // Check that the current URI is a file
         Uri imageUri = Uri.parse(ic.getCurrentImageURI());
-        Intent i = new Intent(ACTION_OVERLAY);
-        i.setType("image/jpeg");
-        i.putExtra("fileURI", imageUri);
-        i.putExtra("coordinateSystem", "MGRS");
-        i.putExtra("altitudeReference", prefs.get("alt_display_pref",
-                "MSL"));
-        i.putExtra("altitudeUnit",
-                prefs.getAltitudeUnits() == Span.METER ? "M" : "FT");
-        i.putExtra("northReference", "M");
-        promptEditImage(i);
+        if (!FileSystemUtils.isEquals(imageUri.getScheme(), "file"))
+            return false;
+
+        // And check that it exists
+        final File imageFile = new File(imageUri.getPath());
+        if (!IOProviderFactory.exists(imageFile))
+            return false;
+
+        final File outFile = new File(imageFile.getParent(),
+                FileSystemUtils.stripExtension(imageFile.getName())
+                        + "_hud.jpg");
+
+        // Apply the HUD on a separate thread
+        final ImageOverlayHUD hud = new ImageOverlayHUD(_mapView, imageFile);
+        hud.setCoordinateSystem(CoordinateFormat.MGRS);
+        hud.setNorthReference(NorthReference.MAGNETIC);
+        hud.showProgressDialog();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                applyMarkupImpl(hud, imageFile, outFile);
+            }
+        }, TAG + "-applyMarkup").start();
+        return true;
+    }
+
+    /**
+     * Apply image overlay HUD on a separate thread
+     * @param hud Image overlay HUD
+     * @param input Input file
+     * @param output Output file
+     */
+    private void applyMarkupImpl(ImageOverlayHUD hud, File input, File output) {
+        final boolean success;
+        TiledCanvas tc = hud.applyMarkup(output, null);
+        if (tc != null && IOProviderFactory.exists(output)) {
+            FileSystemUtils.renameTo(output, input);
+            success = true;
+        } else
+            success = false;
+        _mapView.post(new Runnable() {
+            @Override
+            public void run() {
+                if (success) {
+                    // Refresh the drop-down view
+                    ImageDropDownReceiver.this.onReceive(_context,
+                            new Intent(IMAGE_REFRESH).putExtra("uid", _uid));
+                } else {
+                    // Notify failure
+                    Toast.makeText(_context,
+                            R.string.failed_to_apply_image_overlay,
+                            Toast.LENGTH_LONG).show();
+                }
+            }
+        });
     }
 
     /**
@@ -1027,33 +1111,50 @@ public class ImageDropDownReceiver
     }
 
     /**
-     * Open the contacts list for selecting which contacts to send the attachment to
+     * Prompt to send an attachment
      * @param file Attachment file
+     * @param uid Map item UID
      */
-    private void openSendList(File file) {
+    private void promptSendFile(File file, String uid) {
         if (!MissionPackageMapComponent.getInstance().checkFileSharingEnabled())
             return;
-        Intent sendList = new Intent(ContactPresenceDropdown.SEND_LIST)
-                .putExtra("uid", _uid)
-                .putExtra("filepath", file.getAbsolutePath())
-                .putExtra("sendCallback", IMAGE_SELECT_RESOLUTION)
-                .putExtra("disableBroadcast", true);
-        AtakBroadcast.getInstance().sendBroadcast(sendList);
+        final MapItem item = _mapView.getMapItem(uid);
+        SendDialog.Builder b = new SendDialog.Builder(_mapView);
+        b.setName(file.getName());
+        b.setIcon(R.drawable.ic_gallery);
+        if (item != null) {
+            b.addMapItem(item);
+            b.addAttachment(file, item);
+        } else
+            b.addFile(file);
+        b.setRecipientCallback(new URIContentRecipient.Callback() {
+            @Override
+            public void onSelectRecipients(URIContentSender sender,
+                    String contentURI,
+                    List<? extends URIContentRecipient> recipients) {
+                decideImageType(file, item, recipients, sender);
+            }
+        });
+        b.show();
     }
 
     /**
      * Compress image in mission package and send to contacts
      * @param file Resized image file
-     * @param contactUIDs Contact UIDs to send to
+     * @param item Attached map item
+     * @param recipients Recipients to send to
+     * @param sender Content sender interface (null to fallback to default)
      */
-    private boolean sendImage(File file, String[] contactUIDs) {
+    private boolean sendImage(File file, @Nullable MapItem item,
+            List<? extends URIContentRecipient> recipients,
+            URIContentSender sender) {
+
         if (file == null)
             return false;
 
         // Find attached marker
         boolean tempMarker = false;
-        MapItem mi = _mapView.getRootGroup().deepFindUID(_uid);
-        if (mi == null) {
+        if (item == null) {
             // Need a valid SHA-256 hash for the temp UID
             String sha256 = HashingUtils.sha256sum(file.getAbsolutePath());
             if (FileSystemUtils.isEmpty(sha256))
@@ -1069,20 +1170,20 @@ public class ImageDropDownReceiver
                 else
                     gp = _mapView.getPoint().get();
             }
-            mi = new PlacePointTool.MarkerCreator(gp)
+            item = new PlacePointTool.MarkerCreator(gp)
                     .setUid(UUID.nameUUIDFromBytes(sha256.getBytes())
                             .toString())
                     .setCallsign(file.getName())
                     .setType(QuickPicReceiver.QUICK_PIC_IMAGE_TYPE)
                     .showCotDetails(false)
                     .placePoint();
-            mi.setVisible(false);
+            item.setVisible(false);
             tempMarker = true;
         }
 
         // Get callsign and UID
-        String callsign = mi.getMetaString("callsign", null);
-        String uid = mi.getUID();
+        String callsign = item.getMetaString("callsign", null);
+        String uid = item.getUID();
 
         MissionPackageManifest manifest = MissionPackageApi
                 .CreateTempManifest(file.getName(), true, true, null);
@@ -1120,16 +1221,29 @@ public class ImageDropDownReceiver
         config.setParameter(new NameValuePair("callsign", callsign));
         config.setParameter(new NameValuePair("uid", uid));
 
-        // Find contacts by UID
-        List<Contact> contacts = new ArrayList<>();
-        if (contactUIDs != null && contactUIDs.length > 0)
-            contacts.addAll(Arrays.asList(Contacts.getInstance()
-                    .getIndividualContactsByUuid(Arrays.asList(contactUIDs))));
-
-        // Send packaged image to contacts w/ scope set to "private"
-        return MissionPackageApi.Send(_context, manifest,
-                DeleteAfterSendCallback.class,
-                contacts.toArray(new Contact[0]));
+        if (sender != null) {
+            // Send via provided sender using best interface
+            if (sender instanceof MissionPackageSender)
+                return ((MissionPackageSender) sender).sendMissionPackage(
+                        manifest,
+                        recipients, new DeleteAfterSendCallback(), null);
+            else if (sender instanceof URIContentRecipient.Sender)
+                return ((URIContentRecipient.Sender) sender)
+                        .sendContent(URIHelper.getURI(manifest), recipients,
+                                null);
+            return sender.sendContent(URIHelper.getURI(manifest), null);
+        } else {
+            // Fallback to default implementation
+            List<Contact> contacts = new ArrayList<>(recipients.size());
+            for (URIContentRecipient rec : recipients) {
+                if (rec instanceof ContactRecipient)
+                    contacts.add(((ContactRecipient) rec).contact);
+            }
+            // Send packaged image to contacts w/ scope set to "private"
+            return MissionPackageApi.Send(_context, manifest,
+                    DeleteAfterSendCallback.class,
+                    contacts.toArray(new Contact[0]));
+        }
     }
 
     private void setSelected(String imageUID) {

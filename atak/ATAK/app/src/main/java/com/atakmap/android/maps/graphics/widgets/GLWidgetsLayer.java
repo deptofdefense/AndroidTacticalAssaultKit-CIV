@@ -3,6 +3,7 @@ package com.atakmap.android.maps.graphics.widgets;
 
 import android.util.Pair;
 
+import com.atakmap.android.maps.MapView;
 import com.atakmap.android.widgets.WidgetsLayer;
 import com.atakmap.map.LegacyAdapters;
 import com.atakmap.map.MapRenderer;
@@ -13,6 +14,9 @@ import com.atakmap.map.layer.opengl.GLLayerSpi2;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.math.MathUtils;
 import com.atakmap.opengl.GLES20FixedPipeline;
+
+import gov.tak.api.widgets.opengl.IGLWidget;
+import gov.tak.platform.widgets.opengl.GLWidget;
 
 public class GLWidgetsLayer implements GLLayer3 {
 
@@ -37,7 +41,7 @@ public class GLWidgetsLayer implements GLLayer3 {
     private final MapRenderer renderContext;
     private final WidgetsLayer subject;
 
-    private GLLayoutWidget impl;
+    private IGLWidget impl;
 
     public GLWidgetsLayer(MapRenderer surface, WidgetsLayer layer) {
         this.renderContext = surface;
@@ -80,20 +84,26 @@ public class GLWidgetsLayer implements GLLayer3 {
     public void draw(GLMapView view, int renderPass) {
         if (MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_UI)) {
             if (this.impl == null) {
-                this.impl = new GLLayoutWidget(this.subject.getRoot(),
-                        (GLMapView) this.renderContext);
-                this.impl.startObserving(this.subject.getRoot());
-                this.impl.orthoView = view;
+                gov.tak.api.engine.map.MapRenderer wrapper = LegacyAdapters
+                        .adapt(MapView.getMapView().getRenderer3());
+                this.impl = new gov.tak.platform.widgets.opengl.GLLayoutWidget(
+                        this.subject.getRoot(), wrapper);
+                this.impl.start();
             }
-
             GLES20FixedPipeline.glDepthFunc(GLES20FixedPipeline.GL_ALWAYS);
             GLES20FixedPipeline.glPushMatrix();
+
+            float height = LegacyAdapters.getRenderContext(this.renderContext)
+                    .getRenderSurface()
+                    .getHeight() - 1;
+
             GLES20FixedPipeline.glTranslatef(0,
-                    LegacyAdapters.getRenderContext(this.renderContext)
-                            .getRenderSurface()
-                            .getHeight() - 1,
+                    height,
                     0f);
-            this.impl.drawWidget();
+
+            GLWidget.DrawState drawState = com.atakmap.android.maps.graphics.widgets.GLWidget
+                    .drawStateFromFixedPipeline(view);
+            this.impl.drawWidget(drawState);
             GLES20FixedPipeline.glPopMatrix();
             GLES20FixedPipeline.glDepthFunc(GLES20FixedPipeline.GL_LEQUAL);
         }

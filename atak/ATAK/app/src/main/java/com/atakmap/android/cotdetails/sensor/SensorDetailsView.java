@@ -22,6 +22,7 @@ import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.Spinner;
+import android.widget.TextView;
 
 import com.atakmap.android.drawing.details.GenericDetailsView;
 import com.atakmap.android.hashtags.view.RemarksLayout;
@@ -84,22 +85,26 @@ public class SensorDetailsView extends GenericPointDetailsView implements
     private boolean isInitalized = false;
     private EditText nameET;
     private Button sensorVideoUrlBtn;
-    private EditText rangeET;
+    private EditText rangeET, rangeLinesET;
     private Spinner directionAzimuthSpin;
     private EditText directionET;
     private EditText fovET;
-    private SeekBar rangeSeek;
+    private SeekBar rangeSeek, rangeLineSeek;
     private SeekBar directionSeek;
     private SeekBar fovSeek;
     private RemarksLayout remarksLayout;
     private CheckBox fovVisibleCB;
+    private CheckBox anglesVisibleCB;
     private ImageButton _strokeColorBtn;
     private SeekBar _strokeWeightSeek;
     private ImageButton _fillColorBtn;
     private SeekBar _fillAlphaSeek;
     private Button _coordButton;
+    private View _rangeLinesLayout;
+    private TextView _rangeLineMax;
 
     private boolean ignoreRangeUpdate = false;
+    private boolean ignoreRangeLinesUpdate = false;
 
     /**
      * *************************** CONSTRUCTOR ***************************
@@ -151,11 +156,47 @@ public class SensorDetailsView extends GenericPointDetailsView implements
                 sensorFOV.setVisible(isChecked);
                 sensorItem.toggleMetaData(SensorDetailHandler.HIDE_FOV,
                         !isChecked);
+                if (!isChecked) {
+                    anglesVisibleCB.setChecked(false);
+                    sensorItem.toggleMetaData(
+                            SensorDetailHandler.DISPLAY_LABELS, false);
+                    sensorFOV.setMetrics(sensorFOV.getAzimuth(),
+                            sensorFOV.getFOV(),
+                            sensorFOV.getExtent(), false,
+                            sensorFOV.getRangeLines());
+                }
                 sensorItem.persist(_mapView.getMapEventDispatcher(), null,
                         this.getClass());
+                _rangeLinesLayout
+                        .setVisibility(isChecked ? View.VISIBLE : View.GONE);
             }
         });
 
+        anglesVisibleCB = this.findViewById(R.id.labelVisibilityCB);
+        anglesVisibleCB.setEnabled(sensorItem.getVisible());
+        anglesVisibleCB
+                .setOnCheckedChangeListener(new OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(CompoundButton buttonView,
+                            boolean isChecked) {
+                        Log.d(TAG, "anglesVisibleCB: " + isChecked);
+                        sensorItem.toggleMetaData(
+                                SensorDetailHandler.DISPLAY_LABELS, isChecked);
+                        sensorFOV.setMetrics(sensorFOV.getAzimuth(),
+                                sensorFOV.getFOV(),
+                                sensorFOV.getExtent(), isChecked,
+                                sensorFOV.getRangeLines());
+                        sensorItem.persist(_mapView.getMapEventDispatcher(),
+                                null,
+                                this.getClass());
+                        rangeLineSeek.setEnabled(isChecked);
+                    }
+                });
+
+        _rangeLineMax = this.findViewById(R.id.rangeLineMax);
+        _rangeLinesLayout = this.findViewById(R.id.rangeLinesLayout);
+
+        //Range extent
         rangeET = this.findViewById(R.id.sensorRangeET);
         rangeET.addTextChangedListener(new AfterTextChangedWatcher() {
             @Override
@@ -189,7 +230,8 @@ public class SensorDetailsView extends GenericPointDetailsView implements
                 //Apply to new range to FOV
                 if (sensorFOV != null && (int) sensorFOV.getExtent() != val) {
                     sensorFOV.setMetrics(sensorFOV.getAzimuth(),
-                            sensorFOV.getFOV(), val);
+                            sensorFOV.getFOV(), val, sensorFOV.isShowLabels(),
+                            sensorFOV.getRangeLines());
                     sensorItem.setMetaInteger(
                             SensorDetailHandler.RANGE_ATTRIBUTE, val);
                     sensorItem.persist(_mapView.getMapEventDispatcher(), null,
@@ -212,8 +254,9 @@ public class SensorDetailsView extends GenericPointDetailsView implements
                 }
             }
         });
+
         rangeSeek = this.findViewById(R.id.rangeSeek);
-        rangeSeek.setMax(122);
+        rangeSeek.setMax(150);
         rangeSeek.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
@@ -231,7 +274,7 @@ public class SensorDetailsView extends GenericPointDetailsView implements
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress,
                     boolean fromUser) {
-                //if the seek bar was changed by the user, update the range 
+                //if the seek bar was changed by the user, update the range
                 if (!ignoreRangeUpdate)
                     //exponentially grow the range so that there is finer adjustment
                     //on the low end and more coarse adjustment on the high end
@@ -239,9 +282,74 @@ public class SensorDetailsView extends GenericPointDetailsView implements
             }
         });
 
+        //Range Lines
+        rangeLinesET = this.findViewById(R.id.rangeLinesET);
+        rangeLinesET.addTextChangedListener(new AfterTextChangedWatcher() {
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (s.length() <= 0)
+                    return;
+
+                int val = Integer.parseInt(s.toString());
+
+                // lower bounds for human entry
+                if (val < 25) {
+                    rangeLinesET.setText("25");
+                    return;
+                }
+
+                //Apply to new range to FOV
+                if (sensorFOV != null
+                        && (int) sensorFOV.getRangeLines() != val) {
+                    sensorFOV.setMetrics(sensorFOV.getAzimuth(),
+                            sensorFOV.getFOV(), sensorFOV.getExtent(),
+                            sensorFOV.isShowLabels(), val);
+                    sensorItem.setMetaInteger(
+                            SensorDetailHandler.RANGE_LINES_ATTRIBUTE, val);
+                    sensorItem.persist(_mapView.getMapEventDispatcher(), null,
+                            this.getClass());
+                }
+
+                int estimatedProg = Math.round(val);
+                int currentProg = rangeLineSeek.getProgress();
+                if (estimatedProg != currentProg) {
+                    ignoreRangeLinesUpdate = true;
+                    rangeLineSeek.setProgress(Math.round(val));
+                    ignoreRangeLinesUpdate = false;
+                }
+            }
+        });
+        rangeLineSeek = this.findViewById(R.id.rangeLineSeek);
+        rangeLineSeek.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                if (!ignoreRangeLinesUpdate) {
+                    int currentProg = rangeLineSeek.getProgress();
+                    if (currentProg < 25)
+                        currentProg = 25;
+                    rangeLinesET.setText(String.valueOf(currentProg));
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+                rangeLinesET.requestFocus();
+            }
+
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress,
+                    boolean fromUser) {
+                //if the seek bar was changed by the user, update the range 
+                if (!ignoreRangeLinesUpdate && fromUser)
+                    //exponentially grow the range so that there is finer adjustment
+                    //on the low end and more coarse adjustment on the high end
+                    rangeLinesET.setText(String.valueOf(progress));
+            }
+        });
+
         directionAzimuthSpin = this
                 .findViewById(R.id.directionAzimuthSpinner);
-        ArrayAdapter<Object> adapter = new ArrayAdapter<Object>(
+        ArrayAdapter<Object> adapter = new ArrayAdapter<>(
                 _mapView.getContext(),
                 R.layout.spinner_text_view_dark, DIRECTION_AZIMUTH_OPTIONS);
         adapter.setDropDownViewResource(
@@ -311,7 +419,8 @@ public class SensorDetailsView extends GenericPointDetailsView implements
                 if (sensorFOV != null
                         && (int) sensorFOV.getAzimuth() != trueVal) {
                     sensorFOV.setMetrics(trueVal, sensorFOV.getFOV(),
-                            sensorFOV.getExtent());
+                            sensorFOV.getExtent(), sensorFOV.isShowLabels(),
+                            sensorFOV.getRangeLines());
                     sensorItem.setMetaInteger(
                             SensorDetailHandler.AZIMUTH_ATTRIBUTE, trueVal);
                     sensorItem.persist(_mapView.getMapEventDispatcher(), null,
@@ -354,7 +463,8 @@ public class SensorDetailsView extends GenericPointDetailsView implements
                 //Apply to new direction to FOV
                 if (sensorFOV != null && (int) sensorFOV.getFOV() != val) {
                     sensorFOV.setMetrics(sensorFOV.getAzimuth(), val,
-                            sensorFOV.getExtent());
+                            sensorFOV.getExtent(), sensorFOV.isShowLabels(),
+                            sensorFOV.getRangeLines());
                     sensorItem.setMetaInteger(
                             SensorDetailHandler.FOV_ATTRIBUTE, val);
                     sensorItem.persist(_mapView.getMapEventDispatcher(), null,
@@ -566,7 +676,7 @@ public class SensorDetailsView extends GenericPointDetailsView implements
     public void setSensorMarker(String uid) {
         //find the marker, and set the UI to the values
         MapItem mi = _mapView.getMapItem(uid);
-        if (mi == null || !mi.getType().equals("b-m-p-s-p-loc"))
+        if (!SensorDetailHandler.hasFoV(mi))
             return;
 
         removeListeners();
@@ -580,10 +690,12 @@ public class SensorDetailsView extends GenericPointDetailsView implements
             sensorFOV = (SensorFOV) sfov;
         if (sfov == null) {
             //if no sensor FOV was found create a default sensor FOV and set it to not be visible
+            //TODO in this case we could pull the data from the marker if its available, and use
+            //it to create SensorFOV, rather than using hardcoded defaults here
             SensorDetailHandler.addFovToMap(sensorMarker, 270, 45, 100,
                     new float[] {
                             1, 1, 1, 0.3f
-                    }, false);
+                    }, false, false, 100);
 
             sensorItem.setMetaBoolean(SensorDetailHandler.HIDE_FOV,
                     true);
@@ -656,6 +768,12 @@ public class SensorDetailsView extends GenericPointDetailsView implements
 
                 remarksLayout.setText(sensorItem.getMetaString("remarks", ""));
                 rangeET.setText(String.valueOf((int) sensorFOV.getExtent()));
+                rangeLinesET.setText(
+                        String.valueOf((int) sensorFOV.getRangeLines()));
+
+                rangeLineSeek.setMax((int) sensorFOV.getExtent());
+                _rangeLineMax
+                        .setText(String.valueOf((int) sensorFOV.getExtent()));
 
                 if (directionAzimuthSpin.getSelectedItemPosition() == 1) {
                     float trueAzimuth = sensorFOV.getAzimuth();
@@ -680,6 +798,8 @@ public class SensorDetailsView extends GenericPointDetailsView implements
                 if (sensorItem.hasMetaValue(SensorDetailHandler.HIDE_FOV))
                     fovVisibleCB.setChecked(false);
 
+                anglesVisibleCB.setChecked(sensorItem.getMetaBoolean(
+                        SensorDetailHandler.DISPLAY_LABELS, false));
                 _extrasLayout.setItem(sensorItem);
             }
         });

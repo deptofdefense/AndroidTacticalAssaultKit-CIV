@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:gravity="center_vertical|fill_horizontal">
+        <shape android:shape="rectangle"
+            android:tint="@drawable/switch_track_selector">
+            <corners android:radius="7dp" />
+            <size android:height="14dp" />
+        </shape>
+    </item>
+</layer-list>
