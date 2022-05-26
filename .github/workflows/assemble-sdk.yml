@@ -110,6 +110,7 @@ jobs:
         echo "cmake.dir=$CMAKE_HOME" >> local.properties
         echo "ndk.dir=$ANDROID_NDK" >> local.properties
         rm -rf ATAK/app/build
+        bash ./gradlew generateJniHeaders
         bash ./gradlew assembleCivSdk
     - name: generate ATAK CIV SDK package
       run: |
@@ -126,7 +127,6 @@ jobs:
         mkdir -p tmp/src
         cp -R ./atak/ATAK/app/src/common/java/* tmp/src
         cp -R ./atak/ATAK/app/src/main/java/* tmp/src
-        cp -R ./atak/ATAKMapEngine/lib/src/main/java/* tmp/src
         pushd .
         cd tmp/src && javadoc -linkoffline http://d.android.com/reference file://$ANDROID_HOME/docs/reference -d ../javadoc -classpath .:$ANDROID_HOME/platforms/android-${ANDROID_COMPILE_SDK}/android.jar -subpackages . &> /dev/null || echo "success by failure"
         popd
