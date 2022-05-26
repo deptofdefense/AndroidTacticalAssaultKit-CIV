@@ -1,0 +1,194 @@
+apply from: configProject.file('gradle/conan.gradle'), to: project
+apply from: configProject.file('gradle/javah.gradle'), to: project
+
+javah {
+    input file('src/main/jni/javah.properties')
+    outputDir file('src/main/jni/')
+}
+
+externalNativeBuild {
+    path 'CMakeLists.txt'
+    arguments  "-DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/android.toolchain.cmake",
+        "-DANDROID_TOOLCHAIN=gcc",
+        "-DANDROID_STL=gnustl_static",
+        "-DANDROID_PLATFORM=android-24", // 24 is the highest so available in 12 ndk??
+        "-DANDROID_ARM_NEON=ON"
+    cFlags "-D__GXX_EXPERIMENTAL_CXX0X__"
+    cppFlags "-fexceptions", "-frtti"
+    buildTarget 'install'
+    if(isJavaKernelBuild) {
+        installPrefix "${buildDir}/jniLibs/${runtimePlatform}"
+    }
+}
+
+
+dependencies {
+    api project(':annotation')
+    api project(':port')
+    // This dependency is found on compile classpath of this component and consumers.
+    if(isJavaKernelBuild) {
+        api("com.google.guava:guava:${guavaVersion}")
+
+        api("org.jogamp.gluegen:gluegen-rt-main:${joglVersion}")
+        api("org.jogamp.jogl:jogl-all-main:${joglVersion}")
+
+        // XML pull parser
+        api("net.sf.kxml:kxml2:${kxmlVersion}")
+
+        // org.json
+        api("org.json:json:${jsonVersion}")
+
+        // apache http client
+        api("org.apache.httpcomponents:httpclient:${httpclientVersion}")
+
+        api("org.slf4j:slf4j-api:$slf4jApiVersion")
+
+        // Use JUnit test framework
+        testImplementation("junit:junit:${junitVersion}")
+
+        api("gov.tak.support:android-port:${androidPortVersion}")
+        api("gov.tak.support:gles-jogl-c:${glesJoglCVersion}")
+        api("gov.tak.thirdparty:takthirdparty-rt-${runtimePlatform}:${takthirdpartyVersion}")
+        api("gov.tak.thirdparty:gdal:${takthirdpartyVersion}:tak")
+        api("gov.tak.thirdparty:gdaldata:${takthirdpartyVersion}")
+        api("gov.tak.thirdparty:jassimp:${takthirdpartyVersion}:tak")
+        api("gov.tak.thirdparty:libLAS-${runtimePlatform}:${libLasVersion}")
+    } else if(isAndroidKernelBuild) {
+        api("gov.tak.thirdparty:takthirdparty:${takthirdpartyVersion}@aar")
+        api("gov.tak.thirdparty:libLAS:${libLasVersion}@aar")
+    }
+}
+
+if(isJavaKernelBuild) {
+    processResources {
+        with copySpec {
+            from('src/main/res/raw')
+            {
+                into 'resources/raw'
+            }
+            from('src/main/res/drawable')
+            {
+                into 'resources/drawable'
+                rename { String filename -> filename.replace('.png', '') }
+            }
+            from('src/main/assets/certs')
+            {
+                into 'assets/certs'
+            }
+        }
+    }
+
+    jar {}
+
+    /**
+     * Creates the "main" JAR file; used as a dependency reference with transitive dependencies to
+     * both the classfiles JAR and the native runtimes JAR (all platforms)
+     */
+    task mainJar(type: Jar, dependsOn: [jar]) {
+        // empty, will reference all jars via dependency
+        archiveBaseName = "${project.archivesBaseName}-main"
+    }
+
+    /**
+     * Creates the natives runtime JAR file for the host platform.
+     */
+    task "${runtimePlatform}Jar"(type: Jar) {
+        archiveBaseName = "${project.archivesBaseName}-rt-${runtimePlatform}"
+
+        into('libs') {
+            from "${project.buildDir}/jniLibs"
+            include '**/*.dll'
+            include '**/*.so'
+            include '**/*.dylib'
+        }
+    }
+}
+
+// Custom Tasks
+task cleanCMakeExports(type: Delete) {
+    group = 'Build'
+    description = 'Cleans the \"exports\" directory created by the inter-dependent CMake projects in this repository.'
+
+    delete '../exports'
+}
+
+// configure custom task dependencies
+clean.dependsOn cleanCMakeExports
+
+afterEvaluate {
+    tasks.getByName('preExternalNativeBuild').dependsOn('generateJniHeaders')
+
+    if (isJavaKernelBuild) {
+        // Java specific
+        def runtimeJarTask = tasks.getByName("${runtimePlatform}Jar")
+        runtimeJarTask.dependsOn('postExternalNativeBuild')
+        jar.dependsOn(runtimeJarTask)
+
+        publishing {
+            publications {
+                // jar publication defined in `publishing.gradle`
+                jar.pom.withXml {
+                    Node pomNode = asNode()
+                    pomNode.dependencies.'*'.findAll() { dep ->
+                        // exclude native runtime dependencies
+                        desktopPlatformDesignations.any { rt ->
+                            dep.artifactId.text().contains("-${rt}")
+                        }
+                    }.each() {
+                        it.parent().remove(it)
+                    }
+                }
+
+                desktopPlatformDesignations.each { rt ->
+                    def platformJarFile = getPlatformSpecificJar(project, rt, "${rt}" != "${runtimePlatform}")
+                    if(platformJarFile) {
+                        "${rt}Jar"(MavenPublication) {
+                            artifact "${platformJarFile}"
+
+                            artifactId = "${project.archivesBaseName}-rt-${rt}"
+
+                            // export runtime dependencies to POM
+                            pom.withXml {
+                                def dependencies  = asNode().appendNode("dependencies")
+                                configurations.api.allDependencies.each {  dep ->
+                                    if(!(dep instanceof ProjectDependency) &&
+                                            dep.name.contains("-${runtimePlatform}")) {
+
+                                        def depNode = dependencies.appendNode("dependency")
+                                        depNode.appendNode('groupId', dep.group)
+                                        depNode.appendNode('artifactId', dep.name.replace("-${runtimePlatform}", "-${rt}"))
+                                        depNode.appendNode('version', dep.version)
+                                        def depClassifier = getClassifier(dep)
+                                        if(depClassifier)   depNode.appendNode('classifier', depClassifier)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                mainJar(MavenPublication) {
+                    artifact tasks.getByName('mainJar')
+                    artifactId = "${project.archivesBaseName}-main"
+
+                    // export dependencies to POM
+                    pom.withXml {
+                        def pubDepends = [jar]
+                        desktopPlatformDesignations.each { rt ->
+                            def rtPub = publications.findByName("${rt}Jar")
+                            if(rtPub) pubDepends += rtPub
+                        }
+
+                        def dependencies  = asNode().appendNode("dependencies")
+                        pubDepends.each {  dep ->
+                            def depNode = dependencies.appendNode("dependency")
+                            depNode.appendNode('groupId', dep.groupId)
+                            depNode.appendNode('artifactId', dep.artifactId)
+                            depNode.appendNode('version', dep.version)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

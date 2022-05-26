@@ -255,7 +255,7 @@ public class RectangleEditTool extends ButtonTool implements Undoable,
                             || event.getType()
                                     .equals(MapEvent.MAP_LONG_PRESS)) {
                         point = _mapView.inverseWithElevation(
-                                event.getPoint().x, event.getPoint().y);
+                                event.getPointF().x, event.getPointF().y);
                     } else if (event.getType().equals(MapEvent.ITEM_CLICK)
                             && event.getItem() instanceof PointMapItem &&
                             _deviceUID.equals(event.getItem().getUID())) {
@@ -302,7 +302,7 @@ public class RectangleEditTool extends ButtonTool implements Undoable,
                 return;
             PointMapItem pmi = (PointMapItem) mi;
             GeoPointMetaData point = _mapView.inverseWithElevation(
-                    event.getPoint().x, event.getPoint().y);
+                    event.getPointF().x, event.getPointF().y);
             if (!point.get().isValid())
                 return;
             boolean dragCenter = pmi == _rectangle.getAnchorItem();

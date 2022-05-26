@@ -8,52 +8,27 @@
 
     <ImageButton
         android:id="@+id/buttonTrackStartNewTrack"
-        android:layout_width="@dimen/dropdown_bottom_bar_height"
-        android:layout_height="@dimen/dropdown_bottom_bar_height"
-        android:background="@drawable/btn_gray"
-        android:lines="0"
-        android:padding="6dp"
-        android:scaleType="fitCenter"
-        android:src="@drawable/ic_track_new" />
+        android:src="@drawable/ic_track_new"
+        style="@style/ActionBarViewImageButton"/>
 
     <ImageButton
         android:id="@+id/buttonTrackCallsigns"
-        android:layout_width="@dimen/dropdown_bottom_bar_height"
-        android:layout_height="@dimen/dropdown_bottom_bar_height"
-        android:background="@drawable/btn_gray"
-        android:lines="0"
-        android:padding="6dp"
-        android:scaleType="fitCenter"
-        android:src="@drawable/ic_track_userlist" />
+        android:src="@drawable/ic_track_userlist"
+        style="@style/ActionBarViewImageButton"/>
 
     <ImageButton
         android:id="@+id/buttonTrackSearch"
-        android:layout_width="@dimen/dropdown_bottom_bar_height"
-        android:layout_height="@dimen/dropdown_bottom_bar_height"
-        android:background="@drawable/btn_gray"
-        android:lines="0"
-        android:padding="6dp"
-        android:scaleType="fitCenter"
-        android:src="@drawable/ic_track_search" />
+        android:src="@drawable/ic_track_search"
+        style="@style/ActionBarViewImageButton"/>
 
     <ImageButton
         android:id="@+id/buttonTrackList"
-        android:layout_width="@dimen/dropdown_bottom_bar_height"
-        android:layout_height="@dimen/dropdown_bottom_bar_height"
-        android:background="@drawable/btn_gray"
-        android:lines="0"
-        android:padding="6dp"
-        android:scaleType="fitCenter"
-        android:src="@drawable/ic_track_list_self" />
+        android:src="@drawable/ic_track_list_self"
+        style="@style/ActionBarViewImageButton"/>
 
     <ImageButton
         android:id="@+id/buttonTrackListClear"
-        android:layout_width="@dimen/dropdown_bottom_bar_height"
-        android:layout_height="@dimen/dropdown_bottom_bar_height"
-        android:background="@drawable/btn_gray"
-        android:lines="0"
-        android:padding="6dp"
-        android:scaleType="fitCenter"
-        android:src="@drawable/ic_track_clear" />
+        android:src="@drawable/ic_track_clear"
+        style="@style/ActionBarViewImageButton"/>
 
 </com.atakmap.android.tools.ActionBarView>

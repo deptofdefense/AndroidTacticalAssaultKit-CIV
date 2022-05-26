@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.graphics.PorterDuff.Mode;
-import android.preference.PreferenceManager;
 import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -106,9 +105,7 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
         this.cardLayer = cardLayer;
         this.layer = layer;
 
-        SharedPreferences prefs = PreferenceManager
-                .getDefaultSharedPreferences(_context);
-        final boolean offlineOnly = prefs.getBoolean(PREF_OFFLINE_ONLY, false);
+        final boolean offlineOnly = _prefs.get(PREF_OFFLINE_ONLY, false);
 
         setOfflineOnly(offlineOnly);
 
@@ -133,9 +130,9 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
 
         mapView.addOnMapMovedListener(this);
 
-        String active = prefs.getString("lastViewedLayer.active", null);
+        String active = _prefs.get("lastViewedLayer.active", null);
 
-        final String selected = prefs.getString(PREF_SELECTED, null);
+        final String selected = _prefs.get(PREF_SELECTED, null);
         if (selected != null && active != null && active.equals("Mobile")) {
             if (offlineOnly) {
                 mapView.post(new Runnable() {
@@ -156,29 +153,15 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
             }
         }
 
-        prefs.registerOnSharedPreferenceChangeListener(this);
+        _prefs.registerListener(this);
     }
 
     @Override
     public void dispose() {
 
         _mapView.removeOnMapMovedListener(this);
-
-        SharedPreferences prefs = PreferenceManager
-                .getDefaultSharedPreferences(_context);
-        SharedPreferences.Editor editor = prefs.edit();
-
-        prefs.unregisterOnSharedPreferenceChangeListener(this);
-
-        final boolean offlineOnly = isOfflineOnly();
-        editor.putBoolean(PREF_OFFLINE_ONLY, offlineOnly);
-
-        if (curr != null)
-            editor.putString(PREF_SELECTED, curr.toString());
-        else
-            editor.remove(PREF_SELECTED);
-
-        editor.apply();
+        _prefs.unregisterListener(this);
+        _prefs.set(PREF_OFFLINE_ONLY, isOfflineOnly());
         calc.dispose();
 
         super.dispose();
@@ -193,7 +176,8 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
     public void onSharedPreferenceChanged(SharedPreferences p, String key) {
         if (key.equals(PREF_SELECTED)) {
             String selected = p.getString(PREF_SELECTED, null);
-            if (selected != null) {
+            String curr = this.curr != null ? this.curr.toString() : null;
+            if (!FileSystemUtils.isEquals(selected, curr)) {
                 cardLayer.show("Mobile");
                 postSelected(selected);
             }
@@ -464,7 +448,7 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
         h.lockBtn.setVisibility(View.GONE);
         h.vizBtn.setVisibility(View.GONE);
 
-        if (getDescriptorFile(tsInfo) != null)
+        if (getDescriptorFile(tsInfo) != null && !isOfflineOnly())
             h.sendBtn.setVisibility(View.VISIBLE);
         else
             h.sendBtn.setVisibility(View.INVISIBLE);
@@ -860,7 +844,7 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
                 } else {
                     super.setSelected((String) null);
                 }
-
+                _prefs.set(PREF_SELECTED, curr.toString());
                 return;
             }
         }

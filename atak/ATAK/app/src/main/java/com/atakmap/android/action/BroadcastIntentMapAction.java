@@ -10,6 +10,7 @@ import com.atakmap.android.config.DataParser;
 import com.atakmap.android.config.ParseUtil;
 import com.atakmap.android.config.PhraseParser;
 import com.atakmap.android.ipc.AtakBroadcast;
+import com.atakmap.android.maps.DefaultMetaDataHolder;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.coremap.log.Log;
@@ -141,7 +142,9 @@ class BroadcastIntentMapAction implements MapAction {
 
         PhraseParser.Parameters parms = new PhraseParser.Parameters();
         parms.setResolver('@',
-                new PhraseParser.BundleResolver(mapView.getMapData()));
+                new PhraseParser.BundleResolver(
+                        mapView != null ? mapView.getMapData()
+                                : new DefaultMetaDataHolder()));
         parms.setResolver('^', _TIME_RESOLVER);
         if (mapItem != null) {
             parms.setResolver('$', new PhraseParser.BundleResolver(mapItem));
@@ -172,6 +175,9 @@ class BroadcastIntentMapAction implements MapAction {
                 intent.setData(Uri.parse(resolvedUri));
             }
         }
+
+        if (mapView == null)
+            return;
 
         if (!_isActivity) {
             AtakBroadcast.getInstance().sendBroadcast(intent);

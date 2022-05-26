@@ -12,6 +12,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.app.R;
 import com.atakmap.comms.CommsMapComponent.ImportResult;
+import com.atakmap.coremap.conversions.AngleUtilities;
 import com.atakmap.coremap.cot.event.CotDetail;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -58,6 +59,16 @@ public class DrawingEllipseImporter extends DrawingImporter {
             double minor = parseDouble(d.getAttribute("minor"), 0);
             double major = parseDouble(d.getAttribute("major"), 0);
             double angle = parseDouble(d.getAttribute("angle"), 0);
+
+            // Extra property used to maintain the same display dimensions
+            // across restarts when the width > length
+            if (FileSystemUtils.isEquals(d.getAttribute("swapAxis"), "true")) {
+                double length = minor;
+                minor = major;
+                major = length;
+                angle = AngleUtilities.wrapDeg(angle - 90);
+            }
+
             Ellipse e = new Ellipse(UUID.randomUUID().toString());
             e.setDimensions(center, minor / 2, major / 2, angle);
             rings.add(e);

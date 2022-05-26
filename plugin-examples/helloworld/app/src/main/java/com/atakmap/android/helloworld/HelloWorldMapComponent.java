@@ -9,7 +9,9 @@ import com.atakmap.android.contact.ContactLocationView;
 import com.atakmap.android.cot.detail.CotDetailHandler;
 import com.atakmap.android.cot.detail.CotDetailManager;
 import com.atakmap.android.cotdetails.ExtendedInfoView;
+import com.atakmap.android.data.URIContentManager;
 import com.atakmap.android.helloworld.routes.RouteExportMarshal;
+import com.atakmap.android.helloworld.sender.HelloWorldContactSender;
 import com.atakmap.android.importexport.ExporterManager;
 import com.atakmap.android.importexport.ImportExportMapComponent;
 import com.atakmap.android.importexport.ImportReceiver;
@@ -22,7 +24,6 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.cot.UIDHandler;
 import com.atakmap.android.dropdown.DropDownMapComponent;
 import com.atakmap.android.maps.PointMapItem;
-
 import com.atakmap.android.maps.graphics.GLMapItemFactory;
 
 import com.atakmap.android.maps.MapEventDispatcher;
@@ -79,7 +80,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
-
 /**
  * This is an example of a MapComponent within the ATAK 
  * ecosphere.   A map component is the building block for all
@@ -99,6 +99,7 @@ public class HelloWorldMapComponent extends DropDownMapComponent {
     private SpecialDetailHandler sdh;
     private CotDetailHandler aaaDetailHandler;
     private ContactLocationView.ExtendedSelfInfoFactory extendedselfinfo;
+    private HelloWorldContactSender contactSender;
 
     public static class JoystickView extends RelativeLayout {
 
@@ -194,10 +195,6 @@ public class HelloWorldMapComponent extends DropDownMapComponent {
         super.onCreate(context, intent, view);
         pluginContext = context;
 
-        AtakAuthenticationCredentials aac = AtakAuthenticationDatabase.getCredentials("myplugin.certificate_password");
-        if (aac != null)
-            Log.d(TAG, "aac password: " + aac.password);
-
         GLMapItemFactory.registerSpi(GLSpecialMarker.SPI);
 
         // Register capability to handle detail tags that TAK does not 
@@ -208,29 +205,28 @@ public class HelloWorldMapComponent extends DropDownMapComponent {
 
         CotDetailManager.getInstance().registerHandler(
                 aaaDetailHandler = new CotDetailHandler("__aaa") {
-            private final String TAG = "AAACotDetailHandler";
+                    private final String TAG = "AAACotDetailHandler";
 
-            @Override
+                    @Override
                     public CommsMapComponent.ImportResult toItemMetadata(
                             MapItem item, CotEvent event, CotDetail detail) {
                         Log.d(TAG, "detail received: " + detail + " in:  "
                                 + event);
-                return CommsMapComponent.ImportResult.SUCCESS;
-            }
+                        return CommsMapComponent.ImportResult.SUCCESS;
+                    }
 
-            @Override
+                    @Override
                     public boolean toCotDetail(MapItem item, CotEvent event,
                             CotDetail root) {
                         Log.d(TAG, "converting to cot detail from: "
                                 + item.getUID());
-                return true;
-            }
-        });
+                        return true;
+                    }
+                });
 
         //HelloWorld MapOverlay added to Overlay Manager.
         this.mapOverlay = new HelloWorldMapOverlay(view, pluginContext);
         view.getMapOverlayManager().addOverlay(this.mapOverlay);
-
 
         //MapView.getMapView().getRootGroup().getChildGroupById(id).setVisible(true);
 
@@ -456,6 +452,10 @@ public class HelloWorldMapComponent extends DropDownMapComponent {
         // example of how to save and retrieve credentials using the credential management system
         // within core ATAK
         saveAndRetrieveCredentials();
+
+        // Content sender example
+        URIContentManager.getInstance().registerSender(contactSender =
+                new HelloWorldContactSender(view, pluginContext));
     }
 
     private final GeocodeManager.Geocoder fakeGeoCoder = new GeocodeManager.Geocoder() {
@@ -558,7 +558,6 @@ public class HelloWorldMapComponent extends DropDownMapComponent {
 
     @Override
     protected void onDestroyImpl(Context context, MapView view) {
-
         Log.d(TAG, "calling on destroy");
         ContactLocationView.unregister(extendedselfinfo);
         GLMapItemFactory.unregisterSpi(GLSpecialMarker.SPI);
@@ -571,6 +570,7 @@ public class HelloWorldMapComponent extends DropDownMapComponent {
         CotDetailManager.getInstance().unregisterHandler(aaaDetailHandler);
         ExporterManager.unregisterExporter(
                 context.getString(R.string.route_exporter_name));
+        URIContentManager.getInstance().unregisterSender(contactSender);
         super.onDestroyImpl(context, view);
 
         // Example call on how to end ATAK if the plugin is unloaded.

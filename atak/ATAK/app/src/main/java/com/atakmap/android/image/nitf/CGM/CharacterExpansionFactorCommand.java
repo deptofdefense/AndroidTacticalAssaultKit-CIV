@@ -8,7 +8,7 @@ import java.io.IOException;
  *
  */
 public class CharacterExpansionFactorCommand extends Command {
-    private double factor;
+    private final double factor;
 
     public CharacterExpansionFactorCommand(int ec, int eid, int l, DataInput in)
             throws IOException {

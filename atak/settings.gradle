@@ -1,14 +1,32 @@
+static def getValueFromPropertiesFile(File propFile, String key) {
+    if(!propFile.isFile() || !propFile.canRead())
+        return null
+    def prop = new Properties()
+    def reader = propFile.newReader()
+    try {
+        prop.load(reader)
+    } finally {
+        reader.close()
+    }
+    return prop.get(key)
+}
+
+
 include ':ATAK'
 project(':ATAK').projectDir = new File(settingsDir, 'ATAK')
 include ':ATAK:app'
-include ':ATAKMapEngine'
-project(':ATAKMapEngine').projectDir = new File(settingsDir, 'ATAKMapEngine')
-include ':ATAKMapEngine:lib'
 
-includeFlat('takkernel')
-include(':takkernel:annotation')
-include(':takkernel:port')
+// if `takkernel` is present, include projects directly
+if((getValueFromPropertiesFile(file('local.properties'), 'takkernel.dependency.forceRemote') != 'true') &&
+        new File('../takkernel').exists()) {
 
-include(':libtakengine')
-project (':libtakengine').projectDir = new File(settingsDir.getParentFile(), 'takengine/takengine/android')
-
+    includeFlat('takkernel')
+    include(':takkernel:annotation')
+    include(':takkernel:port')
+    include(':takkernel:engine')
+    include(':takkernel:shared')
+    // conditionally include `:takkernel:controlled`
+    if(new File('../takkernel/controlled').exists()) {
+        include(':takkernel:controlled')
+    }
+}

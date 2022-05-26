@@ -171,7 +171,7 @@ public class ProductInformationAdapter extends BaseAdapter {
      * Context used for dialog creation
      */
     private final AppMgmtActivity _context;
-    private LayoutInflater _inflater;
+    private final LayoutInflater _inflater;
     private List<ProductInformation> _appList;
     private List<ProductInformation> _filteredAppList;
     private final ArrayList<ProductInformation> selected = new ArrayList<>();

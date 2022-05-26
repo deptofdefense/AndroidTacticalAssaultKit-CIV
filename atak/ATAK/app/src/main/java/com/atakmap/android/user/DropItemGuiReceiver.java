@@ -21,6 +21,7 @@ import com.atakmap.coremap.maps.coords.Ellipsoid;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.MGRSPoint;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
+import com.atakmap.map.CameraController;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -421,6 +422,7 @@ public class DropItemGuiReceiver extends BroadcastReceiver {
                 .setCallsign(getCallsign())
                 .setType(getType(v))
                 .placePoint();
-        _mapView.getMapController().panTo(point, true);
+        CameraController.Programmatic.panTo(
+                _mapView.getRenderer3(), point, true);
     }
 }

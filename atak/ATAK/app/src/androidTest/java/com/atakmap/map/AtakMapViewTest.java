@@ -12,7 +12,7 @@ import org.junit.Test;
 import java.util.LinkedList;
 import java.util.List;
 
-import androidx.test.InstrumentationRegistry;
+import androidx.test.core.app.ApplicationProvider;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
@@ -26,8 +26,8 @@ public class AtakMapViewTest extends ATAKInstrumentedTest {
         androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
                 .runOnMainSync(new Runnable() {
                     public void run() {
-                        Context appContext = InstrumentationRegistry
-                                .getTargetContext();
+                        Context appContext = ApplicationProvider
+                                .getApplicationContext();
                         final OnLayerChangedCallbackRecorder cbrecorder = new OnLayerChangedCallbackRecorder();
                         AtakMapView mapView = new AtakMapView(appContext, null);
                         mapView.addOnLayersChangedListener(cbrecorder);
@@ -53,8 +53,8 @@ public class AtakMapViewTest extends ATAKInstrumentedTest {
         androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
                 .runOnMainSync(new Runnable() {
                     public void run() {
-                        Context appContext = InstrumentationRegistry
-                                .getTargetContext();
+                        Context appContext = ApplicationProvider
+                                .getApplicationContext();
                         final OnLayerChangedCallbackRecorder cbrecorder = new OnLayerChangedCallbackRecorder();
                         AtakMapView mapView = new AtakMapView(appContext, null);
                         mapView.addOnLayersChangedListener(cbrecorder);
@@ -81,8 +81,8 @@ public class AtakMapViewTest extends ATAKInstrumentedTest {
         androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
                 .runOnMainSync(new Runnable() {
                     public void run() {
-                        Context appContext = InstrumentationRegistry
-                                .getTargetContext();
+                        Context appContext = ApplicationProvider
+                                .getApplicationContext();
                         final OnLayerChangedCallbackRecorder cbrecorder = new OnLayerChangedCallbackRecorder();
                         AtakMapView mapView = new AtakMapView(appContext, null);
                         mapView.addOnLayersChangedListener(cbrecorder);
@@ -144,8 +144,8 @@ public class AtakMapViewTest extends ATAKInstrumentedTest {
         androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
                 .runOnMainSync(new Runnable() {
                     public void run() {
-                        Context appContext = InstrumentationRegistry
-                                .getTargetContext();
+                        Context appContext = ApplicationProvider
+                                .getApplicationContext();
                         final OnLayerChangedCallbackRecorder cbrecorder = new OnLayerChangedCallbackRecorder();
                         AtakMapView mapView = new AtakMapView(appContext, null);
                         mapView.addOnLayersChangedListener(cbrecorder);
@@ -207,8 +207,8 @@ public class AtakMapViewTest extends ATAKInstrumentedTest {
         androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
                 .runOnMainSync(new Runnable() {
                     public void run() {
-                        Context appContext = InstrumentationRegistry
-                                .getTargetContext();
+                        Context appContext = ApplicationProvider
+                                .getApplicationContext();
                         final OnLayerChangedCallbackRecorder cbrecorder = new OnLayerChangedCallbackRecorder();
                         AtakMapView mapView = new AtakMapView(appContext, null);
                         mapView.addOnLayersChangedListener(cbrecorder);
@@ -270,8 +270,8 @@ public class AtakMapViewTest extends ATAKInstrumentedTest {
         androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
                 .runOnMainSync(new Runnable() {
                     public void run() {
-                        Context appContext = InstrumentationRegistry
-                                .getTargetContext();
+                        Context appContext = ApplicationProvider
+                                .getApplicationContext();
                         final OnLayerChangedCallbackRecorder cbrecorder = new OnLayerChangedCallbackRecorder();
                         AtakMapView mapView = new AtakMapView(appContext, null);
                         mapView.addOnLayersChangedListener(cbrecorder);

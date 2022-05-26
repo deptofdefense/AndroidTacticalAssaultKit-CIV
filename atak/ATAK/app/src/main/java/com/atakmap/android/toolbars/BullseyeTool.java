@@ -10,7 +10,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
-import android.graphics.Point;
+import android.graphics.PointF;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Pair;
@@ -47,6 +47,7 @@ import com.atakmap.coremap.cot.event.CotDetail;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.NorthReference;
+import com.atakmap.map.CameraController;
 import com.atakmap.map.elevation.ElevationManager;
 import com.atakmap.spatial.file.export.KMZFolder;
 import com.ekito.simpleKML.model.Folder;
@@ -110,7 +111,7 @@ public class BullseyeTool extends ButtonTool implements
 
         if (event.getType().equals(MapEvent.MAP_CLICK)
                 || event.getType().equals(MapEvent.ITEM_CLICK)) {
-            Point pt = event.getPoint();
+            PointF pt = event.getPointF();
 
             if (centerLoc == null) {
                 centerLoc = _mapView.inverseWithElevation(pt.x, pt.y);
@@ -156,7 +157,7 @@ public class BullseyeTool extends ButtonTool implements
             }
         } else if (event.getType().equals(MapEvent.MAP_LONG_PRESS)) {
             GeoPointMetaData point = _mapView.inverseWithElevation(
-                    event.getPoint().x, event.getPoint().y);
+                    event.getPointF().x, event.getPointF().y);
             displayCoordinateDialog(point);
         }
     }
@@ -524,7 +525,8 @@ public class BullseyeTool extends ButtonTool implements
                         showDetails.putExtra("uid", aosCenterMarker.getUID());
                         AtakBroadcast.getInstance().sendBroadcast(showDetails);
                         aosCenterMarker.setPoint(gp);
-                        mv.getMapController().panTo(gp.get(), true);
+                        CameraController.Programmatic.panTo(
+                                mv.getRenderer3(), gp.get(), true);
                     }
                 });
         builderView.second.setParameters(aosCenterMarker.getGeoPointMetaData(),

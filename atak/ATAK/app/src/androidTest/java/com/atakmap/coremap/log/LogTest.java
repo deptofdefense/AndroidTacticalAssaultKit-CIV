@@ -1,7 +1,7 @@
 
 package com.atakmap.coremap.log;
 
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import com.atakmap.android.androidtest.ATAKInstrumentedTest;
 

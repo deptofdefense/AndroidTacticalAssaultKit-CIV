@@ -466,7 +466,8 @@ namespace commoncommo {
     {
     public:
         CommoJNI(JNIEnv *env, jobject jlogger,
-                 jstring jourUID, jstring jourCallsign) COMMO_THROW (int);
+                 jstring jourUID, jstring jourCallsign,
+                 jint jaddrMode) COMMO_THROW (int);
         static void destroy(JNIEnv *env, CommoJNI *commoJNI);
 
         void setupMPIO(JNIEnv *env, jobject jmpio) COMMO_THROW (int);
@@ -517,6 +518,7 @@ namespace commoncommo {
         SimpleFileIOJNI *fileio;
 public:
         CommoLoggerJNI *logger;
+        jint jaddrMode;
 
         std::mutex ifaceListenersMutex;
         std::set<InterfaceStatusListenerJNI *> ifaceListeners;

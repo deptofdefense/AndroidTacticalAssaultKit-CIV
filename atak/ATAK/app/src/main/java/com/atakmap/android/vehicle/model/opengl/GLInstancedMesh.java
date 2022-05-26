@@ -343,8 +343,9 @@ public class GLInstancedMesh extends GLInstancedRenderable {
             return null;
         try {
             // NOTE: assumes float, per `glVertexAttribPointer` definition
-            final int bufSize =
-                    vdlArr.offset + ((_subject.getNumVertices()-1)*vdlArr.stride) + (size*4);
+            final int bufSize = vdlArr.offset
+                    + ((_subject.getNumVertices() - 1) * vdlArr.stride)
+                    + (size * 4);
             Buffer buf = _subject.getVertices(attr);
             int[] bufID = new int[1];
             GLES30.glGenBuffers(1, bufID, 0);

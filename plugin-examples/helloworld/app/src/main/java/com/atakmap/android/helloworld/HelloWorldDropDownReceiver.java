@@ -26,6 +26,7 @@ import com.atakmap.android.drawing.mapItems.DrawingShape;
 import com.atakmap.android.helloworld.image.MapScreenshotExample;
 import com.atakmap.android.helloworld.layers.LayerDownloadExample;
 import com.atakmap.android.helloworld.menu.MenuFactory;
+import com.atakmap.android.maps.Association;
 import com.atakmap.android.maps.DefaultMapGroup;
 import com.atakmap.android.maps.MultiPolyline;
 import com.atakmap.android.maps.SensorFOV;
@@ -59,6 +60,7 @@ import com.atakmap.android.tools.menu.ActionMenuData;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.util.AbstractMapItemSelectionTool;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.map.CameraController;
 import com.atakmap.map.layer.opengl.GLLayerFactory;
 import com.atakmap.android.helloworld.samplelayer.*;
 
@@ -448,132 +450,93 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
 
             @Override
             public boolean onLongClick(View v) {
-                switch (v.getId()) {
-                    case R.id.smallerButton:
-                        toast(context.getString(R.string.smallerButton));
-                        break;
-                    case R.id.largerButton:
-                        toast(context.getString(R.string.largerButton));
-                        break;
-                    case R.id.showSearchIcon:
-                        toast(context.getString(R.string.showSeachIcon));
-                        break;
-                    case R.id.fly:
-                        toast(context.getString(R.string.fly));
-                        break;
-                    case R.id.specialWheelMarker:
-                        toast(context.getString(R.string.specialWheelMarker));
-                        break;
-                    case R.id.addAnAircraft:
-                        toast(context.getString(R.string.addAnAircraft));
-                        break;
-                    case R.id.staleoutMarker:
-                        toast(context.getString(R.string.staleoutMarker));
-                        break;
-                    case R.id.addStream:
-                        toast(context.getString(R.string.addStream));
-                        break;
-                    case R.id.removeStream:
-                        toast(context.getString(R.string.removeStream));
-                        break;
-                    case R.id.itemInspect:
-                        toast(context.getString(R.string.itemInspect));
-                        break;
-                    case R.id.customType:
-                        toast(context.getString(R.string.customType));
-                        break;
-                    case R.id.customMenuDefault:
-                        toast(context.getString(R.string.customMenuDefault));
-                        break;
-                    case R.id.issLocation:
-                        toast(context.getString(R.string.issLocation));
-                        break;
-                    case R.id.sensorFOV:
-                        toast(context.getString(R.string.sensorFOV));
-                        break;
-                    case R.id.listRoutes:
-                        toast(context.getString(R.string.listRoutes));
-                        break;
-                    case R.id.addXRoute:
-                        toast(context.getString(R.string.addXRoute));
-                        break;
-                    case R.id.reXRoute:
-                        toast(context.getString(R.string.reXRoute));
-                        break;
-                    case R.id.dropRoute:
-                        toast(context.getString(R.string.dropRoute));
-                        break;
-                    case R.id.emergency:
-                        toast(context.getString(R.string.emergency));
-                        break;
-                    case R.id.no_emergency:
-                        toast(context.getString(R.string.no_emergency));
-                        break;
-                    case R.id.addRectangle:
-                        toast(context.getString(R.string.addRectangle));
-                        break;
-                    case R.id.drawShapes:
-                        toast(context.getString(R.string.drawShapes));
-                        break;
-                    case R.id.groupAdd:
-                        toast("Add a shape to a custom group called MyCustomGroup for rendering in the overlay manager");
-                        break;
-                    case R.id.rbcircle:
-                        toast(context.getString(R.string.rbcircle));
-                        break;
-                    case R.id.externalGps:
-                        toast(context.getString(R.string.externalGps));
-                        break;
-                    case R.id.surfaceAtCenter:
-                        toast(context.getString(R.string.surfaceAtCenter));
-                        break;
-                    case R.id.fakeContentProvider:
-                        toast(context.getString(R.string.fakeContentProvider));
-                        break;
-                    case R.id.pluginNotification:
-                        toast(context.getString(R.string.pluginNotification));
-                        break;
-                    case R.id.notificationSpammer:
-                        toast(context.getString(R.string.notificationSpammer));
-                        break;
-                    case R.id.notificationWithOptions:
-                        toast(context
-                                .getString(R.string.notificationWithOptions));
-                        break;
-                    case R.id.videoLauncher:
-                        toast(context.getString(R.string.videoLauncher));
-                        break;
-                    case R.id.addToolbarItem:
-                        toast(context.getString(R.string.addToolbarItem));
-                        break;
-                    case R.id.cameraLauncher:
-                        toast(context.getString(R.string.cameraLauncher));
-                        break;
-                    case R.id.imageAttach:
-                        toast(context.getString(R.string.imageAttach));
-                        break;
-                    case R.id.webView:
-                        toast(context.getString(R.string.webView));
-                        break;
-                    case R.id.addLayer:
-                        toast(context.getString(R.string.addLayer));
-                        break;
-                    case R.id.bumpControl:
-                        toast(context.getString(R.string.bumpControl));
-                        break;
-                    case R.id.speechToActivity:
-                        toast(context.getString(R.string.speechToActivity));
-                        break;
-                    case R.id.btnHookNavigationEvents:
-                        toast(context.getString(R.string.hookNavigation));
-                        break;
-                    case R.id.downloadMapLayer:
-                        toast(context
-                                .getString(R.string.download_map_layer_msg));
-                        break;
-                    case R.id.mapScreenshot:
-                        toast(context.getString(R.string.map_screenshot_desc));
-                        break;
+                int id = v.getId();
+                if (id == R.id.smallerButton) {
+                    toast(context.getString(R.string.smallerButton));
+                } else if (id == R.id.largerButton) {
+                    toast(context.getString(R.string.largerButton));
+                } else if (id == R.id.showSearchIcon) {
+                    toast(context.getString(R.string.showSeachIcon));
+                } else if (id == R.id.fly) {
+                    toast(context.getString(R.string.fly));
+                } else if (id == R.id.specialWheelMarker) {
+                    toast(context.getString(R.string.specialWheelMarker));
+                } else if (id == R.id.addAnAircraft) {
+                    toast(context.getString(R.string.addAnAircraft));
+                } else if (id == R.id.staleoutMarker) {
+                    toast(context.getString(R.string.staleoutMarker));
+                } else if (id == R.id.addStream) {
+                    toast(context.getString(R.string.addStream));
+                } else if (id == R.id.removeStream) {
+                    toast(context.getString(R.string.removeStream));
+                } else if (id == R.id.itemInspect) {
+                    toast(context.getString(R.string.itemInspect));
+                } else if (id == R.id.customType) {
+                    toast(context.getString(R.string.customType));
+                } else if (id == R.id.customMenuDefault) {
+                    toast(context.getString(R.string.customMenuDefault));
+                } else if (id == R.id.issLocation) {
+                    toast(context.getString(R.string.issLocation));
+                } else if (id == R.id.sensorFOV) {
+                    toast(context.getString(R.string.sensorFOV));
+                } else if (id == R.id.listRoutes) {
+                    toast(context.getString(R.string.listRoutes));
+                } else if (id == R.id.addXRoute) {
+                    toast(context.getString(R.string.addXRoute));
+                } else if (id == R.id.reXRoute) {
+                    toast(context.getString(R.string.reXRoute));
+                } else if (id == R.id.dropRoute) {
+                    toast(context.getString(R.string.dropRoute));
+                } else if (id == R.id.emergency) {
+                    toast(context.getString(R.string.emergency));
+                } else if (id == R.id.no_emergency) {
+                    toast(context.getString(R.string.no_emergency));
+                } else if (id == R.id.addRectangle) {
+                    toast(context.getString(R.string.addRectangle));
+                } else if (id == R.id.drawShapes) {
+                    toast(context.getString(R.string.drawShapes));
+                } else if (id == R.id.groupAdd) {
+                    toast("Add a shape to a custom group called MyCustomGroup for rendering in the overlay manager");
+                } else if (id == R.id.associations) {
+                    toast("Demonstrate the proper way to add two map items and an association");
+                } else if (id == R.id.rbcircle) {
+                    toast(context.getString(R.string.rbcircle));
+                } else if (id == R.id.externalGps) {
+                    toast(context.getString(R.string.externalGps));
+                } else if (id == R.id.surfaceAtCenter) {
+                    toast(context.getString(R.string.surfaceAtCenter));
+                } else if (id == R.id.fakeContentProvider) {
+                    toast(context.getString(R.string.fakeContentProvider));
+                } else if (id == R.id.pluginNotification) {
+                    toast(context.getString(R.string.pluginNotification));
+                } else if (id == R.id.notificationSpammer) {
+                    toast(context.getString(R.string.notificationSpammer));
+                } else if (id == R.id.notificationWithOptions) {
+                    toast(context
+                            .getString(R.string.notificationWithOptions));
+                } else if (id == R.id.videoLauncher) {
+                    toast(context.getString(R.string.videoLauncher));
+                } else if (id == R.id.addToolbarItem) {
+                    toast(context.getString(R.string.addToolbarItem));
+                } else if (id == R.id.cameraLauncher) {
+                    toast(context.getString(R.string.cameraLauncher));
+                } else if (id == R.id.imageAttach) {
+                    toast(context.getString(R.string.imageAttach));
+                } else if (id == R.id.webView) {
+                    toast(context.getString(R.string.webView));
+                } else if (id == R.id.addLayer) {
+                    toast(context.getString(R.string.addLayer));
+                } else if (id == R.id.bumpControl) {
+                    toast(context.getString(R.string.bumpControl));
+                } else if (id == R.id.speechToActivity) {
+                    toast(context.getString(R.string.speechToActivity));
+                } else if (id == R.id.btnHookNavigationEvents) {
+                    toast(context.getString(R.string.hookNavigation));
+                } else if (id == R.id.downloadMapLayer) {
+                    toast(context
+                            .getString(R.string.download_map_layer_msg));
+                } else if (id == R.id.mapScreenshot) {
+                    toast(context.getString(R.string.map_screenshot_desc));
                 }
                 return true;
             }
@@ -614,11 +577,14 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
             public void onClick(View v) {
                 new Thread(new Runnable() {
                     public void run() {
-                        getMapView().getMapController().zoomTo(.00001d, false);
+
+                        CameraController.Programmatic.zoomTo( getMapView().getRenderer3(),
+                                .00001d, false);
                         for (int i = 0; i < 20; ++i) {
-                            getMapView().getMapController().panTo(
-                                    new GeoPoint(42, -79 - (double) i / 100),
-                                    false);
+                            CameraController.Programmatic.panTo(
+                                    getMapView().getRenderer3(),
+                                    new GeoPoint(42, -79 - (double) i / 100), false);
+
                             try {
                                 Thread.sleep(1000);
                             } catch (Exception ignored) {
@@ -985,6 +951,27 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
                 point.setShowLabel(true);
 
                 dmg.addItem(point);
+
+            }
+        });
+
+        final Button associations = helloView.findViewById(R.id.associations);
+        associations.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                PlacePointTool.MarkerCreator mc = new PlacePointTool.MarkerCreator(new GeoPoint(43,-72));
+                mc.setType("a-f");
+                mc.setNeverPersist(true);
+                PointMapItem point1 = mc.placePoint();
+
+                mc = new PlacePointTool.MarkerCreator(new GeoPoint(43.1,-72.2));
+                mc.setType("a-f");
+                mc.setNeverPersist(true);
+                PointMapItem point2 = mc.placePoint();
+
+                Association a = new Association(point1, point2, UUID.randomUUID().toString());
+                a.setColor(Color.RED);
+                mapView.getRootGroup().addItem(a);
 
             }
         });
@@ -1713,10 +1700,8 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
                                             "HelloWorld Test Multi Layer %4d",
                                             altitude),
                                     f.getAbsolutePath(), ul, ur, lr, ll);
-                            if (exampleMultiLayer != null) {
-                                exampleMultiLayers.put(altitude,
-                                        exampleMultiLayer);
-                            }
+                            exampleMultiLayers.put(altitude,
+                                    exampleMultiLayer);
                         }
                     }
                 }
@@ -2477,9 +2462,14 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
 
         new Thread(new Runnable() {
             public void run() {
-                getMapView().getMapController().zoomTo(.00001d, false);
+                CameraController.Programmatic.zoomTo(
+                        getMapView().getRenderer3(),
+                        .00001d, false);
 
-                getMapView().getMapController().panTo(mgrsPoint, false);
+                CameraController.Programmatic.panTo(
+                        getMapView().getRenderer3(),
+                        mgrsPoint, false);
+
                 try {
                     Thread.sleep(1000);
                 } catch (Exception ignored) {

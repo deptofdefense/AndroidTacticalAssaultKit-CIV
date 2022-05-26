@@ -191,6 +191,10 @@ public class VideoManager {
         }
     }
 
+    /**
+     * Calls addEntries with the list and persists the entry to a file automatically
+     * @param entries the list of entries
+     */
     public void addEntries(List<ConnectionEntry> entries) {
         addEntries(entries, true);
     }
@@ -238,6 +242,10 @@ public class VideoManager {
         }
     }
 
+    /**
+     * Removes an entry from both the filesystem and the local in memory list.
+     * @param entry the entry to be removed.
+     */
     public void removeEntry(ConnectionEntry entry) {
         if (entry == null)
             return;

@@ -13,11 +13,14 @@ import com.atakmap.android.toolbar.Tool;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.android.toolbar.widgets.TextContainer;
 import com.atakmap.android.user.CamLockerReceiver;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
 /**
+ *
+ *    ** DEPRECATED ** DO NOT MODIFY ** SEE com.atakmap.android.user.MapClickTool
  * Simple tool for retrieving a map/item click
  * Callback intent contains the "point" extra
  *
@@ -25,11 +28,17 @@ import com.atakmap.coremap.maps.coords.GeoPointMetaData;
  * needs to GUARANTEE that it is first checked to see if the tool is active for that
  * specific workflow or guarantee that calls to END_TOOL from other workflows with this 
  * tool will not cause issues.
+ * @deprecated @see com.atakmap.android.user.MapClickTool
  */
+@DeprecatedApi(since = "4.5", forRemoval = true, removeAt = "4.8")
 public class MapClickTool extends Tool implements
         MapEventDispatcher.MapEventDispatchListener {
 
-    public static final String TOOL_NAME = "MapClickTool";
+    /**
+     * Please migrate to using com.atakmap.android.user.MapClickTool
+     * @deprecated
+     */
+    public static final String TOOL_NAME = "MapClickTool-Deprectated";
 
     private final Context _context;
     private final TextContainer _container;

@@ -24,20 +24,21 @@ libkml_urip_newproj=uriparser.vcxproj
 
 libkml_win32_dir=$(OUTDIR)/$(libkml_srcdir)/msvc
 
-libkml_patch_win_mz=$(DISTFILESDIR)/libkml-pgsc-win-mz.patch
-libkml_patch_win_urip=$(DISTFILESDIR)/libkml-pgsc-win-urip.patch
-libkml_patch_win=$(DISTFILESDIR)/libkml-pgsc-win.patch
+libkml_patch_win_mz=$(DISTFILESDIR)/libkml-pgsc-win-mz-$(VS_VER_MSB).patch
+libkml_patch_win_urip=$(DISTFILESDIR)/libkml-pgsc-win-urip-$(VS_VER_MSB).patch
+libkml_patch_win=$(DISTFILESDIR)/libkml-pgsc-win-$(VS_VER_MSB).patch
 
 
-$(libkml_mz_dir)/$(libkml_mz_newproj): $(libkml_mz_dir)/$(libkml_mz_oldproj) \
-                                       $(libkml_patch_win_mz)
-	cd $(libkml_mz_dir) && $(VS_SETUP) devenv minizip.sln /upgrade
+$(libkml_mz_dir)/.libkml_mz_patched: $(libkml_mz_dir)/$(libkml_mz_oldproj) \
+                                     $(libkml_patch_win_mz)
 	patch -p1 --binary -d $(OUTDIR)/$(libkml_srcdir) < $(libkml_patch_win_mz)
+	touch $@
 
-$(libkml_urip_dir)/$(libkml_urip_newproj): $(libkml_urip_dir)/$(libkml_urip_oldproj) \
+$(libkml_urip_dir)/.libkml_urip_patched: $(libkml_urip_dir)/$(libkml_urip_oldproj) \
                                            $(libkml_patch_win_urip)
-	cd $(libkml_urip_dir) && $(VS_SETUP) devenv uriparser.sln /upgrade
+	cd $(libkml_urip_dir) && rm -f uriparser.sln
 	patch -p1 -d $(OUTDIR)/$(libkml_srcdir) < $(libkml_patch_win_urip)
+	touch $@
 
 libkml_msbuild_opts=/p:Configuration=$(BUILD_TYPE) /p:Platform=$(libkml_win_platform) /t:Build
 
@@ -45,21 +46,20 @@ libkml_msbuild_opts=/p:Configuration=$(BUILD_TYPE) /p:Platform=$(libkml_win_plat
 # These are phony because we always want to be invoking libkml make to be sure
 # the files are up to date;  it knows if anything needs to be done
 .PHONY: libkml_build libkml_build_minizip libkml_build_uriparser
-libkml_build_minizip: $(libkml_mz_dir)/$(libkml_mz_newproj)
+libkml_build_minizip: $(libkml_mz_dir)/.libkml_mz_patched
 	cd $(libkml_mz_dir) && $(VS_SETUP) MSBuild minizip.sln              \
 	    $(libkml_msbuild_opts)
 	mkdir -p $(libkml_src_lib_dir)
 	$(CP) $(libkml_mz_dir)/$(libkml_win_arch_dir)/$(BUILD_TYPE)/minizip_static.lib             \
 	    $(libkml_mz_lib)
 
-libkml_build_uriparser: $(libkml_urip_dir)/$(libkml_urip_newproj)
+libkml_build_uriparser: $(libkml_urip_dir)/.libkml_urip_patched
 	cd $(libkml_urip_dir) && $(VS_SETUP) MSBuild $(libkml_urip_newproj) \
 	    $(libkml_msbuild_opts)
 	$(CP) $(libkml_urip_dir)/../uriparser.lib                           \
 	    $(OUTDIR)/$(libkml_srcdir)/third_party/uriparser-0.7.5.win32/$(BUILD_TYPE)/
 
 $(libkml_win32_dir)/.libkmlwin.patched: $(libkml_patch_win)
-	cd $(libkml_win32_dir) && $(VS_SETUP) devenv libkml.sln /Upgrade
 	patch -p1 -d $(OUTDIR)/$(libkml_srcdir) < $(libkml_patch_win)
 	touch $@
 
@@ -90,4 +90,6 @@ $(libkml_out_libs): $(libkml_src_libs)
 	mkdir -p $(libkml_oid)/kml/xsd
 	cd $(libkml_oid)/kml/xsd && $(CP) $(OUTDIR)/$(libkml_srcdir)/src/kml/xsd/*.h .
 	cd $(libkml_oid) && $(CP) -r $(OUTDIR)/$(libkml_srcdir)/third_party/boost_1_34_1/boost .
+	mkdir -p $(libkml_oid)/zlib-1.2.3/contrib/minizip
+	cd $(libkml_oid)/zlib-1.2.3/contrib/minizip && $(CP) $(OUTDIR)/$(libkml_srcdir)/third_party/zlib-1.2.3/contrib/minizip/*.h .
 	for i in $^ ; do $(CP) $$i $(OUTDIR)/lib/ ; done

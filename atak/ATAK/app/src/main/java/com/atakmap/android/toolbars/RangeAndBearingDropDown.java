@@ -98,7 +98,7 @@ public class RangeAndBearingDropDown extends DropDownReceiver implements
     protected RangeAndBearingTableHandler rabtable;
 
     private CoordinateFormat _coordinateFormat;
-    private RouteRangeAndBearingWrapper _tmpRoute;
+    protected RouteRangeAndBearingWrapper _tmpRoute;
     private int _speedUnits;
     private Resources _resources;
 
@@ -591,12 +591,12 @@ public class RangeAndBearingDropDown extends DropDownReceiver implements
         });
     }
 
-    private void reverseLine() {
+    protected void reverseLine() {
         _rabItem.reverse();
         populateLocationWidgets();
     }
 
-    private void displayCoordinateDialog(GeoPointMetaData point,
+    protected void displayCoordinateDialog(GeoPointMetaData point,
             final int pointNum) {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(getMapView()

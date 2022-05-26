@@ -9,6 +9,7 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.map.CameraController;
 
 import java.util.List;
 
@@ -63,7 +64,8 @@ public class ZoomToLayerReceiver extends BroadcastReceiver {
                         intent.getBooleanExtra("noNegativeZoom", false));
             }
 
-            _mapView.getMapController().panTo(point, true);
+            CameraController.Programmatic.panTo(
+                    _mapView.getRenderer3(), point, true);
         }
     }
 
@@ -90,7 +92,8 @@ public class ZoomToLayerReceiver extends BroadcastReceiver {
 
         // XXX - determine if there is online tiles
         if (layerSelection != null/* && !layerSelection.isRemote()*/) {
-            _mapView.getMapController().panTo(specificPoint, true);
+            CameraController.Programmatic.panTo(
+                    _mapView.getRenderer3(), specificPoint, true);
             _zoomToNaturalLevel(_mapView, layerSelection, noNegativeZoom,
                     !pointProvided);
         }

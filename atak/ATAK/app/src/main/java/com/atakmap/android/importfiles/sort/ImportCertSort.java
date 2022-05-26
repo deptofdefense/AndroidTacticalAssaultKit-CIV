@@ -213,7 +213,7 @@ public class ImportCertSort extends ImportInternalSDResolver {
         }
 
         String defaultPassword = _context.getString(
-                com.atakmap.R.string.defaultTrustStorePassword);
+                com.atakmap.app.R.string.defaultTrustStorePassword);
 
         String connectString = null;
 
@@ -226,6 +226,12 @@ public class ImportCertSort extends ImportInternalSDResolver {
                     .getProperty(TAKServer.CONNECT_STRING_KEY, "");
         }
 
+        // scan through the connection specific entries and see if they will use enrollment
+        for (Properties properties : cotStreamProperties) {
+            enrollForCertificateWithTrust |= !properties.getProperty(
+                    "enrollForCertificateWithTrust", "0").equals("0");
+        }
+
         // import default certs
         SharedPreferences defaultPrefs = PreferenceManager
                 .getDefaultSharedPreferences(_context);
@@ -233,7 +239,7 @@ public class ImportCertSort extends ImportInternalSDResolver {
                 defaultPrefs,
                 "caLocation", "caPassword",
                 "certificateLocation", "clientPassword",
-                connectString, false,
+                connectString, enrollForCertificateWithTrust,
                 defaultPassword);
 
         // import connection specific certs

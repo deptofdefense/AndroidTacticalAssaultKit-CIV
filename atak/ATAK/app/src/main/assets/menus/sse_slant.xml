@@ -23,8 +23,7 @@
             onClick='actions/showquick_sse_slant.xml' />
 
     <button icon='icons/pairing_line.png'
-            onClick='actions/pairingline.xml'
-            selected='${pairingline_on}' />
+            onClick='actions/pairingline.xml'/>
 
     <button icon='icons/move.png'
             submenu='menus/mgrs_entry_submenu.xml'

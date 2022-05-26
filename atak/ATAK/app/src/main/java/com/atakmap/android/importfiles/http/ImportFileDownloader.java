@@ -157,25 +157,25 @@ public class ImportFileDownloader extends NetworkLinkDownloader {
                         contentType = response.getContentType();
 
                     } else {
-                    URL url = new URL(urlStr);
-                    URLConnection conn = url.openConnection();
-                    conn.setRequestProperty("User-Agent", "TAK");
-                    conn.setUseCaches(true);
-                    conn.setConnectTimeout(10000);
-                    conn.setReadTimeout(30000);
+                        URL url = new URL(urlStr);
+                        URLConnection conn = url.openConnection();
+                        conn.setRequestProperty("User-Agent", "TAK");
+                        conn.setUseCaches(true);
+                        conn.setConnectTimeout(10000);
+                        conn.setReadTimeout(30000);
 
-                    // support authenticated connections
-                    if (conn instanceof HttpURLConnection) {
-                        AtakAuthenticationHandlerHTTP.Connection connection;
-                        connection = AtakAuthenticationHandlerHTTP
-                                .makeAuthenticatedConnection(
-                                        (HttpURLConnection) conn, 3);
-                        conn = connection.conn;
-                        input = connection.stream;
-                    } else {
-                        conn.connect();
-                        input = conn.getInputStream();
-                    }
+                        // support authenticated connections
+                        if (conn instanceof HttpURLConnection) {
+                            AtakAuthenticationHandlerHTTP.Connection connection;
+                            connection = AtakAuthenticationHandlerHTTP
+                                    .makeAuthenticatedConnection(
+                                            (HttpURLConnection) conn, 3);
+                            conn = connection.conn;
+                            input = connection.stream;
+                        } else {
+                            conn.connect();
+                            input = conn.getInputStream();
+                        }
 
                         contentType = conn.getHeaderField("Content-Type");
 

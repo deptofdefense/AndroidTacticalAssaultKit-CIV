@@ -3,15 +3,17 @@ package com.atakmap.android.channels.ui.overlay;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
 import android.widget.BaseAdapter;
 
+import com.atakmap.android.overlay.AbstractMapOverlay2;
+import com.atakmap.android.util.LimitingThread;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.android.channels.ChannelsMapComponent;
 import com.atakmap.android.channels.ChannelsReceiver;
@@ -23,14 +25,10 @@ import com.atakmap.android.hierarchy.HierarchyListReceiver;
 import com.atakmap.android.http.rest.ServerGroup;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.DeepMapItemQuery;
-import com.atakmap.android.maps.DefaultMapGroup;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
-import com.atakmap.android.maps.MapOverlayManager;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
-import com.atakmap.android.overlay.DefaultMapGroupOverlay;
-import com.atakmap.android.overlay.MapOverlay;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.comms.CotServiceRemote;
 import com.atakmap.comms.CotStreamListener;
@@ -43,42 +41,42 @@ import com.atakmap.coremap.cot.event.CotEvent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
-public class ChannelsOverlay extends DefaultMapGroupOverlay implements
+public class ChannelsOverlay extends AbstractMapOverlay2 implements
         CotServiceRemote.CotEventListener,
         ServerGroupsClient.ServerGroupsCallback {
 
     private static final String TAG = "ChannelsOverlay";
     private static final String CHANNELS = "ChannelsOverlay";
-    private MapView mapView;
-    private Context context;
+
+    // Timeout (ms) between server group updates
+    private static final long SET_GROUPS_TIMEOUT = 2500;
+
+    private final MapView mapView;
+    private final Context context;
     private HierarchyListAdapter overlayManager;
-    private View overlayHeader;
-    private HashMap<String, List<ServerGroup>> serverGroupCache = new HashMap<>();
-    private HashMap<String, List<ServerGroupHierarchyListItem>> serverGroupHierarchyListItemCache = new HashMap<>();
-    private CotServiceRemote cotServiceRemote;
-    private CotStreamListener cotStreamListener;
+    private final HashMap<String, List<ServerGroup>> serverGroupCache = new HashMap<>();
+    private final HashMap<String, List<ServerGroupHierarchyListItem>> serverGroupHierarchyListItemCache = new HashMap<>();
+    private final CotStreamListener cotStreamListener;
     private int notificationId = -1;
-    private boolean dialogVisible = false;
+    private AlertDialog dialog;
+
+    // Group update operation thread
+    private final LimitingThread setGroupsThread;
+    private final Set<String> setGroupHosts = new HashSet<>();
+    private boolean active;
 
     public ChannelsOverlay(MapView mapView, Context context) {
-        super(mapView, ChannelsOverlay.getActiveGroupsMapGroup(mapView),
-                getIconUri(context));
-        Log.d(TAG, "Creating ChannelsOverlay");
-
         this.mapView = mapView;
         this.context = context;
-
-        cotServiceRemote = new CotServiceRemote();
-        cotServiceRemote.setCotEventListener(this);
-
-        getGroups(null, false);
 
         final ChannelsOverlay channelsOverlay = this;
 
         cotStreamListener = new CotStreamListener(mapView.getContext(),
-                CHANNELS, null) {
+                CHANNELS, this) {
 
             @Override
             public void onCotOutputRemoved(Bundle bundle) {
@@ -115,6 +113,48 @@ public class ChannelsOverlay extends DefaultMapGroupOverlay implements
                 }
             }
         };
+
+        // Set group operation limiter to prevent network spam
+        active = true;
+        setGroupsThread = new LimitingThread(TAG + "-SetGroups",
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        if (active) {
+                            // Execute operations on all pending hosts
+                            List<String> hosts;
+                            synchronized (setGroupHosts) {
+                                hosts = new ArrayList<>(setGroupHosts);
+                                setGroupHosts.clear();
+                            }
+                            for (String host : hosts)
+                                setGroupsImpl(host);
+                            try {
+                                Thread.sleep(SET_GROUPS_TIMEOUT);
+                            } catch (InterruptedException ignore) {
+                            }
+                        }
+                    }
+                });
+
+        // Request groups from all servers
+        getGroups(null, false);
+    }
+
+    public void dispose() {
+        active = false;
+        setGroupsThread.dispose(false);
+        cotStreamListener.dispose();
+    }
+
+    @Override
+    public String getIdentifier() {
+        return CHANNELS;
+    }
+
+    @Override
+    public String getName() {
+        return context.getString(R.string.actionbar_channels);
     }
 
     public void getGroups(String host, boolean sendLatestSA) {
@@ -151,7 +191,7 @@ public class ChannelsOverlay extends DefaultMapGroupOverlay implements
 
     private void clearMapItems(String netConnectString) {
         // clear the map of all markers streamed in from this server
-        MapView.getMapView().getRootGroup().deepForEachItem(
+        mapView.getRootGroup().deepForEachItem(
                 new MapGroup.MapItemsCallback() {
                     @Override
                     public boolean onItemFunction(
@@ -204,7 +244,23 @@ public class ChannelsOverlay extends DefaultMapGroupOverlay implements
         return false;
     }
 
+    /**
+     * Set the active/inactive groups on a given server
+     *
+     * The operation is carried out asynchronously on a limiter thread
+     * to prevent network spam
+     *
+     * @param host Server host
+     */
     public void setGroups(String host) {
+        // Add host to setGroups queue and notify the thread
+        synchronized (setGroupHosts) {
+            setGroupHosts.add(host);
+        }
+        setGroupsThread.exec();
+    }
+
+    private void setGroupsImpl(String host) {
         TAKServer[] servers = TAKServerListener.getInstance()
                 .getConnectedServers();
         if (servers == null) {
@@ -225,11 +281,13 @@ public class ChannelsOverlay extends DefaultMapGroupOverlay implements
                 // TODO : revisit for IN/OUT group support
                 List<ServerGroup> outGroups = serverGroupCache.get(host);
                 List<ServerGroup> allGroups = new ArrayList<>();
-                allGroups.addAll(outGroups);
-                for (ServerGroup outGroup : outGroups) {
-                    ServerGroup inGroup = new ServerGroup(outGroup);
-                    inGroup.setDirection("IN");
-                    allGroups.add(inGroup);
+                if (outGroups != null) {
+                    allGroups.addAll(outGroups);
+                    for (ServerGroup outGroup : outGroups) {
+                        ServerGroup inGroup = new ServerGroup(outGroup);
+                        inGroup.setDirection("IN");
+                        allGroups.add(inGroup);
+                    }
                 }
 
                 // push the update to the server, which will send down an updated SA blast
@@ -296,46 +354,46 @@ public class ChannelsOverlay extends DefaultMapGroupOverlay implements
         serverGroupHierarchyListItemCache.put(server,
                 serverGroupHierarchyListItems);
 
-        if (dialogVisible) {
+        refresh();
+
+        if (dialog != null) {
             Log.d(TAG, "AlertDialog already visible, skipping");
-        } else {
-            if (!foundActiveGroup) {
-                Log.d(TAG, "in onGetServerGroups, foundActiveGroup is false");
-                dialogVisible = true;
-                new AlertDialog.Builder(MapView.getMapView().getContext())
-                        .setTitle("Channels")
-                        .setMessage(
-                                "TAK Server has no active channels selected. Would you like to select a channel?")
-                        .setPositiveButton(
-                                "Yes",
-                                (d, w) -> {
-                                    displayOverlay(context);
-                                    dialogVisible = false;
-                                })
-                        .setNegativeButton("Cancel",
-                                (d, w) -> dialogVisible = false)
-                        .show();
-            } else if (oldGroups != null
-                    && !compareGroupLists(oldGroups, outGroups)) {
-                Log.d(TAG, "in onGetServerGroups, groups have been updated");
-                dialogVisible = true;
-                new AlertDialog.Builder(MapView.getMapView().getContext())
-                        .setTitle("Channels")
-                        .setMessage(
-                                "TAK Server available channels have been updated. Would you like to select a channel?")
-                        .setPositiveButton(
-                                "Yes",
-                                (d, w) -> {
-                                    displayOverlay(context);
-                                    dialogVisible = false;
-                                })
-                        .setNegativeButton("Cancel",
-                                (d, w) -> dialogVisible = false)
-                        .show();
-            }
+            return;
         }
 
-        refresh();
+        String msg = null;
+        if (!foundActiveGroup) {
+            Log.d(TAG, "in onGetServerGroups, foundActiveGroup is false");
+            msg = context.getString(R.string.server_no_active_channels_msg,
+                    server);
+        } else if (oldGroups != null
+                && !compareGroupLists(oldGroups, outGroups)) {
+            Log.d(TAG, "in onGetServerGroups, groups have been updated");
+            msg = context.getString(R.string.server_channels_updated_msg,
+                    server);
+        }
+
+        if (msg == null)
+            return;
+
+        AlertDialog.Builder b = new AlertDialog.Builder(context);
+        b.setTitle(R.string.actionbar_channels);
+        b.setMessage(msg);
+        b.setPositiveButton(R.string.yes,
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        displayOverlay(context);
+                    }
+                });
+        b.setNegativeButton(R.string.cancel, null);
+        dialog = b.show();
+        dialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface d) {
+                dialog = null;
+            }
+        });
     }
 
     public List<ServerGroupHierarchyListItem> getServerGroups(String server) {
@@ -350,29 +408,6 @@ public class ChannelsOverlay extends DefaultMapGroupOverlay implements
         }
 
         return serverGroupHierarchyListItems;
-    }
-
-    public static MapGroup getActiveGroupsMapGroup(MapView mapView) {
-        try {
-            MapGroup retGroup = mapView.getRootGroup().findMapGroup(CHANNELS);
-
-            if (retGroup == null) {
-                retGroup = new DefaultMapGroup(CHANNELS);
-                retGroup.setMetaBoolean("permaGroup", true);
-                retGroup.setMetaBoolean("ignoreOffscreen", true);
-
-                mapView.getRootGroup().addGroup(retGroup);
-            }
-            return retGroup;
-        } catch (Exception e) {
-            Log.e(TAG, e.getMessage(), e);
-            return null;
-        }
-    }
-
-    private static String getIconUri(Context context) {
-        return "android.resource://" + context.getPackageName() + "/"
-                + R.drawable.ic_channel;
     }
 
     public static void displayOverlay(Context context) {
@@ -423,16 +458,6 @@ public class ChannelsOverlay extends DefaultMapGroupOverlay implements
     }
 
     @Override
-    public String getIdentifier() {
-        return CHANNELS;
-    }
-
-    @Override
-    public String getName() {
-        return "Channels";
-    }
-
-    @Override
     public MapGroup getRootGroup() {
         return null;
     }
@@ -444,55 +469,12 @@ public class ChannelsOverlay extends DefaultMapGroupOverlay implements
 
     /** Helper Methods **/
 
-    View getOverlayHeader() {
-        if (overlayHeader == null) {
-            LayoutInflater inflater = LayoutInflater.from(context);
-            overlayHeader = inflater.inflate(
-                    R.layout.channels_overlay_header, mapView, false);
-        }
-        return overlayHeader;
-    }
-
-    /**
-     * This method logic is borrowed from Data Sync
-     *
-     * Get this overlay by searching the overlay listing
-     *
-     * NOTE: Do not heavily rely on this method - pass in the overlay instance
-     * to your class for a more dependable instance
-     *
-     * @return Data Sync map overlay
-     */
-    @Deprecated
-    public static ChannelsOverlay getOverlay() {
-        try {
-            Log.d(TAG, "in getOverlay");
-
-            MapView mv = MapView.getMapView();
-            if (mv == null)
-                return null;
-
-            MapOverlayManager om = mv.getMapOverlayManager();
-            if (om == null)
-                return null;
-
-            MapOverlay o = om.getOverlay(ChannelsOverlay.class.getSimpleName());
-            if (o instanceof ChannelsOverlay)
-                return (ChannelsOverlay) o;
-
-            return null;
-        } catch (Exception e) {
-            Log.e(TAG, e.getMessage(), e);
-            return null;
-        }
-    }
-
     public static Intent getListIntent(Context context) {
         try {
             Log.d(TAG, "in getListIntent");
 
             ArrayList<String> overlayPaths = new ArrayList<>();
-            overlayPaths.add("Channels");
+            overlayPaths.add(context.getString(R.string.actionbar_channels));
 
             SharedPreferences sharedPreferences = PreferenceManager
                     .getDefaultSharedPreferences(context);
@@ -560,7 +542,7 @@ public class ChannelsOverlay extends DefaultMapGroupOverlay implements
                 notificationId,
                 NotificationUtil.GeneralIcon.SYNC_ORIGINAL.getID(),
                 NotificationUtil.BLUE,
-                "Groups Updated",
+                context.getString(R.string.channels_updated),
                 null, null,
                 true);
 
@@ -576,5 +558,19 @@ public class ChannelsOverlay extends DefaultMapGroupOverlay implements
                 ChannelsReceiver.CHANNELS_UPDATED);
         channelsUpdatedIntent.putExtra("server", host);
         AtakBroadcast.getInstance().sendBroadcast(channelsUpdatedIntent);
+    }
+
+    /* Unused methods */
+
+    @Deprecated
+    @DeprecatedApi(since = "4.5", forRemoval = true, removeAt = "4.8")
+    public static ChannelsOverlay getOverlay() {
+        return null;
+    }
+
+    @Deprecated
+    @DeprecatedApi(since = "4.5", forRemoval = true, removeAt = "4.8")
+    public static MapGroup getActiveGroupsMapGroup(MapView mapView) {
+        return null;
     }
 }

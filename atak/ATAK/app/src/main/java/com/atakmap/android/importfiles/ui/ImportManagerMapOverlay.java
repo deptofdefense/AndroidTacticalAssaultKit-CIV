@@ -15,6 +15,7 @@ import com.atakmap.android.filesystem.MIMETypeMapper;
 import com.atakmap.android.hierarchy.HierarchyListFilter;
 import com.atakmap.android.hierarchy.HierarchyListItem;
 import com.atakmap.android.hierarchy.HierarchyListReceiver;
+import com.atakmap.android.hierarchy.action.Delete;
 import com.atakmap.android.hierarchy.action.GroupDelete;
 import com.atakmap.android.hierarchy.action.Search;
 import com.atakmap.android.hierarchy.items.AbstractHierarchyListItem2;
@@ -56,7 +57,7 @@ import java.util.Set;
  *  doesn't need to be so damn complicated...
  */
 public class ImportManagerMapOverlay extends AbstractMapOverlay2
-        implements ATAKActivity.OnShutDownListener {
+        implements ATAKActivity.OnShutDownListener, Delete {
 
     private final static String TAG = "ImportManagerMapOverlay";
 
@@ -106,6 +107,13 @@ public class ImportManagerMapOverlay extends AbstractMapOverlay2
     private void refresh() {
         AtakBroadcast.getInstance().sendBroadcast(new Intent(
                 HierarchyListReceiver.REFRESH_HIERARCHY));
+    }
+
+    @Override
+    public boolean delete() {
+        // This is implemented simply to get HierarchyListUserDelete to
+        // not filter out this overlay
+        return false;
     }
 
     public class RemoteResourcesOverlayListModel extends

@@ -2,13 +2,11 @@
 package com.atakmap.android.rubbersheet.tool;
 
 import android.content.Context;
-import android.graphics.Point;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 
 import com.atakmap.android.editableShapes.RectangleEditTool;
-import com.atakmap.android.mapcompass.CompassArrowMapComponent;
 import com.atakmap.android.maps.MapEvent;
 import com.atakmap.android.maps.MapEventDispatcher;
 import com.atakmap.android.maps.MapGroup;
@@ -16,6 +14,7 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapMode;
 import com.atakmap.android.maps.MapTouchController;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.navigation.views.NavView;
 import com.atakmap.android.preference.UnitPreferences;
 import com.atakmap.android.rubbersheet.maps.AbstractSheet;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
@@ -36,7 +35,6 @@ import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.NorthReference;
-import com.atakmap.map.AtakMapController;
 import com.atakmap.map.MapRenderer2;
 import com.atakmap.map.MapSceneModel;
 
@@ -74,6 +72,7 @@ public class RubberSheetEditTool extends RectangleEditTool
     protected double _startAngle;
     private double _oldTilt;
     private boolean _oldTiltEnabled;
+    private boolean _oldFreeRotate;
 
     public RubberSheetEditTool(MapView mapView, MapGroup group) {
         super(mapView, null, null);
@@ -90,7 +89,7 @@ public class RubberSheetEditTool extends RectangleEditTool
                 R.layout.rs_edit_sheet_toolbar, _mapView, false);
         _toolbar.setClosable(true);
         _toolbar.showCloseButton(false);
-        _toolbar.setEmbedded(true);
+        _toolbar.setPosition(ActionBarView.TOP_RIGHT);
         _toolbar.setEmbedState(ActionBarView.FLOATING);
         _buttons[DRAG] = _toolbar.findViewById(R.id.dragBtn);
         _buttons[PITCH] = _toolbar.findViewById(R.id.pitchBtn);
@@ -142,8 +141,10 @@ public class RubberSheetEditTool extends RectangleEditTool
         super.onToolBegin(extras);
 
         // Focus on the sheet
+        _oldFreeRotate = isFreeRotate();
         _oldTilt = _mapView.getMapTilt();
-        _oldTiltEnabled = _prefs.get("status_3d_enabled", false);
+        _oldTiltEnabled = _mapView.getMapTouchController()
+                .getTiltEnabledState() == MapTouchController.STATE_TILT_ENABLED;
         if (_oldTilt != 0d)
             _mapView.getMapController().tiltTo(0, false);
         MapTouchController.goTo(_sheet, false);
@@ -160,7 +161,6 @@ public class RubberSheetEditTool extends RectangleEditTool
         _mapView.getMapEventDispatcher().addMapEventListener(
                 MapEvent.MAP_RELEASE, this);
         _mapView.getMapTouchController().setToolActive(true);
-        CompassArrowMapComponent.getInstance().enableSlider(false);
         _sheet.addOnGroupChangedListener(this);
 
         _abReceiver.setToolView(_toolbar);
@@ -184,24 +184,22 @@ public class RubberSheetEditTool extends RectangleEditTool
         if (_sheet != null && _sheet.hasMetaValue("archive"))
             _sheet.persist(_mapView.getMapEventDispatcher(), null, getClass());
         unregisterListeners();
+        _mapView.getMapTouchController().setUserOrientation(_oldFreeRotate);
         _mapView.getMapController().tiltTo(_oldTilt, false);
-        CompassArrowMapComponent.getInstance().enable3DControls(
-                _oldTiltEnabled);
-        CompassArrowMapComponent.getInstance().enableSlider(true);
+        NavView.getInstance().setTiltEnabled(_oldTiltEnabled);
         _subText.setVisible(false);
         super.onToolEnd();
     }
 
-    private boolean freeRotate() {
-        MapMode mode = CompassArrowMapComponent.getInstance().getMapMode();
-        boolean locked = _prefs.get("status_mapmode_heading_locked", false);
-        return mode == MapMode.USER_DEFINED_UP && !locked;
+    private boolean isFreeRotate() {
+        MapMode mode = NavView.getInstance().getMapMode();
+        return mode == MapMode.USER_DEFINED_UP
+                && _mapView.getMapTouchController().isUserOrientationEnabled();
     }
 
     protected void unregisterListeners() {
         if (_sheet != null) {
             _mapView.getMapTouchController().setToolActive(false);
-            _mapView.getMapTouchController().setUserOrientation(freeRotate());
             _cont.closePrompt();
             _sheet.removeOnGroupChangedListener(this);
             _sheet = null;
@@ -266,20 +264,14 @@ public class RubberSheetEditTool extends RectangleEditTool
         int mode = getMode();
         String type = event.getType();
 
-        // Drag mode
-        if (mode == DRAG) {
-            // Allow map scale gesture when in this mode
-            // XXX - 3.12 does not have "eventNotHandled" support for this event
-            // so we have to override it and re-implement here
-            if (type.equals(MapEvent.MAP_SCALE)) {
-                AtakMapController ctrl = _mapView.getMapController();
-                Point p = event.getPoint();
-                ctrl.zoomBy(event.getScaleFactor(), p.x, p.y, false);
-            }
+        // Only allow map scale gesture in drag mode
+        if (mode == DRAG && type.equals(MapEvent.MAP_SCALE)) {
+            _mapView.getMapTouchController().onScaleEvent(event);
+            return;
         }
 
         // Change sheet heading/rotation
-        else if (mode == HEADING) {
+        if (mode == HEADING) {
             switch (type) {
                 case MapEvent.MAP_TILT:
                     event.getExtras().putBoolean("eventNotHandled", false);
@@ -343,7 +335,7 @@ public class RubberSheetEditTool extends RectangleEditTool
                     false);
         }
         _sheet.setEditable(mode == DRAG);
-        _mapView.getMapTouchController().setUserOrientation(freeRotate()
+        _mapView.getMapTouchController().setUserOrientation(isFreeRotate()
                 || mode == HEADING);
         updateSubText();
     }

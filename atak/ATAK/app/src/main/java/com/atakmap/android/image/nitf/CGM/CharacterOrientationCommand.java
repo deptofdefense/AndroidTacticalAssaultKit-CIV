@@ -10,10 +10,10 @@ import java.io.IOException;
  *
  */
 public class CharacterOrientationCommand extends Command {
-    private int xUp;
-    private int yUp;
-    private int xBase;
-    private int yBase;
+    private final int xUp;
+    private final int yUp;
+    private final int xBase;
+    private final int yBase;
 
     public CharacterOrientationCommand(int ec, int eid, int l, DataInput in)
             throws IOException {

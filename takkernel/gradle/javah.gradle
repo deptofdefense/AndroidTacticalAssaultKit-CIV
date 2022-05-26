@@ -1,0 +1,158 @@
+/**
+ * Extension defining
+ */
+class Javah {
+    /**
+     * Input properties file. Keys are the generated output header file name, values are comma-separated list of the
+     * Java class(es) -- as fully qualified classname -- provided as input into the `javah` process.
+     */
+    File input
+    /**
+     * Output directory for generated JNI header files.
+     */
+    File outputDir
+}
+
+/**
+ * Processes an input properties file, defining the output headers mapped to input java classes, to generate JNI header
+ * files into the specified output directory.
+ */
+abstract class GenerateJniHeaders extends DefaultTask {
+    /** @return input properties file mapping to-be-generated header file to input java classnames */
+    @InputFile
+    abstract Property<File> getInput()
+    /** @return output directory for generated JNI header files */
+    @Input
+    abstract Property<File> getOutputDir()
+
+    /** @return classpath to be provided to the `javah` process. */
+    @Input
+    abstract Property<Collection<File>> getClasspath()
+
+    /** @return `input` transformed into `Map` of output header files to array of source classnames */
+    @Input
+    final Provider<Map<File, String[]>> generateConfig = input.map {
+        // process all inputs
+        def prop = new Properties()
+        def f = input.getOrNull()
+        if(f != null) {
+            f.withReader { reader ->
+                prop.load(reader)
+            }
+        }
+
+        def value = new HashMap<>()
+
+        // generate inputs/outputs from input headers definitions
+        prop.each { headerFileName, commaDelimitedClassNames ->
+            def headerFile = new File(outputDir.getOrNull(), headerFileName)
+            def sourceClasses = commaDelimitedClassNames.split(", ")
+            value.put(headerFile, sourceClasses)
+        }
+        return value
+    }
+
+    /** @return `generateConfig` transformed into collection of all Java files corresponding to input classes */
+    @InputFiles
+    final Provider<FileCollection> javaSources = generateConfig.map {
+        def value = project.files()
+        generateConfig.getOrElse(Collections.emptyMap()).each { headerFile, sourceClasses ->
+            sourceClasses.each { fullyQualifiedClassName ->
+                // find file on classpath
+                def javahInputFilesPaths = project.isAndroidKernelBuild ?
+                        project.android.sourceSets.main.java.srcDirs :
+                        project.sourceSets.main.java.srcDirs
+                for (def sp : javahInputFilesPaths) {
+                    def javaFile = new File(sp, fullyQualifiedClassName.replaceAll("\\.", "/") + ".java")
+                    if (javaFile.exists()) {
+                        value += javaFile
+                        break
+                    }
+                }
+            }
+        }
+        return value
+    }
+
+    /** @return `generateConfig` transformed into collection header files that will be generated */
+    @OutputFiles
+    final Provider<Collection<File>> headerFiles = generateConfig.map {
+        def value = new HashSet<>()
+        generateConfig.getOrElse(Collections.emptyMap()).each { headerFile, sourceClasses ->
+            value += headerFile
+        }
+        return value
+    }
+
+    /** Generates header files from Java classes via `javah` process. */
+    @TaskAction
+    void generate() {
+        String classpathArg = ""
+        classpath.getOrElse(Collections.emptySet()).each { cp ->
+            classpathArg += File.pathSeparator + cp.getAbsolutePath()
+        }
+
+        generateConfig.getOrElse(Collections.emptyMap()).each { header, classes ->
+            project.exec {
+                // create command line args
+                ArrayList<String> clargs = ['javah', '-classpath', classpathArg, "-o", header]
+                clargs.addAll(classes)
+
+                // execute javah
+                commandLine clargs
+            }
+        }
+    }
+}
+
+// Create the `javah` extension on the project
+project.extensions.create("javah", Javah)
+
+// Inject the `generateJniHeaders` task
+project.afterEvaluate {
+    project.tasks.register('generateJniHeaders', GenerateJniHeaders) {
+        group = 'Build'
+        description = 'Generates native header files from Java classes in engine/src/main/java.'
+
+        //classpath = project.files()
+        classpath = new HashSet<>()
+        input = javah.input
+        outputDir = javah.outputDir
+
+        String classesTask = null
+        def cp = new HashSet<>()
+        if(project.isJavaKernelBuild) {
+            // configure classpath
+            sourceSets.main.compileClasspath.each { e -> cp += e }
+            sourceSets.main.runtimeClasspath.each { e -> cp += e }
+
+            // define task dependency
+            classesTask = 'classes'
+        } else if(project.isAndroidKernelBuild) {
+            // select variant for dependency, giving deference to `release`
+            def javahClasspathVariant = project.getAndroidBuildVariant(project, 'release')
+
+            // set up classpath
+            cp += javahClasspathVariant.javaCompile.classpath
+            cp += files(javahClasspathVariant.javaCompile.destinationDir)
+
+            cp += new File("${android.sdkDirectory.path}/platforms/${android.compileSdkVersion}/android.jar")
+
+            // define task dependency
+            classesTask = "compile${javahClasspathVariant.name.capitalize()}JavaWithJavac"
+        } else {
+            throw new GradleException("Unsupported kernel build target: ${kernelBuildTarget}")
+        }
+        classpath = cp
+
+        // configure the dependency on the class file generation task
+        if(classesTask != null)
+            dependsOn classesTask
+    }
+    // XXX - below is observed to cause script evaluation failure when the `engine` project has
+    //       dependencies on other projects. Deferring fix as this is a new (convenience) feature
+    // configure cleanup of generated JNI header files
+    //project.clean {
+    //    delete generateJniHeaders.outputs
+    //}
+}

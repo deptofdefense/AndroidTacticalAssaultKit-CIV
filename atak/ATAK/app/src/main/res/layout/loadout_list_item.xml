@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical">
+
+    <ImageView
+        android:id="@+id/toolbar_item_image"
+        android:layout_width="@dimen/button_primary_height"
+        android:layout_height="@dimen/button_primary_height"
+        android:backgroundTint="@android:color/transparent"
+        android:src="@drawable/loadout_selection_drawable"
+        android:padding="@dimen/auto_margin"/>
+
+    <TextView
+        android:id="@+id/toolbar_title_item_text"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/auto_margin"
+        android:layout_marginEnd="@dimen/auto_margin"
+        android:layout_weight="1"
+        android:textSize="@dimen/fontSize"
+        tools:text="@string/new_loadout"/>
+
+    <ImageView
+        android:id="@+id/toolbar_edit_image"
+        android:layout_width="@dimen/button_primary_height"
+        android:layout_height="@dimen/button_primary_height"
+        android:padding="@dimen/auto_margin"
+        android:src="@drawable/ic_edit_outline"/>
+
+    <ImageView
+        android:id="@+id/toolbar_delete_button"
+        android:layout_width="@dimen/button_primary_height"
+        android:layout_height="@dimen/button_primary_height"
+        android:padding="@dimen/auto_margin"
+        android:src="@drawable/nav_delete"/>
+
+</LinearLayout>

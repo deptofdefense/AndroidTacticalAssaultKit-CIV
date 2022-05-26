@@ -19,6 +19,7 @@ import com.atakmap.android.emergency.EmergencyAlertComponent;
 import com.atakmap.android.emergency.tool.EmergencyLifecycleListener;
 import com.atakmap.android.fires.FiresMapComponent;
 import com.atakmap.android.fires.HostileManagerMapComponent;
+import com.atakmap.android.firstperson.FirstPersonMapComponent;
 import com.atakmap.android.gdal.NativeRenderingMapComponent;
 import com.atakmap.android.geofence.component.GeoFenceComponent;
 import com.atakmap.android.gpkg.GeopackageMapComponent;
@@ -33,7 +34,6 @@ import com.atakmap.android.jumpbridge.JumpBridgeMapComponent;
 import com.atakmap.android.layers.LayersMapComponent;
 import com.atakmap.android.location.LocationMapComponent;
 import com.atakmap.android.lrf.LRFMapComponent;
-import com.atakmap.android.mapcompass.CompassArrowMapComponent;
 import com.atakmap.android.maps.graphics.widgets.GLWidgetsMapComponent;
 import com.atakmap.android.maps.tilesets.TilesetMapComponent;
 import com.atakmap.android.maps.visibility.VisibilityMapComponent;
@@ -43,6 +43,10 @@ import com.atakmap.android.metricreport.MetricReportMapComponent;
 import com.atakmap.android.missionpackage.MissionPackageMapComponent;
 import com.atakmap.android.model.ModelMapComponent;
 import com.atakmap.android.munitions.DangerCloseMapComponent;
+import com.atakmap.android.navigation.views.loadout.LoadoutListMapComponent;
+import com.atakmap.android.navigation.views.loadout.LoadoutToolsMapComponent;
+import com.atakmap.android.navigation.widgets.FreeLookMapComponent;
+import com.atakmap.android.navigation.widgets.NavWidgetsMapComponent;
 import com.atakmap.android.nightvision.NightVisionMapWidgetComponent;
 import com.atakmap.android.offscreenindicators.OffScreenIndicatorsMapComponent;
 import com.atakmap.android.pairingline.PairingLineMapComponent;
@@ -89,6 +93,8 @@ public class MapComponentLoader {
         // common communications next
         mapComponents.add(CommsMapComponent.class);
 
+        mapComponents.add(LoadoutToolsMapComponent.class);
+        mapComponents.add(NavWidgetsMapComponent.class);
         mapComponents.add(VisibilityMapComponent.class);
         mapComponents.add(BrightnessComponent.class);
         mapComponents.add(DataMgmtMapComponent.class);
@@ -97,6 +103,7 @@ public class MapComponentLoader {
         mapComponents.add(UserMapComponent.class);
         mapComponents.add(CotMapComponent.class);
         mapComponents.add(MenuMapComponent.class);
+        mapComponents.add(FreeLookMapComponent.class);
         mapComponents.add(ElevationMapComponent.class);
         mapComponents.add(TargetBubbleMapComponent.class);
         mapComponents.add(DangerCloseMapComponent.class);
@@ -141,7 +148,6 @@ public class MapComponentLoader {
         mapComponents.add(BloodHoundMapComponent.class);
         mapComponents.add(MedicalLineMapComponent.class);
         mapComponents.add(DrawingToolsMapComponent.class);
-        mapComponents.add(CompassArrowMapComponent.class);
         mapComponents.add(RadioMapComponent.class);
         mapComponents.add(MissionPackageMapComponent.class);
         mapComponents.add(QuickPicMapComponent.class);
@@ -167,15 +173,16 @@ public class MapComponentLoader {
         mapComponents.add(RubberSheetMapComponent.class);
         mapComponents.add(HashtagMapComponent.class);
 
-        // Vehicle shapes and overhead markers
+        // Vehicle models
         mapComponents.add(VehicleMapComponent.class);
 
-        // Load up all of the external components, when this is complete it will trigger the
-        // state saver to unroll all of the map components.
-
-        mapComponents.add(PluginMapComponent.class);
-
+        mapComponents.add(LoadoutListMapComponent.class);
+        mapComponents.add(FirstPersonMapComponent.class);
         mapComponents.add(ChannelsMapComponent.class);
+
+        // Load up all of the external components, when this is complete it will trigger the
+        // state saver to unroll all of the map components.    This should be done last.
+        mapComponents.add(PluginMapComponent.class);
 
     }
 

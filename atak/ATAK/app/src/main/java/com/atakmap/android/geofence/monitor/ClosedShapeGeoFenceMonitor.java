@@ -12,7 +12,7 @@ import com.atakmap.android.maps.Shape;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
@@ -257,9 +257,8 @@ public class ClosedShapeGeoFenceMonitor extends GeoFenceMonitor {
                     } else {
                         //see if map item has moved
                         pointHandle = lastPoint.second;
-                        double moved = DistanceCalculations
-                                .metersFromAtSourceTarget(lastPoint.first,
-                                        point);
+                        double moved = GeoCalculations
+                                .distanceTo(lastPoint.first, point);
                         if (moved >= METERS_THRESHOLD_TO_UPDATE_POINT) {
                             //Log.d(TAG, "Updating point: " + item.getUID());
                             //s2 = android.os.SystemClock.elapsedRealtime();
@@ -341,9 +340,8 @@ public class ClosedShapeGeoFenceMonitor extends GeoFenceMonitor {
     public double getfurthestPointRange() {
         double furthestRangeKM = 0;
         for (GeoPoint point : _shape.getPoints()) {
-            double distance = DistanceCalculations
-                    .metersFromAtSourceTarget(_shape.getCenter().get(),
-                            point);
+            double distance = GeoCalculations
+                    .distanceTo(_shape.getCenter().get(), point);
             if (distance > furthestRangeKM) {
                 furthestRangeKM = distance;
             }

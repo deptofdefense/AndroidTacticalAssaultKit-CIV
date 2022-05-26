@@ -42,10 +42,7 @@ public class DrawingRectangleEditTool extends RectangleEditTool {
 
         if (uid != null && found instanceof DrawingRectangle) {
             _rectangle = (DrawingRectangle) found;
-            _drawingToolsToolbar.setDefaultButtonsVisiblity(Button.GONE);
-            _undoButton.setVisibility(Button.VISIBLE);
-            _undoButton.setEnabled(false);
-            _button.setVisibility(Button.VISIBLE);
+            _drawingToolsToolbar.toggleEditButtons(true);
             return super.onToolBegin(extras);
         } else {
             return false;
@@ -57,9 +54,7 @@ public class DrawingRectangleEditTool extends RectangleEditTool {
         super.onToolEnd();
         AtakBroadcast.getInstance().sendBroadcast(
                 new Intent(MapMenuReceiver.HIDE_MENU));
-        _drawingToolsToolbar.setDefaultButtonsVisiblity(Button.VISIBLE);
-        _undoButton.setEnabled(false);
-        _undoButton.setVisibility(Button.GONE);
+        _drawingToolsToolbar.toggleEditButtons(false);
 
         _rectangle.persist(_mapView.getMapEventDispatcher(), null,
                 this.getClass()); // persist the item after

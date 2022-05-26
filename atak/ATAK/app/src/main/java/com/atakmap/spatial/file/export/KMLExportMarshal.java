@@ -190,8 +190,7 @@ public class KMLExportMarshal extends ExportFileMarshal {
         } //end folder loop
 
         //Simple KML wants them in a StyleSelector list
-        List<StyleSelector> styleList = new ArrayList<>();
-        styleList.addAll(styles.values());
+        List<StyleSelector> styleList = new ArrayList<>(styles.values());
 
         Log.d(TAG, "Exporting top level features: " + documentFeatures.size());
         Log.d(TAG, "Exporting styles: " + styleList.size());

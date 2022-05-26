@@ -55,6 +55,7 @@ public class RouteConfirmationTool extends Tool implements
 
         _toolbar = (ActionBarView) LayoutInflater.from(_context).inflate(
                 R.layout.route_confirm_address_toolbar, mapView, false);
+        _toolbar.setPosition(ActionBarView.TOP_RIGHT);
         _toolbar.setEmbedState(ActionBarView.FLOATING);
         _toolbar.showCloseButton(false);
         _toolbar.findViewById(R.id.route_address_accept)

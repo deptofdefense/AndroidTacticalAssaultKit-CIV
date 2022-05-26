@@ -12,7 +12,7 @@ import com.atakmap.android.maps.Shape;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
@@ -24,8 +24,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static java.lang.Math.sqrt;
 
 class RectangleGeoFenceMonitor extends GeoFenceMonitor {
 
@@ -251,9 +249,8 @@ class RectangleGeoFenceMonitor extends GeoFenceMonitor {
                     } else {
                         //see if map item has moved
                         pointHandle = lastPoint.second;
-                        double moved = DistanceCalculations
-                                .metersFromAtSourceTarget(lastPoint.first,
-                                        point);
+                        double moved = GeoCalculations
+                                .distanceTo(lastPoint.first, point);
                         if (moved >= METERS_THRESHOLD_TO_UPDATE_POINT) {
                             //Log.d(TAG, "Updating point: " + item.getUID());
                             //s2 = android.os.SystemClock.elapsedRealtime();
@@ -337,6 +334,6 @@ class RectangleGeoFenceMonitor extends GeoFenceMonitor {
     public double getfurthestPointRange() {
         double length = _shape.getLength() / 2;
         double width = _shape.getWidth() / 2;
-        return sqrt((length * length) + (width * width));
+        return Math.sqrt((length * length) + (width * width));
     }
 }

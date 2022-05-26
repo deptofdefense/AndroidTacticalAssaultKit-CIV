@@ -523,12 +523,12 @@ public class GeometryFactoryTests extends ATAKInstrumentedTest {
         LineString lineString = polygon.getExteriorRing();
         assertEquals(362, lineString.getNumPoints());
         assertEquals(-0.8743334798155771, lineString.getX(222), 0);
-        assertEquals(-0.9709150725244007, lineString.getY(222), 0);
+        assertEquals(-0.9709150725244005, lineString.getY(222), 0);
         assertEquals(0, lineString.getZ(222), 0);
 
-        assertEquals(0, lineString.getX(361), 0);
-        assertEquals(2, lineString.getY(361), 0);
-        assertEquals(0, lineString.getZ(361), 0);
+        assertEquals(0, lineString.getX(361), 0.00000002);
+        assertEquals(2, lineString.getY(361), 0.00000002);
+        assertEquals(0, lineString.getZ(361), 0.00000002);
 
         Envelope envelope = lineString.getEnvelope();
         assertNotNull(envelope);
@@ -803,7 +803,7 @@ public class GeometryFactoryTests extends ATAKInstrumentedTest {
         LineString lineString = polygon.getExteriorRing();
 
         assertEquals(-5.608285380740403E-5, lineString.getX(0), 0);
-        assertEquals(0.9999335469661117, lineString.getY(0), 0);
+        assertEquals(0.999933546966112, lineString.getY(0), 0);
         assertEquals(2, lineString.getZ(0), 0);
 
         assertEquals(3.179902348572112E-5, lineString.getX(1), 0);

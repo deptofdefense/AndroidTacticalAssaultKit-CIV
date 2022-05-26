@@ -159,7 +159,6 @@ public class RouteMapReceiver extends BroadcastReceiver implements
 
     // Reroute pieces
     private MarkerIconWidget rerouteButton;
-    private MarkerIconWidget.OnClickListener rerouteButtonListener;
     private Icon rerouteActiveIcon;
     private Icon rerouteInactiveIcon;
 

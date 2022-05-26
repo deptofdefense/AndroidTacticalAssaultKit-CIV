@@ -247,6 +247,7 @@ bool TcpSocketManagement::resolutionComplete(
     }
 
     if (!result) {
+        Lock lock(txMutex);
         queueTxErr(ctx, "Failed to resolve host", false);
     } else {
         Lock lock(txMutex);
@@ -574,6 +575,7 @@ void TcpSocketManagement::ioThreadProcess()
                         }
                         if (ctx->dataLen == 0) {
                             // all sent, all done
+                            Lock txLock(txMutex);
                             killTxCtx(ctx, true);
                         }
                     } catch (SocketException &) {

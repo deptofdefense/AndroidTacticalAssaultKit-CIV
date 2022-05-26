@@ -44,6 +44,7 @@ public class RouteToolbarBroadcastReceiver extends DropDownReceiver
         LayoutInflater inflater = LayoutInflater.from(context);
         _layout = (ActionBarView) inflater.inflate(R.layout.route_toolbar_view,
                 mapView, false);
+        _layout.setPosition(ActionBarView.TOP_RIGHT);
         _layout.setEmbedState(ActionBarView.FLOATING);
 
         Log.d(TAG, "setting embedded on: " + this);

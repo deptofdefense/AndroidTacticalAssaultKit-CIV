@@ -17,7 +17,7 @@ public class BrightnessComponent extends AbstractMapComponent {
 
     public final static String SHOW_BRIGHTNESS_TOOL = "com.atakmap.android.brightness.BrightnessComponent.SHOW_TOOL";
 
-    private BrightnessReceiver _brightnessReceiver;
+    protected BrightnessReceiver _brightnessReceiver;
 
     @Override
     public void onCreate(Context context, Intent intent, MapView view) {

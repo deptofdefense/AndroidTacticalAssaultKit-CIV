@@ -21,6 +21,7 @@ import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.map.AtakMapController;
+import com.atakmap.map.CameraController;
 import com.atakmap.map.Globe;
 import com.atakmap.map.MapRenderer2;
 import com.atakmap.map.MapSceneModel;
@@ -135,7 +136,8 @@ public class FocusBroadcastReceiver extends BroadcastReceiver {
                     // check for shape center point
                     if (center != null) {
                         // similar to _focus_unfocus()
-                        _mapView.getMapController().panTo(center, true);
+                        CameraController.Programmatic.panTo(
+                                _mapView.getRenderer3(), center, true);
                         return;
                     }
 
@@ -163,7 +165,8 @@ public class FocusBroadcastReceiver extends BroadcastReceiver {
         }
 
         if (gp != null)
-            _mapView.getMapController().panTo(gp, true);
+            CameraController.Programmatic.panTo(
+                    _mapView.getRenderer3(), gp, true);
     }
 
     private PointMapItem _getPointItemFocusPoint(String uid) {

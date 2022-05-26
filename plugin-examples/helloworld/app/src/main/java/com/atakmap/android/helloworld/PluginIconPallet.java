@@ -50,8 +50,7 @@ public class PluginIconPallet implements IconPallet {
      * if the fragment handles the user interactions.
      */
     @Override
-    public MapItem getPointPlacedIntent(GeoPointMetaData point, String uid)
-            throws CreatePointException {
+    public MapItem getPointPlacedIntent(GeoPointMetaData point, String uid) {
         // logic that creates the point //
         return new Marker(point, uid);
     }

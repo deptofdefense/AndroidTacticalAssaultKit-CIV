@@ -1,0 +1,7 @@
+<PersistedActionMenu baseline="true" hideable="true" iconPath="nav_elevation" title="actionbar_elevationtools">
+   <ClickData actionType="click">
+      <broadcast>
+         <action>com.atakmap.viewshed.VIEWSHED_TOOL</action>
+      </broadcast>
+   </ClickData>
+</PersistedActionMenu>

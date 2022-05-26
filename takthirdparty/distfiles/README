@@ -7,7 +7,7 @@ proj - 4.9.1
 expat - 2.1.0
 libkml - 1.3
 libxml2 - 2.9.10
-libmicrohttpd - 0.9.46
+libmicrohttpd - 0.9.73
 ogdi - 3.2.0
 geos - 3.4.3
 sqlcipher - 3.4.2
@@ -51,12 +51,20 @@ win32-v140.zip:
 MrSID_DSDK-9.5.4.4709-win32-vc14.zip
 (rearranged and extraneous files removed)
 
+win32-v142.zip:
+MrSID_DSDK-9.5.4.5047-win32-vc16.zip
+(rearranged and extraneous files removed)
+
 win64.zip:
 MrSID_DSDK-9.5.4.4709-win64-vc12.zip
 (rearranged and extraneous files removed)
 
 win64-v140.zip:
 MrSID_DSDK-9.5.4.4709-win64-vc14.zip
+(rearranged and extraneous files removed)
+
+win64-v142.zip:
+MrSID_DSDK-9.5.4.5047-win64-vc16.zip
 (rearranged and extraneous files removed)
 
 
@@ -76,7 +84,9 @@ libmicrohttpd-pgsc-win32.patch - Changes the VC++ project file
                      DLLs or apps built against the DLL runtime
 expat-pgsc.patch - Fix include for close(), read(), etc. on ios-arm64
                    Add android arm64 to autoconf
-expat-pgsc-winproj.patch - Add 64-bit build config to MSVC project files
+expat-pgsc-winproj-v*.patch - Add 64-bit build config to MSVC project files
+                   The -vXXX extension denotes the MSVC version in use as
+                   the project files to patch vary based on MSVC version.
 libspatialite-pgsc.patch - Android compatibility for package's autoconf
                    Fix several places where library would have undefined
                    references if OMIT_ICONV was defined (which we do)
@@ -115,6 +125,11 @@ geos-pgsc.patch - Add support for newer nmake version in VS2015 Update 3 and
 libkml-pgsc.patch - Fix various issues with libkml
 libkml-pgsc-postac.patch - Fixes applied after autoconf is run
 libkml-pgsc-win*.patch - Fixes for Windows project files (mostly adding 64-bit)
+                   The -vXXX extension denotes the MSVC version in use as
+                   the project files to patch vary based on MSVC version.
+pri-pgsc-winproj-vXXX.patch - Patch to update MS project file from the 
+                   base supported version for PRI to the version in the patch
+                   filename's suffix.
 
 
 

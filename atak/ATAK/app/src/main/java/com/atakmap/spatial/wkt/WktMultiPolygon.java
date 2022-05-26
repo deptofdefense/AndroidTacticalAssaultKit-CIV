@@ -10,7 +10,7 @@ import java.util.List;
 
 public class WktMultiPolygon extends WktGeometry {
 
-    List<WktPolygon> polygons = null;
+    final List<WktPolygon> polygons;
 
     private WktMultiPolygon(List<WktPolygon> polygons) {
         this.polygons = polygons;

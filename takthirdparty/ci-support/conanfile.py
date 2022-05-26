@@ -62,7 +62,7 @@ class TTPDistConan(ConanFile):
         source = self._get_source()
         self.cpp_info.libdirs = [source + "/lib"]
         self.cpp_info.includedirs = [source+"/include",source+"/include/libkml",source+"/include/libkml/boost_1_34_1",source+"/include/kml/third_party/boost_1_34_1",
-            source+"/include/libxml2/"]
+            source+"/include/libxml2/",source+"/include/libkml/zlib-1.2.3/contrib",source+"/include/kml/third_party/zlib-1.2.3/contrib"]
 
     def _get_source(self):
         source = ""

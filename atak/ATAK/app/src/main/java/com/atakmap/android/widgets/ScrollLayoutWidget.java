@@ -8,6 +8,8 @@ import com.atakmap.math.MathUtils;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import gov.tak.platform.marshal.MarshalManager;
+
 /**
  * Parent widget with functions similar to a ScrollLayout view
  */
@@ -74,37 +76,44 @@ public class ScrollLayoutWidget extends LinearLayoutWidget {
     }
 
     @Override
-    public void onPress(MotionEvent event) {
+    public void onPress(android.view.MotionEvent event) {
         _onClickWidget = null;
         if (_onPressWidget != null)
-            _onPressWidget.onPress(event);
+            _onPressWidget.onPress(MarshalManager.marshal(event,
+                    android.view.MotionEvent.class,
+                    gov.tak.platform.ui.MotionEvent.class));
         _startScroll = _scroll;
         _startPos = _orientation == HORIZONTAL ? event.getX()
                 : event.getY();
     }
 
     @Override
-    public boolean onMove(MotionEvent event) {
+    public boolean onMove(android.view.MotionEvent event) {
         float pos = _orientation == HORIZONTAL ? event.getX() : event.getY();
+        final gov.tak.platform.ui.MotionEvent pevent = MarshalManager.marshal(
+                event, android.view.MotionEvent.class,
+                gov.tak.platform.ui.MotionEvent.class);
         if (_onPressWidget == null || Math.abs(_startPos - pos) > 5f
                 * MapView.DENSITY) {
             _scrolling = true;
             if (_onPressWidget != null)
-                _onPressWidget.onUnpress(event);
+                _onPressWidget.onUnpress(pevent);
             _onPressWidget = null;
         }
         if (_scrolling) {
             setScroll(_startScroll + (_startPos - pos));
-            super.onMove(event);
+            super.onMove(pevent);
         } else if (_onPressWidget != null)
-            _onPressWidget.onMove(event);
+            _onPressWidget.onMove(pevent);
         return true;
     }
 
     @Override
-    public void onClick(MotionEvent event) {
+    public void onClick(android.view.MotionEvent event) {
         if (_onClickWidget != null)
-            _onClickWidget.onClick(event);
+            _onClickWidget.onClick(MarshalManager.marshal(event,
+                    android.view.MotionEvent.class,
+                    gov.tak.platform.ui.MotionEvent.class));
         _onClickWidget = null;
     }
 
@@ -115,10 +124,12 @@ public class ScrollLayoutWidget extends LinearLayoutWidget {
     }
 
     @Override
-    public void onUnpress(MotionEvent event) {
+    public void onUnpress(android.view.MotionEvent event) {
         _scrolling = false;
         if (_onPressWidget != null) {
-            _onPressWidget.onUnpress(event);
+            _onPressWidget.onUnpress(MarshalManager.marshal(event,
+                    android.view.MotionEvent.class,
+                    gov.tak.platform.ui.MotionEvent.class));
             _onClickWidget = _onPressWidget;
         }
         _onPressWidget = null;

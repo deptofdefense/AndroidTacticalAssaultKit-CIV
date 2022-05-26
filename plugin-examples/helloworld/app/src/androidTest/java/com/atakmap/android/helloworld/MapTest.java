@@ -63,12 +63,6 @@ public class MapTest extends ATAKTestClass {
     }
 
     @Test
-    public void openOverflowMenu() throws Exception {
-        Espresso.openActionBarOverflowOrOptionsMenu(appContext);
-        helper.pressBackTimes(1);
-    }
-
-    @Test
     public void placeMarker() throws Exception {
         // Short-term fix for first hint dialog, just disable that hint so the rest of the test works:
         PreferenceManager.getDefaultSharedPreferences(appContext)

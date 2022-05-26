@@ -165,6 +165,7 @@
                 android:id="@+id/selectAll_cb"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
+                android:padding="@dimen/auto_margin"
                 android:src="@drawable/btn_check_off"/>
             <TextView
                 android:layout_width="wrap_content"

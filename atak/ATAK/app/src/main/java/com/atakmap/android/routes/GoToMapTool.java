@@ -188,8 +188,8 @@ public class GoToMapTool extends BroadcastReceiver implements
                 if (event.getItem() == null) {
                     final GeoPointMetaData geoPoint = _mapView
                             .inverseWithElevation(
-                                    event.getPoint().x,
-                                    event.getPoint().y);
+                                    event.getPointF().x,
+                                    event.getPointF().y);
                     // addPoint(_point);
                     _container.closePrompt();
                     _mapView.getMapEventDispatcher().addMapEventListener(

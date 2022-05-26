@@ -137,6 +137,14 @@ public class SettingsActivity extends MetricPreferenceActivity implements
         fm.addOnBackStackChangedListener(this);
 
         if (toolPreferenceViaShortCut != null) {
+
+            // Make sure the tool preference isn't already pushed to another
+            // fragment manager - pop until it's off the stack
+            FragmentManager otherFM;
+            while ((otherFM = toolPreferenceViaShortCut
+                    .getFragmentManager()) != null)
+                otherFM.popBackStackImmediate();
+
             Log.d(TAG, "fake construction of the trail");
             if (!isLegacyPreferenceLayout()) {
                 fm.beginTransaction()
@@ -154,6 +162,7 @@ public class SettingsActivity extends MetricPreferenceActivity implements
                     .replace(lookupID, toolPreferenceViaShortCut)
                     .addToBackStack(null)
                     .commit();
+
             fakeTrail = true;
             return;
         } else {

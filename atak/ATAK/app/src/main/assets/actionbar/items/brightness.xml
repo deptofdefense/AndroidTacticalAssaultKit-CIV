@@ -1,4 +1,4 @@
-<PersistedActionMenu baseline="true" hideable="true" iconPath="ic_menu_map_brightness"  title="actionbar_brightness">
+<PersistedActionMenu baseline="true" hideable="true" iconPath="nav_brightness" title="actionbar_brightness">
    <ClickData actionType="click">
       <broadcast>
          <action>com.atakmap.android.brightness.BrightnessComponent.SHOW_TOOL</action>

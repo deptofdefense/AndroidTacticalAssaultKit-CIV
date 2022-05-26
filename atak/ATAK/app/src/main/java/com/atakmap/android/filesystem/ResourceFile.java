@@ -54,11 +54,11 @@ public class ResourceFile implements Parcelable {
         NITF("image/nitf", "nitf", "asset://icons/camera.png"),
 
         // video files
-        MPG("video/mpeg", "mpg", "asset://icons/video2.png"),
-        AVI("video/avi", "avi", "asset://icons/video2.png"),
-        WMV("video/x-ms-wmv", "wmv", "asset://icons/video2.png"),
-        MOV("video/quicktime", "mov", "asset://icons/video2.png"),
-        MP4("video/mp4", "mp4", "asset://icons/video2.png"),
+        MPG("video/mpeg", "mpg", "asset://icons/video.png"),
+        AVI("video/avi", "avi", "asset://icons/video.png"),
+        WMV("video/x-ms-wmv", "wmv", "asset://icons/video.png"),
+        MOV("video/quicktime", "mov", "asset://icons/video.png"),
+        MP4("video/mp4", "mp4", "asset://icons/video.png"),
 
         // audio files
         WAV("audio/wav", "wav", "asset://icons/audio.png"),

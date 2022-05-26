@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+   android:layout_width="wrap_content"
+   android:layout_height="match_parent"
+   android:fadeScrollbars="false">
+
+     <LinearLayout
+         android:layout_width="match_parent"
+         android:layout_height="wrap_content"
+         android:padding="@dimen/auto_margin"
+         android:orientation="vertical">
+          <TextView
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:text="ATAK accesses files and data using native code and libraries that use direct file paths.    Android now requires you to enable access to the file system for this to work.   Please review the steps and click 'I Understand' otherwise click cancel.    ATAK will not run without this access."
+              android:textColor="@color/white"
+              android:padding="@dimen/auto_margin"
+              android:textSize="16sp"/>
+
+          <TextView
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:text="@string/step_one_with_colon"
+              android:textStyle="bold"
+              android:textColor="@color/white"
+              android:textSize="16sp"/>
+
+          <ImageView
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:src="@drawable/storage_permission_1"
+              android:padding="5dp"
+              android:textSize="16sp"/>
+
+          <TextView
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:textStyle="bold"
+              android:text="@string/location_permission_step2"
+              android:textColor="@color/white"
+              android:textSize="16sp"/>
+
+
+          <ImageView
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:src="@drawable/storage_permission_2"
+              android:padding="5dp"
+              android:textSize="16sp"/>
+
+     </LinearLayout>
+
+</ScrollView>

@@ -34,4 +34,16 @@
         <attr name="android:ellipsize" format="integer"/>
         <attr name="android:gravity" format="integer"/>
     </declare-styleable>
+    
+    <declare-styleable name="TakDrawableStates">
+        <attr name="state_error" format="boolean" />
+        <attr name="state_entered" format="boolean" />
+        <attr name="state_expanded" format="boolean" />
+    </declare-styleable>
+
+    <declare-styleable name="TakButton">
+        <attr name="buttonText" format="string" />
+        <attr name="buttonImage" format="reference" />
+        <attr name="buttonImageTint" format="color" />
+    </declare-styleable>
 </resources>

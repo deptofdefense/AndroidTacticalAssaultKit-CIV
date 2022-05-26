@@ -27,6 +27,7 @@ CPP=i686-linux-android-cpp
 LD=i686-linux-android-ld
 RANLIB=i686-linux-android-ranlib
 AR=i686-linux-android-ar
+STRIP=i686-linux-android-strip -S
 
 # "host" argument to autoconf-based configure scripts
 # Leave blank for autodetect/non-cross compile

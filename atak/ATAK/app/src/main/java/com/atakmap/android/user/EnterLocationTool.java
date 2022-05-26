@@ -5,7 +5,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.graphics.Point;
+import android.graphics.PointF;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 
@@ -268,7 +268,7 @@ public class EnterLocationTool extends Tool implements
                 return;
 
             // Regular map click! handle it
-            Point p = event.getPoint();
+            PointF p = event.getPointF();
             GeoPointMetaData gp = _mapView.inverseWithElevation(p.x, p.y);
 
             MapItem marker;

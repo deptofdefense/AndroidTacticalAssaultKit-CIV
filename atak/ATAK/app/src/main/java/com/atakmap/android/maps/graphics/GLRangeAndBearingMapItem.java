@@ -13,7 +13,7 @@ import com.atakmap.map.hittest.HitTestResult;
  */
 public class GLRangeAndBearingMapItem extends GLArrow2 {
 
-    private final RangeAndBearingMapItem _subject;
+    protected final RangeAndBearingMapItem _subject;
 
     public GLRangeAndBearingMapItem(MapRenderer surface,
             RangeAndBearingMapItem arrow) {

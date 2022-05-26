@@ -1,13 +1,13 @@
 
 package com.atakmap.coremap.conversions;
 
-import androidx.test.runner.AndroidJUnit4;
-
 import com.atakmap.android.androidtest.ATAKInstrumentedTest;
 
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
+
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 @RunWith(AndroidJUnit4.class)
 public class AngleTest extends ATAKInstrumentedTest {

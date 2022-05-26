@@ -1,6 +1,7 @@
 
 package com.atakmap.android.missionpackage.file;
 
+import com.atakmap.android.data.FileContentHandler;
 import com.atakmap.android.data.URIContentHandler;
 import com.atakmap.android.data.URIContentManager;
 import com.atakmap.android.filesystem.ResourceFile;
@@ -114,11 +115,21 @@ public class MissionPackageManifestAdapter {
                     MissionPackageConfiguration.PARAMETER_UID, uid));
         }
 
-        // Save the title of this content
+        // Pull metadata from file handler if there is one
         URIContentHandler h = URIContentManager.getInstance().getHandler(file);
-        if (h != null)
-            content.setParameter(new NameValuePair(
-                    MissionPackageContent.PARAMETER_NAME, h.getTitle()));
+        if (h != null) {
+            // Title for this file
+            content.setParameter(MissionPackageContent.PARAMETER_NAME,
+                    h.getTitle());
+
+            // Importer content type
+            String cType = h instanceof FileContentHandler
+                    ? ((FileContentHandler) h).getContentType()
+                    : null;
+            if (!FileSystemUtils.isEmpty(cType))
+                content.setParameter(
+                        MissionPackageContent.PARAMETER_CONTENT_TYPE, cType);
+        }
 
         return content;
     }

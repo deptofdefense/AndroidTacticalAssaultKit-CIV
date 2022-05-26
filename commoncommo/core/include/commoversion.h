@@ -12,12 +12,12 @@
  * Minor version - Corresponds to backward-compatible API changes
  * and/or very significant bug fixes
  */
-#define COMMO_MINOR 3
+#define COMMO_MINOR 5
 
 /**
  * Patch version - Corresponds to bug fixes without API changes
  */
-#define COMMO_PATCH 0
+#define COMMO_PATCH 2
 
 #endif
 

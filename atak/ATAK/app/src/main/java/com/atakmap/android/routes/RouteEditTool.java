@@ -1,11 +1,8 @@
 
 package com.atakmap.android.routes;
 
-import android.app.ActionBar;
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Point;
 import android.graphics.PointF;
 import android.os.Bundle;
 import android.view.View;
@@ -14,6 +11,8 @@ import android.widget.Button;
 import com.atakmap.android.coordoverlay.CoordOverlayMapReceiver;
 import com.atakmap.android.drawing.mapItems.DrawingShape;
 import com.atakmap.android.maps.MapEventDispatcher;
+import com.atakmap.android.tools.ActionBarReceiver;
+import com.atakmap.android.tools.ActionBarView;
 import com.atakmap.android.user.CamLockerReceiver;
 import com.atakmap.android.user.FocusBroadcastReceiver;
 import com.atakmap.android.util.ATAKUtilities;
@@ -33,7 +32,6 @@ import com.atakmap.android.menu.MapMenuReceiver;
 import com.atakmap.android.routes.elevation.model.RouteCache;
 import com.atakmap.android.selfcoordoverlay.SelfCoordOverlayUpdater;
 import com.atakmap.android.toolbar.ToolbarBroadcastReceiver;
-import com.atakmap.android.tools.ActionBarReceiver;
 import com.atakmap.android.util.EditAction;
 import com.atakmap.app.R;
 import com.atakmap.coremap.log.Log;
@@ -43,7 +41,7 @@ import com.atakmap.map.elevation.ElevationManager;
 import com.atakmap.spatial.SpatialCalculator;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.SortedSet;
@@ -66,8 +64,8 @@ public class RouteEditTool extends EditablePolylineEditTool implements
     private int _alignIndex = -1;
 
     private Intent _onToolEnd;
-    private boolean _hidActionBar = false, _firstTime = true,
-            _creatingRoute = false, _dimRoutes = true;
+    private boolean _firstTime = true, _creatingRoute = false,
+            _dimRoutes = true;
     private Route _route;
 
     public static final String TOOL_IDENTIFIER = "com.atakmap.android.maps.route.EDIT_ROUTE";
@@ -79,7 +77,7 @@ public class RouteEditTool extends EditablePolylineEditTool implements
         _dispatcher = mapView.getMapEventDispatcher();
         _drawButton = drawButton;
         _routeMapReceiver = routeMapReceiver;
-        _spatialCalculator = new SpatialCalculator(true);
+        _spatialCalculator = new SpatialCalculator.Builder().inMemory().build();
         MAIN_PROMPT = _context.getString(R.string.route_edit);
     }
 
@@ -137,25 +135,11 @@ public class RouteEditTool extends EditablePolylineEditTool implements
         // order to bridgebetween tools -> [navigation] mode
         // since they're at least currently two very seperate concepts. nav mode could become a tool
         // at some point maybe?
-        Intent myLocationIntent = new Intent();
-        myLocationIntent.setAction(RouteMapReceiver.END_NAV);
-        AtakBroadcast.getInstance().sendBroadcast(myLocationIntent);
+        AtakBroadcast.getInstance().sendBroadcast(
+                new Intent(RouteMapReceiver.END_NAV));
 
         // Show route toolbar unless we've been told to ignore it
-        if (!extras.getBoolean("ignoreToolbar", false)) {
-            ActionBar ab = ((Activity) _context).getActionBar();
-            if (ab != null && ab.isShowing()) {
-                AtakBroadcast.getInstance().sendBroadcast(new Intent(
-                        ActionBarReceiver.TOGGLE_ACTIONBAR)
-                                .putExtra("show", false));
-                _hidActionBar = true;
-            }
-            myLocationIntent = new Intent();
-            myLocationIntent.setAction(ToolbarBroadcastReceiver.OPEN_TOOLBAR);
-            myLocationIntent.putExtra("toolbar",
-                    RouteToolbarBroadcastReceiver.TOOLBAR_IDENTIFIER);
-            AtakBroadcast.getInstance().sendBroadcast(myLocationIntent);
-        }
+        openToolbar(extras);
 
         // Undo button starts off disabled; undo stack is empty
         _undoButton.setVisibility(View.VISIBLE);
@@ -197,6 +181,23 @@ public class RouteEditTool extends EditablePolylineEditTool implements
         _dispatcher.addMapEventListener(MapEvent.ITEM_CLICK, _defaultListener);
 
         return retval;
+    }
+
+    private void openToolbar(Bundle extras) {
+        // Ignore toolbar
+        if (extras.getBoolean("ignoreToolbar", false))
+            return;
+
+        // Check if the route toolbar is already active
+        ActionBarView abv = ActionBarReceiver.getInstance().getToolView();
+        if (abv != null && abv.getId() == R.id.route_toolbar_view)
+            return;
+
+        // Request to open edit toolbar
+        AtakBroadcast.getInstance().sendBroadcast(new Intent(
+                ToolbarBroadcastReceiver.OPEN_TOOLBAR)
+                        .putExtra("toolbar",
+                                RouteToolbarBroadcastReceiver.TOOLBAR_IDENTIFIER));
     }
 
     // Default edit mode behavior
@@ -321,11 +322,6 @@ public class RouteEditTool extends EditablePolylineEditTool implements
             AtakBroadcast.getInstance().sendBroadcast(_onToolEnd);
         _onToolEnd = null;
 
-        if (_hidActionBar)
-            AtakBroadcast.getInstance().sendBroadcast(new Intent(
-                    ActionBarReceiver.TOGGLE_ACTIONBAR)
-                            .putExtra("show", true));
-        _hidActionBar = false;
         _firstTime = false;
     }
 
@@ -432,8 +428,8 @@ public class RouteEditTool extends EditablePolylineEditTool implements
 
     private boolean addControlPoint(MapEvent event, int index) {
         return addControlPoint(
-                _mapView.inverseWithElevation(event.getPoint().x,
-                        event.getPoint().y),
+                _mapView.inverseWithElevation(event.getPointF().x,
+                        event.getPointF().y),
                 index);
     }
 
@@ -450,8 +446,8 @@ public class RouteEditTool extends EditablePolylineEditTool implements
     }
 
     private boolean addWayPoint(MapEvent event, int index) {
-        GeoPointMetaData gp = _mapView.inverseWithElevation(event.getPoint().x,
-                event.getPoint().y);
+        GeoPointMetaData gp = _mapView.inverseWithElevation(event.getPointF().x,
+                event.getPointF().y);
         return addWayPoint(gp, index);
     }
 
@@ -535,7 +531,7 @@ public class RouteEditTool extends EditablePolylineEditTool implements
         @Override
         public void onMapEvent(MapEvent event) {
             String e = event.getType();
-            Point p = event.getPoint();
+            PointF p = event.getPointF();
             if (p == null)
                 return;
             GeoPointMetaData gpEvent = _mapView.inverse(p.x, p.y,
@@ -587,27 +583,18 @@ public class RouteEditTool extends EditablePolylineEditTool implements
                     return;
 
                 // Simplify geometry
-                float dp = _context.getResources().getDisplayMetrics().density;
-                GeoPoint p1 = _drawShape.getCenter().get();
-                PointF pt = _mapView.forward(p1);
-                GeoPoint p2 = _mapView.inverse(pt.x + dp, pt.y + dp).get();
-                double threshX = Math.abs(p1.getLongitude() - p2.getLongitude());
-                double threshY = Math.abs(p1.getLatitude() - p2.getLatitude());
-                double threshold = Math.min(threshX, threshY);
-                Collection<GeoPoint> simplified = _spatialCalculator.simplify(
-                        _drawShape.getPoints(), threshold,
-                        true);
+                List<GeoPoint> simplified = ATAKUtilities.simplifyPoints(
+                        _spatialCalculator,
+                        Arrays.asList(_drawShape.getPoints()));
                 List<GeoPoint> newPoints = new ArrayList<>();
-                if (simplified != null) {
-                    for (GeoPoint gp : simplified) {
-                        double hae = ElevationManager.getElevation(
-                                gp.getLatitude(), gp.getLongitude(), null);
-                        if (!Double.isNaN(hae))
-                            gp = new GeoPoint(gp.getLatitude(),
-                                    gp.getLongitude(),
-                                    hae, GeoPoint.AltitudeReference.HAE);
-                        newPoints.add(gp);
-                    }
+                for (GeoPoint gp : simplified) {
+                    double hae = ElevationManager.getElevation(
+                            gp.getLatitude(), gp.getLongitude(), null);
+                    if (!Double.isNaN(hae))
+                        gp = new GeoPoint(gp.getLatitude(),
+                                gp.getLongitude(),
+                                hae, GeoPoint.AltitudeReference.HAE);
+                    newPoints.add(gp);
                 }
                 _route.setColor(_drawShape.getColor());
 

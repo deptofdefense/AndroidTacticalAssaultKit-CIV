@@ -64,9 +64,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import gov.tak.api.annotation.DontObfuscate;
+
 /**
  * A circle with one or more rings, a center marker, and radius marker
  */
+@DontObfuscate
 public class DrawingCircle extends Shape implements
         Exportable, AnchoredMapItem, ParentMapItem,
         MapItem.OnGroupChangedListener,
@@ -174,11 +177,13 @@ public class DrawingCircle extends Shape implements
         Marker marker = getRadiusMarker();
         if (marker != null) {
             GeoPoint center = getCenterPoint();
-            double[] ra = DistanceCalculations.computeDirection(center,
+            double distance = GeoCalculations.distanceTo(center,
                     marker.getPoint());
-            if (Math.abs(ra[0] - radius) > 0.1) {
+            if (Math.abs(distance - radius) > 0.1) {
                 // Radius marker needs to be moved
-                GeoPoint dest = GeoCalculations.pointAtDistance(center, ra[1],
+                double bearing = GeoCalculations.bearingTo(center,
+                        marker.getPoint());
+                GeoPoint dest = GeoCalculations.pointAtDistance(center, bearing,
                         radius);
                 marker.setPoint(new GeoPointMetaData(dest)
                         .setGeoPointSource(GeoPointMetaData.CALCULATED));

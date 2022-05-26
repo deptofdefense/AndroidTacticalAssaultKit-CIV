@@ -1,40 +1,37 @@
 
 package com.atakmap.android.widgets;
 
-import android.graphics.PointF;
-
 import com.atakmap.android.maps.MapTextFormat;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.coremap.conversions.Span;
-import com.atakmap.coremap.conversions.SpanUtilities;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.maps.coords.GeoPoint;
-import com.atakmap.map.AtakMapView;
-import com.atakmap.opengl.GLText;
 
+import java.util.IdentityHashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class ScaleWidget extends ShapeWidget implements
-        AtakMapView.OnMapMovedListener,
-        AtakMapView.OnMapProjectionChangedListener {
+import gov.tak.api.widgets.IScaleWidget2;
+
+public class ScaleWidget extends ShapeWidget implements IScaleWidget2 {
 
     private final MapView _mapView;
     private final MapTextFormat _mapTextFormat;
-    protected float _xdpi;
 
     private String _text = "";
-    private float _maxWidth = 0;
+    private final float _minWidth;
+    private float _maxWidth;
     private int _rangeUnits = Span.METRIC;
     private boolean _useRounding = false;
-    private double _lastScale = 0;
-    private int _lastLatitude = 180;
+    private double _scale;
+
+    private final ConcurrentLinkedQueue<OnDisplayChangedListener> _dispListeners = new ConcurrentLinkedQueue<>();
 
     public ScaleWidget(MapView mapView, MapTextFormat mtf) {
         _mapView = mapView;
         _mapTextFormat = mtf;
-        _xdpi = mapView.getContext().getResources().getDisplayMetrics().xdpi;
-        _mapView.addOnMapMovedListener(this);
-        _mapView.addOnMapProjectionChangedListener(this);
+        _minWidth = mapView.getContext().getResources()
+                .getDisplayMetrics().xdpi;
+        _maxWidth = mapView.getWidth();
     }
 
     @Override
@@ -51,6 +48,41 @@ public class ScaleWidget extends ShapeWidget implements
         return _text;
     }
 
+    @Override
+    public double getScale() {
+        return _scale;
+    }
+
+    @Override
+    public int getUnits() {
+        return _rangeUnits;
+    }
+
+    @Override
+    public boolean isRounded() {
+        return _useRounding;
+    }
+
+    @Override
+    public float getMinWidth() {
+        return _minWidth;
+    }
+
+    @Override
+    public float getMaxWidth() {
+        return _maxWidth;
+    }
+
+    @Override
+    public void update(String text, double scale) {
+        _scale = scale;
+        if (!FileSystemUtils.isEquals(_text, text)) {
+            _text = text;
+            for (IScaleWidget2.OnTextChangedListener l : _onTextChanged)
+                l.onScaleTextChanged(this);
+        }
+    }
+
     public MapTextFormat getTextFormat() {
         return _mapTextFormat;
     }
@@ -61,98 +93,88 @@ public class ScaleWidget extends ShapeWidget implements
     public void setRangeUnits(int units) {
         if (units != _rangeUnits) {
             _rangeUnits = units;
-            refresh();
+            onDisplayChanged();
         }
     }
 
     public void setRounding(boolean enabled) {
         if (enabled != _useRounding) {
             _useRounding = enabled;
-            refresh();
+            onDisplayChanged();
         }
     }
 
     public void setMaxWidth(float maxWidth) {
         if (Float.compare(maxWidth, _maxWidth) != 0) {
             _maxWidth = maxWidth;
-            refresh();
+            onDisplayChanged();
         }
     }
 
-    private void refresh() {
-        String oldText = _text;
-
-        float barWidth = _xdpi;
-        if (_useRounding)
-            barWidth = Math.max(_xdpi, _maxWidth - _padding[LEFT]
-                    - _padding[RIGHT]);
-
-        PointF pt = getAbsolutePosition();
-        float x = pt.x + _padding[LEFT];
-        float y = pt.y + _height / 2;
-
-        GeoPoint p1 = _mapView.inverse(x, y).get();
-        GeoPoint p2 = _mapView.inverse(x + barWidth, y).get();
-
-        boolean valid = p1.isValid() && p2.isValid();
-        if (valid) {
-            double meters = p1.distanceTo(p2);
-            if (_useRounding) {
-                String text = SpanUtilities.formatType(_rangeUnits, meters,
-                        Span.METER);
-                Span displayUnit = Span.findFromAbbrev(text
-                        .substring(text.lastIndexOf(" ") + 1));
-                if (displayUnit == null)
-                    displayUnit = Span.METER;
-
-                double converted = SpanUtilities.convert(meters,
-                        Span.METER, displayUnit);
-                int decimalPlaces = converted < 1 ? (int) Math.ceil(-Math
-                        .log10(converted)) : 0;
-                double exp10 = SpanUtilities.convert(Math.pow(10, Math.floor(
-                        Math.log10(converted))), displayUnit, Span.METER);
-                barWidth = (float) (barWidth * (exp10 / meters));
-                meters = exp10 + 1e-6;
-                _text = SpanUtilities.formatType(_rangeUnits, meters, Span.METER,
-                        decimalPlaces);
-            } else {
-                _text = SpanUtilities.formatType(_rangeUnits, meters, Span.METER);
-            }
-            _text = GLText.localize(_text);
-
-            if (_text.startsWith("0 "))
-                _text = "<1 " + _text.substring(2);
-        }
-
-        setVisible(valid);
-        setSize(barWidth, _mapTextFormat.measureTextHeight(_text));
-        if (!FileSystemUtils.isEquals(_text, oldText)) {
-            for (OnTextChangedListener l : _onTextChanged)
-                l.onScaleTextChanged(this);
-        }
+    private void onDisplayChanged() {
+        for (OnDisplayChangedListener l : _dispListeners)
+            l.onDisplayChanged(this);
     }
 
     @Override
-    public void onMapProjectionChanged(AtakMapView view) {
-        refresh();
+    protected void onPointChanged() {
+        super.onPointChanged();
+        onDisplayChanged();
     }
 
     @Override
-    public void onMapMoved(AtakMapView mapView, boolean animate) {
-        refresh();
+    public void removeOnDisplayChangedListener(
+            OnDisplayChangedListener listener) {
+        _dispListeners.remove(listener);
+    }
+
+    @Override
+    public void addOnDisplayChangedListener(OnDisplayChangedListener listener) {
+        _dispListeners.add(listener);
     }
 
     public interface OnTextChangedListener {
         void onScaleTextChanged(ScaleWidget widget);
     }
 
-    public void addOnTextChangedListener(OnTextChangedListener l) {
+    @Override
+    public final void addOnTextChangedListener(
+            IScaleWidget2.OnTextChangedListener l) {
         _onTextChanged.add(l);
     }
 
-    public void removeOnTextChangedListener(OnTextChangedListener l) {
+    public void addOnTextChangedListener(ScaleWidget.OnTextChangedListener l) {
+        registerForwardedListener(_onTextChanged, _onTextChangedForwarders, l,
+                new TextChangedForwarder(l));
+    }
+
+    @Override
+    public final void removeOnTextChangedListener(
+            IScaleWidget2.OnTextChangedListener l) {
         _onTextChanged.remove(l);
     }
 
-    private final ConcurrentLinkedQueue<OnTextChangedListener> _onTextChanged = new ConcurrentLinkedQueue<>();
+    public void removeOnTextChangedListener(
+            ScaleWidget.OnTextChangedListener l) {
+        unregisterForwardedListener(_onTextChanged, _onTextChangedForwarders,
+                l);
+    }
+
+    private final ConcurrentLinkedQueue<IScaleWidget2.OnTextChangedListener> _onTextChanged = new ConcurrentLinkedQueue<>();
+    private final Map<ScaleWidget.OnTextChangedListener, IScaleWidget2.OnTextChangedListener> _onTextChangedForwarders = new IdentityHashMap<>();
+
+    private final static class TextChangedForwarder
+            implements IScaleWidget2.OnTextChangedListener {
+        final ScaleWidget.OnTextChangedListener _cb;
+
+        TextChangedForwarder(ScaleWidget.OnTextChangedListener cb) {
+            _cb = cb;
+        }
+
+        @Override
+        public void onScaleTextChanged(IScaleWidget2 widget) {
+            if (widget instanceof ScaleWidget)
+                _cb.onScaleTextChanged((ScaleWidget) widget);
+        }
+    }
 }

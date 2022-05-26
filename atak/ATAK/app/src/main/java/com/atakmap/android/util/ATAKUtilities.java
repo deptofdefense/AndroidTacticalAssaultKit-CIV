@@ -69,6 +69,7 @@ import com.atakmap.map.elevation.ElevationManager;
 import com.atakmap.map.projection.MapProjectionDisplayModel;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.PointD;
+import com.atakmap.spatial.SpatialCalculator;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -88,6 +89,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import java.util.List;
 import java.util.Map;
+
+import gov.tak.api.annotation.ModifierApi;
 
 /**
  * Home for utility functions that don't have a better home yet. Should consolidate functions like
@@ -187,6 +190,9 @@ public class ATAKUtilities {
      * @param mapView the mapView to use
      * @return Self marker if it exists, otherwise null.
      */
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {
+            "@Nullable", "public"
+    })
     static public Marker findSelf(MapView mapView) {
         if (mapView.getSelfMarker().getGroup() != null)
             return mapView.getSelfMarker();
@@ -869,12 +875,16 @@ public class ATAKUtilities {
         Date d = CoordinatedTime.currentDate();
 
         // Use the GMF around the user to find the declination, according to the Jump master 
-        double altmsl = EGM96.getMSL(point);
+        double hae = EGM96.getHAE(point);
+
+        // Default to zero so we don't get a NaN result
+        if (!GeoPoint.isAltitudeValid(hae))
+            hae = 0;
 
         GeomagneticField gmf = new GeomagneticField(
                 (float) point.getLatitude(),
                 (float) point.getLongitude(),
-                (float) altmsl, d.getTime());
+                (float) hae, d.getTime());
         return gmf.getDeclination();
     }
 
@@ -1392,18 +1402,39 @@ public class ATAKUtilities {
         return getUriBitmap(getIconUri(item));
     }
 
+    /**
+     * Convert a uriStr into a path keeping legacy behavior.   Does not account
+     * for the hostname being included in the path.  We also do not support file uri
+     * with two slashes "used to access files in a remote system."
+     * @param uriStr the uri string { file, android, android.resource, base64 or
+     *               no scheme at all}
+     * @return the path of the uriStr
+     */
     public static String getUriPath(String uriStr) {
         String path = uriStr;
-        String scheme = Uri.parse(uriStr).getScheme();
+
+        if (uriStr.startsWith("file://") && !uriStr.startsWith("file:///"))
+            uriStr = uriStr.replace("file://", "file:///");
+        else if (uriStr.startsWith("/"))
+            uriStr = "file://" + uriStr;
+
+        final Uri uri = Uri.parse(uriStr);
+        final String scheme = uri.getScheme();
+
         if (scheme != null && !scheme.isEmpty()) {
+
+            // properly decode file uri (with 3 slashes / not 2)
+            if (scheme.equals("file")) {
+                String retval = Uri.decode(uri.getPath());
+                return retval;
+            }
+
+            // Old method
             path = uriStr.substring(scheme.length() + 1);
             // Takes care of cases where there's only one slash
             // i.e. asset:/icons/icon.png
             while (!path.isEmpty() && path.charAt(0) == '/')
                 path = path.substring(1);
-            // File requires a leading slash
-            if (scheme.equals("file"))
-                path = "/" + path;
         }
         return path;
     }
@@ -1828,5 +1859,79 @@ public class ATAKUtilities {
                 b.x * displayModel.projectionXToNominalMeters,
                 b.y * displayModel.projectionYToNominalMeters,
                 b.z * displayModel.projectionZToNominalMeters);
+    }
+
+    /**
+     * Get the estimated meters per pixel at a given point on the screen
+     * @param x X coordinate on the screen
+     * @param y Y coordinate on the screen
+     * @return Meters or {@link Double#NaN} if could not be calculated
+     */
+    public static double getMetersPerPixel(float x, float y) {
+        MapView mapView = MapView.getMapView();
+        if (mapView == null)
+            return Double.NaN;
+        GeoPoint p1 = mapView.inverse(x, y).get();
+        GeoPoint p2 = mapView.inverse(x + 1, y + 1).get();
+        return p1.isValid() && p2.isValid() ? p1.distanceTo(p2) : Double.NaN;
+    }
+
+    /**
+     * Get the estimated meters per pixel at a given point on the screen
+     * @param point Point on the screen (x, y)
+     * @return Meters or {@link Double#NaN} if could not be calculated
+     */
+    public static double getMetersPerPixel(PointF point) {
+        return getMetersPerPixel(point.x, point.y);
+    }
+
+    /**
+     * Get the estimated meters per pixel at a given point on the map
+     * @param point Point on the map
+     * @return Meters or {@link Double#NaN} if could not be calculated
+     */
+    public static double getMetersPerPixel(GeoPoint point) {
+        MapView mapView = MapView.getMapView();
+        if (mapView == null)
+            return Double.NaN;
+        return getMetersPerPixel(mapView.forward(point));
+    }
+
+    /**
+     * Get the estimated meters per pixel at the default focus point
+     * @return Meters or {@link Double#NaN} if could not be calculated
+     */
+    public static double getMetersPerPixel() {
+        MapView mapView = MapView.getMapView();
+        if (mapView == null)
+            return Double.NaN;
+        MapSceneModel mdl = mapView.getSceneModel();
+        return getMetersPerPixel(mdl.focusx, mdl.focusy);
+    }
+
+    /**
+     * Helper method for {@link SpatialCalculator#simplify(Collection, double, boolean)}
+     * Automatically calculates degree threshold using the current DPI
+     * @param calc Spatial calcualtor
+     * @param points List of points
+     * @return List of simplified points
+     */
+    public static List<GeoPoint> simplifyPoints(SpatialCalculator calc,
+            Collection<GeoPoint> points) {
+        double thresh = 0;
+        MapView mapView = MapView.getMapView();
+        if (mapView != null) {
+            float dp = mapView.getResources().getDisplayMetrics().density;
+            MapSceneModel scene = mapView.getSceneModel();
+            GeoPoint p1 = mapView.inverse(scene.focusx, scene.focusy).get();
+            GeoPoint p2 = mapView.inverse(scene.focusx, scene.focusy + dp)
+                    .get();
+            double threshX = Math.abs(p1.getLongitude() - p2.getLongitude());
+            double threshY = Math.abs(p1.getLatitude() - p2.getLatitude());
+            thresh = Math.max(threshX, threshY);
+        }
+        Collection<GeoPoint> simplified = calc.simplify(points, thresh, true);
+        return simplified instanceof List ? (List<GeoPoint>) simplified
+                : new ArrayList<>(simplified);
     }
 }

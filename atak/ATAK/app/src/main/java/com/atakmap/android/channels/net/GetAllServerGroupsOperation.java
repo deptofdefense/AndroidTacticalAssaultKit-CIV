@@ -50,7 +50,8 @@ public class GetAllServerGroupsOperation extends HTTPOperation {
 
             final String baseUrl = "https://"
                     + groupsRequestRequest.getServer();
-            httpClient = new TakHttpClient(baseUrl);
+            httpClient = new TakHttpClient(baseUrl,
+                    groupsRequestRequest.getConnectString());
 
             String url = "/api/groups/all?useCache=true";
             if (groupsRequestRequest.getSendLatestSA()) {

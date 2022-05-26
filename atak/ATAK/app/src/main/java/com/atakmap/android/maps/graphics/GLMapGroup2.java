@@ -340,7 +340,7 @@ public final class GLMapGroup2 implements MapGroup.OnItemListChangedListener,
             if (item instanceof Marker)
                 return new GLMarker2(surface, (Marker) item);
             else if (item instanceof RangeAndBearingMapItem)
-                return new GLRangeAndBearingMapItem(surface,
+                return GLRangeAndBearingMapItemCompat.newInstance(surface,
                         (RangeAndBearingMapItem) item);
             else if (item instanceof Arrow)
                 return new GLArrow2(surface, (Arrow) item);

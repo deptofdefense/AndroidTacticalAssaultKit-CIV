@@ -49,7 +49,7 @@ public class DragMarkerHelper {
                 R.drawable.large_reticle_red));
         reticle.setSize(retSize, retSize);
         reticle.setVisible(false);
-        root.addWidgetAt(0, reticle);
+        root.addChildWidgetAt(0, reticle);
     }
 
     public synchronized static DragMarkerHelper getInstance() {
@@ -184,7 +184,7 @@ public class DragMarkerHelper {
                     //                + pmi.getMetaString("callsign", "unknown"));
                     // calculate the new ground point
                     GeoPointMetaData newPoint = mapView.inverseWithElevation(
-                            event.getPoint().x, event.getPoint().y);
+                            event.getPointF().x, event.getPointF().y);
                     dragMarker.setPoint(newPoint);
                     //pmi.setPoint(newPoint);
                 } else if (type.equals(MapEvent.ITEM_DRAG_DROPPED)) {

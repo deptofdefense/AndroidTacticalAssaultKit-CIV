@@ -39,7 +39,6 @@ import com.atakmap.android.gui.HintDialogHelper;
 import com.atakmap.android.icons.Icon2525cIconAdapter;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
-import com.atakmap.android.mapcompass.CompassArrowMapComponent;
 import com.atakmap.android.maps.AbstractMapComponent;
 import com.atakmap.android.maps.Ellipse;
 import com.atakmap.android.maps.MapData;
@@ -51,6 +50,7 @@ import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.Marker.OnTrackChangedListener;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.PointMapItem.OnPointChangedListener;
+import com.atakmap.android.navigation.views.NavView;
 import com.atakmap.android.selfcoordoverlay.SelfCoordOverlayUpdaterCompat;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.util.NotificationUtil;
@@ -135,7 +135,6 @@ public class LocationMapComponent extends AbstractMapComponent implements
 
     private boolean useOnlyGPSBearing = false;
 
-    private TrackUpReceiver _trackUpReceiver;
     private MapView _mapView;
     private Context context;
     private final AlphaBetaFilter _filteredHeading = new AlphaBetaFilter(
@@ -287,9 +286,7 @@ public class LocationMapComponent extends AbstractMapComponent implements
             boolean use = (SystemClock.elapsedRealtime()
                     - lastHighSpeed) < VALID_TIME;
             //Log.d(TAG, "use=" + use + " using=" + using + "driving=" + _locationMarker.getMetaBoolean("driving", false));
-            if (_trackUpReceiver != null
-                    && _trackUpReceiver
-                            .getOrientationMethod() != MapMode.MAGNETIC_UP) {
+            if (getMapMode() != MapMode.MAGNETIC_UP) {
                 if (use != using) {
                     if (!use)
                         setDrivingWidgetVisible(false);
@@ -404,9 +401,7 @@ public class LocationMapComponent extends AbstractMapComponent implements
                      */
 
                     if (!avgSpeed.useGPSBearing()
-                            || (_trackUpReceiver != null
-                                    && _trackUpReceiver
-                                            .getOrientationMethod() == MapMode.MAGNETIC_UP)) {
+                            || getMapMode() == MapMode.MAGNETIC_UP) {
                         final double trueAzimuth = ATAKUtilities
                                 .convertFromMagneticToTrue(
                                         _locationMarker.getPoint(),
@@ -612,15 +607,14 @@ public class LocationMapComponent extends AbstractMapComponent implements
 
     private void setDrivingWidgetVisible(final boolean visible) {
         if (visible) {
-            CompassArrowMapComponent.getInstance()
-                    .setGPSLockAction(new Runnable() {
-                        @Override
-                        public void run() {
-                            avgSpeed.reset();
-                        }
-                    });
+            NavView.getInstance().setGPSLockAction(new Runnable() {
+                @Override
+                public void run() {
+                    avgSpeed.reset();
+                }
+            });
         } else {
-            CompassArrowMapComponent.getInstance().setGPSLockAction(null);
+            NavView.getInstance().setGPSLockAction(null);
         }
     }
 
@@ -654,15 +648,6 @@ public class LocationMapComponent extends AbstractMapComponent implements
         useGPSTime = locationPrefs.getBoolean("useGPSTime", useGPSTime);
         useOnlyGPSBearing = locationPrefs.getBoolean("useOnlyGPSBearing",
                 false);
-
-        DocumentedIntentFilter trackUpFilter = new DocumentedIntentFilter();
-        trackUpFilter.addAction(MapMode.TRACK_UP.getIntent());
-        trackUpFilter.addAction(MapMode.NORTH_UP.getIntent());
-        trackUpFilter.addAction(MapMode.MAGNETIC_UP.getIntent());
-        trackUpFilter.addAction(MapMode.USER_DEFINED_UP.getIntent());
-        AtakBroadcast.getInstance().registerReceiver(
-                _trackUpReceiver = new TrackUpReceiver(view),
-                trackUpFilter);
 
         // After user specifies a self location when there's no GPS, update the
         // overlay
@@ -1284,9 +1269,6 @@ public class LocationMapComponent extends AbstractMapComponent implements
 
         _stopLocationGathering();
 
-        if (_trackUpReceiver != null) {
-            AtakBroadcast.getInstance().unregisterReceiver(_trackUpReceiver);
-        }
         if (selflocrec != null) {
             AtakBroadcast.getInstance().unregisterReceiver(selflocrec);
         }
@@ -1452,7 +1434,7 @@ public class LocationMapComponent extends AbstractMapComponent implements
                 AtakBroadcast.getInstance().sendBroadcast(i);
 
                 // disable for 3.4 
-                //NetworkDeviceManager.setDateTime(gpsTimestamp);
+                //NetworkManagerLite.setDateTime(gpsTimestamp);
 
                 SimpleDateFormat dformatter = new SimpleDateFormat(
                         "dd MMMMM yyyy  HH:mm:ss", LocaleUtil.getCurrent());
@@ -1610,9 +1592,7 @@ public class LocationMapComponent extends AbstractMapComponent implements
             mapData.putDouble("fineLocationBearing", loc.getBearing());
 
         // use the GPS bearing when we're over a certain speed
-        if (avgSpeed.useGPSBearing() && _trackUpReceiver != null &&
-                _trackUpReceiver
-                        .getOrientationMethod() != MapMode.MAGNETIC_UP) {
+        if (avgSpeed.useGPSBearing() && getMapMode() != MapMode.MAGNETIC_UP) {
 
             // according to all of the documentation I have read
             // Location::getBearing is a direction east of true north.
@@ -1887,8 +1867,7 @@ public class LocationMapComponent extends AbstractMapComponent implements
                     SystemClock.elapsedRealtime());
 
             if (avgSpeed.useGPSBearing()
-                    && _trackUpReceiver
-                            .getOrientationMethod() != MapMode.MAGNETIC_UP) {
+                    && getMapMode() != MapMode.MAGNETIC_UP) {
                 final double h = _mapView.getMapData().getDouble(
                         prefix + "LocationBearing");
 
@@ -2020,22 +1999,19 @@ public class LocationMapComponent extends AbstractMapComponent implements
             if (lastHeading < 0)
                 lastHeading += 360f;
 
-            if (_trackUpReceiver != null) {
-                MapMode orientationMethod = _trackUpReceiver
-                        .getOrientationMethod();
-                if (orientationMethod == MapMode.TRACK_UP
-                        || orientationMethod == MapMode.MAGNETIC_UP) {
+            MapMode orientationMethod = getMapMode();
+            if (orientationMethod == MapMode.TRACK_UP
+                    || orientationMethod == MapMode.MAGNETIC_UP) {
 
-                    if (_locationMarker.getMetaBoolean("camLocked", false)) {
-                        PointF p = _mapView.forward(_locationMarker.getPoint());
-                        CameraController.Interactive.rotateTo(
-                                _mapView.getRenderer3(), lastHeading,
-                                _locationMarker.getPoint(), p.x, p.y,
-                                MapRenderer3.CameraCollision.AdjustCamera,
-                                true);
-                    } else {
-                        ctrl.rotateTo(lastHeading, true);
-                    }
+                if (_locationMarker.getMetaBoolean("camLocked", false)) {
+                    PointF p = _mapView.forward(_locationMarker.getPoint());
+                    CameraController.Interactive.rotateTo(
+                            _mapView.getRenderer3(), lastHeading,
+                            _locationMarker.getPoint(), p.x, p.y,
+                            MapRenderer3.CameraCollision.AdjustCamera,
+                            true);
+                } else {
+                    ctrl.rotateTo(lastHeading, true);
                 }
             }
         }
@@ -2094,6 +2070,45 @@ public class LocationMapComponent extends AbstractMapComponent implements
         mapData.remove("fineLocationTime");
         mapData.remove("fineLocationBearing");
         mapData.remove("fineLocationSpeed");
+    }
+
+    /**
+     * Get the current map mode/orientation
+     * @return Map mode - one of {@link MapMode}
+     */
+    private MapMode getMapMode() {
+        return NavView.getInstance().getMapMode();
+    }
+
+    /**
+     * Retrieves a TAK generated serial number based on the device.   If the serial number
+     * is not available, null will be returned.   Recent versions of Android rely on the ANDROID_ID
+     * as the app accessible serial number
+     * @param context the context to use
+     * @return the serial number or null
+     */
+    public static String fetchSerialNumber(final Context context) {
+        return _fetchSerialNumber(context);
+    }
+
+    /**
+     * Retrives a TAK accessible telephony identifier based on the device.  If the telephony id is
+     * not available, then return it will return null.
+     * @param context the context to use
+     * @return the telephony identifier
+     */
+    public static String fetchTelephonyDeviceId(final Context context) {
+        return _fetchTelephonyDeviceId(context);
+    }
+
+    /**
+     * Retrives a TAK accessible wifi mac address based on the device.  If the mac address is
+     * not available, then return it will return null.
+     * @param context the context to use
+     * @return the telephony identifier
+     */
+    public static String fetchWifiMacAddress(final Context context) {
+        return _fetchWifiMacAddress(context);
     }
 
     @SuppressLint({
@@ -2221,7 +2236,11 @@ public class LocationMapComponent extends AbstractMapComponent implements
         if (tm != null &&
                 Permissions.checkPermission(context,
                         android.Manifest.permission.READ_PHONE_STATE)) {
-            telephonyLineNumber = tm.getLine1Number();
+
+            try {
+                telephonyLineNumber = tm.getLine1Number();
+            } catch (SecurityException se) {
+            }
         } else {
             Log.d(TAG, "unable to get the line number");
         }

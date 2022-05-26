@@ -8,6 +8,9 @@ import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import com.atakmap.android.util.FileProviderHelper;
@@ -23,6 +26,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.util.DisplayMetrics;
 
 import com.atakmap.android.util.NotificationUtil;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.locale.LocaleUtil;
@@ -159,6 +163,45 @@ public class AppMgmtUtils {
     }
 
     /**
+     * Scale image to a specified size
+     * Used to display alert dialog icons at a reasonable, consistent size.
+     * @param image Drawable
+     * @param size Desired size in pixels
+     *             It's recommended to pass in a dimension resource here rather
+     *             than a hardcoded size
+     * @return Scaled drawable
+     */
+    public static Drawable getDialogIcon(Context context, Drawable image,
+            float size) {
+
+        // Create a bitmap buffer for the image
+        int sizePixels = (int) size;
+        Bitmap bmp = Bitmap.createBitmap(sizePixels, sizePixels,
+                Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bmp);
+
+        // Draw the image to the bitmap
+        Rect bounds = new Rect(image.getBounds());
+        image.setBounds(0, 0, sizePixels, sizePixels);
+        image.draw(canvas);
+        image.setBounds(bounds);
+
+        // Create a new bitmap drawable for the scaled image
+        return new BitmapDrawable(context.getResources(), bmp);
+    }
+
+    /**
+     * Given a drawable, get a scaled drawable useful for the dialog box
+     * @param context the context to use
+     * @param image the original drawable
+     * @return a 32dp icon useful for a dialog box icon.
+     */
+    public static Drawable getDialogIcon(Context context, Drawable image) {
+        return getDialogIcon(context, image, context.getResources()
+                .getDimension(R.dimen.nav_child_button_size));
+    }
+
+    /**
      * Scale image to a specified size - only works for bitmap drawables
      * Used to display alert dialog icons at a reasonable, consistent size.
      * @param image Bitmap drawable
@@ -166,7 +209,10 @@ public class AppMgmtUtils {
      *             It's recommended to pass in a dimension resource here rather
      *             than a hardcoded size
      * @return Scaled drawable
+     * @deprecated Use {@link #getDialogIcon(Context, Drawable, float)}
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.5", forRemoval = true, removeAt = "4.8")
     public static Drawable getDialogIcon(Drawable image, float size) {
         // Scaling method only works for bitmap-based drawables
         if (!(image instanceof BitmapDrawable))
@@ -190,17 +236,6 @@ public class AppMgmtUtils {
         b.setTargetDensity(Math.round(scale * DisplayMetrics.DENSITY_HIGH));
 
         return image;
-    }
-
-    /**
-     * Given a drawable, get a scaled drawable useful for the dialog box
-     * @param context the context to use
-     * @param image the original drawable
-     * @return a 32dp icon useful for a dialog box icon.
-     */
-    public static Drawable getDialogIcon(Context context, Drawable image) {
-        return getDialogIcon(image, context.getResources()
-                .getDimension(R.dimen.button_small));
     }
 
     /**

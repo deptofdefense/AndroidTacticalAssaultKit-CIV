@@ -32,6 +32,8 @@ import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.ErrorCategory;
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.map.CameraController;
+
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 
@@ -92,7 +94,11 @@ public class ContactLocationView extends ContactDetailView {
             public void onClick(View v) {
                 if (_marker != null) {
                     GeoPoint gp = _marker.getPoint();
-                    _mapView.getMapController().panTo(gp, false);
+                    CameraController.Programmatic.panTo(
+                            _mapView.getRenderer3(), gp, false);
+                    CameraController.Programmatic.panTo(
+                            _mapView.getRenderer3(),
+                            gp, false);
                 }
             }
         });
@@ -158,7 +164,8 @@ public class ContactLocationView extends ContactDetailView {
                                     // will work as well.
                                     if (p != null) {
                                         m.setPoint(p);
-                                        _mapView.getMapController().panTo(
+                                        CameraController.Programmatic.panTo(
+                                                _mapView.getRenderer3(),
                                                 p.get(),
                                                 false);
                                     }

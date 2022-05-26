@@ -35,9 +35,9 @@ public class RouteElevationView extends LinearLayout {
     private final static int _GRAPH_COLOR_NULL = Color.argb(80, 255, 0, 0);
     private final static int _CP_COLOR = Color.argb(100, 255, 255, 255);
     private LinearLayout _layout;
-    private ChartSeekBar _seekerBar;
+    protected ChartSeekBar _seekerBar;
     private RouteElevationChart _chart;
-    private XYMultipleSeriesRenderer _renderer;
+    protected XYMultipleSeriesRenderer _renderer;
     private XYImageSeriesRenderer _imageRender;
     private SharedPreferences _prefs;
     private final Context _context;
@@ -213,9 +213,8 @@ public class RouteElevationView extends LinearLayout {
         int rangeFmt = Integer.parseInt(_prefs.getString("rab_rng_units_pref",
                 String.valueOf(Span.METRIC)));
         Span rangeUnits = Span.METER;
-        if (rangeFmt == Span.METRIC)
-            rangeUnits = Span.METER;
-        else if (rangeFmt == Span.ENGLISH)
+
+        if (rangeFmt == Span.ENGLISH)
             rangeUnits = Span.MILE;
         else if (rangeFmt == Span.NM)
             rangeUnits = Span.NAUTICALMILE;
@@ -228,8 +227,6 @@ public class RouteElevationView extends LinearLayout {
         Span heightUnits = Span.FOOT;
         if (heightFmt == Span.METRIC) {
             heightUnits = Span.METER;
-        } else if (heightFmt == Span.ENGLISH) {
-            heightUnits = Span.FOOT;
         }
         return heightUnits;
     }

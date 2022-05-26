@@ -14,7 +14,8 @@ import com.atakmap.android.maps.MapEvent;
 import com.atakmap.android.maps.MapEventDispatcher;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
-import com.atakmap.android.tools.ActionBarReceiver;
+import com.atakmap.android.navigation.NavButtonManager;
+import com.atakmap.android.navigation.models.NavButtonModel;
 import com.atakmap.android.util.LimitingThread;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -464,16 +465,10 @@ public class Contacts implements MapEventDispatcher.MapEventDispatchListener {
                                         .getContactConnectorMgr() != null) {
                             int totalUnread = rootGroup.calculateUnread();
                             if (_totalUnread != totalUnread) {
-                                //now do something with it
-                                Intent i = new Intent("ic_menu_contact_layers");
-                                i.putExtra("badge_string", totalUnread + "");
-                                AtakBroadcast.getInstance().sendBroadcast(i);
-
-                                //refresh the action bar
-                                AtakBroadcast.getInstance()
-                                        .sendBroadcast(new Intent(
-                                                ActionBarReceiver.REFRESH_ACTION_BAR));
                                 _totalUnread = totalUnread;
+                                // Update the unread count on both chat icons
+                                setUnreadCount("contacts.xml", totalUnread);
+                                //setUnreadCount("groupchat.xml", totalUnread);
                             }
                         }
                     } catch (Exception e) {
@@ -487,4 +482,13 @@ public class Contacts implements MapEventDispatcher.MapEventDispatchListener {
                     }
                 }
             });
+
+    private void setUnreadCount(String ref, int totalUnread) {
+        NavButtonModel mdl = NavButtonManager.getInstance()
+                .getModelByReference(ref);
+        if (mdl != null) {
+            mdl.setBadgeCount(totalUnread);
+            NavButtonManager.getInstance().notifyModelChanged(mdl);
+        }
+    }
 }

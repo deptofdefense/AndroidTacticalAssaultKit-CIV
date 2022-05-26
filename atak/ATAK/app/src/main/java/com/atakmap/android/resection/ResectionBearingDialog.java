@@ -149,6 +149,8 @@ public class ResectionBearingDialog implements View.OnClickListener,
                         ? (float) ATAKUtilities
                                 .getCurrentMagneticVariation(point)
                         : 0f;
+                if (Double.isNaN(declination))
+                    declination = 0;
                 _compassView.setRotation(declination);
                 _bearingLine.setRotation((float) bearing + declination);
             }
@@ -245,9 +247,9 @@ public class ResectionBearingDialog implements View.OnClickListener,
             if (Double.isNaN(b))
                 b = 0;
             b += (v == _addBtn ? 5 : -5);
-            if (b > 360)
+            if (b >= 360)
                 b -= 360;
-            else if (b < -360)
+            else if (b < 0)
                 b += 360;
             _bearingTxt.setText(_df.format(b));
         }

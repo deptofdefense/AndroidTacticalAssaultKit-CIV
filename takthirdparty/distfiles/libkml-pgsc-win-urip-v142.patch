@@ -1,0 +1,273 @@
+--- libkml.vanilla/third_party/uriparser-0.7.5/win32/Visual_Studio_2005/uriparser.vcxproj	2021-08-13 14:37:28.000000000 -0400
++++ libkml/third_party/uriparser-0.7.5/win32/Visual_Studio_2005/uriparser.vcxproj	2021-08-04 15:09:16.170529900 -0400
+@@ -0,0 +1,167 @@
++<?xml version="1.0" encoding="utf-8"?>
++<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
++  <ItemGroup Label="ProjectConfigurations">
++    <ProjectConfiguration Include="Debug|Win32">
++      <Configuration>Debug</Configuration>
++      <Platform>Win32</Platform>
++    </ProjectConfiguration>
++    <ProjectConfiguration Include="Debug|x64">
++      <Configuration>Debug</Configuration>
++      <Platform>x64</Platform>
++    </ProjectConfiguration>
++    <ProjectConfiguration Include="Release|Win32">
++      <Configuration>Release</Configuration>
++      <Platform>Win32</Platform>
++    </ProjectConfiguration>
++    <ProjectConfiguration Include="Release|x64">
++      <Configuration>Release</Configuration>
++      <Platform>x64</Platform>
++    </ProjectConfiguration>
++  </ItemGroup>
++  <PropertyGroup Label="Globals">
++    <ProjectGuid>{8E2F76A2-59B5-4DF7-8062-EBD6FCF0C8B3}</ProjectGuid>
++    <RootNamespace>uriparser</RootNamespace>
++    <Keyword>Win32Proj</Keyword>
++  </PropertyGroup>
++  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <PlatformToolset>v142</PlatformToolset>
++    <CharacterSet>Unicode</CharacterSet>
++    <WholeProgramOptimization>false</WholeProgramOptimization>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <PlatformToolset>v142</PlatformToolset>
++    <CharacterSet>Unicode</CharacterSet>
++    <WholeProgramOptimization>false</WholeProgramOptimization>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <PlatformToolset>v142</PlatformToolset>
++    <CharacterSet>Unicode</CharacterSet>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <PlatformToolset>v142</PlatformToolset>
++    <CharacterSet>Unicode</CharacterSet>
++  </PropertyGroup>
++  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
++  <ImportGroup Label="ExtensionSettings">
++  </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++  </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++  </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++  </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++  </ImportGroup>
++  <PropertyGroup Label="UserMacros" />
++  <PropertyGroup>
++    <_ProjectFileVersion>16.0.31515.66</_ProjectFileVersion>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
++    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
++    <IntDir>$(Configuration)\</IntDir>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
++    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
++    <IntDir>$(Configuration)\</IntDir>
++  </PropertyGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
++    <ClCompile>
++      <Optimization>Disabled</Optimization>
++      <AdditionalIncludeDirectories>..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <MinimalRebuild>true</MinimalRebuild>
++      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
++      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
++      <PrecompiledHeader />
++      <WarningLevel>Level4</WarningLevel>
++      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
++    </ClCompile>
++    <Lib>
++      <OutputFile>..\uriparser.lib</OutputFile>
++    </Lib>
++  </ItemDefinitionGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
++    <ClCompile>
++      <Optimization>Disabled</Optimization>
++      <AdditionalIncludeDirectories>..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
++      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
++      <PrecompiledHeader>
++      </PrecompiledHeader>
++      <WarningLevel>Level4</WarningLevel>
++      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
++    </ClCompile>
++    <Lib>
++      <OutputFile>..\uriparser.lib</OutputFile>
++    </Lib>
++  </ItemDefinitionGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
++    <ClCompile>
++      <AdditionalIncludeDirectories>..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
++      <PrecompiledHeader>
++      </PrecompiledHeader>
++      <WarningLevel>Level3</WarningLevel>
++      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
++    </ClCompile>
++    <Lib>
++      <OutputFile>..\uriparser.lib</OutputFile>
++    </Lib>
++  </ItemDefinitionGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
++    <ClCompile>
++      <AdditionalIncludeDirectories>..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
++      <PrecompiledHeader />
++      <WarningLevel>Level3</WarningLevel>
++      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
++    </ClCompile>
++    <Lib>
++      <OutputFile>..\uriparser.lib</OutputFile>
++    </Lib>
++  </ItemDefinitionGroup>
++  <ItemGroup>
++    <ClInclude Include="..\..\include\uriparser\Uri.h" />
++    <ClInclude Include="..\..\include\uriparser\UriBase.h" />
++    <ClInclude Include="..\..\include\uriparser\UriDefsAnsi.h" />
++    <ClInclude Include="..\..\include\uriparser\UriDefsConfig.h" />
++    <ClInclude Include="..\..\include\uriparser\UriDefsUnicode.h" />
++    <ClInclude Include="..\..\include\uriparser\UriIp4.h" />
++    <ClInclude Include="..\..\lib\UriCommon.h" />
++    <ClInclude Include="..\..\lib\UriIp4Base.h" />
++    <ClInclude Include="..\..\lib\UriNormalizeBase.h" />
++    <ClInclude Include="..\..\lib\UriParseBase.h" />
++  </ItemGroup>
++  <ItemGroup>
++    <ClCompile Include="..\..\lib\UriCommon.c" />
++    <ClCompile Include="..\..\lib\UriCompare.c" />
++    <ClCompile Include="..\..\lib\UriEscape.c" />
++    <ClCompile Include="..\..\lib\UriFile.c" />
++    <ClCompile Include="..\..\lib\UriIp4.c" />
++    <ClCompile Include="..\..\lib\UriIp4Base.c" />
++    <ClCompile Include="..\..\lib\UriNormalize.c" />
++    <ClCompile Include="..\..\lib\UriNormalizeBase.c" />
++    <ClCompile Include="..\..\lib\UriParse.c" />
++    <ClCompile Include="..\..\lib\UriParseBase.c" />
++    <ClCompile Include="..\..\lib\UriQuery.c" />
++    <ClCompile Include="..\..\lib\UriRecompose.c" />
++    <ClCompile Include="..\..\lib\UriResolve.c" />
++    <ClCompile Include="..\..\lib\UriShorten.c" />
++  </ItemGroup>
++  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
++  <ImportGroup Label="ExtensionTargets">
++  </ImportGroup>
++</Project>
+\ No newline at end of file
+--- libkml.vanilla/third_party/uriparser-0.7.5/win32/Visual_Studio_2005/uriparser.vcxproj.user	2021-08-13 14:37:34.000000000 -0400
++++ libkml/third_party/uriparser-0.7.5/win32/Visual_Studio_2005/uriparser.vcxproj.user	2021-08-04 15:09:15.410379900 -0400
+@@ -0,0 +1,4 @@
++﻿<?xml version="1.0" encoding="utf-8"?>
++<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
++  <PropertyGroup />
++</Project>
+\ No newline at end of file
+--- libkml.vanilla/third_party/uriparser-0.7.5/win32/Visual_Studio_2005/uriparser.vcxproj.filters	2021-08-13 14:37:38.000000000 -0400
++++ libkml/third_party/uriparser-0.7.5/win32/Visual_Studio_2005/uriparser.vcxproj.filters	2021-08-04 15:09:15.230330900 -0400
+@@ -0,0 +1,90 @@
++﻿<?xml version="1.0" encoding="utf-8"?>
++<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
++  <ItemGroup>
++    <Filter Include="include">
++      <UniqueIdentifier>{f41c38d5-6c1a-4c86-b25c-5ef8e4949e09}</UniqueIdentifier>
++    </Filter>
++    <Filter Include="include\uriparser">
++      <UniqueIdentifier>{7c4e49d7-78de-48be-8699-96a6ae836d3f}</UniqueIdentifier>
++    </Filter>
++    <Filter Include="lib">
++      <UniqueIdentifier>{6cdd21ad-83b3-4761-b09a-abf52d68f209}</UniqueIdentifier>
++    </Filter>
++  </ItemGroup>
++  <ItemGroup>
++    <ClInclude Include="..\..\include\uriparser\Uri.h">
++      <Filter>include\uriparser</Filter>
++    </ClInclude>
++    <ClInclude Include="..\..\include\uriparser\UriBase.h">
++      <Filter>include\uriparser</Filter>
++    </ClInclude>
++    <ClInclude Include="..\..\include\uriparser\UriDefsAnsi.h">
++      <Filter>include\uriparser</Filter>
++    </ClInclude>
++    <ClInclude Include="..\..\include\uriparser\UriDefsConfig.h">
++      <Filter>include\uriparser</Filter>
++    </ClInclude>
++    <ClInclude Include="..\..\include\uriparser\UriDefsUnicode.h">
++      <Filter>include\uriparser</Filter>
++    </ClInclude>
++    <ClInclude Include="..\..\include\uriparser\UriIp4.h">
++      <Filter>include\uriparser</Filter>
++    </ClInclude>
++    <ClInclude Include="..\..\lib\UriCommon.h">
++      <Filter>lib</Filter>
++    </ClInclude>
++    <ClInclude Include="..\..\lib\UriIp4Base.h">
++      <Filter>lib</Filter>
++    </ClInclude>
++    <ClInclude Include="..\..\lib\UriNormalizeBase.h">
++      <Filter>lib</Filter>
++    </ClInclude>
++    <ClInclude Include="..\..\lib\UriParseBase.h">
++      <Filter>lib</Filter>
++    </ClInclude>
++  </ItemGroup>
++  <ItemGroup>
++    <ClCompile Include="..\..\lib\UriCommon.c">
++      <Filter>lib</Filter>
++    </ClCompile>
++    <ClCompile Include="..\..\lib\UriCompare.c">
++      <Filter>lib</Filter>
++    </ClCompile>
++    <ClCompile Include="..\..\lib\UriEscape.c">
++      <Filter>lib</Filter>
++    </ClCompile>
++    <ClCompile Include="..\..\lib\UriFile.c">
++      <Filter>lib</Filter>
++    </ClCompile>
++    <ClCompile Include="..\..\lib\UriIp4.c">
++      <Filter>lib</Filter>
++    </ClCompile>
++    <ClCompile Include="..\..\lib\UriIp4Base.c">
++      <Filter>lib</Filter>
++    </ClCompile>
++    <ClCompile Include="..\..\lib\UriNormalize.c">
++      <Filter>lib</Filter>
++    </ClCompile>
++    <ClCompile Include="..\..\lib\UriNormalizeBase.c">
++      <Filter>lib</Filter>
++    </ClCompile>
++    <ClCompile Include="..\..\lib\UriParse.c">
++      <Filter>lib</Filter>
++    </ClCompile>
++    <ClCompile Include="..\..\lib\UriParseBase.c">
++      <Filter>lib</Filter>
++    </ClCompile>
++    <ClCompile Include="..\..\lib\UriQuery.c">
++      <Filter>lib</Filter>
++    </ClCompile>
++    <ClCompile Include="..\..\lib\UriRecompose.c">
++      <Filter>lib</Filter>
++    </ClCompile>
++    <ClCompile Include="..\..\lib\UriResolve.c">
++      <Filter>lib</Filter>
++    </ClCompile>
++    <ClCompile Include="..\..\lib\UriShorten.c">
++      <Filter>lib</Filter>
++    </ClCompile>
++  </ItemGroup>
++</Project>
+\ No newline at end of file

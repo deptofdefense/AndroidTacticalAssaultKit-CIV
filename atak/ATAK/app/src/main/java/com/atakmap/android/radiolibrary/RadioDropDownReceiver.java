@@ -14,8 +14,8 @@ import android.widget.Toast;
 import com.atakmap.android.dropdown.DropDownReceiver;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapView;
-import com.atakmap.comms.NetworkDeviceManager;
-import com.atakmap.comms.NetworkDeviceManager.NetworkDevice;
+import com.atakmap.comms.NetworkManagerLite;
+import com.atakmap.comms.NetworkManagerLite.NetworkDevice;
 import com.atakmap.android.video.ConnectionEntry;
 import com.atakmap.android.video.StreamManagementUtils;
 import com.atakmap.app.R;
@@ -191,7 +191,8 @@ public class RadioDropDownReceiver extends DropDownReceiver {
                 .createConnectionEntryFromUrl("pddl", url);
         NetworkDevice nd = getPDDLDevice();
         if (nd != null)
-            ce.setMacAddress(nd.macaddr);
+            ce.setPreferredInterfaceAddress(
+                    NetworkManagerLite.getAddress(nd.getInterface()));
 
         Toast.makeText(context, R.string.radio_initiating_connection,
                 Toast.LENGTH_SHORT).show();
@@ -211,7 +212,7 @@ public class RadioDropDownReceiver extends DropDownReceiver {
      * with the type set to POCKET_DDL
      */
     private NetworkDevice getPDDLDevice() {
-        List<NetworkDevice> devices = NetworkDeviceManager.getNetworkDevices();
+        List<NetworkDevice> devices = NetworkManagerLite.getNetworkDevices();
         for (NetworkDevice nd : devices) {
             if (nd.isSupported(NetworkDevice.Type.POCKET_DDL)) {
                 Log.d(TAG, "found PocketDDL entry in network.map file: " + nd);

@@ -1,4 +1,4 @@
-<PersistedActionMenu baseline="true" hideable="true" iconPath="ic_menu_ruler"  title="actionbar_rangeandbearing">
+<PersistedActionMenu baseline="true" hideable="true" iconPath="nav_rab" title="actionbar_rangeandbearing">
    <ClickData actionType="click">
       <broadcast>
          <action>com.atakmap.android.maps.toolbar.SET_TOOLBAR</action>
@@ -8,3 +8,4 @@
       </broadcast>
    </ClickData>
 </PersistedActionMenu>
+

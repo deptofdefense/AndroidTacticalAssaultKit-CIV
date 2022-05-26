@@ -27,6 +27,7 @@ class SidePane implements OnTouchListener {
 
     private final FrameLayout mapLayout;
     private final ViewGroup rightLayout, leftLayout;
+    private final ViewGroup rightContainer;
     private final RelativeLayout parent;
 
     final private View sideHandle;
@@ -51,8 +52,9 @@ class SidePane implements OnTouchListener {
     SidePane(MapView view) {
         FragmentActivity act = (FragmentActivity) view.getContext();
         mapLayout = act.findViewById(R.id.main_map_container);
-        rightLayout = act.findViewById(R.id.right_side_panel_container);
-        leftLayout = act.findViewById(R.id.left_side_panel_container);
+        rightLayout = act.findViewById(R.id.right_drop_down);
+        leftLayout = act.findViewById(R.id.left_drop_down);
+        rightContainer = act.findViewById(R.id.right_drop_down_container);
         parent = act.findViewById(R.id.map_parent);
 
         pHeight = parent.getHeight();
@@ -121,32 +123,12 @@ class SidePane implements OnTouchListener {
         this.dd = dd;
         if (dd == null)
             this.leftDD = null;
+        updatePaneVisibility();
     }
 
     void setLeftDropDown(final DropDown dd) {
         this.leftDD = this.dd != null ? dd : null;
-    }
-
-    void adjustMargin() {
-        if (dd == null)
-            return;
-
-        mapView.post(new Runnable() {
-            @Override
-            public void run() {
-                boolean hidden = state == DropDownReceiver.DROPDOWN_STATE_NONE;
-                int abHeight = mapView.getActionBarHeight();
-                if (Double.compare(heightFraction,
-                        DropDownReceiver.FULL_HEIGHT) == 0) {
-                    LayoutParams sidePanelLP = (LayoutParams) rightLayout
-                            .getLayoutParams();
-                    sidePanelLP.topMargin = hidden ? 0 : abHeight;
-                    rightLayout.setLayoutParams(sidePanelLP);
-                }
-                mapLayout.setPadding(0, leftDD == null || hidden ? 0 : abHeight,
-                        0, 0);
-            }
-        });
+        updatePaneVisibility();
     }
 
     /**
@@ -191,7 +173,7 @@ class SidePane implements OnTouchListener {
                         (int) (width - (width * widthFraction)),
                         height);
                 x = (int) (width - (width * widthFraction));
-                y = mapView.getActionBarHeight();
+                y = 0;
                 w = (int) (width * widthFraction);
                 h = height;
             } else {
@@ -219,7 +201,7 @@ class SidePane implements OnTouchListener {
                 mapPanelLP = new LayoutParams(
                         (int) (width - (width * widthFraction)),
                         height);
-                y = mapView.getActionBarHeight();
+                y = 0;
                 w = (int) (width * widthFraction);
                 h = height;
             } else {
@@ -242,7 +224,7 @@ class SidePane implements OnTouchListener {
         this.heightFraction = heightFraction;
 
         mapLayout.setLayoutParams(mapPanelLP);
-        rightLayout.setLayoutParams(rightPanelLP);
+        rightContainer.setLayoutParams(rightPanelLP);
         leftLayout.setLayoutParams(leftPanelLP);
 
         // XXX - In order to keep the map surface view behaving properly we
@@ -270,7 +252,7 @@ class SidePane implements OnTouchListener {
 
         if (widthFraction > 0)
             showHandle();
-
+        updatePaneVisibility();
     }
 
     public double getWidth() {
@@ -302,6 +284,7 @@ class SidePane implements OnTouchListener {
         this.dd = null;
         this.leftDD = null;
         showHandle();
+        updatePaneVisibility();
     }
 
     /**
@@ -340,6 +323,15 @@ class SidePane implements OnTouchListener {
         }
     }
 
+    /**
+     * Toggle visibility on both drop-down panes depending on whether there's
+     * a set drop-down for either
+     */
+    private void updatePaneVisibility() {
+        rightContainer.setVisibility(dd != null ? View.VISIBLE : View.GONE);
+        leftLayout.setVisibility(leftDD != null ? View.VISIBLE : View.GONE);
+    }
+
     private void unhidePane() {
         showHandle();
         open();
@@ -358,17 +350,26 @@ class SidePane implements OnTouchListener {
         mapPanelLP.height = LayoutParams.MATCH_PARENT;
         mapLayout.setLayoutParams(mapPanelLP);
 
-        // no margin required
-        LayoutParams sidePanelLP = (LayoutParams) rightLayout
+        // Hide right-side panel
+        LayoutParams sidePanelLP = (LayoutParams) rightContainer
                 .getLayoutParams();
         sidePanelLP.topMargin = 0;
         sidePanelLP.leftMargin = 0;
         sidePanelLP.width = 0;
         sidePanelLP.height = 0;
-        rightLayout.setLayoutParams(sidePanelLP);
+        rightContainer.setLayoutParams(sidePanelLP);
+
+        // Hide left-side panel
+        sidePanelLP = (LayoutParams) leftLayout.getLayoutParams();
+        sidePanelLP.topMargin = 0;
+        sidePanelLP.leftMargin = 0;
+        sidePanelLP.width = 0;
+        sidePanelLP.height = 0;
+        leftLayout.setLayoutParams(sidePanelLP);
 
         // Show map view again in case visibility was turned off
         mapView.setVisibility(View.VISIBLE);
+        updatePaneVisibility();
     }
 
     private void refresh(final int prevValue) {

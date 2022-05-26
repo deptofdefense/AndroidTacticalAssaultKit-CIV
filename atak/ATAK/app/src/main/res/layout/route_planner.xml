@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.atakmap.android.routes.RoutePlannerView
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -95,12 +96,57 @@
         android:layout_height="1dp"
         android:background="#333"/>
 
+    <!-- Total route distance stats + undo button -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:gravity="center_vertical"
+        android:background="@color/dark_gray">
+        <TextView
+            android:layout_width="50dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.5"
+            android:gravity="center"
+            android:textSize="12sp"
+            android:textColor="#FFF"
+            android:text="@string/total"/>
+        <TextView
+            android:id="@+id/distance_total"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:gravity="center"
+            android:textSize="12sp"
+            android:textColor="#FFF"
+            android:text="@string/meters"/>
+        <TextView
+            android:id="@+id/elevation_total"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:gravity="center"
+            android:textSize="12sp"
+            android:textColor="#FFF"
+            android:text="@string/meters"
+            android:visibility="gone"/>
+        <Button
+            android:id="@+id/undoButton"
+            android:layout_width="84dp"
+            android:layout_height="wrap_content"
+            android:padding="@dimen/auto_space_big"
+            android:text="@string/undo"
+            style="@style/darkButton"/>
+    </LinearLayout>
+
     <ListView
         android:id="@+id/control_points_list"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:fadeScrollbars="false"/>
+        android:fadeScrollbars="false"
+        tools:listitem="@layout/route_planner_contact_point_row"/>
 
     <View
         android:layout_width="match_parent"
@@ -162,7 +208,7 @@
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:padding="4dp"
-            android:src="@drawable/edit"
+            android:src="@drawable/ic_edit"
             style="@style/darkButton"/>
         <View
             android:id="@+id/edit_route_spacer"

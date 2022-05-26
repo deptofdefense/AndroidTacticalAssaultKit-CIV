@@ -14,12 +14,6 @@ import com.atakmap.coremap.maps.time.CoordinatedTime;
 public class LRFCotManager extends BluetoothCotManager implements
         LRFReader.Callback {
 
-    private static final byte[] address = new byte[] {
-            (byte) 127, (byte) 0, (byte) 0, (byte) 1
-    };
-    private static final int port = 17211;
-    private static final int ttl = 1;
-
     public LRFCotManager(final LRFReader reader, final MapView mapView,
             final String cotUID, final String name) {
         super(reader, mapView, cotUID, name);
@@ -28,30 +22,32 @@ public class LRFCotManager extends BluetoothCotManager implements
 
     @Override
     public void onCompassError() {
-        publish("1," + cotUID + "," + new CoordinatedTime() + ","
-                + "COMPASS_ERROR", address, port, ttl);
+        LocalRangeFinderInput.getInstance()
+                .process("1," + cotUID + "," + new CoordinatedTime() + ","
+                        + "COMPASS_ERROR");
     }
 
     @Override
     public void onRangeError() {
-        publish("1," + cotUID + "," + new CoordinatedTime() + ","
-                + "RANGE_ERROR", address, port, ttl);
+        LocalRangeFinderInput.getInstance()
+                .process("1," + cotUID + "," + new CoordinatedTime() + ","
+                        + "RANGE_ERROR");
     }
 
     @Override
     public void onComputerError() {
-        publish("1," + cotUID + "," + new CoordinatedTime() + ","
-                + "MAINBOARD_ERROR", address, port, ttl);
+        LocalRangeFinderInput.getInstance()
+                .process("1," + cotUID + "," + new CoordinatedTime() + ","
+                        + "MAINBOARD_ERROR");
     }
 
     @Override
     public void onRangeFinderInfo(final double azimuth, final double elRad,
             final double meters) {
 
-        publish("1," + cotUID + "," + new CoordinatedTime() + "," + meters
-                + "," + azimuth + "," + elRad,
-                address,
-                port,
-                ttl);
+        LocalRangeFinderInput.getInstance()
+                .process("1," + cotUID + "," + new CoordinatedTime() + ","
+                        + meters
+                        + "," + azimuth + "," + elRad);
     }
 }

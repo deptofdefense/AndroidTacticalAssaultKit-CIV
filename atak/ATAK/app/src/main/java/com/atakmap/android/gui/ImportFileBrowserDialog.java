@@ -193,11 +193,12 @@ public class ImportFileBrowserDialog {
                     .setStartDirectory(ATAKUtilities.getStartDirectory(mapCtx));
         }
 
-
         if (extensionTypes == null)
-           importFileBrowser.setExtensionTypes(new String[] {"*"});
-        else 
-           importFileBrowser.setExtensionTypes(extensionTypes);
+            importFileBrowser.setExtensionTypes(new String[] {
+                    "*"
+            });
+        else
+            importFileBrowser.setExtensionTypes(extensionTypes);
 
         importFileBrowser.setMultiSelect(false);
 

@@ -32,6 +32,10 @@
             android:key="gpsSettings"
             android:summary="@string/preferences_text267"
             android:icon="@drawable/ic_menu_compass"/>
+        <Preference android:title="Laser Range Finder Preferences"
+            android:key="lrfSettings"
+            android:summary="Adjust the Laser Range Finder Preferences"
+            android:icon="@drawable/lrf_slide"/>
         <CheckBoxPreference 
             android:title="@string/wave_relay_callsign"
             android:key="locationUseWRCallsign"

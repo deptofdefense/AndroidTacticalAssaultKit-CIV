@@ -435,6 +435,7 @@ public class MissionSpecificPalletFragment extends Fragment implements
                 _customNamingView.incrementStartIndex();
             }
             Marker m = mc.placePoint();
+            m.setMetaBoolean(SensorDetailHandler.SENSOR_FOV, true);
             m.setMetaBoolean(SensorDetailHandler.HIDE_FOV, true);
             m.persist(MapView.getMapView().getMapEventDispatcher(), null,
                     this.getClass());

@@ -10,6 +10,7 @@ import android.widget.ImageButton;
 
 import com.atakmap.android.hashtags.HashtagContent;
 import com.atakmap.android.hashtags.util.HashtagSet;
+import com.atakmap.android.maps.Arrow;
 import com.atakmap.android.maps.ILocation;
 import com.atakmap.android.util.AttachmentManager;
 import com.atakmap.android.hierarchy.action.Delete;
@@ -142,7 +143,10 @@ public class MapItemHierarchyListItem extends AbstractChildlessListItem
     @Override
     public GeoPoint getPoint(GeoPoint point) {
         GeoPoint loc = null;
-        if (this.item instanceof Shape) {
+        if (this.item instanceof Arrow) {
+            Arrow arrow = ((Arrow) this.item);
+            loc = arrow.getPoint2().get();
+        } else if (this.item instanceof Shape) {
             loc = ((Shape) this.item).getCenter().get();
         } else if (this.item instanceof PointMapItem) {
             loc = ((PointMapItem) this.item).getGeoPointMetaData().get();

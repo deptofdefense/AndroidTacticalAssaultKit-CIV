@@ -19,7 +19,7 @@ public class CotServiceRemote {
     private CotEventListener cel;
 
     /**
-     * the d variant of the variable is only to be used when defering the registration of 
+     * the d variant of the variable is only to be used when deferring the registration of
      * the listener after it has been connected.
      */
     private ConnectionListener cl;

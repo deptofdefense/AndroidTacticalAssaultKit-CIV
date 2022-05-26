@@ -9,6 +9,11 @@ import com.atakmap.coremap.log.Log;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * The clear content registry holds all of the clear content implementations that need to be called
+ * when the app specifically requests to clear all content.    Only implementations provided by
+ * enabled plugins will be called.
+ */
 public class ClearContentRegistry {
 
     private static final String TAG = "ClearContentRegistry";

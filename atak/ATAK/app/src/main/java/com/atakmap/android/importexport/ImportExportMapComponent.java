@@ -498,7 +498,7 @@ public class ImportExportMapComponent extends AbstractMapComponent implements
     private FtpUploader _ftp;
     private MapView _mapView;
     private ImportManagerMapOverlay _overlay;
-    private List<URIContentSender> _senders = new ArrayList<>();
+    private final List<URIContentSender> _senders = new ArrayList<>();
 
     CotImportExportHandler cotHandler;
     KmlImportExportHandler kmlHandler;

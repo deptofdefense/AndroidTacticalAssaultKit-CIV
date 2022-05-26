@@ -25,6 +25,7 @@ import com.atakmap.coremap.maps.coords.GeoPoint.AltitudeReference;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.map.layer.feature.Feature.AltitudeMode;
 
 class RouteElevationPresenter implements ChartSelectionListener {
 
@@ -78,12 +79,10 @@ class RouteElevationPresenter implements ChartSelectionListener {
         if (RouteElevationBroadcastReceiver.getInstance().isDropDownOpen()) {
             _marker.setQuickDraw(!seekerStopped);
 
-            if (!(_route instanceof FloatingPointRoute))
-                //set the elvation of the seeker marker to ground level
-                _marker.draw(new GeoPoint(point.get().getLatitude(),
-                        point.get().getLongitude(), 0, AltitudeReference.AGL));
+            if (_route instanceof FloatingPointRoute) {
 
-            else {
+                // Special case for FloatingPointRoute
+
                 FloatingPointRoute floatingRoute = (FloatingPointRoute) _route;
                 List<GeoPoint> floatingGeoPoints = floatingRoute
                         .getFloatingGeoPoints();
@@ -128,6 +127,18 @@ class RouteElevationPresenter implements ChartSelectionListener {
                         point.get().getLongitude(), alt,
                         point.get().getAltitudeReference());
                 _marker.draw(gp);
+            } else {
+                // Generic route
+                AltitudeMode altMode = _route.getAltitudeMode();
+                if (altMode == AltitudeMode.ClampToGround) {
+                    // Clamp marker to terrain
+                    _marker.draw(new GeoPoint(point.get().getLatitude(),
+                            point.get().getLongitude(), 0,
+                            AltitudeReference.AGL));
+                } else {
+                    // Show marker on the exact route line
+                    _marker.draw(point.get());
+                }
             }
         }
 
@@ -187,7 +198,6 @@ class RouteElevationPresenter implements ChartSelectionListener {
 
         int altFmt = Integer.parseInt(_prefs.getString("alt_unit_pref",
                 String.valueOf(Span.ENGLISH)));
-        Span chartUnit = _view.getRangeUnits();
 
         String altDisplayPref = _prefs.getString("alt_display_pref",
                 "MSL");

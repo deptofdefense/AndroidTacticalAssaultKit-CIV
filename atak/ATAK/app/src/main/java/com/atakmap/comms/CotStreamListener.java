@@ -400,7 +400,7 @@ public class CotStreamListener implements
      * Get list of servers
      * //TODO force these references to be immutable, or make copies...
      *
-     * @return
+     * @return the list of servers
      */
     public synchronized CotPortListActivity.CotPort[] getServers() {
         if (getStreamCount() < 1)

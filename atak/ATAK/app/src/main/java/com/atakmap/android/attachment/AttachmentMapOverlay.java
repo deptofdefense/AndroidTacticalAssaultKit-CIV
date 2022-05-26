@@ -55,7 +55,7 @@ import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.assets.Icon;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.spatial.file.export.GPXExportWrapper;
 import com.atakmap.spatial.file.export.KMZFolder;
@@ -1204,14 +1204,12 @@ public class AttachmentMapOverlay extends AbstractMapOverlay2 {
                     && ((PointMapItem) i2.getMapItem()).getPoint().isValid();
 
             if (validP1 && validP2) {
-                final double d1 = DistanceCalculations
-                        .metersFromAtSourceTarget(
-                                ((PointMapItem) i1.getMapItem()).getPoint(),
-                                this.pointOfInterest);
-                final double d2 = DistanceCalculations
-                        .metersFromAtSourceTarget(
-                                ((PointMapItem) i2.getMapItem()).getPoint(),
-                                this.pointOfInterest);
+                final double d1 = GeoCalculations.distanceTo(
+                        ((PointMapItem) i1.getMapItem()).getPoint(),
+                        this.pointOfInterest);
+                final double d2 = GeoCalculations.distanceTo(
+                        ((PointMapItem) i2.getMapItem()).getPoint(),
+                        this.pointOfInterest);
                 if (d1 > d2)
                     return 1;
                 else if (d2 > d1)

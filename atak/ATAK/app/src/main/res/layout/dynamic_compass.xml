@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.atakmap.android.gui.DynamicCompass
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="@dimen/nav_button_size"
+    android:layout_height="@dimen/dynamic_compass_height">
+    <View
+        android:id="@+id/compass_shadow"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
+    <ImageView
+        android:id="@+id/compass_background"
+        android:layout_width="@dimen/nav_button_size"
+        android:layout_height="@dimen/nav_button_size"
+        android:padding="@dimen/auto_space_big"
+        android:src="@drawable/nav_dynamic_compass_background"/>
+
+    <RelativeLayout
+        android:id="@+id/compass_lines"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <ImageView
+            android:id="@+id/compass_circle"
+            android:layout_width="@dimen/nav_button_size"
+            android:layout_height="@dimen/nav_button_size"
+            android:padding="@dimen/auto_space_big"
+            android:src="@drawable/nav_dynamic_compass_circle"/>
+        <ImageView
+            android:id="@+id/rotate_arrow"
+            android:layout_width="@dimen/nav_button_size"
+            android:layout_height="@dimen/nav_button_size"
+            android:padding="@dimen/auto_space_big"
+            android:src="@drawable/nav_dynamic_compass_rotate"/>
+
+        <ImageView
+            android:id="@+id/tilt_ticks"
+            android:layout_width="@dimen/nav_button_size"
+            android:layout_height="@dimen/nav_button_size"
+            android:padding="@dimen/auto_space_big"
+            android:src="@drawable/nav_dynamic_compass_ticks" />
+
+    </RelativeLayout>
+
+    <ImageView
+        android:id="@+id/tilt_arrow"
+        android:layout_width="@dimen/nav_button_size"
+        android:layout_height="@dimen/nav_button_size"
+        android:src="@drawable/tilt_indicator"/>
+    <ImageView
+        android:id="@+id/compass_arrow"
+        android:layout_width="@dimen/nav_button_size"
+        android:layout_height="@dimen/nav_button_size"
+        android:padding="@dimen/dynamic_compass_arrow_padding"
+        android:src="@drawable/nav_dynamic_compass_arrow"
+        android:tint="@color/deep_carmine_pink"/>
+
+    <view
+        android:id="@+id/heading_value"
+        class="com.atakmap.android.gui.DynamicCompass$HeadingText"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true" />
+
+</com.atakmap.android.gui.DynamicCompass>

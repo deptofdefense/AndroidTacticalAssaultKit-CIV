@@ -60,9 +60,6 @@ PDFIUM_LIBS="$(gdal_pdfium_libdir)/pdfium.lib $(gdal_pdfium_libdir)/bigint.lib $
 PROJ_DIR=$(OUTDIR_CYGSAFE)/proj                                              \
 PROJ_INCLUDE=-I$(OUTDIR_CYGSAFE)/proj/src                                    \
 PROJ_LIBRARY=$(OUTDIR_CYGSAFE)/lib/proj_i.lib                                \
-GEOS_DIR=$(OUTDIR_CYGSAFE)/geos                                              \
-GEOS_CFLAGS="-I$(OUTDIR_CYGSAFE)/include -DHAVE_GEOS"                        \
-GEOS_LIB=$(OUTDIR_CYGSAFE)/lib/geos_c_i.lib                                  \
 CURL_DIR="$(OUTDIR_CYGSAFE)/curl"                                            \
 CURL_INC="-I$(OUTDIR_CYGSAFE)/curl/include"                                  \
 CURL_LIB="$(OUTDIR_CYGSAFE)/lib/libcurl.lib wsock32.lib wldap32.lib winmm.lib" \
@@ -78,10 +75,10 @@ OGDILIB=$(OUTDIR_CYGSAFE)/lib/ogdi.lib                                       \
 $(gdal_win64_$(TARGET))                                                      \
 GDAL_HOME='$(OUTDIR_WIN)'
 
-# VS2013
-gdal_nmake_msvcver_v120=MSVC_VER=1800
 # VS2015
 gdal_nmake_msvcver_v140=MSVC_VER=1900
+# VS2019
+gdal_nmake_msvcver_v142=MSVC_VER=1900
 
 gdal_nmake_msvcver=$(gdal_nmake_msvcver_$(VS_VER_MSB))
 

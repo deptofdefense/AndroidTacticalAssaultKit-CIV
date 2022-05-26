@@ -1,8 +1,6 @@
 
 package com.atakmap.comms;
 
-import androidx.test.runner.AndroidJUnit4;
-
 import com.atakmap.android.androidtest.ATAKInstrumentedTest;
 import com.atakmap.commoncommo.CommoException;
 import com.atakmap.commoncommo.FileIOProvider;
@@ -37,6 +35,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 /**
  * This class tests the functionality of the native FileIOProvider by attempting a SimpleFileIO file
@@ -219,8 +219,8 @@ public class FileIOProviderTest extends ATAKInstrumentedTest {
         File f = createTestFile();
         // ACT
         FileChannel openedChannel = _tester.open(f.getAbsolutePath(), "rw");
-        String inputString = new String("something");
-        String expectedString = new String("mething");
+        String inputString = "something";
+        String expectedString = "mething";
         ByteBuffer buffer = ByteBuffer.allocateDirect(15);
         buffer.put(inputString.getBytes());
         ByteBuffer outbuffer = ByteBuffer

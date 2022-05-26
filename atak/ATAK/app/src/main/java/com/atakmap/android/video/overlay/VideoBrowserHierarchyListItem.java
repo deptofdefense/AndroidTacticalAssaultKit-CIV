@@ -63,7 +63,7 @@ class VideoBrowserHierarchyListItem extends AbstractHierarchyListItem2
         URIContentHandler h = null;
         if (entry != null)
             h = URIContentManager.getInstance().getHandler(
-                    entry.getLocalFile());
+                    entry.getLocalFile(), "Video");
         _handler = h;
     }
 
@@ -74,7 +74,7 @@ class VideoBrowserHierarchyListItem extends AbstractHierarchyListItem2
 
     @Override
     public String getDescription() {
-        return _entry.getAddress();
+        return _entry.getAddress(true);
     }
 
     @Override
@@ -89,11 +89,13 @@ class VideoBrowserHierarchyListItem extends AbstractHierarchyListItem2
 
     @Override
     public Drawable getIconDrawable() {
-        return _context.getDrawable(R.drawable.ic_video_alias);
+        return _context.getDrawable(_entry.getProtocol() == Protocol.FILE
+                ? R.drawable.ic_video_alias
+                : R.drawable.ic_video_remote);
     }
 
     @Override
-    public Object getUserObject() {
+    public ConnectionEntry getUserObject() {
         return _entry;
     }
 

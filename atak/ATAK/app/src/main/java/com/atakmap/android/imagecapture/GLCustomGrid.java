@@ -150,11 +150,9 @@ public class GLCustomGrid extends GLAbstractLayer2
     }
 
     private boolean withinView(PointF p, GLMapView view) {
-        int barHeight = view.getSurface().getMapView()
-                .getActionBarHeight();
         return p.x >= view.getLeft() && p.x < view.getRight()
                 && p.y >= view.getBottom()
-                && p.y <= view.getTop() - barHeight;
+                && p.y <= view.getTop();
     }
 
     private void projectVerts(final GLMapView view) {

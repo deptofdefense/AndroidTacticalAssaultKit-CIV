@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:background="@drawable/message_bar_background"
+    tools:gravity="center_vertical"
+    tools:layout_height="@dimen/message_bar_height"
+    tools:layout_width="match_parent"
+    tools:paddingEnd="@dimen/padding_medium"
+    tools:paddingStart="@dimen/padding_medium"
+    tools:parentTag="android.widget.LinearLayout">
+
+    <EditText
+        android:id="@+id/message"
+        style="@style/AtakMessageEditText"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:hint="@string/message" />
+
+    <ImageButton
+        android:id="@+id/send"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        android:src="@drawable/ic_send"
+        android:tint="@color/pastel_gray" />
+</merge>

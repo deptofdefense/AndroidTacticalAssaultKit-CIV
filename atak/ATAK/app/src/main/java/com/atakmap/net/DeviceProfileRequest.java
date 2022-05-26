@@ -376,7 +376,7 @@ public class DeviceProfileRequest implements Parcelable {
     public Request createDeviceProfileRequest() {
         Request request = new Request(
                 DeviceProfileClient.REQUEST_TYPE_GET_PROFILE);
-        request.put(DeviceProfileOperation.PARAM_PROFILE_REQEUST, this);
+        request.put(DeviceProfileOperation.PARAM_PROFILE_REQUEST, this);
         return request;
     }
 }

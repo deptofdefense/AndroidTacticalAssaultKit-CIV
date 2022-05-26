@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/nav_grid_item_size"
+    android:background="@color/black"
+    android:backgroundTint="@color/nav_settings_item_background">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:orientation="vertical">
+
+        <ImageView
+            android:id="@+id/tak_nav_item_image"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginTop="10dp"
+            android:layout_centerHorizontal="true"
+            android:tint="@color/nav_item_foreground"
+            tools:src="@drawable/nav_bloodhound" />
+
+        <TextView
+            android:id="@+id/tak_nav_item_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/tak_nav_item_image"
+            android:layout_centerHorizontal="true"
+            android:gravity="center"
+            android:paddingStart="@dimen/auto_space"
+            android:paddingEnd="@dimen/auto_space"
+            android:lineSpacingMultiplier="0.8"
+            android:ellipsize="end"
+            android:lines="2"
+            android:textAppearance="@style/AtakTextAppearance.Body"
+            android:textSize="12sp"
+            android:textColor="@color/nav_item_foreground_white"
+            tools:text="@string/bloodhound_title"
+            tools:textColor="@color/white"/>
+
+        <ImageView
+            android:id="@+id/tak_nav_delete_tool"
+            android:layout_width="@dimen/list_item_title_icon_size"
+            android:layout_height="@dimen/list_item_title_icon_size"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentRight="true"
+            android:src="@drawable/nav_tool_delete" />
+
+        <ImageView
+            android:id="@+id/tak_nav_hide_tool"
+            android:layout_width="@dimen/list_item_title_icon_size"
+            android:layout_height="@dimen/list_item_title_icon_size"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentRight="true"
+            android:src="@drawable/nav_tool_shown"/>
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:background="@color/manatee"
+            android:layout_alignParentEnd="true"/>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/manatee"
+            android:layout_alignParentBottom="true"/>
+
+    </RelativeLayout>
+</FrameLayout>

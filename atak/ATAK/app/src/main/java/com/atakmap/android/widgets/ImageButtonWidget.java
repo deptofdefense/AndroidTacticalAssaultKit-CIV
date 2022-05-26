@@ -7,21 +7,26 @@ import android.graphics.Point;
 import android.net.Uri;
 
 import com.atakmap.android.maps.MapDataRef;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.io.UriFactory;
 
-import java.io.IOException;
 import java.io.InputStream;
 
+@Deprecated
+@DeprecatedApi(since = "4.4")
 public class ImageButtonWidget extends ButtonWidget {
 
     public static final String TAG = "ImageButtonWidget";
 
-    final Context _context;
     private boolean _hasBackground = true;
     private WidgetIcon _icon;
 
-    public ImageButtonWidget(Context context) {
-        _context = context;
+    public ImageButtonWidget(Context ignored) {
+        this();
+    }
+
+    public ImageButtonWidget() {
         setBackground(new WidgetBackground(-1728053248));
         _hasBackground = true;
         setState(0);
@@ -39,12 +44,15 @@ public class ImageButtonWidget extends ButtonWidget {
         int imgWidth = 32;
         InputStream istr = null;
         try {
-            istr = _context.getAssets().open(path);
-            BitmapFactory.Options options = new BitmapFactory.Options();
-            BitmapFactory.decodeStream(istr, null, options);
-            imgHeight = options.outHeight;
-            imgWidth = options.outWidth;
-        } catch (IOException e) {
+            UriFactory.OpenResult result = UriFactory.open(uri.toString());
+            if (result != null) {
+                istr = result.inputStream;
+                BitmapFactory.Options options = new BitmapFactory.Options();
+                BitmapFactory.decodeStream(istr, null, options);
+                imgHeight = options.outHeight;
+                imgWidth = options.outWidth;
+            }
+        } catch (Throwable e) {
             Log.e(TAG, "error: ", e);
         } finally {
             if (istr != null) {
@@ -85,9 +93,9 @@ public class ImageButtonWidget extends ButtonWidget {
     }
 
     @Override
-    public void setSize(float width, float height) {
-        super.setSize(width + 4f, height + 4f); // to compensate for the gl bordering with the
-                                                // rounded corners
+    public boolean setSize(float width, float height) {
+        return super.setSize(width + 4f, height + 4f); // to compensate for the gl bordering with the
+        // rounded corners
     }
 
     public boolean getHasBackground() {

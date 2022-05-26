@@ -12,6 +12,7 @@ import java.io.ByteArrayOutputStream;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 
+import com.atakmap.app.BuildConfig;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.net.CertificateManager;
@@ -64,7 +65,6 @@ import android.util.Pair;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 import com.atakmap.commoncommo.*;
-import com.atakmap.comms.NetworkDeviceManager.NetworkDevice;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.net.AtakAuthenticationCredentials;
 import com.atakmap.net.AtakCertificateDatabaseIFace;
@@ -79,6 +79,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
     private static boolean commoNativeInitComplete = false;
 
     private static CommsMapComponent _instance;
+    private final NetworkManagerLite networkManagerLite = new NetworkManagerLite();
 
     private final int SCAN_WAIT = 45 * 1000; // 45 seconds
 
@@ -162,38 +163,8 @@ public class CommsMapComponent extends AbstractMapComponent implements
     // should not be used for anything more than that.
     private final ConcurrentLinkedQueue<CommsLogger> loggers = new ConcurrentLinkedQueue<>();
 
-    private static class HwAddress {
-        public final byte[] addr;
-
-        HwAddress(byte[] b) {
-            addr = b;
-        }
-
-        public boolean equals(final Object b) {
-            if (!(b instanceof HwAddress))
-                return false;
-            HwAddress other = (HwAddress) b;
-            if (other.addr.length != addr.length)
-                return false;
-            for (int i = 0; i < addr.length; ++i)
-                if (other.addr[i] != addr[i])
-                    return false;
-            return true;
-        }
-
-        public int hashCode() {
-            int ret = 0;
-            for (int i = 0; i < addr.length; ++i) {
-                int b = i % 4;
-                int n = (((int) addr[i]) & 0xff) << b * 8;
-                ret ^= n;
-            }
-            return ret;
-        }
-    }
-
-    private final Set<HwAddress> hwAddressesIn;
-    private final Set<HwAddress> hwAddressesOut;
+    private final Set<String> hwAddressesIn;
+    private final Set<String> hwAddressesOut;
 
     private static class InputPortInfo {
         CotPort inputPort;
@@ -369,6 +340,29 @@ public class CommsMapComponent extends AbstractMapComponent implements
         SharedPreferences prefs = PreferenceManager
                 .getDefaultSharedPreferences(context);
 
+        if (!prefs.contains("enableNonStreamingConnections")) {
+            Log.d(TAG, "setting the default mesh networking state to " +
+                    BuildConfig.MESH_NETWORK_DEFAULT);
+            prefs.edit().putBoolean("enableNonStreamingConnections",
+                    BuildConfig.MESH_NETWORK_DEFAULT).apply();
+        }
+        if (!prefs.contains("mockingOption")) {
+            Log.d(TAG, "setting the default gps listening state to: " +
+                    (BuildConfig.MESH_NETWORK_DEFAULT ? "WRGPS" : "LocalGPS"));
+            prefs.edit().putString("mockingOption",
+                    BuildConfig.MESH_NETWORK_DEFAULT ? "WRGPS" : "LocalGPS")
+                    .apply();
+        }
+        if (!prefs.contains("nonBluetoothLaserRangeFinder")) {
+            Log.d(TAG,
+                    "setting the default non-bluetooth laser range finder listening state to "
+                            +
+                            BuildConfig.MESH_NETWORK_DEFAULT);
+            prefs.edit().putBoolean("nonBluetoothLaserRangeFinder",
+                    BuildConfig.MESH_NETWORK_DEFAULT).apply();
+
+        }
+
         prefs.registerOnSharedPreferenceChangeListener(this);
 
         if (commoNativeInitComplete && commo == null) {
@@ -384,7 +378,8 @@ public class CommsMapComponent extends AbstractMapComponent implements
                     "callsign", "nocallsign");
 
             try {
-                commo = new Commo(new Logger(TAG + "Commo"), uid, callsign);
+                commo = new Commo(new Logger(TAG + "Commo"), uid, callsign,
+                        NetInterfaceAddressMode.NAME);
                 commo.addCoTMessageListener(this);
                 commo.addInterfaceStatusListener(this);
                 commo.addContactPresenceListener(this);
@@ -478,8 +473,8 @@ public class CommsMapComponent extends AbstractMapComponent implements
             // likely not needed but for semantic symmetry
             hwAddressesOut.clear();
             hwAddressesIn.clear();
-            hwAddressesIn.addAll(scanInterfaces(true, true));
-            hwAddressesOut.addAll(scanInterfaces(false, true));
+            hwAddressesIn.addAll(scanInterfaces(true));
+            hwAddressesOut.addAll(scanInterfaces(true));
             scannerThread = new Thread("CommsMapComponent iface scan") {
                 @Override
                 public void run() {
@@ -510,9 +505,15 @@ public class CommsMapComponent extends AbstractMapComponent implements
                 "com.atakmap.app.COMPONENTS_CREATED");
         registerReceiver(context, _componentsListener, filter);
 
-        AtakBroadcast.getInstance().registerSystemReceiver(rescanReceiver,
-                new DocumentedIntentFilter(
-                        NetworkDeviceManager.CONFIG_ALTERED));
+        // listen for network changes from network monitor
+        DocumentedIntentFilter networkFilter = new DocumentedIntentFilter();
+        networkFilter.addAction(NetworkManagerLite.NETWORK_STATUS_CHANGED);
+        networkFilter.addAction(NetworkManagerLite.NETWORK_LIST);
+        AtakBroadcast.getInstance().registerSystemReceiver(networkManagerLite,
+                networkFilter);
+        AtakBroadcast.getInstance().sendSystemBroadcast(
+                new Intent(NetworkManagerLite.LIST_NETWORK));
+
         commo.registerFileIOProvider(new com.atakmap.comms.FileIOProvider());
         _instance = this;
         cotService = new CotService(context);
@@ -928,7 +929,8 @@ public class CommsMapComponent extends AbstractMapComponent implements
             _componentsListener = null;
         }
 
-        AtakBroadcast.getInstance().unregisterSystemReceiver(rescanReceiver);
+        AtakBroadcast.getInstance()
+                .unregisterSystemReceiver(networkManagerLite);
 
         // dispose of the registered loggers
         for (CommsLogger logger : loggers) {
@@ -996,20 +998,6 @@ public class CommsMapComponent extends AbstractMapComponent implements
         preSendProcessor = psp;
     }
 
-    private static byte[] macStringToBytes(String mac)
-            throws NumberFormatException {
-        String[] macByteStrings = mac.split(":");
-        byte[] b = new byte[macByteStrings.length];
-
-        for (int i = 0; i < macByteStrings.length; ++i) {
-            if (macByteStrings[i].length() != 2)
-                throw new NumberFormatException("Illegal mac address string");
-            b[i] = (byte) Integer.parseInt(macByteStrings[i], 16);
-        }
-
-        return b;
-    }
-
     /**
      * Enabled PPP as a tunnel for use with the trellisware wireless connector.   When called, it
      * will trigger a rescan of the interfaces with ppp[0..4] included or excluded.
@@ -1028,15 +1016,15 @@ public class CommsMapComponent extends AbstractMapComponent implements
     }
 
     private void rescanInterfaces() {
-        Set<HwAddress> in = scanInterfaces(true, false);
-        Set<HwAddress> out = scanInterfaces(false, false);
+        Set<String> in = scanInterfaces(false);
+        Set<String> out = scanInterfaces(false);
         in.removeAll(hwAddressesIn);
         out.removeAll(hwAddressesOut);
 
         if (!in.isEmpty()) {
             Log.i(TAG,
                     "Set of input network interfaces changed - rebuilding inputs!");
-            in = scanInterfaces(true, true);
+            in = scanInterfaces(true);
             synchronized (hwAddressesIn) {
                 hwAddressesIn.clear();
                 hwAddressesIn.addAll(in);
@@ -1046,7 +1034,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
         if (!out.isEmpty()) {
             Log.i(TAG,
                     "Set of output network interfaces changed - rebuilding outputs!");
-            out = scanInterfaces(false, true);
+            out = scanInterfaces(true);
             synchronized (hwAddressesOut) {
                 hwAddressesOut.clear();
                 hwAddressesOut.addAll(out);
@@ -1055,135 +1043,56 @@ public class CommsMapComponent extends AbstractMapComponent implements
         }
     }
 
-    private Set<HwAddress> scanInterfaces(boolean input, boolean doLog) {
-        final Set<HwAddress> ret = new HashSet<>();
-        /**
-         * Obtain the list of all of the networks that are preconfigured. For multicast address for
-         * the inputs and outputs, the interface name can be specified to send traffic out the
-         * specific network interface. if no network interface is specified, send it out the OS
-         * specific default.
-         */
-        List<NetworkDevice> networks = NetworkDeviceManager.getNetworkDevices();
+    private Set<String> scanInterfaces(boolean doLog) {
+        final Set<String> ret = new HashSet<>();
 
-        for (NetworkDevice nd : networks) {
-            if (nd.isSupported(NetworkDevice.Type.COT_BOTH)
-                    || nd.isSupported(input ? NetworkDevice.Type.COT_INPUT
-                            : NetworkDevice.Type.COT_OUTPUT)) {
-                try {
-                    ret.add(new HwAddress(macStringToBytes(nd.macaddr)));
-                    if (doLog)
-                        Log.d(TAG, "managing: "
-                                + nd.label + " mac address: "
-                                + nd.macaddr);
-                } catch (NumberFormatException e) {
-                    if (doLog)
-                        Log.d(TAG, "Error getting mac address for iface "
-                                + nd.label, e);
-                }
-            }
-        }
-
-        // Add wifi
-        if (networks.size() == 0) {
-            try {
-                Enumeration<NetworkInterface> enifs = NetworkInterface
-                        .getNetworkInterfaces();
-                if (enifs != null) {
-                    List<NetworkInterface> nifs = Collections.list(enifs);
-                    for (NetworkInterface nif : nifs) {
-                        // nwradioX and usbX are both interface names assigned to the HHL16 radio 
-                        // nwradioX is a renamed variant of usbX found on NettWarrior devices.
-                        // the MPU5 uses waverelay as the network device name
-                        final String name = nif.getName();
-                        if (name != null
-                                && (name.startsWith("wlan")
-                                        || name.startsWith("tun")
-                                        || name.startsWith("waverelay")
-                                        || name.startsWith("rndis")
-                                        || name.startsWith("eth")
-                                        || name.startsWith("nwradio")
-                                        || name.startsWith("usb")
-                                        || (pppIncluded
-                                                && name.startsWith("ppp")))) {
-                            // possible interfaces do not skip
-                        } else {
-                            if (doLog)
-                                Log.d(TAG,
-                                        "network device skipping: "
-                                                + nif.getName()
-                                                + " mac: "
-                                                + NetworkDeviceManager
-                                                        .byteToMac(nif
-                                                                .getHardwareAddress()));
-                            continue;
-                        }
+        try {
+            Enumeration<NetworkInterface> enifs = NetworkInterface
+                    .getNetworkInterfaces();
+            if (enifs != null) {
+                List<NetworkInterface> nifs = Collections.list(enifs);
+                for (NetworkInterface nif : nifs) {
+                    // nwradioX and usbX are both interface names assigned to the HHL16 radio
+                    // nwradioX is a renamed variant of usbX found on NettWarrior devices.
+                    // the MPU5 uses waverelay as the network device name
+                    final String name = nif.getName();
+                    if (name != null
+                            && (name.startsWith("wlan")
+                                    || name.startsWith("tun")
+                                    || name.startsWith("waverelay")
+                                    || name.startsWith("rndis")
+                                    || name.startsWith("eth")
+                                    || name.startsWith("nwradio")
+                                    || name.startsWith("usb")
+                                    || (pppIncluded
+                                            && name.startsWith("ppp")))) {
                         if (doLog)
-                            Log.d(TAG,
-                                    "network device registering: "
-                                            + nif.getName()
-                                            + " mac: "
-                                            + NetworkDeviceManager.byteToMac(nif
-                                                    .getHardwareAddress()));
+                            Log.d(TAG, "network device registering: "
+                                    + nif.getName());
 
-                        byte[] hwa = nif.getHardwareAddress();
-
-                        // fix up for tun0 and tun1
-                        if (nif.getName().equals("tun0")) {
-                            Log.d(TAG, "fixup for tun0 applied");
-                            hwa = new byte[] {
-                                    (byte) 0xff, (byte) 0xff, (byte) 0xff,
-                                    (byte) 0xff, (byte) 0xff, (byte) 0xff,
-                                    (byte) 0x74, (byte) 0x75, (byte) 0x6e,
-                                    (byte) 0x30
-                            };
-                        } else if (nif.getName().equals("tun1")) {
-                            Log.d(TAG, "fixup for tun1 applied");
-                            hwa = new byte[] {
-                                    (byte) 0xff, (byte) 0xff, (byte) 0xff,
-                                    (byte) 0xff, (byte) 0xff, (byte) 0xff,
-                                    (byte) 0x74, (byte) 0x75, (byte) 0x6e,
-                                    (byte) 0x31
-                            };
-                        } else if (pppIncluded) {
-                            for (int i = 0; i < 4; ++i) {
-                                String s = "ppp" + i;
-                                if (nif.getName().equals(s)) {
-                                    Log.d(TAG, "fixup for " + s + " applied");
-                                    hwa = new byte[] {
-                                            (byte) 0xff, (byte) 0xff,
-                                            (byte) 0xff,
-                                            (byte) 0xff, (byte) 0xff,
-                                            (byte) 0xff,
-                                            (byte) 0x70, (byte) 0x70,
-                                            (byte) 0x70,
-                                            (byte) (0x30 + i)
-                                    };
-                                    break;
-                                }
-                            }
-                        }
-
-                        if (hwa != null)
-                            ret.add(new HwAddress(hwa));
+                        ret.add(name);
+                    } else {
+                        if (doLog)
+                            Log.d(TAG, "network device skipping: "
+                                    + nif.getName());
                     }
-
                 }
-                ret.add(new HwAddress(macStringToBytes("30:30:70:70:70:30")));
-            } catch (SocketException e) {
-                if (doLog)
-                    Log.d(TAG, "Exception getting wifi mac address", e);
             }
+        } catch (SocketException e) {
+            if (doLog)
+                Log.d(TAG,
+                        "exception occurred trying to build the interface list",
+                        e);
         }
-
         return ret;
     }
 
-    private List<byte[]> getMacAddrs(boolean input) {
-        ArrayList<byte[]> ret = new ArrayList<>();
-        Set<HwAddress> addrSet = input ? hwAddressesIn : hwAddressesOut;
+    private List<String> getInterfaceNames(boolean input) {
+        ArrayList<String> ret;
+        Set<String> addrSet = input ? hwAddressesIn : hwAddressesOut;
+        //noinspection SynchronizationOnLocalVariableOrMethodParameter
         synchronized (addrSet) {
-            for (HwAddress addr : addrSet)
-                ret.add(addr.addr);
+            ret = new ArrayList<>(addrSet);
         }
         return ret;
     }
@@ -1205,7 +1114,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
 
     // Assumes holding of netIfaces lock
     private List<PhysicalNetInterface> addInputsForMcastSet(
-            Set<String> mcastSet, int port, List<byte[]> macAddrs) {
+            Set<String> mcastSet, int port, List<String> ifaceNames) {
         // remove null unicast-only entry, return null if that null is only one
         Set<String> nonNullSet = new HashSet<>();
         for (String s : mcastSet) {
@@ -1218,14 +1127,14 @@ public class CommsMapComponent extends AbstractMapComponent implements
         }
 
         List<PhysicalNetInterface> netIfaces = new ArrayList<>();
-        for (byte[] b : macAddrs) {
-            PhysicalNetInterface iface = null;
+        for (String name : ifaceNames) {
+            PhysicalNetInterface iface;
             try {
-                iface = commo.addInboundInterface(b, port, mcastAddresses,
+                iface = commo.addInboundInterface(name, port, mcastAddresses,
                         false);
                 netIfaces.add(iface);
             } catch (CommoException e) {
-                Log.d(TAG, "Could not create input for " + iface + " mcast: "
+                Log.d(TAG, "Could not create input for " + name + " mcast: "
                         + Arrays.toString(mcastAddresses) + ":" + port, e);
             }
         }
@@ -1241,14 +1150,15 @@ public class CommsMapComponent extends AbstractMapComponent implements
             return;
 
         synchronized (inputIfaces) {
-            List<byte[]> macAddrs = getMacAddrs(true);
+            List<String> ifaceNames = getInterfaceNames(true);
 
             // Remove interfaces associated with this input's network port
             if (inputIfaces.containsKey(port)) {
                 // need to remove it to change parameters/disable
                 List<PhysicalNetInterface> ifaces = inputIfaces.remove(port);
-                for (PhysicalNetInterface iface : ifaces)
-                    commo.removeInboundInterface(iface);
+                if (ifaces != null)
+                    for (PhysicalNetInterface iface : ifaces)
+                        commo.removeInboundInterface(iface);
             }
 
             // If this Input existed before....
@@ -1277,7 +1187,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
                     } else if (portInfo.netPort != port) {
                         // Add old port back with remaining enabled mcasts
                         List<PhysicalNetInterface> netIfaces = addInputsForMcastSet(
-                                mcast, portInfo.netPort, macAddrs);
+                                mcast, portInfo.netPort, ifaceNames);
                         inputIfaces.put(portInfo.netPort, netIfaces);
                     }
                 }
@@ -1296,7 +1206,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
             // If there are any addresses left enabled for our net port, add the ifaces with that set of addrs
             if (mcastSet != null && !mcastSet.isEmpty()) {
                 List<PhysicalNetInterface> netIfaces = addInputsForMcastSet(
-                        mcastSet, port, macAddrs);
+                        mcastSet, port, ifaceNames);
                 inputIfaces.put(port, netIfaces);
             }
         }
@@ -1370,9 +1280,9 @@ public class CommsMapComponent extends AbstractMapComponent implements
                     if (mcast.isEmpty()) {
                         mcastAddrsByPort.remove(portInfo.netPort);
                     } else {
-                        List<byte[]> macAddrs = getMacAddrs(true);
+                        List<String> ifaceNames = getInterfaceNames(true);
                         List<PhysicalNetInterface> netIfaces = addInputsForMcastSet(
-                                mcast, portInfo.netPort, macAddrs);
+                                mcast, portInfo.netPort, ifaceNames);
                         inputIfaces.put(portInfo.netPort, netIfaces);
                     }
                 }
@@ -1398,8 +1308,9 @@ public class CommsMapComponent extends AbstractMapComponent implements
                 // remove the ifaces from commo but leave them in our list of ports
                 List<PhysicalNetInterface> netIfaces = broadcastIfaces
                         .remove(uniqueKey);
-                for (PhysicalNetInterface iface : netIfaces)
-                    commo.removeBroadcastInterface(iface);
+                if (netIfaces != null)
+                    for (PhysicalNetInterface iface : netIfaces)
+                        commo.removeBroadcastInterface(iface);
             }
 
             if (isNowEnabled) {
@@ -1417,30 +1328,30 @@ public class CommsMapComponent extends AbstractMapComponent implements
                 }
 
                 if (!isReallyMcast) {
-                    PhysicalNetInterface iface = null;
+                    PhysicalNetInterface iface;
                     try {
                         iface = commo.addBroadcastInterface(types,
                                 mcastAddress, port);
                         netIfaces.add(iface);
                     } catch (CommoException e) {
                         Log.d(TAG, "Could not create output iface " + uniqueKey
-                                + " for " + iface + " mcast: " + mcastAddress
+                                + " for mcast: " + mcastAddress
                                 + ":" + port, e);
                     }
 
                 } else {
-                    List<byte[]> macAddrs = getMacAddrs(false);
-                    for (byte[] b : macAddrs) {
-                        PhysicalNetInterface iface = null;
+                    List<String> ifaceNames = getInterfaceNames(false);
+                    for (String name : ifaceNames) {
+                        PhysicalNetInterface iface;
                         try {
-                            iface = commo.addBroadcastInterface(b, types,
+                            iface = commo.addBroadcastInterface(name, types,
                                     mcastAddress, port);
                             netIfaces.add(iface);
                         } catch (CommoException e) {
 
                             Log.d(TAG, "Could not create output iface "
                                     + uniqueKey
-                                    + " for " + iface + " mcast: "
+                                    + " for " + name + " mcast: "
                                     + mcastAddress
                                     + ":" + port, e);
                         }
@@ -2264,14 +2175,6 @@ public class CommsMapComponent extends AbstractMapComponent implements
             Log.e(TAG, "Failed to destroy cloud client", e);
         }
     }
-
-    private final BroadcastReceiver rescanReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            triggerIfaceRescan();
-
-        }
-    };
 
     private BroadcastReceiver _credListener = new BroadcastReceiver() {
         @Override

@@ -3,13 +3,14 @@ package com.atakmap.coremap.maps.coords;
 
 import com.atakmap.android.androidtest.ATAKInstrumentedTest;
 
-import androidx.test.runner.AndroidJUnit4;
-
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 @RunWith(AndroidJUnit4.class)
 public class GeoBoundsTest extends ATAKInstrumentedTest {
@@ -35,8 +36,8 @@ public class GeoBoundsTest extends ATAKInstrumentedTest {
         GeoBounds geoBounds1 = new GeoBounds(pointA, pointB);
         GeoBounds geoBounds2 = new GeoBounds(pointB, pointA);
         GeoBounds geoBounds3 = new GeoBounds(pointA, pointC);
-        assertTrue(geoBounds1.equals(geoBounds2));
-        assertFalse(geoBounds1.equals(geoBounds3));
+        assertEquals(geoBounds1, geoBounds2);
+        assertNotEquals(geoBounds1, geoBounds3);
     }
 
     @org.junit.Test
@@ -118,10 +119,10 @@ public class GeoBoundsTest extends ATAKInstrumentedTest {
         double midPointAlt = (pointA.getAltitude() + pointB.getAltitude())
                 / 2.0d;
         GeoPoint midPoint = new GeoPoint(midPointLat, midPointLng, midPointAlt);
-        assertTrue(geoBounds.getCenter(null).equals(midPoint));
+        assertEquals(geoBounds.getCenter(null), midPoint);
         GeoPoint rtnPoint = GeoPoint.createMutable();
         geoBounds.getCenter(rtnPoint);
-        assertTrue(rtnPoint.equals(midPoint));
+        assertEquals(rtnPoint, midPoint);
     }
 
     @org.junit.Test
@@ -134,7 +135,7 @@ public class GeoBoundsTest extends ATAKInstrumentedTest {
         GeoBounds geoBounds = GeoBounds.createFromPoints(points);
         GeoBounds expBounds = new GeoBounds(34.1, -79.9, 100.5, 34.4, -79.6,
                 102.2);
-        assertTrue(geoBounds.equals(expBounds));
+        assertEquals(geoBounds, expBounds);
     }
 
     @org.junit.Test
@@ -154,7 +155,7 @@ public class GeoBoundsTest extends ATAKInstrumentedTest {
         GeoBounds notExpBounds = new GeoBounds(34.1, -79.9, 100.5, 34.4, -79.6,
                 102.2);
         GeoBounds expBounds = new GeoBounds(34.1, -79.9, 34.4, -79.6);
-        assertFalse(geoBounds.equals(notExpBounds));
-        assertTrue(geoBounds.equals(expBounds));
+        assertNotEquals(geoBounds, notExpBounds);
+        assertEquals(geoBounds, expBounds);
     }
 }

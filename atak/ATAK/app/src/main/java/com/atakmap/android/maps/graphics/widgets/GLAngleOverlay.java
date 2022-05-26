@@ -445,8 +445,6 @@ public class GLAngleOverlay extends GLAutoSizeAngleOverlay {
         // Could be in portrait mode as well, so change the bottom accordingly
         //float top = this.orthoView.focusy * 2;
         float top = ((GLMapView) this.context).getTop();
-        return new RectF(0f + 20,
-                top - (MapView.getMapView().getActionBarHeight() + 20),
-                right - 20, 0f + 20);
+        return new RectF(0f + 20, top - 20, right - 20, 0f + 20);
     }
 }

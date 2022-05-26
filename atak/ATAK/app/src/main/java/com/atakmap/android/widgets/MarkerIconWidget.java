@@ -6,18 +6,26 @@ import android.graphics.Rect;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.coremap.maps.assets.Icon;
 
+import java.util.IdentityHashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class MarkerIconWidget extends MapWidget2 {
+import gov.tak.api.commons.graphics.IIcon;
+import gov.tak.api.widgets.IMarkerIconWidget;
+
+public class MarkerIconWidget extends MapWidget2 implements IMarkerIconWidget {
 
     private int _state;
-    private final ConcurrentLinkedQueue<OnMarkerWidgetIconStateChangedListener> _onStateChanged = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<IMarkerIconWidget.OnMarkerWidgetIconStateChangedListener> _onStateChanged = new ConcurrentLinkedQueue<>();
+    private final Map<MarkerIconWidget.OnMarkerWidgetIconStateChangedListener, IMarkerIconWidget.OnMarkerWidgetIconStateChangedListener> _onStateChangedForwarders = new IdentityHashMap<>();
 
     private Icon _icon;
-    private final ConcurrentLinkedQueue<OnMarkerWidgetIconChangedListener> _onIconChanged = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<IMarkerIconWidget.OnMarkerWidgetIconChangedListener> _onIconChanged = new ConcurrentLinkedQueue<>();
+    private final Map<MarkerIconWidget.OnMarkerWidgetIconChangedListener, IMarkerIconWidget.OnMarkerWidgetIconChangedListener> _onIconChangedForwarders = new IdentityHashMap<>();
 
     private float _rotation;
-    private final ConcurrentLinkedQueue<OnMarkerWidgetIconRotationChangedListener> _onRotationChanged = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<IMarkerIconWidget.OnMarkerWidgetIconRotationChangedListener> _onRotationChanged = new ConcurrentLinkedQueue<>();
+    private final Map<MarkerIconWidget.OnMarkerWidgetIconRotationChangedListener, IMarkerIconWidget.OnMarkerWidgetIconRotationChangedListener> _onRotationChangedForwarders = new IdentityHashMap<>();
 
     private final Rect _hitBounds = new Rect(0, 0, 0, 0);
 
@@ -58,14 +66,28 @@ public class MarkerIconWidget extends MapWidget2 {
         return _state;
     }
 
-    public void addOnMarkerWidgetIconStateChangedListener(
-            OnMarkerWidgetIconStateChangedListener l) {
+    @Override
+    public final void addOnMarkerWidgetIconStateChangedListener(
+            IMarkerIconWidget.OnMarkerWidgetIconStateChangedListener l) {
         _onStateChanged.add(l);
     }
 
+    public void addOnMarkerWidgetIconStateChangedListener(
+            MarkerIconWidget.OnMarkerWidgetIconStateChangedListener l) {
+        registerForwardedListener(_onStateChanged, _onStateChangedForwarders, l,
+                new StateChangedForwarder(l));
+    }
+
+    @Override
     public void removeOnMarkerWidgetIconStateChangedListener(
-            OnMarkerWidgetIconStateChangedListener l) {
+            IMarkerIconWidget.OnMarkerWidgetIconStateChangedListener l) {
         _onStateChanged.remove(l);
+    }
+
+    public void removeOnMarkerWidgetIconStateChangedListener(
+            MarkerIconWidget.OnMarkerWidgetIconStateChangedListener l) {
+        unregisterForwardedListener(_onStateChanged, _onStateChangedForwarders,
+                l);
     }
 
     /**
@@ -142,6 +164,11 @@ public class MarkerIconWidget extends MapWidget2 {
         return _icon;
     }
 
+    @Override
+    public final IIcon getWidgetIcon() {
+        return _icon;
+    }
+
     /**
      * Set the size of the icon in pixels
      * @param width Width in pixels
@@ -175,42 +202,120 @@ public class MarkerIconWidget extends MapWidget2 {
         return _rotation;
     }
 
-    public void addOnMarkerWidgetIconChangedListener(
-            OnMarkerWidgetIconChangedListener l) {
+    @Override
+    public final void addOnMarkerWidgetIconChangedListener(
+            IMarkerIconWidget.OnMarkerWidgetIconChangedListener l) {
         _onIconChanged.add(l);
     }
 
-    public void removeOnMarkerWidgetIconChangedListener(
-            OnMarkerWidgetIconChangedListener l) {
+    public void addOnMarkerWidgetIconChangedListener(
+            MarkerIconWidget.OnMarkerWidgetIconChangedListener l) {
+        registerForwardedListener(_onIconChanged, _onIconChangedForwarders, l,
+                new IconChangedForwarder(l));
+    }
+
+    @Override
+    public final void removeOnMarkerWidgetIconChangedListener(
+            IMarkerIconWidget.OnMarkerWidgetIconChangedListener l) {
         _onIconChanged.remove(l);
     }
 
-    public void addOnMarkerWidgetIconRotationChangedListener(
-            OnMarkerWidgetIconRotationChangedListener l) {
+    public void removeOnMarkerWidgetIconChangedListener(
+            MarkerIconWidget.OnMarkerWidgetIconChangedListener l) {
+        unregisterForwardedListener(_onIconChanged, _onIconChangedForwarders,
+                l);
+    }
+
+    @Override
+    public final void addOnMarkerWidgetIconRotationChangedListener(
+            IMarkerIconWidget.OnMarkerWidgetIconRotationChangedListener l) {
         _onRotationChanged.add(l);
     }
 
-    public void removeOnMarkerWidgetIconRotationChangedListener(
-            OnMarkerWidgetIconRotationChangedListener l) {
+    public void addOnMarkerWidgetIconRotationChangedListener(
+            MarkerIconWidget.OnMarkerWidgetIconRotationChangedListener l) {
+        registerForwardedListener(_onRotationChanged,
+                _onRotationChangedForwarders, l,
+                new RotationChangedForwarder(l));
+    }
+
+    @Override
+    public final void removeOnMarkerWidgetIconRotationChangedListener(
+            IMarkerIconWidget.OnMarkerWidgetIconRotationChangedListener l) {
         _onRotationChanged.remove(l);
     }
 
+    public void removeOnMarkerWidgetIconRotationChangedListener(
+            MarkerIconWidget.OnMarkerWidgetIconRotationChangedListener l) {
+        unregisterForwardedListener(_onRotationChanged,
+                _onRotationChangedForwarders, l);
+    }
+
     private void onIconChanged() {
-        for (OnMarkerWidgetIconChangedListener l : _onIconChanged) {
+        for (IMarkerIconWidget.OnMarkerWidgetIconChangedListener l : _onIconChanged) {
             l.onMarkerWidgetIconChanged(this);
         }
     }
 
     private void onStateChanged() {
-        for (OnMarkerWidgetIconStateChangedListener l : _onStateChanged) {
+        for (IMarkerIconWidget.OnMarkerWidgetIconStateChangedListener l : _onStateChanged) {
             l.onMarkerWidgetStateChanged(this);
         }
     }
 
     private void onRotationChanged() {
-        for (OnMarkerWidgetIconRotationChangedListener l : _onRotationChanged) {
+        for (IMarkerIconWidget.OnMarkerWidgetIconRotationChangedListener l : _onRotationChanged) {
             l.onMarkerWidgetIconRotationChanged(this);
         }
     }
 
+    private final static class IconChangedForwarder
+            implements IMarkerIconWidget.OnMarkerWidgetIconChangedListener {
+        final MarkerIconWidget.OnMarkerWidgetIconChangedListener _cb;
+
+        IconChangedForwarder(
+                MarkerIconWidget.OnMarkerWidgetIconChangedListener cb) {
+            _cb = cb;
+        }
+
+        @Override
+        public void onMarkerWidgetIconChanged(IMarkerIconWidget widget) {
+            if (widget instanceof MarkerIconWidget)
+                _cb.onMarkerWidgetIconChanged((MarkerIconWidget) widget);
+        }
+    }
+
+    private final static class StateChangedForwarder implements
+            IMarkerIconWidget.OnMarkerWidgetIconStateChangedListener {
+        final MarkerIconWidget.OnMarkerWidgetIconStateChangedListener _cb;
+
+        StateChangedForwarder(
+                MarkerIconWidget.OnMarkerWidgetIconStateChangedListener cb) {
+            _cb = cb;
+        }
+
+        @Override
+        public void onMarkerWidgetStateChanged(IMarkerIconWidget widget) {
+            if (widget instanceof MarkerIconWidget)
+                _cb.onMarkerWidgetStateChanged((MarkerIconWidget) widget);
+        }
+    }
+
+    private final static class RotationChangedForwarder implements
+            IMarkerIconWidget.OnMarkerWidgetIconRotationChangedListener {
+        final MarkerIconWidget.OnMarkerWidgetIconRotationChangedListener _cb;
+
+        RotationChangedForwarder(
+                MarkerIconWidget.OnMarkerWidgetIconRotationChangedListener cb) {
+            _cb = cb;
+        }
+
+        @Override
+        public void onMarkerWidgetIconRotationChanged(
+                IMarkerIconWidget widget) {
+            if (widget instanceof MarkerIconWidget)
+                _cb.onMarkerWidgetIconRotationChanged(
+                        (MarkerIconWidget) widget);
+        }
+    }
 }

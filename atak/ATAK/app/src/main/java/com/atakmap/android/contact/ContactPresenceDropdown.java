@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.text.Editable;
 import android.text.InputType;
@@ -76,6 +77,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -97,6 +99,8 @@ public class ContactPresenceDropdown extends DropDownReceiver
     public static final String SEND_LIST = "mil.arl.atak.CONTACT_LIST";
     // Refresh list
     public static final String REFRESH_LIST = "com.atakmap.android.contact.REFRESH_LIST";
+    // Send directly to a list of contacts using the same logic employed by SEND_LIST
+    public static final String SEND_TO_CONTACTS = "com.atakmap.android.contact.SEND_TO_CONTACTS";
 
     private final Context _context;
     private final SharedPreferences _prefs;
@@ -167,11 +171,28 @@ public class ContactPresenceDropdown extends DropDownReceiver
     @Override
     public void onReceive(final Context context, Intent intent) {
         String action = intent.getAction();
-        if (action.equals(REFRESH_LIST)) {
-            if (adapter != null && !isClosed())
-                adapter.refreshList(intent.getStringExtra("reason"));
+        if (action == null)
             return;
+
+        switch (action) {
+            // Refresh the display
+            case REFRESH_LIST:
+                if (adapter != null && !isClosed())
+                    adapter.refreshList(intent.getStringExtra("reason"));
+                return;
+
+            // Directly send data to a list of contacts
+            case SEND_TO_CONTACTS: {
+                String[] contactUIDs = intent
+                        .getStringArrayExtra("contactUIDs");
+                if (FileSystemUtils.isEmpty(contactUIDs))
+                    return;
+                SendRequest req = new SendRequest(intent);
+                sendToContacts(req, Arrays.asList(contactUIDs));
+                return;
+            }
         }
+
         if (!isClosed() && openAction != null && !openAction.equals(action)) {
             reOpening = true;
             closeDropDown();
@@ -473,200 +494,25 @@ public class ContactPresenceDropdown extends DropDownReceiver
 
         setBaseViewMode(ViewMode.SEND_LIST);
 
-        final String uid = extras.getString("targetUID");
-        final String[] uids = extras.getStringArray("targetsUID");
-        final String msg = extras.getString("message");
-
-        Object o = intent.getParcelableExtra("com.atakmap.contact.CotEvent");
-        final CotEvent cotEvent = (CotEvent) o;
-
-        o = intent
-                .getSerializableExtra("com.atakmap.contact.MultipleCotEvents");
-        final ArrayList<CotEvent> multipleCotEvents = (ArrayList<CotEvent>) o;
-
-        // Mapped TAK server connect strings to file transfer cot events above
-        String[] ftrConns = intent.getStringArrayExtra("FileTransferConns");
-        final Map<String, CotEvent> ftrMap = new HashMap<>();
-        if (!FileSystemUtils.isEmpty(ftrConns)
-                && !FileSystemUtils.isEmpty(multipleCotEvents)) {
-            int i = 0;
-            for (CotEvent ce : multipleCotEvents) {
-                if (ce == null || !ce.isValid() || ce.getDetail() == null
-                        || ce.getDetail().getFirstChildByName(0,
-                                "fileshare") == null)
-                    continue;
-                ftrMap.put(ftrConns[i], ce);
-                i++;
-            }
-        }
-
-        // Intent to fire when contacts are selected, instead of immediately sending
-        final String sendCallback = extras.getString("sendCallback");
-
-        // This is used in FileSharing
-        final String filename = extras.getString("filename");
-
-        // This is used when embedding an image in CoT
-        final String imageFilename = extras.getString("imageFilename");
-
-        // see if sender desires no broadcast option
-        final boolean disableBroadcast = extras.getBoolean("disableBroadcast");
+        final SendRequest req = new SendRequest(intent);
 
         Button share = root
                 .findViewById(R.id.contact_list_button_share_selected);
         share.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                String[] uidList = uids;
-                if (uid != null)
-                    uidList = new String[] {
-                            uid
-                    };
-
-                if (sendCallback == null && cotEvent == null && filename == null
-                        && FileSystemUtils.isEmpty(multipleCotEvents)
-                        && FileSystemUtils.isEmpty(uidList)
-                        && FileSystemUtils.isEmpty(msg))
-                    return;
-
-                List<String> selected = adapter.getSelectedUids();
-                if (selected.isEmpty()) {
-                    // Nothing selected
-                    Toast.makeText(
-                            getMapView().getContext(),
-                            R.string.chat_text21,
-                            Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                // Multi-convo message sending
-                if (msg != null) {
-                    List<Contact> convos = new ArrayList<>();
-                    for (String u : selected) {
-                        Contact c = _contacts.getContactByUuid(u);
-                        if (c != null)
-                            convos.add(c);
-                    }
-                    if (convos.isEmpty()) {
-                        Toast.makeText(getMapView().getContext(),
-                                R.string.chat_text21, Toast.LENGTH_SHORT)
-                                .show();
-                        return;
-                    }
-                    ChatManagerMapComponent.getInstance().sendMessage(
-                            msg, convos);
+                if (sendToContacts(req, adapter.getSelectedUids())) {
+                    // disp.shareWithContacts(selectedContacts, cotEvent, cotType);
                     adapter.loadView();
                     closeDropDown();
-                    return;
                 }
-
-                Map<String, IndividualContact> uniqueSelected = new HashMap<>();
-                for (String u : selected) {
-                    Contact contact = _contacts.getContactByUuid(u);
-                    if (GroupContact.isGroup(contact)) {
-                        for (Contact c : contact
-                                .getFiltered(true)) {
-                            if (c instanceof IndividualContact)
-                                uniqueSelected.put(c.getUID(),
-                                        (IndividualContact) c);
-                        }
-                    } else if (contact instanceof IndividualContact)
-                        uniqueSelected.put(u, (IndividualContact) contact);
-                }
-                if (uniqueSelected.isEmpty()) {
-                    // Groups are empty
-                    Toast.makeText(getMapView().getContext(),
-                            R.string.chat_text22,
-                            Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                // First, send to all the plugins... i.e., via intents
-                List<IndividualContact> contacts = new ArrayList<>(
-                        uniqueSelected.values());
-                for (IndividualContact ic : contacts) {
-                    if (ic == null)
-                        continue;
-
-                    if (!ftrMap.isEmpty()) {
-                        // Workaround for Mission Package sending issue
-                        // TODO: Move MP implementation to Common Commo
-                        String serverFrom = ic.getServerFrom();
-                        CotEvent ce = ftrMap.get(String.valueOf(
-                                serverFrom));
-                        if (ce != null) {
-                            dispatchCot(ce, imageFilename,
-                                    new IndividualContact[] {
-                                            ic
-                            });
-                            uniqueSelected.remove(ic.getUID());
-                            continue;
-                        }
-                    }
-
-                    IpConnector ipConn = (IpConnector) ic.getConnector(
-                            IpConnector.CONNECTOR_TYPE);
-                    if (ipConn != null && !FileSystemUtils.isEmpty(
-                            ipConn.getSendIntent())) {
-                        // Send intent instead of sending by normal means
-                        Intent sendIntent = new Intent(intent);
-                        sendIntent.setAction(ipConn.getSendIntent());
-                        sendIntent.putExtra("contactUID", ic.getUID());
-                        AtakBroadcast.getInstance().sendBroadcast(
-                                sendIntent);
-                        uniqueSelected.remove(ic.getUID());
-                        continue;
-                    }
-                    if (uidList == null
-                            || ContactUtil.getIpAddress(ic) != null)
-                        continue;
-                    for (String uid : uidList) {
-                        Log.d(TAG,
-                                "Sending an intent for plugin ContactListItem: "
-                                        + ic.getName() + " to "
-                        /*+ item.intentAction*/);
-                        Intent forPlugin = createIntentForPlugin(
-                                intent, ic, uid, cotEvent);
-                        Log.d(TAG,
-                                " intent has uid: "
-                                        + forPlugin
-                                                .getStringExtra("uid"));
-                        AtakBroadcast.getInstance()
-                                .sendBroadcast(forPlugin);
-                    }
-                }
-
-                if (!uniqueSelected.isEmpty()) {
-                    IndividualContact[] allSelected = uniqueSelected
-                            .values().toArray(new IndividualContact[0]);
-
-                    if (sendCallback != null) {
-                        Intent cb = new Intent(intent);
-                        cb.setAction(sendCallback);
-                        cb.putExtra("sendTo", uniqueSelected.keySet()
-                                .toArray(new String[0]));
-                        // Uses LocalBroadcast to mitigate any risk.  Cannot be manipulated externally.
-                        AtakBroadcast.getInstance().sendBroadcast(cb);
-                    } else if (uidList != null) {
-                        sendCot(uidList, allSelected);
-                    } else if (cotEvent != null) {
-                        dispatchCot(cotEvent, imageFilename, allSelected);
-                    } else if (multipleCotEvents != null) {
-                        for (CotEvent ce : multipleCotEvents)
-                            dispatchCot(ce, imageFilename, allSelected);
-                    } else {
-                        sendFile(filename, allSelected);
-                    }
-                }
-                // disp.shareWithContacts(selectedContacts, cotEvent, cotType);
-                adapter.loadView();
-                closeDropDown();
             }
         });
 
         Button sendBroadcast = root
                 .findViewById(R.id.contact_list_button_send_to_all);
-        if (filename != null || imageFilename != null || disableBroadcast) {
+        if (req.filename != null || req.imageFilename != null
+                || req.disableBroadcast) {
             sendBroadcast.setVisibility(View.INVISIBLE);
         } else {
             sendBroadcast.setVisibility(View.VISIBLE);
@@ -674,45 +520,269 @@ public class ContactPresenceDropdown extends DropDownReceiver
         sendBroadcast.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                String[] uidList = uids;
-                if (uid != null)
-                    uidList = new String[] {
-                            uid
-                    };
-                if (sendCallback != null) {
-                    Intent cb = new Intent(sendCallback);
-                    cb.putExtra("sendTo", new String[] {
-                            GeoChatService.DEFAULT_CHATROOM_NAME
-                    });
-                    AtakBroadcast.getInstance().sendBroadcast(cb);
-                } else if (uidList != null) {
-                    sendCot(uidList, null);
-                } else if (cotEvent != null) {
-                    dispatchCot(cotEvent, imageFilename, null);
-                } else if (multipleCotEvents != null) {
-                    for (CotEvent ce : multipleCotEvents)
-                        dispatchCot(ce, imageFilename, null);
-                } else if (filename != null) {
-                    sendFile(filename, null);
-                } else if (msg != null) {
-                    List<Contact> dests = new ArrayList<>();
-                    dests.add(Contacts.getInstance().getContactByUuid(
-                            GeoChatService.DEFAULT_CHATROOM_NAME));
-                    ChatManagerMapComponent.getInstance().sendMessage(
-                            msg, dests);
-                } else
-                    return;
+                sendBroadcast(req);
                 adapter.loadView();
                 closeDropDown();
             }
         });
 
-        if (uid != null) {
-            MapItem mi = getMapView().getRootGroup().deepFindUID(uid);
+        if (req.uid != null) {
+            MapItem mi = getMapView().getRootGroup().deepFindUID(req.uid);
             if (mi instanceof PointMapItem)
                 setSelected(mi, "asset:/icons/outline.png");
         }
         return true;
+    }
+
+    private static class SendRequest {
+
+        private final Intent intent;
+
+        // UID of map item(s)
+        private final String uid;
+        private final String[] uids;
+
+        // GeoChat message
+        private final String msg;
+
+        // CoT event(s)
+        private final CotEvent cotEvent;
+        private final ArrayList<CotEvent> cotEvents;
+
+        // File transfer CoT events
+        private final Map<String, CotEvent> ftrMap = new HashMap<>();
+
+        // Callback intent action
+        private final Intent sendCallback;
+
+        // File path to send
+        private final String filename;
+
+        // Image file path
+        private final String imageFilename;
+
+        // True to disable broadcast imageFilename
+        private final boolean disableBroadcast;
+
+        SendRequest(Intent intent) {
+            this.intent = intent;
+            this.uid = intent.getStringExtra("targetUID");
+            this.uids = this.uid != null ? new String[] {
+                    this.uid
+            }
+                    : intent.getStringArrayExtra("targetsUID");
+            this.msg = intent.getStringExtra("message");
+
+            this.cotEvent = intent
+                    .getParcelableExtra("com.atakmap.contact.CotEvent");
+            this.cotEvents = (ArrayList<CotEvent>) intent.getSerializableExtra(
+                    "com.atakmap.contact.MultipleCotEvents");
+
+            // Mapped TAK server connect strings to file transfer cot events above
+            String[] ftrConns = intent.getStringArrayExtra("FileTransferConns");
+            if (!FileSystemUtils.isEmpty(ftrConns)
+                    && !FileSystemUtils.isEmpty(this.cotEvents)) {
+                int i = 0;
+                for (CotEvent ce : this.cotEvents) {
+                    if (ce == null || !ce.isValid() || ce.getDetail() == null
+                            || ce.getDetail().getFirstChildByName(0,
+                                    "fileshare") == null)
+                        continue;
+                    ftrMap.put(ftrConns[i], ce);
+                    i++;
+                }
+            }
+
+            // Intent to fire when contacts are selected, instead of immediately sending
+            Intent sendCallback = null;
+            if (intent.hasExtra("sendCallback")) {
+                Object o = intent.getExtras().get("sendCallback");
+                if (o instanceof String)
+                    sendCallback = new Intent((String) o);
+                else if (o instanceof Parcelable)
+                    sendCallback = intent.getParcelableExtra("sendCallback");
+            }
+            this.sendCallback = sendCallback;
+
+            // This is used in FileSharing
+            this.filename = intent.getStringExtra("filename");
+
+            // This is used when embedding an image in CoT
+            this.imageFilename = intent.getStringExtra("imageFilename");
+
+            // see if sender desires no broadcast option
+            this.disableBroadcast = intent.getBooleanExtra("disableBroadcast",
+                    false);
+        }
+    }
+
+    /**
+     * Send data to a list of contacts using various methods
+     * @param req Send request
+     * @param toUIDs Contact UIDs to send to
+     * @return True if sent successfully
+     */
+    private boolean sendToContacts(SendRequest req, List<String> toUIDs) {
+        // Nothing to do
+        if (req.sendCallback == null && req.cotEvent == null
+                && req.filename == null
+                && FileSystemUtils.isEmpty(req.cotEvents)
+                && FileSystemUtils.isEmpty(req.uids)
+                && FileSystemUtils.isEmpty(req.msg))
+            return false;
+
+        if (toUIDs.isEmpty()) {
+            // Nothing selected
+            Toast.makeText(
+                    getMapView().getContext(),
+                    R.string.chat_text21,
+                    Toast.LENGTH_SHORT).show();
+            return false;
+        }
+
+        // Multi-convo message sending
+        if (req.msg != null) {
+            List<Contact> convos = new ArrayList<>();
+            for (String u : toUIDs) {
+                Contact c = _contacts.getContactByUuid(u);
+                if (c != null)
+                    convos.add(c);
+            }
+            if (convos.isEmpty()) {
+                Toast.makeText(getMapView().getContext(),
+                        R.string.chat_text21, Toast.LENGTH_SHORT)
+                        .show();
+                return false;
+            }
+            ChatManagerMapComponent.getInstance().sendMessage(
+                    req.msg, convos);
+            return true;
+        }
+
+        Map<String, IndividualContact> uniqueSelected = new HashMap<>();
+        for (String u : toUIDs) {
+            Contact contact = _contacts.getContactByUuid(u);
+            if (GroupContact.isGroup(contact)) {
+                for (Contact c : contact
+                        .getFiltered(true)) {
+                    if (c instanceof IndividualContact)
+                        uniqueSelected.put(c.getUID(),
+                                (IndividualContact) c);
+                }
+            } else if (contact instanceof IndividualContact)
+                uniqueSelected.put(u, (IndividualContact) contact);
+        }
+        if (uniqueSelected.isEmpty()) {
+            // Groups are empty
+            Toast.makeText(getMapView().getContext(),
+                    R.string.chat_text22,
+                    Toast.LENGTH_SHORT).show();
+            return false;
+        }
+
+        // First, send to all the plugins... i.e., via intents
+        List<IndividualContact> contacts = new ArrayList<>(
+                uniqueSelected.values());
+        for (IndividualContact ic : contacts) {
+            if (ic == null)
+                continue;
+
+            if (!req.ftrMap.isEmpty()) {
+                // Workaround for Mission Package sending issue
+                // TODO: Move MP implementation to Common Commo
+                String serverFrom = ic.getServerFrom();
+                CotEvent ce = req.ftrMap.get(String.valueOf(
+                        serverFrom));
+                if (ce != null) {
+                    dispatchCot(ce, req.imageFilename,
+                            new IndividualContact[] {
+                                    ic
+                            });
+                    uniqueSelected.remove(ic.getUID());
+                    continue;
+                }
+            }
+
+            IpConnector ipConn = (IpConnector) ic.getConnector(
+                    IpConnector.CONNECTOR_TYPE);
+            if (ipConn != null && !FileSystemUtils.isEmpty(
+                    ipConn.getSendIntent())) {
+                // Send intent instead of sending by normal means
+                Intent sendIntent = new Intent(req.intent);
+                sendIntent.setAction(ipConn.getSendIntent());
+                sendIntent.putExtra("contactUID", ic.getUID());
+                AtakBroadcast.getInstance().sendBroadcast(
+                        sendIntent);
+                uniqueSelected.remove(ic.getUID());
+                continue;
+            }
+            if (req.uids == null
+                    || ContactUtil.getIpAddress(ic) != null)
+                continue;
+            for (String uid : req.uids) {
+                Log.d(TAG,
+                        "Sending an intent for plugin ContactListItem: "
+                                + ic.getName() + " to "
+                /*+ item.intentAction*/);
+                Intent forPlugin = createIntentForPlugin(
+                        req.intent, ic, uid, req.cotEvent);
+                Log.d(TAG,
+                        " intent has uid: "
+                                + forPlugin
+                                        .getStringExtra("uid"));
+                AtakBroadcast.getInstance()
+                        .sendBroadcast(forPlugin);
+            }
+        }
+
+        if (!uniqueSelected.isEmpty()) {
+            IndividualContact[] allSelected = uniqueSelected
+                    .values().toArray(new IndividualContact[0]);
+
+            if (req.sendCallback != null) {
+                Intent cb = new Intent(req.sendCallback);
+                cb.putExtras(req.intent);
+                cb.putExtra("sendTo", uniqueSelected.keySet()
+                        .toArray(new String[0]));
+                // Uses LocalBroadcast to mitigate any risk.  Cannot be manipulated externally.
+                AtakBroadcast.getInstance().sendBroadcast(cb);
+            } else if (req.uids != null) {
+                sendCot(req.uids, allSelected);
+            } else if (req.cotEvent != null) {
+                dispatchCot(req.cotEvent, req.imageFilename, allSelected);
+            } else if (req.cotEvents != null) {
+                for (CotEvent ce : req.cotEvents)
+                    dispatchCot(ce, req.imageFilename, allSelected);
+            } else {
+                sendFile(req.filename, allSelected);
+            }
+        }
+        return true;
+    }
+
+    private void sendBroadcast(SendRequest req) {
+        if (req.sendCallback != null) {
+            Intent cb = new Intent(req.sendCallback);
+            cb.putExtra("sendTo", new String[] {
+                    GeoChatService.DEFAULT_CHATROOM_NAME
+            });
+            AtakBroadcast.getInstance().sendBroadcast(cb);
+        } else if (req.uids != null) {
+            sendCot(req.uids, null);
+        } else if (req.cotEvent != null) {
+            dispatchCot(req.cotEvent, req.imageFilename, null);
+        } else if (req.cotEvents != null) {
+            for (CotEvent ce : req.cotEvents)
+                dispatchCot(ce, req.imageFilename, null);
+        } else if (req.filename != null) {
+            sendFile(req.filename, null);
+        } else if (req.msg != null) {
+            List<Contact> dests = new ArrayList<>();
+            dests.add(Contacts.getInstance().getContactByUuid(
+                    GeoChatService.DEFAULT_CHATROOM_NAME));
+            ChatManagerMapComponent.getInstance().sendMessage(
+                    req.msg, dests);
+        }
     }
 
     /**
@@ -1782,7 +1852,6 @@ public class ContactPresenceDropdown extends DropDownReceiver
 
         private static final String TAG = "SearchResults";
         private GroupContact _list;
-        private String _terms = "";
 
         public SearchResults() {
             super("SearchResults", "Results", false);

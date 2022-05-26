@@ -91,9 +91,9 @@ public final class GRGMapOverlay extends FeatureDataStoreMapOverlay {
 
     private AtakPreferences _prefs;
     private SharedPreferences.OnSharedPreferenceChangeListener _prefListener;
-    private RasterLayer2 _layer;
-    private FeatureLayer3 _coveragesLayer;
-    private RasterDataStore _grgLayersDb;
+    private final RasterLayer2 _layer;
+    private final FeatureLayer3 _coveragesLayer;
+    private final RasterDataStore _grgLayersDb;
     private GRGMapOverlayListModel _listModel;
 
     public GRGMapOverlay(MapView view, RasterLayer2 layer,
@@ -102,8 +102,7 @@ public final class GRGMapOverlay extends FeatureDataStoreMapOverlay {
                 coveragesLayer.getDataStore(),
                 null, // contentSource
                 ResourceUtil.getString(view.getContext(),
-                        R.string.civ_grg_lowercase, R.string.grg_lowercase)
-                        .toUpperCase(LocaleUtil.getCurrent()),
+                        R.string.image_overlay, R.string.grg),
                 "android.resource://"
                         + view.getContext().getPackageName()
                         + "/" + R.drawable.ic_overlay_gridlines,

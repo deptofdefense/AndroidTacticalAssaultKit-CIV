@@ -1,0 +1,1308 @@
+--- libkml.vanilla/msvc/libkml.sln	2014-06-05 15:57:51.000000000 -0400
++++ libkml/msvc/libkml.sln	2021-08-13 15:38:12.240801100 -0400
+@@ -1,63 +1,76 @@
+ ﻿
+-Microsoft Visual Studio Solution File, Format Version 9.00
+-# Visual Studio 2005
+-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libkmldom", "libkmldom.vcproj", "{19484FD7-58B0-44DA-89CE-EADF0CF39E04}"
+-	ProjectSection(ProjectDependencies) = postProject
+-		{DA5DEA8E-4DF5-4B36-BF1E-4760104149F0} = {DA5DEA8E-4DF5-4B36-BF1E-4760104149F0}
+-	EndProjectSection
+-EndProject
+-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libkmlengine", "libkmlengine.vcproj", "{C7D291C3-46EC-441C-B7F1-911FD32CE185}"
+-	ProjectSection(ProjectDependencies) = postProject
+-		{19484FD7-58B0-44DA-89CE-EADF0CF39E04} = {19484FD7-58B0-44DA-89CE-EADF0CF39E04}
+-	EndProjectSection
+-EndProject
+-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libkmlregionator", "libkmlregionator.vcproj", "{2A7D7DC5-8AB2-4B4F-848A-2A81226F2BC2}"
+-	ProjectSection(ProjectDependencies) = postProject
+-		{5E53C538-7B22-41FF-84AF-F08F0C019E7B} = {5E53C538-7B22-41FF-84AF-F08F0C019E7B}
+-	EndProjectSection
+-EndProject
+-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libkmlconvenience", "libkmlconvenience.vcproj", "{5E53C538-7B22-41FF-84AF-F08F0C019E7B}"
+-	ProjectSection(ProjectDependencies) = postProject
+-		{C7D291C3-46EC-441C-B7F1-911FD32CE185} = {C7D291C3-46EC-441C-B7F1-911FD32CE185}
+-	EndProjectSection
+-EndProject
+-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libkmlbase", "libkmlbase.vcproj", "{DA5DEA8E-4DF5-4B36-BF1E-4760104149F0}"
+-EndProject
+-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libkmlxsd", "libkmlxsd.vcproj", "{D5CD9019-3AC4-4223-82B2-E3A44A443395}"
+-	ProjectSection(ProjectDependencies) = postProject
+-		{C7D291C3-46EC-441C-B7F1-911FD32CE185} = {C7D291C3-46EC-441C-B7F1-911FD32CE185}
+-	EndProjectSection
++Microsoft Visual Studio Solution File, Format Version 12.00
++# Visual Studio 14
++VisualStudioVersion = 14.0.25420.1
++MinimumVisualStudioVersion = 10.0.40219.1
++Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libkmldom", "libkmldom.vcxproj", "{19484FD7-58B0-44DA-89CE-EADF0CF39E04}"
++EndProject
++Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libkmlengine", "libkmlengine.vcxproj", "{C7D291C3-46EC-441C-B7F1-911FD32CE185}"
++EndProject
++Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libkmlregionator", "libkmlregionator.vcxproj", "{2A7D7DC5-8AB2-4B4F-848A-2A81226F2BC2}"
++EndProject
++Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libkmlconvenience", "libkmlconvenience.vcxproj", "{5E53C538-7B22-41FF-84AF-F08F0C019E7B}"
++EndProject
++Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libkmlbase", "libkmlbase.vcxproj", "{DA5DEA8E-4DF5-4B36-BF1E-4760104149F0}"
++EndProject
++Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libkmlxsd", "libkmlxsd.vcxproj", "{D5CD9019-3AC4-4223-82B2-E3A44A443395}"
+ EndProject
+ Global
+ 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+ 		Debug|Win32 = Debug|Win32
++		Debug|x64 = Debug|x64
+ 		Release|Win32 = Release|Win32
++		Release|x64 = Release|x64
+ 	EndGlobalSection
+ 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+ 		{19484FD7-58B0-44DA-89CE-EADF0CF39E04}.Debug|Win32.ActiveCfg = Debug|Win32
+ 		{19484FD7-58B0-44DA-89CE-EADF0CF39E04}.Debug|Win32.Build.0 = Debug|Win32
++		{19484FD7-58B0-44DA-89CE-EADF0CF39E04}.Debug|x64.ActiveCfg = Debug|x64
++		{19484FD7-58B0-44DA-89CE-EADF0CF39E04}.Debug|x64.Build.0 = Debug|x64
+ 		{19484FD7-58B0-44DA-89CE-EADF0CF39E04}.Release|Win32.ActiveCfg = Release|Win32
+ 		{19484FD7-58B0-44DA-89CE-EADF0CF39E04}.Release|Win32.Build.0 = Release|Win32
++		{19484FD7-58B0-44DA-89CE-EADF0CF39E04}.Release|x64.ActiveCfg = Release|x64
++		{19484FD7-58B0-44DA-89CE-EADF0CF39E04}.Release|x64.Build.0 = Release|x64
+ 		{C7D291C3-46EC-441C-B7F1-911FD32CE185}.Debug|Win32.ActiveCfg = Debug|Win32
+ 		{C7D291C3-46EC-441C-B7F1-911FD32CE185}.Debug|Win32.Build.0 = Debug|Win32
++		{C7D291C3-46EC-441C-B7F1-911FD32CE185}.Debug|x64.ActiveCfg = Debug|x64
++		{C7D291C3-46EC-441C-B7F1-911FD32CE185}.Debug|x64.Build.0 = Debug|x64
+ 		{C7D291C3-46EC-441C-B7F1-911FD32CE185}.Release|Win32.ActiveCfg = Release|Win32
+ 		{C7D291C3-46EC-441C-B7F1-911FD32CE185}.Release|Win32.Build.0 = Release|Win32
++		{C7D291C3-46EC-441C-B7F1-911FD32CE185}.Release|x64.ActiveCfg = Release|x64
++		{C7D291C3-46EC-441C-B7F1-911FD32CE185}.Release|x64.Build.0 = Release|x64
+ 		{2A7D7DC5-8AB2-4B4F-848A-2A81226F2BC2}.Debug|Win32.ActiveCfg = Debug|Win32
+ 		{2A7D7DC5-8AB2-4B4F-848A-2A81226F2BC2}.Debug|Win32.Build.0 = Debug|Win32
++		{2A7D7DC5-8AB2-4B4F-848A-2A81226F2BC2}.Debug|x64.ActiveCfg = Debug|x64
++		{2A7D7DC5-8AB2-4B4F-848A-2A81226F2BC2}.Debug|x64.Build.0 = Debug|x64
+ 		{2A7D7DC5-8AB2-4B4F-848A-2A81226F2BC2}.Release|Win32.ActiveCfg = Release|Win32
+ 		{2A7D7DC5-8AB2-4B4F-848A-2A81226F2BC2}.Release|Win32.Build.0 = Release|Win32
++		{2A7D7DC5-8AB2-4B4F-848A-2A81226F2BC2}.Release|x64.ActiveCfg = Release|x64
++		{2A7D7DC5-8AB2-4B4F-848A-2A81226F2BC2}.Release|x64.Build.0 = Release|x64
+ 		{5E53C538-7B22-41FF-84AF-F08F0C019E7B}.Debug|Win32.ActiveCfg = Debug|Win32
+ 		{5E53C538-7B22-41FF-84AF-F08F0C019E7B}.Debug|Win32.Build.0 = Debug|Win32
++		{5E53C538-7B22-41FF-84AF-F08F0C019E7B}.Debug|x64.ActiveCfg = Debug|x64
++		{5E53C538-7B22-41FF-84AF-F08F0C019E7B}.Debug|x64.Build.0 = Debug|x64
+ 		{5E53C538-7B22-41FF-84AF-F08F0C019E7B}.Release|Win32.ActiveCfg = Release|Win32
+ 		{5E53C538-7B22-41FF-84AF-F08F0C019E7B}.Release|Win32.Build.0 = Release|Win32
++		{5E53C538-7B22-41FF-84AF-F08F0C019E7B}.Release|x64.ActiveCfg = Release|x64
++		{5E53C538-7B22-41FF-84AF-F08F0C019E7B}.Release|x64.Build.0 = Release|x64
+ 		{DA5DEA8E-4DF5-4B36-BF1E-4760104149F0}.Debug|Win32.ActiveCfg = Debug|Win32
+ 		{DA5DEA8E-4DF5-4B36-BF1E-4760104149F0}.Debug|Win32.Build.0 = Debug|Win32
++		{DA5DEA8E-4DF5-4B36-BF1E-4760104149F0}.Debug|x64.ActiveCfg = Debug|x64
++		{DA5DEA8E-4DF5-4B36-BF1E-4760104149F0}.Debug|x64.Build.0 = Debug|x64
+ 		{DA5DEA8E-4DF5-4B36-BF1E-4760104149F0}.Release|Win32.ActiveCfg = Release|Win32
+ 		{DA5DEA8E-4DF5-4B36-BF1E-4760104149F0}.Release|Win32.Build.0 = Release|Win32
++		{DA5DEA8E-4DF5-4B36-BF1E-4760104149F0}.Release|x64.ActiveCfg = Release|x64
++		{DA5DEA8E-4DF5-4B36-BF1E-4760104149F0}.Release|x64.Build.0 = Release|x64
+ 		{D5CD9019-3AC4-4223-82B2-E3A44A443395}.Debug|Win32.ActiveCfg = Debug|Win32
+ 		{D5CD9019-3AC4-4223-82B2-E3A44A443395}.Debug|Win32.Build.0 = Debug|Win32
++		{D5CD9019-3AC4-4223-82B2-E3A44A443395}.Debug|x64.ActiveCfg = Debug|x64
++		{D5CD9019-3AC4-4223-82B2-E3A44A443395}.Debug|x64.Build.0 = Debug|x64
+ 		{D5CD9019-3AC4-4223-82B2-E3A44A443395}.Release|Win32.ActiveCfg = Release|Win32
+ 		{D5CD9019-3AC4-4223-82B2-E3A44A443395}.Release|Win32.Build.0 = Release|Win32
++		{D5CD9019-3AC4-4223-82B2-E3A44A443395}.Release|x64.ActiveCfg = Release|x64
++		{D5CD9019-3AC4-4223-82B2-E3A44A443395}.Release|x64.Build.0 = Release|x64
+ 	EndGlobalSection
+ 	GlobalSection(SolutionProperties) = preSolution
+ 		HideSolutionNode = FALSE
+--- libkml.vanilla/msvc/libkmlbase.vcxproj	2021-08-13 15:46:51.000000000 -0400
++++ libkml/msvc/libkmlbase.vcxproj	2021-08-13 15:38:12.240801100 -0400
+@@ -0,0 +1,194 @@
++﻿<?xml version="1.0" encoding="utf-8"?>
++<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
++  <ItemGroup Label="ProjectConfigurations">
++    <ProjectConfiguration Include="Debug|Win32">
++      <Configuration>Debug</Configuration>
++      <Platform>Win32</Platform>
++    </ProjectConfiguration>
++    <ProjectConfiguration Include="Debug|x64">
++      <Configuration>Debug</Configuration>
++      <Platform>x64</Platform>
++    </ProjectConfiguration>
++    <ProjectConfiguration Include="Release|Win32">
++      <Configuration>Release</Configuration>
++      <Platform>Win32</Platform>
++    </ProjectConfiguration>
++    <ProjectConfiguration Include="Release|x64">
++      <Configuration>Release</Configuration>
++      <Platform>x64</Platform>
++    </ProjectConfiguration>
++  </ItemGroup>
++  <PropertyGroup Label="Globals">
++    <ProjectGuid>{DA5DEA8E-4DF5-4B36-BF1E-4760104149F0}</ProjectGuid>
++    <RootNamespace>libkmlbase</RootNamespace>
++    <Keyword>Win32Proj</Keyword>
++  </PropertyGroup>
++  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <PlatformToolset>v140</PlatformToolset>
++    <CharacterSet>Unicode</CharacterSet>
++    <WholeProgramOptimization>false</WholeProgramOptimization>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <PlatformToolset>v140</PlatformToolset>
++    <CharacterSet>Unicode</CharacterSet>
++    <WholeProgramOptimization>false</WholeProgramOptimization>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <PlatformToolset>v140</PlatformToolset>
++    <CharacterSet>Unicode</CharacterSet>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <PlatformToolset>v140</PlatformToolset>
++    <CharacterSet>Unicode</CharacterSet>
++  </PropertyGroup>
++  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
++  <ImportGroup Label="ExtensionSettings">
++  </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++  </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++  </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++  </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++  </ImportGroup>
++  <PropertyGroup Label="UserMacros" />
++  <PropertyGroup>
++    <_ProjectFileVersion>14.0.25431.1</_ProjectFileVersion>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
++    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
++    <IntDir>$(Configuration)\</IntDir>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
++    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
++    <IntDir>$(Configuration)\</IntDir>
++  </PropertyGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
++    <ClCompile>
++      <Optimization>Disabled</Optimization>
++      <AdditionalIncludeDirectories>..\third_party\zlib-1.2.3;..\third_party\zlib-1.2.3\contrib;..\third_party\expat.win32;..\third_party\boost_1_34_1;..\src;..\third_party\uriparser-0.7.5\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <MinimalRebuild>true</MinimalRebuild>
++      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
++      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
++      <PrecompiledHeader />
++      <WarningLevel>Level3</WarningLevel>
++      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
++    </ClCompile>
++  </ItemDefinitionGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
++    <ClCompile>
++      <Optimization>Disabled</Optimization>
++      <AdditionalIncludeDirectories>..\third_party\zlib-1.2.3;..\third_party\zlib-1.2.3\contrib;..\third_party\expat.win32;..\third_party\boost_1_34_1;..\src;..\third_party\uriparser-0.7.5\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
++      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
++      <PrecompiledHeader>
++      </PrecompiledHeader>
++      <WarningLevel>Level3</WarningLevel>
++      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
++    </ClCompile>
++  </ItemDefinitionGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
++    <ClCompile>
++      <AdditionalIncludeDirectories>..\third_party\zlib-1.2.3;..\third_party\zlib-1.2.3\contrib;..\third_party\expat.win32;..\third_party\boost_1_34_1;..\src;..\third_party\uriparser-0.7.5\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
++      <PrecompiledHeader />
++      <PrecompiledHeaderFile />
++      <WarningLevel>Level3</WarningLevel>
++      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
++      <ForcedIncludeFiles>stdafx.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
++    </ClCompile>
++  </ItemDefinitionGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
++    <ClCompile>
++      <AdditionalIncludeDirectories>..\third_party\zlib-1.2.3;..\third_party\zlib-1.2.3\contrib;..\third_party\expat.win32;..\third_party\boost_1_34_1;..\src;..\third_party\uriparser-0.7.5\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
++      <PrecompiledHeader>
++      </PrecompiledHeader>
++      <PrecompiledHeaderFile>
++      </PrecompiledHeaderFile>
++      <WarningLevel>Level3</WarningLevel>
++      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
++      <ForcedIncludeFiles>stdafx.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
++    </ClCompile>
++  </ItemDefinitionGroup>
++  <ItemGroup>
++    <ClCompile Include="..\src\kml\base\attributes.cc" />
++    <ClCompile Include="..\src\kml\base\csv_splitter.cc" />
++    <ClCompile Include="..\src\kml\base\date_time.cc" />
++    <ClCompile Include="..\src\kml\base\expat_handler_ns.cc" />
++    <ClCompile Include="..\src\kml\base\expat_parser.cc" />
++    <ClCompile Include="..\src\kml\base\file.cc" />
++    <ClCompile Include="..\src\kml\base\file_win32.cc" />
++    <ClCompile Include="..\src\kml\base\math_util.cc" />
++    <ClCompile Include="..\src\kml\base\mimetypes.cc" />
++    <ClCompile Include="..\src\kml\base\referent.cc" />
++    <ClCompile Include="..\src\kml\base\string_util.cc" />
++    <ClCompile Include="..\src\kml\base\time_util.cc" />
++    <ClCompile Include="..\src\kml\base\uri_parser.cc" />
++    <ClCompile Include="..\src\kml\base\version.cc" />
++    <ClCompile Include="..\src\kml\base\xml_namespaces.cc" />
++    <ClCompile Include="..\src\kml\base\zip_file.cc" />
++    <ClCompile Include="..\src\stdafx.cpp">
++      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
++      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
++    </ClCompile>
++  </ItemGroup>
++  <ItemGroup>
++    <ClInclude Include="..\src\kml\base\attributes.h" />
++    <ClInclude Include="..\src\kml\base\color32.h" />
++    <ClInclude Include="..\src\kml\base\csv_splitter.h" />
++    <ClInclude Include="..\src\kml\base\date_time.h" />
++    <ClInclude Include="..\src\kml\base\expat_handler.h" />
++    <ClInclude Include="..\src\kml\base\expat_handler_ns.h" />
++    <ClInclude Include="..\src\kml\base\expat_parser.h" />
++    <ClInclude Include="..\src\kml\base\file.h" />
++    <ClInclude Include="..\src\kml\base\google_internal_test.h" />
++    <ClInclude Include="..\src\kml\base\math_util.h" />
++    <ClInclude Include="..\src\kml\base\memory_file.h" />
++    <ClInclude Include="..\src\kml\base\mimetypes.h" />
++    <ClInclude Include="..\src\kml\base\net_cache.h" />
++    <ClInclude Include="..\src\kml\base\net_cache_test_util.h" />
++    <ClInclude Include="..\src\kml\base\referent.h" />
++    <ClInclude Include="..\src\kml\base\string_string_map.h" />
++    <ClInclude Include="..\src\kml\base\string_util.h" />
++    <ClInclude Include="..\src\kml\base\tempfile.h" />
++    <ClInclude Include="..\src\kml\base\time_util.h" />
++    <ClInclude Include="..\src\kml\base\unit_test.h" />
++    <ClInclude Include="..\src\kml\base\uri_parser.h" />
++    <ClInclude Include="..\src\kml\base\util.h" />
++    <ClInclude Include="..\src\kml\base\vec3.h" />
++    <ClInclude Include="..\src\kml\base\version.h" />
++    <ClInclude Include="..\src\kml\base\xmlns.h" />
++    <ClInclude Include="..\src\kml\base\xml_element.h" />
++    <ClInclude Include="..\src\kml\base\xml_file.h" />
++    <ClInclude Include="..\src\kml\base\xml_namespaces.h" />
++    <ClInclude Include="..\src\kml\base\zip_file.h" />
++    <ClInclude Include="..\src\stdafx.h" />
++  </ItemGroup>
++  <ItemGroup>
++    <None Include="debug\BuildLog.htm">
++      <DeploymentContent>true</DeploymentContent>
++    </None>
++  </ItemGroup>
++  <ItemGroup>
++    <Text Include="ReadMe.txt" />
++  </ItemGroup>
++  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
++  <ImportGroup Label="ExtensionTargets">
++  </ImportGroup>
++</Project>
+\ No newline at end of file
+--- libkml.vanilla/msvc/libkmlconvenience.vcxproj	2021-08-13 15:47:07.000000000 -0400
++++ libkml/msvc/libkmlconvenience.vcxproj	2021-08-13 15:38:12.240801100 -0400
+@@ -0,0 +1,180 @@
++﻿<?xml version="1.0" encoding="utf-8"?>
++<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
++  <ItemGroup Label="ProjectConfigurations">
++    <ProjectConfiguration Include="Debug|Win32">
++      <Configuration>Debug</Configuration>
++      <Platform>Win32</Platform>
++    </ProjectConfiguration>
++    <ProjectConfiguration Include="Debug|x64">
++      <Configuration>Debug</Configuration>
++      <Platform>x64</Platform>
++    </ProjectConfiguration>
++    <ProjectConfiguration Include="Release|Win32">
++      <Configuration>Release</Configuration>
++      <Platform>Win32</Platform>
++    </ProjectConfiguration>
++    <ProjectConfiguration Include="Release|x64">
++      <Configuration>Release</Configuration>
++      <Platform>x64</Platform>
++    </ProjectConfiguration>
++  </ItemGroup>
++  <PropertyGroup Label="Globals">
++    <ProjectGuid>{5E53C538-7B22-41FF-84AF-F08F0C019E7B}</ProjectGuid>
++    <RootNamespace>libkmlregionator</RootNamespace>
++    <Keyword>Win32Proj</Keyword>
++  </PropertyGroup>
++  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <PlatformToolset>v140</PlatformToolset>
++    <CharacterSet>Unicode</CharacterSet>
++    <WholeProgramOptimization>false</WholeProgramOptimization>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <PlatformToolset>v140</PlatformToolset>
++    <CharacterSet>Unicode</CharacterSet>
++    <WholeProgramOptimization>false</WholeProgramOptimization>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <PlatformToolset>v140</PlatformToolset>
++    <CharacterSet>Unicode</CharacterSet>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <PlatformToolset>v140</PlatformToolset>
++    <CharacterSet>Unicode</CharacterSet>
++  </PropertyGroup>
++  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
++  <ImportGroup Label="ExtensionSettings">
++  </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++  </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++  </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++  </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++  </ImportGroup>
++  <PropertyGroup Label="UserMacros" />
++  <PropertyGroup>
++    <_ProjectFileVersion>14.0.25431.1</_ProjectFileVersion>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
++    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
++    <IntDir>$(Configuration)\</IntDir>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
++    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
++    <IntDir>$(Configuration)\</IntDir>
++  </PropertyGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
++    <ClCompile>
++      <Optimization>Disabled</Optimization>
++      <AdditionalIncludeDirectories>..\third_party\boost_1_34_1;..\src;..\third_party\uriparser-0.7.5\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <MinimalRebuild>true</MinimalRebuild>
++      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
++      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
++      <PrecompiledHeader />
++      <WarningLevel>Level3</WarningLevel>
++      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
++    </ClCompile>
++  </ItemDefinitionGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
++    <ClCompile>
++      <Optimization>Disabled</Optimization>
++      <AdditionalIncludeDirectories>..\third_party\boost_1_34_1;..\src;..\third_party\uriparser-0.7.5\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
++      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
++      <PrecompiledHeader>
++      </PrecompiledHeader>
++      <WarningLevel>Level3</WarningLevel>
++      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
++    </ClCompile>
++  </ItemDefinitionGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
++    <ClCompile>
++      <AdditionalIncludeDirectories>..\third_party\boost_1_34_1;..\src;..\third_party\uriparser-0.7.5\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
++      <PrecompiledHeader />
++      <PrecompiledHeaderFile />
++      <WarningLevel>Level3</WarningLevel>
++      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
++      <ForcedIncludeFiles>stdafx.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
++    </ClCompile>
++  </ItemDefinitionGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
++    <ClCompile>
++      <AdditionalIncludeDirectories>..\third_party\boost_1_34_1;..\src;..\third_party\uriparser-0.7.5\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
++      <PrecompiledHeader>
++      </PrecompiledHeader>
++      <PrecompiledHeaderFile>
++      </PrecompiledHeaderFile>
++      <WarningLevel>Level3</WarningLevel>
++      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
++      <ForcedIncludeFiles>stdafx.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
++    </ClCompile>
++  </ItemDefinitionGroup>
++  <ItemGroup>
++    <ClCompile Include="..\src\kml\convenience\atom_util.cc" />
++    <ClCompile Include="..\src\kml\convenience\convenience.cc" />
++    <ClCompile Include="..\src\kml\convenience\csv_file.cc" />
++    <ClCompile Include="..\src\kml\convenience\csv_parser.cc" />
++    <ClCompile Include="..\src\kml\convenience\feature_list.cc" />
++    <ClCompile Include="..\src\kml\convenience\google_doc_list.cc" />
++    <ClCompile Include="..\src\kml\convenience\google_maps_data.cc" />
++    <ClCompile Include="..\src\kml\convenience\google_picasa_web.cc" />
++    <ClCompile Include="..\src\kml\convenience\google_spreadsheets.cc" />
++    <ClCompile Include="..\src\kml\convenience\http_client.cc" />
++    <ClCompile Include="..\src\kml\convenience\kmz_check_links.cc" />
++    <ClCompile Include="..\src\stdafx.cpp">
++      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
++      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
++    </ClCompile>
++  </ItemGroup>
++  <ItemGroup>
++    <ClInclude Include="..\src\kml\convenience\atom_util.h" />
++    <ClInclude Include="..\src\kml\convenience\convenience.h" />
++    <ClInclude Include="..\src\kml\convenience\csv_file.h" />
++    <ClInclude Include="..\src\kml\convenience\csv_parser.h" />
++    <ClInclude Include="..\src\kml\convenience\element_counter.h" />
++    <ClInclude Include="..\src\kml\convenience\feature_list.h" />
++    <ClInclude Include="..\src\kml\convenience\google_doc_list.h" />
++    <ClInclude Include="..\src\kml\convenience\google_maps_data.h" />
++    <ClInclude Include="..\src\kml\convenience\google_picasa_web.h" />
++    <ClInclude Include="..\src\kml\convenience\google_spreadsheets.h" />
++    <ClInclude Include="..\src\kml\convenience\gpx_trk_pt_handler.h" />
++    <ClInclude Include="..\src\kml\convenience\http_client.h" />
++    <ClInclude Include="..\src\kml\convenience\http_client_test_util.h" />
++    <ClInclude Include="..\src\kml\convenience\kmz_check_links.h" />
++    <ClInclude Include="..\src\stdafx.h" />
++  </ItemGroup>
++  <ItemGroup>
++    <None Include="debug\BuildLog.htm">
++      <DeploymentContent>true</DeploymentContent>
++    </None>
++  </ItemGroup>
++  <ItemGroup>
++    <Text Include="ReadMe.txt" />
++  </ItemGroup>
++  <ItemGroup>
++    <ProjectReference Include="libkmlengine.vcxproj">
++      <Project>{c7d291c3-46ec-441c-b7f1-911fd32ce185}</Project>
++      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
++    </ProjectReference>
++  </ItemGroup>
++  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
++  <ImportGroup Label="ExtensionTargets">
++  </ImportGroup>
++</Project>
+\ No newline at end of file
+--- libkml.vanilla/msvc/libkmldom.vcxproj	2021-08-13 15:47:17.000000000 -0400
++++ libkml/msvc/libkmldom.vcxproj	2021-08-13 15:38:12.240801100 -0400
+@@ -0,0 +1,252 @@
++﻿<?xml version="1.0" encoding="utf-8"?>
++<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
++  <ItemGroup Label="ProjectConfigurations">
++    <ProjectConfiguration Include="Debug|Win32">
++      <Configuration>Debug</Configuration>
++      <Platform>Win32</Platform>
++    </ProjectConfiguration>
++    <ProjectConfiguration Include="Debug|x64">
++      <Configuration>Debug</Configuration>
++      <Platform>x64</Platform>
++    </ProjectConfiguration>
++    <ProjectConfiguration Include="Release|Win32">
++      <Configuration>Release</Configuration>
++      <Platform>Win32</Platform>
++    </ProjectConfiguration>
++    <ProjectConfiguration Include="Release|x64">
++      <Configuration>Release</Configuration>
++      <Platform>x64</Platform>
++    </ProjectConfiguration>
++  </ItemGroup>
++  <PropertyGroup Label="Globals">
++    <ProjectGuid>{19484FD7-58B0-44DA-89CE-EADF0CF39E04}</ProjectGuid>
++    <RootNamespace>libkmldom</RootNamespace>
++    <Keyword>Win32Proj</Keyword>
++  </PropertyGroup>
++  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <PlatformToolset>v140</PlatformToolset>
++    <CharacterSet>Unicode</CharacterSet>
++    <WholeProgramOptimization>false</WholeProgramOptimization>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <PlatformToolset>v140</PlatformToolset>
++    <CharacterSet>Unicode</CharacterSet>
++    <WholeProgramOptimization>false</WholeProgramOptimization>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <PlatformToolset>v140</PlatformToolset>
++    <CharacterSet>Unicode</CharacterSet>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <PlatformToolset>v140</PlatformToolset>
++    <CharacterSet>Unicode</CharacterSet>
++  </PropertyGroup>
++  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
++  <ImportGroup Label="ExtensionSettings">
++  </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++  </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++  </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++  </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++  </ImportGroup>
++  <PropertyGroup Label="UserMacros" />
++  <PropertyGroup>
++    <_ProjectFileVersion>14.0.25431.1</_ProjectFileVersion>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
++    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
++    <IntDir>$(Configuration)\</IntDir>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
++    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
++    <IntDir>$(Configuration)\</IntDir>
++  </PropertyGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
++    <ClCompile>
++      <Optimization>Disabled</Optimization>
++      <AdditionalIncludeDirectories>..\third_party\expat.win32;..\third_party\boost_1_34_1;..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <MinimalRebuild>true</MinimalRebuild>
++      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
++      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
++      <PrecompiledHeader />
++      <WarningLevel>Level3</WarningLevel>
++      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
++    </ClCompile>
++  </ItemDefinitionGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
++    <ClCompile>
++      <Optimization>Disabled</Optimization>
++      <AdditionalIncludeDirectories>..\third_party\expat.win32;..\third_party\boost_1_34_1;..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
++      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
++      <PrecompiledHeader>
++      </PrecompiledHeader>
++      <WarningLevel>Level3</WarningLevel>
++      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
++    </ClCompile>
++  </ItemDefinitionGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
++    <ClCompile>
++      <AdditionalIncludeDirectories>..\third_party\expat.win32;..\third_party\boost_1_34_1;..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
++      <PrecompiledHeader />
++      <PrecompiledHeaderFile />
++      <WarningLevel>Level3</WarningLevel>
++      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
++      <ForcedIncludeFiles>stdafx.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
++    </ClCompile>
++  </ItemDefinitionGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
++    <ClCompile>
++      <AdditionalIncludeDirectories>..\third_party\expat.win32;..\third_party\boost_1_34_1;..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
++      <PrecompiledHeader>
++      </PrecompiledHeader>
++      <PrecompiledHeaderFile>
++      </PrecompiledHeaderFile>
++      <WarningLevel>Level3</WarningLevel>
++      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
++      <ForcedIncludeFiles>stdafx.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
++    </ClCompile>
++  </ItemDefinitionGroup>
++  <ItemGroup>
++    <ClCompile Include="..\src\kml\dom\abstractlatlonbox.cc" />
++    <ClCompile Include="..\src\kml\dom\abstractview.cc" />
++    <ClCompile Include="..\src\kml\dom\atom.cc" />
++    <ClCompile Include="..\src\kml\dom\balloonstyle.cc" />
++    <ClCompile Include="..\src\kml\dom\colorstyle.cc" />
++    <ClCompile Include="..\src\kml\dom\container.cc" />
++    <ClCompile Include="..\src\kml\dom\document.cc" />
++    <ClCompile Include="..\src\kml\dom\element.cc" />
++    <ClCompile Include="..\src\kml\dom\extendeddata.cc" />
++    <ClCompile Include="..\src\kml\dom\feature.cc" />
++    <ClCompile Include="..\src\kml\dom\folder.cc" />
++    <ClCompile Include="..\src\kml\dom\geometry.cc" />
++    <ClCompile Include="..\src\kml\dom\gx_timeprimitive.cc" />
++    <ClCompile Include="..\src\kml\dom\gx_tour.cc" />
++    <ClCompile Include="..\src\kml\dom\hotspot.cc" />
++    <ClCompile Include="..\src\kml\dom\iconstyle.cc" />
++    <ClCompile Include="..\src\kml\dom\kml.cc" />
++    <ClCompile Include="..\src\kml\dom\kml22.cc" />
++    <ClCompile Include="..\src\kml\dom\kml_cast.cc" />
++    <ClCompile Include="..\src\kml\dom\kml_factory.cc" />
++    <ClCompile Include="..\src\kml\dom\kml_handler.cc" />
++    <ClCompile Include="..\src\kml\dom\kml_handler_ns.cc" />
++    <ClCompile Include="..\src\kml\dom\labelstyle.cc" />
++    <ClCompile Include="..\src\kml\dom\linestyle.cc" />
++    <ClCompile Include="..\src\kml\dom\link.cc" />
++    <ClCompile Include="..\src\kml\dom\liststyle.cc" />
++    <ClCompile Include="..\src\kml\dom\model.cc" />
++    <ClCompile Include="..\src\kml\dom\networklink.cc" />
++    <ClCompile Include="..\src\kml\dom\networklinkcontrol.cc" />
++    <ClCompile Include="..\src\kml\dom\object.cc" />
++    <ClCompile Include="..\src\kml\dom\overlay.cc" />
++    <ClCompile Include="..\src\kml\dom\parser.cc" />
++    <ClCompile Include="..\src\kml\dom\placemark.cc" />
++    <ClCompile Include="..\src\kml\dom\polystyle.cc" />
++    <ClCompile Include="..\src\kml\dom\region.cc" />
++    <ClCompile Include="..\src\kml\dom\schema.cc" />
++    <ClCompile Include="..\src\kml\dom\serializer.cc" />
++    <ClCompile Include="..\src\kml\dom\snippet.cc" />
++    <ClCompile Include="..\src\kml\dom\style.cc" />
++    <ClCompile Include="..\src\kml\dom\stylemap.cc" />
++    <ClCompile Include="..\src\kml\dom\styleselector.cc" />
++    <ClCompile Include="..\src\kml\dom\substyle.cc" />
++    <ClCompile Include="..\src\kml\dom\timeprimitive.cc" />
++    <ClCompile Include="..\src\kml\dom\vec2.cc" />
++    <ClCompile Include="..\src\kml\dom\visitor.cc" />
++    <ClCompile Include="..\src\kml\dom\visitor_driver.cc" />
++    <ClCompile Include="..\src\kml\dom\xal.cc" />
++    <ClCompile Include="..\src\kml\dom\xml_serializer.cc" />
++    <ClCompile Include="..\src\kml\dom\xsd.cc" />
++    <ClCompile Include="..\src\stdafx.cpp">
++      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
++      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
++    </ClCompile>
++  </ItemGroup>
++  <ItemGroup>
++    <ClInclude Include="..\src\kml\dom.h" />
++    <ClInclude Include="..\src\kml\dom\abstractlatlonbox.h" />
++    <ClInclude Include="..\src\kml\dom\abstractview.h" />
++    <ClInclude Include="..\src\kml\dom\atom.h" />
++    <ClInclude Include="..\src\kml\dom\balloonstyle.h" />
++    <ClInclude Include="..\src\kml\dom\colorstyle.h" />
++    <ClInclude Include="..\src\kml\dom\container.h" />
++    <ClInclude Include="..\src\kml\dom\document.h" />
++    <ClInclude Include="..\src\kml\dom\element.h" />
++    <ClInclude Include="..\src\kml\dom\extendeddata.h" />
++    <ClInclude Include="..\src\kml\dom\feature.h" />
++    <ClInclude Include="..\src\kml\dom\folder.h" />
++    <ClInclude Include="..\src\kml\dom\geometry.h" />
++    <ClInclude Include="..\src\kml\dom\gx_timeprimitive.h" />
++    <ClInclude Include="..\src\kml\dom\gx_tour.h" />
++    <ClInclude Include="..\src\kml\dom\hotspot.h" />
++    <ClInclude Include="..\src\kml\dom\iconstyle.h" />
++    <ClInclude Include="..\src\kml\dom\kml.h" />
++    <ClInclude Include="..\src\kml\dom\kml22.h" />
++    <ClInclude Include="..\src\kml\dom\kmldom.h" />
++    <ClInclude Include="..\src\kml\dom\kml_cast.h" />
++    <ClInclude Include="..\src\kml\dom\kml_factory.h" />
++    <ClInclude Include="..\src\kml\dom\kml_funcs.h" />
++    <ClInclude Include="..\src\kml\dom\kml_handler.h" />
++    <ClInclude Include="..\src\kml\dom\kml_handler_ns.h" />
++    <ClInclude Include="..\src\kml\dom\kml_ptr.h" />
++    <ClInclude Include="..\src\kml\dom\labelstyle.h" />
++    <ClInclude Include="..\src\kml\dom\linestyle.h" />
++    <ClInclude Include="..\src\kml\dom\link.h" />
++    <ClInclude Include="..\src\kml\dom\liststyle.h" />
++    <ClInclude Include="..\src\kml\dom\model.h" />
++    <ClInclude Include="..\src\kml\dom\networklink.h" />
++    <ClInclude Include="..\src\kml\dom\networklinkcontrol.h" />
++    <ClInclude Include="..\src\kml\dom\object.h" />
++    <ClInclude Include="..\src\kml\dom\overlay.h" />
++    <ClInclude Include="..\src\kml\dom\parser.h" />
++    <ClInclude Include="..\src\kml\dom\parser_observer.h" />
++    <ClInclude Include="..\src\kml\dom\placemark.h" />
++    <ClInclude Include="..\src\kml\dom\polystyle.h" />
++    <ClInclude Include="..\src\kml\dom\region.h" />
++    <ClInclude Include="..\src\kml\dom\schema.h" />
++    <ClInclude Include="..\src\kml\dom\serializer.h" />
++    <ClInclude Include="..\src\kml\dom\snippet.h" />
++    <ClInclude Include="..\src\kml\dom\stats_serializer.h" />
++    <ClInclude Include="..\src\kml\dom\style.h" />
++    <ClInclude Include="..\src\kml\dom\stylemap.h" />
++    <ClInclude Include="..\src\kml\dom\styleselector.h" />
++    <ClInclude Include="..\src\kml\dom\substyle.h" />
++    <ClInclude Include="..\src\kml\dom\timeprimitive.h" />
++    <ClInclude Include="..\src\kml\dom\vec2.h" />
++    <ClInclude Include="..\src\kml\dom\visitor.h" />
++    <ClInclude Include="..\src\kml\dom\visitor_driver.h" />
++    <ClInclude Include="..\src\kml\dom\xal.h" />
++    <ClInclude Include="..\src\kml\dom\xml_serializer.h" />
++    <ClInclude Include="..\src\kml\dom\xsd.h" />
++    <ClInclude Include="..\src\kml\util\unit_test.h" />
++    <ClInclude Include="..\src\stdafx.h" />
++  </ItemGroup>
++  <ItemGroup>
++    <ProjectReference Include="libkmlbase.vcxproj">
++      <Project>{da5dea8e-4df5-4b36-bf1e-4760104149f0}</Project>
++      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
++    </ProjectReference>
++  </ItemGroup>
++  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
++  <ImportGroup Label="ExtensionTargets">
++  </ImportGroup>
++</Project>
+\ No newline at end of file
+--- libkml.vanilla/msvc/libkmlengine.vcxproj	2021-08-13 15:47:33.000000000 -0400
++++ libkml/msvc/libkmlengine.vcxproj	2021-08-13 15:38:12.240801100 -0400
+@@ -0,0 +1,220 @@
++﻿<?xml version="1.0" encoding="utf-8"?>
++<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
++  <ItemGroup Label="ProjectConfigurations">
++    <ProjectConfiguration Include="Debug|Win32">
++      <Configuration>Debug</Configuration>
++      <Platform>Win32</Platform>
++    </ProjectConfiguration>
++    <ProjectConfiguration Include="Debug|x64">
++      <Configuration>Debug</Configuration>
++      <Platform>x64</Platform>
++    </ProjectConfiguration>
++    <ProjectConfiguration Include="Release|Win32">
++      <Configuration>Release</Configuration>
++      <Platform>Win32</Platform>
++    </ProjectConfiguration>
++    <ProjectConfiguration Include="Release|x64">
++      <Configuration>Release</Configuration>
++      <Platform>x64</Platform>
++    </ProjectConfiguration>
++  </ItemGroup>
++  <PropertyGroup Label="Globals">
++    <ProjectGuid>{C7D291C3-46EC-441C-B7F1-911FD32CE185}</ProjectGuid>
++    <RootNamespace>libkmlengine</RootNamespace>
++    <Keyword>Win32Proj</Keyword>
++  </PropertyGroup>
++  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <PlatformToolset>v140</PlatformToolset>
++    <CharacterSet>Unicode</CharacterSet>
++    <WholeProgramOptimization>false</WholeProgramOptimization>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <PlatformToolset>v140</PlatformToolset>
++    <CharacterSet>Unicode</CharacterSet>
++    <WholeProgramOptimization>false</WholeProgramOptimization>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <PlatformToolset>v140</PlatformToolset>
++    <CharacterSet>Unicode</CharacterSet>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <PlatformToolset>v140</PlatformToolset>
++    <CharacterSet>Unicode</CharacterSet>
++  </PropertyGroup>
++  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
++  <ImportGroup Label="ExtensionSettings">
++  </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++  </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++  </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++  </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++  </ImportGroup>
++  <PropertyGroup Label="UserMacros" />
++  <PropertyGroup>
++    <_ProjectFileVersion>14.0.25431.1</_ProjectFileVersion>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
++    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
++    <IntDir>$(Configuration)\</IntDir>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
++    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
++    <IntDir>$(Configuration)\</IntDir>
++  </PropertyGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
++    <ClCompile>
++      <Optimization>Disabled</Optimization>
++      <AdditionalIncludeDirectories>..\third_party\expat.win32;..\third_party\boost_1_34_1;..\src;..\third_party\zlib-1.2.3;..\third_party\zlib-1.2.3\contrib;..\third_party\uriparser-0.7.5\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <MinimalRebuild>true</MinimalRebuild>
++      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
++      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
++      <PrecompiledHeader />
++      <WarningLevel>Level3</WarningLevel>
++      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
++    </ClCompile>
++  </ItemDefinitionGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
++    <ClCompile>
++      <Optimization>Disabled</Optimization>
++      <AdditionalIncludeDirectories>..\third_party\expat.win32;..\third_party\boost_1_34_1;..\src;..\third_party\zlib-1.2.3;..\third_party\zlib-1.2.3\contrib;..\third_party\uriparser-0.7.5\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
++      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
++      <PrecompiledHeader>
++      </PrecompiledHeader>
++      <WarningLevel>Level3</WarningLevel>
++      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
++    </ClCompile>
++  </ItemDefinitionGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
++    <ClCompile>
++      <AdditionalIncludeDirectories>..\third_party\expat.win32;..\third_party\boost_1_34_1;..\src;..\third_party\zlib-1.2.3;..\third_party\zlib-1.2.3\contrib;..\third_party\uriparser-0.7.5\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
++      <PrecompiledHeader />
++      <PrecompiledHeaderFile />
++      <WarningLevel>Level3</WarningLevel>
++      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
++      <ForcedIncludeFiles>stdafx.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
++    </ClCompile>
++  </ItemDefinitionGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
++    <ClCompile>
++      <AdditionalIncludeDirectories>..\third_party\expat.win32;..\third_party\boost_1_34_1;..\src;..\third_party\zlib-1.2.3;..\third_party\zlib-1.2.3\contrib;..\third_party\uriparser-0.7.5\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
++      <PrecompiledHeader>
++      </PrecompiledHeader>
++      <PrecompiledHeaderFile>
++      </PrecompiledHeaderFile>
++      <WarningLevel>Level3</WarningLevel>
++      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
++      <ForcedIncludeFiles>stdafx.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
++    </ClCompile>
++  </ItemDefinitionGroup>
++  <ItemGroup>
++    <ClCompile Include="..\src\kml\engine\clone.cc" />
++    <ClCompile Include="..\src\kml\engine\entity_mapper.cc" />
++    <ClCompile Include="..\src\kml\engine\feature_balloon.cc" />
++    <ClCompile Include="..\src\kml\engine\feature_view.cc" />
++    <ClCompile Include="..\src\kml\engine\feature_visitor.cc" />
++    <ClCompile Include="..\src\kml\engine\find.cc" />
++    <ClCompile Include="..\src\kml\engine\find_xml_namespaces.cc" />
++    <ClCompile Include="..\src\kml\engine\get_links.cc" />
++    <ClCompile Include="..\src\kml\engine\get_link_parents.cc" />
++    <ClCompile Include="..\src\kml\engine\href.cc" />
++    <ClCompile Include="..\src\kml\engine\id_mapper.cc" />
++    <ClCompile Include="..\src\kml\engine\kml_cache.cc" />
++    <ClCompile Include="..\src\kml\engine\kml_file.cc" />
++    <ClCompile Include="..\src\kml\engine\kml_stream.cc" />
++    <ClCompile Include="..\src\kml\engine\kml_uri.cc" />
++    <ClCompile Include="..\src\kml\engine\kmz_cache.cc" />
++    <ClCompile Include="..\src\kml\engine\kmz_file.cc" />
++    <ClCompile Include="..\src\kml\engine\link_util.cc" />
++    <ClCompile Include="..\src\kml\engine\location_util.cc" />
++    <ClCompile Include="..\src\kml\engine\merge.cc" />
++    <ClCompile Include="..\src\kml\engine\parse_old_schema.cc" />
++    <ClCompile Include="..\src\kml\engine\style_inliner.cc" />
++    <ClCompile Include="..\src\kml\engine\style_merger.cc" />
++    <ClCompile Include="..\src\kml\engine\style_resolver.cc" />
++    <ClCompile Include="..\src\kml\engine\style_splitter.cc" />
++    <ClCompile Include="..\src\kml\engine\update.cc" />
++    <ClCompile Include="..\src\kml\engine\update_processor.cc" />
++    <ClCompile Include="..\src\stdafx.cpp">
++      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
++      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
++    </ClCompile>
++  </ItemGroup>
++  <ItemGroup>
++    <ClInclude Include="..\src\kml\engine\bbox.h" />
++    <ClInclude Include="..\src\kml\engine\clone.h" />
++    <ClInclude Include="..\src\kml\engine\engine_constants.h" />
++    <ClInclude Include="..\src\kml\engine\engine_types.h" />
++    <ClInclude Include="..\src\kml\engine\entity_mapper.h" />
++    <ClInclude Include="..\src\kml\engine\feature_balloon.h" />
++    <ClInclude Include="..\src\kml\engine\feature_view.h" />
++    <ClInclude Include="..\src\kml\engine\feature_visitor.h" />
++    <ClInclude Include="..\src\kml\engine\find.h" />
++    <ClInclude Include="..\src\kml\engine\find_xml_namespaces.h" />
++    <ClInclude Include="..\src\kml\engine\get_links.h" />
++    <ClInclude Include="..\src\kml\engine\get_link_parents.h" />
++    <ClInclude Include="..\src\kml\engine\href.h" />
++    <ClInclude Include="..\src\kml\engine\id_mapper.h" />
++    <ClInclude Include="..\src\kml\engine\id_mapper_internal.h" />
++    <ClInclude Include="..\src\kml\engine\kml_cache.h" />
++    <ClInclude Include="..\src\kml\engine\kml_file.h" />
++    <ClInclude Include="..\src\kml\engine\kml_stream.h" />
++    <ClInclude Include="..\src\kml\engine\kml_uri.h" />
++    <ClInclude Include="..\src\kml\engine\kml_uri_internal.h" />
++    <ClInclude Include="..\src\kml\engine\kmz_cache.h" />
++    <ClInclude Include="..\src\kml\engine\kmz_file.h" />
++    <ClInclude Include="..\src\kml\engine\link_util.h" />
++    <ClInclude Include="..\src\kml\engine\location_util.h" />
++    <ClInclude Include="..\src\kml\engine\merge.h" />
++    <ClInclude Include="..\src\kml\engine\object_id_parser_observer.h" />
++    <ClInclude Include="..\src\kml\engine\old_schema_parser_observer.h" />
++    <ClInclude Include="..\src\kml\engine\parse_old_schema.h" />
++    <ClInclude Include="..\src\kml\engine\schema_parser_observer.h" />
++    <ClInclude Include="..\src\kml\engine\shared_style_parser_observer.h" />
++    <ClInclude Include="..\src\kml\engine\style_inliner.h" />
++    <ClInclude Include="..\src\kml\engine\style_inliner_internal.h" />
++    <ClInclude Include="..\src\kml\engine\style_merger.h" />
++    <ClInclude Include="..\src\kml\engine\style_resolver.h" />
++    <ClInclude Include="..\src\kml\engine\style_splitter.h" />
++    <ClInclude Include="..\src\kml\engine\style_splitter_internal.h" />
++    <ClInclude Include="..\src\kml\engine\update.h" />
++    <ClInclude Include="..\src\kml\engine\update_processor.h" />
++    <ClInclude Include="..\src\stdafx.h" />
++  </ItemGroup>
++  <ItemGroup>
++    <None Include="debug\BuildLog.htm">
++      <DeploymentContent>true</DeploymentContent>
++    </None>
++  </ItemGroup>
++  <ItemGroup>
++    <Text Include="ReadMe.txt" />
++  </ItemGroup>
++  <ItemGroup>
++    <ProjectReference Include="libkmldom.vcxproj">
++      <Project>{19484fd7-58b0-44da-89ce-eadf0cf39e04}</Project>
++      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
++    </ProjectReference>
++  </ItemGroup>
++  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
++  <ImportGroup Label="ExtensionTargets">
++  </ImportGroup>
++</Project>
+\ No newline at end of file
+--- libkml.vanilla/msvc/libkmlregionator.vcxproj	2021-08-13 15:47:44.000000000 -0400
++++ libkml/msvc/libkmlregionator.vcxproj	2021-08-13 15:38:12.240801100 -0400
+@@ -0,0 +1,164 @@
++﻿<?xml version="1.0" encoding="utf-8"?>
++<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
++  <ItemGroup Label="ProjectConfigurations">
++    <ProjectConfiguration Include="Debug|Win32">
++      <Configuration>Debug</Configuration>
++      <Platform>Win32</Platform>
++    </ProjectConfiguration>
++    <ProjectConfiguration Include="Debug|x64">
++      <Configuration>Debug</Configuration>
++      <Platform>x64</Platform>
++    </ProjectConfiguration>
++    <ProjectConfiguration Include="Release|Win32">
++      <Configuration>Release</Configuration>
++      <Platform>Win32</Platform>
++    </ProjectConfiguration>
++    <ProjectConfiguration Include="Release|x64">
++      <Configuration>Release</Configuration>
++      <Platform>x64</Platform>
++    </ProjectConfiguration>
++  </ItemGroup>
++  <PropertyGroup Label="Globals">
++    <ProjectGuid>{2A7D7DC5-8AB2-4B4F-848A-2A81226F2BC2}</ProjectGuid>
++    <RootNamespace>libkmlregionator</RootNamespace>
++    <Keyword>Win32Proj</Keyword>
++  </PropertyGroup>
++  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <PlatformToolset>v140</PlatformToolset>
++    <CharacterSet>Unicode</CharacterSet>
++    <WholeProgramOptimization>false</WholeProgramOptimization>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <PlatformToolset>v140</PlatformToolset>
++    <CharacterSet>Unicode</CharacterSet>
++    <WholeProgramOptimization>false</WholeProgramOptimization>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <PlatformToolset>v140</PlatformToolset>
++    <CharacterSet>Unicode</CharacterSet>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <PlatformToolset>v140</PlatformToolset>
++    <CharacterSet>Unicode</CharacterSet>
++  </PropertyGroup>
++  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
++  <ImportGroup Label="ExtensionSettings">
++  </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++  </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++  </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++  </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++  </ImportGroup>
++  <PropertyGroup Label="UserMacros" />
++  <PropertyGroup>
++    <_ProjectFileVersion>14.0.25431.1</_ProjectFileVersion>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
++    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
++    <IntDir>$(Configuration)\</IntDir>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
++    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
++    <IntDir>$(Configuration)\</IntDir>
++  </PropertyGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
++    <ClCompile>
++      <Optimization>Disabled</Optimization>
++      <AdditionalIncludeDirectories>..\third_party\boost_1_34_1;..\src;..\third_party\uriparser-0.7.5\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <MinimalRebuild>true</MinimalRebuild>
++      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
++      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
++      <PrecompiledHeader />
++      <WarningLevel>Level3</WarningLevel>
++      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
++    </ClCompile>
++  </ItemDefinitionGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
++    <ClCompile>
++      <Optimization>Disabled</Optimization>
++      <AdditionalIncludeDirectories>..\third_party\boost_1_34_1;..\src;..\third_party\uriparser-0.7.5\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
++      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
++      <PrecompiledHeader>
++      </PrecompiledHeader>
++      <WarningLevel>Level3</WarningLevel>
++      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
++    </ClCompile>
++  </ItemDefinitionGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
++    <ClCompile>
++      <AdditionalIncludeDirectories>..\third_party\boost_1_34_1;..\src;..\third_party\uriparser-0.7.5\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
++      <PrecompiledHeader />
++      <PrecompiledHeaderFile />
++      <WarningLevel>Level3</WarningLevel>
++      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
++      <ForcedIncludeFiles>stdafx.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
++    </ClCompile>
++  </ItemDefinitionGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
++    <ClCompile>
++      <AdditionalIncludeDirectories>..\third_party\boost_1_34_1;..\src;..\third_party\uriparser-0.7.5\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
++      <PrecompiledHeader>
++      </PrecompiledHeader>
++      <PrecompiledHeaderFile>
++      </PrecompiledHeaderFile>
++      <WarningLevel>Level3</WarningLevel>
++      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
++      <ForcedIncludeFiles>stdafx.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
++    </ClCompile>
++  </ItemDefinitionGroup>
++  <ItemGroup>
++    <ClCompile Include="..\src\kml\regionator\feature_list_region_handler.cc" />
++    <ClCompile Include="..\src\kml\regionator\regionator.cc" />
++    <ClCompile Include="..\src\kml\regionator\regionator_util.cc" />
++    <ClCompile Include="..\src\stdafx.cpp">
++      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
++      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
++    </ClCompile>
++  </ItemGroup>
++  <ItemGroup>
++    <ClInclude Include="..\src\kml\regionator\feature_list_regionator.h" />
++    <ClInclude Include="..\src\kml\regionator\feature_list_region_handler.h" />
++    <ClInclude Include="..\src\kml\regionator\regionator.h" />
++    <ClInclude Include="..\src\kml\regionator\regionator_qid.h" />
++    <ClInclude Include="..\src\kml\regionator\regionator_util.h" />
++    <ClInclude Include="..\src\kml\regionator\region_handler.h" />
++    <ClInclude Include="..\src\stdafx.h" />
++  </ItemGroup>
++  <ItemGroup>
++    <None Include="debug\BuildLog.htm">
++      <DeploymentContent>true</DeploymentContent>
++    </None>
++  </ItemGroup>
++  <ItemGroup>
++    <Text Include="ReadMe.txt" />
++  </ItemGroup>
++  <ItemGroup>
++    <ProjectReference Include="libkmlconvenience.vcxproj">
++      <Project>{5e53c538-7b22-41ff-84af-f08f0c019e7b}</Project>
++      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
++    </ProjectReference>
++  </ItemGroup>
++  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
++  <ImportGroup Label="ExtensionTargets">
++  </ImportGroup>
++</Project>
+\ No newline at end of file
+--- libkml.vanilla/msvc/libkmlxsd.vcxproj	2021-08-13 15:47:57.000000000 -0400
++++ libkml/msvc/libkmlxsd.vcxproj	2021-08-13 15:38:12.240801100 -0400
+@@ -0,0 +1,167 @@
++﻿<?xml version="1.0" encoding="utf-8"?>
++<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
++  <ItemGroup Label="ProjectConfigurations">
++    <ProjectConfiguration Include="Debug|Win32">
++      <Configuration>Debug</Configuration>
++      <Platform>Win32</Platform>
++    </ProjectConfiguration>
++    <ProjectConfiguration Include="Debug|x64">
++      <Configuration>Debug</Configuration>
++      <Platform>x64</Platform>
++    </ProjectConfiguration>
++    <ProjectConfiguration Include="Release|Win32">
++      <Configuration>Release</Configuration>
++      <Platform>Win32</Platform>
++    </ProjectConfiguration>
++    <ProjectConfiguration Include="Release|x64">
++      <Configuration>Release</Configuration>
++      <Platform>x64</Platform>
++    </ProjectConfiguration>
++  </ItemGroup>
++  <PropertyGroup Label="Globals">
++    <ProjectGuid>{D5CD9019-3AC4-4223-82B2-E3A44A443395}</ProjectGuid>
++    <RootNamespace>libkmlxsd</RootNamespace>
++    <Keyword>Win32Proj</Keyword>
++  </PropertyGroup>
++  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <PlatformToolset>v140</PlatformToolset>
++    <CharacterSet>Unicode</CharacterSet>
++    <WholeProgramOptimization>false</WholeProgramOptimization>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <PlatformToolset>v140</PlatformToolset>
++    <CharacterSet>Unicode</CharacterSet>
++    <WholeProgramOptimization>false</WholeProgramOptimization>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <PlatformToolset>v140</PlatformToolset>
++    <CharacterSet>Unicode</CharacterSet>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
++    <ConfigurationType>StaticLibrary</ConfigurationType>
++    <PlatformToolset>v140</PlatformToolset>
++    <CharacterSet>Unicode</CharacterSet>
++  </PropertyGroup>
++  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
++  <ImportGroup Label="ExtensionSettings">
++  </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++  </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++  </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++  </ImportGroup>
++  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
++    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
++  </ImportGroup>
++  <PropertyGroup Label="UserMacros" />
++  <PropertyGroup>
++    <_ProjectFileVersion>14.0.25431.1</_ProjectFileVersion>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
++    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
++    <IntDir>$(Configuration)\</IntDir>
++  </PropertyGroup>
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
++  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
++    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
++    <IntDir>$(Configuration)\</IntDir>
++  </PropertyGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
++    <ClCompile>
++      <Optimization>Disabled</Optimization>
++      <AdditionalIncludeDirectories>..\third_party\expat.win32;..\third_party\boost_1_34_1;..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <MinimalRebuild>true</MinimalRebuild>
++      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
++      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
++      <PrecompiledHeader />
++      <WarningLevel>Level3</WarningLevel>
++      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
++    </ClCompile>
++  </ItemDefinitionGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
++    <ClCompile>
++      <Optimization>Disabled</Optimization>
++      <AdditionalIncludeDirectories>..\third_party\expat.win32;..\third_party\boost_1_34_1;..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
++      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
++      <PrecompiledHeader>
++      </PrecompiledHeader>
++      <WarningLevel>Level3</WarningLevel>
++      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
++    </ClCompile>
++  </ItemDefinitionGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
++    <ClCompile>
++      <AdditionalIncludeDirectories>..\third_party\expat.win32;..\third_party\boost_1_34_1;..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
++      <PrecompiledHeader />
++      <PrecompiledHeaderFile />
++      <WarningLevel>Level3</WarningLevel>
++      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
++      <ForcedIncludeFiles>stdafx.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
++    </ClCompile>
++  </ItemDefinitionGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
++    <ClCompile>
++      <AdditionalIncludeDirectories>..\third_party\expat.win32;..\third_party\boost_1_34_1;..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
++      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
++      <PrecompiledHeader>
++      </PrecompiledHeader>
++      <PrecompiledHeaderFile>
++      </PrecompiledHeaderFile>
++      <WarningLevel>Level3</WarningLevel>
++      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
++      <ForcedIncludeFiles>stdafx.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
++    </ClCompile>
++  </ItemDefinitionGroup>
++  <ItemGroup>
++    <ClCompile Include="..\src\kml\xsd\xsd_complex_type.cc" />
++    <ClCompile Include="..\src\kml\xsd\xsd_element.cc" />
++    <ClCompile Include="..\src\kml\xsd\xsd_file.cc" />
++    <ClCompile Include="..\src\kml\xsd\xsd_handler.cc" />
++    <ClCompile Include="..\src\kml\xsd\xsd_primitive_type.cc">
++      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
++      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
++    </ClCompile>
++    <ClCompile Include="..\src\kml\xsd\xsd_util.cc" />
++    <ClCompile Include="..\src\kml\xsd\xst_parser.cc" />
++    <ClCompile Include="..\src\stdafx.cpp" />
++  </ItemGroup>
++  <ItemGroup>
++    <ClInclude Include="..\src\kml\xsd\xsd_complex_type.h" />
++    <ClInclude Include="..\src\kml\xsd\xsd_element.h" />
++    <ClInclude Include="..\src\kml\xsd\xsd_file.h" />
++    <ClInclude Include="..\src\kml\xsd\xsd_handler.h" />
++    <ClInclude Include="..\src\kml\xsd\xsd_primitive_type.h" />
++    <ClInclude Include="..\src\kml\xsd\xsd_schema.h" />
++    <ClInclude Include="..\src\kml\xsd\xsd_simple_type.h" />
++    <ClInclude Include="..\src\kml\xsd\xsd_type.h" />
++    <ClInclude Include="..\src\kml\xsd\xsd_util.h" />
++    <ClInclude Include="..\src\kml\xsd\xst_parser.h" />
++    <ClInclude Include="..\src\stdafx.h" />
++  </ItemGroup>
++  <ItemGroup>
++    <Text Include="ReadMe.txt" />
++  </ItemGroup>
++  <ItemGroup>
++    <ProjectReference Include="libkmlengine.vcxproj">
++      <Project>{c7d291c3-46ec-441c-b7f1-911fd32ce185}</Project>
++      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
++    </ProjectReference>
++  </ItemGroup>
++  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
++  <ImportGroup Label="ExtensionTargets">
++  </ImportGroup>
++</Project>
+\ No newline at end of file

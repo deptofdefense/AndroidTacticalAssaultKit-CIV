@@ -41,15 +41,13 @@ public class WFSImporter extends AbstractImporter {
         SUPPORTED_MIME_TYPES.add(MIME_XML);
     }
 
-    private WFSManager wfs;
+    private final WFSManager wfs;
 
-    private Map<File, WFSSchemaHandler> configToHandler;
+    private final Map<File, WFSSchemaHandler> configToHandler = new HashMap<>();
 
     public WFSImporter(WFSManager wfs) {
         super(CONTENT);
-
         this.wfs = wfs;
-        this.configToHandler = new HashMap<>();
     }
 
     @Override

@@ -31,8 +31,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
-import static com.atakmap.android.routes.RouteCreationDialog.setupPlanSpinner;
-
 /** Similar to {@link RouteCreationDialog}, except only allows the user to configure
  *  route planning options -- not including the start and end point of the route to be planned.
  */
@@ -232,7 +230,8 @@ public class RouteConfigurationDialog {
         b.setNegativeButton(R.string.cancel, null);
         AlertDialog d = b.create();
 
-        setupPlanSpinner(planSpinner, _planners, _routePlanOptions,
+        RouteCreationDialog.setupPlanSpinner(planSpinner, _planners,
+                _routePlanOptions,
                 d, _routeAroundOptions);
 
         _routePlanOptions.addView(

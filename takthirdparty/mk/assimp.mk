@@ -21,9 +21,11 @@ $(assimp_local_libfile): assimp_build
 
 $(assimp_out_jlib): $(assimp_local_jlibfile) $(assimp_local_srcdir)/port/jassimp/dist/jassimp.jar
 	$(CP) $(assimp_local_jlibfile) $@
+	$(STRIP) $@
 	$(CP) $(assimp_local_srcdir)/port/jassimp/dist/jassimp.jar $(OUTDIR)/java/
 
 $(assimp_out_lib): $(assimp_local_libfile)
 	$(CP) $(assimp_local_libfile) $@
+	$(STRIP) $@
 
 assimp: $(assimp_out_lib) $(assimp_out_jlib) assimp_install_headers

@@ -50,6 +50,7 @@ import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.conversions.SpanUtilities;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.map.CameraController;
 
 public abstract class AbstractSheetDropDown extends DropDownReceiver
         implements DropDown.OnStateListener,
@@ -430,7 +431,8 @@ public abstract class AbstractSheetDropDown extends DropDownReceiver
                         _coordFmt = cf;
                         if (res == CoordDialogView.Result.VALID_CHANGED) {
                             _item.move(_item.getCenter(), p, true);
-                            _mapView.getMapController().panTo(p.get(), true);
+                            CameraController.Programmatic.panTo(
+                                    _mapView.getRenderer3(), p.get(), true);
                         }
                         refreshCenter();
                         d.dismiss();

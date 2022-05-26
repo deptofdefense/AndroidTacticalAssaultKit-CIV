@@ -398,9 +398,9 @@ public class MissionPackageMapComponent extends AbstractWidgetMapComponent
         if (!isEnabled()) {
             _mapView.post(new Runnable() {
                 public void run() {
-            Toast.makeText(_context,
-                    R.string.mission_package_file_sharing_is_disabled,
-                    Toast.LENGTH_LONG).show();
+                    Toast.makeText(_context,
+                            R.string.mission_package_file_sharing_is_disabled,
+                            Toast.LENGTH_LONG).show();
                 }
             });
             return false;
@@ -451,9 +451,9 @@ public class MissionPackageMapComponent extends AbstractWidgetMapComponent
         if (notifyUser) {
             _mapView.post(new Runnable() {
                 public void run() {
-            Toast.makeText(_context,
-                    R.string.mission_package_file_sharing_disabled,
-                    Toast.LENGTH_SHORT).show();
+                    Toast.makeText(_context,
+                            R.string.mission_package_file_sharing_disabled,
+                            Toast.LENGTH_SHORT).show();
                 }
             });
         }

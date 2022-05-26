@@ -1,23 +1,22 @@
 
 package com.atakmap.android.channels.ui.overlay;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.drawable.Drawable;
 import android.preference.PreferenceManager;
-import android.view.View;
 import android.widget.BaseAdapter;
 import android.util.Log;
 
+import com.atakmap.android.hierarchy.action.Action;
+import com.atakmap.android.hierarchy.action.Visibility;
 import com.atakmap.app.R;
 import com.atakmap.android.channels.ChannelsMapComponent;
 import com.atakmap.android.channels.prefs.ChannelsPrefs;
-import com.atakmap.android.hierarchy.HierarchyListAdapter;
 import com.atakmap.android.hierarchy.HierarchyListFilter;
 import com.atakmap.android.hierarchy.HierarchyListItem;
-import com.atakmap.android.hierarchy.HierarchyListStateListener;
-import com.atakmap.android.hierarchy.action.Action;
 import com.atakmap.android.hierarchy.action.Search;
-import com.atakmap.android.hierarchy.action.Visibility;
 import com.atakmap.android.hierarchy.action.Visibility2;
 import com.atakmap.android.hierarchy.items.AbstractHierarchyListItem2;
 import com.atakmap.comms.NetConnectString;
@@ -33,14 +32,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@SuppressLint("LongLogTag")
 class ChannelsOverlayListModel extends AbstractHierarchyListItem2
-        implements Visibility2, Search, HierarchyListStateListener {
+        implements Visibility2, Search {
 
-    private static String TAG = "ChannelsOverlayListModel";
+    private static final String TAG = "ChannelsOverlayListModel";
 
-    private ChannelsOverlay channelsOverlay;
-    private Context context;
-    private SharedPreferences sharedPreferences;
+    private final ChannelsOverlay overlay;
+    private final Context context;
+    private final SharedPreferences prefs;
 
     public ChannelsOverlayListModel(ChannelsOverlay channelsOverlay,
             BaseAdapter baseAdapter,
@@ -49,12 +49,12 @@ class ChannelsOverlayListModel extends AbstractHierarchyListItem2
 
         Log.d(TAG, "creating ChannelsOverlayListModel");
         this.context = context;
-        this.channelsOverlay = channelsOverlay;
+        this.overlay = channelsOverlay;
         this.listener = baseAdapter;
 
         this.asyncRefresh = true;
         this.reusable = true;
-        this.sharedPreferences = PreferenceManager
+        this.prefs = PreferenceManager
                 .getDefaultSharedPreferences(context);
 
         refresh(filter);
@@ -62,35 +62,27 @@ class ChannelsOverlayListModel extends AbstractHierarchyListItem2
 
     @Override
     public String getTitle() {
-        return "Channels";
+        return context.getString(R.string.actionbar_channels);
     }
 
     @Override
     public String getUID() {
-        return channelsOverlay.getName();
+        return overlay.getName();
     }
 
     @Override
     public String getDescription() {
-        try {
-            int numServers = getDescendantCount();
-            return numServers > 0
-                    ? numServers + (numServers == 1 ? " server" : " servers")
-                    : "No servers available";
-        } catch (Exception e) {
-            Log.e(TAG, e.getMessage(), e);
-            return null;
-        }
+        int numServers = getChildCount();
+        if (numServers == 0)
+            return context.getString(R.string.no_servers_available);
+        else
+            return context.getString(numServers == 1 ? R.string.server_singular
+                    : R.string.server_plural, numServers);
     }
 
     @Override
-    public View getCustomLayout() {
-        try {
-            return super.getCustomLayout();
-        } catch (Exception e) {
-            Log.e(TAG, e.getMessage(), e);
-            return null;
-        }
+    public Drawable getIconDrawable() {
+        return context.getDrawable(R.drawable.nav_channels);
     }
 
     @Override
@@ -115,7 +107,7 @@ class ChannelsOverlayListModel extends AbstractHierarchyListItem2
                     NetConnectString ncs = NetConnectString
                             .fromString(server.getConnectString());
 
-                    boolean enableChannelsForHost = sharedPreferences.getString(
+                    boolean enableChannelsForHost = prefs.getString(
                             ChannelsMapComponent.PREFERENCE_ENABLE_CHANNELS_HOST_KEY
                                     + "-" +
                                     ncs.getHost(),
@@ -155,13 +147,7 @@ class ChannelsOverlayListModel extends AbstractHierarchyListItem2
 
     @Override
     public Object getUserObject() {
-        return channelsOverlay;
-    }
-
-    @Override
-    public String getIconUri() {
-        return "android.resource://" + context.getPackageName() + "/"
-                + R.drawable.ic_channel;
+        return overlay;
     }
 
     @Override
@@ -169,7 +155,7 @@ class ChannelsOverlayListModel extends AbstractHierarchyListItem2
         return ChannelsPrefs.ASSOCIATION_KEY;
     }
 
-    public static boolean find(String str, String terms) {
+    private static boolean find(String str, String terms) {
         return !FileSystemUtils.isEmpty(str) && str.toLowerCase(
                 LocaleUtil.getCurrent()).contains(terms);
     }
@@ -214,33 +200,9 @@ class ChannelsOverlayListModel extends AbstractHierarchyListItem2
 
     @Override
     public <T extends Action> T getAction(Class<T> clazz) {
-        if ((clazz.equals(Visibility.class)
-                || clazz.equals(Visibility2.class)))
+        // Disable visibility
+        if (clazz == Visibility.class || clazz == Visibility2.class)
             return null;
         return super.getAction(clazz);
-    }
-
-    @Override
-    public boolean onOpenList(HierarchyListAdapter hierarchyListAdapter) {
-        Log.d(TAG, "in onOpenList");
-        //activeGroupsOverlay.getGroups(null, false);
-        return false;
-    }
-
-    @Override
-    public boolean onCloseList(HierarchyListAdapter var1, boolean var2) {
-        Log.d(TAG, "in onCloseList");
-        return false;
-    }
-
-    @Override
-    public void onListVisible(HierarchyListAdapter var1, boolean var2) {
-        Log.d(TAG, "in onListVisible");
-    }
-
-    @Override
-    public boolean onBackButton(HierarchyListAdapter var1, boolean var2) {
-        Log.d(TAG, "in onBackButton");
-        return false;
     }
 }

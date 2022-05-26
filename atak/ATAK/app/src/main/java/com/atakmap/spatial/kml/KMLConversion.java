@@ -352,6 +352,13 @@ public class KMLConversion {
         return toMapItem(placemark, ptArray, style);
     }
 
+    /**
+     * Given a placemark, point array and style - turn it into a MapItem.
+     * @param placemark the KML Placemark
+     * @param ptArray the point array
+     * @param style the style
+     * @return a map item representative of the above composition.
+     */
     public static MapItem toMapItem(Placemark placemark,
             GeoPointMetaData[] ptArray,
             Style style) {

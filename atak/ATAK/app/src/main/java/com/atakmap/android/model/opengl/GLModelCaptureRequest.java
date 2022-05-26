@@ -86,7 +86,7 @@ public class GLModelCaptureRequest implements GLOffscreenCaptureRequest {
 
     private boolean _lighting;
     private boolean _stroke;
-    private float[] _strokeColor = {
+    private final float[] _strokeColor = {
             0, 0, 0, 1
     };
     private boolean _strokeColorContrast;

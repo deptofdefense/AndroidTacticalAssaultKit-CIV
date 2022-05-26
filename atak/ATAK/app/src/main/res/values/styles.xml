@@ -1,16 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:android="http://schemas.android.com/apk/res/android">
+<resources xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
 
-    <style name="ATAKTheme" parent="@android:style/Theme.Holo">
+    <style name="ATAKThemeActionBar" parent="@android:style/Theme.Holo">
 
         <item name="android:textAppearanceLargePopupMenu">@style/PopupMenuTextAppearance</item>
-
-
-        <!--
-            Revert to old theme's buttons and spinner styles, since they match the colors and sizes
-            we use currently in the toolbar and in dropdowns better.
-            (And because we have to use dialog mode spinners in dropdowns or they crash ATM)
-        -->
         <item name="android:buttonStyle">@android:style/Widget.Button</item>
         <item name="android:imageButtonStyle">@android:style/Widget.Button</item>
         <item name="android:buttonStyleToggle">@android:style/Widget.Button</item>
@@ -25,30 +18,35 @@
         <item name="android:navigationBarColor">@android:color/black</item>
     </style>
 
-    <style name="ATAKThemeActionBarOverlay" parent="@style/ATAKTheme">
-        <item name="android:windowActionBarOverlay">true</item>
-        <item name="android:actionBarStyle">@style/Widget.ActionBar</item>
-        <item name="android:actionOverflowButtonStyle">@style/OverflowMenuButton</item>
-    </style>
 
-    <style name="Widget.ActionBar" parent="@android:style/Widget.Holo.Light.ActionBar.Solid.Inverse">
-        <item name="android:background">@color/actionbar_background</item>
-        <item name="android:windowActionBarOverlay">true</item>
-    </style>
 
-    <style name="OverflowMenuButton" parent="@android:style/Widget.Holo.Light.ActionButton.Overflow">
-        <item name="android:src">@drawable/ic_action_overflow</item>
+    <style name="ATAKTheme" parent="@android:style/Theme.Holo.NoActionBar">
+
+        <item name="android:textAppearanceLargePopupMenu">@style/PopupMenuTextAppearance</item>
+        <item name="android:buttonStyle">@android:style/Widget.Button</item>
+        <item name="android:imageButtonStyle">@android:style/Widget.Button</item>
+        <item name="android:buttonStyleToggle">@android:style/Widget.Button</item>
+        <item name="android:spinnerStyle">@style/ATAKSpinner</item>
+        <item name="android:spinnerItemStyle">@style/ATAKSpinnerItem</item>
+        <item name="android:spinnerDropDownItemStyle">@style/ATAKSpinnerDropDownItem</item>
+        <!--<item name="android:checkboxStyle">@style/ATAKCheckBox</item>-->
+
+        <item name="android:editTextStyle">@style/ATAKEditText</item>
+        <item name="android:autoCompleteTextViewStyle">@style/ATAKAutoCompleteText</item>
+
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:navigationBarColor">@android:color/black</item>
     </style>
 
     <!--
-         This shouldn't be necessary since Widget.Spinner is a base android theme that 
+         This shouldn't be necessary since Widget.Spinner is a base android theme that
          shouldn't change across devices. But just in case, since otherwise we crash...
     -->
     <style name="ATAKSpinner" parent="@android:style/Widget.Spinner">
         <item name="android:spinnerMode">dialog</item>
     </style>
-    
-    
+
+
     <style name="ATAKEditText" parent="@android:style/Widget.EditText">
         <!-- Default to non-multi-line edit texts? Probably should do this field-by-field, but we've missed a LOT of them!  -->
         <!-- <item name="inputType">text</item> -->
@@ -64,7 +62,7 @@
 
     <!-- In the new theme, sometimes the spinner text color is turning white. -->
     <!-- parent="@android:style/Widget.DropDownItem.Spinner"> -->
-    <style name="ATAKSpinnerItem"> 
+    <style name="ATAKSpinnerItem">
         <item name="android:textColor">@android:color/white</item>
         <item name="android:dropDownVerticalOffset">0dip</item>
         <item name="android:dropDownHorizontalOffset">0dip</item>
@@ -101,12 +99,12 @@
         <item name="android:textColor">@android:color/white</item>
         <item name="android:imeOptions">flagNoExtractUi</item>
     </style>
-    
+
     <style name="smallHoloButton" parent="@android:style/Widget.Holo.Button.Small">
         <item name="android:minHeight">0dp</item>
         <item name="android:minWidth">0dp</item>
     </style>
-    
+
     <style name="smallHoloSpinner" parent="@android:style/Widget.Holo.Button.Small">
         <item name="android:background">@drawable/spinner_background_holo</item>
         <item name="android:gravity">right|center_vertical</item>
@@ -135,8 +133,8 @@
         <item name="android:textColor">#FF000000</item>
         <item name="android:textSize">@dimen/spinnerFontSize</item>
     </style>
-    
-    
+
+
     <!-- ==== Style for ISRV Dark Buttons ==== -->
     <style name="darkButton" parent="@android:style/Widget.Button">
         <item name="android:background">@drawable/btn_gray</item>
@@ -146,7 +144,7 @@
         <item name="android:textColor">@color/white</item>
         <item name="android:textStyle">bold</item>
     </style>
-    
+
     <style name="darkButtonNoHighlight" parent="@android:style/Widget.Button">
         <item name="android:background">@drawable/btn_gray_no_checked_highlight</item>
         <item name="android:shadowColor">@color/darker_gray</item>
@@ -229,5 +227,303 @@
          <item name="android:textColor">@color/white</item>
     </style>
 
+    <!-- MG UI -->
+
+    <style name="AtakButton" parent="@android:style/Widget.Button">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:textAppearance">@style/ATAKTextAppearance.Button</item>
+        <item name="android:gravity">center_vertical|center_horizontal</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:background">@drawable/button_background</item>
+        <item name="android:minHeight">@dimen/button_primary_height</item>
+        <item name="android:maxHeight">@dimen/button_primary_height</item>
+    </style>
+
+    <style name="AtakButton.Inverse">
+        <item name="android:background">@drawable/button_background_inverse</item>
+        <item name="android:textAppearance">@style/ATAKTextAppearance.Button.Inverse</item>
+        <item name="buttonImageTint">@color/atac_beige</item>
+    </style>
+
+    <style name="AtakButton.Secondary">
+        <item name="android:textAppearance">@style/ATAKTextAppearance.Button.Secondary</item>
+        <item name="android:background">@drawable/button_secondary_background</item>
+        <item name="android:textColor">@color/button_foreground</item>
+        <item name="android:paddingStart">@dimen/padding_medium</item>
+        <item name="android:paddingEnd">@dimen/padding_medium</item>
+        <item name="android:minHeight">@dimen/button_secondary_height</item>
+        <item name="android:maxHeight">@dimen/button_secondary_height</item>
+    </style>
+
+    <style name="AtakButton.Secondary.Black">
+        <item name="android:background">@drawable/button_black_secondary_background</item>
+    </style>
+
+    <style name="AtakButton.Marker">
+        <item name="android:background">@drawable/button_marker_background</item>
+        <item name="android:layout_width">@dimen/button_marker_size</item>
+        <item name="android:layout_height">@dimen/button_marker_size</item>
+        <item name="android:padding">@dimen/button_marker_padding</item>
+    </style>
+
+    <style name="AtakButton.Alert" parent="@android:style/Widget.Button">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:textAppearance">@style/ATAKTextAppearance.Button</item>
+        <item name="android:gravity">center_vertical|center_horizontal</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:background">@android:color/transparent</item>
+        <item name="android:minHeight">@dimen/alert_button_height</item>
+        <item name="android:maxHeight">@dimen/alert_button_height</item>
+    </style>
+
+    <style name="AtakTextAppearance">
+        <item name="android:fontFamily" tools:ignore="NewApi">@font/nunito_regular</item>
+        <item name="android:textSize">@dimen/text_size_small</item>
+        <item name="android:textColor">@color/white</item>
+    </style>
+
+    <style name="AtakTextAppearance.Body" />
+
+    <style name="AtakTextAppearance.Header1">
+        <item name="android:textSize">@dimen/text_size_medium</item>
+        <item name="android:fontFamily" tools:ignore="NewApi">@font/nunito_bold</item>
+    </style>
+
+    <style name="AtakTextAppearance.Header2">
+        <item name="android:textSize">@dimen/text_size_medium</item>
+        <item name="android:fontFamily" tools:ignore="NewApi">@font/nunito_bold</item>
+        <item name="android:textColor">@color/black</item>
+        <item name="android:textAllCaps">true</item>
+    </style>
+
+    <style name="AtakTextAppearance.Header3">
+        <item name="android:textSize">@dimen/text_size_medium</item>
+    </style>
+
+    <style name="AtakTextAppearance.Header4">
+        <item name="android:textColor">@color/black</item>
+        <item name="android:fontFamily" tools:ignore="NewApi">@font/nunito_bold</item>
+        <item name="android:textAllCaps">true</item>
+    </style>
+
+    <style name="AtakTextAppearance.Toolbar" parent="AtakTextAppearance.Header3"/>
+
+    <style name="ATAKTextAppearance.Button" parent="AtakTextAppearance.Header2">
+        <item name="android:textSize">@dimen/text_size_small</item>
+    </style>
+
+    <style name="ATAKTextAppearance.Button.Inverse">
+        <item name="android:textColor">@color/pastel_gray</item>
+    </style>
+
+    <style name="ATAKTextAppearance.Button.Secondary" parent="AtakTextAppearance.Body">
+        <item name="android:textColor">@color/button_foreground</item>
+    </style>
+
+    <style name="dialogTitleTextView">
+        <item name="android:gravity">center_horizontal</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:background">@android:color/transparent</item>
+        <item name="android:scrollHorizontally">true</item>
+        <item name="android:textColor">@color/black</item>
+        <item name="android:fontFamily">@font/nunito_bold</item>
+        <item name="android:textSize">@dimen/text_size_large</item>
+        <item name="android:textAppearance">@android:style/TextAppearance.Material.Title</item>
+    </style>
+
+    <style name="dialogMessageTextView">
+        <item name="android:gravity">center_horizontal</item>
+        <item name="android:background">@android:color/transparent</item>
+        <item name="android:textColor">@color/black</item>
+        <item name="android:fontFamily">@font/nunito_regular</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <style name="dialogTextAppearance" parent="android:style/TextAppearance.Material">
+        <item name="android:textSize">@dimen/fontSize</item>
+        <item name="android:fontFamily">@font/nunito_regular</item>
+    </style>
+
+    <style name="newDialogTitleStyle">
+        <item name="android:gravity">center_horizontal</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:background">@android:color/transparent</item>
+        <item name="android:scrollHorizontally">true</item>
+        <item name="android:fontFamily">@font/nunito_bold</item>
+        <item name="android:textSize">@dimen/text_size_large</item>
+        <item name="android:textAppearance">@android:style/TextAppearance.Material.Title</item>
+    </style>
+
+    <style name="newAlertDialog" parent="android:style/Theme.Material.Dialog.Alert">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowBackground">@drawable/dialog_alert_background</item>
+        <item name="android:windowTitleStyle">@style/newDialogTitleStyle</item>
+        <item name="android:textAppearance">@style/dialogTextAppearance</item>
+        <item name="android:textColorPrimary">@color/black</item>
+        <item name="android:colorControlNormal">@color/black</item>
+        <item name="android:colorControlHighlight">@color/black</item>
+        <item name="android:colorControlActivated">@color/black</item>
+    </style>
+
+    <style name="standardDialog" parent="newAlertDialog">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowBackground">@drawable/dialog_standard_background</item>
+        <item name="android:windowTitleStyle">@style/newDialogTitleStyle</item>
+        <item name="android:textAppearance">@style/dialogTextAppearance</item>
+        <item name="android:textColorPrimary">@color/black</item>
+        <item name="android:colorControlNormal">@color/black</item>
+        <item name="android:colorControlHighlight">@color/black</item>
+        <item name="android:colorControlActivated">@color/black</item>
+    </style>
+
+    <style name="newSpinnerStyle" parent="android:Widget.Holo.Spinner">
+        <item name="android:background">@drawable/spinner_new</item>
+        <item name="android:popupBackground">@drawable/menu_dropdown_background</item>
+        <item name="android:spinnerMode">dropdown</item>
+    </style>
+
+    <style name="newTabWidget" parent="@android:style/Widget.Holo.TabWidget">
+        <item name="android:divider">@drawable/tab_divider_vertical</item>
+        <item name="android:dividerPadding">0dp</item>
+        <item name="android:maxHeight">43dp</item>
+    </style>
+
+    <style name="newTab" parent="@android:style/Widget.Holo.Tab">
+        <item name="android:background">@drawable/tab_indicator_background</item>
+    </style>
+    <style name="newTabLeft" parent="@android:style/Widget.Holo.Tab">
+        <item name="android:background">@drawable/tab_indicator_left_background</item>
+    </style>
+    <style name="newTabRight" parent="@android:style/Widget.Holo.Tab">
+        <item name="android:background">@drawable/tab_indicator_right_background</item>
+    </style>
+
+    <style name="newTabTitle">
+        <item name="android:maxWidth">180dp</item>
+        <item name="android:textAppearance">@style/tabTextAppearance</item>
+    </style>
+
+    <style name="tabTextAppearance">
+        <item name="android:textSize">@dimen/fontSmall</item>
+        <item name="android:font" tools:ignore="NewApi">@font/nunito_regular</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:textColor">@color/button_foreground</item>
+    </style>
+
+    <style name="newSwitch">
+        <item name="android:track">@drawable/switch_track</item>
+        <item name="android:thumb">@drawable/switch_thumb</item>
+        <item name="android:switchTextAppearance">@style/switchTextAppearance</item>
+        <item name="android:showText">false</item>
+        <item name="android:switchMinWidth">7dp</item>
+    </style>
+
+    <style name="switchTextAppearance">
+        <item name="android:textSize">@dimen/fontSmall</item>
+        <item name="android:font" tools:ignore="NewApi">@font/nunito_bold</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textColor">@color/white</item>
+    </style>
+
+    <style name="progressBarHorizontal" parent="android:Widget.Holo.ProgressBar.Horizontal">
+        <item name="android:progressDrawable">@drawable/progress_horizontal</item>
+    </style>
+
+    <style name="progressBarHorizontal.Small">
+        <item name="android:progressDrawable">@drawable/progress_horizontal_small</item>
+        <item name="android:maxHeight">4dp</item>
+        <item name="android:minHeight">4dp</item>
+    </style>
+
+    <style name="listView" parent="android:Widget.ListView">
+        <item name="android:divider">@color/listview_divider</item>
+        <item name="android:dividerHeight">0.5dp</item>
+    </style>
+
+    <style name="listViewItem" >
+        <item name="android:textColor">@color/white</item>
+        <item name="android:font" tools:ignore="NewApi">@font/nunito_regular</item>
+        <item name="android:textStyle">normal</item>
+    </style>
+
+    <style name="ListViewItemTitle">
+        <item name="android:ellipsize">end</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:textAppearance">@style/AtakTextAppearance.Header1</item>
+    </style>
+
+    <style name="ListViewItemSecondaryTitle">
+        <item name="android:ellipsize">end</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:textAppearance">@style/AtakTextAppearance.Body</item>
+        <item name="android:layout_marginStart">@dimen/list_item_internal_margin</item>
+        <item name="android:layout_marginEnd">@dimen/list_item_internal_margin</item>
+    </style>
+
+    <style name="ListViewItemTertiaryTitle" parent="ListViewItemSecondaryTitle" />
+
+    <style name="AtakEditTextNew">
+        <item name="android:imeOptions">flagNoFullscreen</item>
+        <item name="android:background">@drawable/edit_text_new_background</item>
+        <item name="android:textAppearance">@style/AtakTextAppearance.Header1</item>
+        <item name="android:paddingStart">@dimen/padding_medium</item>
+        <item name="android:focusable">true</item>
+        <item name="android:focusableInTouchMode">true</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:minHeight">@dimen/textview_height</item>
+        <item name="android:maxHeight">@dimen/textview_height</item>
+        <item name="android:drawablePadding">@dimen/edit_text_drawable_padding</item>
+        <item name="android:textColorHint">@color/ash_gray</item>
+    </style>
+
+    <style name="AtakSearchView" parent="AtakEditTextNew">
+        <item name="android:drawableEnd">@drawable/ic_search</item>
+    </style>
+
+    <style name="AtakMessageEditText" parent="AtakEditTextNew">
+        <item name="android:background">@android:color/transparent</item>
+    </style>
+
+    <style name="AtakMessageBar">
+        <item name="android:background">@drawable/message_bar_background</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:paddingStart">@dimen/padding_medium</item>
+        <item name="android:paddingEnd">@dimen/padding_medium</item>
+        <item name="android:layout_height">@dimen/message_bar_height</item>
+        <item name="android:layout_width">wrap_content</item>
+    </style>
+
+    <style name="NavButton">
+        <item name="android:layout_width">@dimen/nav_button_size</item>
+        <item name="android:layout_height">@dimen/nav_button_size</item>
+        <item name="android:layout_marginStart">@dimen/nav_child_padding</item>
+        <item name="android:padding">0dp</item>
+        <item name="android:background">@android:color/transparent</item>
+    </style>
+
+    <style name="NavZoomButton">
+        <item name="android:layout_width">@dimen/nav_button_size</item>
+        <item name="android:layout_height">@dimen/nav_zoom_button_height</item>
+        <item name="android:padding">0dp</item>
+        <item name="android:background">@android:color/transparent</item>
+    </style>
+
+    <style name="ActionBarViewImageButton">
+        <item name="android:layout_width">@dimen/nav_child_button_size</item>
+        <item name="android:layout_height">@dimen/nav_child_button_size</item>
+        <item name="android:padding">@dimen/auto_margin</item>
+        <item name="android:background">@android:color/transparent</item>
+    </style>
+
+    <style name="CompassButton">
+        <item name="android:layout_width">@dimen/nav_button_size</item>
+        <item name="android:layout_height">@dimen/nav_button_size</item>
+        <item name="android:padding">@dimen/scroll_margin</item>
+        <item name="android:background">@android:color/transparent</item>
+    </style>
+
+    <style name="ATAKCheckBox" parent="@android:style/Widget.CompoundButton.CheckBox">
+        <item name="android:button">@drawable/btn_check</item>
+    </style>
 
 </resources>

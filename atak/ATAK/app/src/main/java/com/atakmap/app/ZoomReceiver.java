@@ -34,6 +34,7 @@ public class ZoomReceiver extends BroadcastReceiver {
                 double zoom = intent.getDoubleExtra("zoomLevel", 1d);
                 if (intent.getBooleanExtra("maintainZoomLevel", false))
                     zoom = _mapView.getMapScale();
+
                 _mapView.getMapController().panZoomTo(touchPoint,
                         zoom,
                         true);

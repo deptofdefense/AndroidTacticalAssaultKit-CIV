@@ -82,6 +82,19 @@ public class ImageMapComponent extends DropDownMapComponent {
         registerDropDownReceiver(new ImageDropDownReceiver(view),
                 viewImagesFilter);
 
+        DocumentedIntentFilter viewEquirectangularImagesFilter = new DocumentedIntentFilter();
+        viewEquirectangularImagesFilter.addAction(
+                SphereImageViewerDropDownReceiver.SHOW_IMAGE,
+                "View an Equirectangular Image",
+                new DocumentedExtra[] {
+                        new DocumentedExtra("filepath",
+                                "The image file path",
+                                false, String.class)
+                });
+
+        registerDropDownReceiver(new SphereImageViewerDropDownReceiver(view),
+                viewEquirectangularImagesFilter);
+
         BroadcastReceiver imageMapReceiver = new ImageMapReceiver(view);
         DocumentedIntentFilter imageMapFilter = new DocumentedIntentFilter();
         imageMapFilter.addAction(ImageMapReceiver.IMAGE_DETAILS,

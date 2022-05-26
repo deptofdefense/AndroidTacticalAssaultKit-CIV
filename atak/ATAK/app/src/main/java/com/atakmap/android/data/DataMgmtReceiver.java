@@ -20,6 +20,7 @@ import android.widget.Toast;
 import com.atakmap.android.hierarchy.HierarchyListReceiver;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
@@ -46,8 +47,10 @@ public class DataMgmtReceiver extends BroadcastReceiver {
      * intent action to process zeroize - see ClearContentRegistry
      * @deprecated
      */
+    @DeprecatedApi(since = "4.5", removeAt = "4.8", forRemoval = true)
     final public static String ZEROIZE_CONFIRMED_ACTION = "com.atakmap.app.ZEROIZE_CONFIRMED";
 
+    @DeprecatedApi(since = "4.5", removeAt = "4.8", forRemoval = true)
     final public static String ZEROIZE_CLEAR_MAPS = "com.atakmap.app.ZEROIZE_CLEAR_MAPS";
 
     private MapView _mapView;
@@ -85,7 +88,7 @@ public class DataMgmtReceiver extends BroadcastReceiver {
         zeroizeBtn.setVisibility(Button.GONE);
 
         AlertDialog.Builder adb = new AlertDialog.Builder(_mapView.getContext())
-                .setIcon(R.drawable.ic_menu_clear_content)
+                .setIcon(R.drawable.nav_delete)
                 .setTitle(R.string.clear_content)
                 .setPositiveButton(R.string.select_items,
                         new DialogInterface.OnClickListener() {
@@ -131,7 +134,8 @@ public class DataMgmtReceiver extends BroadcastReceiver {
             @Override
             public void onClick(View v) {
                 if (lock1.isChecked() && lock2.isChecked()) {
-                    Log.d(TAG, "Initiating Zeroize sequence...");
+                    Log.d(TAG,
+                            "Initiating clear content (ZEROIZE) sequence...");
                     ad.dismiss();
 
                     // stop rendering all data

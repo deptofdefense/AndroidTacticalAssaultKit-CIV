@@ -12,10 +12,16 @@ import com.atakmap.android.rubbersheet.tool.RubberModelEditTool;
 import com.atakmap.android.toolbar.Tool;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.coremap.maps.coords.GeoBounds;
+import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.MapRenderer2;
+import com.atakmap.map.MapRenderer3;
 import com.atakmap.map.MapSceneModel;
+import com.atakmap.map.hittest.HitTestQueryParameters;
+import com.atakmap.map.hittest.HitTestResult;
 import com.atakmap.map.layer.model.Model;
+import com.atakmap.map.layer.model.ModelHitTestControl;
 import com.atakmap.map.layer.opengl.GLAsynchronousLayer2;
 import com.atakmap.map.opengl.GLMapRenderable2;
 import com.atakmap.map.opengl.GLMapView;
@@ -33,7 +39,8 @@ public class GLRubberModelLayer extends
         GLAsynchronousLayer2<Collection<GLMapRenderable2>>
         implements MapGroup.OnItemListChangedListener,
         GLMapItem2.OnVisibleChangedListener,
-        GLMapItem2.OnBoundsChangedListener, LayerHitTestControl {
+        GLMapItem2.OnBoundsChangedListener, LayerHitTestControl,
+        ModelHitTestControl {
 
     private final static String TAG = "GLRubberModelLayer";
 
@@ -238,6 +245,49 @@ public class GLRubberModelLayer extends
 
     @Override
     public synchronized Collection<?> getHitTestList() {
-        return getRenderList();
+        return new ArrayList<>(getRenderList());
+    }
+
+    // ModelHitTestControl - used to populate model DSM elevation
+    @Override
+    public boolean hitTest(float screenX, float screenY, GeoPoint result) {
+        MapView mv = MapView.getMapView();
+        if (mv == null)
+            return false;
+
+        MapRenderer3 renderer = mv.getRenderer3();
+
+        HitTestQueryParameters params = new HitTestQueryParameters(
+                mv.getGLSurface(), screenX, screenY,
+                MapRenderer2.DisplayOrigin.UpperLeft);
+
+        return dsmHitTest(this, renderer, params, result);
+    }
+
+    private static boolean dsmHitTest(LayerHitTestControl ctrl,
+            MapRenderer3 renderer, HitTestQueryParameters params,
+            GeoPoint result) {
+        Collection<?> objects = ctrl.getHitTestList();
+        for (Object o : objects) {
+            if (o instanceof GLRubberModel) {
+                GLRubberModel mdl = (GLRubberModel) o;
+
+                // Do not query elevation on a model being dragged or else
+                // the drag events query elevation from the model itself,
+                // causing the model to start flying up toward the camera
+                MapItem sub = mdl.getSubject();
+                if (sub == null || sub.getMetaBoolean("dragInProgress", false))
+                    continue;
+
+                HitTestResult res = mdl.hitTest(renderer, params);
+                if (res != null && res.point != null) {
+                    result.set(res.point);
+                    return true;
+                }
+            } else if (o instanceof LayerHitTestControl && dsmHitTest(
+                    (LayerHitTestControl) o, renderer, params, result))
+                return true;
+        }
+        return false;
     }
 }

@@ -20,6 +20,7 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.math.MathUtils;
 import com.atakmap.android.widgets.SeekBarControl;
+import com.atakmap.android.widgets.SeekBarControlCompat;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
@@ -253,7 +254,7 @@ public class GRGMapReceiver extends BroadcastReceiver implements
         SeekBarControl.dismiss();
         _selectedInfo = info;
         _sliderMode = mode;
-        SeekBarControl.show(this, 5000L);
+        SeekBarControlCompat.show(this, 5000L);
         // add a click listener to dismiss the slider
         _mapView.getMapEventDispatcher().addMapEventListenerToBase(
                 MapEvent.MAP_CLICK, this);

@@ -1,8 +1,0 @@
-<PersistedActionMenu baseline="true" hideable="true" iconPath="ic_channel"  title="actionbar_channels">
-   <ClickData actionType="click">
-      <broadcast>
-         <action>com.atakmap.android.channels.OPEN_CHANNELS_OVERLAY</action>
-         <extras/>
-      </broadcast>
-   </ClickData>
-</PersistedActionMenu>

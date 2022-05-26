@@ -3,20 +3,16 @@ package com.atakmap.coremap.cot.event;
 
 import com.atakmap.android.androidtest.ATAKInstrumentedTest;
 
-import androidx.test.runner.AndroidJUnit4;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-/**
- * Instrumented test, which will execute on an Android device.
- *
- * @see <a href="http://d.android.com/tools/testing">Testing documentation</a>
- */
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+
 @RunWith(AndroidJUnit4.class)
 public class CotEventTester extends ATAKInstrumentedTest {
 
@@ -27,6 +23,7 @@ public class CotEventTester extends ATAKInstrumentedTest {
             ce = CotEvent.parse(getInvalid1());
         } catch (Exception ignored) {
         }
+        assertNotNull(ce);
         assertFalse(ce.isValid());
 
         try {
@@ -46,7 +43,7 @@ public class CotEventTester extends ATAKInstrumentedTest {
 
     @Test
     public void valid() {
-        CotEvent ce = null;
+        CotEvent ce;
 
         ce = CotEvent.parse(getValid1());
         assertEquals("904a7ff3-fe24-4809-86fd-0d486444a809", ce.getUID());

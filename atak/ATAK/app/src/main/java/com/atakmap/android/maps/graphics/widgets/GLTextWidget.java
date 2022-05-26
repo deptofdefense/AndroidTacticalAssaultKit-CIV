@@ -16,6 +16,11 @@ import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLNinePatch;
 import com.atakmap.opengl.GLText;
 
+import gov.tak.api.annotation.DeprecatedApi;
+
+/** @deprecated use {@link gov.tak.platform.widgets.opengl.GLTextWidget} */
+@Deprecated
+@DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
 public class GLTextWidget extends GLWidget2 implements OnTextChangedListener,
         OnColorChangedListener, OnHasBackgroundChangedListener {
     protected int _background = TextWidget.TRANSLUCENT;
@@ -86,16 +91,17 @@ public class GLTextWidget extends GLWidget2 implements OnTextChangedListener,
                     .getMediumNinePatch();
             if (ninePatch != null && _background != TextWidget.TRANSLUCENT) {
                 GLES20FixedPipeline.glPushMatrix();
-                GLES20FixedPipeline.glTranslatef(0f, -_pHeight, 0f);
+                GLES20FixedPipeline.glTranslatef(_margin[LEFT],
+                        -_pHeight + _margin[BOTTOM], 0f);
 
                 GLES20FixedPipeline.glColor4f(_r, _g, _b, _a);
                 ninePatch.draw(_pWidth, _pHeight);
                 GLES20FixedPipeline.glPopMatrix();
             }
             GLES20FixedPipeline.glPushMatrix();
-            GLES20FixedPipeline.glTranslatef(_padding[LEFT],
+            GLES20FixedPipeline.glTranslatef(_padding[LEFT] + _margin[LEFT],
                     _mapTextFormat.getBaselineOffsetFromBottom()
-                            - _padding[TOP],
+                            - _padding[TOP] + _margin[BOTTOM],
                     0f);
 
             int[] colors = _colors;

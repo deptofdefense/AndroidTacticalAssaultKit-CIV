@@ -3,11 +3,7 @@
     android:id="@+id/close"
     android:layout_width="@dimen/dropdown_bottom_bar_height"
     android:layout_height="@dimen/dropdown_bottom_bar_height"
-    android:layout_gravity="center_vertical"
-    android:adjustViewBounds="true"
-    android:background="#00000000"
-    android:lines="0"
-    android:padding="3dp"
-    android:scaleType="fitCenter"
-    android:src="@drawable/ic_menu_close_clear_cancel" />
+    android:background="@android:color/transparent"
+    android:padding="@dimen/auto_margin"
+    android:src="@drawable/ic_close" />
 

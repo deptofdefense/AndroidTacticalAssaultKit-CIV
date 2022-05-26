@@ -18,10 +18,9 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.SensorFOV;
 import com.atakmap.android.widgets.SeekBarControl;
+import com.atakmap.android.widgets.SeekBarControlCompat;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-
-import static com.atakmap.android.cot.detail.SensorDetailHandler.*;
 
 /**
  * Receiver for showing sensor details and handling actions such as toggle FOV
@@ -87,7 +86,8 @@ public class SensorDetailsReceiver extends DropDownReceiver implements
         if (mi == null)
             return;
 
-        MapItem fovMI = _mapView.getMapItem(uid + UID_POSTFIX);
+        MapItem fovMI = _mapView
+                .getMapItem(uid + SensorDetailHandler.UID_POSTFIX);
         final SensorFOV fov = fovMI instanceof SensorFOV
                 ? (SensorFOV) fovMI
                 : null;
@@ -96,7 +96,7 @@ public class SensorDetailsReceiver extends DropDownReceiver implements
             // Toggle FOV cone visibility
             case TOGGLE_FOV: {
                 boolean hide = intent.getBooleanExtra("hide",
-                        !mi.hasMetaValue(HIDE_FOV));
+                        !mi.hasMetaValue(SensorDetailHandler.HIDE_FOV));
                 toggleFOV(mi, fov, !hide);
                 mi.persist(_mapView.getMapEventDispatcher(), null, getClass());
                 break;
@@ -129,7 +129,7 @@ public class SensorDetailsReceiver extends DropDownReceiver implements
                         SeekBarControl.dismiss();
                 }
                 toggleFOV(mi, fov, true);
-                SeekBarControl.show(new SeekBarControl.Subject() {
+                SeekBarControlCompat.show(new SeekBarControl.Subject() {
                     @Override
                     public int getValue() {
                         return (int) ((fov.getFOV() / 360f) * 100);
@@ -138,7 +138,8 @@ public class SensorDetailsReceiver extends DropDownReceiver implements
                     @Override
                     public void setValue(int value) {
                         int deg = (int) ((value / 100f) * 360);
-                        fov.setMetrics(fov.getAzimuth(), deg, fov.getExtent());
+                        fov.setMetrics(fov.getAzimuth(), deg, fov.getExtent(),
+                                fov.isShowLabels(), fov.getRangeLines());
                         mi.setMetaInteger(SensorDetailHandler.FOV_ATTRIBUTE,
                                 deg);
                     }
@@ -163,6 +164,7 @@ public class SensorDetailsReceiver extends DropDownReceiver implements
                 SensorDetailsView sdv = (SensorDetailsView) inflater.inflate(
                         R.layout.sensor_details_view, _mapView, false);
                 sdv.setSensorMarker(uid);
+                setSelected(mi, "asset:/icons/outline.png");
                 showDropDown(sdv, THREE_EIGHTHS_WIDTH, FULL_HEIGHT, FULL_WIDTH,
                         HALF_HEIGHT, false);
                 break;
@@ -179,17 +181,28 @@ public class SensorDetailsReceiver extends DropDownReceiver implements
     }
 
     private void toggleFOV(MapItem mi, SensorFOV fov, boolean show) {
-        mi.toggleMetaData(HIDE_FOV, !show);
+        mi.toggleMetaData(SensorDetailHandler.HIDE_FOV, !show);
         if (fov != null)
             fov.setVisible(show);
+
+        if (!show) {
+            mi.toggleMetaData(SensorDetailHandler.DISPLAY_LABELS, false);
+            if (fov != null)
+                fov.setMetrics(fov.getAzimuth(), fov.getFOV(),
+                        fov.getExtent(), false, fov.getRangeLines());
+        }
     }
 
     private void promptFOVColor(final MapItem mi, final SensorFOV fov) {
-        float red = (float) mi.getMetaDouble(FOV_RED, 1.0);
-        float green = (float) mi.getMetaDouble(FOV_GREEN, 1.0);
-        float blue = (float) mi.getMetaDouble(FOV_BLUE, 1.0);
-        float alpha = (float) mi.getMetaDouble(FOV_ALPHA, 0.3);
-        int strokeColor = mi.getMetaInteger(STROKE_COLOR, Color.WHITE);
+        float red = (float) mi.getMetaDouble(SensorDetailHandler.FOV_RED, 1.0);
+        float green = (float) mi.getMetaDouble(SensorDetailHandler.FOV_GREEN,
+                1.0);
+        float blue = (float) mi.getMetaDouble(SensorDetailHandler.FOV_BLUE,
+                1.0);
+        float alpha = (float) mi.getMetaDouble(SensorDetailHandler.FOV_ALPHA,
+                0.3);
+        int strokeColor = mi.getMetaInteger(SensorDetailHandler.STROKE_COLOR,
+                Color.LTGRAY);
 
         int color;
         if (alpha > 0) {
@@ -217,10 +230,10 @@ public class SensorDetailsReceiver extends DropDownReceiver implements
                     fov.setColor(red, green, blue);
                     fov.setStrokeColor(color);
                 }
-                mi.setMetaDouble(FOV_RED, red);
-                mi.setMetaDouble(FOV_GREEN, green);
-                mi.setMetaDouble(FOV_BLUE, blue);
-                mi.setMetaInteger(STROKE_COLOR, color);
+                mi.setMetaDouble(SensorDetailHandler.FOV_RED, red);
+                mi.setMetaDouble(SensorDetailHandler.FOV_GREEN, green);
+                mi.setMetaDouble(SensorDetailHandler.FOV_BLUE, blue);
+                mi.setMetaInteger(SensorDetailHandler.STROKE_COLOR, color);
                 mi.persist(_mapView.getMapEventDispatcher(), null,
                         SensorDetailsReceiver.class);
             }

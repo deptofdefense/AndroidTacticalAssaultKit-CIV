@@ -1,13 +1,15 @@
 
 package com.atakmap.opengl;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
+
 import android.opengl.GLES30;
 
 import com.atakmap.android.androidtest.ATAKInstrumentedTest;
-import com.atakmap.opengl.Skirt;
 
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;

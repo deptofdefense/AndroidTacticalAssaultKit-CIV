@@ -186,8 +186,8 @@ public class MenuLayoutWidget extends MenuLayoutBase implements
         @Override
         public void onMapEvent(MapEvent event) {
             PointF p = new PointF();
-            p.x = event.getPoint().x;
-            p.y = event.getPoint().y;
+            p.x = event.getPointF().x;
+            p.y = event.getPointF().y;
             _openMenuOnMap(p);
 
         }

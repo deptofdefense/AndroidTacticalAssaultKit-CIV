@@ -1,4 +1,4 @@
-<PersistedActionMenu baseline="true" hideable="true" iconPath="ic_menu_geofence"  title="actionbar_geofence">
+<PersistedActionMenu baseline="true" hideable="true" iconPath="nav_geofence" title="actionbar_geofence">
    <ClickData actionType="click">
       <broadcast>
          <action>com.atakmap.android.geofence.DISPLAY_ALERTING</action>

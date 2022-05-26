@@ -9,12 +9,13 @@ import com.atakmap.android.androidtest.util.RandomUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.io.ZipVirtualFile;
 
-import androidx.test.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.core.app.ApplicationProvider;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -28,7 +29,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
-import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -56,10 +56,10 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
         string_array = new String[] {};
         assertTrue(FileSystemUtils.isEmpty(string_array));
 
-        List string_list = null;
+        List<String> string_list = null;
         assertTrue(FileSystemUtils.isEmpty(string_list));
 
-        string_list = new ArrayList();
+        string_list = new ArrayList<>();
         assertTrue(FileSystemUtils.isEmpty(string_list));
 
     }
@@ -67,7 +67,7 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
     @Test
     public void FileSystemUtils_getFileTreeData_invalid_file()
             throws IOException {
-        Context appContext = InstrumentationRegistry.getTargetContext();
+        Context appContext = ApplicationProvider.getApplicationContext();
         File f = File.createTempFile("testfile", ".dat",
                 appContext.getCacheDir());
         try {
@@ -95,7 +95,7 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
     @Test
     public void FileSystemUtils_getFileTreeData_single_file()
             throws IOException {
-        Context appContext = InstrumentationRegistry.getTargetContext();
+        Context appContext = ApplicationProvider.getApplicationContext();
         File f = File.createTempFile("testfile", ".dat",
                 appContext.getCacheDir());
         try {
@@ -118,7 +118,7 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
 
     @Test
     public void FileSystemUtils_getFileTreeData_directory() throws IOException {
-        Context appContext = InstrumentationRegistry.getTargetContext();
+        Context appContext = ApplicationProvider.getApplicationContext();
         File f = FileSystemUtils.createTempDir("testfile", ".dir",
                 appContext.getCacheDir());
         try {
@@ -154,7 +154,7 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
     @Test
     public void FileSystemUtils_getFileTreeData_directory_with_limit()
             throws IOException {
-        Context appContext = InstrumentationRegistry.getTargetContext();
+        Context appContext = ApplicationProvider.getApplicationContext();
         File f = FileSystemUtils.createTempDir("testfile", ".dir",
                 appContext.getCacheDir());
         try {
@@ -212,7 +212,7 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
     @Test
     public void FileSystemUtils_findFile_null_base_returns_null()
             throws IOException {
-        Context appContext = InstrumentationRegistry.getTargetContext();
+        Context appContext = ApplicationProvider.getApplicationContext();
         try (FileUtils.AutoDeleteFile dir = new FileUtils.AutoDeleteFile(
                 FileSystemUtils.createTempDir("testfile", ".dir",
                         appContext.getCacheDir()))) {
@@ -230,7 +230,7 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
     @Test
     public void FileSystemUtils_findFile_null_exts_returns_null()
             throws IOException {
-        Context appContext = InstrumentationRegistry.getTargetContext();
+        Context appContext = ApplicationProvider.getApplicationContext();
         try (FileUtils.AutoDeleteFile dir = new FileUtils.AutoDeleteFile(
                 FileSystemUtils.createTempDir("testfile", ".dir",
                         appContext.getCacheDir()))) {
@@ -248,7 +248,7 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
     @Test
     public void FileSystemUtils_findFile_no_matching_exts_returns_null()
             throws IOException {
-        Context appContext = InstrumentationRegistry.getTargetContext();
+        Context appContext = ApplicationProvider.getApplicationContext();
         try (FileUtils.AutoDeleteFile dir = new FileUtils.AutoDeleteFile(
                 FileSystemUtils.createTempDir("testfile", ".dir",
                         appContext.getCacheDir()))) {
@@ -270,7 +270,7 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
     @Test
     public void FileSystemUtils_findFile_matching_ext_returns_file()
             throws IOException {
-        Context appContext = InstrumentationRegistry.getTargetContext();
+        Context appContext = ApplicationProvider.getApplicationContext();
         try (FileUtils.AutoDeleteFile dir = new FileUtils.AutoDeleteFile(
                 FileSystemUtils.createTempDir("testfile", ".dir",
                         appContext.getCacheDir()))) {
@@ -292,7 +292,7 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
     @Test
     public void FileSystemUtils_findFile_matching_last_ext_returns_file()
             throws IOException {
-        Context appContext = InstrumentationRegistry.getTargetContext();
+        Context appContext = ApplicationProvider.getApplicationContext();
         try (FileUtils.AutoDeleteFile dir = new FileUtils.AutoDeleteFile(
                 FileSystemUtils.createTempDir("testfile", ".dir",
                         appContext.getCacheDir()))) {
@@ -314,7 +314,7 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
     @Test
     public void FileSystemUtils_canWrite_writable_dir_returns_true()
             throws IOException {
-        Context appContext = InstrumentationRegistry.getTargetContext();
+        Context appContext = ApplicationProvider.getApplicationContext();
         File dir = appContext.getCacheDir();
         assertTrue(FileSystemUtils.canWrite(dir));
     }
@@ -322,7 +322,7 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
     @Test
     public void FileSystemUtils_canWrite_writable_not_existing_dir_returns_false()
             throws IOException {
-        Context appContext = InstrumentationRegistry.getTargetContext();
+        Context appContext = ApplicationProvider.getApplicationContext();
         File dir = new File(appContext.getCacheDir(), ".doesnotexist");
         assertFalse(FileSystemUtils.canWrite(dir));
     }
@@ -330,7 +330,7 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
     @Test
     public void FileSystemUtils_canWrite_writable_not_writable_dir_returns_false()
             throws IOException {
-        Context appContext = InstrumentationRegistry.getTargetContext();
+        Context appContext = ApplicationProvider.getApplicationContext();
         try (FileUtils.AutoDeleteFile dir = new FileUtils.AutoDeleteFile(
                 FileSystemUtils.createTempDir("testfile", ".dir",
                         appContext.getCacheDir()))) {
@@ -349,7 +349,7 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
 
     @Test
     public void FileSystemUtils_read__File_roundtrip() throws IOException {
-        Context appContext = InstrumentationRegistry.getTargetContext();
+        Context appContext = ApplicationProvider.getApplicationContext();
         try (FileUtils.AutoDeleteFile f = new FileUtils.AutoDeleteFile(
                 File.createTempFile("testfile", ".dat",
                         appContext.getCacheDir()))) {
@@ -364,7 +364,7 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
             }
 
             byte[] result = FileSystemUtils.read(f.file);
-            assertTrue(Arrays.equals(arr, result));
+            assertArrayEquals(arr, result);
         }
     }
 
@@ -378,7 +378,7 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
     @Test
     public void FileSystemUtils_read__InputStream_roundtrip()
             throws IOException {
-        Context appContext = InstrumentationRegistry.getTargetContext();
+        Context appContext = ApplicationProvider.getApplicationContext();
         try (FileUtils.AutoDeleteFile f = new FileUtils.AutoDeleteFile(
                 File.createTempFile("testfile", ".dat",
                         appContext.getCacheDir()))) {
@@ -395,7 +395,7 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
             try (FileInputStream fis = IOProviderFactory
                     .getInputStream(f.file)) {
                 byte[] result = FileSystemUtils.read(fis);
-                assertTrue(Arrays.equals(arr, result));
+                assertArrayEquals(arr, result);
             }
         }
     }
@@ -409,13 +409,13 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
 
     @Test
     public void FileSystemUtils_copyFile_roundtrip() throws IOException {
-        Context appContext = InstrumentationRegistry.getTargetContext();
+        Context appContext = ApplicationProvider.getApplicationContext();
         try (FileUtils.AutoDeleteFile orig = new FileUtils.AutoDeleteFile(
                 File.createTempFile("testfile", ".dat",
                         appContext.getCacheDir()));
                 FileUtils.AutoDeleteFile copy = new FileUtils.AutoDeleteFile(
                         File.createTempFile("testfile", ".dat",
-                                appContext.getCacheDir()));) {
+                                appContext.getCacheDir()))) {
 
             byte[] arr = new byte[256];
             for (int i = 0; i < arr.length; i++)
@@ -431,17 +431,17 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
                     IOProviderFactory.length(copy.file));
 
             byte[] copyData = FileSystemUtils.read(copy.file);
-            assertTrue(Arrays.equals(arr, copyData));
+            assertArrayEquals(arr, copyData);
         }
     }
 
     @Test(expected = RuntimeException.class)
     public void FileSystemUtils_copyFile_null_source_throws()
             throws IOException {
-        Context appContext = InstrumentationRegistry.getTargetContext();
+        Context appContext = ApplicationProvider.getApplicationContext();
         try (FileUtils.AutoDeleteFile copy = new FileUtils.AutoDeleteFile(
                 File.createTempFile("testfile", ".dat",
-                        appContext.getCacheDir()));) {
+                        appContext.getCacheDir()))) {
             FileSystemUtils.copyFile(null, copy.file, new byte[8192]);
             fail();
         }
@@ -450,10 +450,10 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
     @Test(expected = RuntimeException.class)
     public void FileSystemUtils_copyFile_null_destination_throws()
             throws IOException {
-        Context appContext = InstrumentationRegistry.getTargetContext();
+        Context appContext = ApplicationProvider.getApplicationContext();
         try (FileUtils.AutoDeleteFile orig = new FileUtils.AutoDeleteFile(
                 File.createTempFile("testfile", ".dat",
-                        appContext.getCacheDir()));) {
+                        appContext.getCacheDir()))) {
             FileSystemUtils.copyFile(orig.file, null, new byte[8192]);
             fail();
         }
@@ -462,13 +462,13 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
     @Test(expected = RuntimeException.class)
     public void FileSystemUtils_copyFile_null_buffer_throws()
             throws IOException {
-        Context appContext = InstrumentationRegistry.getTargetContext();
+        Context appContext = ApplicationProvider.getApplicationContext();
         try (FileUtils.AutoDeleteFile orig = new FileUtils.AutoDeleteFile(
                 File.createTempFile("testfile", ".dat",
                         appContext.getCacheDir()));
                 FileUtils.AutoDeleteFile copy = new FileUtils.AutoDeleteFile(
                         File.createTempFile("testfile", ".dat",
-                                appContext.getCacheDir()));) {
+                                appContext.getCacheDir()))) {
 
             byte[] arr = new byte[256];
             for (int i = 0; i < arr.length; i++)
@@ -486,7 +486,7 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
 
     @Test
     public void FileSystemUtils_deleteDirectory_false() throws IOException {
-        Context appContext = InstrumentationRegistry.getTargetContext();
+        Context appContext = ApplicationProvider.getApplicationContext();
         File directory = new File(appContext.getFilesDir(), "runtime_test");
 
         IOProviderFactory.mkdir(directory);

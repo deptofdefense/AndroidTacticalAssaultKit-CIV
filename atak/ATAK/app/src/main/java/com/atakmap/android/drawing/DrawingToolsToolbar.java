@@ -1,7 +1,6 @@
 
 package com.atakmap.android.drawing;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -13,6 +12,8 @@ import android.widget.Button;
 import android.widget.ImageButton;
 
 import com.atakmap.android.drawing.tools.DrawingCircleEditTool;
+import com.atakmap.android.drawing.tools.DrawingEllipseCreationTool;
+import com.atakmap.android.drawing.tools.DrawingEllipseEditTool;
 import com.atakmap.android.drawing.tools.DrawingRectangleCreationTool;
 import com.atakmap.android.drawing.tools.DrawingRectangleEditTool;
 import com.atakmap.android.drawing.tools.ShapeCreationTool;
@@ -27,6 +28,7 @@ import com.atakmap.android.toolbar.ToolbarBroadcastReceiver;
 import com.atakmap.android.tools.ActionBarView;
 import com.atakmap.android.tools.CircleCreationButtonTool;
 import com.atakmap.android.widgets.TextWidget;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 
 import java.util.ArrayList;
@@ -52,12 +54,14 @@ public class DrawingToolsToolbar extends DropDownReceiver implements
     private ShapeEditTool _shapeEditTool;
     private DrawingRectangleEditTool _rectEditTool;
     private DrawingCircleEditTool _circleEditTool;
+    private DrawingEllipseEditTool _ellipseEditTool;
     private TelestrationTool _telestrationTool;
 
     private final ImageButton _createCircleButton;
+    private final ImageButton _createEllipseButton;
     private final ImageButton _createRectangleButton;
     private final ImageButton _createShapeButton;
-    private final Button _editShapeButton;
+    private final Button _toggleEditButton;
     private final Button _shapeDoneButton;
     private final ImageButton _telestrationButton;
     private final Button _doneButton;
@@ -85,6 +89,7 @@ public class DrawingToolsToolbar extends DropDownReceiver implements
         _layout = (ActionBarView) inflater.inflate(
                 R.layout.drawing_toolbar_view, mapView,
                 false);
+        _layout.setPosition(ActionBarView.TOP_LEFT);
 
         _undoButton = _layout.findViewById(R.id.undoButton);
         _undoButton.setOnClickListener(new OnClickListener() {
@@ -100,15 +105,17 @@ public class DrawingToolsToolbar extends DropDownReceiver implements
                     _rectEditTool.undo();
                 } else if (_circleEditTool.getActive()) {
                     _circleEditTool.undo();
+                } else if (_ellipseEditTool.getActive()) {
+                    _ellipseEditTool.undo();
                 } else if (_telestrationTool.getActive()) {
                     _telestrationTool.undo();
                 }
             }
         });
 
-        _editShapeButton = _layout.findViewById(R.id.editShapeButton);
-        _createCircleButton = _layout
-                .findViewById(R.id.newCircleButton);
+        _toggleEditButton = _layout.findViewById(R.id.editShapeButton);
+        _createCircleButton = _layout.findViewById(R.id.newCircleButton);
+        _createEllipseButton = _layout.findViewById(R.id.newEllipseButton);
         _createRectangleButton = _layout
                 .findViewById(R.id.newRectangleButton);
         _createShapeButton = _layout
@@ -129,9 +136,48 @@ public class DrawingToolsToolbar extends DropDownReceiver implements
 
     }
 
+    /**
+     * Get the undo button in the top-left toolbar
+     * @return Undo button
+     */
+    public Button getUndoButton() {
+        return _undoButton;
+    }
+
+    /**
+     * Get the button used to toggle edit mode
+     * @return Toggle edit button
+     */
+    public Button getToggleEditButton() {
+        return _toggleEditButton;
+    }
+
+    /**
+     * Set whether to show the shape tool buttons
+     * @param show True to show
+     */
+    public void toggleShapeButtons(boolean show) {
+        int vis = show ? View.VISIBLE : View.GONE;
+        _createCircleButton.setVisibility(vis);
+        _createEllipseButton.setVisibility(vis);
+        _createRectangleButton.setVisibility(vis);
+        _createShapeButton.setVisibility(vis);
+        _telestrationButton.setVisibility(vis);
+    }
+
+    /**
+     * Shortcut for toggling edit mode buttons (undo and end)
+     * @param edit True to toggle edit buttons on
+     */
+    public void toggleEditButtons(boolean edit) {
+        toggleShapeButtons(!edit);
+        _undoButton.setEnabled(false);
+        _undoButton.setVisibility(edit ? View.VISIBLE : View.GONE);
+        _toggleEditButton.setVisibility(edit ? View.VISIBLE : View.GONE);
+    }
+
     @Override
     public void disposeImpl() {
-
     }
 
     @Override
@@ -157,15 +203,18 @@ public class DrawingToolsToolbar extends DropDownReceiver implements
                     _undoButton,
                     _shapeDoneButton,
                     _context);
-            _shapeEditTool = new ShapeEditTool(getMapView(), _editShapeButton,
+            _shapeEditTool = new ShapeEditTool(getMapView(), _toggleEditButton,
                     _undoButton, this,
                     _drawingMapReceiver);
             _rectEditTool = new DrawingRectangleEditTool(getMapView(),
-                    _editShapeButton, _undoButton,
+                    _toggleEditButton, _undoButton,
                     this);
             _circleEditTool = new DrawingCircleEditTool(getMapView(),
-                    _editShapeButton, _undoButton,
+                    _toggleEditButton, _undoButton,
                     this);
+            DrawingEllipseCreationTool ellipseTool = new DrawingEllipseCreationTool(
+                    getMapView(), _createEllipseButton);
+            _ellipseEditTool = new DrawingEllipseEditTool(getMapView(), this);
 
             _telestrationTool = new TelestrationTool(getMapView(),
                     _drawingGroup, _telestrationButton, this,
@@ -187,19 +236,11 @@ public class DrawingToolsToolbar extends DropDownReceiver implements
             _tools.add(_rectEditTool);
             _tools.add(_telestrationTool);
             _tools.add(_circleEditTool);
+            _tools.add(ellipseTool);
+            _tools.add(_ellipseEditTool);
 
         }
         return _tools;
-    }
-
-    public void setDefaultButtonsVisiblity(int vis) {
-        _createCircleButton.setVisibility(vis);
-        _createRectangleButton.setVisibility(vis);
-        _createShapeButton.setVisibility(vis);
-        _telestrationButton.setVisibility(vis);
-        // Anytime we change visibility we potentially affect the size of the
-        // toolbar view - need to invalidate the action bar so it fits
-        ((Activity) _context).invalidateOptionsMenu();
     }
 
     @Override
@@ -216,4 +257,12 @@ public class DrawingToolsToolbar extends DropDownReceiver implements
     public void onToolbarVisible(final boolean vis) {
     }
 
+    /**
+     * @deprecated Use {@link #toggleShapeButtons(boolean)} instead
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.5", forRemoval = true, removeAt = "4.8")
+    public void setDefaultButtonsVisiblity(int vis) {
+        toggleShapeButtons(vis == View.VISIBLE);
+    }
 }

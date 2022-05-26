@@ -199,6 +199,7 @@ public class BluetoothFragment implements OnSharedPreferenceChangeListener {
         Thread t = new Thread() {
             public void run() {
                 toggleNotification(false);
+                manager.interrupt();
                 manager.stop();
             }
         };

@@ -19,6 +19,11 @@ import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.opengl.GLText;
 
+import gov.tak.api.annotation.DeprecatedApi;
+
+/** @deprecated use {@link gov.tak.platform.widgets.opengl.GLAbstractButtonWidget} */
+@Deprecated
+@DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
 public abstract class GLAbstractButtonWidget extends GLWidget implements
         OnBackgroundChangedListener,
         OnIconChangedListener, OnStateChangedListener, OnTextChangedListener {
@@ -26,7 +31,7 @@ public abstract class GLAbstractButtonWidget extends GLWidget implements
     public GLAbstractButtonWidget(AbstractButtonWidget subject,
             GLMapView orthoView) {
         super(subject, orthoView);
-        _bgColor = Color.WHITE;
+        _bgColor = _iconColor = Color.WHITE;
         if (subject.getBackground() != null) {
             _bgColor = subject.getBackground().getColor(subject.getState());
         }
@@ -177,7 +182,7 @@ public abstract class GLAbstractButtonWidget extends GLWidget implements
         }
 
         if (_image != null)
-            drawButtonIcon(Color.WHITE, _image);
+            drawButtonIcon(_iconColor, _image);
 
         if (_textDirty) {
             if (_glText == null) {
@@ -246,7 +251,7 @@ public abstract class GLAbstractButtonWidget extends GLWidget implements
         }
     }
 
-    protected int _bgColor;
+    protected int _bgColor, _iconColor;
     protected GLImageCache.Entry _imageEntry;
     protected GLImage _image;
     protected int _anchorx, _anchory, _iconWidth, _iconHeight;

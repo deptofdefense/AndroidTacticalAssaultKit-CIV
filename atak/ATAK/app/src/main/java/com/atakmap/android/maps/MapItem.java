@@ -20,7 +20,7 @@ import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.map.MapRenderer3;
@@ -963,13 +963,13 @@ public abstract class MapItem extends FilterMetaDataHolder implements
 
     public static double computeDistance(MapItem item, GeoPoint point) {
         if (item instanceof PointMapItem)
-            return DistanceCalculations.calculateRange(
-                    ((PointMapItem) item).getPoint(), point);
+            return GeoCalculations.distanceTo(((PointMapItem) item).getPoint(),
+                    point);
         else if (item instanceof Shape)
-            return DistanceCalculations.calculateRange(
-                    ((Shape) item).getCenter().get(), point);
+            return GeoCalculations.distanceTo(((Shape) item).getCenter().get(),
+                    point);
         else if (item instanceof AnchoredMapItem)
-            return DistanceCalculations.calculateRange(((AnchoredMapItem) item)
+            return GeoCalculations.distanceTo(((AnchoredMapItem) item)
                     .getAnchorItem()
                     .getPoint(), point);
         else

@@ -1,0 +1,7 @@
+<PersistedActionMenu baseline="true" hideable="true" iconPath="nav_settings" title="actionbar_settings">
+   <ClickData actionType="click">
+      <broadcast>
+         <action>com.atakmap.app.ADVANCED_SETTINGS</action>
+      </broadcast>
+   </ClickData>
+</PersistedActionMenu>

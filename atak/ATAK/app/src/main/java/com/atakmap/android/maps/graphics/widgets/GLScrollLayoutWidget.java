@@ -10,6 +10,11 @@ import com.atakmap.android.widgets.ScrollLayoutWidget;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.opengl.GLES20FixedPipeline;
 
+import gov.tak.api.annotation.DeprecatedApi;
+
+/** @deprecated use {@link gov.tak.platform.widgets.opengl.GLScrollLayoutWidget} */
+@Deprecated
+@DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
 public class GLScrollLayoutWidget extends GLLinearLayoutWidget
         implements ScrollLayoutWidget.OnScrollChangedListener {
 

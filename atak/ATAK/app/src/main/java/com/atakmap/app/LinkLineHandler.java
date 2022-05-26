@@ -48,7 +48,7 @@ public class LinkLineHandler
      * @param parentItem parent MapItem. One parent can have many children.
      * @param childUid unique identifier for the child
      * @param childItem child MapItem. One child can only have one parent.
-     * @return
+     * @return true if the link has been processed
      */
     public boolean processLink(String parentUid, MapItem parentItem,
             String childUid, MapItem childItem) {
@@ -84,17 +84,13 @@ public class LinkLineHandler
      * This method is specific for _links Map.
      */
     private String findObjectInMap(String newChildUid) {
-        Iterator it = _links.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry pair = (Map.Entry) it.next();
-            Map<String, _Link> childMap = (Map<String, _Link>) pair.getValue();
+        for (Map.Entry<String, Map<String, _Link>> pair : _links.entrySet()) {
+            Map<String, _Link> childMap = pair.getValue();
 
-            Iterator itChildMap = childMap.entrySet().iterator();
-            while (itChildMap.hasNext()) {
-                Map.Entry childPair = (Map.Entry) itChildMap.next();
-                String childUid = (String) childPair.getKey();
+            for (Map.Entry<String, _Link> childPair : childMap.entrySet()) {
+                String childUid = childPair.getKey();
                 if (childUid.equals(newChildUid)) {
-                    return (String) pair.getKey();
+                    return pair.getKey();
                 }
             }
         }
@@ -277,9 +273,9 @@ public class LinkLineHandler
                 List<String> list = deferredParentLinkage.get(parentItem);
                 if (list == null)
                     list = new ArrayList<>();
-                if (!list.contains(childItem)) {
-                    list.add(childUid);
-                }
+
+                list.add(childUid);
+
                 deferredParentLinkage.put(parentItem, list);
             } else {
                 Log.e(TAG,
@@ -414,7 +410,7 @@ public class LinkLineHandler
 
     /**
      * returns number of parents from each list
-     * @return
+     * @return the number of deferred links
      */
     public int getNumDeferredLinks() {
         return deferredChildLinkage.size() + deferredParentLinkage.size();
@@ -422,7 +418,7 @@ public class LinkLineHandler
 
     /**
      * returns number of parents that have a link
-     * @return
+     * @return the number of links
      */
     public int getNumLinks() {
         return _links.size();

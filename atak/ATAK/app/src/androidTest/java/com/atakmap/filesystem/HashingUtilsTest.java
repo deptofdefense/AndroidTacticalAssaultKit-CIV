@@ -1,13 +1,13 @@
 
 package com.atakmap.filesystem;
 
-import androidx.test.runner.AndroidJUnit4;
-
 import com.atakmap.android.androidtest.ATAKInstrumentedTest;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import static org.junit.Assert.assertEquals;
+
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 /**
  * Instrumented test, which will execute on an Android device.

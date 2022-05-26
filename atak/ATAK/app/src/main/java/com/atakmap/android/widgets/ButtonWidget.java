@@ -1,32 +1,44 @@
 
 package com.atakmap.android.widgets;
 
+import com.atakmap.annotations.DeprecatedApi;
+
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class ButtonWidget extends AbstractButtonWidget {
+import gov.tak.api.widgets.IButtonWidget;
+
+@Deprecated
+@DeprecatedApi(since = "4.4")
+public class ButtonWidget extends AbstractButtonWidget
+        implements IButtonWidget {
 
     private float _width;
     private float _height;
-    private final ConcurrentLinkedQueue<OnSizeChangedListener> _sizeChanged = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<IButtonWidget.OnSizeChangedListener> _sizeChanged = new ConcurrentLinkedQueue<>();
 
     public interface OnSizeChangedListener {
         void onButtonSizeChanged(ButtonWidget button);
     }
 
-    public void addOnSizeChangedListener(OnSizeChangedListener l) {
+    public void addOnSizeChangedListener(
+            IButtonWidget.OnSizeChangedListener l) {
         _sizeChanged.add(l);
     }
 
-    public void removeOnSizeChangedListener(OnSizeChangedListener l) {
+    public void removeOnSizeChangedListener(
+            IButtonWidget.OnSizeChangedListener l) {
         _sizeChanged.remove(l);
     }
 
-    public void setSize(float width, float height) {
+    @Override
+    public boolean setSize(float width, float height) {
         if (_width != width || _height != height) {
             _width = width;
             _height = height;
             onSizeChanged();
         }
+
+        return super.setSize(width, height);
     }
 
     public float getButtonWidth() {
@@ -37,8 +49,8 @@ public class ButtonWidget extends AbstractButtonWidget {
         return _height;
     }
 
-    protected void onSizeChanged() {
-        for (OnSizeChangedListener l : _sizeChanged) {
+    public void onSizeChanged() {
+        for (IButtonWidget.OnSizeChangedListener l : _sizeChanged) {
             l.onButtonSizeChanged(this);
         }
     }
