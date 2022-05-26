@@ -1,0 +1,5 @@
+ext {
+    jacocoVersion = '0.8.5'
+    takDevkitVersion = '3.2.0'
+    takKernelVersion = '0.26.2'
+}

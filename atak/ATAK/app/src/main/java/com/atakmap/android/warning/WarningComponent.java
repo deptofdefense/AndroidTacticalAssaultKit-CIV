@@ -15,6 +15,8 @@ import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.menu.MapMenuReceiver;
+import com.atakmap.android.overlay.MapOverlay;
+import com.atakmap.android.overlay.MapOverlayParent;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.android.widgets.AbstractWidgetMapComponent;
 import com.atakmap.android.widgets.LinearLayoutWidget;
@@ -29,16 +31,26 @@ import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
 import com.atakmap.android.util.NotificationIdRecycler;
+import com.atakmap.map.CameraController;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
- * Currently supports 3 types of warnings
+ * The primary types of alerts:
  *  Danger Close (Fires Tools) Alerts
  *  Geo Fence Alerts
  *  911/Emergency Alerts
+ *
+ *  Additional alert types are supported in Overlay Manager using the group name
+ *  as the overlay identifier. If plugins would like to implement their own
+ *  custom alert overlay over the default, they must use the group name as the
+ *  identifier and remove the default overlay.
  */
 public class WarningComponent extends AbstractWidgetMapComponent implements
         OnClickListener {
@@ -50,8 +62,13 @@ public class WarningComponent extends AbstractWidgetMapComponent implements
 
     private static MapView _mapView;
     private static SharedPreferences _prefs;
-
     private static NotificationIdRecycler _notificationId;
+    private static MapOverlayParent _overlayParent;
+
+    /**
+     * Primary alert type overlay identifiers
+     */
+    private static final Set<String> _primaryGroups = new HashSet<>();
 
     /**
      * Prevent alerts being triggered after shutdown/destroy has already cleared alerts
@@ -81,7 +98,8 @@ public class WarningComponent extends AbstractWidgetMapComponent implements
                 AtakBroadcast.getInstance().sendBroadcast(
                         new Intent("com.atakmap.android.maps.UNFOCUS"));
             }
-            mv.getMapController().panTo(gp, false);
+            CameraController.Programmatic.panTo(
+                    mv.getRenderer3(), gp, false);
         }
 
         /**
@@ -108,8 +126,11 @@ public class WarningComponent extends AbstractWidgetMapComponent implements
      */
     private static final List<Alert> alerts;
 
+    private static final Map<String, MapOverlay> overlays;
+
     static {
         alerts = new ArrayList<>();
+        overlays = new HashMap<>();
     }
 
     @Override
@@ -120,6 +141,15 @@ public class WarningComponent extends AbstractWidgetMapComponent implements
         _prefs = PreferenceManager.getDefaultSharedPreferences(context);
 
         _notificationId = new NotificationIdRecycler(49765, 5);
+
+        _primaryGroups.add(context.getString(R.string.geo_fences));
+        _primaryGroups.add(context.getString(R.string.danger_close));
+        _primaryGroups.add(context.getString(R.string.emergency));
+
+        _overlayParent = MapOverlayParent.getOrAddParent(_mapView,
+                "alertoverlays",
+                _mapView.getContext().getString(R.string.alerts),
+                "asset://icons/emergency.png", 1, false);
 
         RootLayoutWidget root = (RootLayoutWidget) _mapView.getComponentExtra(
                 "rootLayoutWidget");
@@ -300,6 +330,10 @@ public class WarningComponent extends AbstractWidgetMapComponent implements
                 }
             }
         }
+
+        // Refresh Overlay Manager any time an alert is added or removed
+        AtakBroadcast.getInstance().sendBroadcast(new Intent(
+                HierarchyListReceiver.REFRESH_HIERARCHY));
     }
 
     /**
@@ -336,9 +370,9 @@ public class WarningComponent extends AbstractWidgetMapComponent implements
             }
         }
 
+        updateOverlay(alert);
         alert(bAlert);
         alert(alert);
-
     }
 
     /**
@@ -372,6 +406,9 @@ public class WarningComponent extends AbstractWidgetMapComponent implements
             }
         }
 
+        for (Alert alert : list)
+            updateOverlay(alert);
+
         alert(bAlert);
     }
 
@@ -385,6 +422,10 @@ public class WarningComponent extends AbstractWidgetMapComponent implements
      */
     public static void addAlerts(Class<? extends Alert> clazz,
             Collection<? extends Alert> list) {
+
+        // Nothing to do if there's no alerts
+        if (FileSystemUtils.isEmpty(list))
+            return;
 
         //first add/update alerts
         addAlerts(list);
@@ -430,13 +471,12 @@ public class WarningComponent extends AbstractWidgetMapComponent implements
                 return;
             }
 
-            if (!alerts.contains(alert)) {
+            if (!alerts.remove(alert)) {
                 Log.w(TAG, "Not alerting: " + alert.toString());
                 return;
             }
 
             Log.d(TAG, "Removing alert: " + alert.toString());
-            alerts.remove(alert);
         }
 
         alert(false);
@@ -503,6 +543,33 @@ public class WarningComponent extends AbstractWidgetMapComponent implements
         alert(false);
     }
 
+    /**
+     * Get the list of active alerts
+     * @return Active alerts
+     */
+    public static List<Alert> getAlerts() {
+        synchronized (alerts) {
+            return new ArrayList<>(alerts);
+        }
+    }
+
+    /**
+     * Get all alerts with the given group name
+     * @param groupName Group name
+     * @return List of alerts
+     */
+    public static List<Alert> getAlerts(String groupName) {
+        List<Alert> ret = new ArrayList<>();
+        synchronized (alerts) {
+            for (Alert alert : alerts) {
+                if (FileSystemUtils.isEquals(groupName,
+                        alert.getAlertGroupName()))
+                    ret.add(alert);
+            }
+        }
+        return ret;
+    }
+
     static private String refreshWidget() {
         String text;
         synchronized (alerts) {
@@ -547,4 +614,17 @@ public class WarningComponent extends AbstractWidgetMapComponent implements
         pastMessage = "";
     }
 
+    private static void updateOverlay(Alert alert) {
+        if (_overlayParent == null || alert == null)
+            return;
+
+        String groupName = alert.getAlertGroupName();
+        if (FileSystemUtils.isEmpty(groupName)
+                || _primaryGroups.contains(groupName))
+            return;
+
+        MapOverlay overlay = _overlayParent.get(groupName);
+        if (overlay == null)
+            _overlayParent.add(new AlertMapOverlay(_mapView, groupName));
+    }
 }

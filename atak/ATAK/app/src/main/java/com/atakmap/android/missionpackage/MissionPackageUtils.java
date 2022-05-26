@@ -9,6 +9,8 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 
 import com.atakmap.android.config.FiltersConfig;
+import com.atakmap.android.drawing.mapItems.DrawingCircle;
+import com.atakmap.android.drawing.mapItems.DrawingEllipse;
 import com.atakmap.android.filesharing.android.service.AndroidFileInfo;
 import com.atakmap.android.filesharing.android.service.FileInfoPersistanceHelper;
 import com.atakmap.android.icons.Icon2525cTypeResolver;
@@ -22,6 +24,7 @@ import com.atakmap.android.maps.SqliteMapDataRef;
 import com.atakmap.android.missionpackage.file.MissionPackageManifest;
 import com.atakmap.android.missionpackage.file.MissionPackageManifestAdapter;
 import com.atakmap.android.missionpackage.ui.MissionPackageListGroup;
+import com.atakmap.android.toolbars.RangeCircle;
 import com.atakmap.android.user.icon.Icon2525cPallet;
 import com.atakmap.android.user.icon.SpotMapPallet;
 import com.atakmap.android.util.ATAKUtilities;
@@ -174,9 +177,11 @@ public class MissionPackageUtils {
                     R.drawable.shape));
             _iconURIs.put("u-d-f-m", ATAKUtilities.getResourceUri(
                     R.drawable.multipolyline));
-            _iconURIs.put("u-d-c-c", ATAKUtilities.getResourceUri(
+            _iconURIs.put(DrawingCircle.COT_TYPE, ATAKUtilities.getResourceUri(
                     R.drawable.ic_circle));
-            _iconURIs.put("u-r-b-c-c", ATAKUtilities.getResourceUri(
+            _iconURIs.put(DrawingEllipse.COT_TYPE, ATAKUtilities.getResourceUri(
+                    R.drawable.ic_circle));
+            _iconURIs.put(RangeCircle.COT_TYPE, ATAKUtilities.getResourceUri(
                     R.drawable.ic_circle));
             _iconURIs.put(VehicleShape.COT_TYPE, ATAKUtilities.getResourceUri(
                     R.drawable.pointtype_aircraft));

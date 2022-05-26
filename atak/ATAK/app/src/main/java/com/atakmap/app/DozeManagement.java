@@ -177,12 +177,11 @@ class DozeManagement {
     }
 
     static private boolean isPowerSaveMode(Context context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            final PowerManager pm = (PowerManager) context
-                    .getSystemService(Context.POWER_SERVICE);
-            if (pm != null)
-                return pm.isPowerSaveMode();
-        }
+        final PowerManager pm = (PowerManager) context
+                .getSystemService(Context.POWER_SERVICE);
+        if (pm != null)
+            return pm.isPowerSaveMode();
+
         return false;
     }
 

@@ -177,6 +177,16 @@ public class MapEvent {
      */
     public static final String MAP_TILT = "map_tilt";
 
+    /**
+     * The map view tilt lock state has been changed
+     */
+    public static final String MAP_TILT_LOCK = "map_tilt_lock";
+
+    /**
+     * The map view rotation lock state has been changed
+     */
+    public static final String MAP_ROTATE_LOCK = "map_rotate_lock";
+
     MapEvent(String type) {
         _type = type;
     }

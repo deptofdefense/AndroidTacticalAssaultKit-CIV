@@ -29,6 +29,7 @@ public class Gpx {
     /**
      * Note this is required by schema, but not always populated in practice
      */
+    @SuppressWarnings("FieldMayBeFinal")
     @Attribute(name = "version", required = false)
     private String VERSION = "1.1";
 
@@ -38,9 +39,11 @@ public class Gpx {
     @Attribute(name = "creator", required = false)
     private String CREATOR = "TAK";
 
+    @SuppressWarnings("FieldMayBeFinal")
     @Attribute(name = "xmlns", required = false)
     private String XMLNS = "http://www.topografix.com/GPX/1/1/";
 
+    @SuppressWarnings("FieldMayBeFinal")
     @Attribute(name = "xmlns:xsd", required = false)
     private String XMLNS_XSD = "https://www.w3.org/2001/XMLSchema";
 

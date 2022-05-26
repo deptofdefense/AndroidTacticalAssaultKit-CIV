@@ -20,6 +20,7 @@ import com.atakmap.android.maps.Polyline;
 import com.atakmap.android.maps.Shape;
 import com.atakmap.android.preference.UnitPreferences;
 import com.atakmap.android.util.EditAction;
+import com.atakmap.android.util.Undoable;
 import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.conversions.SpanUtilities;
 
@@ -448,7 +449,7 @@ public abstract class Rectangle extends AssociationSet
         } else {
             setCenterPoint(_center.getGeoPointMetaData());
         }
-            _center.addOnPointChangedListener(this);
+        _center.addOnPointChangedListener(this);
         _center.addOnGroupChangedListener(this);
     }
 
@@ -543,7 +544,7 @@ public abstract class Rectangle extends AssociationSet
             a.getMarker().setTitle(title);
             a.getFirstItem().setTitle(title);
             a.getSecondItem().setTitle(title);
-    }
+        }
     }
 
     @Override
@@ -774,8 +775,10 @@ public abstract class Rectangle extends AssociationSet
         if (_editable == editable)
             return;
         _editable = editable;
-        if (_center != null)
-            _center.setEditable(_editable);
+        // XXX - Do we want to enable drag on the center?
+        // It would be consistent with the other markers.
+        /*if (_center != null)
+            _center.setMetaBoolean("drag", editable);*/
         this.setVisible(this.getVisible());
         for (Association a : _lines) {
             a.getMarker().setMetaBoolean("drag", editable);
@@ -975,7 +978,7 @@ public abstract class Rectangle extends AssociationSet
     }
 
     public void removeOnMovedListener(OnMoveListener l) {
-            _onMoveListeners.remove(l);
+        _onMoveListeners.remove(l);
     }
 
     private final List<OnMoveListener> _onMoveListeners = new ArrayList<>();
@@ -1269,7 +1272,7 @@ public abstract class Rectangle extends AssociationSet
         Marker m = new Marker(point, UUID.randomUUID().toString());
         m.setMetaString("entry", ""); // can't modify these via DTED because the extra calculations
                                       // mess with the ignoring of the onpointchangedlistener
-        m.setMetaBoolean("editable", false);
+        m.setMetaBoolean("editable", getMetaBoolean("editable", true));
         m.setMovable(getMovable());
         m.setType(getSideMarkerType());
         m.setMetaString("how", "h-g-i-g-o");
@@ -1290,7 +1293,7 @@ public abstract class Rectangle extends AssociationSet
                         getPoints(), wrap180()),
                 uid);
         m.setMetaString("entry", "user");
-        m.setMetaBoolean("editable", false);
+        m.setMetaBoolean("editable", getMetaBoolean("editable", true));
         m.setType(getCenterMarkerType());
         m.setMetaString("how", "h-g-i-g-o");
         m.setMetaString(getUIDKey(), getUID());
@@ -1448,7 +1451,7 @@ public abstract class Rectangle extends AssociationSet
      * and should override the protected Builder(Recangle, Mode) constructor, and the build
      * function.
      */
-    public static class Builder {
+    public static class Builder implements Undoable {
         /**
          * @param r
          * @param mode
@@ -1743,8 +1746,10 @@ public abstract class Rectangle extends AssociationSet
 
         public void dispose() {
             // should remove all of the items
-            _r.getChildMapGroup().getParentGroup()
-                    .removeGroup(_r.getChildMapGroup());
+            MapGroup childGroup = _r.getChildMapGroup();
+            MapGroup parentGroup = childGroup.getParentGroup();
+            if (parentGroup != null)
+                parentGroup.removeGroup(childGroup);
             _r.removeFromGroup();
         }
 
@@ -1788,6 +1793,24 @@ public abstract class Rectangle extends AssociationSet
             return new Association[] {
                     a0, a1, a2, a3
             };
+        }
+
+        @Override
+        public boolean run(EditAction action) {
+            return false;
+        }
+
+        @Override
+        public void undo() {
+            Marker m;
+            if (_m == Mode.THREE_POINTS)
+                m = _m1 != null ? _m1 : _m0;
+            else
+                m = _m0;
+            if (m != null) {
+                m.removeOnPointChangedListener(_r.cornerListener);
+                m.removeFromGroup();
+            }
         }
 
         protected final Rectangle _r;

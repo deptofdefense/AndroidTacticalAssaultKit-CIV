@@ -1,7 +1,7 @@
 
 package com.atakmap.android.vehicle;
 
-import android.graphics.Point;
+import android.graphics.PointF;
 import android.os.Bundle;
 import android.widget.ImageButton;
 
@@ -154,7 +154,7 @@ public class VehicleRotationTool extends ButtonTool
                 || type.equals(MapEvent.ITEM_DRAG_CONTINUED)
                 || type.equals(MapEvent.ITEM_DRAG_DROPPED)) {
 
-            Point pt = event.getPoint();
+            PointF pt = event.getPointF();
             // rotation is relative about a point, no need to look at terrain
             GeoPoint gp = _mapView.inverse(pt.x, pt.y).get();
             if (!gp.isValid())

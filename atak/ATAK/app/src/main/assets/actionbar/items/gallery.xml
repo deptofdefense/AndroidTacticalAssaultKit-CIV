@@ -1,4 +1,4 @@
-<PersistedActionMenu baseline="true" hideable="true" iconPath="ic_gallery"  title="actionbar_gallery">
+<PersistedActionMenu baseline="true" hideable="true" iconPath="nav_gallery" title="actionbar_gallery">
    <ClickData actionType="click">
       <broadcast>
          <action>com.atakmap.android.attachment.GALLERY</action>

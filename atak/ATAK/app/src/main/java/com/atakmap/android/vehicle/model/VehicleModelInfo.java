@@ -269,7 +269,8 @@ public class VehicleModelInfo implements ModelLoader.Callback {
             return;
 
         // Copy the file from assets if we haven't already
-        if (!IOProviderFactory.exists(file) || IOProviderFactory.length(file) == 0) {
+        if (!IOProviderFactory.exists(file)
+                || IOProviderFactory.length(file) == 0) {
             Log.d(TAG, "Copying vehicle model from assets: " + file.getName());
             if (!VehicleModelAssetUtils.copyAssetToFile(file)) {
                 Log.e(TAG, "Failed to find model file: " + file);

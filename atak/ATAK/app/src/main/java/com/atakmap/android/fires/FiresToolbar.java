@@ -123,6 +123,7 @@ public class FiresToolbar implements
             _toolbarView = (ActionBarView) inflater.inflate(
                     R.layout.cas_toolbar, _mapView,
                     false);
+            _toolbarView.setPosition(ActionBarView.TOP_LEFT);
             ImageButton buttonSPI1 = _toolbarView
                     .findViewById(R.id.buttonSPI1);
             buttonSPI1.setOnTouchListener(this);

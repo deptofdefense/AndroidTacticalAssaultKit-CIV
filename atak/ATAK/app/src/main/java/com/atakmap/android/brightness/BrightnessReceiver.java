@@ -8,7 +8,9 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.navigation.views.NavView;
 import com.atakmap.android.widgets.SeekBarControl;
+import com.atakmap.android.widgets.SeekBarControlCompat;
 import com.atakmap.map.layer.control.SurfaceRendererControl;
 import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.math.MathUtils;
@@ -20,6 +22,7 @@ public class BrightnessReceiver extends BroadcastReceiver implements
 
     public final static int MAX_BRIGHTNESS_MAGNITUDE = 255;
     public final static String BRIGHT_PREF = "brightness";
+    protected static final String NAV_REF = "brightness.xml";
 
     protected final MapView _mapView;
     protected BrightnessOverlay _brightnessOverlay;
@@ -77,11 +80,12 @@ public class BrightnessReceiver extends BroadcastReceiver implements
             return;
         }
 
-        SeekBarControl.show(this, 5000L);
+        SeekBarControlCompat.show(this, 5000L);
         _showingControl = true;
+        NavView.getInstance().setButtonSelected(NAV_REF, true);
     }
 
-    private void hideControl() {
+    protected void hideControl() {
         if (_showingControl) {
             SeekBarControl.dismiss();
             _showingControl = false;
@@ -117,6 +121,7 @@ public class BrightnessReceiver extends BroadcastReceiver implements
     @Override
     public void onControlDismissed() {
         _showingControl = false;
+        NavView.getInstance().setButtonSelected(NAV_REF, false);
     }
 
 }

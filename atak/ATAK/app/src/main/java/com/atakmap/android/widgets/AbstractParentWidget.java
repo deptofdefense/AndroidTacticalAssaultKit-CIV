@@ -1,8 +1,6 @@
 
 package com.atakmap.android.widgets;
 
-import android.view.MotionEvent;
-
 import com.atakmap.android.config.ConfigEnvironment;
 import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -15,15 +13,27 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public abstract class AbstractParentWidget extends MapWidget2 implements
+import gov.tak.api.widgets.IParentWidget;
+import gov.tak.api.widgets.IMapWidget;
+import gov.tak.platform.ui.MotionEvent;
+import gov.tak.platform.widgets.WidgetList;
+
+@Deprecated
+@DeprecatedApi(since = "4.4")
+public abstract class AbstractParentWidget extends MapWidget2
+        implements IParentWidget,
         AtakMapView.OnActionBarToggledListener {
 
     // Lock to prevent weird stuff like doing the same undo twice
     private final WidgetList _childWidgets = new WidgetList();
-    private final ConcurrentLinkedQueue<OnWidgetListChangedListener> _onWidgetListChanged = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<IParentWidget.OnWidgetListChangedListener> _onWidgetListChanged = new ConcurrentLinkedQueue<>();
+
+    private final Map<OnWidgetListChangedListener, IParentWidget.OnWidgetListChangedListener> _onWidgetListChangedForwarders = new IdentityHashMap<>();
 
     public interface OnWidgetListChangedListener {
         void onWidgetAdded(AbstractParentWidget parent, int index,
@@ -35,9 +45,9 @@ public abstract class AbstractParentWidget extends MapWidget2 implements
 
     // Comparator for visual draw order of widgets
     // MUST only be used in a sync block on _childWidgets
-    private final Comparator<MapWidget> _visualComparator = new Comparator<MapWidget>() {
+    private final Comparator<IMapWidget> _visualComparator = new Comparator<IMapWidget>() {
         @Override
-        public int compare(MapWidget o1, MapWidget o2) {
+        public int compare(IMapWidget o1, IMapWidget o2) {
             // First sort by Z-order
             int zComp = Double.compare(o2.getZOrder(), o1.getZOrder());
             if (zComp != 0)
@@ -70,7 +80,7 @@ public abstract class AbstractParentWidget extends MapWidget2 implements
         }
 
         @Override
-        protected void configAttributes(MapWidget widget,
+        protected void configAttributes(IMapWidget widget,
                 ConfigEnvironment config,
                 NamedNodeMap attrs) {
             super.configAttributes(widget, config, attrs);
@@ -79,24 +89,31 @@ public abstract class AbstractParentWidget extends MapWidget2 implements
 
     public int getChildCount() {
         synchronized (_childWidgets) {
-            return _childWidgets.size();
+            int count = 0;
+            for (IMapWidget widget : _childWidgets) {
+                if (widget instanceof MapWidget)
+                    ++count;
+            }
+            return count;
         }
     }
 
     public MapWidget getChildAt(int index) {
         synchronized (_childWidgets) {
-            return _childWidgets.get(index);
+            int count = 0;
+            for (IMapWidget widget : _childWidgets) {
+                if (widget instanceof MapWidget) {
+                    if (count++ == index)
+                        return (MapWidget) widget;
+                }
+            }
+            throw new IndexOutOfBoundsException();
         }
     }
 
-    /**
-     * Gets the child widgets.
-     * @return Defensive list of child widgets
-     */
-    public List<MapWidget> getChildWidgets() {
-        synchronized (_childWidgets) {
-            return new ArrayList<>(_childWidgets);
-        }
+    @Override
+    public AbstractParentWidget getParent() {
+        return parent;
     }
 
     /**
@@ -105,53 +122,101 @@ public abstract class AbstractParentWidget extends MapWidget2 implements
      * @return
      */
     public List<MapWidget> getSortedWidgets() {
+        List<MapWidget> sorted = getChildWidgets();
+        Collections.sort(sorted, _visualComparator);
+        return sorted;
+    }
+
+    public List<IMapWidget> getChildren() {
         synchronized (_childWidgets) {
-            List<MapWidget> sorted = new ArrayList<>(_childWidgets);
-            Collections.sort(sorted, _visualComparator);
-            return sorted;
+            return new ArrayList<>(_childWidgets);
+        }
+    }
+
+    @Override
+    public void addChildWidget(IMapWidget widget) {
+        synchronized (_childWidgets) {
+            addChildWidgetAt(_childWidgets.size(), widget);
         }
     }
 
     public void addWidget(MapWidget widget) {
-        synchronized (_childWidgets) {
-            addWidgetAt(_childWidgets.size(), widget);
+        addChildWidget(widget);
+    }
+
+    @Override
+    public void addChildWidgetAt(int index, IMapWidget widget) {
+        if (widget == this)
+            return;
+        if (this.onChildWidgetCanBeAdded(index, widget)) {
+            synchronized (_childWidgets) {
+                _childWidgets.add(index, widget);
+                if (widget.getParent() != null) {
+                    widget.getParent().removeChildWidget(widget);
+                }
+                widget.setParent(this);
+                if (widget instanceof MapWidget)
+                    onWidgetAdded(index, (MapWidget) widget);
+                else
+                    onWidgetAdded(index, widget);
+            }
         }
     }
 
     public void addWidgetAt(int index, MapWidget widget) {
-        if (widget == this)
-            return;
-        if (this.onWidgetCanBeAdded(index, widget)) {
-            synchronized (_childWidgets) {
-                _childWidgets.add(index, widget);
-                if (widget.parent != null) {
-                    widget.parent.removeWidget(widget);
-                }
-                widget.setParent(this);
-                onWidgetAdded(index, widget);
+        addChildWidgetAt(index, widget);
+    }
+
+    @Override
+    public IMapWidget removeChildWidgetAt(int index) {
+        synchronized (_childWidgets) {
+            IMapWidget w = _childWidgets.remove(index);
+            if (w != null) {
+                w.setParent(null);
+                if (w instanceof MapWidget)
+                    onWidgetRemoved(index, (MapWidget) w);
+                else
+                    onWidgetRemoved(index, w);
             }
+            return w;
         }
+
     }
 
     public MapWidget removeWidgetAt(int index) {
         synchronized (_childWidgets) {
-            MapWidget w = _childWidgets.remove(index);
-            if (w != null) {
-                w.setParent(null);
-                onWidgetRemoved(index, w);
+            int count = 0;
+            for (IMapWidget iMapWidget : _childWidgets) {
+                if (!(iMapWidget instanceof MapWidget))
+                    continue;
+
+                if (count++ != index)
+                    continue;
+
+                MapWidget w = (MapWidget) _childWidgets.remove(index);
+                if (w != null) {
+                    w.setParent(null);
+                    onWidgetRemoved(index, w);
+                }
+                return w;
             }
-            return w;
         }
+        throw new IndexOutOfBoundsException();
     }
 
-    public boolean removeWidget(MapWidget widget) {
+    @Override
+    public boolean removeChildWidget(IMapWidget widget) {
         synchronized (_childWidgets) {
             int index = _childWidgets.indexOf(widget);
             boolean r = index != -1;
             if (r)
-                removeWidgetAt(index);
+                removeChildWidgetAt(index);
             return r;
         }
+    }
+
+    public boolean removeWidget(MapWidget widget) {
+        return removeChildWidget(widget);
     }
 
     /**
@@ -167,14 +232,15 @@ public abstract class AbstractParentWidget extends MapWidget2 implements
             return null;
         synchronized (_childWidgets) {
             // First perform a shallow find
-            for (MapWidget w : _childWidgets) {
-                if (FileSystemUtils.isEquals(w.getName(), name))
-                    return w;
+            for (IMapWidget w : _childWidgets) {
+                if (w instanceof MapWidget
+                        && FileSystemUtils.isEquals(w.getName(), name))
+                    return (MapWidget) w;
             }
             if (!deep)
                 return null;
             // Now perform a deep find
-            for (MapWidget w : _childWidgets) {
+            for (IMapWidget w : _childWidgets) {
                 if (w instanceof AbstractParentWidget) {
                     MapWidget found = ((AbstractParentWidget) w)
                             .findWidget(name, true);
@@ -192,19 +258,56 @@ public abstract class AbstractParentWidget extends MapWidget2 implements
         double oldZ = getZOrder();
         if (oldZ != zOrder) {
             super.setZOrder(zOrder);
-            List<MapWidget> children = getChildWidgets();
-            for (MapWidget w : children)
+            List<IMapWidget> children = getChildren();
+            for (IMapWidget w : children)
                 w.setZOrder(zOrder + (w.getZOrder() - oldZ));
         }
     }
 
-    public void addOnWidgetListChangedListener(OnWidgetListChangedListener l) {
+    public List<MapWidget> getChildWidgets() {
+        List<MapWidget> ret = new ArrayList<>();
+        synchronized (_childWidgets) {
+            for (IMapWidget child : _childWidgets) {
+                if (child instanceof MapWidget)
+                    ret.add((MapWidget) child);
+            }
+        }
+        return ret;
+    }
+
+    @Override
+    public void addOnWidgetListChangedListener(
+            IParentWidget.OnWidgetListChangedListener l) {
         _onWidgetListChanged.add(l);
     }
 
+    public void addOnWidgetListChangedListener(
+            AbstractParentWidget.OnWidgetListChangedListener legacy) {
+        final IParentWidget.OnWidgetListChangedListener l;
+        synchronized (_onWidgetListChangedForwarders) {
+            if (_onWidgetListChangedForwarders.containsKey(legacy))
+                return;
+            l = new WidgetListChangedForwarder(legacy);
+            _onWidgetListChangedForwarders.put(legacy, l);
+        }
+        addOnWidgetListChangedListener(l);
+    }
+
+    @Override
     public void removeOnWidgetListChangedListener(
-            OnWidgetListChangedListener l) {
+            IParentWidget.OnWidgetListChangedListener l) {
         _onWidgetListChanged.remove(l);
+    }
+
+    public void removeOnWidgetListChangedListener(
+            AbstractParentWidget.OnWidgetListChangedListener legacy) {
+        final IParentWidget.OnWidgetListChangedListener l;
+        synchronized (_onWidgetListChangedForwarders) {
+            l = _onWidgetListChangedForwarders.remove(legacy);
+            if (l == null)
+                return;
+        }
+        removeOnWidgetListChangedListener(l);
     }
 
     /**
@@ -212,26 +315,23 @@ public abstract class AbstractParentWidget extends MapWidget2 implements
      * list to determine what item is hit.
      */
     @Override
-    public MapWidget seekHit(MotionEvent event, float x, float y) {
+    public IMapWidget seekWidgetHit(gov.tak.platform.ui.MotionEvent event,
+            float x, float y) {
         if (!isVisible() || !isTouchable())
             return null;
 
         // Iterate through visually-sorted list of widgets backwards so we hit
         // detect the stuff on top first
-        List<MapWidget> widgets = getSortedWidgets();
+        List<IMapWidget> widgets = getSortedChildrenWidgets();
         Collections.reverse(widgets);
 
-        MapWidget hit = null;
-        for (MapWidget w : widgets) {
+        IMapWidget hit = null;
+        for (IMapWidget w : widgets) {
             if (!w.isVisible())
                 continue;
             float lx = x - w.getPointX();
             float ly = y - w.getPointY();
-            MapWidget c;
-            if (w instanceof MapWidget2)
-                c = ((MapWidget2) w).seekHit(event, lx, ly);
-            else
-                c = w.seekHit(lx, ly);
+            IMapWidget c = w.seekWidgetHit(event, lx, ly);
             if (hit == null)
                 hit = c;
             else if (c != null && c.getZOrder() < hit.getZOrder()) {
@@ -242,7 +342,7 @@ public abstract class AbstractParentWidget extends MapWidget2 implements
     }
 
     /**
-     * @deprecated use {@link #seekHit(MotionEvent, float, float)}
+     * @deprecated use {@link #seekWidgetHit(MotionEvent, float, float)}
      * @param x
      * @param y
      * @return
@@ -251,29 +351,50 @@ public abstract class AbstractParentWidget extends MapWidget2 implements
     @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     @Override
     public MapWidget seekHit(float x, float y) {
-        return seekHit(null, x, y);
+        final long time = System.currentTimeMillis();
+        final gov.tak.platform.ui.MotionEvent event = gov.tak.platform.ui.MotionEvent
+                .obtain(time, time, gov.tak.platform.ui.MotionEvent.ACTION_DOWN,
+                        x, y, 0);
+        final IMapWidget widget = seekWidgetHit(event, x, y);
+        if (widget instanceof MapWidget)
+            return (MapWidget) widget;
+
+        return null;
     }
 
-    protected boolean onWidgetCanBeAdded(int index, MapWidget widget) {
+    @Override
+    public boolean onChildWidgetCanBeAdded(int index, IMapWidget widget) {
         return true;
     }
 
+    public boolean onWidgetCanBeAdded(int index, MapWidget widget) {
+        return onChildWidgetCanBeAdded(index, widget);
+    }
+
     protected void onWidgetAdded(int index, MapWidget widget) {
-        for (OnWidgetListChangedListener l : _onWidgetListChanged) {
+        onWidgetAdded(index, (IMapWidget) widget);
+    }
+
+    protected void onWidgetRemoved(int index, MapWidget widget) {
+        onWidgetRemoved(index, (IMapWidget) widget);
+    }
+
+    protected void onWidgetAdded(int index, IMapWidget widget) {
+        for (IParentWidget.OnWidgetListChangedListener l : _onWidgetListChanged) {
             l.onWidgetAdded(this, index, widget);
         }
     }
 
-    protected void onWidgetRemoved(int index, MapWidget widget) {
-        for (OnWidgetListChangedListener l : _onWidgetListChanged) {
+    protected void onWidgetRemoved(int index, IMapWidget widget) {
+        for (IParentWidget.OnWidgetListChangedListener l : _onWidgetListChanged) {
             l.onWidgetRemoved(this, index, widget);
         }
     }
 
     @Override
     public void orientationChanged() {
-        Collection<MapWidget> children = getChildWidgets();
-        for (MapWidget child : children)
+        Collection<IMapWidget> children = getChildren();
+        for (IMapWidget child : children)
             child.orientationChanged();
     }
 
@@ -287,12 +408,33 @@ public abstract class AbstractParentWidget extends MapWidget2 implements
     @Override
     public void onActionBarToggled(boolean showing) {
         synchronized (_childWidgets) {
-            for (MapWidget child : _childWidgets) {
+            for (IMapWidget child : _childWidgets) {
                 if (child instanceof AtakMapView.OnActionBarToggledListener) {
                     ((AtakMapView.OnActionBarToggledListener) child)
                             .onActionBarToggled(showing);
                 }
             }
         }
+    }
+
+    @Override
+    public int getChildWidgetCount() {
+        synchronized (_childWidgets) {
+            return _childWidgets.size();
+        }
+    }
+
+    @Override
+    public IMapWidget getChildWidgetAt(int index) {
+        synchronized (_childWidgets) {
+            return _childWidgets.get(index);
+        }
+    }
+
+    @Override
+    public List<IMapWidget> getSortedChildrenWidgets() {
+        List<IMapWidget> sorted = getChildren();
+        Collections.sort(sorted, _visualComparator);
+        return sorted;
     }
 }

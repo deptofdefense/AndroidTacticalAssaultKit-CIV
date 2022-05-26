@@ -41,14 +41,14 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
         OnTextChangedListener {
 
     private final Arrow _subject;
-    private final FloatBuffer _arrowHead;
+    protected final FloatBuffer _arrowHead;
 
-    private int _labelID = GLLabelManager.NO_ID;
-    private String _text;
-    private static final double div_pi_4 = Math.PI / 4f;
+    protected int _labelID = GLLabelManager.NO_ID;
+    protected String _text;
+    protected static final double div_pi_4 = Math.PI / 4f;
 
     private final static boolean CLAMP_TO_GROUND_ENABLED = true;
-    private final static boolean XRAY_ENABLED = true;
+    protected final static boolean XRAY_ENABLED = true;
 
     /**
      * The minimum distance that must be exceeded before clamping is enabled.
@@ -60,20 +60,20 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
     private static final double slantMinElAngle = 10d;
     private static final double threshold = 10000;
 
-    private GeoPoint[] _pts;
+    protected GeoPoint[] _pts;
 
     private boolean _forceClamp = false;
-    private boolean _clampToGround = false;
+    protected boolean _clampToGround = false;
     private boolean _nadirClamp = false;
     private Envelope _geomBounds;
 
     private final GLBatchLineString impl;
     private final GLBatchLineString ximpl;
-    private final GLLabelManager _labelManager;
+    protected final GLLabelManager _labelManager;
 
     private boolean _ptsAgl;
     private int _terrainVersion;
-    private int _arrowheadVersion;
+    protected int _arrowheadVersion;
 
     public GLArrow2(MapRenderer surface, Arrow arrow) {
         super(surface,
@@ -149,7 +149,7 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
 
     }
 
-    private boolean ensureLabel() {
+    protected boolean ensureLabel() {
         if (_labelID == GLLabelManager.NO_ID) {
             _labelID = _labelManager.addLabel();
             MapTextFormat mapTextFormat = MapView
@@ -200,7 +200,7 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
         }));
     }
 
-    private void _validateArrowhead(GLMapView ortho) {
+    protected void _validateArrowhead(GLMapView ortho) {
         if (_pts.length < 2)
             return;
 
@@ -279,12 +279,11 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
         float right = ortho.currentScene.right;
         // Could be in portrait mode as well, so change the bottom accordingly
         float top = ortho.currentScene.top;
-        return new RectF(ortho.currentScene.left,
-                top - MapView.getMapView().getActionBarHeight(),
-                right, ortho.currentScene.bottom);
+        return new RectF(ortho.currentScene.left, top, right,
+                ortho.currentScene.bottom);
     }
 
-    private void _setColor(int color) {
+    protected void _setColor(int color) {
         GLES20FixedPipeline.glColor4f(Color.red(color) / 255f,
                 Color.green(color) / 255f,
                 Color.blue(color) / 255f, Color.alpha(color) / 255f);
@@ -301,7 +300,7 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
         });
     }
 
-    private double getHae(GLMapView ortho, GeoPoint geo) {
+    protected double getHae(GLMapView ortho, GeoPoint geo) {
         final boolean ptAgl = (geo
                 .getAltitudeReference() == GeoPoint.AltitudeReference.AGL ||
                 Double.isNaN(geo.getAltitude()));
@@ -443,7 +442,7 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
         _terrainVersion = -1;
     }
 
-    private void updateText(String text, int textColor) {
+    protected void updateText(String text, int textColor) {
         _text = text;
         if (_labelID != 0) {
             _labelManager.setText(_labelID, _text);
@@ -455,7 +454,7 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
      * Expects GL_VERTEX_ARRAY client state to be enabled and _arrowHead
      * geometry uploaded as vertex pointer
      */
-    private void _drawArrowHead() {
+    protected void _drawArrowHead() {
         GLES20FixedPipeline.glColor4f(0f, 0f, 0f, 1f);
         GLES20FixedPipeline.glLineWidth(strokeWeight + 2);
         GLES20FixedPipeline.glDrawArrays(GLES20FixedPipeline.GL_LINE_STRIP, 0,

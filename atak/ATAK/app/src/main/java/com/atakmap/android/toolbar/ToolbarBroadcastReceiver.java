@@ -4,11 +4,18 @@ package com.atakmap.android.toolbar;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.view.View;
+import android.view.ViewGroup;
 
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.navigation.views.NavView;
+import com.atakmap.android.navigation.views.buttons.NavButton;
+import com.atakmap.android.navigation.views.buttons.NavButtonChildView;
 import com.atakmap.android.tools.ActionBarReceiver;
+import com.atakmap.android.tools.ActionBarView;
 import com.atakmap.annotations.DeprecatedApi;
+import com.atakmap.app.R;
 import com.atakmap.coremap.log.Log;
 
 import java.util.HashMap;
@@ -23,9 +30,20 @@ public class ToolbarBroadcastReceiver extends BroadcastReceiver {
 
     public static final String TAG = "ToolbarBroadcastReceiver";
 
+    public static final String SET_TOOLBAR = "com.atakmap.android.maps.toolbar.SET_TOOLBAR";
+    public static final String UNSET_TOOLBAR = "com.atakmap.android.maps.toolbar.UNSET_TOOLBAR";
+    public static final String OPEN_TOOLBAR = "com.atakmap.android.maps.toolbar.OPEN_TOOLBAR";
+
+    private static ToolbarBroadcastReceiver _instance = null;
+
     protected MapView _mapView;
 
+    protected final HashMap<String, IToolbarExtension> toolbars = new HashMap<>();
+
+    protected String activeToolbar = "";
+
     private ToolManagerBroadcastReceiver toolManager;
+    private NavButtonChildView childView;
 
     protected ToolbarBroadcastReceiver() {
     }
@@ -110,6 +128,21 @@ public class ToolbarBroadcastReceiver extends BroadcastReceiver {
         toolbars.put(toolbarIdentifier, toolbarComponent);
     }
 
+    /**
+     * Close the open toolbar in the given position
+     * @param position Position
+     */
+    public void closeToolbar(int position) {
+        if (position == ActionBarView.TOP_LEFT)
+            removeChildView();
+        else if (position == ActionBarView.TOP_RIGHT)
+            ActionBarReceiver.getInstance().setToolView(null);
+    }
+
+    public String getActive() {
+        return activeToolbar;
+    }
+
     @Override
     public void onReceive(Context context, Intent intent) {
 
@@ -127,21 +160,22 @@ public class ToolbarBroadcastReceiver extends BroadcastReceiver {
         switch (intent.getAction()) {
             case SET_TOOLBAR:
                 ToolManagerBroadcastReceiver.getInstance().endCurrentTool();
+
+                if (getActive().equals(toolbar)) {
+                    setToolbar("");
+                    return;
+                }
+
                 setToolbar(toolbar);
 
                 if (!toolbar.equals("")) {
                     Log.d(TAG,
                             "show the toolbar: "
                                     + intent.getExtras().getString("toolbar"));
-                    if (getActiveToolbar() != null) {
-                        ActionBarReceiver.getInstance().setToolView(
-                                getActiveToolbar().getToolbarView());
-                    }
                 } else {
                     Log.d(TAG, "*DEPRECATED* hide the toolbar: " + toolbar);
                     // notify the new tool bar is visible
-                    ActionBarReceiver.getInstance().setToolView(null);
-                    Log.e(TAG, "deprcrated call to hide the toolbar at: ",
+                    Log.e(TAG, "deprecated call to hide the toolbar at: ",
                             new Exception());
                 }
 
@@ -150,25 +184,15 @@ public class ToolbarBroadcastReceiver extends BroadcastReceiver {
                 // notify the new tool bar is visible
                 ToolManagerBroadcastReceiver.getInstance().endCurrentTool();
                 setToolbar(""); // sets it to nothing
-
-                if (intent.getBooleanExtra("setToolView", true))
-                    ActionBarReceiver.getInstance().setToolView(null);
                 break;
             case OPEN_TOOLBAR: // Open is the same as SET except it
                 // doesn't end a tool, useful if
                 // you're a tool that wants to set a
                 // toolbar.
 
-                if (intent.hasExtra("toolbar")
-                        && intent.getExtras().getString("toolbar") != null) {
-
+                if (!toolbar.equals("")) {
                     // actually change the toolbar
                     setToolbar(toolbar);
-
-                    if (getActiveToolbar() != null)
-                        ActionBarReceiver.getInstance().setToolView(
-                                getActiveToolbar().getToolbarView());
-
                 }
 
                 break;
@@ -182,7 +206,8 @@ public class ToolbarBroadcastReceiver extends BroadcastReceiver {
                             && !item.getMetaBoolean("ignoreMenu", false)) {
                         // it has a uid, a menu, and no "ignoreMenu" so lock it
                     }
-                } else if (intent.hasExtra("point")) { // This is a map-click menu, so there won't be an
+                } else if (intent.hasExtra("point")) { // This is a map-click menu, so there won't
+                    // be an
                     // item but we still want to lock
                 }
 
@@ -194,12 +219,14 @@ public class ToolbarBroadcastReceiver extends BroadcastReceiver {
                 } else {
                     // Not sure why we would have to close it again?
                     // We close it again because this also gets called when you hit the back button.
+                    // Closing the dropdown calls HIDE_MENU, which closes our just opened child menu
+                    // removeChildView();
                 }
 
                 break;
             case "com.atakmap.android.maps.toolbar.END_TOOL":
             case "com.atakmap.android.maps.toolbar.BEGIN_TOOL":
-                //Do nothing - stop displaying an error in the logcat (the else statement)
+                // Do nothing - stop displaying an error in the logcat (the else statement)
                 break;
             default:
                 Log.w(TAG,
@@ -210,40 +237,32 @@ public class ToolbarBroadcastReceiver extends BroadcastReceiver {
         }
     }
 
-    protected void setToolbar(final String toolbarIdentifier) {
+    protected void setToolbar(String toolbarIdentifier) {
 
-        if (toolbars.get(toolbarIdentifier) != null
-                && toolbars.get(toolbarIdentifier).hasToolbar()) {
+        if (toolbarIdentifier == null)
+            toolbarIdentifier = "";
 
-            // Previous active toolbar extension
-            IToolbarExtension activeToolbarExt = getActiveToolbar();
+        IToolbarExtension ext = toolbars.get(toolbarIdentifier);
+        IToolbarExtension active = getActiveToolbar();
 
-            // Keep track of the last active unique toolbar
-            if (activeToolbarExt != null) {
-
-                // notify the old tool bar is not visible
-                activeToolbarExt.onToolbarVisible(false);
+        if (ext != active) {
+            if (active != null) {
+                closeToolbar(active);
+                active.onToolbarVisible(false);
             }
 
-            // Set the new toolbar
-            activeToolbar = toolbarIdentifier;
-
-            activeToolbarExt = getActiveToolbar();
-            if (activeToolbarExt != null) {
-
-                ActionBarReceiver.getInstance().setToolView(
-                        activeToolbarExt.getToolbarView());
-
-                // notify the new tool bar is visible
-                activeToolbarExt.onToolbarVisible(true);
-            }
-
-        } else {
-
-            if (getActiveToolbar() != null)
-                getActiveToolbar().onToolbarVisible(false);
             activeToolbar = "";
-
+            if (ext != null && ext.hasToolbar()) {
+                ActionBarView abv = ext.getToolbarView();
+                if (abv != null) {
+                    activeToolbar = toolbarIdentifier;
+                    openToolbar(toolbarIdentifier);
+                    ext.onToolbarVisible(true);
+                }
+            }
+        } else {
+            // Refresh the toolbar layout
+            openToolbar(toolbarIdentifier);
         }
     }
 
@@ -258,18 +277,56 @@ public class ToolbarBroadcastReceiver extends BroadcastReceiver {
         }
     }
 
-    public String getActive() {
-        return activeToolbar;
+    private void closeToolbar(IToolbarExtension ext) {
+        ActionBarView abv = ext.getToolbarView();
+        if (abv == null)
+            return;
+
+        switch (abv.getPosition()) {
+            case ActionBarView.TOP_LEFT:
+                removeChildView();
+                break;
+            case ActionBarView.TOP_RIGHT:
+                ActionBarReceiver.getInstance().setToolView(null, false);
+                break;
+        }
     }
 
-    public static final String SET_TOOLBAR = "com.atakmap.android.maps.toolbar.SET_TOOLBAR";
-    public static final String UNSET_TOOLBAR = "com.atakmap.android.maps.toolbar.UNSET_TOOLBAR";
-    public static final String OPEN_TOOLBAR = "com.atakmap.android.maps.toolbar.OPEN_TOOLBAR";
+    private void openToolbar(String toolbar) {
+        IToolbarExtension tbInterface = toolbars.get(toolbar);
+        if (tbInterface == null || !tbInterface.hasToolbar())
+            return;
 
-    protected final HashMap<String, IToolbarExtension> toolbars = new HashMap<>();
+        ActionBarView abv = tbInterface.getToolbarView();
+        if (abv == null)
+            return;
 
-    protected String activeToolbar = "";
+        switch (abv.getPosition()) {
+            case ActionBarView.TOP_LEFT: {
+                NavView navView = NavView.getInstance();
+                View sideLayout = navView.findViewById(R.id.side_layout);
+                NavButton takButton = navView.findToolbarButton(toolbar);
+                if (childView == null)
+                    childView = new NavButtonChildView(_mapView.getContext());
+                View anchor = takButton != null ? takButton : sideLayout;
+                childView.layoutForToolbarView(anchor, abv);
+                if (childView.getParent() == null)
+                    navView.addView(childView);
+                break;
+            }
+            case ActionBarView.TOP_RIGHT:
+                ActionBarReceiver.getInstance().setToolView(abv);
+                break;
+        }
+    }
 
-    private static ToolbarBroadcastReceiver _instance = null;
-
+    private void removeChildView() {
+        if (childView != null) {
+            ViewGroup parent = (ViewGroup) childView.getParent();
+            if (parent != null) {
+                parent.removeView(childView);
+                childView = null;
+            }
+        }
+    }
 }

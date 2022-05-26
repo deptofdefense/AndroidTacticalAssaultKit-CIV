@@ -24,6 +24,7 @@ public class DatePickerFragment extends DialogFragment
     private long _initialTime;
     private long _minDate;
     private long _maxDate;
+    private TimeZone _timeZone;
 
     public interface DatePickerListener {
         void onDatePicked(int year, int month, int dayOfMonth);
@@ -31,17 +32,25 @@ public class DatePickerFragment extends DialogFragment
 
     public void init(long initialTime, DatePickerListener listener,
             long minDate, long maxDate) {
+        init(initialTime, listener, minDate, maxDate,
+                TimeZone.getTimeZone("UTC"));
+    }
+
+    public void init(long initialTime, DatePickerListener listener,
+            long minDate, long maxDate,
+            TimeZone timeZone) {
         _initialTime = initialTime;
         _listener = listener;
         _minDate = minDate;
         _maxDate = maxDate;
+        _timeZone = timeZone;
     }
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         // Use the current time as the default values for the picker
         final Calendar cal = Calendar.getInstance();
-        cal.setTimeZone(TimeZone.getTimeZone("UTC"));
+        cal.setTimeZone(_timeZone);
         if (_initialTime >= 0)
             cal.setTime(new Date(_initialTime));
         else

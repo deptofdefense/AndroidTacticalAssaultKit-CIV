@@ -18,7 +18,7 @@ public class InteriorStyleCommand extends Command {
         INTERPOLATED
     }
 
-    private Style style;
+    private final Style style;
 
     public InteriorStyleCommand(int ec, int eid, int l, DataInput in)
             throws IOException {

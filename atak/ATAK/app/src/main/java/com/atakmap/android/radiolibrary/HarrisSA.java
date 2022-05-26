@@ -20,7 +20,7 @@ import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.graphics.Color;
-import com.atakmap.comms.NetworkDeviceManager;
+import com.atakmap.comms.NetworkManagerLite;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.app.R;
 import com.atakmap.coremap.log.Log;
@@ -336,7 +336,7 @@ public class HarrisSA {
                             "prc_defroute", false);
                     if (!defRouteAlreadySet && setDefRoute) {
                         defRouteAlreadySet = true;
-                        NetworkDeviceManager.configure("ppp0",
+                        NetworkManagerLite.configure("ppp0",
                                 address.getHostAddress(), "255.255.255.0",
                                 address.getHostAddress(), true, null);
 

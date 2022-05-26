@@ -91,7 +91,7 @@ public class ModelRenderer implements GLSurfaceView.Renderer {
     public volatile float deltaY;
 
     private com.atakmap.map.layer.model.Model objModel;
-    private Camera camera;
+    private final Camera camera = new Camera();
     private int width;
     private int height;
 
@@ -105,8 +105,6 @@ public class ModelRenderer implements GLSurfaceView.Renderer {
         GLES30.glClearColor(0f, 0f, 0f, 0f);
         GLES30.glEnable(GLES30.GL_CULL_FACE);
         GLES30.glEnable(GLES30.GL_DEPTH_TEST);
-
-        this.camera = new Camera();
 
         //read, compile, and link shaders to our program handle
         final String vertexShader = VERTEX_SHADER_SOURCE;

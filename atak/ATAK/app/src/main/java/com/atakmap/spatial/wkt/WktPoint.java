@@ -20,7 +20,7 @@ import java.util.List;
 public class WktPoint extends WktGeometry {
 
     private static final String TAG = "WktPoint";
-    List<Double> coords;
+    final List<Double> coords;
 
     private WktPoint(List<Double> coords) {
         this.coords = coords;

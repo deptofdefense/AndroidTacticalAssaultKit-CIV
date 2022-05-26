@@ -27,7 +27,6 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.NorthReference;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
-import com.atakmap.map.MapSceneModel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -238,10 +237,7 @@ public class VehicleShape extends EditablePolyline implements VehicleMapItem {
      * Note: this only hides (still clickable; doesn't affect getVisible())
      */
     void updateVisibility() {
-        MapSceneModel mdl = mapView.getSceneModel();
-        GeoPoint p1 = mapView.inverse(mdl.focusx, mdl.focusy).get();
-        GeoPoint p2 = mapView.inverse(mdl.focusx + 1, mdl.focusy + 1).get();
-        double res = p1.distanceTo(p2);
+        double res = ATAKUtilities.getMetersPerPixel(getCenter().get());
         int mask = res < 2 ? Color.WHITE : 0xFFFFFF;
         super.setStrokeColor(_strokeColor & mask);
         super.setFillColor(_fillColor & mask);

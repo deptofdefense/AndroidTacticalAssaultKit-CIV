@@ -68,11 +68,19 @@ public class SentenceHandler
 
     public static Packet makePacket(String s, boolean check)
     {
-        String normalized = s;
         if (s != null)  { 
-            // according to Rockwell Collins, GL Glonass and GN Galileo
-            if (s.startsWith("$GN") || normalized.startsWith("$GL")) {
+
+            // accommodate various NMEA-0183 prefixes (Talker IDs) where one of the most well
+            // know is GP (Global Positioning System (GPS)) GL (GLONASS Receiver) or
+            // GN (Global Navigation Satellite System (GNSS)).
+            // The talker id is the first 2 characters after the $
+            if (s.length() > 6 &&
+                    s.startsWith("$")) { 
+               if (s.regionMatches(3,"GGA", 0, 3)) {
+                     s = "$GP" + s.substring(3);
+               } else if (s.regionMatches(3,"RMC", 0, 3)) {
                  s = "$GP" + s.substring(3);
+               }
             }
         }
         return makePacketImpl(s, check);

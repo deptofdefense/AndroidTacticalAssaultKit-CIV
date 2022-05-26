@@ -20,7 +20,6 @@ import com.atakmap.android.maps.Shape;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.android.tools.DrawingCircleCreationTool;
 import com.atakmap.android.util.AbstractMapItemSelectionTool;
-import com.atakmap.coremap.log.Log;
 
 /** Provides helper functions for running some of ATAK's shape creation tools with callbacks. */
 public class ShapeToolUtils extends AbstractMapItemSelectionTool {
@@ -61,7 +60,6 @@ public class ShapeToolUtils extends AbstractMapItemSelectionTool {
                 if (action.equals(CIRCLE_TOOL_FINISHED)) {
                     AtakBroadcast.getInstance().unregisterReceiver(this);
                     String uid = intent.getStringExtra("uid");
-                    Log.d("TEST", uid);
                     if (uid != null) {
                         DrawingCircle circle = (DrawingCircle) mapView
                                 .getMapItem(uid);

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <size android:height="@dimen/message_bar_height" />
+            <solid android:color="@color/taupe" />
+            <stroke android:width="1dp" android:color="@color/pastel_gray" />
+            <corners android:radius="@dimen/message_bar_height" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <size android:height="@dimen/message_bar_height" />
+            <solid android:color="@color/black" />
+            <stroke android:width="1dp" android:color="@color/pastel_gray" />
+            <corners android:radius="@dimen/message_bar_height" />
+        </shape>
+    </item>
+</selector>

@@ -3,7 +3,8 @@ package com.atakmap.android.androidtest;
 
 import android.Manifest;
 import android.content.Context;
-import androidx.test.InstrumentationRegistry;
+
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.rule.GrantPermissionRule;
 
 import com.atakmap.coremap.loader.NativeLoader;
@@ -57,13 +58,13 @@ public abstract class ATAKInstrumentedTest {
 
     /**
      * Initializes the {@link NativeLoader} with the
-     * {@link InstrumentationRegistry} {@link Context} and loads
+     * {@link ApplicationProvider} {@link Context} and loads
      * <code>gnustl_shared</code>, <code>takengine</code> and
      * <code>atakjni</code>.
      */
     @BeforeClass
     public static void initLibrary() {
-        Context appContext = InstrumentationRegistry.getTargetContext();
+        Context appContext = ApplicationProvider.getApplicationContext();
 
         NativeLoader.init(appContext);
 

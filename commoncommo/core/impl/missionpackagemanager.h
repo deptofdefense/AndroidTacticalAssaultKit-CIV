@@ -416,7 +416,12 @@ private:
                       const char *detail);
     void queueUploadProgressEvent(TxUploadContext *upCtx);
 
-    static int webThreadAccessHandlerCallbackRedir(void *cls,
+#if MHD_VERSION >= 0x00097300
+    static enum MHD_Result webThreadAccessHandlerCallbackRedir(
+#else
+    static int webThreadAccessHandlerCallbackRedir(
+#endif
+                                              void *cls,
                                               struct MHD_Connection * connection,
                                               const char *url,
                                               const char *method,
@@ -424,7 +429,12 @@ private:
                                               const char *upload_data,
                                               size_t *upload_data_size,
                                               void **con_cls);
-    int webThreadAccessHandlerCallback(struct MHD_Connection * connection,
+#if MHD_VERSION >= 0x00097300
+    enum MHD_Result webThreadAccessHandlerCallback(
+#else
+    int webThreadAccessHandlerCallback(
+#endif
+                                              struct MHD_Connection * connection,
                                               const char *url,
                                               const char *method,
                                               const char *version,

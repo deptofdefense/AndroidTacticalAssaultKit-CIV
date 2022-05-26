@@ -7,6 +7,7 @@ import android.util.Pair;
 import com.atakmap.android.layers.LayersMapComponent;
 import com.atakmap.app.R;
 import com.atakmap.map.layer.raster.DatasetDescriptorFactory2;
+import com.atakmap.map.layer.raster.ImageryFileType;
 
 import java.io.File;
 
@@ -27,6 +28,16 @@ public class ImportLayersSort extends ImportInPlaceResolver {
 
     @Override
     public boolean match(File file) {
+
+        // Check file type
+        ImageryFileType.AbstractFileType fileType = ImageryFileType
+                .getFileType(file);
+
+        // DTED is not considered an imagery layer in ATAK
+        if (fileType != null && fileType.getID() == ImageryFileType.DTED)
+            return false;
+
+        // Check if any of the imagery SPIs support
         return DatasetDescriptorFactory2.isSupported(file);
     }
 

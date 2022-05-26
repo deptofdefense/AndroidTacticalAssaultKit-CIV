@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.atakmap.android.vehicle.model.VehicleModelAssetUtils.*;
+import com.atakmap.android.vehicle.model.VehicleModelAssetUtils;
 
 /**
  * Cache vehicle model data for re-use across multiple instances
@@ -222,8 +222,10 @@ public class VehicleModelCache {
         File verFile = new File(DIR, "version.txt");
         int curVersion = 0;
         if (IOProviderFactory.exists(verFile))
-            curVersion = MathUtils.parseInt(readFileString(verFile, false), 0);
-        int newVersion = MathUtils.parseInt(readFileString(verFile, true), 0);
+            curVersion = MathUtils.parseInt(
+                    VehicleModelAssetUtils.readFileString(verFile, false), 0);
+        int newVersion = MathUtils.parseInt(
+                VehicleModelAssetUtils.readFileString(verFile, true), 0);
 
         // Root metadata file
         File metaFile = new File(DIR, "metadata.json");
@@ -233,7 +235,7 @@ public class VehicleModelCache {
         if (updating) {
             Log.d(TAG, "Vehicle models need an update (v" + curVersion
                     + " != v" + newVersion + ")");
-            if (!copyAssetToFile(metaFile))
+            if (!VehicleModelAssetUtils.copyAssetToFile(metaFile))
                 return;
 
             // Delete icon cache if we're updating
@@ -243,7 +245,8 @@ public class VehicleModelCache {
 
         // Read categories we need to load from
         List<VehicleModelInfo> vehicles = new ArrayList<>();
-        JSONObject rootMeta = readFileJSON(metaFile, false);
+        JSONObject rootMeta = VehicleModelAssetUtils.readFileJSON(metaFile,
+                false);
         try {
             JSONArray categories = rootMeta.getJSONArray("categories");
             for (int i = 0; i < categories.length(); i++) {
@@ -258,7 +261,7 @@ public class VehicleModelCache {
 
         // Now that we've finished reading everything properly, update version
         if (updating)
-            copyAssetToFile(verFile);
+            VehicleModelAssetUtils.copyAssetToFile(verFile);
 
         // Store vehicles in the cache
         synchronized (_cache) {
@@ -293,14 +296,15 @@ public class VehicleModelCache {
         // Category metadata
         File catFile = new File(dir, "metadata.json");
         if (updating)
-            copyAssetToFile(catFile);
+            VehicleModelAssetUtils.copyAssetToFile(catFile);
         if (!IOProviderFactory.exists(catFile)) {
             Log.e(TAG, "Category file does not exist in directory: " + catFile);
             return ret;
         }
 
         // Generate vehicle info
-        JSONObject catMeta = readFileJSON(catFile, false);
+        JSONObject catMeta = VehicleModelAssetUtils.readFileJSON(catFile,
+                false);
         if (catMeta == null) {
             Log.e(TAG, "Failed to read category file: " + catFile);
             return ret;

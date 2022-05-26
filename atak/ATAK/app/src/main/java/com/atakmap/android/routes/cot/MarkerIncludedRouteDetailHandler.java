@@ -16,8 +16,8 @@ import com.atakmap.coremap.cot.event.CotEvent;
 public class MarkerIncludedRouteDetailHandler extends CotDetailHandler {
     private static final String TAG = "RouteWaypointDetailHandler";
     private static final String WAYPOINT_DETAIL = "_route";
-    private MapView mapView;
-    private RouteImporter routeImporter;
+    private final MapView mapView;
+    private final RouteImporter routeImporter;
 
     public MarkerIncludedRouteDetailHandler() {
         super(WAYPOINT_DETAIL);
@@ -31,12 +31,11 @@ public class MarkerIncludedRouteDetailHandler extends CotDetailHandler {
     public ImportResult toItemMetadata(MapItem item, CotEvent event,
             CotDetail detail) {
         final String parentItemUID = item.getUID();
-        CotDetail routeDetail = detail;
-        String senderUID = routeDetail.getAttribute("sender");
+        String senderUID = detail.getAttribute("sender");
         if (senderUID != null
                 && senderUID.equalsIgnoreCase(mapView.getSelfMarker().getUID()))
             return ImportResult.IGNORE;
-        if (routeDetail.getChildren().isEmpty()) {
+        if (detail.getChildren().isEmpty()) {
             //remove old route
             MapItem existingRte = mapView.getRootGroup().deepFindUID(
                     parentItemUID + "-rte");
@@ -58,7 +57,8 @@ public class MarkerIncludedRouteDetailHandler extends CotDetailHandler {
             }
             ce.setDetail(det);
 
-            ImportResult result = routeImporter.importData(ce, new Bundle());
+            final ImportResult result = routeImporter.importData(ce,
+                    new Bundle());
             item.addOnGroupChangedListener(
                     new MapItem.OnGroupChangedListener() {
                         public void onItemAdded(MapItem item, MapGroup group) {

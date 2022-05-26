@@ -10,7 +10,6 @@ import android.content.Intent;
 import com.atakmap.android.drawing.DrawingPreferences;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import android.graphics.Color;
-import android.graphics.PointF;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.ShapeDrawable;
 import android.graphics.drawable.shapes.RectShape;
@@ -40,6 +39,7 @@ import com.atakmap.android.toolbar.Tool;
 import com.atakmap.android.toolbar.ToolbarBroadcastReceiver;
 import com.atakmap.android.toolbar.widgets.TextContainer;
 import com.atakmap.android.tools.ActionBarReceiver;
+import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
@@ -91,8 +91,8 @@ public class TelestrationTool extends Tool {
     private final Context _context;
 
     private GeoPointMetaData _currentGeoPoint;
-    private int _currentX;
-    private int _currentY;
+    private float _currentX;
+    private float _currentY;
     private int _color;
     private int _numPoints;
     private boolean _scrollLocked;
@@ -132,7 +132,7 @@ public class TelestrationTool extends Tool {
                 R.string.telestrate_unlocked_prompt);
 
         //Used on release to simplify the polyline
-        _spatialCalculator = new SpatialCalculator(true);
+        _spatialCalculator = new SpatialCalculator.Builder().inMemory().build();
 
         _geoPoints = new ArrayList<>();
 
@@ -179,7 +179,7 @@ public class TelestrationTool extends Tool {
         registerListeners();
         //Set up all the buttons and everything
         _container.displayPrompt(SCROLL_LOCKED);
-        _drawingToolsToolbar.setDefaultButtonsVisiblity(Button.GONE);
+        _drawingToolsToolbar.toggleShapeButtons(false);
         _telestrationButton.setVisibility(Button.GONE);
         _toggleScrollZoomButton.setVisibility(Button.VISIBLE);
         _toggleScrollZoomButton.setSelected(true);
@@ -289,10 +289,10 @@ public class TelestrationTool extends Tool {
         _drawingShape.setStrokeColor(_color);
         _drawingShape.setFillColor(Color.argb(_alpha, Color.red(_color),
                 Color.green(_color), Color.blue(_color)));
-        _currentX = event.getPoint().x;
-        _currentY = event.getPoint().y;
-        GeoPointMetaData _geoPoint = _mapView.inverse(event.getPoint().x,
-                event.getPoint().y, MapView.InverseMode.RayCast);
+        _currentX = event.getPointF().x;
+        _currentY = event.getPointF().y;
+        GeoPointMetaData _geoPoint = _mapView.inverse(event.getPointF().x,
+                event.getPointF().y, MapView.InverseMode.RayCast);
         _geoPoints.add(_geoPoint);
         //So this is pretty hacky but was having some threading issues where the shape was not
         //updating with the GL MultiPolyline, so throughout drawing we render a duplicate shape
@@ -318,8 +318,8 @@ public class TelestrationTool extends Tool {
                 startDrawing(event);
 
             //get screen coordinates based on top-left corner
-            _currentX = event.getPoint().x;
-            _currentY = event.getPoint().y;
+            _currentX = event.getPointF().x;
+            _currentY = event.getPointF().y;
 
             //find the GeoPoint of the touch event
             _currentGeoPoint = _mapView.inverse(_currentX, _currentY,
@@ -353,18 +353,9 @@ public class TelestrationTool extends Tool {
 
                 //simplification is controlled by a threshold value (in degrees).  Points that deviate from the
                 //    topology of the line that are within the threshold are eliminated
-                float dp = _context.getResources().getDisplayMetrics().density;
-                GeoPoint p1 = _duplicateShape.getCenter().get();
-                PointF pt = _mapView.forward(p1);
-                GeoPoint p2 = _mapView.inverse(pt.x + dp, pt.y + dp).get();
-                double threshX = Math.abs(p1.getLongitude() - p2.getLongitude());
-                double threshY = Math.abs(p1.getLatitude() - p2.getLatitude());
-                double threshold = Math.min(threshX, threshY);
-
-                List<GeoPoint> gpts = (List<GeoPoint>) _spatialCalculator
-                        .simplify(
-                                GeoPointMetaData.unwrap(_geoPoints), threshold,
-                                true);
+                List<GeoPoint> gpts = ATAKUtilities.simplifyPoints(
+                        _spatialCalculator,
+                        GeoPointMetaData.unwrap(_geoPoints));
 
                 // valid simplification, rewrap and continue forward
                 if (gpts != null) {
@@ -406,7 +397,7 @@ public class TelestrationTool extends Tool {
                     this.getClass());
         }
         removeDuplicate();
-        _drawingToolsToolbar.setDefaultButtonsVisiblity(Button.VISIBLE);
+        _drawingToolsToolbar.toggleShapeButtons(true);
         _toggleScrollZoomButton.setVisibility(Button.GONE);
         _undoButton.setVisibility(Button.GONE);
         _undoButton.setEnabled(false);

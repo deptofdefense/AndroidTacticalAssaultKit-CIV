@@ -1,5 +1,2 @@
 include ':app'
 
-include ':ATAKMapEngine'
-project(':ATAKMapEngine').projectDir = new File(settingsDir, '../ATAKMapEngine')
-include ':ATAKMapEngine:lib'

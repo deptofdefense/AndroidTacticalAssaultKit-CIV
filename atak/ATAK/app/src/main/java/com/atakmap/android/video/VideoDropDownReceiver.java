@@ -38,16 +38,15 @@ import com.atakmap.android.image.ImageGalleryReceiver;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.util.ATAKUtilities;
+import com.atakmap.android.util.AltitudeUtilities;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.R;
 
-import com.atakmap.comms.NetworkDeviceManager;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
-import com.atakmap.coremap.maps.conversion.EGM96;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.coremap.maps.time.CoordinatedTime.SimpleDateFormatThread;
@@ -149,7 +148,7 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
     private final ViewSwitcher video_switcher;
     private final ViewSwitcher status_switcher;
 
-    private SharedGLSurfaceView glView;
+    private final SharedGLSurfaceView glView;
 
     private final Button cancelBtn;
     private final Button cancelDuringConnectBtn;
@@ -541,6 +540,13 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
                                 R.drawable.playforeground);
                     }
                 });
+            } else {
+                for (VideoViewLayer vvl : activeLayers) {
+                    try {
+                        vvl.error(ce);
+                    } catch (Exception ignored) {
+                    }
+                }
             }
         }
     }
@@ -548,8 +554,18 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
     @Override
     public void mediaFatalError(final String s) {
         final ConnectionEntry ce = vmd.connectionEntry;
-        if (ce != null)
+        if (ce != null) {
             attemptReconnect(ce);
+
+            if (ce.getProtocol() != ConnectionEntry.Protocol.FILE) {
+                for (VideoViewLayer vvl : activeLayers) {
+                    try {
+                        vvl.error(ce);
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
+        }
     }
 
     private void attemptReconnect(final ConnectionEntry ce) {
@@ -615,13 +631,8 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
                                 vmd.frameDTED.get(),
                                 CoordinateFormat.MGRS);
 
-                if (vmd.frameDTED.get().isAltitudeValid()) {
-                    altitudeTxt = EGM96
-                            .formatMSL(vmd.frameDTED.get());
-                } else {
-                    altitudeTxt = getMapView().getContext()
-                            .getString(R.string.ft_msl4);
-                }
+                altitudeTxt = AltitudeUtilities.format(vmd.frameDTED.get(),
+                        _prefs, false);
             } else {
                 frameCenterTxt = getMapView().getContext()
                         .getString(R.string.video_meta_tgt);
@@ -683,7 +694,7 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
         List<String> list = new ArrayList<>();
         for (String s : set) {
             VideoViewLayer vvl = videoviewlayers.get(s);
-            if (vvl.isAlwaysOn())
+            if (vvl != null && vvl.isAlwaysOn())
                 list.add(s);
         }
         return list.toArray(new String[0]);
@@ -720,7 +731,7 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
         if (a != null && a.launchOther(connectionEntry))
             return;
 
-        Log.e(TAG, "call to show the video display for: " + connectionEntry);
+        Log.i(TAG, "call to show the video display for: " + connectionEntry);
 
         // the connection entry will be used to set up the video playback
         vmd.connectionEntry = connectionEntry;
@@ -750,7 +761,9 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
 
         final Thread t = new Thread("video-start-thread") {
             public void run() {
-                startProcessor();
+
+                // only enable structured decoding if a plugin wants structured decoding.
+                metadataDecoder.setStructuredItemDecodeEnabled(false);
 
                 // if the user has passed in an intent with specific layers specified use that
                 final String[] intentLayers = intent
@@ -760,29 +773,7 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
                 final String[] layers = (intentLayers != null) ? intentLayers
                         : getGeneralLayers();
 
-                getMapView().post(new Runnable() {
-                    public void run() {
-                        overlays.removeAllViews();
-                        activeLayers.clear();
-                        // only enable structured decoding if a plugin wants structured decoding.
-                        metadataDecoder.setStructuredItemDecodeEnabled(false);
-                        if (layers != null) {
-                            for (String layer : layers) {
-                                VideoViewLayer vvl = videoviewlayers.get(layer);
-                                if (vvl != null) {
-                                    try {
-                                        overlays.addView(vvl.v, vvl.rlp);
-                                        activeLayers.add(vvl);
-                                        vvl.init(processor, metadataDecoder,
-                                                vmd.connectionEntry);
-                                    } catch (Exception e) {
-                                        Log.e(TAG, "error adding: " + layer, e);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
+                startProcessor(layers);
 
             }
         };
@@ -793,18 +784,48 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
     /**
      * Start the processing of the video.   This will always ensure that all of the components are
      * properly initialized if the processor is created successfully.
+     * @param layers the list of layers to put over the processor
      */
-    private void startProcessor() {
+    private void startProcessor(String[] layers) {
 
         synchronized (processorLock) {
 
             final ConnectionEntry oldce = vmd.connectionEntry;
             stopProcessor();
 
+            activeLayers.clear();
+            if (layers != null) {
+                for (String layer : layers) {
+                    VideoViewLayer vvl = videoviewlayers.get(layer);
+                    if (vvl != null) {
+                        try {
+                            activeLayers.add(vvl);
+                        } catch (Exception e) {
+                            Log.e(TAG, "error adding: " + layer, e);
+                        }
+                    }
+                }
+            }
+
+            getMapView().post(new Runnable() {
+                public void run() {
+                    overlays.removeAllViews();
+                    boolean enableStockMetadata = true;
+                    for (VideoViewLayer vvl : activeLayers) {
+                        overlays.addView(vvl.v, vvl.rlp);
+                        enableStockMetadata &= vvl.enableStockMetadata;
+                    }
+                    frameCenter.setVisibility(
+                            enableStockMetadata ? View.VISIBLE : View.GONE);
+                    altitude.setVisibility(
+                            enableStockMetadata ? View.VISIBLE : View.GONE);
+                }
+            });
+
             final boolean success = startConnection();
             if (oldce != null && !oldce.equals(vmd.connectionEntry)) {
                 Log.d(TAG,
-                        "looks like a procesor succeeded or failed but here is a different one being started");
+                        "looks like a processor succeeded or failed but here is a different one being started");
                 return;
             }
 
@@ -816,8 +837,10 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
                 if (vmd.connectionEntry
                         .getProtocol() == ConnectionEntry.Protocol.FILE)
                     closeDropDown();
-                else
+                else {
                     showScreen(Screen.FAILED);
+
+                }
             }
         }
     }
@@ -873,7 +896,7 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
                     }
                     break;
 
-                case UDP:
+                case UDP: {
                     String host = ce.getAddress();
                     if (host != null) {
                         if (host.length() == 0 || host.equals("0.0.0.0")
@@ -886,25 +909,23 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
                     int buffer = ce.getBufferTime();
                     int timeout = ce.getNetworkTimeout();
 
-                    final String macAddress = ce.getMacAddress();
                     String localAddr = null;
+                    if (ce.getPreferredInterfaceAddress() != null) {
+                        localAddr = ce.getPreferredInterfaceAddress();
+                        Log.d(TAG,
+                                "use local address for network traffic: "
+                                        + localAddr);
 
-                    if (macAddress != null) {
-                        localAddr = NetworkDeviceManager
-                                .getIPv4Address(macAddress);
-                        if (localAddr == null)
-                            localAddr = NetworkDeviceManager
-                                    .getUnmanagedIPv4Address(macAddress);
-                        Log.d(TAG, "use interface macaddr: " + macAddress + " "
-                                + localAddr);
                     }
 
                     if (buffer == 0)
                         buffer = -1;
+
                     Log.d(TAG,
                             "Create udp processor " + host + ":" + port
                                     + " timeout=" + timeout + " buffer="
                                     + buffer + " local=" + localAddr);
+
                     processor = new MediaProcessor(host, port, timeout, buffer,
                             0,
                             tmpDir, localAddr);
@@ -913,6 +934,7 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
                                     + " timeout=" + timeout + " buffer="
                                     + buffer + " local=" + localAddr);
 
+                }
                     break;
                 case RAW:
                 case RTP:
@@ -949,9 +971,20 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
 
                     setupTmpDir();
                     final String rtspaddr = ConnectionEntry.getURL(ce, false);
+
+                    int buffer = ce.getBufferTime();
+                    if (buffer == 0)
+                        buffer = -1;
+
+                    Log.d(TAG,
+                            "Create rtsp processor " + rtspaddr
+                                    + " timeout=" + ce.getNetworkTimeout()
+                                    + " buffer="
+                                    + buffer);
+
                     processor = new MediaProcessor(rtspaddr,
                             ce.getNetworkTimeout(),
-                            ce.getBufferTime(), 0, tmpDir);
+                            buffer, 0, tmpDir);
                     break;
                 }
             }
@@ -982,7 +1015,7 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
             // interested in. Here, for sake of simplicity,
             // we take just the first video track
             // and first klv metadata track if it exists.
-            MediaFormat[] fmts = processor.getTrackInfo();
+            final MediaFormat[] fmts = processor.getTrackInfo();
             boolean haveVid = false;
             vmd.hasMetadata = false;
             for (MediaFormat fmt : fmts) {
@@ -1031,12 +1064,32 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
                 }
             });
 
+            for (VideoViewLayer vvl : activeLayers) {
+                if (vvl != null) {
+                    try {
+                        activeLayers.add(vvl);
+                        vvl.init(processor, metadataDecoder,
+                                vmd.connectionEntry,
+                                VideoDropDownReceiver.this, vmd.hasMetadata);
+                    } catch (Exception e) {
+                        Log.e(TAG, "error starting: " + vvl.id, e);
+                    }
+                }
+            }
+
             sendNotification(true);
             resetPanAndScale();
             processor.start();
 
         } catch (Exception me) {
             Log.e(TAG, "Error occurred loading video", me);
+            for (VideoViewLayer vvl : activeLayers) {
+                try {
+                    vvl.error(vmd.connectionEntry);
+                    vvl.dispose();
+                } catch (Exception ignored) {
+                }
+            }
             return false;
         }
         return true;
@@ -1047,6 +1100,21 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
      * connection.
      */
     private void stopProcessor() {
+
+        //remove all of the views
+        getMapView().post(new Runnable() {
+            public void run() {
+                overlays.removeAllViews();
+            }
+        });
+        for (VideoViewLayer vvl : activeLayers) {
+            try {
+                vvl.stop(vmd.connectionEntry);
+                vvl.dispose();
+            } catch (Exception ignored) {
+            }
+        }
+        activeLayers.clear();
 
         final MediaProcessor oldprocessor = processor;
         processor = null;
@@ -1103,15 +1171,6 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
         if (!isVisible() && !isClosed()) {
             unhideDropDown();
             return true;
-        }
-
-        try {
-            //auto unregister non persistent layers when closing videos
-            for (VideoViewLayer vvl : activeLayers) {
-                unregisterVideoViewLayer(vvl);
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "error with closing layer", e);
         }
 
         closeDropDown();
@@ -1609,6 +1668,16 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
         public boolean onDoubleTap(MotionEvent e) {
             resetPanAndScale();
             return true;
+        }
+
+        @Override
+        public void onLongPress(MotionEvent e) {
+            for (VideoViewLayer vvl : activeLayers) {
+                try {
+                    vvl.onLongPress(e);
+                } catch (Exception ignored) {
+                }
+            }
         }
 
     }

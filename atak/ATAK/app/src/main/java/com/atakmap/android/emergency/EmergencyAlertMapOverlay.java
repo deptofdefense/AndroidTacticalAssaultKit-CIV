@@ -69,7 +69,7 @@ class EmergencyAlertMapOverlay extends AbstractMapOverlay2 {
 
     @Override
     public String getName() {
-        return "Emergency";
+        return _context.getString(R.string.emergency);
     }
 
     @Override
@@ -302,7 +302,7 @@ class EmergencyAlertMapOverlay extends AbstractMapOverlay2 {
         public String getTitle() {
             if (this._alert == null || !this._alert.isValid()) {
                 Log.w(TAG, "Skipping invalid alert title");
-                return "Emergency";
+                return _context.getString(R.string.emergency);
             }
 
             return this._alert.getMessage();

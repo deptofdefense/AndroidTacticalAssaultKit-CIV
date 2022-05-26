@@ -38,20 +38,19 @@ public class AnalysisPanelPresenter implements View.OnClickListener {
     public static final String PREFERENCE_PROFILE_VIEWSHED_OPACITY = "ElevationProfileViewshedOpacity";
 
     private AnalysisPanelView _analysisPanelView;
-    private View _viewshedDetails;
-    private CheckBox _showViewshedCB;
-    private SharedPreferences prefs = null;
+    protected View _viewshedDetails;
+    protected CheckBox _showViewshedCB;
+    protected SharedPreferences prefs = null;
     private double _totalDistance = 0;
     private double _maxSlope = 0;
     private boolean _isOpen = true;
     private Drawable _arrowOpen;
     private Drawable _arrowClosed;
     private SharedPreferences _prefs;
-    private MapView _mapView;
 
-    private int intensity = 50;
+    protected int intensity = 50;
 
-    private final LimitingThread intensityLT;
+    protected final LimitingThread intensityLT;
 
     // private int _totalDistanceUnit = Span.ENGLISH;
     private UnitConverter.FORMAT _maxSlopeUnit = UnitConverter.FORMAT.GRADE;
@@ -86,7 +85,6 @@ public class AnalysisPanelPresenter implements View.OnClickListener {
 
         prefs = PreferenceManager.getDefaultSharedPreferences(mapView
                 .getContext());
-        _mapView = mapView;
 
         View viewshedView = _analysisPanelView.getViewshedView();
         if (viewshedView instanceof ViewGroup)
@@ -99,69 +97,14 @@ public class AnalysisPanelPresenter implements View.OnClickListener {
                 PREFERENCE_PROFILE_VIEWSHED_ALT, 6);
         altitudeET.setText(Integer.toString(heightAboveMarker));
 
-        altitudeET.addTextChangedListener(new AfterTextChangedWatcher() {
-            @Override
-            public void afterTextChanged(Editable s) {
-                if (altitudeET.getText().length() > 0) {
-                    int heightAboveGround = 0;
-                    try {
-                        heightAboveGround = Integer.parseInt(altitudeET
-                                .getText()
-                                .toString());
-                    } catch (Exception e) {
-                        return;
-                    }
-
-                    heightAboveGround = (int) Math.round(heightAboveGround
-                            * ConversionFactors.FEET_TO_METERS);
-                    prefs.edit().putInt(
-                            PREFERENCE_PROFILE_VIEWSHED_ALT,
-                            heightAboveGround).apply();
-                }
-            }
-        });
+        altitudeET.addTextChangedListener(getAltitudeTextWatcher(altitudeET));
 
         final EditText radiusET = viewshedView
                 .findViewById(R.id.radius_et);
         radiusET.setText(String.valueOf(prefs.getInt(
                 PREFERENCE_PROFILE_VIEWSHED_RADIUS, 7000)));
-        radiusET.addTextChangedListener(new AfterTextChangedWatcher() {
-            @Override
-            public void afterTextChanged(Editable s) {
-                if (radiusET.getText().length() == 0)
-                    return;
-                int radius = 0;
-                try {
-                    radius = Integer.parseInt(radiusET.getText().toString());
-                } catch (Exception e) {
-                    Toast.makeText(
-                            mapView.getContext(),
-                            mapView.getContext().getString(
-                                    R.string.radius_num_warn),
-                            Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                if (radius < 1
-                        || radius > ViewshedDropDownReceiver.MAX_RADIUS) {
-                    Toast.makeText(
-                            mapView.getContext(),
-                            mapView.getContext().getString(
-                                    R.string.radius_1_to_40000),
-                            Toast.LENGTH_SHORT).show();
-                    s.clear();
-                    if (radius > ViewshedDropDownReceiver.MAX_RADIUS) {
-                        s.append(Integer
-                                .toString(ViewshedDropDownReceiver.MAX_RADIUS));
-                    }
-                    return;
-                }
-
-                prefs.edit().putInt(
-                        PREFERENCE_PROFILE_VIEWSHED_RADIUS,
-                        radius).apply();
-
-            }
-        });
+        radiusET.addTextChangedListener(
+                getRadiusTextWatcher(mapView, radiusET));
 
         CheckBox circleCB = viewshedView
                 .findViewById(R.id.circularViewshed_cb);
@@ -214,6 +157,72 @@ public class AnalysisPanelPresenter implements View.OnClickListener {
         _arrowOpen = resources.getDrawable(R.drawable.arrowright);
         _arrowClosed = resources.getDrawable(R.drawable.arrowleft);
 
+    }
+
+    protected AfterTextChangedWatcher getRadiusTextWatcher(MapView mapView,
+            EditText radiusET) {
+        return new AfterTextChangedWatcher() {
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (radiusET.getText().length() == 0)
+                    return;
+                int radius;
+                try {
+                    radius = Integer.parseInt(radiusET.getText().toString());
+                } catch (Exception e) {
+                    Toast.makeText(
+                            mapView.getContext(),
+                            mapView.getContext().getString(
+                                    R.string.radius_num_warn),
+                            Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                if (radius < 1
+                        || radius > ViewshedDropDownReceiver.MAX_RADIUS) {
+                    Toast.makeText(
+                            mapView.getContext(),
+                            mapView.getContext().getString(
+                                    R.string.radius_1_to_40000),
+                            Toast.LENGTH_SHORT).show();
+                    s.clear();
+                    if (radius > ViewshedDropDownReceiver.MAX_RADIUS) {
+                        s.append(Integer
+                                .toString(ViewshedDropDownReceiver.MAX_RADIUS));
+                    }
+                    return;
+                }
+
+                prefs.edit().putInt(
+                        PREFERENCE_PROFILE_VIEWSHED_RADIUS,
+                        radius).apply();
+
+            }
+        };
+    }
+
+    protected AfterTextChangedWatcher getAltitudeTextWatcher(
+            TextView altitudeET) {
+        return new AfterTextChangedWatcher() {
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (altitudeET.getText().length() > 0) {
+                    int heightAboveGround;
+                    try {
+                        heightAboveGround = Integer.parseInt(altitudeET
+                                .getText()
+                                .toString());
+                    } catch (Exception e) {
+                        return;
+                    }
+
+                    heightAboveGround = (int) Math.round(heightAboveGround
+                            * ConversionFactors.FEET_TO_METERS);
+                    prefs.edit().putInt(
+                            PREFERENCE_PROFILE_VIEWSHED_ALT,
+                            heightAboveGround).apply();
+                }
+            }
+        };
     }
 
     private void _closeView() {

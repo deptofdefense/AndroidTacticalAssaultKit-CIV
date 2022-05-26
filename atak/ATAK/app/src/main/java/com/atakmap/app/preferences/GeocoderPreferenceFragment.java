@@ -199,43 +199,53 @@ public class GeocoderPreferenceFragment extends AtakPreferenceFragment {
 
         private void result(final boolean success, final String additional) {
 
-            GeocodeManager.Geocoder geocoder = GeocodeManager
-                    .getInstance(getActivity())
-                    .getSelectedGeocoder();
-            final String name = geocoder.getTitle();
+            try {
+                Context context = getActivity();
 
-            Log.d(TAG, "geocoder: " + geocoder.getTitle() + " "
-                    + geocoder.getClass());
+                if (context == null)
+                    return;
 
-            final String msg;
-            if (success) {
-                msg = String.format(getString(R.string.preferences_text397),
-                        name);
-            } else {
-                msg = String.format(
-                        getString(R.string.preferences_text402),
-                        name,
-                        additional);
-            }
+                GeocodeManager.Geocoder geocoder = GeocodeManager
+                        .getInstance(context)
+                        .getSelectedGeocoder();
+                final String name = geocoder.getTitle();
 
-            getActivity().runOnUiThread(new Runnable() {
+                Log.d(TAG, "geocoder: " + geocoder.getTitle() + " "
+                        + geocoder.getClass());
 
-                @Override
-                public void run() {
-
-                    AlertDialog.Builder b = new AlertDialog.Builder(
-                            getActivity());
-                    b.setTitle(success ? getString(R.string.success)
-                            : getString(R.string.failure));
-                    b.setMessage(msg);
-                    b.setPositiveButton(getString(R.string.ok), null);
-
-                    if (pd != null)
-                        pd.dismiss();
-
-                    b.show();
+                final String msg;
+                if (success) {
+                    msg = String.format(
+                            context.getString(R.string.preferences_text397),
+                            name);
+                } else {
+                    msg = String.format(
+                            context.getString(R.string.preferences_text402),
+                            name,
+                            additional);
                 }
-            });
+
+                getActivity().runOnUiThread(new Runnable() {
+
+                    @Override
+                    public void run() {
+
+                        AlertDialog.Builder b = new AlertDialog.Builder(
+                                context);
+                        b.setTitle(success ? context.getString(R.string.success)
+                                : context.getString(R.string.failure));
+                        b.setMessage(msg);
+                        b.setPositiveButton(context.getString(R.string.ok),
+                                null);
+
+                        if (pd != null)
+                            pd.dismiss();
+
+                        b.show();
+                    }
+                });
+            } catch (Exception ignored) {
+            }
         }
 
     };

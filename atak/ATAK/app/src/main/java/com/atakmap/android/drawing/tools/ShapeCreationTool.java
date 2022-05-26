@@ -119,7 +119,7 @@ public class ShapeCreationTool extends Tool {
         _container.displayPrompt(_mapView.getResources().getString(
                 R.string.polygon_prompt));
 
-        _drawingToolsToolbar.setDefaultButtonsVisiblity(Button.GONE);
+        _drawingToolsToolbar.toggleShapeButtons(false);
         _shapeButton.setVisibility(Button.GONE);
         _doneButton.setVisibility(Button.VISIBLE);
         _doneButton.setEnabled(true);
@@ -224,7 +224,7 @@ public class ShapeCreationTool extends Tool {
                 _undoButton.setEnabled(true);
             }
             GeoPointMetaData geoPoint = _mapView.inverseWithElevation(
-                    event.getPoint().x, event.getPoint().y);
+                    event.getPointF().x, event.getPointF().y);
             _handlePoint(geoPoint);
         }
     };
@@ -299,7 +299,7 @@ public class ShapeCreationTool extends Tool {
         }
         _firstClicked = null;
 
-        _drawingToolsToolbar.setDefaultButtonsVisiblity(Button.VISIBLE);
+        _drawingToolsToolbar.toggleShapeButtons(true);
         _undoButton.setVisibility(Button.GONE);
         _undoButton.setEnabled(false);
         _doneButton.setVisibility(Button.GONE);

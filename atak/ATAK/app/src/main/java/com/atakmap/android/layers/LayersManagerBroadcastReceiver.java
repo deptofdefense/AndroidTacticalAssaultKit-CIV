@@ -60,6 +60,7 @@ import com.atakmap.android.importexport.ImportReceiver;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.layers.LayerSelectionAdapter.OnItemSelectedListener;
 import com.atakmap.android.layers.MobileLayerSelectionAdapter.MobileImagerySpec;
+import com.atakmap.android.layers.overlay.IlluminationListItem;
 import com.atakmap.android.layers.wms.DownloadAndCacheBroadcastReceiver;
 import com.atakmap.android.maps.CardLayer;
 import com.atakmap.android.maps.MapTouchController;
@@ -74,11 +75,13 @@ import com.atakmap.app.system.ResourceUtil;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.map.Globe;
 import com.atakmap.map.MapRenderer2;
 import com.atakmap.map.MapSceneModel;
 import com.atakmap.map.layer.Layer;
 import com.atakmap.map.layer.ProxyLayer;
+import com.atakmap.map.layer.control.IlluminationControl2;
 import com.atakmap.map.layer.control.SurfaceRendererControl;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.feature.geometry.Geometry;
@@ -670,6 +673,19 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
                                                 double rotation = getMapView()
                                                         .getMapRotation();
 
+                                                IlluminationControl2 illuminationControl = getMapView()
+                                                        .getRenderer3()
+                                                        .getControl(
+                                                                IlluminationControl2.class);
+                                                boolean illuminationEnabled = illuminationControl != null
+                                                        && illuminationControl
+                                                                .getEnabled();
+                                                long illuminationDateTime = illuminationControl != null
+                                                        ? illuminationControl
+                                                                .getTime()
+                                                        : CoordinatedTime
+                                                                .currentTimeMillis();
+
                                                 LayerSelectionAdapter active = LayersManagerBroadcastReceiver.this
                                                         .getActiveLayers();
 
@@ -693,7 +709,9 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
                                                             scale,
                                                             tilt, rotation,
                                                             layer,
-                                                            selection, locked);
+                                                            selection, locked,
+                                                            illuminationEnabled,
+                                                            illuminationDateTime);
                                                 }
 
                                             }
@@ -729,6 +747,15 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
                 rotations ? fav.tilt : 0d,
                 true);
 
+        // based on the current date and time set and if the illumination was
+        // active for the favorite, reset it.
+        _prefs.edit()
+                .putBoolean(IlluminationListItem.PREF_KEY_IS_ENABLED,
+                        fav.illuminationEnabled)
+                .putLong(IlluminationListItem.PREF_KEY_ILLUMINATION_TIME,
+                        fav.illuminationDateTime)
+                .apply();
+
         // dispatch an Intent to perform the layer selection based on
         // the properties of the favorite
         Intent selectLayer = new Intent();
@@ -763,6 +790,15 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
     protected void add(String name, double lat, double lon, double alt,
             double scale, double tilt, double rotation,
             String layer, String selection, boolean locked) {
+        add(name, lat, lon, alt, scale, tilt, rotation, layer, selection,
+                locked, false,
+                System.currentTimeMillis());
+    }
+
+    protected void add(String name, double lat, double lon, double alt,
+            double scale, double tilt, double rotation,
+            String layer, String selection, boolean locked,
+            boolean illuminationEnabled, long illuminationDateTime) {
         if (_favAdapter == null)
             return;
 
@@ -770,7 +806,8 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
                 lat, lon, alt, scale,
                 tilt, rotation,
                 layer,
-                selection, locked);
+                selection, locked,
+                illuminationEnabled, illuminationDateTime);
         _favAdapter.writeList();
     }
 

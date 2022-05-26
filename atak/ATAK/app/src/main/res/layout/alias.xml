@@ -68,7 +68,6 @@
                     android:layout_height="wrap_content" />
             </LinearLayout>
         </LinearLayout>
-
         <LinearLayout
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
@@ -106,7 +105,7 @@
                 android:id="@+id/alias_file_separator"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/foward_slash" />
+                android:text="@string/forward_slash" />
 
             <EditText
                 android:id="@+id/alias_url_file"
@@ -178,6 +177,57 @@
                 android:focusable="false"
                 android:visibility="gone"
                 />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/video_username_layout"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:orientation="vertical">
+            <LinearLayout
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent">
+            <TextView
+                android:id="@+id/video_username_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/username2"
+                />
+
+            <EditText
+                android:id="@+id/video_username"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text=""
+                />
+        </LinearLayout>
+            <LinearLayout
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent">
+            <TextView
+                android:id="@+id/video_password_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:maxLines="1"
+                android:text="@string/password2"/>
+
+            <EditText
+                android:id="@+id/video_password"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:ems="10"
+                android:inputType="textPassword">
+            </EditText>
+            </LinearLayout>
+
+            <CheckBox
+                android:id="@+id/video_password_checkbox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="right"
+                android:text="@string/show_password"
+                android:textSize="12sp"/>
         </LinearLayout>
 
         <LinearLayout

@@ -77,7 +77,7 @@ class DangerCloseMapOverlay extends AbstractMapOverlay2 {
 
     @Override
     public String getName() {
-        return "Danger Close";
+        return _context.getString(R.string.danger_close);
     }
 
     @Override
@@ -285,7 +285,7 @@ class DangerCloseMapOverlay extends AbstractMapOverlay2 {
         public String getTitle() {
             if (this._alert == null || !this._alert.isValid()) {
                 Log.w(TAG, "Skipping invalid alert title");
-                return "Danger Close";
+                return _context.getString(R.string.danger_close);
             }
 
             return ATAKUtilities.getDisplayName(_alert.getFriendly());

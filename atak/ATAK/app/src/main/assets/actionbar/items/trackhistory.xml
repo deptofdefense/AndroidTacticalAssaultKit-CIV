@@ -1,4 +1,4 @@
-<PersistedActionMenu baseline="true" hideable="true" iconPath="ic_menu_selfhistory"  title="actionbar_trackhistory">
+<PersistedActionMenu baseline="true" hideable="true" iconPath="nav_track_history"  title="actionbar_trackhistory">
    <ClickData actionType="click">
       <broadcast>
          <action>com.atakmap.android.track.TRACK_HISTORY</action>

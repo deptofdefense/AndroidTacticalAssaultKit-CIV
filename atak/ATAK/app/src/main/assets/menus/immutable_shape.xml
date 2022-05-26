@@ -13,8 +13,7 @@
 
     <button icon='icons/pairing_line.png'
             disabled='true'
-            onClick='actions/pairingline.xml'
-            selected='${pairingline_on}'  />
+            onClick='actions/pairingline.xml' />
             
     <button icon='icons/eye.png'
             onClick='actions/toggleVisibility.xml'/>

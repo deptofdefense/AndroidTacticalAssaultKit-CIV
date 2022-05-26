@@ -11,7 +11,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
-import android.graphics.Point;
+import android.graphics.PointF;
 import android.os.Bundle;
 
 import com.atakmap.android.image.quickpic.QuickPicReceiver;
@@ -274,7 +274,7 @@ public class MovePointTool extends Tool implements OnVisibleChangedListener {
     private final MapEventDispatcher.MapEventDispatchListener mapClick = new MapEventDispatcher.MapEventDispatchListener() {
         @Override
         public void onMapEvent(MapEvent event) {
-            Point p = event.getPoint();
+            PointF p = event.getPointF();
             if (p == null)
                 return;
 
@@ -328,7 +328,7 @@ public class MovePointTool extends Tool implements OnVisibleChangedListener {
     private final MapEventDispatcher.MapEventDispatchListener mapClickMP = new MapEventDispatcher.MapEventDispatchListener() {
         @Override
         public void onMapEvent(MapEvent event) {
-            Point p = event.getPoint();
+            PointF p = event.getPointF();
             if (p == null)
                 return;
 

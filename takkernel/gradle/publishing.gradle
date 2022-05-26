@@ -2,24 +2,38 @@
 apply plugin: 'maven-publish'
 
 // configure publications
-def mavenPublishUrl = getProperty(project, "maven.publish.url", "http://localhost")
-def mavenPublishUser = getProperty(project, "maven.publish.user", "invalid")
-def mavenPublishPassword = getProperty(project, "maven.publish.password", "invalid")
+// XXX - fallback on legacy property names, remove support in future version
+def takrepoPublishUrl = getProperty(project, 'takRepoMavenPublishUrl',
+        getProperty(project, 'maven.publish.url', 'http://localhost'))
+def takrepoUser = getProperty(project, 'takRepoUsername',
+        getProperty(project, 'maven.publish.user', 'invalid'))
+def takrepoPassword = getProperty(project, 'takRepoPassword',
+        getProperty(project, 'maven.publish.password', 'invalid'))
+
+// warn use of deprecated properties
+if(getProperty(project, 'maven.publish.url', null))
+    println('WARNING: \'maven.publish.url\' is deprecated and will be removed in 1.0.0 Update references to \'takRepoMavenUrl\'')
+if(getProperty(project, 'maven.publish.user', null))
+    println('WARNING: \'maven.publish.user\' is deprecated and will be removed in 1.0.0 Update references to \'takRepoUsername\'')
+if(getProperty(project, 'maven.publish.password', null))
+    println('WARNING: \'maven.publish.password\' is deprecated and will be removed in 1.0.0 Update references to \'takRepoPassword\'')
 
 publishing {
     publications {
-        if (isJavaKernelBuild && !skipPublications.contains('java')) {
+        if (isJavaKernelBuild && !skipPublications.contains(javaBuildTarget)) {
             jar(MavenPublication) {
                 from components.java
+                artifact sourcesJar
                 afterEvaluate { artifactId = project.archivesBaseName }
             }
         }
 
-        if (isAndroidKernelBuild && !skipPublications.contains('android')) {
+        if (isAndroidKernelBuild && !skipPublications.contains(androidBuildTarget)) {
 
             def baseAarPath = "$buildDir/outputs/aar/${project.archivesBaseName}"
 
             aar(MavenPublication) {
+                // AARs
                 project.android.buildTypes.all { buildType ->
                     artifact("${baseAarPath}-${buildType.name}.aar") { classifier buildType.name }
 
@@ -32,17 +46,43 @@ publishing {
                     }
                 }
 
+                // sources JAR
+                artifact sourcesJar
+
+                // export API dependencies to POM
+                pom.withXml {
+                    def dependencies  = asNode().appendNode("dependencies")
+                    configurations.api.allDependencies.each {  dep ->
+                        if(!(dep instanceof ProjectDependency) &&
+                                !dep.name.contains("-${runtimePlatform}")) {
+
+                            def depNode = dependencies.appendNode("dependency")
+                            depNode.appendNode('groupId', dep.group)
+                            depNode.appendNode('artifactId', dep.name)
+                            depNode.appendNode('version', dep.version)
+                            def depClassifier = getClassifier(dep)
+                            if(depClassifier)   depNode.appendNode('classifier', depClassifier)
+                        }
+                    }
+                }
+
                 afterEvaluate { artifactId = project.archivesBaseName }
             }
         }
     }
     repositories {
         maven {
-            url mavenPublishUrl
+            url takrepoPublishUrl
             credentials {
-                username = mavenPublishUser
-                password = mavenPublishPassword
+                username = takrepoUser
+                password = takrepoPassword
             }
         }
+    }
+}
+
+project.afterEvaluate {
+    tasks.withType(GenerateModuleMetadata) {
+        enabled = false
     }
 }

@@ -20,6 +20,7 @@ import com.atakmap.comms.NetConnectString;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.map.CameraController;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -543,11 +544,14 @@ public class IndividualContact extends Contact
         if (!hasLocation())
             return false;
 
-        Log.d(TAG, "Zooming for individual:  " + this.toString());
+        Log.d(TAG, "zooming for individual:  " + this.toString());
 
         //zoom map
         final GeoPoint gp = ((PointMapItem) mapItem).getPoint();
-        MapView.getMapView().getMapController().panTo(gp, false);
+
+        CameraController.Programmatic.panTo(
+                MapView.getMapView().getRenderer3(),
+                gp, false);
 
         //display details and break cam lock
         Intent intent = new Intent();

@@ -11,7 +11,7 @@ public interface EncryptionProvider {
 
     @Deprecated
     @DeprecatedApi(since = "4.3.1", forRemoval = true, removeAt = "4.5.0")
-    public interface Callback {
+    interface Callback {
         int SETUP_FAILED = 1;
         int SETUP_SUCCESSFUL = 0;
 
@@ -22,7 +22,7 @@ public interface EncryptionProvider {
          * @param icon the icon for the status message in the case of a non SETUP_SUCCESSFUL call.
          * @param msg the message presented to the user in the case of a non SETUP_SUCCESSFUL call.
          */
-        public void complete(int condition, @NonNull String title,
+        void complete(int condition, @NonNull String title,
                 @NonNull Drawable icon, @NonNull String msg);
     }
 

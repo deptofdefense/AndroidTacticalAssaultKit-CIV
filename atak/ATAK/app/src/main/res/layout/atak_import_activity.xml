@@ -7,19 +7,36 @@
             android:id="@+id/atak_splash_imgView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:src="@drawable/atak_splash"/>
+            android:src="@drawable/tak_splash_bg"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:layout_marginTop="30dp"
+        android:gravity="center|top">
+        <ImageView
+            android:id="@+id/atak_splash_shield"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/tak_shield" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/importing_file"
+            android:textSize="28sp"
+            android:fontFamily="@font/nunito_bold"
+            android:textColor="@color/hilight_yellow"/>
+
+    </LinearLayout>
+
     <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
             android:orientation="vertical"
             android:layout_centerInParent="false">
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/importing_file"
-            android:textSize="22sp"
-            android:textColor="@color/heading_yellow" />
         <TextView
                  android:id="@+id/revision"
                  android:layout_width="wrap_content"

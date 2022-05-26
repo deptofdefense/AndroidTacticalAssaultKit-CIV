@@ -1327,8 +1327,10 @@ jmethodID CommoJNI::jmethod_mpnativeresultCtor = NULL;
 
 
 CommoJNI::CommoJNI(JNIEnv *env, jobject jlogger,
-                   jstring jourUID, jstring jourCallsign) COMMO_THROW (int) :
+                   jstring jourUID, jstring jourCallsign,
+                   jint jaddrMode) COMMO_THROW (int) :
         commo(NULL), mpio(NULL), fileio(NULL), logger(NULL),
+        jaddrMode(jaddrMode),
         ifaceListenersMutex(), ifaceListeners(),
         contactListenersMutex(), contactListeners(),
         cotListenersMutex(), cotListeners(),
@@ -1352,7 +1354,8 @@ CommoJNI::CommoJNI(JNIEnv *env, jobject jlogger,
     {
         ContactUID uidobj((const uint8_t *)uid, env->GetStringUTFLength(jourUID));
     
-        commo = new Commo(logger, &uidobj, callsign);
+        commo = new Commo(logger, &uidobj, callsign,
+                (netinterfaceenums::NetInterfaceAddressMode)jaddrMode);
     }
     if (!commo)
         goto err;
@@ -1725,7 +1728,7 @@ jobject CommoJNI::wrapPhysicalNetInterface(JNIEnv *env,
     // Wrap in global java obj
     jobject ret = env->NewObject(jclass_physnetiface, jmethod_physnetifaceCtor,
                                  PTR_TO_JLONG(iface),
-                                 jhwAddr);
+                                 jhwAddr, this->jaddrMode);
     if (env->ExceptionOccurred())
         return NULL;
     
@@ -1843,6 +1846,11 @@ void CommoJNI::unwrapCloudClient(JNIEnv *env, CloudClient *client)
         
 bool CommoJNI::reflectionInit(JNIEnv *env)
 {
+    jclass class_addrMode;
+    jmethodID method_addrModeValues;
+    jmethodID method_addrModeName;
+    jmethodID method_addrModeValue;
+    jobjectArray jaddrModeVals;
     jclass class_send;
     jobjectArray jsendVals;
     jmethodID method_sendValues;
@@ -1859,7 +1867,7 @@ bool CommoJNI::reflectionInit(JNIEnv *env)
     LOOKUP_CLASS(jclass_commoexception, COMMO_PACKAGE "CommoException", false);
     LOOKUP_CLASS(jclass_mpnativeresult, COMMO_PACKAGE "Commo$MPNativeResult", false);
     LOOKUP_METHOD(jmethod_physnetifaceCtor, jclass_physnetiface, 
-                  "<init>", "(J[B)V");
+                  "<init>", "(J[BI)V");
     LOOKUP_METHOD(jmethod_tcpnetifaceCtor, jclass_tcpnetiface, 
                   "<init>", "(JI)V");
     LOOKUP_METHOD(jmethod_streamnetifaceCtor, jclass_streamnetiface,
@@ -1898,6 +1906,35 @@ bool CommoJNI::reflectionInit(JNIEnv *env)
     ret = ret && CHECK_SEND(1, POINT_TO_POINT);
     ret = ret && CHECK_SEND(2, ANY);
 #undef CHECK_SEND
+    if (!ret)
+        goto cleanup;
+
+    // Check mapping of native address modes to java equivalent
+    LOOKUP_CLASS(class_addrMode, COMMO_PACKAGE "NetInterfaceAddressMode", true);
+    LOOKUP_STATIC_METHOD(method_addrModeValues, class_addrMode, "values", "()[L" COMMO_PACKAGE "NetInterfaceAddressMode;");
+    jaddrModeVals = (jobjectArray)env->CallStaticObjectMethod(class_addrMode, method_addrModeValues);
+    if (env->ExceptionOccurred())
+        goto cleanup;
+    
+    numVals = env->GetArrayLength(jaddrModeVals);
+    
+    LOOKUP_METHOD(method_addrModeName, class_addrMode, "name", 
+                  "()Ljava/lang/String;");
+    LOOKUP_METHOD(method_addrModeValue, class_addrMode, "getNativeVal", "()I");
+
+
+#define CHECK_ADDRMODE(i,addrMode) checkEnum(env, method_addrModeName,       \
+                                      method_addrModeValue,                  \
+                                      jaddrModeVals, numVals,                \
+                                      #addrMode,                             \
+                                      NULL,                                  \
+                                      i,                                     \
+                                      PASTE(netinterfaceenums::MODE_, addrMode)) \
+
+    ret = ret && numVals == 2;
+    ret = ret && CHECK_ADDRMODE(0, PHYS_ADDR);
+    ret = ret && CHECK_ADDRMODE(1, NAME);
+#undef CHECK_ADDRMODE
 
     ret = ret && CommoLoggerJNI::reflectionInit(env);
     ret = ret && MissionPackageIOJNI::reflectionInit(env);
@@ -1946,11 +1983,12 @@ CommoJNI::~CommoJNI()
 JNIEXPORT jlong JNICALL
 Java_com_atakmap_commoncommo_Commo_commoCreateNative
     (JNIEnv *env, jclass selfCls, jobject jlogger, jstring jourUID,
-     jstring jourCallsign)
+     jstring jourCallsign, jint jaddressMode)
 {
     jlong ret = 0;
     try {
-        CommoJNI *c = new CommoJNI(env, jlogger, jourUID, jourCallsign);
+        CommoJNI *c = new CommoJNI(env, jlogger, jourUID, jourCallsign,
+                                   jaddressMode);
         ret = PTR_TO_JLONG(c);
     } catch (int &) {
     }

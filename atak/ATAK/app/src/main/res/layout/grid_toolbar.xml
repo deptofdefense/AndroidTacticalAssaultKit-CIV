@@ -9,20 +9,12 @@
 
     <ImageButton
         android:id="@+id/grid_edit"
-        android:padding="@dimen/auto_margin"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:background="@drawable/btn_gray"
-        android:scaleType="fitCenter"
-        android:src="@drawable/ic_menu_settings"/>
+        android:src="@drawable/ic_menu_settings"
+        style="@style/ActionBarViewImageButton"/>
 
     <ImageButton
         android:id="@+id/grid_remove"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:padding="@dimen/auto_margin"
-        android:background="@drawable/btn_gray"
-        android:scaleType="fitCenter"
-        android:src="@drawable/ic_menu_delete"/>
+        android:src="@drawable/ic_menu_delete"
+        style="@style/ActionBarViewImageButton"/>
 
 </com.atakmap.android.tools.ActionBarView>

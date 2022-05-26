@@ -6,6 +6,7 @@ import android.content.Intent;
 
 import android.net.Uri;
 
+import com.atakmap.android.importexport.send.SendDialog;
 import com.atakmap.android.util.AttachmentManager;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.filesystem.HashingUtils;
@@ -287,7 +288,11 @@ public class AttachmentBroadcastReceiver extends DropDownReceiver implements
                     "uid", item.getUID()));
         }
 
-        MissionPackageApi.prepareSend(manifest,
-                DeleteAfterSendCallback.class, false);
+        // Send via content senders
+        SendDialog.Builder b = new SendDialog.Builder(getMapView());
+        b.setIcon(R.drawable.attachment);
+        b.setMissionPackage(manifest);
+        b.setMissionPackageCallback(new DeleteAfterSendCallback());
+        b.show();
     }
 }

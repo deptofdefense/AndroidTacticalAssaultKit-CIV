@@ -130,13 +130,10 @@ public class FauxNavBar implements OnSharedPreferenceChangeListener {
             @Override
             public void run() {
                 setup();
-                if (prefs.getBoolean("atakControlForcePortrait", false)) {
-                    port.setVisibility(View.VISIBLE);
-                    land.setVisibility(View.GONE);
-                } else {
-                    port.setVisibility(View.GONE);
-                    land.setVisibility(View.VISIBLE);
-                }
+                boolean portrait = prefs.getBoolean(
+                        "atakControlForcePortrait", false);
+                setVisible(port, portrait);
+                setVisible(land, !portrait);
             }
         });
     }
@@ -152,8 +149,8 @@ public class FauxNavBar implements OnSharedPreferenceChangeListener {
         activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                port.setVisibility(View.GONE);
-                land.setVisibility(View.GONE);
+                setVisible(port, false);
+                setVisible(land, false);
             }
         });
     }
@@ -329,4 +326,24 @@ public class FauxNavBar implements OnSharedPreferenceChangeListener {
         return null;
     }
 
+    /**
+     * Set visibility by manipulating width/height rather than using
+     * {@link View#setVisibility(int)}
+     *
+     * This is to keep the main ATAK layout from breaking since it uses a
+     * {@link android.widget.RelativeLayout}, which does not like when
+     * relational components have visibility set to {@link View#GONE}.
+     *
+     * @param v View
+     * @param visible True if visible
+     */
+    private static void setVisible(View v, boolean visible) {
+        ViewGroup.LayoutParams lp = v.getLayoutParams();
+        int size = visible ? ViewGroup.LayoutParams.WRAP_CONTENT : 0;
+        if (lp.width == ViewGroup.LayoutParams.MATCH_PARENT)
+            lp.height = size;
+        else
+            lp.width = size;
+        v.setLayoutParams(lp);
+    }
 }

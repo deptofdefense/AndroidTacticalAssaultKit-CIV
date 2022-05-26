@@ -2,7 +2,10 @@
 package com.atakmap.android.gps.bluetooth;
 
 import com.atakmap.android.bluetooth.BluetoothCotManager;
+import com.atakmap.android.cot.ExternalGPSInput;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.coremap.cot.event.CotEvent;
+import com.atakmap.coremap.log.Log;
 
 /**
  * Manages the actual Bluetooth channel and socket reading for NMEA string. Also contains glue code
@@ -16,12 +19,6 @@ class BluetoothGPSCotManager extends BluetoothCotManager {
 
     private static final String TAG = "BluetoothGPSCotManager";
 
-    private static final byte[] address = new byte[] {
-            (byte) 127, (byte) 0, (byte) 0, (byte) 1
-    };
-    private static final int port = 4349;
-    private static final int ttl = 1;
-
     public BluetoothGPSCotManager(final BluetoothGPSNMEAReader reader,
             final MapView mapView,
             final String cotUID, final String name) {
@@ -30,6 +27,10 @@ class BluetoothGPSCotManager extends BluetoothCotManager {
     }
 
     public void publish(String xml) {
-        publish(xml, address, port, ttl);
+        try {
+            ExternalGPSInput.getInstance().process(CotEvent.parse(xml));
+        } catch (Exception e) {
+            Log.e(TAG, "error: ", e);
+        }
     }
 }

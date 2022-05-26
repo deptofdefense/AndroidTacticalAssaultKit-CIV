@@ -19,7 +19,7 @@ public class WktLinestring extends WktGeometry {
 
     public static final String TAG = "WktLinestring";
 
-    List<WktPoint> points;
+    final List<WktPoint> points;
 
     protected WktLinestring(List<WktPoint> points) {
         this.points = points;

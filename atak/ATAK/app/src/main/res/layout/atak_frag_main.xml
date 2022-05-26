@@ -1,66 +1,184 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    android:baselineAligned="false"
-    android:orientation="vertical"
-    android:weightSum="12" >
+<!--
+    This is the primary ATAK UI
 
+    To make editing and visualization easier, all of the views in this layout
+    file have been made visible using the "tools" attribute. This does not mean
+    all these views are visible during normal use.
+
+    The *_side_panel_container views are also color coded for easier
+    visualization. These colors do not show up in the actual app.
+-->
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000">
+
+
+    <!-- Top border container -->
     <FrameLayout
-          android:id="@+id/top_side_panel_container"
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content" />
+        android:id="@+id/top_side_panel_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_toStartOf="@id/faux_button_landscape"
+        tools:background="#800"
+        tools:layout_height="32dp" />
 
-    <LinearLayout 
-         android:layout_width="fill_parent"
-         android:layout_height="0dp"
-         android:baselineAligned="false"
-         android:orientation="horizontal"
-         android:layout_weight="12"
-         android:weightSum="12" >
-
-
-         <RelativeLayout 
-              android:id="@+id/map_parent"
-              android:layout_width="fill_parent"
-              android:layout_height="fill_parent"
-              android:layout_weight="12" >
-     
-              <FrameLayout
-                  android:id="@+id/main_map_container"
-                  android:layout_width="match_parent"
-                  android:layout_height="match_parent" >
-     
-                  <fragment
-                      android:id="@+id/atak_app_fragment"
-                      android:name="com.atakmap.app.ATAKFragment"
-                      android:layout_width="fill_parent"
-                      android:layout_height="fill_parent" />
-          
-              </FrameLayout>
-
-             <FrameLayout
-                 android:id="@+id/left_side_panel_container"
-                 android:layout_width="wrap_content"
-                 android:layout_height="match_parent" />
-     
-              <FrameLayout
-                  android:id="@+id/right_side_panel_container"
-                  android:layout_width="wrap_content"
-                  android:layout_height="match_parent" />
-          
-         </RelativeLayout>
-
-
-
-         <include layout="@layout/atak_faux_button_landscape" />
-    </LinearLayout>
-
+    <!-- Left border container -->
     <FrameLayout
-          android:id="@+id/bottom_side_panel_container"
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content" />
+        android:id="@+id/left_side_panel_container"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_below="@id/top_side_panel_container"
+        android:layout_above="@id/bottom_side_panel_container"
+        tools:background="#008"
+        tools:layout_width="32dp" />
 
-    <include layout="@layout/atak_faux_button_portrait" />
+    <!-- Vertical DEX slider (dexControls setting) -->
+    <include layout="@layout/slider_component"
+        android:id="@+id/vertical_slider"
+        android:layout_height="match_parent"
+        android:layout_width="@dimen/nav_dex_slider_width"
+        android:layout_toRightOf="@id/left_side_panel_container"
+        android:layout_below="@id/top_side_panel_container"
+        android:layout_above="@id/bottom_side_panel_container"
+        android:visibility="gone"
+        tools:visibility="visible"/>
 
-</LinearLayout>
+    <!-- Horizontal DEX slider (dexControls setting) -->
+    <include
+        android:id="@+id/horizontal_slider"
+        layout="@layout/horizontal_slider_component"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/nav_dex_slider_width"
+        android:layout_below="@id/top_side_panel_container"
+        android:layout_toEndOf="@id/vertical_slider"
+        android:layout_toStartOf="@id/right_side_panel_container"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
+    <!-- Anything that overlaps the map goes here -->
+    <RelativeLayout
+        android:id="@+id/map_parent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/horizontal_slider"
+        android:layout_above="@id/bottom_side_panel_container"
+        android:layout_toEndOf="@id/vertical_slider"
+        android:layout_toStartOf="@id/right_side_panel_container">
+
+        <!-- The MapView is placed in here -->
+        <FrameLayout
+            android:id="@+id/main_map_container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <fragment
+                android:id="@+id/atak_app_fragment"
+                android:name="com.atakmap.app.ATAKFragment"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"/>
+
+        </FrameLayout>
+
+        <!-- Tool buttons, zoom controls, and compass -->
+        <include layout="@layout/view_tak_nav"
+            android:id="@+id/atak_app_nav"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+        <!-- Left-side drop-down (used by chat) -->
+        <FrameLayout
+            android:id="@+id/left_drop_down"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:background="@drawable/drop_down_bg"/>
+
+        <!-- Right-side drop-down + embedded toolbar -->
+        <LinearLayout
+            android:id="@+id/right_drop_down_container"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:layout_alignParentEnd="true"
+            tools:layout_width="128dp">
+
+            <!-- Embedded toolbar -->
+            <LinearLayout
+                android:id="@+id/right_drop_down_toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="end"
+                android:background="#000"
+                tools:layout_height="32dp"/>
+
+            <!-- Right-side drop-down (primary drop-down view) -->
+            <FrameLayout
+                android:id="@+id/right_drop_down"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:background="@drawable/drop_down_bg"/>
+
+        </LinearLayout>
+
+    </RelativeLayout>
+
+    <!-- Right border container -->
+    <FrameLayout
+        android:id="@+id/right_side_panel_container"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_above="@id/bottom_side_panel_container"
+        android:layout_below="@id/top_side_panel_container"
+        android:layout_toStartOf="@id/faux_button_landscape"
+        tools:background="#880"
+        tools:layout_width="32dp" />
+
+    <!-- Bottom border container -->
+    <FrameLayout
+        android:id="@+id/bottom_side_panel_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/faux_button_portrait"
+        android:layout_toStartOf="@id/faux_button_landscape"
+        tools:background="#080"
+        tools:layout_height="32dp"/>
+
+    <!-- Portrait faux nav bar -->
+    <include
+        android:id="@+id/faux_button_portrait"
+        layout="@layout/atak_faux_button_portrait"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_alignParentBottom="true"
+        android:layout_toStartOf="@id/faux_button_landscape"
+        tools:layout_height="wrap_content" />
+
+    <!-- Landscape faux nav bar -->
+    <include
+        android:id="@+id/faux_button_landscape"
+        layout="@layout/atak_faux_button_landscape"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_alignParentEnd="true"
+        tools:layout_width="wrap_content"/>
+
+    <!-- Self coordinate bar (not used in 4.5)
+    <com.atakmap.android.navigation.SelfCoordBottomBar
+        android:layout_width="match_parent"
+        android:layout_height="43dp"
+        android:background="@color/black"
+        android:fontFamily="@font/nunito_regular"
+        android:textSize="12sp"
+        android:textColor="@color/pale_silver"
+        android:textAlignment="viewStart"
+        android:text="THIS IS A TEST"
+        android:paddingStart="8dp"
+        android:paddingEnd="5dp"/>
+    -->
+
+</RelativeLayout>

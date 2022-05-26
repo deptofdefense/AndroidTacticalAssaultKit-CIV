@@ -10,6 +10,8 @@ Java and C++ code shared across TAK applications
 | ----- | ----- |
 | aarbundle | Aggregator project used to construct Android AAR from other sub-projects |
 | annotation | Project containing Java annotations used in `takkernel` |
+| controlled | Project containing code that is not publicly releasable. This project is completely separable and not a dependency of the core `takkernel`. |
+| controlledaarbundle | Aggregator project used to construct Android AAR from other sub-projects that contain code that is not publicly releasable |
 | shared | Project containing the shared data models and business logic for TAK Java based applications |
 | engine | Project containing the TAK map engine API and implementation |
 | gradle/ | Contains Gradle distribution and custom scripting |
@@ -17,7 +19,21 @@ Java and C++ code shared across TAK applications
 
 ## Dependency Graph
 
-`:annotation:lib` > `:port:lib` > `:engine:lib` > `:shared:lib` [ > `:aarbundle:lib`]
+```
+annotation
+    |
+  port
+    |
+ engine
+    |
+ shared
+    |  \
+    |    ---
+aarbundle    \
+          controlled
+              |
+       controlledaarbundle
+```
 
 # Build System
 

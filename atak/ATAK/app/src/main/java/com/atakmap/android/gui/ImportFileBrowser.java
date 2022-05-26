@@ -368,7 +368,9 @@ public class ImportFileBrowser extends LinearLayout implements
                 Collections.sort(_fileList, new FileItemComparator());
             }
         } else {
-            _fileList.add(createItem("Permission Denied - Unable to Read Directory Contents", null,
+            _fileList.add(createItem(
+                    "Permission Denied - Unable to Read Directory Contents",
+                    null,
                     FileItem.FILE));
         }
     }
@@ -488,11 +490,10 @@ public class ImportFileBrowser extends LinearLayout implements
             return;
 
         if (Build.VERSION.SDK_INT >= 30) {
-            if (_pathDirsList.get(1).equals("storage") && _pathDirsList.size() == 3)
+            if (_pathDirsList.get(1).equals("storage")
+                    && _pathDirsList.size() == 3)
                 return;
         }
-
-
 
         String s = _pathDirsList.remove(_pathDirsList.size() - 1);
         int lastIndex = _path.toString().lastIndexOf(s);

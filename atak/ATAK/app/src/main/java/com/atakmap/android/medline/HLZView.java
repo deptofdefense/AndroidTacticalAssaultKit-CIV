@@ -531,8 +531,8 @@ public class HLZView extends LinearLayout
                 if (zonePoint != null) {
                     _mapView.getRootGroup().removeItem(zonePoint);
                 }
-                GeoPointMetaData p = _mapView.inverse(event.getPoint().x,
-                        event.getPoint().y, MapView.InverseMode.RayCast);
+                GeoPointMetaData p = _mapView.inverse(event.getPointF().x,
+                        event.getPointF().y, MapView.InverseMode.RayCast);
                 setBtnCustomZone(false);
                 makeZonePoint(p.get());
                 getLocationData(p.get());

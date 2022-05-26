@@ -4,16 +4,20 @@ apply from: project.file('gradle/utils.gradle'), to: project
 ext {
     configProject = project;
 
-    kernelBuildTarget = getProperty(rootProject, 'kernelBuildTarget', 'java')
+    // Define build target Strings
+    javaBuildTarget = 'java'
+    androidBuildTarget = 'android'
 
-    isAndroidKernelBuild = kernelBuildTarget == 'android'
-    isJavaKernelBuild = kernelBuildTarget == 'java'
+    kernelBuildTarget = getProperty(rootProject, 'kernelBuildTarget', javaBuildTarget)
+
+    isAndroidKernelBuild = kernelBuildTarget == androidBuildTarget
+    isJavaKernelBuild = kernelBuildTarget == javaBuildTarget
 
     if (!isAndroidKernelBuild && !isJavaKernelBuild) {
         throw new GradleException('Invalid kernelBuildTarget: ' + kernelBuildTarget)
     }
 
-    skipPublications = ['android']
+    skipPublications = [androidBuildTarget]
 }
 
-println('takkernel build target: ' + kernelBuildTarget)
+logger.info('takkernel build target: ' + kernelBuildTarget)

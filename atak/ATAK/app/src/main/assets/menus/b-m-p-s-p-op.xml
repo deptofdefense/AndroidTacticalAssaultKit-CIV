@@ -10,13 +10,13 @@
     
     <button icon='icons/self.png'
             onClick='actions/snaptoself.xml' />
-    
-    <button icon='icons/green_flag.png'
-            onClick='actions/startgoto.xml' />
-            
+
+    <button icon='icons/green_flag_radial.png'
+            onClick='actions/startgoto.xml'
+            selected='${hounding}'/>
+
     <button icon='icons/pairing_line.png'
-            onClick='actions/pairingline.xml'
-            selected='${pairingline_on}' />
+            onClick='actions/pairingline.xml'/>
             
     <button icon='icons/move.png'
             submenu='menus/mgrs_entry_submenu.xml'

@@ -2,10 +2,10 @@
 package com.atakmap.android.video;
 
 import android.graphics.Matrix;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.RelativeLayout;
 
-import com.atakmap.annotations.DeprecatedApi;
 import com.partech.pgscmedia.MediaProcessor;
 import com.partech.pgscmedia.frameaccess.DecodedMetadataItem;
 import com.partech.pgscmedia.frameaccess.KLVData;
@@ -21,27 +21,62 @@ public class VideoViewLayer {
     final String id;
     final View v;
     final RelativeLayout.LayoutParams rlp;
-    final MetadataCallback mcb;
+    final boolean enableStockMetadata;
 
     private boolean alwaysOn;
     MediaMetadataDecoder decoder;
     MediaProcessor processor;
     ConnectionEntry entry;
+    VideoDropDownReceiver vddr;
+    private boolean hasMetadata;
 
     /**
-     * This interface has been deprecated in favor of subclassing the same method.
-     * @deprecated
+     * Create a video view layer as a set <id, view, layout, metadatacallback>.
+     * @param id the unique identifier that describes the layer.
+     * @param v the view that is to be displayed
+     * @param rlp the layout parameters associated with the view.
      */
-    @Deprecated
-    @DeprecatedApi(since = "4.2.1", forRemoval = true, removeAt = "4.5")
-    public interface MetadataCallback {
-        /**
-         * The metadata change listener.  This supplies both decoded and raw data 
-         * @param rawData The raw metadata wrapped in a KLVData object.
-         * @param items the decoded values as ids and items.
-         */
-        void metadataChanged(KLVData rawData,
-                Map<DecodedMetadataItem.MetadataItemIDs, DecodedMetadataItem> items);
+    public VideoViewLayer(final String id, final View v,
+            final RelativeLayout.LayoutParams rlp) {
+        this(id, v, rlp, true, true);
+    }
+
+    /**
+     * Construct a Video View Layer with a provided identifier and the view to be drawn over the
+     * top of the video being played.
+     * @param id the id of the video view
+     * @param v the view
+     * @param rlp the layout parameters for the view
+     * @param alwaysOn if the view needs to be explicitly defined in the layers intent string array
+     *                 extra (false) or if it is always going to be shown (true).
+     */
+    public VideoViewLayer(final String id, final View v,
+            final RelativeLayout.LayoutParams rlp,
+            final boolean alwaysOn) {
+        this(id, v, rlp, alwaysOn, true);
+
+    }
+
+    /**
+     * Construct a Video View Layer with a provided identifier and the view to be drawn over the
+     * top of the video being played.
+     * @param id the id of the video view
+     * @param v the view
+     * @param rlp the layout parameters for the view
+     * @param alwaysOn if the view needs to be explicitly defined in the layers intent string array
+     *                 extra (false) or if it is always going to be shown (true).
+     * @param enableStockMetadata if set to false, the stock metadata display for the frame center
+     *                              will not be rendered.   It is up to this video view layer to
+     *                              render all desired metadata.
+     */
+    public VideoViewLayer(final String id, final View v,
+            final RelativeLayout.LayoutParams rlp,
+            final boolean alwaysOn, final boolean enableStockMetadata) {
+        this.id = id;
+        this.v = v;
+        this.rlp = rlp;
+        this.alwaysOn = alwaysOn;
+        this.enableStockMetadata = enableStockMetadata;
     }
 
     /**
@@ -53,11 +88,15 @@ public class VideoViewLayer {
      */
     final void init(final MediaProcessor processor,
             final MediaMetadataDecoder decoder,
-            final ConnectionEntry entry) {
+            final ConnectionEntry entry,
+            final VideoDropDownReceiver vddr,
+            final boolean hasMetadata) {
         this.processor = processor;
         this.decoder = decoder;
         this.entry = entry;
-        start(entry);
+        this.vddr = vddr;
+
+        start(entry, hasMetadata);
     }
 
     /**
@@ -70,7 +109,41 @@ public class VideoViewLayer {
         }
     }
 
-    public void start(ConnectionEntry connectionEntry) {
+    /**
+     * Called when video processing has started.
+     * @param connectionEntry the connection entry representing the video
+     */
+    public void start(ConnectionEntry connectionEntry, boolean hasMetadata) {
+    }
+
+    /**
+     * Called when video processing has stopped.
+     * @param connectionEntry the connection entry representing the video
+     */
+    public void stop(ConnectionEntry connectionEntry) {
+    }
+
+    /**
+     * Called when video processing was unable to start due to an error.
+     * @param connectionEntry the connection entry representing the video
+     */
+    public void error(ConnectionEntry connectionEntry) {
+    }
+
+    /**
+     * Call to close the drop down that is currently open.   This can be used by
+     * implementations to close a drop down that is playing the video.
+     */
+    public final void close() {
+        if (vddr != null && !vddr.isClosed())
+            vddr.closeDropDown();
+    }
+
+    /**
+     * Dispose the components that are set via the initialize
+     */
+    public void dispose() {
+        vddr = null;
     }
 
     /**
@@ -114,56 +187,6 @@ public class VideoViewLayer {
      */
     public void metadataChanged(final KLVData rawData,
             final Map<DecodedMetadataItem.MetadataItemIDs, DecodedMetadataItem> items) {
-        if (mcb != null)
-            mcb.metadataChanged(rawData, items);
-    }
-
-    /**
-     * Create a video view layer as a set <id, view, layout, metadatacallback>.
-     * @param id the unique identifier that describes the layer.
-     * @param v the view that is to be displayed
-     * @param rlp the layout parameters associated with the view.
-     * @param mcb the metadata callback associated with the view.
-     * This interface has been deprecated in favor of subclassing the same method.
-     * @deprecated
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.2.1", forRemoval = true, removeAt = "4.5")
-    public VideoViewLayer(final String id, final View v,
-            final RelativeLayout.LayoutParams rlp, MetadataCallback mcb) {
-        this.id = id;
-        this.v = v;
-        this.rlp = rlp;
-        this.mcb = mcb;
-        this.alwaysOn = true;
-    }
-
-    /**
-     * Construct a Video View Layer with a provided identifier and the view to be drawn over the
-     * top of the video being played.
-     * @param id the id of the video view
-     * @param v the view
-     * @param rlp the layout parameters for the view
-     * @param alwaysOn if the view needs to be explicitly defined in the layers intent string array
-     *                 extra (false) or if it is always going to be shown (true).
-     */
-    public VideoViewLayer(final String id, final View v,
-            final RelativeLayout.LayoutParams rlp,
-            final boolean alwaysOn) {
-        this(id, v, rlp, null);
-        this.alwaysOn = alwaysOn;
-    }
-
-    /**
-     * Construct a Video View Layer with a provided identifier and the view to be drawn over the
-     * top of the video being played.
-     * @param id the id of the video view
-     * @param v the view
-     * @param rlp the layout parameters for the view
-     */
-    public VideoViewLayer(final String id, final View v,
-            final RelativeLayout.LayoutParams rlp) {
-        this(id, v, rlp, true);
     }
 
     /**
@@ -175,5 +198,19 @@ public class VideoViewLayer {
      */
     public boolean isAlwaysOn() {
         return alwaysOn;
+    }
+
+    /**
+     * Get a copy of the connection entry
+     * 
+     * @return
+     */
+    public ConnectionEntry getEntry() {
+        ConnectionEntry copy = new ConnectionEntry();
+        copy.copy(entry);
+        return copy;
+    }
+
+    public void onLongPress(MotionEvent e) {
     }
 }

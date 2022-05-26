@@ -5,6 +5,7 @@
 
     
     <!-- font size big enough for most things; MGRS coordinate, etc, so at least ~18 characters of MGRS in a typical dropdown width -->
+    <dimen name="textSize">14sp</dimen>
     <dimen name="fontSize">14sp</dimen>        
 
     <dimen name="draper_verylarge_font">18sp</dimen>
@@ -45,6 +46,67 @@
     <dimen name="button_small">32dp</dimen>
 
     <dimen name="top_bar_button_padding">5dp</dimen>
+
+    <dimen name="nav_child_padding">8dp</dimen>
+    <dimen name="nav_child_pointer_padding">16dp</dimen>
+    <dimen name="nav_child_width">64dp</dimen>
+    <dimen name="nav_child_button_size">40dp</dimen>
+    <dimen name="nav_button_size">48dp</dimen>
+    <dimen name="nav_zoom_button_height">96dp</dimen>
+    <dimen name="nav_slider_icon_size">32dp</dimen>
+    <dimen name="nav_dex_slider_width">57dp</dimen>
+
+    <dimen name="nav_grid_item_size">80dp</dimen>
+    <dimen name="callsign_portrait_height">66dp</dimen>
+    <dimen name="callsign_landscape_height">23dp</dimen>
+
+    <dimen name="text_size_small">12sp</dimen>
+    <dimen name="text_size_medium">14sp</dimen>
+    <dimen name="text_size_large">16sp</dimen>
+
+    <dimen name="padding_small">4dp</dimen>
+    <dimen name="padding_medium">10dp</dimen>
+    <dimen name="padding_large">16dp</dimen>
+
+    <dimen name="margin_small">4dp</dimen>
+    <dimen name="margin_medium">10dp</dimen>
+    <dimen name="margin_large">16dp</dimen>
+
+    <dimen name="toggle_width">132dp</dimen>
+    <dimen name="toggle_height">41dp</dimen>
+    <dimen name="toggle_button_width">38dp</dimen>
+    <dimen name="toggle_button_padding">7dp</dimen>
+    <dimen name="toggle_textview_width">56dp</dimen>
+
+    <dimen name="list_item_height">44dp</dimen>
+    <dimen name="list_item_large_height">62dp</dimen>
+    <dimen name="list_item_drawer_height">49dp</dimen>
+    <dimen name="list_item_internal_margin">4dp</dimen>
+    <dimen name="list_item_title_icon_size">24dp</dimen>
+    <dimen name="list_item_large_title_icon_size">48dp</dimen>
+    <dimen name="list_item_title_icon_margin">10dp</dimen>
+    <dimen name="list_item_title_margin">8dp</dimen>
+    <dimen name="list_item_action_icon_size">36dp</dimen>
+
+    <dimen name="alert_dialog_corner_radius">18dp</dimen>
+    <dimen name="standard_dialog_corner_radius">6dp</dimen>
+    <dimen name="message_bar_height">34dp</dimen>
+
+    <dimen name="alert_button_height">48dp</dimen>
+
+    <dimen name="button_primary_height">40dp</dimen>
+    <dimen name="button_secondary_height">44dp</dimen>
+
+    <dimen name="button_marker_size">48dp</dimen>
+    <dimen name="button_marker_padding">8dp</dimen>
+
+    <dimen name="textview_height">44dp</dimen>
+
+    <dimen name="edit_text_drawable_padding">7dp</dimen>
+
+    <dimen name="dynamic_compass_height">54dp</dimen>
+    <dimen name="dynamic_compass_text_size">12sp</dimen>
+    <dimen name="dynamic_compass_arrow_padding">14dp</dimen>
 
 </resources>
 

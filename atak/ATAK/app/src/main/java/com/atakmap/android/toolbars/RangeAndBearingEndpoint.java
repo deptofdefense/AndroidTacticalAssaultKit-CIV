@@ -24,6 +24,7 @@ public class RangeAndBearingEndpoint extends MetaMapPoint implements
         super(point, uid);
         setTitle("endpoint");
         setMetaString("type", "u-r-b-endpoint");
+        setMovable(true);
     }
 
     static public void setTool(RangeAndBearingEndpointMoveTool tool) {

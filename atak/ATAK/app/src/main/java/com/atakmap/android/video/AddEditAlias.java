@@ -4,6 +4,9 @@ package com.atakmap.android.video;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.text.Editable;
+import android.text.method.HideReturnsTransformationMethod;
+import android.text.method.PasswordTransformationMethod;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup.LayoutParams;
@@ -20,15 +23,18 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.graphics.Color;
 
+import com.atakmap.android.util.AfterTextChangedWatcher;
 import com.atakmap.android.util.SimpleItemSelectedListener;
 import com.atakmap.android.video.manager.VideoManager;
 import com.atakmap.annotations.FortifyFinding;
-import com.atakmap.comms.NetworkDeviceManager;
-import com.atakmap.comms.NetworkDeviceManager.NetworkDevice;
+import com.atakmap.comms.NetworkManagerLite;
+import com.atakmap.comms.NetworkManagerLite.NetworkDevice;
 import com.atakmap.android.video.ConnectionEntry.Protocol;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
+
+import org.apache.commons.lang.StringUtils;
 
 import java.net.NetworkInterface;
 import java.net.URI;
@@ -87,6 +93,11 @@ public class AddEditAlias {
     private Spinner preferredNetworkSpinner = null;
     private List<NetworkDeviceStringWrapper> networkList = null;
 
+    private LinearLayout videoUsernameLayout;
+    private TextView videoUsername;
+    private TextView videoPassword;
+    private CheckBox videoPasswordShowCheckbox;
+
     // initial values if editing an alias for easy comparison to see if anything has changed
     private int initialProto = 0;
     private String initialAddress = "";
@@ -95,11 +106,15 @@ public class AddEditAlias {
     private String initialPath = "";
     private String initialTimeout = "";
 
+    private String initialUsername = "";
+    @FortifyFinding(finding = "Password Management: Hardcoded Password", rational = "This is a empty assignment just for the purposes of making the code simpler instead of extra null pointer checks.    This is not hardcoded.")
+    private String initialPassword = "";
+
     @FortifyFinding(finding = "Password Management: Hardcoded Password", rational = "This is a empty assignment just for the purposes of making the code simpler instead of extra null pointer checks.    This is not hardcoded.")
     private String initialPassphrase = "";
     private boolean initialBuffered = false;
     private String initialBufferTime = "";
-    private String preferredMacAddress = "";
+    private String preferredAddress = "";
 
     private final Context context;
 
@@ -144,6 +159,18 @@ public class AddEditAlias {
 
                 String aliasKey = alias.getText().toString();
                 String aliasVal = url.getText().toString();
+                if (p == Protocol.RTSP ||
+                        p == Protocol.RTMP ||
+                        p == Protocol.RTMPS ||
+                        p == Protocol.HTTP ||
+                        p == Protocol.HTTPS) {
+                    String userName = videoUsername.getText().toString();
+                    String password = videoPassword.getText().toString();
+                    if (!StringUtils.isBlank(userName)
+                            && !StringUtils.isBlank(password)) {
+                        aliasVal = userName + ":" + password + "@" + aliasVal;
+                    }
+                }
                 String host = aliasVal.contains("/") ? aliasVal
                         .substring(0,
                                 aliasVal.indexOf("/"))
@@ -222,11 +249,12 @@ public class AddEditAlias {
                 ce.setPath(path);
                 ce.setProtocol(p);
                 ce.setRtspReliable(rtspReliable.isChecked() ? 1 : 0);
+
                 if (p == Protocol.SRT)
                     ce.setPassphrase(passphrase.getText().toString());
                 ce.setIgnoreEmbeddedKLV(ignoreKLVCB.isChecked());
-                if (!FileSystemUtils.isEmpty(preferredMacAddress))
-                    ce.setMacAddress(preferredMacAddress);
+                if (!FileSystemUtils.isEmpty(preferredAddress))
+                    ce.setPreferredInterfaceAddress(preferredAddress);
                 ce.setBufferTime(-1);
 
                 if (bufferEnabled.isChecked()) {
@@ -389,15 +417,15 @@ public class AddEditAlias {
                             int pos, long id) {
                         NetworkDevice nd = ((NetworkDeviceStringWrapper) parent
                                 .getItemAtPosition(pos)).nd;
-
                         if (nd == null)
-                            preferredMacAddress = "";
+                            preferredAddress = "";
                         else
-                            preferredMacAddress = nd.macaddr;
+                            preferredAddress = NetworkManagerLite
+                                    .getAddress(nd.getInterface());
 
                         if (view instanceof TextView)
                             ((TextView) view).setTextColor(Color.WHITE);
-                        // Log.d(TAG, "mac addres set to: " + preferredMacAddress);
+                        Log.d(TAG, "address set to: " + preferredAddress);
                     }
 
                 });
@@ -411,7 +439,34 @@ public class AddEditAlias {
         fileSep = view.findViewById(R.id.alias_file_separator);
         file.setNextFocusDownId(R.id.alias_text);
 
-        List<NetworkDevice> list = NetworkDeviceManager.getNetworkDevices();
+        videoUsernameLayout = view.findViewById(R.id.video_username_layout);
+        videoUsername = view.findViewById(R.id.video_username);
+        videoPassword = view.findViewById(R.id.video_password);
+        videoPasswordShowCheckbox = view
+                .findViewById(R.id.video_password_checkbox);
+
+        videoPasswordShowCheckbox.setSelected(false);
+        videoPassword.setTransformationMethod(
+                PasswordTransformationMethod.getInstance());
+        videoPasswordShowCheckbox.setOnCheckedChangeListener(
+                new CompoundButton.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(CompoundButton compoundButton,
+                            boolean isChecked) {
+                        if (videoPassword
+                                .getTransformationMethod() == PasswordTransformationMethod
+                                        .getInstance()) {
+                            videoPassword.setTransformationMethod(
+                                    HideReturnsTransformationMethod
+                                            .getInstance());
+                        } else {
+                            videoPassword.setTransformationMethod(
+                                    PasswordTransformationMethod.getInstance());
+                        }
+                    }
+                });
+
+        List<NetworkDevice> list = NetworkManagerLite.getNetworkDevices();
 
         // need to prepare to populate it with some defaults wlan0, eth0, tun0, tun1
         if (list.size() == 0) {
@@ -424,12 +479,7 @@ public class AddEditAlias {
                 try {
                     NetworkInterface ni = NetworkInterface.getByName(iface);
                     if (ni != null && ni.isUp()) {
-                        NetworkDevice nd = new NetworkDevice(
-                                NetworkDeviceManager.getMacAddress(ni),
-                                iface, new NetworkDevice.Type[] {
-                                        NetworkDevice.Type.UNKNOWN
-                                },
-                                NetworkDevice.Configuration.NONE);
+                        NetworkDevice nd = new NetworkDevice(iface);
                         Log.d(TAG, "discovered: " + nd);
                         list.add(nd);
                     }
@@ -467,10 +517,13 @@ public class AddEditAlias {
         if (networkList != null && currentCE != null) {
             for (int i = 0; i < networkList.size(); ++i) {
                 NetworkDeviceStringWrapper ndsw = networkList.get(i);
-                if ((ndsw.nd != null)
-                        && (ndsw.nd.macaddr
-                                .equals(currentCE.getMacAddress()))) {
-                    preferredNetworkSpinner.setSelection(i);
+                if (ndsw.nd != null) {
+                    String address = NetworkManagerLite
+                            .getAddress(ndsw.nd.getInterface());
+                    if (address != null && address
+                            .equals(currentCE.getPreferredInterfaceAddress())) {
+                        preferredNetworkSpinner.setSelection(i);
+                    }
                 }
             }
         }
@@ -504,7 +557,45 @@ public class AddEditAlias {
                 }
             }
             url.setText(urlString);
-            initialAddress = urlString;
+
+            if ((currentCE.getProtocol().equals(Protocol.RTSP) ||
+                    currentCE.getProtocol().equals(Protocol.HTTP) ||
+                    currentCE.getProtocol().equals(Protocol.HTTPS) ||
+                    currentCE.getProtocol().equals(Protocol.RTMP) ||
+                    currentCE.getProtocol().equals(Protocol.RTMPS))
+                    && urlString != null && urlString.contains("@")) {
+                String[] userPassIp = ConnectionEntry.getUserPassIp(urlString);
+                if (!StringUtils.isBlank(userPassIp[0])
+                        && !StringUtils.isBlank(userPassIp[1])) {
+                    initialUsername = userPassIp[0];
+                    initialPassword = userPassIp[1];
+                    videoUsername.setText(initialUsername);
+                    videoPassword.setText(initialPassword);
+                    if (!FileSystemUtils.isEmpty(initialPassword)) {
+                        videoPasswordShowCheckbox.setEnabled(false);
+                        videoPassword.addTextChangedListener(
+                                new AfterTextChangedWatcher() {
+                                    @Override
+                                    public void afterTextChanged(Editable s) {
+                                        if (s != null && s.length() == 0) {
+                                            videoPasswordShowCheckbox
+                                                    .setEnabled(true);
+                                            videoPassword
+                                                    .removeTextChangedListener(
+                                                            this);
+                                        }
+                                    }
+                                });
+                    } else {
+                        videoPasswordShowCheckbox.setEnabled(true);
+                    }
+                }
+                initialAddress = userPassIp[2];
+                url.setText(userPassIp[2]);
+            } else {
+                initialAddress = urlString;
+            }
+
             String selectedProtocol = currentCE.getProtocol().toString();
 
             proto.setSelection(connectionProtos.indexOf(selectedProtocol));
@@ -553,6 +644,14 @@ public class AddEditAlias {
 
     }
 
+    private void setLoginVisible(int visible) {
+        videoUsernameLayout.setVisibility(visible);
+        if (visible == View.GONE || visible == View.INVISIBLE) {
+            videoUsername.setText("");
+            videoPassword.setText("");
+        }
+    }
+
     /**
      * Sets the UI to match the selected spinner protocol.
      */
@@ -565,6 +664,16 @@ public class AddEditAlias {
             preferredNetwork.setVisibility(View.GONE);
         }
         rtspReliable.setVisibility(View.GONE);
+
+        if (p == Protocol.RTSP ||
+                p == Protocol.RTMP ||
+                p == Protocol.RTMPS ||
+                p == Protocol.HTTP ||
+                p == Protocol.HTTPS) {
+            setLoginVisible(View.VISIBLE);
+        } else {
+            setLoginVisible(View.GONE);
+        }
 
         if (p == Protocol.RAW ||
                 p == Protocol.HTTP ||
@@ -622,14 +731,16 @@ public class AddEditAlias {
             fileSep.setVisibility(View.GONE);
             file.setVisibility(View.GONE);
             file.setFocusable(false);
-
-            passphraseLabel.setVisibility(View.VISIBLE);
-            passphrase.setVisibility(View.VISIBLE);
-            passphrase.setFocusable(true);
-            passphrase.setEnabled(true);
-            passphrase.setFocusableInTouchMode(true);
-
         }
+        setPassphraseVisibility(p == Protocol.SRT);
+    }
+
+    private void setPassphraseVisibility(boolean visible) {
+        passphraseLabel.setVisibility(visible ? View.VISIBLE : View.GONE);
+        passphrase.setVisibility(visible ? View.VISIBLE : View.GONE);
+        passphrase.setFocusable(visible);
+        passphrase.setEnabled(visible);
+        passphrase.setFocusableInTouchMode(visible);
     }
 
     /**
@@ -639,7 +750,7 @@ public class AddEditAlias {
      */
     private boolean entryChanged(ConnectionEntry ce) {
         String name = alias.getText().toString();
-        if (!name.contentEquals(prevAlias))
+        if (!name.equals(prevAlias))
             return true;
         Log.v(TAG, "name is the same");
 
@@ -648,8 +759,8 @@ public class AddEditAlias {
             return true;
         Log.v(TAG, "protocol is the same");
 
-        if (!(networkTimeout.getText().toString() + "000")
-                .contentEquals(initialTimeout)) {
+        if (!(networkTimeout.getText().toString())
+                .equals(initialTimeout)) {
             return true;
         }
 
@@ -666,8 +777,8 @@ public class AddEditAlias {
         Log.v(TAG, "hasBuffer is the same");
 
         if (bufferEnabled.isChecked()) {
-            if (!(bufferTime.getText().toString() + "000")
-                    .contentEquals(initialBufferTime))
+            if (!(bufferTime.getText().toString())
+                    .equals(initialBufferTime))
                 return true;
 
             Log.v(TAG, "Buffer Time is the same");
@@ -676,21 +787,33 @@ public class AddEditAlias {
         if (initialAddress == null)
             initialAddress = "";
 
-        if (!url.getText().toString().contentEquals(initialAddress))
+        if (!url.getText().toString().equals(initialAddress))
             return true;
 
         if (initialIgnoreKLV != ignoreKLVCB.isChecked())
             return true;
 
         if (ce.getProtocol() == Protocol.RTSP) {
-            if (!port.getText().toString().contentEquals(initialPort))
+            if (!port.getText().toString().equals(initialPort))
                 return true;
-            if (!file.getText().toString().contentEquals(initialPath))
+            if (!file.getText().toString().equals(initialPath))
                 return true;
         }
+
+        if (ce.getProtocol() == Protocol.RTSP ||
+                ce.getProtocol() == Protocol.RTMP ||
+                ce.getProtocol() == Protocol.RTMPS ||
+                ce.getProtocol() == Protocol.HTTP ||
+                ce.getProtocol() == Protocol.HTTPS) {
+            if (!videoUsername.getText().toString().equals(initialUsername))
+                return true;
+            if (!videoPassword.getText().toString().equals(initialPassword))
+                return true;
+        }
+
         if (ce.getProtocol() == Protocol.SRT) {
             if (!passphrase.getText().toString()
-                    .contentEquals(initialPassphrase))
+                    .equals(initialPassphrase))
                 return true;
         }
 
@@ -699,7 +822,7 @@ public class AddEditAlias {
                 ce.getProtocol() == Protocol.RTP ||
                 ce.getProtocol() == Protocol.SRT)
 
-            if (!port.getText().toString().contentEquals(initialPort))
+            if (!port.getText().toString().equals(initialPort))
                 return true;
 
         Log.v(TAG, "url is the same");
@@ -718,6 +841,11 @@ public class AddEditAlias {
             } catch (NumberFormatException nfe) {
                 Log.e(TAG, "not a valid integer: " + ui.getText(), nfe);
             }
+        }
+        //Do not display an error if RTSP, Just use Default Port 554
+        if ("RTSP".equals(fieldName)
+                && FileSystemUtils.isEmpty((String) ui.getText())) {
+            return false;
         }
         ui.requestFocus();
         Toast.makeText(context, R.string.video_text33, Toast.LENGTH_LONG)
@@ -777,8 +905,14 @@ public class AddEditAlias {
                 protocol == Protocol.RTP ||
                 protocol == Protocol.SRT) {
 
-            if (!ensurePort(protocol.toString(), port))
+            if (!ensurePort(protocol.toString(), port)) {
+                if (port.getText().toString().isEmpty()
+                        && protocol == ConnectionEntry.Protocol.RTSP) {
+                    port.setText("554");
+                    return true;
+                }
                 return false;
+            }
         }
 
         try {
@@ -816,7 +950,39 @@ public class AddEditAlias {
             }
         }
 
+        if (protocol == Protocol.RTSP ||
+                protocol == Protocol.RTMP ||
+                protocol == Protocol.RTMPS ||
+                protocol == Protocol.HTTP ||
+                protocol == Protocol.HTTPS) {
+
+            boolean check = checkUserPass(
+                    context.getString(R.string.username_colon), videoUsername);
+            if (!check)
+                return false;
+            check = checkUserPass(context.getString(R.string.password_colon),
+                    videoPassword);
+            if (!check)
+                return false;
+        }
         return checkAlias();
+    }
+
+    private boolean checkUserPass(String field_name, TextView textView) {
+        String value = textView.getText().toString();
+        String invalid_input = context.getString(R.string.invalid_input);
+        String invalid_characters = "/@:<>[]%#\"?/{}";
+        for (int i = 0; i < invalid_characters.length(); ++i) {
+            String c = invalid_characters.charAt(i) + "";
+            if (value.contains(c)) {
+                textView.requestFocus();
+                Toast.makeText(context,
+                        field_name + " " + invalid_input + " '" + c + "'",
+                        Toast.LENGTH_LONG).show();
+                return false;
+            }
+        }
+        return true;
     }
 
     private boolean checkAlias() {
@@ -859,7 +1025,7 @@ public class AddEditAlias {
 
         public String toString() {
             if (nd != null) {
-                return nd.label;
+                return nd.getLabel();
             } else {
                 return "default";
             }

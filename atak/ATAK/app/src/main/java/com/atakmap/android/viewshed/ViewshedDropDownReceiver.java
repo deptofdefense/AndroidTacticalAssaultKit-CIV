@@ -70,10 +70,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
 
-import static com.atakmap.android.viewshed.ContourLinesOverlay.CONTOUR_PREFERENCE_INTERVAL_KEY;
-import static com.atakmap.android.viewshed.ContourLinesOverlay.CONTOUR_PREFERENCE_LINE_COLOR_KEY;
-import static com.atakmap.android.viewshed.ContourLinesOverlay.CONTOUR_PREFERENCE_MAJOR_WIDTH_KEY;
-
 public class ViewshedDropDownReceiver extends DropDownReceiver implements
         OnPointChangedListener, MapEventDispatcher.MapEventDispatchListener,
         OnGroupChangedListener, OnClickListener {
@@ -96,7 +92,8 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
     private PointMapItem selectedLineMarker1 = null;
     private PointMapItem selectedLineMarker2 = null;
 
-    //These hold the viewshed marker uids and their values
+    private boolean viewshedListShowing = false;
+
     private final HashMap<String, Double> radiusMap = new HashMap<>();
     private final HashMap<String, Integer> heightMap = new HashMap<>();
     private final HashMap<String, Integer> intensityMap = new HashMap<>();
@@ -184,8 +181,26 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
     @Override
     public void onMapEvent(MapEvent event) {
         if (event.getType().equals(MapEvent.ITEM_REMOVED)) {
+
+            if (viewshedListShowing) {
+                for (int i = 0; i < viewshedListView.getChildCount(); i++) {
+                    View childView = viewshedListView.getChildAt(i);
+                    CheckBox cb = childView.findViewById(R.id.selectCB);
+
+                    String uid = (String) cb.getTag();
+                    if (event.getItem().getUID().equals(uid)) {
+                        viewshedListView.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                viewshedListView.removeView(childView);
+                            }
+                        });
+                    }
+                }
+            }
             if (event.getItem() == selectedMarker) {
                 setMarker(null);
+
             }
         }
     }
@@ -882,7 +897,9 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
                 .setDropDownViewResource(R.layout.simple_spinner_item);
         intervalSpinner.setAdapter(intervalAdapter);
         intervalSpinner.setSelection(intervalAdapter.getPosition(
-                prefs.getInt(CONTOUR_PREFERENCE_INTERVAL_KEY, 20)));
+                prefs.getInt(
+                        ContourLinesOverlay.CONTOUR_PREFERENCE_INTERVAL_KEY,
+                        20)));
         intervalSpinner.setOnItemSelectedListener(
                 new AdapterView.OnItemSelectedListener() {
                     @Override
@@ -896,7 +913,9 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
                         if (i == null)
                             return;
 
-                        prefs.edit().putInt(CONTOUR_PREFERENCE_INTERVAL_KEY, i)
+                        prefs.edit().putInt(
+                                ContourLinesOverlay.CONTOUR_PREFERENCE_INTERVAL_KEY,
+                                i)
                                 .apply();
                     }
 
@@ -929,21 +948,25 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
         SeekBar _thickSeek = cView
                 .findViewById(R.id.drawingShapeStrokeSeek);
         _thickSeek.setProgress(prefs
-                .getInt(CONTOUR_PREFERENCE_MAJOR_WIDTH_KEY, 4));
+                .getInt(ContourLinesOverlay.CONTOUR_PREFERENCE_MAJOR_WIDTH_KEY,
+                        4));
         _thickSeek.setOnSeekBarChangeListener(
                 new SimpleSeekBarChangeListener() {
                     @Override
                     public void onProgressChanged(SeekBar seekBar,
                             int progress, boolean fromUser) {
                         int strokeWeight = 1 + progress;
-                        prefs.edit().putInt(CONTOUR_PREFERENCE_MAJOR_WIDTH_KEY,
+                        prefs.edit().putInt(
+                                ContourLinesOverlay.CONTOUR_PREFERENCE_MAJOR_WIDTH_KEY,
                                 strokeWeight).apply();
                     }
                 });
 
         _colorButton = cView.findViewById(R.id.line_color);
         updateColorButton(
-                prefs.getInt(CONTOUR_PREFERENCE_LINE_COLOR_KEY, Color.WHITE));
+                prefs.getInt(
+                        ContourLinesOverlay.CONTOUR_PREFERENCE_LINE_COLOR_KEY,
+                        Color.WHITE));
         //_colorButton.setEnabled(true);
         _colorButton.setOnClickListener(new OnClickListener() {
             @Override
@@ -1061,7 +1084,9 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
                         .setTitle(getMapView().getResources().getString(
                                 R.string.contour_choose_line_color));
         ColorPalette palette = new ColorPalette(getMapView().getContext(),
-                prefs.getInt(CONTOUR_PREFERENCE_LINE_COLOR_KEY, Color.WHITE));
+                prefs.getInt(
+                        ContourLinesOverlay.CONTOUR_PREFERENCE_LINE_COLOR_KEY,
+                        Color.WHITE));
         dialogBuilder.setView(palette);
         final AlertDialog alert = dialogBuilder.create();
 
@@ -1069,7 +1094,9 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
             @Override
             public void onColorSelected(int color, String label) {
                 updateColorButton(color);
-                prefs.edit().putInt(CONTOUR_PREFERENCE_LINE_COLOR_KEY, color)
+                prefs.edit().putInt(
+                        ContourLinesOverlay.CONTOUR_PREFERENCE_LINE_COLOR_KEY,
+                        color)
                         .apply();
                 alert.cancel();
             }
@@ -1103,6 +1130,7 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
         } else if (v.getId() == R.id.selectViewshed_btn) {
             //Show dropdown with the list of viewsheds
             viewshedViewSwitcher.showNext();
+            viewshedListShowing = true;
             viewshedListView.removeAllViews();
             //get the list of viewsheds
             HashMap<String, ArrayList<VsdLayer>> layerMap = ViewShedReceiver
@@ -1149,9 +1177,15 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
                                 hideButton.setVisibility(View.VISIBLE);
                                 selectedMarker = m;
                                 //setMarker(m);
-                                changeViewshed(m);
 
+                                try {
+                                    changeViewshed(m);
+                                } catch (Exception e) {
+                                    // should not get here if the viewshed is deleted
+                                    Log.e(TAG, "error showing viewshed", e);
+                                }
                                 viewshedViewSwitcher.showPrevious();
+                                viewshedListShowing = false;
                             }
                         });
 
@@ -1215,6 +1249,8 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
                                 viewshedOpts.setVisibility(View.GONE);
 
                                 viewshedViewSwitcher.showPrevious();
+                                viewshedListShowing = false;
+
                             }
                         });
 
@@ -1224,6 +1260,7 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
             }
         } else if (v.getId() == R.id.backBtn) {
             viewshedViewSwitcher.showPrevious();
+            viewshedListShowing = false;
             multiSelectBtn.setVisibility(View.VISIBLE);
             removeBtn.setVisibility(View.GONE);
         } else if (v.getId() == R.id.removeBtn) {
@@ -1276,6 +1313,8 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
             removeBtn.setVisibility(View.GONE);
             if (returnAfter) {
                 viewshedViewSwitcher.showPrevious();
+                viewshedListShowing = false;
+
                 listButton.setVisibility(View.GONE);
             }
         } else if (v.getId() == R.id.multiSelectBtn) {

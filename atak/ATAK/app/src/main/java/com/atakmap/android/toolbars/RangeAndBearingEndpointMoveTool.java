@@ -2,7 +2,7 @@
 package com.atakmap.android.toolbars;
 
 import android.content.Intent;
-import android.graphics.Point;
+import android.graphics.PointF;
 import android.os.Bundle;
 
 import com.atakmap.android.ipc.AtakBroadcast;
@@ -52,7 +52,7 @@ public class RangeAndBearingEndpointMoveTool extends Tool implements
     @Override
     public void onMapEvent(MapEvent event) {
         if (event.getType().equals(MapEvent.MAP_CLICK)) {
-            Point p = event.getPoint();
+            PointF p = event.getPointF();
             _ep.setPoint(_mapView.inverseWithElevation(p.x, p.y));
             requestEndTool();
         } else if (event.getType().equals(MapEvent.ITEM_CLICK)) {

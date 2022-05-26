@@ -9,7 +9,7 @@ import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
@@ -85,8 +85,8 @@ class CircleGeoFenceMonitor extends GeoFenceMonitor {
                 }
 
                 //get distance of point from circle center
-                double distanceMeters = DistanceCalculations
-                        .metersFromAtSourceTarget(center.get(), point);
+                double distanceMeters = GeoCalculations.distanceTo(center.get(),
+                        point);
                 boolean bInside = inElevationRange(point)
                         && distanceMeters <= radiusMeters;
 
@@ -191,8 +191,7 @@ class CircleGeoFenceMonitor extends GeoFenceMonitor {
             }
 
             //get distance of point from circle center
-            double distanceMeters = DistanceCalculations
-                    .metersFromAtSourceTarget(center, point);
+            double distanceMeters = GeoCalculations.distanceTo(center, point);
             boolean bWithinRadius = distanceMeters <= radiusMeters;
 
             //now check if we should alert based on trigger

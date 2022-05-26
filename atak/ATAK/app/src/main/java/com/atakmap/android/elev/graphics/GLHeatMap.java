@@ -17,7 +17,6 @@ import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.conversion.EGM96;
 
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 
@@ -118,6 +117,8 @@ public class GLHeatMap extends GLAsynchronousMapRenderable<HeatMapParams>
     protected float value;
     protected float alpha;
 
+    private int terrainVersion;
+
     private final Collection<GLMapRenderable> renderable;
 
     private CancellationSignal querySignal;
@@ -145,6 +146,8 @@ public class GLHeatMap extends GLAsynchronousMapRenderable<HeatMapParams>
                 10);
 
         this.renderable = new LinkedList<>();
+
+        this.terrainVersion = -1;
     }
 
     /**************************************************************************/
@@ -202,6 +205,17 @@ public class GLHeatMap extends GLAsynchronousMapRenderable<HeatMapParams>
 
     /**************************************************************************/
     // GL Asynchronous Map Renderable
+
+    @Override
+    public void draw(GLMapView view) {
+        final int viewTerrainVersion = view.getTerrainVersion();
+        // if terrain has changed, mark invalid
+        if (this.terrainVersion != viewTerrainVersion) {
+            this.invalid = true;
+            this.terrainVersion = viewTerrainVersion;
+        }
+        super.draw(view);
+    }
 
     @Override
     protected Collection<GLMapRenderable> getRenderList() {
@@ -383,7 +397,7 @@ public class GLHeatMap extends GLAsynchronousMapRenderable<HeatMapParams>
         gp1 = result.lowerLeft;
         gp2 = result.upperRight;
 
-        distance = DistanceCalculations.metersFromAtSourceTarget(gp1, gp2);
+        distance = GeoCalculations.distanceTo(gp1, gp2);
 
         // obtain the elevation data
         if (result.elevationData == null

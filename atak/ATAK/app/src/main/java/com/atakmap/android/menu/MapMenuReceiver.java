@@ -9,7 +9,6 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.android.widgets.LayoutWidget;
-import com.atakmap.android.widgets.MapWidget;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -18,6 +17,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
+import gov.tak.api.widgets.IMapWidget;
 
 public class MapMenuReceiver extends BroadcastReceiver {
 
@@ -221,8 +222,8 @@ public class MapMenuReceiver extends BroadcastReceiver {
         if (!(o instanceof LayoutWidget))
             return null;
         LayoutWidget root = (LayoutWidget) o;
-        Collection<MapWidget> children = root.getChildWidgets();
-        for (MapWidget mw : children) {
+        Collection<IMapWidget> children = root.getChildren();
+        for (IMapWidget mw : children) {
             if (mw instanceof MenuLayoutWidget)
                 return (MenuLayoutWidget) mw;
         }

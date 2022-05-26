@@ -28,6 +28,7 @@ import com.atakmap.android.maps.Shape;
 import com.atakmap.android.maps.graphics.GLMapGroup2;
 import com.atakmap.android.maps.graphics.GLQuadtreeNode2;
 import com.atakmap.android.overlay.MapOverlay;
+import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.coremap.conversions.ConversionFactors;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
@@ -38,7 +39,6 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.map.AtakMapView;
 import com.atakmap.map.MapRenderer;
-import com.atakmap.map.MapSceneModel;
 import com.atakmap.map.elevation.ElevationData;
 import com.atakmap.map.elevation.ElevationManager;
 import com.atakmap.map.gdal.GdalLibrary;
@@ -860,14 +860,7 @@ public class ContourLinesOverlay extends AbstractHierarchyListItem
     }
 
     public boolean checkZoom() {
-        // Map resolution is no longer reliable for measuring meters per pixel
-        //return mapView.getMapResolution() < 300d;
-
-        // Measure meters per pixel at the focus point to get a rough estimate
-        MapSceneModel mdl = mapView.getSceneModel();
-        GeoPoint p1 = mapView.inverse(mdl.focusx, mdl.focusy).get();
-        GeoPoint p2 = mapView.inverse(mdl.focusx + 1, mdl.focusy + 1).get();
-        return p1.distanceTo(p2) < 300d;
+        return ATAKUtilities.getMetersPerPixel() < 300d;
     }
 
     @Override

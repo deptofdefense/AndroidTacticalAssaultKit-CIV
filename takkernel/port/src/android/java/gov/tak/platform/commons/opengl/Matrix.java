@@ -16,7 +16,6 @@
 package gov.tak.platform.commons.opengl;
 
 import gov.tak.api.annotation.IncubatingApi;
-
 /**
  * Matrix math utilities. These methods operate on OpenGL ES format
  * matrices and vectors stored in float arrays.

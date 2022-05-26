@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <Toolbar
+        android:id="@+id/nav_stack_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:background="@color/toolbar_tint"
+        android:visibility="visible">
+
+        <TextView
+            android:id="@+id/nav_stack_toolbar_title"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:textAppearance="@style/AtakTextAppearance.Toolbar"
+            tools:text="Toolbar Title" />
+
+        <LinearLayout
+            android:id="@+id/nav_stack_toolbar_buttons"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="end|center_vertical"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/nav_stack_close"
+                android:layout_width="@dimen/list_item_action_icon_size"
+                android:layout_height="@dimen/list_item_action_icon_size"
+                android:scaleType="centerInside"
+                android:background="@android:color/transparent"
+                android:src="@drawable/sidemenu_close" />
+        </LinearLayout>
+    </Toolbar>
+
+    <FrameLayout
+        android:id="@+id/nav_stack_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+</LinearLayout>

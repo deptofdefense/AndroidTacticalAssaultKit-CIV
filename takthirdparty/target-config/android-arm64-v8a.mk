@@ -27,6 +27,7 @@ CPP=aarch64-linux-android-cpp
 LD=aarch64-linux-android-ld
 RANLIB=aarch64-linux-android-ranlib
 AR=aarch64-linux-android-ar
+STRIP=aarch64-linux-android-strip -S
 
 # "host" argument to autoconf-based configure scripts
 # Leave blank for autodetect/non-cross compile

@@ -1,13 +1,17 @@
 
 package com.atakmap.android.video;
 
+import android.util.Log;
+
 import java.net.URI;
 
 import com.atakmap.android.video.manager.VideoManager;
 import com.atakmap.annotations.FortifyFinding;
+import com.atakmap.comms.NetworkDeviceManager;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
-import com.atakmap.coremap.log.Log;
+
+import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
 import java.io.Serializable;
@@ -17,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import com.atakmap.annotations.DeprecatedApi;
 
 public class ConnectionEntry implements Serializable {
 
@@ -79,7 +84,7 @@ public class ConnectionEntry implements Serializable {
                     return p;
                 }
             }
-            Log.d(TAG, "using raw for: " + proto);
+            android.util.Log.d(TAG, "using raw for: " + proto);
             return Protocol.RAW;
         }
 
@@ -95,7 +100,7 @@ public class ConnectionEntry implements Serializable {
                     return p;
                 }
             }
-            return null;
+            return Protocol.RAW;
 
         }
 
@@ -105,6 +110,7 @@ public class ConnectionEntry implements Serializable {
     private String uid;
     private String address = null;
     private String macAddress = null;
+    private String preferredInterfaceAddress = null;
     private int port = -1;
     private int roverPort = -1;
     private boolean ignoreEmbeddedKLV = false;
@@ -135,6 +141,48 @@ public class ConnectionEntry implements Serializable {
     /**
      * Construct a connection entry that describes all of the fields that could potentially be
      * stored to describe a video source.
+     *
+     * @param alias a human readable alias for the video stream.
+     * @param address the IPv4 address for the video stream.
+     * @param port the port used for the specified video stream.
+     * @param roverPort UDP sideband metadata traffic from a L3 Com Video Downlink Receiver, provide the
+     *        additional rover port, -1 if there is no data.
+     * @param path for rtsp and http, provide the path to use when connecting to the stream.
+     * @param protocol the protocol for the video stream.
+     * @param networkTimeout as specified in milliseconds (should be 5000).
+     * @param bufferTime as specified in milliseconds (should be -1 unless required).
+     * @param passphrase passphrase to access the source (empty string if not needed)
+     * @param source the source of the saved data, either LOCAL_STORAGE or EXTERNAL (by default
+     *            should be LOCAL_STORAGE).
+     */
+    public ConnectionEntry(final String alias,
+            final String address,
+            final int port,
+            final int roverPort,
+            final String path,
+            final Protocol protocol,
+            final int networkTimeout,
+            final int bufferTime,
+            final int rtspReliable,
+            final String passphrase,
+            final Source source) {
+        this();
+        this.alias = alias;
+        this.address = address;
+        this.port = port;
+        this.roverPort = roverPort;
+        this.path = path;
+        this.protocol = protocol;
+        this.networkTimeout = networkTimeout;
+        this.bufferTime = bufferTime;
+        this.rtspReliable = rtspReliable;
+        this.passphrase = passphrase;
+        this.source = source;
+    }
+
+    /**
+     * Construct a connection entry that describes all of the fields that could potentially be
+     * stored to describe a video source.
      * 
      * @param alias a human readable alias for the video stream.
      * @param address the IPv4 address for the video stream.
@@ -154,7 +202,10 @@ public class ConnectionEntry implements Serializable {
      * @param passphrase passphrase to access the source (empty string if not needed)
      * @param source the source of the saved data, either LOCAL_STORAGE or EXTERNAL (by default
      *            should be LOCAL_STORAGE).
+     * @deprecated as of Android 11 using the machine address is strictly prohibited and unobtainable
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.5", forRemoval = true, removeAt = "4.8")
     public ConnectionEntry(final String alias,
             final String address,
             final String macAddress,
@@ -203,7 +254,10 @@ public class ConnectionEntry implements Serializable {
      * @param bufferTime as specified in milliseconds (should be -1 unless required).
      * @param source the source of the saved data, either LOCAL_STORAGE or EXTERNAL (by default
      *            should be LOCAL_STORAGE).
+     * @deprecated as of Android 11 using the machine address is strictly prohibited and unobtainable
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.5", forRemoval = true, removeAt = "4.8")
     public ConnectionEntry(final String alias,
             final String address,
             final String macAddress,
@@ -219,6 +273,10 @@ public class ConnectionEntry implements Serializable {
                 networkTimeout, bufferTime, rtspReliable, "", source);
     }
 
+    /**
+     * Construct a connection entry based on the file provided.
+     * @param f the file
+     */
     public ConnectionEntry(File f) {
         this.alias = f.getName();
         this.path = f.getAbsolutePath();
@@ -262,7 +320,20 @@ public class ConnectionEntry implements Serializable {
         setProtocol(protocol);
         setAddress(host);
         setPort(port);
-        setPath(u.getPath());
+
+        String query = u.getQuery();
+        if (FileSystemUtils.isEmpty(query))
+            setPath(u.getPath());
+        else
+            setPath(u.getPath() + "?" + query);
+
+
+
+        if ((this.protocol == Protocol.RTSP)) {
+            String q = u.getQuery();
+            if (q != null)
+                this.rtspReliable = (q.contains("tcp")) ? 1 : 0;
+        }
     }
 
     /**
@@ -291,21 +362,22 @@ public class ConnectionEntry implements Serializable {
      * @param from the connection entry to copy the details from.
      */
     public void copy(final ConnectionEntry from) {
-        alias = from.getAlias();
-        uid = from.getUID();
-        address = from.getAddress();
-        macAddress = from.getMacAddress();
-        port = from.getPort();
-        roverPort = from.getRoverPort();
-        ignoreEmbeddedKLV = from.getIgnoreEmbeddedKLV();
-        path = from.getPath();
-        protocol = from.getProtocol();
-        source = from.getSource();
-        networkTimeout = from.getNetworkTimeout();
-        bufferTime = from.getBufferTime();
-        rtspReliable = from.getRtspReliable();
-        passphrase = from.getPassphrase();
-        localFile = from.getLocalFile();
+        alias = from.alias;
+        uid = from.uid;
+        address = from.address;
+        macAddress = from.macAddress;
+        preferredInterfaceAddress = from.preferredInterfaceAddress;
+        port = from.port;
+        roverPort = from.roverPort;
+        ignoreEmbeddedKLV = from.ignoreEmbeddedKLV;
+        path = from.path;
+        protocol = from.protocol;
+        source = from.source;
+        networkTimeout = from.networkTimeout;
+        bufferTime = from.bufferTime;
+        rtspReliable = from.rtspReliable;
+        passphrase = from.passphrase;
+        localFile = from.localFile;
         synchronized (this) {
             childrenUIDs = from.childrenUIDs;
         }
@@ -394,6 +466,22 @@ public class ConnectionEntry implements Serializable {
     }
 
     /**
+     * Get the address associated with the alias.
+     * @return the address for the Connection Entry.
+     */
+    public String getAddress(boolean forDisplay) {
+
+        if (forDisplay && address != null && address.contains("@")) {
+            String[] userPassIp = ConnectionEntry.getUserPassIp(address);
+            if (StringUtils.isBlank(userPassIp[0])
+                    || StringUtils.isBlank(userPassIp[1]))
+                return address;
+            return userPassIp[0] + ":XXHiddenXX" + "@" + userPassIp[2];
+        }
+        return this.address;
+    }
+
+    /**
      * Sets the address associated with the alias.
      * @param address the address for the Connection Entry.
      */
@@ -406,7 +494,10 @@ public class ConnectionEntry implements Serializable {
      * in the format XX:XX:XX:XX:XX:XX and may describe an interface that exists or does not exist.
      * Invalid data can also be returned and it is assumed that the data should be ignored.
      * @return The hinted mac address.
+     * @deprecated as of Android 11 using the machine address is strictly prohibited and unobtainable
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.5", forRemoval = true, removeAt = "4.8")
     public String getMacAddress() {
         return macAddress;
     }
@@ -416,9 +507,38 @@ public class ConnectionEntry implements Serializable {
      * @param macAddress for multicast udp video streams, an optional MAC address can be supplied to
      *            support video streams from a specific interface. For any other input, the video
      *            source is assumed to come from the default interface.
+     * @deprecated as of Android 11 using the machine address is strictly prohibited and unobtainable
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.5", forRemoval = true, removeAt = "4.8")
     public void setMacAddress(final String macAddress) {
         this.macAddress = macAddress;
+    }
+
+    /**
+     * Sets the preferred ip address for the interface to use.   This is not the ip address
+     * associated with the video.   Null if using the system level preference for the video
+     * traffic.    This is specific for multicast video traffic coming in from a single
+     * radio.
+     */
+    public void setPreferredInterfaceAddress(String preferredInterfaceAddress) {
+        this.preferredInterfaceAddress = preferredInterfaceAddress;
+    }
+
+    /**
+     * Gets the preferred ip address for the interface to use.
+     * @return the ip address for the interface to use for the video traffic.   This is
+     * primarily for multicast video traffic.
+     */
+    public String getPreferredInterfaceAddress() {
+        if (preferredInterfaceAddress != null)
+            return preferredInterfaceAddress;
+
+        // hide the implementation details
+        String localAddr = NetworkDeviceManager
+                .getUnmanagedIPv4Address(macAddress);
+        return localAddr;
+
     }
 
     /**
@@ -454,6 +574,7 @@ public class ConnectionEntry implements Serializable {
      */
     public void setPath(final String path) {
         this.path = path;
+
     }
 
     /**
@@ -681,7 +802,7 @@ public class ConnectionEntry implements Serializable {
      *                   URL being obscured.
      */
     public static String getURL(ConnectionEntry ce, boolean forDisplay) {
-        String url = ce.getAddress();
+        String url = ce.getAddress(forDisplay);
 
         // remove the null from the file entries
         if (url == null)
@@ -697,7 +818,7 @@ public class ConnectionEntry implements Serializable {
             // original code did nothing
         } else {
             // construct a proper URL
-            url = p.toURL() + ce.getAddress();
+            url = p.toURL() + ce.getAddress(forDisplay);
         }
 
         if (ce.getPort() != -1)
@@ -767,6 +888,9 @@ public class ConnectionEntry implements Serializable {
                 Objects.equals(uid, that.uid) &&
                 Objects.equals(address, that.address) &&
                 Objects.equals(macAddress, that.macAddress) &&
+                Objects.equals(preferredInterfaceAddress,
+                        that.preferredInterfaceAddress)
+                &&
                 Objects.equals(path, that.path) &&
                 protocol == that.protocol &&
                 Objects.equals(passphrase, that.passphrase) &&
@@ -778,7 +902,8 @@ public class ConnectionEntry implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(alias, uid, address, macAddress, port,
+        return Objects.hash(alias, uid, address, macAddress,
+                preferredInterfaceAddress, port,
                 roverPort, ignoreEmbeddedKLV, path, protocol, passphrase,
                 source,
                 networkTimeout, bufferTime, rtspReliable, localFile,
@@ -787,12 +912,45 @@ public class ConnectionEntry implements Serializable {
 
     @Override
     public String toString() {
-        return "ConnectionEntry [address=" + address +
+        return "ConnectionEntry [address=" + getAddress(true) +
                 ", alias=" + alias + ", port=" + port +
                 ", path=" + path + ", protocol=" + protocol +
                 ", networkTimeout=" + networkTimeout +
                 ", bufferTime=" + bufferTime +
-                ", macAddress=" + macAddress + "]" +
+                ", macAddress=" + macAddress +
+                ", preferredInterfaceAddress=" + preferredInterfaceAddress +
+                "]" +
                 " possible url = " + getURL(this, true);
+    }
+
+    /**
+     * Parses out a username and password combination from the provided
+     * address or url
+     * @param address the address of url
+     * @return an array of length 3, with the username being in position 0,
+     * password being in position 1 and the address or rest of the url being
+     * in position 2.
+     */
+    public static String[] getUserPassIp(String address) {
+        final String[] retval = new String[] {
+                "", "", address
+        };
+
+        if (!address.contains("://"))
+            address = "scheme://" + address;
+
+        URI u = URI.create(address);
+        final String up = u.getUserInfo();
+        if (!FileSystemUtils.isEmpty(up)) {
+            String[] upList = up.split(":");
+            if (upList.length > 0)
+                retval[0] = upList[0];
+            if (upList.length > 1)
+                retval[1] = upList[1];
+            retval[2] = u.getHost();
+        } else {
+            retval[2] = u.getHost();
+        }
+        return retval;
     }
 }

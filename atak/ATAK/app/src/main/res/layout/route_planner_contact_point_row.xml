@@ -1,76 +1,60 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
     android:paddingStart="8dp"
     android:paddingEnd="8dp"
     android:paddingTop="4dp"
     android:paddingBottom="4dp"
     android:descendantFocusability="blocksDescendants">
+    <Button
+        android:id="@+id/cp_name"
+        android:layout_width="50dp"
+        android:layout_height="28dp"
+        android:layout_weight="1.5"
+        android:textSize="12sp"
+        android:textColor="#FFF"
+        android:text="@string/contactPoint"
+        style="@style/darkButton"/>
+    <TextView
+        android:id="@+id/cp_dist"
+        android:layout_width="0dp"
+        android:layout_height="28dp"
+        android:layout_weight="2"
+        android:gravity="center"
+        android:textSize="12sp"
+        android:textColor="#FFF"/>
+    <TextView
+        android:id="@+id/cp_elevation"
+        android:layout_width="0dp"
+        android:layout_height="28dp"
+        android:layout_weight="2"
+        android:gravity="center"
+        android:textSize="12sp"
+        android:textColor="#FFF"
+        android:visibility="gone"/>
+    <ImageButton
+        android:id="@+id/cp_dir"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:padding="2dp"
+        style="@style/darkButton"/>
+    <ImageButton
+        android:id="@+id/cp_plan_segment"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:padding="2dp"
+        android:src="@drawable/ic_route_planner"
+        style="@style/darkButton"/>
+    <ImageButton
+        android:id="@+id/cp_remove"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:padding="@dimen/auto_space_big"
+        android:src="@drawable/ic_menu_delete"
+        style="@style/darkButton"/>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
-        <TextView
-            android:id="@+id/title"
-            android:layout_width="50dp"
-            android:layout_height="28dp"
-            android:layout_weight="1.5"
-            android:gravity="center"
-            android:textSize="12sp"
-            android:textColor="#FFF"
-            android:text="@string/contactPoint"/>
-
-        <Button
-            android:id="@+id/cp_name"
-            android:layout_width="50dp"
-            android:layout_height="28dp"
-            android:layout_weight="1.5"
-            android:textSize="12sp"
-            android:textColor="#FFF"
-            android:text="@string/contactPoint"
-            style="@style/darkButton"/>
-        <TextView
-            android:id="@+id/cp_dist"
-            android:layout_width="0dp"
-            android:layout_height="28dp"
-            android:layout_weight="2"
-            android:gravity="center"
-            android:textSize="12sp"
-            android:textColor="#FFF"/>
-        <TextView
-            android:id="@+id/cp_elevation"
-            android:layout_width="0dp"
-            android:layout_height="28dp"
-            android:layout_weight="2"
-            android:gravity="center"
-            android:textSize="12sp"
-            android:textColor="#FFF"/>
-        <ImageButton
-            android:id="@+id/cp_dir"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:padding="2dp"
-            style="@style/darkButton"/>
-        <ImageButton
-            android:id="@+id/cp_plan_segment"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:padding="2dp"
-            android:src="@drawable/ic_route_planner"
-            style="@style/darkButton"/>
-        <ImageButton
-            android:id="@+id/cp_remove"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:padding="@dimen/auto_space_big"
-            android:src="@drawable/ic_menu_delete"
-            style="@style/darkButton"/>
-
-    </LinearLayout>
-    
 </LinearLayout>

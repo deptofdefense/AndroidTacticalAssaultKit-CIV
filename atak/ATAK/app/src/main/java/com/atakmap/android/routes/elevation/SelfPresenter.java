@@ -13,7 +13,7 @@ import com.atakmap.coremap.conversions.SpanUtilities;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.conversion.EGM96;
 
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.map.elevation.ElevationManager;
@@ -50,9 +50,7 @@ public class SelfPresenter {
             GeoPointMetaData[] geoPoints,
             double[] distances) {
 
-        /**
-         * There can be only one processing.
-         */
+        // There can be only one processing.
         stop();
 
         title = routeTitle;
@@ -126,14 +124,13 @@ public class SelfPresenter {
                                         reference);
                         if (p == null)
                             continue;
-                        final double dist = DistanceCalculations
-                                .calculateRange(p.get(),
-                                        self.getPoint());
+                        final double dist = GeoCalculations.distanceTo(p.get(),
+                                self.getPoint());
                         if (dist < minDist && dist < _MINIMUN_METER_RANGE) {
                             minDist = dist;
                             pointDistance = UnitConverter.Meter
-                                    .toFeet(_distance[i] + DistanceCalculations
-                                            .calculateRange(_geoPoint[i].get(),
+                                    .toFeet(_distance[i] + GeoCalculations
+                                            .distanceTo(_geoPoint[i].get(),
                                                     p.get()));
                             selfPoint = p;
                         }

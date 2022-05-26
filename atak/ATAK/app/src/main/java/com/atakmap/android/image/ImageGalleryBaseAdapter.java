@@ -1,9 +1,6 @@
 
 package com.atakmap.android.image;
 
-import static com.atakmap.android.image.ImageDropDownReceiver.ImageFileFilter;
-import static com.atakmap.android.image.ImageDropDownReceiver.VideoFileFilter;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -668,9 +665,11 @@ public abstract class ImageGalleryBaseAdapter
                             new Intent(MapMenuReceiver.HIDE_MENU));
                 }
 
-                if (ImageFileFilter.accept(null, itemName))
+                if (ImageDropDownReceiver.ImageFileFilter.accept(null,
+                        itemName))
                     displayImage(item);
-                else if (VideoFileFilter.accept(null, itemName))
+                else if (ImageDropDownReceiver.VideoFileFilter.accept(null,
+                        itemName))
                     displayVideo(item);
                 else
                     displayFile(item);

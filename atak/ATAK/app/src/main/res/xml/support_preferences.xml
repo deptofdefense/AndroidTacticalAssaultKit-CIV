@@ -3,21 +3,31 @@
     <PreferenceCategory
         android:title="@string/supportPreferences">
         <Preference android:title="@string/support_information"
-                    android:key="atakSupport"
-                    android:icon="@drawable/ic_menu_support_info"/>
+            android:key="atakSupport"
+            android:icon="@drawable/ic_menu_support_info"/>
         <Preference android:title="@string/preferences_text372"
             android:key="resetHints"
             android:summary="@string/preferences_text373"
             android:icon="@drawable/hints"/>
         <Preference android:title="@string/preferences_text3721"
-                    android:key="resetDeviceConfig"
-                    android:summary="@string/preferences_text3731"
-                    android:icon="@drawable/ic_atak_launcher"/>
+            android:key="resetDeviceConfig"
+            android:summary="@string/preferences_text3731"
+            android:icon="@drawable/ic_atak_launcher"/>
         <Preference
             android:title="@string/loggingPreferences"
             android:summary="@string/preferences_logging_desc"
             android:key="settingsLogging"
             android:icon="@drawable/send_logs"/>
+
+        <Preference
+            android:title="Device Details"
+            android:summary="Hardware Details for remote help and support"
+            android:key="settingsDebugging"
+            android:icon="@drawable/ic_debugging"/>
+
+
+
+
     </PreferenceCategory>
 
     <PreferenceCategory
@@ -28,9 +38,9 @@
           <Preference android:title="@string/userManual"
                     android:key="atakDocumentation"
                     android:icon="@drawable/document"/>
-        <Preference android:title="@string/addendum"
-            android:key="atakFlavorAddendum"
-            android:icon="@drawable/document"/>
+          <Preference android:title="@string/addendum"
+                    android:key="atakFlavorAddendum"
+                    android:icon="@drawable/document"/>
           <Preference android:title="@string/atakDatasets"
                     android:key="atakDatasets"
                     android:icon="@drawable/document"/>

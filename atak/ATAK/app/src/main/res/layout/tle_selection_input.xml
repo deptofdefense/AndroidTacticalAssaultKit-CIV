@@ -38,9 +38,11 @@
         android:layout_marginTop="10dp"
         android:textSize="14sp"
         android:text="@string/accuracy"/>
+
     <RadioGroup android:id="@+id/tle_accuracy"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:gravity="center_vertical"
         android:orientation="horizontal">
 
         <RadioButton

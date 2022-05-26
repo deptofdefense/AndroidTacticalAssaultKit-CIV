@@ -19,9 +19,9 @@ import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import com.atakmap.android.metrics.activity.MetricActivity;
+import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.android.video.ConnectionEntry;
 import com.atakmap.app.R;
-import com.atakmap.comms.NetworkDeviceManager;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
@@ -81,6 +81,8 @@ public class Gv2FMobilePlayer extends MetricActivity
 
     /** Temporary file directory to use. */
     private static final String TEMP_DIR = "VidActivityTmp";
+
+    private static final int NOTIFICATION_ID = 13213;
 
     private MediaProcessor processor;
 
@@ -182,19 +184,12 @@ public class Gv2FMobilePlayer extends MetricActivity
                                 int buffer = ce.getBufferTime();
                                 int timeout = ce.getNetworkTimeout();
 
-                                final String macAddress = ce.getMacAddress();
                                 String localAddr = null;
-
-                                if (macAddress != null) {
-                                    localAddr = NetworkDeviceManager
-                                            .getIPv4Address(macAddress);
-                                    if (localAddr == null)
-                                        localAddr = NetworkDeviceManager
-                                                .getUnmanagedIPv4Address(
-                                                        macAddress);
+                                if (ce.getPreferredInterfaceAddress() != null) {
+                                    localAddr = ce
+                                            .getPreferredInterfaceAddress();
                                     Log.d(TAG,
-                                            "use interface macaddr: "
-                                                    + macAddress + " "
+                                            "use local address for network traffic: "
                                                     + localAddr);
 
                                 }
@@ -342,22 +337,7 @@ public class Gv2FMobilePlayer extends MetricActivity
                         .show();
                 return;
             }
-        } catch (MediaException e) {
-            Log.v(TAG, "Media Exception!");
-            // Gv2FMobilePlayer.this.finish();
-            new AlertDialog.Builder(this)
-                    .setTitle(R.string.error)
-                    .setMessage(R.string.video_text57)
-                    .setNeutralButton(R.string.close,
-                            new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface d, int i) {
-                                    Gv2FMobilePlayer.this.finish();
-                                }
-                            })
-                    .show();
-            return;
-        } catch (RuntimeException e) {
+        } catch (MediaException | RuntimeException e) {
             Log.v(TAG, "Media Exception!");
             // Gv2FMobilePlayer.this.finish();
             new AlertDialog.Builder(this)
@@ -440,6 +420,7 @@ public class Gv2FMobilePlayer extends MetricActivity
             // Can be null if we get a MediaException during onCreate() and
             // are getting here whilst showing the dialog
             processor.start();
+            setNotification(true);
             final ImageButton pausePlay = findViewById(
                     R.id.PlayPauseBID);
             pausePlay.post(new Runnable() {
@@ -465,6 +446,7 @@ public class Gv2FMobilePlayer extends MetricActivity
         super.onPause();
         if (processor != null) {
             processor.stop();
+            setNotification(false);
             Log.v(TAG, "Playback stopped");
             GLSurfaceView gsv = findViewById(R.id.GLSurface);
             try {
@@ -481,6 +463,8 @@ public class Gv2FMobilePlayer extends MetricActivity
     @Override
     public void onDestroy() {
         super.onDestroy();
+
+        removeNotification();
 
         stepperScale = 1.0f;
         if (isFinishing()) {
@@ -533,10 +517,12 @@ public class Gv2FMobilePlayer extends MetricActivity
             mProcessor.stop();
             mProcessor.setRate(1.0f);
             pausePlay.setImageResource(R.drawable.playforeground);
+            setNotification(false);
         } else {
             mProcessor.setRate(1.0f);
             mProcessor.start();
             pausePlay.setImageResource(R.drawable.pauseforeground);
+            setNotification(true);
         }
 
     }
@@ -854,5 +840,26 @@ public class Gv2FMobilePlayer extends MetricActivity
             }
         }
     };
+
+    private void setNotification(boolean isPlaying) {
+        if (isPlaying) {
+            NotificationUtil.getInstance().postNotification(NOTIFICATION_ID,
+                    R.drawable.green_full,
+                    NotificationUtil.GREEN,
+                    getString(R.string.video_text56),
+                    getString(R.string.playing), null, false);
+        } else {
+            NotificationUtil.getInstance().postNotification(NOTIFICATION_ID,
+                    R.drawable.red_full,
+                    NotificationUtil.RED,
+                    getString(R.string.video_text56),
+                    getString(R.string.stopped), null, false);
+        }
+
+    }
+
+    private void removeNotification() {
+        NotificationUtil.getInstance().clearNotification(NOTIFICATION_ID);
+    }
 
 }

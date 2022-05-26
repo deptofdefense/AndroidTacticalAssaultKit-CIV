@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/black">
+
+    <com.atakmap.android.widgets.TakEditText
+        android:id="@+id/toolbar_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:hint="@string/new_loadout"
+        android:imeOptions="flagNoFullscreen|actionDone"
+        android:singleLine="true"
+        android:visibility="gone"
+        tools:visibility="visible"/>
+
+    <GridView
+        android:id="@+id/tools_list"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:horizontalSpacing="0dp"
+        android:verticalSpacing="0dp"
+        android:numColumns="1"
+        android:stretchMode="columnWidth"
+        tools:listitem="@layout/loadout_tool_list_item"/>
+</LinearLayout>

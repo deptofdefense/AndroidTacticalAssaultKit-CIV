@@ -2,6 +2,7 @@
 package com.atakmap.android.tools.menu;
 
 import android.content.Context;
+import android.content.res.AssetManager;
 import android.content.res.Resources.NotFoundException;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.LayerDrawable;
@@ -10,7 +11,9 @@ import android.os.Parcelable;
 import android.util.TypedValue;
 
 import com.atak.plugins.impl.PluginMapComponent;
+import com.atakmap.android.maps.MapView;
 import com.atakmap.android.tools.AtakLayerDrawableUtil;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.system.FlavorProvider;
 import com.atakmap.app.system.SystemComponentLoader;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -181,7 +184,7 @@ public class ActionMenuData implements Parcelable {
                 placeholderActionClick, false, false, true);
     }
 
-    String getRef() {
+    public String getRef() {
         return ref;
     }
 
@@ -201,7 +204,12 @@ public class ActionMenuData implements Parcelable {
         bEnabled = enabled;
     }
 
-    public String getTitle() {
+    /**
+     * Get the title of this action data
+     * @param appContext Application context used for string lookup
+     * @return Title
+     */
+    public String getTitle(Context appContext) {
         if (pam.title == null)
             return "";
 
@@ -221,16 +229,29 @@ public class ActionMenuData implements Parcelable {
                     f = c.getField(pam.title);
 
                 int i = f.getInt(null);
-                Context ctx = com.atakmap.android.maps.MapView.getMapView()
-                        .getContext();
-                if (ctx != null)
-                    return ctx.getString(i);
+                return appContext.getString(i);
             } catch (Exception e) {
                 //                Log.e(TAG, "error, could not find id: " + pam.title, e);
                 Log.e(TAG, "error, could not find id: " + pam.title);
             }
         }
         return pam.title;
+    }
+
+    /**
+     * Get the title of this action data
+     * @return Title
+     * @deprecated Use {@link #getTitle(Context)} instead
+     * This call will fail to return the resolved string if the map view hasn't
+     * been initialized yet.
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.5", forRemoval = true, removeAt = "4.8")
+    public String getTitle() {
+        if (pam.title == null)
+            return "";
+        MapView mapView = MapView.getMapView();
+        return mapView != null ? getTitle(mapView.getContext()) : pam.title;
     }
 
     /**
@@ -584,95 +605,71 @@ public class ActionMenuData implements Parcelable {
     // for the imutable asset:// references
     private final static Map<String, PersistedActionMenu> pamCache = new HashMap<>();
 
-    public void deferredLoad() {
-        //Log.d(TAG, "deferred loading of the ActionMenuData");
+    /**
+     * In support of reading the actions in use by the
+     * TAK Button Maanger
+     * @param ctx
+     * @return
+     */
+    public static List<ActionMenuData> getAllActions(Context ctx) {
+        List<ActionMenuData> retval = new ArrayList<>();
+        // this is fine because asset:// refs are imutable
+        AssetManager assetManager = ctx.getAssets();
+        String[] actions;
+        try {
+            actions = assetManager.list("actionbar/items");
+        } catch (Exception ignored) {
+            actions = new String[0];
+        }
+        ActionMenuData quit = null;
+        ActionMenuData settings = null;
 
-        if (ref == null)
-            return;
+        for (final String action : actions) {
+            final ActionMenuData amd = new ActionMenuData();
+            PersistedActionMenu pam = pamCache.get(action);
 
-        if (ref.startsWith("asset://")) {
+            amd.ref = action;
 
-            // this is fine because asset:// refs are imutable
-            PersistedActionMenu pam = pamCache.get(ref);
             if (pam != null) {
-                this.pam = pam;
-                return;
-            }
-
-            Context ctx = com.atakmap.android.maps.MapView.getMapView()
-                    .getContext();
-
-            try {
-                String xml = FileSystemUtils.copyStreamToString(
-                        FileSystemUtils.getInputStreamFromAsset(ctx,
-                                ref.substring("asset://".length())),
-                        true,
-                        FileSystemUtils.UTF8_CHARSET);
-
-                pam = fromItemXml(xml);
-                if (pam != null) {
-                    // this is fine because asset:// refs are imutable
-                    pamCache.put(ref, pam);
-                    this.pam = pam;
-
-                    // success
-                    return;
-                } else {
-                    Log.e(TAG, "unable to load: " + ref);
-                }
-            } catch (IOException ioe) {
-                Log.e(TAG, "unable to load: " + ref, ioe);
-
-            }
-
-        } else if (ref.startsWith("plugin://")) {
-            Log.e(TAG, "no need to defer load: " + ref);
-            String[] s = ref.substring("plugin://".length())
-                    .split("/");
-            if (s.length == 2) {
-                this.pam.iconPath = "ic_menu_actionbar_placeholder";
-                this.pam.title = s[1];
-                this.pam.baseline = false;
-
-                List<ActionClickData> placeholderActionClick = new ArrayList<>();
-                placeholderActionClick.add(new ActionClickData(
-                        new ActionBroadcastData(
-                                PLACEHOLDER_TITLE + "-"
-                                        + UUID.randomUUID().toString(),
-                                null),
-                        ActionClickData.CLICK));
-                this.pam.actionClickData = placeholderActionClick;
-                // success
-                return;
+                amd.pam = pam;
             } else {
-                Log.e(TAG, "unable to load: " + ref);
+                try {
+                    String xml = FileSystemUtils.copyStreamToString(
+                            FileSystemUtils.getInputStreamFromAsset(ctx,
+                                    "actionbar/items/" + action),
+                            true,
+                            FileSystemUtils.UTF8_CHARSET);
+
+                    pam = fromItemXml(xml);
+                    if (pam != null) {
+                        // this is fine because asset:// refs are imutable
+                        pamCache.put(action, pam);
+                        amd.pam = pam;
+                    } else {
+                        Log.e(TAG, "unable to load: " + action);
+                    }
+                } catch (IOException ioe) {
+                    Log.e(TAG, "unable to load: " + action, ioe);
+                }
+
+                if (amd.pam != null) {
+                    if (action.equals("settings.xml"))
+                        settings = amd;
+                    else if (action.equals("quit.xml"))
+                        quit = amd;
+                    else
+                        retval.add(amd);
+                }
+
             }
         }
+        if (settings != null)
+            retval.add(settings);
 
-        // messy for now, but assume an error condition has occurred or the reference is 
-        // a placholder - put in a placeholder
+        if (quit != null)
+            retval.add(quit);
 
-        List<ActionClickData> placeholderActionClick = new ArrayList<>();
-        placeholderActionClick.add(new ActionClickData(new ActionBroadcastData(
-                PLACEHOLDER_TITLE + "-" + UUID.randomUUID().toString(), null),
-                ActionClickData.CLICK));
-        this.bSelected = false;
-        this.bEnabled = false;
-        this.pam.title = PLACEHOLDER_TITLE;
-        this.pam.iconPath = "ic_menu_actionbar_placeholder";
-        this.pam.selectedIconPath = null;
-        this.pam.enabledIconPath = null;
-        this.pam.hideable = false;
-        this.pam.actionClickData = placeholderActionClick;
-        this.pam.baseline = true;
-
-        // a custom added action can have any ref, so it will get a placeholder, but we want it
-        // to be treated like a "plugin://".  Note that only the ref and baseline fields matter,
-        // the rest is replaced later
-        if (!ref.startsWith(PLACEHOLDER_TITLE)) {
-            this.pam.baseline = false;
-            this.pam.title = ref; // just for easier debugging
-        }
+        return retval;
     }
 
     /**

@@ -23,6 +23,8 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.atakmap.android.gui.drawable.CheckBoxDrawable;
+import com.atakmap.android.gui.drawable.VisibilityDrawable;
 import com.atakmap.android.hashtags.util.HashtagUtils;
 import com.atakmap.android.hashtags.HashtagSearch;
 import com.atakmap.android.hashtags.HashtagContent;
@@ -43,6 +45,7 @@ import com.atakmap.android.hierarchy.items.AbstractHierarchyListItem;
 import com.atakmap.android.hierarchy.items.AbstractHierarchyListItem2;
 import com.atakmap.android.hierarchy.items.MapItemUser;
 import com.atakmap.android.maps.ILocation;
+import com.atakmap.android.maps.IReferenceLocation;
 import com.atakmap.android.maps.LocationSearchManager;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
@@ -56,16 +59,14 @@ import com.atakmap.android.util.AltitudeUtilities;
 import com.atakmap.android.util.LimitingThread;
 import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.Angle;
-import com.atakmap.coremap.conversions.AngleUtilities;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
 import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.conversions.SpanUtilities;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
-import com.atakmap.coremap.maps.conversion.EGM96;
 
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
@@ -100,9 +101,9 @@ public class HierarchyListAdapter extends BaseAdapter implements
     private final static String TAG = "HierarchyListAdapter";
 
     // 3-state visibility
-    public static final int UNCHECKED = 0;
-    public static final int CHECKED = 1;
-    public static final int SEMI_CHECKED = 2;
+    public static final int UNCHECKED = CheckBoxDrawable.UNCHECKED;
+    public static final int CHECKED = CheckBoxDrawable.CHECKED;
+    public static final int SEMI_CHECKED = CheckBoxDrawable.SEMI_CHECKED;
 
     // Max list refresh interval in milliseconds (1 second)
     private static final int REFRESH_INTERVAL = 1000;
@@ -762,8 +763,12 @@ public class HierarchyListAdapter extends BaseAdapter implements
             h.toggleParent.setOnClickListener(h);
             h.checkbox = row.findViewById(
                     R.id.hierarchy_manager_list_item_checkbox);
+            h.checkbox.setImageDrawable(
+                    h.checkboxIcon = new CheckBoxDrawable());
             h.vizButton = row.findViewById(
                     R.id.hierarchy_manager_visibility_iv);
+            h.vizButton.setImageDrawable(
+                    h.vizIcon = new VisibilityDrawable());
             h.icon = row.findViewById(
                     R.id.hierarchy_manager_list_item_icon);
             h.title = row.findViewById(
@@ -778,6 +783,10 @@ public class HierarchyListAdapter extends BaseAdapter implements
                     R.id.hierarchy_manager_list_item_dir_text);
             h.elevation = row.findViewById(
                     R.id.hierarchy_manager_list_item_el_text);
+            h.refPointTitle = row.findViewById(
+                    R.id.hierarchy_manager_list_item_refTitle_text);
+            h.refLayout = row.findViewById(
+                    R.id.hierarchy_manager_list_item_ref_view);
             h.extraContainer = row.findViewById(
                     R.id.hierarchy_manager_list_item_extra_view_layout);
             row.setTag(h);
@@ -801,11 +810,7 @@ public class HierarchyListAdapter extends BaseAdapter implements
             if (this.userSelectHandler.isMultiSelect()) {
                 // if there is a custom handler use the checkbox and hide the visibility icons
                 int state = getCheckValue(item);
-                h.checkbox.setImageResource(state == UNCHECKED
-                        ? R.drawable.btn_check_off
-                        : (state == SEMI_CHECKED
-                                ? R.drawable.btn_check_semi
-                                : R.drawable.btn_check_on));
+                h.checkboxIcon.setChecked(state);
                 h.checkbox.setVisibility(View.VISIBLE);
             }
         } else {
@@ -817,19 +822,7 @@ public class HierarchyListAdapter extends BaseAdapter implements
                 int vizState = itemViz2 != null ? itemViz2.getVisibility()
                         : (itemViz.isVisible() ? Visibility2.VISIBLE
                                 : Visibility2.INVISIBLE);
-                int vizRes;
-                switch (vizState) {
-                    default:
-                    case Visibility2.INVISIBLE:
-                        vizRes = R.drawable.overlay_not_visible;
-                        break;
-                    case Visibility2.SEMI_VISIBLE:
-                        vizRes = R.drawable.overlay_semi_visible;
-                        break;
-                    case Visibility2.VISIBLE:
-                        vizRes = R.drawable.overlay_visible;
-                }
-                h.vizButton.setImageResource(vizRes);
+                h.vizIcon.setVisibility(vizState);
                 h.vizOn = vizState != Visibility2.INVISIBLE;
             }
         }
@@ -888,27 +881,45 @@ public class HierarchyListAdapter extends BaseAdapter implements
             h.distance.setText(SpanUtilities.formatType(this.rangeSystem, dist,
                     Span.METER));
 
+            // Location of reference point
+            double refLat = item.getLocalData("refLatitude", Number.class)
+                    .doubleValue();
+            double refLng = item.getLocalData("refLongitude", Number.class)
+                    .doubleValue();
+            double refAlt = item.getLocalData("refAltitude", Number.class)
+                    .doubleValue();
+            GeoPoint refPoint = new GeoPoint(refLat, refLng, refAlt);
+
             // Bearing from self marker to item
             double bearing = item.getLocalData("bearing", Number.class)
                     .doubleValue();
-            h.bearing.setText(AngleUtilities.format(bearing, this.bearingUnits)
-                    + this.northRef.getAbbrev());
+            h.bearing.setText(NorthReference.format(bearing, refPoint, dist,
+                    this.bearingUnits, this.northRef, 0));
 
             // Item coordinate and elevation
             double lat = item.getLocalData("latitude", Number.class)
                     .doubleValue();
             double lon = item.getLocalData("longitude", Number.class)
                     .doubleValue();
-            double el = item.getLocalData("el", Number.class).doubleValue();
+            double alt = item.getLocalData("altitude", Number.class)
+                    .doubleValue();
 
-            // XXY is el HAE or MSL - in the original code it was MSL.
-            GeoPoint point = new GeoPoint(lat, lon,
-                    EGM96.getHAE(lat, lon, el));
+            GeoPoint point = new GeoPoint(lat, lon, alt);
+
             h.elevation.setText(AltitudeUtilities.format(point, this.prefs));
             h.desc.setText(CoordinateFormatUtilities.formatToString(point,
                     this.coordFmt));
             h.desc.setVisibility(View.VISIBLE);
             h.rabView.setVisibility(View.VISIBLE);
+
+            String refPointTitle = item.getLocalData("refPointTitle",
+                    String.class);
+            if (!FileSystemUtils.isEmpty(refPointTitle)) {
+                h.refPointTitle.setText(refPointTitle);
+                h.refLayout.setVisibility(View.VISIBLE);
+            } else {
+                h.refLayout.setVisibility(View.GONE);
+            }
         }
 
         // Show the number of child items by default
@@ -959,7 +970,9 @@ public class HierarchyListAdapter extends BaseAdapter implements
         HierarchyListItem item;
         View toggleParent;
         ImageView checkbox;
+        CheckBoxDrawable checkboxIcon;
         ImageView vizButton;
+        VisibilityDrawable vizIcon;
         boolean vizOn;
         ImageView icon;
         TextView title;
@@ -968,6 +981,8 @@ public class HierarchyListAdapter extends BaseAdapter implements
         TextView bearing;
         TextView distance;
         TextView elevation;
+        TextView refPointTitle;
+        View refLayout;
         LinearLayout extraContainer;
 
         @Override
@@ -987,8 +1002,7 @@ public class HierarchyListAdapter extends BaseAdapter implements
                 if (userSelectHandler == null)
                     return;
                 boolean checked = getCheckValue(item) == UNCHECKED;
-                checkbox.setImageResource(checked ? R.drawable.btn_check_on
-                        : R.drawable.btn_check_off);
+                checkboxIcon.setChecked(checked);
                 setItemChecked(item, checked);
             }
 
@@ -997,13 +1011,11 @@ public class HierarchyListAdapter extends BaseAdapter implements
                 Visibility visAction = item.getAction(Visibility.class);
                 if (visAction != null) {
                     vizOn = !vizOn;
-                    vizButton.setImageResource(vizOn
-                            ? R.drawable.overlay_visible
-                            : R.drawable.overlay_not_visible);
+                    vizIcon.setVisible(vizOn);
                     // Set visibility asynchronously
                     setVisibleAsync(visAction, vizOn);
                 } else
-                    vizButton.setImageResource(R.drawable.overlay_not_visible);
+                    vizIcon.setVisible(false);
             }
         }
     }
@@ -1018,22 +1030,27 @@ public class HierarchyListAdapter extends BaseAdapter implements
         if (!(item instanceof ILocation))
             return false;
 
-        GeoPoint gp = GeoPoint.createMutable();
-        ((ILocation) item).getPoint(gp);
-        final GeoPointMetaData loc = GeoPointMetaData.wrap(gp);
+        GeoPoint loc = ((ILocation) item).getPoint(null);
 
-        item.setLocalData("latitude", loc.get().getLatitude());
-        item.setLocalData("longitude", loc.get().getLongitude());
+        item.setLocalData("latitude", loc.getLatitude());
+        item.setLocalData("longitude", loc.getLongitude());
+        item.setLocalData("altitude", loc.getAltitude());
 
-        GeoPoint cLoc = getCurrentLocation();
-        item.setLocalData("bearing", cLoc.bearingTo(loc.get()));
-        item.setLocalData("dist", cLoc.distanceTo(loc.get()));
-        if (loc.get().isAltitudeValid()) {
-            item.setLocalData(
-                    "el", EGM96.getMSL(loc.get()));
-        } else {
-            item.setLocalData("el", GeoPoint.UNKNOWN);
+        //check for a reference point from the item
+        GeoPoint cLoc = null;
+        if (item instanceof IReferenceLocation) {
+            cLoc = ((IReferenceLocation) item).getReferencePoint(null);
+            String title = ((IReferenceLocation) item).getReferenceTitle();
+            item.setLocalData("refPointTitle", title);
         }
+        if (cLoc == null || !cLoc.isValid())
+            cLoc = getCurrentLocation();
+
+        item.setLocalData("refLatitude", cLoc.getLatitude());
+        item.setLocalData("refLongitude", cLoc.getLongitude());
+        item.setLocalData("refAltitude", cLoc.getAltitude());
+        item.setLocalData("bearing", cLoc.bearingTo(loc));
+        item.setLocalData("dist", cLoc.distanceTo(loc));
 
         Boolean showLoc = item.getLocalData("showLocation", Boolean.class);
         return showLoc == null || showLoc;
@@ -2144,12 +2161,10 @@ public class HierarchyListAdapter extends BaseAdapter implements
         public int compare(HierarchyListItem i1, HierarchyListItem i2) {
             final GeoPointMetaData p1 = getLocation(i1), p2 = getLocation(i2);
             if (p1 != null && p2 != null) {
-                final double d1 = DistanceCalculations
-                        .metersFromAtSourceTarget(p1.get(),
-                                _pointOfInterest);
-                final double d2 = DistanceCalculations
-                        .metersFromAtSourceTarget(p2.get(),
-                                _pointOfInterest);
+                final double d1 = GeoCalculations.distanceTo(p1.get(),
+                        _pointOfInterest);
+                final double d2 = GeoCalculations.distanceTo(p2.get(),
+                        _pointOfInterest);
                 if (d1 > d2)
                     return 1;
                 else if (d2 > d1)

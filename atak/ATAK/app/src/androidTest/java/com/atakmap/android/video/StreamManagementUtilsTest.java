@@ -34,7 +34,7 @@ public class StreamManagementUtilsTest extends ATAKInstrumentedTest {
     public void testUrlEmpty() {
         final ConnectionEntry ce = StreamManagementUtils
                 .createConnectionEntryFromUrl("test1", "");
-        assertEquals(ce, null);
+        assertNull(ce);
     }
 
     @Test
@@ -67,6 +67,7 @@ public class StreamManagementUtilsTest extends ATAKInstrumentedTest {
         for (String s : examples) {
             final ConnectionEntry ce = StreamManagementUtils
                     .createConnectionEntryFromUrl("test1", s);
+            assertNotNull(ce);
             assertEquals("Test: " + s, ConnectionEntry.Protocol.UDP,
                     ce.getProtocol());
             assertEquals("Test: " + s, 3500, ce.getPort());
@@ -85,6 +86,7 @@ public class StreamManagementUtilsTest extends ATAKInstrumentedTest {
         for (String s : examples) {
             final ConnectionEntry ce = StreamManagementUtils
                     .createConnectionEntryFromUrl("test1", s);
+            assertNotNull(ce);
             assertEquals("Test: " + s, ConnectionEntry.Protocol.UDP,
                     ce.getProtocol());
             assertEquals("Test: " + s, 1234, ce.getPort());
@@ -107,6 +109,7 @@ public class StreamManagementUtilsTest extends ATAKInstrumentedTest {
         for (String s : examples) {
             final ConnectionEntry ce = StreamManagementUtils
                     .createConnectionEntryFromUrl("test1", s);
+            assertNotNull(ce);
             assertEquals("Test: " + s, ConnectionEntry.Protocol.RTSP,
                     ce.getProtocol());
             assertEquals("Test: " + s, "192.168.1.1", ce.getAddress());
@@ -122,7 +125,8 @@ public class StreamManagementUtilsTest extends ATAKInstrumentedTest {
         ConnectionEntry ce2 = StreamManagementUtils
                 .createConnectionEntryFromUrl("big buck bunny",
                         "rtsp://3.84.6.190:554/vod/mp4:BigBuckBunny_115k.mov");
-
+        assertNotNull(ce2);
+        assertNotNull(ce1);
         assertEquals("test missing port", ce1, ce2);
         assertEquals("test port", 554, ce2.getPort());
         assertEquals("test address", "3.84.6.190", ce1.getAddress());
@@ -136,6 +140,7 @@ public class StreamManagementUtilsTest extends ATAKInstrumentedTest {
         ConnectionEntry ce1 = StreamManagementUtils
                 .createConnectionEntryFromUrl("name",
                         "http://192.168.1.1:8081");
+        assertNotNull(ce1);
         assertEquals("http:address", "192.168.1.1", ce1.getAddress());
         assertEquals("http:port", 8081, ce1.getPort());
         assertEquals("http:path", "", ce1.getPath());
@@ -146,9 +151,30 @@ public class StreamManagementUtilsTest extends ATAKInstrumentedTest {
         ConnectionEntry ce1 = StreamManagementUtils
                 .createConnectionEntryFromUrl("name",
                         "http://username:password@192.168.1.1:8081/test.mjpg");
+        assertNotNull(ce1);
         assertEquals("http:address", "username:password@192.168.1.1",
                 ce1.getAddress());
         assertEquals("http:port", 8081, ce1.getPort());
         assertEquals("http:path", "/test.mjpg", ce1.getPath());
+    }
+
+    @Test
+    public void testRtmpWithToken() {
+        ConnectionEntry ce =  StreamManagementUtils.createConnectionEntryFromUrl(
+                "name", "rtmp://demo.unifiedvideo.com/live/4?token=e02532a591f14f16a233521ab907a150");
+
+        assertEquals(ce.getProtocol(), ConnectionEntry.Protocol.RTMP);
+        assertEquals("rtmp://demo.unifiedvideo.com:1935/live/4?token=e02532a591f14f16a233521ab907a150&timeout=5",
+                ConnectionEntry.getURL(ce));
+    }
+
+    @Test
+    public void testUrlWithQuery() {
+        ConnectionEntry ce =  StreamManagementUtils.createConnectionEntryFromUrl(
+                "name", "rtmp://demo.unifiedvideo.com/?token=e02532a591f14f16a233521ab907a150&token2=shb");
+
+        assertEquals(ce.getProtocol(), ConnectionEntry.Protocol.RTMP);
+        assertEquals("rtmp://demo.unifiedvideo.com:1935/?token=e02532a591f14f16a233521ab907a150&token2=shb&timeout=5",
+                ConnectionEntry.getURL(ce));
     }
 }

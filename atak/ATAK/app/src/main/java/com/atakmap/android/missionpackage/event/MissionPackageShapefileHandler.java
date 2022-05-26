@@ -19,6 +19,7 @@ import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.spatial.file.ShapefileSpatialDb;
 import com.atakmap.util.zip.ZipEntry;
 import com.atakmap.util.zip.ZipFile;
 
@@ -145,12 +146,13 @@ public class MissionPackageShapefileHandler implements
      * Static version of member method "add" which operates on a manifest
      * rather than a UI/MissionPackageListGroup
      * 
-     * @param manifest
-     * @param file
-     * @return
+     * @param manifest Data package manifest
+     * @param file Shapefile to send (.shp)
+     * @param attachedUID Map item UID the file is attached to (null if N/A)
+     * @return True if successfully added
      */
     public static boolean add(Context context, MissionPackageManifest manifest,
-            File file) {
+            File file, String attachedUID) {
         //resolver only used for matching
         ImportSHPSort sort = new ImportSHPSort(context, true, false, false);
         if (!sort.match(file))
@@ -158,7 +160,7 @@ public class MissionPackageShapefileHandler implements
 
         // Add main .shp file
         MissionPackageContent content = MissionPackageManifestAdapter
-                .FileToContent(file, null);
+                .FileToContent(file, attachedUID);
         if (content == null || !content.isValid()) {
             Log.w(TAG, "Failed to adapt file path to Mission Package Content");
             return false;
@@ -190,7 +192,7 @@ public class MissionPackageShapefileHandler implements
         for (File datasetFile : files) {
             MissionPackageContent dataSetContent = MissionPackageManifestAdapter
                     .FileToContent(
-                            datasetFile, null);
+                            datasetFile, attachedUID);
             if (dataSetContent == null || !dataSetContent.isValid()) {
                 Log.w(TAG,
                         "Failed to adapt file path to Mission Package Content");
@@ -205,6 +207,9 @@ public class MissionPackageShapefileHandler implements
             dataSetContent.setParameter(new NameValuePair(
                     MissionPackageContent.PARAMETER_NAME,
                     datasetFile.getName()));
+            dataSetContent.setParameter(
+                    MissionPackageContent.PARAMETER_CONTENT_TYPE,
+                    ShapefileSpatialDb.SHP_CONTENT_TYPE);
 
             if (manifest.hasFile(dataSetContent)) {
                 Log.i(TAG, manifest.toString() + " already contains filename: "
@@ -226,6 +231,11 @@ public class MissionPackageShapefileHandler implements
                 + " files for shapefile: "
                 + file.getAbsolutePath());
         return true;
+    }
+
+    public static boolean add(Context context, MissionPackageManifest manifest,
+            File file) {
+        return add(context, manifest, file, null);
     }
 
     @Override

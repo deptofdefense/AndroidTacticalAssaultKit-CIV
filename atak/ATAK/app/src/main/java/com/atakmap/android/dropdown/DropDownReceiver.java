@@ -4,11 +4,13 @@ package com.atakmap.android.dropdown;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Intent;
+
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
 import android.util.DisplayMetrics;
 import android.view.View;
+import android.view.ViewGroup.LayoutParams;
 import android.widget.Toast;
 
 import com.atakmap.android.drawing.tools.TelestrationTool;
@@ -25,10 +27,13 @@ import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.PointMapItem.OnPointChangedListener;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.app.R;
+import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.assets.Icon;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public abstract class DropDownReceiver extends BroadcastReceiver {
@@ -78,6 +83,7 @@ public abstract class DropDownReceiver extends BroadcastReceiver {
     private boolean _closed = true;
 
     private boolean retain = false;
+    private boolean _transient = false;
     private DropDown _dropDown;
     private final MapView _mapView;
     private final FragmentManager _fragmentManager;
@@ -338,6 +344,15 @@ public abstract class DropDownReceiver extends BroadcastReceiver {
                 if (!isClosed())
                     DropDownManager.getInstance().closeDropDown(_dropDown);
 
+                // Make sure layout parameters for the view are set
+                // to match_parent by default
+                LayoutParams lp = contentView.getLayoutParams();
+                if (lp == null) {
+                    lp = new LayoutParams(LayoutParams.MATCH_PARENT,
+                            LayoutParams.MATCH_PARENT);
+                    contentView.setLayoutParams(lp);
+                }
+
                 _dropDown = new DropDown(contentView, ignoreBackButton,
                         DropDownReceiver.this);
                 _dropDown.setSwitchable(switchable);
@@ -348,53 +363,8 @@ public abstract class DropDownReceiver extends BroadcastReceiver {
                     _dropDown.setDimensions(lwFraction, lhFraction);
                 }
 
-                _dropDown.setOnStateListener(new OnStateListener() {
-                    @Override
-                    public void onDropDownSelectionRemoved() {
-                        if (stateListener != null)
-                            stateListener.onDropDownSelectionRemoved();
-                    }
-
-                    @Override
-                    public void onDropDownVisible(boolean v) {
-                        showSelection(v);
-                        if (stateListener != null)
-                            stateListener.onDropDownVisible(v);
-
-                    }
-
-                    @Override
-                    public void onDropDownSizeChanged(double width,
-                            double height) {
-                        if (stateListener != null)
-                            stateListener.onDropDownSizeChanged(width, height);
-                    }
-
-                    @Override
-                    public void onDropDownClose() {
-                        unregisterSelection();
-                        // Even if the calling code has it's own close listener, we still want
-                        // to fix the map when we close
-                        if ((_dropDown != null)
-                                && (_dropDown.getFragment() != null)) {
-                            try {
-                                _fragmentManager.beginTransaction()
-                                        .remove(_dropDown.getFragment())
-                                        .commit();
-                                _backstack = 0;
-                            } catch (IllegalStateException e) {
-                                // see the Fragment Manager warning at the top
-                                Log.d(TAG, "state loss fragment for: " + this,
-                                        e);
-                            }
-                        }
-
-                        if (stateListener != null) {
-                            stateListener.onDropDownClose();
-                        }
-
-                    }
-                });
+                _dropDown.setOnStateListener(
+                        new StateListenerForwarder(stateListener));
                 _closed = false;
                 hideToolbar();
                 notifyManager();
@@ -494,51 +464,8 @@ public abstract class DropDownReceiver extends BroadcastReceiver {
                 } else {
                     _dropDown.setDimensions(lwFraction, lhFraction);
                 }
-                _dropDown.setOnStateListener(new OnStateListener() {
-
-                    @Override
-                    public void onDropDownSelectionRemoved() {
-                        if (stateListener != null)
-                            stateListener.onDropDownSelectionRemoved();
-                    }
-
-                    @Override
-                    public void onDropDownVisible(final boolean v) {
-                        showSelection(v);
-                        if (stateListener != null)
-                            stateListener.onDropDownVisible(v);
-                    }
-
-                    @Override
-                    public void onDropDownSizeChanged(final double width,
-                            final double height) {
-                        if (stateListener != null)
-                            stateListener.onDropDownSizeChanged(width, height);
-                    }
-
-                    @Override
-                    public void onDropDownClose() {
-                        unregisterSelection();
-
-                        if (_dropDown.getFragment() != null) {
-                            try {
-                                _fragmentManager.beginTransaction()
-                                        .remove(_dropDown.getFragment())
-                                        .commit();
-                                _backstack = 0;
-                            } catch (IllegalStateException e) {
-                                // see the Fragment Manager warning at the top
-                                Log.d(TAG, "state loss fragment for: " + this,
-                                        e);
-                            }
-                            if (stateListener != null) {
-                                stateListener.onDropDownClose();
-                            }
-
-                        }
-
-                    }
-                });
+                _dropDown.setOnStateListener(
+                        new StateListenerForwarder(stateListener));
                 _closed = false;
                 hideToolbar();
                 notifyManager();
@@ -565,14 +492,41 @@ public abstract class DropDownReceiver extends BroadcastReceiver {
     }
 
     /**
+     * Flags the drop-down as transient to handle a number of specific cases:
+     * - {@link DropDownManager#getTopDropDownKey()} ignores this drop-down
+     * - Opening this drop-down does not close other drop-downs
+     *   (even with {@link #setRetain(boolean)} set to <code>false</code>)
+     *
+     * @param isTransient True if this drop-down should be flagged as transient
+     */
+    public void setTransient(boolean isTransient) {
+        _transient = isTransient;
+    }
+
+    /**
+     * Check whether this drop-down is flagged as transient
+     * See {@link #setTransient(boolean)} for more info
+     * 
+     * @return True if this drop-down is flagged as transient
+     */
+    public boolean isTransient() {
+        return _transient;
+    }
+
+    /**
      * Sets the associated setting screen in the Tools section so if the settings
      * screen is open while this drop down receiver is open and in the foreground,
      * the associated setting screen will be opened.
+     * @param key Settings screen key
      */
     public void setAssociationKey(final String key) {
         this.key = key;
     }
 
+    /**
+     * Get the associated settings screen key
+     * @return Settings screen key
+     */
     public String getAssociationKey() {
         return key;
     }
@@ -678,9 +632,9 @@ public abstract class DropDownReceiver extends BroadcastReceiver {
     final protected boolean _showDropDown() {
         int side;
         if (_dropDown.getSide() == DropDown.DropDownSide.RIGHT_SIDE) {
-            side = R.id.right_side_panel_container;
+            side = R.id.right_drop_down;
         } else {
-            side = R.id.left_side_panel_container;
+            side = R.id.left_drop_down;
         }
 
         boolean success = fragmentReplaceTransaction(side,
@@ -699,6 +653,7 @@ public abstract class DropDownReceiver extends BroadcastReceiver {
         try {
             _fragmentManager.beginTransaction()
                     .replace(id, frag).addToBackStack(null).commit();
+
             _backstack++;
             return true;
         } catch (IllegalStateException e) {
@@ -788,9 +743,16 @@ public abstract class DropDownReceiver extends BroadcastReceiver {
      */
     void clearFragment() {
         try {
-            _fragmentManager.beginTransaction().detach(_dropDown.getFragment())
-                    .commitAllowingStateLoss();
-            //_fragmentManager.beginTransaction().remove(_dropDown.getFragment()).commitAllowingStateLoss();
+
+            if (!(_dropDown.getFragment() instanceof GenericFragmentAdapter))
+                _fragmentManager.beginTransaction()
+                        .remove(_dropDown.getFragment())
+                        .commitAllowingStateLoss();
+            else
+                _fragmentManager.beginTransaction()
+                        .detach(_dropDown.getFragment())
+                        .commitAllowingStateLoss();
+            _backstack--;
         } catch (Exception e) {
             Log.e(TAG,
                     "error removing fragment for: " + _dropDown.getFragment());
@@ -948,4 +910,78 @@ public abstract class DropDownReceiver extends BroadcastReceiver {
         }
     }
 
+    /**
+     * Forwards drop-down events from {@link DropDown} to internal and
+     * external state listeners
+     */
+    private class StateListenerForwarder implements OnStateListener {
+
+        private final OnStateListener stateListener;
+
+        StateListenerForwarder(OnStateListener listener) {
+            this.stateListener = listener;
+        }
+
+        @Override
+        public void onDropDownSelectionRemoved() {
+            for (OnStateListener l : getListeners())
+                l.onDropDownSelectionRemoved();
+        }
+
+        @Override
+        public void onDropDownVisible(boolean v) {
+            showSelection(v);
+            for (OnStateListener l : getListeners())
+                l.onDropDownVisible(v);
+        }
+
+        @Override
+        public void onDropDownSizeChanged(double width,
+                double height) {
+            for (OnStateListener l : getListeners())
+                l.onDropDownSizeChanged(width, height);
+        }
+
+        @Override
+        public void onDropDownClose() {
+            unregisterSelection();
+            // Even if the calling code has it's own close listener, we still want
+            // to fix the map when we close
+            if (_dropDown != null && _dropDown.getFragment() != null) {
+                try {
+                    _fragmentManager.beginTransaction()
+                            .remove(_dropDown.getFragment())
+                            .commit();
+                    _backstack = 0;
+                } catch (IllegalStateException e) {
+                    // see the Fragment Manager warning at the top
+                    Log.d(TAG, "state loss fragment for: " + this,
+                            e);
+                }
+            }
+
+            for (OnStateListener l : getListeners())
+                l.onDropDownClose();
+        }
+
+        /**
+         * Get internal and external state listeners
+         * @return List of listeners
+         */
+        private List<OnStateListener> getListeners() {
+            List<OnStateListener> listeners = new ArrayList<>();
+
+            // Add the primary state listener first
+            if (stateListener != null)
+                listeners.add(stateListener);
+
+            // Get association key-based listeners
+            String key = getAssociationKey();
+            if (!FileSystemUtils.isEmpty(key))
+                listeners.addAll(DropDownManager.getInstance()
+                        .getListeners(key));
+
+            return listeners;
+        }
+    }
 }

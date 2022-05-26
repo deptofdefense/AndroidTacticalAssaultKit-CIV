@@ -1876,7 +1876,12 @@ std::string MissionPackageManager::getLocalUrl(int transferId)
 }
 
 
-int MissionPackageManager::webThreadAccessHandlerCallbackRedir(void *cbContext,
+#if MHD_VERSION >= 0x00097300
+enum MHD_Result MissionPackageManager::webThreadAccessHandlerCallbackRedir(
+#else
+int MissionPackageManager::webThreadAccessHandlerCallbackRedir(
+#endif
+                                          void *cbContext,
                                           struct MHD_Connection *connection,
                                           const char *url,
                                           const char *method,
@@ -1892,7 +1897,11 @@ int MissionPackageManager::webThreadAccessHandlerCallbackRedir(void *cbContext,
                                           connectionContext);
 }
 
+#if MHD_VERSION >= 0x00097300
+enum MHD_Result MissionPackageManager::webThreadAccessHandlerCallback(
+#else
 int MissionPackageManager::webThreadAccessHandlerCallback(
+#endif
                                           struct MHD_Connection *connection,
                                           const char *url,
                                           const char *method,
@@ -1979,7 +1988,12 @@ int MissionPackageManager::webThreadAccessHandlerCallback(
                 "MP webserver: Error serving request: %s",
                 e.what());
     }
-    int ret = MHD_queue_response(connection, code, response);
+#if MHD_VERSION >= 0x00097300
+    enum MHD_Result ret;
+#else
+    int ret;
+#endif
+    ret = MHD_queue_response(connection, code, response);
     MHD_destroy_response(response);
     return ret;
 }

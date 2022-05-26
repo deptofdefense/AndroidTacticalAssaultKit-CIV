@@ -16,6 +16,7 @@ import com.atakmap.android.missionpackage.file.MissionPackageFileIO;
 import com.atakmap.android.missionpackage.file.MissionPackageManifest;
 import com.atakmap.android.util.ATAKConstants;
 import com.atakmap.android.util.NotificationUtil;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.comms.SslNetCotPort;
 import com.atakmap.comms.http.TakHttpClient;
@@ -46,6 +47,15 @@ public class DeviceProfileOperation extends HTTPOperation {
 
     private static final String TAG = "DeviceProfileOperation";
 
+    public static final String PARAM_PROFILE_REQUEST = com.atakmap.net.DeviceProfileOperation.class
+            .getName()
+            + ".PARAM_PROFILE_REQEUST";
+
+    /**
+     * Replaced with PARAM_PROFILE_REQUEST.
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.4", removeAt = "4.7", forRemoval = true)
     public static final String PARAM_PROFILE_REQEUST = com.atakmap.net.DeviceProfileOperation.class
             .getName()
             + ".PARAM_PROFILE_REQEUST";
@@ -90,7 +100,7 @@ public class DeviceProfileOperation extends HTTPOperation {
             // Get request data
             DeviceProfileRequest profileRequest = (DeviceProfileRequest) request
                     .getParcelable(
-                            DeviceProfileOperation.PARAM_PROFILE_REQEUST);
+                            DeviceProfileOperation.PARAM_PROFILE_REQUEST);
             if (profileRequest == null) {
                 throw new DataException("Unable to serialize profile request");
             }
@@ -205,11 +215,15 @@ public class DeviceProfileOperation extends HTTPOperation {
             }
 
             Bundle output = new Bundle();
-            output.putParcelable(PARAM_PROFILE_REQEUST, profileRequest);
+            output.putParcelable(PARAM_PROFILE_REQUEST, profileRequest);
 
             if (response.isOk()) {
                 //content available, process it now
-                processResults(context, profileRequest, response, output,
+                Context useContext = DeviceProfileClient.getInstance()
+                        .getContext() != null
+                                ? DeviceProfileClient.getInstance().getContext()
+                                : MapView.getMapView().getContext();
+                processResults(useContext, profileRequest, response, output,
                         profileRequest.getAutoImportProfile());
             } else if (response.isStatus(HttpStatus.SC_NO_CONTENT)) {
                 //no content available, nothing to process, but not an error

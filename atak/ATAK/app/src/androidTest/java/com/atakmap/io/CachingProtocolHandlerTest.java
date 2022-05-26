@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -134,7 +135,7 @@ public class CachingProtocolHandlerTest {
                     FileSystemUtils.copyStream(result.inputStream, false,
                             content, false);
                     assertEquals(data.length, content.size());
-                    assertTrue(Arrays.equals(data, content.toByteArray()));
+                    assertArrayEquals(data, content.toByteArray());
                 }
             }
 
@@ -154,7 +155,7 @@ public class CachingProtocolHandlerTest {
                     FileSystemUtils.copyStream(result.inputStream, false,
                             content, false);
                     assertEquals(data.length, content.size());
-                    assertTrue(Arrays.equals(data, content.toByteArray()));
+                    assertArrayEquals(data, content.toByteArray());
                 }
             }
         }

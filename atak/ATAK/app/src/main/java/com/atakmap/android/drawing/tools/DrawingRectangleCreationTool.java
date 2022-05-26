@@ -188,7 +188,7 @@ public class DrawingRectangleCreationTool extends Tool implements
         if (event.getType().equals(MapEvent.MAP_CLICK)
                 || event.getType().equals(MapEvent.MAP_LONG_PRESS)) {
             point = _mapView.inverseWithElevation(
-                    event.getPoint().x, event.getPoint().y);
+                    event.getPointF().x, event.getPointF().y);
 
         } else if (event.getType().equals(MapEvent.ITEM_CLICK)) {
             if (item instanceof PointMapItem) {
@@ -217,7 +217,7 @@ public class DrawingRectangleCreationTool extends Tool implements
             if (point.equals(_first_point)) {
                 Toast.makeText(
                         _mapView.getContext(),
-                        "Warning: Must be a different point ",
+                        R.string.same_point_warning,
                         Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -232,7 +232,7 @@ public class DrawingRectangleCreationTool extends Tool implements
             if (point.equals(_first_point) || point.equals(_second_point)) {
                 Toast.makeText(
                         _mapView.getContext(),
-                        "Warning: Must be a different point ",
+                        R.string.same_point_warning,
                         Toast.LENGTH_SHORT).show();
                 return;
             }

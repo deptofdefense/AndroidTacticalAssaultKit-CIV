@@ -6,13 +6,21 @@ import android.os.SystemClock;
 
 import com.atakmap.android.config.ConfigEnvironment;
 import com.atakmap.android.config.DataParser;
+import com.atakmap.annotations.DeprecatedApi;
 
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
+import java.util.IdentityHashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class LayoutWidget extends AbstractParentWidget {
+import gov.tak.api.widgets.ILayoutWidget;
+
+@Deprecated
+@DeprecatedApi(since = "4.4")
+public class LayoutWidget extends AbstractParentWidget
+        implements ILayoutWidget {
 
     public interface OnBackingColorChangedListener {
         void onBackingColorChanged(LayoutWidget layout);
@@ -134,34 +142,64 @@ public class LayoutWidget extends AbstractParentWidget {
         return _dragEnabled;
     }
 
-    public void addOnBackingColorChangedListener(
-            OnBackingColorChangedListener l) {
+    @Override
+    public final void addOnBackingColorChangedListener(
+            ILayoutWidget.OnBackingColorChangedListener l) {
         _onBackingColorChanged.add(l);
     }
 
-    public void removeOnBackingColorChangedListener(
-            OnBackingColorChangedListener l) {
+    public void addOnBackingColorChangedListener(
+            LayoutWidget.OnBackingColorChangedListener l) {
+        registerForwardedListener(_onBackingColorChanged,
+                _onBackingColorChangedForwarders, l,
+                new BackingColorChangedForwarder(l));
+    }
+
+    @Override
+    public final void removeOnBackingColorChangedListener(
+            ILayoutWidget.OnBackingColorChangedListener l) {
         _onBackingColorChanged.remove(l);
     }
 
-    public void addOnDragEnabledChangedListener(
-            OnDragEnabledChangedListener l) {
+    public void removeOnBackingColorChangedListener(
+            LayoutWidget.OnBackingColorChangedListener l) {
+        unregisterForwardedListener(_onBackingColorChanged,
+                _onBackingColorChangedForwarders, l);
+    }
+
+    @Override
+    public final void addOnDragEnabledChangedListener(
+            ILayoutWidget.OnDragEnabledChangedListener l) {
         _onDragEnabledChanged.add(l);
     }
 
-    public void removeOnDragEnabledChangedListener(
-            OnDragEnabledChangedListener l) {
+    public void addOnDragEnabledChangedListener(
+            LayoutWidget.OnDragEnabledChangedListener l) {
+        registerForwardedListener(_onDragEnabledChanged,
+                _onDragEnabledChangedForwarders, l,
+                new DragEnabledChangedForwarder(l));
+    }
+
+    @Override
+    public final void removeOnDragEnabledChangedListener(
+            ILayoutWidget.OnDragEnabledChangedListener l) {
         _onDragEnabledChanged.remove(l);
     }
 
-    protected void onBackingColorChanged() {
-        for (OnBackingColorChangedListener l : _onBackingColorChanged) {
+    public void removeOnDragEnabledChangedListener(
+            LayoutWidget.OnDragEnabledChangedListener l) {
+        unregisterForwardedListener(_onDragEnabledChanged,
+                _onDragEnabledChangedForwarders, l);
+    }
+
+    public void onBackingColorChanged() {
+        for (ILayoutWidget.OnBackingColorChangedListener l : _onBackingColorChanged) {
             l.onBackingColorChanged(this);
         }
     }
 
-    protected void onDragEnabledChanged() {
-        for (OnDragEnabledChangedListener l : _onDragEnabledChanged) {
+    public void onDragEnabledChanged() {
+        for (ILayoutWidget.OnDragEnabledChangedListener l : _onDragEnabledChanged) {
             l.onDragEnabledChanged(this);
         }
     }
@@ -174,6 +212,40 @@ public class LayoutWidget extends AbstractParentWidget {
     private int _backingColor = 0;
     private boolean _ninePatchBG = false;
     private boolean _dragEnabled = false;
-    private final ConcurrentLinkedQueue<OnBackingColorChangedListener> _onBackingColorChanged = new ConcurrentLinkedQueue<>();
-    private final ConcurrentLinkedQueue<OnDragEnabledChangedListener> _onDragEnabledChanged = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<ILayoutWidget.OnBackingColorChangedListener> _onBackingColorChanged = new ConcurrentLinkedQueue<>();
+    private final Map<LayoutWidget.OnBackingColorChangedListener, ILayoutWidget.OnBackingColorChangedListener> _onBackingColorChangedForwarders = new IdentityHashMap<>();
+    private final ConcurrentLinkedQueue<ILayoutWidget.OnDragEnabledChangedListener> _onDragEnabledChanged = new ConcurrentLinkedQueue<>();
+    private final Map<LayoutWidget.OnDragEnabledChangedListener, ILayoutWidget.OnDragEnabledChangedListener> _onDragEnabledChangedForwarders = new IdentityHashMap<>();
+
+    private final static class BackingColorChangedForwarder
+            implements ILayoutWidget.OnBackingColorChangedListener {
+        final LayoutWidget.OnBackingColorChangedListener _cb;
+
+        BackingColorChangedForwarder(
+                LayoutWidget.OnBackingColorChangedListener cb) {
+            _cb = cb;
+        }
+
+        @Override
+        public void onBackingColorChanged(ILayoutWidget layout) {
+            if (layout instanceof LayoutWidget)
+                _cb.onBackingColorChanged((LayoutWidget) layout);
+        }
+    }
+
+    private final static class DragEnabledChangedForwarder
+            implements ILayoutWidget.OnDragEnabledChangedListener {
+        final LayoutWidget.OnDragEnabledChangedListener _cb;
+
+        DragEnabledChangedForwarder(
+                LayoutWidget.OnDragEnabledChangedListener cb) {
+            _cb = cb;
+        }
+
+        @Override
+        public void onDragEnabledChanged(ILayoutWidget layout) {
+            if (layout instanceof LayoutWidget)
+                _cb.onDragEnabledChanged((LayoutWidget) layout);
+        }
+    }
 }

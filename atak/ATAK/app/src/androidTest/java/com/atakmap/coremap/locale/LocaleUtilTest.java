@@ -3,8 +3,6 @@ package com.atakmap.coremap.locale;
 
 import com.atakmap.android.androidtest.ATAKInstrumentedTest;
 
-import androidx.test.runner.AndroidJUnit4;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -14,6 +12,8 @@ import java.util.Locale;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 @RunWith(AndroidJUnit4.class)
 public class LocaleUtilTest extends ATAKInstrumentedTest {

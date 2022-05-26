@@ -15,7 +15,7 @@ import com.atakmap.app.preferences.ToolsPreferenceFragment;
 
 import org.junit.Test;
 
-import androidx.test.InstrumentationRegistry;
+import androidx.test.core.app.ApplicationProvider;
 
 import java.util.List;
 
@@ -29,7 +29,7 @@ public class SearchIndexTest extends ATAKInstrumentedTest {
 
     @Test
     public void testMyPreferences() {
-        final Context appContext = InstrumentationRegistry.getTargetContext();
+        final Context appContext = ApplicationProvider.getApplicationContext();
 
         Thread t = new Thread() {
             public void run() {
@@ -62,7 +62,7 @@ public class SearchIndexTest extends ATAKInstrumentedTest {
     public void testSupportPreferences() {
         if (this != null)
             return;
-        final Context appContext = InstrumentationRegistry.getTargetContext();
+        final Context appContext = ApplicationProvider.getApplicationContext();
 
         // Brian - somehow this one is always null?
         Thread t = new Thread() {
@@ -85,7 +85,7 @@ public class SearchIndexTest extends ATAKInstrumentedTest {
 
     @Test
     public void testMetricPreferences() {
-        final Context appContext = InstrumentationRegistry.getTargetContext();
+        final Context appContext = ApplicationProvider.getApplicationContext();
         AtakPreferenceFragment.setContext(appContext);
 
         Thread t = new Thread() {

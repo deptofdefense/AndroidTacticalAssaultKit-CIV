@@ -67,7 +67,7 @@ public class ModelContentHandler extends FileOverlayContentHandler implements
 
     private final FeatureDataStore2 _dataStore;
     private final Envelope.Builder _envBuilder = new Envelope.Builder();
-    private long _fsid;
+    private final long _fsid;
 
     // For capturing
     private List<ModelInfo> _modelInfo;

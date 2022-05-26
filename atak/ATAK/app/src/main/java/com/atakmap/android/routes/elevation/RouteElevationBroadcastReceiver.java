@@ -29,30 +29,30 @@ public class RouteElevationBroadcastReceiver extends DropDownReceiver
 
     static final public String TAG = "RouteElevationBroadcastReceiver";
 
-    private static RouteElevationBroadcastReceiver _instance;
+    protected static RouteElevationBroadcastReceiver _instance;
 
-    private final MapView _mapView;
-    private final Context _context;
-    private final LayoutInflater _inflater;
+    protected final MapView _mapView;
+    protected final Context _context;
+    protected final LayoutInflater _inflater;
 
-    private Route _route;
-    private String _title;
+    protected Route _route;
+    protected String _title;
     private ProcessRouteThread processThread;
-    private static int orient = Configuration.ORIENTATION_LANDSCAPE;
-    private RouteElevationView routeElevationView;
-    private SeekerBarPanelView seekerBarPanelView;
-    private AnalysisPanelView analysisPanelView;
-    private AnalysisPanelPresenter analysisPanelPresenter;
+    protected static int orient = Configuration.ORIENTATION_LANDSCAPE;
+    protected RouteElevationView routeElevationView;
+    protected SeekerBarPanelView seekerBarPanelView;
+    protected AnalysisPanelView analysisPanelView;
+    protected AnalysisPanelPresenter analysisPanelPresenter;
 
-    private final RouteElevationPresenter routeElevationPresenter;
-    private final SeekerBarPanelPresenter seekerBarPanelPresenter;
-    private final SelfPresenter selfPresenter;
-    private final SharedPreferences prefs;
+    protected final RouteElevationPresenter routeElevationPresenter;
+    protected final SeekerBarPanelPresenter seekerBarPanelPresenter;
+    protected final SelfPresenter selfPresenter;
+    protected final SharedPreferences prefs;
     private Boolean bInterpolateElevations;
     private boolean _dropDownOpen = false;
-    private Intent _onCloseIntent;
+    protected Intent _onCloseIntent;
 
-    private final BroadcastReceiver routePointsChangedReceiver = new BroadcastReceiver() {
+    protected final BroadcastReceiver routePointsChangedReceiver = new BroadcastReceiver() {
 
         @Override
         public void onReceive(Context arg0, Intent arg1) {
@@ -65,7 +65,7 @@ public class RouteElevationBroadcastReceiver extends DropDownReceiver
 
     };
 
-    private RouteElevationBroadcastReceiver(MapView mapView,
+    protected RouteElevationBroadcastReceiver(MapView mapView,
             MapGroup mapGroup) {
         super(mapView);
 
@@ -77,8 +77,9 @@ public class RouteElevationBroadcastReceiver extends DropDownReceiver
                 .getContext());
 
         // Setup Presenters
-        analysisPanelPresenter = new AnalysisPanelPresenter();
-        seekerBarPanelPresenter = new SeekerBarPanelPresenter(mapView);
+        analysisPanelPresenter = AnalysisPanelPresenterCompat.newInstance();
+        seekerBarPanelPresenter = SeekerBarPanelPresenterCompat
+                .newInstance(mapView);
         routeElevationPresenter = new RouteElevationPresenter();
         selfPresenter = new SelfPresenter(prefs);
 
@@ -90,15 +91,14 @@ public class RouteElevationBroadcastReceiver extends DropDownReceiver
 
     synchronized public static void initialize(MapView mapView,
             MapGroup mapGroup) {
-        if (_instance == null)
-            _instance = new RouteElevationBroadcastReceiver(mapView, mapGroup);
+        RouteElevationBroadcastReceiverCompat.initialize(mapView, mapGroup);
     }
 
     synchronized public static RouteElevationBroadcastReceiver getInstance() {
         return _instance;
     }
 
-    private void initViews() {
+    protected void initViews() {
         // Save the initial orientation so we can now when to reinitialize the views & presenters
         orient = _context.getResources().getConfiguration().orientation;
 
@@ -259,7 +259,7 @@ public class RouteElevationBroadcastReceiver extends DropDownReceiver
     /**
      * Check the orientation to see if we should update which layout the RouteElevationView uses.
      */
-    private void _checkOrientation() {
+    protected void _checkOrientation() {
         int o = getMapView().getContext().getResources()
                 .getConfiguration().orientation;
 

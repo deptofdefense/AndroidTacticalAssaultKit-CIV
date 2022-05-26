@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.preference.PreferenceManager;
 import android.util.Pair;
@@ -17,16 +18,17 @@ import com.atakmap.android.routes.animations.SpeedInterpolationProvider;
 import com.atakmap.android.routes.animations.Storyboard;
 import com.atakmap.android.routes.animations.StoryboardPlayer;
 import com.atakmap.android.routes.nav.RoutePanelViewModel;
+import com.atakmap.android.widgets.LayoutHelper;
 import com.atakmap.android.widgets.LayoutWidget;
-import com.atakmap.android.widgets.LinearLayoutWidget;
 import com.atakmap.android.widgets.MapWidget;
-import com.atakmap.android.widgets.MapWidget2;
 import com.atakmap.android.widgets.MarkerIconWidget;
 import com.atakmap.android.widgets.RootLayoutWidget;
 import com.atakmap.android.widgets.TextWidget;
 import com.atakmap.app.R;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.assets.Icon;
+
+import java.util.List;
 
 /**
  * This is the UI that will be displayed while navigating.
@@ -37,8 +39,7 @@ import com.atakmap.coremap.maps.assets.Icon;
 public class NavigationInstrumentPanel implements
         RoutePanelViewModel.RouteNavigationStateListener,
         SharedPreferences.OnSharedPreferenceChangeListener,
-        MapWidget.OnWidgetPointChangedListener,
-        MapWidget2.OnWidgetSizeChangedListener {
+        RootLayoutWidget.OnLayoutChangedListener {
 
     //-------------------- Fields and Properties ---------------------------
 
@@ -108,7 +109,6 @@ public class NavigationInstrumentPanel implements
     }
 
     private final RootLayoutWidget rootLayoutWidget;
-    private final LinearLayoutWidget topLeft, topEdge, leftEdge;
 
     private LayoutWidget instrumentLayoutWidget = null;
     private LayoutWidget speedLayoutWidget = null;
@@ -139,21 +139,7 @@ public class NavigationInstrumentPanel implements
         this.stateManager = stateManager;
         this.rootLayoutWidget = (RootLayoutWidget) mapView.getComponentExtra(
                 "rootLayoutWidget");
-
-        this.topLeft = this.rootLayoutWidget.getLayout(
-                RootLayoutWidget.TOP_LEFT);
-        this.topLeft.addOnWidgetPointChangedListener(this);
-        this.topLeft.addOnWidgetSizeChangedListener(this);
-
-        this.topEdge = this.rootLayoutWidget.getLayout(
-                RootLayoutWidget.TOP_EDGE);
-        this.topEdge.addOnWidgetPointChangedListener(this);
-        this.topEdge.addOnWidgetSizeChangedListener(this);
-
-        this.leftEdge = this.rootLayoutWidget.getLayout(
-                RootLayoutWidget.LEFT_EDGE);
-        this.leftEdge.addOnWidgetPointChangedListener(this);
-        this.leftEdge.addOnWidgetSizeChangedListener(this);
+        this.rootLayoutWidget.addOnLayoutChangedListener(this);
 
         //Install the UI
         addWidgets();
@@ -167,16 +153,6 @@ public class NavigationInstrumentPanel implements
                 updateVolumeWidget(volumeWidget, !voice_cue);
         } else if (key.equals("route_billboard_enabled"))
             updateBillboardWidget();
-    }
-
-    @Override
-    public void onWidgetPointChanged(MapWidget widget) {
-        invalidatePosition();
-    }
-
-    @Override
-    public void onWidgetSizeChanged(MapWidget2 widget) {
-        invalidatePosition();
     }
 
     //-------------------- Methods ---------------------------
@@ -234,28 +210,26 @@ public class NavigationInstrumentPanel implements
         if (instrumentLayoutWidget == null)
             return;
 
-        float[] tlSize = topLeft.getSize(true, true);
-        float[] teSize = topEdge.getSize(true, true);
-        float[] leSize = leftEdge.getSize(true, true);
+        // Setup layout helper with all top-aligned views + widgets
+        Rect mapRect = new Rect(0, 0, mapView.getWidth(), mapView.getHeight());
+        List<Rect> bounds = rootLayoutWidget.getOccupiedBounds();
+        LayoutHelper layoutHelper = new LayoutHelper(mapRect, bounds);
 
-        float left = topLeft.getPointX(), top = topLeft.getPointY();
-        float cueLeft = Math.max(leftEdge.getPointX() + leSize[0],
-                cueWidgetXPos * density);
-        if (tlSize[0] / tlSize[1] < 1.25f) {
-            // Place right of the top-left widget and below the top edge
-            left += Math.max(tlSize[0], leSize[0]);
-            top += teSize[1];
-        } else {
-            // Place below the top-left widget and right of the ledge edge
-            left += Math.max(cueLeft, leSize[0]);
-            top += Math.max(tlSize[1], teSize[1]);
-        }
-        instrumentLayoutWidget.setPoint(left, top + (instrumentWidgetHeight
-                * density));
+        // Setup instrument box bounds
+        float cueOffset = (cueWidgetHeight + cueWidgetOffset) * density;
+        Rect instBounds = LayoutHelper.getBounds(instrumentLayoutWidget);
+        instBounds.bottom += cueOffset;
+
+        // Find the best position aligned to the top-right
+        instBounds = layoutHelper.findBestPosition(instBounds,
+                RootLayoutWidget.TOP_LEFT);
+
+        float top = instBounds.top + (instrumentWidgetHeight * density);
+        instrumentLayoutWidget.setPoint(instBounds.left, top);
+
+        // Move cue/waypoint layout directly below
         if (cueLayoutWidget != null)
-            cueLayoutWidget.setPoint(cueLeft, top + Math.max(
-                    (instrumentWidgetHeight + cueWidgetOffset) * density,
-                    tlSize[1]) + (cueWidgetHeight * density));
+            cueLayoutWidget.setPoint(instBounds.left, top + cueOffset);
     }
 
     public void removeWidgets() {
@@ -758,7 +732,6 @@ public class NavigationInstrumentPanel implements
         });
 
         LayoutWidget root = new LayoutWidget();
-        root.setSize(backdrop.getWidth(), backdrop.getHeight());
         root.addWidget(backdrop);
 
         //-------------------- ETA and Distance ---------------------------
@@ -838,12 +811,14 @@ public class NavigationInstrumentPanel implements
         root.addWidget(prevWidget);
         root.addWidget(nextWidget);
 
+        root.setSize(backdrop.getWidth() + rockerSize, backdrop.getHeight());
+
         return root;
     }
 
     private void updateEtaAndDistance(String eta, String distance) {
         LayoutWidget root = (LayoutWidget) etaTextWidget.getParent();
-        float width = root.getWidth();
+        float width = root.getWidth() - rockerSize;
         float height = root.getHeight();
         float segmentWidth = (width - speedLayoutWidget.getWidth()) / 2.0f;
 
@@ -1099,5 +1074,10 @@ public class NavigationInstrumentPanel implements
         if (!isdistanceAndETACheckpointBased) {
             updateEtaAndDistance(eta, null);
         }
+    }
+
+    @Override
+    public void onLayoutChanged() {
+        invalidatePosition();
     }
 }

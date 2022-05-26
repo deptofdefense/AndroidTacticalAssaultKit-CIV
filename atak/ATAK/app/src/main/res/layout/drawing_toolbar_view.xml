@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<com.atakmap.android.tools.ActionBarView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.atakmap.android.tools.ActionBarView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="horizontal"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
@@ -9,116 +11,99 @@
 
     <ImageButton
         android:id="@+id/newCircleButton"
-        android:layout_height="@dimen/dropdown_bottom_bar_height"
-        android:layout_width="@dimen/dropdown_bottom_bar_height"
-        android:lines="0"
-        android:background="@drawable/btn_gray"
-        android:padding="6dp"
-        android:scaleType="centerInside"
-        android:src="@drawable/ic_menu_drawing_circle_toggle" />
+        android:src="@drawable/ic_menu_drawing_circle_toggle"
+        style="@style/ActionBarViewImageButton"/>
+
+    <ImageButton
+        android:id="@+id/newEllipseButton"
+        android:src="@drawable/ic_menu_ellipse_toggle"
+        style="@style/ActionBarViewImageButton"/>
 
     <ImageButton
         android:id="@+id/newRectangleButton"
-        android:layout_height="@dimen/dropdown_bottom_bar_height"
-        android:layout_width="@dimen/dropdown_bottom_bar_height"
-        android:lines="0"
-        android:background="@drawable/btn_gray"
-        android:padding="6dp"
-        android:scaleType="centerInside"
-        android:src="@drawable/ic_menu_drawing_rect_toggle" />
+        android:src="@drawable/ic_menu_drawing_rect_toggle"
+        style="@style/ActionBarViewImageButton"/>
 
     <ImageButton
         android:id="@+id/newShapeButton"
-        android:layout_height="@dimen/dropdown_bottom_bar_height"
-        android:layout_width="@dimen/dropdown_bottom_bar_height"
-        android:lines="0"
-        android:background="@drawable/btn_gray"
-        android:padding="6dp"
-        android:scaleType="centerInside"
-        android:src="@drawable/sse_shape" />
+        android:src="@drawable/sse_shape"
+        style="@style/ActionBarViewImageButton"/>
 
     <ImageButton
         android:id="@+id/toggleScrollButton"
-        style="@style/dflt_toolbar_btn_tool"
-        android:layout_width="@dimen/dropdown_bottom_bar_height"
-        android:layout_height="@dimen/dropdown_bottom_bar_height"
-        android:scaleType="fitCenter"
-        android:padding="6dp"
-        android:background="@drawable/btn_gray"
         android:src="@drawable/ic_menu_drawing_telestrate_toggle"
-        android:visibility="gone" />
+        style="@style/ActionBarViewImageButton"
+        android:visibility="gone"
+        tools:visibility="visible"/>
 
     <ImageButton
         android:id="@+id/telestrationColorButton"
-        style="@android:style/Widget.Holo.Button"
-        android:drawableStart="@drawable/color_rectangle"
-        android:padding="6dp"
-        android:layout_width="@dimen/dropdown_bottom_bar_height"
-        android:layout_height="@dimen/dropdown_bottom_bar_height"
-        android:background="@drawable/btn_gray"
-        android:visibility="gone"/>
+        android:src="@drawable/color_rectangle"
+        style="@style/ActionBarViewImageButton"
+        android:visibility="gone"
+        tools:visibility="visible"/>
 
     <Button
         android:id="@+id/undoButton"
         style="@style/dflt_toolbar_btn_tool"
         android:layout_width="wrap_content"
-        android:layout_height="@dimen/dropdown_bottom_bar_height"
-        android:background="@drawable/btn_gray"
+        android:layout_height="@dimen/nav_child_button_size"
         android:paddingStart="4dp" android:paddingEnd="4dp"
+        android:background="@drawable/btn_gray"
         android:text="@string/undo"
-        android:visibility="gone"/>
+        android:visibility="gone"
+        tools:visibility="visible"/>
 
     <ImageButton
         android:id="@+id/telestration"
-        android:layout_height="@dimen/dropdown_bottom_bar_height"
-        android:layout_width="@dimen/dropdown_bottom_bar_height"
-        android:lines="0"
-        android:background="@drawable/btn_gray"
-        android:padding="6dp"
-        android:scaleType="centerInside"
-        android:src="@drawable/ic_menu_drawing_telestrate_toggle" />
+        android:src="@drawable/ic_menu_drawing_telestrate_toggle"
+        style="@style/ActionBarViewImageButton"/>
     
     <Button
         android:id="@+id/editShapeButton"
         style="@style/dflt_toolbar_btn_tool"
         android:layout_width="wrap_content"
-        android:layout_height="@dimen/dropdown_bottom_bar_height"
+        android:layout_height="@dimen/nav_child_button_size"
         android:layout_alignParentTop="true"
         android:background="@drawable/btn_gray"
         android:paddingStart="4dp" android:paddingEnd="4dp"
         android:text="@string/end_editing"
-        android:visibility="gone"/>
+        android:visibility="gone"
+        tools:visibility="visible"/>
     
     <Button
         android:id="@+id/deleteTelestrationButton"
         style="@style/dflt_toolbar_btn_tool"
         android:layout_width="wrap_content"
-        android:layout_height="@dimen/dropdown_bottom_bar_height"
+        android:layout_height="@dimen/nav_child_button_size"
         android:background="@drawable/btn_gray"
         android:paddingStart="4dp" android:paddingEnd="4dp"
         android:text="@string/details_text2"
         android:textColor="#FFFFFFFF"
-        android:visibility="gone"/>
+        android:visibility="gone"
+        tools:visibility="visible"/>
     
     <Button
         android:id="@+id/doneButton"
         style="@style/dflt_toolbar_btn_tool"
         android:layout_width="wrap_content"
-        android:layout_height="@dimen/dropdown_bottom_bar_height"
+        android:layout_height="@dimen/nav_child_button_size"
         android:background="@drawable/btn_gray"
         android:text="@string/end"
         android:paddingStart="4dp" android:paddingEnd="4dp"
         android:visibility="gone"
-        android:textColor="#FFFFFFFF"/>
+        android:textColor="#FFFFFFFF"
+        tools:visibility="visible"/>
     <Button
         android:id="@+id/doneDrawing"
         style="@style/dflt_toolbar_btn_tool"
         android:layout_width="wrap_content"
-        android:layout_height="@dimen/dropdown_bottom_bar_height"
+        android:layout_height="@dimen/nav_child_button_size"
         android:background="@drawable/btn_gray"
         android:text="@string/details_text3"
         android:paddingStart="4dp" android:paddingEnd="4dp"
         android:visibility="gone"
-        android:textColor="#FFFFFFFF"/>
+        android:textColor="#FFFFFFFF"
+        tools:visibility="visible"/>
 
 </com.atakmap.android.tools.ActionBarView>

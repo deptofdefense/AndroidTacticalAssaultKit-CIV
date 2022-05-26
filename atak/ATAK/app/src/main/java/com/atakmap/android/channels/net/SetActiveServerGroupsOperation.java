@@ -6,6 +6,7 @@ import android.os.Bundle;
 
 import com.atakmap.android.http.rest.operation.HTTPOperation;
 import com.atakmap.android.http.rest.operation.NetworkOperation;
+import com.atakmap.android.maps.MapView;
 import com.atakmap.comms.http.TakHttpClient;
 import com.atakmap.comms.http.TakHttpException;
 import com.atakmap.comms.http.TakHttpResponse;
@@ -49,7 +50,8 @@ public class SetActiveServerGroupsOperation extends HTTPOperation {
                     + activeServerGroupsRequest.getServer();
             httpClient = new TakHttpClient(baseUrl);
             HttpPut httpPut = new HttpPut(
-                    httpClient.getUrl("/api/groups/active"));
+                    httpClient.getUrl("/api/groups/active?clientUid="
+                            + MapView.getDeviceUid()));
             httpPut.addHeader("content-type", "application/json");
             httpPut.setEntity(new StringEntity(
                     activeServerGroupsRequest.getActiveGroups(),

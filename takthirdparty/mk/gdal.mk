@@ -40,14 +40,16 @@ $(gdal_configtouchfile): $(OUTDIR)/$(gdal_local_srcdir)/configure
 		--with-mrsid=$(OUTDIR_CYGSAFE)                              \
 		--with-curl=$(OUTDIR)/bin/curl-config                       \
 		--with-xml2=$(OUTDIR)/libxml2/xml2-config                   \
-		--with-geos=$(OUTDIR)/bin/geos-config                       \
+		--with-geos=no                                              \
 		--with-sqlite3=$(OUTDIR_CYGSAFE)                            \
-        --with-ogdi=$(OUTDIR_CYGSAFE)                               \
+		--with-ogdi=$(OUTDIR_CYGSAFE)                               \
 		--with-proj=$(OUTDIR_CYGSAFE)                               \
 		$(gdal_ttp_zlib)                                            \
 		--without-lerc                                              \
 		--with-pdfium=$(OUTDIR_CYGSAFE)/pdfium                      \
 		--with-pdfium-extra-lib-for-test=                           \
+                --without-pcre                                              \
+                --with-png=internal                                         \
 		--enable-static                                             \
 		--prefix=$(OUTDIR_CYGSAFE)
 	touch $@
@@ -71,7 +73,7 @@ gdal_java_data:
 	cd $(OUTDIR)/$(gdal_local_srcdir)/data &&                        \
             ls -1 > gdaldata.files
 	cd $(OUTDIR) &&                                                  \
-            $(JAVA_HOME)/bin/jar cvf $(OUTDIR)/java/gdaldata.jar ./gdal/data
+            $(JAVA_HOME)/bin/jar cvf $(OUTDIR_CYGSAFE)/java/gdaldata.jar ./gdal/data
 	rm -f $(OUTDIR)/$(gdal_local_srcdir)/data/gdaldata.files
 
 $(gdal_local_libfile): gdal_build

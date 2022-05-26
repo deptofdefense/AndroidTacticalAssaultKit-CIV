@@ -1,4 +1,4 @@
-<PersistedActionMenu baseline="true" hideable="true" iconPath="ic_menu_contact_layers" title="actionbar_contacts">
+<PersistedActionMenu baseline="true" hideable="true" iconPath="nav_contacts" title="actionbar_contacts">
    <ClickData actionType="click">
       <broadcast>
          <action>com.atakmap.android.contact.CONTACT_LIST</action>

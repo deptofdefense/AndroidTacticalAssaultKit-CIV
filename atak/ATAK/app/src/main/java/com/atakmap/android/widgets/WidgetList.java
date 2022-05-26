@@ -1,162 +1,76 @@
 
 package com.atakmap.android.widgets;
 
+import com.atakmap.annotations.DeprecatedApi;
+
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Array list that has a quick child index lookup for each child
  * Also prevents the same child from being inserted twice in order to simplify
  * the child -> index mapping
+ *
+ * @deprecated use {@link gov.tak.platform.widgets.WidgetList}
  */
+@Deprecated
+@DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
 public class WidgetList extends ArrayList<MapWidget> {
 
-    private final Map<MapWidget, Integer> _childToIndex = new HashMap<>();
+    private final gov.tak.platform.widgets.WidgetList impl = new gov.tak.platform.widgets.WidgetList();
 
     @Override
     public int indexOf(Object o) {
-        if (!(o instanceof MapWidget))
-            return -1;
-        synchronized (_childToIndex) {
-            Integer idx = _childToIndex.get(o);
-            if (idx != null)
-                return idx;
-        }
-        return -1;
+        return impl.indexOf(o);
     }
 
     @Override
     public int lastIndexOf(Object o) {
-        // Can only have 1 occurrence per item
-        return indexOf(o);
+        return impl.lastIndexOf(o);
     }
 
     @Override
     public void add(int index, MapWidget element) {
-        int reIdx = index;
-        synchronized (_childToIndex) {
-            // Re-index elements elements after the one we just added
-            // Also prevent same element from being added twice so the index map
-            // is maintained
-            Integer oldIndex = _childToIndex.get(element);
-            if (oldIndex != null) {
-                super.remove(oldIndex);
-                reIdx = oldIndex;
-            }
-        }
-        super.add(index, element);
-        reIndex(Math.min(reIdx, index));
+        impl.add(index, element);
     }
 
     @Override
     public boolean addAll(Collection<? extends MapWidget> c) {
-        // Remove existing elements from old index
-        int reIdx = removeOldEntries(c);
-
-        // Add new children and re-index
-        if (super.addAll(c)) {
-            reIndex(reIdx);
-            return true;
-        }
-        return false;
+        return impl.addAll(c);
     }
 
     @Override
     public boolean addAll(int index, Collection<? extends MapWidget> c) {
-        int reIdx = removeOldEntries(c);
-        if (super.addAll(index, c)) {
-            reIndex(Math.min(reIdx, index));
-            return true;
-        }
-        return false;
+        return impl.addAll(index, c);
     }
 
     @Override
     public MapWidget set(int index, MapWidget element) {
-        MapWidget removed = super.set(index, element);
-        synchronized (_childToIndex) {
-            if (removed != null)
-                _childToIndex.remove(removed);
-            _childToIndex.put(element, index);
-        }
-        return removed;
+        return (MapWidget) impl.set(index, element);
     }
 
     @Override
     public boolean remove(Object o) {
-        if (super.remove(o) && o instanceof MapWidget) {
-            // Re-index elements after the one we just removed
-            synchronized (_childToIndex) {
-                Integer oldIndex = _childToIndex.remove(o);
-                if (oldIndex != null)
-                    reIndex(oldIndex);
-            }
-            return true;
-        }
-        return false;
+        return impl.remove(o);
     }
 
     @Override
     public MapWidget remove(int index) {
-        MapWidget w = super.remove(index);
-        synchronized (_childToIndex) {
-            _childToIndex.remove(w);
-            reIndex(index);
-        }
-        return w;
+        return (MapWidget) impl.remove(index);
     }
 
     @Override
     public boolean removeAll(Collection<?> c) {
-        if (super.removeAll(c)) {
-            reIndex();
-            return true;
-        }
-        return false;
+        return impl.removeAll(c);
     }
 
     @Override
     public boolean retainAll(Collection<?> c) {
-        if (super.retainAll(c)) {
-            reIndex();
-            return true;
-        }
-        return false;
+        return impl.retainAll(c);
     }
 
     @Override
     public void clear() {
-        super.clear();
-        reIndex();
-    }
-
-    private int removeOldEntries(Collection<? extends MapWidget> c) {
-        int ret = size();
-        synchronized (_childToIndex) {
-            for (MapWidget w : c) {
-                Integer oldIndex = _childToIndex.get(w);
-                if (oldIndex != null) {
-                    super.remove(oldIndex);
-                    ret = Math.min(ret, oldIndex);
-                }
-            }
-        }
-        return ret;
-    }
-
-    private void reIndex(int startIdx) {
-        synchronized (_childToIndex) {
-            for (int i = startIdx; i < size(); i++)
-                _childToIndex.put(get(i), i);
-        }
-    }
-
-    private void reIndex() {
-        synchronized (_childToIndex) {
-            _childToIndex.clear();
-            reIndex(0);
-        }
+        impl.clear();
     }
 }

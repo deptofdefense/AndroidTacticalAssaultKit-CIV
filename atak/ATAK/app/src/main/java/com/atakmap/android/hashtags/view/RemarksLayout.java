@@ -5,17 +5,22 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.res.TypedArray;
+import android.os.Build;
 import android.text.Editable;
 import android.text.TextUtils.TruncateAt;
 import android.text.TextWatcher;
 import android.util.AttributeSet;
+import android.view.ActionMode;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.atakmap.android.imagecapture.CapturePrefs;
 import com.atakmap.android.maps.MapView;
@@ -27,7 +32,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * Layout that includes remarks and hashtags using the same visual style as
  * other elements in the CoT details views
  */
-public class RemarksLayout extends LinearLayout {
+public class RemarksLayout extends LinearLayout implements ActionMode.Callback {
 
     private static final String TAG = "RemarksLayout";
 
@@ -126,7 +131,12 @@ public class RemarksLayout extends LinearLayout {
         addView(ll);
 
         _label = findViewById(R.id.label);
+
         _remarks = findViewById(R.id.remarks);
+        _remarks.setCustomSelectionActionModeCallback(this);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+            _remarks.setCustomInsertionActionModeCallback(this);
+
         _editBtn = findViewById(R.id.edit_remarks);
         _editBtn.setOnClickListener(new OnClickListener() {
             @Override
@@ -219,5 +229,26 @@ public class RemarksLayout extends LinearLayout {
             _remarks.setEnabled(enabled);
         if (_editBtn != null)
             _editBtn.setEnabled(enabled);
+    }
+
+    @Override
+    public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+        Toast.makeText(getContext(), R.string.remarks_select_edit_button,
+                Toast.LENGTH_LONG).show();
+        return false;
+    }
+
+    @Override
+    public void onDestroyActionMode(ActionMode mode) {
+    }
+
+    @Override
+    public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+        return false;
+    }
+
+    @Override
+    public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+        return true;
     }
 }

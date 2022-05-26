@@ -9,7 +9,7 @@
 buildscript {
 
     ext.PLUGIN_VERSION = "1.0"
-    ext.ATAK_VERSION = "4.4.0"
+    ext.ATAK_VERSION = "4.5.0"
 
     def takdevVersion = '2.+'
 
@@ -46,6 +46,7 @@ buildscript {
     repositories {
         mavenCentral()
         google()
+        mavenCentral()
         mavenLocal()
         maven {
             url "https://jitpack.io"
@@ -59,7 +60,7 @@ buildscript {
         }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.0.2'
+        classpath 'com.android.tools.build:gradle:4.2.2'
         if(isDevKitEnabled()) {
             classpath "com.atakmap.gradle:atak-gradle-takdev:${takdevVersion}"
         } else {
@@ -68,12 +69,11 @@ buildscript {
     }
 }
 
-
 allprojects {
     repositories {
         mavenCentral()
         google()
-
+        mavenCentral()
         mavenLocal()
         maven {
             url "https://jitpack.io"
@@ -104,52 +104,9 @@ dependencies {
 
 }
 
-// Attempt to get a suitable version name for the plugin based on
-// either a git or svn repository
-def getVersionName() { 
-    try {
-            def stdout = new ByteArrayOutputStream()
-            exec {
-                commandLine 'git', 'rev-parse', '--short=8', 'HEAD'
-                standardOutput = stdout
-            }
-            def describe = stdout.toString().trim()
-            println("versionName[git]: $describe")
-            return describe
-    } catch (Exception ignored) {
-       println("error occured, using revision of 1")
-       return 1
-    }
-}
-
-
-// Attempt to get a suitable version code for the plugin based on
-// either a git or svn repository
-def getVersionCode() {
-    try {
-        new ByteArrayOutputStream().withStream { os ->
-                def result = exec {
-                    executable = 'git'
-                    args = ['show', '-s', '--format=%ct']
-                    standardOutput = os
-                    ignoreExitValue = true
-                }
-            def outputAsString = os.toString()
-                ext.revision = "$outputAsString".toInteger()
-
-                 println("version[git]: $revision")
-        }
-    } catch (Exception ignored) {
-       println("error occured, using revision of 1")
-       ext.revision = 1
-    }
-
-    return revision
-}
-
 android {
     compileSdkVersion 28
-    buildToolsVersion "29.0.2"
+    buildToolsVersion "30.0.2"
 
    dexOptions {
         jumboMode = true
@@ -164,7 +121,7 @@ android {
 
     signingConfigs {
         debug {
-            def kf = project.getValueFromPropertiesFile(project.rootProject.file('local.properties'), 'takDebugKeyFile')
+            def kf = getValueFromPropertiesFile(project.rootProject.file('local.properties'), 'takDebugKeyFile')
             def kfp = getValueFromPropertiesFile(project.rootProject.file('local.properties'), 'takDebugKeyFilePassword')
             def ka = getValueFromPropertiesFile(project.rootProject.file('local.properties'), 'takDebugKeyAlias')
             def kp = getValueFromPropertiesFile(project.rootProject.file('local.properties'), 'takDebugKeyPassword')
@@ -172,7 +129,7 @@ android {
             if (kf == null) {
                  throw new GradleException("No signing key configured!")
             }
-
+ 
             storeFile file(kf)
             if (kfp != null) storePassword kfp
             if (ka != null) keyAlias ka
@@ -273,6 +230,10 @@ android {
         prt {
             dimension "application"
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".PRT"]
+        }
+        est {
+            dimension "application"
+            manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".EST"]
             buildConfigField 'String', 'ATAK_PACKAGE_NAME', '"com.atakmap.app.civ"'
         }
         nor {
@@ -306,11 +267,6 @@ android {
             dimension "application"
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".GBR"]
             buildConfigField 'String', 'ATAK_PACKAGE_NAME', '"com.atakmap.app.civ"'
-        }
-        gov {
-            dimension "application"
-            manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".GOV"]
-            buildConfigField 'String', 'ATAK_PACKAGE_NAME', '"com.atakmap.app.fvey"'
         }
         can {
             dimension "application"

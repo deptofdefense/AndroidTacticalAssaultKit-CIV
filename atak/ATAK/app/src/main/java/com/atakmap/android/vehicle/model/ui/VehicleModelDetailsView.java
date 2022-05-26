@@ -35,7 +35,6 @@ import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.Shape;
 import com.atakmap.android.rubbersheet.maps.AbstractSheet;
 import com.atakmap.android.rubbersheet.maps.RubberModel;
-import com.atakmap.android.rubbersheet.tool.RubberModelEditTool;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.android.user.ExpandableGridView;
 import com.atakmap.android.util.ATAKUtilities;
@@ -44,6 +43,7 @@ import com.atakmap.android.util.SimpleItemSelectedListener;
 import com.atakmap.android.util.SimpleSeekBarChangeListener;
 import com.atakmap.android.vehicle.model.VehicleModel;
 import com.atakmap.android.vehicle.model.VehicleModelCache;
+import com.atakmap.android.vehicle.model.VehicleModelEditTool;
 import com.atakmap.android.vehicle.model.VehicleModelInfo;
 import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.AngleUtilities;
@@ -247,7 +247,7 @@ public class VehicleModelDetailsView extends GenericDetailsView implements
 
     @Override
     protected String getEditTool() {
-        return RubberModelEditTool.TOOL_NAME;
+        return VehicleModelEditTool.TOOL_NAME;
     }
 
     @Override

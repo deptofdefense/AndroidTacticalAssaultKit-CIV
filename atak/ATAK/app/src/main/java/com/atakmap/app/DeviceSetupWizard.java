@@ -69,14 +69,8 @@ class DeviceSetupWizard implements CredentialsDialog.Callback {
      * @param force true to force the device to run even if it has already been run before.
      */
     void init(boolean force) {
-
-        // The device wizard should be run if one of the well known preferences is not set
-        // In this case it is "screenViewLat", in future release, start to check for the 
-        // actual variable PerformedDeviceSetupWizard.   Start to set it now in preparation 
-        // to cut over for 3.16
-        //if (!_controlPrefs.getBoolean("PerformedDeviceSetupWizard", false) || force) {
-
-        if (_controlPrefs.getString("screenViewLat", null) == null || force) {
+        if (!_controlPrefs.getBoolean("PerformedDeviceSetupWizard", false)
+                || force) {
             wizardPage = 0;
             init_settings();
             SharedPreferences.Editor editor = _controlPrefs.edit();

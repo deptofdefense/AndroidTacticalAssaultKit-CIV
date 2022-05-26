@@ -1,0 +1,30 @@
+// XXX - fallback on legacy property names, remove support in future version
+def takrepoUrl = getProperty(project, 'takRepoMavenUrl',
+        getProperty(project, 'maven.consume.url', 'http://localhost'))
+def takrepoUser = getProperty(project, 'takRepoUsername',
+        getProperty(project, 'maven.consume.user', 'invalid'))
+def takrepoPassword = getProperty(project, 'takRepoPassword',
+        getProperty(project, 'maven.consume.password', 'invalid'))
+
+// warn use of deprecated properties
+if(getProperty(project, 'maven.consume.url', null))
+    println('WARNING: \'maven.consume.url\' is deprecated and will be removed at takkernel:1.0.0 Update references to \'takRepoMavenUrl\'')
+if(getProperty(project, 'maven.consume.user', null))
+    println('WARNING: \'maven.consume.user\' is deprecated and will be removed at takkernel:1.0.0 Update references to \'takRepoUsername\'')
+if(getProperty(project, 'maven.consume.password', null))
+    println('WARNING: \'maven.consume.password\' is deprecated and will be removed at takkernel:1.0.0 Update references to \'takRepoPassword\'')
+
+repositories {
+    mavenLocal()
+    google()
+    mavenCentral()
+    maven {
+        url = takrepoUrl
+        credentials {
+            username takrepoUser
+            password takrepoPassword
+        }
+    }
+}
+
+ext.repos = repositories

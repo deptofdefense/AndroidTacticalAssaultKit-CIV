@@ -12,7 +12,7 @@ import java.io.IOException;
  *
  */
 public class PolyMarkerCommand extends Command {
-    private Point[] points;
+    private final Point[] points;
 
     public PolyMarkerCommand(int ec, int eid, int l, DataInput in)
             throws IOException {

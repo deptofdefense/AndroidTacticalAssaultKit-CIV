@@ -6,6 +6,7 @@ import com.atakmap.android.routes.elevation.model.SegmentData;
 import com.atakmap.android.routes.elevation.model.UnitConverter;
 
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.UTMPoint;
@@ -136,10 +137,10 @@ public class RouteElevationService {
                 / ((x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4));
         UTMPoint p = new UTMPoint(zoneDescriptor, px, py);
 
-        double minX = x1 < x2 ? x1 : x2;
-        double maxX = x1 > x2 ? x1 : x2;
-        double minY = y1 < y2 ? y1 : y2;
-        double maxY = y1 > y2 ? y1 : y2;
+        double minX = Math.min(x1, x2);
+        double maxX = Math.max(x1, x2);
+        double minY = Math.min(y1, y2);
+        double maxY = Math.max(y1, y2);
 
         UTMPoint closest;
         if (px >= minX && maxX <= x2 && py >= minY && py <= maxY)
@@ -202,8 +203,7 @@ public class RouteElevationService {
         distVec.add(startingDistance);
 
         // Calculate total distance and altitude delta
-        double totalDistance = DistanceCalculations.calculateRange(
-                newSource.get(),
+        double totalDistance = GeoCalculations.distanceTo(newSource.get(),
                 newTarget.get());
         Double totalAltChange = null;
         if (sourceAlt.get().isAltitudeValid()
@@ -229,8 +229,8 @@ public class RouteElevationService {
                 //see if we can interpolate
                 if (bInterpolateAltitudes && totalAltChange != null) {
                     //Log.d(TAG, "Interpolating alt");
-                    currentDistance += DistanceCalculations
-                            .calculateRange(newSource.get(), newPoint);
+                    currentDistance += GeoCalculations
+                            .distanceTo(newSource.get(), newPoint);
                     double currentDistanceFraction = currentDistance
                             / totalDistance;
                     alt = sourceAlt.get().getAltitude()
@@ -254,19 +254,18 @@ public class RouteElevationService {
                 distVec.add(i);
                 i += incrementInFeet;
                 newSource = GeoPointMetaData.wrap(newPoint);
-            } while (DistanceCalculations.calculateRange(newPoint,
+            } while (GeoCalculations.distanceTo(newPoint,
                     newTarget.get()) > incrementInMeters);
 
             // adjust i, it's more than increment count
             i -= incrementInFeet
-                    - UnitConverter.Meter.toFeet(DistanceCalculations
-                            .calculateRange(newPoint,
-                                    newTarget.get()));
+                    - UnitConverter.Meter.toFeet(GeoCalculations
+                            .distanceTo(newPoint, newTarget.get()));
         } else {
             // adjust i, it's more than increment count
             i -= incrementInFeet
-                    - UnitConverter.Meter.toFeet(DistanceCalculations
-                            .calculateRange(newSource.get(), newTarget.get()));
+                    - UnitConverter.Meter.toFeet(GeoCalculations
+                            .distanceTo(newSource.get(), newTarget.get()));
         }
 
         geoPointVec.add(newTarget);

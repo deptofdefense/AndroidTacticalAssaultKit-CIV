@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:atak="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/remarksIcon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_remarks_new" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/margin_small"
+            android:layout_weight="1"
+            android:text="@string/remarks" />
+
+        <com.atakmap.android.widgets.TakButton
+            android:id="@+id/addRemark"
+            style="@style/AtakButton.Secondary"
+            android:layout_width="90dp"
+            android:layout_height="wrap_content"
+            app:buttonText="@string/add" />
+
+    </LinearLayout>
+
+    <com.atakmap.android.hashtags.view.HashtagEditText
+        android:id="@+id/remarks"
+        style="@style/AtakEditTextNew"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/margin_medium"
+        android:contentDescription="@string/remarks"
+        android:focusable="false"
+        android:focusableInTouchMode="false"
+        android:inputType="textMultiLine|textCapSentences"
+        android:minLines="1"
+        android:textSize="@dimen/draper_title_font"
+        atak:clickableTags="true"
+        atak:mixedInput="true" />
+
+</LinearLayout>

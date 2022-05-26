@@ -12,6 +12,7 @@ import com.atakmap.android.maps.DeepMapItemQuery;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.overlay.AbstractMapOverlay2;
+import com.atakmap.app.DeveloperOptions;
 import com.atakmap.app.R;
 
 import java.util.ArrayList;
@@ -37,6 +38,7 @@ public class MapControlsOverlay extends AbstractMapOverlay2 {
         _items.add(new ImageryTransparencyListItem(_mapView));
         _items.add(new LollipopListItem(_mapView));
         _items.add(new LegacyAltitudeRenderingListItem(_mapView));
+        _items.add(new IlluminationListItem(_mapView));
 
         _mapView.getMapOverlayManager().addOverlay(this);
     }

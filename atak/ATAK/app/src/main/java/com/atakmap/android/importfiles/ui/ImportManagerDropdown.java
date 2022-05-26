@@ -32,7 +32,7 @@ public class ImportManagerDropdown extends DropDownReceiver {
 
     private ImportManagerView _view;
     private ImportExportMapComponent _component;
-    private ImportManagerMapOverlay _overlay;
+    private final ImportManagerMapOverlay _overlay;
     private final int _notifyId = 24126; // replace any existing Resource notifications
 
     public ImportManagerDropdown(MapView mapView,

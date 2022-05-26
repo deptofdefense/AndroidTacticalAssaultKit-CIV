@@ -1,0 +1,34 @@
+ext.getValueFromPropertiesFile = { propFile, key ->
+    if(!propFile.isFile() || !propFile.canRead())
+        return null
+    def prop = new Properties()
+    def reader = propFile.newReader()
+    try {
+        prop.load(reader)
+    } finally {
+        reader.close()
+    }
+    return prop.get(key)
+}
+
+ext.getProperty = { name, defValue ->
+    def prop = project.properties[name] ?:
+            getValueFromPropertiesFile(project.rootProject.file('local.properties'), name)
+    return (null == prop) ? defValue : prop
+}
+
+// private maven  artifacts may be resolved through mavenLocal, so idea is to keep the remote configuration well formed but obviously defaulted
+ext.consumeUrl = getProperty('takRepoMavenUrl',
+        getProperty('maven.consume.url', 'http://localhost/'))
+ext.mavenUser = getProperty('takRepoUsername',
+        getProperty('maven.user', 'invalid'))
+ext.mavenPassword = getProperty('takRepoPassword',
+        getProperty('maven.password', 'invalid'))
+
+// warn use of deprecated properties
+if(getProperty('maven.consume.url', null))
+    println('WARNING: \'maven.consume.url\' is deprecated and will be removed at atak:4.5.0 Update references to \'takRepoMavenUrl\'')
+if(getProperty('maven.user', null))
+    println('WARNING: \'maven.user\' is deprecated and will be removed at atak:4.5.0 Update references to \'takRepoUsername\'')
+if(getProperty('maven.password', null))
+    println('WARNING: \'maven.password\' is deprecated and will be removed at atak:4.5.0 Update references to \'takRepoPassword\'')

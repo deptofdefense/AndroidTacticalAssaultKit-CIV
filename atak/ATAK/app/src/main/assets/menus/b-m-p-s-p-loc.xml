@@ -8,7 +8,7 @@
     <button icon='icons/details.png'
         onClick='actions/showdetails_sensor.xml' />
 
-    <button icon='icons/eye.png'
+    <button icon='icons/fov_visibility.png'
         onClick='actions/toggle_sensor_fov.xml'
         selected='!{${hideFov}}'/>
 
@@ -26,7 +26,6 @@
         onClick='actions/sensor_fov_size.xml'/>
             
     <button icon='icons/pairing_line.png'
-        onClick='actions/pairingline.xml'
-        selected='${pairingline_on}' />
+        onClick='actions/pairingline.xml'/>
 
 </menu>

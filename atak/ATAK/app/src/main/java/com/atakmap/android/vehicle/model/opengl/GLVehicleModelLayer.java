@@ -407,7 +407,7 @@ public class GLVehicleModelLayer extends GLRubberModelLayer implements
 
         @Override
         public synchronized Collection<?> getHitTestList() {
-            return _renderables;
+            return new ArrayList<>(_renderables);
         }
     }
 }

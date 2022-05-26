@@ -327,7 +327,9 @@ public class EmergencyManager {
         if (tm != null) {
 
             if (com.atakmap.app.Permissions.checkPermission(getContext(),
-                    android.Manifest.permission.READ_PHONE_STATE)) {
+                    android.Manifest.permission.READ_PHONE_STATE) ||
+                    com.atakmap.app.Permissions.checkPermission(getContext(),
+                            Manifest.permission.READ_PHONE_NUMBERS)) {
                 final String phoneNumber = tm.getLine1Number();
                 if (!FileSystemUtils.isEmpty(phoneNumber)
                         && !phoneNumber.startsWith("00")) {

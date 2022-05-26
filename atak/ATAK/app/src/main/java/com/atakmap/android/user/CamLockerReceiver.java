@@ -233,26 +233,12 @@ public class CamLockerReceiver extends BroadcastReceiver implements
 
         touch.setFreeForm3DPoint(pointItem.getPoint());
 
-        String type = _lockedItem.getType();
-        if (ATAKUtilities.isSelf(_mapView, _lockedItem)) {
-            type = "self";
-        } else if (type.startsWith("a-f")) {
-            type = "friendly";
-        } else if (type.startsWith("a-h")) {
-            type = "hostile";
-        } else if (type.startsWith("a-u")) {
-            type = "unknown";
-        } else if (type.startsWith("a-n")) {
-            type = "neutral";
-        } else if (type.equals("rad_sensor")) {
-            type = "sensor";
-        }
         _lockedItem.setMetaBoolean("camLocked", true);
 
         Toast.makeText(
                 _mapView.getContext(),
                 _mapView.getResources().getString(R.string.locked_on_tip)
-                        + type + ".",
+                        + ATAKUtilities.getDisplayName(pointItem) + ".",
                 Toast.LENGTH_SHORT).show();
         onPointChanged(_lockedItem);
     }

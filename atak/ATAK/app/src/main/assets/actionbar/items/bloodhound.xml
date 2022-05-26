@@ -1,4 +1,4 @@
-<PersistedActionMenu baseline="true" hideable="true" iconPath="ic_menu_bloodhound"  selectedIconPath="ic_menu_bloodhound_lit" title="actionbar_bloodhoundtool">
+<PersistedActionMenu baseline="true" hideable="true" iconPath="nav_bloodhound" title="actionbar_bloodhoundtool">
    <ClickData actionType="click">
       <broadcast>
          <action>com.atakmap.android.toolbars.BLOOD_HOUND</action>

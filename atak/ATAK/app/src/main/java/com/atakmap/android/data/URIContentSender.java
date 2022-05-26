@@ -35,6 +35,9 @@ public interface URIContentSender {
      */
     boolean sendContent(String contentURI, Callback callback);
 
+    /**
+     * Callback invoked when content has been sent
+     */
     interface Callback {
 
         /**

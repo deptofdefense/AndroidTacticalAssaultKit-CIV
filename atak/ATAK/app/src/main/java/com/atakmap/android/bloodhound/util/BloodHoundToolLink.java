@@ -454,15 +454,7 @@ public class BloodHoundToolLink implements MapItem.OnGroupChangedListener,
         this.route.setEditable(false);
         this.route.setClickable(false);
 
-        // See ATAK-13090
-        // "removable" is assumed true by default, so we have to explicitly set
-        // it to false. We also want to disable the remove button on the radial,
-        // but radial buttons can only be disabled using the presence or absence
-        // of a meta boolean (as opposed to the actual value). So we need to
-        // create a separate meta boolean that's only present when the remove
-        // button should be disabled.
         this.route.setMetaBoolean("removable", false);
-        this.route.setMetaBoolean("nonremovable", true);
 
         this.route.setColor(outerColor);
         this.route.setFillColor(outerColor);
@@ -481,7 +473,7 @@ public class BloodHoundToolLink implements MapItem.OnGroupChangedListener,
         rb.setType("rb");
         rb.setZOrder(-1000d);
         rb.setStrokeColor(outerColor);
-        rb.setMetaBoolean("nonremovable", true);
+        rb.setMetaBoolean("removable", false);
         rb.setBearingUnits(_bearingUnits);
         rb.setNorthReference(_northReference);
         rb.setMetaBoolean("displayBloodhoundEta", true);

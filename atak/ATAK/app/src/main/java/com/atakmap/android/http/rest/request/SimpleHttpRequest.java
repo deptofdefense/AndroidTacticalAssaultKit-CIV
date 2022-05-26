@@ -25,37 +25,37 @@ public class SimpleHttpRequest implements Parcelable {
     /**
      * Base URL of server
      */
-    private String mBaseUrl;
+    private final String mBaseUrl;
 
     /**
      * URL path, including query string params
      */
-    private String mPath;
+    private final String mPath;
 
     /**
      * An option tag used to identify this request
      */
-    private String mTag;
+    private final String mTag;
 
     /**
      * Type/Methods of HTTP operation
      */
-    private OpType mType;
+    private final OpType mType;
 
     /**
      * String to match in response body
      */
-    private String mMatcher;
+    private final String mMatcher;
 
     /**
      * Expected HTTP Response code
      */
-    private int mMatcherCode;
+    private final int mMatcherCode;
 
     /**
      * Android notification ID
      */
-    private int mNotificationId;
+    private final int mNotificationId;
 
     public SimpleHttpRequest(String baseUrl, String path, OpType type,
             String matcher, int matcherCode,

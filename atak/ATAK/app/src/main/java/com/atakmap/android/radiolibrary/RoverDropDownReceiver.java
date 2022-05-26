@@ -42,8 +42,8 @@ import com.atakmap.android.gui.HintDialogHelper;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.video.VideoBrowserDropDownReceiver;
-import com.atakmap.comms.NetworkDeviceManager;
-import com.atakmap.comms.NetworkDeviceManager.NetworkDevice;
+import com.atakmap.comms.NetworkManagerLite;
+import com.atakmap.comms.NetworkManagerLite.NetworkDevice;
 import com.atakmap.comms.NetworkUtils;
 import com.atakmap.android.network.TrafficRecorder;
 import com.atakmap.android.util.NotificationUtil;
@@ -233,12 +233,13 @@ public class RoverDropDownReceiver extends DropDownReceiver implements
         // should match the network network provided by the network monitor.   
         NetworkDevice nd = getNetworkMapDevice();
         if (nd != null) {
-            if (nd.prefAddress != null
-                    && nd.prefAddress.equals("192.168.50.200")) {
+            String prefAddress = nd.getPreferredAddress();
+            if (prefAddress != null
+                    && nd.equals("192.168.50.200")) {
                 sharedPreferences.edit().putString("rover_ip_address",
                         "192.168.50.1").apply();
-            } else if (nd.prefAddress != null
-                    && nd.prefAddress.equals("192.168.80.200")) {
+            } else if (nd != null
+                    && nd.equals("192.168.80.200")) {
                 sharedPreferences.edit().putString("rover_ip_address",
                         "192.168.80.1").apply();
             }
@@ -425,7 +426,7 @@ public class RoverDropDownReceiver extends DropDownReceiver implements
                     setStatusText(Color.GREEN, CONNECTED);
                 } else if (status == RoverInterface.STATUS_TIMEOUT) {
                     NetworkDevice nd = getNetworkMapDevice();
-                    if (nd == null || nd.getCleanInterface() == null) {
+                    if (nd == null || nd.getInterface() == null) {
                         setStatusIcon(RoverStatusState.DISCONNECTED);
                         setStatusText(Color.RED, DISCONNECTED);
                     } else {
@@ -1787,6 +1788,10 @@ public class RoverDropDownReceiver extends DropDownReceiver implements
                     .show();
         }
 
+        if (ce == null) {
+            return;
+        }
+
         // the sideband is for the metadata translated down port 3002 usually from a L3 Communication 
         // product.
         Log.d(TAG, "sideband metadata enabled: " + sideband);
@@ -1796,15 +1801,18 @@ public class RoverDropDownReceiver extends DropDownReceiver implements
         }
 
         NetworkDevice nd = getNetworkMapDevice();
-        if (nd != null)
-            ce.setMacAddress(nd.macaddr);
+        if (nd != null && nd.getInterface() != null)
+            ce.setPreferredInterfaceAddress(
+                    NetworkManagerLite.getAddress(nd.getInterface()));
         else {
             NetworkInterface eth = getEthInterface();
             try {
-                if (eth != null && eth.isUp())
-                    ce.setMacAddress(NetworkDeviceManager.getMacAddress(eth));
+                if (eth != null && eth.isUp()) {
+                    ce.setPreferredInterfaceAddress(
+                            NetworkManagerLite.getAddress(eth));
+                }
             } catch (IOException ioe) {
-                Log.d(TAG, "error occurred getting the mac address");
+                Log.d(TAG, "error occurred getting the address");
             }
         }
 
@@ -1826,10 +1834,10 @@ public class RoverDropDownReceiver extends DropDownReceiver implements
      * Is the rover described as a network mapped device.
      */
     private NetworkDevice getNetworkMapDevice() {
-        List<NetworkDevice> devices = NetworkDeviceManager.getNetworkDevices();
+        List<NetworkDevice> devices = NetworkManagerLite.getNetworkDevices();
         NetworkDevice retval = null;
 
-        // An individual may have accidently configured more than one rover.   There are 
+        // An individual may have accidentally configured more than one rover.   There are
         // two cases - either no rover is plugged in meaning all are down, in this case
         // we will return the last known rover device so that ATAK does not try to 
         // configure one on it's very own.
@@ -1944,7 +1952,7 @@ public class RoverDropDownReceiver extends DropDownReceiver implements
                     context.getString(R.string.radio_connecting_ellipses));
 
             if (ni != null) {
-                radio.startListening(NetworkDeviceManager.getMacAddress(ni));
+                radio.startListening(NetworkManagerLite.getAddress(ni));
             } else {
                 radio.startListening("any");
             }
@@ -2071,12 +2079,12 @@ public class RoverDropDownReceiver extends DropDownReceiver implements
 
                         if (address != null) {
                             // set ip, subnet mask, and default gateway
-                            NetworkDeviceManager.configure(name,
+                            NetworkManagerLite.configure(name,
                                     address,
                                     subnet,
                                     gateway, true, null);
                         } else {
-                            NetworkDeviceManager.configure(name);
+                            NetworkManagerLite.configure(name);
                         }
                     } else {
                         Log.d(TAG, "network health ok for: " + name);
@@ -2091,7 +2099,7 @@ public class RoverDropDownReceiver extends DropDownReceiver implements
                                         R.string.radio_rover_using_network_interface_with_address),
                                 context.getString(R.string.rover),
                                 name,
-                                NetworkDeviceManager.getAddress(eth)));
+                                NetworkManagerLite.getAddress(eth)));
 
                     }
                     NotificationUtil.getInstance().postNotification(
@@ -2127,7 +2135,7 @@ public class RoverDropDownReceiver extends DropDownReceiver implements
             final String gateway,
             final int polling) {
         stopNetworkChecking();
-        NetworkDeviceManager.unconfigure(name);
+        NetworkManagerLite.unconfigure(name);
         networkChecker = new NetworkCheckerRunnable(name, address, subnet,
                 gateway, polling);
         new Thread(networkChecker, "networkchecker-" + name).start();
@@ -2173,7 +2181,7 @@ public class RoverDropDownReceiver extends DropDownReceiver implements
                         context.getString(
                                 R.string.radio_configuring_ethernet_on_network_map));
                 if (!eth.isUp())
-                    NetworkDeviceManager.configure(isrvNetworkDevice);
+                    NetworkManagerLite.configure(isrvNetworkDevice);
 
                 automaticDiscoveryAttempt();
             } catch (Exception e) {
@@ -2265,17 +2273,17 @@ public class RoverDropDownReceiver extends DropDownReceiver implements
 
             try {
                 if (eth != null && eth.isUp()
-                        && NetworkDeviceManager.getAddress(eth) != null) {
+                        && NetworkManagerLite.getAddress(eth) != null) {
                     setStatusText(
                             Color.GREEN,
                             context.getString(R.string.config_complete_)
-                                    + NetworkDeviceManager.getAddress(eth)
+                                    + NetworkManagerLite.getAddress(eth)
                                     + "...");
 
                     automaticDiscoveryAttempt();
                     Log.d(TAG,
                             eth.getName() + " is up with ip "
-                                    + NetworkDeviceManager.getAddress(eth)
+                                    + NetworkManagerLite.getAddress(eth)
                                     + ", exiting");
                     return true;
                 }
@@ -2331,7 +2339,7 @@ public class RoverDropDownReceiver extends DropDownReceiver implements
     }
 
     private String bestDisplayableIP() {
-        String ethip = NetworkDeviceManager.getAddress(getEthInterface());
+        String ethip = NetworkManagerLite.getAddress(getEthInterface());
         if (ethip != null) {
             return ethip;
         } else {

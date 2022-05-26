@@ -1,14 +1,14 @@
 
 package com.atakmap.android.rubbersheet.tool;
 
-import android.graphics.Point;
+import android.graphics.PointF;
 import android.os.Bundle;
 import android.view.View;
 
 import com.atakmap.android.editableShapes.Rectangle;
-import com.atakmap.android.mapcompass.CompassArrowMapComponent;
 import com.atakmap.android.maps.MapEvent;
 import com.atakmap.android.maps.MapGroup;
+import com.atakmap.android.maps.MapTouchController;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.rubbersheet.maps.RubberModel;
@@ -20,6 +20,11 @@ import com.atakmap.coremap.maps.coords.GeoPoint.AltitudeReference;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.map.CameraController;
 import com.atakmap.map.MapCamera;
+import com.atakmap.map.MapRenderer3;
+import com.atakmap.map.MapSceneModel;
+import com.atakmap.math.MathUtils;
+
+import gov.tak.api.engine.map.IMapRendererEnums.CameraCollision;
 
 /**
  * Rotation tool for models
@@ -40,9 +45,11 @@ public class RubberModelEditTool extends RubberSheetEditTool {
 
     protected RubberModel _model;
     private double[] _rotation;
-    private Point _startTilt;
+    private PointF _startTilt;
     private double _oldAlt;
     private AltitudeReference _oldAltRef;
+    private double _cameraDist;
+    private double _modelHeight;
 
     public RubberModelEditTool(MapView mapView, MapGroup group) {
         super(mapView, group);
@@ -73,7 +80,8 @@ public class RubberModelEditTool extends RubberSheetEditTool {
     @Override
     public void onToolEnd() {
         super.onToolEnd();
-        _mapView.getMapController().panTo(_model.getCenterPoint(), false);
+        CameraController.Programmatic.panTo(
+                _mapView.getRenderer3(), _model.getCenterPoint(), false);
         _model = null;
     }
 
@@ -107,30 +115,25 @@ public class RubberModelEditTool extends RubberSheetEditTool {
             // Two-finger altitude adjustment
             if (type.equals(MapEvent.MAP_TILT)) {
                 event.getExtras().putBoolean("eventNotHandled", false);
-                Point p = event.getPoint();
+                PointF p = event.getPointF();
                 if (_startTilt == null) {
                     _center = _sheet.getCenter();
                     _startTilt = p;
                     return;
                 }
 
-                // Get the current altitude
+                // Get the current model altitude
                 GeoPoint c = _center.get();
                 double alt = c.getAltitude();
                 if (Double.isNaN(alt))
                     alt = 0;
 
-                // Measure distance between camera and model
-                MapCamera camera = _mapView.getSceneModel().camera;
-                double dist = Math.sqrt(
-                        Math.pow(camera.location.x - camera.target.x, 2)
-                        + Math.pow(camera.location.y - camera.target.y, 2)
-                        + Math.pow(camera.location.z - camera.target.z, 2));
-
                 // Modify altitude based on distance from camera
                 // Note: This is not a hard calculation. More of a rule of thumb.
-                double newAlt = alt + ((_startTilt.y - p.y) * Math.sqrt(dist));
+                double newAlt = alt
+                        + ((_startTilt.y - p.y) * _modelHeight * 0.01);
                 _model.setAltitude(newAlt, c.getAltitudeReference());
+                updateSubText();
             }
 
             // Re-center map view on the new floating point
@@ -146,7 +149,7 @@ public class RubberModelEditTool extends RubberSheetEditTool {
             GeoPointMetaData[] newPoints) {
         super.onMoved(r, oldPoints, newPoints);
         if (getMode() == ELEV)
-            _mapView.getMapController().panTo(_sheet.getCenterPoint(), false);
+            focusElevation();
     }
 
     @Override
@@ -173,16 +176,21 @@ public class RubberModelEditTool extends RubberSheetEditTool {
         _oldAltRef = _center.get().getAltitudeReference();
         _startTilt = null;
         if (getMode() == ELEV)
-            _mapView.getMapController().panTo(_center.get(), false);
+            CameraController.Programmatic.panTo(
+                    _mapView.getRenderer3(), _center.get(), false);
     }
 
     @Override
     public void onClick(View v) {
         // Tilt the map so the user can see what they're doing
-        if (v == _buttons[ELEV] && _mapView.getMapTilt() == 0d) {
-            CompassArrowMapComponent.getInstance().enable3DControls(true);
-            _mapView.getMapController().tiltTo(_mapView.getMaxMapTilt() * 0.9d,
-                    false);
+        if (v == _buttons[ELEV]) {
+            _mapView.getMapTouchController().setTiltEnabledState(
+                    MapTouchController.STATE_TILT_ENABLED);
+            double[] dim = _model.getModelDimensions(true);
+            _cameraDist = MathUtils.distance(dim[0], dim[1], dim[2], 0, 0, 0)
+                    * 1.5;
+            _modelHeight = dim[2];
+            focusElevation();
         }
 
         // Tilt the map back when switching from elevation to drag
@@ -196,6 +204,25 @@ public class RubberModelEditTool extends RubberSheetEditTool {
         }
 
         super.onClick(v);
+    }
+
+    private double getCameraDistance() {
+        MapCamera camera = _mapView.getSceneModel().camera;
+        return Math.sqrt(Math.pow(camera.location.x - camera.target.x, 2)
+                + Math.pow(camera.location.y - camera.target.y, 2)
+                + Math.pow(camera.location.z - camera.target.z, 2));
+    }
+
+    private void focusElevation() {
+        GeoPoint point = _sheet.getCenterPoint();
+        MapRenderer3 renderer = _mapView.getRenderer3();
+        final MapSceneModel sm = renderer.getMapSceneModel(true,
+                MapRenderer3.DisplayOrigin.UpperLeft);
+        double gsd = MapSceneModel.gsd(_cameraDist + point.getAltitude(),
+                sm.camera.fov, sm.height);
+        renderer.lookAt(point, gsd, sm.camera.azimuth,
+                _mapView.getMaxMapTilt() * 0.9d,
+                CameraCollision.Ignore, false);
     }
 
     private static class ElevAction extends EditAction {

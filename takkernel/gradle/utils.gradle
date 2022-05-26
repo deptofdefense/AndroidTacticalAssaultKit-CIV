@@ -1,3 +1,5 @@
+ext.desktopPlatformDesignations = ['linux64', 'win64', 'macos64']
+
 ext.getValueFromPropertiesFile = { propFile, key ->
     if(!propFile.isFile() || !propFile.canRead())
         return null
@@ -18,8 +20,197 @@ ext.getValueFromPropertiesFile = { propFile, key ->
  */
 ext.getProperty = { project, name, defValue ->
     def prop = project.properties[name] ?:
+            gradle.ext.properties[name] ?:
             getValueFromPropertiesFile(project.rootProject.file('local.properties'), name)
     return (null == prop) ? defValue : prop
 }
 
+/**
+ * Gets the platform-specific JAR file (e.g. win64, linux32, etc.) found in the given project's 'libs' directory,
+ * ignoring any sources JARs that may be present. Assumes that the desired JARs have the format
+ * <archivesBaseName>-rt-<platform><architecture>-<version>.jar, e.g. "takkernel-engine-rt-win64-1.0.0.jar".
+ *
+ * @param project The project for which platform-specific JARs should be retrieved.
+ * @oaram platformDesignation   The runtime platform designator
+ * @param ifExists              If `true`, only returns if the file exists, else always returns the file
+ * @return A File representing the path to the platform-specific JAR.
+ */
+ext.getPlatformSpecificJar = { project, desktopPlatformDesignation, ifExists ->
+    project.with {
+        // Create collection of PublishArtifacts representing platform-specific JAR files
+        def rtJar = new File("${project.buildDir}", "libs/${archivesBaseName}-rt-${desktopPlatformDesignation}-${version}.jar")
+        return (!ifExists || rtJar.exists()) ? rtJar : null
+    }
+}
 
+/**
+ * Gets the platform-specific JARs (e.g. win64, linux32, etc.) found in the given project's 'libs' directory, ignoring
+ * any sources JARs that may be present. Assumes that the desired JARs have the format
+ * <artifactId>-<version>-<platform><architecture>.jar, e.g. "takkernel-engine-1.0.0-win64.jar".
+ *
+ * Note that, if called prior to the "jar" task executing successfully (whether in the same Gradle run or a previous one),
+ * no JAR files are likely to be found.
+ *
+ * @param project The project for which platform-specific JARs should be retrieved.
+ * @return A collection of {@link PublishArtifact publish artifacts} representing platform-specific JARs.
+ */
+ext.getPlatformSpecificJars = { project ->
+    project.with {
+        def platformSpecificJars = []
+        def preformattedPlatformSpecificJarName = "${archivesBaseName}-${version}-%s.jar"
+        def allowablePlatformSpecificFiles = []
+
+        // Create white-list of allowable JAR files
+        desktopPlatformDesignations.forEach {
+            allowablePlatformSpecificFiles.add(String.format(preformattedPlatformSpecificJarName, it))
+        }
+
+        // Create collection of PublishArtifacts representing platform-specific JAR files
+        layout.buildDirectory.dir('libs').get().asFileTree.forEach {
+            if (allowablePlatformSpecificFiles.contains(it.name)) {
+                platformSpecificJars.add(artifacts.add('archives', it))
+            }
+        }
+
+        logger.info "Found platform-specific JARs in build/java/libs directory: $platformSpecificJars"
+
+        return platformSpecificJars
+    }
+}
+
+// XXX - a little goofy, but fails by attempting to reference `android` from the root project when subproject reference
+// not explicitly provided
+
+/**
+ * Determines the build variant associated with the given task. Returns <code>null</code> if the build variant cannot
+ * be determined.
+ *
+ * @param project   The project that will be executing tasks
+ * @param task      The name of the task
+ *
+ * @return  The Android build variant associated with the task
+ */
+ext.getTaskAndroidBuildVariant = { project, task ->
+    if(!isAndroidKernelBuild)
+        return null
+
+    // try to determine the active variants based on the task name
+    def buildVariant = null
+    project.android.libraryVariants.each { it ->
+        if (task.name.contains(it.name.capitalize())) {
+            buildVariant = it
+        }
+    }
+
+    return buildVariant
+}
+
+/**
+ * Returns the preferred Android variant for the current build execution. The returned variant will be selected as
+ * follows:
+ * <UL>
+ *     <LI>Any <I>active</I> variant containing <code>defVarName</code>; else
+ *     <LI>Any <I>active</I> variant (order not guaranteed); else
+ *     <LI>Any <I>available</I> variant containing <code>defVarName</code>; else
+ *     <LI>Any <I>available</I> variant (order not guaranteed); else
+ *     <LI><code>null</code>
+ * </UL>
+ * @param project       The project that will be executing tasks
+ * @param defVarName    The name of the preferred variant (in case the current build execution spans multiple)
+ *
+ * @return  The preferred Android variant.
+ */
+ext.getAndroidBuildVariant = { project, defVarName ->
+    if(!isAndroidKernelBuild)
+        return null
+
+    if(!defVarName) defVarName = 'release'
+
+    def availableVariants = []
+    def defaultVariant = null
+    project.android.libraryVariants.each { var ->
+        availableVariants += var
+        // set the default variant
+        if(!defaultVariant && var.name.toLowerCase().contains(defVarName)) {
+            defaultVariant = var
+        }
+    }
+
+    // try to determine the active variants based on the requested tasks
+    def preferredActiveVariant = null
+    def activeVariants = []
+    gradle.startParameter.taskNames.each { tn ->
+        availableVariants.each { var ->
+            if (tn.contains(var.name.capitalize())) {
+                activeVariants += var
+            }
+            // if the task name contains the preferred default variant name, update `defaultVariant`
+            if(!preferredActiveVariant && tn.contains(defVarName)) {
+                preferredActiveVariant = var;
+            }
+        }
+    }
+
+    return preferredActiveVariant ?:
+            !activeVariants.empty ? activeVariants[0] :
+                    defaultVariant ?:
+                            !availableVariants.empty ? availableVariants[0] : null
+}
+
+// OS and architecture detection based on host runtime
+ext.runtimePlatform = { ->
+    // adapted from `EngineLibrary`
+    def arch = System.getProperty("os.arch")
+    def os = System.getProperty("os.name")
+
+    String rt;
+    if(os.toLowerCase().indexOf("win") >= 0) {
+        rt = 'win'
+    } else if(os.toLowerCase().indexOf("linux") >= 0) {
+        rt = 'linux'
+    } else  if(os.toLowerCase().indexOf("mac") >= 0 || os.toLowerCase().indexOf("darwin") >= 0) {
+        rt = 'macos'
+    } else {
+        throw new GradleException("Unsupported runtime host arch=${arch} os = ${os}")
+    }
+    // architecture detection
+    if(arch.toLowerCase().indexOf("64") >= 0) {
+        rt += '64'
+    } else if(arch.toLowerCase().indexOf("32") >= 0) {
+        rt += '32'
+    } else if(arch.toLowerCase().indexOf("86") >= 0) {
+        rt += '32'
+    } else {
+        throw new GradleException("Unsupported runtime host arch=${arch} os = ${os}")
+    }
+    return rt
+}
+
+ext.touch = { file ->
+    if(!file.exists()) {
+        file.parentFile.mkdirs()
+        file.createNewFile()
+    } else {
+        file.setLastModified(System.currentTimeMillis())
+    }
+}
+
+/**
+ * Retrieves the classifier for the artifact associated with the specified
+ * dependency or `null` if not defined
+ */
+ext.getClassifier = { dep ->
+    if(dep.artifacts.isEmpty()) return null
+    def artifact = dep.artifacts[0]
+    return artifact.classifier
+}
+
+/**
+ * Retrieves the extension for the artifact associated with the specified
+ * dependency or `null` if not defined
+ */
+ext.getExtension = { dep ->
+    if(dep.artifacts.isEmpty()) return null
+    def artifact = dep.artifacts[0]
+    return artifact.extension
+}

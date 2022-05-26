@@ -1,7 +1,0 @@
-<PersistedActionMenu baseline="true" hideable="false" iconPath="ic_menu_tools"  title="actionbar_toolbarmanager">
-   <ClickData actionType="click">
-      <broadcast>
-         <action>com.atakmap.app.LAYOUT_MANAGER</action>
-      </broadcast>
-   </ClickData>
-</PersistedActionMenu>

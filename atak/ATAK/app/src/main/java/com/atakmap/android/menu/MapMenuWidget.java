@@ -16,9 +16,14 @@ import com.atakmap.coremap.log.Log;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
-public class MapMenuWidget extends LayoutWidget {
+import gov.tak.api.widgets.IMapMenuButtonWidget;
+import gov.tak.api.widgets.IMapMenuWidget;
+import gov.tak.api.widgets.IMapWidget;
+
+public class MapMenuWidget extends LayoutWidget implements IMapMenuWidget {
 
     public static final String TAG = "MapMenuWidget";
+    private static final float BUTTON_WIDTH_SCALAR = 0.76666f;
 
     float _buttonSpan = 45f;
     float _buttonRadius = 70f;
@@ -157,8 +162,8 @@ public class MapMenuWidget extends LayoutWidget {
         _clockwiseWinding = winding;
     }
 
-    protected boolean onWidgetCanBeAdded(int index, MapWidget widget) {
-        return (widget instanceof MapMenuButtonWidget);
+    public boolean onWidgetCanBeAdded(int index, MapWidget widget) {
+        return (widget instanceof IMapMenuButtonWidget);
     }
 
     static class Factory extends LayoutWidget.Factory {
@@ -216,29 +221,26 @@ public class MapMenuWidget extends LayoutWidget {
 
             float radius = DataParser.parseFloatText(
                     attrs.getNamedItem("buttonRadius"), -1f);
-            if (0.0 > radius) {
+            if (radius < 0)
                 radius = 45f;
-            } else {
+            else
                 _explicitSizing = true;
-            }
             radius *= MapView.DENSITY;
 
             float width = DataParser.parseFloatText(
                     attrs.getNamedItem("buttonWidth"), -1f);
-            if (0.0 > width) {
+            if (width < 0)
                 width = 100f;
-            } else {
+            else
                 _explicitSizing = true;
-            }
-            width *= MapView.DENSITY;
+            width *= MapView.DENSITY * BUTTON_WIDTH_SCALAR;
 
             float span = DataParser.parseFloatText(
                     attrs.getNamedItem("buttonSpan"), -1f);
-            if (0.0 > span) {
+            if (span < 0)
                 span = 45f;
-            } else {
+            else
                 _explicitSizing = true;
-            }
 
             boolean dragDismiss = false;
             try {
@@ -272,15 +274,15 @@ public class MapMenuWidget extends LayoutWidget {
                             .seekNodeNamed(childNode.getNextSibling(),
                                     Node.ELEMENT_NODE, "button")) {
 
-                MapWidget buttonWidget = buttonFactory.createFromElem(config,
+                IMapWidget buttonWidget = buttonFactory.createFromElem(config,
                         childNode);
-                if (buttonWidget instanceof MapMenuButtonWidget) {
-                    MapMenuButtonWidget button = (MapMenuButtonWidget) buttonWidget;
+                if (buttonWidget instanceof IMapMenuButtonWidget) {
+                    IMapMenuButtonWidget button = (IMapMenuButtonWidget) buttonWidget;
                     NamedNodeMap attrs = childNode.getAttributes();
                     if (null == attrs.getNamedItem("background")
                             && menu._buttonBackground != null) {
                         try {
-                            button.setBackground(menu._buttonBackground);
+                            button.setWidgetBackground(menu._buttonBackground);
                         } catch (Exception e) {
                             Log.e(TAG, "error: ", e);
                         }
@@ -316,10 +318,10 @@ public class MapMenuWidget extends LayoutWidget {
                     menu._coveredAngle += button.getButtonSpan();
 
                     // parent / child relationships
-                    MapMenuWidget submenu = button.getSubmenuWidget();
+                    IMapMenuWidget submenu = button.getSubmenu();
                     if (null != submenu)
                         submenu.setParent(menu);
-                    menu.addWidget(button);
+                    menu.addChildWidget(button);
                 }
             }
         }

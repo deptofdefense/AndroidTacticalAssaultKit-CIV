@@ -21,7 +21,9 @@ import com.atakmap.android.toolbar.ButtonTool;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.android.toolbar.widgets.TextContainer;
 import com.atakmap.app.R;
+import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
 /**
@@ -38,6 +40,8 @@ public class SensorFOVTool extends ButtonTool
     private Marker _marker;
     private final TextContainer _cont;
     private boolean _showDetails = false;
+    private String _prompt = null;
+    private String _intentAction = null;
 
     public SensorFOVTool(MapView mapView, ImageButton button) {
         super(mapView, button, TOOL_NAME);
@@ -56,10 +60,19 @@ public class SensorFOVTool extends ButtonTool
             if (item instanceof Marker)
                 _marker = (Marker) item;
         }
+
+        if (extras.containsKey("prompt")) {
+            _prompt = extras.getString("prompt");
+        }
+        if (extras.containsKey("intent")) {
+            _intentAction = extras.getString("intent");
+        }
         _showDetails = extras.getBoolean("showDetails", false);
         if (_marker != null) {
-            _cont.displayPrompt(_mapView.getResources().getString(
-                    R.string.point_dropper_sensor_prompt));
+            _cont.displayPrompt(FileSystemUtils.isEmpty(_prompt)
+                    ? _mapView.getResources()
+                            .getString(R.string.point_dropper_sensor_prompt)
+                    : _prompt);
             // Take control of all map events
             _mapView.getMapEventDispatcher().addMapEventListener(
                     MapEvent.MAP_CLICK, this);
@@ -92,7 +105,7 @@ public class SensorFOVTool extends ButtonTool
             return;
 
         GeoPoint geoPoint = _mapView.inverse(
-                event.getPoint().x, event.getPoint().y,
+                event.getPointF().x, event.getPointF().y,
                 MapView.InverseMode.RayCast).get();
 
         //if marker does not have range attribute, it is being created
@@ -102,8 +115,7 @@ public class SensorFOVTool extends ButtonTool
             _marker.removeMetaData(SensorDetailHandler.HIDE_FOV);
 
         //set range and azimuth
-        double dist = DistanceCalculations.metersFromAtSourceTarget(
-                _marker.getPoint(), geoPoint);
+        double dist = GeoCalculations.distanceTo(_marker.getPoint(), geoPoint);
         if (dist > SensorDetailHandler.MAX_SENSOR_RANGE) {
             dist = SensorDetailHandler.MAX_SENSOR_RANGE;
             Toast.makeText(
@@ -123,6 +135,8 @@ public class SensorFOVTool extends ButtonTool
 
         int fov = _marker.getMetaInteger(
                 SensorDetailHandler.FOV_ATTRIBUTE, 45);
+        int rangeLines = _marker.getMetaInteger(
+                SensorDetailHandler.RANGE_LINES_ATTRIBUTE, 100);
         float red = (float) _marker.getMetaDouble(
                 SensorDetailHandler.FOV_RED, 1);
         float green = (float) _marker.getMetaDouble(
@@ -133,24 +147,29 @@ public class SensorFOVTool extends ButtonTool
                 SensorDetailHandler.FOV_ALPHA, 0.3f);
         boolean showFOV = !_marker.hasMetaValue(
                 SensorDetailHandler.HIDE_FOV);
+        boolean showLabels = _marker.hasMetaValue(
+                SensorDetailHandler.DISPLAY_LABELS);
         int sc = _marker.getMetaInteger(SensorDetailHandler.STROKE_COLOR,
-                Color.WHITE);
+                Color.LTGRAY);
         double sw = _marker.getMetaDouble(SensorDetailHandler.STROKE_WEIGHT, 0);
 
         SensorFOV sens = SensorDetailHandler.addFovToMap(_marker, trueBearing,
                 fov, dist,
                 new float[] {
                         red, green, blue, alpha
-                }, showFOV);
+                }, showFOV, showLabels, rangeLines);
         if (sens == null)
             return;
 
         sens.setStrokeWeight(sw);
         sens.setStrokeColor(sc);
 
-        if (_showDetails) {
-            Intent detailEditor = new Intent(
-                    SensorDetailsReceiver.SHOW_DETAILS);
+        if (_showDetails || !FileSystemUtils.isEmpty(_intentAction)) {
+            String action = FileSystemUtils.isEmpty(_intentAction)
+                    ? SensorDetailsReceiver.SHOW_DETAILS
+                    : _intentAction;
+
+            Intent detailEditor = new Intent(action);
             detailEditor.putExtra("targetUID", _marker.getUID());
             AtakBroadcast.getInstance().sendBroadcast(detailEditor);
         }

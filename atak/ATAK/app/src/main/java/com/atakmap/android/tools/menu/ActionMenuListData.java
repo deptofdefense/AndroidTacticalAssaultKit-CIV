@@ -4,12 +4,9 @@ package com.atakmap.android.tools.menu;
 import com.atakmap.android.tools.ActionBarReceiver;
 import com.atakmap.android.tools.menu.ActionMenuData.PreferredMenu;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.log.Log;
 
 import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Root;
-import org.simpleframework.xml.Serializer;
-import org.simpleframework.xml.core.Persister;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,11 +54,7 @@ public class ActionMenuListData {
     }
 
     public boolean isValid() {
-        if (FileSystemUtils.isEmpty(actions)) {
-            return false;
-        }
-
-        return true;
+        return !FileSystemUtils.isEmpty(actions);
     }
 
     @Override
@@ -76,10 +69,7 @@ public class ActionMenuListData {
 
     public boolean equals(ActionMenuListData c) {
 
-        if (!FileSystemUtils.isEquals(getActions(), c.getActions()))
-            return false;
-
-        return true;
+        return FileSystemUtils.isEquals(getActions(), c.getActions());
     }
 
     @Override
@@ -113,18 +103,6 @@ public class ActionMenuListData {
         return matching;
     }
 
-    public List<ActionMenuData> getHideableActions(boolean hideable) {
-        List<ActionMenuData> matching = new ArrayList<>();
-        if (!isValid())
-            return matching;
-
-        for (ActionMenuData action : actions) {
-            if (action.isHideable() == hideable)
-                matching.add(action);
-        }
-        return matching;
-    }
-
     public List<ActionMenuData> getPlaceholderActions(boolean placeholder) {
         List<ActionMenuData> matching = new ArrayList<>();
         if (!isValid())
@@ -132,20 +110,6 @@ public class ActionMenuListData {
 
         for (ActionMenuData action : actions) {
             if (action.isPlaceholder() == placeholder)
-                matching.add(action);
-        }
-        return matching;
-    }
-
-    public List<ActionMenuData> getHideableActions(boolean hideable,
-            boolean placeholder) {
-        List<ActionMenuData> matching = new ArrayList<>();
-        if (!isValid())
-            return matching;
-
-        for (ActionMenuData action : actions) {
-            if (action.isHideable() == hideable
-                    && action.isPlaceholder() == placeholder)
                 matching.add(action);
         }
         return matching;
@@ -190,72 +154,6 @@ public class ActionMenuListData {
         }
 
         return getAction(action.getId()) != null;
-    }
-
-    /**
-     * Find a placeholder associated with this action.  A placeholder is associated with an action
-     * if it is used to replace a "missing" plugin.  This is used to put dynamic actions back in the
-     * same spot after a restart.
-     *
-     * @param action The plugin AMD to find an associated placeholder for.
-     * @return The associated placeholder or null if none are found.
-     */
-    public ActionMenuData findPlaceholder(ActionMenuData action) {
-        String id = String.valueOf(action.getId());
-        for (ActionMenuData amd : getPlaceholderActions(true)) {
-            if (amd.getRef()
-                    .substring(ActionMenuData.PLACEHOLDER_TITLE.length() + 1)
-                    .equals(id)) {
-                return amd;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Replace an action that already exists with a new one.   This is specifically
-     * used when the action is from a plugin.   The one loaded from the persisted
-     * state is incomplete and not able to be loaded until after the plugins have
-     * been loaded.
-     */
-    public void replaceAction(final ActionMenuData action) {
-        int id = action.getId();
-        for (int i = 0; i < actions.size(); ++i) {
-            ActionMenuData amd = actions.get(i);
-            if (amd == null)
-                return;
-
-            if (amd.getId() == id) {
-                // clone this so that it can correctly carry the configuration 
-                // for the preferredMenu location (overflow or actionBar)
-                ActionMenuData cpy = new ActionMenuData(action);
-                cpy.setPreferredMenu(amd.getPreferredMenu());
-                actions.set(i, cpy);
-            }
-        }
-    }
-
-    /**
-     * Replace an old action with a new one.  This is used to replace specific placeholders with
-     * their associated actions.
-     *
-     * @param oldAction Action to replace
-     * @param newAction Action to replace it with
-     */
-    public void replaceAction(final ActionMenuData oldAction,
-            final ActionMenuData newAction) {
-        int id = oldAction.getId();
-        for (int i = 0; i < actions.size(); ++i) {
-            ActionMenuData amd = actions.get(i);
-            if (amd == null)
-                return;
-
-            if (amd.getId() == id) {
-                ActionMenuData cpy = new ActionMenuData(newAction);
-                cpy.setPreferredMenu(amd.getPreferredMenu());
-                actions.set(i, cpy);
-            }
-        }
     }
 
     /**
@@ -341,28 +239,6 @@ public class ActionMenuListData {
 
     public void clear() {
         getActions().clear();
-    }
-
-    /**
-     * Parse the specified action bar string
-     *
-     * @param xml
-     * @return
-     */
-    public static ActionMenuListData fromXml(String xml) {
-        Log.d(TAG, "Loading ActionMenuListData from xml");
-
-        Serializer serializer = new Persister();
-        try {
-            ActionMenuListData retval = serializer
-                    .read(ActionMenuListData.class, xml);
-            for (ActionMenuData amd : retval.actions)
-                amd.deferredLoad();
-            return retval;
-        } catch (Exception e) {
-            Log.e(TAG, "Failed to load action bar: " + xml, e);
-            return null;
-        }
     }
 
 }

@@ -9,6 +9,7 @@ import android.preference.PreferenceManager;
 
 import com.atakmap.android.attachment.layer.AttachmentBillboardLayer;
 import com.atakmap.android.maps.MapItem;
+import com.atakmap.android.util.DisplayManager;
 import com.atakmap.comms.ReportingRate;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
@@ -45,10 +46,7 @@ public class RouteNavigator {
     private final DocumentedIntentFilter navFilter;
     private final DocumentedIntentFilter gpsFilter;
     private final SharedPreferences navPrefs;
-    private AttachmentBillboardLayer billboardLayer;
-
-    private boolean oldKeyGuardSetting;
-    private boolean oldScreenLockSetting;
+    private final AttachmentBillboardLayer billboardLayer;
 
     //-------------------- Properties ---------------------------
     private volatile boolean navigating = false;
@@ -105,15 +103,6 @@ public class RouteNavigator {
 
         navPrefs = PreferenceManager.getDefaultSharedPreferences(mapView
                 .getContext());
-
-        // set up the default state of the key guard and the screen lock
-        this.oldKeyGuardSetting = navPrefs.getBoolean("atakDisableKeyGuard",
-                false);
-        this.oldScreenLockSetting = navPrefs.getBoolean("atakScreenLock",
-                false);
-
-        Log.d(TAG, "recording atakKeyGuard: " + oldKeyGuardSetting
-                + " atakScreenLock: " + oldScreenLockSetting);
 
         navFilter = new DocumentedIntentFilter();
         navFilter.addAction(NAV_TO_NEXT_INTENT,
@@ -264,17 +253,7 @@ public class RouteNavigator {
         AtakBroadcast.getInstance().registerReceiver(navReceiver, navFilter);
         AtakBroadcast.getInstance().registerReceiver(gpsReceiver, gpsFilter);
 
-        // set up the default state of the key guard and the screen lock
-        this.oldKeyGuardSetting = navPrefs.getBoolean("atakDisableKeyguard",
-                false);
-        this.oldScreenLockSetting = navPrefs.getBoolean("atakScreenLock",
-                false);
-
-        Log.d(TAG, "recording atakKeyGuard: " + oldKeyGuardSetting
-                + " atakScreenLock: " + oldScreenLockSetting);
-
-        navPrefs.edit().putBoolean("atakDisableKeyguard", true)
-                .putBoolean("atakScreenLock", true).apply();
+        DisplayManager.acquireTemporaryScreenLock(mapView, "RouteNavigator");
 
         //Set state
         fireOnNavigationStarting();
@@ -310,11 +289,8 @@ public class RouteNavigator {
 
         if (navigating && route != null) {
 
-            Log.d(TAG, "ending nav, setting atakKeyGuard: " + oldKeyGuardSetting
-                    + " atakScreenLock: " + oldScreenLockSetting);
-            navPrefs.edit()
-                    .putBoolean("atakDisableKeyguard", oldKeyGuardSetting)
-                    .putBoolean("atakScreenLock", oldScreenLockSetting).apply();
+            DisplayManager.releaseTemporaryScreenLock(mapView,
+                    "RouteNavigator");
 
             AtakBroadcast.getInstance().unregisterReceiver(gpsReceiver);
             AtakBroadcast.getInstance().unregisterReceiver(navReceiver);
@@ -349,7 +325,7 @@ public class RouteNavigator {
     /**
      * Begins navigation to the new waypoint if present in the existing route.
      *
-     * @param waypoint
+     * @param waypoint the waypoint to navigate to
      */
     synchronized void navigateToNewWayPoint(final PointMapItem waypoint) {
 
@@ -546,13 +522,17 @@ public class RouteNavigator {
 
     /**
      * Registers a route navigation listener
-     * @param listener
+     * @param listener the listener fired during route navigation
      */
     public void registerRouteNavigatorListener(
             RouteNavigatorListener listener) {
         routeNavigatorListeners.add(listener);
     }
 
+    /**
+     * Unregisters a route navigation listener
+     * @param listener the listener fired during route navigation
+     */
     public void unregisterRouteNavigatorListener(
             RouteNavigatorListener listener) {
         routeNavigatorListeners.remove(listener);

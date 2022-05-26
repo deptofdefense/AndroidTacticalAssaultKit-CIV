@@ -17,12 +17,15 @@ import com.atakmap.android.importexport.Exportable;
 import com.atakmap.android.importexport.FormatNotSupportedException;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.missionpackage.export.MissionPackageExportWrapper;
+import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.video.ConnectionEntry;
+import com.atakmap.android.video.ConnectionEntry.Protocol;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.locale.LocaleUtil;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -118,8 +121,7 @@ class VideoFolderHierarchyListItem extends VideoBrowserHierarchyListItem
                 if (!FileSystemUtils.isEquals(uid, e.getParentUID()))
                     continue;
                 VideoBrowserHierarchyListItem item;
-                boolean isDir = e
-                        .getProtocol() == ConnectionEntry.Protocol.DIRECTORY;
+                boolean isDir = e.getProtocol() == Protocol.DIRECTORY;
                 if (isDir)
                     item = new VideoFolderHierarchyListItem(_mapView, e, this);
                 else
@@ -155,6 +157,14 @@ class VideoFolderHierarchyListItem extends VideoBrowserHierarchyListItem
         // Clear the opened menu when we leave the list
         _showMenuUID = null;
         return false;
+    }
+
+    @Override
+    public List<Sort> getSorts() {
+        List<Sort> sortModes = new ArrayList<>();
+        sortModes.add(new SortAlphabet());
+        sortModes.add(new SortProtocol());
+        return sortModes;
     }
 
     @Override
@@ -229,5 +239,33 @@ class VideoFolderHierarchyListItem extends VideoBrowserHierarchyListItem
         }
 
         return null;
+    }
+
+    private static final Comparator<HierarchyListItem> SORT_PROTOCOL = new Comparator<HierarchyListItem>() {
+        @Override
+        public int compare(HierarchyListItem o1, HierarchyListItem o2) {
+            Protocol p1 = ((VideoBrowserHierarchyListItem) o1)
+                    .getUserObject().getProtocol();
+            Protocol p2 = ((VideoBrowserHierarchyListItem) o2)
+                    .getUserObject().getProtocol();
+            int comp;
+            if (p1 == p2)
+                comp = 0;
+            else if (p1 == Protocol.FILE)
+                comp = -1;
+            else
+                comp = 1;
+            if (comp == 0)
+                return HierarchyListAdapter.MENU_ITEM_COMP.compare(o1, o2);
+            return comp;
+        }
+    };
+
+    private class SortProtocol extends ComparatorSort {
+
+        SortProtocol() {
+            super(SORT_PROTOCOL, _context.getString(R.string.type),
+                    ATAKUtilities.getResourceUri(R.drawable.file_sort));
+        }
     }
 }

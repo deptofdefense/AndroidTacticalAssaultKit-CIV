@@ -1,4 +1,4 @@
-<PersistedActionMenu baseline="true" hideable="true" iconPath="ic_menu_radio"  title="actionbar_radiocontrols">
+<PersistedActionMenu baseline="true" hideable="true" iconPath="nav_radio" title="actionbar_radiocontrols">
    <ClickData actionType="click">
       <broadcast>
          <action>com.atakmap.radiocontrol.RADIO_CONTROL</action>

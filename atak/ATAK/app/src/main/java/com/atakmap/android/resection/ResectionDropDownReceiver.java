@@ -17,6 +17,7 @@ import com.atakmap.android.util.AfterTextChangedWatcher;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.map.CameraController;
 
 import android.app.AlertDialog;
 import android.content.Context;
@@ -261,7 +262,8 @@ public class ResectionDropDownReceiver extends DropDownReceiver
         else if (id == R.id.panto_resection) {
             GeoPoint intersectionPoint = _manager.getIntersectionPoint();
             if (intersectionPoint != null) {
-                _mapView.getMapController().panTo(intersectionPoint, true);
+                CameraController.Programmatic.panTo(
+                        _mapView.getRenderer3(), intersectionPoint, true);
             }
         }
 

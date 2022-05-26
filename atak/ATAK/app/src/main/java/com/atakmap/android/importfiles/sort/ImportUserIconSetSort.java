@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -169,5 +170,16 @@ public class ImportUserIconSetSort extends ImportInPlaceResolver {
     @Override
     public Pair<String, String> getContentMIME() {
         return new Pair<>(CONTENT_TYPE, MIME_TYPE);
+    }
+
+    @Override
+    public void filterFoundResolvers(final List<ImportResolver> importResolvers,
+            File file) {
+        // Remove data package sorters
+        for (int i = 0; i < importResolvers.size(); i++) {
+            ImportResolver ir = importResolvers.get(i);
+            if (ir instanceof ImportMissionPackageSort)
+                importResolvers.remove(i--);
+        }
     }
 }

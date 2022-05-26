@@ -12,8 +12,8 @@ import com.atakmap.io.UriFactory;
 import org.apache.http.HttpEntity;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 
 public final class TakServerHttpsProtocolHandler implements ProtocolHandler {
     @Override
@@ -65,6 +65,6 @@ public final class TakServerHttpsProtocolHandler implements ProtocolHandler {
 
     @Override
     public Collection<String> getSupportedSchemes() {
-        return Arrays.asList("https");
+        return Collections.singletonList("https");
     }
 }

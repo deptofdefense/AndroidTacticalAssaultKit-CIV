@@ -13,8 +13,8 @@ import com.atakmap.android.imagecapture.PointA;
 import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoBounds;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
@@ -296,9 +296,7 @@ public class Polyline extends Shape {
         GeoPointMetaData current;
         while (iter.hasNext()) {
             current = iter.next();
-            distance += DistanceCalculations.metersFromAtSourceTarget(
-                    last.get(),
-                    current.get());
+            distance += GeoCalculations.distanceTo(last.get(), current.get());
             last = current;
         }
         return distance;

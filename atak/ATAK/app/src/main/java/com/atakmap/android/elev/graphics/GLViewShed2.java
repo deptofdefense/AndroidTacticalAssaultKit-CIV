@@ -462,7 +462,7 @@ public class GLViewShed2 extends GLHeatMap implements
             gp1 = result.lowerLeft;
             gp2 = result.upperRight;
 
-            distance = DistanceCalculations.metersFromAtSourceTarget(gp1, gp2);
+            distance = GeoCalculations.distanceTo(gp1, gp2);
             //            long time = System.currentTimeMillis();
 
             // obtain the elevation data

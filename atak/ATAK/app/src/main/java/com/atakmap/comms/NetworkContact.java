@@ -30,7 +30,7 @@ public class NetworkContact implements Parcelable {
     private String uid;
     private String callsign;
     private String team, role;
-    private NetConnectString connectionEndpoint = null;
+    private NetConnectString connectionEndpoint;
     private int _version = 2; //0 - GeoChat, 1 - 2.2 and before, 2 - 2.3
 
     private long lastRefresh = 0L;

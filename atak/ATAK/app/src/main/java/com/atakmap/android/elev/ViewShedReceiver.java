@@ -148,8 +148,8 @@ public class ViewShedReceiver extends BroadcastReceiver {
 
     private static ViewShedReceiver instance;
     private static MapView mapView;
-    private static HashMap<String, ArrayList<VsdLayer>> singleVsdLayerMap;
-    private static HashMap<String, ArrayList<VsdLayer>> vsdLineLayerMap;
+    private static final HashMap<String, ArrayList<VsdLayer>> singleVsdLayerMap = new HashMap<>();
+    private static final HashMap<String, ArrayList<VsdLayer>> vsdLineLayerMap = new HashMap<>();
 
     public static synchronized ViewShedReceiver getInstance() {
         if (instance == null)
@@ -159,8 +159,6 @@ public class ViewShedReceiver extends BroadcastReceiver {
 
     private ViewShedReceiver(MapView mv) {
         mapView = mv;
-        singleVsdLayerMap = new HashMap<>();
-        vsdLineLayerMap = new HashMap<>();
     }
 
     public static HashMap<String, ArrayList<VsdLayer>> getSingleVsdLayerMap() {

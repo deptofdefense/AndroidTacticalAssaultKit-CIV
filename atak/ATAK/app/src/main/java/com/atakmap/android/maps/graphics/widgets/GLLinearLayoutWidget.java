@@ -13,6 +13,11 @@ import com.atakmap.opengl.GLES20FixedPipeline;
 
 import java.util.List;
 
+import gov.tak.api.annotation.DeprecatedApi;
+
+/** @deprecated use {@link gov.tak.platform.widgets.opengl.GLLinearLayoutWidget} */
+@Deprecated
+@DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
 public class GLLinearLayoutWidget extends GLLayoutWidget {
 
     public final static GLWidgetSpi SPI = new GLWidgetSpi() {
@@ -83,6 +88,7 @@ public class GLLinearLayoutWidget extends GLLayoutWidget {
         _sizeChanged = false;
 
         // Enable stencil for cropping out overflowing children draw operations
+
         GLES20FixedPipeline.glClear(GLES20FixedPipeline.GL_STENCIL_BUFFER_BIT);
         GLES20FixedPipeline.glStencilMask(0xFFFFFFFF);
         GLES20FixedPipeline.glStencilFunc(GLES20FixedPipeline.GL_ALWAYS, 0x1,
@@ -144,9 +150,9 @@ public class GLLinearLayoutWidget extends GLLayoutWidget {
 
         List<GLWidget> glChildren = getChildren();
         for (GLWidget c : glChildren) {
-            if (!c.subject.isVisible())
+            if (!c.getSubject().isVisible())
                 continue;
-            float[] size = MapWidget2.getSize(c.subject, true, false);
+            float[] size = MapWidget2.getSize(c.getSubject(), true, false);
             float[] cMargin;
             if (c instanceof GLWidget2)
                 cMargin = ((GLWidget2) c)._margin;
@@ -180,12 +186,18 @@ public class GLLinearLayoutWidget extends GLLayoutWidget {
                 top += cMargin[TOP];
 
             // Draw child here
-            c.x = left;
-            c.y = top;
-            c.drawWidget();
+            c.setX(left);
+            c.setY(top);
 
+            if (c instanceof GLWidget) {
+                ((GLWidget) c).drawWidget();
+            } else {
+                gov.tak.platform.widgets.opengl.GLWidget.DrawState drawState = drawStateFromFixedPipeline(
+                        orthoView);
+                c.drawWidget(drawState);
+            }
             // Update position for click events
-            c.subject.setPoint(left + xOffset, top - yOffset);
+            c.getSubject().setPoint(left + xOffset, top - yOffset);
 
             // Post-draw increment offset
             if (_orientation == LinearLayoutWidget.HORIZONTAL) {

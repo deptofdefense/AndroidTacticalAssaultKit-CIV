@@ -1,5 +1,7 @@
 apply from: 'gradle/versions.gradle'
 
+def publishGroup = 'jcommoncommo'
+
 publishing {
     repositories {
         maven {
@@ -11,13 +13,36 @@ publishing {
             url = System.getenv('ARTIFACTORY_MAVEN_URL')
         }
     }
+
     publications {
-        jcommoncommo(MavenPublication) {
-            group = 'jcommoncommo'
+        // DEPRECATED: remove at version 2.0.0
+        jcommoncommoNative(MavenPublication) {
+            group = "$publishGroup"
             artifactId = 'jcommoncommo-native'
             version = "${commoncommoVersion}"
             artifact "$buildDir/jcommoncommo-native.zip"
+        }
+
+        jcommoncommo(MavenPublication) {
+            group = "$publishGroup"
+            artifactId = 'jcommoncommo'
+            version = "${commoncommoVersion}"
             artifact "$rootDir/../jcommoncommo.jar"
+            // define dependency on `jcommoncommo-rt`
+            pom.withXml {
+                def dependencies  = asNode().appendNode("dependencies")
+                def depNode  = dependencies.appendNode("dependency")
+                depNode.appendNode('groupId', "$publishGroup")
+                depNode.appendNode('artifactId', 'jcommoncommo-rt')
+                depNode.appendNode('version', "${commoncommoVersion}")
+            }
+        }
+
+        jcommoncommoRuntime(MavenPublication) {
+            group = "$publishGroup"
+            artifactId = 'jcommoncommo-rt'
+            version = "${commoncommoVersion}"
+            artifact "$buildDir/jcommoncommo-rt.jar"
         }
     }
 }

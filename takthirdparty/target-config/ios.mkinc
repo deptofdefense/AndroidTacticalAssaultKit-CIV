@@ -14,6 +14,8 @@ CPP:=$(shell xcrun -find -sdk $(ios_platform) cpp)
 # Needed for KDU
 AR:=$(shell xcrun -find -sdk $(ios_platform) ar)
 RANLIB:=$(shell xcrun -find -sdk $(ios_platform) ranlib)
+# Needed for ASSIMP
+STRIP:=$(shell xcrun -find -sdk $(ios_platform) strip)
 
 # These are needed in the environment by the openssl configure script
 export CROSS_TOP := $(ios_sdk_platform_path)/Developer

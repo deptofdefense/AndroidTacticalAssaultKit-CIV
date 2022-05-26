@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.atakmap.android.navigation.views.buttons.CompassButtonChildView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical">
+
+    <ImageView
+        android:id="@+id/arrow"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_nav_child_arrow_horizontal"/>
+
+    <LinearLayout
+        android:id="@+id/buttons"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/toolbar_container_rounded">
+
+        <com.atakmap.android.navigation.views.buttons.NavButton
+            android:id="@+id/rotate"
+            android:src="@drawable/ic_rotation"
+            style="@style/ActionBarViewImageButton"/>
+
+        <com.atakmap.android.navigation.views.buttons.NavButton
+            android:id="@+id/rotate_lock"
+            android:src="@drawable/ic_rotation_lock"
+            style="@style/ActionBarViewImageButton"/>
+
+        <com.atakmap.android.navigation.views.buttons.NavButton
+            android:id="@+id/tilt"
+            android:src="@drawable/ic_3d"
+            style="@style/ActionBarViewImageButton"/>
+
+        <com.atakmap.android.navigation.views.buttons.NavButton
+            android:id="@+id/tilt_lock"
+            android:src="@drawable/ic_3d_lock"
+            style="@style/ActionBarViewImageButton"/>
+
+    </LinearLayout>
+
+</com.atakmap.android.navigation.views.buttons.CompassButtonChildView>

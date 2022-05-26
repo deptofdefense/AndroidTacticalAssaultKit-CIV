@@ -299,10 +299,12 @@ public class MissionPackageFileIO {
     /**
      * Save the Mission Package via an asynchronous task. Provide callback when complete
      * 
-     * @param contents
-     * @param callback
+     * @param contents Mission Package manifest
+     * @param persist True to persist the package to the local file database
+     * @param callback Task callback
      */
-    public void save(MissionPackageManifest contents, Callback callback) {
+    public void save(MissionPackageManifest contents, boolean persist,
+            Callback callback) {
 
         // delete old .zip if this has been renamed...
         if (FileSystemUtils.isFile(contents.getLastSavedPath())
@@ -319,9 +321,22 @@ public class MissionPackageFileIO {
         }
 
         // now save it out via async task and progress dialog
-        new CompressionTask(contents, _receiver, true, null, callback, false)
-                .execute();
+        CompressionTask task = new CompressionTask(contents, _receiver, true,
+                null, callback, false);
+        task.setPersist(persist);
+        task.execute();
         contents.setLastSavedPath(contents.getPath());
+    }
+
+    /**
+     * Saves and persists the Mission Package via an asynchronous task.
+     * Provide callback when complete
+     *
+     * @param contents
+     * @param callback
+     */
+    public void save(MissionPackageManifest contents, Callback callback) {
+        save(contents, true, callback);
     }
 
     /**

@@ -110,13 +110,19 @@ public class RangeAndBearingMapItem extends Arrow implements
 
     private final SharedPreferences _prefs;
 
-    public static RangeAndBearingMapItem getRABLine(String id) {
+    /**
+     * Provided a unique identifier look up a Range and Bearing Map item.
+     * @param uid the uid describing the range and bearing map item
+     * @return the associated range and bearing map item or null if one is not
+     * found.
+     */
+    public static RangeAndBearingMapItem getRABLine(String uid) {
         MapView mv = MapView.getMapView();
         if (mv == null)
             return null;
         RangeAndBearingMapItem rab = null;
-        if (id != null && !id.isEmpty()) {
-            MapItem item = mv.getRootGroup().deepFindUID(id);
+        if (uid != null && !uid.isEmpty()) {
+            MapItem item = mv.getRootGroup().deepFindUID(uid);
             if (item instanceof RangeAndBearingMapItem)
                 rab = (RangeAndBearingMapItem) item;
         }
@@ -125,29 +131,36 @@ public class RangeAndBearingMapItem extends Arrow implements
 
     /**
      * Creates a persistent Range and Bearing map item.
+     * @param uid the unique identifier for the range and bearing line
+     * @param pmi1 the map item to attach to the start of the arrow
+     * @param pmi2 the map item to attach to the end of the arrow.
      */
-    public static RangeAndBearingMapItem createOrUpdateRABLine(String id,
+    public static RangeAndBearingMapItem createOrUpdateRABLine(String uid,
             PointMapItem pmi1, PointMapItem pmi2) {
-        return createOrUpdateRABLine(id, pmi1, pmi2, true);
+        return createOrUpdateRABLine(uid, pmi1, pmi2, true);
     }
 
     /** 
-     * Creats a Range and Bearing map item, with a given uid and a start and end point.  
-     * Additionally, this could be persistent (true) or transient (false)
+     * Create a Range and Bearing map item, with a given uid and a start and end
+     * point.  Additionally, this could be persistent (true) or transient (false)
+     * @param uid the unique identifier for the range and bearing line
+     * @param pmi1 the point map item for the start of the arrow
+     * @param pmi2 the point map item for the end of the arrow
+     * @param persist if the arrow is to persist after a restart.
      */
-    public static RangeAndBearingMapItem createOrUpdateRABLine(String id,
+    public static RangeAndBearingMapItem createOrUpdateRABLine(String uid,
             PointMapItem pmi1, PointMapItem pmi2, boolean persist) {
 
-        RangeAndBearingMapItem rab = getRABLine(id);
+        RangeAndBearingMapItem rab = getRABLine(uid);
         try {
-            if (id != null && !id.isEmpty()
+            if (uid != null && !uid.isEmpty()
                     && pmi1 != null
                     && pmi2 != null) {
-                Log.d(TAG, "wrap a rangeandbearingmapitem: " + id);
+                Log.d(TAG, "wrap a rangeandbearingmapitem: " + uid);
 
                 if (rab == null) {
                     rab = new RangeAndBearingMapItem(pmi1, pmi2,
-                            MapView.getMapView(), id, persist);
+                            MapView.getMapView(), uid, persist);
 
                     if (pmi1 instanceof RangeAndBearingEndpoint) {
                         RangeAndBearingEndpoint rabe = (RangeAndBearingEndpoint) pmi1;
@@ -178,7 +191,7 @@ public class RangeAndBearingMapItem extends Arrow implements
 
                     rab.setTitle(rab.getTitle());
                     rab.setMetaString("menu", "menus/rab_menu.xml");
-                    rab.setMetaString("rabUUID", id);
+                    rab.setMetaString("rabUUID", uid);
                     rab.setZOrder(-2d);
 
                     rab.onPointChanged(null);
@@ -192,7 +205,7 @@ public class RangeAndBearingMapItem extends Arrow implements
                 }
             } else {
                 Log.w(TAG,
-                        "One or more of the following required extras are missing: 'id', 'pmi1', 'pmi2'");
+                        "One or more of the following required extras are missing: 'uid', 'pmi1', 'pmi2'");
             }
         } catch (Exception e) {
             Log.e(TAG, "error: ", e);
@@ -200,6 +213,13 @@ public class RangeAndBearingMapItem extends Arrow implements
         return rab;
     }
 
+    /**
+     * Return true if the given point map item is associated with the range and bearing
+     * arrow
+     * @param pmi the point map item to check
+     * @return true if it is either attached to the start or the end of the range and
+     * bearing arrow
+     */
     public boolean containsEndpoint(PointMapItem pmi) {
         return pmi == _pt1 || pmi == _pt2;
     }
@@ -220,10 +240,18 @@ public class RangeAndBearingMapItem extends Arrow implements
         return false;
     }
 
+    /**
+     * Sets the map item for the start of the arrow.
+     * @param pmi the map item to be associated with the start of the arrow.
+     */
     public void setPoint1(PointMapItem pmi) {
         updateEndpoint(pmi, true);
     }
 
+    /**
+     * Sets the map item for the start of the arrow.
+     * @param pmi the map item to be associated with the end of the arrow.
+     */
     public void setPoint2(PointMapItem pmi) {
         updateEndpoint(pmi, false);
     }
@@ -259,10 +287,17 @@ public class RangeAndBearingMapItem extends Arrow implements
         onPointChanged(_pt2);
     }
 
+    /**
+     * Returns true if the arrow has been reversed.
+     * @return true if reversed.
+     */
     public boolean isReversed() {
         return _reversed;
     }
 
+    /**
+     * Reverse the direction of the arrow.
+     */
     public void reverse() {
         _reversed = !_reversed;
         if (_pt1 instanceof RangeAndBearingEndpoint) {
@@ -287,10 +322,19 @@ public class RangeAndBearingMapItem extends Arrow implements
         onPointChanged(_pt1);
     }
 
+    /**
+     * Toggles the current state of the slant range display for the range and bearing arrow.
+     * Slant range is the true distance (hypotenuse) where as range is just the distance
+     * as the crow flies between two points on a flat model.
+     */
     public void toggleSlantRange() {
         setDisplaySlantRange(!hasMetaValue("slantRange"));
     }
 
+    /**
+     * Toggle length lock for the range and bearing arrow
+     * @return true if lock is enabled, false if the result is not locked.
+     */
     public boolean toggleLock() {
         _lengthLock = !_lengthLock;
         if (_lengthLock) {
@@ -305,6 +349,10 @@ public class RangeAndBearingMapItem extends Arrow implements
         return _lengthLock;
     }
 
+    /**
+     * Returns true if the range and bearring arrow is length locked.
+     * @return true if length locked
+     */
     public boolean isLocked() {
         return _lengthLock;
     }
@@ -324,16 +372,24 @@ public class RangeAndBearingMapItem extends Arrow implements
     }
 
     /**
-     * Set this R&B MapItem's range units display option<br>
-     * <br>
+     * Set this R&B MapItem's range units display option
+     *
      * @param rangeUnits - The constant int associated with the range units preference.
+     *                   Can be one of Span.METRIC, Span.ENGLISH, or Span.NM
+     * @throws IllegalStateException if the range unit is not one of the following
      */
     public void setRangeUnits(int rangeUnits) {
-
+        if (rangeUnits != Span.ENGLISH &&
+                rangeUnits != Span.NM &&
+                rangeUnits != Span.METRIC) {
+            //throw new IllegalStateException("invalid range unit passed in");
+            Log.d(TAG,
+                    "soft exception - starting in 4.8 this will be a Illegal State Exception",
+                    new IllegalStateException("invalid range unit passed in"));
+            return;
+        }
         _rangeUnits = rangeUnits;
-
         updateLabel();
-
         this.persist(_mapView.getMapEventDispatcher(), null, this.getClass());
     }
 
@@ -354,12 +410,22 @@ public class RangeAndBearingMapItem extends Arrow implements
         this.persist(_mapView.getMapEventDispatcher(), null, this.getClass());
     }
 
-    void setSpeed(double speed) {
+    /**
+     * Sets the speed associated with the range and bearing arrow for the purposes of
+     * bloodhound computation.
+     * @param speed the speed in meters per second.
+     */
+    void setSpeed(final double speed) {
         setMetaDouble(META_USER_SPEED,
                 isSpeedValid(speed) ? speed : Double.NaN);
         updateLabel();
     }
 
+    /**
+     * Allows for the toggle of the slant range and is not actually the toggle of
+     * the slant range
+     * @param state the state togglable or not.
+     */
     public void allowSlantRangeToggle(boolean state) {
         if (state) {
             removeMetaData("disable_slant");
@@ -370,6 +436,10 @@ public class RangeAndBearingMapItem extends Arrow implements
         setDisplaySlantRange(hasMetaValue("slantRange"));
     }
 
+    /**
+     * Sets the state of the slant range display to either true or false
+     * @param bSlantRange true shows the distance as slant range.
+     */
     public void setDisplaySlantRange(boolean bSlantRange) {
         if (bSlantRange) {
             setMetaBoolean("slantRange", true);
@@ -387,18 +457,34 @@ public class RangeAndBearingMapItem extends Arrow implements
         this.persist(_mapView.getMapEventDispatcher(), null, this.getClass());
     }
 
+    /**
+     * Returns the inclination of the range and bearing arrow.
+     * @return the inclination in degrees
+     */
     public double getInclination() {
         return _depAngle;
     }
 
+    /**
+     * Returns the bearing units for the range and bearing arrow
+     * @return the bearing units
+     */
     public Angle getBearingUnits() {
         return _bearingUnits;
     }
 
+    /**
+     * Returns the range units for the range and bearing arrow
+     * @return the range unit as one of Span.METRIC, Span.ENGLISH, or Span.NM
+     */
     public int getRangeUnits() {
         return _rangeUnits;
     }
 
+    /**
+     * Returns the north reference for the range and bearing arrow
+     * @return the north reference
+     */
     public NorthReference getNorthReference() {
         return _northReference;
     }
@@ -415,6 +501,16 @@ public class RangeAndBearingMapItem extends Arrow implements
 
     /**
      * Range And Bearing Map Item with the ability to make it persist in the database.
+     * @param pt1 the start point for the arrow
+     * @param pt2 the end point for the arrow
+     * @param mapView the map view
+     * @param title the title or label of the arrow
+     * @param uid the unique identifier
+     * @param rangeUnits the range units as one of Span.ENGLISH, Span.METRIC, Span.NM
+     * @param bearingUnits the bearing units
+     * @param northRef the north reference
+     * @param color the color of the arrow
+     * @param persist true if it will persist past application restarts
      */
     public RangeAndBearingMapItem(PointMapItem pt1, PointMapItem pt2,
             MapView mapView,
@@ -428,7 +524,14 @@ public class RangeAndBearingMapItem extends Arrow implements
 
         _northReference = northRef;
         _bearingUnits = bearingUnits;
-        _rangeUnits = rangeUnits;
+        try {
+            setRangeUnits(rangeUnits);
+        } catch (IllegalStateException ise) {
+            Log.e(TAG,
+                    "error setting the range units for a range and bearing arrow: "
+                            + uid,
+                    ise);
+        }
         onPointChanged(_pt1);
 
         setStrokeColor(color);
@@ -444,7 +547,11 @@ public class RangeAndBearingMapItem extends Arrow implements
     }
 
     /**
-     * Construct a peristent RangeAndBearingMapItem
+     * Range And Bearing Map Item with the ability to make it persist in the database.
+     * @param pt1 the start point for the arrow
+     * @param pt2 the end point for the arrow
+     * @param mapView the map view
+     * @param uid the unique identifier
      */
     public RangeAndBearingMapItem(PointMapItem pt1, PointMapItem pt2,
             MapView mapView, final String uid) {
@@ -452,7 +559,12 @@ public class RangeAndBearingMapItem extends Arrow implements
     }
 
     /**
-     * RangeAndBearingMapItem
+     * Range And Bearing Map Item with the ability to make it persist in the database.
+     * @param pt1 the start point for the arrow
+     * @param pt2 the end point for the arrow
+     * @param mapView the map view
+     * @param uid the unique identifier
+     * @param persist true if it will persist past application restarts
      */
     public RangeAndBearingMapItem(PointMapItem pt1, PointMapItem pt2,
             MapView mapView, final String uid, boolean persist) {
@@ -469,6 +581,7 @@ public class RangeAndBearingMapItem extends Arrow implements
             setMetaBoolean("nevercot", true);
         else
             setMetaBoolean("archive", true);
+        toggleMetaData("removable", true);
 
         _mapView = mapView;
         _pt1 = pt1;
@@ -510,8 +623,17 @@ public class RangeAndBearingMapItem extends Arrow implements
             _bearingUnits = Angle.DEGREE;
         }
 
-        _rangeUnits = Integer.parseInt(_prefs.getString("rab_rng_units_pref",
-                String.valueOf(Span.METRIC)));
+        try {
+            setRangeUnits(
+                    Integer.parseInt(_prefs.getString("rab_rng_units_pref",
+                            String.valueOf(Span.METRIC))));
+        } catch (Exception ise) {
+            Log.e(TAG,
+                    "error setting the range units for a range and bearing arrow: "
+                            + uid,
+                    ise);
+            setRangeUnits(Span.METRIC);
+        }
         setDisplaySlantRange(_prefs.getString("rab_dist_slant_range",
                 "clamped").equals("slantrange"));
 
@@ -609,10 +731,18 @@ public class RangeAndBearingMapItem extends Arrow implements
         removeOnGroupChangedListener(this);
     }
 
+    /**
+     * Return the start point for the range and bearing arrow
+     * @return
+     */
     public PointMapItem getPoint1Item() {
         return _pt1;
     }
 
+    /**
+     * Return the end point for the range and bearing arrow
+     * @return
+     */
     public PointMapItem getPoint2Item() {
         return _pt2;
     }
@@ -667,11 +797,12 @@ public class RangeAndBearingMapItem extends Arrow implements
     }
 
     /**
-      * Retrieve users of an endpoint
-      *
-      * @param point The point to check for users
-      * @return userList
-      */
+     * Retrieve users of an endpoint
+     *
+     * @param point The point to check for users
+     * @return userList the list of range and bearing items that contain the given
+     * point
+     */
     public static List<RangeAndBearingMapItem> getUsers(PointMapItem point) {
         Collection<MapItem> rabItems;
         rabItems = RangeAndBearingCompat.getGroup().getItems();
@@ -688,14 +819,7 @@ public class RangeAndBearingMapItem extends Arrow implements
         return rabMapItems;
     }
 
-    private void updateLabel() {
-
-        if (_bearingUnits == null) { 
-               _bearingUnits = Angle.DEGREE;
-        }
-
-
-        // This just updates the radial menu - probably shouldn't be here
+    private void updateRadial() {
         setMetaBoolean("degs_t_bool", _bearingUnits == Angle.DEGREE
                 && _northReference == NorthReference.TRUE);
         setMetaBoolean("mils_t_bool", _bearingUnits == Angle.MIL
@@ -711,6 +835,19 @@ public class RangeAndBearingMapItem extends Arrow implements
         setMetaBoolean("ftmi_bool", _rangeUnits == Span.ENGLISH);
         setMetaBoolean("kmm_bool", _rangeUnits == Span.METRIC);
         setMetaBoolean("nm_bool", _rangeUnits == Span.NM);
+    }
+
+    private void updateLabel() {
+
+        // since I have no way to reproduce the playstore issue, going to make sure that
+        // _bearingUnits is not null when updating the label.
+
+        if (_bearingUnits == null) {
+            _bearingUnits = Angle.DEGREE;
+        }
+
+        // This just updates the radial menu - probably shouldn't be here
+        updateRadial();
 
         String bs;
         if (_northReference == NorthReference.GRID) {
@@ -907,9 +1044,15 @@ public class RangeAndBearingMapItem extends Arrow implements
                     String.valueOf(Angle.DEGREE.getValue())))));
         }
         if (key.equals("rab_rng_units_pref")) {
-            setRangeUnits(Integer.parseInt(sp.getString(key,
-                    String.valueOf(Span.METRIC))));
-
+            try {
+                setRangeUnits(Integer.parseInt(sp.getString(key,
+                        String.valueOf(Span.METRIC))));
+            } catch (IllegalStateException ise) {
+                Log.e(TAG,
+                        "error setting the range units for a range and bearing arrow: "
+                                + getUID(),
+                        ise);
+            }
         }
         if (key.equals("rab_dist_slant_range")) {
             setDisplaySlantRange(_prefs.getString("rab_dist_slant_range",
@@ -963,6 +1106,10 @@ public class RangeAndBearingMapItem extends Arrow implements
 
     };
 
+    /**
+     * Given a point, remove it from the range and bearing arrow.
+     * @param endpoint the point to remove
+     */
     public void removePoint(MapItem endpoint) {
         RangeAndBearingEndpoint newPoint;
         if (endpoint == _pt1) {
@@ -1009,14 +1156,26 @@ public class RangeAndBearingMapItem extends Arrow implements
         this.persist(_mapView.getMapEventDispatcher(), null, this.getClass());
     }
 
+    /**
+     * Return the type of point currently used as the start point.
+     * @return the type for the point.
+     */
     public String getPoint1CotType() {
         return _pt1.getType();
     }
 
+    /**
+     * Return the type of point currently used as the end point.
+     * @return the type for the point.
+     */
     public String getPoint2CotType() {
         return _pt2.getType();
     }
 
+    /**
+     * Return the uid of point currently used as the start point.
+     * @return the uid for the point.
+     */
     public String getPoint1UID() {
         String uid = _pt1.getUID();
 
@@ -1027,6 +1186,10 @@ public class RangeAndBearingMapItem extends Arrow implements
         }
     }
 
+    /**
+     * Return the uid of point currently used as the end point.
+     * @return the uid for the point.
+     */
     public String getPoint2UID() {
 
         String uid = _pt2.getUID();

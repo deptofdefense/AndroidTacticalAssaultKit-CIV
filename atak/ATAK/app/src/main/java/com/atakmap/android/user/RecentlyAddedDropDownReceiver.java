@@ -52,6 +52,7 @@ import com.atakmap.coremap.maps.conversion.EGM96;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.map.CameraController;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -259,7 +260,8 @@ public class RecentlyAddedDropDownReceiver extends DropDownReceiver
                 long id) {
             GeoPoint center = ((RecentlyAdded) _recentlyAddedAdapter
                     .getItem(position)).getPoint();
-            getMapView().getMapController().panTo(center, false);
+            CameraController.Programmatic.panTo(
+                    getMapView().getRenderer3(), center, false);
         }
     };
 

@@ -13,18 +13,19 @@ import android.view.ViewGroup;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 
-public final class SeekBarControl implements OnMapViewResizedListener {
+public class SeekBarControl implements OnMapViewResizedListener {
 
     static SeekBarControl instance;
 
-    private final MapView _mapView;
-    private final Context _context;
-    private SeekBar seekBar;
-    private Subject subject;
+    protected final MapView _mapView;
+    protected final Context _context;
+    private final SeekBar seekBar;
+    protected Subject subject;
     private HideControlAction _hideControlAction;
-    private long timeout;
+    protected long timeout;
 
-    private SeekBarControl() {
+    protected SeekBarControl() {
+        super();
         _mapView = MapView.getMapView();
         _context = _mapView.getContext();
 
@@ -56,7 +57,7 @@ public final class SeekBarControl implements OnMapViewResizedListener {
         });
     }
 
-    private void show(long timeout) {
+    protected void show(long timeout) {
         this.timeout = timeout;
         this.seekBar.setVisibility(View.VISIBLE);
         _mapView.addOnMapViewResizedListener(this);
@@ -76,7 +77,7 @@ public final class SeekBarControl implements OnMapViewResizedListener {
         });
     }
 
-    private void setSubject(Subject subject) {
+    protected void setSubject(Subject subject) {
         // notify previous subject that its control is being dismissed and clear
         // the reference
         if (this.subject != null) {

@@ -12,7 +12,7 @@ import com.atakmap.app.R;
 public class SeekerBarPanelView extends LinearLayout {
 
     private View _topLevelView;
-    private TextView _routeText;
+
     private TextView _mgrsText;
     private TextView _mslText;
     private TextView _gainText;

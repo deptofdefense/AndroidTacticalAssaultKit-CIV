@@ -3,6 +3,7 @@ CC=gcc
 CXX=g++
 CPP=cpp
 RANLIB=ranlib
+STRIP=strip -S
 
 # "host" argument to autoconf-based configure scripts
 # Leave blank for autodetect/non-cross compile

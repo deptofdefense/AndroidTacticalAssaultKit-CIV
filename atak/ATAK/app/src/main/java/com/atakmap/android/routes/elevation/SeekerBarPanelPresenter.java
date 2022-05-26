@@ -21,13 +21,13 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 public class SeekerBarPanelPresenter implements View.OnClickListener {
 
     private final Context _context;
-    private SeekerBarPanelView _seekerBarPanelView;
+    protected SeekerBarPanelView _seekerBarPanelView;
 
     private CoordinateFormat _locationUnit = CoordinateFormat.MGRS;
-    private UnitConverter.FORMAT _slopeUnit = UnitConverter.FORMAT.GRADE;
+    protected UnitConverter.FORMAT _slopeUnit = UnitConverter.FORMAT.GRADE;
     private GeoPoint _seekerGeopoint = GeoPoint.ZERO_POINT;
-    private double _seekerSlope = 0;
-    private SharedPreferences _prefs;
+    protected double _seekerSlope = 0;
+    protected SharedPreferences _prefs;
 
     public SeekerBarPanelPresenter(MapView mapView) {
         _context = mapView.getContext();

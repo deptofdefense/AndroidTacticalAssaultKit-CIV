@@ -1,4 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.atakmap.android.helloworld.plugin">
 
     <application 
@@ -55,6 +56,15 @@
                 <action android:name="com.atakmap.android.helloworld.SpeechToActivity"/>
             </intent-filter>
         </activity>
+
+       <!-- allow for plugin discovery -->
+       <activity android:name="com.atakmap.app.component"
+           tools:ignore="MissingClass">
+           <intent-filter android:label="@string/app_name">
+              <action android:name="com.atakmap.app.component" />
+           </intent-filter>
+       </activity>
+
 
     </application>
 

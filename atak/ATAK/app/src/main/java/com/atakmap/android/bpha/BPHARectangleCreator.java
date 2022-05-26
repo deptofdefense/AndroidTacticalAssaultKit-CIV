@@ -165,8 +165,10 @@ public class BPHARectangleCreator {
      */
     private static String nearest100(String s) {
         final int len = s.length();
+        StringBuilder sBuilder = new StringBuilder(s);
         for (int i = len; i < 6; ++i)
-            s = s + "0";
+            sBuilder.append("0");
+        s = sBuilder.toString();
         return s.substring(0, 3) + "00";
 
     }

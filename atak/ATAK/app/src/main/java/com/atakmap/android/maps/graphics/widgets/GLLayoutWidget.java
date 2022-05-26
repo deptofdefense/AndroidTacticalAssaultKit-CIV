@@ -13,6 +13,11 @@ import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLNinePatch;
 
+import gov.tak.api.annotation.DeprecatedApi;
+
+/** @deprecated use {@link gov.tak.platform.widgets.opengl.GLLayoutWidget} */
+@Deprecated
+@DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
 public class GLLayoutWidget extends GLAbstractParentWidget implements
         OnBackingColorChangedListener {
 

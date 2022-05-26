@@ -1,4 +1,4 @@
-<PersistedActionMenu baseline="true" hideable="true" iconPath="ic_menu_goto"  title="actionbar_goto">
+<PersistedActionMenu baseline="true" hideable="true" iconPath="nav_goto" title="actionbar_goto">
    <ClickData actionType="click">
       <broadcast>
          <action>com.atakmap.android.user.GO_TO</action>

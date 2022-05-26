@@ -924,7 +924,7 @@ public class GLQuadtreeNode2 extends
 
         @Override
         public Collection<?> getHitTestList() {
-            return batchables;
+            return new ArrayList<>(batchables);
         }
     }
 

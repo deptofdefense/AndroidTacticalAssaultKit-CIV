@@ -1,8 +1,5 @@
-<icon anchor='15,15' size='32,32'>
+<icon anchor='16,16' size='32,32'>
     <state>
         <image>icons/bloodhound.png</image>
-    </state>
-    <state flags='selected'>
-        <image>icons/bloodhound_lit.png</image>
     </state>
 </icon>

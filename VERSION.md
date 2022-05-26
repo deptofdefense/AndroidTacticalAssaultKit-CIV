@@ -1,5 +1,28 @@
 # Version History
 
+## 4.5.0.0
+
+* Feature Additions
+  * User Interface updates
+    * Action Bar
+    * Tools Menu
+    * On Screen Map Controls (zoom, self-lock, compass)
+    * Radial Menu Look & Feel
+  * First person perspective
+  * Wide (360) Degree Photo Support
+  * Device Information dialog
+  * Chat read receipt timestamp
+  * Improved Send Image workflow
+* Bug Fixes
+  * Various issues with certificate self-enrollment
+  * Update the expired letsEncrypt root CA
+  * Update magnetic model to WMM2020
+  * Fix several discrepancies with KML parsing/rendering
+  * Fix issue with screen-always-on mode during navigation
+* Security
+  * Update `libpng`
+  * Android 11 requires prompt for file system access
+
 ## 4.4.0.15
 
 * Bug Fixes

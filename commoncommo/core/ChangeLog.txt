@@ -1,3 +1,55 @@
+** Release 1.5.2 - 2021-11-12
+BUG FIXES
+* Fix a race condition that could result in memory corruption and crash of
+  the program utilizing commo.  This is only likely to occur when sending
+  multiple CoT messages directly to a remote contact in very rapid succession.
+
+** Release 1.5.1 - 2021-11-03
+MISCELLANEOUS
+* A new global symbol has been added to the core library that encompasses
+  a unique version string that can be reliably extracted using standard binary
+  utilities. Note that this is not meant for programmatic use;  an existing
+  public function (Commo::getVersionString()) already exists to obtain 
+  version information programmatically.
+
+** Release 1.5.0 - 2021-11-01
+NEW FEATURES
+* Interface name-based addressing is now supported on Linux (and Android)
+  platforms.  This is driven by the removal of MAC address access by
+  unpriviledged apps in Android 11.  See COMMO-4
+* Interface name-based addressing is now usable via the Java API
+
+API CHANGES - JAVA ONLY
+* New variant of Commo::Commo() allowing specification of addressing mode.
+  The existing variant remains and reverts to MAC/Physical addressing
+  for backwards compatibility.
+* New variants of the various address-specifying interface creation
+  functions have been added which take String interface names as arguments.
+  These are only usable in name-based addressing mode.
+  The old variants remain but are only usable in MAC/Physical addressing mode.
+* Interface name parameter added to PhysicalNetInterface, populated when
+  name-based addressing is used.
+
+BUG FIXES
+* Passing a previously removed StreamingNetInterface to 
+  Commo::removeStreamingInterface() will no longer cause invalid
+  memory accesses and possibly a crash. See COMMO-5
+
+** Release 1.4.0 - 2021-09-09
+NEW FEATURES
+* Runtime native libraries for Java desktop distributions are included
+  with jcommoncommo-rt.jar. Use of jcommoncommo-native.zip is deprecated
+  and the artifact will be removed from the distribution in the next
+  major version. Transparent native library loading is augmented to
+  unpack runtime libraries to the system temp directory (using a
+  well-formed name) and load using absolute path; failure to deploy/load
+  will result in an attempt to load `commoncommojni` by name.
+
+** Release 1.3.1 - 2021-08-05
+MISCELLANEOUS
+* libmicrohttpd >= 0.9.73 is supported.  Internal changes have been made
+  to adjust to the new libmicrohttpd API
+
 ** Release 1.3.0 - 2021-07-14
 NEW FEATURES
 * Java only: Native library loading can optionally be done transparently 
