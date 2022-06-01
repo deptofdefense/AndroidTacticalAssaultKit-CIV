@@ -271,6 +271,11 @@ void ContactManager::datagramReceived(
 void ContactManager::streamingMessageReceived(
         std::string streamingEndpoint, const CoTMessage *msg)
 {
+    EndpointType msgEpType = msg->getEndpointType();
+    if (msgEpType == ENDPOINT_NONE)
+        // If no valid endpoint (even though we don't need or use the value),
+        // it is not to be considered a contact
+        return;
     msgRxImpl(streamingEndpoint, msg->getContactUID(), NULL,
               msg, 0, CoTEndpoint::STREAMING);
 }

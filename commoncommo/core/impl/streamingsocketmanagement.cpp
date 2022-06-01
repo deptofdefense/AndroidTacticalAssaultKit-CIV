@@ -69,6 +69,7 @@ StreamingSocketManagement::StreamingSocketManagement(CommoLogger *logger,
         ifaceListeners(), ifaceListenersMutex(),
         listeners(), listenersMutex()
 {
+    ERR_clear_error();
     sslCtx = SSL_CTX_new(SSLv23_client_method());
     if (sslCtx)
         // Be certain openssl doesn't do anything with its internal
@@ -270,10 +271,12 @@ void StreamingSocketManagement::resetConnection(ConnectionContext *ctx, CommoTim
         ctx->ssl->writeState = SSLConnectionContext::WANT_NONE;
         ctx->ssl->readState = SSLConnectionContext::WANT_NONE;
         if (ctx->ssl->ssl) {
-            SSL_shutdown(ctx->ssl->ssl);
+            if (!ctx->ssl->fatallyErrored)
+                SSL_shutdown(ctx->ssl->ssl);
             SSL_free(ctx->ssl->ssl);
             ctx->ssl->ssl = NULL;
         }
+        ctx->ssl->fatallyErrored = false;
     }
     if (ctx->socket) {
         delete ctx->socket;
@@ -572,6 +575,7 @@ bool StreamingSocketManagement::connectionThreadCheckSsl(ConnectionContext *ctx)
                                   "associating fd with ssl context failed");
     }
 
+    ERR_clear_error();
     int r = SSL_connect(ctx->ssl->ssl);
     if (r == 1) {
         // openssl's cert verification during connection cannot be made
@@ -634,6 +638,9 @@ bool StreamingSocketManagement::connectionThreadCheckSsl(ConnectionContext *ctx)
                 ERR_error_string_n(ERR_get_error(), msg, sizeof(msg));
                 msg[1023] = '\0';
                 InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Error making SSL connection: %s", msg);
+                ctx->ssl->fatallyErrored = true;
+            } else if (r == SSL_ERROR_SYSCALL) {
+                ctx->ssl->fatallyErrored = true;
             }
             throw SocketException(netinterfaceenums::ERR_CONN_SSL_HANDSHAKE,
                                   "unexpected error in ssl handshake");
@@ -862,6 +869,7 @@ void StreamingSocketManagement::connectionThreadProcess()
 
 size_t StreamingSocketManagement::ioThreadSslRead(ConnectionContext *ctx) COMMO_THROW (SocketException)
 {
+    ERR_clear_error();
     int n = SSL_read(ctx->ssl->ssl, ctx->rxBuf + ctx->rxBufOffset, (int)(ConnectionContext::rxBufSize - ctx->rxBufOffset));
     SSLConnectionContext::SSLWantState newState = SSLConnectionContext::WANT_NONE;
     if (n <= 0) {
@@ -875,6 +883,10 @@ size_t StreamingSocketManagement::ioThreadSslRead(ConnectionContext *ctx) COMMO_
         case SSL_ERROR_WANT_WRITE:
             newState = SSLConnectionContext::WANT_WRITE;
             break;
+        case SSL_ERROR_SSL:
+        case SSL_ERROR_SYSCALL:
+            ctx->ssl->fatallyErrored = true;
+            // Intentionally fall-through
         default:
             InternalUtils::logprintf(logger, 
                     CommoLogger::LEVEL_ERROR,
@@ -893,6 +905,7 @@ size_t StreamingSocketManagement::ioThreadSslRead(ConnectionContext *ctx) COMMO_
 
 size_t StreamingSocketManagement::ioThreadSslWrite(ConnectionContext *ctx, const uint8_t *data, size_t dataLen) COMMO_THROW (SocketException)
 {
+    ERR_clear_error();
     int n = SSL_write(ctx->ssl->ssl, data, (int)dataLen);
     SSLConnectionContext::SSLWantState newState = SSLConnectionContext::WANT_NONE;
     if (n <= 0) {
@@ -906,6 +919,10 @@ size_t StreamingSocketManagement::ioThreadSslWrite(ConnectionContext *ctx, const
         case SSL_ERROR_WANT_WRITE:
             newState = SSLConnectionContext::WANT_WRITE;
             break;
+        case SSL_ERROR_SSL:
+        case SSL_ERROR_SYSCALL:
+            ctx->ssl->fatallyErrored = true;
+            // Intentionally fall-through
         default:
             InternalUtils::logprintf(logger, 
                     CommoLogger::LEVEL_ERROR,
@@ -1707,7 +1724,8 @@ StreamingSocketManagement::SSLConnectionContext::SSLConnectionContext(
                 key(NULL),
                 certChecker(),
                 authMessage(),
-                caCerts(NULL)
+                caCerts(NULL),
+                fatallyErrored(false)
 {
     if (!sslCtx)
         throw SSLArgException(COMMO_ILLEGAL_ARGUMENT, "SSL is unavailable - did you initialize SSL libraries?");
@@ -1782,7 +1800,8 @@ StreamingSocketManagement::SSLConnectionContext::~SSLConnectionContext()
     EVP_PKEY_free(key);
     X509_free(cert);
     if (ssl) {
-        SSL_shutdown(ssl);
+        if (!fatallyErrored)
+            SSL_shutdown(ssl);
         SSL_free(ssl);
         ssl = NULL;
     }

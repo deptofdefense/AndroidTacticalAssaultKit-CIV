@@ -1003,6 +1003,9 @@ public class CotMapComponent extends AbstractMapComponent implements
         @Override
         public void onSharedPreferenceChanged(
                 final SharedPreferences cotPrefs, final String key) {
+
+            if (key == null) return;
+
             if (key.equals("dispatchLocationCotExternal") ||
                     key.equals("dispatchLocationHidden") ||
                     key.equals("mockingOption") ||

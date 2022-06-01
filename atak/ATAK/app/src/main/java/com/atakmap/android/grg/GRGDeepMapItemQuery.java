@@ -104,6 +104,9 @@ public class GRGDeepMapItemQuery extends FeatureDataStoreDeepMapItemQuery
     @Override
     public synchronized void onSharedPreferenceChanged(SharedPreferences prefs,
             String key) {
+ 
+        if (key == null) return;
+
         if ("prefs_layer_grg_map_interaction".equals(key)) {
             this.hitTestEnabled = prefs.getBoolean(
                     "prefs_layer_grg_map_interaction", true);

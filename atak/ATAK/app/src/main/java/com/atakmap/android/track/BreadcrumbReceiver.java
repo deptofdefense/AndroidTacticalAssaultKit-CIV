@@ -121,6 +121,9 @@ public class BreadcrumbReceiver extends BroadcastReceiver implements
     @Override
     public void onSharedPreferenceChanged(
             SharedPreferences sharedPreferences, String key) {
+
+        if (key == null) return;
+
         if (key.equals("toggle_log_tracks")) {
             logCrumbs = sharedPreferences.getBoolean(
                     "toggle_log_tracks", true);

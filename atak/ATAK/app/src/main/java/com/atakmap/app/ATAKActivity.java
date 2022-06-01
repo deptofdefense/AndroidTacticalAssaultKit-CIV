@@ -702,6 +702,8 @@ public class ATAKActivity extends MapActivity implements
     @Override
     public void onSharedPreferenceChanged(
             final SharedPreferences prefs, final String key) {
+        if (key == null) return;
+
         if (key.equals("atakDisableSoftkeyIllumination")) {
             AtakPreferenceFragment.setSoftKeyIllumination(this);
         } else if (key.equals("loggingfile_error_only")) {

@@ -307,6 +307,8 @@ public class LoadoutToolsDropDown extends NavigationStackItem implements
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
             String key) {
 
+        if (key == null) return;
+
         // Controls how tools are laid out (grid vs. list)
         if (key.equals(PREF_TOOLS_LAYOUT)) {
             _isList = FileSystemUtils.isEquals(_prefs.get(PREF_TOOLS_LAYOUT,

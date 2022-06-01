@@ -130,6 +130,9 @@ public class NavWidgetsMapComponent extends AbstractMapComponent
     @Override
     public void onSharedPreferenceChanged(
             final SharedPreferences prefs, final String key) {
+
+        if (key == null) return;
+
         switch (key) {
             case "map_scale_visible":
                 if (scale != null)

@@ -598,6 +598,9 @@ public class CommsMapComponent extends AbstractMapComponent implements
     @Override
     public void onSharedPreferenceChanged(final SharedPreferences prefs,
             final String key) {
+
+        if (key == null) return;
+
         if (key.equals("ppp0_highspeed_capable")) {
             setPPPIncluded(prefs.getBoolean(key, false));
         } else if (key.equals("monitorServerConnections")) {

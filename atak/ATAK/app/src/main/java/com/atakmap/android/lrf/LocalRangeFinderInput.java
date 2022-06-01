@@ -943,6 +943,9 @@ public class LocalRangeFinderInput implements Runnable, RangeFinderAction,
     @Override
     public void onSharedPreferenceChanged(
             SharedPreferences sharedPreferences, String key) {
+
+        if (key == null) return;
+
         if (key.equals("spiUpdateDelay")) {
 
             updateTimeout();

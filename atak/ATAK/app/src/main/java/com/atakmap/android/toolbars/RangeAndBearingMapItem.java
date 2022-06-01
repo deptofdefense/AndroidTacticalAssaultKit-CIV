@@ -1028,21 +1028,24 @@ public class RangeAndBearingMapItem extends Arrow implements
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sp,
             String key) {
+
+        if (key == null) return;
+
         if (key.equals("rab_color_pref")) {
             setStrokeColor(Color.parseColor((sp.getString(key,
                     String.valueOf(Color.RED)))));
-        }
+        } else 
         if (key.equals("rab_north_ref_pref")) {
             setNorthReference(NorthReference
                     .findFromValue(Integer.parseInt(sp.getString(key,
                             String.valueOf(
                                     NorthReference.MAGNETIC.getValue())))));
-        }
+        } else 
         if (key.equals("rab_brg_units_pref")) {
             setBearingUnits(Angle.findFromValue(Integer.parseInt(sp.getString(
                     key,
                     String.valueOf(Angle.DEGREE.getValue())))));
-        }
+        } else 
         if (key.equals("rab_rng_units_pref")) {
             try {
                 setRangeUnits(Integer.parseInt(sp.getString(key,
@@ -1053,12 +1056,12 @@ public class RangeAndBearingMapItem extends Arrow implements
                                 + getUID(),
                         ise);
             }
-        }
+        } else 
         if (key.equals("rab_dist_slant_range")) {
             setDisplaySlantRange(_prefs.getString("rab_dist_slant_range",
                     "clamped")
                     .equals("slantrange"));
-        }
+        } else 
         if (key.equals("rng_feet_display_pref")) {
             int ftToMi = 5280;
             try {
@@ -1068,7 +1071,7 @@ public class RangeAndBearingMapItem extends Arrow implements
             }
             SpanUtilities.setFeetToMileThreshold(ftToMi);
             updateLabel();
-        }
+        } else 
         if (key.equals("rng_meters_display_pref")) {
             int mToKm = 2000;
             try {
@@ -1078,7 +1081,7 @@ public class RangeAndBearingMapItem extends Arrow implements
             }
             SpanUtilities.setMetersToKilometersThreshold(mToKm);
             updateLabel();
-        }
+        } else 
         if (key.equals("rab_preference_show_eta")) {
             updateLabel();
         }

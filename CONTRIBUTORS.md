@@ -5,7 +5,6 @@
 ## Signed-off-by
 
 - _Add the copyright date, your name, and email address here. (PLEASE KEEP THIS LINE)_
-- 10/29/21 Matt B w20682@motorolasolutions.com
 
 ## Note for U.S. Federal Employees
 

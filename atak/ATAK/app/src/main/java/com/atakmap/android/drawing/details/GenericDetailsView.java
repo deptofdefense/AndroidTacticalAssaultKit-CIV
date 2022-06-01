@@ -146,6 +146,8 @@ public abstract class GenericDetailsView extends RelativeLayout implements
             final SharedPreferences sp,
             final String key) {
 
+        if (key == null) return;
+
         if (key.equals(UnitPreferences.COORD_FMT))
             _cFormat = _unitPrefs.getCoordinateFormat();
     }

@@ -589,6 +589,9 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
     @Override
     public void onSharedPreferenceChanged(
             final SharedPreferences prefs, final String key) {
+
+        if (key == null) return;
+
         switch (key) {
             case "dexControls":
                 if (this.tlwc != null)

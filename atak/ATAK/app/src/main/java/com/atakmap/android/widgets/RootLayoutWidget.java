@@ -463,6 +463,8 @@ public class RootLayoutWidget extends LayoutWidget implements IRootLayoutWidget,
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sp, String key) {
 
+        if (key == null) return;
+
         // Make sure widgets aren't cut off on curved-screen devices (ATAK-8160)
         if (key.equals(PREF_CURVED_SCREEN)) {
             _curvePadding = 0f;

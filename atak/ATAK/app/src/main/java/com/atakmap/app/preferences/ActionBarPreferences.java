@@ -134,6 +134,9 @@ public class ActionBarPreferences extends AtakPreferenceFragment implements
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
             String key) {
+
+        if (key == null) return;
+
         if (key.equals(CustomActionBarFragment.ACTIONBAR_ICON_COLOR_KEY)) {
             applyNewIconColors();
         } else if (key

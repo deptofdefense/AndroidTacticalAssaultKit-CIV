@@ -174,6 +174,10 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences p, String key) {
+
+        if (key == null) return;
+
+
         if (key.equals(PREF_SELECTED)) {
             String selected = p.getString(PREF_SELECTED, null);
             String curr = this.curr != null ? this.curr.toString() : null;

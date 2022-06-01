@@ -147,6 +147,9 @@ public class NavigationInstrumentPanel implements
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences p, String key) {
+
+        if (key == null) return;
+
         if (key.equals(VOICE_CUE_PREFERENCE_KEY)) {
             boolean voice_cue = _prefs.getBoolean(key, true);
             if (volumeWidget != null)

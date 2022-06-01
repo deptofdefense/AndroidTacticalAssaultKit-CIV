@@ -243,6 +243,9 @@ public class NightVisionMapWidgetComponent extends AbstractWidgetMapComponent
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences p, String key) {
+
+        if (key == null) return;
+
         if (key.equals("night_vision_widget")) {
             if (p.getBoolean(key, false))
                 launchNightVisionLocation(p);

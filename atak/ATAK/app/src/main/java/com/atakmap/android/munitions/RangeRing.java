@@ -135,6 +135,7 @@ public class RangeRing extends PointMapItem implements AnchoredMapItem,
     @Override
     public void onSharedPreferenceChanged(
             SharedPreferences sharedPreferences, String key) {
+        if (key == null) return;
         if (key.equals("prone_standing_coloring")) {
             boolean showProne = sharedPreferences
                     .getBoolean("prone_standing_coloring", false);

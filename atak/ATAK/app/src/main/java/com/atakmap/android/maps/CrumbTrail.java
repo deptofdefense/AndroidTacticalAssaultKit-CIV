@@ -207,6 +207,9 @@ public class CrumbTrail extends MapItem implements FOVFilter.Filterable,
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
+
+        if (key == null) return;
+
         switch (key) {
             case "track_line_to_surface":
                 this.drawLineToSurface = prefs.getBoolean(

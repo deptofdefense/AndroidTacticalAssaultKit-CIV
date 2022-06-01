@@ -323,6 +323,9 @@ public class CoTAutoBroadcaster implements
     @Override
     public void onSharedPreferenceChanged(
             SharedPreferences sharedPreferences, String key) {
+
+        if (key == null) return;
+
         if (key.equals("hostileUpdateDelay")) {
             // default to 60 seconds
             _updateTimeout = Integer.parseInt(_prefs.getString(key,

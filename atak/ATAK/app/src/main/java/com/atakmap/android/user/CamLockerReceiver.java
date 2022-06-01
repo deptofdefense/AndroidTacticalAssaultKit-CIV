@@ -116,6 +116,9 @@ public class CamLockerReceiver extends BroadcastReceiver implements
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
             String key) {
+
+        if (key == null) return;
+
         if (key.equals("disableFloatToBottom")) {
             disableFloatToBottom = sharedPreferences.getBoolean(key, false);
         }

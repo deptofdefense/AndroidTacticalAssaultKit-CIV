@@ -2105,6 +2105,9 @@ public class HierarchyListAdapter extends BaseAdapter implements
     @Override
     public void onSharedPreferenceChanged(SharedPreferences p, String key) {
         // Preferred range system (metric, imperial, nautical)
+
+        if (key == null) return;
+
         switch (key) {
             case "rab_rng_units_pref":
                 rangeSystem = Integer.parseInt(p.getString(key,
