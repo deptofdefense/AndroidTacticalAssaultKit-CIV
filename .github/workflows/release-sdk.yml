@@ -1,10 +1,9 @@
 name: Release SDK
 
 on:
-  pull_request:
-#  release:
-#    types:
-#      - created
+  release:
+    types:
+      - created
 
 jobs:
   assemble:
@@ -152,12 +151,12 @@ jobs:
         mv pluginsdk atak-civ
         zip -qq -r atak-civ-sdk-${{ github.event.release.tag_name }}.zip atak-civ
         rm -rf atak-civ
-#    - name: publish ATAK SDK release artifact
-#      uses: actions/upload-release-asset@v1.0.1
-#      env:
-#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#      with:
-#        upload_url: ${{ github.event.release.upload_url }}
-#        asset_path: atak-civ-sdk-${{ github.event.release.tag_name }}.zip
-#        asset_name: atak-civ-sdk-${{ github.event.release.tag_name }}.zip
-#        asset_content_type: binary/octet-stream
+    - name: publish ATAK SDK release artifact
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: atak-civ-sdk-${{ github.event.release.tag_name }}.zip
+        asset_name: atak-civ-sdk-${{ github.event.release.tag_name }}.zip
+        asset_content_type: binary/octet-stream
