@@ -41,10 +41,10 @@ jobs:
         apt -y install ninja-build
         apt -y install swig
         apt -y install tclsh
+        apt -y install zip
         apt -y install python3-pip
         pip3 install -U pip setuptools
         pip3 install --upgrade conan
-        sudo apt-get clean
         echo "ANDROID_COMPILE_SDK=29" >> $GITHUB_ENV
         echo "ANDROID_BUILD_TOOLS=29.0.3" >> $GITHUB_ENV
         echo "ANDROID_SDK_TOOLS=4333796" >> $GITHUB_ENV
