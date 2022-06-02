@@ -59,6 +59,8 @@ public class SeekerMarker implements OnSharedPreferenceChangeListener {
     public void onSharedPreferenceChanged(SharedPreferences sp,
             String key) {
 
+        if (key == null) return;
+
         if (key.equals("elevProfileCenterOnSeeker")) {
             bCenterMap = prefs.getBoolean(
                     "elevProfileCenterOnSeeker", true);

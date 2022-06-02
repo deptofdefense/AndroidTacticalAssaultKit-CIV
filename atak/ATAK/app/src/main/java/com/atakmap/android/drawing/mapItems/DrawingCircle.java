@@ -708,6 +708,9 @@ public class DrawingCircle extends Shape implements
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sp, String key) {
+ 
+        if (key == null) return;
+
         if (UnitPreferences.RANGE_SYSTEM.equals(key))
             refresh();
     }

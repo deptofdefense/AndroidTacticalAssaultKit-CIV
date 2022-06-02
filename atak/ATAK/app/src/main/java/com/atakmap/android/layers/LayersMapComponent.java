@@ -165,6 +165,9 @@ public class LayersMapComponent extends AbstractMapComponent
         @Override
         public void onSharedPreferenceChanged(
                 SharedPreferences sharedPreferences, String key) {
+
+            if (key == null) return;
+
             if (key.equals("volumemapswitcher")) {
                 _volumeKeySwitcher.setEnabled(sharedPreferences.getBoolean(
                         "volumemapswitcher",
@@ -650,6 +653,9 @@ public class LayersMapComponent extends AbstractMapComponent
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
             String key) {
+
+        if (key == null) return;
+
         if (key.equals("pref_layer_outline_color")) {
             mobileOutlines.setOutlineColor(Color
                     .parseColor(sharedPreferences.getString(

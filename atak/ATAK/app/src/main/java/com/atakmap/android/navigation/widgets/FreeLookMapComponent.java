@@ -307,6 +307,9 @@ public class FreeLookMapComponent extends AbstractMapComponent implements
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
+ 
+        if (key == null) return;
+
         if (key.equals(CustomActionBarFragment.ACTIONBAR_BACKGROUND_COLOR_KEY))
             updateColors();
     }

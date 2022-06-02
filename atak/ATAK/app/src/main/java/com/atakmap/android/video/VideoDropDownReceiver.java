@@ -345,6 +345,8 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
             final SharedPreferences sp,
             final String key) {
 
+        if (key == null) return;
+
         if (key.equals("prefs_use_klv_elevation")) {
             vmd.useKlvElevation = _prefs.getBoolean("prefs_use_klv_elevation",
                     false);

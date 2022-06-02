@@ -91,6 +91,7 @@ namespace {
         const uint16_t httpPort;
         const int connTimeoutSec;
         CommoTime connTimeoutTime;
+        bool fatallyErrored;
         
     private:
         COMMO_DISALLOW_COPY(ProxyContext);
@@ -770,7 +771,8 @@ ProxyContext::ProxyContext(CommoLogger *logger,
         ioNeeds{false, false, false, false, false},
         httpPort(httpPort),
         connTimeoutSec(connTimeoutSec),
-        connTimeoutTime(CommoTime::ZERO_TIME)
+        connTimeoutTime(CommoTime::ZERO_TIME),
+        fatallyErrored(false)
 {
     ssl = SSL_new(sslCtx);
     SSL_set_fd(ssl, (int)httpsSocket->getFD());
@@ -778,7 +780,8 @@ ProxyContext::ProxyContext(CommoLogger *logger,
 
 ProxyContext::~ProxyContext()
 {
-    SSL_shutdown(ssl);
+    if (!fatallyErrored)
+        SSL_shutdown(ssl);
     SSL_free(ssl);
 }
 
@@ -874,6 +877,7 @@ bool ProxyContext::processSSLHandshake(bool *done, bool *stateChanged,
     if (readState == WANT_NONE || 
             (readState == WANT_READ && ioReady[HTTPS_READ]) ||
             (readState == WANT_WRITE && ioReady[HTTPS_WRITE])) {
+        ERR_clear_error();
         int r = SSL_accept(ssl);
         std::unique_ptr<NetAddress> addr(nullptr);
         
@@ -911,9 +915,12 @@ bool ProxyContext::processSSLHandshake(bool *done, bool *stateChanged,
                 readState = WANT_READ;
             else if (r == SSL_ERROR_WANT_WRITE)
                 readState = WANT_WRITE;
-            else
+            else {
                 // Actual error
+                if (r == SSL_ERROR_SSL || r == SSL_ERROR_SYSCALL)
+                    fatallyErrored = true;
                 ret = false;
+            }
             *done = true;
             break;
         }
@@ -1025,6 +1032,7 @@ bool ProxyContext::processIO(bool *done, bool *ioReady)
                 ((ioReady[HTTPS_READ] && readState != WANT_WRITE) ||
                  (ioReady[HTTPS_WRITE] && readState == WANT_WRITE))) {
             
+            ERR_clear_error();
             int n = SSL_read(ssl, bufClientToServer + offsetClientToServer,
                          (int)(PROXY_BUF_SIZE - offsetClientToServer));
             if (n <= 0) {
@@ -1039,6 +1047,10 @@ bool ProxyContext::processIO(bool *done, bool *ioReady)
                     readState = WANT_WRITE;
                     ioOneTry[HTTPS_WRITE] = ioReady[HTTPS_WRITE] = false;
                     break; 
+                case SSL_ERROR_SSL:
+                case SSL_ERROR_SYSCALL:
+                    fatallyErrored = true;
+                    // Intentionally fall through
                 default:
                     hadError = true;
                     break;
@@ -1061,6 +1073,7 @@ bool ProxyContext::processIO(bool *done, bool *ioReady)
         if (offsetServerToClient > 0 &&
                 ((ioReady[HTTPS_WRITE] && writeState != WANT_READ) ||
                  (ioReady[HTTPS_READ] && writeState == WANT_READ))) {
+            ERR_clear_error();
             int n = SSL_write(ssl, bufServerToClient, (int)offsetServerToClient);
             if (n <= 0) {
                 // Nothing was written
@@ -1074,6 +1087,10 @@ bool ProxyContext::processIO(bool *done, bool *ioReady)
                     writeState = WANT_WRITE;
                     ioOneTry[HTTPS_WRITE] = ioReady[HTTPS_WRITE] = false;
                     break; 
+                case SSL_ERROR_SSL:
+                case SSL_ERROR_SYSCALL:
+                    fatallyErrored = true;
+                    // Intentionally fall through
                 default:
                     hadError = true;
                     break;

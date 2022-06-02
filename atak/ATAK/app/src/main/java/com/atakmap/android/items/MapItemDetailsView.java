@@ -66,6 +66,8 @@ public class MapItemDetailsView extends RelativeLayout implements
             final SharedPreferences sp,
             final String key) {
 
+        if (key == null) return;
+
         if (key.equals("coord_display_pref")) {
             _cFormat = CoordinateFormat
                     .find(sp.getString(

@@ -107,6 +107,9 @@ public class LegacyAltitudeRenderingListItem extends AbstractChildlessListItem
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
             String key) {
+ 
+        if (key == null) return;
+
         if (key.equals(PREF_KEY)) {
             _clampToGroundAtNadir = !_prefs.get(key, true);
             AtakBroadcast.getInstance().sendBroadcast(new Intent(

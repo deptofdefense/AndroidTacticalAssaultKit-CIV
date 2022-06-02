@@ -47,6 +47,9 @@ class MapTouchEventListener implements
         @Override
         public void onSharedPreferenceChanged(
                 SharedPreferences sharedPreferences, String key) {
+
+            if (key == null) return;
+
             if (key.equals("atakDoubleTapToZoom") ||
                     key.equals("atakLongPressMap")) {
                 setPrefs();

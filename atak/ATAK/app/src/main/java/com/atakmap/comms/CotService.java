@@ -121,6 +121,9 @@ public class CotService implements OnSharedPreferenceChangeListener,
     @Override
     public void onSharedPreferenceChanged(final SharedPreferences prefs,
             final String key) {
+
+        if (key == null) return; 
+
         if (key.compareTo("udpNoDataTimeout") == 0) {
             try {
                 udpNoDataTimeout = Integer.parseInt(prefs.getString(

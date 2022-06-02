@@ -248,6 +248,8 @@ public class ProcessRouteThread implements Runnable,
     @Override
     public synchronized void onSharedPreferenceChanged(SharedPreferences p,
             String key) {
+        if (key == null) return;
+
         if (key.equals("rab_rng_units_pref")
                 || key.equals("alt_unit_pref")
                 || key.equals("alt_display_pref")

@@ -1294,6 +1294,8 @@ public class LocationMapComponent extends AbstractMapComponent implements
     public void onSharedPreferenceChanged(
             SharedPreferences sharedPreferences, String key) {
 
+        if (key == null) return;
+
         switch (key) {
             case "useGPSTime":
                 useGPSTime = sharedPreferences.getBoolean(key,

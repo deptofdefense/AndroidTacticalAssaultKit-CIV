@@ -64,6 +64,9 @@ public class MissionPackagePreferenceListener implements
     @Override
     public void onSharedPreferenceChanged(
             SharedPreferences sharedPreferences, String key) {
+
+        if (key == null) return;
+
         switch (key) {
             case filesharingEnabled: {
                 boolean bEnabled = sharedPreferences.getBoolean(

@@ -255,6 +255,9 @@ public class LoadoutManager implements OnSharedPreferenceChangeListener {
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
+
+        if (key == null) return;
+
         if (key.startsWith(LOADOUT_PREFIX)) {
 
             // Check if this change is in response to a local edit

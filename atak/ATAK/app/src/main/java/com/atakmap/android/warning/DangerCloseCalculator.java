@@ -215,6 +215,9 @@ public class DangerCloseCalculator implements Runnable,
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
             String key) {
+
+        if (key == null) return;
+
         if (key.equals("expandedDangerClose")) {
             expandedDangerClose = _prefs.getBoolean(key, false);
         }

@@ -1399,6 +1399,9 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
             String key) {
+
+        if (key == null) return; 
+
         if (key.equals("overlay_manager_width_height")
                 && overlayManagerDropDown.isVisible()) {
             determineDropDownSizeBasedOnDeviceState();

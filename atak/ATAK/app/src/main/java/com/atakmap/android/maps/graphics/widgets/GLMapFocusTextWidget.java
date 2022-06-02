@@ -90,6 +90,9 @@ public class GLMapFocusTextWidget extends GLTextWidget implements
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
+
+        if (key == null) return;
+
         if (UnitPreferences.COORD_FMT.equals(key)) {
             orthoView.queueEvent(new Runnable() {
                 @Override

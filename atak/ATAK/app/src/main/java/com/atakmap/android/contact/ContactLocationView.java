@@ -237,6 +237,9 @@ public class ContactLocationView extends ContactDetailView {
         public void onSharedPreferenceChanged(
                 final SharedPreferences sp,
                 final String key) {
+
+            if (key == null) return;
+
             _updatePreferences();
         }
     };

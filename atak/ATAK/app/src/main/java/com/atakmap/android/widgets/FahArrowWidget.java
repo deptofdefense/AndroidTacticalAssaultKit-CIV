@@ -403,6 +403,9 @@ public class FahArrowWidget extends ShapeWidget implements
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
             String key) {
+
+        if (key == null) return;
+
         if (key.equals("fahDistance")) {
             distance = getInteger(sharedPreferences, key, DEFAULT_DISTANCE)
                     * 1852d;

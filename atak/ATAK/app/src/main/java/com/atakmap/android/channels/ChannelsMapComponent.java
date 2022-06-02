@@ -67,6 +67,8 @@ public class ChannelsMapComponent extends AbstractMapComponent implements
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
+        if (key == null) return;
+
         if (key.equals(PREFERENCE_ENABLE_CHANNELS_UI_KEY))
             checkPreferenceEnabled();
     }

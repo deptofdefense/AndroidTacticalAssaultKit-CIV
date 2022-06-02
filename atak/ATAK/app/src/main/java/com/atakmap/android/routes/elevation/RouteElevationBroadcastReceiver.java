@@ -163,8 +163,10 @@ public class RouteElevationBroadcastReceiver extends DropDownReceiver
     }
 
     @Override
-    public void onSharedPreferenceChanged(SharedPreferences prefs, String k) {
-        if (k.equals("elevProfileInterpolateAlt") && _route != null) {
+    public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
+        if (key == null) return;
+
+        if (key.equals("elevProfileInterpolateAlt") && _route != null) {
             startProcessing();
         }
     }

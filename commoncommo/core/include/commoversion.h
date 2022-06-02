@@ -17,7 +17,7 @@
 /**
  * Patch version - Corresponds to bug fixes without API changes
  */
-#define COMMO_PATCH 2
+#define COMMO_PATCH 3
 
 #endif
 

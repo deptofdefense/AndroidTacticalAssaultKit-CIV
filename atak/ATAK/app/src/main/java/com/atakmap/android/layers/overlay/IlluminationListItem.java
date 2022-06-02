@@ -145,6 +145,9 @@ public final class IlluminationListItem extends AbstractChildlessListItem
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences p, String key) {
+
+        if (key == null) return;
+
         if (key.equals(PREF_KEY_IS_ENABLED)
                 || key.equals(PREF_KEY_ILLUMINATION_TIME)
                 || key.equals(PREF_KEY_CURRENT_TIME_LOCK)) {

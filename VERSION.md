@@ -1,5 +1,12 @@
 # Version History
 
+## 4.5.0.1
+
+* Bug Fixes
+  * Playstore fix crash with allowed null preference key which is now allowed in Android 11 and used when SharedPreference::editor::clear is called.
+  * Playstore fix  call the correct super method when sending a TAK client parameters mission package.
+  * Common commo correctly recovers in specific low level cases involving open ssl library usage.
+
 ## 4.5.0.0
 
 * Feature Additions

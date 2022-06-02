@@ -31,6 +31,9 @@ class NotificationFader implements
     @Override
     public void onSharedPreferenceChanged(
             SharedPreferences prefs, String key) {
+
+        if (key == null) return;
+
         if (key.equals("fade_notification")) {
             String s = prefs.getString(key, "" + DEFAULT_FADE);
             fadeTimeout = DEFAULT_FADE * 1000;

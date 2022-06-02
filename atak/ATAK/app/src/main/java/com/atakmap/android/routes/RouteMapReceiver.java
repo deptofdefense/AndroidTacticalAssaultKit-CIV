@@ -266,6 +266,9 @@ public class RouteMapReceiver extends BroadcastReceiver implements
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
+
+        if (key == null) return;
+
         if (isNavigating() && key.equals("route_billboard_enabled"))
             _billboardLayer.setVisible(prefs.getBoolean(key, true));
     }

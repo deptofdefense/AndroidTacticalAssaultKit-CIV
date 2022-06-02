@@ -306,6 +306,8 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
     public void onSharedPreferenceChanged(
             SharedPreferences sharedPreferences, String key) {
 
+        if (key == null) return;
+
         if (key.equals("rab_rng_units_pref")
                 || key.equals("rab_brg_units_pref") ||
                 key.equals("alt_unit_pref")

@@ -128,6 +128,9 @@ public class DesignatorTargetLine implements
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
             String key) {
+
+        if (key == null) return;
+
         if (key.equals("laserBasketDegrees")) {
             _showDegrees = sharedPreferences.getBoolean(key, true);
             draw();

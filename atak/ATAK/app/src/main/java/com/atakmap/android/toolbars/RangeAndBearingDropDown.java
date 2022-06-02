@@ -190,6 +190,8 @@ public class RangeAndBearingDropDown extends DropDownReceiver implements
         public void onSharedPreferenceChanged(SharedPreferences prefs,
                 String key) {
 
+            if (key == null) return;
+
             switch (key) {
                 case "coord_display_pref":
                     _coordinateFormat = CoordinateFormat.find(_prefs.getString(

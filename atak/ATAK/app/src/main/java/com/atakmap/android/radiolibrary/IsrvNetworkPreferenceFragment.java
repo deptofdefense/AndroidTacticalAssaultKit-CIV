@@ -69,6 +69,8 @@ public class IsrvNetworkPreferenceFragment extends AtakPreferenceFragment
             final SharedPreferences sharedPreferences,
             final String key) {
 
+        if (key == null) return;
+
         switch (key) {
             case "network_dhcp":
                 boolean isDhcp = sharedPreferences.getBoolean(key, true);
