@@ -216,6 +216,9 @@ public class FiresToolbar implements
     @Override
     public void onSharedPreferenceChanged(
             final SharedPreferences prefs, final String key) {
+
+        if (key == null) return;
+
         FlavorProvider fp = SystemComponentLoader.getFlavorProvider();
         if (key.equals("legacyFiresToolbarMode")) {
             if (prefs.getBoolean(key, false)) {

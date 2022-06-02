@@ -192,6 +192,9 @@ public class CoTInfoView extends RelativeLayout
     public void onSharedPreferenceChanged(
             final SharedPreferences sp,
             final String key) {
+
+        if (key == null) return;
+
         switch (key) {
             case UnitPreferences.COORD_FMT:
                 _cFormat = _prefs.getCoordinateFormat();

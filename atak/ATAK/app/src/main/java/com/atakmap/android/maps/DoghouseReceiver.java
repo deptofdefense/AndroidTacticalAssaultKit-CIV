@@ -131,6 +131,9 @@ public class DoghouseReceiver extends BroadcastReceiver implements
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
+
+        if (key == null) return;
+
         if (RELATIVE_LOCATION.equals(key)) {
             int c = prefs.getInt(key, -1);
             if (c != -1) {

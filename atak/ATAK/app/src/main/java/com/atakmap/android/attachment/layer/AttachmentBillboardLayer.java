@@ -67,6 +67,8 @@ public class AttachmentBillboardLayer extends AbstractLayer implements
         if (_glSubject == null)
             return;
 
+        if (key == null) return;
+
         if (key.equals("route_billboard_distance_m"))
             setSelfMarkerDistance(_prefs.get(key, 500));
         else if (key.equals("relativeOverlaysScalingRadioList")) {

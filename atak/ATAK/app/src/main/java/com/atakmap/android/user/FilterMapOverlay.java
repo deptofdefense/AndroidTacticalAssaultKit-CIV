@@ -651,6 +651,9 @@ public class FilterMapOverlay extends AbstractMapOverlay2
     @Override
     public void onSharedPreferenceChanged(
             SharedPreferences sharedPrefs, String key) {
+
+        if (key == null) return;
+
         if (onPrefChanged(key)) {
             /*Log.d(TAG, "Relevant pref \"" + key + "\" changed for "
                     + getIdentifier());*/

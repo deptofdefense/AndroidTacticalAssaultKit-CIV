@@ -266,6 +266,8 @@ public class SelfCoordOverlayUpdater extends CotStreamListener implements
             final SharedPreferences sp,
             final String key) {
 
+        if (key == null) return;
+
         switch (key) {
             case "show_self_coordinate_overlay":
                 _show = sp.getBoolean(key, true);

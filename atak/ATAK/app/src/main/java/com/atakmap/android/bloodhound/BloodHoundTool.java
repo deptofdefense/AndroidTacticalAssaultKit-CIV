@@ -1215,6 +1215,9 @@ public class BloodHoundTool extends ButtonTool implements
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sp,
             String key) {
+
+        if (key == null) return;
+
         switch (key) {
             case "rab_north_ref_pref":
                 _northReference = _prefs.getNorthReference();

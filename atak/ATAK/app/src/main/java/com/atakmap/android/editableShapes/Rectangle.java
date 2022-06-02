@@ -814,6 +814,9 @@ public abstract class Rectangle extends AssociationSet
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sp,
             String key) {
+
+        if (key == null) return;
+
         //if labels are shown, update units
         _recalculateLabels();
     }

@@ -79,6 +79,10 @@ public class PluginMapComponent extends AbstractMapComponent implements
     @Override
     public void onSharedPreferenceChanged(
             SharedPreferences prefs, String key) {
+
+        if (key == null) return;
+
+
         //Log.d(TAG, "prefs changed: " + key);
 
         if (key.equals("atakPluginScanningOnStartup")) {

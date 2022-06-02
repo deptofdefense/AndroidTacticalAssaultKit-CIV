@@ -866,6 +866,9 @@ public class ContourLinesOverlay extends AbstractHierarchyListItem
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
             String key) {
+
+        if (key == null) return;
+
         switch (key) {
             case CONTOUR_PREFERENCE_INTERVAL_KEY:
                 break;

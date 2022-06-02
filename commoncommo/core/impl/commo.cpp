@@ -30,19 +30,24 @@ const char *COTL_THREAD_NAMES[1] = {
     "cmo.cotlistn"
 };
 
+// Report (log) when the backlog grows/shrinks by this number of messages
+const size_t BACKLOG_REPORT_THRESHOLD = 50;
+
 class CoTListenerManagement : public ThreadedHandler, public DatagramListener,
                               public TcpMessageListener,
                               public InterfaceStatusListener,
                               public StreamingMessageListener
 {
-
 public:
     CoTListenerManagement(CommoLogger *logger) :
             ThreadedHandler(1, COTL_THREAD_NAMES),
             DatagramListener(),
             InterfaceStatusListener(),
             StreamingMessageListener(), logger(logger),
-            queueMutex(), queueMonitor(), queue(), listenerMutex(),
+            queueMutex(), queueMonitor(), queue(),
+            queueLowMark(0),
+            queueHighMark(BACKLOG_REPORT_THRESHOLD),
+            listenerMutex(),
             listeners(), genListeners(),
             ifaceListeners(), ifaceListenersMutex()
     {
@@ -105,6 +110,15 @@ public:
                 }
                 qitem = queue.back();
                 queue.pop_back();
+
+                size_t qsize = queue.size();
+                if (qsize < queueLowMark)
+                {
+                    InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, CommoLogger::TYPE_GENERAL, nullptr, "cot dispatch queue draining; size: %zu", qsize);
+                    queueLowMark = (queueLowMark < BACKLOG_REPORT_THRESHOLD) ?
+                                       0 : (queueLowMark - BACKLOG_REPORT_THRESHOLD);
+                    queueHighMark = queueLowMark + 2 * BACKLOG_REPORT_THRESHOLD;
+                }
             }
             {
                 thread::Lock lock(listenerMutex);
@@ -149,6 +163,15 @@ public:
             thread::Lock lock(queueMutex);
             queue.push_front(new QItem(data, epCopy));
             queueMonitor.broadcast(lock);
+            
+            size_t qsize = queue.size();
+            if (qsize > queueHighMark)
+            {
+                InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, CommoLogger::TYPE_GENERAL, nullptr, "cot dispatch queue filling; size: %zu", qsize);
+                queueHighMark += BACKLOG_REPORT_THRESHOLD;
+                queueLowMark = (queueHighMark < 2 * BACKLOG_REPORT_THRESHOLD) ?
+                                   0 : (queueHighMark - 2 * BACKLOG_REPORT_THRESHOLD);
+            }
         }
     }
     
@@ -268,6 +291,8 @@ private:
     thread::Mutex queueMutex;
     thread::CondVar queueMonitor;
     std::deque<QItem *> queue;
+    size_t queueLowMark;
+    size_t queueHighMark;
     thread::Mutex listenerMutex;
     std::set<CoTMessageListener *> listeners;
     std::set<GenericDataListener *> genListeners;

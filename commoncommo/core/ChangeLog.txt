@@ -1,3 +1,26 @@
+** Release 1.5.3 - 2021-11-23
+BUG FIXES
+* Any CoT message from a streaming server (TAK server) connection with a
+  <contact> detail element containing a callsign attribute was erroneously
+  being considered a reachable "contact". This could trigger off messages
+  for things like points and routes, resulting in false "contact" entries
+  being tracked and contactAdded messages being fired.  Following this fix,
+  only contact announcements with legitimate endpoint attributes under the
+  <contact> element will be considered "contacts". See COMMO-6.
+* For SSL-based streaming server (TAK server) connections and https data
+  package serving, fix some situations where a low-level SSL error triggered
+  by handling of one connection could cause errors in the handling of both
+  that connection and other connections.  See COMMO-7.
+
+MISCELLANEOUS
+* Win32 only: Add support to VS project files for VS 2022 
+* Logging for reception timeouts of multicast messages and subsequent
+  socket rebuild and rejoin issuing moved from debug to verbose level
+* Debug logging added to report the cot message reception queue size when
+  the backlog shrinks or grows by a threshold number of messages. This
+  is intended as a diagnostic aid for applications to determine if
+  app-side processing is keeping up with message reception.
+
 ** Release 1.5.2 - 2021-11-12
 BUG FIXES
 * Fix a race condition that could result in memory corruption and crash of

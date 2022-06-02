@@ -1008,6 +1008,9 @@ public class NavView extends RelativeLayout implements View.OnClickListener,
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
             String key) {
+
+        if (key == null) return;
+
         switch (key) {
             case "largeActionBar":
             case "relativeOverlaysScalingRadioList": {

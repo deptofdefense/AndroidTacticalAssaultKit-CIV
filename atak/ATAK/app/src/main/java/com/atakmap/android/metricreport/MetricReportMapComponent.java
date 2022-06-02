@@ -734,6 +734,8 @@ public class MetricReportMapComponent extends AbstractMapComponent
     public void onSharedPreferenceChanged(
             final SharedPreferences prefs, final String key) {
 
+        if (key == null) return;
+
         if (key.startsWith("collect_metrics")) {
             if (prefs.getBoolean("collect_metrics", false)) {
                 startMetricsCollection();

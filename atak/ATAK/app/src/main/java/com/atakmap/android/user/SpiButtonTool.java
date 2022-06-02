@@ -163,6 +163,9 @@ public class SpiButtonTool extends SpecialPointButtonTool implements
         @Override
         public void onSharedPreferenceChanged(
                 SharedPreferences sharedPreferences, String key) {
+ 
+            if (key == null) return;
+
             if (key.equals("spiUpdateDelay")) {
                 // default to 5 seconds
                 updateTimeout();

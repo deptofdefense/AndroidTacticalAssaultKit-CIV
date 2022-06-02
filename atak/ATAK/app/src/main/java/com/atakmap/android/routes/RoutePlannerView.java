@@ -433,6 +433,9 @@ public class RoutePlannerView extends LinearLayout implements
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences p, String key) {
+
+        if (key == null) return;
+
         if (key.equals("rab_rng_units_pref"))
             _adapter.refresh();
     }

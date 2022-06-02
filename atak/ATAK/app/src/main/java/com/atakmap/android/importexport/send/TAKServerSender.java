@@ -105,7 +105,7 @@ public class TAKServerSender extends MissionPackageSender implements
             }
             return false;
         }
-        return super.sendContent(contentURI, callback);
+        return super.sendContent(contentURI, null, callback);
     }
 
     @Override

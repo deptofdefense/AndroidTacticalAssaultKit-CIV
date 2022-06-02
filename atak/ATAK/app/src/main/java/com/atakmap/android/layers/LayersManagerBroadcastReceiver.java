@@ -518,6 +518,8 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
     @Override
     public void onSharedPreferenceChanged(SharedPreferences p, String key) {
 
+        if (key == null) return;
+
         if (key.startsWith(ONLINE_USERNAME) ||
                 key.startsWith(ONLINE_PASSWORD) ||
                 key.startsWith(ONLINE_DOMAIN)) {

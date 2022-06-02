@@ -273,6 +273,8 @@ public class ReportingRate extends BroadcastReceiver implements
     public void onSharedPreferenceChanged(
             SharedPreferences cotPrefs, String key) {
 
+        if (key == null) return;
+
         //check if this pref change means we need to report now
         checkMonitoring(key);
 

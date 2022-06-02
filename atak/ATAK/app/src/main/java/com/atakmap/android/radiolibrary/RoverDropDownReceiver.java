@@ -2367,6 +2367,9 @@ public class RoverDropDownReceiver extends DropDownReceiver implements
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
             String key) {
+
+        if (key == null) return;
+
         if (key.equals(PREF_KEY_ANALOG_IP)
                 || key.equals(PREF_KEY_ANALOG_PORT)) {
             updateURLAnalog();

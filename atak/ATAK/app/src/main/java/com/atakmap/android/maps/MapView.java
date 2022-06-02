@@ -338,6 +338,9 @@ public class MapView extends AtakMapView {
             @Override
             public void onSharedPreferenceChanged(SharedPreferences sp,
                     String key) {
+
+                if (key == null) return;
+
                 switch (key) {
                     case "pref_overlay_style_outline_color":
                         copyPrefToConfigOptions(preferenceManager,

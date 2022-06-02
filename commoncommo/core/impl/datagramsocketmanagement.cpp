@@ -753,7 +753,7 @@ void DatagramSocketManagement::recvThreadProcess()
                             CommoTime::now().minus(rxCtx->lastRxTime) > 
                                                 (float)rebuildTimeoutSecs) {
                         InternalUtils::logprintf(logger, 
-                                CommoLogger::LEVEL_DEBUG,
+                                CommoLogger::LEVEL_VERBOSE,
                                 "datagram rx socket for port %d has not "
                                 "received data in a long time; rebuilding and "
                                 "reissuing joins", rxCtx->port);

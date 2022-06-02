@@ -189,6 +189,11 @@ private:
 
         // The ca certs, in order
         STACK_OF(X509) *caCerts;
+        
+        // Flag to track if fatal SSL-level error was seen. Controls
+        // how teardown of this context is performed, particularly
+        // if SSL_shutdown should be attempted
+        bool fatallyErrored;
 
         SSLConnectionContext(const std::string &uid,
                 SSL_CTX *sslCtx, const uint8_t *clientCert,

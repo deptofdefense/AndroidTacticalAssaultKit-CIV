@@ -81,12 +81,12 @@ Prior to building the APK within Android Studio, many of the binary thirdparty d
 
 ### Step 1: Unpack GDAL
 
-A tarball containing a modified version of GDAL 2.2.3 is included with the library in the `depends` directory. The contents must be extracted to the root directory for use during step 2, e.g.
+A tarball containing a modified version of GDAL 2.4.4 is included with the library in the `depends` directory. The contents must be extracted to the root directory for use during step 2, e.g.
 
 ``` sh
-gzip -d ./depends/gdal-2.2.3-mod.tar.gz
-cp ./depends/gdal-2.2.3-mod.tar .
-tar xf gdal-2.2.3-mod.tar
+gzip -d ./depends/gdal-2.4.4-mod.tar.gz
+cp ./depends/gdal-2.4.4-mod.tar .
+tar xf gdal-2.4.4-mod.tar
 ```
 
 ### Step 3: Unpack ASSIMP
