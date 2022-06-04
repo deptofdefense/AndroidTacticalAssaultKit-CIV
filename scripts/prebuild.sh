@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Be verbose
-set -x
+set -xe
 
 # Make sure you enter the directory that contains this script.
 # The rest of the script requires this as the starting point.
@@ -10,12 +10,12 @@ pushd $(dirname $(readlink -f $0))
 mkdir -p ../takengine/thirdparty
 
 # Extract everything in parallel
-tar xf ./depends/assimp-4.0.1-mod.tar.gz         -C ../ &
-tar xf ./depends/gdal-2.4.4-mod.tar.gz           -C ../ &
-tar xf ./depends/tinygltf-2.4.1-mod.tar.gz       -C takengine/thirdparty &
-tar xf ./depends/tinygltfloader-0.9.5-mod.tar.gz -C takengine/thirdparty &
-tar xf ../depends/libLAS-1.8.2-mod.tar.gz        -C ../ &
-tar xf ../depends/LASzip-3.4.3-mod.tar.gz        -C ../ &
+tar xf ../depends/assimp-4.0.1-mod.tar.gz         -C ../ &
+tar xf ../depends/gdal-2.4.4-mod.tar.gz           -C ../ &
+tar xf ../depends/tinygltf-2.4.1-mod.tar.gz       -C ../takengine/thirdparty &
+tar xf ../depends/tinygltfloader-0.9.5-mod.tar.gz -C ../takengine/thirdparty &
+tar xf ../depends/libLAS-1.8.2-mod.tar.gz         -C ../ &
+tar xf ../depends/LASzip-3.4.3-mod.tar.gz         -C ../ &
 wait
 
 # Make the third party parts in parallel
@@ -77,12 +77,12 @@ pushd ../LASzip
 ANDROID_ABIS="arm64-v8a armeabi-v7a x86"
 for LASZIP_ANDROID_ABI in ${ANDROID_ABIS} ;
 do
-    mkdir build-android-${LASZIP_ANDROID_ABI} || exit 1
-    pushd build-android-${LASZIP_ANDROID_ABI} || exit 1
-    cmake .. -G "Unix Makefiles" -DCMAKE_TOOLCHAIN_FILE=../cmake/android.toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DANDROID_NDK=${ANDROID_NDK_HOME} -DANDROID_ABI=${LASZIP_ANDROID_ABI} -DANDROID_TOOLCHAIN=gcc -DANDROID_STL=gnustl_static -DANDROID_PLATFORM=android-24 -DCMAKE_CXX_FLAGS="-fexceptions -frtti -std=c++11" -DLASZIP_BUILD_STATIC=ON || exit 1
-    cmake --build . || exit 1
-    cp -r ../include . || exit 1
-    cp ../src/*.hpp ./include/laszip || exit 1
+    mkdir -p build-android-${LASZIP_ANDROID_ABI}
+    pushd build-android-${LASZIP_ANDROID_ABI}
+    cmake .. -G "Unix Makefiles" -DCMAKE_TOOLCHAIN_FILE=../cmake/android.toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DANDROID_NDK=${ANDROID_NDK_HOME} -DANDROID_ABI=${LASZIP_ANDROID_ABI} -DANDROID_TOOLCHAIN=gcc -DANDROID_STL=gnustl_static -DANDROID_PLATFORM=android-24 -DCMAKE_CXX_FLAGS="-fexceptions -frtti -std=c++11" -DLASZIP_BUILD_STATIC=ON
+    cmake --build .
+    cp -r ../include .
+    cp ../src/*.hpp ./include/laszip
     popd
 done
 
@@ -98,12 +98,12 @@ pushd ../libLAS
 ANDROID_ABIS="arm64-v8a armeabi-v7a x86"
 for LIBLAS_ANDROID_ABI in ${ANDROID_ABIS} ;
 do
-    mkdir build-android-${LIBLAS_ANDROID_ABI} || exit 1
-    pushd build-android-${LIBLAS_ANDROID_ABI} || exit 1
-    cmake .. -G "Unix Makefiles" -DCMAKE_TOOLCHAIN_FILE=../cmake/android.toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DANDROID_NDK=${ANDROID_NDK_HOME} -DANDROID_ABI=${LIBLAS_ANDROID_ABI} -DANDROID_TOOLCHAIN=gcc -DANDROID_STL=gnustl_static -DANDROID_PLATFORM=android-24 -DCMAKE_CXX_FLAGS="-fexceptions -frtti -std=c++11" -DLASZIP_BUILD_STATIC=ON || exit 1
-    cmake --build . --target las_c || exit 1
-    cmake --build . --target las || exit 1
-    cp -r ../include . || exit 1
+    mkdir -p build-android-${LIBLAS_ANDROID_ABI}
+    pushd build-android-${LIBLAS_ANDROID_ABI}
+    cmake .. -G "Unix Makefiles" -DCMAKE_TOOLCHAIN_FILE=../cmake/android.toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DANDROID_NDK=${ANDROID_NDK_HOME} -DANDROID_ABI=${LIBLAS_ANDROID_ABI} -DANDROID_TOOLCHAIN=gcc -DANDROID_STL=gnustl_static -DANDROID_PLATFORM=android-24 -DCMAKE_CXX_FLAGS="-fexceptions -frtti -std=c++11" -DLASZIP_BUILD_STATIC=ON
+    cmake --build . --target las_c
+    cmake --build . --target las
+    cp -r ../include .
     popd
 done
 
@@ -125,10 +125,6 @@ conan export-pkg . -f
 popd
 
 # Khronos
-mkdir -p ../khronos
-(cd .. && git clone --depth 1 https://github.com/KhronosGroup/OpenGL-Registry khronos/OpenGL)
-(cd .. && git clone --depth 1 https://github.com/KhronosGroup/EGL-Registry khronos/EGL)
-
 cp khronos-conanfile.py ../khronos/conanfile.py
 pushd ../khronos
 conan export-pkg . -f
