@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Be verbose
-set -xe
+set -x
 
 # Make sure you enter the directory that contains this script.
 # The rest of the script requires this as the starting point.
