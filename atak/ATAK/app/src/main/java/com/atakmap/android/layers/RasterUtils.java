@@ -57,22 +57,22 @@ public final class RasterUtils {
     public static List<DatasetDescriptor> queryDatasets(
             DatasetQueryParameters params, boolean visibleOnly) {
 
-        List<DatasetDescriptor> ret = new ArrayList<>();
+        final List<DatasetDescriptor> ret = new ArrayList<>();
 
-        MapView mv = MapView.getMapView();
+        final MapView mv = MapView.getMapView();
         if (mv == null)
             return ret;
 
         // Find the raster layer
         AbstractRasterLayer2 layer = null;
         List<Layer> layers = mv.getLayers(MapView.RenderStack.MAP_LAYERS);
-        for (Layer l : layers) {
-            if (!(l instanceof CardLayer)
-                    && !l.getName().equals("Raster Layers"))
-                continue;
-            CardLayer cd = (CardLayer) l;
-            layer = (AbstractRasterLayer2) cd.get();
-            break;
+        for (final Layer l : layers) {
+            // ensure both conditions are met before assigning the layer
+            if (l.getName().equals("Raster Layers") && l instanceof CardLayer) {
+                CardLayer cd = (CardLayer) l;
+                layer = (AbstractRasterLayer2) cd.get();
+                break;
+            }
         }
         if (layer == null)
             return ret;

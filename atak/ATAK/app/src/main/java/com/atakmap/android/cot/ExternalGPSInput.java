@@ -54,7 +54,7 @@ public class ExternalGPSInput implements Runnable {
     private boolean closed = false;
 
     private final MapView _mapView;
-    private final AtakPreferences preferences;
+
 
     private final int _port;
     private DatagramSocket socket;
@@ -70,7 +70,6 @@ public class ExternalGPSInput implements Runnable {
         _port = port;
         _mapView = mapView;
         _instance = this;
-        preferences = new AtakPreferences(mapView.getContext());
     }
 
     public static ExternalGPSInput getInstance() {

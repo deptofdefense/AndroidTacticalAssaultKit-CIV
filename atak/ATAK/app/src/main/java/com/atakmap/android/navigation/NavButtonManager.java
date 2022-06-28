@@ -13,11 +13,14 @@ import com.atakmap.android.tools.menu.ActionMenuData;
 import com.atakmap.app.R;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import androidx.annotation.NonNull;
 import transapps.maps.plugin.tool.Tool;
 
 /**
@@ -166,6 +169,7 @@ public class NavButtonManager {
             int size = modelList.size();
             modelList.add(size >= 2 ? size - 2 : 0, model);
             modelByRef.put(model.getReference(), model);
+            Collections.sort(modelList, DEFAULT_SORT_ORDER);
         }
         onModelListChanged();
     }
@@ -292,6 +296,7 @@ public class NavButtonManager {
                 modelList.add(mdl);
                 modelByRef.put(mdl.getReference(), mdl);
             }
+            Collections.sort(modelList, DEFAULT_SORT_ORDER);
         }
 
         // Notify listeners that the list of available models has been changed
@@ -337,4 +342,59 @@ public class NavButtonManager {
         else if (actionType.equals("longClick"))
             b.setActionLong(action);
     }
+
+    // Keep "Settings" and "Quit" at the bottom by default
+    private static final Map<String, Integer> defSortOrder = new HashMap<>();
+    static {
+        defSortOrder.put("settings.xml", 1);
+        defSortOrder.put("quit.xml", 2);
+    }
+
+    /**
+     * Get the sort order for a given button model
+     * @param model Button model
+     * @return Sort order
+     */
+    private static int getSortOrder(NavButtonModel model) {
+        String ref = model.getReference();
+
+        // Settings & Quit at the bottom
+        Integer order = defSortOrder.get(ref);
+        if (order != null)
+            return order;
+
+        // Plugins between default tools and Settings/Quit
+        if (ref != null && ref.startsWith("plugin://"))
+            return 0;
+
+        // Default tools on top
+        return -1;
+    }
+
+    /**
+     * Get the non-null name for a model
+     * @param model Button model
+     * @return Name or empty string if null
+     */
+    @NonNull
+    private static String getName(NavButtonModel model) {
+        String name = model.getName();
+        return name != null ? name : "";
+    }
+
+    /**
+     * The default sort order for tools and plugins:
+     * [Default Tools A-Z][Plugins A-Z][Settings][Quit]
+     */
+    private static final Comparator<NavButtonModel> DEFAULT_SORT_ORDER = new Comparator<NavButtonModel>() {
+        @Override
+        public int compare(NavButtonModel b1, NavButtonModel b2) {
+            int order1 = getSortOrder(b1);
+            int order2 = getSortOrder(b2);
+            int comp = Integer.compare(order1, order2);
+            if (comp == 0)
+                comp = getName(b1).compareTo(getName(b2));
+            return comp;
+        }
+    };
 }

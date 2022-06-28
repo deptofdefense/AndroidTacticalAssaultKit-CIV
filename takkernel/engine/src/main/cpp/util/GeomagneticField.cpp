@@ -109,7 +109,7 @@ namespace
 #ifdef __ANDROID__
             success = MAG_robustReadMagModels(coffFilePath.get(), &model, 1u);
 #else
-            success = MAG_robustReadMagModels(coffFilePath.get(), (MAGtype_MagneticModel *(*)[])&model, 1u);
+            success = MAG_robustReadMagModels(coffFilePath.get(), (MAGtype_MagneticModel ***)&model, 1u);
 #endif
             if(!success)
                 return;

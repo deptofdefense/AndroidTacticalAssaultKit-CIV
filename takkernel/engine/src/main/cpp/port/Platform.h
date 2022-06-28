@@ -13,6 +13,11 @@
 #endif
 #endif
 
+#if !defined(__clang__) && \
+    defined(__GNUC__) && (__GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ <= 8))
+#define TE_GCC48X_COMPAT
+#endif
+
 #if defined(__linux__) && !defined(__ANDROID__)
 #define __LINUX__
 #endif
@@ -77,6 +82,12 @@ namespace TAK {
             ENGINE_API int64_t Platform_systime_millis() NOTHROWS;
 
             ENGINE_API char Platform_pathSep() NOTHROWS;
+
+            /**
+             * Obtain the maximum alignment required by any and all scalar
+             * native data types for this platform.
+             */
+            ENGINE_API std::size_t Platform_max_align() NOTHROWS;
         }
     }
 }

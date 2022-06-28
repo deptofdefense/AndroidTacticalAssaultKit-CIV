@@ -33,7 +33,7 @@ import android.app.PendingIntent;
  * then it would need to request it separately.
  *
  *
- * This is an example on how to use a Notification with a plugin supplied icon.    if an ATAK suplied
+ * This is an example on how to use a Notification with a plugin supplied icon.    if an ATAK supplied
  * resource / icon can be used, you can just use NotificationUtil.
  */
 

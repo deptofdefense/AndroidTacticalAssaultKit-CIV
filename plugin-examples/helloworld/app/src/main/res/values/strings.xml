@@ -12,6 +12,7 @@
     <string name="fly">Pan to a location on the map</string>
     <string name="specialWheelMarker">Create a marker with an special radial menu</string>
     <string name="addAnAircraft">Create an aircraft marker</string>
+    <string name="svgMarker">Create a marker with a SVG Icon</string>
     <string name="staleoutMarker">Create a marker that will stale out</string>
     <string name="addStream">Connect to a content stream</string>
     <string name="removeStream">Remove the content stream</string>

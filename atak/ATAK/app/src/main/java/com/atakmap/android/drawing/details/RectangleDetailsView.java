@@ -3,22 +3,27 @@ package com.atakmap.android.drawing.details;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
-import android.graphics.drawable.ShapeDrawable;
 import android.os.Bundle;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
 
 import android.text.Editable;
 
 import com.atakmap.android.drawing.DrawingPreferences;
+import com.atakmap.android.gui.ShapeColorButton;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.preference.UnitPreferences;
@@ -41,10 +46,19 @@ import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.conversions.SpanUtilities;
 
 import com.atakmap.android.util.AttachmentManager;
+import com.atakmap.coremap.locale.LocaleUtil;
+import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.map.CameraController;
 
 import android.widget.ImageButton;
+import android.widget.Spinner;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.StringRes;
+
+import java.text.DecimalFormat;
 
 public class RectangleDetailsView extends GenericDetailsView implements
         View.OnClickListener, CompoundButton.OnCheckedChangeListener,
@@ -59,6 +73,8 @@ public class RectangleDetailsView extends GenericDetailsView implements
     private Button _editButton;
     private Button _undoButton;
     private Button _endButton;
+    private Button _lengthButton;
+    private Button _widthButton;
     private Button _areaTF;
     private Button _perimeterTF;
     private CheckBox _tacticalCB;
@@ -67,6 +83,9 @@ public class RectangleDetailsView extends GenericDetailsView implements
     private Rectangle _rect;
     private UnitPreferences _unitPrefs;
     private DrawingPreferences _drawPrefs;
+
+    private static final DecimalFormat DEC_FMT_2 = LocaleUtil
+            .getDecimalFormat("#.##");
 
     @Override
     public void onPointChanged(PointMapItem item) {
@@ -95,18 +114,10 @@ public class RectangleDetailsView extends GenericDetailsView implements
                 _centerButton.setText(_unitPrefs.formatPoint(
                         _rect.getCenter(), true));
 
-                final double rectL = _rect.getLength();
-                final double rectW = _rect.getWidth();
 
                 int areaUnits = _unitPrefs.getAreaSystem();
 
-                int spanUnits = (areaUnits == Area.AC) ? Span.ENGLISH
-                        : areaUnits;
-                final String l = SpanUtilities.formatType(spanUnits,
-                        rectL, Span.METER);
-                final String w = SpanUtilities.formatType(spanUnits,
-                        rectW, Span.METER);
-                _areaTF.setText("(" + l + " x " + w + ")\n" +
+                _areaTF.setText(
                         AreaUtilities.formatArea(areaUnits, _rect.getArea(),
                                 Area.METER2));
 
@@ -116,6 +127,8 @@ public class RectangleDetailsView extends GenericDetailsView implements
                 _perimeterTF.setText(
                         SpanUtilities.formatType(rangeSystem, range, Span.METER,
                                 false));
+
+                updateLengthWidth();
             }
         });
     }
@@ -210,8 +223,12 @@ public class RectangleDetailsView extends GenericDetailsView implements
         _remarksLayout = this.findViewById(R.id.remarksLayout);
         _centerButton = this
                 .findViewById(R.id.drawingRectCenterButton);
-        _colorButton = this
-                .findViewById(R.id.drawingRectColorButton);
+        ShapeColorButton colorBtn = findViewById(R.id.drawingRectColorButton);
+        setupShapeColorButton(colorBtn, _rect);
+
+        _lengthButton = findViewById(R.id.lengthButton);
+        _widthButton = findViewById(R.id.widthButton);
+
         _heightButton = this
                 .findViewById(R.id.drawingRectHeightButton);
         _sendButton = this
@@ -292,10 +309,6 @@ public class RectangleDetailsView extends GenericDetailsView implements
 
         _centerButton.setOnClickListener(this);
 
-        _updateColorButtonDrawable();
-
-        _colorButton.setOnClickListener(this);
-
         double height = _rect.getHeight();
         Span unit = _unitPrefs.getAltitudeUnits();
         if (!Double.isNaN(height)) {
@@ -305,6 +318,10 @@ public class RectangleDetailsView extends GenericDetailsView implements
             _heightButton.setText("-- " + unit.getAbbrev());
         }
 
+        updateLengthWidth();
+
+        _lengthButton.setOnClickListener(this);
+        _widthButton.setOnClickListener(this);
         _heightButton.setOnClickListener(this);
         _sendButton.setOnClickListener(this);
 
@@ -323,24 +340,18 @@ public class RectangleDetailsView extends GenericDetailsView implements
                 .setOnSeekBarChangeListener(new SimpleSeekBarChangeListener() {
 
                     @Override
-                    public void onProgressChanged(SeekBar seekBar, int progress,
+                    public void onProgressChanged(SeekBar seekBar, int alpha,
                             boolean fromUser) {
                         if (fromUser) {
-                            int color = _rect.getFillColor();
-                            _alpha = progress;
-                            _rect.setFillColor(Color.argb(_alpha,
-                                    Color.red(color),
-                                    Color.green(color),
-                                    Color.blue(color)));
-                            _drawPrefs.setFillAlpha(_alpha);
+                            _rect.setFillAlpha(alpha);
+                            _drawPrefs.setFillAlpha(alpha);
                         }
 
                     }
 
                 });
 
-        _alpha = _rect.getFillColor() >>> 24;
-        _transSeek.setProgress(_alpha);
+        _transSeek.setProgress(Color.alpha(_rect.getFillColor()));
 
         _thickSeek.setProgress((int) (_rect.getStrokeWeight() * 10) - 10);
 
@@ -372,8 +383,6 @@ public class RectangleDetailsView extends GenericDetailsView implements
     public void onClick(View v) {
         if (v == _centerButton)
             _onCenterSelected();
-        else if (v == _colorButton)
-            _onColorSelected();
         else if (v == _heightButton)
             _onHeightSelected();
         else if (v == _sendButton)
@@ -384,6 +393,28 @@ public class RectangleDetailsView extends GenericDetailsView implements
             endEditingMode();
         else if (v == _undoButton)
             undoToolEdit();
+
+        // Edit rectangle length
+        else if (v == _lengthButton) {
+            showDialog(R.string.length, _rect.getLength(),
+                    new DialogCallback() {
+                        @Override
+                        public void onEntered(double size) {
+                            _rect.setLength(size);
+                        }
+                    });
+        }
+
+        // Edit rectangle width
+        else if (v == _widthButton) {
+            showDialog(R.string.width, _rect.getWidth(),
+                    new DialogCallback() {
+                        @Override
+                        public void onEntered(double size) {
+                            _rect.setWidth(size);
+                        }
+                    });
+        }
     }
 
     @Override
@@ -391,30 +422,6 @@ public class RectangleDetailsView extends GenericDetailsView implements
         if (cb == _tacticalCB) {
             _rect.showTacticalOverlay(checked);
         }
-    }
-
-    private void _updateColorButtonDrawable() {
-        final ShapeDrawable color = super.updateColorButtonDrawable();
-        color.getPaint().setColor(_rect.getStrokeColor());
-
-        post(new Runnable() {
-            @Override
-            public void run() {
-                _colorButton.setImageDrawable(color);
-            }
-        });
-
-    }
-
-    @Override
-    protected void _onColorSelected(int color, String label) {
-        _drawPrefs.setShapeColor(color);
-        _rect.setColor(Color.argb(_alpha, Color.red(color),
-                Color.green(color), Color.blue(color)), true);
-        if (_rect.getAnchorItem() != null)
-            _rect.getAnchorItem().refresh(_mapView
-                    .getMapEventDispatcher(), null, getClass());
-        _updateColorButtonDrawable();
     }
 
     private void _onCenterSelected() {
@@ -482,4 +489,96 @@ public class RectangleDetailsView extends GenericDetailsView implements
             super.sendSelected(uid);
     }
 
+    /**
+     * Show a dialog for entering diameter/axis
+     * @param titleId Title string resource ID
+     * @param diameter Diameter in meters
+     * @param cb Callback fired when setting radius
+     */
+    private void showDialog(@StringRes int titleId, double diameter,
+            @NonNull
+            final DialogCallback cb) {
+        LayoutInflater inflater = LayoutInflater.from(getContext());
+        final LinearLayout layout = (LinearLayout) inflater.inflate(
+                R.layout.drawing_distance_input, _mapView, false);
+        final EditText input = layout
+                .findViewById(R.id.drawingDistanceInput);
+        final Spinner units = layout
+                .findViewById(R.id.drawingDistanceUnits);
+
+        final ArrayAdapter<Span> adapter = new ArrayAdapter<>(getContext(),
+                R.layout.spinner_text_view_dark, Span.values());
+        adapter.setDropDownViewResource(
+                android.R.layout.simple_spinner_dropdown_item);
+        units.setAdapter(adapter);
+
+        Span span = _unitPrefs.getRangeUnits(diameter);
+        int start = adapter.getPosition(span);
+        units.setSelection(start);
+        input.setText(DEC_FMT_2.format(SpanUtilities.convert(diameter,
+                Span.METER, span)));
+        input.selectAll();
+
+        AlertDialog.Builder b = new AlertDialog.Builder(getContext());
+        b.setMessage(titleId);
+        b.setView(layout);
+        b.setPositiveButton(R.string.ok, null);
+        b.setNegativeButton(R.string.cancel, null);
+        final AlertDialog d = b.create();
+        Window w = d.getWindow();
+        if (w != null)
+            w.setSoftInputMode(
+                    WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+        d.show();
+        d.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(
+                new OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        double r = 0;
+                        try {
+                            r = Double.parseDouble(input.getText().toString());
+                        } catch (NumberFormatException e) {
+                            Log.e(TAG, "error: ", e);
+                        }
+                        Span u = adapter.getItem(units
+                                .getSelectedItemPosition());
+                        if (u == null)
+                            return;
+                        r = SpanUtilities.convert(r, u, Span.METER);
+                        if (r <= 0) {
+                            Toast.makeText(getContext(),
+                                    "number needs to be greater than 0",
+                                    Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                        cb.onEntered(r);
+                        _unitPrefs.setRangeSystem(u.getType());
+                        refresh();
+                        updateLengthWidth();
+                        d.dismiss();
+                    }
+                });
+        input.requestFocus();
+    }
+
+    /**
+     * Interface used as a callback to the diameter entry dialog
+     */
+    private interface DialogCallback {
+        /**
+         * A size has been set using the dialog
+         * @param size the size in meters
+         */
+        void onEntered(double size);
+    }
+
+    private void updateLengthWidth() {
+        Span rangeUnit = _unitPrefs.getRangeUnits(_rect.getLength());
+        _lengthButton
+                .setText(SpanUtilities.format(_rect.getLength(), Span.METER,
+                        rangeUnit));
+        rangeUnit = _unitPrefs.getRangeUnits(_rect.getWidth());
+        _widthButton.setText(SpanUtilities.format(_rect.getWidth(), Span.METER,
+                rangeUnit));
+    }
 }

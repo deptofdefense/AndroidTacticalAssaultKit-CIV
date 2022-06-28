@@ -208,8 +208,10 @@ public class ImportExportMapComponent extends AbstractMapComponent implements
                             "importInPlace", false);
                     boolean bFlagPromptOnMultipleMatch = intent.getBooleanExtra(
                             "promptOnMultipleMatch", true);
-                    boolean zoomToFile = intent.getBooleanExtra("zoomToFile",
-                            false);
+                    boolean zoomToFile = intent.getBooleanExtra(
+                            ImportReceiver.EXTRA_ZOOM_TO_FILE, false);
+                    boolean hideFile = intent.getBooleanExtra(
+                            ImportReceiver.EXTRA_HIDE_FILE, false);
 
                     Log.d(TAG, "Handle import file: " + filepath);
 
@@ -227,6 +229,8 @@ public class ImportExportMapComponent extends AbstractMapComponent implements
                                         ImportFileTask.FlagPromptOnMultipleMatch);
                     if (zoomToFile)
                         importTask.addFlag(ImportFileTask.FlagZoomToFile);
+                    if (hideFile)
+                        importTask.addFlag(ImportFileTask.FlagHideFile);
                     importTask.execute(filepath);
                     break;
                 case ZOOM_TO_FILE_ACTION:

@@ -627,6 +627,27 @@ bool ATAKMapEngineJNI_equals(JNIEnv *env, jobject a, jobject b) NOTHROWS
     return env->CallBooleanMethod(a, Object_equals, b);
 }
 
+TAKErr ATAKMapEngineJNI_SetStringField(JNIEnv &env, jobject obj, jfieldID fieldid, const char *cstr) NOTHROWS
+{
+    Java::JNILocalRef mstr(env, nullptr);
+    if(cstr) {
+        mstr = Java::JNILocalRef(env, env.NewStringUTF(cstr));
+        if(env.ExceptionCheck())
+            return TE_Err;
+    }
+    env.SetObjectField(obj, fieldid, mstr.get());
+    if(env.ExceptionCheck())
+        return TE_Err;
+    return TE_Ok;
+}
+TAKErr ATAKMapEngineJNI_GetStringField(TAK::Engine::Port::String &value, JNIEnv &env, jobject obj, jfieldID fieldid) NOTHROWS
+{
+    Java::JNILocalRef mstr(env, env.GetObjectField(obj, fieldid));
+    if(env.ExceptionCheck())
+        return TE_Err;
+    return JNIStringUTF_get(value, env, (jstring)mstr);
+}
+
 void ATAKMapEngineJNI_registerShutdownHook(void(*hook)(JNIEnv &, void *) NOTHROWS, std::unique_ptr<void, void(*)(const void *)> &&opaque) NOTHROWS
 {
     Lock lock(mutex());

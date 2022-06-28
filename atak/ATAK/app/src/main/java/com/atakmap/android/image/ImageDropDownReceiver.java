@@ -47,6 +47,7 @@ import com.atakmap.android.missionpackage.file.MissionPackageManifest;
 import com.atakmap.android.missionpackage.file.NameValuePair;
 import com.atakmap.android.util.AttachmentManager;
 import com.atakmap.android.video.manager.VideoFileWatcher;
+import com.atakmap.annotations.ModifierApi;
 import com.atakmap.app.ATAKActivity;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.io.IOProviderFactory;
@@ -156,6 +157,8 @@ public class ImageDropDownReceiver
     //  PUBLIC METHODS
     //==================================
 
+
+    @ModifierApi(since = "4.5", target="4.8", modifiers={})
     public ImageDropDownReceiver(MapView mapView) {
         super(mapView);
         _mapView = mapView;

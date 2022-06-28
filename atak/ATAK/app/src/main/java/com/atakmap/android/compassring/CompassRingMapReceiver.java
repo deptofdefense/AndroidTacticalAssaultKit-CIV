@@ -13,6 +13,7 @@ import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.PointMapItem.OnPointChangedListener;
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.annotations.ModifierApi;
 
 import java.util.UUID;
 
@@ -24,6 +25,8 @@ public class CompassRingMapReceiver extends BroadcastReceiver implements
     private boolean _isVisible = false;
     private CompassRing _compassRing = null;
 
+
+    @ModifierApi(since = "4.5", target="4.8", modifiers={})
     public CompassRingMapReceiver(final MapView mapView,
             final Marker locationMarker) {
 

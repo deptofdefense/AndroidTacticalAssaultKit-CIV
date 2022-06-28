@@ -46,6 +46,7 @@
     <ImageButton
         android:id="@+id/hostileManager"
         android:src="@drawable/ic_hostile_mgr"
+        android:padding="@dimen/auto_space"
         style="@style/ActionBarViewImageButton"/>
 
     <ImageButton

@@ -48,10 +48,7 @@ public class NavigationManipulationTest {
         }
     }
 
-    @Test
-    public void aTAKActivityTest1() {
-
-        sleep(2000);
+    private void pressMenuButton() {
         ViewInteraction imageView = onView(
                 allOf(withId(R.id.tak_nav_menu_button),
                         childAtPosition(
@@ -62,6 +59,13 @@ public class NavigationManipulationTest {
                                 0),
                         isDisplayed()));
         imageView.perform(click());
+    }
+
+    @Test
+    public void aTAKActivityTest1() {
+
+        sleep(2000);
+        pressMenuButton();
 
         // utilize the default navigation layout
         ViewInteraction imageButton = onView(
@@ -83,17 +87,23 @@ public class NavigationManipulationTest {
                 .atPosition(1);
         loadoutListVH.perform(click());
 
+        pressBack();
+
+        sleep(2000);
+        pressMenuButton();
+
         // Example for click on a tool by Position
         DataInteraction loadoutToolsGridVH = onData(anything())
                 .inAdapterView(allOf(withId(R.id.tools_list),
                         childAtPosition(
-                                withClassName(
-                                        is("android.widget.LinearLayout")),
+                                withClassName(is("android.widget.LinearLayout")),
                                 1)))
-                .atPosition(26);
-
+                .atPosition(27);
         loadoutToolsGridVH.perform(click());
+
         pressBack();
+
+        pressMenuButton();
 
         // Example for click on a tool by Name
         loadoutToolsGridVH = onData(withName("Settings"))
@@ -113,6 +123,7 @@ public class NavigationManipulationTest {
         return new TypeSafeMatcher<LoadoutToolsGridVM>() {
             @Override
             public boolean matchesSafely(LoadoutToolsGridVM l) {
+
                 return name.equals(l.getName());
             }
 

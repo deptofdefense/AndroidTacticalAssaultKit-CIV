@@ -174,12 +174,12 @@ public class MGRSPoint {
             double eastingOffset = getXGridOffset(r.xGrid, square.charAt(0))
                     * 100000d
                     - r.easting
-                    + Double.valueOf(LocaleUtil.getNaturalNumber(easting)) * e;
+                    + Double.parseDouble(LocaleUtil.getNaturalNumber(easting)) * e;
 
             double northingOffset = getYGridOffset(r.yGrid, square.charAt(1))
                     * 100000d
                     - r.northing
-                    + Double.valueOf(LocaleUtil.getNaturalNumber(northing)) * n;
+                    + Double.parseDouble(LocaleUtil.getNaturalNumber(northing)) * n;
 
             // offset the UTM point and recalculate MGRS components
             mutUtm.offset(eastingOffset, northingOffset);

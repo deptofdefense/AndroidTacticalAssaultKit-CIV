@@ -20,7 +20,6 @@ import com.atakmap.android.maps.MapEventDispatcher;
 import com.atakmap.android.maps.MapMode;
 import com.atakmap.android.preference.AtakPreferences;
 import com.atakmap.android.selfcoordoverlay.SelfCoordOverlayUpdater;
-import com.atakmap.android.selfcoordoverlay.SelfCoordOverlayUpdaterCompat;
 import com.atakmap.android.targetbubble.graphics.GLMapTargetBubble;
 
 import com.atakmap.android.maps.MapTouchController;
@@ -318,7 +317,7 @@ public class TargetBubbleReceiver extends BroadcastReceiver implements
             _setMapDataTargetPoint();
         }
 
-        hidSelfWidget = SelfCoordOverlayUpdaterCompat.showGPSWidget(false);
+        hidSelfWidget = SelfCoordOverlayUpdater.getInstance().showGPSWidget(false);
 
         AtakBroadcast.getInstance().sendBroadcast(
                 new Intent(MapMode.NORTH_UP.getIntent()));
@@ -424,7 +423,7 @@ public class TargetBubbleReceiver extends BroadcastReceiver implements
             } else if (item instanceof DrawingCircle) {
                 DrawingCircle circle = (DrawingCircle) item;
                 return new RadiusPointMapItem(circle, GeoPointMetaData.wrap(
-                        circle.findTouchPoint()));
+                        circle.getClickPoint()));
             } else if (item instanceof EditablePolyline) {
                 // Create temp item for managing position of shape vertex
                 EditablePolyline poly = (EditablePolyline) item;
@@ -632,7 +631,8 @@ public class TargetBubbleReceiver extends BroadcastReceiver implements
             _editPoint = null;
         }
 
-        if (hidSelfWidget && _prefs.get("show_self_coordinate_overlay", true))
+        if (hidSelfWidget && !SelfCoordOverlayUpdater.getInstance()
+                .getDisplayType().equals(SelfCoordOverlayUpdater.DISPLAY_NONE))
             SelfCoordOverlayUpdater.getInstance().showGPSWidget(true);
 
         AtakBroadcast.getInstance().sendBroadcast(new Intent(
@@ -800,7 +800,7 @@ public class TargetBubbleReceiver extends BroadcastReceiver implements
         private final boolean line;
 
         ShapePointMapItem(EditablePolyline shape, int index, boolean line) {
-            super(shape, line ? GeoPointMetaData.wrap(shape.findTouchPoint())
+            super(shape, line ? GeoPointMetaData.wrap(shape.getClickPoint())
                     : shape.getPoint(index));
             this.shape = shape;
             this.index = index;

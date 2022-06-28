@@ -694,4 +694,33 @@ public class CertificateManager {
         }
         return results;
     }
+
+    /**
+     * Creates an SSLContext.  This is similar to Java-provided 
+     * SSLContext.getInstance(), but serves as a utility method
+     * to consolidate such creations to ensure uniformity and easy
+     * adjustment of low-level SSL parameters to meet security goals.
+     * The returned SSLContext will already be initialized
+     * (init() already invoked).
+     * @param trusts array of TrustManagers to configure into the new context.
+     *        Accepts and used as documented in SSLContext.init()
+     * @throw NoSuchAlgorithmException if there is no underlying security 
+     *        provider registered with the JVM that can handle any of the
+     *        TAK-preferred SSL protocols.
+     * @throw KeyManagementException if initialization of a new context fails
+     */
+    public static SSLContext createSSLContext(TrustManager[] trusts) throws NoSuchAlgorithmException, KeyManagementException {
+        /*
+         * While we do specify TLSv1.2 here, it is worth clearly noting that
+         * this does NOT restrict the returned context from supporting other
+         * protocols. It particularly does not restrict the returned context
+         * from using older protocols (TLS 1.x for example).
+         * In the future, we may further configure/restrict the
+         * accepted protocols of the returned SSLContext.
+         * See comments in ATAK-15747 for more detail.
+         */
+        SSLContext ret = SSLContext.getInstance("TLSv1.2");
+        ret.init(null, trusts, new java.security.SecureRandom());
+        return ret;
+    }
 }

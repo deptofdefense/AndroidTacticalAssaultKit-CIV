@@ -130,7 +130,7 @@ public abstract class AvatarFeature {
      *
      * @param avatar the avatar feature to display
      * @param item the point map item to associate
-     * @param alternateTag the alterativeTag in case it cannot be shown.
+     * @param alternateTag the alternativeTag in case it cannot be shown.
      */
     public static void openAvatar(AvatarFeature avatar, PointMapItem item,
             String alternateTag) {

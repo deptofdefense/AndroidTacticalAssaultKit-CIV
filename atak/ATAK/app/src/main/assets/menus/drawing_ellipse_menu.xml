@@ -2,7 +2,7 @@
 <menu
     buttonBg='bgs/button.xml'
     buttonRadius='65'
-    buttonSpan='51.428571'
+    buttonSpan='45'
     buttonWidth='90' >
 
     <button
@@ -18,6 +18,9 @@
         disabled='!{${editable}}'
         icon='icons/edit2.png'
         onClick='actions/edit_shape.xml' />
+
+    <button icon='icons/blast_rings.png'
+        onClick='actions/shape_msd.xml'/>
 
     <button
         icon='icons/3d_free_look.png'

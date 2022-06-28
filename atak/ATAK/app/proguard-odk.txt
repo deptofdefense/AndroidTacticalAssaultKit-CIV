@@ -159,6 +159,12 @@
 -keep class com.atak.plugins.impl.AtakPluginRegistry$Extension {*;}
 -keep class com.atakmap.android.toolbar.IToolbarExtension {*;}
 
+-keep class com.atakmap.map.layer.feature.Feature$AltitudeMode {*;}
+-keep class com.atakmap.map.layer.model.ModelInfo {*;}
+-keep class com.atakmap.map.layer.model.ModelInfo$AltitudeMode {*;}
+
+
+
 # For newer Android distributions
 -keep class com.atakmap.android.gui.PluginSpinner$ContextSensitiveContext {*;}
 

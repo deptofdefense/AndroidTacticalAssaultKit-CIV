@@ -8,7 +8,9 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Pair;
 
+import com.atakmap.android.data.URIContentHandler;
 import com.atakmap.android.data.URIContentManager;
+import com.atakmap.android.hierarchy.action.Visibility;
 import com.atakmap.android.importexport.ImportExportMapComponent;
 import com.atakmap.android.importexport.ImportReceiver;
 import com.atakmap.android.importexport.Importer;
@@ -51,6 +53,8 @@ import com.atakmap.map.layer.MultiLayer.OnLayersChangedListener;
 import com.atakmap.map.layer.feature.Adapters;
 import com.atakmap.map.layer.feature.FeatureLayer3;
 import com.atakmap.map.layer.feature.gpkg.GeoPackageFeatureDataStore;
+
+import com.atakmap.annotations.ModifierApi;
 
 import java.io.File;
 import java.io.IOException;
@@ -98,6 +102,7 @@ public class GeoPackageImporter implements Importer {
     //
     //==================================
 
+    @ModifierApi(since = "4.5", target="4.8", modifiers={})
     public GeoPackageImporter(MapView view,
             String layerName,
             String iconURI) {
@@ -214,6 +219,8 @@ public class GeoPackageImporter implements Importer {
                     ImportReceiver.EXTRA_SHOW_NOTIFICATIONS);
             boolean zoomToFile = bundle != null && bundle.getBoolean(
                     ImportReceiver.EXTRA_ZOOM_TO_FILE);
+            boolean hideFile = bundle != null && bundle.getBoolean(
+                    ImportReceiver.EXTRA_HIDE_FILE);
             int notificationID = showNotifications
                     ? NotificationUtil.getInstance().reserveNotifyId()
                     : 0;
@@ -291,6 +298,11 @@ public class GeoPackageImporter implements Importer {
             }
             if (zoomToFile)
                 AtakBroadcast.getInstance().sendBroadcast(i);
+            if (hideFile) {
+                URIContentHandler h = contentResolver.getHandler(file);
+                if (h != null && h.isActionSupported(Visibility.class))
+                    ((Visibility) h).setVisible(false);
+            }
         }
 
         return result;
@@ -487,6 +499,8 @@ public class GeoPackageImporter implements Importer {
                 i.putExtra(ImportReceiver.EXTRA_SHOW_NOTIFICATIONS, true);
             if (flags.contains(SortFlags.ZOOM_TO_FILE))
                 i.putExtra(ImportReceiver.EXTRA_ZOOM_TO_FILE, true);
+            if (flags.contains(SortFlags.HIDE_FILE))
+                i.putExtra(ImportReceiver.EXTRA_HIDE_FILE, true);
 
             AtakBroadcast.getInstance().sendBroadcast(i);
         }

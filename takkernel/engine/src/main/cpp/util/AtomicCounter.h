@@ -20,10 +20,6 @@ namespace atakmap {
             {
                 atomic_init(&value, 0);
             }
-#elif defined(__LINUX__)
-            {
-                std::atomic_init(&value, 0);
-            }
 #else
                 : value(0)
             { }
@@ -33,10 +29,6 @@ namespace atakmap {
 #ifdef __ANDROID__
             {
                 atomic_init(&value, initialValue);
-            }
-#elif defined(__LINUX__)
-            {
-                std::atomic_init(&value, initialValue);
             }
 #else
                 : value(initialValue)
@@ -61,7 +53,7 @@ namespace atakmap {
 #elif defined(__ANDROID__)
             atomic_int_fast32_t value;
 #elif defined(__LINUX__)
-            std::atomic_int_fast32_t value;
+            std::atomic<int_fast32_t> value;
 #else
             int32_t value;
 #endif

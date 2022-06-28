@@ -473,10 +473,10 @@ public class ContactConnectorManager {
     /**
      * Get feature for the specified contact's connector
      *
-     * @param contact
-     * @param connector
-     * @param feature
-     * @return
+     * @param contact the contact to be used
+     * @param connector the connector
+     * @param feature the feature desired
+     * @return the feature for the specified contact/connector
      */
     public synchronized Object getFeature(IndividualContact contact,
             Connector connector, ConnectorFeature feature) {

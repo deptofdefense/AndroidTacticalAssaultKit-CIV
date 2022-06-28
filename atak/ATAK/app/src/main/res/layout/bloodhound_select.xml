@@ -115,9 +115,10 @@
 
         <Spinner
             android:id="@+id/spinnerItems"
+            android:padding="6dp" style="@style/darkButton"
+            android:textColor="@color/white"
             android:layout_width="300dp"
-            android:layout_height="wrap_content"
-            android:background="@drawable/atak_dropdown"/>
+            android:layout_height="wrap_content"/>
     </LinearLayout>
 
 

@@ -107,7 +107,7 @@ public class GeoFenceManager implements GeoFenceComponent.GeoFenceListener,
         _component.addGeoFenceChangedListener(this);
         _toRemove = new ArrayList<>();
         _deferredAdds = new HashMap<>();
-        _spatialCalc = new SpatialCalculator(true);
+        _spatialCalc = new SpatialCalculator.Builder().inMemory().build();
         _monitorIteration = 0;
         initialize();
     }
@@ -405,8 +405,8 @@ public class GeoFenceManager implements GeoFenceComponent.GeoFenceListener,
      * Check if we currently tracking this Geo Fence
      * If the monitor is set to custom, but has no tracked items, then ignore tracking
      *
-     * @param mapItemUid
-     * @return
+     * @param mapItemUid the uid for the map item
+     * @return true if the item is currently being tracked
      */
     public synchronized boolean isTracking(String mapItemUid) {
         GeoFenceMonitor monitor = getMonitor(mapItemUid);
@@ -418,8 +418,8 @@ public class GeoFenceManager implements GeoFenceComponent.GeoFenceListener,
     /**
      * Check if we currently tracking this Geo Fence
      *
-     * @param geofence
-     * @return
+     * @param geofence the geofence to be considered
+     * @return true if the geofence map item is being tracked
      */
     public synchronized boolean isTracking(GeoFence geofence) {
         return isTracking(geofence.getMapItemUid());
@@ -429,7 +429,7 @@ public class GeoFenceManager implements GeoFenceComponent.GeoFenceListener,
      * Look up monitor
      *
      * @param uid   UID of the fence reference map item
-     * @return
+     * @return the monitor for the specified geofence
      */
     public synchronized GeoFenceMonitor getMonitor(String uid) {
         if (FileSystemUtils.isEmpty(uid)) {
@@ -443,7 +443,7 @@ public class GeoFenceManager implements GeoFenceComponent.GeoFenceListener,
     /**
      * Add or replace monitor
      *
-     * @param monitor
+     * @param monitor the monitor
      * @return Previous monitor, or null if no previous monitor exists
      */
     private synchronized GeoFenceMonitor addMonitor(GeoFenceMonitor monitor) {
@@ -469,7 +469,7 @@ public class GeoFenceManager implements GeoFenceComponent.GeoFenceListener,
     /**
      * Remove specified monitor
      *
-     * @param uid
+     * @param uid the uid for the monitor
      * @return removed monitor, or null if none removed
      */
     private synchronized GeoFenceMonitor removeMonitor(String uid) {
@@ -596,7 +596,7 @@ public class GeoFenceManager implements GeoFenceComponent.GeoFenceListener,
      * Note, these should be quick since we are just running a Circle QuickCheck, not comparing
      * any complex geometries
      *
-     * @param monitor
+     * @param monitor the monitor
      */
     private void rescan(final GeoFenceMonitor monitor) {
         if (monitor.getFence()

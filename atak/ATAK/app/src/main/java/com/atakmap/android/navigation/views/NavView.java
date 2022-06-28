@@ -17,6 +17,7 @@ import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.style.ForegroundColorSpan;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
 import android.view.DragEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -33,7 +34,6 @@ import com.atakmap.android.gui.DynamicCompass;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import com.atakmap.android.mapcompass.CompassArrowMapComponent;
-import com.atakmap.android.maps.MapActivity;
 import com.atakmap.android.maps.MapEvent;
 import com.atakmap.android.maps.MapEventDispatcher;
 import com.atakmap.android.maps.MapItem;
@@ -55,7 +55,6 @@ import com.atakmap.android.navigation.views.buttons.NavZoomButton;
 import com.atakmap.android.navigation.views.loadout.LoadoutListDropDown;
 import com.atakmap.android.navigation.views.buttons.NavButtonShadowBuilder;
 import com.atakmap.android.navigation.views.loadout.LoadoutManager;
-import com.atakmap.android.navigation.views.loadout.LoadoutToolsDropDown;
 import com.atakmap.android.preference.AtakPreferences;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.android.toolbar.ToolbarBroadcastReceiver;
@@ -102,6 +101,7 @@ public class NavView extends RelativeLayout implements View.OnClickListener,
     public static final String LOCK_BUTTONS = "com.atakmap.android.navigation.LOCK_BUTTONS";
     public static final String REFRESH_BUTTONS = "com.atakmap.android.navigation.REFRESH_BUTTONS";
 
+    public static final String PREF_NAV_ORIENTATION_RIGHT = "nav_orientation_right";
     public static final String NAV_ID_KEY = "nav_id_key";
     public static final String NAV_SELECTED_KEY = "nav_selected_key";
     public static final String NAV_EDITING_KEY = "nav_editing_key";
@@ -132,12 +132,12 @@ public class NavView extends RelativeLayout implements View.OnClickListener,
     private final List<NavButton> topButtons = new ArrayList<>();
 
     // Views
-    private LinearLayout topButtonLayout;
     private LinearLayout sideLayout;
     private ImageButton lockOnButton;
     private NavZoomButton zoomButton;
     private DynamicCompass compass;
     private ImageView menuButton;
+    private ViewGroup embeddedToolbar;
     private View deleteDragArea;
     private View tooltipView;
     private TextView tooltipTextView;
@@ -426,7 +426,6 @@ public class NavView extends RelativeLayout implements View.OnClickListener,
         if (buttonsVisible != visible) {
             buttonsVisible = visible;
             updateButtonLayout();
-            resetChildViews();
             for (NavButtonsVisibilityListener l : buttonVizListeners)
                 l.onNavButtonsVisible(visible);
         }
@@ -524,6 +523,7 @@ public class NavView extends RelativeLayout implements View.OnClickListener,
     }
 
     private void initButtons() {
+        embeddedToolbar = findViewById(R.id.embedded_toolbar);
         deleteDragArea = findViewById(R.id.tak_nav_delete_drag_area);
         deleteDragArea.setOnDragListener(this);
         tooltipView = findViewById(R.id.tak_nav_tooltip_area);
@@ -536,7 +536,6 @@ public class NavView extends RelativeLayout implements View.OnClickListener,
         verticalSliderComponent = act.findViewById(R.id.vertical_slider);
         verticalSliderComponent.setDexSliderListener(this);
 
-        topButtonLayout = findViewById(R.id.tak_nav_buttons);
         sideLayout = findViewById(R.id.side_layout);
 
         compass = findViewById(R.id.compass);
@@ -567,9 +566,12 @@ public class NavView extends RelativeLayout implements View.OnClickListener,
             public boolean onLongClick(View v) {
                 if (_editingNav)
                     return false;
-                if (compassButtonChildView == null)
+                if (compassButtonChildView == null) {
+                    // Make sure the top-left toolbar is hidden
+                    AtakBroadcast.getInstance().sendBroadcast(new Intent(
+                            ToolbarBroadcastReceiver.UNSET_TOOLBAR));
                     addCompassChildView();
-                else
+                } else
                     removeCompassChildView();
                 return true;
             }
@@ -622,7 +624,7 @@ public class NavView extends RelativeLayout implements View.OnClickListener,
             public void onClick(View view) {
                 // Make sure the menu is showing when we open the loadout editor
                 AtakBroadcast.getInstance().sendBroadcast(
-                        new Intent(LoadoutListDropDown.SHOW_LOADOUT));
+                        new Intent(LoadoutListDropDown.TOGGLE_LOADOUT));
             }
         });
 
@@ -633,26 +635,65 @@ public class NavView extends RelativeLayout implements View.OnClickListener,
             }
         });
 
+        // Update button layout if the toolbar position changes
+        embeddedToolbar.addOnLayoutChangeListener(new OnLayoutChangeListener() {
+            @Override
+            public void onLayoutChange(View v, int l, int t, int r, int b,
+                                       int ol, int ot, int or, int ob) {
+                if (l != ol)
+                    updateButtonLayout();
+            }
+        });
+
+        // Initialize and update all views
         initLoadoutButtons();
-        updateCompassIcon();
-        updateButtonLayout();
-        updateButtonLoadout();
-        onUserIconColorChanged();
         onUserIconScaleChanged();
+        onUserIconColorChanged();
+        updateButtonLoadout();
     }
 
+    /**
+     * Get the maximum number of buttons to allow on a device based on its
+     * screen size
+     * @return Maximum button count
+     */
+    private int getMaxButtons() {
+        Resources r = getResources();
+        DisplayMetrics dm = r.getDisplayMetrics();
+        int btnSize = r.getDimensionPixelSize(R.dimen.nav_button_size)
+                + r.getDimensionPixelSize(R.dimen.padding_small);
+        int minSize = Math.min(dm.widthPixels, dm.heightPixels);
+        int maxSize = Math.max(dm.widthPixels, dm.heightPixels);
+        int sizeAvailable = Math.min(minSize, maxSize / 2);
+        int numButtons = (sizeAvailable / btnSize) - 1;
+        return Math.max(6, numButtons);
+    }
+
+    /**
+     * Initialize the tool button layout
+     */
     private void initLoadoutButtons() {
-        Resources res = getResources();
         navButtons.clear();
         topButtons.clear();
-        // TODO: Remove this hardcoding in favor of dynamic population
-        //  of the buttons in a LinearLayout - see comments in view_tak_nav.xml
-        for (int i = 0; i <= 5; i++) {
+        Resources r = getResources();
+        int size = r.getDimensionPixelSize(R.dimen.nav_button_size);
+
+        int numButtons = getMaxButtons();
+        for (int i = 0; i < numButtons; i++) {
+            // Remove existing placeholder buttons
             String id = "tak_nav_button_" + i;
-            NavButton button = findViewById(
-                    res.getIdentifier(id, "id",
-                            ATAKConstants.getPackageName()));
+            NavButton existing = findViewById(r.getIdentifier(id, "id",
+                    ATAKConstants.getPackageName()));
+            if (existing != null)
+                removeView(existing);
+
+            // Add the new buttons
+            NavButton button = new NavButton(getContext());
+            button.setPadding(0, 0, 0, 0);
+            button.setLayoutParams(new LayoutParams(size, size));
+            button.setTag(ATAKConstants.getPackageName() + ":id/" + id);
             button.setOnClickListener(this);
+            addView(button);
             topButtons.add(button);
             navButtons.add(button);
         }
@@ -687,27 +728,60 @@ public class NavView extends RelativeLayout implements View.OnClickListener,
         setIconSize(zoomButton, size, zoomHeight);
         compass.update();
 
-        // If buttons are toggled off then hide the entire layout so widgets
-        // and other views can utilize the extra space
-        topButtonLayout
-                .setVisibility(buttonsVisible ? View.VISIBLE : View.GONE);
+        // Update orientation of menu button
+        LayoutParams menuLP = (LayoutParams) menuButton.getLayoutParams();
+        final boolean alignRight = _prefs.get(PREF_NAV_ORIENTATION_RIGHT,
+                false);
+        final boolean ddVisible = _mapView.getWidth() < getWidth();
+        if (alignRight) {
+            menuButton.setImageResource(ddVisible
+                    ? R.drawable.ic_hamburger
+                    : R.drawable.ic_hamburger_right);
+            menuLP.addRule(ALIGN_PARENT_END);
+        } else {
+            menuButton.setImageResource(R.drawable.ic_hamburger_left);
+            menuLP.removeRule(ALIGN_PARENT_END);
+        }
+        menuButton.setLayoutParams(menuLP);
+
+        // Hide the menu button if we're right-aligned and the buttons are
+        // turned off while a drop-down is open
+        menuButton.setVisibility(alignRight && ddVisible && !buttonsVisible
+                ? View.GONE : View.VISIBLE);
+
+        // Update positions of buttons
+        // The buttons are displayed in their natural order when left-aligned
+        // and reversed when right-aligned
+        final int fullSize = getResources().getDimensionPixelSize(
+                R.dimen.padding_small) + size;
+        final int rightSide = getWidth() - size;
+        for (int i = 0; i < topButtons.size(); i++) {
+            int margin = fullSize * (i + 1);
+            NavButton btn = topButtons.get(i);
+            LayoutParams lp = (LayoutParams) btn.getLayoutParams();
+            lp.setMarginStart(alignRight ? (rightSide - margin) : margin);
+            btn.setLayoutParams(lp);
+        }
 
         // Then on the next frame update visibility once we have the updated
         // positions and sizes
         _mapView.post(new Runnable() {
             @Override
             public void run() {
-                int width = _mapView.getWidth();
+                final int mapWidth = _mapView.getWidth();
+                final boolean tbVisible = embeddedToolbar.getChildCount() > 0;
+                final int tbLeft = embeddedToolbar.getLeft();
 
                 // Set the top button visibility based on available width
                 boolean buttonVizChanged = false;
-                int navLeft = topButtonLayout.getLeft();
                 for (NavButton button : topButtons) {
-                    boolean visible = buttonsVisible && navLeft
-                            + button.getLeft() + button.getWidth() <= width;
-                    buttonVizChanged |= visible != (button
-                            .getVisibility() == VISIBLE);
-                    button.setVisibility(visible ? VISIBLE : INVISIBLE);
+                    int right = button.getRight();
+                    boolean wasVisible = button.getVisibility() == VISIBLE;
+                    button.setOnScreen(buttonsVisible
+                            && (alignRight || right <= mapWidth)
+                            && (!tbVisible || right <= tbLeft));
+                    boolean isVisible = button.getVisibility() == VISIBLE;
+                    buttonVizChanged |= wasVisible != isVisible;
                 }
 
                 // Zoom button visibility
@@ -717,8 +791,17 @@ public class NavView extends RelativeLayout implements View.OnClickListener,
                 View sideHandle = ((ATAKActivity) getContext()).findViewById(
                         R.id.sidepanehandle_background);
                 int handleSize = sideHandle != null ? sideHandle.getWidth() : 0;
-                int mapWidth = width - handleSize;
-                sideLayout.setVisibility(size <= mapWidth ? VISIBLE : GONE);
+                sideLayout.setVisibility(size <= mapWidth - handleSize
+                        ? VISIBLE
+                        : GONE);
+
+                // Move the side layout up or down depending on if there's
+                // space available for it
+                updateTopLeftView(sideLayout);
+                updateTopLeftView(tooltipView);
+
+                // Reset the sub-toolbar and compass toolbar
+                resetChildViews();
 
                 // If any of the buttons' visibility was changed then we
                 // should notify the loadout listeners
@@ -730,27 +813,40 @@ public class NavView extends RelativeLayout implements View.OnClickListener,
     }
 
     /**
-     * Refresh the tool buttons using a given loadout
-     * @param loadout Loadout
+     * Update placement for the top-left view based on the placement of the
+     * tool buttons and the overflow menu button
+     * @param v Top-left view to update
      */
-    private void updateButtonLoadout(LoadoutItemModel loadout) {
-        // Top aligned buttons
-        for (NavButton button : navButtons) {
-            String id = getButtonId(button);
-            NavButtonModel model = loadout.getButton(id);
-            button.setModel(model);
-            button.setEditing(_editingNav);
+    private void updateTopLeftView(View v) {
+        int right = v.getRight();
+        int buttonsLeft = Integer.MAX_VALUE;
+        for (NavButton btn : topButtons) {
+            if (btn.getVisibility() == VISIBLE)
+                buttonsLeft = Math.min(buttonsLeft, btn.getLeft());
         }
-
-        // Zoom button
-        updateZoomButton();
+        LayoutParams lp = (LayoutParams) v.getLayoutParams();
+        if (menuButton.getLeft() < right || buttonsLeft < right)
+            lp.addRule(BELOW, R.id.tak_nav_menu_button);
+        else
+            lp.removeRule(BELOW);
+        v.setLayoutParams(lp);
     }
 
     /**
      * Refresh the tool buttons using the current loadout
      */
     private void updateButtonLoadout() {
-        updateButtonLoadout(_loadouts.getCurrentLoadout());
+        LoadoutItemModel loadout = _loadouts.getCurrentLoadout();
+
+        // Top aligned buttons
+        for (NavButton button : navButtons) {
+            NavButtonModel model = loadout.getButton(button.getKey());
+            button.setModel(model);
+            button.setEditing(_editingNav);
+        }
+
+        // Zoom button
+        updateZoomButton();
     }
 
     /**
@@ -841,7 +937,8 @@ public class NavView extends RelativeLayout implements View.OnClickListener,
 
         // Update focus point offset to account for the nav buttons on smaller devices
         if (!getContext().getResources().getBoolean(R.bool.isTablet))
-            _mapView.setDefaultActionBarHeight(topButtonLayout.getHeight());
+            _mapView.setDefaultActionBarHeight(getResources()
+                    .getDimensionPixelSize(R.dimen.nav_button_size));
 
         // Restore rotation lock state
         setRotationLocked(rotLocked);
@@ -876,9 +973,8 @@ public class NavView extends RelativeLayout implements View.OnClickListener,
             if (childView == null) {
                 addChildView(button);
             } else {
-                Intent i = new Intent(ToolbarBroadcastReceiver.UNSET_TOOLBAR);
-
-                AtakBroadcast.getInstance().sendBroadcast(i);
+                AtakBroadcast.getInstance().sendBroadcast(new Intent(
+                        ToolbarBroadcastReceiver.UNSET_TOOLBAR));
             }
 
         } else {
@@ -1009,14 +1105,15 @@ public class NavView extends RelativeLayout implements View.OnClickListener,
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
             String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         switch (key) {
             case "largeActionBar":
             case "relativeOverlaysScalingRadioList": {
                 // Need to wait until the main activity is active again before
                 // updating icon sizes and visibility
-                ((MapActivity) getContext()).executeOnActive(new Runnable() {
+                _mapView.executeOnActive(new Runnable() {
                     @Override
                     public void run() {
                         onUserIconScaleChanged();
@@ -1038,6 +1135,16 @@ public class NavView extends RelativeLayout implements View.OnClickListener,
                     _mapView.setProjection(
                             EquirectangularMapProjection.INSTANCE);
                 }
+                break;
+
+            // Whether the tool buttons are left-justified or right-justified
+            case PREF_NAV_ORIENTATION_RIGHT:
+                _mapView.executeOnActive(new Runnable() {
+                    @Override
+                    public void run() {
+                        updateButtonLayout();
+                    }
+                });
                 break;
 
             // Nav button default icon color
@@ -1208,11 +1315,12 @@ public class NavView extends RelativeLayout implements View.OnClickListener,
                 case NAV_EDITING_KEY:
                     _editingNav = intent.getBooleanExtra("editing", false);
                     if (_editingNav) {
-                        tooltipView.setVisibility(View.VISIBLE);
+                        tooltipView.setVisibility(VISIBLE);
                         tooltipTextView.setText(createTooltipText());
                         removeCompassChildView();
                     } else
-                        tooltipView.setVisibility(View.GONE);
+                        tooltipView.setVisibility(GONE);
+                    updateButtonLayout();
                     updateButtonLoadout();
                     break;
 
@@ -1227,9 +1335,6 @@ public class NavView extends RelativeLayout implements View.OnClickListener,
 
                     loadout.removeButton(model);
                     _loadouts.notifyLoadoutChanged(loadout);
-
-                    // Refresh buttons
-                    updateButtonLoadout(loadout);
                     break;
                 }
 
@@ -1513,7 +1618,7 @@ public class NavView extends RelativeLayout implements View.OnClickListener,
     @Override
     public void onLoadoutModified(LoadoutItemModel loadout) {
         if (loadout == _loadouts.getCurrentLoadout())
-            updateButtonLoadout(loadout);
+            updateButtonLoadout();
     }
 
     @Override
@@ -1522,19 +1627,12 @@ public class NavView extends RelativeLayout implements View.OnClickListener,
 
     @Override
     public void onLoadoutSelected(LoadoutItemModel loadout) {
-        updateButtonLoadout(loadout);
-    }
-
-    private String getButtonId(View v) {
-        return getResources().getResourceName(v.getId());
+        updateButtonLoadout();
     }
 
     private void addChildView(NavButton button) {
         childView = new NavButtonChildView(this.getContext());
-        childView.layoutForButton(button, this,
-                ((RelativeLayout.LayoutParams) button.getLayoutParams())
-                        .getRules()[ALIGN_PARENT_TOP] != -1);
-
+        childView.layoutForButton(button, this, true);
         this.addView(childView);
     }
 
@@ -1553,7 +1651,7 @@ public class NavView extends RelativeLayout implements View.OnClickListener,
         compassButtonChildView.setStates(tiltEnabled, tiltLocked,
                 rotationEnabled, rotationLocked);
 
-        compassButtonChildView.layoutForToolbarView(menuButton);
+        compassButtonChildView.layoutForToolbarView(sideLayout);
         addView(compassButtonChildView);
     }
 
@@ -1561,21 +1659,11 @@ public class NavView extends RelativeLayout implements View.OnClickListener,
      * Reset the child views (toolbars) so the layouts can be recalculated
      */
     private void resetChildViews() {
-        if (compassButtonChildView != null) {
-            if (!buttonsVisible()) {
-                removeCompassChildView();
-                addCompassChildView();
-            }
-        }
-
-        ToolbarBroadcastReceiver tbr = ToolbarBroadcastReceiver.getInstance();
-        String currentToolbar = tbr.getActive();
-        if (currentToolbar != null) {
-            Intent intent = new Intent();
-            intent.setAction(ToolbarBroadcastReceiver.OPEN_TOOLBAR);
-            intent.putExtra("toolbar", currentToolbar);
-            AtakBroadcast.getInstance().sendBroadcast(intent);
-        }
+        if (compassButtonChildView != null)
+            compassButtonChildView.layoutForToolbarView(sideLayout);
+        if (childView != null)
+            childView.reposition();
+        ToolbarBroadcastReceiver.getInstance().repositionToolbar();
     }
 
     private void setIconColor(ImageView v, int color) {

@@ -350,13 +350,7 @@ public class KMLNetworkLinkDownloader extends NetworkLinkDownloader {
     private static void setAcceptAllVerifier(URLConnection connection) {
         if (connection instanceof javax.net.ssl.HttpsURLConnection) {
             try {
-                javax.net.ssl.SSLContext sc = javax.net.ssl.SSLContext
-                        .getInstance("SSL");
-                sc.init(null,
-                        new TrustManager[] {
-                                CertificateManager.SelfSignedAcceptingTrustManager
-                        },
-                        new java.security.SecureRandom());
+                javax.net.ssl.SSLContext sc = CertificateManager.createSSLContext(new TrustManager[] { CertificateManager.SelfSignedAcceptingTrustManager });
                 ((javax.net.ssl.HttpsURLConnection) connection)
                         .setSSLSocketFactory(sc.getSocketFactory());
             } catch (Exception ignored) {

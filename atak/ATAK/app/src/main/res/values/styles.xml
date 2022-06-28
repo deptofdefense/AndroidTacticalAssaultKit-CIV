@@ -158,6 +158,24 @@
         <item name="android:textStyle">bold</item>
     </style>
 
+    <!-- Used for color selection buttons -->
+    <style name="darkColorButton" parent="darkButton">
+        <item name="android:layout_width">36dp</item>
+        <item name="android:layout_height">36dp</item>
+        <item name="android:src">@drawable/color_rectangle_rounded</item>
+        <item name="android:padding">@dimen/auto_margin</item>
+    </style>
+
+    <!-- Used for color preview in the ColorPalette and ColorPicker -->
+    <style name="colorPreview">
+        <item name="android:layout_width">80dp</item>
+        <item name="android:layout_height">80dp</item>
+        <item name="android:src">@drawable/color_rectangle_rounded</item>
+        <item name="android:background">@android:color/transparent</item>
+        <item name="android:padding">0dp</item>
+        <item name="android:clickable">false</item>
+    </style>
+
     <style name="dflt_toolbar_btn_tool">
         <item name="android:textColor">#FFFFFFFF</item>
         <item name="android:textSize">13sp</item>
@@ -496,7 +514,7 @@
     <style name="NavButton">
         <item name="android:layout_width">@dimen/nav_button_size</item>
         <item name="android:layout_height">@dimen/nav_button_size</item>
-        <item name="android:layout_marginStart">@dimen/nav_child_padding</item>
+        <item name="android:layout_marginStart">@dimen/padding_small</item>
         <item name="android:padding">0dp</item>
         <item name="android:background">@android:color/transparent</item>
     </style>
@@ -524,6 +542,21 @@
 
     <style name="ATAKCheckBox" parent="@android:style/Widget.CompoundButton.CheckBox">
         <item name="android:button">@drawable/btn_check</item>
+    </style>
+
+    <style name="NavButtonDragHighlight">
+        <item name="android:layout_width">3dp</item>
+        <item name="android:layout_height">3dp</item>
+        <item name="android:background">@color/maize</item>
+        <item name="android:visibility">gone</item>
+    </style>
+
+    <style name="SelfCoordBarText">
+        <item name="android:fontFamily">@font/nunito_regular</item>
+        <item name="android:textSize">@dimen/fontSmall</item>
+        <item name="android:textColor">@color/pale_silver</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:ellipsize">end</item>
     </style>
 
 </resources>

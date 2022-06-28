@@ -32,6 +32,7 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.map.CameraController;
 
 public class EnterLocationTool extends Tool implements
         MapEventDispatcher.MapEventDispatchListener {
@@ -230,8 +231,8 @@ public class EnterLocationTool extends Tool implements
                         if (marker != null) {
                             RecentlyAddedDropDownReceiver.instance
                                     .addToRecentList(marker);
-                            _mapView.getMapController()
-                                    .panTo(p.get(), true);
+                            CameraController.Programmatic.panTo(_mapView.getRenderer3(),
+                                    p.get(), true);
                         }
 
                         ad.dismiss();

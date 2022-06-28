@@ -18,9 +18,8 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import android.content.res.XmlResourceParser;
 
-import android.util.Xml;
-
 import com.atakmap.coremap.log.Log;
+import com.atakmap.coremap.xml.XMLUtils;
 import com.atakmap.map.layer.feature.AttributeSet;
 import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.map.layer.feature.geometry.Geometry;
@@ -55,9 +54,7 @@ public class XMLWFSSchemaHandler implements WFSSchemaHandler {
 
         XmlPullParser parser = null;
         try {
-            parser = Xml.newPullParser();
-            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
-            parser.setFeature(Xml.FEATURE_RELAXED, true);
+            parser = XMLUtils.getXmlPullParser();
             parser.setInput(stream, null);
 
             Stack<String> tagStack = new Stack<String>();

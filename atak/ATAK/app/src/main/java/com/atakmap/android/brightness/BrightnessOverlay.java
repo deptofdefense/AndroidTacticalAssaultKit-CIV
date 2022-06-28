@@ -159,7 +159,8 @@ class BrightnessOverlay implements GLMapRenderable,
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
             String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         if (key.equals("dim_map_with_brightness_key")) {
             //remove and reattach the renderer!

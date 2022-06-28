@@ -1,158 +1,109 @@
 package gov.tak.platform.contact;
 
-import com.atakmap.coremap.log.Log;
 import gov.tak.api.annotation.NonNull;
+import gov.tak.api.annotation.Nullable;
 import gov.tak.api.contact.IContact;
 import gov.tak.api.contact.IContactListener;
-import gov.tak.api.contact.IContactStore;
-import org.apache.commons.lang.StringUtils;
-
-import java.util.Collections;
-import java.util.IdentityHashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import gov.tak.api.experimental.chat.IChatService;
+import gov.tak.api.experimental.chat.IChatServiceClient;
+import gov.tak.api.experimental.chat.IChatServiceProvider;
 
 /**
- * Responsible for storing and managing {@link IContact}s for the Contacts API. See {@link IContactStore} for more
- * information.
+ * The Contact Store allows core applications and plugins to manage {@link IContact}s through the API, as well as
+ * register/unregister {@link IContactListener}s so that listeners can receive notifications when Contacts are added,
+ * removed, or updated.
+ * <p>
+ * Aside from takkernel-implemented components, it is typically expected that plugins will be responsible for managing
+ * Contacts as sourced through a specific transport protocol (e.g. XMPP).
+ * <p>
+ * On the other hand, it is typically expected that core applications will register as Contact Listeners to be notified
+ * of changes in Contacts, thereby informing the user of all available Contacts at any given time.
+ * <p>
+ * An instance of this class can be accessed through the Contacts class, and immutable {@link IContact} instances
+ * can be built through the available ContactBuilder classes. For example:
+ * <pre>
+ *     IContactStore contactStore = Contacts.getDefaultContactStore();
+ *     IIndividualContact contact = new IndividualContactBuilder().withUniqueId("uniqueNewYork").build();
+ *     contactStore.registerContactListener(contactListener);
+ *     contactStore.addContact(contact);
+ *     contactStore.unregisterContactListener(contactListener);
+ * </pre>
  *
- * @since 0.17.0
+ * @see IContact
+ * @see IContactListener
+ * @since 0.32.0
  */
-class ContactStore implements IContactStore {
-    private static final String TAG = "ContactStore";
-
-    private final Set<IContactListener> contactListeners = Collections.newSetFromMap(new IdentityHashMap<>());
-    private final Map<String, IContact> allContacts = new ConcurrentHashMap<>();
-    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
-
-    @Override
-    public void addContact(@NonNull IContact contact) {
-        Objects.requireNonNull(contact, "Attempted to add null IContact, must be non-null.");
-
-        final String contactUid = contact.getUniqueId();
-
-        if (allContacts.containsKey(contactUid)) {
-            Log.w(TAG, "Attempted to add contact that has already been added to Contact API: " + contactUid);
-            return;
-        }
-
-        allContacts.put(contactUid, contact);
-
-        Log.d(TAG, "Added contact with UID \"" + contactUid + "\".");
-
-        // Notify listeners on separate threads to prevent a cyclic call-stack.
-        for (IContactListener listener : contactListeners) {
-            executorService.submit(new ContactNotification(
-                    listener,
-                    contact,
-                    ContactNotification.ContactNotificationType.ADD));
-        }
-    }
-
-    @Override
-    public void updateContact(@NonNull IContact contact) {
-        Objects.requireNonNull(contact, "Attempted to update null IContact, must be non-null");
-
-        final String contactUid = contact.getUniqueId();
-
-        if (!allContacts.containsKey(contactUid)) {
-            throw new IllegalArgumentException(
-                    "Cannot update Contact that has never been added. Use addContact(IContact) instead.");
-        }
-
-        allContacts.replace(contactUid, contact);
-
-        Log.d(TAG, "Updated contact with UID \"" + contactUid + "\".");
-
-        // Notify listeners on separate threads to prevent a cyclic call-stack.
-        for (IContactListener listener : contactListeners) {
-            executorService.submit(new ContactNotification(
-                    listener,
-                    contact,
-                    ContactNotification.ContactNotificationType.UPDATE));
-        }
-    }
-
-    @Override
-    public void removeContact(@NonNull String uniqueContactId) {
-        Objects.requireNonNull(uniqueContactId, "Unique Contact ID cannot be null.");
-
-        if (StringUtils.isBlank(uniqueContactId)) {
-            throw new IllegalArgumentException("Unique Contact ID must not be blank.");
-        }
-
-        final IContact removedContact = allContacts.remove(uniqueContactId);
-
-        if (removedContact == null) {
-            Log.d(TAG, "Attempted to remove IContact that does not currently exist in the contact store.");
-            return;
-        }
-
-        Log.d(TAG, "Removed contact with UID \"" + uniqueContactId + "\".");
-
-        // Notify listeners on separate threads to prevent a cyclic call-stack.
-        for (IContactListener listener : contactListeners) {
-            executorService.submit(new ContactNotification(
-                    listener,
-                    removedContact,
-                    ContactNotification.ContactNotificationType.REMOVE));
-        }
-    }
-
-    @Override
-    public boolean containsContact(@NonNull IContact contact) {
-        Objects.requireNonNull(contact, "Attempted to check for existence of null Contact, must be non-null.");
-
-        return allContacts.containsKey(contact.getUniqueId());
-    }
-
-    @Override
-    public void registerContactListener(@NonNull IContactListener contactListener) {
-        Objects.requireNonNull(contactListener, "Cannot register null IContactListener.");
-
-        if (contactListeners.contains(contactListener)) {
-            Log.w(TAG, "Attempted to register IContactListener that has already been registered, ignoring...");
-            return;
-        }
-
-        contactListeners.add(contactListener);
-
-        // Back-fill the new listener with existing Contacts, and do so on a separate thread to prevent loop-back.
-        for (IContact contact : allContacts.values()) {
-            executorService.submit(new ContactNotification(
-                    contactListener,
-                    contact,
-                    ContactNotification.ContactNotificationType.ADD
-            ));
-        }
-    }
-
-    @Override
-    public void unregisterContactListener(@NonNull IContactListener contactListener) {
-        Objects.requireNonNull(contactListener, "Cannot unregister null IContactListener.");
-
-        if (!containsListener(contactListener)) {
-            Log.w(TAG, "Attempted to unregister IContactListener that is not currently registered, ignoring...");
-            return;
-        }
-
-        contactListeners.remove(contactListener);
+public abstract class ContactStore {
+    ContactStore() {
+        // Prevent API consumers from extending this class
     }
 
     /**
-     * Checks if a contact listener is currently registered.
+     * Adds a contact to be stored and maintained by the API. Note that attempting to add a contact that has already been added will
+     * cause no effect; no listeners will be notified of the attempt.
+     * <p>
+     * This method should not be called from an {@link IContactListener} or any form of UI layer that is not directly
+     * responsible for managing and communicating with contacts through a chat service of some kind (which should never
+     * be the case). Instead, an {@link IChatServiceProvider} and supporting components should handle contact
+     * management. However, group contact management <em>can</em> be requested from a UI layer by registering said layer
+     * as an {@link IChatServiceClient}. See {@link IChatService} for more information.
      *
-     * @param contactListener The listener to check for registration
-     * @return {@code true} if the listener is currently registered
+     * @param contact The contact to add
      */
-    public boolean containsListener(@NonNull IContactListener contactListener) {
-        Objects.requireNonNull(contactListener, "Attempted to check for null Contact Listener.");
+    public abstract void addContact(@NonNull IContact contact);
 
-        return contactListeners.contains(contactListener);
-    }
+    /**
+     * Updates a contact that is currently being stored by the API. I.e., replaces the contact that has a unique ID matching
+     * that of the given contact, as decided by {@link IContact#getUniqueId()}. Note that the contact must have already
+     * been added via {@link #addContact(IContact)}.
+     * <p>
+     * This method should not be called from an {@link IContactListener} or any form of UI layer that is not directly
+     * responsible for managing and communicating with contacts through a chat service of some kind (which should never
+     * be the case). Instead, an {@link IChatServiceProvider} and supporting components should handle contact
+     * management. However, group contact management <em>can</em> be requested from a UI layer by registering said layer
+     * as an {@link IChatServiceClient}. See {@link IChatService} for more information.
+     *
+     * @param contact The updated contact
+     * @throws IllegalArgumentException If there is no existing contact to update
+     */
+    public abstract void updateContact(@NonNull IContact contact);
+
+    /**
+     * Removes a contact so that it is no longer stored by the API. If the contact does not exist, then listeners will
+     * not be notified of the removal attempt.
+     * <p>
+     * This method should not be called from an {@link IContactListener} or any form of UI layer that is not directly
+     * responsible for managing and communicating with contacts through a chat service of some kind (which should never
+     * be the case). Instead, an {@link IChatServiceProvider} and supporting components should handle contact
+     * management. However, group contact management <em>can</em> be requested from a UI layer by registering said layer
+     * as an {@link IChatServiceClient}. See {@link IChatService} for more information.
+     *
+     * @param uniqueContactId The unique ID of the contact to remove
+     */
+    public abstract void removeContact(@NonNull String uniqueContactId);
+
+    /**
+     * Gets a contact that has a UID matching the given UID string (as decided by {@link String#equals(Object)}).
+     *
+     * @param contactUid The UID of the contact to get
+     * @return The contact with the given UID, or null if no such contact exists in the store
+     */
+    @Nullable
+    public abstract IContact getContact(@NonNull String contactUid);
+
+    /**
+     * Registers a contact listener to be notified of changes to all existing contacts. The same listener instance
+     * cannot be registered more than once (without first unregistering via {@link #unregisterContactListener(IContactListener)}).
+     *
+     * @param contactListener The listener to register
+     */
+    public abstract void registerContactListener(@NonNull IContactListener contactListener);
+
+    /**
+     * Unregisters a contact listener so that it no longer receives notifications about contacts.
+     *
+     * @param contactListener The listener to unregister
+     */
+    public abstract void unregisterContactListener(@NonNull IContactListener contactListener);
 }
 

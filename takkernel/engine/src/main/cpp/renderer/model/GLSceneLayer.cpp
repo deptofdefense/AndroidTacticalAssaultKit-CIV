@@ -148,16 +148,24 @@ TAKErr GLSceneLayer::hitTest(TAK::Engine::Port::Collection<int64_t> &fids, float
 
 TAKErr GLSceneLayer::getSceneObjectControl(SceneObjectControl **ctrl, const int64_t sid) NOTHROWS
 {
+    return getSceneControl((void **)ctrl, TAK::Engine::Renderer::Model::SceneObjectControl_getType(), sid);
+}
+
+TAKErr GLSceneLayer::getSceneControl(void **ctrl, const char *type, const int64_t sid) NOTHROWS
+{
     TAKErr code(TE_Ok);
     ReadLock lock(renderables_mutex_);
     code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     auto entry = cache.find(sid);
-    if (entry == cache.end())
-        return TE_InvalidArg;
-
-    *ctrl = entry->second->ctrl;
+    if (entry == cache.end()) return TE_InvalidArg;
+    
+    if (strcmp(type, TAK::Engine::Renderer::Model::SceneObjectControl_getType()) == 0) {
+        *ctrl = entry->second->ctrl;
+    } else if (strcmp(type, TAK::Engine::Renderer::Model::HitTestControl_getType()) == 0) {
+        *ctrl = entry->second->hittest;
+    }
     return ctrl ? TE_Ok : TE_InvalidArg;
 }
 
@@ -171,12 +179,14 @@ void GLSceneLayer::start() NOTHROWS
     this->renderer.registerControl(this->subject, FeatureHitTestControl_getType(), static_cast<FeatureHitTestControl *>(this));
     this->renderer.registerControl(this->subject, HitTestControl_getType(), static_cast<HitTestControl *>(this));
     this->renderer.registerControl(this->subject, SceneLayerControl_getType(), static_cast<SceneLayerControl *>(this));
+    this->renderer.registerControl(this->subject, SceneLayerControl2_getType(), static_cast<SceneLayerControl2 *>(this));
 }
 void GLSceneLayer::stop() NOTHROWS
 {
     this->renderer.unregisterControl(this->subject, FeatureHitTestControl_getType(), static_cast<FeatureHitTestControl *>(this));
     this->renderer.unregisterControl(this->subject, HitTestControl_getType(), static_cast<HitTestControl *>(this));
     this->renderer.unregisterControl(this->subject, SceneLayerControl_getType(), static_cast<SceneLayerControl *>(this));
+    this->renderer.unregisterControl(this->subject, SceneLayerControl2_getType(), static_cast<SceneLayerControl2 *>(this));
     this->subject.removeContentChangedListener(this);
 }
 
@@ -618,6 +628,9 @@ TAKErr GLSceneLayer::SceneRenderer::onClampToGroundOffsetComputed(const double o
         updateloc.altitude = llaOrigin.altitude;
         updateloc.altitudeRef = AltitudeReference::AGL;
         update.location = GeoPoint2Ptr(new GeoPoint2(updateloc), Memory_deleter_const<GeoPoint2>);
+
+        if (this->ctrl)
+            this->ctrl->setLocation(*update.location, update.localFrame.get(), update.srid, update.altitudeMode);
     }
 
     // XXX - update AABB

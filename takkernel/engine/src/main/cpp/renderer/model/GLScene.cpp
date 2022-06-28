@@ -228,7 +228,7 @@ void GLScene::draw(const GLGlobeBase &view, const int renderPass) NOTHROWS
                     if ((loader_->isQueued(&queued, tile, prefetch) == TE_Ok) && !queued) {
                         GLSceneNode::LoadContext loadContext;
                         if (tile.prepareLoadContext(&loadContext, view) == TE_Ok)
-                            loader_->enqueue(it->second, std::move(loadContext), prefetch);
+                            loader_->enqueue(it->second, std::move(loadContext), prefetch, view.renderPass->drawSrid);
                     }
                 } else {
                     // if any tiles are drawing, don't draw indicator
@@ -263,7 +263,7 @@ void GLScene::draw(const GLGlobeBase &view, const int renderPass) NOTHROWS
     RenderState state = RenderState_getCurrent();
 
     // xray draw
-    if(xray_color_ && (renderPass&GLMapView2::XRay)) {
+    if(xray_color_ && (renderPass&GLMapView2::XRay) && isXRayCapable()) {
         // only draw samples below surface
         if (!state.depth.enabled) {
             state.depth.enabled = true;
@@ -856,12 +856,12 @@ TAKErr GLScene::SceneControlImpl::clampToGround() NOTHROWS
                 continue;
 
             // compare with current LCS reference
-            if (isnan(sceneMinLCS.z) || meshMin.z < sceneMinLCS.z)
+            if (TE_ISNAN(sceneMinLCS.z) || meshMin.z < sceneMinLCS.z)
                 sceneMinLCS = meshMin;
         }
     }
 
-    if (isnan(sceneMinLCS.z))
+    if (TE_ISNAN(sceneMinLCS.z))
         return TE_Ok;
 
     TAK::Engine::Math::Point2<double> sceneOriginWCS(0.0, 0.0, 0.0);
@@ -904,4 +904,9 @@ void GLScene::SceneControlImpl::dispatchClampToGroundOffsetComputed(const double
         else
             it++;
     }
+}
+
+bool GLScene::isXRayCapable() NOTHROWS
+{
+    return static_cast<bool>(info_.capabilities & SceneInfo::CapabilitiesType::XRay);
 }

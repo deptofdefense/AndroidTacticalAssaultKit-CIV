@@ -152,10 +152,7 @@ public class RemoteProductProvider extends BaseProductProvider {
             }
             if (b != null)
                 return processBundle(b, l);
-        } catch (DataException e) {
-            Log.w(TAG, "Failed to get repo index: " + updateUrl, e);
-            clearLocalCache(e.getMessage());
-        } catch (ConnectionException e) {
+        } catch (DataException | ConnectionException e) {
             Log.w(TAG, "Failed to get repo index: " + updateUrl, e);
             clearLocalCache(e.getMessage());
         }

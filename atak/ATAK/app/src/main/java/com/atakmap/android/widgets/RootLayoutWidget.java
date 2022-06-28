@@ -9,6 +9,7 @@ import android.preference.PreferenceManager;
 import android.view.Gravity;
 
 import gov.tak.api.widgets.IMapWidget;
+import gov.tak.api.widgets.IScaleWidget2;
 import gov.tak.platform.marshal.MarshalManager;
 import android.view.View;
 import android.view.ViewConfiguration;
@@ -87,7 +88,8 @@ public class RootLayoutWidget extends LayoutWidget implements IRootLayoutWidget,
     // Padding for curved screens
     private float _curvePadding = 0f;
     private final RectF _usableArea = new RectF();
-    private View _content;
+    private final View _content;
+    private final View _parent;
     private final View _ddHandleLS;
     private final View _ddHandlePT;
 
@@ -118,6 +120,9 @@ public class RootLayoutWidget extends LayoutWidget implements IRootLayoutWidget,
                 mapView.getContext());
         _prefs.registerOnSharedPreferenceChangeListener(this);
 
+        _parent = ((Activity) _mapView.getContext()).findViewById(
+                R.id.map_parent);
+
         setSize(_mapView.getWidth(), _mapView.getHeight());
 
         // Initialize corner and side widgets
@@ -142,11 +147,14 @@ public class RootLayoutWidget extends LayoutWidget implements IRootLayoutWidget,
         }
 
         // Get the content view so we can properly adjust for curved display
+        View content = null;
         try {
             Window window = ((Activity) _mapView.getContext()).getWindow();
-            _content = window.findViewById(Window.ID_ANDROID_CONTENT);
+            content = window.findViewById(Window.ID_ANDROID_CONTENT);
         } catch (Exception ignore) {
         }
+        _content = content;
+
         boolean defValue = false;
         String mdl = android.os.Build.MODEL;
         if (mdl.contains("SM-G892") || mdl.startsWith("SM-G950") ||
@@ -285,6 +293,8 @@ public class RootLayoutWidget extends LayoutWidget implements IRootLayoutWidget,
         float top = _padding[TOP] + wMargin[TOP];
         float right = _width - _padding[RIGHT] - wMargin[RIGHT] - wSize[0];
         float bottom = _height - _padding[BOTTOM] - wMargin[BOTTOM] - wSize[1];
+        int parentWidth = _parent.getWidth();
+        int parentHeight = _parent.getHeight();
 
         // Offset by right-side drop-down in landscape mode
         if (w == _layouts[RIGHT_EDGE] && _ddHandleLS != null
@@ -358,12 +368,13 @@ public class RootLayoutWidget extends LayoutWidget implements IRootLayoutWidget,
             int width = (int) childrenSize[0];
             int height = (int) childrenSize[1];
 
-            // If the children are set to MATCH_PARENT then default to
-            // 1/4 of the screen size
-            if (width <= 0 || width >= _width)
-                width = (int) (_width / 4);
-            if (height <= 0 || height >= _height)
-                height = (int) (_height / 4);
+            // If the children are set to MATCH_PARENT or have no defined size
+            // then default to a decent percentage of the screen
+            int defSize = (int) (Math.min(parentWidth, parentHeight) / 1.75f);
+            if (width <= 0 || width >= parentWidth)
+                width = defSize;
+            if (height <= 0 || height >= parentHeight)
+                height = defSize / 2;
 
             // Get all possible top-aligned boundaries and sort from top-to-bottom
             layoutHelper.add(_layouts[TOP_RIGHT]);
@@ -463,7 +474,8 @@ public class RootLayoutWidget extends LayoutWidget implements IRootLayoutWidget,
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sp, String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         // Make sure widgets aren't cut off on curved-screen devices (ATAK-8160)
         if (key.equals(PREF_CURVED_SCREEN)) {
@@ -583,6 +595,12 @@ public class RootLayoutWidget extends LayoutWidget implements IRootLayoutWidget,
         Collection<IMapWidget> children = w.getChildren();
         for (IMapWidget c : children) {
             float[] size = getSize(c, true, true);
+            if (c instanceof IScaleWidget2) {
+                // Scale bar can dynamically resize based on available width
+                // Use the minimum width instead of current width
+                IScaleWidget2 sw = (IScaleWidget2) c;
+                size[0] = sw.getMinWidth();
+            }
             if (c instanceof LinearLayoutWidget) {
                 LinearLayoutWidget llw = (LinearLayoutWidget) c;
                 if (llw._paramWidth == LayoutParams.MATCH_PARENT)

@@ -109,7 +109,8 @@ public class LollipopListItem extends AbstractChildlessListItem implements
     @Override
     public void onSharedPreferenceChanged(SharedPreferences p, String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         if (key.equals(PREF_KEY)) {
             _lollipopVis = _prefs.get(key, true);

@@ -79,6 +79,7 @@ set(takengine_feature_COMMON_SRCS
     # Feature
     ${SRC_DIR}/feature/AbstractFeatureDataStore2.cpp
     ${SRC_DIR}/feature/BruteForceLimitOffsetFeatureCursor.cpp
+    ${SRC_DIR}/feature/BruteForceLimitOffsetFeatureSetCursor.cpp
     ${SRC_DIR}/feature/DataSourceFeatureDataStore2.cpp
     ${SRC_DIR}/feature/DataSourceFeatureDataStore3.cpp
     ${SRC_DIR}/feature/DefaultDriverDefinition.cpp
@@ -113,6 +114,7 @@ set(takengine_feature_COMMON_SRCS
     ${SRC_DIR}/feature/LineString.cpp
     ${SRC_DIR}/feature/LineString2.cpp
     ${SRC_DIR}/feature/MultiplexingFeatureCursor.cpp
+    ${SRC_DIR}/feature/MultiplexingFeatureSetCursor.cpp
     ${SRC_DIR}/feature/OGR_DriverDefinition.cpp
     ${SRC_DIR}/feature/OGR_FeatureDataSource.cpp
     ${SRC_DIR}/feature/OGR_SchemaDefinition.cpp
@@ -271,9 +273,12 @@ set(takengine_model_COMMON_SRCS
     ${SRC_DIR}/model/Mesh.cpp
     ${SRC_DIR}/model/MeshBuilder.cpp
     ${SRC_DIR}/model/MeshTransformer.cpp
+	${SRC_DIR}/model/ResourceMapper.cpp
     ${SRC_DIR}/model/Scene.cpp
     ${SRC_DIR}/model/SceneBuilder.cpp
     ${SRC_DIR}/model/SceneGraphBuilder.cpp
+    ${SRC_DIR}/model/SceneInfo.cpp
+    ${SRC_DIR}/model/SceneLayer.cpp
     ${SRC_DIR}/model/SceneNode.cpp
     ${SRC_DIR}/model/VertexDataLayout.cpp
     ${SRC_DIR}/model/ZipCommentGeoreferencer.cpp
@@ -393,11 +398,16 @@ set(takengine_renderer_elevation_COMMON_SRCS
 	${SRC_DIR}/renderer/elevation/TerrainTileShaders.cpp
 )
 
+set(takengine_renderer_feature_COMMON_SRCS
+    ${SRC_DIR}/renderer/feature/SpatialFilterControl.cpp
+)
+
 set(takengine_renderer_COMMON_SRCS
     # Renderer
     ${takengine_renderer_base_COMMON_SRCS}
     ${takengine_renderer_core_COMMON_SRCS}
     ${takengine_renderer_elevation_COMMON_SRCS}
+    ${takengine_renderer_feature_COMMON_SRCS}
 )
 
 set (takengine_simd_COMMON_SRCS
@@ -435,9 +445,11 @@ set(takengine_util_COMMON_SRCS
     ${SRC_DIR}/util/Memory.cpp
     ${SRC_DIR}/util/MemBuffer.cpp
     ${SRC_DIR}/util/MemBuffer2.cpp
+    ${SRC_DIR}/util/ProgressInfo.cpp
     ${SRC_DIR}/util/ProcessingCallback.cpp
     ${SRC_DIR}/util/ProtocolHandler.cpp
     ${SRC_DIR}/util/SyncObject.cpp
+    ${SRC_DIR}/util/URI.cpp
     ${SRC_DIR}/util/Work.cpp
     ${SRC_DIR}/util/ZipFile.cpp
 )
@@ -526,6 +538,7 @@ set(takengine_feature_COMMON_HEADERS
     # Feature
     ${SRC_DIR}/feature/AbstractFeatureDataStore2.h
     ${SRC_DIR}/feature/BruteForceLimitOffsetFeatureCursor.h
+    ${SRC_DIR}/feature/BruteForceLimitOffsetFeatureSetCursor.h
     ${SRC_DIR}/feature/DataSourceFeatureDataStore2.h
     ${SRC_DIR}/feature/DataSourceFeatureDataStore3.h
     ${SRC_DIR}/feature/DefaultDriverDefinition.h
@@ -560,6 +573,7 @@ set(takengine_feature_COMMON_HEADERS
     ${SRC_DIR}/feature/LineString.h
     ${SRC_DIR}/feature/LineString2.h
     ${SRC_DIR}/feature/MultiplexingFeatureCursor.h
+    ${SRC_DIR}/feature/MultiplexingFeatureSetCursor.h
     ${SRC_DIR}/feature/OGR_DriverDefinition.h
     ${SRC_DIR}/feature/OGR_FeatureDataSource.h
     ${SRC_DIR}/feature/OGR_SchemaDefinition.h
@@ -726,6 +740,8 @@ set(takengine_model_COMMON_HEADERS
     ${SRC_DIR}/model/Scene.h
     ${SRC_DIR}/model/SceneBuilder.h
     ${SRC_DIR}/model/SceneGraphBuilder.h
+    ${SRC_DIR}/model/SceneInfo.h
+    ${SRC_DIR}/model/SceneLayer.h
     ${SRC_DIR}/model/SceneNode.h
     ${SRC_DIR}/model/VertexDataLayout.h
     ${SRC_DIR}/model/ZipCommentGeoreferencer.h
@@ -734,9 +750,19 @@ set(takengine_model_COMMON_HEADERS
 
 set(takengine_port_COMMON_HEADERS
     # Port
+    ${SRC_DIR}/port/Collection.h
+    ${SRC_DIR}/port/Collections.h
+    ${SRC_DIR}/port/Iterator.h
+    ${SRC_DIR}/port/Iterator2.h
     ${SRC_DIR}/port/Platform.h
+    ${SRC_DIR}/port/Set.h
+    ${SRC_DIR}/port/STLIteratorAdapter.h
+    ${SRC_DIR}/port/STLListAdapter.h
+    ${SRC_DIR}/port/STLSetAdapter.h
+    ${SRC_DIR}/port/STLVectorAdapter.h
     ${SRC_DIR}/port/String.h
     ${SRC_DIR}/port/StringBuilder.h
+    ${SRC_DIR}/port/Vector.h
 )
 
 set(takengine_raster_base_COMMON_HEADERS
@@ -832,11 +858,16 @@ set(takengine_renderer_elevation_COMMON_HEADERS
     ${SRC_DIR}/renderer/elevation/TerrainRenderService.h
 )
 
+set(takengine_renderer_feature_COMMON_HEADERS
+    ${SRC_DIR}/renderer/feature/SpatialFilterControl.h
+)
+
 set(takengine_renderer_COMMON_HEADERS
     # Renderer
     ${takengine_renderer_base_COMMON_HEADERS}
     ${takengine_renderer_core_COMMON_HEADERS}
     ${takengine_renderer_elevation_COMMON_HEADERS}
+    ${takengine_renderer_feature_COMMON_HEADERS}
 )
 
 set(takengine_simd_COMMON_HEADERS
@@ -882,8 +913,10 @@ set(takengine_util_COMMON_HEADERS
     ${SRC_DIR}/util/Memory.h
     ${SRC_DIR}/util/MemBuffer.h
     ${SRC_DIR}/util/MemBuffer2.h
+    ${SRC_DIR}/util/ProgressInfo.h
     ${SRC_DIR}/util/ProcessingCallback.h
     ${SRC_DIR}/util/ProtocolHandler.h
+    ${SRC_DIR}/util/URI.h
     ${SRC_DIR}/util/Work.h
     ${SRC_DIR}/util/ZipFile.h
 )

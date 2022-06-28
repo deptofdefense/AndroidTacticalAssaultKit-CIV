@@ -3,7 +3,7 @@ package com.atakmap.android.drawing.details;
 
 import android.app.AlertDialog;
 import android.content.Context;
-import android.graphics.drawable.ShapeDrawable;
+import android.graphics.Color;
 import android.text.Editable;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
@@ -16,6 +16,7 @@ import android.widget.ImageButton;
 
 import com.atakmap.android.cot.detail.AddressDetailHandler;
 import com.atakmap.android.cotdetails.CoTInfoView;
+import com.atakmap.android.gui.ColorButton;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
@@ -263,11 +264,12 @@ public class GenericPointDetailsView extends GenericDetailsView implements
     }
 
     protected void _updateColorButtonDrawable() {
-        ShapeDrawable color = super.updateColorButtonDrawable();
-        if (_point != null)
-            color.getPaint().setColor(_point.getMetaInteger("color", 0));
-
-        _colorButton.setImageDrawable(color);
+        int color = _point != null ? _point.getMetaInteger("color", 0)
+                : Color.WHITE;
+        if (_colorButton instanceof ColorButton)
+            ((ColorButton) _colorButton).setColor(color);
+        else
+            _colorButton.setColorFilter(color);
     }
 
     private void _updateName() {

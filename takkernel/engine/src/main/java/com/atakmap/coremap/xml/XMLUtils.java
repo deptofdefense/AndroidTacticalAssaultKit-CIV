@@ -1,6 +1,11 @@
 
 package com.atakmap.coremap.xml;
 
+import android.util.Xml;
+
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.TransformerFactory;
@@ -49,6 +54,31 @@ public class XMLUtils {
         }
 
         return docFactory;
+    }
+
+    /**
+     * Produce a pull parser with the approprate dangerous features
+     * turned off such as expansion bomds like the billion laughs.
+     * @return a XmlPullParser with FEATURE_PROCESS_DOCDECL, FEATURE_PROCESS_NAMESPACES 
+     * turned off and Xml.FEATURE_RELAXED turned on.
+     */
+    public static XmlPullParser getXmlPullParser() throws XmlPullParserException {
+        XmlPullParser parser = null;
+        parser = Xml.newPullParser();
+        if (parser == null)
+            return null;
+
+        try {
+            parser.setFeature(XmlPullParser.FEATURE_PROCESS_DOCDECL, false);
+        } catch (Exception ignored2) { }
+        try {
+            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
+        } catch (Exception ignored1) { }
+        try {
+            parser.setFeature(Xml.FEATURE_RELAXED, true);
+        } catch (Exception ignored) { }
+
+        return parser;
     }
 
 }

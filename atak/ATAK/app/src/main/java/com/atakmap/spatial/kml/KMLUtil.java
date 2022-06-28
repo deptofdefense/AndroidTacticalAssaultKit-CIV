@@ -2,7 +2,6 @@
 package com.atakmap.spatial.kml;
 
 import android.graphics.Color;
-import android.util.Xml;
 
 import com.atakmap.android.importexport.ExportFilters;
 import com.atakmap.android.importexport.Exportable;
@@ -17,6 +16,7 @@ import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.coremap.xml.XMLUtils;
 import com.atakmap.map.layer.feature.Feature.AltitudeMode;
 import com.atakmap.spatial.file.export.KMZFolder;
 import com.atakmap.util.zip.IoUtils;
@@ -66,7 +66,6 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.UUID;
-import java.util.zip.ZipException;
 
 /**
  * Utilities for extracting relevant data from a KML Convert data to/from KML
@@ -263,11 +262,12 @@ public class KMLUtil {
     public static List<NetworkLink> parseNetworkLinks(InputStream is,
             FeatureHandler<NetworkLink> handler) {
         List<NetworkLink> ret = new ArrayList<>();
-        XmlPullParser parser = Xml.newPullParser();
+
+        XmlPullParser parser = null;
         NetworkLink nl = null;
         Link link = null;
         try {
-            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
+            parser = XMLUtils.getXmlPullParser();
             parser.setInput(is, null);
             int eventType;
             do {
@@ -1247,9 +1247,6 @@ public class KMLUtil {
         ZipFile zip = null;
         try {
             zip = new ZipFile(kmzFile);
-        } catch (ZipException e) {
-            // Log.d(TAG, "Failed to open KMZ file", e);
-            zip = null;
         } catch (IOException e) {
             // Log.d(TAG, "Failed to open KMZ file", e);
             zip = null;

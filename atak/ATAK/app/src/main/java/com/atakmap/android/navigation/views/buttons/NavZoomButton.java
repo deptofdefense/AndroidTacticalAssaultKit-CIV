@@ -66,7 +66,7 @@ public class NavZoomButton extends NavButton implements View.OnClickListener {
         Drawable bg = null;
         if (dragging)
             bg = c.getDrawable(R.drawable.nav_button_drag_background);
-        else if (editing && dr != null)
+        else if (editing)
             bg = c.getDrawable(R.drawable.nav_zoom_edit);
 
         // Apply the user icon color to the background

@@ -434,8 +434,6 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
         }
 
         // In case overlay manager is opened twice
-        if (this.adapter != null)
-            this.adapter.unregisterListener();
         this.adapter = null;
         closeDropDown();
 
@@ -552,18 +550,36 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
                 .getExternalHandlers();
         Collections.sort(handlers, HierarchyListUserSelect.COMP_TITLE);
 
+        // Get the current list to determine if it's appropriate to show a
+        // given external select handler in the current context
+        final HierarchyListItem list = adapter.getCurrentList(true);
+        final boolean isRootList = list instanceof HierarchyListAdapter.ListModelImpl;
+
         TileButtonDialog d = new TileButtonDialog(_mapView);
         d.addButton(R.drawable.export_menu_default, R.string.export);
         final List<HierarchyListUserSelect> externalHandlers = new ArrayList<>();
         for (HierarchyListUserSelect h : handlers) {
             if (h == null)
                 continue;
+
+            // Icon and title required
             Drawable icon = h.getIcon();
             String title = h.getTitle();
             if (icon == null || title == null) {
                 Log.w(TAG, "Missing icon/title on select handler: " + h);
                 continue;
             }
+
+            // Make sure this handler is permitted to show up as an option
+            // when multi-selecting from the root list
+            if (isRootList && !h.acceptRootList())
+                continue;
+
+            // Make sure the handler is supported by the current non-root list
+            if (!isRootList && !h.accept(list))
+                continue;
+
+            // Add handler
             d.addButton(icon, title);
             externalHandlers.add(h);
         }
@@ -713,7 +729,7 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
                     // Device back button hit on the nav list
                     if (mode == HIERARCHY_MODE.NONE)
                         closeDropDown(false);
-                    else if (mode == HIERARCHY_MODE.MULTISELECT)
+                    else if (hasSelectHandler())
                         cancelUserSelection();
                     else
                         setPreviousMode();
@@ -724,7 +740,7 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
             adapter.popList();
             //resetScroll();
         } else if ((buttonId == R.id.hierarchy_back_button || buttonId == 0)
-                && mode == HIERARCHY_MODE.MULTISELECT) {
+                && hasSelectHandler()) {
             // else if at root level, exit any special modes
             cancelUserSelection();
         } else if (buttonId == 0) {
@@ -734,8 +750,19 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
         }
     }
 
+    /**
+     * Check if Overlay Manager currently has a select handler active
+     * @return True if select handler is active
+     */
+    private boolean hasSelectHandler() {
+        return adapter != null && adapter.getSelectHandler() != null;
+    }
+
+    /**
+     * Cancel the currently selected user select handler
+     */
     private void cancelUserSelection() {
-        if (adapter != null && adapter.getSelectHandler() != null)
+        if (hasSelectHandler())
             adapter.cancelUserSelection();
     }
 
@@ -1170,7 +1197,7 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
                 titleTextButton.setVisibility(View.VISIBLE);
                 actionsLayout.setVisibility(View.VISIBLE);
                 searchText.setVisibility(View.GONE);
-                searchBtn.setVisibility(View.GONE);
+                searchBtn.setVisibility(View.VISIBLE);
                 break;
 
             case SEARCH:
@@ -1190,7 +1217,8 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
                 titleBar.findViewById(R.id.hierarchy_actions_layout)
                         .setVisibility(View.VISIBLE);
                 checkAllLayout.setVisibility(View.VISIBLE);
-                searchBtn.setVisibility(View.GONE);
+                searchText.setVisibility(View.GONE);
+                searchBtn.setVisibility(View.VISIBLE);
                 break;
             default:
                 break;
@@ -1400,7 +1428,8 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
             String key) {
 
-        if (key == null) return; 
+        if (key == null)
+            return;
 
         if (key.equals("overlay_manager_width_height")
                 && overlayManagerDropDown.isVisible()) {

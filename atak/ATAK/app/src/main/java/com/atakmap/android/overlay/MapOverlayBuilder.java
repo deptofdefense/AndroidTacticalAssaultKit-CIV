@@ -105,7 +105,7 @@ public final class MapOverlayBuilder {
 
         private HierarchyListItem getItem(long capabilities) {
             for (Map.Entry<Long, HierarchyListItem> entry : _item.entrySet()) {
-                if ((entry.getKey().longValue() & capabilities) != 0)
+                if ((entry.getKey() & capabilities) != 0)
                     return entry.getValue();
             }
             return null;

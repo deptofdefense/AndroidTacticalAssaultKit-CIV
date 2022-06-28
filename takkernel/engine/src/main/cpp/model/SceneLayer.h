@@ -86,7 +86,7 @@ namespace TAK {
                 Util::TAKErr update(const int64_t sid, const SceneInfo &info) NOTHROWS;
                 Util::TAKErr update(const int64_t sid, const SceneInfo &info, const atakmap::util::AttributeSet &metadata) NOTHROWS;
 
-                Util::TAKErr getMetadata(atakmap::util::AttributeSet &metadata, const char *uri) const NOTHROWS;
+                static Util::TAKErr getMetadata(atakmap::util::AttributeSet &metadata, const char *uri) NOTHROWS;
 
                 Util::TAKErr setVisible(const int64_t sid, const bool visible) NOTHROWS;
                 bool isVisible(const int64_t sid) NOTHROWS;

@@ -186,7 +186,8 @@ public class ResectionLandmarkAdapter extends BaseAdapter implements
     @Override
     public void onSharedPreferenceChanged(SharedPreferences p, String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         if (key.equals("coord_display_pref")
                 || key.equals("rab_north_ref_pref"))

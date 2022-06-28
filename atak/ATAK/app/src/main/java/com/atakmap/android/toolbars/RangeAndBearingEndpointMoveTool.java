@@ -85,7 +85,7 @@ public class RangeAndBearingEndpointMoveTool extends Tool implements
                 handled = true;
             } else if (item instanceof Shape) {
                 // Shape selected from deconfliction menu
-                _ep.setPoint(((Shape) item).findTouchPoint());
+                _ep.setPoint(((Shape) item).getClickPoint());
                 handled = true;
             }
             // Tell the event dispatcher whether we handled the item click, so that it can be

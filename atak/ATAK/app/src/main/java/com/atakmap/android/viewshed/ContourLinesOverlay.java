@@ -271,12 +271,10 @@ public class ContourLinesOverlay extends AbstractHierarchyListItem
                             .toCharArray()[cursor.getType().length() - 1]);
                     GeoPoint centerGp = cell.bounds.getCenter(null);
                     String cellKey = centerGp.toString();
-                    if (cells.containsKey(cellKey)) {
-                        cells.get(cellKey).add(cell);
-                    } else {
+                    if (!cells.containsKey(cellKey)) {
                         cells.put(cellKey, new ArrayList<DtedCell>());
-                        cells.get(cellKey).add(cell);
                     }
+                    cells.get(cellKey).add(cell);
                 } catch (Exception ex) {
                     // ignored
                 }
@@ -456,8 +454,7 @@ public class ContourLinesOverlay extends AbstractHierarchyListItem
                                 }
                             }
 
-                            SpatialCalculator calculator = new SpatialCalculator(
-                                    true);
+                            SpatialCalculator calculator = new SpatialCalculator.Builder().inMemory().build();
 
                             List<GeoPoint> simplified = (List<GeoPoint>) calculator
                                     .simplify(
@@ -867,7 +864,8 @@ public class ContourLinesOverlay extends AbstractHierarchyListItem
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
             String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         switch (key) {
             case CONTOUR_PREFERENCE_INTERVAL_KEY:

@@ -340,7 +340,8 @@ public abstract class AbstractSheetDropDown extends DropDownReceiver
     @Override
     public void onSharedPreferenceChanged(SharedPreferences p, String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         if (key.equals(COORD_FMT) || key.equals(RANGE_FMT)) {
             refreshUnits();

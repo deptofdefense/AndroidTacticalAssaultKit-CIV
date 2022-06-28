@@ -16,13 +16,9 @@ import com.atakmap.android.maps.MapView;
 public class HostileManagerMapComponent extends DropDownMapComponent {
 
     private HostileManagerDropDownReceiver _receiver;
-    private Context _context;
-    private MapView _mapView;
 
     @Override
     public void onCreate(Context context, Intent intent, MapView view) {
-        _context = context;
-        _mapView = view;
 
         super.onCreate(context, intent, view);
         _receiver = new HostileManagerDropDownReceiver(view);

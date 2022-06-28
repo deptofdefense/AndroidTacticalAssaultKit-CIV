@@ -204,7 +204,12 @@ public class EmergencyAlertReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context ignoreCtx, Intent intent) {
 
-        if (ALERT_EVENT.equals(intent.getAction())) {
+        final String action = intent.getAction();
+        if (action == null)
+            return;
+
+
+        if (ALERT_EVENT.equals(action)) {
             CotEvent event = intent.getParcelableExtra("cotevent");
             if (event == null) {
                 Log.w(TAG, "Failed to process w/out CoT event");
@@ -221,7 +226,7 @@ public class EmergencyAlertReceiver extends BroadcastReceiver {
                 Log.w(TAG, "Failed to add alert for CoT: " + event.getUID());
 
             }
-        } else if (CANCEL_EVENT.equals(intent.getAction())) {
+        } else if (CANCEL_EVENT.equals(action)) {
             CotEvent event = intent.getParcelableExtra("cotevent");
             if (event == null) {
                 Log.w(TAG, "Failed to process w/out CoT event");
@@ -237,7 +242,7 @@ public class EmergencyAlertReceiver extends BroadcastReceiver {
                 Log.w(TAG, "Failed to remove alert for CoT: " + event.getUID());
 
             }
-        } else if (REMOVE_ALERT.equals(intent.getAction())) {
+        } else if (REMOVE_ALERT.equals(action)) {
             String uid = intent.getStringExtra("uid");
             if (FileSystemUtils.isEmpty(uid))
                 return;
@@ -286,12 +291,11 @@ public class EmergencyAlertReceiver extends BroadcastReceiver {
         int index = _alerts.indexOf(alert);
         if (index < 0) {
             Log.d(TAG, "Adding alert: " + alert);
-            _alerts.add(alert);
         } else {
             //Log.d(TAG, "Updating alert: " + alert);
             _alerts.remove(index);
-            _alerts.add(alert);
         }
+        _alerts.add(alert);
 
         WarningComponent.addAlert(alert);
         for (OnAlertChangedListener l : _listeners)

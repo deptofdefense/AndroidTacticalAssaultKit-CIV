@@ -53,7 +53,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 class MissionPackageFileHierarchyListItem extends AbstractChildlessListItem
-        implements GoTo, Delete, MapItemUser, Search, ItemClick,
+        implements GoTo, Delete, MapItemUser, Search, ItemClick, Visibility,
         View.OnClickListener {
 
     private static final String TAG = "MissionPackageFileHierarchyListItem";
@@ -63,6 +63,7 @@ class MissionPackageFileHierarchyListItem extends AbstractChildlessListItem
     private final Context _context;
     private final MissionPackageListGroup _group;
     private final MissionPackageListFileItem _fileItem;
+    private final MissionPackageContent _content;
     private final File _file;
     private final URIContentHandler _handler;
     private final Drawable _icon;
@@ -95,8 +96,9 @@ class MissionPackageFileHierarchyListItem extends AbstractChildlessListItem
         if (_handler != null)
             icon = _handler.getIcon();
 
-        if (icon == null) {
-            String contentType = _fileItem.getContent().getParameterValue(
+        _content = _fileItem != null ? _fileItem.getContent() : null;
+        if (icon == null && _content != null) {
+            String contentType = _content.getParameterValue(
                     MissionPackageContent.PARAMETER_CONTENT_TYPE);
             if (!FileSystemUtils.isEmpty(contentType))
                 icon = ATAKUtilities.getContentIcon(contentType);
@@ -375,11 +377,27 @@ class MissionPackageFileHierarchyListItem extends AbstractChildlessListItem
         // Handler actions
         // While we could return the handler directly, we would no longer
         // be able to override any actions from within this class
-        if ((clazz.equals(Visibility.class) || clazz.equals(Visibility2.class))
-                && clazz.isInstance(_handler)
+        if (clazz.equals(Visibility2.class) && clazz.isInstance(_handler)
                 && _handler.isActionSupported(clazz)
                 && FileSystemUtils.isFile(_file))
             return clazz.cast(_handler);
         return super.getAction(clazz);
+    }
+
+    @Override
+    public boolean isVisible() {
+        return _handler != null && _handler.isActionSupported(Visibility.class)
+                && ((Visibility) _handler).isVisible();
+    }
+
+    @Override
+    public boolean setVisible(boolean visible) {
+        if (_handler != null && _handler.isActionSupported(Visibility.class)) {
+            if (_content != null)
+                _content.setParameter(MissionPackageContent.PARAMETER_VISIBLE,
+                        String.valueOf(visible));
+            return ((Visibility) _handler).setVisible(visible);
+        }
+        return false;
     }
 }

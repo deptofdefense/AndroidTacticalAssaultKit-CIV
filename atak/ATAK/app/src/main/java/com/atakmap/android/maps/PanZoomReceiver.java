@@ -9,7 +9,7 @@ import android.graphics.PointF;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
-import com.atakmap.map.AtakMapController;
+import com.atakmap.map.CameraController;
 import com.atakmap.map.MapRenderer2;
 import com.atakmap.map.MapSceneModel;
 import com.atakmap.map.elevation.ElevationManager;
@@ -56,12 +56,13 @@ public class PanZoomReceiver extends BroadcastReceiver {
         }
 
         final double mapScale = arg1.getDoubleExtra("scale", Double.NaN);
-        final AtakMapController controller = _mapView.getMapController();
+
 
         // in case someone does not pass in panTo point
         if (panTo == null) {
             if (!Double.isNaN(mapScale))
-                controller.zoomTo(mapScale, true);
+                CameraController.Programmatic.zoomTo(_mapView.getRenderer3(),
+                        mapScale, true);
             return;
         }
 
@@ -73,13 +74,13 @@ public class PanZoomReceiver extends BroadcastReceiver {
         }
 
         if (snap) {
-            controller.panTo(panTo, true);
+            CameraController.Programmatic.panTo(_mapView.getRenderer3(), panTo, true);
             if (!Double.isNaN(mapScale))
-                controller.zoomTo(mapScale, false);
+                CameraController.Programmatic.zoomTo(_mapView.getRenderer3(), mapScale, false);
         } else if (!Double.isNaN(mapScale)) {
-            controller.panZoomTo(panTo, mapScale, true);
+            _mapView.getMapController().panZoomTo(panTo, mapScale, true);
         } else {
-            controller.panTo(panTo, true);
+            CameraController.Programmatic.panTo(_mapView.getRenderer3(), panTo, true);
         }
     }
 

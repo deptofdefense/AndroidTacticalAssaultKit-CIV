@@ -81,10 +81,12 @@ public abstract class AbstractLayerContentResolver extends FileContentResolver
 
                 // Get file URI
                 String descPath = GdalLayerInfo.getGdalFriendlyUri(desc);
-                if (descPath.startsWith("/vsizip/"))
-                    descPath = descPath.substring(7);
                 if (FileSystemUtils.isEmpty(descPath))
                     continue;
+                
+                if (descPath.startsWith("/vsizip/"))
+                    descPath = descPath.substring(7);
+
 
                 // Find matching file
                 for (String path : paths) {

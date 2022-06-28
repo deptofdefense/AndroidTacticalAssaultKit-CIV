@@ -52,8 +52,8 @@
             android:key="max_num_bread_tracks"
             android:title="@string/set_max_num_of_crumbs_title"
             android:text="@string/set_max_num_of_crumbs_title"
-            android:defaultValue="100"
-            android:max="255"/>
+            android:defaultValue="200"
+            android:max="500"/>
 
        <CheckBoxPreference
            android:title="Render bread crumb line to ground in 3-D"
@@ -75,6 +75,6 @@
             android:key="bread_dist_threshold"
             android:title="@string/set_bread_crumb_dist_title"
             android:inputType = "number"
-            android:defaultValue="5"/>
+            android:defaultValue="2"/>
     </PreferenceCategory>
 </PreferenceScreen>

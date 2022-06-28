@@ -16,7 +16,6 @@ import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.Angle;
 import com.atakmap.coremap.conversions.AngleUtilities;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
@@ -129,7 +128,8 @@ public class DesignatorTargetLine implements
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
             String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         if (key.equals("laserBasketDegrees")) {
             _showDegrees = sharedPreferences.getBoolean(key, true);
@@ -273,17 +273,16 @@ public class DesignatorTargetLine implements
         final GeoPoint tPoint = target.getPoint();
 
         // compute the angle to the designator
-        double[] da = DistanceCalculations.computeDirection(
-                designator.getPoint(), tPoint);
+        double rawBearing = GeoCalculations.bearingTo(designator.getPoint(), tPoint);
 
         // use the bearing of the given designator
         int bearing = (int) Math.round(ATAKUtilities
-                .convertFromTrueToMagnetic(designator.getPoint(), da[1]));
+                .convertFromTrueToMagnetic(designator.getPoint(), rawBearing));
 
         // compute the point at the given distance
         final GeoPoint dPoint;
         if (distance > 0) {
-            dPoint = GeoCalculations.pointAtDistance(tPoint, da[1] - 180,
+            dPoint = GeoCalculations.pointAtDistance(tPoint, rawBearing - 180,
                     distance);
         } else {
             dPoint = designator.getPoint();

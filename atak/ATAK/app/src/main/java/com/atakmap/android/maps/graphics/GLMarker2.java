@@ -246,13 +246,13 @@ public class GLMarker2 extends GLPointMapItem2 implements
         int offy = 0;
         float offz = 0f;
 
-        boolean adjustForIcon = (view.drawTilt > 0d);
+        boolean adjustForIcon = (view.currentPass.drawTilt > 0d);
         if (_icon != null) {
             adjustForIcon |= (_iconVisibility != Marker.ICON_GONE);
             if (_icon.getHeight() > 0 && adjustForIcon) {
                 offy = (int) (ICON_SCALE
                         * -(_icon.getHeight() - _icon.getAnchorY() - 1));
-                if (view.drawTilt > 0d) {
+                if (view.currentPass.drawTilt > 0d) {
                     // flip offset relative to top
                     offy = -offy;
 
@@ -261,7 +261,7 @@ public class GLMarker2 extends GLPointMapItem2 implements
                     if (_iconVisibility != Marker.ICON_GONE) {
                         offy += (_icon.getHeight() / 2d);
                         offz += (float) (-0.00025
-                                * Math.cos(Math.toRadians(view.drawTilt)));
+                                * Math.cos(Math.toRadians(view.currentPass.drawTilt)));
                     }
                 }
             }
@@ -273,7 +273,7 @@ public class GLMarker2 extends GLPointMapItem2 implements
         }
         GLLabelManager.VerticalAlignment verticalAlignment;
         if (adjustForIcon) {
-            verticalAlignment = (view.drawTilt > 0d)
+            verticalAlignment = (view.currentPass.drawTilt > 0d)
                     ? GLLabelManager.VerticalAlignment.Top
                     : GLLabelManager.VerticalAlignment.Bottom;
         } else {
@@ -703,7 +703,7 @@ public class GLMarker2 extends GLPointMapItem2 implements
                 // indicated no arrow and heading
 
                 GLES20FixedPipeline.glPushMatrix();
-                float f = 360f - _heading + (float) ortho.drawRotation;
+                float f = 360f - _heading + (float) ortho.currentPass.drawRotation;
                 // additional protection
                 if (Float.isNaN(f))
                     f = 0f;
@@ -714,7 +714,7 @@ public class GLMarker2 extends GLPointMapItem2 implements
             } else if ((_style & Marker.STYLE_ROTATE_HEADING_MASK) != 0) {
                 // draw the appropriate arrow on the map but do not rotate the icon
                 GLES20FixedPipeline.glPushMatrix();
-                float f = 360f - _heading + (float) ortho.drawRotation;
+                float f = 360f - _heading + (float) ortho.currentPass.drawRotation;
                 // additional protection
                 if (Float.isNaN(f))
                     f = 0f;
@@ -777,7 +777,7 @@ public class GLMarker2 extends GLPointMapItem2 implements
 
         ortho.scratch.geo.set(alt);
         forward(ortho, ortho.scratch.geo, _point, 0d, terrain);
-        if (ortho.drawTilt > 0d) {
+        if (ortho.currentPass.drawTilt > 0d) {
             // move up ~5 pixels from surface
             // ypos += 5;
             // move up half icon height
@@ -820,8 +820,8 @@ public class GLMarker2 extends GLPointMapItem2 implements
         double maxRes = subject.getMetaDouble("maxLabelRenderResolution",
                 Marker.DEFAULT_MAX_LABEL_RENDER_RESOLUTION);
 
-        return ortho.drawMapResolution > minRes
-                && ortho.drawMapResolution < maxRes;
+        return ortho.currentPass.drawMapResolution > minRes
+                && ortho.currentPass.drawMapResolution < maxRes;
     }
 
     /**
@@ -830,7 +830,7 @@ public class GLMarker2 extends GLPointMapItem2 implements
      * @return True to draw lollipop stick
      */
     private boolean shouldDrawLollipop(GLMapView ortho) {
-        if ((!getLollipopsVisible() && ortho.drawTilt > 0))
+        if ((!getLollipopsVisible() && ortho.currentPass.drawTilt > 0))
             return false;
         return ortho.currentScene.drawTilt > 0d
                 || ortho.currentPass.scene.camera.perspective && !_nadirClamp;

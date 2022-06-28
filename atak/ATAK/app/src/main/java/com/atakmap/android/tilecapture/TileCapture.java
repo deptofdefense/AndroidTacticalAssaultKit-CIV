@@ -152,7 +152,7 @@ public class TileCapture extends DatasetTileReader {
             tc = new TileCapture(reader);
             tc._srid = info.getSpatialReferenceID();
             tc._imprecise = new DefaultProjection(tc._srid);
-            tc._gsd = info.getMaxResolution(null);
+            tc._gsd = reader.getMaxResolution();
             return tc;
         } catch (Exception e) {
             Log.e(TAG, "Failed to parse tile parameters: " + info.getName(), e);

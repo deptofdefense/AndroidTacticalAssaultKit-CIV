@@ -14,9 +14,9 @@ import com.atakmap.coremap.locale.LocaleUtil;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
-import android.util.Xml;
 
 import com.atakmap.coremap.log.Log;
+import com.atakmap.coremap.xml.XMLUtils;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.io.UriFactory;
 
@@ -66,9 +66,7 @@ public class MobacMapSourceFactory {
     private static MobacMapSource parseXmlMapSource(InputStream stream) throws IOException {
         XmlPullParser parser = null;
         try {
-            parser = Xml.newPullParser();
-            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
-            parser.setFeature(Xml.FEATURE_RELAXED, true);
+            parser = XMLUtils.getXmlPullParser();
             parser.setInput(stream, null);
 
             MobacMapSource retval = null;

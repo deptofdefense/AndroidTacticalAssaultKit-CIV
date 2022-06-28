@@ -168,6 +168,7 @@ public class DrawingEllipseEditTool extends ButtonTool implements Undoable,
         m.setMetaBoolean("drag", true);
         m.setMetaBoolean("addToObjList", false);
         m.setMetaBoolean("nevercot", true);
+        m.setMetaBoolean("removable", false);
         m.setType("side_" + DrawingEllipse.COT_TYPE);
         m.setMetaString("how", "h-g-i-g-o");
         m.setMetaString("shapeUID", _ellipse.getUID());

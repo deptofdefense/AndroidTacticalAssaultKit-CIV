@@ -54,7 +54,6 @@ namespace TAK {
 					}
 				};
 
-
 				template <typename T>
 				struct Resolver {
 					static TAKErr resolve(T &r, const T &v) NOTHROWS {
@@ -160,6 +159,19 @@ namespace TAK {
 					typedef CaptureOfT<A3> A3Type;
 					typedef CaptureOfT<A4> A4Type;
 					typedef CaptureOfT<A5> A5Type;
+				};
+
+				template <typename R, typename A0, typename A1, typename A2, typename A3,
+					typename A4, typename A5, typename A6>
+					struct TaskArgs<TAKErr(*)(R&, A0, A1, A2, A3, A4, A5, A6)> {
+					typedef R ResultType;
+					typedef CaptureOfT<A0> A0Type;
+					typedef CaptureOfT<A1> A1Type;
+					typedef CaptureOfT<A2> A2Type;
+					typedef CaptureOfT<A3> A3Type;
+					typedef CaptureOfT<A4> A4Type;
+					typedef CaptureOfT<A5> A5Type;
+					typedef CaptureOfT<A6> A6Type;
 				};
 
 				template <typename Func>
@@ -300,6 +312,18 @@ namespace TAK {
 					TAKErr invoke(ResultType& r) NOTHROWS {
 						CAP_ID(0); CAP_ID(1); CAP_ID(2); CAP_ID(3); CAP_ID(4); CAP_ID(5);
 						return func(r, a0, a1, a2, a3, a4, a5);
+					}
+				};
+
+				// 7 Arg
+				template <typename Func, typename C0, typename C1, typename C2, typename C3, typename C4, typename C5, typename C6>
+				struct Capture<Func, C0, C1, C2, C3, C4, C5, C6> {
+					CAP_ST();
+					CAP_IT(0); CAP_IT(1); CAP_IT(2); CAP_IT(3); CAP_IT(4); CAP_IT(5); CAP_IT(6);
+					Capture(Func func, C0 c0, C1 c1, C2 c2, C3 c3, C4 c4, C5 c5, C6 c6) : func(func), c0(c0), c1(c1), c2(c2), c3(c3), c4(c4), c5(c5), c6(c6) { }
+					TAKErr invoke(ResultType& r) NOTHROWS {
+						CAP_ID(0); CAP_ID(1); CAP_ID(2); CAP_ID(3); CAP_ID(4); CAP_ID(5); CAP_ID(6);
+						return func(r, a0, a1, a2, a3, a4, a5, a6);
 					}
 				};
 

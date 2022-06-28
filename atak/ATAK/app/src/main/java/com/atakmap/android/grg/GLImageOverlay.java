@@ -98,7 +98,7 @@ public class GLImageOverlay extends AbstractGLMapItem2 {
             this.initialized = true;
         }
 
-        final double mapGsd = ortho.drawMapResolution;
+        final double mapGsd = ortho.currentPass.drawMapResolution;
 
         // XXX - consider icon/label when we're zoomed out sufficient far
 

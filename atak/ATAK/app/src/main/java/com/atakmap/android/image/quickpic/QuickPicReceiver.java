@@ -31,6 +31,7 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 
 import org.apache.sanselan.formats.tiff.TiffImageMetadata;
 import org.apache.sanselan.formats.tiff.write.TiffOutputSet;
+import com.atakmap.annotations.ModifierApi;
 
 import java.io.File;
 import java.util.HashMap;
@@ -63,6 +64,7 @@ public class QuickPicReceiver extends BroadcastReceiver {
     private MapView _mapView;
     private static volatile MapGroup _quickPicMapGroup;
 
+    @ModifierApi(since = "4.5", target="4.8", modifiers={})
     public QuickPicReceiver(Context context, MapView mapView) {
         _mapView = mapView;
 

@@ -4,59 +4,46 @@
               android:layout_width="match_parent"
               android:layout_height="match_parent">
 
-    <FrameLayout
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="@dimen/auto_margin"
-        android:id="@+id/prefFragContain"/>
-
-    <LinearLayout
-        android:orientation="vertical"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_horizontal">
-
-        <TextView
-            android:text="@string/preview"
+        android:padding="@dimen/auto_margin2">
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/nav_button_size"
+            android:src="@drawable/navbar_preview_background"/>
+        <LinearLayout
+            android:id="@+id/preview_buttons"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="@dimen/auto_margin"
-            android:textSize="@dimen/draper_title_font"/>
-
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:orientation="horizontal"
+            android:layout_centerInParent="true">
             <ImageView
-                android:layout_width="match_parent"
-                android:layout_height="@dimen/nav_button_size"
-                android:src="@drawable/navbar_preview_background"/>
-            <LinearLayout
-                android:id="@+id/preview_buttons"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_centerInParent="true">
-                <ImageButton
-                    android:src="@drawable/nav_bloodhound"
-                    android:layout_margin="0dp"
-                    style="@style/NavButton"/>
-                <ImageButton
-                    android:src="@drawable/nav_redx"
-                    style="@style/NavButton"/>
-                <ImageButton
-                    android:src="@drawable/nav_point_dropper"
-                    style="@style/NavButton"/>
-                <ImageButton
-                    android:src="@drawable/nav_maps"
-                    style="@style/NavButton"/>
-                <ImageButton
-                    android:src="@drawable/nav_overlay_manager"
-                    style="@style/NavButton"/>
-                <ImageButton
-                    android:src="@drawable/nav_power"
-                    style="@style/NavButton"/>
-            </LinearLayout>
-        </RelativeLayout>
-    </LinearLayout>
+                android:src="@drawable/nav_bloodhound"
+                android:layout_margin="0dp"
+                style="@style/NavButton"/>
+            <ImageView
+                android:src="@drawable/nav_redx"
+                style="@style/NavButton"/>
+            <ImageView
+                android:src="@drawable/nav_point_dropper"
+                style="@style/NavButton"/>
+            <ImageView
+                android:src="@drawable/nav_maps"
+                style="@style/NavButton"/>
+            <ImageView
+                android:src="@drawable/nav_overlay_manager"
+                style="@style/NavButton"/>
+            <ImageView
+                android:src="@drawable/nav_power"
+                style="@style/NavButton"/>
+        </LinearLayout>
+    </RelativeLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:id="@+id/prefFragContain"/>
 
 </LinearLayout>

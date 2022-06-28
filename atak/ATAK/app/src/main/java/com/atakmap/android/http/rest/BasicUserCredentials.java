@@ -17,14 +17,26 @@ public class BasicUserCredentials implements Parcelable {
 
     private final String mBase64;
 
+    /**
+     * Constructs a Basic User Credential from a base64 encoded string
+     * @param base64 the base 64 encoded string representing basic user credentials
+     */
     public BasicUserCredentials(String base64) {
         mBase64 = base64;
     }
 
+    /**
+     * Return the base 64 encoded basic user credentials
+     * @return the basic user credentials in base64 encoding.
+     */
     public String getBase64() {
         return mBase64;
     }
 
+    /**
+     * Simple validity check verifing that the basic encoding is not empty
+     * @return true if the base64 encoding is not empty
+     */
     public boolean isValid() {
         return !FileSystemUtils.isEmpty(mBase64);
     }

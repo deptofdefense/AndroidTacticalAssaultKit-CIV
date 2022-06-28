@@ -23,7 +23,7 @@ public abstract class ContactDetailView extends Fragment {
         _marker = marker;
         _contact = contact;
 
-        //TODO look at CotInfoView.clean, set marker null, remove on point chagned listener
+        //TODO look at CotInfoView.clean, set marker null, remove on point changed listener
         refresh();
     }
 

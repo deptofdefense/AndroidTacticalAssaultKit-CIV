@@ -1,0 +1,21 @@
+<project>
+
+  <target name="clean">
+    <delete dir="bin"/>
+  </target>
+
+  <target name="compile">
+    <mkdir dir="bin/classes"/>
+    <javac srcdir="src" destdir="bin/classes" target="1.6">
+    </javac>
+  </target>
+
+  <target name="jar" depends="compile">
+    <jar jarfile="bin/prijni.jar" basedir="bin/classes">
+    </jar>
+  </target>
+
+  <target name="install" depends="jar">
+    <copy file="bin/prijni.jar" todir="../../../ATAKMapEngine/libs"/>
+  </target>
+</project>

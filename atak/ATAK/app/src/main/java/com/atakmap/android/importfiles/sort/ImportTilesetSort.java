@@ -35,9 +35,7 @@ public class ImportTilesetSort extends ImportInternalSDResolver {
         // it is a .zip, now lets see if it is a tile set
         try {
             return TilesetInfo.parse(file) != null;
-        } catch (IOException e) {
-            return false;
-        } catch (IllegalStateException e) {
+        } catch (IOException | IllegalStateException e) {
             return false;
         }
     }

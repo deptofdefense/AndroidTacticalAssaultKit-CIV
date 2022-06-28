@@ -309,6 +309,8 @@ public class ResectionBearingDialog implements View.OnClickListener,
                 + 90;
         if (_magToggle.isChecked())
             b = ATAKUtilities.convertFromTrueToMagnetic(point, b);
+        if (b < 0)
+            b += 360;
         _bearingTxt.setText(_df.format(b));
         return true;
     }

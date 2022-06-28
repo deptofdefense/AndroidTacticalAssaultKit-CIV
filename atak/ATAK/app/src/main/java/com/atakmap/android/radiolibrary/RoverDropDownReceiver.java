@@ -234,14 +234,14 @@ public class RoverDropDownReceiver extends DropDownReceiver implements
         NetworkDevice nd = getNetworkMapDevice();
         if (nd != null) {
             String prefAddress = nd.getPreferredAddress();
-            if (prefAddress != null
-                    && nd.equals("192.168.50.200")) {
-                sharedPreferences.edit().putString("rover_ip_address",
-                        "192.168.50.1").apply();
-            } else if (nd != null
-                    && nd.equals("192.168.80.200")) {
-                sharedPreferences.edit().putString("rover_ip_address",
-                        "192.168.80.1").apply();
+            if (prefAddress != null) {
+                if (prefAddress.equals("192.168.50.200")) {
+                    sharedPreferences.edit().putString("rover_ip_address",
+                            "192.168.50.1").apply();
+                } else if (prefAddress.equals("192.168.80.200")) {
+                    sharedPreferences.edit().putString("rover_ip_address",
+                            "192.168.80.1").apply();
+                }
             }
         }
 
@@ -2368,7 +2368,8 @@ public class RoverDropDownReceiver extends DropDownReceiver implements
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
             String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         if (key.equals(PREF_KEY_ANALOG_IP)
                 || key.equals(PREF_KEY_ANALOG_PORT)) {

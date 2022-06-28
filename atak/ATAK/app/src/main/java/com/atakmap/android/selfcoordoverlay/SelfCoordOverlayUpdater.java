@@ -15,6 +15,7 @@ import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.PointMapItem.OnPointChangedListener;
 import com.atakmap.android.menu.MapMenuReceiver;
+import com.atakmap.android.navigation.SelfCoordBottomBar;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.android.toolbar.tools.SpecifySelfLocationTool;
 import com.atakmap.android.util.ATAKConstants;
@@ -38,6 +39,7 @@ import com.atakmap.coremap.conversions.Angle;
 import com.atakmap.coremap.conversions.AngleUtilities;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
+import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.assets.Icon;
@@ -47,6 +49,7 @@ import com.atakmap.coremap.maps.coords.MGRSPoint;
 import com.atakmap.coremap.maps.coords.NorthReference;
 import com.atakmap.util.Disposable;
 
+import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -58,22 +61,34 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.view.MotionEvent;
+import android.view.View;
 
 public class SelfCoordOverlayUpdater extends CotStreamListener implements
         MapEventDispatcher.MapEventDispatchListener,
         OnSharedPreferenceChangeListener, OnPointChangedListener,
-        MapWidget.OnClickListener {
+        MapWidget.OnClickListener, View.OnClickListener {
 
     private static final String TAG = "SelfCoordOverlayUpdater";
+
+    // Display preference
+    public static final String PREF_DISPLAY = "self_coord_info_display";
+    public static final String DISPLAY_BOTTOM_RIGHT = "bottom_right";
+    public static final String DISPLAY_BOTTOM_BAR = "bottom_bar";
+    public static final String DISPLAY_NONE = "none";
+
+    // Old preference for toggling display
+    private static final String PREF_LEGACY_DISPLAY = "show_self_coordinate_overlay";
+
     private final MapView _mapView;
     protected static final DecimalFormat _noDecimalFormat = LocaleUtil
             .getDecimalFormat("0");
     protected TextWidget _text, _noGpsMessage;
+    private final SelfCoordBottomBar _bottomBar;
     private Marker _self;
     private String _toggle;
     private boolean _enlarge;
     private boolean _visible = true;
-    private boolean _show;
+    private String _displayType;
     private boolean _noGps = true;
 
     protected Updater calc = null;
@@ -225,9 +240,17 @@ public class SelfCoordOverlayUpdater extends CotStreamListener implements
         _northReference = Integer
                 .parseInt(_prefs.getString("rab_north_ref_pref",
                         String.valueOf(NorthReference.MAGNETIC.getValue())));
-        _show = _prefs.getBoolean("show_self_coordinate_overlay", true);
         _toggle = _prefs.getString("self_coord_action", "panto");
         _enlarge = _prefs.getBoolean("selfcoord_legacy_enlarge", false);
+
+        // Where to display the coordinate info
+        if (_prefs.contains(PREF_DISPLAY)) {
+            // Whether to display the bottom-right widget
+            _displayType = getDisplayType();
+        } else {
+            // Legacy conversion
+            onSharedPreferenceChanged(_prefs, PREF_LEGACY_DISPLAY);
+        }
 
         DocumentedIntentFilter selfLocationSpecifiedFilter = new DocumentedIntentFilter();
         selfLocationSpecifiedFilter
@@ -240,6 +263,11 @@ public class SelfCoordOverlayUpdater extends CotStreamListener implements
                         updateTextVisibility();
                     }
                 }, selfLocationSpecifiedFilter);
+
+        // View that displays coordinate data on the bottom of the screen
+        _bottomBar = ((Activity) _context).findViewById(
+                R.id.self_coordinate_bar);
+        _bottomBar.setOnClickListener(this);
 
         _instance = this;
     }
@@ -266,18 +294,23 @@ public class SelfCoordOverlayUpdater extends CotStreamListener implements
             final SharedPreferences sp,
             final String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         switch (key) {
-            case "show_self_coordinate_overlay":
-                _show = sp.getBoolean(key, true);
-
-                // acceptable two step to force showGPSWidget to work
-                boolean vis = _visible;
-                _visible = !vis;
-                showGPSWidget(vis);
-
+            // Where to display the self coordinate
+            case PREF_DISPLAY:
+                _displayType = getDisplayType();
+                updateTextVisibility();
                 break;
+
+            // Legacy display preference redirect
+            case PREF_LEGACY_DISPLAY:
+                boolean show = sp.getBoolean(key, true);
+                sp.edit().putString(PREF_DISPLAY,
+                        show ? DISPLAY_BOTTOM_RIGHT : DISPLAY_NONE).apply();
+                break;
+
             case "alt_unit_pref":
             case "alt_display_pref":
                 calc.invalidateCache();
@@ -322,11 +355,24 @@ public class SelfCoordOverlayUpdater extends CotStreamListener implements
         calc.change();
     }
 
+    /**
+     * Get the GPS text widget
+     * @return Text widget
+     */
     public TextWidget getWidget() {
         if (_text != null)
             return _text;
         else
             return _noGpsMessage;
+    }
+
+    /**
+     * Get the self coordinate info display position/type
+     * @return Either {@link #DISPLAY_BOTTOM_RIGHT}, {@link #DISPLAY_BOTTOM_BAR}
+     * or {@link #DISPLAY_NONE}
+     */
+    public String getDisplayType() {
+        return _prefs.getString(PREF_DISPLAY, DISPLAY_BOTTOM_RIGHT);
     }
 
     protected class Updater implements Runnable, Disposable {
@@ -489,25 +535,17 @@ public class SelfCoordOverlayUpdater extends CotStreamListener implements
             }
             int firstLine = Color.CYAN;
 
-            StringBuilder coordText = new StringBuilder(512);
-
-            coordText
-                    .append(_mapView.getContext().getString(
-                            R.string.callsign))
-                    .append(": ");
-            coordText.append(callsign);
-
-            coordText.append("\n");
-
             // Comparisons against gpsUpdateTick are against SystemClock.elapsedRealtime as per the definition in
             // LocationMapComponent.
+
+            String source = "";
 
             if ((prefix != null && prefix.equals("fake"))
                     || item == null
                     || SystemClock.elapsedRealtime()
                             - item.getMetaLong("gpsUpdateTick",
                                     0) > LocationMapComponent.GPS_TIMEOUT_MILLIS) {
-                coordText.insert(0, "NO GPS\n");
+                source = "NO GPS";
                 firstLine = Color.RED;
 
                 accuracyString = "+/- ---m";
@@ -518,11 +556,8 @@ public class SelfCoordOverlayUpdater extends CotStreamListener implements
             if (prefix != null
                     && _mapView.getMapData().containsKey(
                             prefix + "LocationSource")) {
-                coordText.insert(
-                        0,
-                        _mapView.getMapData().getString(
-                                prefix + "LocationSource")
-                                + "\n");
+                source = _mapView.getMapData().getString(
+                        prefix + "LocationSource");
                 if (_mapView.getMapData().containsKey(
                         prefix + "LocationSourceColor")) {
                     firstLine = Color.parseColor(_mapView.getMapData()
@@ -532,6 +567,14 @@ public class SelfCoordOverlayUpdater extends CotStreamListener implements
                     firstLine = Color.GREEN;
                 }
             }
+
+            StringBuilder coordText = new StringBuilder(512);
+            if (!FileSystemUtils.isEmpty(source))
+                coordText.append(source).append("\n");
+            coordText.append(_mapView.getContext().getString(R.string.callsign))
+                    .append(": ");
+            coordText.append(callsign);
+            coordText.append("\n");
 
             final float callsignWidth = _format.measureTextWidth(coordText
                     .toString());
@@ -589,6 +632,27 @@ public class SelfCoordOverlayUpdater extends CotStreamListener implements
                 }
                 _text.setColors(colors);
             }
+
+            // Bundle coordinate text into a struct
+            SelfCoordText txt = new SelfCoordText();
+            txt.source = source;
+            txt.sourceColor = firstLine;
+            txt.callsign = callsign;
+            txt.location = locationStr;
+            txt.altitude = altString;
+            txt.heading = orientationString;
+            txt.speed = speedString;
+            txt.accuracy = accuracyString;
+
+            _mapView.post(new Runnable() {
+                @Override
+                public void run() {
+                    // Pass coordinate text to the bottom bar
+                    // TODO: Interface for registering other text receivers
+                    if (_bottomBar != null)
+                        _bottomBar.onSelfCoordinateChanged(txt);
+                }
+            });
 
             synchronized (this) {
                 if (_streamChanged) {
@@ -698,6 +762,21 @@ public class SelfCoordOverlayUpdater extends CotStreamListener implements
         }
     }
 
+    @Override
+    public void onClick(View v) {
+        // Redirect clicks on the bottom bar to the appropriate widget to
+        // ensure identical behavior
+        if (v == _bottomBar && DISPLAY_BOTTOM_BAR.equals(_displayType)) {
+            MotionEvent event = MotionEvent.obtain(0, 0,
+                    MotionEvent.ACTION_DOWN, 0, 0, 0);
+            if (_noGps)
+                onMapWidgetClick(_noGpsMessage, event);
+            else
+                onMapWidgetClick(_text, event);
+            event.recycle();
+        }
+    }
+
     public boolean showGPSWidget(boolean show) {
         if (_visible != show) {
             _visible = show;
@@ -708,8 +787,10 @@ public class SelfCoordOverlayUpdater extends CotStreamListener implements
     }
 
     protected void updateTextVisibility() {
-        _noGpsMessage.setVisible(_noGps && _visible && _show);
-        _text.setVisible(!_noGps && _visible && _show);
+        boolean show = _displayType == null || _displayType.equals(
+                DISPLAY_BOTTOM_RIGHT);
+        _noGpsMessage.setVisible(_noGps && _visible && show);
+        _text.setVisible(!_noGps && _visible && show);
     }
 
     protected synchronized int getConnectedDrawable() {

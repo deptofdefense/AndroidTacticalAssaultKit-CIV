@@ -41,6 +41,10 @@ public class Dt2File {
         }
     }
 
+    /**
+     * Wrap a DTED file
+     * @param file the file to wrap
+     */
     public Dt2File(File file) {
         this(Dt2FileWatcher.getRelativePath(file));
     }

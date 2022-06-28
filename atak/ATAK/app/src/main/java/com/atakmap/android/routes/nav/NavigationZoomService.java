@@ -9,6 +9,7 @@ import com.atakmap.android.routes.Route;
 import com.atakmap.android.routes.RouteNavigationManager;
 import com.atakmap.android.routes.RouteNavigator;
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.map.CameraController;
 
 /**
  * Manages zooming in and out throughout the course of navigation.
@@ -36,7 +37,8 @@ public class NavigationZoomService implements
         if (preferences.getBoolean(
                 SceneSettingService.PREF_TRADITIONAL_NAV_MODE,
                 SceneSettingService.TRADITIONAL_NAV_MODE_DEFAULT)) {
-            routeNavigator.getMapView().getMapController().zoomTo(zoom, true);
+            CameraController.Programmatic.zoomTo(routeNavigator.getMapView().getRenderer3(),
+                    zoom, true);
         }
     }
 

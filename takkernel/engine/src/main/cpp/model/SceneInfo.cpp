@@ -2,6 +2,7 @@
 
 #include <map>
 #include <vector>
+#include <cstring>
 
 #include "feature/Point2.h"
 #include "feature/GeometryCollection2.h"
@@ -28,6 +29,7 @@ SceneInfo::SceneInfo() NOTHROWS
       localFrame(nullptr, nullptr),
       resourceAliases(nullptr, nullptr),
 	  altitudeMode(TEAM_Absolute),
+      capabilities(CapabilitiesType::All),
 	  srid(-1),
       aabb(nullptr, nullptr)
 {}
@@ -43,6 +45,7 @@ SceneInfo::SceneInfo(const SceneInfo &other) NOTHROWS
       localFrame(other.localFrame ? new(std::nothrow) Matrix2(*other.localFrame) : nullptr, Memory_deleter_const<Matrix2>),
       resourceAliases(nullptr, nullptr),
       altitudeMode(other.altitudeMode),
+      capabilities(other.capabilities),
       srid(other.srid),
       aabb(std::move(Envelope2Ptr(other.aabb.get() ? new Envelope2(*other.aabb) : nullptr, Memory_deleter_const<Envelope2>)))
 {
@@ -94,8 +97,9 @@ SceneInfo &SceneInfo::operator=(const SceneInfo &other) NOTHROWS
         this->localFrame.reset();
     this->srid = other.srid;
     this->altitudeMode = other.altitudeMode;
+    this->capabilities = other.capabilities;
     this->minDisplayResolution = other.minDisplayResolution;
-    this->maxDisplayResolution = other.maxDisplayResolution; \
+    this->maxDisplayResolution = other.maxDisplayResolution;
     this->resolution = other.resolution;
     if (other.aabb)
         aabb = Envelope2Ptr(new Envelope2(*other.aabb), Memory_deleter_const<Envelope2>);
@@ -278,7 +282,7 @@ ENGINE_API TAK::Engine::Util::TAKErr TAK::Engine::Model::SceneInfoFactory_create
 
                 if (sceneInfoPtr->srid == -1) {
                     if (georeferencerRegistry->locate(*sceneInfoPtr) != TE_Ok)
-                        Logger_log(TELL_Debug, "Unable to georeference %s", sceneInfoPtr->name);
+                        Logger_log(TELL_Debug, "Unable to georeference %s", sceneInfoPtr->name.get());
                 }
                 code = iterPtr->next();
                 TE_CHECKBREAK_CODE(code);

@@ -18,6 +18,10 @@ public class AttachmentBillboardLayer extends AbstractLayer implements
     private GLAttachmentBillboardLayer _glSubject;
     private boolean _nadirClamp;
 
+    /**
+     * Construct an attachment layer that shows up as a bilboard when in driving mode
+     * @param view the mapview to use
+     */
     public AttachmentBillboardLayer(MapView view) {
         super("Attachment Preview");
         _mapView = view;
@@ -37,6 +41,9 @@ public class AttachmentBillboardLayer extends AbstractLayer implements
         setVisible(false);
     }
 
+    /**
+     * Dispose of the layer.
+     */
     public void dispose() {
         _mapView.getRenderer3().unregisterControl(this, this);
         _prefs.unregisterListener(this);
@@ -67,7 +74,8 @@ public class AttachmentBillboardLayer extends AbstractLayer implements
         if (_glSubject == null)
             return;
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         if (key.equals("route_billboard_distance_m"))
             setSelfMarkerDistance(_prefs.get(key, 500));

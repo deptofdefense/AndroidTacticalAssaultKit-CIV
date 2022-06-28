@@ -39,13 +39,12 @@
                     android:maxLines="1"
                     android:drawableStart="@drawable/ic_menu_actionbar_placeholder"/>
 
-                <ImageButton
+                <com.atakmap.android.gui.ColorButton
+                    style="@style/darkColorButton"
                     android:id="@+id/userIconColorBtn"
                     android:layout_width="50dp"
                     android:layout_height="match_parent"
-                    android:padding="@dimen/auto_margin"
-                    android:src="@drawable/color_rectangle"
-                    style="@style/darkButton"/>
+                    android:padding="@dimen/scroll_margin"/>
             </LinearLayout>
 
             <com.atakmap.android.user.ExpandableGridView

@@ -141,6 +141,10 @@ public class UnitPreferences extends AtakPreferences {
         return ref != null ? ref : NorthReference.MAGNETIC;
     }
 
+    /**
+     * Set the north reference for the default units.
+     * @param ref the reference to be used.
+     */
     public void setNorthReference(NorthReference ref) {
         set(NORTH_REFERENCE, String.valueOf(ref.getValue()));
     }
@@ -159,6 +163,12 @@ public class UnitPreferences extends AtakPreferences {
         return ret;
     }
 
+    /**
+     * Given a point, format the point using the default preference into a human readable format.
+     * @param point the point to be used
+     * @param includeAlt if altitude should be included in the human readable string
+     * @return the humand readable string for the point
+     */
     public String formatPoint(GeoPoint point, boolean includeAlt) {
         return formatPoint(new GeoPointMetaData(point), includeAlt);
     }
@@ -205,6 +215,11 @@ public class UnitPreferences extends AtakPreferences {
         return ret;
     }
 
+    /**
+     * Produce a human-readable altitude string
+     * @param point Altitude point
+     * @return Altitude string
+     */
     public String formatAltitude(GeoPoint point) {
         return formatAltitude(new GeoPointMetaData(point));
     }

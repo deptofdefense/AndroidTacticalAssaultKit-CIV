@@ -439,7 +439,7 @@ public class TadilJListActivity extends MetricActivity {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count,
                     int after) {
-                editText.setBackgroundDrawable(defaultStyle);
+                editText.setBackground(defaultStyle);
             }
 
             @Override

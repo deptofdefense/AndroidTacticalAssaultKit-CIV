@@ -75,8 +75,9 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
     // Height extrusion
     private double _height;
     private boolean _hasHeight;
-    private DoubleBuffer _outlinePointsPreForward, _fillPointsPreForward;
-    private FloatBuffer _outlinePoints, _fillPoints;
+    private DoubleBuffer _fillPointsPreForward;
+    private FloatBuffer _fillPoints;
+    private final GLBatchLineString _3dOutline;
     private boolean _extrudeInvalid;
     private boolean _extrudeCrossesIDL;
     private int _extrudePrimaryHemi;
@@ -111,6 +112,10 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
         _labelManager = _glMapView.getLabelManager();
 
         impl = new GLBatchLineString(surface);
+
+        _3dOutline = new GLBatchLineString(surface);
+        _3dOutline.setTessellationEnabled(false);
+        _3dOutline.setAltitudeMode(Feature.AltitudeMode.Absolute);
 
         if (surface instanceof MapRenderer3)
             _surfaceCtrl = ((MapRenderer3) surface)
@@ -211,6 +216,7 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
             @Override
             public void run() {
                 impl.setStyle(update[0]);
+                _3dOutline.setStyle(update[0]);
                 if (_surfaceCtrl != null &&
                         _points != null &&
                         _points[0] != null &&
@@ -425,17 +431,13 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
     }
 
     private void freeExtrusionBuffers() {
-        Unsafe.free(_outlinePointsPreForward);
-        _outlinePointsPreForward = null;
-
-        Unsafe.free(_outlinePoints);
-        _outlinePoints = null;
-
         Unsafe.free(_fillPointsPreForward);
         _fillPointsPreForward = null;
 
         Unsafe.free(_fillPoints);
         _fillPoints = null;
+
+        _3dOutline.release();
     }
 
     /**
@@ -610,20 +612,29 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
                                 & GLAntiMeridianHelper.MASK_IDL_CROSS) != 0;
                     }
 
-                    _outlinePointsPreForward = GLExtrude.extrudeOutline(
+                    // Extrude the line based on height
+                    DoubleBuffer extruded = GLExtrude.extrudeOutline(
                             Double.NaN, points, extOptions, heights);
-                    _outlinePoints = Unsafe.allocateDirect(
-                            _outlinePointsPreForward.limit(),
-                            FloatBuffer.class);
-                    _outlinePointsPreForward.rewind();
+                    extruded.rewind();
 
+                    // Normalize IDL crossing
                     int idlInfo = GLAntiMeridianHelper.normalizeHemisphere(3,
-                            _outlinePointsPreForward, _outlinePointsPreForward);
-                    _outlinePointsPreForward.flip();
+                            extruded, extruded);
+                    extruded.flip();
                     _extrudePrimaryHemi = (idlInfo
                             & GLAntiMeridianHelper.MASK_PRIMARY_HEMISPHERE);
                     _extrudeCrossesIDL = (idlInfo
                             & GLAntiMeridianHelper.MASK_IDL_CROSS) != 0;
+
+                    // Copy and release buffer to regular double array
+                    double[] pts = new double[extruded.limit()];
+                    extruded.get(pts);
+                    Unsafe.free(extruded);
+
+                    // Convert to line string and pass to 3D outline renderer
+                    LineString ls = new LineString(3);
+                    ls.addPoints(pts, 0, 2, 3);
+                    _3dOutline.setGeometry(ls);
 
                     _extrudeInvalid = false;
                 }
@@ -709,36 +720,7 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
                     GLES30.glDisable(GLES30.GL_POLYGON_OFFSET_FILL);
                 }
 
-                // validate the render vertices
-                if (rebuildExtrusionVertices) {
-                    _outlinePoints.clear();
-                    for (int i = 0; i < _outlinePointsPreForward.limit()
-                            / 3; i++) {
-                        final double lng = _outlinePointsPreForward.get(i * 3);
-                        final double lat = _outlinePointsPreForward
-                                .get(i * 3 + 1);
-                        final double alt = _outlinePointsPreForward
-                                .get(i * 3 + 2);
-                        ortho.scratch.geo.set(lat, lng, alt);
-                        ortho.currentPass.scene.mapProjection.forward(
-                                ortho.scratch.geo, ortho.scratch.pointD);
-                        _outlinePoints.put((float) (ortho.scratch.pointD.x
-                                - _extrusionCentroidProj.x));
-                        _outlinePoints.put((float) (ortho.scratch.pointD.y
-                                - _extrusionCentroidProj.y));
-                        _outlinePoints.put((float) (ortho.scratch.pointD.z
-                                - _extrusionCentroidProj.z));
-                    }
-                    _outlinePoints.flip();
-                }
-
-                GLES20FixedPipeline.glLineWidth(this.strokeWidth
-                        / ortho.currentPass.relativeScaleHint);
-                GLES20FixedPipeline.glVertexPointer(3, GLES30.GL_FLOAT, 0,
-                        _outlinePoints);
-                GLES20FixedPipeline.glColor4f(r, g, b, 1.0f);
-                GLES20FixedPipeline.glDrawArrays(GLES30.GL_LINES, 0,
-                        _outlinePoints.limit() / 3);
+                _3dOutline.draw(ortho);
 
                 GLES20FixedPipeline
                         .glDisableClientState(

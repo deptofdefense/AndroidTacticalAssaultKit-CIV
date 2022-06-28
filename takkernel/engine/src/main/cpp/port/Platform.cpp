@@ -209,3 +209,17 @@ char TAK::Engine::Port::Platform_pathSep() NOTHROWS {
     return '/';
 #endif
 }
+
+std::size_t TAK::Engine::Port::Platform_max_align() NOTHROWS {
+    std::size_t ret;
+
+#ifdef TE_GCC48X_COMPAT
+    // gcc 4.8 (and lower, if supported at all) place max_align_t outside
+    // of std namespace
+    ret = alignof(::max_align_t);
+#else
+    ret = alignof(std::max_align_t);
+#endif
+    return ret;
+}
+

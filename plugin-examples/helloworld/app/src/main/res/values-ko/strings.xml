@@ -222,6 +222,7 @@
         <item>New Zealand</item>
         <item>India</item>
     </string-array>
+    <string name="svgMarker">Create a marker with a SVG Icon</string>
 
 
 </resources>

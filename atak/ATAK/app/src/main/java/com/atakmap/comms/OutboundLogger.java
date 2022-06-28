@@ -53,7 +53,8 @@ class OutboundLogger implements CommsLogger,
     @Override
     public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         if (key.compareTo("lognettraffictofile") == 0) {
             log = prefs.getBoolean("lognettraffictofile", false);

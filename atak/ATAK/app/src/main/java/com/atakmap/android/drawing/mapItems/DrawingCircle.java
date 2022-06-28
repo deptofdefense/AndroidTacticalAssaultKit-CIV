@@ -35,7 +35,6 @@ import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.cot.event.CotPoint;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.conversion.EGM96;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -420,8 +419,7 @@ public class DrawingCircle extends Shape implements
         if (!updatingRadiusMarker && radius != null && oldCenter != null
                 && !oldCenter.equals(point.get())) {
 
-            double bearing = DistanceCalculations.computeDirection(
-                    oldCenter, radius.getPoint())[1];
+            double bearing = GeoCalculations.bearingTo(oldCenter, radius.getPoint());
             GeoPoint rPoint = GeoCalculations.pointAtDistance(point.get(),
                     bearing, getRadius());
 
@@ -641,8 +639,8 @@ public class DrawingCircle extends Shape implements
     }
 
     @Override
-    public void setBasicLineStyle(int basicLineStyle) {
-        super.setBasicLineStyle(basicLineStyle);
+    protected void onStrokeStyleChanged() {
+        super.onStrokeStyleChanged();
         refresh();
     }
 
@@ -708,8 +706,9 @@ public class DrawingCircle extends Shape implements
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sp, String key) {
- 
-        if (key == null) return;
+
+        if (key == null)
+            return;
 
         if (UnitPreferences.RANGE_SYSTEM.equals(key))
             refresh();

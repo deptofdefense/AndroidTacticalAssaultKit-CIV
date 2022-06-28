@@ -22,6 +22,7 @@ import com.atakmap.android.geofence.monitor.GeoFenceMonitor;
 import com.atakmap.android.hierarchy.HierarchyListItem;
 import com.atakmap.android.hierarchy.HierarchyListReceiver;
 import com.atakmap.android.hierarchy.action.Action;
+import com.atakmap.android.hierarchy.action.Delete;
 import com.atakmap.android.hierarchy.action.GoTo;
 import com.atakmap.android.hierarchy.action.Search;
 import com.atakmap.android.hierarchy.items.AbstractChildlessListItem;
@@ -45,7 +46,7 @@ import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.assets.Icon;
 import com.atakmap.coremap.maps.coords.DirectionType;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.spatial.kml.KMLUtil;
@@ -64,7 +65,7 @@ import java.util.UUID;
  *
  */
 public class GeoFenceListModel extends AbstractHierarchyListItem2
-        implements GoTo, MapItemUser, Search, View.OnClickListener,
+        implements GoTo, MapItemUser, Search, Delete, View.OnClickListener,
         View.OnLongClickListener {
 
     private static final String TAG = "GeoFenceListModel";
@@ -348,8 +349,8 @@ public class GeoFenceListModel extends AbstractHierarchyListItem2
      * Partially based on MapItemHierarchyListItem
      */
     private class GeoFenceAlertListItem extends AbstractChildlessListItem
-            implements GoTo, View.OnClickListener, View.OnLongClickListener,
-            MapItemUser {
+            implements GoTo, Delete, View.OnClickListener,
+            View.OnLongClickListener, MapItemUser {
 
         private static final String TAG = "GeoFenceAlertListItem";
         private final MapItem _fenceShape;
@@ -448,14 +449,6 @@ public class GeoFenceListModel extends AbstractHierarchyListItem2
                     color = marker.getIcon().getColor(marker.getState());
             }
             return color;
-        }
-
-        @Override
-        public <T extends Action> T getAction(Class<T> clazz) {
-            if (clazz.equals(GoTo.class))
-                return clazz.cast(this);
-
-            return null;
         }
 
         @Override
@@ -646,14 +639,16 @@ public class GeoFenceListModel extends AbstractHierarchyListItem2
                         }
                     }
 
-                    double[] da = DistanceCalculations
-                            .computeDirection(detectedPoint, _alert
+                    double bearing = GeoCalculations.bearingTo(detectedPoint, _alert
+                            .getItem().getPoint());
+
+                    double distance = GeoCalculations.distanceTo(detectedPoint, _alert
                                     .getItem().getPoint());
                     String dirString = SpanUtilities.formatType(
-                            Span.METRIC, da[0], Span.METER)
+                            Span.METRIC, distance, Span.METER)
                             + " "
                             +
-                            DirectionType.getDirection(da[1])
+                            DirectionType.getDirection(bearing)
                                     .getAbbreviation();
 
                     String message;
@@ -742,6 +737,15 @@ public class GeoFenceListModel extends AbstractHierarchyListItem2
             b.setNegativeButton(R.string.cancel, null);
             b.show();
 
+            return true;
+        }
+
+        @Override
+        public boolean delete() {
+            final GeoFenceMonitor monitor = _manager.getMonitor(_item.getUID());
+            if (monitor == null)
+                return false;
+            _manager.dismiss(monitor, _alert, false);
             return true;
         }
     }

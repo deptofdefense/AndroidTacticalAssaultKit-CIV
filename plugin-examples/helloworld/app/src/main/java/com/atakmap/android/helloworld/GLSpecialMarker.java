@@ -69,13 +69,43 @@ public class GLSpecialMarker extends GLPointMapItem2
     public GLSpecialMarker(MapRenderer surface, PointMapItem subject) {
         super(surface, subject, GLMapView.RENDER_PASS_SPRITES);
         markerRenderer = new GLMarker2(surface, (Marker) subject); //, GLMapView.RENDER_PASS_SPRITES);
-        markerRenderer.startObserving();
-
         this.subject = subject;
+    }
+
+    @Override
+    public void startObserving() {
+        super.startObserving();
+        markerRenderer.startObserving();
+        
+    }
+
+    @Override
+    public void stopObserving() {
+        super.stopObserving();
+        markerRenderer.stopObserving();
+    }
+
+    @Override
+    public void setLollipopsVisible(boolean v) {
+        super.setLollipopsVisible(v);
+        markerRenderer.setLollipopsVisible(v);
+    }
+
+    @Override
+    public void setClampToGroundAtNadir(boolean v) {
+        super.setClampToGroundAtNadir(v);
+        markerRenderer.setClampToGroundAtNadir(v);
+    }
+
+    @Override
+    public boolean getClampToGroundAtNadir() {
+        return super.getClampToGroundAtNadir();
     }
 
     /**************************************************************************/
 
+    
+    
     @Override
     public void draw(GLMapView ortho, int renderPass) {
 

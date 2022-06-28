@@ -7,6 +7,8 @@ import android.content.Intent;
 
 import com.atakmap.android.data.ClearContentRegistry;
 import com.atakmap.android.features.FeatureEditDropdownReceiver;
+import com.atakmap.android.features.FeatureEditListUserSelect;
+import com.atakmap.android.hierarchy.HierarchySelectHandler;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import android.database.sqlite.SQLiteException;
 import android.net.Uri;
@@ -89,6 +91,8 @@ public class WktMapComponent extends AbstractMapComponent {
     private MapView mapView;
     private BroadcastReceiver detailsDropdownReceiver;
     private BroadcastReceiver featureEditDropdownReceiver;
+    private FeatureEditListUserSelect featureEditSelectHandler;
+
     /**
      * Token indicating that previously installed providers were invalidated.
      * On provider change, this flag should be set to <code>true</code>, then
@@ -200,6 +204,9 @@ public class WktMapComponent extends AbstractMapComponent {
                     .dispose();
             this.featureEditDropdownReceiver = null;
         }
+
+        HierarchySelectHandler.unregister(FeatureEditListUserSelect.class);
+
         // remove feature layer
         if (layer != null) {
             List<Layer> layers = view
@@ -318,7 +325,8 @@ public class WktMapComponent extends AbstractMapComponent {
         // XXX - open file DBs
         if (this.fileDatabases == null)
             this.fileDatabases = new HashSet<>();
-        // XXX - register details dropdown receiver
+
+        // Register details dropdown receiver
         this.detailsDropdownReceiver = new FeaturesDetailsDropdownReceiver(view,
                 this.spatialDb);
         DocumentedIntentFilter i = new DocumentedIntentFilter();
@@ -332,12 +340,16 @@ public class WktMapComponent extends AbstractMapComponent {
         // Register the feature edit dropdown receiver
         this.featureEditDropdownReceiver = new FeatureEditDropdownReceiver(view,
                 this.spatialDb);
-        DocumentedIntentFilter featureEditDocumentedIntentFilter = new DocumentedIntentFilter();
-        featureEditDocumentedIntentFilter.addAction(
-                FeatureEditDropdownReceiver.SHOW_EDIT,
+        DocumentedIntentFilter f = new DocumentedIntentFilter();
+        f.addAction(FeatureEditDropdownReceiver.SHOW_EDIT,
                 "Show feature edit drop down");
-        this.registerReceiver(context,
-                featureEditDropdownReceiver, featureEditDocumentedIntentFilter);
+        this.registerReceiver(context, featureEditDropdownReceiver, f);
+
+        // Used for bulk feature editing
+        featureEditSelectHandler = new FeatureEditListUserSelect(view);
+        HierarchySelectHandler.register(FeatureEditListUserSelect.class,
+                featureEditSelectHandler);
+
         // start background initialization
         this.backgroundInit(this.spatialDb);
     }

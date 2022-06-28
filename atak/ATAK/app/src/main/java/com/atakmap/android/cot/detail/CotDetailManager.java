@@ -54,7 +54,6 @@ public class CotDetailManager {
      * Register a detail handler for the given detail element name.  Registration of a handler
      * object more than once is disallowed.
      *
-     *
      * @param handler CoT detail handler
      */
     public synchronized void registerHandler(CotDetailHandler handler) {
@@ -119,6 +118,13 @@ public class CotDetailManager {
         _markerHandlers.add(handler);
     }
 
+    /**
+     * Unregister a marker-specific detail handler
+     * This is here for legacy compatibility - detail handlers should
+     * extend {@link CotDetailHandler} instead
+     *
+     * @param handler Marker handler
+     */
     public synchronized void unregisterHandler(MarkerDetailHandler handler) {
         if (!_markerHandlers.contains(handler))
             return;
@@ -164,6 +170,13 @@ public class CotDetailManager {
         return ret;
     }
 
+    /**
+     * Given a map item and a cot event, process the cot event details into the appropriate
+     * tags within the map item
+     * @param item the map item to fill
+     * @param event the cot event to use
+     * @return the map item correctly reflects the values provided by the cot event.
+     */
     public ImportResult processDetails(MapItem item, CotEvent event) {
         CotDetail root = event.getDetail();
         if (root == null)

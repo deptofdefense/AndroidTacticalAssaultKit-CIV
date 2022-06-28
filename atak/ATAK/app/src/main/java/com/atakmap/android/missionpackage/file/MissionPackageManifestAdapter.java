@@ -5,6 +5,7 @@ import com.atakmap.android.data.FileContentHandler;
 import com.atakmap.android.data.URIContentHandler;
 import com.atakmap.android.data.URIContentManager;
 import com.atakmap.android.filesystem.ResourceFile;
+import com.atakmap.android.hierarchy.action.Visibility;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.missionpackage.ui.MissionPackageListFileItem;
@@ -129,6 +130,11 @@ public class MissionPackageManifestAdapter {
             if (!FileSystemUtils.isEmpty(cType))
                 content.setParameter(
                         MissionPackageContent.PARAMETER_CONTENT_TYPE, cType);
+
+            // Visibility
+            if (h.isActionSupported(Visibility.class))
+                content.setParameter(MissionPackageContent.PARAMETER_VISIBLE,
+                        String.valueOf(((Visibility) h).isVisible()));
         }
 
         return content;

@@ -18,6 +18,7 @@ import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.android.widgets.DrawableWidget;
 import com.atakmap.android.widgets.LinearLayoutWidget;
 import com.atakmap.android.widgets.RootLayoutWidget;
+import com.atakmap.annotations.ModifierApi;
 import com.atakmap.app.R;
 import com.atakmap.app.preferences.CustomActionBarFragment;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -52,6 +53,7 @@ final class FirstPersonTool extends Tool implements
 
     public static final String TOOL_NAME = "com.atakmap.android.firstperson.FirstPersonTool";
 
+    @ModifierApi(since = "4.5", target="4.8", modifiers={})
     public FirstPersonTool(MapView mapView) {
         super(mapView, TOOL_NAME);
         _mapView = mapView;
@@ -167,7 +169,8 @@ final class FirstPersonTool extends Tool implements
     @Override
     public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         if (key.equals(CustomActionBarFragment.ACTIONBAR_BACKGROUND_COLOR_KEY))
             updateColors();

@@ -1029,61 +1029,64 @@ public class RangeAndBearingMapItem extends Arrow implements
     public void onSharedPreferenceChanged(SharedPreferences sp,
             String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
-        if (key.equals("rab_color_pref")) {
-            setStrokeColor(Color.parseColor((sp.getString(key,
-                    String.valueOf(Color.RED)))));
-        } else 
-        if (key.equals("rab_north_ref_pref")) {
-            setNorthReference(NorthReference
-                    .findFromValue(Integer.parseInt(sp.getString(key,
-                            String.valueOf(
-                                    NorthReference.MAGNETIC.getValue())))));
-        } else 
-        if (key.equals("rab_brg_units_pref")) {
-            setBearingUnits(Angle.findFromValue(Integer.parseInt(sp.getString(
-                    key,
-                    String.valueOf(Angle.DEGREE.getValue())))));
-        } else 
-        if (key.equals("rab_rng_units_pref")) {
-            try {
-                setRangeUnits(Integer.parseInt(sp.getString(key,
-                        String.valueOf(Span.METRIC))));
-            } catch (IllegalStateException ise) {
-                Log.e(TAG,
-                        "error setting the range units for a range and bearing arrow: "
-                                + getUID(),
-                        ise);
-            }
-        } else 
-        if (key.equals("rab_dist_slant_range")) {
-            setDisplaySlantRange(_prefs.getString("rab_dist_slant_range",
-                    "clamped")
-                    .equals("slantrange"));
-        } else 
-        if (key.equals("rng_feet_display_pref")) {
-            int ftToMi = 5280;
-            try {
-                ftToMi = Integer.parseInt(sp.getString(key,
-                        String.valueOf(5280)));
-            } catch (NumberFormatException ignored) {
-            }
-            SpanUtilities.setFeetToMileThreshold(ftToMi);
-            updateLabel();
-        } else 
-        if (key.equals("rng_meters_display_pref")) {
-            int mToKm = 2000;
-            try {
-                mToKm = Integer.parseInt(sp.getString(key,
-                        String.valueOf(2000)));
-            } catch (NumberFormatException ignored) {
-            }
-            SpanUtilities.setMetersToKilometersThreshold(mToKm);
-            updateLabel();
-        } else 
-        if (key.equals("rab_preference_show_eta")) {
-            updateLabel();
+        switch (key) {
+            case "rab_color_pref":
+                setStrokeColor(Color.parseColor((sp.getString(key,
+                        String.valueOf(Color.RED)))));
+                break;
+            case "rab_north_ref_pref":
+                setNorthReference(NorthReference
+                        .findFromValue(Integer.parseInt(sp.getString(key,
+                                String.valueOf(
+                                        NorthReference.MAGNETIC.getValue())))));
+                break;
+            case "rab_brg_units_pref":
+                setBearingUnits(Angle.findFromValue(Integer.parseInt(sp.getString(
+                        key,
+                        String.valueOf(Angle.DEGREE.getValue())))));
+                break;
+            case "rab_rng_units_pref":
+                try {
+                    setRangeUnits(Integer.parseInt(sp.getString(key,
+                            String.valueOf(Span.METRIC))));
+                } catch (IllegalStateException ise) {
+                    Log.e(TAG,
+                            "error setting the range units for a range and bearing arrow: "
+                                    + getUID(),
+                            ise);
+                }
+                break;
+            case "rab_dist_slant_range":
+                setDisplaySlantRange(_prefs.getString("rab_dist_slant_range",
+                        "clamped")
+                        .equals("slantrange"));
+                break;
+            case "rng_feet_display_pref":
+                int ftToMi = 5280;
+                try {
+                    ftToMi = Integer.parseInt(sp.getString(key,
+                            String.valueOf(5280)));
+                } catch (NumberFormatException ignored) {
+                }
+                SpanUtilities.setFeetToMileThreshold(ftToMi);
+                updateLabel();
+                break;
+            case "rng_meters_display_pref":
+                int mToKm = 2000;
+                try {
+                    mToKm = Integer.parseInt(sp.getString(key,
+                            String.valueOf(2000)));
+                } catch (NumberFormatException ignored) {
+                }
+                SpanUtilities.setMetersToKilometersThreshold(mToKm);
+                updateLabel();
+                break;
+            case "rab_preference_show_eta":
+                updateLabel();
+                break;
         }
     }
 
@@ -1115,6 +1118,7 @@ public class RangeAndBearingMapItem extends Arrow implements
      */
     public void removePoint(MapItem endpoint) {
         RangeAndBearingEndpoint newPoint;
+        //turn on disance lock option
         if (endpoint == _pt1) {
             removeListenersFromPoint(_pt1);
 
@@ -1131,7 +1135,6 @@ public class RangeAndBearingMapItem extends Arrow implements
             _pt1 = newPoint;
 
             removeMetaData("anchorAvailable");
-            setMetaBoolean("distanceLockAvailable", true); //turn on disance lock option
         } else {
             removeListenersFromPoint(_pt2);
 
@@ -1147,8 +1150,8 @@ public class RangeAndBearingMapItem extends Arrow implements
             _pt2 = newPoint;
 
             this.removeMetaData("radiusAvailable");
-            setMetaBoolean("distanceLockAvailable", true); //turn on disance lock option
         }
+        setMetaBoolean("distanceLockAvailable", true); //turn on disance lock option
 
         addListenersToPoint(newPoint);
         newPoint.setParent(RangeAndBearingMapItem.this);

@@ -38,14 +38,13 @@
                     android:maxLines="1"
                     android:layout_gravity="center"/>
 
-                <ImageButton
+                <com.atakmap.android.gui.ColorButton
+                    style="@style/darkColorButton"
                     android:id="@+id/vehicleColorBtn"
-                    style="@style/darkButton"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:layout_marginEnd="@dimen/scroll_margin"
-                    android:padding="@dimen/scroll_margin"
-                    android:src="@drawable/color_rectangle"/>
+                    android:padding="8dp"/>
             </LinearLayout>
 
             <com.atakmap.android.user.ExpandableGridView

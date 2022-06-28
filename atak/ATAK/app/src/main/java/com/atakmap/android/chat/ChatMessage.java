@@ -6,6 +6,7 @@ import android.os.Bundle;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Chat message Class
@@ -159,54 +160,103 @@ class ChatMessage {
         this.conversationId = conversationId;
     }
 
+    /**
+     * Returns the identifier associated with the chat message.
+     * @return the message identifier
+     */
     public String getMessageId() {
         return messageId;
     }
 
+    /**
+     * Allows for setting of the the identifier associated with the chat message.
+     * @param messageId  the message identifier
+     */
     public void setMessageId(String messageId) {
         this.messageId = messageId;
     }
 
+    /**
+     * Returns the protocol that was used to deliver this message.
+     * @return the protocol
+     */
     public String getProtocol() {
         return protocol;
     }
 
+    /**
+     * Sets the protocol that was used to deliver this message.
+     * @param protocol  the protocol
+     */
     public void setProtocol(String protocol) {
         this.protocol = protocol;
     }
+
 
     void setReceiveTime(CoordinatedTime receiveTime) {
         this.receiveTime = receiveTime;
     }
 
+    /**
+     * Returns the sent time for the message
+     * @return the sent time as a coordinated time.
+     */
     public CoordinatedTime getSentTime() {
         return sentTime;
     }
 
+    /**
+     * Set the sent time for the message.
+     * @param sentTime the snt time as a coordinated time
+     */
     public void setSentTime(CoordinatedTime sentTime) {
         this.sentTime = sentTime;
     }
 
+    /**
+     * Gets the sender uid for the message.
+     * @return the sender uid
+     */
     public String getSenderUid() {
         return senderUid;
     }
 
+    /**
+     * Set the sender uid for the message
+     * @param senderUid the sender uid
+     */
     public void setSenderUid(String senderUid) {
         this.senderUid = senderUid;
     }
 
+    /**
+     * Get a copy of the destinations used for the chat message
+     * @return a copy of the destinations
+     */
     public ArrayList<String> getDestinations() {
-        return destinations;
+        return new ArrayList<>(destinations);
     }
 
-    public void setDestinations(ArrayList<String> destinations) {
-        this.destinations = destinations;
+    /**
+     * Set the destinations used for the chat message
+     * @param destinations the destinations
+     */
+    public void setDestinations(List<String> destinations) {
+        this.destinations = new ArrayList<>(destinations);
     }
 
+    /**
+     * Return the message.
+     * @return the message
+     */
     public String getMessage() {
         return message;
     }
 
+    /**
+     * Set the message
+     * @param message the message
+     */
     public void setMessage(String message) {
         this.message = message;
     }

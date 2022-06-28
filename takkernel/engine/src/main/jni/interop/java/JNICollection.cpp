@@ -14,6 +14,7 @@ namespace
         jmethodID add;
         jmethodID remove;
         jmethodID clear;
+        jmethodID iterator;
     } Collection_class;
 
     struct
@@ -102,6 +103,19 @@ TAKErr TAKEngineJNI::Interop::Java::JNICollection_clear(JNIEnv &env, jobject col
         return TE_Err;
     return TE_Ok;
 }
+TAKErr TAKEngineJNI::Interop::Java::JNICollection_iterator(JNILocalRef &iterator, JNIEnv &env, jobject collection) NOTHROWS
+{
+    if(!checkInit(env))
+        return TE_IllegalState;
+    if(!collection)
+        return TE_InvalidArg;
+    if(env.ExceptionCheck())
+        return TE_Err;
+    iterator = JNILocalRef(env, env.CallObjectMethod(collection, Collection_class.iterator));
+    if(env.ExceptionCheck())
+        return TE_Err;
+    return TE_Ok;
+}
 
 namespace
 {
@@ -116,6 +130,7 @@ namespace
         Collection_class.add = env.GetMethodID(Collection_class.id, "add", "(Ljava/lang/Object;)Z");
         Collection_class.remove = env.GetMethodID(Collection_class.id, "remove", "(Ljava/lang/Object;)Z");
         Collection_class.clear = env.GetMethodID(Collection_class.id, "clear", "()V");
+        Collection_class.iterator = env.GetMethodID(Collection_class.id, "iterator", "()Ljava/util/Iterator;");
 
         ArrayList_class.id = ATAKMapEngineJNI_findClass(&env, "java/util/ArrayList");
         ArrayList_class.ctor = env.GetMethodID(ArrayList_class.id, "<init>", "()V");

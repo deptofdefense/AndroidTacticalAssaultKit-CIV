@@ -13,6 +13,7 @@ import android.widget.ImageButton;
 
 import com.atakmap.android.hierarchy.HierarchyListFilter;
 import com.atakmap.android.hierarchy.HierarchyListItem;
+import com.atakmap.android.hierarchy.action.Delete;
 import com.atakmap.android.hierarchy.action.ItemClick;
 import com.atakmap.android.hierarchy.action.Search;
 import com.atakmap.android.hierarchy.items.AbstractChildlessListItem;
@@ -33,12 +34,14 @@ import java.util.Set;
 /**
  * Adds generic/other alerts to Overlay Manager
  */
-class AlertMapOverlay extends AbstractMapOverlay2 {
+class AlertMapOverlay extends AbstractMapOverlay2 implements Delete {
 
     private static final String TAG = "AlertMapOverlay";
 
     private final Context _context;
     private final String _groupName;
+
+    private AlertHierarchyListModel _listModel;
 
     AlertMapOverlay(MapView mapView, String groupName) {
         _context = mapView.getContext();
@@ -68,18 +71,26 @@ class AlertMapOverlay extends AbstractMapOverlay2 {
     @Override
     public HierarchyListItem getListModel(BaseAdapter adapter,
             long capabilities, HierarchyListFilter prefFilter) {
+        if (_listModel == null)
+            _listModel = new AlertHierarchyListModel(adapter, prefFilter);
+        else
+            _listModel.syncRefresh(adapter, prefFilter);
+        return _listModel;
+    }
 
-        return new AlertHierarchyListModel(adapter, prefFilter);
+    @Override
+    public boolean delete() {
+        return _listModel != null && _listModel.delete();
     }
 
     private class AlertHierarchyListModel extends
             AbstractHierarchyListItem2
-            implements Search, View.OnClickListener {
+            implements Search, Delete, View.OnClickListener {
 
         AlertHierarchyListModel(BaseAdapter listener,
                 HierarchyListFilter filter) {
             this.asyncRefresh = true;
-            refresh(listener, filter);
+            syncRefresh(listener, filter);
         }
 
         @Override
@@ -195,7 +206,7 @@ class AlertMapOverlay extends AbstractMapOverlay2 {
      * The list item used for each alert
      */
     private class AlertListItem extends AbstractChildlessListItem
-            implements ItemClick, View.OnClickListener {
+            implements ItemClick, Delete, View.OnClickListener {
 
         private final Alert _alert;
 
@@ -247,6 +258,12 @@ class AlertMapOverlay extends AbstractMapOverlay2 {
         @Override
         public boolean onLongClick() {
             return false;
+        }
+
+        @Override
+        public boolean delete() {
+            WarningComponent.removeAlert(_alert);
+            return true;
         }
 
         private void promptDelete() {

@@ -272,7 +272,7 @@ public class SupportPreferenceFragment extends AtakPreferenceFragment {
     }
 
     private String getTitle(String title) {
-        StringBuffer sb = new StringBuffer(title);
+        StringBuilder sb = new StringBuilder(title);
         sb.append("\n----------------------------------------");
         return sb.toString();
     }
@@ -331,7 +331,8 @@ public class SupportPreferenceFragment extends AtakPreferenceFragment {
         retVal.append("\n\n").append(getTitle("FileSystem"));
         final File[] folders = context.getExternalCacheDirs();
         for (File f : folders) {
-            retVal.append(getKeyValue("filesystem.mount", f.toString()));
+            if (f != null)
+                 retVal.append(getKeyValue("filesystem.mount", f.toString()));
         }
 
         retVal.append("\n\n").append(getTitle("Plugins"));

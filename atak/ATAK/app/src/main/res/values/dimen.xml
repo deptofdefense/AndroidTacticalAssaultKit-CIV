@@ -108,5 +108,7 @@
     <dimen name="dynamic_compass_text_size">12sp</dimen>
     <dimen name="dynamic_compass_arrow_padding">14dp</dimen>
 
+    <dimen name="shape_color_dialog_margin">8dp</dimen>
+
 </resources>
 

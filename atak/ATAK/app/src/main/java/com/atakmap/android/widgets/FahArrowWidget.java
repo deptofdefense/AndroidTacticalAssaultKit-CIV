@@ -19,8 +19,8 @@ import com.atakmap.android.maps.graphics.widgets.GLWidgetsMapComponent;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.conversions.SpanUtilities;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoBounds;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
@@ -280,9 +280,7 @@ public class FahArrowWidget extends ShapeWidget implements
             return 0;
         }
         // Get the distance and azimuth to from the designator to the target
-        double[] da = DistanceCalculations.computeDirection(_lastDesignatorLoc,
-                _target.getPoint());
-        int bearing = (int) Math.round(da[1]);
+        int bearing = (int) Math.round(GeoCalculations.bearingTo(_lastDesignatorLoc, _target.getPoint()));
         double diff = ATAKUtilities.convertFromTrueToMagnetic(
                 _target.getPoint(), bearing)
                 - _fahAngle;
@@ -317,11 +315,9 @@ public class FahArrowWidget extends ShapeWidget implements
         if (_lastDesignatorLoc == null || _target == null) {
             return;
         }
-        // Get the distance and azimuth to from the designator to the target
-        double[] da = DistanceCalculations.computeDirection(_lastDesignatorLoc,
-                _target.getPoint());
-        //int bearing = (int)Math.round(ATAKUtilities.convertFromTrueToMagnetic(_target.getPoint(), da[1]));
-        int bearing = (int) Math.round(da[1]);
+
+        int bearing = (int) Math.round(GeoCalculations.bearingTo(_lastDesignatorLoc,
+                _target.getPoint()));
 
         // Now update the angle based on the azimuth and offset
         //Round the fahAngle to nearest 5 like everything else
@@ -381,9 +377,9 @@ public class FahArrowWidget extends ShapeWidget implements
 
             if (!(distance > 0) && (_designator != null)) {
                 // overhead or 0, use the distance to the target
-                distance = DistanceCalculations.computeDirection(
+                distance = GeoCalculations.distanceTo(
                         _designator.getPoint(),
-                        _target.getPoint())[0];
+                        _target.getPoint());
             }
 
             distance = Math.abs(distance);
@@ -404,7 +400,8 @@ public class FahArrowWidget extends ShapeWidget implements
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
             String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         if (key.equals("fahDistance")) {
             distance = getInteger(sharedPreferences, key, DEFAULT_DISTANCE)
@@ -471,11 +468,10 @@ public class FahArrowWidget extends ShapeWidget implements
         }
 
         // Get the distance and azimuth to from the designator to the target
-        double[] da = DistanceCalculations.computeDirection(_lastDesignatorLoc,
-                _target.getPoint());
         // use TRUE for the angle computation.
         int bearing = (int) Math.round(ATAKUtilities.convertFromTrueToMagnetic(
-                _target.getPoint(), da[1]));
+                _target.getPoint(),
+                GeoCalculations.bearingTo(_lastDesignatorLoc, _target.getPoint())));
 
         // Now update the angle based on the azimuth and offset
         _fahAngle = (int) Math.round((bearing + _fahOffset) / 5f) * 5;
@@ -547,13 +543,13 @@ public class FahArrowWidget extends ShapeWidget implements
 
             GeoPoint fahPt = _mapView
                     .inverse(x, y, MapView.InverseMode.RayCast).get();
-            double bear = DistanceCalculations.computeDirection(fahPt,
-                    _target.getPoint())[1];
+            double bear = GeoCalculations.bearingTo(fahPt,
+                    _target.getPoint());
             if (bear < 0)
                 bear = bear + 360;
-            double orig = DistanceCalculations.computeDirection(
+            double orig = GeoCalculations.bearingTo(
                     _lastDesignatorLoc,
-                    _target.getPoint())[1];
+                    _target.getPoint());
 
             if (orig < bear)
                 orig += 360;

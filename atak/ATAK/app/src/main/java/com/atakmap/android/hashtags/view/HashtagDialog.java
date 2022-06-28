@@ -116,12 +116,11 @@ public class HashtagDialog implements View.OnClickListener {
             if (FileSystemUtils.isEmpty(tag))
                 return;
             _tags.add(tag);
-            _adapter.refresh();
         } else {
             String tag = String.valueOf(v.getTag());
             _tags.remove(tag);
-            _adapter.refresh();
         }
+        _adapter.refresh();
     }
 
     private class HashtagAdapter extends BaseAdapter {

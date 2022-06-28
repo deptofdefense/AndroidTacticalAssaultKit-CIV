@@ -297,6 +297,14 @@ public abstract class Shape extends MapItem implements Capturable {
     }
 
     /**
+     * Set the alpha value for the fill color
+     * @param alpha Color alpha (0 to 255)
+     */
+    public void setFillAlpha(int alpha) {
+        setFillColor((alpha << 24) | (getFillColor() & 0xFFFFFF));
+    }
+
+    /**
      * Sets both the stroke and fill color while maintaining fill alpha
      *
      * @param color An argb packed {@link Color}
@@ -339,6 +347,28 @@ public abstract class Shape extends MapItem implements Capturable {
      */
     public double getStrokeWeight() {
         return _strokeWeight / MapView.DENSITY;
+    }
+
+    /**
+     * Get the line style for this shape
+     *
+     * For now acts a redirect for {@link #setBasicLineStyle(int)} for the sake
+     * of having a more intuitive API
+     */
+    public final void setStrokeStyle(final int lineStyle) {
+        setBasicLineStyle(lineStyle);
+    }
+
+    /**
+     * Get the line style for this shape
+     *
+     * For now acts a redirect for {@link #getBasicLineStyle()} for the sake
+     * of having a more intuitive API
+     *
+     * @return Line style
+     */
+    public final int getStrokeStyle() {
+        return getBasicLineStyle();
     }
 
     /**
@@ -399,8 +429,11 @@ public abstract class Shape extends MapItem implements Capturable {
      * @param basicLineStyle one of Shape.SOLID, Shape.DASHED or Shape.DOTTED
      */
     public void setBasicLineStyle(int basicLineStyle) {
-        this.basicLineStyle = basicLineStyle;
-        onBasicLineStyleChanged();
+        if (this.basicLineStyle != basicLineStyle) {
+            this.basicLineStyle = basicLineStyle;
+            onBasicLineStyleChanged();
+            onStrokeStyleChanged();
+        }
     }
 
     /**
@@ -434,6 +467,12 @@ public abstract class Shape extends MapItem implements Capturable {
         for (Polyline.OnBasicLineStyleChangedListener l : _onBasicLineStyleChanged) {
             l.onBasicLineStyleChanged(this);
         }
+    }
+
+    /**
+     * The line/stroke style for this shape has been changed
+     */
+    protected void onStrokeStyleChanged() {
     }
 
     protected void onPointsChanged() {

@@ -235,18 +235,13 @@ class TakDevPlugin implements Plugin<Project> {
                 project.dependencies.add("${variant.name}AndroidTestCompileClasspath", dep)
             }
 
-            def mappingName = "proguard-${variant.flavorName}-${variant.buildType.name}-mapping.txt"
+            def devFlavor = getDesiredTpcFlavorName(variant)
+            def devType = variant.buildType.name
+            def mappingName = "proguard-${devFlavor}-${devType}-mapping.txt"
             def mappingFqn = tuple.mapping.absolutePath
 
             def preBuildProvider = project.tasks.named("pre${variant.name.capitalize()}Build")
             preBuildProvider.configure({
-                doFirst {
-                    System.setProperty("atak.proguard.mapping", mappingFqn)
-                }
-            })
-
-            def compileProvider = project.tasks.named("compile${variant.name.capitalize()}JavaWithJavac")
-            compileProvider.configure({
                 doFirst {
                     if (new File(mappingFqn).exists()) {
                         project.copy {
@@ -263,6 +258,7 @@ class TakDevPlugin implements Plugin<Project> {
                         project.file(mappingFqn).text = ""
                         println("${variant.name} => WARNING: no mapping file could be established, obfuscating just the plugin to work with the development core")
                     }
+                    System.setProperty("atak.proguard.mapping", mappingFqn)
                 }
             })
 
@@ -344,7 +340,7 @@ class TakDevPlugin implements Plugin<Project> {
             def keystoreConfigName = "${variant.name}Keystore"
 
             // accommodate uses where variants may not be defined;  default to 'civ'
-            def devFlavor = variant.flavorName ?: 'civ'
+            def devFlavor = getDesiredTpcFlavorName(variant)
             def devType = variant.buildType.name
             if (!variant.buildType.matchingFallbacks.isEmpty() &&
                     !(project.takdevProduction && ('release' == variant.buildType.name))) {
@@ -440,13 +436,6 @@ class TakDevPlugin implements Plugin<Project> {
             def preBuildProvider = project.tasks.named("pre${variant.name.capitalize()}Build")
             preBuildProvider.configure({
                 doFirst {
-                    System.setProperty("atak.proguard.mapping", mappingFqn)
-                }
-            })
-
-            def compileProvider = project.tasks.named("compile${variant.name.capitalize()}JavaWithJavac")
-            compileProvider.configure({
-                doFirst {
                     // Proguard mapping; flavor specific
                     project.copy {
                         from mappingConfiguration
@@ -456,6 +445,7 @@ class TakDevPlugin implements Plugin<Project> {
                             return mappingName
                         }
                     }
+                    System.setProperty("atak.proguard.mapping", mappingFqn)
                 }
             })
 
@@ -663,5 +653,15 @@ class TakDevPlugin implements Plugin<Project> {
             }
         }
         return 0
+    }
+
+	static String getDesiredTpcFlavorName(Object variant) {
+        String flavorName = variant.flavorName ?: 'civ'
+        def matchingFallbacks = variant.productFlavors.matchingFallbacks
+        if (!matchingFallbacks.isEmpty() &&
+                !matchingFallbacks[0].isEmpty()) {
+            flavorName = matchingFallbacks[0][0]
+        }
+        return flavorName
     }
 }

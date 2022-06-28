@@ -926,11 +926,11 @@ class GLAngleOverlay2 extends GLShape2 implements
     static void setGeometry(GLBatchLineString glls, GeoPoint[] pts) {
         ByteBuffer buf = ByteBuffer.allocate((pts.length * 3 * 8) + 4);
         buf.putInt(pts.length);
-        for (int i = 0; i < pts.length; i++) {
-            buf.putDouble(pts[i].getLongitude());
-            buf.putDouble(pts[i].getLatitude());
-            final double alt = Double.isNaN(pts[i].getAltitude()) ? 0d
-                    : pts[i].getAltitude();
+        for (GeoPoint pt : pts) {
+            buf.putDouble(pt.getLongitude());
+            buf.putDouble(pt.getLatitude());
+            final double alt = Double.isNaN(pt.getAltitude()) ? 0d
+                    : pt.getAltitude();
             buf.putDouble(alt);
         }
         buf.flip();

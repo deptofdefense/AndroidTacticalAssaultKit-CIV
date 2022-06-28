@@ -49,7 +49,7 @@ import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.conversions.SpanUtilities;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.conversion.EGM96;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.map.CameraController;
@@ -302,11 +302,8 @@ public class RecentlyAddedDropDownReceiver extends DropDownReceiver
             this.item = item;
             this.anchor = anchor;
 
-            double[] da = DistanceCalculations.computeDirection(focusPoint,
-                    getPoint());
-
-            this.distance = da[0];
-            this.bearing = da[1];
+            this.distance = GeoCalculations.distanceTo(focusPoint, getPoint());
+            this.bearing = GeoCalculations.bearingTo(focusPoint, getPoint());
             this.uid = item.getUID();
             this.open = false;
             refresh();
@@ -492,13 +489,13 @@ public class RecentlyAddedDropDownReceiver extends DropDownReceiver
                         MapView.InverseMode.RayCast);
             }
 
-            double[] da = DistanceCalculations.computeDirection(currPoint.get(),
-                    ra.getPoint());
+            final double distance = GeoCalculations.distanceTo(currPoint.get(), ra.getPoint());
+            final double bearing = GeoCalculations.bearingTo(currPoint.get(), ra.getPoint());
 
-            ra.distance = da[0];
+            ra.distance = distance;
             ra.bearing = ATAKUtilities.convertFromTrueToMagnetic(
                     currPoint.get(),
-                    da[1]);
+                    bearing);
 
             String t = ra.title;
             if (t == null || t.trim().equals("")) {

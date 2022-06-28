@@ -1,13 +1,12 @@
 
 package com.atakmap.android.maps.tilesets.mobac;
 
-import android.util.Xml;
-
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.coremap.xml.XMLUtils;
 import com.atakmap.map.projection.EquirectangularMapProjection;
 import com.atakmap.map.projection.Projection;
 import com.atakmap.map.projection.ProjectionFactory;
@@ -160,8 +159,7 @@ public class WMSQueryLayers extends QueryLayers {
         String version = "1.1.1";
         XmlPullParser parser = null;
         try {
-            parser = Xml.newPullParser();
-            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
+            parser = XMLUtils.getXmlPullParser();
             parser.setInput(input, null);
 
             int eventType;

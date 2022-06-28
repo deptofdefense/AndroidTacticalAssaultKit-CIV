@@ -198,6 +198,22 @@ public abstract class HierarchyListUserSelect extends HierarchyListFilter {
     }
 
     /**
+     * Whether to show this select handler as a multi-select option when the
+     * user is on the root list of Overlay Manager. The root list is not
+     * processed by the usual filtering methods to preserve legacy behavior,
+     * so this method handles the filtering.
+     *
+     * Note: This is only used when {@link #isExternalUsageSupported()} is
+     * set to <code>true</code>.
+     *
+     * @return True to show this select handler as a multi-select option
+     * on the root list
+     */
+    public boolean acceptRootList() {
+        return true;
+    }
+
+    /**
      * Get the icon representing this selector - used externally
      * @return Icon drawable
      */
