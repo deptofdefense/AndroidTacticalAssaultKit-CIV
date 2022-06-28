@@ -21,6 +21,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.math.MathUtils;
 import com.atakmap.android.widgets.SeekBarControl;
 import com.atakmap.android.widgets.SeekBarControlCompat;
+import com.atakmap.annotations.ModifierApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
@@ -66,6 +67,7 @@ public class GRGMapReceiver extends BroadcastReceiver implements
     private final float[] _hsv = new float[3];
     private boolean _layerVisible;
 
+    @ModifierApi(since = "4.5", target="4.8", modifiers={})
     public GRGMapReceiver(MapView mapView, FeatureDataStore outlinesDB,
             PersistentRasterDataStore rasterDB, DatasetRasterLayer2 rasterLayer,
             GRGMapOverlay overlay) {
@@ -86,6 +88,7 @@ public class GRGMapReceiver extends BroadcastReceiver implements
         ClearContentRegistry.getInstance().registerListener(this);
     }
 
+    @ModifierApi(since = "4.5", target="4.8", modifiers={})
     public void dispose() {
         AtakBroadcast.getInstance().unregisterReceiver(this);
         ClearContentRegistry.getInstance().unregisterListener(this);

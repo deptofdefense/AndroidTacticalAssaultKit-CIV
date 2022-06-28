@@ -70,7 +70,7 @@ public class ToolbarBroadcastReceiver extends BroadcastReceiver {
 
     synchronized public static ToolbarBroadcastReceiver getInstance() {
         if (_instance == null) {
-            _instance = ToolbarBroadcastReceiverCompat.createInstance();
+            _instance = new ToolbarBroadcastReceiver();
         }
         return _instance;
     }
@@ -137,6 +137,14 @@ public class ToolbarBroadcastReceiver extends BroadcastReceiver {
             removeChildView();
         else if (position == ActionBarView.TOP_RIGHT)
             ActionBarReceiver.getInstance().setToolView(null);
+    }
+
+    /**
+     * Reposition the toolbar
+     */
+    public void repositionToolbar() {
+        if (childView != null)
+            childView.reposition();
     }
 
     public String getActive() {
@@ -304,11 +312,11 @@ public class ToolbarBroadcastReceiver extends BroadcastReceiver {
         switch (abv.getPosition()) {
             case ActionBarView.TOP_LEFT: {
                 NavView navView = NavView.getInstance();
-                View sideLayout = navView.findViewById(R.id.side_layout);
+                View menuButton = navView.findViewById(R.id.tak_nav_menu_button);
                 NavButton takButton = navView.findToolbarButton(toolbar);
                 if (childView == null)
                     childView = new NavButtonChildView(_mapView.getContext());
-                View anchor = takButton != null ? takButton : sideLayout;
+                View anchor = takButton != null ? takButton : menuButton;
                 childView.layoutForToolbarView(anchor, abv);
                 if (childView.getParent() == null)
                     navView.addView(childView);

@@ -6,9 +6,7 @@ import android.content.Intent;
 import android.util.AttributeSet;
 
 import com.atakmap.android.ipc.AtakBroadcast;
-import com.atakmap.android.maps.MapView;
 import com.atakmap.android.network.ui.CredentialsPreference;
-import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.net.AtakAuthenticationCredentials;
 import com.atakmap.net.AtakAuthenticationDatabase;
@@ -32,8 +30,7 @@ public class EncryptedPanEditTextPreference extends PanEditTextPreference {
         AtakAuthenticationCredentials credentials = AtakAuthenticationDatabase
                 .getCredentials(this.getKey());
 
-        String text = MapView.getMapView().getContext()
-                .getString(R.string.defaultTrustStorePassword);
+        String text = "";
         if (credentials != null) {
             text = credentials.password;
         }

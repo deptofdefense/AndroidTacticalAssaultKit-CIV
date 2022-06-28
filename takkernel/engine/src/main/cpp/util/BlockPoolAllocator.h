@@ -29,7 +29,7 @@ namespace TAK {
                  * @param numBlocks The number of blocks in the pool
                  * @param align     The byte alignment requirement (default to `1`)
                  */
-                BlockPoolAllocator(const std::size_t blockSize, const std::size_t numBlocks, const std::size_t align = alignof(std::max_align_t)) NOTHROWS;
+                BlockPoolAllocator(const std::size_t blockSize, const std::size_t numBlocks, const std::size_t align = Port::Platform_max_align()) NOTHROWS;
                 ~BlockPoolAllocator() NOTHROWS;
             public :
                 /**

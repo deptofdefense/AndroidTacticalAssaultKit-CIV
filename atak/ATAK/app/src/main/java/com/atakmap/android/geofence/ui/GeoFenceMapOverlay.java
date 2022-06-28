@@ -21,6 +21,7 @@ import com.atakmap.android.geofence.monitor.GeoFenceMonitor;
 import com.atakmap.android.hierarchy.HierarchyListFilter;
 import com.atakmap.android.hierarchy.HierarchyListItem;
 import com.atakmap.android.hierarchy.action.Action;
+import com.atakmap.android.hierarchy.action.Delete;
 import com.atakmap.android.hierarchy.action.GoTo;
 import com.atakmap.android.hierarchy.action.Search;
 import com.atakmap.android.hierarchy.items.AbstractHierarchyListItem2;
@@ -44,7 +45,7 @@ import java.util.Set;
 /**
  * Adds Geo Fences to Overlay Manager
  */
-public class GeoFenceMapOverlay extends AbstractMapOverlay2 {
+public class GeoFenceMapOverlay extends AbstractMapOverlay2 implements Delete {
 
     private static final String TAG = "GeoFenceMapOverlay";
 
@@ -148,8 +149,13 @@ public class GeoFenceMapOverlay extends AbstractMapOverlay2 {
         return _listModel;
     }
 
+    @Override
+    public boolean delete() {
+        return _listModel != null && _listModel.delete();
+    }
+
     private class GeoFenceOverlayListModel extends AbstractHierarchyListItem2
-            implements Search, GeoFenceComponent.GeoFenceListener,
+            implements Search, Delete, GeoFenceComponent.GeoFenceListener,
             GeoFenceManager.MonitorListener, View.OnClickListener {
 
         private final String path;
@@ -362,6 +368,12 @@ public class GeoFenceMapOverlay extends AbstractMapOverlay2 {
 
             //TODO deep search to search for callsign of alerting map items (see GeoFenceListModel)?
             return retval;
+        }
+
+        @Override
+        public boolean delete() {
+            _manager.dismissAll();
+            return true;
         }
     }
 

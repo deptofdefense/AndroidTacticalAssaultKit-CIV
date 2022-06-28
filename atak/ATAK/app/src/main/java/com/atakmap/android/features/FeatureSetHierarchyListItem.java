@@ -13,6 +13,7 @@ import android.widget.Toast;
 
 import com.atakmap.android.data.URIContentHandler;
 import com.atakmap.android.data.URIContentManager;
+import com.atakmap.android.features.FeatureDataStorePathUtils.PathEntry;
 import com.atakmap.android.hierarchy.HierarchyListFilter;
 import com.atakmap.android.hierarchy.HierarchyListItem;
 import com.atakmap.android.hierarchy.action.Action;
@@ -32,6 +33,7 @@ import com.atakmap.android.importexport.send.SendDialog;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.missionpackage.export.MissionPackageExportWrapper;
+import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.locale.LocaleUtil;
@@ -42,6 +44,7 @@ import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.FeatureCursor;
 import com.atakmap.map.layer.feature.FeatureDataStore;
 import com.atakmap.map.layer.feature.FeatureDataStore2;
+import com.atakmap.map.layer.feature.FeatureDataStore2.FeatureSetQueryParameters;
 import com.atakmap.map.layer.feature.FeatureSet;
 import com.atakmap.map.layer.feature.FeatureDataStore.FeatureQueryParameters;
 import com.atakmap.map.layer.feature.FeatureSetCursor;
@@ -62,9 +65,11 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
+import androidx.annotation.NonNull;
+
 public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem2
         implements View.OnClickListener, View.OnLongClickListener,
-        Visibility, Search, Delete, Export {
+        Visibility, Search, Delete, Export, FeatureEdit {
 
     private static final String TAG = "FeatureSetHierarchyListItem";
 
@@ -97,7 +102,7 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem2
 
     private CursorWindow window;
 
-    private final FeatureDataStorePathUtils.PathEntry entry;
+    private final PathEntry entry;
     private int descendantCount;
     private final String path;
 
@@ -137,8 +142,7 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem2
 
         this(context,
                 spatialDb,
-                new FeatureDataStorePathUtils.PathEntry(group.getId(),
-                        group.getName()),
+                new PathEntry(group.getId(), group.getName()),
                 title,
                 title,
                 order,
@@ -165,8 +169,7 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem2
 
         this(context,
                 spatialDb,
-                new FeatureDataStorePathUtils.PathEntry(group.getId(),
-                        group.getName()),
+                new PathEntry(group.getId(), group.getName()),
                 title,
                 title,
                 (filter != null) ? filter.sort : new SortAlphabet(),
@@ -178,7 +181,7 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem2
 
     public FeatureSetHierarchyListItem(Context context,
             FeatureDataStore2 spatialDb,
-            FeatureDataStorePathUtils.PathEntry path,
+            PathEntry path,
             HierarchyListFilter filter, BaseAdapter listener,
             String contentType,
             String mimeType, String iconUri) {
@@ -195,7 +198,7 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem2
 
     public FeatureSetHierarchyListItem(Context context,
             FeatureDataStore2 spatialDb,
-            FeatureDataStorePathUtils.PathEntry path,
+            PathEntry path,
             Sort order, BaseAdapter listener, String contentType,
             String mimeType, String iconUri) {
 
@@ -213,7 +216,7 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem2
 
     private FeatureSetHierarchyListItem(Context context,
             FeatureDataStore2 spatialDb,
-            FeatureDataStorePathUtils.PathEntry entry,
+            PathEntry entry,
             String title,
             String path,
             Sort order, BaseAdapter listener, String contentType,
@@ -269,6 +272,15 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem2
                 params.featureSetIds.add(this.entry.fsid);
             }
         }
+    }
+
+    /**
+     * Check if the style is editable for this database
+     * @return True if editable
+     */
+    private boolean isStyleEditable() {
+        return MathUtils.hasBits(spatialDb.getModificationFlags(),
+                FeatureDataStore.MODIFY_FEATURE_STYLE);
     }
 
     @Override
@@ -327,23 +339,9 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem2
         if (index < featureSetChildCount) {
             // XXX - ew
             int i = 0;
-            for (FeatureDataStorePathUtils.PathEntry child : this.entry.children
-                    .values()) {
-                if (i == index) {
-                    String iconUri = "android.resource://"
-                            + context.getPackageName()
-                            + "/" + R.drawable.import_folder_icon;
-                    return new FeatureSetHierarchyListItem(context,
-                            spatialDb,
-                            child,
-                            child.folder,
-                            this.path + "/" + child.folder,
-                            order,
-                            listener,
-                            contentType,
-                            mimeType,
-                            iconUri);
-                }
+            for (PathEntry child : this.entry.children.values()) {
+                if (i == index)
+                    return createChildSet(child);
                 i++;
             }
 
@@ -452,6 +450,8 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem2
             return clazz.cast(this);
         } else if (clazz.equals(Export.class)) {
             return clazz.cast(this);
+        } else if (clazz.equals(FeatureEdit.class)) {
+            return isStyleEditable() ? clazz.cast(this) : null;
         } else {
             return null;
         }
@@ -479,7 +479,7 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem2
                 ? View.VISIBLE
                 : View.GONE);
 
-        h.edit.setVisibility(this.contentType == null
+        h.edit.setVisibility(!isStyleEditable() || this.contentType == null
                 || this.contentType.equals(MvtSpatialDb.MVT_CONTENT_TYPE)
                         ? View.GONE
                         : View.VISIBLE);
@@ -520,6 +520,61 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem2
     @Override
     public boolean hideIfEmpty() {
         return false;
+    }
+
+    /**
+     * Find a child feature or feature set given its ID
+     * @param uid UID to search for
+     * @return Child or null if not found
+     */
+    @Override
+    public HierarchyListItem findChild(String uid) {
+
+        // Check for <folder name>:<uuid> format
+        int slashIdx = uid.lastIndexOf(':');
+        if (slashIdx != -1) {
+
+            // Find feature set folder based on name
+            String folderName = uid.substring(0, slashIdx);
+            for (PathEntry child : entry.children.values()) {
+                if (folderName.equals(child.folder)) {
+
+                    // Then compare UID
+                    if (uid.equals(getUID(child)))
+                        return createChildSet(child);
+                }
+            }
+
+            return null;
+        }
+
+        // Feature ID or feature set ID
+        try {
+            long id = Long.parseLong(uid);
+            if (entry.childFsids.contains(id)) {
+                // Find child feature set based on ID
+                for (PathEntry child : entry.children.values()) {
+                    if (child.fsid == id)
+                        return createChildSet(child);
+                }
+            } else {
+                // Assume this is a feature ID - query for it
+                FeatureDataStore2.FeatureQueryParameters params =
+                        new FeatureDataStore2.FeatureQueryParameters();
+                params.limit = 1;
+                params.featureSetFilter = new FeatureSetQueryParameters();
+                params.featureSetFilter.limit = 1;
+                params.featureSetFilter.ids = Collections.singleton(entry.fsid);
+                params.ids = Collections.singleton(id);
+                try (FeatureCursor c = spatialDb.queryFeatures(params)) {
+                    if (c.moveToNext())
+                        return new FeatureHierarchyListItem(spatialDb, c.get());
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to find child in " + getUID() + ": " + uid);
+        }
+        return null;
     }
 
     @Override
@@ -590,6 +645,9 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem2
 
         // Edit features
         else if (id == R.id.editButton) {
+            if (!isStyleEditable())
+                return;
+
             // 500 feature limit
             if (getDescendantCount() > 500) {
                 Toast.makeText(context,
@@ -609,10 +667,8 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem2
                 idArray = new long[] {
                         this.entry.fsid
                 };
-            Intent i = new Intent(FeatureEditDropdownReceiver.SHOW_EDIT);
-            i.putExtra("fsids", idArray);
-            i.putExtra("title", this.title);
-            AtakBroadcast.getInstance().sendBroadcast(i);
+            new FeatureEditDropdownReceiver(MapView.getMapView(), spatialDb)
+                    .show(this.title, idArray);
         }
     }
 
@@ -629,6 +685,13 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem2
 
         return ExportFileMarshal.sendFile(this.context, this.contentType,
                 fileToSend, true, null);
+    }
+
+    private FeatureSetHierarchyListItem createChildSet(PathEntry child) {
+        return new FeatureSetHierarchyListItem(context, spatialDb,
+                child, child.folder, this.path + "/" + child.folder,
+                order, listener, contentType, mimeType,
+                ATAKUtilities.getResourceUri(R.drawable.import_folder_icon));
     }
 
     private URIContentHandler getHandler(File groupFile) {
@@ -755,6 +818,32 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem2
         AtakBroadcast.getInstance().sendBroadcast(deleteIntent);
 
         return true;
+    }
+
+    @Override
+    @NonNull
+    public FeatureDataStore2 getFeatureDatabase() {
+        return spatialDb;
+    }
+
+    @Override
+    @NonNull
+    public FeatureDataStore2.FeatureQueryParameters getFeatureQueryParams() {
+        // Query parameters for all features in this set
+        FeatureDataStore2.FeatureQueryParameters params =
+                new FeatureDataStore2.FeatureQueryParameters();
+        params.featureSetFilter = new FeatureSetQueryParameters();
+        if (entry.fsid != FeatureDataStore.FEATURESET_ID_NONE) {
+            // This set has a defined feature ID
+            params.featureSetFilter.ids = Collections.singleton(this.entry.fsid);
+        } else {
+            // This set is a folder
+            params.featureSetFilter.names = new HashSet<>(2);
+            params.featureSetFilter.names.add(this.path);
+            params.featureSetFilter.names.add(this.path + "/%");
+            params.featureSetFilter.ids = new HashSet<>(this.entry.childFsids);
+        }
+        return params;
     }
 
     private void fillWindow(CursorWindow resultsWindow, int off, int num) {
@@ -918,19 +1007,24 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem2
      * Generate a UUID for a feature set path entry using the folder name
      * and feature set ID (or child IDs)
      * @param entry Path entry
-     * @return UUID string
+     * @return UUID string or feature set ID
      */
-    private static String getUID(FeatureDataStorePathUtils.PathEntry entry) {
-        StringBuilder sb = new StringBuilder(entry.folder);
+    private static String getUID(PathEntry entry) {
+        // Just use feature set ID
         if (entry.fsid != FeatureDataStore.FEATURESET_ID_NONE)
-            sb.append("[").append(entry.fsid).append("]");
-        else if (!entry.childFsids.isEmpty()) {
-            sb.append("[");
+            return String.valueOf(entry.fsid);
+
+        // Format: <folder name>:<UUID from child feature set IDs>
+        // Since 2 different sets with the same folder name can exist
+        StringBuilder uid = new StringBuilder(entry.folder);
+        if (!entry.childFsids.isEmpty()) {
+            uid.append(':');
+            StringBuilder sb = new StringBuilder();
             for (long fsid : entry.childFsids)
                 sb.append(fsid).append(",");
-            sb.append("]");
+            uid.append(UUID.nameUUIDFromBytes(sb.toString().getBytes(
+                    FileSystemUtils.UTF8_CHARSET)));
         }
-        return UUID.nameUUIDFromBytes(sb.toString().getBytes(
-                FileSystemUtils.UTF8_CHARSET)).toString();
+        return uid.toString();
     }
 }

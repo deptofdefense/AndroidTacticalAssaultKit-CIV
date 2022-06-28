@@ -199,8 +199,8 @@ public class FeatureDataSourceContentFactoryTests extends ATAKInstrumentedTest {
             }
         } finally {
             FeatureDataSourceContentFactory.unregister(supported);
-            for (int i = 0; i < unsupported.length; i++)
-                FeatureDataSourceContentFactory.unregister(unsupported[i]);
+            for (FeatureDataSource featureDataSource : unsupported)
+                FeatureDataSourceContentFactory.unregister(featureDataSource);
         }
     }
 
@@ -236,8 +236,8 @@ public class FeatureDataSourceContentFactoryTests extends ATAKInstrumentedTest {
                     content.close();
             }
         } finally {
-            for (int i = 0; i < supported.length; i++)
-                FeatureDataSourceContentFactory.unregister(supported[i]);
+            for (FeatureDataSource featureDataSource : supported)
+                FeatureDataSourceContentFactory.unregister(featureDataSource);
         }
     }
 
@@ -265,8 +265,8 @@ public class FeatureDataSourceContentFactoryTests extends ATAKInstrumentedTest {
                     content.close();
             }
         } finally {
-            for (int i = 0; i < supported.length; i++)
-                FeatureDataSourceContentFactory.unregister(supported[i]);
+            for (FeatureDataSource featureDataSource : supported)
+                FeatureDataSourceContentFactory.unregister(featureDataSource);
         }
     }
 }

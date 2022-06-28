@@ -5,9 +5,9 @@
         android:title="@string/lrf_preferences"
         android:key="lrfCategory">
         <CheckBoxPreference
-            android:title="Non-Bluetooth Laser Range Finders Support"
+            android:title="@string/additional_lrf_title"
             android:key="nonBluetoothLaserRangeFinder"
             android:defaultValue="true"
-            android:summary="Enable support for Laser Ranger Finders that are not attached by Bluetooth. This is a case for laser range finders that are managed by Serial Monitor"/>
+            android:summary="@string/additional_lrf_summary"/>
     </PreferenceCategory>
 </PreferenceScreen>

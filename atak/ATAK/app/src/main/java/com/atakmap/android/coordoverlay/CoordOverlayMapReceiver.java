@@ -306,7 +306,8 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
     public void onSharedPreferenceChanged(
             SharedPreferences sharedPreferences, String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         if (key.equals("rab_rng_units_pref")
                 || key.equals("rab_brg_units_pref") ||
@@ -406,7 +407,7 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
                         }
                     } else if (item instanceof Shape) {
                         point = GeoPointMetaData
-                                .wrap(((Shape) item).findTouchPoint());
+                                .wrap(((Shape) item).getClickPoint());
 
                         area = ((Shape) item).getArea();
                     } else if (item != null) {

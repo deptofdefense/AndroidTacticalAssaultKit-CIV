@@ -18,7 +18,9 @@ import android.preference.PreferenceCategory;
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
 
-import com.atakmap.android.cot.LRFPreferenceFragment;
+import com.atakmap.android.lrf.LRFPreferenceFragment;
+import com.atakmap.app.system.FlavorProvider;
+import com.atakmap.app.system.SystemComponentLoader;
 import com.atakmap.os.FileObserver;
 import com.atakmap.android.gui.PanEditTextPreference;
 import com.atakmap.android.ipc.AtakBroadcast;
@@ -139,7 +141,8 @@ public class DevicePreferenceFragment extends AtakPreferenceFragment {
             public void onSharedPreferenceChanged(
                     SharedPreferences sharedPreferences, String key) {
 
-                if (key == null) return;
+                if (key == null)
+                    return;
 
                 switch (key) {
                     case "locationTeam":
@@ -187,6 +190,14 @@ public class DevicePreferenceFragment extends AtakPreferenceFragment {
                                 }
 
                             });
+        }
+
+        final Preference urnPrefs = findPreference("saURN");
+        FlavorProvider fp = SystemComponentLoader.getFlavorProvider();
+        if (fp == null || !fp.hasMilCapabilities()) {
+            removePreference(urnPrefs);
+        } else {
+            ((PanEditTextPreference)urnPrefs).setValidIntegerRange(0,16777215, true);
         }
 
         Preference savePrefs = findPreference("savePrefs");

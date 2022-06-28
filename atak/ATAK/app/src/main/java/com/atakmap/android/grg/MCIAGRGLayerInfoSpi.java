@@ -177,7 +177,6 @@ public class MCIAGRGLayerInfoSpi extends AbstractDatasetDescriptorSpi {
         } finally {
             if (dataset != null) {
                 dataset.delete();
-                dataset = null;
             }
         }
 

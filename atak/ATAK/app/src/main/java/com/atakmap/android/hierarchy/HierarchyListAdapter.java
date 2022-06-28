@@ -100,6 +100,8 @@ public class HierarchyListAdapter extends BaseAdapter implements
 
     private final static String TAG = "HierarchyListAdapter";
 
+    private static final String PATH_SEPARATOR = "\\";
+
     // 3-state visibility
     public static final int UNCHECKED = CheckBoxDrawable.UNCHECKED;
     public static final int CHECKED = CheckBoxDrawable.CHECKED;
@@ -1140,6 +1142,12 @@ public class HierarchyListAdapter extends BaseAdapter implements
 
         // Make sure we're on root page on the first attempt
         if (firstAttempt && this.currentList != this.model) {
+            // Notify close listener for the current list
+            HierarchyListStateListener l = getListStateListener();
+            if (l != null)
+                l.onCloseList(HierarchyListAdapter.this, true);
+
+            // Jump to the top-level
             this.prevListStack.clear();
             setCurrentList(this.model);
             this.navStartIndex = 0;
@@ -1422,6 +1430,12 @@ public class HierarchyListAdapter extends BaseAdapter implements
                 || (handler.getButtonMode() != ButtonMode.ALWAYS_VISIBLE
                         && paths.isEmpty()))
             return;
+
+        // If performing a single-select then we don't need to keep the
+        // single selected path past this point
+        if (!handler.isMultiSelect())
+            this.selectedPaths.clear();
+
         new SelectionTask(paths, handler).execute();
     }
 
@@ -1488,8 +1502,9 @@ public class HierarchyListAdapter extends BaseAdapter implements
             for (int i = 0; i < paths.size(); i++) {
                 String path = paths.get(i);
                 String uid = path;
-                if (path.contains("\\"))
-                    uid = path.substring(path.lastIndexOf("\\") + 1);
+                int lastSlash = path.lastIndexOf(PATH_SEPARATOR);
+                if (lastSlash != -1)
+                    uid = path.substring(lastSlash + 1);
                 HierarchyListItem item = findListByPath(path);
                 if (item != null && item.getUID().equals(uid)) {
                     ret.add(item);
@@ -1623,7 +1638,7 @@ public class HierarchyListAdapter extends BaseAdapter implements
             if (checked) {
                 List<HierarchyListItem> children = getChildren(this.model);
                 for (HierarchyListItem c : children)
-                    this.selectedPaths.add("\\" + c.getUID());
+                    this.selectedPaths.add(PATH_SEPARATOR + c.getUID());
             }
             updateCheckAll();
             notifyDataSetChanged();
@@ -1710,7 +1725,7 @@ public class HierarchyListAdapter extends BaseAdapter implements
                 return ret;
         }
         if (parent != this.model)
-            parentPath += "\\";
+            parentPath += PATH_SEPARATOR;
         List<HierarchyListItem> children = getChildren(parent);
         for (HierarchyListItem item : children) {
             String itemPath = parentPath + item.getUID();
@@ -1726,8 +1741,9 @@ public class HierarchyListAdapter extends BaseAdapter implements
      * Updates the state of the "Select All" checkbox
      */
     private void updateCheckAll() {
-        if (userSelectHandler != null && userSelectHandler
-                .getButtonMode() == ButtonMode.VISIBLE_WHEN_SELECTED)
+        if (userSelectHandler != null && userSelectHandler.isMultiSelect()
+                && userSelectHandler.getButtonMode()
+                == ButtonMode.VISIBLE_WHEN_SELECTED)
             processBtn.setVisibility(this.selectedPaths.isEmpty()
                     ? View.GONE
                     : View.VISIBLE);
@@ -1771,7 +1787,7 @@ public class HierarchyListAdapter extends BaseAdapter implements
 
         String dirPath = itemPath;
         if (item != this.model)
-            dirPath += "\\";
+            dirPath += PATH_SEPARATOR;
         boolean partial = false;
         boolean all = true;
         for (HierarchyListItem c : children) {
@@ -1805,7 +1821,7 @@ public class HierarchyListAdapter extends BaseAdapter implements
      * @return True if path is equal to or under dir, false otherwise
      */
     private boolean withinDir(String dir, String path) {
-        return dir.equals("\\") || path.equals(dir) || path.startsWith(dir)
+        return dir.equals(PATH_SEPARATOR) || path.equals(dir) || path.startsWith(dir)
                 && path.charAt(dir.length()) == '\\';
     }
 
@@ -1836,7 +1852,7 @@ public class HierarchyListAdapter extends BaseAdapter implements
                     return;
 
                 // Fire close event for the old list
-                HierarchyListStateListener l = getListStateListener();
+                HierarchyListStateListener l = getListStateListener(false);
                 if (l != null && l.onCloseList(HierarchyListAdapter.this,
                         false))
                     return;
@@ -1847,7 +1863,7 @@ public class HierarchyListAdapter extends BaseAdapter implements
                 if (list instanceof HierarchyListStateListener
                         && ((HierarchyListStateListener) list)
                                 .onOpenList(HierarchyListAdapter.this)) {
-                    HierarchyListStateListener l2 = getListStateListener();
+                    HierarchyListStateListener l2 = getListStateListener(false);
                     if (l2 != null && l2 == l)
                         // List hasn't actually changed - fire open on the old
                         // list again
@@ -2004,11 +2020,11 @@ public class HierarchyListAdapter extends BaseAdapter implements
      */
     public String getCurrentPath(HierarchyListItem selected) {
         List<String> uids = getCurrentPathList(selected);
-        StringBuilder path = new StringBuilder("\\");
+        StringBuilder path = new StringBuilder(PATH_SEPARATOR);
         for (int i = 0; i < uids.size(); i++) {
             path.append(uids.get(i));
             if (i < uids.size() - 1)
-                path.append("\\");
+                path.append(PATH_SEPARATOR);
         }
         return path.toString();
     }
@@ -2026,7 +2042,8 @@ public class HierarchyListAdapter extends BaseAdapter implements
                 continue;
             uids.add(list.getUID());
         }
-        if (this.currentList != this.model)
+        if (this.currentList != this.model &&
+                !(this.currentList instanceof SearchResults))
             uids.add(this.currentList.getUID());
         if (selected != null && selected != this.currentList)
             uids.add(selected.getUID());
@@ -2048,14 +2065,23 @@ public class HierarchyListAdapter extends BaseAdapter implements
     /**
      * Get the current list's state listener
      * Current list must implement {@link HierarchyListStateListener}
-     *
+     * @param nonSearch True to get the underlying list when in search mode
      * @return The state listener or null if not supported
      */
-    HierarchyListStateListener getListStateListener() {
-        HierarchyListItem item = getCurrentList(true);
+    HierarchyListStateListener getListStateListener(boolean nonSearch) {
+        HierarchyListItem item = getCurrentList(nonSearch);
         return item instanceof HierarchyListStateListener
                 ? (HierarchyListStateListener) item
                 : null;
+    }
+
+    /**
+     * Get the current list's state listener
+     * Current list must implement {@link HierarchyListStateListener}
+     * @return The state listener or null if not supported
+     */
+    HierarchyListStateListener getListStateListener() {
+        return getListStateListener(true);
     }
 
     /**
@@ -2106,7 +2132,8 @@ public class HierarchyListAdapter extends BaseAdapter implements
     public void onSharedPreferenceChanged(SharedPreferences p, String key) {
         // Preferred range system (metric, imperial, nautical)
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         switch (key) {
             case "rab_rng_units_pref":
@@ -2463,6 +2490,11 @@ public class HierarchyListAdapter extends BaseAdapter implements
         @Override
         public String getTitle() {
             return "";
+        }
+
+        @Override
+        public String getUID() {
+            return "HierarchyListSearchResults";
         }
 
         @Override

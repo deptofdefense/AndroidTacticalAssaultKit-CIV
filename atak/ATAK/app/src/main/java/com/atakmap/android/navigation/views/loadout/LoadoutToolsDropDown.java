@@ -12,13 +12,15 @@ import com.atakmap.android.navigation.models.NavButtonModel;
 import com.atakmap.android.navigation.views.NavView;
 
 import android.app.AlertDialog;
+import android.content.ClipDescription;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
+import android.view.DragEvent;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.GridView;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
@@ -39,6 +41,7 @@ import com.atakmap.app.preferences.CustomActionBarFragment;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.math.MathUtils;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -55,8 +58,9 @@ public class LoadoutToolsDropDown extends NavigationStackItem implements
         NavButtonManager.OnModelListChangedListener,
         NavButtonManager.OnModelChangedListener,
         LoadoutManager.OnLoadoutChangedListener,
+        MappingAdapterEventReceiver<MappingVM>,
         View.OnLayoutChangeListener,
-        MappingAdapterEventReceiver<MappingVM> {
+        View.OnDragListener {
 
     private static final String TAG = "LoadoutToolsDropDown";
 
@@ -64,9 +68,10 @@ public class LoadoutToolsDropDown extends NavigationStackItem implements
     private static final String PREF_TOOLS_LAYOUT = "loadout_tools_layout";
 
     private final AtakPreferences _prefs;
-    private final GridView _list;
     private final LoadoutToolsAdapter _adapter;
     private final LoadoutManager _loadouts;
+
+    private final LoadoutToolsGridView _list;
 
     private boolean _editMode;
     private boolean _isList = false;
@@ -76,6 +81,12 @@ public class LoadoutToolsDropDown extends NavigationStackItem implements
     private LoadoutItemModel _currentLoadout;
     private LoadoutItemModel _revertLoadout;
     private boolean _editable;
+
+    private int _dragPos = LoadoutToolsVM.NONE;
+    private float _dragX, _dragY;
+    private int _dragScrollAmount;
+    private boolean _dragScrollActive;
+    private final float _dragScrollThresh;
 
     protected LoadoutToolsDropDown(MapView mapView) {
         super(mapView);
@@ -97,10 +108,16 @@ public class LoadoutToolsDropDown extends NavigationStackItem implements
 
         _list = _itemView.findViewById(R.id.tools_list);
         _nameTxt = _itemView.findViewById(R.id.toolbar_name);
+        _nameTxt.setDragEnabled(false);
 
         _adapter = new LoadoutToolsAdapter(_context);
         _adapter.setEventReceiver(this);
         _list.setAdapter(_adapter);
+        _list.setOnDragListener(this);
+
+        Resources res = mapView.getResources();
+        _dragScrollAmount = (int) (res.getDisplayMetrics().density * 4);
+        _dragScrollThresh = res.getDimension(R.dimen.nav_child_button_size);
 
         onSharedPreferenceChanged(_prefs.getSharedPrefs(), PREF_TOOLS_LAYOUT);
     }
@@ -129,6 +146,14 @@ public class LoadoutToolsDropDown extends NavigationStackItem implements
             setEditMode(false);
         updateButtons();
         refresh();
+    }
+
+    /**
+     * Check if the tools drop-down is in edit mode
+     * @return True if in edit mode
+     */
+    public boolean isInEditMode() {
+        return _editMode;
     }
 
     /**
@@ -307,7 +332,8 @@ public class LoadoutToolsDropDown extends NavigationStackItem implements
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
             String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         // Controls how tools are laid out (grid vs. list)
         if (key.equals(PREF_TOOLS_LAYOUT)) {
@@ -338,8 +364,9 @@ public class LoadoutToolsDropDown extends NavigationStackItem implements
      */
     private void refresh() {
         ArrayList<MappingVM> navItems = new ArrayList<>();
-        List<NavButtonModel> models = NavButtonManager.getInstance()
-                .getButtonModels();
+        List<NavButtonModel> models = _currentLoadout != null
+                ? _currentLoadout.getSortedModels()
+                : NavButtonManager.getInstance().getButtonModels();
 
         for (NavButtonModel mdl : models) {
             boolean used = false;
@@ -593,6 +620,203 @@ public class LoadoutToolsDropDown extends NavigationStackItem implements
             _numGridColumns = (int) Math.max(width / cellSize, 1);
             if (!_isList)
                 _list.setNumColumns(_numGridColumns);
+        }
+    }
+
+    @Override
+    public boolean onDrag(View v, DragEvent event) {
+        int action = event.getAction();
+
+        ClipDescription desc = event.getClipDescription();
+        if (desc == null)
+            return false;
+
+        // Only respond to valid content labels
+        CharSequence label = desc.getLabel();
+        if (label == null)
+            return false;
+
+        boolean adding = NavView.DRAG_ADD_TOOL.contentEquals(label);
+        boolean removing = NavView.DRAG_MOVE_TOOL.contentEquals(label);
+        if (!adding && !removing)
+            return false;
+
+        // Make sure the current loadout is valid
+        if (_currentLoadout == null)
+            return false;
+
+        // Drag when deleting
+        switch (action) {
+            case DragEvent.ACTION_DRAG_STARTED:
+                break;
+            case DragEvent.ACTION_DRAG_ENTERED:
+                if (removing)
+                    _list.showDeleteOverlay(true);
+                break;
+
+            // Track which tool is being dragged where in the list
+            case DragEvent.ACTION_DRAG_LOCATION: {
+                if (removing)
+                    break;
+
+                // Highlight the side that's being dragged closest
+                _dragX = event.getX();
+                _dragY = event.getY();
+                updateDragSide();
+
+                // Set scroll direction
+                boolean scrollActive = false;
+                if (_dragY < _dragScrollThresh) {
+                    _dragScrollAmount = -Math.abs(_dragScrollAmount);
+                    scrollActive = true;
+                } else if (_dragY > _list.getHeight() - _dragScrollThresh) {
+                    _dragScrollAmount = Math.abs(_dragScrollAmount);
+                    scrollActive = true;
+                }
+
+                // Start scroll loop
+                setScrollActive(scrollActive);
+                break;
+            }
+            case DragEvent.ACTION_DROP: {
+                NavButtonModel mdl = NavButton.getButtonModel(event);
+                if (mdl == null)
+                    return false;
+                if (adding) {
+                    // Move the tool to a new position in the overflow
+                    List<NavButtonModel> models = _currentLoadout
+                            .getSortedModels();
+                    int idx = models.indexOf(mdl);
+                    if (_dragPos >= 0 && _dragPos <= models.size()
+                            && (_dragPos < idx || _dragPos > idx + 1)) {
+                        models.add(_dragPos, mdl);
+                        models.remove(_dragPos < idx ? idx + 1 : idx);
+                        _currentLoadout.setSortOrder(models);
+                        _loadouts.notifyLoadoutChanged(_currentLoadout);
+                    }
+                } else {
+                    // Remove the selected tool from the current loadout
+                    _currentLoadout.removeButton(mdl);
+                    _loadouts.notifyLoadoutChanged(_currentLoadout);
+                }
+                // Fallthrough to reset the name entry and hide the overlay
+            }
+            case DragEvent.ACTION_DRAG_EXITED:
+            case DragEvent.ACTION_DRAG_ENDED: {
+                setScrollActive(false);
+                if (adding) {
+                    // Reset drag highlights
+                    _dragPos = LoadoutToolsVM.NONE;
+                    int count = _adapter.getCount();
+                    for (int i = 0; i < count; i++) {
+                        LoadoutToolsVM vm = (LoadoutToolsVM) _adapter
+                                .getItem(i);
+                        vm.setDragPosition(LoadoutToolsVM.NONE);
+                    }
+                    _adapter.notifyDataSetChanged();
+                } else
+                    _list.showDeleteOverlay(false);
+                break;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Update the side that's being dragged towards
+     */
+    private void updateDragSide() {
+        int firstPos = _list.getFirstVisiblePosition();
+        int childCount = _list.getChildCount();
+        int adapterCount = _adapter.getCount();
+        boolean update = false;
+        for (int i = 0; i < childCount; i++) {
+            View c = _list.getChildAt(i);
+            if (c == null)
+                continue;
+
+            // Get the corresponding position
+            int pos = firstPos + i;
+            if (pos < 0 || pos >= adapterCount)
+                continue;
+
+            // Get the view model
+            LoadoutToolsVM vm = (LoadoutToolsVM) _adapter.getItem(pos);
+            if (vm == null)
+                continue;
+
+            // Determine the side of the view the drag is closest to
+            int dragSide = LoadoutToolsVM.NONE;
+            int cLeft = c.getLeft();
+            int cRight = c.getRight();
+            int cTop = c.getTop();
+            int cBottom = c.getBottom();
+            if (_dragX >= cLeft && _dragX < cRight
+                    && _dragY >= cTop && _dragY < cBottom) {
+                float xOff = ((_dragX - cLeft) / c.getWidth()) - 0.5f;
+                float yOff = ((_dragY - cTop) / c.getHeight()) - 0.5f;
+                if (_isList) {
+                    if (yOff < 0) {
+                        dragSide = LoadoutToolsVM.TOP;
+                        _dragPos = pos;
+                    } else {
+                        dragSide = LoadoutToolsVM.BOTTOM;
+                        _dragPos = pos + 1;
+                    }
+                } else {
+                    if (xOff < 0) {
+                        dragSide = LoadoutToolsVM.LEFT;
+                        _dragPos = pos;
+                    } else {
+                        dragSide = LoadoutToolsVM.RIGHT;
+                        _dragPos = pos + 1;
+                    }
+                }
+                _dragPos = MathUtils.clamp(_dragPos, 0, adapterCount);
+            }
+
+            // Update drag position while checking if we need to
+            // perform a full view update
+            if (dragSide != vm.getDragPosition()) {
+                vm.setDragPosition(dragSide);
+                update = true;
+            }
+        }
+
+        // Update the items in the list/grid
+        if (update)
+            _adapter.notifyDataSetChanged();
+    }
+
+    /**
+     * Set whether the scroll is active
+     * @param scrollActive True if scroll is active
+     */
+    private void setScrollActive(boolean scrollActive) {
+        if (_dragScrollActive != scrollActive) {
+            _dragScrollActive = scrollActive;
+            _list.setScrollHint(scrollActive ? _dragScrollAmount : 0);
+            if (scrollActive)
+                scrollList();
+        }
+    }
+
+    /**
+     * Scroll the list by a set amount
+     */
+    private void scrollList() {
+        if (_dragScrollActive) {
+            _list.scrollListBy(_dragScrollAmount);
+            _mapView.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (_dragScrollActive) {
+                        updateDragSide();
+                        scrollList();
+                    }
+                }
+            });
         }
     }
 }

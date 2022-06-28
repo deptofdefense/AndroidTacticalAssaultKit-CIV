@@ -324,7 +324,8 @@ public class CoTAutoBroadcaster implements
     public void onSharedPreferenceChanged(
             SharedPreferences sharedPreferences, String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         if (key.equals("hostileUpdateDelay")) {
             // default to 60 seconds

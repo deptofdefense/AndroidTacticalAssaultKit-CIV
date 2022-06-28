@@ -238,6 +238,11 @@ class EmergencyAlertMapOverlay extends AbstractMapOverlay2 {
 
             return retval;
         }
+
+        @Override
+        public boolean isMultiSelectSupported() {
+            return false;
+        }
     }
 
     /**

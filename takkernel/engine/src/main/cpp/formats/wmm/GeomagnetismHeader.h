@@ -291,8 +291,23 @@ int MAG_robustReadMagneticModel_Large(char *filename, char* filenameSV, MAGtype_
 ENGINE_API
 int MAG_robustReadMagModels(char *filename, MAGtype_MagneticModel *(*magneticmodels)[1], int array_size);
 #else
+#ifdef __cplusplus
+}
+#endif
+// portable overload declared outside of extern C linkage to allow overload
 ENGINE_API
-int MAG_robustReadMagModels(char *filename, MAGtype_MagneticModel *(*magneticmodels)[], int array_size);
+int MAG_robustReadMagModels(char *filename, MAGtype_MagneticModel **(*magneticmodels), int array_size);
+#ifdef __cplusplus
+extern "C" {
+#endif
+#ifndef TE_GCC48X_COMPAT
+// legacy signature is not compatible with <=GCC4.8.x
+ENGINE_API
+inline int MAG_robustReadMagModels(char *filename, MAGtype_MagneticModel *(*magneticmodels)[], int array_size)
+{
+    return MAG_robustReadMagModels(filename, (MAGtype_MagneticModel ***)magneticmodels, array_size);
+}
+#endif
 #endif
 ENGINE_API
 int MAG_SetDefaults(MAGtype_Ellipsoid *Ellip, MAGtype_Geoid *Geoid);
@@ -383,8 +398,21 @@ ENGINE_API
 void MAG_PrintEMMFormat(char *filename, char *filenameSV, MAGtype_MagneticModel *MagneticModel);
 
 #ifndef __ANDROID__
+#ifdef __cplusplus
+}
+#endif
 ENGINE_API
-void MAG_PrintSHDFFormat(char *filename, MAGtype_MagneticModel *(*MagneticModel)[], int epochs);
+void MAG_PrintSHDFFormat(char *filename, MAGtype_MagneticModel **(*MagneticModel), int epochs);
+#ifdef __cplusplus
+extern "C" {
+#endif
+#ifndef TE_GCC48X_COMPAT
+ENGINE_API
+inline void MAG_PrintSHDFFormat(char *filename, MAGtype_MagneticModel *(*MagneticModel)[], int epochs)
+{
+    MAG_PrintSHDFFormat(filename, (MAGtype_MagneticModel ***)MagneticModel, epochs);
+}
+#endif
 #endif
 
 ENGINE_API
@@ -397,8 +425,21 @@ int MAG_readMagneticModel_Large(char *filename, char *filenameSV, MAGtype_Magnet
 ENGINE_API
 int MAG_readMagneticModel_SHDF(char *filename, MAGtype_MagneticModel *(*magneticmodels)[1], int array_size);
 #else
+#ifdef __cplusplus
+}
+#endif
 ENGINE_API
-int MAG_readMagneticModel_SHDF(char *filename, MAGtype_MagneticModel *(*magneticmodels)[], int array_size);
+int MAG_readMagneticModel_SHDF(char *filename, MAGtype_MagneticModel **(*magneticmodels), int array_size);
+#ifdef __cplusplus
+extern "C" {
+#endif
+#ifndef TE_GCC48X_COMPAT
+ENGINE_API
+inline int MAG_readMagneticModel_SHDF(char *filename, MAGtype_MagneticModel *(*magneticmodels)[], int array_size)
+{
+    return MAG_readMagneticModel_SHDF(filename, (MAGtype_MagneticModel ***) magneticmodels, array_size);
+}
+#endif
 #endif
 
 ENGINE_API

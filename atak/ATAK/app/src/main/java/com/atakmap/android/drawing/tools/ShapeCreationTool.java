@@ -177,6 +177,7 @@ public class ShapeCreationTool extends Tool {
         _color = _prefs.getShapeColor();
         _shape.setColor(_color);
         _shape.setStrokeWeight(_prefs.getStrokeWeight());
+        _shape.setStrokeStyle(_prefs.getStrokeStyle());
         _fillColor = _prefs.getFillColor();
 
         _shape.setEditable(false);
@@ -241,6 +242,7 @@ public class ShapeCreationTool extends Tool {
                 // close and end!
                 event.getExtras().putBoolean("eventNotHandled", false);
                 _shape.setLineStyle(lineStyle);
+                _shape.setStrokeStyle(_prefs.getStrokeStyle());
                 _shape.setFilled(true);
                 _shape.setClosed(true);
                 _shape.setColor(_color);
@@ -268,6 +270,7 @@ public class ShapeCreationTool extends Tool {
     public void onToolEnd() {
         super.onToolEnd();
 
+        String shapeUID = null;
         if (_shape != null) {
             // If shape has < 2 points, remove it
             if (_shape.getNumPoints() < 2) {
@@ -287,17 +290,19 @@ public class ShapeCreationTool extends Tool {
                 _shape.removeMetaData("creating");
                 _shape.persist(_mapView.getMapEventDispatcher(), null,
                         this.getClass());
-
-                // Broadcast that the tool has completed its action
-                if (_callback != null) {
-                    Intent i = new Intent(_callback);
-                    i.putExtra("uid", _shape.getUID());
-                    AtakBroadcast.getInstance().sendBroadcast(i);
-                }
+                shapeUID = _shape.getUID();
             }
             _shape = null;
         }
         _firstClicked = null;
+
+        // Broadcast that the tool has completed its action
+        if (_callback != null) {
+            Intent i = new Intent(_callback);
+            if (shapeUID != null)
+                i.putExtra("uid", shapeUID);
+            AtakBroadcast.getInstance().sendBroadcast(i);
+        }
 
         _drawingToolsToolbar.toggleShapeButtons(true);
         _undoButton.setVisibility(Button.GONE);
@@ -364,8 +369,10 @@ public class ShapeCreationTool extends Tool {
         }
 
         // This needs to come after addStartMarker now, since _shape is null until then
-        if (_shape != null)
+        if (_shape != null) {
             _shape.setLineStyle(lineStyle);
+            _shape.setStrokeStyle(_prefs.getStrokeStyle());
+        }
     }
 
     @Override

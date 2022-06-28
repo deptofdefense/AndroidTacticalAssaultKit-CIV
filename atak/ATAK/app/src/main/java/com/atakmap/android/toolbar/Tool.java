@@ -239,7 +239,7 @@ public abstract class Tool implements OnKeyListener {
             if (mi instanceof PointMapItem)
                 point = ((PointMapItem) mi).getGeoPointMetaData();
             else if (mi instanceof Shape)
-                point = GeoPointMetaData.wrap(((Shape) mi).findTouchPoint());
+                point = GeoPointMetaData.wrap(((Shape) mi).getClickPoint());
         }
 
         if (point == null)

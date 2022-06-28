@@ -223,6 +223,12 @@ public class MultiPolyline extends DrawingShape implements Exportable {
     }
 
     @Override
+    protected void onStrokeStyleChanged() {
+        super.onStrokeStyleChanged();
+        refresh();
+    }
+
+    @Override
     public void setStrokeWeight(double strokeWeight) {
         super.setStrokeWeight(strokeWeight);
         refresh();
@@ -267,6 +273,7 @@ public class MultiPolyline extends DrawingShape implements Exportable {
         line.setHeight(getHeight());
         line.setClickable(getClickable());
         line.setLineStyle(getLineStyle());
+        line.setStrokeStyle(getStrokeStyle());
         line.toggleMetaData("labels_on", hasMetaValue("labels_on"));
         line.setMetaString("shapeUID", getUID());
         line.setMetaBoolean("addToObjList", false);

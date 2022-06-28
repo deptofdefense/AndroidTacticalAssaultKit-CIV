@@ -128,7 +128,7 @@ public class PhraseParser {
      * Expand a phrase to a resulting string
      * 
      * @param phraseSource the source phrase
-     * @param params tthe parameters to be used
+     * @param params the parameters to be used
      * @return the expanded string
      */
     public static String expandPhrase(final String phraseSource,

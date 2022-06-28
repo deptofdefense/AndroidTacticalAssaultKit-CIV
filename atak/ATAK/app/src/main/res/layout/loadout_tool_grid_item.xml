@@ -67,5 +67,18 @@
             android:background="@color/manatee"
             android:layout_alignParentBottom="true"/>
 
+        <!-- Drag and drop highlights -->
+        <View
+            android:id="@+id/drag_border_left"
+            style="@style/NavButtonDragHighlight"
+            android:layout_height="match_parent"
+            android:layout_alignParentStart="true"/>
+
+        <View
+            android:id="@+id/drag_border_right"
+            style="@style/NavButtonDragHighlight"
+            android:layout_height="match_parent"
+            android:layout_alignParentEnd="true"/>
+
     </RelativeLayout>
 </FrameLayout>

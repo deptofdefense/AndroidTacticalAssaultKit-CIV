@@ -17,6 +17,8 @@
 #include "util/IO2.h"
 #include "model/ZipCommentInfo.h"
 
+#include <math.h>
+
 using namespace TAK::Engine::Model;
 
 using namespace TAK::Engine::Core;
@@ -618,7 +620,7 @@ TAKErr SceneLayer::update(const int64_t sid, const SceneInfo &info) NOTHROWS
     return update(sid, info, attributes);
 }
 
-TAKErr SceneLayer::getMetadata(atakmap::util::AttributeSet &metadata, const char *uri) const NOTHROWS
+TAKErr SceneLayer::getMetadata(atakmap::util::AttributeSet &metadata, const char *uri) NOTHROWS
 {
         TAKErr code(TE_Ok);
 
@@ -642,7 +644,6 @@ TAKErr SceneLayer::getMetadata(atakmap::util::AttributeSet &metadata, const char
             code = ZipCommentInfo::Create(zipCommentInfo, zipComment.get());
             TE_CHECKRETURN_CODE(code);
 
-            ;
             zipCommentInfo->GetMetadata(metadata);
         } TE_END_TRAP(code);
 
@@ -1161,6 +1162,7 @@ namespace
             }
             nested.setInt("srid", info.srid);
             nested.setInt("altitudeMode", info.altitudeMode);
+            nested.setInt("capabilities", static_cast<int>(info.capabilities));
 
             if (info.localFrame.get()) {
                 double localFrame[16];
@@ -1243,6 +1245,10 @@ namespace
             if (!nested.containsAttribute("altitudeMode"))
                 return TE_InvalidArg;
             value->altitudeMode = (AltitudeMode)nested.getInt("altitudeMode");
+    
+            value->capabilities = SceneInfo::CapabilitiesType::All;
+            if(nested.containsAttribute("capabilities"))
+                value->capabilities = (SceneInfo::CapabilitiesType)nested.getInt("capabilities");
             if (value->location.get()) {
                 switch (value->altitudeMode) {
                 case TEAM_Absolute :

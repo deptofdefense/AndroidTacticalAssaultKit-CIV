@@ -31,7 +31,13 @@ class EncryptionUtils {
     private static final String symKeyAlgorithm = "AES";
     private static final String prng = "SHA1PRNG";
 
-    static byte[] encrypt(byte[] symKeyData, byte[] encodedMessage)
+    /**
+     * Given a symetric key, encode a message
+     * @param symKeyData the symetric key
+     * @param encodedMessage the message to encode
+     * @return the byte array representing the encoded message
+     */
+    public static byte[] encrypt(byte[] symKeyData, byte[] encodedMessage)
             throws Exception {
         final Cipher cipher = Cipher.getInstance(cipherOptions);
         final int blockSize = cipher.getBlockSize();
@@ -56,6 +62,12 @@ class EncryptionUtils {
         return ivAndEncryptedMessage;
     }
 
+    /**
+     * Given an encrypted message and a symetric key, decrypt the message
+     * @param symKeyData the symetric key
+     * @param ivAndEncryptedMessage the encrypted message
+     * @return the descrpted message as a byte array
+     */
     public static byte[] decrypt(byte[] symKeyData,
             byte[] ivAndEncryptedMessage) {
         try {

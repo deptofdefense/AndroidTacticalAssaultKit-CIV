@@ -6,17 +6,20 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
-import android.graphics.drawable.ShapeDrawable;
 import android.os.Bundle;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.SeekBar;
 
+import com.atakmap.android.gui.ShapeColorButton;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.Marker;
+import com.atakmap.android.maps.Shape;
 import com.atakmap.android.util.SimpleSeekBarChangeListener;
 
 import android.text.Editable;
@@ -42,13 +45,19 @@ import com.atakmap.map.CameraController;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import androidx.annotation.Nullable;
+
 public class ShapeDetailsView extends GenericDetailsView implements
-        PointMapItem.OnPointChangedListener, View.OnClickListener {
+        PointMapItem.OnPointChangedListener,
+        Shape.OnPointsChangedListener,
+        View.OnClickListener,
+        CompoundButton.OnCheckedChangeListener {
 
     private static final String TAG = "ShapeDetailsView";
 
     private AttachmentManager attachmentManager;
     private ImageButton _attachmentButton;
+    private ShapeColorButton _colorBtn;
 
     private View _sendExportView;
     private View _shapeEditView;
@@ -59,8 +68,16 @@ public class ShapeDetailsView extends GenericDetailsView implements
     private TextView _shapePerimeterLabel;
     private Button _shapePerimeterTF;
 
+    private TextView _startPointLabel;
+    private Button _startPointBtn;
+
+    private TextView _endPointLabel;
+    private Button _endPointBtn;
+
+    private CheckBox _closedCB;
+    private View _transView;
+
     private DrawingShape _shape;
-    private Marker _center;
 
     public ShapeDetailsView(Context context) {
         super(context);
@@ -74,34 +91,22 @@ public class ShapeDetailsView extends GenericDetailsView implements
     public boolean setItem(MapView mapView, MapItem shape) {
         if (!(shape instanceof DrawingShape))
             return false;
+        unregisterListeners();
         super.setItem(mapView, shape);
         _shape = (DrawingShape) shape;
+        registerListeners();
         _init();
         return true;
     }
 
     /**
      * Callback for when the Dropdown closes.
-     * Updates the shapes's meta data if something has changed.
+     * Updates the shape's meta data if something has changed.
      */
     @Override
     public void onClose() {
-
         super.onClose();
-        if (_center != null)
-            _center.removeOnPointChangedListener(this);
-
-        // Update the name if the user changed it.
-        String name = _nameEdit.getText().toString();
-        if (!name.equals(_prevName)) {
-            _shape.setTitle(name);
-        }
-
-        // Update the remarks if the user changed them.
-        String remarks = _remarksLayout.getText();
-        if (!remarks.equals(_prevRemarks)) {
-            _shape.setMetaString("remarks", remarks);
-        }
+        unregisterListeners();
 
         attachmentManager.cleanup();
 
@@ -134,6 +139,39 @@ public class ShapeDetailsView extends GenericDetailsView implements
      * *************************** PRIVATE METHODS ***************************
      */
 
+    /**
+     * Get the shape's center marker
+     * @return Shape center marker or null if none
+     */
+    @Nullable
+    private Marker getCenterMarker() {
+        return _shape != null ? _shape.getMarker() : null;
+    }
+
+    /**
+     * Register shape/point listeners
+     */
+    private void registerListeners() {
+        if (_shape == null)
+            return;
+        Marker center = getCenterMarker();
+        if (center != null)
+            center.addOnPointChangedListener(this);
+        _shape.addOnPointsChangedListener(this);
+    }
+
+    /**
+     * Unregister shape/point listeners
+     */
+    private void unregisterListeners() {
+        if (_shape == null)
+            return;
+        Marker center = getCenterMarker();
+        if (center != null)
+            center.removeOnPointChangedListener(this);
+        _shape.removeOnPointsChangedListener(this);
+    }
+
     private void _init() {
         _nameEdit = findViewById(R.id.drawingShapeNameEdit);
         _remarksLayout = findViewById(R.id.remarksLayout);
@@ -147,13 +185,20 @@ public class ShapeDetailsView extends GenericDetailsView implements
         _shapePerimeterTF = findViewById(R.id.shapePerimeterText);
 
         _heightButton = findViewById(R.id.drawingShapeHeightButton);
-        _colorButton = findViewById(R.id.drawingShapeColorButton);
-        /*
-        *************************** PRIVATE FIELDS ***************************
-        */
+        _colorBtn = findViewById(R.id.drawingShapeColorButton);
+        setupShapeColorButton(_colorBtn, _shape);
+
+        _startPointLabel = findViewById(R.id.startPointLabel);
+        _startPointBtn = findViewById(R.id.startPointButton);
+
+        _endPointLabel = findViewById(R.id.endPointLabel);
+        _endPointBtn = findViewById(R.id.endPointButton);
+
+        _closedCB = findViewById(R.id.closedCB);
+
         _transSeek = findViewById(R.id.drawingShapeTransparencySeek);
         _thickSeek = findViewById(R.id.drawingShapeStrokeSeek);
-        View _transView = findViewById(R.id.drawingShapeTransparencyView);
+        _transView = findViewById(R.id.drawingShapeTransparencyView);
         _sendExportView = findViewById(R.id.drawingShapeSendExportView);
         _shapeEditView = findViewById(R.id.drawingShapeEditView);
 
@@ -171,34 +216,21 @@ public class ShapeDetailsView extends GenericDetailsView implements
                     _attachmentButton);
         attachmentManager.setMapItem(_shape);
 
-        // Save an instance of the name, so we know if it changed when the dropdown closes
-        _prevName = _shape.getTitle();
-        _nameEdit.setText(_prevName);
+        refresh();
 
         _nameEdit.addTextChangedListener(new AfterTextChangedWatcher() {
             @Override
             public void afterTextChanged(Editable s) {
-                if (_shape != null) {
-                    String name = _nameEdit.getText().toString();
-                    _shape.setTitle(name);
-                    _shape.refresh(MapView.getMapView()
-                            .getMapEventDispatcher(), null, this.getClass());
-                }
+                if (_shape != null)
+                    _shape.setTitle(_nameEdit.getText().toString());
             }
         });
-
-        // Save an instance of the remarks, so we know if they changed when the dropdown closes
-        _prevRemarks = _shape.getMetaString("remarks", "");
-        _remarksLayout.setText(_prevRemarks);
 
         _remarksLayout.addTextChangedListener(new AfterTextChangedWatcher() {
             @Override
             public void afterTextChanged(Editable s) {
-                if (_shape != null) {
-                    String remarks = _remarksLayout.getText();
-                    if (!remarks.equals(_prevRemarks))
-                        _shape.setMetaString("remarks", remarks);
-                }
+                if (_shape != null)
+                    _shape.setRemarks(_remarksLayout.getText());
             }
         });
 
@@ -206,86 +238,44 @@ public class ShapeDetailsView extends GenericDetailsView implements
         PointMapItem device = ATAKUtilities.findSelf(_mapView);
         // It's possible that we don't have GPS and therefore don't have a controller point
         if (device != null) {
-            _noGps.setVisibility(View.GONE);
-            rabtable.setVisibility(View.VISIBLE);
+            _noGps.setVisibility(GONE);
+            rabtable.setVisibility(VISIBLE);
             rabtable.update(device, _shape.getCenter().get());
         } else {
-            _noGps.setVisibility(View.VISIBLE);
-            rabtable.setVisibility(View.GONE);
+            _noGps.setVisibility(VISIBLE);
+            rabtable.setVisibility(GONE);
         }
 
         // keep the calculations and processes in the detail page, but disable the 
         // view for 3.2 as per JS.   Maybe this becomes a preference.
-        _noGps.setVisibility(View.GONE);
-        rabtable.setVisibility(View.GONE);
+        _noGps.setVisibility(GONE);
+        rabtable.setVisibility(GONE);
 
-        _thickSeek.setProgress((int) (_shape.getStrokeWeight() * 10) - 10);
+        _thickSeek.setOnSeekBarChangeListener(new SimpleSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar sb, int prog, boolean user) {
+                if (user) {
+                    double strokeWeight = 1 + (prog / 10d);
+                    _shape.setStrokeWeight(strokeWeight);
+                    _drawPrefs.setStrokeWeight(strokeWeight);
+                }
+            }
+        });
 
-        _thickSeek
-                .setOnSeekBarChangeListener(
-                        new SimpleSeekBarChangeListener() {
-                            @Override
-                            public void onProgressChanged(SeekBar seekBar,
-                                    int progress, boolean fromUser) {
-                                double strokeWeight = 1 + (progress / 10d);
-                                _shape.setStrokeWeight(strokeWeight);
-                                _drawPrefs.setStrokeWeight(strokeWeight);
-                            }
-                        });
+        _centerButton.setOnClickListener(this);
+        _startPointBtn.setOnClickListener(this);
+        _endPointBtn.setOnClickListener(this);
+        _transSeek.setOnSeekBarChangeListener(new SimpleSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar sb, int alpha, boolean user) {
+                if (user) {
+                    _shape.setFillAlpha(alpha);
+                    _drawPrefs.setFillAlpha(alpha);
+                }
+            }
+        });
 
-        // Depending on whether or not the shape is closed, the UI will change
-        // shouldn't be able to move the center of a shape, or to edit the transparency
-        // because there is no fill color.
-        if (!_shape.isClosed()) {
-            _transView.setVisibility(View.GONE);
-            _centerButton.setEnabled(false);
-            _shapeAreaLabel.setVisibility(View.GONE);
-            _shapeAreaTF.setVisibility(View.GONE);
-            updatePerimeterOrLength();
-            _center = null;
-        } else {
-            _center = _shape.getMarker();
-            _center.addOnPointChangedListener(this);
-            _centerButton.setOnClickListener(this);
-
-            _alpha = _shape.getFillColor() >>> 24;
-            _transSeek.setProgress(_alpha);
-
-            _transSeek
-                    .setOnSeekBarChangeListener(
-                            new SimpleSeekBarChangeListener() {
-                                @Override
-                                public void onProgressChanged(SeekBar seekBar,
-                                        int progress, boolean fromUser) {
-                                    if (fromUser) {
-                                        int color = _shape.getFillColor();
-                                        _alpha = progress;
-                                        _shape.setFillColor(Color.argb(_alpha,
-                                                Color.red(color),
-                                                Color.green(color),
-                                                Color.blue(color)));
-                                        _drawPrefs.setFillAlpha(_alpha);
-                                    }
-                                }
-                            });
-            _shapeAreaLabel.setVisibility(View.VISIBLE);
-            _shapeAreaTF.setVisibility(View.VISIBLE);
-            updateArea();
-            updatePerimeterOrLength();
-        }
-        onPointChanged(_center);
-
-        double height = _shape.getHeight();
-        Span unit = _unitPrefs.getAltitudeUnits();
-        if (!Double.isNaN(height)) {
-            _heightButton.setText(SpanUtilities.format(height, Span.METER,
-                    unit));
-        } else {
-            _heightButton.setText("-- " + unit.getAbbrev());
-        }
         _heightButton.setOnClickListener(this);
-        _updateColorButtonDrawable();
-        _colorButton.setOnClickListener(this);
 
         setupAreaButton(_shapeAreaTF, new Runnable() {
             public void run() {
@@ -298,6 +288,71 @@ public class ShapeDetailsView extends GenericDetailsView implements
                 updatePerimeterOrLength();
             }
         });
+    }
+
+    @Override
+    public void refresh() {
+        if (_shape == null)
+            return;
+
+        _nameEdit.setText(_shape.getTitle());
+        _remarksLayout.setText(_shape.getRemarks());
+
+        boolean closed = _shape.isClosed();
+
+        // Update the center point
+        Marker centerMarker = getCenterMarker();
+        GeoPointMetaData center = _shape.getCenter();
+        if (centerMarker != null)
+            center = centerMarker.getGeoPointMetaData();
+        _centerButton.setText(_unitPrefs.formatPoint(center,
+                centerMarker != null));
+        _centerButton.setEnabled(closed);
+
+        // Whether the shape is closed or not
+        _closedCB.setVisibility(_shape.getNumPoints() > 2 ? VISIBLE : GONE);
+        _closedCB.setOnCheckedChangeListener(null);
+        _closedCB.setChecked(closed);
+        _closedCB.setOnCheckedChangeListener(this);
+
+        // Update the start and end points
+        int openVis = closed ? GONE : VISIBLE;
+        int closedVis = closed ? VISIBLE : GONE;
+        GeoPointMetaData start = _shape.getPoint(0);
+        GeoPointMetaData end = _shape.getPoint(_shape.getNumPoints() - 1);
+        if (start != null)
+            _startPointBtn.setText(_unitPrefs.formatPoint(start, false));
+        if (end != null)
+            _endPointBtn.setText(_unitPrefs.formatPoint(end, false));
+        _startPointLabel.setVisibility(openVis);
+        _startPointBtn.setVisibility(openVis);
+        _endPointLabel.setVisibility(openVis);
+        _endPointBtn.setVisibility(openVis);
+
+        // Height
+        double height = _shape.getHeight();
+        Span unit = _unitPrefs.getAltitudeUnits();
+        if (!Double.isNaN(height))
+            _heightButton.setText(SpanUtilities.format(height, Span.METER,
+                    unit));
+        else
+            _heightButton.setText("-- " + unit.getAbbrev());
+
+        // Update shape stats
+        updatePerimeterOrLength();
+        updateArea();
+
+        // Stroke weight
+        _thickSeek.setProgress((int) (_shape.getStrokeWeight() * 10) - 10);
+
+        // Alpha transparency
+        int alpha = _shape.isClosed() ? Color.alpha(_shape.getFillColor())
+                : _drawPrefs.getFillAlpha();
+        _transSeek.setProgress(alpha);
+        _transView.setVisibility(closedVis);
+
+        // Attachments button
+        attachmentManager.refresh();
     }
 
     @Override
@@ -320,10 +375,6 @@ public class ShapeDetailsView extends GenericDetailsView implements
         else if (id == R.id.drawingShapeEndEditingButton)
             endEditingMode();
 
-        // Edit color
-        else if (v == _colorButton)
-            _onColorSelected();
-
         // Edit height
         else if (v == _heightButton)
             _onHeightSelected();
@@ -331,6 +382,10 @@ public class ShapeDetailsView extends GenericDetailsView implements
         // Edit center point (closed shape only)
         else if (v == _centerButton)
             _onCenterSelected();
+
+        // Edit start/end points (open shape only)
+        else if (v == _startPointBtn || v == _endPointBtn)
+            onPointSelected(v == _startPointBtn);
     }
 
     @Override
@@ -338,14 +393,19 @@ public class ShapeDetailsView extends GenericDetailsView implements
         _mapView.post(new Runnable() {
             @Override
             public void run() {
-                if (_center == item) {
-                    GeoPointMetaData center = _shape.getCenter();
-                    PointMapItem anchor = _shape.getAnchorItem();
-                    if (anchor != null)
-                        center = anchor.getGeoPointMetaData();
-                    _centerButton.setText(_unitPrefs.formatPoint(center,
-                            anchor != null));
-                }
+                if (getCenterMarker() == item)
+                    refresh();
+            }
+        });
+    }
+
+    @Override
+    public void onPointsChanged(Shape s) {
+        _mapView.post(new Runnable() {
+            @Override
+            public void run() {
+                if (_shape == s)
+                    refresh();
             }
         });
     }
@@ -358,11 +418,11 @@ public class ShapeDetailsView extends GenericDetailsView implements
         else
             _shapePerimeterLabel.setText(R.string.length);
         if (Double.isNaN(range)) {
-            _shapePerimeterTF.setVisibility(View.GONE);
-            _shapePerimeterLabel.setVisibility(View.GONE);
+            _shapePerimeterTF.setVisibility(GONE);
+            _shapePerimeterLabel.setVisibility(GONE);
         } else {
-            _shapePerimeterTF.setVisibility(View.VISIBLE);
-            _shapePerimeterLabel.setVisibility(View.VISIBLE);
+            _shapePerimeterTF.setVisibility(VISIBLE);
+            _shapePerimeterLabel.setVisibility(VISIBLE);
             _shapePerimeterTF.setText(
                     SpanUtilities.formatType(rangeSystem, range, Span.METER,
                             false));
@@ -374,41 +434,14 @@ public class ShapeDetailsView extends GenericDetailsView implements
         final double area = _shape.getArea();
 
         if (Double.isNaN(area)) {
-            _shapeAreaTF.setVisibility(View.GONE);
-            _shapeAreaLabel.setVisibility(View.GONE);
+            _shapeAreaTF.setVisibility(GONE);
+            _shapeAreaLabel.setVisibility(GONE);
         } else {
-            _shapeAreaLabel.setVisibility(View.VISIBLE);
-            _shapeAreaTF.setVisibility(View.VISIBLE);
+            _shapeAreaLabel.setVisibility(VISIBLE);
+            _shapeAreaTF.setVisibility(VISIBLE);
             _shapeAreaTF.setText("(" + AreaUtilities.formatArea(areaUnits, area,
                     Area.METER2) + ")");
         }
-    }
-
-    private void _updateColorButtonDrawable() {
-        final ShapeDrawable color = super.updateColorButtonDrawable();
-        color.getPaint().setColor(_shape.getStrokeColor());
-
-        post(new Runnable() {
-            @Override
-            public void run() {
-                _colorButton.setImageDrawable(color);
-            }
-        });
-
-    }
-
-    // show a dialog view that allows the user to select buttons that have the
-    // colors overlayed on them
-    @Override
-    protected void _onColorSelected(int color, String label) {
-        _shape.setColor(color);
-        _drawPrefs.setShapeColor(color);
-        _shape.setFillColor(Color.argb(_alpha, Color.red(color),
-                Color.green(color), Color.blue(color)));
-        if (_shape.getShapeMarker() != null)
-            _shape.getShapeMarker().refresh(_mapView
-                    .getMapEventDispatcher(), null, getClass());
-        _updateColorButtonDrawable();
     }
 
     private void _onCenterSelected() {
@@ -459,9 +492,43 @@ public class ShapeDetailsView extends GenericDetailsView implements
                 });
     }
 
-    @Override
-    public void refresh() {
-        attachmentManager.refresh();
+    /**
+     * Called when the start or end point button is selected
+     * @param start True if start point, false if end point
+     */
+    private void onPointSelected(final boolean start) {
+        final int index = start ? 0 : _shape.getNumPoints() - 1;
+        GeoPointMetaData point = _shape.getPoint(index);
+        if (point == null)
+            return;
+
+        AlertDialog.Builder b = new AlertDialog.Builder(getContext());
+        LayoutInflater inflater = LayoutInflater.from(getContext());
+        final CoordDialogView coordView = (CoordDialogView) inflater.inflate(
+                R.layout.draper_coord_dialog, null);
+        b.setTitle(start ? R.string.start_point : R.string.end_point);
+        b.setView(coordView);
+        b.setPositiveButton(R.string.ok, null);
+        b.setNegativeButton(R.string.cancel, null);
+
+        coordView.setParameters(point, _mapView.getPoint(), _cFormat);
+        final AlertDialog d = b.create();
+        d.show();
+        d.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        GeoPointMetaData p = coordView.getPoint();
+                        CoordinateFormat cf = coordView.getCoordFormat();
+                        CoordDialogView.Result result = coordView.getResult();
+                        if (result == CoordDialogView.Result.INVALID)
+                            return;
+                        _cFormat = cf;
+                        _shape.setPoint(index, p, true);
+                        refresh();
+                        d.dismiss();
+                    }
+                });
     }
 
     @Override
@@ -475,8 +542,9 @@ public class ShapeDetailsView extends GenericDetailsView implements
     protected void heightSelected(final double height, final Span u,
             final double h) {
         super.heightSelected(height, u, h);
-        if (_center != null)
-            _center.setHeight(height);
+        Marker center = getCenterMarker();
+        if (center != null)
+            center.setHeight(height);
     }
 
     @Override
@@ -487,4 +555,24 @@ public class ShapeDetailsView extends GenericDetailsView implements
             super.sendSelected(uid);
     }
 
+    @Override
+    public void onCheckedChanged(CompoundButton cb, boolean checked) {
+        if (cb == _closedCB) {
+            // Re-register listeners in case the center marker was added/removed
+            unregisterListeners();
+            _shape.setClosed(checked);
+            _shape.setFilled(checked);
+            registerListeners();
+
+            // Make sure the fill color properly matches the stroke color
+            if (checked && _shape.getFillColor() == Color.WHITE) {
+                int color  = _shape.getStrokeColor();
+                int alpha = _transSeek.getProgress();
+                _shape.setFillColor((alpha << 24) | (color & 0xFFFFFF));
+            }
+
+            setupShapeColorButton(_colorBtn, _shape);
+            refresh();
+        }
+    }
 }

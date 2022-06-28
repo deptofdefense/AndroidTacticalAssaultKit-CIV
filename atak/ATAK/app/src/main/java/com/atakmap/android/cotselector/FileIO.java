@@ -115,7 +115,7 @@ class FileIO {
                         pre = line;
                     } else if (line.equals("")) {
                         clv.add2525ToList(req, pre,
-                                (ArrayList<String>) items.clone());
+                                new ArrayList<>(items));
                         req = null;
                         pre = null;
                         items.clear();

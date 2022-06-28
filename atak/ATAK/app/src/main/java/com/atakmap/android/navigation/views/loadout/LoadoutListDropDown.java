@@ -65,6 +65,8 @@ public class LoadoutListDropDown extends NavigationStackItem
 
     private static final String PACKAGE_PREFIX = "com.atakmap.android.loadout.";
     public static final String SHOW_LOADOUT = PACKAGE_PREFIX + "SHOW_LOADOUT";
+    public static final String TOGGLE_LOADOUT = PACKAGE_PREFIX
+            + "TOGGLE_LOADOUT";
     public static final String CLOSE_LOADOUT = PACKAGE_PREFIX + "CLOSE_LOADOUT";
     public static final String REFRESH_LIST = PACKAGE_PREFIX + "REFRESH_LIST";
 
@@ -91,6 +93,8 @@ public class LoadoutListDropDown extends NavigationStackItem
 
         DocumentedIntentFilter filter = new DocumentedIntentFilter();
         filter.addAction(SHOW_LOADOUT, "Show options for the current loadout");
+        filter.addAction(TOGGLE_LOADOUT,
+                "Toggle the loadout/overflow drop-down");
         filter.addAction(CLOSE_LOADOUT, "Close the loadout/overflow drop-down");
         filter.addAction(REFRESH_LIST, "Refresh the loadout list");
         AtakBroadcast.getInstance().registerReceiver(this, filter);
@@ -192,6 +196,16 @@ public class LoadoutListDropDown extends NavigationStackItem
             // Show options for the current loadout
             case SHOW_LOADOUT:
                 showDropDown();
+
+                // Toggle the drop-down
+            case TOGGLE_LOADOUT:
+                if (isVisible()) { 
+                    if (_toolsDropdown != null && _toolsDropdown.isInEditMode())
+                         _toolsDropdown.onCloseButton();
+                    else 
+                         closeNavigationStack();
+                } else
+                    showDropDown();
                 break;
 
             // Close the drop-down

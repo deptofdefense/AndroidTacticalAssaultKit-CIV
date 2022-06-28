@@ -35,12 +35,12 @@ public class CustomActionBarFragment extends AtakPreferenceFragment {
     public static java.util.List<PreferenceSearchIndex> index(Context context) {
         return index(context,
                 CustomActionBarFragment.class,
-                R.string.preferences_text404,
+                R.string.preferences_text131,
                 R.drawable.customize_actionbar_pref_icon);
     }
 
     public CustomActionBarFragment() {
-        super(R.xml.custom_actionbar_preferences, R.string.preferences_text404);
+        super(R.xml.custom_actionbar_preferences, R.string.preferences_text131);
     }
 
     @Override

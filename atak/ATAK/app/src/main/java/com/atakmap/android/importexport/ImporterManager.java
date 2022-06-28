@@ -26,6 +26,10 @@ public final class ImporterManager {
     private ImporterManager() {
     }
 
+    /**
+     * Register an importer for use when importing data
+     * @param importer the importer
+     */
     public static synchronized void registerImporter(Importer importer) {
         Set<Importer> s = importers.get(importer.getContentType());
         if (s == null)
@@ -34,12 +38,22 @@ public final class ImporterManager {
         s.add(importer);
     }
 
+    /**
+     * Unregister an importer for use when importing data
+     * @param importer the importer
+     */
     public static synchronized void unregisterImporter(Importer importer) {
         Set<Importer> s = importers.get(importer.getContentType());
         if (s != null)
             s.remove(importer);
     }
 
+    /**
+     * Returns an importer for a specific content and mime type.
+     * @param contentType the content type to use
+     * @param mime the mime type to use
+     * @return the first importer that satisfies the request
+     */
     public static synchronized Importer findImporter(String contentType,
             String mime) {
         return findImporterNoSync(contentType, mime);
@@ -62,6 +76,11 @@ public final class ImporterManager {
         return null;
     }
 
+    /**
+     * Find a set of importers that support a given mime type
+     * @param supportedMimeType the mime type
+     * @return the set of importers that can be used for the mimetype
+     */
     public static synchronized Set<Importer> findImporters(
             String supportedMimeType) {
         Set<Importer> retval = new LinkedHashSet<>();
@@ -81,7 +100,9 @@ public final class ImporterManager {
 
     /** 
      * Given an inputStream and a bundle, attempt to determine the content type and mime type 
-     * for the stream, then call importData.   
+     * for the stream, then call importData.
+     * @param in the input stream be be used with a maximal probe size of 64kb or less
+     * @param bundle the bundle that could contain extra information
      */
     public static ImportResult importData(final InputStream in,
             final Bundle bundle) throws IOException {

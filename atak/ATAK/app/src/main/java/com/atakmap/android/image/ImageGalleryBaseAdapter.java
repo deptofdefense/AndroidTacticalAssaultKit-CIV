@@ -13,6 +13,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.atakmap.map.CameraController;
 import com.atakmap.util.zip.IoUtils;
 import org.apache.sanselan.formats.tiff.TiffImageMetadata;
 import org.apache.sanselan.formats.tiff.constants.TiffConstants;
@@ -32,7 +33,6 @@ import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.filesystem.HashingUtils;
-import com.atakmap.map.AtakMapController;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -658,8 +658,9 @@ public abstract class ImageGalleryBaseAdapter
                     MapItem mi = mapView.getRootGroup().deepFindUID(itemUID);
                     if (mi instanceof PointMapItem) {
                         // Pan to map item synchronously before displaying content
-                        AtakMapController cont = mapView.getMapController();
-                        cont.panTo(((PointMapItem) mi).getPoint(), true);
+
+                        CameraController.Programmatic.panTo(mapView.getRenderer3(),
+                                ((PointMapItem) mi).getPoint(), true);
                     }
                     AtakBroadcast.getInstance().sendBroadcast(
                             new Intent(MapMenuReceiver.HIDE_MENU));

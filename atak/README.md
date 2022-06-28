@@ -5,7 +5,9 @@ ATAK is a Moving Map capability for the Android OS. The moving map capability is
 core civilian capability that is built first and then flavored with either the military or 
 fms capabilities.  Full development resources can be found at wiki.tak.gov.
 
-ATAK is compiled to use targetSdkVersion 29 but still provide support for the minSdkVersion 21.    Be careful when developing new code within core to make sure that appropriate safeguards are in place that retain system compatibility for minSdkVersion 21.
+ATAK is compiled to use targetSdkVersion 29 but still provide support for the minSdkVersion 21.    
+Be careful when developing new code within core to make sure that appropriate safeguards are in 
+place that retain system compatibility for minSdkVersion 21.
 
 
 Developer Notes

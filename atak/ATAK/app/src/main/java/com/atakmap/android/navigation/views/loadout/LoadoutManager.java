@@ -18,7 +18,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- * Manages the list of tool loadouts (the 6 buttons in the top-left)
+ * Manages the list of tool loadouts (the tool buttons in the top-left)
  */
 public class LoadoutManager implements OnSharedPreferenceChangeListener {
 
@@ -256,7 +256,8 @@ public class LoadoutManager implements OnSharedPreferenceChangeListener {
     @Override
     public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         if (key.startsWith(LOADOUT_PREFIX)) {
 

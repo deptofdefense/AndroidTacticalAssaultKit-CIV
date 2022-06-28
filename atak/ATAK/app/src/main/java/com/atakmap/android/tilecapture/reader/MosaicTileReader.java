@@ -5,11 +5,15 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Point;
 
+import com.atakmap.android.maps.CardLayer;
+import com.atakmap.android.maps.MapView;
 import com.atakmap.android.math.MathUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.gdal.GdalLibrary;
+import com.atakmap.map.layer.Layer;
+import com.atakmap.map.layer.raster.AbstractRasterLayer2;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
 import com.atakmap.map.layer.raster.MosaicDatasetDescriptor;
 import com.atakmap.map.layer.raster.gdal.GdalLayerInfo;
@@ -24,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 
 /**
@@ -52,6 +57,8 @@ public class MosaicTileReader extends DatasetTileReader {
     private final PointD[] _sizes;
     private final Point[][] _offsets;
 
+    private double _maxRes;
+
     /**
      * Create a new tile reader for a imagery source that is GDAL-compatible
      *
@@ -63,6 +70,28 @@ public class MosaicTileReader extends DatasetTileReader {
 
         _paint.setFilterBitmap(true);
         _paint.setAntiAlias(true);
+
+        // Need the map view for layer lookup
+        final MapView mv = MapView.getMapView();
+        if (mv == null)
+            throw new IllegalArgumentException("Failed to get map view");
+
+        // Find the raster layer in order to find out what types are visible/selected
+        AbstractRasterLayer2 layer = null;
+        List<Layer> layers = mv.getLayers(MapView.RenderStack.MAP_LAYERS);
+        for (final Layer l : layers) {
+            // ensure both conditions are met before assigning the layer
+            if (l.getName().equals("Raster Layers") && l instanceof CardLayer) {
+                CardLayer cd = (CardLayer) l;
+                layer = (AbstractRasterLayer2) cd.get();
+                break;
+            }
+        }
+        if (layer == null)
+            throw new IllegalArgumentException("Failed to find root map layer");
+
+        // Get the selected layer
+        String selected = layer.getSelection();
 
         // Open mosaic database
         String provider = info.getMosaicDatabaseProvider();
@@ -89,6 +118,21 @@ public class MosaicTileReader extends DatasetTileReader {
         MosaicDatabase2.QueryParameters params = new MosaicDatabase2.QueryParameters();
         params.spatialFilter = DatasetDescriptor.createSimpleCoverage(
                 corners[0], corners[1], corners[2], corners[3]);
+
+        // Determine which types should be queried
+        if (selected != null) {
+            // Only query the selected type
+            params.types = Collections.singleton(selected);
+        } else {
+            // Get all visible types
+            params.types = new HashSet<>();
+            for (String type : info.getImageryTypes()) {
+                if (layer.isVisible(type))
+                    params.types.add(type);
+            }
+        }
+
+        _maxRes = Double.MAX_VALUE;
 
         try (MosaicDatabase2.Cursor c = db.query(params)) {
             while (c.moveToNext()) {
@@ -118,6 +162,9 @@ public class MosaicTileReader extends DatasetTileReader {
                                 c.getLowerRight(), c.getLowerLeft()
                         }, dataset);
                 _readers.add(reader);
+
+                // Track the maximum resolution for this type
+                _maxRes = Math.min(_maxRes, c.getMaxGSD());
             }
         } catch (Exception e) {
             Log.e(TAG, "Failed to query dataset", e);
@@ -207,6 +254,14 @@ public class MosaicTileReader extends DatasetTileReader {
     public void dispose() {
         for (GdalTileReader reader : _readers)
             reader.dispose();
+    }
+
+    /**
+     * Get the maximum resolution for the datasets in use by this reader
+     * @return Maximum resolution (GSD)
+     */
+    public double getMaxResolution() {
+        return _maxRes;
     }
 
     @Override

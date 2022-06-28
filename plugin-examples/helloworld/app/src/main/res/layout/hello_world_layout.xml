@@ -105,6 +105,14 @@
               android:padding="6dp"
               android:text="Tab View"/>
 
+            <Button
+                android:id="@+id/overlayViewBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                style="@style/darkButton"
+                android:padding="6dp"
+                android:text="Overlay View"/>
+
          <TextView
              android:layout_width="match_parent"
              android:layout_height="wrap_content"
@@ -162,6 +170,14 @@
                 android:text="Add an Aircraft" />
 
             <Button
+                android:id="@+id/svgMarker"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Marker with SVG Icon" />
+
+            <Button
                 android:id="@+id/addLayer"
                 style="@style/darkButton"
                 android:layout_width="wrap_content"
@@ -176,6 +192,14 @@
                 android:layout_height="wrap_content"
                 android:padding="6dp"
                 android:text="Add Multi Layer" />
+
+            <Button
+                android:id="@+id/addHeatMap"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Add Heat Map" />
 
             <Button
                 android:id="@+id/staleoutMarker"

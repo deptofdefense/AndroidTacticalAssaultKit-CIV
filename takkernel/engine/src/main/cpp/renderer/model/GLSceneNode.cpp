@@ -117,11 +117,47 @@ namespace
         info.localFrame = Matrix2Ptr(new Matrix2(localFrame), Memory_deleter_const<Matrix2>);
     }
 
+    TAKErr reproject(SceneInfo *outInfo, std::shared_ptr<const Mesh> &value, const SceneInfo &info, const Mesh &srcMesh, const int dstSrid, bool *cancelToken) NOTHROWS
+    {
+        if (!outInfo)
+            return TE_InvalidArg;
+
+        TAKErr code(TE_Ok);
+
+        // generic reproject
+        MeshPtr xformed(nullptr, nullptr);
+        MeshTransformOptions srcOpts;
+        srcOpts.srid = info.srid;
+        srcOpts.localFrame = Matrix2Ptr(const_cast<Matrix2 *>(info.localFrame.get()), Memory_leaker_const<Matrix2>);
+
+        MeshTransformOptions dstOpts;
+        dstOpts.srid = dstSrid;
+
+        MeshTransformOptions xformedOpts;
+
+        // transform the mesh
+        ProcessingCallback cb_transform;
+        cb_transform.cancelToken = cancelToken;
+        code = Mesh_transform(xformed, &xformedOpts, srcMesh, srcOpts, dstOpts, &cb_transform);
+        TE_CHECKRETURN_CODE(code);
+
+        *outInfo = info;
+        // update the info
+        (*outInfo).srid = xformedOpts.srid;
+        if (xformedOpts.localFrame.get())
+            (*outInfo).localFrame = Matrix2Ptr(new Matrix2(*xformedOpts.localFrame), Memory_deleter_const<Matrix2>);
+        else
+            (*outInfo).localFrame.reset();
+        value = std::move(xformed);
+
+        return code;
+    }
+
     /**
      * Fetches the meshes for the node.
      * @return TE_Ok if the meshes for the node were successfully fetched
      */
-    TAKErr fetchImpl(std::vector<std::unique_ptr<GLMesh>> &value, RenderContext &ctx, SceneNode &node, SceneInfo &info, const std::size_t lod, const std::shared_ptr<MaterialManager> &matmgr, bool *cancelToken)
+    TAKErr fetchImpl(std::vector<std::unique_ptr<GLMesh>> &value, RenderContext &ctx, SceneNode &node, SceneInfo &info, const std::size_t lod, const std::shared_ptr<MaterialManager> &matmgr, const int targetSrid, bool *cancelToken)
     {
         TAKErr code(TE_Ok);
 
@@ -135,7 +171,43 @@ namespace
         code = node.loadMesh(mesh, lod, &cb_load);
         TE_CHECKRETURN_CODE(code);
 
+
+        // obtain AABB
+        Envelope2 meshAabb = mesh->getAABB();
+        // transform to WGS84
+        {
+            Matrix2 srcLocalFrame;
+            if (info.localFrame)
+                srcLocalFrame.concatenate(*info.localFrame);
+            if (node.getLocalFrame())
+                srcLocalFrame.concatenate(*node.getLocalFrame());
+            MeshTransformOptions srcOpts;
+            srcOpts.srid = info.srid;
+            srcOpts.localFrame = Matrix2Ptr(&srcLocalFrame, Memory_leaker_const<Matrix2>);
+            MeshTransformOptions dstOpts;
+            dstOpts.srid = 4326;
+            Mesh_transform(&meshAabb, meshAabb, srcOpts, dstOpts);
+        }
+        // obtain max of horizontal extents (meters)
+        double horizontalExtent = 
+            std::max(
+                GeoPoint2_distance(GeoPoint2((meshAabb.minY+meshAabb.maxY)/2.0, meshAabb.minX), GeoPoint2((meshAabb.minY+meshAabb.maxY)/2.0, meshAabb.maxX), true),
+                GeoPoint2_distance(GeoPoint2(meshAabb.minY, (meshAabb.minX+meshAabb.maxX)/2.0), GeoPoint2(meshAabb.maxY, (meshAabb.minX+meshAabb.maxX)/2.0), true));
+
+        // requires upstream application side modifications that prohibit editing
+#if 0
         // transform if necessary
+        if (targetSrid == 4978 &&
+            info.srid != 4978 &&
+            horizontalExtent > 8000.0) {
+
+            SceneInfo xformedInfo;
+            code = reproject(&xformedInfo, mesh, info, *mesh, targetSrid, cancelToken);
+            TE_CHECKRETURN_CODE(code);
+
+            info = xformedInfo;
+        } else
+#endif
         if ((info.srid / 200) == 163) { // UTM 326xx/327xx
             utm2lla(info, mesh->getAABB());
         } 
@@ -145,30 +217,11 @@ namespace
         }
 #endif
         else if (info.srid != 4326) {
-            // generic reproject
-            MeshPtr xformed(nullptr, nullptr);
-            MeshTransformOptions srcOpts;
-            srcOpts.srid = info.srid;
-            srcOpts.localFrame = Matrix2Ptr(const_cast<Matrix2 *>(info.localFrame.get()), Memory_leaker_const<Matrix2>);
-
-            MeshTransformOptions dstOpts;
-            dstOpts.srid = 4326;
-
-            MeshTransformOptions xformedOpts;
-
-            // transform the mesh
-            ProcessingCallback cb_transform;
-            cb_transform.cancelToken = cancelToken;
-            code = Mesh_transform(xformed, &xformedOpts, *mesh, srcOpts, dstOpts, &cb_transform);
+            SceneInfo xformedInfo;
+            code = reproject(&xformedInfo, mesh, info, *mesh, 4326, cancelToken);
             TE_CHECKRETURN_CODE(code);
 
-            // update the info
-            info.srid = xformedOpts.srid;
-            if (xformedOpts.localFrame.get())
-                info.localFrame = Matrix2Ptr(new Matrix2(*xformedOpts.localFrame), Memory_deleter_const<Matrix2>);
-            else
-                info.localFrame.reset();
-            mesh = std::move(xformed);
+            info = xformedInfo;
         }
 
         Matrix2Ptr nodeTransform(nullptr, nullptr);
@@ -183,7 +236,7 @@ namespace
         }
 
         value.reserve(1u);
-        value.push_back(std::move(std::unique_ptr<GLMesh>(new GLMesh(ctx, std::move(nodeTransform), info.altitudeMode, mesh, TAK::Engine::Math::Point2<double>(), matmgr))));
+        value.push_back(std::move(std::unique_ptr<GLMesh>(new GLMesh(ctx, std::move(nodeTransform), info.altitudeMode, mesh, TAK::Engine::Math::Point2<double>(), matmgr, info.srid))));
 
         return code;
     }
@@ -243,7 +296,7 @@ GLSceneNode::GLSceneNode(RenderContext &ctx_, const std::shared_ptr<SceneNode> &
     refreshAABB(subject->getAABB());
 }
 
-TAKErr GLSceneNode::asyncLoad(GLSceneNode::LoadContext &loadContext, bool *cancelToken) NOTHROWS
+TAKErr GLSceneNode::asyncLoad(GLSceneNode::LoadContext &loadContext, const int srid, bool *cancelToken) NOTHROWS
 {
     TAKErr code(TE_Ok);
     const std::size_t lodIdx = ((std::size_t)(intptr_t)loadContext.opaque.get());
@@ -253,7 +306,7 @@ TAKErr GLSceneNode::asyncLoad(GLSceneNode::LoadContext &loadContext, bool *cance
 
     // load the meshes
     std::vector<std::unique_ptr<GLMesh>> fetchedMeshes;
-    code = fetchImpl(fetchedMeshes, this->ctx, *subject, info, lodIdx, matmgr, cancelToken);
+    code = fetchImpl(fetchedMeshes, this->ctx, *subject, info, lodIdx, matmgr, srid, cancelToken);
     if (code != TE_Ok) {
         // we failed to fetch the meshes. we'll populate an empty LODMeshes to indicate failure so we don't continue trying to load
         {
@@ -367,6 +420,8 @@ bool GLSceneNode::isLoaded(const GLGlobeBase &view) const NOTHROWS
     const int lodIdx = selectLodIndex(view, *subject, info, mbb, true);
 
     const auto clampedLod = atakmap::math::clamp<std::size_t>(lodIdx+1u, 0u, subject->getNumLODs()-1u);
+
+    // XXX - needs to verify SRID
 
     // if LOD not populated, fetch. always need to fetch minimum LOD
     return (lodMeshes[subject->getNumLODs()-1u].get() && lodMeshes[clampedLod].get());

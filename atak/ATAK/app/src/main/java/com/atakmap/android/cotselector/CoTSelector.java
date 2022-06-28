@@ -56,6 +56,12 @@ public class CoTSelector extends DropDownReceiver {
     public void onReceive(Context context, Intent intent) {
     }
 
+    /**
+     * Given a PointMapItem, show the CoT selector that is used to select a new
+     * CoT type.
+     * @param m the map item
+     * @param tl the type change listener
+     */
     public void show(final PointMapItem m,
             final TypeChangedListener tl) {
 

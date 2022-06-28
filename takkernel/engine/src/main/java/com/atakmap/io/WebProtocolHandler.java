@@ -2,6 +2,7 @@ package com.atakmap.io;
 
 import android.util.Base64;
 import com.atakmap.util.zip.IoUtils;
+import com.atakmap.net.CertificateManager;
 
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -180,8 +181,7 @@ public class WebProtocolHandler implements ProtocolHandler {
                     HttpsURLConnection scon = (HttpsURLConnection)con;
                     X509TrustManager trustManager = callbacks.getTrustManager();
                     if (trustManager != null) {
-                        javax.net.ssl.SSLContext sslContext = javax.net.ssl.SSLContext.getInstance("SSL");
-                        sslContext.init(null, new TrustManager[]{trustManager}, new java.security.SecureRandom());
+                        javax.net.ssl.SSLContext sslContext = CertificateManager.createSSLContext(new TrustManager[] { trustManager });
                         scon.setSSLSocketFactory(sslContext.getSocketFactory());
                     } else {
                         scon.setSSLSocketFactory((SSLSocketFactory) SSLSocketFactory.getDefault());

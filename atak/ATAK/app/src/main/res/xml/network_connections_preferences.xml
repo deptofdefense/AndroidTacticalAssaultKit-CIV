@@ -133,8 +133,8 @@
 
         <CheckBoxPreference 
             android:key="waveRelayRedirect"
-            android:title="Legacy Wave Relay Redirect"
-            android:summary="Enable when using ATAK with a Wave Relay Radio when the Wave Relay Radio Control Plugin is not installed.  It is recommended that users install the Wave Relay Radio Plugin."
+            android:title="@string/legacy_wr_redirect_title"
+            android:summary="@string/legacy_wr_redirect_summary"
             android:defaultValue="false" />
 
 

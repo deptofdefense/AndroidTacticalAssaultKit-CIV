@@ -44,20 +44,12 @@ public final class GLMapGroup {
                 String glClassName = packageName + ".GL" + className;
                 glClass = Class.forName(glClassName);
             }
-        } catch (ClassCastException e) {
+        } catch (ClassCastException | SecurityException | IllegalArgumentException e) {
             // Log.e(TAG, "Unable to instatiate GL class for map item of class " +
             // itemClass.getName());
             // Log.e(TAG, "error: ", e);
         } catch (ClassNotFoundException e) {
             // Log.e(TAG, "Unable to instatiate GL class for map item of class "+
-            // itemClass.getName());
-            // Log.e(TAG, "error: ", e);
-        } catch (IllegalArgumentException e) {
-            // Log.e(TAG, "Unable to instatiate GL class for map item of class " +
-            // itemClass.getName());
-            // Log.e(TAG, "error: ", e);
-        } catch (SecurityException e) {
-            // Log.e(TAG, "Unable to instatiate GL class for map item of class " +
             // itemClass.getName());
             // Log.e(TAG, "error: ", e);
         }
@@ -134,9 +126,7 @@ public final class GLMapGroup {
 
                 try {
                     return (GLMapItem2) ctor.newInstance(surface, item);
-                } catch (InstantiationException ignored) {
-                } catch (IllegalAccessException ignored) {
-                } catch (InvocationTargetException ignored) {
+                } catch (InstantiationException | InvocationTargetException | IllegalAccessException ignored) {
                 }
             }
 

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:layout_centerHorizontal="true"
+    android:orientation="vertical">
+    <TextView
+        android:text="@string/online_source_details"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"/>
+
+    <EditText
+        android:id="@+id/wmswfs_address"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:maxLines="1"
+        android:inputType="textNoSuggestions|textUri"/>
+
+    <CheckBox
+        android:id="@+id/wmswfs_extents"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Use Current Screen Extents"
+        android:visibility="gone"
+        android:textSize="10sp"/>
+
+</LinearLayout>
+
+

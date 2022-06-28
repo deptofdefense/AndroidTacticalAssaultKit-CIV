@@ -1,6 +1,11 @@
 
 package gov.tak.platform.utils;
 
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserFactory;
+import org.xmlpull.v1.XmlPullParserException;
+
+
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.TransformerFactory;
@@ -51,6 +56,38 @@ public final class XMLUtils {
         }
 
         return docFactory;
+    }
+
+
+    /**
+     * Produce a pull parser with the approprate dangerous features
+     * turned off such as expansion bomds like the billion laughs.
+     * @return a XmlPullParser with FEATURE_PROCESS_DOCDECL, FEATURE_PROCESS_NAMESPACES
+     * turned off.
+     */
+    public static XmlPullParser getXmlPullParser() throws XmlPullParserException {
+
+        XmlPullParser parser = null;
+
+        try { 
+           XmlPullParserFactory factory = XmlPullParserFactory.newInstance();  
+           parser = factory.newPullParser();
+        } catch (Exception e) { } 
+
+        if (parser == null)
+            return null;
+        
+        try {
+            parser.setFeature(XmlPullParser.FEATURE_PROCESS_DOCDECL, false);
+        } catch (Exception ignored2) { }
+        try {
+            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
+        } catch (Exception ignored1) { }
+        //try {
+        //    parser.setFeature(Xml.FEATURE_RELAXED, true);
+        //} catch (Exception ignored) { }
+        
+        return parser;
     }
 
 }

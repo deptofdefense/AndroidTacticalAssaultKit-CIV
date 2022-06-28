@@ -277,7 +277,7 @@ public class RouteEditTool extends EditablePolylineEditTool implements
     public void onToolEnd() {
         SelfCoordOverlayUpdater.getInstance().showGPSWidget(true);
 
-        if (_route.getNumPoints() > 0)
+        if (_route.getNumPoints() >= 2)
             // Add first/last way point to route if none was added by user
             _route.fixSPandVDO();
         else

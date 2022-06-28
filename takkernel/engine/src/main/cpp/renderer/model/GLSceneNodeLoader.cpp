@@ -21,9 +21,10 @@ namespace {
     }
 }
 
-GLSceneNodeLoader::QueueNode::QueueNode(GLSceneNode *node_, GLSceneNode::LoadContext &&ctx_) NOTHROWS 
+GLSceneNodeLoader::QueueNode::QueueNode(GLSceneNode *node_, GLSceneNode::LoadContext &&ctx_, const int srid_) NOTHROWS 
     : node(node_),
-    ctx(std::move(ctx_))
+    ctx(std::move(ctx_)),
+    srid(srid_)
 {}
 
 bool GLSceneNodeLoader::QueueNode::operator<(const QueueNode &rhs) const NOTHROWS
@@ -53,7 +54,7 @@ GLSceneNodeLoader::~GLSceneNodeLoader() NOTHROWS
         threadPool.reset();
 }
                 
-TAKErr GLSceneNodeLoader::enqueue(const std::shared_ptr<GLSceneNode> &node, GLSceneNode::LoadContext &&ctx, const bool prefetch) NOTHROWS
+TAKErr GLSceneNodeLoader::enqueue(const std::shared_ptr<GLSceneNode> &node, GLSceneNode::LoadContext &&ctx, const bool prefetch, const int srid) NOTHROWS
 {
     TAKErr code(TE_Ok);
 
@@ -84,7 +85,7 @@ TAKErr GLSceneNodeLoader::enqueue(const std::shared_ptr<GLSceneNode> &node, GLSc
     }
 
     if (queueTo)
-        queueTo->push_back(QueueNode(node.get(), std::move(ctx)));
+        queueTo->push_back(QueueNode(node.get(), std::move(ctx), srid));
 
     if (!this->threadPool) {
         code = Thread::ThreadPool_create(this->threadPool, this->numThreads, threadStart, this);
@@ -177,6 +178,7 @@ void GLSceneNodeLoader::threadImpl()
        
         GLSceneNode *node = nullptr;
         GLSceneNode::LoadContext ctx;
+        int srid = -1;
         bool *cancelToken = nullptr;
         
         {
@@ -201,8 +203,10 @@ void GLSceneNodeLoader::threadImpl()
                 if (dirty[i])
                     std::sort(queues[i]->begin(), queues[i]->end());
 
-                node = queues[i]->front().node;
-                ctx = queues[i]->front().ctx;
+                const auto& front = queues[i]->front();
+                node = front.node;
+                ctx = front.ctx;
+                srid = front.srid;
                 queues[i]->pop_front();
                 break;
             }
@@ -213,7 +217,7 @@ void GLSceneNodeLoader::threadImpl()
             cancelToken = &executingNodes.insert(std::make_pair(node, false)).first->second;
         }
 
-        TAKErr code = node->asyncLoad(ctx, cancelToken);
+        TAKErr code = node->asyncLoad(ctx, srid, cancelToken);
         if (code != TE_Ok) {
             Logger_log(TELL_Error, "Failed to load node %s", node->info.uri.get());
         }

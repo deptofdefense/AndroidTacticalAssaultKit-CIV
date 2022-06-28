@@ -119,7 +119,8 @@ public class ZoomToLayerReceiver extends BroadcastReceiver {
             return;
         }
 
-        mapView.getMapController().zoomTo(scale, true);
+        CameraController.Programmatic.zoomTo(mapView.getRenderer3(),
+                scale, true);
     }
 
 }

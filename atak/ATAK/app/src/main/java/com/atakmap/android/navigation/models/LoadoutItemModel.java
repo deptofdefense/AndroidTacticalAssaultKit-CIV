@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -20,12 +21,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import androidx.annotation.Nullable;
+
 /**
- * Model used for a button loadout (the 6 buttons in the top left)
+ * Model used for a button loadout (the tool buttons in the top left)
  */
 public class LoadoutItemModel {
 
-    private static final int VERSION = 1;
+    private static final int VERSION = 2;
     private static final String PERSIST_SEPERATOR = "###";
 
     // The UID for this loadout
@@ -42,6 +45,9 @@ public class LoadoutItemModel {
 
     // Set of hidden tools for this loadout mapped by their model reference
     private final Set<String> hiddenTools = new HashSet<>();
+
+    // Tool sort order mapped by reference
+    private final Map<String, Integer> sortOrder = new HashMap<>();
 
     // Whether or not this is a temporary loadout (not persisted)
     // Used during editing
@@ -65,6 +71,7 @@ public class LoadoutItemModel {
         buttons.putAll(copy.buttons);
         buttonSet.addAll(copy.buttonSet);
         hiddenTools.addAll(copy.hiddenTools);
+        sortOrder.putAll(copy.sortOrder);
     }
 
     public LoadoutItemModel(LoadoutItemModel copy) {
@@ -319,6 +326,82 @@ public class LoadoutItemModel {
     }
 
     /**
+     * Set the sort order for this loadout using a list of sorted button models
+     * @param models Button models to use as the order reference
+     * This can be a list of {@link NavButtonModel} or {@link String}
+     */
+    public void setSortOrder(@Nullable List<?> models) {
+        sortOrder.clear();
+        if (models != null) {
+            for (int i = 0; i < models.size(); i++) {
+                Object mdl = models.get(i);
+                String ref = mdl instanceof NavButtonModel
+                        ? ((NavButtonModel) mdl).getReference()
+                        : String.valueOf(mdl);
+                sortOrder.put(ref, i);
+            }
+        }
+    }
+
+    /**
+     * Get all button models sorted by this loadout's sort order
+     * @return List of button models
+     */
+    public List<NavButtonModel> getSortedModels() {
+        List<NavButtonModel> models = NavButtonManager.getInstance()
+                .getButtonModels();
+        sortModels(models);
+        return models;
+    }
+
+    /**
+     * Sort button models by this loadout's sort order
+     * @param models Tool button models to sort
+     */
+    private void sortModels(List<NavButtonModel> models) {
+        // No sort order defined
+        if (sortOrder.isEmpty())
+            return;
+
+        // Track tools that don't have a defined sort order
+        final List<NavButtonModel> noOrder = new ArrayList<>();
+        for (int i = 0; i < models.size(); i++) {
+            if (!sortOrder.containsKey(models.get(i).getReference()))
+                noOrder.add(models.remove(i--));
+        }
+
+        // Sort tools
+        Collections.sort(models, new Comparator<NavButtonModel>() {
+            @Override
+            public int compare(NavButtonModel o1, NavButtonModel o2) {
+                Integer s1 = sortOrder.get(o1.getReference());
+                Integer s2 = sortOrder.get(o2.getReference());
+                if (s1 != null && s2 != null)
+                    return s1.compareTo(s2);
+                else if (s1 != null)
+                    return -1;
+                else
+                    return 1;
+            }
+        });
+
+        // Define sort order for newly added tools/plugins
+        if (!noOrder.isEmpty()) {
+
+            // Keep new tools before Settings and Quit
+            Integer s = sortOrder.get("settings.xml");
+            if (s == null) s = models.size();
+            Integer q = sortOrder.get("quit.xml");
+            if (q == null) q = models.size();
+            int min = Math.min(s, q);
+            models.addAll(min, noOrder);
+
+            // Update sort order with new tools included
+            setSortOrder(models);
+        }
+    }
+
+    /**
      * Persist this loadout to shared preferences
      */
     public void persist() {
@@ -349,6 +432,8 @@ public class LoadoutItemModel {
         buttonSet.addAll(other.buttonSet);
         hiddenTools.clear();
         hiddenTools.addAll(other.hiddenTools);
+        sortOrder.clear();
+        sortOrder.putAll(other.sortOrder);
     }
 
     /**
@@ -373,11 +458,12 @@ public class LoadoutItemModel {
      */
     public Set<String> toStringSet() {
         Set<String> set = new HashSet<>();
+        set.add("version=" + VERSION);
         set.add("uid=" + getUID());
         set.add("title=" + getTitle());
-        set.add("buttons=" + TextUtils.join(",", getButtonStringSet()));
-        set.add("hidden=" + TextUtils.join(",", getHiddenStringSet()));
-        set.add("version=" + VERSION);
+        addStringList(set, "buttons", getButtonStringSet());
+        addStringList(set, "hidden", getHiddenStringSet());
+        addStringList(set, "sortOrder", getSortedStringSet());
         return set;
     }
 
@@ -404,6 +490,7 @@ public class LoadoutItemModel {
         int version = MathUtils.parseInt(map.get("version"), 0);
         String uid, title, buttons;
         String hidden = null;
+        String sortOrder = null;
 
         if (version > 0) {
             // New format stores each attribute in key=value format
@@ -411,6 +498,7 @@ public class LoadoutItemModel {
             title = map.get("title");
             buttons = map.get("buttons");
             hidden = map.get("hidden");
+            sortOrder = map.get("sortOrder");
         } else {
             // Legacy string set parsing
             List<String> values = new ArrayList<>(set);
@@ -426,20 +514,43 @@ public class LoadoutItemModel {
         if (FileSystemUtils.isEmpty(uid) || FileSystemUtils.isEmpty(title))
             return null;
 
-        List<String> buttonList = buttons != null ? Arrays.asList(
-                buttons.split(",")) : new ArrayList<>();
-        List<String> hiddenList = hidden != null ? Arrays.asList(
-                hidden.split(",")) : new ArrayList<>();
+        List<String> buttonList = getStringList(buttons);
+        List<String> hiddenList = getStringList(hidden);
+        List<String> sortList = getStringList(sortOrder);
 
         LoadoutItemModel loadout = new LoadoutItemModel(uid, title,
                 buttonList);
         loadout.setToolsVisible(hiddenList, false);
+        loadout.setSortOrder(sortList);
 
         // Make sure the zoom button is visible by default if version < 1
         if (version < 1)
             loadout.showZoomButton(true);
 
         return loadout;
+    }
+
+    /**
+     * Add a keyed string list to a string set
+     * @param set String set
+     * @param key Key for the string set
+     * @param strings List of strings (if empty nothing is added)
+     */
+    private static void addStringList(Set<String> set, String key,
+            @Nullable List<String> strings) {
+        if (!FileSystemUtils.isEmpty(strings))
+            set.add(key + "=" + TextUtils.join(",", strings));
+    }
+
+    /**
+     * Parse list given a comma-separated list of strings
+     * @param strings Comma-separated string list
+     * @return List of strings
+     */
+    private static List<String> getStringList(@Nullable String strings) {
+        return !FileSystemUtils.isEmpty(strings)
+                ? Arrays.asList(strings.split(","))
+                : new ArrayList<>();
     }
 
     /**
@@ -461,5 +572,20 @@ public class LoadoutItemModel {
      */
     private List<String> getHiddenStringSet() {
         return new ArrayList<>(hiddenTools);
+    }
+
+    /**
+     * Get a set of strings for the sorted tool order
+     * @return Sort order string set
+     */
+    @Nullable
+    private List<String> getSortedStringSet() {
+        if (sortOrder.isEmpty())
+            return null;
+        List<NavButtonModel> models = getSortedModels();
+        List<String> ret = new ArrayList<>(models.size());
+        for (NavButtonModel mdl : models)
+            ret.add(mdl.getReference());
+        return ret;
     }
 }

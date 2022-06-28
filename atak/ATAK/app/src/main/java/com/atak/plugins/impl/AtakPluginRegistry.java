@@ -79,6 +79,7 @@ public final class AtakPluginRegistry {
             "308202c73082024ea00302010202143efff3c9fc6b6865c29bb23af07fa7645727e650300a06082a8648ce3d040302308199310b30090603550406130255533111300f06035504080c0856697267696e69613115301306035504070c0c466f72742042656c766f6972310c300a060355040a0c0354414b31173015060355040b0c0e50726f647563742043656e7465723139303706035504030c3054414b2050726f647563742043656e746572204154414b20556e7472757374656420506c7567696e2052656c656173653020170d3230313030383135343631375a180f32303530313030313135343631375a308199310b30090603550406130255533111300f06035504080c0856697267696e69613115301306035504070c0c466f72742042656c766f6972310c300a060355040a0c0354414b31173015060355040b0c0e50726f647563742043656e7465723139303706035504030c3054414b2050726f647563742043656e746572204154414b20556e7472757374656420506c7567696e2052656c656173653076301006072a8648ce3d020106052b8104002203620004bbf9dba5553faaee4558788805494c1a3d8bc0a5eca4c59bce62fcb68b979993877f5c65190454e1700c98184163d022b8d91648ca6898b41b2cf56b26ce19e3794a4bdeb1c7c08f021d8fb7b258b904d94c52ab1ffb223975bd6365127083cfa3533051301d0603551d0e04160414893a2594bd35f780183a882731d180de056b8326301f0603551d23041830168014893a2594bd35f780183a882731d180de056b8326300f0603551d130101ff040530030101ff300a06082a8648ce3d040302036700306402306a0b7e55fb2eb46584bf79dbac99720ed368cd0f9e4c333893aaa1763104472ce60c899136cb3fb3a847ee7d6dc9029602300afbc42742092b1f499cb7febd33543c0a24afe21aee6820d1b917375bd0204406751c647d76071cd61e16c1042d796a",
     };
 
+
     private boolean allTrusted = true;
 
     /**
@@ -154,6 +155,7 @@ public final class AtakPluginRegistry {
     @SuppressLint("PackageManagerGetSignatures")
     public static boolean verifySignature(final Context context,
             final String pkgname) {
+
         try {
             final PackageManager pm = context.getPackageManager();
             final PackageInfo atak = pm.getPackageInfo(context.getPackageName(),
@@ -189,6 +191,9 @@ public final class AtakPluginRegistry {
             Log.d(TAG, "error occurred verifying signature", e);
         }
 
+        if(PluginValidator.checkAppTransparencySignature(context, pkgname, ACCEPTABLE_KEY_LIST))
+            return true;
+
         Log.d(TAG, "signature mismatch[" + pkgname + "]");
 
         // in the case of failure to verify the signature, mention it in the logs and in the metrics
@@ -216,11 +221,14 @@ public final class AtakPluginRegistry {
         return false;
     }
 
+
+
+
     /**
      * Verifies that a specific package can be trusted.
      * @param context the context to use
      * @param pkgname the package name to look up
-     * @return true if trust can be verfied
+     * @return true if trust can be verified
      */
     public static boolean verifyTrust(final Context context,
             final String pkgname) {
@@ -237,6 +245,10 @@ public final class AtakPluginRegistry {
 
         } catch (Exception ignored) {
         }
+
+        if (PluginValidator.checkAppTransparencySignature(context, pkgname, ACCEPTABLE_KEY_LIST))
+            return true;
+
         return false;
     }
 
@@ -1226,7 +1238,7 @@ public final class AtakPluginRegistry {
                         Log.d(TAG, "Unloading Lifecycle: " + extension.impl);
 
                         try {
-                            //remove the plugin lifecyle imple
+                            //remove the plugin lifecycle impl
                             Object o = pluginInstantiations.get(extension.impl);
                             pluginInstantiations.remove(extension.impl);
                             if (!(o instanceof Lifecycle)) {

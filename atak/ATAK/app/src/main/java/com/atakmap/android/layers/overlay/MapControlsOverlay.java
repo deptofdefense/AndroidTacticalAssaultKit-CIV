@@ -12,7 +12,6 @@ import com.atakmap.android.maps.DeepMapItemQuery;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.overlay.AbstractMapOverlay2;
-import com.atakmap.app.DeveloperOptions;
 import com.atakmap.app.R;
 
 import java.util.ArrayList;

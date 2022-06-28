@@ -70,7 +70,7 @@ public class RangeAndBearingTool extends ButtonTool implements
             if (endpoint instanceof PointMapItem)
                 _pt1 = (PointMapItem) endpoint;
             else if (endpoint instanceof Shape) {
-                GeoPoint touchPoint = ((Shape) endpoint).findTouchPoint();
+                GeoPoint touchPoint = ((Shape) endpoint).getClickPoint();
                 if (touchPoint != null) {
                     GeoPointMetaData point = GeoPointMetaData.wrap(touchPoint);
                     _pt1 = createRabEndpoint(point);

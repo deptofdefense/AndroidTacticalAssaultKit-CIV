@@ -6,21 +6,20 @@ import android.graphics.Color;
 
 import com.atakmap.android.hierarchy.filters.FOVFilter;
 import com.atakmap.android.icons.Icon2525cIconAdapter;
-
 import com.atakmap.android.track.crumb.Crumb;
 import com.atakmap.android.track.crumb.CrumbDatabase;
 import com.atakmap.android.track.task.CreateTracksTask;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
-import com.atakmap.coremap.maps.conversion.EGM96;
-
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
+import gov.tak.api.annotation.DeprecatedApi;
 
 /**
  * CrumbTrail manages crumbs for a map item using a dedicated trackThread
@@ -45,8 +44,9 @@ public class CrumbTrail extends MapItem implements FOVFilter.Filterable,
      */
     private static final long minimumUICrumbTime = 2000;
 
-    private int maxCrumbs = 51;
+    private int maxCrumbs = 200;
     private int transparencyRate = 1;
+    private final boolean unlimited;
 
     public Crumb first;
     public Crumb last; //last crumb sent to UI
@@ -60,12 +60,18 @@ public class CrumbTrail extends MapItem implements FOVFilter.Filterable,
     @SuppressWarnings("unused")
     private final SharedPreferences prefs;
     private final MapView _mapView;
+    private final boolean circles;
 
     private CrumbItemChangedListener crumbItemChangedListener;
 
     private final ConcurrentLinkedQueue<OnCrumbTrailUpdateListener> crumbTrailUpdateListeners = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<CrumbLogListener> crumbLogListeners = new ConcurrentLinkedQueue<>();
 
+    /**
+     * @deprecated
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.5", forRemoval = true, removeAt = "4.8")
     public CrumbTrail(final long serialId,
             final MetaDataHolder metadata,
             final MapView mapView,
@@ -73,21 +79,40 @@ public class CrumbTrail extends MapItem implements FOVFilter.Filterable,
             final String uid) {
 
         super(serialId, metadata, uid);
-
+        circles = false;
+        this.unlimited = false;
         _mapView = mapView;
         this.prefs = prefs;
         init();
     }
 
     public CrumbTrail(final MapView mapView,
+                      final PointMapItem target,
+                      final SharedPreferences prefs,
+                      final String uid) {
+        this(mapView, target, prefs, uid, false, false);
+    }
+
+    /**
+     * Creates a new crumb trail.
+     * @param mapView the map view for the crumb trail
+     * @param target the target to produce the crumb trail for
+     * @param prefs the preferences to query
+     * @param uid the uid for the trail
+     * @param circles render the trail as circles instead of arrows
+     * @param unlimited if the trail should ignore the system default max
+     */
+    public CrumbTrail(final MapView mapView,
             final PointMapItem target,
             final SharedPreferences prefs,
-            final String uid) {
+            final String uid, boolean circles, boolean unlimited) {
 
         super(MapItem.createSerialId(), uid);
 
         _mapView = mapView;
         this.prefs = prefs;
+        this.circles = circles;
+        this.unlimited = unlimited;
 
         init();
 
@@ -111,19 +136,7 @@ public class CrumbTrail extends MapItem implements FOVFilter.Filterable,
         this.drawLineToSurface = prefs.getBoolean("track_line_to_surface",
                 false);
 
-        maxCrumbs = prefs.getInt("max_num_bread_tracks", 100);
-
-        if (maxCrumbs < 1) {
-            maxCrumbs = 1;
-        }
-
-        transparencyRate = 255 / maxCrumbs;
-
-        if (transparencyRate < 1) {
-            transparencyRate = 1;
-        } else if (transparencyRate > 255) {
-            transparencyRate = 255;
-        }
+        onSharedPreferenceChanged(prefs, "max_num_bread_tracks");
     }
 
     @Override
@@ -135,12 +148,8 @@ public class CrumbTrail extends MapItem implements FOVFilter.Filterable,
         if (theTarget == null || rhs.theTarget == null)
             return false;
 
-        if (!FileSystemUtils.isEquals(theTarget.getUID(),
-                rhs.theTarget.getUID())) {
-            return false;
-        }
-
-        return true;
+        return FileSystemUtils.isEquals(theTarget.getUID(),
+                rhs.theTarget.getUID());
     }
 
     @Override
@@ -162,10 +171,18 @@ public class CrumbTrail extends MapItem implements FOVFilter.Filterable,
         return false;
     }
 
+    /**
+     * Return the current point map item that this crumb trail represents.
+     * @return the point map item
+     */
     public PointMapItem getTarget() {
         return this.theTarget;
     }
 
+    /**
+     * Sets the point map item for an existing crumb trail
+     * @param target the point map item that will be used for the next crumbs in the crumb trail.
+     */
     public void setTarget(PointMapItem target) {
         if (this.theTarget != null && this.theTarget.getGroup() != null)
             theTarget.getGroup().removeOnItemListChangedListener(
@@ -175,6 +192,10 @@ public class CrumbTrail extends MapItem implements FOVFilter.Filterable,
                 this.crumbItemChangedListener);
     }
 
+    /**
+     * Sets the color for the crumb trail.    This applies to the entire trail.
+     * @param color the color as a ARGB value.
+     */
     public void setColor(int color) {
         Crumb c = first;
         while (c != null) {
@@ -208,7 +229,8 @@ public class CrumbTrail extends MapItem implements FOVFilter.Filterable,
     @Override
     public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         switch (key) {
             case "track_line_to_surface":
@@ -225,17 +247,14 @@ public class CrumbTrail extends MapItem implements FOVFilter.Filterable,
                 break;
             case "max_num_bread_tracks":
                 maxCrumbs = prefs.getInt("max_num_bread_tracks",
-                        100);
+                        200);
                 if (maxCrumbs < 1) {
                     maxCrumbs = 1;
                 }
 
                 transparencyRate = 255 / maxCrumbs;
-
                 if (transparencyRate < 1) {
                     transparencyRate = 1;
-                } else if (transparencyRate > 255) {
-                    transparencyRate = 255;
                 }
                 break;
             case "track_crumb_size":
@@ -265,30 +284,23 @@ public class CrumbTrail extends MapItem implements FOVFilter.Filterable,
             return;
 
         if (lastPoint != null) {
-            // Calculate range and bearing between last and current point
-            // [meters, degrees]
-            double[] rab = DistanceCalculations.computeDirection(lastPoint,
-                    newP);
+            final double distance = GeoCalculations.slantDistanceTo(lastPoint, newP);
+            final double direction = GeoCalculations.bearingTo(lastPoint, newP);
 
             // Set direction of last crumb based on bearing
             if (last != null)
-                last.setDirection(rab[1]);
+                last.setDirection(direction);
 
-            // Factor in altitude distance
-            double a1 = EGM96.getHAE(lastPoint);
-            double a2 = EGM96.getHAE(newP);
-            if (GeoPoint.isAltitudeValid(a1) && GeoPoint.isAltitudeValid(a2))
-                rab[0] = Math.hypot(rab[0], a1 - a2);
 
             // Check if we should add a new breadcrumb based on distance thresh
             double threshM;
             try {
                 threshM = Double.parseDouble(prefs.getString(
-                        "bread_dist_threshold", "5"));
+                        "bread_dist_threshold", "2"));
             } catch (Exception e) {
-                threshM = 5;
+                threshM = 2;
             }
-            if (rab[0] < threshM)
+            if (distance < threshM)
                 return;
         }
 
@@ -312,9 +324,12 @@ public class CrumbTrail extends MapItem implements FOVFilter.Filterable,
             }
         }
 
-        //wrap the new crumb
-        crumb = new Crumb(newP, color, UUID.randomUUID()
+        if (circles)
+            crumb = new CircleCrumb(newP, color, 0);
+        else
+            crumb = new Crumb(newP, color, UUID.randomUUID()
                 .toString());
+
         crumb.setSize(size);
         crumb.setDrawLineToSurface(drawLineToSurface);
         // persisting the crumb information
@@ -343,9 +358,11 @@ public class CrumbTrail extends MapItem implements FOVFilter.Filterable,
                         | (Color.green(col) << 8) | Color
                                 .blue(col));
                 int alpha = Color.alpha(col);
-                alpha -= transparencyRate;
-                if (alpha < 0) {
-                    alpha = 0;
+                if (!unlimited) {
+                    alpha -= transparencyRate;
+                    if (alpha < 0) {
+                        alpha = 0;
+                    }
                 }
                 col = color | (alpha << 24);
                 c.setColor(col);
@@ -353,12 +370,11 @@ public class CrumbTrail extends MapItem implements FOVFilter.Filterable,
             }
 
             //now add new crumb
-            final Crumb finalCrumb = crumb;
-            finalCrumb.setSize(size);
-            addCrumb(finalCrumb);
-            finalCrumb.setVisible(CrumbTrail.this.getVisible());
+            crumb.setSize(size);
+            addCrumb(crumb);
+            crumb.setVisible(CrumbTrail.this.getVisible());
 
-            lastUICrumbTime = finalCrumb.timestamp;
+            lastUICrumbTime = crumb.timestamp;
             //Log.d(TAG, "Created UI Crumb at time: " + lastUICrumbTime);
         }
     }
@@ -396,8 +412,10 @@ public class CrumbTrail extends MapItem implements FOVFilter.Filterable,
                 }
                 ++crumbCount;
 
-                while (crumbCount > maxCrumbs) {
-                    removeOldestCrumb();
+                if (!unlimited) {
+                    while (crumbCount > maxCrumbs) {
+                        removeOldestCrumb();
+                    }
                 }
 
                 if (this.getGroup() != null)
@@ -430,7 +448,6 @@ public class CrumbTrail extends MapItem implements FOVFilter.Filterable,
                 for (OnCrumbTrailUpdateListener l : crumbTrailUpdateListeners) {
                     l.onCrumbRemoved(this, c);
                 }
-                c = null;
                 --crumbCount;
             }
         }

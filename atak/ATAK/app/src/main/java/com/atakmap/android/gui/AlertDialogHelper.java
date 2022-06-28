@@ -56,7 +56,6 @@ public class AlertDialogHelper {
             WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
             lp.copyFrom(w.getAttributes());
             lp.width = Math.min((int) (p.x * percentageWidth), maximumWidth);
-            lp.height = WindowManager.LayoutParams.MATCH_PARENT;
             w.setAttributes(lp);
         }
     }

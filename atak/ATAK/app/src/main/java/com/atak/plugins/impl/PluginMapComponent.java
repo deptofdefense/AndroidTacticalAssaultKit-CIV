@@ -3,6 +3,7 @@ package com.atak.plugins.impl;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -66,6 +67,9 @@ public class PluginMapComponent extends AbstractMapComponent implements
         prefs = PreferenceManager
                 .getDefaultSharedPreferences(context);
 
+        registerReceiver(context, uninstallReceiver,
+                new AtakBroadcast.DocumentedIntentFilter("com.atakmap.app.APP_REMOVED"));
+
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -80,8 +84,8 @@ public class PluginMapComponent extends AbstractMapComponent implements
     public void onSharedPreferenceChanged(
             SharedPreferences prefs, String key) {
 
-        if (key == null) return;
-
+        if (key == null)
+            return;
 
         //Log.d(TAG, "prefs changed: " + key);
 
@@ -339,6 +343,7 @@ public class PluginMapComponent extends AbstractMapComponent implements
                 .getDefaultSharedPreferences(context);
         prefs.edit().putBoolean("pluginSafeMode", false).apply();
         AtakPluginRegistry.get().dispose();
+        unregisterReceiver(context, uninstallReceiver);
     }
 
     private static final Map<String, Drawable> pluginIconMap = new HashMap<>();
@@ -398,5 +403,21 @@ public class PluginMapComponent extends AbstractMapComponent implements
     public static Drawable getPluginIconWithId(String id) {
         return pluginIconMap.get(id);
     }
+
+
+
+    private final BroadcastReceiver uninstallReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+            final String pkgName = intent.getStringExtra("package");
+
+
+            // if the package is uninstalled, make sure to invalidate the
+            // hash cache for that particular package
+            if (action != null && pkgName != null)
+                PluginValidator.invalidateHash(pkgName);
+        }
+    };
 
 }

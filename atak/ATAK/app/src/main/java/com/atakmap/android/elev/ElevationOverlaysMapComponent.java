@@ -44,7 +44,7 @@ public class ElevationOverlaysMapComponent extends AbstractMapComponent
 
         final int id;
 
-        private HeatMapMode(int id) {
+        HeatMapMode(int id) {
             this.id = id;
         }
 
@@ -78,7 +78,8 @@ public class ElevationOverlaysMapComponent extends AbstractMapComponent
         public void onSharedPreferenceChanged(
                 SharedPreferences sharedPreferences, String key) {
 
-            if (key == null) return;
+            if (key == null)
+                return;
 
             if (key.equals(PREFERENCE_COLOR_SATURATION_KEY)
                     || key.equals(PREFERENCE_COLOR_VALUE_KEY)

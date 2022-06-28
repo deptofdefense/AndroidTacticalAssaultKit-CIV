@@ -1327,7 +1327,7 @@ final class RouteNavigatorEngine {
             int lhi = lhs.getTriggerValue();
             int rhi = rhs.getTriggerValue();
 
-            return lhi < rhi ? -1 : (lhi == rhi ? 0 : 1);
+            return Integer.compare(lhi, rhi);
         }
     }
 }

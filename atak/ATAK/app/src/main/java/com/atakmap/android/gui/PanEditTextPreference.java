@@ -240,25 +240,51 @@ public class PanEditTextPreference extends EditTextPreference {
     }
 
     /**
-     * Before the preference value is saved, check to see if the 
-     * value is valid integer and that it falls within a given range. 
-     * If it does not, then the preference is not saved and a message is shown. 
+     * Before the preference value is saved, check to see if the
+     * value is valid integer and that it falls within a given range.
+     * If it does not, then the preference is not saved and a message is shown.
+     * @param minVal the minimum value supported by the preference
+     * @param maxVal the maximumn value supported by rhe preference
+     *
      */
     public void setValidIntegerRange(final int minVal, final int maxVal) {
+        setValidIntegerRange(minVal, maxVal, false);
+    }
+
+    /**
+     * Before the preference value is saved, check to see if the
+     * value is valid integer and that it falls within a given range.
+     * If it does not, then the preference is not saved and a message is shown.
+     * @param minVal the minimum value supported by the preference
+     * @param maxVal the maximumn value supported by rhe preference
+     * @param allowForBlank allow for empty entry for the preference
+     */
+    public void setValidIntegerRange(final int minVal, final int maxVal, boolean allowEmpty) {
         setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
             @Override
             public boolean onPreferenceChange(Preference preference,
                     Object newValue) {
                 int value;
+
+                String val = "";
+
+                if (newValue != null)
+                    val = newValue.toString();
+
+                if (allowEmpty && val.length() == 0)
+                    return true;
+
                 try {
-                    value = Integer.parseInt(newValue.toString());
+                    value = Integer.parseInt(val);
                 } catch (NumberFormatException nfe) {
+                    showDialog(null);
                     Toast.makeText(appContext, R.string.invalid_value,
                             Toast.LENGTH_SHORT).show();
                     return false;
                 }
 
                 if (value < minVal) {
+                    showDialog(null);
                     Toast.makeText(appContext,
                             "Value must be at least " + minVal,
                             Toast.LENGTH_SHORT).show();
@@ -266,6 +292,7 @@ public class PanEditTextPreference extends EditTextPreference {
                 }
 
                 if (value > maxVal) {
+                    showDialog(null);
                     Toast.makeText(appContext,
                             "Value can't be greater than " + maxVal,
                             Toast.LENGTH_SHORT).show();

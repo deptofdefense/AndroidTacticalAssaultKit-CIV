@@ -520,7 +520,7 @@ class NativeLayerSelectionAdapter extends LayerSelectionAdapter
 
         @Override
         public void run() {
-            final SpatialCalculator calc = new SpatialCalculator(true);
+            final SpatialCalculator calc = new SpatialCalculator.Builder().inMemory().build();
             try {
                 int compute = 0;
                 while (true) {

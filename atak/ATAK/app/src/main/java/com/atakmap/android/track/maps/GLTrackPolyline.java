@@ -89,9 +89,9 @@ public class GLTrackPolyline extends GLPolyline implements GLMapBatchable {
 
         updateNadirClamp(ortho);
 
-        if (currentDraw != ortho.drawVersion)
+        if (currentDraw != ortho.currentPass.drawVersion)
             recompute = true;
-        currentDraw = ortho.drawVersion;
+        currentDraw = ortho.currentPass.drawVersion;
 
         if (_needsUpdate) {
             _ensureVertBuffer();
@@ -277,9 +277,9 @@ public class GLTrackPolyline extends GLPolyline implements GLMapBatchable {
 
         updateNadirClamp(view);
 
-        if (this.currentDraw != view.drawVersion)
+        if (this.currentDraw != view.currentPass.drawVersion)
             this.recompute = true;
-        this.currentDraw = view.drawVersion;
+        this.currentDraw = view.currentPass.drawVersion;
 
         if (_needsUpdate) {
             _ensureVertBuffer();

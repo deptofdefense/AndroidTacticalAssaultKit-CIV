@@ -153,21 +153,21 @@ public class GLDt2OutlineOverlay extends GLAbstractLayer2
         double westBound = 360, eastBound = -360;
         for (GeoPoint gp : _corners) {
             double lng = gp.getLongitude();
-            if (ortho.crossesIDL) {
-                if (ortho.drawLng > 0 && lng < 0)
+            if (ortho.currentPass.crossesIDL) {
+                if (ortho.currentPass.drawLng > 0 && lng < 0)
                     lng += 360;
-                else if (ortho.drawLng < 0 && lng > 0)
+                else if (ortho.currentPass.drawLng < 0 && lng > 0)
                     lng -= 360;
             }
             westBound = Math.min(westBound, lng);
             eastBound = Math.max(eastBound, lng);
         }
 
-        int interval = (int) Math.ceil(ortho.drawMapResolution / 2000);
+        int interval = (int) Math.ceil(ortho.currentPass.drawMapResolution / 2000);
         int minLng = (int) Math.floor(westBound / interval) * interval;
         int maxLng = (int) Math.floor(eastBound / interval) * interval;
-        int minLat = (int) Math.floor(ortho.southBound / interval) * interval;
-        int maxLat = (int) Math.floor(ortho.northBound / interval) * interval;
+        int minLat = (int) Math.floor(ortho.currentPass.southBound / interval) * interval;
+        int maxLat = (int) Math.floor(ortho.currentPass.northBound / interval) * interval;
 
         BitSet[] coverages = _dtedWatcher.getCoverages();
         BitSet coverage = _dtedWatcher.getFullCoverage();

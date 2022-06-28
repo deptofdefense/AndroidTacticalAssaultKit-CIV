@@ -1,12 +1,11 @@
 
 package com.atakmap.android.maps.tilesets.mobac;
 
-import android.util.Xml;
-
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
+import com.atakmap.coremap.xml.XMLUtils;
 import com.atakmap.net.AtakAuthenticationHandlerHTTP;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -219,8 +218,7 @@ public class WMTSQueryLayers extends QueryLayers {
         // Parse the actual data with the PullParser
         XmlPullParser parser = null;
         try {
-            parser = Xml.newPullParser();
-            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, true);
+            parser = XMLUtils.getXmlPullParser();
             parser.setInput(input, null);
 
             int eventType;

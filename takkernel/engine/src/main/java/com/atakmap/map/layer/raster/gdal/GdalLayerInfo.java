@@ -852,11 +852,21 @@ public class GdalLayerInfo extends AbstractDatasetDescriptorSpi {
         }
     }
 
+    /**
+     * Given a Dateset Descriptor, return the GDAL friendly URI.   If none exists, this will return
+     * an empty string.
+     * @param info the datset descriptor to use
+     * @return a gdal friendly uri or an empty string.
+     */
     public static String getGdalFriendlyUri(DatasetDescriptor info) {
         if (info.getExtraData("gdalSubdataset") != null)
             return info.getExtraData("gdalSubdataset");
 
         Uri uri = Uri.parse(FileSystemUtils.sanitizeURLKeepSpaces(info.getUri()));
+
+        if (uri == null)
+            return "";
+
         String scheme = uri.getScheme();
         String path = uri.getPath().replace("%20", " ").
                                     replace("%23", "#").    

@@ -171,15 +171,16 @@ public class GLModelRenderer2 implements GLMapRenderable2, ModelHitTestControl {
             }
         }
 
-        if (view.drawMapResolution < 5d
+        if (view.currentPass.drawMapResolution < 5d
                 && sourceInfo.srid != -1
                 && Rectangle.intersects(featureBounds.minX, featureBounds.minY,
                         featureBounds.maxX, featureBounds.maxY, view.westBound,
-                        view.southBound, view.eastBound, view.northBound)) {
+                        view.currentPass.southBound,
+                view.currentPass.eastBound, view.currentPass.northBound)) {
             synchronized (this) {
-                this.drawSrid = view.drawSrid;
+                this.drawSrid = view.currentPass.drawSrid;
                 if (this.modelInfo == null
-                        || !isCompatibleSrid(view.drawSrid,
+                        || !isCompatibleSrid(view.currentPass.drawSrid,
                                 this.modelInfo.srid)) {
                     if (this.modelLoader == null) {
                         this.modelLoader = new Thread(new Runnable() {

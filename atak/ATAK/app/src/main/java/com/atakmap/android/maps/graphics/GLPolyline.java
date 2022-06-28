@@ -37,6 +37,7 @@ import com.atakmap.map.layer.feature.style.BasicStrokeStyle;
 import com.atakmap.map.layer.feature.style.CompositeStyle;
 import com.atakmap.map.layer.feature.style.PatternStrokeStyle;
 import com.atakmap.map.layer.feature.style.Style;
+import com.atakmap.map.opengl.GLAntiAliasedLine;
 import com.atakmap.map.opengl.GLAntiMeridianHelper;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLLabelManager;
@@ -102,7 +103,7 @@ public class GLPolyline extends GLShape2 implements
     protected long currentDraw = 0;
     protected boolean recompute = true;
 
-    private Map<String, Object> segmentLabels = null;
+    private Map<String, Object> segmentLabels;
 
     private String centerLabelText = null;
     private int middle = -1;
@@ -119,10 +120,7 @@ public class GLPolyline extends GLShape2 implements
     private DoubleBuffer _3dPointsPreForward;
     /** extrusion vertices, map projection; relative-to-center */
     private FloatBuffer _3dPoints;
-    /** extrused outline vertices, LLA */
-    private DoubleBuffer _outlinePointsPreForward;
-    /** extruded outline vertices, map projection; relative-to-center */
-    private FloatBuffer _outlinePoints;
+    private final GLBatchLineString _3dOutline;
     private boolean _shouldReextrude;
     private double _height = Double.NaN;
     private boolean _hasHeight;
@@ -148,6 +146,12 @@ public class GLPolyline extends GLShape2 implements
                 | GLMapView.RENDER_PASS_SCENES);
         this.impl = new GLBatchPolygon(surface);
         this.impl.setTesselationThreshold(threshold);
+
+        // Outline rendered when the shape is extruded
+        _3dOutline = new GLBatchLineString(surface);
+        _3dOutline.setTessellationEnabled(false);
+        _3dOutline.setAltitudeMode(AltitudeMode.Absolute);
+        _3dOutline.setConnectionType(GLAntiAliasedLine.ConnectionType.SEGMENTS);
 
         _subject = subject;
         GeoPoint[] points = subject.getPoints();
@@ -301,6 +305,8 @@ public class GLPolyline extends GLShape2 implements
         } else {
             s = new BasicStrokeStyle(this.strokeColor, this.strokeWeight);
         }
+        final Style strokeStyle = s;
+
         int numStyles = 0;
         if (fill)
             numStyles++;
@@ -343,6 +349,7 @@ public class GLPolyline extends GLShape2 implements
             @Override
             public void run() {
                 impl.setStyle(fs);
+                _3dOutline.setStyle(strokeStyle);
                 markSurfaceDirty(true);
             }
         });
@@ -572,20 +579,22 @@ public class GLPolyline extends GLShape2 implements
             refreshStyle();
 
             // Free unused buffers
-            if (!_hasHeight) {
-                Unsafe.free(_3dPoints);
-                _3dPoints = null;
-
-                Unsafe.free(_3dPointsPreForward);
-                _3dPointsPreForward = null;
-
-                Unsafe.free(_outlinePoints);
-                _outlinePoints = null;
-
-                Unsafe.free(_outlinePointsPreForward);
-                _outlinePointsPreForward = null;
-            }
+            if (!_hasHeight)
+                freeExtrusionBuffers();
         }
+    }
+
+    /**
+     * Free the various buffers used to render extruded shapes in 3D
+     */
+    private void freeExtrusionBuffers() {
+        Unsafe.free(_3dPoints);
+        _3dPoints = null;
+
+        Unsafe.free(_3dPointsPreForward);
+        _3dPointsPreForward = null;
+
+        _3dOutline.release();
     }
 
     /**
@@ -660,12 +669,12 @@ public class GLPolyline extends GLShape2 implements
                 GLMapView.RENDER_PASS_SCENES);
 
         // Not in resolution to draw
-        if (ortho.drawMapResolution > _subject.getMetaDouble(
+        if (ortho.currentPass.drawMapResolution > _subject.getMetaDouble(
                 "maxLineRenderResolution",
                 Polyline.DEFAULT_MAX_LINE_RENDER_RESOLUTION))
             return;
 
-        else if (ortho.drawMapResolution < _subject.getMetaDouble(
+        else if (ortho.currentPass.drawMapResolution < _subject.getMetaDouble(
                 "minLineRenderResolution",
                 Polyline.DEFAULT_MIN_LINE_RENDER_RESOLUTION))
             return;
@@ -791,21 +800,30 @@ public class GLPolyline extends GLShape2 implements
                 }
 
                 if (renderOutline) {
-                    _outlinePointsPreForward = GLExtrude.extrudeOutline(
+                    // Extrude the shape outline
+                    DoubleBuffer extruded = GLExtrude.extrudeOutline(
                             Double.NaN, _points, 3, extOptions, heights);
-                    _outlinePoints = Unsafe.allocateDirect(
-                            _outlinePointsPreForward.limit(),
-                            FloatBuffer.class);
-                    _outlinePointsPreForward.rewind();
+                    extruded.rewind();
 
+                    // Normalize IDL crossing
                     final int idlInfo = GLAntiMeridianHelper
-                            .normalizeHemisphere(3, _outlinePointsPreForward,
-                                    _outlinePointsPreForward);
-                    _outlinePointsPreForward.flip();
+                            .normalizeHemisphere(3, extruded,
+                                    extruded);
+                    extruded.flip();
                     _extrudePrimaryHemi = (idlInfo
                             & GLAntiMeridianHelper.MASK_PRIMARY_HEMISPHERE);
                     _extrudeCrossesIDL = (idlInfo
                             & GLAntiMeridianHelper.MASK_IDL_CROSS) != 0;
+
+                    // Copy and release buffer to regular double array
+                    double[] pts = new double[extruded.limit()];
+                    extruded.get(pts);
+                    Unsafe.free(extruded);
+
+                    // Convert to line string and pass to 3D outline renderer
+                    LineString ls = new LineString(3);
+                    ls.addPoints(pts, 0, pts.length / 3, 3);
+                    _3dOutline.setGeometry(ls);
                 }
 
                 _shouldReextrude = false;
@@ -845,11 +863,6 @@ public class GLPolyline extends GLShape2 implements
             GLES20FixedPipeline.glEnable(GLES20FixedPipeline.GL_BLEND);
             GLES20FixedPipeline.glBlendFunc(GLES20FixedPipeline.GL_SRC_ALPHA,
                     GLES20FixedPipeline.GL_ONE_MINUS_SRC_ALPHA);
-            int color = fill ? fillColor : strokeColor;
-            float r = Color.red(color) / 255.0f;
-            float g = Color.green(color) / 255.0f;
-            float b = Color.blue(color) / 255.0f;
-            float a = fill ? Color.alpha(color) / 255.0f : 0.5f;
 
             if (renderPolygon) {
                 // validate the render vertices
@@ -871,6 +884,12 @@ public class GLPolyline extends GLShape2 implements
                     }
                     _3dPoints.flip();
                 }
+
+                int color = fill ? fillColor : strokeColor;
+                float r = Color.red(color) / 255.0f;
+                float g = Color.green(color) / 255.0f;
+                float b = Color.blue(color) / 255.0f;
+                float a = fill ? Color.alpha(color) / 255.0f : 0.5f;
 
                 GLES20FixedPipeline.glColor4f(r, g, b, a);
 
@@ -908,38 +927,8 @@ public class GLPolyline extends GLShape2 implements
             }
 
             // Outline around height polygon (only when map is tilted)
-            if (renderOutline) {
-                // validate the render vertices
-                if (rebuildExtrusionVertices) {
-                    _outlinePoints.clear();
-                    for (int i = 0; i < _outlinePointsPreForward.limit()
-                            / 3; i++) {
-                        final double lng = _outlinePointsPreForward.get(i * 3);
-                        final double lat = _outlinePointsPreForward
-                                .get(i * 3 + 1);
-                        final double alt = _outlinePointsPreForward
-                                .get(i * 3 + 2);
-                        ortho.scratch.geo.set(lat, lng, alt);
-                        ortho.currentPass.scene.mapProjection.forward(
-                                ortho.scratch.geo, ortho.scratch.pointD);
-                        _outlinePoints.put((float) (ortho.scratch.pointD.x
-                                - _extrusionCentroidProj.x));
-                        _outlinePoints.put((float) (ortho.scratch.pointD.y
-                                - _extrusionCentroidProj.y));
-                        _outlinePoints.put((float) (ortho.scratch.pointD.z
-                                - _extrusionCentroidProj.z));
-                    }
-                    _outlinePoints.flip();
-                }
-
-                GLES20FixedPipeline.glLineWidth(this.strokeWeight
-                        / ortho.currentPass.relativeScaleHint);
-                GLES20FixedPipeline.glVertexPointer(3, GLES30.GL_FLOAT, 0,
-                        _outlinePoints);
-                GLES20FixedPipeline.glColor4f(r * .9f, g * .9f, b * .9f, 1.0f);
-                GLES20FixedPipeline.glDrawArrays(GLES30.GL_LINES, 0,
-                        _outlinePoints.limit() / 3);
-            }
+            if (renderOutline)
+                _3dOutline.draw(ortho);
 
             GLES20FixedPipeline
                     .glDisableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
@@ -1129,8 +1118,8 @@ public class GLPolyline extends GLShape2 implements
 
         if (segmentLabels != null) {
             Map<String, Object> labelBundle;
-            int segment = 0;
-            String text = "";
+            int segment;
+            String text;
             GeoPoint curPoint = GeoPoint.createMutable();
             GeoPoint lastPoint = GeoPoint.createMutable();
             PointF startPoint = new PointF();
@@ -1139,14 +1128,21 @@ public class GLPolyline extends GLShape2 implements
             double minGSD;
             for (Map.Entry e : segmentLabels.entrySet()) {
                 labelBundle = (Map<String, Object>) e.getValue();
-                segment = ((Number) labelBundle.get("segment")).intValue();
+                Number segNumber = ((Number) labelBundle.get("segment"));
+                if (segNumber != null)
+                    segment = segNumber.intValue();
+                else
+                    segment = -1;
+
                 if (segment < 0 || segment >= this.numPoints - 1)
                     continue;
 
                 minGSD = Double.MAX_VALUE;
-                if (labelBundle.containsKey("min_gsd"))
-                    minGSD = ((Number) labelBundle.get("min_gsd"))
-                            .doubleValue();
+                if (labelBundle.containsKey("min_gsd")) {
+                    Number number = ((Number) labelBundle.get("min_gsd"));
+                    if (number != null)
+                        minGSD = number.doubleValue();
+                }
                 if (mapGSD > minGSD)
                     continue;
 
@@ -1358,7 +1354,7 @@ public class GLPolyline extends GLShape2 implements
     }
 
     /**
-     * TODO: Currently a direct copy from GLMapItem - but will be reritten / removed when the final
+     * TODO: Currently a direct copy from GLMapItem - but will be rewritten / removed when the final
      * version is done.
      *
      * @param ctx
@@ -1501,13 +1497,32 @@ public class GLPolyline extends GLShape2 implements
     @Override
     protected HitTestResult hitTestImpl(MapRenderer3 renderer,
             HitTestQueryParameters params) {
+
+        // Code that can be used to perform hit detection on the extruded part
+        // of the shape
+        // Disabled for now - Results in wonky behavior when editing.
+        // Possibly requires a new metadata field or correction to properly
+        // move the top outline of the shape relative to its bottom point
+        /*final int hs = _heightStyle;
+        if (_hasHeight && !_nadirClamp && (
+                MathUtils.hasBits(hs, Polyline.HEIGHT_STYLE_OUTLINE_SIMPLE) ||
+                MathUtils.hasBits(hs, Polyline.HEIGHT_STYLE_OUTLINE))) {
+            result = _3dOutline.hitTest(renderer, params);
+            if (result != null) {
+                int count2 = numPoints * 2;
+                if (result.index >= count2)
+                    result.index -= count2;
+                result.index /= 2;
+            }
+        }*/
+
         HitTestResult result = impl.hitTest(renderer, params);
         if (result == null)
             return null;
 
         // Check if we touched the last point in the closed shape
         if (_closed && result.index == this.numPoints) {
-            // Redirect to the first point in the same
+            // Redirect to the first point in the shape
             result.index = 0;
             result.count = 1;
         }
@@ -1544,15 +1559,7 @@ public class GLPolyline extends GLShape2 implements
         _verts2Ptr = 0L;
 
         needsProjectVertices = true;
-
-        Unsafe.free(_3dPointsPreForward);
-        _3dPointsPreForward = null;
-        Unsafe.free(_3dPoints);
-        _3dPoints = null;
-        Unsafe.free(_outlinePointsPreForward);
-        _outlinePointsPreForward = null;
-        Unsafe.free(_outlinePoints);
-        _outlinePoints = null;
+        freeExtrusionBuffers();
         _shouldReextrude = true;
         _extrusionCentroidSrid = -1;
         _extrusionTerrainVersion = -1;

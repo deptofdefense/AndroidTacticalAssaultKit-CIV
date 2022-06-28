@@ -16,6 +16,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.dropdown.DropDown.OnStateListener;
 import com.atakmap.android.dropdown.DropDownReceiver;
 
+import com.atakmap.annotations.ModifierApi;
 import com.atakmap.app.R;
 
 public class SphereImageViewerDropDownReceiver extends DropDownReceiver
@@ -37,6 +38,8 @@ public class SphereImageViewerDropDownReceiver extends DropDownReceiver
 
     /**************************** CONSTRUCTOR *****************************/
 
+
+    @ModifierApi(since = "4.5", target="4.8", modifiers={})
     public SphereImageViewerDropDownReceiver(final MapView mapView) {
         super(mapView);
 

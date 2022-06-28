@@ -523,7 +523,7 @@ Util::TAKErr TAK::Engine::Elevation::ElevationManager_getElevation(
             continue;
         }
 
-        std::list<GeoPoint2>::const_iterator srcIter = src.begin();
+        auto srcIter = src.begin();
         const std::size_t limit = srcSize;
         for (std::size_t i = 0u; i < limit; i++) {
             const double value = dataEls[i];

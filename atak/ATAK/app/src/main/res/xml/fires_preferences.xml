@@ -37,8 +37,8 @@
             android:defaultValue="30" />
 
         <CheckBoxPreference
-            android:title="Expanded Danger Close Search"
-            android:summary="Consider Neutrals and Unknowns when determining a danger close situation."
+            android:title="@string/expand_danger_close_title"
+            android:summary="@string/expand_danger_close_summary"
             android:key="expandedDangerClose"
             android:defaultValue="false" />
     </PreferenceCategory>

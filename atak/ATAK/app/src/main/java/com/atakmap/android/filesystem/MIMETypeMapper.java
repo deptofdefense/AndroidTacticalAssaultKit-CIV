@@ -32,6 +32,11 @@ public class MIMETypeMapper implements ContentTypeMapper {
         return MIMETypeMapper.GetContentType(file);
     }
 
+    /**
+     * Given a file, attempt to determine the mime type from the extension
+     * @param file the file
+     * @return the mime type as a string
+     */
     public static String GetContentType(File file) {
         String mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(
                 FileSystemUtils.getExtension(file, false, false));

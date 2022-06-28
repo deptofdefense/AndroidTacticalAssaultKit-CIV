@@ -56,9 +56,9 @@ public class ClosedShapeGeoFenceMonitor extends GeoFenceMonitor {
     /**
      * ctor
      *
-     * @param view
-     * @param spatialCalc
-     * @param fence
+     * @param view the map view
+     * @param spatialCalc the spatial calculator
+     * @param fence the geofence to be used
      * @param item shape with at least 3 points
      */
     public ClosedShapeGeoFenceMonitor(MapView view,

@@ -8,6 +8,7 @@ import android.content.Intent;
 
 import com.atakmap.android.cotdetails.extras.ExtraDetailsLayout;
 import com.atakmap.android.drawing.DrawingPreferences;
+import com.atakmap.android.gui.ColorButton;
 import com.atakmap.android.gui.RangeEntryDialog;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
@@ -15,7 +16,6 @@ import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.ShapeDrawable;
 import android.graphics.drawable.shapes.RectShape;
-import android.graphics.drawable.shapes.Shape;
 import android.os.Bundle;
 import android.text.Editable;
 import android.util.AttributeSet;
@@ -40,11 +40,13 @@ import com.atakmap.android.dropdown.DropDownReceiver;
 import com.atakmap.android.gui.ColorPalette;
 import com.atakmap.android.gui.ColorPalette.OnColorSelectedListener;
 import com.atakmap.android.gui.RangeAndBearingTableHandler;
+import com.atakmap.android.gui.ShapeColorButton;
 import com.atakmap.android.hashtags.view.HashtagEditText;
 import com.atakmap.android.hashtags.view.RemarksLayout;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.maps.Shape;
 import com.atakmap.android.preference.UnitPreferences;
 import com.atakmap.android.toolbar.Tool;
 import com.atakmap.android.toolbar.ToolListener;
@@ -58,6 +60,10 @@ import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.conversions.SpanUtilities;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.math.MathUtils;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 /**
  * Generic details view for a map item
@@ -85,6 +91,7 @@ public abstract class GenericDetailsView extends RelativeLayout implements
     protected Button _centerButton, _heightButton;
     protected ImageButton _colorButton;
     protected CheckBox _showLabels;
+    protected Button _lineStyleBtn;
     protected final UnitPreferences _unitPrefs;
     protected final DrawingPreferences _drawPrefs;
 
@@ -138,6 +145,7 @@ public abstract class GenericDetailsView extends RelativeLayout implements
                     });
         }
 
+        _lineStyleBtn = findViewById(R.id.lineStyleBtn);
         _extrasLayout = findViewById(R.id.extrasLayout);
     }
 
@@ -146,7 +154,8 @@ public abstract class GenericDetailsView extends RelativeLayout implements
             final SharedPreferences sp,
             final String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         if (key.equals(UnitPreferences.COORD_FMT))
             _cFormat = _unitPrefs.getCoordinateFormat();
@@ -182,7 +191,7 @@ public abstract class GenericDetailsView extends RelativeLayout implements
     /****************************** PRIVATE METHODS ****************************/
 
     protected ShapeDrawable updateColorButtonDrawable() {
-        Shape rect = new RectShape();
+        RectShape rect = new RectShape();
         rect.resize(50, 50);
         ShapeDrawable color = new ShapeDrawable();
         color.setBounds(0, 0, 50, 50);
@@ -208,12 +217,21 @@ public abstract class GenericDetailsView extends RelativeLayout implements
         palette.setOnColorSelectedListener(l);
     }
 
+    /**
+     * The color button has been selected
+     */
     protected void _onColorSelected() {
         int color = Color.WHITE;
-        Drawable dr = _colorButton.getDrawable();
-        if (dr instanceof ShapeDrawable) {
-            ShapeDrawable drawable = (ShapeDrawable) dr;
-            color = drawable.getPaint().getColor();
+        if (_colorButton instanceof ColorButton)
+            color = ((ColorButton) _colorButton).getColor();
+        else if (_colorButton instanceof ShapeColorButton)
+            color = ((ShapeColorButton) _colorButton).getStrokeColor();
+        else if (_colorButton != null) {
+            Drawable dr = _colorButton.getDrawable();
+            if (dr instanceof ShapeDrawable) {
+                ShapeDrawable drawable = (ShapeDrawable) dr;
+                color = drawable.getPaint().getColor();
+            }
         }
         promptColor(color);
     }
@@ -231,6 +249,8 @@ public abstract class GenericDetailsView extends RelativeLayout implements
             _showLabels.setChecked(_item.hasMetaValue("labels_on"));
         if (_extrasLayout != null)
             _extrasLayout.setItem(item);
+        if (_lineStyleBtn != null && item instanceof Shape)
+            setupLineStyleButton(_lineStyleBtn, (Shape) item);
         return item != null;
     }
 
@@ -239,7 +259,8 @@ public abstract class GenericDetailsView extends RelativeLayout implements
      */
     public abstract void refresh();
 
-    protected abstract void _onColorSelected(int color, String label);
+    protected void _onColorSelected(int color, String label) {
+    }
 
     protected void _onHeightSelected() {
         // Map item may not have a modifiable height
@@ -553,5 +574,90 @@ public abstract class GenericDetailsView extends RelativeLayout implements
                 dialog.show();
             }
         });
+    }
+
+    /**
+     * Setup a {@link ShapeColorButton} to automatically update a shape's
+     * stroke and fill colors
+     * @param button Color button
+     * @param shape Shape to update
+     */
+    protected void setupShapeColorButton(@NonNull final ShapeColorButton button,
+                                         @NonNull final Shape shape) {
+        button.setShape(shape);
+        button.setOnColorsSelectedListener(new ShapeColorButton.OnColorsSelectedListener() {
+            @Override
+            public void onColorsSelected(int strokeColor, int fillColor) {
+                // Update default shape color preferences
+                DrawingPreferences prefs = new DrawingPreferences(_mapView);
+                prefs.setShapeColor(strokeColor);
+                final boolean filled = MathUtils.hasBits(shape.getStyle(),
+                        Shape.STYLE_FILLED_MASK);
+                if (filled)
+                    prefs.setFillAlpha(Color.alpha(fillColor));
+            }
+        });
+    }
+
+    /**
+     * Setup line style button so it automatically updates the shape's line
+     * style and the button text itself
+     * @param button The button/view to setup
+     * @param shape The shape to set the line style for
+     */
+    protected void setupLineStyleButton(@NonNull final View button,
+                                        @NonNull final Shape shape) {
+        updateLineStyleButton(button, shape);
+        button.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                promptLineStyle(shape, new Runnable() {
+                    @Override
+                    public void run() {
+                        updateLineStyleButton(button, shape);
+                    }
+                });
+            }
+        });
+    }
+
+    /**
+     * Update the line style button text
+     * @param button The button/view to update
+     * @param shape Shape to use for updating
+     */
+    protected void updateLineStyleButton(@NonNull final View button,
+                                         @NonNull final Shape shape) {
+        String[] styles = getResources().getStringArray(R.array.line_styles);
+        int s = shape.getStrokeStyle();
+        if (button instanceof TextView)
+            ((TextView) button).setText(s < styles.length ? styles[s] : "");
+        // Sub-classes may add support for other types of views
+    }
+
+    /**
+     * Prompt to set the shape line style
+     * @param shape The shape to set the line style for
+     * @param callback Callback fired when line style is set on the shape
+     */
+    protected void promptLineStyle(@NonNull final Shape shape,
+                                   @Nullable final Runnable callback) {
+        AlertDialog.Builder b = new AlertDialog.Builder(getContext());
+        b.setTitle(R.string.line_style);
+        b.setSingleChoiceItems(R.array.line_styles, shape.getStrokeStyle(),
+                new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int style) {
+                if (style < 0)
+                    return;
+                shape.setStrokeStyle(style);
+                _drawPrefs.setStrokeStyle(style);
+                dialog.dismiss();
+                if (callback != null)
+                    callback.run();
+            }
+        });
+        b.setNegativeButton(R.string.cancel, null);
+        b.show();
     }
 }

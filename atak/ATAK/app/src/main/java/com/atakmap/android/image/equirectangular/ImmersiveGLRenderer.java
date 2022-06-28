@@ -32,11 +32,11 @@ public class ImmersiveGLRenderer implements GLSurfaceView.Renderer {
     private GLTexturedSphereProgram program;
     // Render thread only
     // Matrix defining the current view
-    private float[] viewMatrix;
+    private final float[] viewMatrix;
     // Render thread only
     // No persistent state; used during renders to hold
     // model/view matrix computation results
-    private float[] mvpMatrix;
+    private final float[] mvpMatrix;
     // Tracks last supplied and loaded bitmap.
     // Render thread only
     private Bitmap lastBitmap;

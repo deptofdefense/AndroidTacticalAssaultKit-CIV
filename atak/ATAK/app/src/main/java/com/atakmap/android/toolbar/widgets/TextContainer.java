@@ -52,7 +52,7 @@ public class TextContainer implements MapWidget.OnClickListener, Runnable,
     protected final MarkerIconWidget _widget;
     private String _prompt = "";
 
-    private final Icon icon_lit;
+    protected final Icon icon_lit;
     private final Icon icon_unlit;
     private final Icon icon_blank;
 
@@ -138,7 +138,7 @@ public class TextContainer implements MapWidget.OnClickListener, Runnable,
     @Override
     public void onWidgetSizeChanged(MapWidget2 widget) {
         if (displaying)
-            displayPromptAtTop(_prompt, false);
+            updatePromptText();
     }
 
     private Icon createIcon(final String imageUri) {
@@ -241,7 +241,7 @@ public class TextContainer implements MapWidget.OnClickListener, Runnable,
      * @param maxWidth Max width available
      * @return Line-wrapped string
      */
-    private static String wrap(String prompt, MapTextFormat fmt,
+    protected static String wrap(String prompt, MapTextFormat fmt,
             float maxWidth) {
         // First check if the string even has to be wrapped
         float width = fmt.measureTextWidth(prompt);
@@ -306,6 +306,7 @@ public class TextContainer implements MapWidget.OnClickListener, Runnable,
      * @param blink True to blink the widget icon when text is hidden
      */
     private synchronized void displayPromptAtTop(String prompt, boolean blink) {
+        displaying = true;
         _prompt = prompt;
         _mapView.post(new Runnable() {
             @Override
@@ -324,13 +325,9 @@ public class TextContainer implements MapWidget.OnClickListener, Runnable,
         _widget.setVisible(true);
 
         // Wrap text
-        prompt = wrap(prompt, textFormat, _text.getParent().getWidth() - 16f);
-        if (displaying && FileSystemUtils.isEquals(prompt, _text.getText()))
-            return;
-
         _text.setTextFormat(textFormat);
         _text.setColor(color);
-        _text.setText(prompt);
+        updatePromptText();
         _text.setVisible(showText);
 
         if (MetricsApi.shouldRecordMetric()) {
@@ -338,8 +335,6 @@ public class TextContainer implements MapWidget.OnClickListener, Runnable,
             b.putString("prompt", prompt);
             MetricsApi.record("hint", b);
         }
-
-        displaying = true;
 
         // the user previously requested the text to show, so we will continue 
         // to show the text
@@ -373,7 +368,7 @@ public class TextContainer implements MapWidget.OnClickListener, Runnable,
         _widget.setIcon(getIcon());
     }
 
-    private Icon getIcon() {
+    protected Icon getIcon() {
         return _prefs.getBoolean("textContainer.textShowing", true)
                 ? icon_lit
                 : icon_unlit;
@@ -393,5 +388,11 @@ public class TextContainer implements MapWidget.OnClickListener, Runnable,
 
     public void closePrompt() {
         closePrompt(null);
+    }
+
+    private void updatePromptText() {
+        String wrapped = wrap(_prompt, textFormat,
+                _text.getParent().getWidth() - 16f);
+        _text.setText(wrapped);
     }
 }

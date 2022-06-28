@@ -130,19 +130,7 @@ class HierarchyListUserExport extends HierarchyListUserSelect {
         try {
             marshal.execute(exports);
             return true;
-        } catch (IOException e) {
-            Log.e(TAG,
-                    "Failed to initiate export of type: "
-                            + marshal.getContentType(),
-                    e);
-            NotificationUtil.getInstance().postNotification(
-                    R.drawable.ic_network_error_notification_icon,
-                    NotificationUtil.RED,
-                    "Export Failed",
-                    marshal.getContentType() + " export failed",
-                    marshal.getContentType() + " export failed");
-            return false;
-        } catch (FormatNotSupportedException e) {
+        } catch (IOException | FormatNotSupportedException e) {
             Log.e(TAG,
                     "Failed to initiate export of type: "
                             + marshal.getContentType(),

@@ -29,7 +29,8 @@ public class TilesetMapComponent extends AbstractMapComponent {
         public void onSharedPreferenceChanged(SharedPreferences prefs,
                 String key) {
 
-            if (key == null) return;
+            if (key == null)
+                return;
 
             if (key.equals("wms_connect_timeout"))
                 MobacMapSource.Config.defaults.connectTimeout = prefs.getInt(

@@ -71,17 +71,7 @@ public final class GetFileOperation extends HTTPOperation {
                         client = TakHttpClient.GetHttpClient(factory,
                                 getFileRequest.getUrl());
                     }
-                } catch (KeyStoreException e) {
-                    Log.w(TAG, "Failed to create TLS client", e);
-                } catch (NoSuchAlgorithmException e) {
-                    Log.w(TAG, "Failed to create TLS client", e);
-                } catch (KeyManagementException e) {
-                    Log.w(TAG, "Failed to create TLS client", e);
-                } catch (IOException e) {
-                    Log.w(TAG, "Failed to create TLS client", e);
-                } catch (CertificateException e) {
-                    Log.w(TAG, "Failed to create TLS client", e);
-                } catch (UnrecoverableKeyException e) {
+                } catch (KeyStoreException | UnrecoverableKeyException | CertificateException | IOException | KeyManagementException | NoSuchAlgorithmException e) {
                     Log.w(TAG, "Failed to create TLS client", e);
                 }
             }

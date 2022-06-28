@@ -160,21 +160,25 @@ public class StreamManagementUtilsTest extends ATAKInstrumentedTest {
 
     @Test
     public void testRtmpWithToken() {
-        ConnectionEntry ce =  StreamManagementUtils.createConnectionEntryFromUrl(
-                "name", "rtmp://demo.unifiedvideo.com/live/4?token=e02532a591f14f16a233521ab907a150");
+        ConnectionEntry ce = StreamManagementUtils.createConnectionEntryFromUrl(
+                "name",
+                "rtmp://demo.unifiedvideo.com/live/4?token=e02532a591f14f16a233521ab907a150");
 
         assertEquals(ce.getProtocol(), ConnectionEntry.Protocol.RTMP);
-        assertEquals("rtmp://demo.unifiedvideo.com:1935/live/4?token=e02532a591f14f16a233521ab907a150&timeout=5",
+        assertEquals(
+                "rtmp://demo.unifiedvideo.com:1935/live/4?token=e02532a591f14f16a233521ab907a150&timeout=5",
                 ConnectionEntry.getURL(ce));
     }
 
     @Test
     public void testUrlWithQuery() {
-        ConnectionEntry ce =  StreamManagementUtils.createConnectionEntryFromUrl(
-                "name", "rtmp://demo.unifiedvideo.com/?token=e02532a591f14f16a233521ab907a150&token2=shb");
+        ConnectionEntry ce = StreamManagementUtils.createConnectionEntryFromUrl(
+                "name",
+                "rtmp://demo.unifiedvideo.com/?token=e02532a591f14f16a233521ab907a150&token2=shb");
 
         assertEquals(ce.getProtocol(), ConnectionEntry.Protocol.RTMP);
-        assertEquals("rtmp://demo.unifiedvideo.com:1935/?token=e02532a591f14f16a233521ab907a150&token2=shb&timeout=5",
+        assertEquals(
+                "rtmp://demo.unifiedvideo.com:1935/?token=e02532a591f14f16a233521ab907a150&token2=shb&timeout=5",
                 ConnectionEntry.getURL(ce));
     }
 }

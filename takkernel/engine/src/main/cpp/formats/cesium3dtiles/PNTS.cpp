@@ -365,16 +365,26 @@ TAKErr TAK::Engine::Formats::Cesium3DTiles::PNTS_write(const char* URI, uint8_t 
 
     constexpr std::uint32_t MAGIC_PNTS_LE = 0x73746E70;
 
+    TAKErr code;
     TAK::Engine::Util::FileOutput2 fileout;
-    fileout.open(URI);
-    fileout.writeInt(MAGIC_PNTS_LE);
-    fileout.writeInt(1);
-    fileout.writeInt(featureTableByteLength + featureTableBinaryByteLength + batchTableByteLength + batchTableBinaryByteLength + 28);
-    fileout.writeInt(featureTableByteLength);
-    fileout.writeInt(featureTableBinaryByteLength);
-    fileout.writeInt(batchTableByteLength);
-    fileout.writeInt(batchTableBinaryByteLength);
-    fileout.writeString(sfeatureTable.c_str());
+    code = fileout.open(URI);
+    TE_CHECKRETURN_CODE(code);
+    code = fileout.writeInt(MAGIC_PNTS_LE);
+    TE_CHECKRETURN_CODE(code);
+    code = fileout.writeInt(1);
+    TE_CHECKRETURN_CODE(code);
+    code = fileout.writeInt(featureTableByteLength + featureTableBinaryByteLength + batchTableByteLength + batchTableBinaryByteLength + 28);
+    TE_CHECKRETURN_CODE(code);
+    code = fileout.writeInt(featureTableByteLength);
+    TE_CHECKRETURN_CODE(code);
+    code = fileout.writeInt(featureTableBinaryByteLength);
+    TE_CHECKRETURN_CODE(code);
+    code = fileout.writeInt(batchTableByteLength);
+    TE_CHECKRETURN_CODE(code);
+    code = fileout.writeInt(batchTableBinaryByteLength);
+    TE_CHECKRETURN_CODE(code);
+    code = fileout.writeString(sfeatureTable.c_str());
+    TE_CHECKRETURN_CODE(code);
 
     std::vector< int32_t> colors;
     colors.reserve(numPoints);
@@ -385,18 +395,16 @@ TAKErr TAK::Engine::Formats::Cesium3DTiles::PNTS_write(const char* URI, uint8_t 
     for (std::size_t i = 0; i < numPoints; ++i) {
         colors.push_back(*colorsIt);
 
-        fileout.writeFloat(pointsIt[0]);
-        fileout.writeFloat(pointsIt[1]);
-        fileout.writeFloat(pointsIt[2]);
+        code = fileout.write(reinterpret_cast<uint8_t*>(pointsIt), 3 * sizeof(float));
+        TE_CHECKRETURN_CODE(code);
         pointsIt += 4;
         colorsIt += 4;
-
     }
 
-    for (auto color2 : colors) {
-        fileout.writeInt(color2);
-    }
-    fileout.close();
+    code = fileout.write(reinterpret_cast<uint8_t*>(colors.data()), sizeof(float) * colors.size());
+    TE_CHECKRETURN_CODE(code);
+    code = fileout.close();
+    TE_CHECKRETURN_CODE(code);
 
     return TE_Ok;
 

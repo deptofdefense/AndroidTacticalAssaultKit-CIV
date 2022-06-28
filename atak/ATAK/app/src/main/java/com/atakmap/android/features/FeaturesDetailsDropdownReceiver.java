@@ -4,10 +4,12 @@ package com.atakmap.android.features;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.view.LayoutInflater;
 import android.view.View;
 
 import android.view.ViewGroup;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -19,9 +21,7 @@ import android.widget.TabHost;
 import android.widget.TabHost.TabContentFactory;
 import android.widget.TextView;
 
-import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.io.ZipVirtualFile;
-import java.io.IOException;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 
@@ -41,6 +41,7 @@ public class FeaturesDetailsDropdownReceiver extends DropDownReceiver implements
     private final DataSourceFeatureDataStore spatialDb;
     private final MapItemDetailsView itemViewer;
     private final WebView htmlViewer;
+    private ImageButton editButton;
     private TabHost tabs;
     private MapItem item;
     private double currWidth = HALF_WIDTH;
@@ -55,9 +56,8 @@ public class FeaturesDetailsDropdownReceiver extends DropDownReceiver implements
         super(mapView);
         this.spatialDb = spatialDb;
 
-        LayoutInflater inflater = (LayoutInflater) getMapView().getContext()
-                .getSystemService(
-                        Service.LAYOUT_INFLATER_SERVICE);
+        final LayoutInflater inflater =
+                LayoutInflater.from( getMapView().getContext());
 
         WebView wv = null;
         try {
@@ -83,9 +83,8 @@ public class FeaturesDetailsDropdownReceiver extends DropDownReceiver implements
             webSettings.setDisplayZoomControls(false);
 
             this.htmlViewer.setWebViewClient(new WebViewClient() {
-                @Override
-                public WebResourceResponse shouldInterceptRequest(WebView view,
-                        String url) {
+                public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                    String url = request.getUrl().toString();
                     //Log.d(TAG, "shouldInterceptRequest: " + url);
                     if (url.startsWith("file:///android_asset/")) {
                         if (item == null)
@@ -104,19 +103,14 @@ public class FeaturesDetailsDropdownReceiver extends DropDownReceiver implements
                                 return new WebResourceResponse("text/html",
                                         FileSystemUtils.UTF8_CHARSET.name(), vf
                                                 .openStream());
-                            } catch (IOException ioe) {
+                            } catch (Exception ioe) {
                                 Log.d(TAG,
                                         "error reading: " + fName + " entry: "
                                                 + url,
                                         ioe);
                                 return null;
-                            } catch (Exception e) {
-                                Log.d(TAG,
-                                        "error reading: " + fName + " entry: "
-                                                + url,
-                                        e);
-                                return null; // general exception occurred
-                            }
+                            }// general exception occurred
+
                         }
                     }
 
@@ -195,59 +189,7 @@ public class FeaturesDetailsDropdownReceiver extends DropDownReceiver implements
                     metadataTab.setContent(new TabContentFactory() {
                         @Override
                         public View createTabContent(String tag) {
-                            LinearLayout outer = new LinearLayout(context);
-                            outer.setOrientation(LinearLayout.VERTICAL);
-                            outer.setLayoutParams(new ViewGroup.LayoutParams(
-                                    ViewGroup.LayoutParams.MATCH_PARENT,
-                                    ViewGroup.LayoutParams.WRAP_CONTENT));
-                            ScrollView htmlScrollView = new ScrollView(context);
-                            htmlScrollView.setLayoutParams(
-                                    new LinearLayout.LayoutParams(
-                                            LinearLayout.LayoutParams.MATCH_PARENT,
-                                            0, 1.0f));
-                            outer.addView(htmlScrollView);
-
-                            LinearLayout scrollViewLayout = new LinearLayout(
-                                    context);
-                            scrollViewLayout
-                                    .setOrientation(LinearLayout.VERTICAL);
-
-                            htmlScrollView.addView(scrollViewLayout);
-                            if (htmlViewer != null) {
-                                scrollViewLayout.addView(htmlViewer);
-                            } else {
-                                final TextView tv = new TextView(context);
-                                tv.setText(R.string.webview_not_installed);
-                                scrollViewLayout.addView(tv);
-                            }
-                            ImageButton button = new ImageButton(context, null,
-                                    R.style.darkButton);
-                            button.setImageDrawable(
-                                    context.getDrawable(R.drawable.edit));
-                            button.setLayoutParams(new ViewGroup.LayoutParams(
-                                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                                    ViewGroup.LayoutParams.WRAP_CONTENT));
-                            button.setOnClickListener(
-                                    new View.OnClickListener() {
-                                        @Override
-                                        public void onClick(View v) {
-                                            Intent i = new Intent(
-                                                    FeatureEditDropdownReceiver.SHOW_EDIT);
-                                            i.putExtra("fid",
-                                                    FeaturesDetailsDropdownReceiver.this.item
-                                                            .getMetaLong("fid",
-                                                                    0));
-                                            i.putExtra("title",
-                                                    FeaturesDetailsDropdownReceiver.this.item
-                                                            .getTitle());
-                                            AtakBroadcast.getInstance()
-                                                    .sendBroadcast(i);
-                                        }
-                                    });
-                            if (item.getEditable()) {
-                                outer.addView(button);
-                            }
-                            return outer;
+                            return createMetadataView();
                         }
                     });
                     this.tabs.addTab(metadataTab);
@@ -311,5 +253,65 @@ public class FeaturesDetailsDropdownReceiver extends DropDownReceiver implements
         } else {
             return null;
         }
+    }
+
+    /**
+     * Create view for displaying feature metadata and edit button
+     * @return Metadata view
+     */
+    private View createMetadataView() {
+        final Context context = getMapView().getContext();
+        final Resources res = context.getResources();
+        LinearLayout outer = new LinearLayout(context);
+        outer.setWeightSum(1f);
+        outer.setOrientation(LinearLayout.VERTICAL);
+        outer.setLayoutParams(new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT));
+        LinearLayout htmlLayout = new LinearLayout(context);
+        htmlLayout.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.0f));
+        outer.addView(htmlLayout);
+
+
+        if (htmlViewer != null) {
+            htmlLayout.addView(htmlViewer);
+        } else {
+            final TextView tv = new TextView(context);
+            tv.setText(R.string.webview_not_installed);
+            htmlLayout.addView(tv);
+        }
+        final int size = res.getDimensionPixelSize(R.dimen.nav_child_button_size);
+        final int p = res.getDimensionPixelSize(R.dimen.auto_space_big);
+        editButton = new ImageButton(context, null,
+                0, R.style.darkButton);
+        editButton.setPadding(p, p, p, p);
+        editButton.setImageResource(R.drawable.ic_edit);
+        editButton.setLayoutParams(new ViewGroup.LayoutParams(size, size));
+        editButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                editStyle();
+            }
+        });
+        outer.addView(editButton);
+        return outer;
+    }
+
+    /**
+     * Bring up the style editor for this feature
+     *
+     * XXX - Due to the disconnect from feature -> map item -> this drop-down
+     * it's currently not possible to get the proper database instance for
+     * the feature map item. Instead assume the feature is part of the default
+     * WKT spatial database and toast if it cannot be found.
+     */
+    private void editStyle() {
+        long fid = item.getMetaLong("fid", -1);
+        if (fid == -1)
+            return;
+
+        new FeatureEditDropdownReceiver(getMapView(), spatialDb)
+                .show(item.getTitle(), fid);
     }
 }

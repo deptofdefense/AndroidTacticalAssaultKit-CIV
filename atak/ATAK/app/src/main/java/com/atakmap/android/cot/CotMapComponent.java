@@ -56,6 +56,8 @@ import com.atakmap.android.util.NotificationIdRecycler;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
+import com.atakmap.app.system.FlavorProvider;
+import com.atakmap.app.system.SystemComponentLoader;
 import com.atakmap.comms.CommsMapComponent;
 import com.atakmap.comms.CommsMapComponent.ImportResult;
 import com.atakmap.comms.CotDispatcher;
@@ -155,6 +157,7 @@ public class CotMapComponent extends AbstractMapComponent implements
     private boolean saHasPhoneNumber = false;
     private String emailAddress = null;
     private String xmppUsername = null;
+    private String urn = null;
     private String sipAddressAssignment = null;
     private String sipAddress = null;
     private String sipAddressAssignmentDisabled;
@@ -646,6 +649,7 @@ public class CotMapComponent extends AbstractMapComponent implements
         sipAddress = preferences.getString("saSipAddress", null);
         emailAddress = preferences.getString("saEmailAddress", null);
         xmppUsername = preferences.getString("saXmppUsername", null);
+        urn = preferences.getString("saURN", null);
     }
 
     void addTadilJ(CotDetail detail, MapData mapData) {
@@ -759,7 +763,7 @@ public class CotMapComponent extends AbstractMapComponent implements
 
             if (SystemClock.elapsedRealtime()
                     - self.getMetaLong("gpsUpdateTick",
-                            0) > LocationMapComponent.GPS_TIMEOUT_MILLIS) {
+                    0) > LocationMapComponent.GPS_TIMEOUT_MILLIS) {
                 cotEvent.setHow(mapData.getString("how", "h-e"));
             } else {
                 cotEvent.setHow(mapData.getString("how", "m-g"));
@@ -796,6 +800,15 @@ public class CotMapComponent extends AbstractMapComponent implements
         }
         if (!FileSystemUtils.isEmpty(xmppUsername)) {
             contact.setAttribute("xmppUsername", xmppUsername);
+        }
+
+        FlavorProvider fp = SystemComponentLoader.getFlavorProvider();
+        if (fp == null || !fp.hasMilCapabilities()) {
+            if (!FileSystemUtils.isEmpty(urn)) {
+                CotDetail variablemessage = new CotDetail("vmf");
+                variablemessage.setAttribute("urn", urn);
+                detail.addChild(variablemessage);
+            }
         }
 
         UIDHandler.getInstance().toCotDetail(self, detail);
@@ -1004,7 +1017,8 @@ public class CotMapComponent extends AbstractMapComponent implements
         public void onSharedPreferenceChanged(
                 final SharedPreferences cotPrefs, final String key) {
 
-            if (key == null) return;
+            if (key == null)
+                return;
 
             if (key.equals("dispatchLocationCotExternal") ||
                     key.equals("dispatchLocationHidden") ||
@@ -1038,7 +1052,8 @@ public class CotMapComponent extends AbstractMapComponent implements
                     || key.equals("saSipAddress")
                     || key.equals("saEmailAddress")
                     || key.equals("saHasPhoneNumber")
-                    || key.equals("saXmppUsername")) {
+                    || key.equals("saXmppUsername")
+                    || key.equals("saURN")) {
                 updateSAContact(cotPrefs);
                 //now immediate report to push updated contact info
                 Log.d(TAG, "Alternate contact prefs changed");

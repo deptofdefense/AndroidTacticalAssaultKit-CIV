@@ -807,6 +807,10 @@ void GLMesh::draw(const Shader &shader, GLMaterial &material, const bool reset) 
 
     glUniform4f(shader.uColor, red*r_, green*g_, blue*b_, alpha*a_);
 
+    if (shader.uPointSize != -1) {
+        glUniform1f(shader.uPointSize, TE_GL_DEFAULT_POINT_SIZE);
+    }
+
     int mode;
     switch (this->subject_->getDrawMode()) {
         case TEDM_Triangles:

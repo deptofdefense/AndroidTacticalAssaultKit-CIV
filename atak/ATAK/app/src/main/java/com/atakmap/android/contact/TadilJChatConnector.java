@@ -9,7 +9,7 @@ public class TadilJChatConnector extends Connector {
 
     public final static String CONNECTOR_TYPE = "connector.tadilj";
 
-    private NetConnectString connectionEndpoint = null;
+    private final NetConnectString connectionEndpoint;
 
     public TadilJChatConnector(NetConnectString netConnectString) {
         connectionEndpoint = netConnectString;

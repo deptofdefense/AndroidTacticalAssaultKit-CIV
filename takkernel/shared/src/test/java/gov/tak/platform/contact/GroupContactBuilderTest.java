@@ -173,5 +173,30 @@ public class GroupContactBuilderTest {
     public void withGroupMembers_ThrowsIllegalArgumentException_WhenGivenEmptySetOfGroupMembers() {
         groupContactBuilderUnderTest.withGroupMembers(Collections.emptySet());
     }
+
+    @Test
+    public void withParentContact_CorrectlySetsParentContact() {
+        final IGroupContact parentContact = mock(IGroupContact.class);
+        final IGroupContact groupContact = groupContactBuilderUnderTest
+                .withGroupMembers(defaultGroupMembers)
+                .withParentContact(parentContact)
+                .build();
+
+        assertThat("Expected parent contact set on the GroupContactBuilder to equal the parent contact returned by "
+                        + "the built IGroupContact.",
+                groupContact.getParentContact(), is(parentContact));
+    }
+
+    @Test
+    public void withParentContact_CorrectlySetsParentContact_WhenParentContactNull() {
+        final IGroupContact groupContact = groupContactBuilderUnderTest
+                .withGroupMembers(defaultGroupMembers)
+                .withParentContact(null)
+                .build();
+
+        assertThat("Expected built IGroupContact parent contact to be null when null parent contact given to "
+                        + "GroupContactBuilder.",
+                groupContact.getParentContact(), is(nullValue()));
+    }
 }
 

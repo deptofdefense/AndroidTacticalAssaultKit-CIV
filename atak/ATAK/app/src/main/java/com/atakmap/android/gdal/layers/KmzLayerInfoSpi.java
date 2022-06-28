@@ -5,13 +5,13 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.SystemClock;
 import android.util.Pair;
-import android.util.Xml;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.coremap.xml.XMLUtils;
 import com.atakmap.io.ZipVirtualFile;
 import com.atakmap.map.layer.feature.geometry.Geometry;
 import com.atakmap.map.layer.raster.AbstractDatasetDescriptorSpi;
@@ -129,8 +129,7 @@ public class KmzLayerInfoSpi extends AbstractDatasetDescriptorSpi {
             if (docFile == null)
                 return null;
             inputStream = docFile.openStream();
-            parser = Xml.newPullParser();
-            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
+            parser = XMLUtils.getXmlPullParser();
             parser.setInput(inputStream, null);
 
             int eventType;
@@ -166,13 +165,7 @@ public class KmzLayerInfoSpi extends AbstractDatasetDescriptorSpi {
             if (mosaic == null)
                 return null;
             return Collections.singleton(mosaic);
-        } catch (XmlPullParserException e) {
-            Log.e(TAG, "Unexpected XML error creating KMZ layer", e);
-            return null;
-        } catch (IOException e) {
-            Log.e(TAG, "Unexpected XML error creating KMZ layer", e);
-            return null;
-        } catch (IllegalArgumentException e) {
+        } catch (XmlPullParserException | IllegalArgumentException | IOException e) {
             Log.e(TAG, "Unexpected XML error creating KMZ layer", e);
             return null;
         } finally {
@@ -221,9 +214,7 @@ public class KmzLayerInfoSpi extends AbstractDatasetDescriptorSpi {
                 return false;
 
             inputStream = docFile.openStream();
-            parser = Xml.newPullParser();
-
-            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
+            parser = XMLUtils.getXmlPullParser();
             parser.setInput(inputStream, null);
 
             AtomicInteger tagCount = new AtomicInteger(0);

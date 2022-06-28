@@ -10,6 +10,7 @@ import com.atakmap.android.channels.ui.overlay.ChannelsOverlay;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.dropdown.DropDown.OnStateListener;
 import com.atakmap.android.selfcoordoverlay.SelfCoordOverlayUpdater.ConnectedButtonWidgetCallback;
+import com.atakmap.annotations.ModifierApi;
 import com.atakmap.app.SettingsActivity;
 import com.atakmap.app.preferences.NetworkConnectionPreferenceFragment;
 import com.atakmap.comms.TAKServer;
@@ -27,6 +28,7 @@ public class ChannelsReceiver extends BroadcastReceiver implements
 
     /**************************** CONSTRUCTOR *****************************/
 
+    @ModifierApi(since = "4.5", target="4.8", modifiers={})
     public ChannelsReceiver(final MapView mapView,
             final Context context) {
 

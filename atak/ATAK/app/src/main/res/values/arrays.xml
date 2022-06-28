@@ -18,6 +18,17 @@
         <item>Highest</item>
     </string-array>
 
+    <string-array name="self_coord_display_names">
+        <item>Bottom-Right Box</item>
+        <item>Bottom Bar</item>
+        <item>Do Not Display</item>
+    </string-array>
+
+    <string-array translatable="false" name="self_coord_display_values">
+        <item>bottom_right</item>
+        <item>bottom_bar</item>
+        <item>none</item>
+    </string-array>
 
     <string-array name="tap_selfoverlay_names">
         <item>Do Nothing</item>
@@ -1053,4 +1064,12 @@
         <item>2</item>
         <item>3</item>
     </string-array>
+
+    <string-array name="line_styles">
+        <item>@string/line_solid</item>
+        <item>@string/line_dashed</item>
+        <item>@string/line_dotted</item>
+        <item>@string/line_outlined</item>
+    </string-array>
+
 </resources>

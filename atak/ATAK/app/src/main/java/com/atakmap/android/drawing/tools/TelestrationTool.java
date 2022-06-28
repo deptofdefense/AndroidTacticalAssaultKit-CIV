@@ -286,6 +286,7 @@ public class TelestrationTool extends Tool {
 
         _drawingShape.setStrokeWeight(_prefs.getStrokeWeight());
         int _alpha = _drawingShape.getFillColor() >>> 24;
+        _drawingShape.setStrokeStyle(_prefs.getStrokeStyle());
         _drawingShape.setStrokeColor(_color);
         _drawingShape.setFillColor(Color.argb(_alpha, Color.red(_color),
                 Color.green(_color), Color.blue(_color)));
@@ -303,6 +304,7 @@ public class TelestrationTool extends Tool {
         _duplicateShape.setMetaBoolean("addToObjList", false);
         _duplicateShape.setStrokeColor(_color);
         _duplicateShape.setStrokeWeight(_prefs.getStrokeWeight());
+        _duplicateShape.setStrokeStyle(_prefs.getStrokeStyle());
         _duplicateShape.setFillColor(Color.argb(_alpha, Color.red(_color),
                 Color.green(_color), Color.blue(_color)));
         _mapGroup.addItem(_duplicateShape);
@@ -370,6 +372,7 @@ public class TelestrationTool extends Tool {
                 _drawingShape.setMovable(true);
                 _multiPolyline.add(_drawingShape);
                 _multiPolyline.setStrokeWeight(_prefs.getStrokeWeight());
+                _multiPolyline.setStrokeStyle(_prefs.getStrokeStyle());
                 _multiPolyline.setMetaString("entry", "user");
                 //Remove the duplicate that we have been rendering up until now
                 _mapGroup.removeItem(_duplicateShape);

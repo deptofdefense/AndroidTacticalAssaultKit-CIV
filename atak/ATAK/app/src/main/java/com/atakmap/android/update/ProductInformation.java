@@ -174,7 +174,7 @@ public class ProductInformation {
             try {
                 String pkgName = trim(arrayOfString[0]);
                 String simpleName = trim(arrayOfString[1]);
-                int revision = Integer.parseInt(trim(arrayOfString[2]));
+                int revision = parseInt(trim(arrayOfString[2]), 1);
                 String url = trim(arrayOfString[3]);
 
                 //check OS for installed version
@@ -201,8 +201,8 @@ public class ProductInformation {
                     return null;
 
                 ProductType pt = ProductType.valueOf(trim(arrayOfString[1]));
-                int revision = Integer.parseInt(trim(arrayOfString[5]));
-                int osReq = Integer.parseInt(trim(arrayOfString[10]));
+                int revision = parseInt(trim(arrayOfString[5]), 1);
+                int osReq = parseInt(trim(arrayOfString[10]), 21);
 
                 String pkgName = trim(arrayOfString[2]);
 
@@ -626,8 +626,7 @@ public class ProductInformation {
     protected static String getString(String s) {
         if (s == null)
             return "";
-
-        return s;
+        return s.replaceAll(",", " ");
     }
 
     @Override
@@ -733,7 +732,19 @@ public class ProductInformation {
                 this.takRequirement);
     }
 
+    /**
+     * Returns true if the Product is considered TAK compatible.
+     * @return true if the product is compatible or false if there is a reason why it is not.
+     */
     public boolean isTakCompatible() {
         return FileSystemUtils.isEmpty(getTakInCompatibilityReason());
+    }
+
+    private static int parseInt(String s, int def) {
+        try {
+            return Integer.parseInt(s);
+        } catch (Exception ignored) {
+            return def;
+        }
     }
 }

@@ -221,9 +221,9 @@ namespace
 
         ElevationChunk_Data_class.id = ATAKMapEngineJNI_findClass(env, "com/atakmap/map/elevation/ElevationChunk$Data");
         ElevationChunk_Data_class.value = env->GetFieldID(ElevationChunk_Data_class.id, "value", "Lcom/atakmap/map/layer/model/Mesh;");
-        ElevationChunk_Data_class.value = env->GetFieldID(ElevationChunk_Data_class.id, "srid", "I");
+        ElevationChunk_Data_class.srid = env->GetFieldID(ElevationChunk_Data_class.id, "srid", "I");
         ElevationChunk_Data_class.localFrame = env->GetFieldID(ElevationChunk_Data_class.id, "localFrame", "Lcom/atakmap/math/Matrix;");
-        ElevationChunk_Data_class.value = env->GetFieldID(ElevationChunk_Data_class.id, "interpolated", "Z");
+        ElevationChunk_Data_class.interpolated = env->GetFieldID(ElevationChunk_Data_class.id, "interpolated", "Z");
 
         return true;
     }

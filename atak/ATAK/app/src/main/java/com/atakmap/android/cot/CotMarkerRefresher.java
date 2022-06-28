@@ -95,7 +95,8 @@ public class CotMarkerRefresher {
         synchronized (_markers) {
             for (String uid : uids) {
                 Marker m = _markers.get(uid);
-                m.setMetaBoolean("forceStale", true);
+                if (m != null)
+                    m.setMetaBoolean("forceStale", true);
             }
         }
     }

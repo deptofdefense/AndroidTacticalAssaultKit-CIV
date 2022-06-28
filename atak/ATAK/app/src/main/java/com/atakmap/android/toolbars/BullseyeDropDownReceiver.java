@@ -59,6 +59,7 @@ import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.NorthReference;
+import com.atakmap.map.CameraController;
 
 import java.text.DecimalFormat;
 
@@ -831,8 +832,8 @@ public class BullseyeDropDownReceiver extends DropDownReceiver implements
         if (v) {
             setSelected(centerMarker);
             if (centerMarker != null)
-                getMapView().getMapController().panTo(centerMarker
-                        .getPoint(), true);
+                CameraController.Programmatic.panTo(getMapView().getRenderer3(),
+                        centerMarker.getPoint(), true);
             refresh();
         }
     }

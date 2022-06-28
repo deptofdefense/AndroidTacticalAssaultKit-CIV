@@ -46,6 +46,6 @@ public final class MockTileContainer extends MockTileMatrix
     @Override
     public long getTileExpiration(int level, int x, int y) {
         final Long expiration = tileExpirations.get(getTileKey(level, x, y));
-        return (expiration != null) ? expiration.longValue() : -1L;
+        return (expiration != null) ? expiration : -1L;
     }
 }

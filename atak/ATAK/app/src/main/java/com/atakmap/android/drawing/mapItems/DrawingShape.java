@@ -87,7 +87,7 @@ public class DrawingShape extends EditablePolyline implements ParentMapItem {
      * Ignored for open (non closed) Shapes
      * Invoke <code>setClosed(true)</code> prior to this method
      *
-     * @param color
+     * @param color the fill color in ARGB format.
      */
     @Override
     public void setFillColor(int color) {
@@ -141,9 +141,8 @@ public class DrawingShape extends EditablePolyline implements ParentMapItem {
                 childItemMapGroup.addItem(_shapeMarker);
         }
 
-        if (getMarker() != null) {
-            getMarker().setVisible(true);
-        }
+        if (getMarker() != null)
+            getMarker().setVisible(closed);
 
         setMetaString("iconUri", getDefaultIconUri());
         this.refresh(this.mapView.getMapEventDispatcher(), null,

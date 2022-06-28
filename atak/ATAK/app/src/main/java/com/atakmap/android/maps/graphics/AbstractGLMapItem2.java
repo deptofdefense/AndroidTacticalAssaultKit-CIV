@@ -522,12 +522,11 @@ public abstract class AbstractGLMapItem2 implements GLMapItem2, HitTestable,
                 if (size == 4) {
                     lat = Unsafe.getFloat(pointsPtr + size);
                     lng = Unsafe.getFloat(pointsPtr);
-                    hae = Unsafe.getFloat(pointsPtr + 2 * size);
                 } else {
                     lat = Unsafe.getDouble(pointsPtr + size);
                     lng = Unsafe.getDouble(pointsPtr);
-                    hae = Unsafe.getFloat(pointsPtr + 2 * size);
                 }
+                hae = Unsafe.getFloat(pointsPtr + 2 * size);
                 if (unwrap > 0 && lng < 0 || unwrap < 0 && lng > 0)
                     lng += unwrap;
 

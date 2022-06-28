@@ -16,7 +16,6 @@ import com.atakmap.coremap.log.Log;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -32,6 +31,7 @@ public class ImportReceiver extends BroadcastReceiver {
     public final static String EXTRA_URI_LIST = "uriList";
     public final static String EXTRA_SHOW_NOTIFICATIONS = "showNotifications";
     public final static String EXTRA_ZOOM_TO_FILE = "zoomToFile";
+    public final static String EXTRA_HIDE_FILE = "hideFile";
     public final static String EXTRA_ADVANCED_OPTIONS = "advanced";
 
     ImportReceiver() {
@@ -116,8 +116,6 @@ public class ImportReceiver extends BroadcastReceiver {
                                 + ", no Importer found.");
                     }
                 } catch (FileNotFoundException e) {
-                    Log.e(TAG, "failed to open Uri for import " + uri, e);
-                } catch (IOException e) {
                     Log.e(TAG, "failed to open Uri for import " + uri, e);
                 } catch (Exception e) {
                     Log.e(TAG, "failed to open Uri for import " + uri, e);

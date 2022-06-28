@@ -149,16 +149,16 @@ public class ContactLocationView extends ContactDetailView {
                                 if (result == CoordDialogView.Result.VALID_UNCHANGED
                                         && changedFormat) {
                                     // The coordinate format was changed but not the point itself
-                                    onPointChanged(m);
+                                    onPointChanged();
                                 } else if (result == CoordDialogView.Result.VALID_CHANGED) {
                                     com.atakmap.android.drawing.details.GenericPointDetailsView
                                             .setAddress(coordView, m,
                                                     null);
-                                    onPointChanged(m);
+                                    onPointChanged();
 
                                 }
 
-                                if (m != null && m.getMovable()) {
+                                if (m.getMovable()) {
                                     // if the point is null, do not set it
                                     // should check for VALID_CHANGED but this
                                     // will work as well.
@@ -238,7 +238,8 @@ public class ContactLocationView extends ContactDetailView {
                 final SharedPreferences sp,
                 final String key) {
 
-            if (key == null) return;
+            if (key == null)
+                return;
 
             _updatePreferences();
         }
@@ -274,7 +275,7 @@ public class ContactLocationView extends ContactDetailView {
                 ((Marker) _marker).addOnTrackChangedListener(_parent);
             }
 
-            onPointChanged(_marker);
+            onPointChanged();
 
             com.atakmap.android.drawing.details.GenericPointDetailsView
                     .controlAddressUI(_marker, _addressText, _addressInfoText,
@@ -351,10 +352,14 @@ public class ContactLocationView extends ContactDetailView {
         }
     }
 
-    void onPointChanged(final PointMapItem item) {
+    void onPointChanged() {
+        final PointMapItem m = _marker;
+        if (m == null)
+            return;
+
         final String p = CoordinateFormatUtilities.formatToString(
-                _marker.getPoint(), _cFormat);
-        final String a = _prefs.formatAltitude(_marker.getPoint());
+                m.getPoint(), _cFormat);
+        final String a = _prefs.formatAltitude(m.getPoint());
 
         _mapView.post(new Runnable() {
             @Override
@@ -367,17 +372,16 @@ public class ContactLocationView extends ContactDetailView {
         // is fired from the receiver.
         updateDeviceLocation(ATAKUtilities.findSelf(_mapView));
 
-        if (_marker instanceof Marker)
-            onTrackChanged((Marker) _marker);
+        if (m instanceof Marker)
+            onTrackChanged((Marker) m);
 
         com.atakmap.android.drawing.details.GenericPointDetailsView
-                .controlAddressUI(_marker, _addressText, _addressInfoText,
+                .controlAddressUI(m, _addressText, _addressInfoText,
                         _addressLayout);
 
     }
 
-    void onTrackChanged(final Marker item) {
-        final Marker m = item;
+    void onTrackChanged(final Marker m) {
         if (m == null)
             return;
 
@@ -400,7 +404,7 @@ public class ContactLocationView extends ContactDetailView {
                     + unit;
         }
 
-        final String s = SpeedFormatter.getInstance().getSpeedFormatted(item);
+        final String s = SpeedFormatter.getInstance().getSpeedFormatted(m);
         final String c = orientationString;
 
         _mapView.post(new Runnable() {

@@ -57,7 +57,7 @@ class MobileOutlinesDataStore extends OutlinesFeatureDataStore {
 
             SpatialCalculator calc = null;
             try {
-                calc = new SpatialCalculator(true);
+                calc = new SpatialCalculator.Builder().inMemory().build();
 
                 // iterate the GeometryCollections and perform the UnaryUnion
                 Feature feature;

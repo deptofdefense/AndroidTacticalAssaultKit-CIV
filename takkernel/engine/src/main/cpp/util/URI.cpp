@@ -3,6 +3,7 @@
 #include <sstream>
 #include <map>
 #include <functional>
+#include <cstring>
 #include "util/URI.h"
 #include "util/CopyOnWrite.h"
 #include "port/StringBuilder.h"

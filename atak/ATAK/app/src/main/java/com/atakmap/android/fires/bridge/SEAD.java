@@ -12,8 +12,14 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 public abstract class SEAD {
     public static SEAD impl;
 
+    /**
+     * Used by the system plugin to register a concrete implementation of the
+     * call for fire capability.
+     * @param concreteImpl the concrete call for fire implementation
+     */
     public static void registerImplementation(SEAD concreteImpl) {
-        impl = concreteImpl;
+        if (impl == null)
+            impl = concreteImpl;
     }
 
     public synchronized static String toCSV(GeoPoint p, MapItem item) {

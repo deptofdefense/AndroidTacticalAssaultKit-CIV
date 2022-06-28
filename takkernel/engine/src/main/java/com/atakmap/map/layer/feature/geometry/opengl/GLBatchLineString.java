@@ -38,6 +38,7 @@ import com.atakmap.math.MathUtils;
 import com.atakmap.math.Matrix;
 import com.atakmap.math.PointD;
 import com.atakmap.map.opengl.GLAntiAliasedLine;
+import com.atakmap.map.opengl.GLAntiAliasedLine.ConnectionType;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLRenderBatch2;
 import com.atakmap.opengl.Tessellate;
@@ -130,6 +131,8 @@ public class GLBatchLineString extends GLBatchGeometry {
     private final MutableGeoBounds _hitBounds = new MutableGeoBounds();
     private final List<GeoBoundsPartition> _partitionBounds = new ArrayList<>();
 
+    protected ConnectionType _connType = ConnectionType.AS_IS;
+
     public GLBatchLineString(GLMapSurface surface) {
         this(surface.getGLMapView());
     }
@@ -188,6 +191,15 @@ public class GLBatchLineString extends GLBatchGeometry {
 
     public void setTessellationMode(Tessellate.Mode mode) {
         this.tessellationMode = mode;
+    }
+
+    /**
+     * Set the line connection type
+     * See {@link ConnectionType} in {@link GLAntiAliasedLine}
+     * @param type Connection type
+     */
+    public void setConnectionType(ConnectionType type) {
+        _connType = type;
     }
 
     @Override
@@ -1199,7 +1211,8 @@ public class GLBatchLineString extends GLBatchGeometry {
             if(_aalineDirty) {
                 if(_lineRenderer == null)
                     _lineRenderer = new GLAntiAliasedLine();
-                _lineRenderer.setLineData(this.renderPoints, 3, GLAntiAliasedLine.ConnectionType.AS_IS, getAltitudeMode());
+                _lineRenderer.setLineData(this.renderPoints, 3, _connType,
+                        getAltitudeMode());
                 _aalineDirty = false;
             }
             _lineRenderer.draw(view,

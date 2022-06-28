@@ -336,7 +336,7 @@ public abstract class DropDownReceiver extends BroadcastReceiver {
         if (contentView == null)
             Log.d(TAG, "null content view passed in: " + this, new Exception());
 
-        getMapView().post(new Runnable() {
+        getMapView().postOnActive(new Runnable() {
             @Override
             public void run() {
 
@@ -448,7 +448,7 @@ public abstract class DropDownReceiver extends BroadcastReceiver {
             final boolean switchable,
             final OnStateListener stateListener) {
 
-        getMapView().post(new Runnable() {
+        getMapView().postOnActive(new Runnable() {
 
             @Override
             public void run() {
@@ -575,7 +575,7 @@ public abstract class DropDownReceiver extends BroadcastReceiver {
      * Action to take when a dropdown is already open under the stack.
      */
     protected void dropDownAlreadyExists() {
-        getMapView().post(new Runnable() {
+        getMapView().postOnActive(new Runnable() {
             @Override
             public void run() {
                 Toast.makeText(_mapView.getContext(),
@@ -591,7 +591,7 @@ public abstract class DropDownReceiver extends BroadcastReceiver {
     final public void closeDropDown() {
         hideRadialMenu();
         if (_dropDown != null)
-            _mapView.post(new Runnable() {
+            _mapView.postOnActive(new Runnable() {
                 @Override
                 public void run() {
                     DropDownManager.getInstance().closeDropDown(_dropDown);

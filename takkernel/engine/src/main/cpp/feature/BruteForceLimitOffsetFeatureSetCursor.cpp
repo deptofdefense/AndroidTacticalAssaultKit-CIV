@@ -1,5 +1,7 @@
 #include "feature/BruteForceLimitOffsetFeatureSetCursor.h"
 
+#include <limits>
+
 using namespace TAK::Engine::Feature;
 
 using namespace TAK::Engine::Util;

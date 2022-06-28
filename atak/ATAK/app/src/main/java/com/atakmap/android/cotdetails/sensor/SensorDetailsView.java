@@ -56,6 +56,7 @@ import com.atakmap.coremap.conversions.AngleUtilities;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.map.CameraController;
 import com.atakmap.math.MathUtils;
 
 public class SensorDetailsView extends GenericPointDetailsView implements
@@ -848,8 +849,8 @@ public class SensorDetailsView extends GenericPointDetailsView implements
                             _coordButton
                                     .setText(coordView.getFormattedString());
 
-                            _mapView.getMapController()
-                                    .panTo(p.get(), true);
+                            CameraController.Programmatic.panTo(_mapView.getRenderer3(), p.get(), true);
+
                             sensorItem.persist(
                                     _mapView.getMapEventDispatcher(), null,
                                     this.getClass());

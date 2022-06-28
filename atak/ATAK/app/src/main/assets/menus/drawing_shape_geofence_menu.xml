@@ -2,7 +2,7 @@
 <menu
     buttonBg='bgs/button.xml'
     buttonRadius='65'
-    buttonSpan='45'
+    buttonSpan='40'
     buttonWidth='90' >
 
     <button
@@ -18,7 +18,10 @@
         disabled='!{${editable}}'
         icon='icons/edit2.png'
         onClick='actions/edit_shape.xml' />
-    
+
+    <button icon='icons/blast_rings.png'
+        onClick='actions/shape_msd.xml'/>
+
     <button
         disabled='!{${closed}}'
         selected='${geofence_tracking_menustate}'

@@ -273,11 +273,40 @@
                     android:progress="25" />
             </RelativeLayout>
 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_row="5"
+                android:layout_rowSpan="1"
+                android:layout_column="0"
+                android:layout_columnSpan="1"
+                android:layout_gravity="center_vertical"
+                android:text="@string/line_style"
+                android:textColor="@color/heading_yellow"
+                android:textSize="@dimen/draper_font" />
+
+            <Button
+                android:id="@+id/lineStyleBtn"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/auto_space_big"
+                android:layout_marginBottom="@dimen/auto_space_big"
+                android:layout_column="2"
+                android:layout_columnSpan="2"
+                android:layout_gravity="fill_horizontal"
+                android:layout_row="5"
+                android:layout_rowSpan="1"
+                android:padding="6dp"
+                android:gravity="center"
+                android:textColor="#FFF"
+                android:textSize="@dimen/draper_title_font"
+                style="@style/darkButton"/>
+
             <com.atakmap.android.hashtags.view.RemarksLayout
                 android:id="@+id/remarksLayout"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_row="5"
+                android:layout_row="6"
                 android:layout_column="0"
                 android:layout_columnSpan="4"
                 android:layout_rowSpan="1"
@@ -290,7 +319,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:layout_row="6"
+                android:layout_row="7"
                 android:layout_column="0"
                 android:layout_columnSpan="4"
                 android:layout_rowSpan="1"/>

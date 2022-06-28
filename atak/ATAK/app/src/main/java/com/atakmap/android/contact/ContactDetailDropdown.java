@@ -38,6 +38,7 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.map.CameraController;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -106,7 +107,7 @@ public class ContactDetailDropdown extends DropDownReceiver implements
             if (item != _locationView.getMarker()) {
                 item.removeOnPointChangedListener(this);
             } else {
-                _locationView.onPointChanged(item);
+                _locationView.onPointChanged();
             }
         }
     }
@@ -348,8 +349,8 @@ public class ContactDetailDropdown extends DropDownReceiver implements
                             if (selectedItem != null
                                     && selectedItem.getPoint() != null) {
                                 final GeoPoint gp = selectedItem.getPoint();
-                                getMapView().getMapController()
-                                        .panTo(gp, false);
+                                CameraController.Programmatic.panTo(
+                                        getMapView().getRenderer3(), gp, false);
                             }
                         }
                     });

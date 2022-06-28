@@ -57,6 +57,9 @@ public class FileSystemUtils {
             "/storage/emulated/legacy"
     };
 
+    /** Regex used to match any characters not allowed in filenames - see sanitizeWithSpaces() */
+    private static final String REGEX_BAD_FILENAME_CHARS = "[^A-Za-z0-9-_. ',%$#:@+=&\u0600-\u06FF()\\]\\[]";
+
     /**
      * Max extension length to display in UI
      */
@@ -1024,6 +1027,19 @@ public class FileSystemUtils {
     }
 
     /**
+     * Test if the given character will pass unaltered in a call to sanitizeFilename().
+     * Note that this can only test the single character out of context;  the character may still
+     * be removed in a later call to sanitizeFilename() if it is part of a disallowed sequence of
+     * multiple characters.
+     * @param c character to test
+     * @return true if character is acceptable for filenames (on its own), false otherwise
+     */
+    public static boolean isAcceptableInFilename(Character c) {
+        String s = "" + c;
+        return !s.matches(REGEX_BAD_FILENAME_CHARS);
+    }
+
+    /**
      * Prepare for DB storage and use restrict characters during input i.e.
      * alphanumeric and various allowed filename characters.
      * <p>
@@ -1039,7 +1055,7 @@ public class FileSystemUtils {
 
         final String retval = s
                 .trim()
-                .replaceAll("[^A-Za-z0-9-_. ',%$#:@+=&\u0600-\u06FF()\\]\\[]",
+                .replaceAll(REGEX_BAD_FILENAME_CHARS,
                         "")
                 .replaceAll("\\.\\.", "");
 

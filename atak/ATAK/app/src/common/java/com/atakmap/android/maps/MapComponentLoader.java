@@ -35,6 +35,7 @@ import com.atakmap.android.layers.LayersMapComponent;
 import com.atakmap.android.location.LocationMapComponent;
 import com.atakmap.android.lrf.LRFMapComponent;
 import com.atakmap.android.maps.graphics.widgets.GLWidgetsMapComponent;
+import com.atakmap.android.maps.selector.MapItemListComponent;
 import com.atakmap.android.maps.tilesets.TilesetMapComponent;
 import com.atakmap.android.maps.visibility.VisibilityMapComponent;
 import com.atakmap.android.medline.MedicalLineMapComponent;
@@ -179,6 +180,7 @@ public class MapComponentLoader {
         mapComponents.add(LoadoutListMapComponent.class);
         mapComponents.add(FirstPersonMapComponent.class);
         mapComponents.add(ChannelsMapComponent.class);
+        mapComponents.add(MapItemListComponent.class);
 
         // Load up all of the external components, when this is complete it will trigger the
         // state saver to unroll all of the map components.    This should be done last.

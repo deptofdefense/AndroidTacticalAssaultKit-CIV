@@ -7,7 +7,8 @@
 namespace TAK {
     namespace Engine {
         namespace Model {
-            Util::TAKErr LASSceneSPI_computeZColor(double z, float *r, float *g, float *b);
+            Util::TAKErr LASSceneSPI_computeZColor(double z, float* r, float* g, float* b);
+            Util::TAKErr LASSceneSPI_computeZColor(float *r, float *g, float *b, double mean, double stddev, double z);
             class ENGINE_API LASSceneSPI : public Model::SceneSpi {
             public:
                 const char *getType() const NOTHROWS override;

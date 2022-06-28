@@ -2,7 +2,6 @@
 package com.atakmap.android.maps;
 
 import com.atakmap.coremap.conversions.Angle;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
@@ -294,10 +293,8 @@ public class Wedge extends Polyline {
         // This will be used to apply the offset
         // Get the distance in meters so we can apply the multiplier for the
         // wedge's radius.
-        double[] da = DistanceCalculations.computeDirection(pointX, pointZ);
-
-        double azimuth = da[1];
-        double distance = da[0] * this.multiplier;
+        double azimuth = GeoCalculations.bearingTo(pointX, pointZ);
+        double distance = GeoCalculations.distanceTo(pointX, pointZ) * this.multiplier;
         double fraction = 1.0 / NUM_SEGMENTS;
 
         // include the starting point and make the ending point the same as the starting point

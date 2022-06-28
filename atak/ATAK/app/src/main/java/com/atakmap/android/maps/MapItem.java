@@ -93,12 +93,7 @@ public abstract class MapItem extends FilterMetaDataHolder implements
                 return -1;
             final long id0 = item0.getSerialId();
             final long id1 = item1.getSerialId();
-            if (id0 < id1)
-                return -1;
-            else if (id0 > id1)
-                return 1;
-            else
-                return 0;
+            return Long.compare(id0, id1);
         }
     };
 

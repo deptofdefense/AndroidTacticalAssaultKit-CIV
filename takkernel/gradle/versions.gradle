@@ -9,7 +9,7 @@ ext {
     androidNdkVersion = '12.1.2977051'
 
     // general dependencies
-    androidPortVersion = '3.0.1'
+    androidPortVersion = '3.1.0'
     assertjVersion = '3.6.1'
     avroVersion = '1.9.2'
     glesJoglCVersion = '1.0.3'

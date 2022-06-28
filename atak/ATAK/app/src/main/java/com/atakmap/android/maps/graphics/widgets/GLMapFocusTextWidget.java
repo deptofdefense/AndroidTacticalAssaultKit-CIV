@@ -58,15 +58,15 @@ public class GLMapFocusTextWidget extends GLTextWidget implements
     @Override
     public void drawWidgetContent() {
         // Update coordinate whenever draw position changes
-        if (Double.compare(_drawLat, orthoView.drawLat) != 0
-                || Double.compare(_drawLng, orthoView.drawLng) != 0) {
-            _drawLat = orthoView.drawLat;
-            _drawLng = orthoView.drawLng;
+        if (Double.compare(_drawLat, orthoView.currentPass.drawLat) != 0
+                || Double.compare(_drawLng, orthoView.currentPass.drawLng) != 0) {
+            _drawLat = orthoView.currentPass.drawLat;
+            _drawLng = orthoView.currentPass.drawLng;
 
             // Inverse for point at focus
             GLMapView.ScratchPad s = orthoView.scratch;
-            s.pointD.x = orthoView.focusx;
-            s.pointD.y = orthoView.focusy;
+            s.pointD.x = orthoView.currentPass.focusx;
+            s.pointD.y = orthoView.currentPass.focusy;
             s.pointD.z = 0;
             orthoView.inverse(s.pointD, s.geo, MapRenderer2.InverseMode.RayCast,
                     0, MapRenderer2.DisplayOrigin.UpperLeft);
@@ -91,7 +91,8 @@ public class GLMapFocusTextWidget extends GLTextWidget implements
     @Override
     public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         if (UnitPreferences.COORD_FMT.equals(key)) {
             orthoView.queueEvent(new Runnable() {

@@ -135,26 +135,50 @@ public class PreferenceSearchIndex {
         }
     }
 
+    /**
+     * Gets the ATAK preference fragment that this search index represents.
+     * @return the ATAK preference fragment
+     */
     public Class<? extends AtakPreferenceFragment> getFragClass() {
         return fragClass;
     }
 
+    /**
+     * Gets the parent summary for the search index.
+     * @return the parent summary
+     */
     public String getParentSummary() {
         return parentSummary;
     }
 
+    /**
+     * Gets the parent key for the search index.
+     * @return the parent key
+     */
     public String getParentKey() {
         return parentKey;
     }
 
+    /**
+     * Gets the preference key for the preference described by the search index.
+     * @return the preference key
+     */
     public String getKey() {
         return key;
     }
 
+    /**
+     * Gets the preference summary for the preference described by the search index.
+     * @return the preference summary
+     */
     public String getSummary() {
         return summary;
     }
 
+    /**
+     * Checks to see if the preference has a icon
+     * @return true if the preference has an icon
+     */
     public boolean hasIcon() {
         return icon != null;
     }

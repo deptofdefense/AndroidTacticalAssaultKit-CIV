@@ -39,6 +39,7 @@ set(takenginejni_COMMON_SRCS
     ${SRC_DIR}/interop/feature/ManagedFeatureDataSource2.cpp
     ${SRC_DIR}/interop/java/JNICollection.cpp
     ${SRC_DIR}/interop/java/JNIEnum.cpp
+    ${SRC_DIR}/interop/java/JNIIterator.cpp
     ${SRC_DIR}/interop/java/JNILocalRef.cpp
     ${SRC_DIR}/interop/java/JNIPair.cpp
     ${SRC_DIR}/interop/java/JNIPrimitive.cpp
@@ -131,6 +132,7 @@ set(takenginejni_COMMON_SRCS
     ${SRC_DIR}/jtilecoord.cpp
     ${SRC_DIR}/junsafe.cpp
     ${SRC_DIR}/jvertexdatalayout.cpp
+    ${SRC_DIR}/jzipcommentgeoreferencer.cpp
     ${SRC_DIR}/ManagedModel.cpp
     ${SRC_DIR}/vsi_jfile.cpp
 )

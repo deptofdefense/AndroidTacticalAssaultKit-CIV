@@ -75,7 +75,7 @@ public abstract class GeoFenceMonitor {
     /**
      * Check if any tracked items have breached the Geo Fence
      *
-     * @return
+     * @return the list of alerts for items that have breached the geofence
      */
     public List<GeoFenceAlerting.Alert> check() {
         return check(_fence.getTrigger());
@@ -83,9 +83,9 @@ public abstract class GeoFenceMonitor {
 
     /**
      * Check if any tracked items have breached the Geo Fence
-     * @param trigger
+     * @param trigger the trigger to be used
      *
-     * @return
+     * @return the list of alerts for the items that have breached the geofence
      */
     protected List<GeoFenceAlerting.Alert> check(GeoFence.Trigger trigger) {
         if (!_fence.isTracking()) {
@@ -99,9 +99,9 @@ public abstract class GeoFenceMonitor {
     /**
      * Check if the item has breached the Geo Fence
      *
-     * @param trigger
-     * @param item
-     * @return
+     * @param trigger the trigger to be checked
+     * @param item the map item
+     * @return true if the item has breached the geofence
      */
     boolean check(GeoFence.Trigger trigger, PointMapItem item,
             boolean bCheckPrevious) {
@@ -110,18 +110,16 @@ public abstract class GeoFenceMonitor {
             return false;
         }
 
-        List<PointMapItem> items = new ArrayList<>();
-        items.add(item);
-
-        return !FileSystemUtils.isEmpty(check(trigger, items, bCheckPrevious));
+        return !FileSystemUtils.isEmpty(check(trigger,
+                Collections.singletonList(item), bCheckPrevious));
     }
 
     /**
      * Check if any tracked items have breached the Geo Fence
      * All items passed in so subclasses can optimize shape comparison math
      *
-     * @param trigger
-     * @param items
+     * @param trigger the trigger to be used
+     * @param items the list of items
      * @param bCheckPrevious    if true, only alert if current state differs from previous state
      * @return
      */
@@ -137,10 +135,11 @@ public abstract class GeoFenceMonitor {
     public abstract double getfurthestPointRange();
 
     /**
-     * Subclasses should invoke this for each item to see if user has already dismissed these alerts
+     * Subclasses should invoke this for each item to see if user has already
+     * dismissed these alerts
      *
-     * @param item
-     * @return
+     * @param item the item
+     * @return true if the items alert has been previously dismissed
      */
     protected synchronized boolean checkDismissed(PointMapItem item) {
         if (_uidsToIgnore.size() > 0 && _uidsToIgnore.contains(item.getUID())) {
@@ -190,10 +189,11 @@ public abstract class GeoFenceMonitor {
     /**
      * Get UID of the Map item which identifies this GeoFence
      * This class caches the shape (e.g. Rectangle or Rings)
-     * But the UID may be the shapes UID (rectangle) or the shape's center marker UID (circle)
+     * But the UID may be the shapes UID (rectangle) or the shape's center
+     * marker UID (circle)
      * See GeoFenceReceiver.onReceive for more info
      *
-     * @return
+     * @return the uid of the geofence.
      */
     public String getMapItemUid() {
         if (_fence == null)
@@ -227,10 +227,10 @@ public abstract class GeoFenceMonitor {
     }
 
     /**
-     * Special handling for Self marker b/c it doesn't have a type and does not show up in
-     * the Overlay Manager for selection by user
+     * Special handling for Self marker b/c it doesn't have a type and does not
+     * show up in the Overlay Manager for selection by user
      *
-     * @param items
+     * @param items the list of items
      */
     public synchronized void setSelectItems(List<PointMapItem> items) {
         _itemsToTrack = items;

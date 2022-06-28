@@ -119,9 +119,7 @@ public class MapEventDispatcher {
                     && Modifier.isFinal(f.getModifiers())) {
                 try {
                     addMapEventListener(f.get(f).toString(), l);
-                } catch (IllegalArgumentException e) {
-                    Log.e(TAG, "error: ", e);
-                } catch (IllegalAccessException e) {
+                } catch (IllegalArgumentException | IllegalAccessException e) {
                     Log.e(TAG, "error: ", e);
                 }
 
@@ -144,9 +142,7 @@ public class MapEventDispatcher {
                     && Modifier.isFinal(f.getModifiers())) {
                 try {
                     removeMapEventListener(f.get(f).toString(), l);
-                } catch (IllegalArgumentException e) {
-                    Log.e(TAG, "error: ", e);
-                } catch (IllegalAccessException e) {
+                } catch (IllegalArgumentException | IllegalAccessException e) {
                     Log.e(TAG, "error: ", e);
                 }
 

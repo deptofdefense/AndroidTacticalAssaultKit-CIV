@@ -169,7 +169,6 @@ public class HostileManagerDropDownReceiver extends DropDownReceiver implements
      * add a new hostile, but check to see if color/ordering info is available
      * @param item  item to add
      */
-
     private void addHostile(Marker item) {
         synchronized (lock) {
             int index = previousList

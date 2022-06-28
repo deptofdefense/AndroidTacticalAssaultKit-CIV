@@ -556,16 +556,18 @@ TAKErr GLC3DTRenderer::hitTest(GeoPoint2* value, const MapSceneModel2& sceneMode
     if (content_context_->getRenderContext().isRenderThread())
     {
         code = depthTestTask(hitGeo, this, sceneModel, screenX, screenY);
-        TE_CHECKRETURN_CODE(code);
     }
     else
     {
         TAKErr awaitCode = Task_begin(GLWorkers_glThread(), depthTestTask, this, sceneModel, screenX, screenY)
             .await(hitGeo, code);
-
-        if (awaitCode != TE_Ok)
+        // confirm task was executed
+        if(awaitCode != TE_Ok)
             return awaitCode;
     }
+    // filter error codes versus a "miss" in the hit-test
+    if (code != TE_Done)
+        TE_CHECKRETURN_CODE(code);
 
     if (code == TE_Ok)
         *value = hitGeo;
@@ -753,7 +755,7 @@ namespace {
     double computeMetersPerPixelPerspective(GLC3DTTile& tile, const MapSceneModel2& scene) NOTHROWS {
         // XXX - distance camera to object
         Point2<double> center;
-        scene.forward(&center, tile.centroid);
+        scene.projection->forward(&center, tile.centroid);
 
         // distance of the camera to the centroid of the tile
         double dx = center.x * scene.displayModel->projectionXToNominalMeters - scene.camera.location.x * scene.displayModel->projectionXToNominalMeters;
@@ -773,7 +775,23 @@ namespace {
 
     double computeMetersPerPixelOrtho(GLC3DTTile& tile, const MapSceneModel2& scene) {
         // compute using perspective method up front
-        double metersPerPixelAtD = computeMetersPerPixelPerspective(tile, scene);
+        Point2<double> center;
+        
+        //for ortho, use z distance in model space
+        scene.projection->forward(&center, tile.centroid);
+        center = scene.camera.modelView.transform(center);
+
+        // distance of the camera to the centroid of the tile
+        double dz = center.z * scene.displayModel->projectionZToNominalMeters;
+
+        double dcam = abs(dz);
+
+        double metersPerPixelAtD = (2.0 * dcam * tan(scene.camera.fov / 2.0) / ((scene.height) / 2.0));
+        // if bounding sphere does not contain camera, compute meters-per-pixel at centroid,
+        // else use nominal meters-per-pixel
+        if (dcam <= tile.radius_) {
+            metersPerPixelAtD = std::min(scene.gsd, metersPerPixelAtD);
+        }
 
         // *** this workaround will be OBE after implementing perspective camera ***
         // XXX - the camera location for the ortho projection is not

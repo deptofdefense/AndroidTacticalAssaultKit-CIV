@@ -11,6 +11,8 @@ import com.atakmap.android.user.MapClickTool;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.elevation.ElevationManager;
+import com.atakmap.annotations.ModifierApi;
+
 
 /**
  * Broadcast receiver that can handle First Person events via intent.
@@ -18,22 +20,22 @@ import com.atakmap.map.elevation.ElevationManager;
 public class FirstPersonReceiver extends BroadcastReceiver {
 
     private final MapView _mapView;
-    private final Context _context;
+
 
     public static final String FIRSTPERSON = "com.atakmap.android.map.FIRSTPERSON";
     public static final String MAP_CLICKED = "com.atakmap.android.map.FIRSTPERSON_MAP_CLICKED";
 
     private static FirstPersonTool _firstPersonTool;
 
+    @ModifierApi(since = "4.5", target="4.8", modifiers={})
     public FirstPersonReceiver(MapView mapView) {
         _mapView = mapView;
-        _context = mapView.getContext();
         _firstPersonTool = new FirstPersonTool(_mapView);
     }
 
     @Override
     public void onReceive(final Context context, final Intent intent) {
-        String action = intent.getAction();
+        final String action = intent.getAction();
         if (action == null)
             return;
 
