@@ -107,6 +107,8 @@ public class AddNetInfoActivity extends MetricActivity {
             String message = getString(R.string.address_blank_error);
             showErrorDialog(message);
             return null;
+        } else if (addressText.equals("0.0.0.0")) {
+            // valid case specifying localhost
         } else if (!NetworkUtils.isValid(addressText)) {
             String message = String.format(
                     getString(R.string.address_invalid_error), addressText);

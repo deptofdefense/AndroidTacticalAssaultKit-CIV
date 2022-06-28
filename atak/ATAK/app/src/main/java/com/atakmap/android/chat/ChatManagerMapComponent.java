@@ -49,6 +49,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class ChatManagerMapComponent extends AbstractMapComponent implements
         ChatConvoFragCreateWatcher {
@@ -164,6 +165,23 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
         }
     };
 
+
+    public interface ChatMessageListener {
+        /**
+         * Replacement for the intent that current listens for the chat messages received
+         * intents.
+         * @param bundle a copy of the chat message bundle that represents the chat message.
+         */
+        void chatMessageReceived(Bundle bundle);
+    }
+
+    private final ConcurrentLinkedQueue<ChatMessageListener> chatMessageListeners = new ConcurrentLinkedQueue<>();
+
+
+
+
+
+
     /**
      * sends message intent out to plugin(ChatmessagePopups) when
      * a new chat message is received
@@ -173,6 +191,8 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
                 "com.atakmap.android.ChatMessagePopups.NEW_CHAT_RECEIVED");
         re.putExtra("chat_bundle", bundle);
         AtakBroadcast.getInstance().sendBroadcast(re);
+
+        fireChatMessageReceived(bundle);
     }
 
     public static String getTeamName() {
@@ -1390,5 +1410,40 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
     ChatMesssageRenderer getChatMesssageRenderer() {
         return chatMesssageRenderer;
     }
+
+
+    /**
+     * Replacement for the intent currently in use for listenering to all chat messages
+     * incoming to the system.  Adds a chat message listener to be notified.
+     * Please note that the intent "com.atakmap.android.ChatMessagePopups.NEW_CHAT_RECEIVED"
+     * will be deprecated as of 4.8
+     * @param cml the chat message listener that is to be notified.
+     */
+    public void addChatMessageListener(ChatMessageListener cml)  {
+        chatMessageListeners.add(cml);
+    }
+
+    /**
+     * Replacement for the intent currently in use for listenering to all chat messages
+     * incoming to the system.  Removes a chat message listener to be notified.
+     * Please note that the intent "com.atakmap.android.ChatMessagePopups.NEW_CHAT_RECEIVED"
+     * will be deprecated as of 4.8
+     * @param cml the chat message listener that is to be notified.
+     */
+    public void removeChatMessageListener(ChatMessageListener cml)  {
+        chatMessageListeners.remove(cml);
+    }
+
+    private void fireChatMessageReceived(Bundle bundle) {
+        Bundle copy = new Bundle(bundle);
+        for (ChatMessageListener cml : chatMessageListeners) {
+            try {
+                cml.chatMessageReceived(copy);
+            } catch (Exception e) {
+                Log.e(TAG, "error notifying: " + cml, e);
+            }
+        }
+    }
+
 
 }

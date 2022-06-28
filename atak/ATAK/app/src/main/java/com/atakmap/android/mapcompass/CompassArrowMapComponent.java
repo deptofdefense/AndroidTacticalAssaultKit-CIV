@@ -590,7 +590,8 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
     public void onSharedPreferenceChanged(
             final SharedPreferences prefs, final String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         switch (key) {
             case "dexControls":

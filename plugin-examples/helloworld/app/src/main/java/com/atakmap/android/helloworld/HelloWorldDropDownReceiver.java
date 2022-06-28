@@ -8,7 +8,17 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.ClipboardManager;
-import android.preference.PreferenceManager;
+
+import com.atakmap.android.helloworld.heatmap.GLSimpleHeatMapLayer;
+import com.atakmap.android.helloworld.heatmap.SimpleHeatMapLayer;
+import com.atakmap.android.preference.AtakPreferences;
+
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.VectorDrawable;
+import android.util.Base64;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.app.AlertDialog;
@@ -26,6 +36,7 @@ import com.atakmap.android.drawing.mapItems.DrawingShape;
 import com.atakmap.android.helloworld.image.MapScreenshotExample;
 import com.atakmap.android.helloworld.layers.LayerDownloadExample;
 import com.atakmap.android.helloworld.menu.MenuFactory;
+import com.atakmap.android.helloworld.view.ViewOverlayExample;
 import com.atakmap.android.maps.Association;
 import com.atakmap.android.maps.DefaultMapGroup;
 import com.atakmap.android.maps.MultiPolyline;
@@ -59,6 +70,7 @@ import com.atakmap.android.tools.menu.ActionClickData;
 import com.atakmap.android.tools.menu.ActionMenuData;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.util.AbstractMapItemSelectionTool;
+import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.map.CameraController;
 import com.atakmap.map.layer.opengl.GLLayerFactory;
@@ -93,6 +105,7 @@ import com.atakmap.android.importfiles.sort.ImportMissionPackageSort.ImportMissi
 import android.os.Bundle;
 import android.os.Environment;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 
 import com.atakmap.android.maps.MapEvent;
@@ -172,6 +185,8 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 
+import androidx.core.content.ContextCompat;
+
 /**
  * The DropDown Receiver should define the visual experience
  * that a user might have while using this plugin.   At a
@@ -216,6 +231,8 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
 
     private ExampleLayer exampleLayer;
     private final Map<Integer, ExampleMultiLayer> exampleMultiLayers = new HashMap<>();
+    private SimpleHeatMapLayer simpleHeatMapLayer;
+
 
     private LayerDownloadExample layerDownloader;
 
@@ -463,6 +480,8 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
                     toast(context.getString(R.string.specialWheelMarker));
                 } else if (id == R.id.addAnAircraft) {
                     toast(context.getString(R.string.addAnAircraft));
+                } else if (id == R.id.svgMarker) {
+                    toast(context.getString(R.string.svgMarker));
                 } else if (id == R.id.staleoutMarker) {
                     toast(context.getString(R.string.staleoutMarker));
                 } else if (id == R.id.addStream) {
@@ -622,6 +641,38 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
             }
         });
 
+        final Button svgMarker = helloView
+                .findViewById(R.id.svgMarker);
+        svgMarker.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String uid = UUID.randomUUID().toString();
+                GeoPoint location = getMapView().getCenterPoint().get();
+
+                Marker marker = new Marker(location, uid);
+                marker.setAlwaysShowText(true);
+                marker.setTitle("HelloWorld");
+                marker.setType("custom-type");
+                marker.setTouchable(true);
+
+                Bitmap icon = getBitmap(pluginContext,
+                        R.drawable.svg_example);
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                icon.compress(Bitmap.CompressFormat.PNG, 100, baos);
+                byte[] b = baos.toByteArray();
+                String encoded = "base64://" + android.util.Base64.encodeToString(b, android.util.Base64.NO_WRAP | Base64.URL_SAFE);
+
+
+                Icon.Builder markerIconBuilder = new Icon.Builder().
+                        setImageUri(0, encoded);
+
+                marker.setIcon(markerIconBuilder.build());
+
+                getMapView().getRootGroup().addItem(marker);
+
+            }
+        });
+
         // The button bellow shows how one might go about
         // programmatically listing all routes on the map.
         final Button listRoutes = helloView
@@ -692,6 +743,15 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
                         tabView.show();
                     }
                 });
+
+        View overlayViewBtn = helloView.findViewById(R.id.overlayViewBtn);
+        overlayViewBtn.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AtakBroadcast.getInstance().sendBroadcast(new Intent(
+                        ViewOverlayExample.TOGGLE_OVERLAY_VIEW));
+            }
+        });
 
         // The button bellow shows how one might go about
         // programatically add a route to the system. Adding
@@ -1745,6 +1805,42 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
             }
         });
 
+
+
+        final Button addHeatMap = helloView
+                .findViewById(R.id.addHeatMap);
+        addHeatMap.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                GeoBounds bounds = mapView.getBounds();
+
+                if (simpleHeatMapLayer == null) {
+                    GLLayerFactory.register(GLSimpleHeatMapLayer.SPI);
+                    simpleHeatMapLayer = new SimpleHeatMapLayer(pluginContext, "simple heat map",
+                            8, 8, bounds);
+                }
+
+                view.setSelected(!view.isSelected());
+
+                if (view.isSelected()) {
+
+                    simpleHeatMapLayer.setCorners(mapView.getBounds());
+                    simpleHeatMapLayer.setData(generateHeatMap());
+                    simpleHeatMapLayer.refresh();
+                    getMapView().addLayer(RenderStack.MAP_SURFACE_OVERLAYS,
+                            simpleHeatMapLayer);
+                    simpleHeatMapLayer.setVisible(true);
+
+                } else {
+                    getMapView().removeLayer(RenderStack.MAP_SURFACE_OVERLAYS,
+                            simpleHeatMapLayer);
+                    simpleHeatMapLayer.setVisible(false);
+                }
+            }
+        });
+
+
+
         final Button btnHookNavigationEvents = helloView
                 .findViewById(R.id.btnHookNavigationEvents);
         btnHookNavigationEvents.setText(
@@ -1836,11 +1932,10 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
                                     }
                                 });
                 CoordinateFormat _cFormat;
-                SharedPreferences sharedPrefs = PreferenceManager
-                        .getDefaultSharedPreferences(getMapView().getContext());
+                AtakPreferences sharedPrefs = new AtakPreferences(getMapView().getContext());
                 _cFormat = CoordinateFormat
                         .find(sharedPrefs
-                                .getString(
+                                .get(
                                         "coord_display_pref",
                                         getMapView().getContext()
                                                 .getString(
@@ -2739,11 +2834,9 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
         contact.addConnector(new IpConnector(SEND_HELLO_WORLD));
 
         // Set default connector to plugin connector
-        SharedPreferences prefs = PreferenceManager
-                .getDefaultSharedPreferences(
-                        getMapView().getContext());
-        prefs.edit().putString("contact.connector.default." + contact.getUID(),
-                PluginConnector.CONNECTOR_TYPE).apply();
+        AtakPreferences prefs = new AtakPreferences(getMapView().getContext());
+        prefs.set("contact.connector.default." + contact.getUID(),
+                PluginConnector.CONNECTOR_TYPE);
 
         // Add new contact to master contacts list
         Contacts.getInstance().addContact(contact);
@@ -2912,4 +3005,48 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
             }
         }
     };
+
+
+    /**
+     * Note - this will become a API offering in 4.5.1 and beyond.
+     * @param context
+     * @param drawableId
+     * @return
+     */
+    private static Bitmap getBitmap(Context context, int drawableId) {
+        Drawable drawable = ContextCompat.getDrawable(context, drawableId);
+        if (drawable instanceof BitmapDrawable) {
+            return BitmapFactory.decodeResource(context.getResources(), drawableId);
+        } else if (drawable instanceof VectorDrawable) {
+            VectorDrawable vectorDrawable = (VectorDrawable) drawable;
+            Bitmap bitmap = Bitmap.createBitmap(vectorDrawable.getIntrinsicWidth(),
+                    vectorDrawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(bitmap);
+            vectorDrawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+            vectorDrawable.draw(canvas);
+            return bitmap;
+        } else {
+            return null;
+        }
+    }
+
+
+    private int[] generateHeatMap() {
+        int[] data = new int[] {
+                1,1,2,0,0,0,0,0,
+                1,4,2,0,0,0,0,0,
+                2,2,0,0,0,0,0,0,
+                6,6,0,3,0,0,0,3,
+                6,6,5,3,1,3,3,3,
+                6,6,3,3,0,3,6,6,
+                3,3,3,0,0,0,6,5,
+                3,0,0,0,0,0,5,5,
+        };
+        for (int i = 0; i < data.length;++i) {
+            if (data[i] != 0)
+                data[i] = Color.BLACK / data[i];
+        }
+        return data;
+
+    }
 }

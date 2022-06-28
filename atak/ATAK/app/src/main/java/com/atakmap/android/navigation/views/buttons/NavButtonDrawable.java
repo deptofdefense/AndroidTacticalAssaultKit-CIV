@@ -22,6 +22,8 @@ import android.renderscript.ScriptIntrinsicBlur;
 import android.renderscript.Type;
 import android.widget.ImageView;
 
+import com.atakmap.android.gui.drawable.ShadowDrawable;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -46,7 +48,7 @@ public class NavButtonDrawable extends Drawable implements Drawable.Callback {
     private final Drawable _baseDrawable;
 
     // Set by user
-    private float _shadowRadius;
+    private float _shadowRadius = 16;
     private int _alpha = 255;
     private int _fillColor, _shadowColor;
     private ColorFilter _colorFilter, _shadowFilter;
@@ -80,15 +82,26 @@ public class NavButtonDrawable extends Drawable implements Drawable.Callback {
         _baseDrawable.setCallback(this);
         _basePaint = new Paint(
                 Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
-        _rs = RenderScript.create(appContext);
-        _blur = ScriptIntrinsicBlur.create(_rs, Element.U8_4(_rs));
-        _shadowFilter = new PorterDuffColorFilter(Color.BLACK,
-                PorterDuff.Mode.SRC_ATOP);
-        _blur.setRadius(_shadowRadius = 16);
+
+        RenderScript rs = null;
+        ScriptIntrinsicBlur blur = null;
+        if (ShadowDrawable.isSupported()) {
+            try {
+                rs = RenderScript.create(appContext);
+                blur = ScriptIntrinsicBlur.create(rs, Element.U8_4(rs));
+                blur.setRadius(_shadowRadius);
+            } catch (Exception ignored) {
+                // Render script not supported
+            }
+        }
+        _rs = rs;
+        _blur = blur;
 
         _textSize = BADGE_TEXT_SIZE;
 
         _shadowPaint = new Paint(_basePaint);
+        _shadowFilter = new PorterDuffColorFilter(Color.BLACK,
+                PorterDuff.Mode.SRC_ATOP);
 
         _badgePaint = new Paint();
         _badgePaint.setColor(Color.RED);
@@ -138,7 +151,7 @@ public class NavButtonDrawable extends Drawable implements Drawable.Callback {
     public void setShadowRadius(float radius) {
         if (Float.compare(_shadowRadius, radius) != 0) {
             _shadowRadius = radius;
-            if (radius > 0)
+            if (radius > 0 && _blur != null)
                 _blur.setRadius(radius);
             _scratchBmp = null;
             invalidateSelf();
@@ -159,7 +172,7 @@ public class NavButtonDrawable extends Drawable implements Drawable.Callback {
      * @param color Color integer
      */
     public void setShadowColor(int color) {
-        color = 0xFF000000 | (color & 0xFFFFFF);
+        color = (_blur != null ? 0xFF000000 : 0x80000000) | (color & 0xFFFFFF);
         if (_shadowColor != color) {
             _shadowColor = color;
             setShadowColorFilter(new PorterDuffColorFilter(color,
@@ -258,10 +271,12 @@ public class NavButtonDrawable extends Drawable implements Drawable.Callback {
             _shadowBmp = Bitmap.createBitmap(sWidth, sHeight,
                     Bitmap.Config.ARGB_8888);
             _shadowCanvas = new Canvas(_shadowBmp);
-            Type type = new Type.Builder(_rs, Element.RGBA_8888(_rs))
-                    .setX(sWidth).setY(sHeight).setMipmaps(false).create();
-            _inBuffer = Allocation.createTyped(_rs, type);
-            _outBuffer = Allocation.createTyped(_rs, type);
+            if (_rs != null) {
+                Type type = new Type.Builder(_rs, Element.RGBA_8888(_rs))
+                        .setX(sWidth).setY(sHeight).setMipmaps(false).create();
+                _inBuffer = Allocation.createTyped(_rs, type);
+                _outBuffer = Allocation.createTyped(_rs, type);
+            }
         }
 
         // XXX - No idea how the color filter keeps leaking into the base
@@ -280,7 +295,7 @@ public class NavButtonDrawable extends Drawable implements Drawable.Callback {
             // Apply padding so the shadow doesn't get cut off
             if (_shadowPadding) {
                 float sRad = _shadowRadius * scale;
-                float drop = sRad / 2;
+                float drop = _blur != null ? sRad / 2 : 0;
                 float padding = sRad * 2;
                 float pWidth = width - padding;
                 float pHeight = height - padding;
@@ -305,22 +320,36 @@ public class NavButtonDrawable extends Drawable implements Drawable.Callback {
             _shadowCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
             _shadowCanvas.drawBitmap(_scratchBmp, _srcRect, _shadowRect,
                     _shadowPaint);
-
-            // Copy to render script buffer
-            _inBuffer.copyFrom(_shadowBmp);
-
-            // Blur the bitmap
-            _blur.setInput(_inBuffer);
-            _blur.forEach(_outBuffer);
-
-            // Copy out to the shadow bitmap
-            _outBuffer.copyTo(_shadowBmp);
-
-            // Draw the shadow
             _shadowRect.set(0, 0, sWidth, sHeight);
-            for (int i = 0; i < 2; i++)
-                canvas.drawBitmap(_shadowBmp, _shadowRect, _srcRect,
-                        _shadowPaint);
+
+            if (_blur != null) {
+                // Copy to render script buffer
+                _inBuffer.copyFrom(_shadowBmp);
+
+                // Blur the bitmap
+                _blur.setInput(_inBuffer);
+                _blur.forEach(_outBuffer);
+
+                // Copy out to the shadow bitmap
+                _outBuffer.copyTo(_shadowBmp);
+
+                // Draw the shadow
+                for (int i = 0; i < 2; i++)
+                    canvas.drawBitmap(_shadowBmp, _shadowRect, _srcRect,
+                            _shadowPaint);
+            } else {
+                // Shadow not supported - Draw a stroke instead
+                float strokeWidth = 2 * scale;
+                for (int x = -1; x <= 1; x++) {
+                    for (int y = -1; y <= 1; y++) {
+                        int save = canvas.save();
+                        canvas.translate(x * strokeWidth, y * strokeWidth);
+                        canvas.drawBitmap(_shadowBmp, _shadowRect, _srcRect,
+                                _shadowPaint);
+                        canvas.restoreToCount(save);
+                    }
+                }
+            }
         }
     }
 

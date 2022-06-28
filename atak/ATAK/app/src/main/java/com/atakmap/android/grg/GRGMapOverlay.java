@@ -44,6 +44,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.menu.MapMenuReceiver;
 import com.atakmap.android.missionpackage.export.MissionPackageExportWrapper;
 import com.atakmap.android.preference.AtakPreferences;
+import com.atakmap.annotations.ModifierApi;
 import com.atakmap.app.R;
 import com.atakmap.app.system.ResourceUtil;
 import com.atakmap.coremap.conversions.CoordinateFormat;
@@ -96,6 +97,7 @@ public final class GRGMapOverlay extends FeatureDataStoreMapOverlay {
     private final RasterDataStore _grgLayersDb;
     private GRGMapOverlayListModel _listModel;
 
+    @ModifierApi(since = "4.5", target="4.8", modifiers={})
     public GRGMapOverlay(MapView view, RasterLayer2 layer,
             RasterDataStore grgLayersDb, FeatureLayer3 coveragesLayer) {
         super(view.getContext(),
@@ -125,6 +127,7 @@ public final class GRGMapOverlay extends FeatureDataStoreMapOverlay {
                 "prefs_layer_grg_map_interaction");
     }
 
+    @ModifierApi(since = "4.5", target="4.8", modifiers={})
     public void dispose() {
         if (_prefs != null && _prefListener != null) {
             _prefs.unregisterListener(_prefListener);

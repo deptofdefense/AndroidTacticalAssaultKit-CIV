@@ -5,7 +5,6 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Looper;
@@ -34,6 +33,7 @@ import com.atakmap.android.importexport.Exportable;
 import com.atakmap.android.importexport.FormatNotSupportedException;
 import com.atakmap.android.importfiles.sort.ImportAPKSort;
 import com.atakmap.android.importfiles.sort.ImportResolver;
+import com.atakmap.android.importfiles.sort.ImportResolver.SortFlags;
 import com.atakmap.android.importfiles.task.ImportFilesTask;
 import com.atakmap.android.importfiles.ui.ImportManagerFileBrowser;
 import android.content.SharedPreferences;
@@ -95,6 +95,7 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -442,9 +443,18 @@ public class MissionPackageMapOverlay extends AbstractMapOverlay2 implements
 
             // Import using the set content type parameter
             String contentType = null;
-            if (content != null)
+            boolean hidden = false;
+            if (content != null) {
                 contentType = content.getParameterValue(
                         MissionPackageContent.PARAMETER_CONTENT_TYPE);
+                hidden = FileSystemUtils.isEquals(content.getParameterValue(
+                        MissionPackageContent.PARAMETER_VISIBLE), "false");
+            }
+
+            // Sort flags based on manifest parameters
+            Set<SortFlags> flags = hidden
+                    ? Collections.singleton(SortFlags.HIDE_FILE)
+                    : Collections.emptySet();
 
             final List<ImportResolver> matchingSorters = new ArrayList<>();
             List<ImportResolver> sorters = ImportFilesTask.GetSorters(_context,
@@ -461,7 +471,7 @@ public class MissionPackageMapOverlay extends AbstractMapOverlay2 implements
                     if (p != null && contentType != null
                             && contentType.equals(p.first)) {
                         // If the content type matches then import right here
-                        sorter.beginImport(file);
+                        sorter.beginImport(file, flags);
                         return;
                     }
                     matchingSorters.add(sorter);

@@ -20,8 +20,8 @@
             android:icon="@drawable/send_logs"/>
 
         <Preference
-            android:title="Device Details"
-            android:summary="Hardware Details for remote help and support"
+            android:title="@string/device_details_title"
+            android:summary="@string/device_details_summary"
             android:key="settingsDebugging"
             android:icon="@drawable/ic_debugging"/>
 

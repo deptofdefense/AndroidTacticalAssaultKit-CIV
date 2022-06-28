@@ -36,9 +36,10 @@ public class DrawingCircleCreationTool extends CircleCreationTool {
 
     @Override
     public void onToolEnd() {
-        if (_callback != null && _circle.getCenterMarker() != null) {
+        if (_callback != null) {
             Intent i = new Intent(_callback);
-            i.putExtra("uid", _circle.getUID());
+            if (_circle.getCenterMarker() != null)
+                i.putExtra("uid", _circle.getUID());
             AtakBroadcast.getInstance().sendBroadcast(i);
         }
         super.onToolEnd();
@@ -51,6 +52,7 @@ public class DrawingCircleCreationTool extends CircleCreationTool {
         circle.setStrokeColor(_prefs.getShapeColor());
         circle.setFillColor(_prefs.getFillColor());
         circle.setStrokeWeight(_prefs.getStrokeWeight());
+        circle.setStrokeStyle(_prefs.getStrokeStyle());
         circle.setMetaString("entry", "user");
         _mapGroup.addItem(circle);
         circle.persist(_mapView.getMapEventDispatcher(), null, getClass());

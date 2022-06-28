@@ -1,9 +1,11 @@
 package gov.tak.api.contact;
 
+import gov.tak.api.annotation.DeprecatedApi;
 import gov.tak.api.annotation.NonNull;
 import gov.tak.api.experimental.chat.IChatService;
 import gov.tak.api.experimental.chat.IChatServiceClient;
 import gov.tak.api.experimental.chat.IChatServiceProvider;
+import gov.tak.platform.contact.ContactStore;
 
 /**
  * The Contact Store allows core applications and plugins to manage {@link IContact}s through the API, as well as
@@ -29,7 +31,10 @@ import gov.tak.api.experimental.chat.IChatServiceProvider;
  * @see IContact
  * @see IContactListener
  * @since 0.17.0
+ * @deprecated Since 0.32, use {@link ContactStore} instead
  */
+@Deprecated
+@DeprecatedApi(since = "0.32", forRemoval = true, removeAt = "1.0")
 public interface IContactStore {
     /**
      * Adds a contact to be stored and maintained by the API. Note that attempting to add a contact that has already been added will

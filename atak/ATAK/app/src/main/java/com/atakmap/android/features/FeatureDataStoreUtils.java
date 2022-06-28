@@ -53,6 +53,11 @@ public class FeatureDataStoreUtils {
         return bounds.build();
     }
 
+    /**
+     * Given a datastore, build the envelope for it
+     * @param dataStore the datastore
+     * @return the envelope that contains the datastore
+     */
     public static Envelope buildEnvelope(FeatureDataStore dataStore) {
         return buildEnvelope(dataStore, (FeatureSetQueryParameters) null);
     }

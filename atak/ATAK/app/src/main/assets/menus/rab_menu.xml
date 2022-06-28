@@ -1,4 +1,4 @@
-<menu buttonRadius='65' buttonSpan='51.428571' buttonWidth='90' buttonBg='bgs/button.xml'>
+<menu buttonRadius='65' buttonSpan='40' buttonWidth='90' buttonBg='bgs/button.xml'>
     
     <button angle='-90'
             icon='icons/delete.png'
@@ -7,6 +7,9 @@
     
     <button icon='icons/details.png'
             onClick='actions/rab_drop_down.xml' />
+
+    <button icon='icons/blast_rings.png'
+        onClick='actions/shape_msd.xml'/>
 
     <button icon='icons/kmm.png'
             submenu='menus/randb_range_submenu.xml'
@@ -34,5 +37,10 @@
     <button icon='icons/edit2.png'
             disabled='${disable_polar}'
             onClick='actions/polarCoords.xml'/>
+
+    <button icon='icons/clamp.png'
+            onClick='actions/clamp_toggle.xml'
+            selected='${clampedToGround}'/>
+
 
 </menu>

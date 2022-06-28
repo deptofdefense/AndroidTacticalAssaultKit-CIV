@@ -9,6 +9,13 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import gov.tak.api.annotation.DeprecatedApi;
+
+/**
+ * @deprecated
+ */
+@Deprecated
+@DeprecatedApi(since = "4.5", forRemoval = true, removeAt = "4.8")
 public class PersistentCircleCrumbTrail extends MapItem {
 
     private static final String TAG = "PersistentCircleCrumbTrail";

@@ -20,6 +20,7 @@ namespace TAK {
                  */
                 TAKErr(*progress)(void *opaque, const int current, const int max) NOTHROWS;
                 TAKErr(*error)(void *opaque, const char *msg) NOTHROWS;
+                TAKErr(*sync_canceled)(void* opaque) NOTHROWS;
             };
 
             bool ProcessingCallback_isCanceled(ProcessingCallback *callback) NOTHROWS;

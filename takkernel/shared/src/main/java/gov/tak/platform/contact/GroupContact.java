@@ -13,25 +13,26 @@ import java.util.Set;
 
 /**
  * Internal implementation of an {@link IGroupContact}.
+ *
  * @since 0.17.0
  */
 class GroupContact extends Contact implements IGroupContact {
     private final Set<IContact> groupMembers;
-    private IGroupContact parent;
+    private final IGroupContact parentContact;
 
     /**
      * @param uniqueContactId The unique ID of this group contact
      * @param displayName     The display name of this group contact
      * @param attributes      The attributes associated with this contact
      * @param groupMembers    The group members associated with this group contact
-     * @param parent          The parent group if this is a nested group (or else null)
+     * @param parentContact   The parent group if this is a nested group (or else null)
      * @since 0.24.0
      */
     GroupContact(@NonNull String uniqueContactId,
-                 @NonNull String displayName,
-                 @NonNull AttributeSet attributes,
-                 @NonNull Set<IContact> groupMembers,
-                 @Nullable IGroupContact parent) {
+            @NonNull String displayName,
+            @NonNull AttributeSet attributes,
+            @NonNull Set<IContact> groupMembers,
+            @Nullable IGroupContact parentContact) {
         super(uniqueContactId, displayName, attributes);
 
         Objects.requireNonNull(groupMembers, "Set of group members cannot be null.");
@@ -40,20 +41,21 @@ class GroupContact extends Contact implements IGroupContact {
         }
 
         this.groupMembers = new HashSet<>(groupMembers);
-        this.parent = parent;
+        this.parentContact = parentContact;
     }
 
     /**
      * Constructor for creating a root-level group that doesn't have a parent.
+     *
      * @param uniqueContactId The unique ID of this group contact
      * @param displayName     The display name of this group contact
      * @param attributes      The attributes associated with this contact
      * @param groupMembers    The group members associated with this group contact
      */
     GroupContact(@NonNull String uniqueContactId,
-                 @NonNull String displayName,
-                 @NonNull AttributeSet attributes,
-                 @NonNull Set<IContact> groupMembers) {
+            @NonNull String displayName,
+            @NonNull AttributeSet attributes,
+            @NonNull Set<IContact> groupMembers) {
         this(uniqueContactId, displayName, attributes, groupMembers, null);
     }
 
@@ -64,8 +66,9 @@ class GroupContact extends Contact implements IGroupContact {
     }
 
     @Override
+    @Nullable
     public IGroupContact getParentContact() {
-        return parent;
+        return parentContact;
     }
 }
 

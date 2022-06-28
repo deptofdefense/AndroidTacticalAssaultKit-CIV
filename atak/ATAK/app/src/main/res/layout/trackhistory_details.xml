@@ -157,13 +157,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
-                <ImageButton
-                    android:id="@+id/track_details_colorBtn"
-                    android:layout_width="@dimen/dropdown_bottom_bar_height"
-                    android:layout_height="@dimen/dropdown_bottom_bar_height"
-                    android:padding="@dimen/auto_margin"
-                    android:src="@drawable/color_rectangle"
-                    style="@style/darkButton"/>
+                <com.atakmap.android.gui.ColorButton
+                    style="@style/darkColorButton"
+                    android:id="@+id/track_details_colorBtn"/>
                 <Button
                     android:id="@+id/track_details_styleBtn"
                     android:layout_width="0dp"

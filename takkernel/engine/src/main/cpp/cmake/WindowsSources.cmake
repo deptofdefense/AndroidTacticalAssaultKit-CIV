@@ -129,7 +129,6 @@ set(takengine_elevation_WINDOWS_SRCS
 
 set(takengine_feature_WINDOWS_SRCS
     # Feature
-    ${SRC_DIR}/feature/BruteForceLimitOffsetFeatureSetCursor.cpp
     ${SRC_DIR}/feature/DataSourceFeatureDataStore.cpp
     ${SRC_DIR}/feature/FeatureCatalogDatabase.cpp
     ${SRC_DIR}/feature/FeatureDataStore.cpp
@@ -144,7 +143,6 @@ set(takengine_feature_WINDOWS_SRCS
     ${SRC_DIR}/feature/KMLFeatureDataSource2.cpp
     ${SRC_DIR}/feature/KMLModels.cpp
     ${SRC_DIR}/feature/KMLParser.cpp
-    ${SRC_DIR}/feature/MultiplexingFeatureSetCursor.cpp
     ${SRC_DIR}/feature/OGDIDriverDefinition.cpp
     ${SRC_DIR}/feature/OGDIFeatureDataSource.cpp
     ${SRC_DIR}/feature/OGDISchemaDefinition.cpp
@@ -155,6 +153,7 @@ set(takengine_feature_WINDOWS_SRCS
     ${SRC_DIR}/feature/RuntimeFeatureDataStore2.cpp
     ${SRC_DIR}/feature/SpatialCalculator.cpp
     ${SRC_DIR}/feature/SpatialCalculator2.cpp
+    ${SRC_DIR}/feature/SpatialFilter.cpp
     ${SRC_DIR}/feature/SQLiteDriverDefinition.cpp
 )
 
@@ -172,7 +171,6 @@ set(takengine_formats_gltf_WINDOWS_SRCS
 
 set (takengine_formats_las_WINDOWS_SRCS
     ${SRC_DIR}/formats/las/LAS.cpp
-    ${SRC_DIR}/formats/las/LASSceneNode.cpp
 )
 
 set(takengine_formats_mbtiles_WINDOWS_SRCS
@@ -213,9 +211,6 @@ set(takengine_model_WINDOWS_SRCS
     ${SRC_DIR}/model/OBJSceneInfoSpi.cpp
     ${SRC_DIR}/model/Pix4dGeoreferencer.cpp
     ${SRC_DIR}/model/PLYSceneInfoSpi.cpp
-    ${SRC_DIR}/model/ResourceMapper.cpp
-    ${SRC_DIR}/model/SceneInfo.cpp
-    ${SRC_DIR}/model/SceneLayer.cpp
 )
 
 set(takengine_raster_base_WINDOWS_SRCS
@@ -349,6 +344,7 @@ set(takengine_renderer_model_WINDOWS_SRCS
     ${SRC_DIR}/renderer/model/HitTestControl.cpp
     ${SRC_DIR}/renderer/model/MaterialManager.cpp
     ${SRC_DIR}/renderer/model/SceneLayerControl.cpp
+    ${SRC_DIR}/renderer/model/SceneLayerControl2.cpp
     ${SRC_DIR}/renderer/model/SceneObjectControl.cpp
 )
 
@@ -464,7 +460,6 @@ set(takengine_elevation_WINDOWS_HEADERS
 
 set(takengine_feature_WINDOWS_HEADERS
     # Feature
-    ${SRC_DIR}/feature/BruteForceLimitOffsetFeatureSetCursor.h
     ${SRC_DIR}/feature/DataSourceFeatureDataStore.h
     ${SRC_DIR}/feature/FeatureCatalogDatabase.h
     ${SRC_DIR}/feature/FeatureDataStore.h
@@ -479,7 +474,6 @@ set(takengine_feature_WINDOWS_HEADERS
     ${SRC_DIR}/feature/KMLFeatureDataSource2.h
     ${SRC_DIR}/feature/KMLModels.h
     ${SRC_DIR}/feature/KMLParser.h
-    ${SRC_DIR}/feature/MultiplexingFeatureSetCursor.h
     ${SRC_DIR}/feature/OGDIDriverDefinition.h
     ${SRC_DIR}/feature/OGDIFeatureDataSource.h
     ${SRC_DIR}/feature/OGDISchemaDefinition.h
@@ -490,6 +484,7 @@ set(takengine_feature_WINDOWS_HEADERS
     ${SRC_DIR}/feature/RuntimeFeatureDataStore2.h
     ${SRC_DIR}/feature/SpatialCalculator.h
     ${SRC_DIR}/feature/SpatialCalculator2.h
+    ${SRC_DIR}/feature/SpatialFilter.h
     ${SRC_DIR}/feature/SQLiteDriverDefinition.h
 )
 
@@ -505,7 +500,6 @@ set(takengine_formats_gltf_WINDOWS_HEADERS
 
 set (takengine_formats_las_WINDOWS_HEADERS
     ${SRC_DIR}/formats/las/LAS.h
-    ${SRC_DIR}/formats/las/LASSceneNode.h
 )
 
 set(takengine_formats_mbtiles_WINDOWS_HEADERS
@@ -547,8 +541,6 @@ set(takengine_model_WINDOWS_HEADERS
     ${SRC_DIR}/model/Pix4dGeoreferencer.h
     ${SRC_DIR}/model/PLYSceneInfoSpi.h
     ${SRC_DIR}/model/ResourceMapper.h
-    ${SRC_DIR}/model/SceneInfo.h
-    ${SRC_DIR}/model/SceneLayer.h
 )
 
 set(takengine_raster_base_WINDOWS_HEADERS
@@ -668,6 +660,7 @@ set(takengine_renderer_feature_WINDOWS_HEADERS
     ${SRC_DIR}/renderer/feature/GLBatchPoint3.h
     ${SRC_DIR}/renderer/feature/GLBatchPointBuffer.h
     ${SRC_DIR}/renderer/feature/GLBatchPolygon3.h
+    ${SRC_DIR}/renderer/feature/SpatialFilterControl.h
 )
 
 set(takengine_renderer_impl_WINDOWS_HEADERS
@@ -688,6 +681,7 @@ set(takengine_renderer_model_WINDOWS_HEADERS
     ${SRC_DIR}/renderer/model/HitTestControl.h
     ${SRC_DIR}/renderer/model/MaterialManager.h
     ${SRC_DIR}/renderer/model/SceneLayerControl.h
+    ${SRC_DIR}/renderer/model/SceneLayerControl2.h
     ${SRC_DIR}/renderer/model/SceneObjectControl.h
 )
 
@@ -740,7 +734,6 @@ set(takengine_util_WINDOWS_HEADERS
     ${SRC_DIR}/util/ErrorHandling.h
     ${SRC_DIR}/util/HttpProtocolHandler.h
     ${SRC_DIR}/util/SyncObject.h
-    ${SRC_DIR}/util/URI.h
     ${SRC_DIR}/util/URIOfflineCache.h
 )
 

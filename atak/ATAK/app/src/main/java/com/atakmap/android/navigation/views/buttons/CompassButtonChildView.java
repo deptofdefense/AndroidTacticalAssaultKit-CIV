@@ -174,11 +174,8 @@ public class CompassButtonChildView extends LinearLayout {
         RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
-        params.addRule(RelativeLayout.RIGHT_OF, anchor.getId());
-        params.addRule(RelativeLayout.BELOW, anchor.getId());
-
-        if (navView.buttonsVisible())
-            params.addRule(RelativeLayout.BELOW, anchor.getId());
+        params.addRule(RelativeLayout.END_OF, anchor.getId());
+        params.addRule(RelativeLayout.ALIGN_TOP, anchor.getId());
 
         this.setLayoutParams(params);
 

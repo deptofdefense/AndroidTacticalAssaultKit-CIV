@@ -42,6 +42,9 @@ public class NavButton extends ImageButton implements View.OnDragListener {
     // Drag variables
     protected boolean dragEntered, dragInProgress;
 
+    // Visibility variables
+    protected boolean onScreen = true;
+
     public NavButton(Context context) {
         super(context);
     }
@@ -52,6 +55,16 @@ public class NavButton extends ImageButton implements View.OnDragListener {
 
     public NavButton(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
+    }
+
+    /**
+     * Get the loadout key for this button
+     * @return Loadout key
+     */
+    public String getKey() {
+        return getId() != View.NO_ID
+                ? getResources().getResourceName(getId())
+                : String.valueOf(getTag());
     }
 
     @Override
@@ -153,6 +166,17 @@ public class NavButton extends ImageButton implements View.OnDragListener {
     }
 
     /**
+     * Set whether the button is fully on screen or not (cut off)
+     * @param onScreen True if on screen
+     */
+    public void setOnScreen(boolean onScreen) {
+        if (this.onScreen != onScreen) {
+            this.onScreen = onScreen;
+            updateState();
+        }
+    }
+
+    /**
      * Update the display state of the button
      */
     protected void updateState() {
@@ -166,11 +190,6 @@ public class NavButton extends ImageButton implements View.OnDragListener {
 
         Drawable resource = this.model.getImage();
         boolean dragging = dragInProgress && !dragEntered;
-        if (dragging && resource == null) {
-            setImageResource(R.drawable.nav_empty);
-            setBackgroundResource(R.drawable.nav_item_background);
-            return;
-        }
 
         Drawable dr = null;
         Drawable bg = null;
@@ -194,25 +213,38 @@ public class NavButton extends ImageButton implements View.OnDragListener {
             navDr.setShadowRadius(this.shadowEnabled ? 16 : 0);
             navDr.setBadgeCount(model.getBadgeCount());
             navDr.setBadgeImage(model.getBadgeImage());
-            if (dragging)
-                bg = new LayerDrawable(new Drawable[] {
-                        c.getDrawable(R.drawable.nav_item_background),
-                        c.getDrawable(R.drawable.nav_empty)
-                });
-            else if (editing)
-                bg = c.getDrawable(R.drawable.ic_group).mutate();
             dr = navDr;
         }
+
+        // Set the background
+        if (dragging)
+            bg = new LayerDrawable(new Drawable[] {
+                    c.getDrawable(R.drawable.nav_item_background),
+                    c.getDrawable(R.drawable.nav_empty)
+            });
+        else if (editing)
+            bg = c.getDrawable(R.drawable.ic_group).mutate();
+
         setImageDrawable(dr);
         if (bg != null) {
             bg.setColorFilter(color, PorterDuff.Mode.MULTIPLY);
             setBackground(bg);
         } else
             setBackgroundColor(Color.TRANSPARENT);
+
+        // Update visibility (ignoring the side layout buttons)
+        // If the button is on screen and has a valid button model or is in edit
+        // mode then it's visible
+        if (getParent() == NavView.getInstance())
+            setVisibility(onScreen && (model != NavButtonModel.NONE || editing)
+                    ? View.VISIBLE
+                    : View.INVISIBLE);
     }
 
     @Override
     public boolean onDrag(View view, DragEvent dragEvent) {
+        if (view != this)
+            return false;
 
         int action = dragEvent.getAction();
 
@@ -261,7 +293,7 @@ public class NavButton extends ImageButton implements View.OnDragListener {
 
                 // Button view ID keys
                 String srcKey = loadout.getButtonKey(srcModel);
-                String dstKey = getResources().getResourceName(view.getId());
+                String dstKey = getKey();
 
                 // Dragging a button on top of itself - nothing to do
                 if (FileSystemUtils.isEquals(srcKey, dstKey))
@@ -294,7 +326,7 @@ public class NavButton extends ImageButton implements View.OnDragListener {
      * @param dragEvent Drag event
      * @return Button model or null if not found/valid
      */
-    protected static NavButtonModel getButtonModel(DragEvent dragEvent) {
+    public static NavButtonModel getButtonModel(DragEvent dragEvent) {
         // On newer versions the model reference is also stored in the
         // description extras, which allows us to get the model before the
         // drop event

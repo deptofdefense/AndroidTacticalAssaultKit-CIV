@@ -31,91 +31,29 @@ using namespace TAK::Engine::Renderer::Core;
 using namespace TAK::Engine::Thread;
 using namespace TAK::Engine::Util;
 
+constexpr const char* LLA2ECEF_FN_SRC =
+#include "shaders/lla2ecef.frag"
+;
 
-#define LLA2ECEF_FN_SRC \
-    "const float radiusEquator = 6378137.0;\n" \
-    "const float radiusPolar = 6356752.3142;\n" \
-    "vec3 lla2ecef(in vec3 llh) {\n" \
-    "  float flattening = (radiusEquator - radiusPolar)/radiusEquator;\n" \
-    "   float eccentricitySquared = 2.0 * flattening - flattening * flattening;\n" \
-    "   float sin_latitude = sin(radians(llh.y));\n" \
-    "   float cos_latitude = cos(radians(llh.y));\n" \
-    "   float sin_longitude = sin(radians(llh.x));\n" \
-    "   float cos_longitude = cos(radians(llh.x));\n" \
-    "   float N = radiusEquator / sqrt(1.0 - eccentricitySquared * sin_latitude * sin_latitude);\n" \
-    "   float x = (N + llh.z) * cos_latitude * cos_longitude;\n" \
-    "   float y = (N + llh.z) * cos_latitude * sin_longitude; \n" \
-    "   float z = (N * (1.0 - eccentricitySquared) + llh.z) * sin_latitude;\n" \
-    "   return vec3(x, y, z);\n" \
-    "}\n"
+constexpr const char* ECEF_LO_VSH_BASE =
+#include "shaders/SlopeAngleECEFLo.vert"
+;
 
-#define ECEF_LO_VSH \
-    "#version 100\n" \
-    "uniform mat4 uMVP;\n" \
-    "uniform mat4 uLocalTransform[3];\n" \
-    "attribute vec3 aVertexCoords;\n" \
-    "attribute vec3 aNormals;\n" \
-    "attribute float aNoDataFlag;\n" \
-    "varying float vNoDataFlag;\n" \
-    "varying float vAngle;\n" \
-    LLA2ECEF_FN_SRC \
-    "void main() {\n" \
-    "  vec4 lla = uLocalTransform[0] * vec4(aVertexCoords, 1.0);\n" \
-    "  lla = lla / lla.w;\n" \
-    "  vec3 ecef = lla2ecef(vec3(lla.xy, lla.z));\n" \
-    "  vNoDataFlag = aNoDataFlag;\n" \
-    "  vAngle = abs(dot(normalize(aNormals), vec3(0.0, 0.0, 1.0)));\n" \
-    "  gl_Position = uMVP * vec4(ecef.xyz, 1.0);\n" \
-    "}"
+static std::string ECEF_LO_VSH = std::string(ECEF_LO_VSH_BASE) + std::string(LLA2ECEF_FN_SRC);
 
-#define ECEF_MD_VSH \
-    "#version 100\n" \
-    "uniform mat4 uMVP;\n" \
-    "uniform mat4 uLocalTransform[3];\n" \
-    "attribute vec3 aVertexCoords;\n" \
-    "attribute vec3 aNormals;\n" \
-    "attribute float aNoDataFlag;\n" \
-    "varying float vNoDataFlag;\n" \
-    "varying float vAngle;\n" \
-    "void main() {\n" \
-    "  vec4 lla = uLocalTransform[0] * vec4(aVertexCoords.xyz, 1.0);\n" \
-    "  lla /= lla.w;\n" \
-    "  vec4 llaLocal = uLocalTransform[1] * lla;\n" \
-    "  vec4 lla2ecef_in = vec4(llaLocal.xy, llaLocal.x*llaLocal.y, 1.0);\n" \
-    "  lla2ecef_in /= lla2ecef_in.w;\n" \
-    "  vec4 ecefSurface = uLocalTransform[2] * lla2ecef_in;\n" \
-    "  ecefSurface /= ecefSurface.w;\n" \
-    "  vec3 ecef = vec3(ecefSurface.xy * (1.0 + llaLocal.z / 6378137.0), ecefSurface.z * (1.0 + llaLocal.z / 6356752.3142));\n" \
-    "  vNoDataFlag = aNoDataFlag;\n" \
-    "  vAngle = abs(dot(normalize(aNormals), vec3(0.0, 0.0, 1.0)));\n" \
-    "  gl_Position = uMVP * vec4(ecef.xyz, 1.0);\n" \
-    "}"
+constexpr const char* ECEF_MD_VSH_BASE =
+#include "shaders/SlopeAngleECEFMd.vert"
+;
 
-#define PLANAR_SHADER_VSH \
-    "#version 100\n" \
-    "uniform mat4 uMVP;\n" \
-    "attribute vec4 aVertexCoords;\n" \
-    "attribute vec3 aNormals;\n" \
-    "attribute float aNoDataFlag;\n" \
-    "varying float vNoDataFlag;\n" \
-    "varying float vAngle;\n" \
-    "void main() {\n" \
-    "  gl_Position = uMVP * vec4(aVertexCoords.xyz, 1.0);\n" \
-    "  vNoDataFlag = aNoDataFlag;\n" \
-    "  vAngle = abs(dot(normalize(aNormals), vec3(0.0, 0.0, 1.0)));\n" \
-    "}"
+static std::string ECEF_MD_VSH = std::string(ECEF_MD_VSH_BASE) + std::string(LLA2ECEF_FN_SRC);
 
-#define SHADER_FSH \
-    "#version 100\n" \
-    "precision mediump float;\n" \
-    "uniform sampler2D uTexture;\n" \
-    "uniform float uAlpha;\n" \
-    "varying float vNoDataFlag;\n" \
-    "varying float vAngle;\n" \
-    "void main(void) {\n" \
-    "  vec4 color = texture2D(uTexture, vec2(vAngle, 0.5));\n" \
-    "  gl_FragColor = vec4(color.rgb, color.a*uAlpha*step(1.0, vNoDataFlag));\n" \
-    "}"
+constexpr const char* PLANAR_SHADER_VSH =
+#include "shaders/SlopeAnglePlanar.vert"
+;
+
+constexpr const char* SHADER_FSH =
+#include "shaders/SlopeAngle.frag"
+;
 
 namespace
 {
@@ -161,6 +99,7 @@ namespace
         prog.program = GL_NONE;
         prog.vertShader = GL_NONE;
         prog.fragShader = GL_NONE;
+        
         GLSLUtil_createProgram(&prog, vsh, fsh);
         glDeleteShader(prog.vertShader);
         glDeleteShader(prog.fragShader);
@@ -186,10 +125,10 @@ namespace
         s.ecef.base = GLTerrainTile_getColorShader(ctx, 4978);
 
         // create custom shaders
-        code = createShader(s.ecef.lo, ECEF_LO_VSH, SHADER_FSH);
+        code = createShader(s.ecef.lo, ECEF_LO_VSH.c_str(), SHADER_FSH);
         TE_CHECKRETURN_CODE(code);
         s.ecef.base.lo = s.ecef.lo.base;
-        createShader(s.ecef.md, ECEF_MD_VSH, SHADER_FSH);
+        createShader(s.ecef.md, ECEF_MD_VSH.c_str(), SHADER_FSH);
         TE_CHECKRETURN_CODE(code);
         s.ecef.base.md = s.ecef.md.base;
         createShader(s.ecef.hi, PLANAR_SHADER_VSH, SHADER_FSH);

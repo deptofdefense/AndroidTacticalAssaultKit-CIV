@@ -29,6 +29,11 @@ public class ShapeUtils {
 
     private static final String TAG = "ShapeUtils";
 
+    /**
+     * Given an intent, get the uid for the shape.
+     * @param intent the intent that references a shape uid
+     * @return the uid for the shape
+     */
     public static String getShapeUID(Intent intent) {
         if (!FileSystemUtils.isEmpty(intent.getStringExtra("shapeUID")))
             return intent.getStringExtra("shapeUID");
@@ -38,6 +43,11 @@ public class ShapeUtils {
             return intent.getStringExtra("uid");
     }
 
+    /**
+     * Given a map item, return the uid for the associated shape
+     * @param item the map item
+     * @return the uid for the associated shape
+     */
     public static String getShapeUID(MapItem item) {
         if (item != null && item.hasMetaValue("shapeUID"))
             return item.getMetaString("shapeUID", null);
@@ -51,6 +61,8 @@ public class ShapeUtils {
      * XXX - For 3.0 - Given a MapItem which would be the center point for a shape,
      * return either the center point if no associated shape is found or return 
      * the associated shape.
+     * Resolves the shape given a map item.
+     * @param item the map item to resolve the shape from.
      */
     public static MapItem resolveShape(final MapItem item) {
         String suid = getShapeUID(item);
@@ -70,6 +82,11 @@ public class ShapeUtils {
         return item;
     }
 
+    /**
+     * Given a Map Item produce an intent to zoom to the shape.
+     * @param item the map item
+     * @return the intent to zoom to the shape.
+     */
     public static Intent getZoomShapeIntent(MapItem item) {
 
         item = resolveShape(item);

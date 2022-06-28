@@ -66,7 +66,8 @@ public class OffscreenIndicatorController extends AbstractLayer implements
                     @Override
                     public void onSharedPreferenceChanged(
                             SharedPreferences sharedPreferences, String key) {
-                        if (key == null) return;
+                        if (key == null)
+                            return;
 
                         switch (key) {
                             case "toggle_offscreen_indicators":

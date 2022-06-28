@@ -101,6 +101,8 @@ public abstract class ImportInPlaceResolver extends ImportInternalSDResolver {
             i.putExtra(ImportReceiver.EXTRA_SHOW_NOTIFICATIONS, true);
         if (flags.contains(SortFlags.ZOOM_TO_FILE))
             i.putExtra(ImportReceiver.EXTRA_ZOOM_TO_FILE, true);
+        if (flags.contains(SortFlags.HIDE_FILE))
+            i.putExtra(ImportReceiver.EXTRA_HIDE_FILE, true);
         AtakBroadcast.getInstance().sendBroadcast(i);
     }
 
@@ -140,6 +142,8 @@ public abstract class ImportInPlaceResolver extends ImportInternalSDResolver {
                     i.putExtra(ImportReceiver.EXTRA_SHOW_NOTIFICATIONS, true);
                 if (flags.contains(SortFlags.ZOOM_TO_FILE))
                     i.putExtra(ImportReceiver.EXTRA_ZOOM_TO_FILE, true);
+                if (flags.contains(SortFlags.HIDE_FILE))
+                    i.putExtra(ImportReceiver.EXTRA_HIDE_FILE, true);
                 AtakBroadcast.getInstance().sendBroadcast(i);
             }
 

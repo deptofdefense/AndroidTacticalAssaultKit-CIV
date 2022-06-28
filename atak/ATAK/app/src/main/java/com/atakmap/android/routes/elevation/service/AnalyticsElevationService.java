@@ -6,8 +6,6 @@ import android.util.Pair;
 import com.atakmap.android.routes.elevation.SeekerBarPanelPresenter;
 import com.atakmap.android.routes.elevation.model.RouteData;
 import com.atakmap.coremap.conversions.ConversionFactors;
-import com.atakmap.coremap.conversions.Span;
-import com.atakmap.coremap.conversions.SpanUtilities;
 import com.atakmap.coremap.maps.conversion.EGM96;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -71,41 +69,54 @@ public class AnalyticsElevationService {
      * Finds the summation of all of the gains or losses along a route in feet
      * @param routeData Route data
      * @param gain True to calculate gain, false to calculate loss
-     * @param stopIndex The point index to stop at
-     * @return the total elevation of the route
+     * @param stopIndex The point index to stop at, if -1 use the entire length
+     * @return the total elevation change either gain or loss base in feet for either gain or loss
      */
     public static double findRouteTotalElevation(RouteData routeData,
-            boolean gain, int stopIndex) {
-        if (routeData == null || routeData.getGeoPoints() == null)
-            return 0;
-        GeoPointMetaData[] pts = routeData.getGeoPoints();
+                                                 boolean gain, int stopIndex) {
+        double[] retval = findRouteTotalElevation(routeData,stopIndex);
+        retval[0] *= ConversionFactors.METERS_TO_FEET;
+        retval[1] *= ConversionFactors.METERS_TO_FEET;
+        return retval[gain?0:1];
+    }
+
+    /**
+     * Finds the summation of all of the gains or losses along a route in meters
+     * @param routeData Route data
+     * @param stopIndex The point index to stop at, if -1 use the entire length
+     * @return the total elevation change where the array position 0 is gain and array position 0 is
+     * loss.
+     */
+    public static double[] findRouteTotalElevation(RouteData routeData,
+             int stopIndex) {
+
+        double[] retval = new double[] { 0, 0};
+        final GeoPointMetaData[] pts;
+
+        if (routeData == null || (pts = routeData.getGeoPoints()) == null)
+            return retval;
+
         if (stopIndex < 0)
             stopIndex = pts.length;
-        double thresh = SpanUtilities.convert(routeData.getTotalDistance(),
-                Span.FOOT, Span.METER) / 1000;
-        double ret = 0, avgRet = 0, remDist = thresh;
-        int avgCount = 0;
+
+
         for (int i = 0; i < pts.length - 1 && i <= stopIndex; i++) {
-            double y1 = EGM96.getHAE(pts[i].get());
-            double y2 = EGM96.getHAE(pts[i + 1].get());
-            remDist -= pts[i].get().distanceTo(pts[i + 1].get());
-            if (GeoPoint.isAltitudeValid(y1) && GeoPoint.isAltitudeValid(y2)) {
-                double delta = y2 - y1;
-                avgRet += delta;
-                avgCount++;
-                if (remDist <= 0) {
-                    delta = avgRet / avgCount;
-                    if (gain && delta > 0 || !gain && delta < 0)
-                        ret += delta;
-                    avgRet = 0;
-                    avgCount = 0;
-                    remDist = thresh;
+
+            final GeoPoint p1 = pts[i].get();
+            final GeoPoint p2 = pts[i + 1].get();
+
+            final double y1 = EGM96.getHAE(p1);
+            final double y2 = EGM96.getHAE(p2);
+            if (!Double.isNaN(y1) && !Double.isNaN(y2)) {
+                double diff = y2 - y1;
+                if (diff > 0) {
+                    retval[0] += diff;
+                } else if (diff < 0) {
+                    retval[1] -= diff;
                 }
             }
         }
-        if (avgCount > 0 && (gain && avgRet > 0 || !gain && avgRet < 0))
-            ret += avgRet / avgCount;
-        return ret * ConversionFactors.METERS_TO_FEET * (gain ? 1 : -1);
+        return retval;
     }
 
     public static double[] findContactPointElevationGain(int[] contactIndices,
@@ -145,8 +156,10 @@ public class AnalyticsElevationService {
 
     public static void findRouteSeekElevationGain(RouteData routeData,
             int seekerIndex, SeekerBarPanelPresenter seekerBarPanelPresenter) {
-        double gain = findRouteTotalElevation(routeData, true, seekerIndex);
-        seekerBarPanelPresenter.updateGainText(gain);
+        double[] retval = findRouteTotalElevation(routeData,seekerIndex);
+        double val = (retval[0] - retval[1]) * ConversionFactors.METERS_TO_FEET;
+
+        seekerBarPanelPresenter.updateGainText(val);
     }
 
     public static double findInstantaneousSlope(double[] distance,

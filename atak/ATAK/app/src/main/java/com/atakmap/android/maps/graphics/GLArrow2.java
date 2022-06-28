@@ -8,6 +8,7 @@ import android.graphics.Typeface;
 
 import com.atakmap.android.maps.Arrow;
 import com.atakmap.android.maps.Arrow.OnTextChangedListener;
+import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapTextFormat;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Shape;
@@ -38,7 +39,7 @@ import java.nio.FloatBuffer;
 import java.util.ConcurrentModificationException;
 
 public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
-        OnTextChangedListener {
+        OnTextChangedListener, MapItem.OnAltitudeModeChangedListener {
 
     private final Arrow _subject;
     protected final FloatBuffer _arrowHead;
@@ -47,7 +48,7 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
     protected String _text;
     protected static final double div_pi_4 = Math.PI / 4f;
 
-    private final static boolean CLAMP_TO_GROUND_ENABLED = true;
+
     protected final static boolean XRAY_ENABLED = true;
 
     /**
@@ -63,8 +64,8 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
     protected GeoPoint[] _pts;
 
     private boolean _forceClamp = false;
-    protected boolean _clampToGround = false;
     private boolean _nadirClamp = false;
+    private boolean _clampToGround = false;
     private Envelope _geomBounds;
 
     private final GLBatchLineString impl;
@@ -85,10 +86,6 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
         _subject = arrow;
         _arrowHead = Unsafe.allocateDirect(9, FloatBuffer.class);
         updateText(GLText.localize(arrow.getText()), arrow.getTextColor());
-        try {
-            _forceClamp = subject.getMetaBoolean("forceClampToGround", false);
-        } catch (ConcurrentModificationException ignored) {
-        }
         this.impl = new GLBatchLineString(surface);
         this.impl.setTesselationThreshold(threshold);
         this.ximpl = new GLBatchLineString(surface);
@@ -101,15 +98,15 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
     @Override
     public void startObserving() {
         super.startObserving();
-        try {
-            _forceClamp = subject.getMetaBoolean("forceClampToGround", false);
-        } catch (ConcurrentModificationException ignored) {
-        }
-        refreshStyle();
-        this.onPointsChanged(_subject);
         _subject.addOnStrokeColorChangedListener(this);
         _subject.addOnPointsChangedListener(this);
         _subject.addOnTextChangedListener(this);
+        _subject.addOnAltitudeModeChangedListener(this);
+        _subject.addOnStyleChangedListener(this);
+
+        refreshStyle();
+        this.onPointsChanged(_subject);
+        this.onAltitudeModeChanged(subject.getAltitudeMode());
     }
 
     @Override
@@ -119,33 +116,48 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
         _subject.removeOnStrokeColorChangedListener(this);
         _subject.removeOnPointsChangedListener(this);
         _subject.removeOnTextChangedListener(this);
+        _subject.removeOnAltitudeModeChangedListener(this);
+        _subject.removeOnStyleChangedListener(this);
+    }
+
+    private void safeRefreshStyle() {
+        if (context.isRenderThread())
+            refreshStyle();
+        else
+            context.queueEvent(new Runnable() {
+                public void run() {
+                    refreshStyle();
+                }
+            });
+
+    }
+    @Override
+    public void onStyleChanged(Shape shape) {
+        super.onStyleChanged(shape);
+        safeRefreshStyle();
     }
 
     @Override
     public void onStrokeColorChanged(Shape subject) {
         super.onStrokeColorChanged(subject);
-        if (context.isRenderThread())
-            refreshStyle();
-        else
-            context.queueEvent(new Runnable() {
-                public void run() {
-                    refreshStyle();
-                }
-            });
-
+        safeRefreshStyle();
     }
+
 
     @Override
     public void onStrokeWeightChanged(Shape subject) {
         super.onStrokeWeightChanged(subject);
-        if (context.isRenderThread())
-            refreshStyle();
-        else
-            context.queueEvent(new Runnable() {
-                public void run() {
-                    refreshStyle();
-                }
-            });
+        safeRefreshStyle();
+    }
+
+    @Override
+    public void onAltitudeModeChanged(Feature.AltitudeMode altitudeMode) {
+        ximpl.setAltitudeMode(altitudeMode);
+        impl.setAltitudeMode(altitudeMode);
+        if (_labelID != GLLabelManager.NO_ID) {
+            _labelManager.setAltitudeMode(_labelID, altitudeMode);
+        }
+        _clampToGround = altitudeMode.equals(Feature.AltitudeMode.ClampToGround);
 
     }
 
@@ -363,34 +375,8 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
         impl.setGeometry(ls);
         ximpl.setGeometry(ls);
 
-        // XXX - whether the R&B representation is slant or surface
-        //       should really be deferred to the user. Any attempt to
-        //       automatically determine which is appropriate is likely
-        //       to miss the mark in some user interactions
-        if (CLAMP_TO_GROUND_ENABLED) {
-            final double elANgle = Math
-                    .toDegrees(Math.atan2(maxEl - minEl, dist));
-            _clampToGround = (dist > minClampDistance) && // distance less than 4km
-                    elANgle < slantMinElAngle;
-        }
-
-        _clampToGround |= _forceClamp || _nadirClamp;
-
-        impl.setAltitudeMode(
-                _clampToGround ? Feature.AltitudeMode.ClampToGround
-                        : Feature.AltitudeMode.Absolute);
-        impl.setTessellationEnabled(_clampToGround);
-
-        ximpl.setAltitudeMode(
-                _clampToGround ? Feature.AltitudeMode.ClampToGround
-                        : Feature.AltitudeMode.Absolute);
-        ximpl.setTessellationEnabled(_clampToGround);
-
         if (_labelID != GLLabelManager.NO_ID) {
             _labelManager.setGeometry(_labelID, ls);
-            _labelManager.setAltitudeMode(_labelID,
-                    _clampToGround ? Feature.AltitudeMode.ClampToGround
-                            : Feature.AltitudeMode.Absolute);
         }
 
         _terrainVersion = ortho.getTerrainVersion();

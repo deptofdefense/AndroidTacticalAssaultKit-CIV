@@ -175,8 +175,8 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
     @Override
     public void onSharedPreferenceChanged(SharedPreferences p, String key) {
 
-        if (key == null) return;
-
+        if (key == null)
+            return;
 
         if (key.equals(PREF_SELECTED)) {
             String selected = p.getString(PREF_SELECTED, null);
@@ -203,8 +203,7 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
 
         if (onlyViewport) {
             validateNoSync();
-            ArrayList<LayerSelection> l = new ArrayList<>(_selections);
-            return l;
+            return new ArrayList<>(_selections);
 
         } else {
             return super.getAllSelectionsAt(point);
@@ -230,22 +229,20 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
 
             final GeoBounds bnds = _mapView.getBounds();
 
-            if (Double.isNaN(bnds.getNorth()) ||
-                    Double.isNaN(bnds.getWest()) ||
-                    Double.isNaN(bnds.getSouth()) ||
-                    Double.isNaN(bnds.getWest())) {
-                // if any of these values are NaN, do not constrain the query
+            if (!Double.isNaN(bnds.getNorth()) &&
+                    !Double.isNaN(bnds.getWest()) &&
+                    !Double.isNaN(bnds.getSouth()) &&
+                    !Double.isNaN(bnds.getWest())) {
+                        final GeoPoint upperLeft = new GeoPoint(bnds.getNorth(),
+                                bnds.getWest());
+                        final GeoPoint lowerRight = new GeoPoint(bnds.getSouth(),
+                                bnds.getEast());
 
-            } else {
-                final GeoPoint upperLeft = new GeoPoint(bnds.getNorth(),
-                        bnds.getWest());
-                final GeoPoint lowerRight = new GeoPoint(bnds.getSouth(),
-                        bnds.getEast());
+                        if (onlyViewport) {
+                            params.spatialFilter = new DatasetQueryParameters.RegionSpatialFilter(
+                                    upperLeft, lowerRight);
+                        }
 
-                if (onlyViewport) {
-                    params.spatialFilter = new RasterDataStore.DatasetQueryParameters.RegionSpatialFilter(
-                            upperLeft, lowerRight);
-                }
             }
 
         }
@@ -552,6 +549,9 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
                                 Integer minValue,
                                 Integer maxValue) {
 
+                            if (spec == null)
+                                return;
+
                             ResolutionLevelSpec res = resolutionLevel
                                     .get(spec.desc);
                             if (res == null) {
@@ -640,7 +640,7 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
             seekBar.setSelectedMaxValue(sliderMax);
 
             // update the resolution views to display the correct info for the current res levels
-            if (downloadable) {
+            if (downloadable && spec != null) {
                 h.dlSize.setText(getStringTileCount(getTileCount2(spec, minRes,
                         maxRes)));
                 setCurrentRes(h.resTxt, minRes, maxRes);

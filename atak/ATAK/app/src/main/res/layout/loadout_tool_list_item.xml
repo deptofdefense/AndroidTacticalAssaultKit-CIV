@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="54dp"
     android:orientation="vertical">
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="54dp"
+        android:layout_height="match_parent"
         android:paddingStart="@dimen/auto_margin"
         android:paddingEnd="@dimen/scroll_margin"
         android:background="@color/black"
@@ -48,6 +48,19 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
+        android:layout_alignParentBottom="true"
         android:background="@color/manatee"/>
 
-</LinearLayout>
+    <View
+        android:id="@+id/drag_border_bottom"
+        style="@style/NavButtonDragHighlight"
+        android:layout_width="match_parent"
+        android:layout_alignParentBottom="true"/>
+
+    <View
+        android:id="@+id/drag_border_top"
+        style="@style/NavButtonDragHighlight"
+        android:layout_width="match_parent"
+        android:layout_alignParentTop="true"/>
+
+</RelativeLayout>

@@ -24,6 +24,14 @@ public class BPHARectangleCreator {
 
     public static final String TYPE = "u-d-r";
 
+    /**
+     * Create a drawing rectangle from a point and a bpha
+     * @param point the point for the center
+     * @param bPHA the bpha definition as rows and columns
+     * @param mapView the mapview
+     * @param customTitle the title
+     * @return the drawing rectangle that represents the input
+     */
     public static DrawingRectangle drawRectangle(GeoPointMetaData point,
             BattlePositionHoldingArea bPHA, MapView mapView,
             String customTitle) {
@@ -147,6 +155,11 @@ public class BPHARectangleCreator {
         return prefix + " " + num;
     }
 
+    /**
+     * Returns the ma group for the bpha rectangles, mission and if not available
+     * it will put them in drawing.
+     * @return the map group to be used.
+     */
     public static MapGroup getGroup() {
         MapGroup group = null;
         MapView mv = MapView.getMapView();

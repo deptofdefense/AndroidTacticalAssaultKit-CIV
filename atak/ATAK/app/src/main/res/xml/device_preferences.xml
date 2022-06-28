@@ -78,21 +78,27 @@
             android:summary="@string/preferences_text97"
             android:inputType="textEmailAddress"
             android:key="saEmailAddress"/>
+        <com.atakmap.android.gui.PanEditTextPreference
+            android:icon="@drawable/urn"
+            android:title="@string/urn_title"
+            android:summary="@string/urn_summary"
+            android:inputType="number"
+            android:key="saURN"/>
     </PreferenceCategory>
 
     <PreferenceCategory
         android:title="@string/preferences_text98">
         <Preference android:title="@string/reportingPreferences"
-                    android:key="reportingSettings"
-                    android:summary="@string/preferences_text469"
-                    android:icon="@drawable/ic_self_pref"/>
+            android:key="reportingSettings"
+            android:summary="@string/preferences_text469"
+            android:icon="@drawable/ic_self_pref"/>
     </PreferenceCategory>
 
     <PreferenceCategory
-        android:title="Encryption Passphrase">
-        <Preference android:title="Change Encryption Passphrase"
+        android:title="@string/encryption_passphrase_title">
+        <Preference android:title="@string/change_encryption_title"
             android:icon="@drawable/passphrase"
-            android:summary="Allow for changes to the encryption passphrase protecting databases containing map items, location information and chat."
+            android:summary="@string/change_encryption_summary"
             android:key="encryptionPassphrase"/>
     </PreferenceCategory>
 

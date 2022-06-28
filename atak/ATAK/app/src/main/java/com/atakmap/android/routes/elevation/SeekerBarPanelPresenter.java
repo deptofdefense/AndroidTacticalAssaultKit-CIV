@@ -132,10 +132,15 @@ public class SeekerBarPanelPresenter implements View.OnClickListener {
                     value = feet;
                     valueSpan = Span.FOOT;
                 }
+                String text = _context.getString(R.string.gain);
+                if (value < 0) {
+                    text = _context.getString(R.string.loss_1);
+                }
+                value = Math.abs(value);
+
                 _seekerBarPanelView.getGainText()
-                        .setText(_context.getString(R.string.gain)
-                                + (value > 0 ? "+" : "")
-                                + SpanUtilities.format(value, valueSpan, 0));
+                        .setText(text + " " +
+                                SpanUtilities.format(value, valueSpan, 0));
             }
         });
     }

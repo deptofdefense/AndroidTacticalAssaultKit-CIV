@@ -3,7 +3,7 @@
 
 #include <util/NonCopyable.h>
 
-#include "core/AbstractLayer.h"
+#include "core/AbstractLayer2.h"
 #include "core/ServiceManagerBase2.h"
 #include "feature/FeatureDataStore2.h"
 #include "port/Platform.h"
@@ -12,7 +12,7 @@
 namespace TAK {
     namespace Engine {
         namespace Feature {
-            class FeatureLayer2 : public atakmap::core::AbstractLayer,
+            class FeatureLayer2 : public TAK::Engine::Core::AbstractLayer2,
                                   public TAK::Engine::Core::ServiceManagerBase2,
                                   TAK::Engine::Util::NonCopyable
             {

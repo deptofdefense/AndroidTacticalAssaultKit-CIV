@@ -5,21 +5,21 @@
         android:title="Elevation Data">
 
         <com.atakmap.android.gui.PanEditTextPreference
-            android:title="Elevation Server"
+            android:title="@string/elevation_server_title"
             android:key="prefs_dted_stream_server"
-            android:summary="The publicly facing elevation server to pull data from"
+            android:summary="@string/elevation_server_summary"
             android:defaultValue="tak.gov"
             android:inputType="textUri" />
 
         <com.atakmap.android.gui.PanPreference
-            android:title="Elevation Downloader"
+            android:title="@string/elevation_downloader"
             android:key="prefs_dted_download"
-            android:summary="Attempts to mass download elevation data for the entire world from the server and gives the user options for which hemisphere they are in." />
+            android:summary="@string/elevation_downloader_summary" />
 
         <CheckBoxPreference
-            android:title="Stream Elevation Data"
+            android:title="@string/stream_elevation_title"
             android:key="prefs_dted_stream"
-            android:summary="Stream elevation data when missing instead of downloading the entire world."
+            android:summary="@string/stream_elevation_summary"
             android:defaultValue="true" />
     </PreferenceCategory>
 

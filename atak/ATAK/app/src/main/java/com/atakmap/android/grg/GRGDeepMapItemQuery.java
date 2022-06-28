@@ -16,6 +16,7 @@ import com.atakmap.map.layer.raster.LocalRasterDataStore;
 import com.atakmap.map.layer.raster.RasterDataStore;
 import com.atakmap.map.layer.raster.RasterLayer2;
 import com.atakmap.map.hittest.HitTestQueryParameters;
+import com.atakmap.annotations.ModifierApi;
 
 import java.io.File;
 import java.util.Collection;
@@ -31,6 +32,7 @@ public class GRGDeepMapItemQuery extends FeatureDataStoreDeepMapItemQuery
     private final RasterLayer2 grgLayer;
     private final RasterDataStore grgDataStore;
 
+    @ModifierApi(since = "4.5", target="4.8", modifiers={})
     public GRGDeepMapItemQuery(FeatureLayer3 layer,
             AbstractDataStoreRasterLayer2 grgDataStore) {
         super(layer);
@@ -104,8 +106,9 @@ public class GRGDeepMapItemQuery extends FeatureDataStoreDeepMapItemQuery
     @Override
     public synchronized void onSharedPreferenceChanged(SharedPreferences prefs,
             String key) {
- 
-        if (key == null) return;
+
+        if (key == null)
+            return;
 
         if ("prefs_layer_grg_map_interaction".equals(key)) {
             this.hitTestEnabled = prefs.getBoolean(

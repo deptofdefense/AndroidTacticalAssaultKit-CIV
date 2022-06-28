@@ -1,13 +1,12 @@
 #ifndef TAK_ENGINE_FORMATS_OGR_OGRFEATUREDATASTORE_H_INCLUDED
 #define TAK_ENGINE_FORMATS_OGR_OGRFEATUREDATASTORE_H_INCLUDED
 
+#include <gdal.h>
+
 #include <cstdint>
 #include <list>
-#include <memory>
-
 #include <map>
-
-#include <gdal.h>
+#include <memory>
 
 #include "feature/AbstractDataSourceFeatureDataStore2.h"
 #include "port/Platform.h"
@@ -139,7 +138,7 @@ namespace TAK {
                     Thread::ThreadPtr refreshThread;
 
                     std::map<int64_t, std::shared_ptr<FeatureSetDefn>> fsidToFeatureDb;
-                    std::map<Port::String, std::shared_ptr<FeatureSetDefn>> fsNameToFeatureDb;
+                    std::map<std::string, std::shared_ptr<FeatureSetDefn>> fsNameToFeatureDb;
 
                     int refreshRequest;
 

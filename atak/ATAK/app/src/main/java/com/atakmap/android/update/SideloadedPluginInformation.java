@@ -29,8 +29,8 @@ public class SideloadedPluginInformation extends ProductInformation {
                 AppMgmtUtils
                         .getAppVersionCode(context, plugin.getPackageName()),
                 null, null,
-                AppMgmtUtils
-                        .getAppDescription(context, plugin.getPackageName()),
+                getString(AppMgmtUtils
+                        .getAppDescription(context, plugin.getPackageName())),
                 null, AppMgmtUtils.getTargetSdkVersion(
                         context, plugin.getPackageName()),
                 plugin.getPluginApi(), AppMgmtUtils.getAppVersionCode(context,
@@ -48,7 +48,9 @@ public class SideloadedPluginInformation extends ProductInformation {
                         .getAppVersionName(context, plugin.getPackageName()),
                 AppMgmtUtils
                         .getAppVersionCode(context, plugin.getPackageName()),
-                null, null, null, null, plugin.getOsRequirement(), plugin
+                plugin.getAppUri(), plugin.getIconUri(),
+                plugin.getDescription(),
+                plugin.getHash(), plugin.getOsRequirement(), plugin
                         .getTakRequirement(),
                 AppMgmtUtils
                         .getAppVersionCode(context, plugin.getPackageName()));

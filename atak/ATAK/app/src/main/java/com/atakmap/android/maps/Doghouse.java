@@ -401,7 +401,8 @@ public final class Doghouse extends Polyline implements
     @Override
     public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
         switch (key) {
             case DoghouseReceiver.STROKE_COLOR:
                 _strokeColor = prefs.getInt(key, _strokeColor);

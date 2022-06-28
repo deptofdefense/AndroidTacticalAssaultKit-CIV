@@ -66,7 +66,7 @@ namespace TAK {
                     GLSceneNode(TAK::Engine::Core::RenderContext &ctx, TAK::Engine::Model::SceneNodePtr &&subject, const TAK::Engine::Model::SceneInfo &info, const std::shared_ptr<MaterialManager> &matmgr) NOTHROWS;
                     GLSceneNode(TAK::Engine::Core::RenderContext &ctx, const std::shared_ptr<TAK::Engine::Model::SceneNode> &subject, const TAK::Engine::Model::SceneInfo &info, const std::shared_ptr<MaterialManager> &matmgr) NOTHROWS;
                 private :
-                    Util::TAKErr asyncLoad(LoadContext &ctx, bool *cancelToken) NOTHROWS;
+                    Util::TAKErr asyncLoad(LoadContext &ctx, const int srid, bool *cancelToken) NOTHROWS;
                     bool isLoaded(const Core::GLGlobeBase  &view) const NOTHROWS;
                     Util::TAKErr prepareLoadContext(LoadContext *ctx, const Core::GLGlobeBase &view) const NOTHROWS;
                     Util::TAKErr prepareLoadContext(LoadContext* ctx, const TAK::Engine::Core::MapSceneModel2& scene, double drawMapResolution) const NOTHROWS;

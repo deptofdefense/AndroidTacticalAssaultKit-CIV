@@ -701,6 +701,18 @@ TAKErr GLBatch::executeImpl_(ExecuteState_& execState, const Math::Matrix2& forw
             }
         }
 
+        if (!state.depth.enabled) {
+            state.depth.enabled = true;
+            glEnable(GL_DEPTH_TEST);
+        }
+        if (!state.depth.mask) {
+            state.depth.mask = GL_TRUE;
+            glDepthMask(state.depth.mask);
+        }
+        if (state.depth.func != GL_LEQUAL) {
+            state.depth.func = GL_LEQUAL;
+            glDepthFunc(state.depth.func);
+        }
         if (!state.blend.enabled) {
             state.blend.enabled = true;
             glEnable(GL_BLEND);
@@ -752,7 +764,7 @@ TAKErr GLBatch::executeImpl_(ExecuteState_& execState, const Math::Matrix2& forw
                         glUniform4f(state.shader->uColor, 1.0f, 1.0f, 1.0f, 1.0f);
 
                     if(state.shader->uPointSize != -1)
-                        glUniform1f(state.shader->uPointSize, 8.0f);
+                        glUniform1f(state.shader->uPointSize, TE_GL_DEFAULT_POINT_SIZE);
                 }
 
                 uint32_t set_flags = instr >> (OPERAND_SHIFT_ + 16);

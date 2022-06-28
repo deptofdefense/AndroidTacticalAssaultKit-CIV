@@ -1,6 +1,7 @@
 package com.atakmap.map.layer.model;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.map.layer.feature.AttributeSet;
 import com.atakmap.math.Matrix;
 import com.atakmap.math.PointD;
 
@@ -16,6 +17,10 @@ public class ModelInfo {
          * Altitude values are absolute, meters HAE
          */
         Absolute,
+        /**
+         * Altitude values are ignored, model is clamped to ground surface
+         */
+        ClampToGround,
     }
 
 
@@ -56,6 +61,8 @@ public class ModelInfo {
      */
     public Map<String, String> resourceMap = null;
 
+    public AttributeSet metadata = null;
+
     public ModelInfo() {
 
     }
@@ -79,5 +86,8 @@ public class ModelInfo {
         this.maxDisplayResolution = other.maxDisplayResolution;
         this.minDisplayResolution = other.minDisplayResolution;
         this.type = other.type;
+        if (other.metadata != null) {
+            this.metadata = new AttributeSet(other.metadata);
+        }
     }
 }

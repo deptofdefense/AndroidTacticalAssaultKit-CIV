@@ -11,6 +11,7 @@ import com.atakmap.android.dropdown.DropDownReceiver;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
+import com.atakmap.annotations.ModifierApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 
@@ -24,6 +25,8 @@ public class ImageMapReceiver extends DropDownReceiver implements
     // starts off with mgrs
     private Marker _item;
 
+
+    @ModifierApi(since = "4.5", target="4.8", modifiers={})
     public ImageMapReceiver(MapView mapView) {
         super(mapView);
     }

@@ -10,6 +10,7 @@ import com.atakmap.android.rubbersheet.data.RubberImageData;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.AtakMapView;
+import com.atakmap.map.CameraController;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -102,7 +103,7 @@ public class RubberImage extends AbstractSheet {
                     mv.inverse(left, bottom, AtakMapView.InverseMode.RayCast)
                             .get()
             };
-            mv.getMapController().rotateTo(mRot, false);
+            CameraController.Programmatic.rotateTo(mv.getRenderer3(), mRot, false);
         }
         return new RubberImage(data);
     }

@@ -73,12 +73,7 @@ class GLLayerOutlinesLayer extends
             final long fid0 = lhs.getId();
             final long fid1 = rhs.getId();
 
-            if (fid0 < fid1)
-                return -1;
-            else if (fid0 > fid1)
-                return 1;
-            else
-                return 0;
+            return Long.compare(fid0, fid1);
         }
     };
 

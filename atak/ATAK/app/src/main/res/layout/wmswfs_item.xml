@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:padding="@dimen/auto_space_big">
+
+
+    <CheckBox
+        android:id="@+id/selectCB"
+        android:layout_width="45dp"
+        android:layout_height="45dp" />
+
+    <TextView
+        android:id="@+id/result"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/auto_space_big"
+        android:text="@string/hashtag"
+        android:textColor="#FFF"
+        android:textStyle="bold"
+        android:textSize="@dimen/draper_large_font"/>
+
+</LinearLayout>

@@ -161,7 +161,7 @@ public class FreeLookMapComponent extends AbstractMapComponent implements
                 alt += height;
                 point.set(alt);
             } else if (item instanceof Shape)
-                point = ((Shape) item).findTouchPoint();
+                point = ((Shape) item).getClickPoint();
             if (point != null)
                 setPoint(point);
             _item.addOnGroupChangedListener(this);
@@ -307,8 +307,9 @@ public class FreeLookMapComponent extends AbstractMapComponent implements
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
- 
-        if (key == null) return;
+
+        if (key == null)
+            return;
 
         if (key.equals(CustomActionBarFragment.ACTIONBAR_BACKGROUND_COLOR_KEY))
             updateColors();

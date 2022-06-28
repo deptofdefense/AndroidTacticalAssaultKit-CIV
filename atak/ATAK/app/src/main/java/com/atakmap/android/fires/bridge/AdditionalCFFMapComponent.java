@@ -17,9 +17,15 @@ public abstract class AdditionalCFFMapComponent extends AbstractMapComponent {
         return impl;
     }
 
+    /**
+     * Used by the system plugin to register a concrete implementation of the
+     * call for fire capability.
+     * @param concreteImpl the concrete call for fire implementation
+     */
     public static void registerImplementation(
             AdditionalCFFMapComponent concreteImpl) {
-        impl = concreteImpl;
+        if (impl == null)
+            impl = concreteImpl;
     }
 
     /**

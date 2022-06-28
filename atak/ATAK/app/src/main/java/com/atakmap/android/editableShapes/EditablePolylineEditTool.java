@@ -230,7 +230,7 @@ public class EditablePolylineEditTool extends ButtonTool
                                 indexToMove = _poly.getMetaInteger(
                                         "hit_index", 0) + 1;
                                 startPoint = GeoPointMetaData
-                                        .wrap(_poly.findTouchPoint());
+                                        .wrap(_poly.getClickPoint());
                                 insertPoint = true;
                             } else
                                 return;

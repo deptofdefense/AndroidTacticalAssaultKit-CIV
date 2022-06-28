@@ -20,6 +20,7 @@ import android.view.ViewParent;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import com.atakmap.android.dropdown.DropDown;
@@ -27,6 +28,7 @@ import com.atakmap.android.dropdown.DropDownManager;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.navigation.views.NavView;
+import com.atakmap.android.navigation.views.buttons.NavButtonsVisibilityListener;
 import com.atakmap.android.toolbar.ToolbarBroadcastReceiver;
 import com.atakmap.android.tools.menu.ActionMenuData;
 import com.atakmap.android.tools.menu.AtakActionBarListData;
@@ -45,7 +47,8 @@ import java.util.Map;
 /**
  *
  */
-public class ActionBarReceiver extends BroadcastReceiver {
+public class ActionBarReceiver extends BroadcastReceiver implements
+        NavButtonsVisibilityListener {
 
     private static final String TAG = "ActionBarReceiver";
 
@@ -83,7 +86,6 @@ public class ActionBarReceiver extends BroadcastReceiver {
     private ActionBarView _activeToolView = null;
     private final LinearLayout toolbarDrawer;
     private final ViewGroup dropDownToolbar;
-    private final ViewGroup dropDown;
     private final View ddHandle;
     private RootLayoutWidget.OnLayoutChangedListener toolbarLayoutListener;
     private boolean overflowVisible;
@@ -98,20 +100,7 @@ public class ActionBarReceiver extends BroadcastReceiver {
         toolbarDrawer = mActivity.findViewById(R.id.toolbar_drawer);
 
         // Toolbar displayed above the right-side drop-down
-        dropDownToolbar = mActivity.findViewById(R.id.right_drop_down_toolbar);
-
-        // Track drop-down size changes and refresh
-        dropDown = mActivity.findViewById(R.id.right_drop_down_container);
-        dropDown.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
-            @Override
-            public void onLayoutChange(View view, int l, int t, int r, int b,
-                    int ol, int ot, int or, int ob) {
-                int width = r - l;
-                int oldWidth = or - ol;
-                if (width != oldWidth)
-                    refreshToolbar();
-            }
-        });
+        dropDownToolbar = mActivity.findViewById(R.id.embedded_toolbar);
 
         // Drop-down toolbar depends on overflow menu visibility
         DropDownManager.getInstance().addStateListener("overflow_menu",
@@ -138,6 +127,9 @@ public class ActionBarReceiver extends BroadcastReceiver {
 
         // Landscape drop-down handle
         ddHandle = mActivity.findViewById(R.id.sidepanehandle_background);
+
+        // Embedded toolbar tracks nav button visibility in certain situations
+        NavView.getInstance().addButtonVisibilityListener(this);
     }
 
     /**
@@ -328,11 +320,14 @@ public class ActionBarReceiver extends BroadcastReceiver {
             return;
         }
 
-        // If the toolbar is embedded, the right drop-down is visible, and it
-        // isn't the overflow menu, then embed the toolbar
-        if (_activeToolView.getEmbedState() == ActionBarView.EMBEDDED
-                && dropDown.getWidth() > 0
-                && dropDown.getVisibility() == View.VISIBLE) {
+        // The embedded toolbar is shown if:
+        // 1) The right-drop down is visible
+        // 2) The overflow menu is NOT visible
+        // 3) The top tool buttons ARE visible
+        boolean embedded = _activeToolView.getEmbedState() == ActionBarView.EMBEDDED;
+        boolean ddVisible = mv.getWidth() < NavView.getInstance().getWidth();
+        boolean buttonsVisible = NavView.getInstance().buttonsVisible();
+        if (embedded && ddVisible && buttonsVisible) {
             if (!overflowVisible)
                 refreshDropDownToolbar();
             else
@@ -356,6 +351,27 @@ public class ActionBarReceiver extends BroadcastReceiver {
     private void refreshDropDownToolbar() {
         toolbarDrawer.removeAllViews();
         addToolbarView(dropDownToolbar, _activeToolView);
+
+        RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams)
+                dropDownToolbar.getLayoutParams();
+
+        // Set the height of the toolbar to match the nav bar
+        float size = toolbarDrawer.getResources().getDimension(
+                R.dimen.nav_button_size);
+        lp.height = (int) (NavView.getInstance().getUserIconScale() * size);
+
+        // Align the embedded toolbar against the menu button or right side
+        // of the screen
+        boolean navRight = _prefs.getBoolean(
+                NavView.PREF_NAV_ORIENTATION_RIGHT, false);
+        if (navRight) {
+            lp.removeRule(RelativeLayout.ALIGN_PARENT_END);
+            lp.addRule(RelativeLayout.START_OF, R.id.tak_nav_menu_button);
+        } else {
+            lp.addRule(RelativeLayout.ALIGN_PARENT_END);
+            lp.removeRule(RelativeLayout.START_OF);
+        }
+        dropDownToolbar.setLayoutParams(lp);
     }
 
     /**
@@ -484,4 +500,9 @@ public class ActionBarReceiver extends BroadcastReceiver {
             setToolView(null);
         }
     };
+
+    @Override
+    public void onNavButtonsVisible(boolean visible) {
+        refreshToolbar();
+    }
 }

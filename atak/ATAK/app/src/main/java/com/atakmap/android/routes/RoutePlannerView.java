@@ -7,9 +7,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
-import android.graphics.drawable.ShapeDrawable;
-import android.graphics.drawable.shapes.RectShape;
-import android.graphics.drawable.shapes.Shape;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
@@ -39,6 +36,7 @@ import com.atakmap.android.dropdown.DropDown;
 import com.atakmap.android.dropdown.DropDownManager;
 import com.atakmap.android.dropdown.DropDownReceiver;
 import com.atakmap.android.editableShapes.EditablePolyline;
+import com.atakmap.android.gui.ColorButton;
 import com.atakmap.android.gui.ColorPalette;
 import com.atakmap.android.gui.ColorPalette.OnColorSelectedListener;
 import com.atakmap.android.gui.NonEmptyEditTextDialog;
@@ -129,7 +127,7 @@ public class RoutePlannerView extends LinearLayout implements
     // Children views
     private EditText _routeName;
     private ImageButton _routePlannerBtn, _editRoute;
-    protected ImageButton _colorButton;
+    protected ColorButton _colorButton;
     private ImageView _routeTypeIcon;
     private TextView _routeType;
     private TextView _distTotal, _elevTotal;
@@ -434,7 +432,8 @@ public class RoutePlannerView extends LinearLayout implements
     @Override
     public void onSharedPreferenceChanged(SharedPreferences p, String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         if (key.equals("rab_rng_units_pref"))
             _adapter.refresh();
@@ -639,7 +638,7 @@ public class RoutePlannerView extends LinearLayout implements
                         "android.resource://" + _context.getPackageName()
                                 + "/" + _route.getRouteMethod().iconId));
                 setupRoutePlannerButton(_routePlannerBtn);
-                updateColorButton();
+                _colorButton.setColor(_route.getColor());
                 _cps = _route.getContactPoints();
                 _adapter.refresh();
 
@@ -691,18 +690,6 @@ public class RoutePlannerView extends LinearLayout implements
                 && !FileSystemUtils.isEquals(_route.getTitle(),
                         (name = _routeName.getText().toString().trim())))
             _route.setTitle(name);
-    }
-
-    private void updateColorButton() {
-        Shape rect = new RectShape();
-        rect.resize(50, 50);
-        ShapeDrawable color = new ShapeDrawable();
-        color.setBounds(0, 0, 50, 50);
-        color.setIntrinsicHeight(50);
-        color.setIntrinsicWidth(50);
-        color.getPaint().setColor(_route.getColor());
-        color.setShape(rect);
-        _colorButton.setImageDrawable(color);
     }
 
     private void listenForMapClick(View v) {

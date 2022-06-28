@@ -533,7 +533,7 @@ public class GLHeatMap extends GLAsynchronousMapRenderable<HeatMapParams>
 
             // Move heatmap/viewshed to proper unwrap
             if (view.crossesIDL) {
-                int hemi = view.drawLng < 0 ? GeoCalculations.HEMISPHERE_WEST
+                int hemi = view.currentPass.drawLng < 0 ? GeoCalculations.HEMISPHERE_WEST
                         : GeoCalculations.HEMISPHERE_EAST;
                 double unwrap = 0;
                 for (int i = 0; i < 4; i++) {
@@ -541,12 +541,12 @@ public class GLHeatMap extends GLAsynchronousMapRenderable<HeatMapParams>
                     int gHemi = GeoCalculations.getHemisphere(gp);
                     if (gHemi == GeoCalculations.HEMISPHERE_WEST
                             && hemi == GeoCalculations.HEMISPHERE_EAST
-                            && gp.getLongitude() < view.eastBound) {
+                            && gp.getLongitude() < view.currentPass.eastBound) {
                         unwrap = 360;
                         break;
                     } else if (gHemi == GeoCalculations.HEMISPHERE_EAST
                             && hemi == GeoCalculations.HEMISPHERE_WEST
-                            && gp.getLongitude() > view.westBound) {
+                            && gp.getLongitude() > view.currentPass.westBound) {
                         unwrap = -360;
                         break;
                     }

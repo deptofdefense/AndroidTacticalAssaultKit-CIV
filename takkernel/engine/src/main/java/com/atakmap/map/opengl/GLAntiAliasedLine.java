@@ -27,13 +27,16 @@ public class GLAntiAliasedLine {
     public enum ConnectionType {
         // Causes the last point to be connected to the first point
         FORCE_CLOSE,
-        // Draws the line as-is based on the given vertex data
+        // Draws the line as-is based on the given vertex data (line strip)
         AS_IS,
+        // Draws line segments instead of a line strip
+        SEGMENTS
     }
 
     /** source coordinates, LLA (longitude, latitude, altitude) */
     private DoubleBuffer _lineStrip;
     private Feature.AltitudeMode _altMode;
+    private ConnectionType _connType = ConnectionType.AS_IS;
     /** source coordinates, current map projection */
     private FloatBuffer _forwardSegmentVerts;
     private ByteBuffer _normals;
@@ -107,17 +110,18 @@ public class GLAntiAliasedLine {
      */
     public void setLineData(DoubleBuffer verts, int componentCount, ConnectionType type, Feature.AltitudeMode altMode) {
         _altMode = altMode;
+        _connType = type;
         _crossesIDL = false;
         _primaryHemi = 0;
 
         int capacity = verts.limit(); // > 0 ? verts.limit() : verts.capacity();
-        if (capacity <= 3) {
+        if (capacity <= 3)
             return;
-        }
+
         int numPoints = capacity / componentCount;
-        if (type == ConnectionType.FORCE_CLOSE) {
+        if (type == ConnectionType.FORCE_CLOSE)
             numPoints++;
-        }
+
         // capture surface MBB
         double minX = verts.get(0);
         double minY = verts.get(1);
@@ -327,6 +331,10 @@ public class GLAntiAliasedLine {
                 _forwardSegmentVerts.put(ax); _forwardSegmentVerts.put(ay); _forwardSegmentVerts.put(az);
                 _normals.put((byte)0x00); _normals.put((byte)0x00); // normal & direction
                 _normals.put((byte)0x00); _normals.put((byte)0xFF); // vertex select & origin select
+
+                // Skip to next segment
+                if (_connType == ConnectionType.SEGMENTS)
+                    i++;
             }
             // prepare the buffers for draw
             _forwardSegmentVerts.rewind();
@@ -451,18 +459,20 @@ public class GLAntiAliasedLine {
      * @param numPoints The number of source points.
      */
     private void _allocateBuffers(int numPoints) {
+        int segmentCount = _connType == ConnectionType.SEGMENTS
+                ? numPoints / 2 : numPoints - 1;
+
         // Vertex positions are 3 component, so make sure we allocate enough even if the data we're
         // given only has 2 components
-        int segmentCount = numPoints-1;
         int vertBufferCapacity = segmentCount * 3 * 12;
         int normalBufferCapacity = segmentCount * 4 * 12;
-        if (_lineStrip == null || _lineStrip.capacity() < (3*numPoints)) {
+        if (_lineStrip == null || _lineStrip.capacity() < (3 * numPoints)) {
             _freeBuffers();
-            _lineStrip = Unsafe.allocateDirect(3*numPoints, DoubleBuffer.class);
+            _lineStrip = Unsafe.allocateDirect(3 * numPoints, DoubleBuffer.class);
             _forwardSegmentVerts = Unsafe.allocateDirect(vertBufferCapacity, FloatBuffer.class);
             _normals = Unsafe.allocateDirect(normalBufferCapacity, ByteBuffer.class);
         }
-        _lineStrip.limit(3*numPoints);
+        _lineStrip.limit(3 * numPoints);
         _forwardSegmentVerts.limit(vertBufferCapacity);
         _normals.limit(normalBufferCapacity);
     }

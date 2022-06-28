@@ -36,8 +36,8 @@ public abstract class PluginPreferenceFragment extends AtakPreferenceFragment {
                 getResourceID());
 
         settingsView = createContextLocalPreferenceScreen(
-                getPreferenceManager(), getActivity(), settingsView,
-                pluginContext);
+                getPreferenceManager(), getActivity(), settingsView
+        );
 
         setPreferenceScreen(settingsView);
     }
@@ -53,8 +53,7 @@ public abstract class PluginPreferenceFragment extends AtakPreferenceFragment {
 
     static PreferenceScreen createContextLocalPreferenceScreen(
             final PreferenceManager prefMgr, final Context applicationContext,
-            final PreferenceScreen resCustomPreferenceScreen,
-            Context pluginContext) {
+            final PreferenceScreen resCustomPreferenceScreen) {
         final PreferenceScreen retval = prefMgr
                 .createPreferenceScreen(applicationContext);
 

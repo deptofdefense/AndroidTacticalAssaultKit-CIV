@@ -4,20 +4,22 @@ package com.atakmap.app.preferences;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 
+import com.atakmap.android.navigation.views.NavView;
 import com.atakmap.android.navigation.views.buttons.NavButtonDrawable;
+import com.atakmap.android.preference.AtakPreferences;
 import com.atakmap.android.preference.PreferenceSearchIndex;
 import com.atakmap.android.tools.ActionBarReceiver;
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.app.R;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -29,9 +31,10 @@ import java.util.List;
 public class ActionBarPreferences extends AtakPreferenceFragment implements
         SharedPreferences.OnSharedPreferenceChangeListener {
 
-    private SharedPreferences prefs;
+    private AtakPreferences prefs;
     private CustomActionBarFragment customActionBarFragment;
-    private final List<ImageButton> buttons = new ArrayList<>();
+    private LinearLayout buttonsLayout;
+    private final List<ImageView> buttons = new ArrayList<>();
 
     public static List<PreferenceSearchIndex> index(Context context) {
         return index(context,
@@ -52,16 +55,15 @@ public class ActionBarPreferences extends AtakPreferenceFragment implements
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Context context = getActivity();
-        prefs = PreferenceManager.getDefaultSharedPreferences(context
-                .getApplicationContext());
-        prefs.registerOnSharedPreferenceChangeListener(this);
+        prefs = new AtakPreferences(context.getApplicationContext());
+        prefs.registerListener(this);
 
         customActionBarFragment = new CustomActionBarFragment();
     }
 
     @Override
     public void onDestroy() {
-        prefs.unregisterOnSharedPreferenceChangeListener(this);
+        prefs.unregisterListener(this);
         super.onDestroy();
     }
 
@@ -90,16 +92,19 @@ public class ActionBarPreferences extends AtakPreferenceFragment implements
 
         //bind xml variables
         buttons.clear();
-        LinearLayout buttonLayout = view.findViewById(R.id.preview_buttons);
-        for (int i = 0; i < buttonLayout.getChildCount(); i++) {
-            View v = buttonLayout.getChildAt(i);
-            if (v instanceof ImageButton) {
-                ImageButton btn = (ImageButton) v;
+        buttonsLayout = view.findViewById(R.id.preview_buttons);
+        for (int i = 0; i < buttonsLayout.getChildCount(); i++) {
+            View v = buttonsLayout.getChildAt(i);
+            if (v instanceof ImageView) {
+                ImageView btn = (ImageView) v;
                 btn.setImageDrawable(new NavButtonDrawable(getActivity(),
                         btn.getDrawable()));
-                buttons.add((ImageButton) v);
+                buttons.add(btn);
             }
         }
+
+        if (prefs.get(NavView.PREF_NAV_ORIENTATION_RIGHT, false))
+            reverseButtons();
 
         applyNewBackground();
         applyNewIconColors();
@@ -107,7 +112,7 @@ public class ActionBarPreferences extends AtakPreferenceFragment implements
 
     public void applyNewIconColors() {
         int newColor = ActionBarReceiver.getUserIconColor();
-        for (ImageButton btn : buttons) {
+        for (ImageView btn : buttons) {
             NavButtonDrawable dr = (NavButtonDrawable) btn.getDrawable();
             dr.setColor(newColor);
         }
@@ -115,10 +120,20 @@ public class ActionBarPreferences extends AtakPreferenceFragment implements
 
     private void applyNewBackground() {
         int newColor = ActionBarReceiver.getInstance().getActionBarColor();
-        for (ImageButton btn : buttons) {
+        for (ImageView btn : buttons) {
             NavButtonDrawable dr = (NavButtonDrawable) btn.getDrawable();
             dr.setShadowColor(newColor);
         }
+    }
+
+    /**
+     * Reverse the display order of the buttons to signify toolbar side
+     */
+    private void reverseButtons() {
+        Collections.reverse(buttons);
+        buttonsLayout.removeAllViews();
+        for (ImageView btn : buttons)
+            buttonsLayout.addView(btn);
     }
 
     /**
@@ -135,13 +150,19 @@ public class ActionBarPreferences extends AtakPreferenceFragment implements
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
             String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
-        if (key.equals(CustomActionBarFragment.ACTIONBAR_ICON_COLOR_KEY)) {
-            applyNewIconColors();
-        } else if (key
-                .equals(CustomActionBarFragment.ACTIONBAR_BACKGROUND_COLOR_KEY)) {
-            applyNewBackground();
+        switch (key) {
+            case CustomActionBarFragment.ACTIONBAR_ICON_COLOR_KEY:
+                applyNewIconColors();
+                break;
+            case CustomActionBarFragment.ACTIONBAR_BACKGROUND_COLOR_KEY:
+                applyNewBackground();
+                break;
+            case NavView.PREF_NAV_ORIENTATION_RIGHT:
+                reverseButtons();
+                break;
         }
     }
 }

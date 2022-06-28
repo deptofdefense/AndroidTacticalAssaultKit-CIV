@@ -5,6 +5,7 @@
 
 #include "common.h"
 #include "interop/Pointer.h"
+#include "interop/java/JNIEnum.h"
 
 using namespace TAK::Engine::Feature;
 using namespace TAK::Engine::Util;
@@ -42,6 +43,13 @@ namespace
         jfieldID maxZ;
         jmethodID ctor__DDDDDD;
     } Envelope_class;
+
+    struct
+    {
+        jobject ClampToGround;
+        jobject Relative;
+        jobject Absolute;
+    } AltitudeMode_enum;
 
     TAKErr geometry_clone(Geometry2Ptr &value, const Geometry2 &geom) NOTHROWS;
     TAKErr style_clone(TAK::Engine::Feature::StylePtr &value, const Style &style) NOTHROWS;
@@ -123,9 +131,9 @@ jobject TAKEngineJNI::Interop::Feature::Interop_create(JNIEnv *env, const Style 
 jobject TAKEngineJNI::Interop::Feature::Interop_create(JNIEnv *env, const AttributeSet &cattr) NOTHROWS
 {
     jclass AttributeSet_class = ATAKMapEngineJNI_findClass(env, "com/atakmap/map/layer/feature/AttributeSet");
-    jmethodID AttributeSet_ctor = env->GetMethodID(AttributeSet_class, "<init>", "(Lcom/atakmap/interop/Pointer;)V");
+    jmethodID AttributeSet_ctor = env->GetMethodID(AttributeSet_class, "<init>", "(Lcom/atakmap/interop/Pointer;Ljava/lang/Object;)V");
     AttributeSetPtr retval(new AttributeSet(cattr), Memory_deleter_const<AttributeSet>);
-    return env->NewObject(AttributeSet_class, AttributeSet_ctor, NewPointer(env, std::move(retval)));
+    return env->NewObject(AttributeSet_class, AttributeSet_ctor, NewPointer(env, std::move(retval)), nullptr);
 }
 
 TAKErr TAKEngineJNI::Interop::Feature::Interop_copy(Envelope2 *value, JNIEnv *env, jobject jenvelope) NOTHROWS
@@ -171,6 +179,38 @@ TAK::Engine::Util::TAKErr TAKEngineJNI::Interop::Feature::Interop_marshal(Java::
         return TE_IllegalState;
 
     value = JNILocalRef(env, env.NewObject(Envelope_class.id, Envelope_class.ctor__DDDDDD, cenvelope.minX, cenvelope.minY, cenvelope.minZ, cenvelope.maxX, cenvelope.maxY, cenvelope.maxZ));
+    return TE_Ok;
+}
+
+TAK::Engine::Util::TAKErr TAKEngineJNI::Interop::Feature::Interop_marshal(JNILocalRef &maltMode, JNIEnv &env, const TAK::Engine::Feature::AltitudeMode &caltMode) NOTHROWS
+{
+    if(!checkInit(env))
+        return TE_IllegalState;
+    if(caltMode == TAK::Engine::Feature::AltitudeMode::TEAM_ClampToGround)
+        maltMode = JNILocalRef(env, AltitudeMode_enum.ClampToGround);
+    else if(caltMode == TAK::Engine::Feature::AltitudeMode::TEAM_Relative)
+        maltMode = JNILocalRef(env, AltitudeMode_enum.Relative);
+    else if(caltMode == TAK::Engine::Feature::AltitudeMode::TEAM_Absolute)
+        maltMode = JNILocalRef(env, AltitudeMode_enum.Absolute);
+    else
+        return TE_InvalidArg;
+    return TE_Ok;
+}
+
+TAK::Engine::Util::TAKErr TAKEngineJNI::Interop::Feature::Interop_marshal(TAK::Engine::Feature::AltitudeMode &caltMode, JNIEnv &env, jobject maltMode) NOTHROWS
+{
+    if(!checkInit(env))
+        return TE_IllegalState;
+    if(maltMode == nullptr)
+        return TE_InvalidArg;
+    else if(env.IsSameObject(maltMode, AltitudeMode_enum.ClampToGround))
+        caltMode = TAK::Engine::Feature::AltitudeMode::TEAM_ClampToGround;
+    else if(env.IsSameObject(maltMode, AltitudeMode_enum.Relative))
+        caltMode = TAK::Engine::Feature::AltitudeMode::TEAM_Relative;
+    else if(env.IsSameObject(maltMode, AltitudeMode_enum.Absolute))
+        caltMode = TAK::Engine::Feature::AltitudeMode::TEAM_Absolute;
+    else
+        return TE_InvalidArg;
     return TE_Ok;
 }
 
@@ -283,6 +323,20 @@ namespace
         Envelope_class.maxY = env.GetFieldID(Envelope_class.id, "maxY", "D");
         Envelope_class.maxZ = env.GetFieldID(Envelope_class.id, "maxZ", "D");
         Envelope_class.ctor__DDDDDD = env.GetMethodID(Envelope_class.id, "<init>", "(DDDDDD)V");
+
+        {
+            Java::JNILocalRef enumValue(env, nullptr);
+            const char enumClass[] = "com/atakmap/map/layer/feature/Feature$AltitudeMode";
+            if(Java::JNIEnum_value(enumValue, env, enumClass, "ClampToGround") != TE_Ok)
+                return false;
+            AltitudeMode_enum.ClampToGround = env.NewWeakGlobalRef(enumValue);
+            if(Java::JNIEnum_value(enumValue, env, enumClass, "Relative") != TE_Ok)
+                return false;
+            AltitudeMode_enum.Relative = env.NewWeakGlobalRef(enumValue);
+            if(Java::JNIEnum_value(enumValue, env, enumClass, "Absolute") != TE_Ok)
+                return false;
+            AltitudeMode_enum.Absolute = env.NewWeakGlobalRef(enumValue);
+        }
 
         return true;
     }

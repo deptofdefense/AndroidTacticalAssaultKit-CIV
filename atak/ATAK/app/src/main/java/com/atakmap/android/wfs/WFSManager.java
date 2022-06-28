@@ -350,6 +350,7 @@ public final class WFSManager implements MapOverlay2, DeepMapItemQuery {
                     src.dispose();
             }
             synchronized (this.itemMap) {
+                this.itemMap.clear();
                 this.itemMap.putAll(itemMap);
             }
 

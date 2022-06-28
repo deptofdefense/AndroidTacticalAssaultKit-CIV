@@ -133,7 +133,7 @@ public class GLMapTargetBubble implements OnLocationChangedListener,
     }
 
     protected final void queueEvent(Runnable r) {
-        this.renderCtx.equals(r);
+        this.renderCtx.queueEvent(r);
     }
 
     @Override

@@ -166,7 +166,8 @@ public class LayersMapComponent extends AbstractMapComponent
         public void onSharedPreferenceChanged(
                 SharedPreferences sharedPreferences, String key) {
 
-            if (key == null) return;
+            if (key == null)
+                return;
 
             if (key.equals("volumemapswitcher")) {
                 _volumeKeySwitcher.setEnabled(sharedPreferences.getBoolean(
@@ -590,15 +591,16 @@ public class LayersMapComponent extends AbstractMapComponent
                 return;
 
             this.rasterLayers.show(active);
-            if (!this.layerToAdapter.containsKey(this.rasterLayers.get()))
+            final LayerSelectionAdapter lsa =
+                    this.layerToAdapter.get(this.rasterLayers.get());
+
+            if (lsa == null)
                 return;
 
             if (layerName != null)
-                this.layerToAdapter.get(this.rasterLayers.get()).setSelected(
-                        layerName);
+                lsa.setSelected(layerName);
 
-            this.layerToAdapter.get(this.rasterLayers.get()).setLocked(
-                    !autoSelect);
+            lsa.setLocked(!autoSelect);
         } catch (Exception ex) {
             Log.e(TAG, "error: ", ex);
         }
@@ -612,8 +614,13 @@ public class LayersMapComponent extends AbstractMapComponent
                 SharedPreferences.Editor e = prefs.edit();
 
                 final String active = this.rasterLayers.get().getName();
-                final LayerSelection ls = this.layerToAdapter.get(
-                        this.rasterLayers.get()).getSelected();
+                LayerSelectionAdapter lsa = this.layerToAdapter.get(
+                        this.rasterLayers.get());
+
+                if (lsa == null)
+                    return;
+
+                final LayerSelection ls = lsa.getSelected();
 
                 if (ls == null)
                     e.putString("lastViewedLayer.name", null);
@@ -654,7 +661,8 @@ public class LayersMapComponent extends AbstractMapComponent
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
             String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         if (key.equals("pref_layer_outline_color")) {
             mobileOutlines.setOutlineColor(Color

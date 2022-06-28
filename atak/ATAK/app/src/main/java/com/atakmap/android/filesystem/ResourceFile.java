@@ -187,9 +187,9 @@ public class ResourceFile implements Parcelable {
     private final String mContentType;
 
     /**
-     * @param filePath
-     * @param mimeType
-     * @param contentType
+     * @param filePath the file path
+     * @param mimeType the mime type
+     * @param contentType the content type
      */
     public ResourceFile(String filePath, String mimeType, String contentType) {
         mFilePath = filePath;
@@ -197,6 +197,10 @@ public class ResourceFile implements Parcelable {
         mContentType = contentType;
     }
 
+    /**
+     * @param filePath the file path
+     * @param contentType the content type
+     */
     public ResourceFile(String filePath, String contentType) {
         mFilePath = filePath;
         mContentType = contentType;
@@ -204,18 +208,34 @@ public class ResourceFile implements Parcelable {
         mMimeType = mt != null ? mt.MIME : null;
     }
 
+    /**
+     * Is the resource file valid
+     * @return return true if the file path for the resource type is not empty.
+     */
     public boolean isValid() {
         return !FileSystemUtils.isEmpty(mFilePath);
     }
 
+    /**
+     * Returns the file path for the resource
+     * @return the file path
+     */
     public String getFilePath() {
         return mFilePath;
     }
 
+    /**
+     * Returns the mimetype for the resource
+     * @return the mimetype
+     */
     public String getMimeType() {
         return mMimeType;
     }
 
+    /**
+     * Returns the content type for the resource
+     * @return the content type
+     */
     public String getContentType() {
         return mContentType;
     }

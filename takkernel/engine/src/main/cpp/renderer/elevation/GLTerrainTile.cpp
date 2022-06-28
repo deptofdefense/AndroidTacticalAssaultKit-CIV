@@ -41,122 +41,28 @@ using namespace TAK::Engine::Util;
     "   return vec3(X, Y, Z);\n" \
     "}\n"
 #else
-#define LLA2ECEF_FN_SRC \
-    "const float radiusEquator = 6378137.0;\n" \
-    "const float radiusPolar = 6356752.3142;\n" \
-    "vec3 lla2ecef(in vec3 llh) {\n" \
-    "  float flattening = (radiusEquator - radiusPolar)/radiusEquator;\n" \
-    "   float eccentricitySquared = 2.0 * flattening - flattening * flattening;\n" \
-    "   float sin_latitude = sin(radians(llh.y));\n" \
-    "   float cos_latitude = cos(radians(llh.y));\n" \
-    "   float sin_longitude = sin(radians(llh.x));\n" \
-    "   float cos_longitude = cos(radians(llh.x));\n" \
-    "   float N = radiusEquator / sqrt(1.0 - eccentricitySquared * sin_latitude * sin_latitude);\n" \
-    "   float x = (N + llh.z) * cos_latitude * cos_longitude;\n" \
-    "   float y = (N + llh.z) * cos_latitude * sin_longitude; \n" \
-    "   float z = (N * (1.0 - eccentricitySquared) + llh.z) * sin_latitude;\n" \
-    "   return vec3(x, y, z);\n" \
-    "}\n"
+constexpr const char* LLA2ECEF_FN_SRC =
+#include "shaders/lla2ecef.frag"
+;
+
 #endif
 
-#define OFFSCREEN_ECEF_VERT_LO_SHADER_SRC \
-    TE_GLSL_VERSION_300_ES \
-    "uniform mat4 uMVP;\n" \
-    "uniform mat4 uLocalTransform[3];\n" \
-    "uniform mat4 uModelViewOffscreen;\n" \
-    "uniform mat4 uNormalMatrix;\n" \
-    "uniform float uTexWidth;\n" \
-    "uniform float uTexHeight;\n" \
-    "uniform float uElevationScale;\n" \
-    "in vec3 aVertexCoords;\n" \
-    "out vec2 vTexPos;\n" \
-    "in vec3 aNormals;\n" \
-    "out vec3 vNormal;\n" \
-    "out float vLumAdj;\n" \
-    "in float aNoDataFlag;\n" \
-    "out float vNoDataFlag;\n" \
-    LLA2ECEF_FN_SRC \
-    "void main() {\n" \
-    "  vec4 lla = uLocalTransform[0] * vec4(aVertexCoords, 1.0);\n" \
-    "  lla = lla / lla.w;\n" \
-    "  vec3 ecef = lla2ecef(vec3(lla.xy, lla.z*uElevationScale));\n" \
-    "  vec4 offscreenPos = uModelViewOffscreen * vec4(lla.xy, 0.0, 1.0);\n" \
-    "  offscreenPos.x = offscreenPos.x / offscreenPos.w;\n" \
-    "  offscreenPos.y = offscreenPos.y / offscreenPos.w;\n" \
-    "  offscreenPos.z = offscreenPos.z / offscreenPos.w;\n" \
-    "  vec4 texPos = vec4(offscreenPos.x / uTexWidth, offscreenPos.y / uTexHeight, 0.0, 1.0);\n" \
-    "  vNormal = aNormals; \n " \
-    "  vTexPos = texPos.xy;\n" \
-    "  vLumAdj = 0.0;\n" \
-    "  vNoDataFlag = aNoDataFlag;\n" \
-    "  gl_Position = uMVP * vec4(ecef.xyz, 1.0);\n" \
-    "}"
 
-#define OFFSCREEN_ECEF_VERT_MD_SHADER_SRC \
-    TE_GLSL_VERSION_300_ES \
-    "uniform mat4 uMVP;\n" \
-    "uniform mat4 uLocalTransform[3];\n" \
-    "uniform mat4 uModelViewOffscreen;\n" \
-    "uniform mat4 uNormalMatrix;\n" \
-    "uniform float uTexWidth;\n" \
-    "uniform float uTexHeight;\n" \
-    "uniform float uElevationScale;\n" \
-    "in vec3 aVertexCoords;\n" \
-    "out vec2 vTexPos;\n" \
-    "in vec3 aNormals;\n" \
-    "out vec3 vNormal;\n" \
-    "out float vLumAdj;\n" \
-    "in float aNoDataFlag;\n" \
-    "out float vNoDataFlag;\n" \
-    "void main() {\n" \
-    "  vec4 lla = uLocalTransform[0] * vec4(aVertexCoords.xyz, 1.0);\n" \
-    "  lla /= lla.w;\n" \
-    "  vec4 llaLocal = uLocalTransform[1] * lla;\n" \
-    "  vec4 lla2ecef_in = vec4(llaLocal.xy, llaLocal.x*llaLocal.y, 1.0);\n" \
-    "  lla2ecef_in /= lla2ecef_in.w;\n" \
-    "  vec4 ecefSurface = uLocalTransform[2] * lla2ecef_in;\n" \
-    "  ecefSurface /= ecefSurface.w;\n" \
-    "  vec3 ecef = vec3(ecefSurface.xy * (1.0 + llaLocal.z / 6378137.0), ecefSurface.z * (1.0 + llaLocal.z / 6356752.3142));\n" \
-    "  vec4 offscreenPos = uModelViewOffscreen * vec4(lla.xy, 0.0, 1.0);\n" \
-    "  offscreenPos.x = offscreenPos.x / offscreenPos.w;\n" \
-    "  offscreenPos.y = offscreenPos.y / offscreenPos.w;\n" \
-    "  offscreenPos.z = offscreenPos.z / offscreenPos.w;\n" \
-    "  vec4 texPos = vec4(offscreenPos.x / uTexWidth, offscreenPos.y / uTexHeight, 0.0, 1.0);\n" \
-    "  vTexPos = texPos.xy;\n" \
-    "  vNormal = aNormals; \n " \
-    "  vLumAdj = 0.0;\n" \
-    "  vNoDataFlag = aNoDataFlag;\n" \
-    "  gl_Position = uMVP * vec4(ecef.xyz, 1.0);\n" \
-    "}"
+constexpr const char* OFFSCREEN_ECEF_VERT_LO_SHADER_SRC_BASE =
+#include "shaders/TerrainTileECEFLo.vert"
+;
 
+const std::string OFFSCREEN_ECEF_VERT_LO_SHADER_SRC = std::string(TE_GLSL_VERSION_300_ES) + std::string(OFFSCREEN_ECEF_VERT_LO_SHADER_SRC_BASE) + LLA2ECEF_FN_SRC;
 
-#define OFFSCREEN_PLANAR_VERT_SHADER_SRC \
-    TE_GLSL_VERSION_300_ES \
-    "uniform mat4 uMVP;\n" \
-    "uniform mat4 uNormalMatrix;\n" \
-    "uniform mat4 uModelViewOffscreen;\n" \
-    "uniform float uTexWidth;\n" \
-    "uniform float uTexHeight;\n" \
-    "uniform float uElevationScale;\n" \
-    "in vec3 aVertexCoords;\n" \
-    "in vec3 aNormals;\n" \
-    "out vec3 vNormal;\n" \
-    "out vec2 vTexPos;\n" \
-    "out float vLumAdj;\n" \
-    "in float aNoDataFlag;\n" \
-    "out float vNoDataFlag;\n" \
-    "void main() {\n" \
-    "  vec4 offscreenPos = uModelViewOffscreen * vec4(aVertexCoords.xy, 0.0, 1.0);\n" \
-    "  offscreenPos.x = offscreenPos.x / offscreenPos.w;\n" \
-    "  offscreenPos.y = offscreenPos.y / offscreenPos.w;\n" \
-    "  offscreenPos.z = offscreenPos.z / offscreenPos.w;\n" \
-    "  vec4 texPos = vec4(offscreenPos.x / uTexWidth, offscreenPos.y / uTexHeight, 0.0, 1.0);\n" \
-    "  vTexPos = texPos.xy;\n" \
-    "  vNormal = aNormals; \n " \
-    "  vLumAdj = 0.0;\n" \
-    "  vNoDataFlag = aNoDataFlag;\n" \
-    "  gl_Position = uMVP * vec4(aVertexCoords.xy, aVertexCoords.z*uElevationScale, 1.0);\n" \
-    "}"
+constexpr const char* OFFSCREEN_ECEF_VERT_MD_SHADER_SRC_BASE =
+#include "shaders/TerrainTileECEFMd.vert"
+;
+const std::string OFFSCREEN_ECEF_VERT_MD_SHADER_SRC = std::string(TE_GLSL_VERSION_300_ES) + std::string(OFFSCREEN_ECEF_VERT_MD_SHADER_SRC_BASE) + LLA2ECEF_FN_SRC;
+
+constexpr const char* OFFSCREEN_ECEF_VERT_PLANAR_SHADER_SRC_BASE =
+#include "shaders/TerrainTilePlanar.vert"
+;
+const std::string OFFSCREEN_PLANAR_VERT_SHADER_SRC = std::string(TE_GLSL_VERSION_300_ES) + std::string(OFFSCREEN_ECEF_VERT_PLANAR_SHADER_SRC_BASE);
 
 
 #if 0
@@ -179,35 +85,16 @@ using namespace TAK::Engine::Util;
     "}"
 #else
 
-#define LIGHTING_EFFECT_SRC \
-    "  vec3 light_color = vec3(1.0, 1.0, 1.0);\n" \
-    "  float lum = 0.0;\n" \
-    "  for(int i = 0; i < 2; i++) {\n" \
-    "    lum = lum + max(dot(vNormal, uLightSourceNormal[i]), 0.0)*uLightSourceContribution[i];\n" \
-    "  }\n" \
-    "  lum =  min((uMinAmbientLight + (1.0-uMinAmbientLight)*(lum + vLumAdj)), 1.0);\n" \
-    "  color =  color *  vec4(lum*light_color, 1.0);\n"
+constexpr const char* LIGHTING_EFFECT_SRC =
+#include "shaders/ApplyLighting.frag"
+;
 
-#define COLOR_FRAG_SHADER_SRC(lightingEffectSrc, fogEffectSrc) \
-    TE_GLSL_VERSION_300_ES \
-    "precision mediump float;\n" \
-    "uniform sampler2D uTexture;\n" \
-    "uniform vec4 uColor;\n" \
-    "uniform float uMinAmbientLight;\n" \
-    "uniform float uLightSourceContribution[2];\n" \
-    "uniform vec3 uLightSourceNormal[2];\n" \
-    "out vec4 FragColor; \n " \
-    "in vec3 vNormal;\n" \
-    "in vec2 vTexPos;\n" \
-    "in float vLumAdj;\n" \
-    "void main(void) {\n" \
-    "  float min_clamp = step(0.0, vTexPos.x) * step(0.0, vTexPos.y);\n" \
-    "  float max_clamp = step(0.0, 1.0-vTexPos.x) * step(0.0, 1.0-vTexPos.y);\n" \
-    "  vec4 color = texture(uTexture, vTexPos)*uColor*vec4(1.0, 1.0, 1.0, min_clamp*max_clamp);\n" \
-    lightingEffectSrc \
-    fogEffectSrc \
-    "  FragColor = color;\n"\
-    "}"
+constexpr const char* LIGHTING_EFFECT_EMPTY = "vec4 ApplyLighting(vec4 color){return color;}";
+constexpr const char* COLOR_FRAG_SHADER_SRC_BASE =
+#include "shaders/Color.frag"
+;
+
+const std::string COLOR_FRAG_SHADER_SRC = std::string(TE_GLSL_VERSION_300_ES) + std::string(COLOR_FRAG_SHADER_SRC_BASE);
 
 #endif
 // depth shaders
@@ -238,64 +125,29 @@ using namespace TAK::Engine::Util;
 "}\n"
 #endif
 
-#define DEPTH_ECEF_VERT_LO_SHADER_SRC \
-    TE_GLSL_VERSION_300_ES \
-    "precision highp float;\n" \
-    "uniform mat4 uMVP;\n" \
-    "uniform mat4 uLocalTransform[3];\n" \
-    "uniform float uElevationScale;\n" \
-    "in vec3 aVertexCoords;\n" \
-    "out float vDepth;\n" \
-    LLA2ECEF_FN_SRC \
-    "void main() {\n" \
-    "  vec4 lla = uLocalTransform[0] * vec4(aVertexCoords, 1.0);\n" \
-    "  lla = lla / lla.w;\n" \
-    "  vec3 ecef = lla2ecef(vec3(lla.xy, lla.z*uElevationScale));\n" \
-    "  gl_Position = uMVP * vec4(ecef.xyz, 1.0);\n" \
-    "  vDepth = (gl_Position.z + 1.0) * 0.5;" \
-    "}"
+constexpr const char* DEPTH_ECEF_VERT_LO_SHADER_SRC_BASE =
+#include "shaders/TerrainTileDepthECEFLo.vert"
+;
 
-#define DEPTH_ECEF_VERT_MD_SHADER_SRC \
-    TE_GLSL_VERSION_300_ES \
-    "precision highp float;\n" \
-    "uniform mat4 uMVP;\n" \
-    "uniform mat4 uLocalTransform[3];\n" \
-    "uniform float uElevationScale;\n" \
-    "in vec3 aVertexCoords;\n" \
-    "out float vDepth;\n" \
-    "void main() {\n" \
-    "  vec4 lla = uLocalTransform[0] * vec4(aVertexCoords.xyz, 1.0);\n" \
-    "  lla /= lla.w;\n" \
-    "  vec4 llaLocal = uLocalTransform[1] * lla;\n" \
-    "  vec4 lla2ecef_in = vec4(llaLocal.xy, llaLocal.x*llaLocal.y, 1.0);\n" \
-    "  lla2ecef_in /= lla2ecef_in.w;\n" \
-    "  vec4 ecefSurface = uLocalTransform[2] * lla2ecef_in;\n" \
-    "  ecefSurface /= ecefSurface.w;\n" \
-    "  vec3 ecef = vec3(ecefSurface.xy * (1.0 + llaLocal.z / 6378137.0), ecefSurface.z * (1.0 + llaLocal.z / 6356752.3142));\n" \
-    "  gl_Position = uMVP * vec4(ecef.xyz, 1.0);\n" \
-    "  vDepth = (gl_Position.z + 1.0) * 0.5;" \
-    "}"
+const std::string DEPTH_ECEF_VERT_LO_SHADER_SRC = std::string(TE_GLSL_VERSION_300_ES) + std::string(DEPTH_ECEF_VERT_LO_SHADER_SRC_BASE) + std::string(LLA2ECEF_FN_SRC);
 
-#define DEPTH_PLANAR_VERT_SHADER_SRC \
-    TE_GLSL_VERSION_300_ES \
-    "precision highp float;\n" \
-    "uniform mat4 uMVP;\n" \
-    "uniform float uElevationScale;\n" \
-    "in vec3 aVertexCoords;\n" \
-    "out float vDepth;\n" \
-    "void main() {\n" \
-    "  gl_Position = uMVP * vec4(aVertexCoords.xy, aVertexCoords.z*uElevationScale, 1.0);\n" \
-    "  vDepth = (gl_Position.z + 1.0) * 0.5;" \
-    "}"
-#define DEPTH_FRAG_SHADER_SRC \
-    TE_GLSL_VERSION_300_ES \
-    "precision mediump float;\n" \
-    "in float vDepth;\n" \
-    "out vec4 vFragColor;\n" \
-    PACK_DEPTH_FN_SRC \
-    "void main(void) {\n" \
-    "  vFragColor = PackDepth(vDepth);\n" \
-    "}"
+constexpr const char* DEPTH_ECEF_VERT_MD_SHADER_SRC_BASE =
+#include "shaders/TerrainTileDepthECEFMd.vert"
+;
+
+const std::string DEPTH_ECEF_VERT_MD_SHADER_SRC = std::string(TE_GLSL_VERSION_300_ES) + std::string(DEPTH_ECEF_VERT_MD_SHADER_SRC_BASE) + std::string(LLA2ECEF_FN_SRC);
+
+constexpr const char* DEPTH_PLANAR_VERT_SHADER_SRC_BASE =
+#include "shaders/TerrainTileDepthPlanar.vert"
+;
+
+const std::string DEPTH_PLANAR_VERT_SHADER_SRC = std::string(TE_GLSL_VERSION_300_ES) + std::string(DEPTH_PLANAR_VERT_SHADER_SRC_BASE);
+
+constexpr const char* DEPTH_FRAG_SHADER_SRC_BASE =
+#include "shaders/Depth.frag"
+;
+
+const std::string DEPTH_FRAG_SHADER_SRC = std::string(TE_GLSL_VERSION_300_ES) + std::string(DEPTH_FRAG_SHADER_SRC_BASE);
 
 #define FLAT_MD_THRESHOLD 0.0
 #define FLAT_HI_THRESHOLD 0.0
@@ -606,16 +458,18 @@ TerrainTileShaders TAK::Engine::Renderer::Elevation::GLTerrainTile_getColorShade
     shaders.md.base.handle = GL_NONE;
     shaders.lo.base.handle = GL_NONE;
 
-    const char *fragShaderSrc = COLOR_FRAG_SHADER_SRC(,);
+    std::string fragShaderSrc = COLOR_FRAG_SHADER_SRC;
     if(options == TECSO_Lighting)
-        fragShaderSrc = COLOR_FRAG_SHADER_SRC(LIGHTING_EFFECT_SRC,);
+        fragShaderSrc += LIGHTING_EFFECT_SRC;
+    else
+        fragShaderSrc += LIGHTING_EFFECT_EMPTY;
 
     switch (srid) {
         case 4978 :
         {
             createTerrainTileShaders(&shaders,
-                OFFSCREEN_PLANAR_VERT_SHADER_SRC, OFFSCREEN_ECEF_VERT_MD_SHADER_SRC, OFFSCREEN_ECEF_VERT_LO_SHADER_SRC,
-                    fragShaderSrc);
+                OFFSCREEN_PLANAR_VERT_SHADER_SRC.c_str(), OFFSCREEN_ECEF_VERT_MD_SHADER_SRC.c_str(), OFFSCREEN_ECEF_VERT_LO_SHADER_SRC.c_str(),
+                    fragShaderSrc.c_str());
             shaders.hi_threshold = GLOBE_HI_THRESHOLD;
             shaders.md_threshold = GLOBE_MD_THRESHOLD;
             colorShaders[&ctx][key] = shaders;
@@ -624,8 +478,8 @@ TerrainTileShaders TAK::Engine::Renderer::Elevation::GLTerrainTile_getColorShade
         case 4326 :
         {
             createTerrainTileShaders(&shaders,
-                                   OFFSCREEN_PLANAR_VERT_SHADER_SRC, OFFSCREEN_PLANAR_VERT_SHADER_SRC, OFFSCREEN_PLANAR_VERT_SHADER_SRC,
-                                   fragShaderSrc);
+                                   OFFSCREEN_PLANAR_VERT_SHADER_SRC.c_str(), OFFSCREEN_PLANAR_VERT_SHADER_SRC.c_str(), OFFSCREEN_PLANAR_VERT_SHADER_SRC.c_str(),
+                                   fragShaderSrc.c_str());
             shaders.hi_threshold = FLAT_HI_THRESHOLD;
             shaders.md_threshold = FLAT_MD_THRESHOLD;
             colorShaders[&ctx][key] = shaders;
@@ -655,8 +509,8 @@ TerrainTileShaders TAK::Engine::Renderer::Elevation::GLTerrainTile_getDepthShade
         case 4978 :
         {
             createTerrainTileShaders(&shaders,
-                    DEPTH_ECEF_VERT_LO_SHADER_SRC, DEPTH_ECEF_VERT_MD_SHADER_SRC, DEPTH_PLANAR_VERT_SHADER_SRC,
-                    DEPTH_FRAG_SHADER_SRC);
+                    DEPTH_ECEF_VERT_LO_SHADER_SRC.c_str(), DEPTH_ECEF_VERT_MD_SHADER_SRC.c_str(), DEPTH_PLANAR_VERT_SHADER_SRC.c_str(),
+                    DEPTH_FRAG_SHADER_SRC.c_str());
 
             shaders.hi_threshold = GLOBE_HI_THRESHOLD;
             shaders.md_threshold = GLOBE_MD_THRESHOLD;
@@ -666,8 +520,8 @@ TerrainTileShaders TAK::Engine::Renderer::Elevation::GLTerrainTile_getDepthShade
         case 4326 :
         {
             createTerrainTileShaders(&shaders,
-                    DEPTH_PLANAR_VERT_SHADER_SRC, DEPTH_PLANAR_VERT_SHADER_SRC, DEPTH_PLANAR_VERT_SHADER_SRC,
-                    DEPTH_FRAG_SHADER_SRC);
+                    DEPTH_PLANAR_VERT_SHADER_SRC.c_str(), DEPTH_PLANAR_VERT_SHADER_SRC.c_str(), DEPTH_PLANAR_VERT_SHADER_SRC.c_str(),
+                    DEPTH_FRAG_SHADER_SRC.c_str());
             shaders.hi_threshold = FLAT_HI_THRESHOLD;
             shaders.md_threshold = FLAT_MD_THRESHOLD;
             depthShaders[&ctx][srid] = shaders;
@@ -1003,6 +857,7 @@ namespace
     {
         TAKErr code(TE_Ok);
         ShaderProgram program;
+
         code = GLSLUtil_createProgram(&program, vertShaderSrc, fragShaderSrc);
         TE_CHECKRETURN_CODE(code);
 

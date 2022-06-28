@@ -26,8 +26,8 @@ public class GLCompassRing extends GLPointMapItem2 {
         GLES20FixedPipeline.glPushMatrix();
 
         GLES20FixedPipeline.glTranslatef(posx, posy, posz);
-        GLES20FixedPipeline.glRotatef((float) ortho.drawRotation, 0f, 0f, 1f);
-        GLES20FixedPipeline.glRotatef((float) ortho.drawTilt, 1f, 0f, 0f);
+        GLES20FixedPipeline.glRotatef((float) ortho.currentPass.drawRotation, 0f, 0f, 1f);
+        GLES20FixedPipeline.glRotatef((float) ortho.currentPass.drawTilt, 1f, 0f, 0f);
 
         // Calculate the dimensions we'll use for the ring
         float height = (float) ortho.getTop() - (float) ortho.getBottom();

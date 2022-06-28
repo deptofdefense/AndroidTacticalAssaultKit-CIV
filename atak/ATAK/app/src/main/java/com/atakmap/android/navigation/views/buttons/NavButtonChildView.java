@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,8 +17,10 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
 import com.atakmap.android.ipc.AtakBroadcast;
+import com.atakmap.android.maps.MapView;
 import com.atakmap.android.navigation.models.NavButtonModel;
 import com.atakmap.android.navigation.views.NavView;
+import com.atakmap.android.preference.AtakPreferences;
 import com.atakmap.android.tools.ActionBarView;
 import com.atakmap.app.R;
 
@@ -30,13 +33,17 @@ public class NavButtonChildView extends LinearLayout {
             View.MeasureSpec.UNSPECIFIED);
     private static final int HANDLE_MARGIN = 3;
 
+    private final AtakPreferences _prefs;
     private LinearLayout _container;
+    private View _anchor;
     private ImageView _arrow;
     private ImageView _handle;
+    private boolean _horizontal = true;
 
     public NavButtonChildView(Context context) {
         super(context);
         setOrientation(VERTICAL);
+        _prefs = new AtakPreferences(context);
         _container = this;
     }
 
@@ -52,6 +59,18 @@ public class NavButtonChildView extends LinearLayout {
             layoutHorizontal(button, nav);
         else
             layoutVertical(button, nav);
+    }
+
+    /**
+     * Reposition the child view based on its existing anchor
+     */
+    public void reposition() {
+        if (_anchor != null) {
+            if (_horizontal)
+                positionHorizontal(_anchor);
+            else
+                configureForVerticalLayout(_anchor);
+        }
     }
 
     private void layoutHorizontal(View anchor, ActionBarView actionBarView) {
@@ -127,6 +146,8 @@ public class NavButtonChildView extends LinearLayout {
     }
 
     private void configureForVerticalLayout(View anchor) {
+        _anchor = anchor;
+        _horizontal = false;
         int bgColor = NavView.getInstance().getUserIconShadowColor();
         setBackground(colorDrawable(R.drawable.ic_nav_child_dropdown_vertical,
                 bgColor));
@@ -222,84 +243,152 @@ public class NavButtonChildView extends LinearLayout {
      * @param anchor Position anchor
      */
     private void positionHorizontal(View anchor) {
+        _anchor = anchor;
+        _horizontal = true;
         RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) this
                 .getLayoutParams();
 
-        // Put the view below the anchor
-        if (anchor.getParent() instanceof NavView) {
-            NavView navView = (NavView) anchor.getParent();
+        // Default margin
+        int margin = getResources().getDimensionPixelSize(R.dimen.auto_margin);
 
-            // If both views have the same RelativeLayout parent we can utilize
-            // layout rules
-            params.addRule(RelativeLayout.RIGHT_OF, anchor.getId());
-            params.addRule(RelativeLayout.ALIGN_TOP, anchor.getId());
-            params.setMargins(12, 12, 0, 0);
+        // Get the width of the map
+        final MapView mapView = MapView.getMapView();
+        final NavView nav = NavView.getInstance();
+        int mapWidth = mapView != null ? mapView.getWidth() : nav.getWidth();
 
-            if (navView.buttonsVisible())
-                params.addRule(RelativeLayout.ALIGN_TOP, anchor.getId());
-            else
-                params.addRule(RelativeLayout.ALIGN_TOP,
-                        RelativeLayout.ALIGN_PARENT_TOP);
+        // Current view settings
+        final boolean alignRight = _prefs.get(
+                NavView.PREF_NAV_ORIENTATION_RIGHT, false);
+        final boolean buttonsVisible = nav.buttonsVisible();
+        final View menuBtn = nav.findViewById(R.id.tak_nav_menu_button);
+        final View sideLayout = nav.findViewById(R.id.side_layout);
 
-        } else {
-            // Otherwise we need to get the screen position and offset accordingly
+        // Use the menu button as an anchor if the anchor isn't visible
+        if (anchor.getVisibility() != View.VISIBLE && menuBtn != null)
+            anchor = menuBtn;
+
+        // Get the screen position and offset accordingly
+        int anchorX = anchor.getLeft();
+        int anchorY = anchor.getTop();
+        int anchorWidth = anchor.getWidth();
+        int anchorHeight = anchor.getHeight();
+
+        // Need to get the absolute screen position if the view isn't part
+        // of the NavView
+        if (anchor.getParent() != nav) {
             int[] anchorPt = new int[2];
+            int[] navPt = new int[2];
             anchor.getLocationInWindow(anchorPt);
-            anchorPt[1] += anchor.getHeight() / 2;
+            nav.getLocationInWindow(navPt);
+            anchorX = anchorPt[0] - navPt[0];
+            anchorY = anchorPt[1] - navPt[1];
+        }
 
-            // If the anchor is a nav button then we have special behavior
-            if (anchor instanceof NavButton && _arrow != null) {
-                // Measure the toolbar and related views
-                this.measure(MEASURE, MEASURE);
-                _arrow.measure(MEASURE, MEASURE);
+        // Hide the arrow by default
+        if (_arrow != null)
+            _arrow.setVisibility(View.GONE);
 
-                int width = getMeasuredWidth();
-                int arrowWidth = _arrow.getMeasuredWidth();
+        // If the anchor is a nav button then we have special behavior
+        if (anchor instanceof NavButton && _arrow != null) {
 
-                if (_handle != null)
-                    _handle.measure(MEASURE, MEASURE);
+            // Measure the toolbar and related views
+            this.measure(MEASURE, MEASURE);
+            _arrow.measure(MEASURE, MEASURE);
+            int width = getMeasuredWidth();
+            int arrowWidth = _arrow.getMeasuredWidth();
 
-                int hWidth = _handle == null ? 0
-                        : _handle.getMeasuredWidth() + HANDLE_MARGIN;
+            // Offset position by anchor height
+            anchorY += anchorHeight;
 
-                // Get the position of the parent layout
-                int[] parentPt = new int[2];
-                ViewGroup parent = (ViewGroup) anchor.getParent();
-                parent.getLocationInWindow(parentPt);
+            // Measure the handle (if applicable)
+            if (_handle != null)
+                _handle.measure(MEASURE, MEASURE);
+            int hWidth = _handle == null ? 0
+                    : _handle.getMeasuredWidth() + HANDLE_MARGIN;
 
-                // Determine the position of the toolbar and the arrow
-                int left = parentPt[0];
-                int right = (left + width) - hWidth;
-                int arrowLeft = anchorPt[0]
-                        + (anchor.getWidth() - arrowWidth) / 2;
-                int arrowRight = arrowLeft + arrowWidth;
-
-                if (anchor.getVisibility() == View.VISIBLE) {
-                    // If the arrow is moved further to the right than the toolbar
-                    // then offset the toolbar enough so the arrow remains on top
-                    if (arrowRight > right)
-                        left += arrowRight - right;
-
-                    params.setMargins(left, anchorPt[1], 0, 0);
-                    // Put the arrow under the corresponding button
-                    LayoutParams llp = new LayoutParams(
-                            LayoutParams.WRAP_CONTENT,
-                            LayoutParams.WRAP_CONTENT);
-                    llp.setMargins(arrowLeft - left, 0, 0, 0);
-                    _arrow.setLayoutParams(llp);
-                    _arrow.setVisibility(View.VISIBLE);
-                } else {
-                    // toolbar hidden so stick to top
-                    _arrow.setVisibility(GONE);
-                    params.addRule(RelativeLayout.ALIGN_PARENT_TOP);
-                    left += left * .25;
-                    params.setMargins(left, 12, 0, 0);
-                }
-            } else {
-                // Default behavior
-                anchorPt[0] -= anchor.getWidth() / 2;
-                params.setMargins(anchorPt[0], anchorPt[1], 0, 0);
+            // Get the position of the menu button which is the main anchor
+            int left = 0;
+            if (menuBtn != null) {
+                left = menuBtn.getLeft();
+                if (alignRight)
+                    left = Math.min(left - width, mapWidth - (width + margin));
+                else
+                    left += menuBtn.getWidth();
             }
+
+            // Determine the position of the toolbar and the arrow
+            int right = (left + width) - hWidth;
+            int arrowLeft = anchorX + (anchor.getWidth() - arrowWidth) / 2;
+            int arrowRight = arrowLeft + arrowWidth;
+
+            // If the arrow is moved further to the right than the toolbar
+            // then offset the toolbar enough so the arrow remains on top
+            boolean arrowVisible = true;
+            if (!alignRight && arrowRight > right) {
+                // Make sure the toolbar isn't pushed off the screen
+                // If the arrow can't fit then just don't show it
+                int newLeft = left + (arrowRight - right);
+                if (newLeft + width > mapWidth)
+                    arrowVisible = false;
+                else
+                    left = newLeft;
+            } else if (alignRight && arrowLeft < left) {
+                // Make sure we're not intersecting the left-side buttons
+                if (arrowLeft < sideLayout.getRight()) {
+                    left = sideLayout.getRight() + margin;
+                    arrowVisible = false;
+                } else
+                    left = arrowLeft;
+            }
+
+            // Set the toolbar position
+            params.setMargins(left, anchorY, 0, 0);
+
+            // Set the arrow position
+            if (arrowVisible) {
+                // Put the arrow under the corresponding button
+                LayoutParams llp = new LayoutParams(
+                        LayoutParams.WRAP_CONTENT,
+                        LayoutParams.WRAP_CONTENT);
+                llp.setMargins(arrowLeft - left, 0, 0, 0);
+                _arrow.setLayoutParams(llp);
+                _arrow.setVisibility(View.VISIBLE);
+            }
+
+            // Update the rounded rectangle background so there's no gap
+            // between the arrow and the the rounded corner it's attached to
+            int bgColor = NavView.getInstance().getUserIconShadowColor();
+            int tlr = arrowVisible && arrowLeft < left + margin ? 0 : margin;
+            int trr = arrowVisible && arrowRight > right - margin ? 0 : margin;
+            GradientDrawable bg = new GradientDrawable();
+            bg.setShape(GradientDrawable.RECTANGLE);
+            bg.setColor((bgColor & 0xFFFFFF) | 0x80000000);
+            bg.setCornerRadii(new float[] {
+                    tlr, tlr,
+                    trr, trr,
+                    margin, margin,
+                    margin, margin
+            });
+            _container.setBackground(bg);
+
+        } else if (anchor == menuBtn) {
+            // Anchor is the overflow menu button
+            anchorY += margin;
+            if (buttonsVisible)
+                anchorY += anchorHeight;
+            if (alignRight) {
+                this.measure(MEASURE, MEASURE);
+                int right = Math.min(mapWidth, anchorX);
+                anchorX = right - (getMeasuredWidth() + margin);
+            } else
+                anchorX += anchorWidth + margin;
+            params.setMargins(anchorX, anchorY, 0, 0);
+        } else {
+            // Default behavior
+            if (anchorWidth > anchorHeight)
+                params.setMargins(anchorX, anchorY + anchorHeight + margin, 0, 0);
+            else
+                params.setMargins(anchorX + anchorWidth + margin, anchorY, 0, 0);
         }
         this.setLayoutParams(params);
     }

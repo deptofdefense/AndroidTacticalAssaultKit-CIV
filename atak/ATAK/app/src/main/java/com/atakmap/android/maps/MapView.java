@@ -339,7 +339,8 @@ public class MapView extends AtakMapView {
             public void onSharedPreferenceChanged(SharedPreferences sp,
                     String key) {
 
-                if (key == null) return;
+                if (key == null)
+                    return;
 
                 switch (key) {
                     case "pref_overlay_style_outline_color":
@@ -934,6 +935,24 @@ public class MapView extends AtakMapView {
     public boolean isPortrait() {
         return (((Activity) getContext())
                 .getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+    }
+
+    /**
+     * Run a task only if/when the map activity is active
+     * For more info see {@link MapActivity#executeOnActive(Runnable)}
+     * @param task Task to run
+     */
+    public void executeOnActive(Runnable task) {
+        ((MapActivity) getContext()).executeOnActive(task);
+    }
+
+    /**
+     * Post a task only if/when the map activity is active
+     * For more info see {@link MapActivity#postOnActive(Runnable)}
+     * @param task Task to run if the activity is active (ie onStart has been called).
+     */
+    public void postOnActive(Runnable task) {
+        ((MapActivity) getContext()).postOnActive(task);
     }
 
     /**************************************************************************/

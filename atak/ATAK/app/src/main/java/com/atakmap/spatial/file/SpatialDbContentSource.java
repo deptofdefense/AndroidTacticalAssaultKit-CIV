@@ -6,10 +6,12 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 
+import com.atakmap.android.data.URIContentHandler;
 import com.atakmap.android.data.URIContentManager;
 import com.atakmap.android.features.FeatureDataStoreDeepMapItemQuery;
 import com.atakmap.android.features.FeatureDataStoreMapOverlay;
 import com.atakmap.android.hierarchy.HierarchyListReceiver;
+import com.atakmap.android.hierarchy.action.Visibility;
 import com.atakmap.android.importexport.ImportExportMapComponent;
 import com.atakmap.android.importexport.ImportReceiver;
 import com.atakmap.android.importexport.Importer;
@@ -324,6 +326,8 @@ public abstract class SpatialDbContentSource implements Importer {
                 ImportReceiver.EXTRA_SHOW_NOTIFICATIONS);
         boolean zoomToFile = b != null && b.getBoolean(
                 ImportReceiver.EXTRA_ZOOM_TO_FILE);
+        boolean hideFile = b != null && b.getBoolean(
+                ImportReceiver.EXTRA_HIDE_FILE);
 
         Log.d(TAG, "importData: " + uri.getPath());
         File file;
@@ -379,6 +383,13 @@ public abstract class SpatialDbContentSource implements Importer {
             }
             if (success && zoomToFile)
                 AtakBroadcast.getInstance().sendBroadcast(i);
+        }
+
+        // Hide the file that was just imported, if applicable
+        if (success && hideFile) {
+            URIContentHandler h = contentResolver.getHandler(file);
+            if (h != null && h.isActionSupported(Visibility.class))
+                ((Visibility) h).setVisible(false);
         }
 
         // Remove existing files that failed to import from the content resolver

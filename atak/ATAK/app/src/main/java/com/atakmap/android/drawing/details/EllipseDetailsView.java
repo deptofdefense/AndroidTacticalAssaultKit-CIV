@@ -28,6 +28,7 @@ import com.atakmap.android.drawing.mapItems.DrawingEllipse;
 import com.atakmap.android.drawing.tools.DrawingEllipseEditTool;
 import com.atakmap.android.gui.CoordDialogView;
 import com.atakmap.android.gui.RangeAndBearingTableHandler;
+import com.atakmap.android.gui.ShapeColorButton;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
@@ -38,7 +39,6 @@ import com.atakmap.android.util.AttachmentManager;
 import com.atakmap.android.util.Circle;
 import com.atakmap.android.util.SimpleSeekBarChangeListener;
 import com.atakmap.app.R;
-import com.atakmap.coremap.conversions.Angle;
 import com.atakmap.coremap.conversions.AngleUtilities;
 import com.atakmap.coremap.conversions.Area;
 import com.atakmap.coremap.conversions.AreaUtilities;
@@ -172,7 +172,8 @@ public class EllipseDetailsView extends GenericDetailsView implements
         _remarksLayout = findViewById(R.id.remarksLayout);
         _noGps = findViewById(R.id.rabNoGps);
         rabtable = new RangeAndBearingTableHandler(this);
-        _colorButton = findViewById(R.id.colorButton);
+        ShapeColorButton colorBtn = findViewById(R.id.colorButton);
+        setupShapeColorButton(colorBtn, _ellipse);
         _centerButton = findViewById(R.id.centerButton);
         _lengthButton = findViewById(R.id.lengthButton);
         _widthButton = findViewById(R.id.widthButton);
@@ -215,16 +216,11 @@ public class EllipseDetailsView extends GenericDetailsView implements
                 new SimpleSeekBarChangeListener() {
                     @Override
                     public void onProgressChanged(SeekBar seekBar,
-                            int progress, boolean fromUser) {
+                            int alpha, boolean fromUser) {
                         if (!fromUser)
                             return;
-                        _alpha = seekBar.getProgress();
-                        int color = _ellipse.getFillColor();
-                        _ellipse.setFillColor(Color.argb(_alpha,
-                                Color.red(color),
-                                Color.green(color),
-                                Color.blue(color)));
-                        _drawPrefs.setFillAlpha(_alpha);
+                        _ellipse.setFillAlpha(alpha);
+                        _drawPrefs.setFillAlpha(alpha);
                     }
                 });
 
@@ -248,10 +244,7 @@ public class EllipseDetailsView extends GenericDetailsView implements
             }
         });
 
-        _alpha = _ellipse.getFillColor() >>> 24;
-        _transSeek.setProgress(_alpha);
-
-        _colorButton.setOnClickListener(this);
+        _transSeek.setProgress(Color.alpha(_ellipse.getFillColor()));
 
         _heightButton.setOnClickListener(this);
         _lengthButton.setOnClickListener(this);
@@ -296,10 +289,6 @@ public class EllipseDetailsView extends GenericDetailsView implements
         // End circle edit mode
         else if (id == R.id.endButton)
             endEditingMode();
-
-        // Edit circle color
-        else if (v == _colorButton)
-            promptColor(_ellipse.getStrokeColor());
 
         // Edit center
         else if (v == _centerButton)
@@ -367,9 +356,6 @@ public class EllipseDetailsView extends GenericDetailsView implements
             heightTxt = SpanUtilities.format(height, Span.METER, unit);
         _heightButton.setText(heightTxt);
 
-        // Color
-        _colorButton.setColorFilter(_ellipse.getStrokeColor());
-
         // Diameter
         _lengthButton.setText(SpanUtilities.formatType(
                 _unitPrefs.getRangeSystem(), _ellipse.getLength(),
@@ -395,17 +381,6 @@ public class EllipseDetailsView extends GenericDetailsView implements
                         false));
 
         _ellipse.refresh();
-    }
-
-    @Override
-    protected void _onColorSelected(int color, String label) {
-        int newColor = Color.argb(_alpha,
-                Color.red(color),
-                Color.green(color),
-                Color.blue(color));
-        _drawPrefs.setShapeColor(color);
-        _ellipse.setColor(newColor);
-        refresh();
     }
 
     /**

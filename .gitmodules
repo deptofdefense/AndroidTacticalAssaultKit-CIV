@@ -1,9 +1,0 @@
-[submodule "stl-soft"]
-	path = stl-soft
-	url = https://github.com/synesissoftware/STLSoft-1.9.git
-[submodule "khronos/OpenGL"]
-	path = khronos/OpenGL
-	url = https://github.com/KhronosGroup/OpenGL-Registry
-[submodule "khronos/EGL"]
-	path = khronos/EGL
-	url = https://github.com/KhronosGroup/EGL-Registry

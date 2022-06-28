@@ -49,7 +49,7 @@ class GRGDiscovery implements Runnable, LayerScanner.Callback {
     }
 
     public void cancel() {
-        LayerScanner cs = null;
+        LayerScanner cs;
         synchronized (this) {
             cs = currentScanner;
         }

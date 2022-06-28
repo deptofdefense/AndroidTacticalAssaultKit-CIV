@@ -4,6 +4,7 @@ package com.atakmap.android.drawing;
 import android.graphics.Color;
 
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.maps.Shape;
 import com.atakmap.android.preference.AtakPreferences;
 
 /**
@@ -14,6 +15,7 @@ public class DrawingPreferences extends AtakPreferences {
     public static final String SHAPE_COLOR = "shape_color";
     public static final String SHAPE_FILL_ALPHA = "shape_fill_alpha";
     public static final String STROKE_WEIGHT = "strokeWeight";
+    public static final String STROKE_STYLE = "strokeStyle";
 
     public DrawingPreferences(MapView mapView) {
         super(mapView);
@@ -71,5 +73,21 @@ public class DrawingPreferences extends AtakPreferences {
      */
     public double getStrokeWeight() {
         return get(STROKE_WEIGHT, 4d);
+    }
+
+    /**
+     * Set the default shape line style
+     * @param lineStyle Line style (see {@link Shape#setStrokeStyle(int)})
+     */
+    public void setStrokeStyle(int lineStyle) {
+        set(STROKE_STYLE, lineStyle);
+    }
+
+    /**
+     * Get the default stroke style
+     * @return Stroke style (see {@link Shape#getStrokeStyle()})
+     */
+    public int getStrokeStyle() {
+        return get(STROKE_STYLE, Shape.BASIC_LINE_STYLE_SOLID);
     }
 }

@@ -13,6 +13,7 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.renderscript.Allocation;
 import android.renderscript.Element;
 import android.renderscript.RenderScript;
@@ -21,6 +22,10 @@ import android.renderscript.Type;
 import android.view.View;
 
 import com.atakmap.android.navigation.views.buttons.NavButtonDrawable;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -33,6 +38,19 @@ import androidx.annotation.Nullable;
  * view. Padding may be necessary to prevent the shadow from being cut off.
  */
 public class ShadowDrawable extends Drawable {
+
+    // Set of device models that do not properly support or perform well with
+    // the RenderScript API
+    private static final Set<String> NOT_SUPPORTED = new HashSet<>(
+            Collections.singletonList("SM-T330NU")); // Samsung Tab 4
+
+    /**
+     * Check if RenderScript is supported on this device
+     * @return True if supported
+     */
+    public static boolean isSupported() {
+        return !NOT_SUPPORTED.contains(Build.MODEL);
+    }
 
     // The scratch bitmap size for the shadow
     // This is used to ensure we get a shadow blur that is consistent between
@@ -51,18 +69,29 @@ public class ShadowDrawable extends Drawable {
     private Bitmap _viewBmp, _shadowBmp;
     private Canvas _viewCanvas, _shadowCanvas;
     private ColorFilter _shadowFilter;
-    private int _shadowRadius;
+    private int _shadowRadius = 16;
     private int _color;
     private int _alpha;
 
     public ShadowDrawable(Context appContext, @NonNull View view) {
         _view = view;
         _paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
-        _rs = RenderScript.create(appContext);
-        _blur = ScriptIntrinsicBlur.create(_rs, Element.U8_4(_rs));
         _shadowFilter = new PorterDuffColorFilter(Color.BLACK,
                 PorterDuff.Mode.SRC_ATOP);
-        _blur.setRadius(_shadowRadius = 16);
+
+        RenderScript rs = null;
+        ScriptIntrinsicBlur blur = null;
+        if (isSupported()) {
+            try {
+                rs = RenderScript.create(appContext);
+                blur = ScriptIntrinsicBlur.create(rs, Element.U8_4(rs));
+                blur.setRadius(_shadowRadius);
+            } catch (Exception ignored) {
+                // Render script not supported
+            }
+        }
+        _rs = rs;
+        _blur = blur;
     }
 
     /**
@@ -86,12 +115,16 @@ public class ShadowDrawable extends Drawable {
         int vWidth = _view.getWidth();
         int vHeight = _view.getHeight();
 
+        float scale;
         double ar = (double) width / height;
         int sWidth = SHADOW_BMP_SIZE, sHeight = SHADOW_BMP_SIZE;
-        if (ar > 1)
+        if (ar > 1) {
             sWidth *= ar;
-        else
+            scale = (float) width / sWidth;
+        } else {
             sHeight /= ar;
+            scale = (float) height / sHeight;
+        }
 
         if (boundsChanged(_viewBmp, vWidth, vHeight)) {
             _viewBmp = Bitmap.createBitmap(vWidth, vHeight, Config.ARGB_8888);
@@ -103,13 +136,15 @@ public class ShadowDrawable extends Drawable {
             _shadowBmp = Bitmap.createBitmap(sWidth, sHeight, Config.ARGB_8888);
             _shadowCanvas = new Canvas(_shadowBmp);
             _shadowRect.set(0, 0, sWidth, sHeight);
-            Type type = new Type.Builder(_rs, Element.RGBA_8888(_rs))
-                    .setX(sWidth).setY(sHeight).setMipmaps(false).create();
-            _inBuffer = Allocation.createTyped(_rs, type);
-            _outBuffer = Allocation.createTyped(_rs, type);
+            if (_rs != null) {
+                Type type = new Type.Builder(_rs, Element.RGBA_8888(_rs))
+                        .setX(sWidth).setY(sHeight).setMipmaps(false).create();
+                _inBuffer = Allocation.createTyped(_rs, type);
+                _outBuffer = Allocation.createTyped(_rs, type);
+            }
         }
 
-        int sRad = _shadowRadius / 2;
+        int sRad = _blur != null ? _shadowRadius / 2 : 0;
         _shadowRect.offset(0, sRad);
 
         // Draw the view to the view canvas
@@ -120,21 +155,34 @@ public class ShadowDrawable extends Drawable {
         _paint.setColorFilter(_shadowFilter);
         _shadowCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
         _shadowCanvas.drawBitmap(_viewBmp, _viewRect, _shadowRect, _paint);
-
-        // Copy pixels from enlarged view bitmap
-        _inBuffer.copyFrom(_shadowBmp);
-
-        // Blur the bitmap
-        _blur.setInput(_inBuffer);
-        _blur.forEach(_outBuffer);
-
-        // Copy out to the shadow bitmap
-        _outBuffer.copyTo(_shadowBmp);
-
-        // Draw to the output canvas
         _shadowRect.offset(0, -sRad);
-        for (int i = 0; i < 2; i++)
-            canvas.drawBitmap(_shadowBmp, _shadowRect, bounds, _paint);
+
+        if (_blur != null) {
+            // Copy pixels from enlarged view bitmap
+            _inBuffer.copyFrom(_shadowBmp);
+
+            // Blur the bitmap
+            _blur.setInput(_inBuffer);
+            _blur.forEach(_outBuffer);
+
+            // Copy out to the shadow bitmap
+            _outBuffer.copyTo(_shadowBmp);
+
+            // Draw to the output canvas
+            for (int i = 0; i < 2; i++)
+                canvas.drawBitmap(_shadowBmp, _shadowRect, bounds, _paint);
+        } else {
+            // Shadow not supported - Draw a stroke instead
+            float strokeWidth = 2 * scale;
+            for (int x = -1; x <= 1; x++) {
+                for (int y = -1; y <= 1; y++) {
+                    int save = canvas.save();
+                    canvas.translate(x * strokeWidth, y * strokeWidth);
+                    canvas.drawBitmap(_shadowBmp, _shadowRect, bounds, _paint);
+                    canvas.restoreToCount(save);
+                }
+            }
+        }
     }
 
     @Override

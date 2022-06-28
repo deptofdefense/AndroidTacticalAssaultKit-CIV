@@ -4,7 +4,6 @@ package com.atakmap.android.layers.kmz;
 import android.content.res.XmlResourceParser;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Xml;
 
 import com.atakmap.android.filesystem.ResourceFile;
 import com.atakmap.android.gdal.layers.KmzLayerInfoSpi;
@@ -16,6 +15,7 @@ import com.atakmap.comms.CommsMapComponent.ImportResult;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.coremap.xml.XMLUtils;
 import com.atakmap.io.ZipVirtualFile;
 import com.atakmap.spatial.file.KmlFileSpatialDb;
 import com.atakmap.util.zip.IoUtils;
@@ -122,9 +122,7 @@ public class KMZPackageImporter implements Importer {
                 return types;
 
             inputStream = docFile.openStream();
-            parser = Xml.newPullParser();
-
-            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
+            parser = XMLUtils.getXmlPullParser();
             parser.setInput(inputStream, null);
 
             boolean inPlacemark = false;

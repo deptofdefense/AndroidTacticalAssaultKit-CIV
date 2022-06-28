@@ -87,7 +87,7 @@ public class FeatureCursorEncoder extends FeatureCursorWrapper {
             return null;
         SpatialCalculator calc = null;
         try {
-            calc = new SpatialCalculator(true);
+            calc = new SpatialCalculator.Builder().inMemory().build();
             return calc.getGeometryAsBlob(calc.createGeometry(geom));
         } finally {
             if (calc != null)
@@ -100,7 +100,7 @@ public class FeatureCursorEncoder extends FeatureCursorWrapper {
             return null;
         SpatialCalculator calc = null;
         try {
-            calc = new SpatialCalculator(true);
+            calc = new SpatialCalculator.Builder().inMemory().build();
             return calc.getGeometryAsWkt(calc.createGeometry(geom));
         } finally {
             if (calc != null)

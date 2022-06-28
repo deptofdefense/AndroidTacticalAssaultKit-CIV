@@ -6,7 +6,7 @@ import org.w3c.dom.Node;
 public class ParseUtil {
 
     /**
-     * Walks throuh the nodes looking for a node of a specific name and type.
+     * Walks through the nodes looking for a node of a specific name and type.
      * @param node the Node to begin the search from.
      * @param type the type to search for
      * @param name the name to search for

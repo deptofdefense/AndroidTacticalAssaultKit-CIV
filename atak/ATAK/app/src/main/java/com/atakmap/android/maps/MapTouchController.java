@@ -1081,7 +1081,7 @@ public class MapTouchController implements OnTouchListener,
             for (int i = 0; i < tracks.size(); i++) {
                 MapItem item = tracks.get(i);
                 if (item instanceof Shape)
-                    touchPoints.put(i, ((Shape) item).findTouchPoint());
+                    touchPoints.put(i, ((Shape) item).getClickPoint());
             }
 
             final DeconflictionAdapter listAdapter = new DeconflictionAdapter(
@@ -1359,7 +1359,8 @@ public class MapTouchController implements OnTouchListener,
 
     public PointMapItem getFreeForm3DItem() {
         return FreeLookMapComponent.getInstance() != null
-                ? FreeLookMapComponent.getInstance().getItem() : null;
+                ? FreeLookMapComponent.getInstance().getItem()
+                : null;
     }
 
     public void setFreeForm3DPoint(GeoPoint point) {
@@ -1369,7 +1370,8 @@ public class MapTouchController implements OnTouchListener,
 
     public GeoPoint getFreeForm3DPoint() {
         return FreeLookMapComponent.getInstance() != null
-                ? FreeLookMapComponent.getInstance().getPoint() : null;
+                ? FreeLookMapComponent.getInstance().getPoint()
+                : null;
     }
 
     public boolean isFreeForm3DEnabled() {
@@ -1971,16 +1973,13 @@ public class MapTouchController implements OnTouchListener,
                 }
             } else if (action == MotionEvent.ACTION_UP
                     || action == MotionEvent.ACTION_CANCEL) {
-                if (!_inLongPressDrag) {
-                    _mapView.removeOnTouchListener(this);
-                    _mapView.addOnTouchListener(MapTouchController.this);
-                } else {
+                if (_inLongPressDrag) {
                     _inLongPressDrag = false;
                     onItemDragDropped(_downHitItem, event);
                     _onRelease(event);
-                    _mapView.removeOnTouchListener(this);
-                    _mapView.addOnTouchListener(MapTouchController.this);
                 }
+                _mapView.removeOnTouchListener(this);
+                _mapView.addOnTouchListener(MapTouchController.this);
             } else {
                 _mapView.removeOnTouchListener(this);
                 _mapView.addOnTouchListener(MapTouchController.this);

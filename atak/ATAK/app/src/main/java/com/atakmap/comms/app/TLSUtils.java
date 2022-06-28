@@ -28,7 +28,6 @@ import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
@@ -402,9 +401,8 @@ public class TLSUtils {
                             .getDefaultAlgorithm());
             trustManagerFactory.init(trustStore);
 
-            sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(null, trustManagerFactory.getTrustManagers(),
-                    new SecureRandom());
+            sslContext = CertificateManager.createSSLContext(
+                             trustManagerFactory.getTrustManagers());
         } finally {
             if (trustedIn != null)
                 trustedIn.close();

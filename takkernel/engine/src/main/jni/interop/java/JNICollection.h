@@ -22,6 +22,7 @@ namespace TAKEngineJNI {
             TAK::Engine::Util::TAKErr JNICollection_add(JNIEnv &env, jobject collection, jobject element) NOTHROWS;
             TAK::Engine::Util::TAKErr JNICollection_remove(JNIEnv &env, jobject collection, jobject element) NOTHROWS;
             TAK::Engine::Util::TAKErr JNICollection_clear(JNIEnv &env, jobject collection) NOTHROWS;
+            TAK::Engine::Util::TAKErr JNICollection_iterator(JNILocalRef &iterator, JNIEnv &env, jobject collection) NOTHROWS;
         }
     }
 }

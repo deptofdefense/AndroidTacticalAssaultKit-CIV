@@ -87,7 +87,8 @@ public class GridLinesMapComponent extends AbstractMapComponent implements
     public void onSharedPreferenceChanged(
             SharedPreferences sharedPreferences, String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         if (key.equals("pref_grid_color") || key.equals("pref_grid_type")) {
             _setPrefs(sharedPreferences);

@@ -243,21 +243,22 @@ OGRFeatureDataStore::FeatureSetDefn::FeatureSetDefn() :
     visible(true),
     lla2layer(nullptr),
     minResolution(NAN),
-    maxResolution(NAN)
+    maxResolution(NAN),
+    schema(nullptr)
 {}
 
 OGRFeatureDataStore::OGRFeatureDataStore(const char *uri_, const char *workingDir_, const bool asyncRefresh_) NOTHROWS :
     AbstractFeatureDataStore2(0, VISIBILITY_SETTINGS_FEATURESET),
     uri(uri_),
     workingDir(workingDir_),
+    openOptions(nullptr),
     refreshThread(nullptr, nullptr),
     refreshRequest(0),
     disposed(false),
     disposing(false),
     backgroundRefresh(asyncRefresh_),
     provider("ogr"),
-    type("ogr)"),
-    openOptions(nullptr)
+    type("ogr")
 {
     bool exists;
     IO_exists(&exists, workingDir);
@@ -280,15 +281,15 @@ OGRFeatureDataStore::OGRFeatureDataStore(const char *uri_, const char *workingDi
     AbstractFeatureDataStore2(0, VISIBILITY_SETTINGS_FEATURESET),
     uri(uri_),
     workingDir(workingDir_),
+    openOptions(nullptr),
     refreshThread(nullptr, nullptr),
     refreshRequest(0),
     disposed(false),
     disposing(false),
     backgroundRefresh(asyncRefresh_),
-    userSchema(std::move(schema_)),
     provider("ogr"),
     type("ogr"),
-    openOptions(nullptr)
+    userSchema(std::move(schema_))
 {
     bool exists;
     IO_exists(&exists, workingDir);
@@ -306,19 +307,20 @@ OGRFeatureDataStore::OGRFeatureDataStore(const char *uri_, const char *workingDi
     // the feature data from remote
     this->refresh();
 }
+
 OGRFeatureDataStore::OGRFeatureDataStore(const char* uri_, const char* driver_, const char** opts_, const std::shared_ptr<SchemaHandler> &schema_) NOTHROWS :
     AbstractFeatureDataStore2(0, VISIBILITY_SETTINGS_FEATURESET),
     uri(uri_),
     workingDir(uri_),
+    openOptions(nullptr),
     refreshThread(nullptr, nullptr),
     refreshRequest(0),
     disposed(false),
     disposing(false),
     backgroundRefresh(false),
-    userSchema(schema_),
     provider("ogr"),
     type("ogr"),
-    openOptions(nullptr)
+    userSchema(schema_)
 {
     if (driver_) {
         array_ptr<char> d(new char[strlen(driver_) + 1u]);
@@ -338,6 +340,7 @@ OGRFeatureDataStore::OGRFeatureDataStore(const char* uri_, const char* driver_, 
     // the feature data from remote
     this->refresh();
 }
+
 OGRFeatureDataStore::~OGRFeatureDataStore() NOTHROWS
 {
     this->close();
@@ -397,13 +400,11 @@ TAKErr OGRFeatureDataStore::ConfigureForQuery(OGRLayerH layer, const FeatureSetD
     {
         // XXX - check name
     }
-    if (params.spatialFilter.get())
-    {
+    if (params.spatialFilter.get()) {
         atakmap::feature::Envelope spatialFilter = params.spatialFilter->getEnvelope();
 
         // need to transform to source CS
-        if (defn.lla2layer.get())
-        {
+        if (defn.lla2layer.get()) {
             double minxminy[] = { spatialFilter.minX, spatialFilter.minY, 0 };
             OCTTransform(defn.lla2layer.get(), 1, minxminy + 0, minxminy + 1, minxminy + 2);
             double minxmaxy[] = { spatialFilter.minX, spatialFilter.maxY, 0 };
@@ -421,8 +422,7 @@ TAKErr OGRFeatureDataStore::ConfigureForQuery(OGRLayerH layer, const FeatureSetD
 
         OGR_L_SetSpatialFilterRect(layer, spatialFilter.minX, spatialFilter.minY, spatialFilter.maxX, spatialFilter.maxY);
     }
-    else
-    {
+    else {
         OGR_L_SetSpatialFilter(layer, nullptr);
     }
 
@@ -431,8 +431,7 @@ TAKErr OGRFeatureDataStore::ConfigureForQuery(OGRLayerH layer, const FeatureSetD
 
 TAKErr OGRFeatureDataStore::refreshImpl() NOTHROWS
 {
-    TAKErr code(TE_Ok);
-    
+    TAKErr code(TE_Ok);    
 
     // connect to WFS
     GDALDataset_unique_ptr wfs(nullptr, nullptr);
@@ -523,8 +522,9 @@ TAKErr OGRFeatureDataStore::refreshImpl() NOTHROWS
             defnPtr->type = type;
             defnPtr->schema = this->schema;
 
+            std::string name(defnPtr->displayName);
             this->fsidToFeatureDb[defnPtr->fsid] = defnPtr;
-            this->fsNameToFeatureDb[defnPtr->displayName] = defnPtr;
+            this->fsNameToFeatureDb[name] = defnPtr;
         }
 
         // XXX - if defs changed, clear connection pool
@@ -1247,7 +1247,7 @@ TAKErr OGRFeatureDataStore::setFeatureSetsReadOnlyImpl(const FeatureSetQueryPara
 TAKErr OGRFeatureDataStore::isFeatureSetReadOnly(bool *value, const int64_t fsid) NOTHROWS 
 {
     if (value) {
-        *value = false;
+        *value = true;
     }
     return Util::TE_Ok;
 }
@@ -1255,7 +1255,7 @@ TAKErr OGRFeatureDataStore::isFeatureSetReadOnly(bool *value, const int64_t fsid
 TAKErr OGRFeatureDataStore::isFeatureReadOnly(bool *value, const int64_t fid) NOTHROWS 
 {
     if (value) {
-        *value = false;
+        *value = true;
     }
     return Util::TE_Ok;
 }
@@ -1641,7 +1641,7 @@ TAKErr OGRFeatureDataStore::OgrLayerFeatureCursor::get(const Feature2 **feature)
         GeometryPtr_const geom(nullptr, nullptr);
         code = ogr2geom(geom, this->rowData->ogrFeature);
         TE_CHECKRETURN_CODE(code);
-
+        
         AltitudeMode altitudeMode = this->getAltitudeMode();
         double extrude = this->getExtrude();
 
@@ -1803,13 +1803,11 @@ TAKErr OGRFeatureDataStore::OgrLayerFeatureCursor::getVersion(int64_t *value) NO
     return TE_Ok;
 }
 
-TAKErr OGRFeatureDataStore::OgrLayerFeatureCursor::moveToNext() NOTHROWS
-{
+TAKErr OGRFeatureDataStore::OgrLayerFeatureCursor::moveToNext() NOTHROWS {
 #if 1
     this->rowData.reset();
     OGRFeatureH ogrFeature = OGR_L_GetNextFeature(this->layer);
-    if (!ogrFeature)
-        return TE_Done;
+    if (!ogrFeature) return TE_Done;
     this->rowData.reset(new OgrFeatureCursorRowData());
     this->rowData->ogrFeature = ogrFeature;
     return TE_Ok;
@@ -1817,7 +1815,6 @@ TAKErr OGRFeatureDataStore::OgrLayerFeatureCursor::moveToNext() NOTHROWS
     return TE_Done;
 #endif
 }
-
 
 namespace
 {

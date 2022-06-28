@@ -3,8 +3,8 @@
 using namespace TAK::Engine::Feature;
 
 FeatureLayer2::FeatureLayer2(const char* layerName, FeatureDataStore2Ptr &&dataStore_) NOTHROWS :
-    AbstractLayer(layerName),
-    ServiceManagerBase2(AbstractLayer::getMutex()),
+    AbstractLayer2(layerName),
+    ServiceManagerBase2(AbstractLayer2::mutex_),
     dataStore(std::move(dataStore_))
 {}
             

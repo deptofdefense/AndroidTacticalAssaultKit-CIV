@@ -29,11 +29,15 @@
             android:key="map_center_designator"
             android:icon="@drawable/ic_center_designator"/>
 
-        <CheckBoxPreference
-            android:title="@string/display_self_coord"
-            android:summary="@string/display_self_coord_summary"
-            android:defaultValue="true"
-            android:key="show_self_coordinate_overlay" />
+        <ListPreference
+            android:title="@string/pref_self_coord_info"
+            android:summary="@string/pref_self_coord_info_summary"
+            android:key="self_coord_info_display"
+            android:entries="@array/self_coord_display_names"
+            android:entryValues="@array/self_coord_display_values"
+            android:defaultValue="bottom_right"
+            android:icon="@drawable/ic_pref_self_coord_info"/>
+
     </PreferenceCategory>
 
 

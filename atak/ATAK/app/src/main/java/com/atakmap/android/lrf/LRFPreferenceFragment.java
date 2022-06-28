@@ -1,19 +1,15 @@
 
-package com.atakmap.android.cot;
+package com.atakmap.android.lrf;
 
 import android.content.Context;
 import android.os.Bundle;
 import android.preference.EditTextPreference;
 import android.preference.ListPreference;
-import android.preference.Preference;
-import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.PreferenceCategory;
 
-import com.atakmap.android.gui.PanEditTextPreference;
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.android.preference.PreferenceSearchIndex;
 import com.atakmap.app.R;
-import com.atakmap.app.preferences.DevicePreferenceFragment;
 
 public class LRFPreferenceFragment extends AtakPreferenceFragment {
     private PreferenceCategory networkCategory;

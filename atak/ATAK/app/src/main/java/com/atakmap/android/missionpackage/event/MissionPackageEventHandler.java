@@ -6,6 +6,7 @@ import android.util.Pair;
 import android.widget.Toast;
 
 import com.atakmap.android.importfiles.sort.ImportResolver;
+import com.atakmap.android.importfiles.sort.ImportResolver.SortFlags;
 import com.atakmap.android.missionpackage.file.MissionPackageContent;
 import com.atakmap.android.missionpackage.file.MissionPackageExtractor;
 import com.atakmap.android.missionpackage.file.MissionPackageFileIO;
@@ -23,7 +24,9 @@ import com.atakmap.util.zip.ZipFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Base handler for Mission Packages being processed
@@ -103,8 +106,17 @@ public class MissionPackageEventHandler implements IMissionPackageEventHandler {
         String contentType = content.getParameterValue(
                 MissionPackageContent.PARAMETER_CONTENT_TYPE);
 
+        // Whether this content is visible by default
+        boolean hidden = FileSystemUtils.isEquals(content.getParameterValue(
+                MissionPackageContent.PARAMETER_VISIBLE), "false");
+
+        // Sort flags
+        Set<SortFlags> flags = hidden
+                ? Collections.singleton(SortFlags.HIDE_FILE)
+                : Collections.emptySet();
+
         // attempt import using ImportManager
-        String filePath = importFile(toUnzip, contentType, sorters);
+        String filePath = importFile(toUnzip, contentType, flags, sorters);
         if (!FileSystemUtils.isEmpty(filePath)) {
             Log.d(TAG, "Imported Supported File: " + filePath);
         } else {
@@ -122,12 +134,14 @@ public class MissionPackageEventHandler implements IMissionPackageEventHandler {
     /**
      * This method based on ImportFileTask.sort()
      * 
-     * @param file
-     * @param sorters
-     * @return
+     * @param file File to import
+     * @param contentType File content type
+     * @param flags Sort flags
+     * @param sorters List of import resolvers to use
+     * @return File path or null if import failed
      */
-    private String importFile(final File file,
-            final String contentType, final List<ImportResolver> sorters) {
+    private String importFile(final File file, final String contentType,
+            final Set<SortFlags> flags, final List<ImportResolver> sorters) {
         if (!IOProviderFactory.exists(file)) {
             Log.w(TAG, "Import file not found: " + file.getAbsolutePath());
             return null;
@@ -162,7 +176,7 @@ public class MissionPackageEventHandler implements IMissionPackageEventHandler {
                 }
 
                 // now attempt to sort (i.e. move the file to proper location)
-                if (sorter.beginImport(file)) {
+                if (sorter.beginImport(file, flags)) {
                     Log.d(TAG,
                             sorter.toString() + ", Sorted: "
                                     + file.getAbsolutePath() + " to "

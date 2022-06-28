@@ -271,4 +271,9 @@
         <item>Constant (ارسل في فترات منتظمه)</item>
     </string-array>
 
+    <string-array name="self_coord_display_names">
+        <item>Bottom-Right Box</item>
+        <item>Bottom Bar</item>
+        <item>Do Not Display</item>
+    </string-array>
 </resources>

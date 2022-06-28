@@ -24,6 +24,11 @@ public abstract class CallForFireBroadcastReceiver extends DropDownReceiver
      * In the future we will be deprecating this feature in favor of using the contact list.
      */
     public interface ExternalFiveLineProcessor {
+        /**
+         * Called when a CoT event is formed and ready to be sent.
+         * @param ce the cot event
+         * @return true if the cot event is able to be processed.
+         */
         boolean processFiveLine(CotEvent ce);
     }
 

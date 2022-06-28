@@ -46,7 +46,9 @@ namespace TAK {
                 public: // GLDepthSamplerDrawable
                     virtual Util::TAKErr gatherDepthSamplerDrawables(std::vector<GLDepthSamplerDrawable*>& result, int levelDepth, const TAK::Engine::Core::MapSceneModel2& sceneModel, float x, float y) NOTHROWS;
                     virtual void depthSamplerDraw(GLDepthSampler& sampler, const TAK::Engine::Core::MapSceneModel2& sceneModel) NOTHROWS;
-                private :
+                private:
+                    bool isXRayCapable() NOTHROWS;
+                private:
                     static void *initializeThread(void *opaque);
                 private:
                     static Util::TAKErr depthTestTask(TAK::Engine::Core::GeoPoint2& value, GLScene* scene, const TAK::Engine::Core::MapSceneModel2& sceneModel, float x, float y) NOTHROWS;

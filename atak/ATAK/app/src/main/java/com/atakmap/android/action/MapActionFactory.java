@@ -45,7 +45,11 @@ public class MapActionFactory {
     }
 
     /**
-     * Given an uri create the appropriate MapAction to be performed.
+     * Given a uri, create the appropriate MapAction to be performed.
+     * A MapAction generally is defined series of broadcasts in a set statement.
+     * For a listing of the original MapActions please see assets/actions
+     * @param configUri the uri used
+     * @param config the configuration environment
      */
     public static MapAction createFromUri(final Uri configUri,
             final ConfigEnvironment config)
@@ -53,12 +57,26 @@ public class MapActionFactory {
         return _loader.loadFromConfigUri(configUri, config);
     }
 
+    /**
+     * Given a string resource, create the appropriate MapAction to be performed.
+     * A MapAction generally is defined series of broadcasts in a set statement.
+     * For a listing of the original MapActions please see assets/actions
+     * @param resource the string resource to be used
+     * @param config the configuration environment
+     */
     public static MapAction loadFromConfigResource(final String resource,
             final ConfigEnvironment config)
             throws ParserConfigurationException, SAXException, IOException {
         return _loader.loadFromConfigResource(resource, config);
     }
 
+    /**
+     * Given a npde element, create the appropriate MapAction to be performed.
+     * A MapAction generally is defined series of broadcasts in a set statement.
+     * For a listing of the original MapActions please see assets/actions
+     * @param elemNode the node element to be used
+     * @param config the configuration environment
+     */
     public static MapAction createFromElem(final Node elemNode,
             final ConfigEnvironment config) {
         return _loader.loadFromElem(elemNode, config);

@@ -174,24 +174,24 @@ class GLGridTile {
 
             // draw the labels
             if (MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SPRITES)
-                    && ortho.drawTilt < 40d) {
-                if (projSrid != ortho.drawSrid) {
-                    swp = ortho.scene.mapProjection.forward(sw, null);
-                    sep = ortho.scene.mapProjection.forward(se, null);
-                    nwp = ortho.scene.mapProjection.forward(nw, null);
+                    && ortho.currentPass.drawTilt < 40d) {
+                if (projSrid != ortho.currentPass.drawSrid) {
+                    swp = ortho.currentPass.scene.mapProjection.forward(sw, null);
+                    sep = ortho.currentPass.scene.mapProjection.forward(se, null);
+                    nwp = ortho.currentPass.scene.mapProjection.forward(nw, null);
                     projSrid = ortho.drawSrid;
                 }
-                if (lastDrawVersionM != ortho.drawVersion) {
-                    ortho.scene.forward.transform(swp, ortho.scratch.pointD);
+                if (lastDrawVersionM != ortho.currentPass.drawVersion) {
+                    ortho.currentPass.scene.forward.transform(swp, ortho.scratch.pointD);
                     swx = (float) ortho.scratch.pointD.x;
                     swy = (float) ortho.scratch.pointD.y;
-                    ortho.scene.forward.transform(sep, ortho.scratch.pointD);
+                    ortho.currentPass.scene.forward.transform(sep, ortho.scratch.pointD);
                     sex = (float) ortho.scratch.pointD.x;
                     sey = (float) ortho.scratch.pointD.y;
                     ortho.scene.forward.transform(nwp, ortho.scratch.pointD);
                     nwx = (float) ortho.scratch.pointD.x;
                     nwy = (float) ortho.scratch.pointD.y;
-                    lastDrawVersionM = ortho.drawVersion;
+                    lastDrawVersionM = ortho.currentPass.drawVersion;
                 }
 
                 final float l = ortho.currentScene.left;
@@ -326,14 +326,14 @@ class GLGridTile {
             if (lastRenderPump == renderPump) {
                 // iterate across all child tiles, dumping any that weren't
                 // touched during the current pump
-                for (int i = 0; i < _subs.length; i++) {
-                    if (_subs[i] == null)
+                for (GLGridTile[] sub : _subs) {
+                    if (sub == null)
                         continue;
-                    for (int j = 0; j < _subs[i].length; j++) {
-                        if (_subs[i][j] == null)
+                    for (int j = 0; j < sub.length; j++) {
+                        if (sub[j] == null)
                             continue;
-                        validSubs |= _subs[i][j].lastRenderPump == renderPump;
-                        _subs[i][j].dumpSubs(renderPump);
+                        validSubs |= sub[j].lastRenderPump == renderPump;
+                        sub[j].dumpSubs(renderPump);
                     }
                 }
             }

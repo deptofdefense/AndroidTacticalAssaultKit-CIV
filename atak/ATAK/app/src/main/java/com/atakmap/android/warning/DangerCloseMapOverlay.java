@@ -144,6 +144,11 @@ class DangerCloseMapOverlay extends AbstractMapOverlay2 {
         }
 
         @Override
+        public boolean isMultiSelectSupported() {
+            return false;
+        }
+
+        @Override
         protected void refreshImpl() {
             List<DangerCloseCalculator.DangerCloseAlert> alerts = DangerCloseMapOverlay.this._calculator
                     .getAlerts();

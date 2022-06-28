@@ -371,7 +371,7 @@ public class ModelMapComponent extends AbstractMapComponent {
         }, refreshRendererFilter);
 
         modelScanCancelToken = new AtomicBoolean(false);
-        this.scanForModels(modelDataStore, importer, contentResolver, reimport,
+        scanForModels(modelDataStore, importer, contentResolver, reimport,
                 modelScanCancelToken);
 
         view.addLayer(MapView.RenderStack.VECTOR_OVERLAYS, modelLayer);

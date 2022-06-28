@@ -56,8 +56,6 @@ public abstract class MapActivity extends MetricFragmentActivity {
             //Log.d(TAG, "error restoring activity", e);
         }
 
-        _isActive = false;
-
         final ContentResolverURIStreamHandler defaultHandler = new ContentResolverURIStreamHandler(
                 this.getContentResolver());
         URIStreamHandlerFactory.registerHandler("content", defaultHandler);
@@ -399,26 +397,49 @@ public abstract class MapActivity extends MetricFragmentActivity {
     public abstract MapView getMapView();
 
     /**
-     * Run only when the activity is started (active state) or enqueue it to be run when
-     * the activity is started.
-     * @param task the task to run if the activity is active (ie onStart has been called).
+     * Run a task only when the activity is started (active state) or enqueue
+     * it to be run when the activity is started.
+     * @param task Task to run if the activity is active (ie onStart has been called).
      */
     public void executeOnActive(Runnable task) {
+        executeOnActive(task, false);
+    }
+
+    /**
+     * Post a task only when the activity is started (active state) or enqueue
+     * it to be run when the activity is started.
+     * @param task Task to run if the activity is active (ie onStart has been called).
+     */
+    public void postOnActive(Runnable task) {
+        executeOnActive(task, true);
+    }
+
+    /**
+     * Run a task only when the activity is started (active state) or enqueue
+     * it to be run when the activity is started.
+     * @param task Task to run if the activity is active (ie onStart has been called).
+     * @param post True to post the task to the map view (executed next frame)
+     */
+    private void executeOnActive(final Runnable task, final boolean post) {
         synchronized (lifecycleTransitionLock) {
             if (_isActive) {
                 try {
-                    Log.d(TAG, "running a requested task immediately");
-                    task.run();
+                    final MapView mapView = getMapView();
+                    if (post && mapView != null) {
+                        Log.d(TAG, "Posting requested task");
+                        mapView.post(task);
+                    } else {
+                        Log.d(TAG, "Running requested task immediately");
+                        task.run();
+                    }
                 } catch (Exception e) {
-                    Log.e(TAG, "error running task: " + task);
+                    Log.e(TAG, "Error running task: " + task, e);
                 }
             } else {
                 Log.d(TAG,
-                        "request to run a task but the activity is not active");
+                        "Request to run a task but the activity is not active");
                 tasks.add(task);
             }
         }
-
     }
-
 }

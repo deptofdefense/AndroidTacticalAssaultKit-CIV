@@ -53,7 +53,8 @@ public class SpeedFormatter implements
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sp, String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         if (key.equals("speed_unit_pref")) {
             String type = sp.getString("speed_unit_pref", "0");

@@ -4,7 +4,6 @@ package com.atakmap.android.missionpackage.export;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.graphics.Typeface;
 import android.text.InputFilter;
 import android.text.InputType;
 import android.text.Spanned;
@@ -341,8 +340,7 @@ public class MissionPackageExportMarshal extends ExportMarshal {
                 Spanned dest, int dstart, int dend) {
             for (int k = start; k < end; k++) {
                 char c = source.charAt(k);
-                if (!Character.isLetterOrDigit(c) && !Character.isSpaceChar(c)
-                        && c != '_' && c != '-' && c != '.')
+                if (!FileSystemUtils.isAcceptableInFilename(c))
                     return "";
             }
             return null;

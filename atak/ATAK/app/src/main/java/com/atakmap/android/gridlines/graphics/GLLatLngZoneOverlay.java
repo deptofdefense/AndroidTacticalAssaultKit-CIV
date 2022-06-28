@@ -64,7 +64,7 @@ public class GLLatLngZoneOverlay extends GLZonesOverlay {
 
         double resolutionStep = calcStep(map);
         double lat = roundUp((int) south, (int) resolutionStep);
-        for (; lat <= north;) {
+        while (lat <= north) {
             if (lat >= south || lat <= north) {
                 if (MathUtils.hasBits(renderPass,
                         GLMapView.RENDER_PASS_SURFACE))

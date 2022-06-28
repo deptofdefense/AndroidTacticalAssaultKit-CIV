@@ -587,7 +587,7 @@ int MAG_robustReadMagneticModel_Large(char *filename, char *filenameSV, MAGtype_
 #ifdef __ANDROID__
 int MAG_robustReadMagModels(char *filename, MAGtype_MagneticModel *(*magneticmodels)[1], int array_size)
 #else
-int MAG_robustReadMagModels(char *filename, MAGtype_MagneticModel *(*magneticmodels)[], int array_size)
+int MAG_robustReadMagModels(char *filename, MAGtype_MagneticModel **(*magneticmodels), int array_size)
 #endif
 {
     char line[MAXLINELENGTH];
@@ -2114,7 +2114,7 @@ void MAG_PrintEMMFormat(char *filename, char *filenameSV, MAGtype_MagneticModel 
     return;
 } /*MAG_PrintEMMFormat*/
 #ifndef __ANDROID__
-void MAG_PrintSHDFFormat(char *filename, MAGtype_MagneticModel *(*MagneticModel)[], int epochs)
+void MAG_PrintSHDFFormat(char *filename, MAGtype_MagneticModel **(*MagneticModel), int epochs)
 {
     	int i, n, m, index, epochRange;
 	FILE *SHDF_file;
@@ -2312,7 +2312,7 @@ int MAG_readMagneticModel_Large(char *filename, char *filenameSV, MAGtype_Magnet
 #ifdef __ANDROID__
 int MAG_readMagneticModel_SHDF(char *filename, MAGtype_MagneticModel *(*magneticmodels)[1], int array_size)
 #else
-int MAG_readMagneticModel_SHDF(char *filename, MAGtype_MagneticModel *(*magneticmodels)[], int array_size)
+int MAG_readMagneticModel_SHDF(char *filename, MAGtype_MagneticModel **(*magneticmodels), int array_size)
 #endif
 /*
  * MAG_readMagneticModels - Read the Magnetic Models from an SHDF format file

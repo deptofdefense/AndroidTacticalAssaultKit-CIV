@@ -143,12 +143,16 @@ public class AppVersionUpgrade {
             if (fp != null)
                 fp.deployWMSPointers();
 
-            // ATAK-14138 - Default to OpenStreetMap
-            SharedPreferences.Editor e = prefs.edit();
-            e.putString("lastViewedLayer.active", "Mobile");
-            e.putString("MobileLayerSelectionAdapter.selected",
-                    "NRL-OpenStreetMap");
-            e.apply();
+
+            final String active = prefs.getString("lastViewedLayer.active", null);
+            if (active == null) {
+                // ATAK-14138 - Default to OpenStreetMap
+                SharedPreferences.Editor e = prefs.edit();
+                e.putString("lastViewedLayer.active", "Mobile");
+                e.putString("MobileLayerSelectionAdapter.selected",
+                        "NRL-OpenStreetMap");
+                e.apply();
+            }
 
             prefs.edit().putBoolean("wms_deployed", true).apply();
         }

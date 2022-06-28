@@ -28,7 +28,6 @@ import com.atakmap.android.widgets.MapWidget;
 import com.atakmap.coremap.conversions.AngleUtilities;
 
 import com.atakmap.coremap.maps.coords.DirectionType;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.lang.Unsafe;
@@ -967,9 +966,8 @@ public class GLFahArrowWidget extends GLShapeWidget implements
                             if (_target != null && _designator != null) {
                                 // only rebuild the circle when the distance of the designator changes
                                 // by 10% of saved distance
-                                double newRange = DistanceCalculations
-                                        .computeDirection(_designator,
-                                                _target)[0];
+                                double newRange = GeoCalculations.distanceTo(_designator,
+                                                _target);
                                 if (Double.isNaN(_savedRange)) {
                                     _savedRange = newRange;
                                     _buildConeCircle();

@@ -458,7 +458,8 @@ public class ImageGalleryFileAdapter extends ImageGalleryBaseAdapter
                 d.setOnClickListener(new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        beginMultiSelectAction(which == 0);
+                        if (which != -1)
+                            beginMultiSelectAction(which == 0);
                     }
                 });
             }

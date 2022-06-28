@@ -10,12 +10,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.PointF;
 import android.os.Bundle;
-
-import com.atakmap.android.bloodhound.ui.BloodHoundNavWidget;
-import com.atakmap.android.bloodhound.ui.BloodHoundRouteWidget;
-import androidx.annotation.NonNull;
-
-import android.preference.PreferenceManager;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -27,7 +21,11 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.bloodhound.ui.BloodHoundHUD;
+import com.atakmap.android.bloodhound.ui.BloodHoundNavWidget;
+import com.atakmap.android.bloodhound.ui.BloodHoundRouteWidget;
 import com.atakmap.android.bloodhound.ui.BloodHoundZoomWidget;
 import com.atakmap.android.bloodhound.util.BloodHoundToolLink;
 import com.atakmap.android.bloodhound.util.SpiDistanceComparator;
@@ -51,7 +49,6 @@ import com.atakmap.android.toolbar.ButtonTool;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.android.toolbar.widgets.TextContainer;
 import com.atakmap.android.toolbars.RangeAndBearingMapItem;
-import com.atakmap.android.tools.menu.ActionMenuData;
 import com.atakmap.android.user.PlacePointTool;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.util.DisplayManager;
@@ -72,6 +69,7 @@ import com.atakmap.coremap.maps.conversion.EGM96;
 import com.atakmap.coremap.maps.coords.DirectionType;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.Ellipsoid;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.MGRSPoint;
@@ -93,7 +91,6 @@ public class BloodHoundTool extends ButtonTool implements
     public static final String TOOL_IDENTIFIER = "com.atakmap.android.toolbars.BloodHoundButtonTool";
     private static final String TAG = "com.atakmap.android.bloodhound.BloodHoundToolbarButton";
 
-    private static ActionMenuData _amd;
 
     private final Timer timer;
     private FlashTimerTask timerTask;
@@ -120,7 +117,6 @@ public class BloodHoundTool extends ButtonTool implements
     private PointMapItem _startItem = null;
     private PointMapItem _endItem = null;
 
-    private final SharedPreferences navPrefs;
 
     private boolean running = false;
     private boolean manuallyClosed = true;
@@ -188,9 +184,6 @@ public class BloodHoundTool extends ButtonTool implements
         super(mapView, button, TOOL_IDENTIFIER);
 
         _prefs = new BloodHoundPreferences(mapView);
-
-        navPrefs = PreferenceManager.getDefaultSharedPreferences(mapView
-                .getContext());
 
         _bloodHoundHUD = bloodHoundHUD;
         _bloodHoundHUD.setToolbarButton(this);
@@ -574,6 +567,9 @@ public class BloodHoundTool extends ButtonTool implements
         LayoutInflater inflater = LayoutInflater.from(_mapView.getContext());
         View view = inflater.inflate(R.layout.bloodhound_select, null);
 
+        ((TextView)view.findViewById(R.id.spinnerItemsLabel)).setText(
+                ResourceUtil.getResource(R.string.civ_quick_select_spi, R.string.quick_select_spi));
+
         final AlertDialog.Builder builder = new AlertDialog.Builder(
                 _mapView.getContext());
 
@@ -642,7 +638,9 @@ public class BloodHoundTool extends ButtonTool implements
                     };
 
                     if (item instanceof PointMapItem) {
-                        da = DistanceCalculations.computeDirection(userPoint,
+                        da[0] = GeoCalculations.distanceTo(userPoint,
+                                ((PointMapItem) item).getPoint());
+                        da[1] = GeoCalculations.bearingTo(userPoint,
                                 ((PointMapItem) item).getPoint());
                     }
 
@@ -1216,7 +1214,8 @@ public class BloodHoundTool extends ButtonTool implements
     public void onSharedPreferenceChanged(SharedPreferences sp,
             String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         switch (key) {
             case "rab_north_ref_pref":

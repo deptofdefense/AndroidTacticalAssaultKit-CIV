@@ -6,10 +6,14 @@
 #include <memory>
 
 #include "feature/FeatureDataStore2.h"
+#include "feature/Envelope2.h"
 #include "feature/HitTestService2.h"
+#include "feature/SpatialCalculator2.h"
 #include "renderer/GLRenderContext.h"
 #include "renderer/core/GLAsynchronousMapRenderable3.h"
 #include "renderer/feature/GLBatchGeometryRenderer3.h"
+#include "feature/SpatialFilter.h"
+#include "renderer/feature/SpatialFilterControl.h"
 
 namespace TAK {
     namespace Engine {
@@ -30,6 +34,7 @@ namespace TAK {
                 private:
                     struct GLGeometryRecord;
                     class HitTestImpl;
+                    class SpatialFilterControlImpl;
                 public:
                     GLBatchGeometryFeatureDataStoreRenderer2(TAK::Engine::Core::RenderContext &surface, TAK::Engine::Feature::FeatureDataStore2 &subject) NOTHROWS;
                     GLBatchGeometryFeatureDataStoreRenderer2(TAK::Engine::Core::RenderContext &surface, TAK::Engine::Feature::FeatureDataStore2 &subject, const GLBatchGeometryRenderer3::CachePolicy &cachingPolicy) NOTHROWS;
@@ -61,6 +66,11 @@ namespace TAK {
 
                 public:
                     virtual Util::TAKErr hitTest2(Port::Collection<int64_t> &features, const float screenX, const float screenY, const atakmap::core::GeoPoint &touch, const double resolution, const float radius, const std::size_t limit) NOTHROWS;
+                public:
+                    Util::TAKErr getControl(void **ctrl, const char *type) const NOTHROWS;
+                private:
+                    Util::TAKErr setSpatialFilter(const std::vector<std::shared_ptr<Engine::Feature::SpatialFilter>> &spatial_filters) NOTHROWS;
+                    Util::TAKErr checkSpatialFilter(bool &fits_filter, Engine::Feature::GeometryPtr_const &geom) const NOTHROWS;
                 private:
                     //System::Collections::Generic::Dictionary<int, Statistics> queryStats;
                     std::list<TAK::Engine::Renderer::Core::GLMapRenderable2 *> renderList;
@@ -77,6 +87,14 @@ namespace TAK {
                     Thread::Mutex mutex_;
 
                     TAK::Engine::Feature::FeatureDataStore2 &dataStore;
+
+                    std::unique_ptr<SpatialFilterControlImpl> spatial_filter_control_;
+                    std::map<std::string, void *> controls_;
+
+                    std::shared_ptr<Engine::Feature::SpatialCalculator2> spatial_calculator_;
+                    std::vector<int64_t> include_filter_ids_;
+                    std::vector<int64_t> exclude_filter_ids_;
+                    std::shared_ptr<Engine::Feature::Envelope2> include_spatial_filter_envelope_;
 
                 protected:
                     std::shared_ptr<atakmap::core::Service> hittest;
@@ -100,6 +118,16 @@ namespace TAK {
                     virtual Util::TAKErr hitTest(Port::Collection<int64_t> &fids, const float screenX, const float screenY, const atakmap::core::GeoPoint &touch, const double resolution, const float radius, const std::size_t limit) NOTHROWS;
                 private:
                     GLBatchGeometryFeatureDataStoreRenderer2 &owner;
+                };
+
+                class GLBatchGeometryFeatureDataStoreRenderer2::SpatialFilterControlImpl : public Renderer::Feature::SpatialFilterControl
+                {
+                public:
+                    SpatialFilterControlImpl(GLBatchGeometryFeatureDataStoreRenderer2 &owner) NOTHROWS;
+                public:
+                    Util::TAKErr setSpatialFilters(Port::Collection<std::shared_ptr<Engine::Feature::SpatialFilter>> *spatial_filters) NOTHROWS override;
+                private:
+                    GLBatchGeometryFeatureDataStoreRenderer2 &owner_;
                 };
             }
         }

@@ -13,6 +13,7 @@ import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.AttributeSet;
 import android.view.ContextThemeWrapper;
+import android.view.DragEvent;
 
 public class TakEditText extends EditText implements TextWatcher {
     private static final int[] STATE_ERROR = {
@@ -24,6 +25,7 @@ public class TakEditText extends EditText implements TextWatcher {
 
     private boolean _errorState = false;
     private boolean _enteredState = false;
+    private boolean _dragEnabled = true;
 
     public TakEditText(Context context) {
         this(context, null);
@@ -52,6 +54,14 @@ public class TakEditText extends EditText implements TextWatcher {
     public void setError(boolean error) {
         _errorState = error;
         refreshDrawableState();
+    }
+
+    /**
+     * Set whether default drag-and-drop behavior is enabled
+     * @param enabled True if enabled
+     */
+    public void setDragEnabled(boolean enabled) {
+        _dragEnabled = enabled;
     }
 
     @Override
@@ -84,6 +94,11 @@ public class TakEditText extends EditText implements TextWatcher {
     public void afterTextChanged(Editable s) {
         _enteredState = s.length() > 0;
         refreshDrawableState();
+    }
+
+    @Override
+    public boolean onDragEvent(DragEvent event) {
+        return _dragEnabled && super.onDragEvent(event);
     }
 
     static class EmojiExcludeFilter implements InputFilter {

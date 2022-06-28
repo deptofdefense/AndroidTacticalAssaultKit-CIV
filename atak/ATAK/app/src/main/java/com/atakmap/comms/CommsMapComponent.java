@@ -599,7 +599,8 @@ public class CommsMapComponent extends AbstractMapComponent implements
     public void onSharedPreferenceChanged(final SharedPreferences prefs,
             final String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         if (key.equals("ppp0_highspeed_capable")) {
             setPPPIncluded(prefs.getBoolean(key, false));
@@ -1081,7 +1082,10 @@ public class CommsMapComponent extends AbstractMapComponent implements
                     }
                 }
             }
-        } catch (SocketException e) {
+        } catch (NullPointerException | SocketException e) {
+            // ^ NPE observed on some less-prevalent devices coming
+            // out of internal impl of android
+            // NetworkInterface.getNetworkInterfaces(). See ATAK-15755
             if (doLog)
                 Log.d(TAG,
                         "exception occurred trying to build the interface list",
@@ -1160,8 +1164,13 @@ public class CommsMapComponent extends AbstractMapComponent implements
                 // need to remove it to change parameters/disable
                 List<PhysicalNetInterface> ifaces = inputIfaces.remove(port);
                 if (ifaces != null)
-                    for (PhysicalNetInterface iface : ifaces)
-                        commo.removeInboundInterface(iface);
+                    for (PhysicalNetInterface iface : ifaces) {
+                        try {
+                            commo.removeInboundInterface(iface);
+                        } catch (IllegalArgumentException iae) {
+                            Log.e(TAG, "unable to remove inbound interface for: " + iface);
+                        }
+                    }
             }
 
             // If this Input existed before....
@@ -1176,8 +1185,13 @@ public class CommsMapComponent extends AbstractMapComponent implements
                     List<PhysicalNetInterface> ifaces = inputIfaces
                             .remove(portInfo.netPort);
                     if (ifaces != null) {
-                        for (PhysicalNetInterface iface : ifaces)
-                            commo.removeInboundInterface(iface);
+                        for (PhysicalNetInterface iface : ifaces) {
+                            try {
+                                commo.removeInboundInterface(iface);
+                            } catch (IllegalArgumentException iae) {
+                                Log.e(TAG, "unable to remove inbound interface for: " + iface);
+                            }
+                        }
                     }
                 }
 

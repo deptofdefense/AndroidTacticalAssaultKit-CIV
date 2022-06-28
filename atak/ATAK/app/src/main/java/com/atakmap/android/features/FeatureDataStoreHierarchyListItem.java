@@ -34,6 +34,8 @@ import com.atakmap.map.layer.feature.DataStoreException;
 import com.atakmap.map.layer.feature.FeatureCursor;
 import com.atakmap.map.layer.feature.FeatureDataStore;
 import com.atakmap.map.layer.feature.FeatureDataStore2;
+import com.atakmap.map.layer.feature.FeatureDataStore2.FeatureQueryParameters;
+import com.atakmap.map.layer.feature.FeatureDataStore2.FeatureSetQueryParameters;
 import com.atakmap.map.layer.feature.FeatureDefinition2;
 import com.atakmap.map.layer.feature.FeatureLayer;
 import com.atakmap.map.layer.feature.FeatureSet;
@@ -43,8 +45,11 @@ import com.atakmap.map.layer.feature.geometry.Geometry;
 import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.math.MathUtils;
 
+import androidx.annotation.NonNull;
+
 public class FeatureDataStoreHierarchyListItem extends
-        AbstractHierarchyListItem2 implements Visibility, Search, Delete {
+        AbstractHierarchyListItem2 implements Visibility, Search, Delete,
+        FeatureEdit {
 
     private static final String TAG = "FeatureDataStoreHierarchyListItem";
 
@@ -107,10 +112,18 @@ public class FeatureDataStoreHierarchyListItem extends
 
         this.supportedActions = new HashSet<>();
         this.supportedActions.add(Search.class);
-        if (MathUtils.hasBits(this.spatialDb.getModificationFlags(),
+
+        long modFlags = this.spatialDb.getModificationFlags();
+
+        if (MathUtils.hasBits(modFlags,
                 FeatureDataStore2.MODIFY_FEATURESET_DELETE) &&
                 (this.spatialDb instanceof DataSourceFeatureDataStore))
             this.supportedActions.add(Delete.class);
+
+        // Feature style editing requires modification permission
+        if (MathUtils.hasBits(modFlags, FeatureDataStore2.MODIFY_FEATURE_STYLE))
+            this.supportedActions.add(FeatureEdit.class);
+
         if (MathUtils.hasBits(this.spatialDb.getVisibilityFlags(),
                 FeatureDataStore2.VISIBILITY_SETTINGS_FEATURESET))
             this.supportedActions.add(Visibility.class);
@@ -462,6 +475,24 @@ public class FeatureDataStoreHierarchyListItem extends
 
     public FeatureDataStore.FeatureQueryParameters buildQueryParams() {
         return buildQueryParams(this.filter);
+    }
+
+    @Override
+    @NonNull
+    public FeatureDataStore2 getFeatureDatabase() {
+        return spatialDb;
+    }
+
+    @Override
+    @NonNull
+    public FeatureQueryParameters getFeatureQueryParams() {
+        FeatureQueryParameters params = new FeatureQueryParameters();
+        if (typeFilter != null) {
+            // Filter by content type
+            params.featureSetFilter = new FeatureSetQueryParameters();
+            params.featureSetFilter.types = Collections.singleton(typeFilter);
+        }
+        return params;
     }
 
     /**************************************************************************/

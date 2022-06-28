@@ -79,7 +79,8 @@ public class TrackDetails
     public void onSharedPreferenceChanged(
             SharedPreferences sharedPreferences, String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         if (key.equals("track_crumb_size")) {
             _trackPolyline.setCrumbSize(Integer.parseInt(

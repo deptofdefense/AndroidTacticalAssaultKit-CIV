@@ -368,8 +368,7 @@ public class AtakAuthenticationHandlerHTTP {
         // Reusing the same socket factory allows sockets to be
         // reused, supporting persistent connections.
         if (null == sslSocketFactory) {
-            javax.net.ssl.SSLContext sc = javax.net.ssl.SSLContext.getInstance("SSL");
-            sc.init(null, new TrustManager[] { CertificateManager.SelfSignedAcceptingTrustManager}, new java.security.SecureRandom());
+            javax.net.ssl.SSLContext sc = CertificateManager.createSSLContext(new TrustManager[] { CertificateManager.SelfSignedAcceptingTrustManager});
             sslSocketFactory = sc.getSocketFactory();
         }
 

@@ -46,4 +46,10 @@
         <attr name="buttonImage" format="reference" />
         <attr name="buttonImageTint" format="color" />
     </declare-styleable>
+
+    <declare-styleable name="ColorPalette">
+        <attr name="layoutId" format="reference"/>
+        <attr name="showAlpha" format="boolean"/>
+        <attr name="showFill" format="boolean"/>
+    </declare-styleable>
 </resources>

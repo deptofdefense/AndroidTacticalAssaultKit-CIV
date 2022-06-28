@@ -214,12 +214,12 @@ public abstract class Rectangle extends AssociationSet
                     p[0], p[1], p[2], p[3]
             };
             for (i = 0; i < 4; i++) {
-
-                double[] temp = DistanceCalculations.computeDirection(
+                da[i * 2] = GeoCalculations.distanceTo(
                         oldPoint.get(),
                         p[i].get());
-                da[i * 2] = temp[0];
-                da[(i * 2) + 1] = temp[1];
+                da[(i * 2) + 1] = GeoCalculations.bearingTo(
+                        oldPoint.get(),
+                        p[i].get());
                 // i += 2;
             }
             _ignore += 8; // changing 8 points
@@ -400,6 +400,42 @@ public abstract class Rectangle extends AssociationSet
                 this.onPointsChanged();
             }
         }
+    }
+
+    /**
+     * Set the length of this rectangle
+     * @param length Length in meters
+     */
+    public void setLength(double length) {
+        double halfLength = length / 2;
+        Association a = getAssociationAt(0);
+        double angle = GeoCalculations.bearingTo(a.getFirstItem().getPoint(),
+                a.getSecondItem().getPoint());
+        GeoPoint topCenterPoint = GeoCalculations.pointAtDistance(
+                _center.getPoint(), angle + 90, halfLength);
+        GeoPoint bottomCenterPoint = GeoCalculations.pointAtDistance(
+                _center.getPoint(), angle - 90, halfLength);
+
+        getAssociationAt(0).getMarker().setPoint(topCenterPoint);
+        getAssociationAt(2).getMarker().setPoint(bottomCenterPoint);
+    }
+
+    /**
+     * Set the width of this rectangle
+     * @param width Width in meters
+     */
+    public void setWidth(double width) {
+        double halfWidth = width / 2;
+        Association a = getAssociationAt(1);
+        double angle = GeoCalculations.bearingTo(a.getFirstItem().getPoint(),
+                a.getSecondItem().getPoint());
+        GeoPoint topCenterPoint = GeoCalculations.pointAtDistance(
+                _center.getPoint(), angle + 90, halfWidth);
+        GeoPoint bottomCenterPoint = GeoCalculations.pointAtDistance(
+                _center.getPoint(), angle - 90, halfWidth);
+
+        getAssociationAt(1).getMarker().setPoint(topCenterPoint);
+        getAssociationAt(3).getMarker().setPoint(bottomCenterPoint);
     }
 
     @Override
@@ -815,7 +851,8 @@ public abstract class Rectangle extends AssociationSet
     public void onSharedPreferenceChanged(SharedPreferences sp,
             String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         //if labels are shown, update units
         _recalculateLabels();
@@ -1265,6 +1302,7 @@ public abstract class Rectangle extends AssociationSet
         m.setMetaBoolean("addToObjList", false);
         m.setMetaBoolean("nevercot", true);
         m.setVisible(_editable);
+        m.setMetaBoolean("removable", false);
         m.setZOrder(getZOrder() + Z_ORDER_MARKERS);
         m.setShowLabel(false);
         m.setTitle(getTitle());
@@ -1283,6 +1321,7 @@ public abstract class Rectangle extends AssociationSet
         m.setMetaBoolean("addToObjList", false);
         m.setMetaBoolean("nevercot", true);
         m.setVisible(_editable);
+        m.setMetaBoolean("removable", false);
         m.setZOrder(getZOrder() + Z_ORDER_MARKERS);
         m.setShowLabel(false);
         m.setTitle(getTitle());
@@ -1624,12 +1663,12 @@ public abstract class Rectangle extends AssociationSet
                     _r.getChildMapGroup().addItem(c1);
                     _r._points.add(0, _m0);
 
-                    double[] da = DistanceCalculations.computeDirection(
+                    final double bearing = GeoCalculations.bearingTo(
                             _m0.getPoint(),
                             _m1.getPoint());
                     // Make sure to put the markers in counter-clockwise order
-                    if ((da[1] >= 270d && da[1] <= 360d)
-                            || (da[1] >= 90d && da[1] < 180d)) {
+                    if ((bearing >= 270d && bearing <= 360d)
+                            || (bearing >= 90d && bearing < 180d)) {
                         _r._points.add(1, c1);
                         _r._points.add(2, _m1);
                         _r._points.add(3, c0);
@@ -1653,23 +1692,23 @@ public abstract class Rectangle extends AssociationSet
         }
 
         public Builder setWidth(double width) {
-            double[] da = DistanceCalculations.computeDirection(_m0.getPoint(),
+            final double bearing = GeoCalculations.bearingTo(_m0.getPoint(),
                     _m1.getPoint());
             switch (_m) {
                 case START_END_WIDTH_MIRRORED:
                     double half = width / 2;
                     _r._points.get(0).setPoint(
                             GeoCalculations.pointAtDistance(_m0.getPoint(),
-                                    da[1] - 90d, half));
+                                    bearing - 90d, half));
                     _r._points.get(1).setPoint(
                             GeoCalculations.pointAtDistance(_m0.getPoint(),
-                                    da[1] + 90d, half));
+                                    bearing + 90d, half));
                     _r._points.get(2).setPoint(
                             GeoCalculations.pointAtDistance(_m1.getPoint(),
-                                    da[1] + 90d, half));
+                                    bearing + 90d, half));
                     _r._points.get(3).setPoint(
                             GeoCalculations.pointAtDistance(_m1.getPoint(),
-                                    da[1] - 90d, half));
+                                    bearing - 90d, half));
                     break;
                 case START_END_WIDTH_UNMIRRORED:
                     break;
@@ -1677,11 +1716,11 @@ public abstract class Rectangle extends AssociationSet
                     Marker s0 = _r._createCornerMarker(
                             GeoPointMetaData.wrap(GeoCalculations
                                     .pointAtDistance(_m0.getPoint(),
-                                            da[1] + 90d, width)));
+                                            bearing + 90d, width)));
                     Marker s1 = _r._createCornerMarker(
                             GeoPointMetaData.wrap(GeoCalculations
                                     .pointAtDistance(_m1.getPoint(),
-                                            da[1] + 90d, width)));
+                                            bearing + 90d, width)));
                     s0.addOnPointChangedListener(_r.cornerListener);
                     s0.addOnPointChangedListener(_r.cornerListener);
                     _r.getChildMapGroup().addItem(s0);

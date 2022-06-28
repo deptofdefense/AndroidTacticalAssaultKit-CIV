@@ -1,7 +1,5 @@
 package com.atakmap.map.layer.model.contextcapture;
 
-import android.util.Xml;
-
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
@@ -15,6 +13,8 @@ import com.atakmap.math.Matrix;
 import com.atakmap.math.PointD;
 
 import com.atakmap.util.zip.IoUtils;
+
+import com.atakmap.coremap.xml.XMLUtils;
 import org.xmlpull.v1.XmlPullParser;
 
 import java.io.Closeable;
@@ -40,9 +40,7 @@ final class ContextCaptureGeoreferencer implements Georeferencer {
                 stream = ((ZipVirtualFile)path).openStream();
             else
                 stream = IOProviderFactory.getInputStream(path);
-            parser = Xml.newPullParser();
-            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
-            parser.setFeature(Xml.FEATURE_RELAXED, true);
+            parser = XMLUtils.getXmlPullParser();
             parser.setInput(stream, null);
 
             /*

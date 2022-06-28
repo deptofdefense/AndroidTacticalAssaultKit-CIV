@@ -20,6 +20,7 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.maps.assets.Icon;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.AtakMapView;
+import com.atakmap.map.CameraController;
 import com.atakmap.math.MathUtils;
 
 /**
@@ -191,7 +192,9 @@ class TiltLockWidgetController implements
         if (tiltStatus == MapTouchController.STATE_MANUAL_TILT_DISABLED) {
             //Log.d(TAG, "attempt to correct tilt: " + lockedTilt + "/" + maxTilt);
             if (_mapView.getMapTilt() < maxTilt && lockedTilt >= maxTilt) {
-                _mapView.getMapController().tiltTo(maxTilt, true);
+
+                CameraController.Programmatic.tiltTo(_mapView.getRenderer3(),
+                        maxTilt, true);
                 return;
             }
         }

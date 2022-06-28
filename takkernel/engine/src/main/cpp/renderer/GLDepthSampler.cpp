@@ -34,62 +34,24 @@ namespace {
             "gl_Position = vcoords;"
         "}";
 
-    const char* DEPTH_FRAG_SHADER_SRC =
-        "precision mediump float;"
-        "varying float depth;"
-        "vec4 PackDepth(float v) {"
-        "vec4 r = vec4(1.,255.,65025.,16581375.) * v;" // shift
-        "r = fract(r);"
-        "r -= r.yzww * vec4(1.0/255.0,1.0/255.0,1.0/255.0,0.0);" // mask
-        "return r;"
-        "}"
-        "void main(void) {"
-        "gl_FragColor = PackDepth(depth);"
-        "}";
+    constexpr const char* DEPTH_FRAG_SHADER_SRC =
+        #include "elevation/shaders/Depth.frag"
+        ;
 
-    const char* ID_VERT_SHADER =
-        "attribute vec3 aVertexCoords;"
-        "uniform mat4 uMVP;"
-        "void main()"
-        "{"
-            "gl_Position = uMVP * vec4(aVertexCoords.xyz, 1.0);"
-        "}";
+    constexpr const char* ID_VERT_SHADER =
+        #include "shaders/DepthSamplerID.vert"
+        ;
 
-
-    const char* ID_FRAG_SHADER_SRC =
-        "precision highp float;"
-        "uniform int uColor;"
-        "vec3 UnpackColor(float f) {"
-            "vec3 color;"
-            "color.b = floor(f / 256.0 / 256.0);"
-            "color.g = floor((f - color.b * 256.0 * 256.0) / 256.0);"
-            "color.r = floor(f - color.b * 256.0 * 256.0 - color.g * 256.0);"
-            "return color / 255.0;"
-        "}"
-        "void main()"
-        "{"
-            "gl_FragColor = vec4(UnpackColor(float(uColor)), 0.0);"
-        "}";
-
-    const char *FULLSIZE_QUAD_VERT_SHADER_SRC =
-        "precision lowp float;"
-        "attribute vec2 aVertexCoords;"
-        "varying vec2 vTexCoords;"
-        "const vec2 scale = vec2(0.5, 0.5);"
-        "void main()"
-        "{"
-            "vTexCoords = aVertexCoords * scale + scale;"
-            "gl_Position = vec4(aVertexCoords, 0.0, 1.0);"
-        "}";
-
-    const char *FULLSIZE_QUAD_FRAG_SHADER_SRC = 
-        "precision highp float;"
-        "uniform sampler2D uTexture;"
-        "varying vec2 vTexCoords;"
-        "void main()"
-        "{"
-            "gl_FragColor = texture2D(uTexture, vTexCoords);"
-        "}";
+    constexpr const char* ID_FRAG_SHADER_SRC =
+        #include "shaders/DepthSamplerID.frag"
+        ;
+    
+    constexpr const char* FULLSIZE_QUAD_VERT_SHADER_SRC =
+        #include "shaders/FullsizeQuad.vert"
+        ;
+    constexpr const char* FULLSIZE_QUAD_FRAG_SHADER_SRC =
+        #include "shaders/FullsizeQuad.frag"
+        ;
 
     const int VIEWPORT_WIDTH = 4;
     const int VIEWPORT_HEIGHT = 4;

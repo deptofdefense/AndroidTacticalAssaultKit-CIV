@@ -5,6 +5,7 @@ import android.graphics.Color;
 
 import com.atakmap.android.maps.Shape;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.math.MathUtils;
 
 public abstract class GLShape2 extends AbstractGLMapItem2 implements
         Shape.OnFillColorChangedListener,
@@ -77,12 +78,8 @@ public abstract class GLShape2 extends AbstractGLMapItem2 implements
     }
 
     private void _updateStyle(int style) {
-        if ((style & Shape.STYLE_FILLED_MASK) != 0) {
-            fill = true;
-        }
-        if ((style & Shape.STYLE_STROKE_MASK) != 0) {
-            stroke = true;
-        }
+        fill = MathUtils.hasBits(style, Shape.STYLE_FILLED_MASK);
+        stroke = MathUtils.hasBits(style, Shape.STYLE_STROKE_MASK);
     }
 
     protected boolean fill;

@@ -6,7 +6,7 @@ import gov.tak.api.contact.IContact;
 import gov.tak.api.contact.IContactListener;
 
 /**
- * Used internally by the {@link ContactStore} to notify listeners of changes to {@link IContact}s on a separate thread.
+ * Used internally by the {@link DefaultContactStore} to notify listeners of changes to {@link IContact}s on a separate thread.
  *
  * @since 0.17.0
  */

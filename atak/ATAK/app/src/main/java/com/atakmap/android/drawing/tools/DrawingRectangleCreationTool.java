@@ -7,6 +7,7 @@ import android.view.View;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
+import com.atakmap.android.drawing.DrawingPreferences;
 import com.atakmap.android.drawing.DrawingToolsMapComponent;
 import com.atakmap.android.drawing.DrawingToolsMapReceiver;
 import com.atakmap.android.drawing.mapItems.DrawingRectangle;
@@ -42,6 +43,7 @@ public class DrawingRectangleCreationTool extends Tool implements
 
     public static final String TAG = "DrawingRectangleCreationTool";
 
+    private final DrawingPreferences _prefs;
     private DrawingRectangle.Builder _b;
 
     private Intent _callback;
@@ -70,6 +72,7 @@ public class DrawingRectangleCreationTool extends Tool implements
         super(mapView, TOOL_IDENTIFIER);
         _mapView = mapView;
         _drawingGroup = drawingGroup;
+        _prefs = new DrawingPreferences(mapView);
         if (button != null) {
             _button = button;
             initButton();
@@ -106,23 +109,30 @@ public class DrawingRectangleCreationTool extends Tool implements
     @Override
     public void onToolEnd() {
         // If the builder didn't finish then destroy it
+        String uid;
         if (!_b.built()) {
+            uid = null;
             _b.dispose();
         } else {
-            // If properly built then show the details for the item
-            if (_callback != null) {
-                Intent callbackIntent = new Intent(_callback);
-                callbackIntent.putExtra("uid", _b.build().getUID());
-                AtakBroadcast.getInstance().sendBroadcast(callbackIntent);
-            }
+            uid = _b.build().getUID();
 
+            // If properly built then zoom to the rectangle
             Intent intent = new Intent();
             intent.setAction(DrawingToolsMapReceiver.ZOOM_ACTION);
             intent.putExtra(DrawingToolsMapReceiver.EXTRA_CREATION_MODE, true);
-            intent.putExtra("uid", _b.build().getUID());
+            intent.putExtra("uid", uid);
             AtakBroadcast.getInstance().sendBroadcast(intent);
         }
         _b = null;
+
+        // Fire the intent callback regardless of whether it succeeded or not
+        if (_callback != null) {
+            Intent callbackIntent = new Intent(_callback);
+            if (uid != null)
+                callbackIntent.putExtra("uid", uid);
+            AtakBroadcast.getInstance().sendBroadcast(callbackIntent);
+        }
+
         TextContainer.getInstance().closePrompt();
         _mapView.getMapEventDispatcher().popListeners();
         _mapView.getMapTouchController().setToolActive(false);
@@ -196,7 +206,7 @@ public class DrawingRectangleCreationTool extends Tool implements
                 event.getExtras().putBoolean("eventNotHandled", false);
             } else if (item instanceof Shape) {
                 point = GeoPointMetaData
-                        .wrap((((Shape) item).findTouchPoint()));
+                        .wrap((item.getClickPoint()));
                 event.getExtras().putBoolean("eventNotHandled", false);
             }
         }
@@ -256,6 +266,7 @@ public class DrawingRectangleCreationTool extends Tool implements
             _b.createCenterMarker();
             DrawingRectangle r = _b.build();
             r.setMetaString("entry", "user");
+            r.setStrokeStyle(_prefs.getStrokeStyle());
             DrawingToolsMapComponent.getGroup().addItem(r);
             r.persist(_mapView.getMapEventDispatcher(), null,
                     this.getClass());

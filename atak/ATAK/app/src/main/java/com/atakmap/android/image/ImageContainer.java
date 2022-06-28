@@ -50,6 +50,7 @@ import com.atakmap.coremap.maps.conversion.EGM96;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.map.CameraController;
 import com.atakmap.map.gdal.GdalLibrary;
 import com.atakmap.map.layer.raster.gdal.GdalGraphicUtils;
 import com.atakmap.map.layer.raster.gdal.GdalTileReader;
@@ -63,11 +64,13 @@ import org.gdal.gdal.Dataset;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Hashtable;
 import com.atakmap.coremap.locale.LocaleUtil;
 
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -113,7 +116,7 @@ public abstract class ImageContainer implements OnTouchListener,
         @Override
         public int compare(NITFGraphics lhs, NITFGraphics rhs) {
             int zl = lhs.getDisplayLevel(), zr = rhs.getDisplayLevel();
-            return zl < zr ? -1 : (zl == zr ? 0 : 1);
+            return Integer.compare(zl, zr);
         }
     };
 
@@ -301,7 +304,7 @@ public abstract class ImageContainer implements OnTouchListener,
                 Canvas canvas = new Canvas(result);
                 canvas.scale(1 / scale, 1 / scale);
                 int segments = Integer.parseInt(segmentCount);
-                NITFGraphics[] nitfCGM = new NITFGraphics[segments];
+                List<NITFGraphics> nitfCGM = new ArrayList<>();
                 float density = Math.min(img.width, img.height) / 360f;
                 Paint paint = new Paint();
                 paint.setAntiAlias(true);
@@ -323,29 +326,39 @@ public abstract class ImageContainer implements OnTouchListener,
                     byte[] dataVal = new byte[0];
 
                     try {
-                        dataVal = cgmDict.get(data).getBytes("ISO_8859_1");
+                        String val = cgmDict.get(data);
+                        if (val != null)
+                            dataVal = val.getBytes("ISO_8859_1");
                     } catch (UnsupportedEncodingException e) {
                         Log.e(TAG, "error occurred", e);
                     }
 
-                    int relativeRowVal = Integer.parseInt(relRowVal);
-                    int relativeColVal = Integer.parseInt(relColVal);
-                    int commonRowVal = Integer.parseInt(comRowVal);
-                    int commonColVal = Integer.parseInt(comColVal);
-                    int displayLvlVal = Integer.parseInt(dlvlVal);
-                    int attatchmentLvlVal = Integer.parseInt(alvlVal);
+                    if (dataVal != null) {
+                        try {
+                            int relativeRowVal = Integer.parseInt(relRowVal);
+                            int relativeColVal = Integer.parseInt(relColVal);
+                            int commonRowVal = Integer.parseInt(comRowVal);
+                            int commonColVal = Integer.parseInt(comColVal);
+                            int displayLvlVal = Integer.parseInt(dlvlVal);
+                            int attachmentLvlVal = Integer.parseInt(alvlVal);
 
-                    nitfCGM[i] = new NITFGraphics(relativeRowVal,
-                            relativeColVal,
-                            commonRowVal,
-                            commonColVal,
-                            displayLvlVal,
-                            attatchmentLvlVal,
-                            dataVal);
+                            nitfCGM.add(new NITFGraphics(relativeRowVal,
+                                    relativeColVal,
+                                    commonRowVal,
+                                    commonColVal,
+                                    displayLvlVal,
+                                    attachmentLvlVal,
+                                    dataVal));
+                        } catch (Exception e) {
+                            // cowardly way of not producing the graphic if any of the
+                            // values are null.
+                        }
+                    }
                 }
+                final NITFGraphics[] sorted = nitfCGM.toArray(new NITFGraphics[0]);
                 // Draw in order based on display level
-                Arrays.sort(nitfCGM, NITF_Z_Comparator);
-                for (NITFGraphics g : nitfCGM)
+                Arrays.sort(sorted, NITF_Z_Comparator);
+                for (NITFGraphics g : sorted)
                     g.draw(canvas, paint, density);
             }
             ds.delete();
@@ -615,7 +628,8 @@ public abstract class ImageContainer implements OnTouchListener,
             panButton.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    getMapView().getMapController().panTo(imageLocation, false);
+                    CameraController.Programmatic.panTo(getMapView().getRenderer3(),
+                            imageLocation, false);
                 }
             });
 
@@ -862,7 +876,8 @@ public abstract class ImageContainer implements OnTouchListener,
         panButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                getMapView().getMapController().panTo(imageLocation, false);
+                CameraController.Programmatic.panTo(getMapView().getRenderer3(), imageLocation,
+                        false);
             }
         });
 

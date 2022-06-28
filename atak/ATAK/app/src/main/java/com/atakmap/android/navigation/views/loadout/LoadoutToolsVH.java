@@ -17,7 +17,6 @@ import com.atakmap.android.navigation.models.NavButtonModel;
 import com.atakmap.android.navigation.views.NavView;
 
 import com.atakmap.android.ipc.AtakBroadcast;
-import com.atakmap.android.navigation.models.LoadoutItemModel;
 import com.atakmap.android.navigation.views.buttons.NavButtonDrawable;
 import com.atakmap.android.navigation.views.buttons.NavButtonShadowBuilder;
 import com.atakmap.android.util.MappingAdapterEventReceiver;
@@ -34,6 +33,7 @@ abstract class LoadoutToolsVH<T extends LoadoutToolsVM> extends MappingVH<T> {
     protected final ImageView deleteView;
     protected final ImageView hideView;
     protected final VisibilityDrawable hideIcon;
+    protected final View[] dragBorders = new View[4];
 
     public LoadoutToolsVH(ViewGroup parent, @LayoutRes int layoutResId) {
         super(parent, layoutResId);
@@ -42,6 +42,12 @@ abstract class LoadoutToolsVH<T extends LoadoutToolsVM> extends MappingVH<T> {
         this.deleteView = this.findViewById(R.id.tak_nav_delete_tool);
         this.hideView = this.findViewById(R.id.tak_nav_hide_tool);
         this.hideView.setImageDrawable(hideIcon = new VisibilityDrawable());
+        dragBorders[LoadoutToolsVM.BOTTOM] = findViewById(
+                R.id.drag_border_bottom);
+        dragBorders[LoadoutToolsVM.TOP] = findViewById(R.id.drag_border_top);
+        dragBorders[LoadoutToolsVM.LEFT] = findViewById(R.id.drag_border_left);
+        dragBorders[LoadoutToolsVM.RIGHT] = findViewById(
+                R.id.drag_border_right);
     }
 
     @Override
@@ -76,6 +82,7 @@ abstract class LoadoutToolsVH<T extends LoadoutToolsVM> extends MappingVH<T> {
         navDr.setBadgeCount(btn.getBadgeCount());
         navDr.setBadgeImage(btn.getBadgeImage());
 
+        float alpha = hidden || editMode && inUse ? 0.5f : 1f;
         this.textView.setText(viewModel.getName());
         this.deleteView.setVisibility(inUse && editMode
                 ? View.VISIBLE
@@ -83,8 +90,15 @@ abstract class LoadoutToolsVH<T extends LoadoutToolsVM> extends MappingVH<T> {
         this.hideView.setVisibility(!inUse && editMode
                 ? View.VISIBLE
                 : View.GONE);
-        this.imageView.setAlpha(hidden || editMode && inUse ? 0.5f : 1f);
-        this.textView.setAlpha(hidden || editMode && inUse ? 0.5f : 1f);
+        this.imageView.setAlpha(alpha);
+        this.textView.setAlpha(alpha);
+
+        int dragPos = viewModel.getDragPosition();
+        for (int i = 0; i < this.dragBorders.length; i++) {
+            View border = this.dragBorders[i];
+            if (border != null)
+                border.setVisibility(dragPos == i ? View.VISIBLE : View.GONE);
+        }
 
         this.deleteView.setOnClickListener(new OnClickListener() {
             @Override
@@ -135,17 +149,13 @@ abstract class LoadoutToolsVH<T extends LoadoutToolsVM> extends MappingVH<T> {
     }
 
     private void startDrag(View view, T viewModel) {
-        final LoadoutItemModel currentLoadout = LoadoutManager.getInstance()
-                .getCurrentLoadout();
         NavButtonModel btn = viewModel.getButton();
-        if (!currentLoadout.containsButton(btn)) {
-            ClipData dragData = btn.createClipboardData(NavView.DRAG_ADD_TOOL);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
-                view.startDragAndDrop(dragData,
-                        new NavButtonShadowBuilder(imageView, btn), null, 0);
-            else
-                view.startDrag(dragData,
-                        new NavButtonShadowBuilder(imageView, btn), null, 0);
-        }
+        NavButtonShadowBuilder shadowBuilder = new NavButtonShadowBuilder(
+                imageView, btn);
+        ClipData dragData = btn.createClipboardData(NavView.DRAG_ADD_TOOL);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+            view.startDragAndDrop(dragData, shadowBuilder, null, 0);
+        else
+            view.startDrag(dragData, shadowBuilder, null, 0);
     }
 }

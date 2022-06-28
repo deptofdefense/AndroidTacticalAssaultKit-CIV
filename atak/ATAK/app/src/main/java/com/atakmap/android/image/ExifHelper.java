@@ -66,6 +66,7 @@ public class ExifHelper {
 
     /**
      * Convert latlng value to DMS number array
+     * @param tude the latitude or longitude
      */
     public static Number[] getDMSArray(double tude) {
         tude = Math.abs(tude);
@@ -102,6 +103,11 @@ public class ExifHelper {
         return orientationOffset;
     }
 
+    /**
+     * Returns the image orientation as an integer
+     * @param img the image file
+     * @return a value representing the orientation as 0, 90, 180, 270.
+     */
     public static int getImageOrientation(File img) {
         TiffImageMetadata exif = getExifMetadata(img);
         if (exif != null) {
@@ -150,7 +156,7 @@ public class ExifHelper {
 
     /**
      * Computes the required correction to the image based on the orientation of the 
-     * of ATAK vs the orienatation of the image.
+     * of ATAK vs the orientation of the image.
      */
     static private double computeCorrection(double iO, double aO) {
         Log.d(TAG, "captured image orientation: " + iO
@@ -301,7 +307,8 @@ public class ExifHelper {
                                 "%s %2.0f:%2.0f:%2.0f", ymd, hms[0], hms[1],
                                 hms[2]);
                         Date d = dateFormat.parse(input);
-                        return d.getTime();
+                        if (d != null)
+                            return d.getTime();
                     }
                 }
             } catch (Exception e) {

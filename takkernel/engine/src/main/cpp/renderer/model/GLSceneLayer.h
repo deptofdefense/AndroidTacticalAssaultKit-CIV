@@ -11,6 +11,7 @@
 #include "renderer/model/MaterialManager.h"
 #include "renderer/model/HitTestControl.h"
 #include "renderer/model/SceneLayerControl.h"
+#include "renderer/model/SceneLayerControl2.h"
 #include "feature/FeatureHitTestControl.h"
 
 namespace TAK {
@@ -21,7 +22,8 @@ namespace TAK {
                                      public TAK::Engine::Model::SceneLayer::ContentChangedListener,
                                      public HitTestControl,
                                      public TAK::Engine::Feature::FeatureHitTestControl,
-                                     public SceneLayerControl
+                                     public SceneLayerControl,
+                                     public SceneLayerControl2
                 {
                 private :
                     class SceneRenderer;
@@ -34,7 +36,9 @@ namespace TAK {
                     virtual TAK::Engine::Util::TAKErr hitTest(Port::Collection<int64_t> &fids, float screenX, float screenY, const TAK::Engine::Core::GeoPoint2 &point, double resolution, float radius, int limit) NOTHROWS;
                 public :
                     virtual Util::TAKErr getSceneObjectControl(SceneObjectControl **ctrl, const int64_t sid) NOTHROWS;
-                private :
+                public:
+                    virtual Util::TAKErr getSceneControl(void **ctrl, const char *type, const int64_t sid) NOTHROWS;
+                private:
                     Util::TAKErr queryImpl(std::set<std::shared_ptr<SceneRenderer>> &result, const Core::GLMapView2::State &state)  NOTHROWS;
                 public : // SceneLayer::ContentChangedListener
                     Util::TAKErr contentChanged(const TAK::Engine::Model::SceneLayer &layer) NOTHROWS;
