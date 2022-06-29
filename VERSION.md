@@ -1,5 +1,11 @@
 # Version History
 
+## 4.5.1.1
+
+* Bug Fixes
+  * Null Pointer when setting the title of a MultiPolyline
+  * Toggling doghouse visibility displays doghouses for hidden routes
+
 ## 4.5.1.0
 
 * Bug Fixes

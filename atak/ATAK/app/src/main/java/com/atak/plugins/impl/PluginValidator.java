@@ -46,7 +46,7 @@ class PluginValidator {
     private PluginValidator() {}
     
     /**
-     * Checks the app transparency signature and if valud compares the SHA256 checksums with the
+     * Checks the app transparency signature and if valid compares the SHA256 checksums with the
      * dex files in the apk.
      * @param pkgname the package name to load the files from
      * @return true if the jwt is valid and the files pass the dex check
@@ -104,6 +104,14 @@ class PluginValidator {
              zipFile = new ZipFile(file);
 
             final ZipEntry jwtEntry = zipFile.getEntry("META-INF/code_transparency_signed.jwt");
+
+            // if the zip entry does not exist, there is no transparent signing
+            if (jwtEntry == null) {
+                AtakCertificateDatabase.saveCertificate(pkgname,
+                        (apkHash + "." + INVALID).getBytes(FileSystemUtils.UTF8_CHARSET));
+                return false;
+            }
+
             final InputStream jwtInputStream = zipFile.getInputStream(jwtEntry);
             final String jwt =
                     FileSystemUtils.copyStreamToString(jwtInputStream, true, FileSystemUtils.UTF8_CHARSET);
@@ -176,7 +184,8 @@ class PluginValidator {
             }
         }
 
-
+        AtakCertificateDatabase.saveCertificate(pkgname,
+                (apkHash + "." + INVALID).getBytes(FileSystemUtils.UTF8_CHARSET));
         return false;
     }
 
