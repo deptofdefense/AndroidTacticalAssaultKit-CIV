@@ -1683,13 +1683,16 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
             IconStyle istyle = new IconStyle();
             istyle.setColor(KMLUtil.convertKmlColor(getStrokeColor()));
 
-            //set white pushpin and Google Earth will tint based on color above
-            com.ekito.simpleKML.model.Icon icon = new com.ekito.simpleKML.model.Icon();
-            String whtpushpin = context
-                    .getString(R.string.whtpushpin);
-            icon.setHref(whtpushpin);
+            if (isClosed()) {
+                //set white pushpin and Google Earth will tint based on color above
+                com.ekito.simpleKML.model.Icon icon = new com.ekito.simpleKML.model.Icon();
+                String whtpushpin = context
+                        .getString(R.string.whtpushpin);
+                icon.setHref(whtpushpin);
 
-            istyle.setIcon(icon);
+                istyle.setIcon(icon);
+
+            }
             style.setIconStyle(istyle);
 
             LineStyle lstyle = new LineStyle();

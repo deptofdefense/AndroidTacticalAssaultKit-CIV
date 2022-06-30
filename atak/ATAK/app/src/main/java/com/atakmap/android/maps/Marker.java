@@ -1070,18 +1070,19 @@ public class Marker extends PointMapItem implements Exportable, Capturable {
             Style style = new Style();
             IconStyle istyle = new IconStyle();
             if (_icon != null) {
-                int color = getAffiliationColor(this);
-                istyle.setColor(KMLUtil.convertKmlColor(color));
-                style.setIconStyle(istyle);
+                if (getIconVisibility() == ICON_VISIBLE) {
+                    int color = getAffiliationColor(this);
+                    istyle.setColor(KMLUtil.convertKmlColor(color));
+                    style.setIconStyle(istyle);
 
-                //set white pushpin and Google Earth will tint based on color above
-                com.ekito.simpleKML.model.Icon icon = new com.ekito.simpleKML.model.Icon();
+                    //set white pushpin and Google Earth will tint based on color above
+                    com.ekito.simpleKML.model.Icon icon = new com.ekito.simpleKML.model.Icon();
+                    String whtpushpin = MapView.getMapView().getContext()
+                            .getString(R.string.whtpushpin);
+                    icon.setHref(whtpushpin);
+                    istyle.setIcon(icon);
 
-                String whtpushpin = MapView.getMapView().getContext()
-                        .getString(R.string.whtpushpin);
-                icon.setHref(whtpushpin);
-
-                istyle.setIcon(icon);
+                }
             }
 
             String styleId = KMLUtil.hash(style);
@@ -1157,54 +1158,58 @@ public class Marker extends PointMapItem implements Exportable, Capturable {
             Style style = new Style();
             IconStyle istyle = new IconStyle();
             if (_icon != null) {
-                int color = getAffiliationColor(this);
-                istyle.setColor(KMLUtil.convertKmlColor(color));
                 style.setIconStyle(istyle);
 
-                //set white pushpin and Google Earth will tint based on color above
-                com.ekito.simpleKML.model.Icon icon = new com.ekito.simpleKML.model.Icon();
-                icon.setHref(
-                        "http://maps.google.com/mapfiles/kml/pushpin/wht-pushpin.png");
-                istyle.setIcon(icon);
+                if (getIconVisibility() == ICON_VISIBLE) {
+                    int color = getAffiliationColor(this);
+                    istyle.setColor(KMLUtil.convertKmlColor(color));
 
-                //see if we can set the actual icon for this marker
-                String type = getType();
-                String imageUri = getIcon().getImageUri(Icon.STATE_DEFAULT);
-                if (!FileSystemUtils.isEmpty(imageUri)) {
-                    String kmzIconPath = null;
-                    if (imageUri.startsWith("sqlite")) {
-                        //query sqlite to get iconset UID and icon filename
-                        UserIcon userIcon = UserIcon.GetIcon(imageUri, false,
-                                MapView.getMapView().getContext());
-                        if (userIcon != null && userIcon.isValid()) {
+
+                    //set white pushpin and Google Earth will tint based on color above
+                    com.ekito.simpleKML.model.Icon icon = new com.ekito.simpleKML.model.Icon();
+                    icon.setHref(
+                            "http://maps.google.com/mapfiles/kml/pushpin/wht-pushpin.png");
+                    istyle.setIcon(icon);
+
+                    //see if we can set the actual icon for this marker
+                    String type = getType();
+                    String imageUri = getIcon().getImageUri(Icon.STATE_DEFAULT);
+                    if (!FileSystemUtils.isEmpty(imageUri)) {
+                        String kmzIconPath = null;
+                        if (imageUri.startsWith("sqlite")) {
+                            //query sqlite to get iconset UID and icon filename
+                            UserIcon userIcon = UserIcon.GetIcon(imageUri, false,
+                                    MapView.getMapView().getContext());
+                            if (userIcon != null && userIcon.isValid()) {
+                                kmzIconPath = "icons" + File.separatorChar
+                                        + userIcon.getIconsetUid()
+                                        + "_" + userIcon.getFileName();
+                            }
+                        } else {
+                            File f = new File(imageUri);
                             kmzIconPath = "icons" + File.separatorChar
-                                    + userIcon.getIconsetUid()
-                                    + "_" + userIcon.getFileName();
+                                    + type + "_" + f.getName();
                         }
-                    } else {
-                        File f = new File(imageUri);
-                        kmzIconPath = "icons" + File.separatorChar
-                                + type + "_" + f.getName();
-                    }
 
-                    if (!FileSystemUtils.isEmpty(kmzIconPath)) {
-                        icon.setHref(kmzIconPath);
+                        if (!FileSystemUtils.isEmpty(kmzIconPath)) {
+                            icon.setHref(kmzIconPath);
 
-                        if (!imageUri.endsWith(POINT_ICON_SUFFIX)
-                                && !hasMetaValue("color")) {
-                            //if we are including the icon, and it's not the white dot, then
-                            //don't set color as GE will paint/taint it.
-                            // shb: unless the marker is a team member //
-                            if (!hasMetaValue("team")) {
-                                istyle.setColor(null);
+                            if (!imageUri.endsWith(POINT_ICON_SUFFIX)
+                                    && !hasMetaValue("color")) {
+                                //if we are including the icon, and it's not the white dot, then
+                                //don't set color as GE will paint/taint it.
+                                // shb: unless the marker is a team member //
+                                if (!hasMetaValue("team")) {
+                                    istyle.setColor(null);
+                                }
                             }
                         }
-                    }
 
-                    Pair<String, String> pair = new Pair<>(
-                            imageUri, kmzIconPath);
-                    if (!folder.getFiles().contains(pair)) {
-                        folder.getFiles().add(pair);
+                        Pair<String, String> pair = new Pair<>(
+                                imageUri, kmzIconPath);
+                        if (!folder.getFiles().contains(pair)) {
+                            folder.getFiles().add(pair);
+                        }
                     }
                 }
             }

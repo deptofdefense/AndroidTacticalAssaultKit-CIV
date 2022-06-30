@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-
+    <PreferenceCategory
+        android:title="Toolbar Preferences">
+        <Preference
+            android:summary="@string/preferences_text130"
+            android:key="my_actionbar_settings"
+            android:title="@string/preferences_text131"
+            android:icon="@drawable/customize_actionbar_pref_icon"/>
+    </PreferenceCategory>
     <PreferenceCategory
         android:title="@string/basic_display_settings">
         <Preference android:title="@string/unitDisplayPreferences"
@@ -145,11 +152,7 @@
             android:title="@string/preferences_text129"
             android:icon="@drawable/ic_self_pref"/>
 
-        <Preference
-            android:summary="@string/preferences_text130"
-            android:key="my_actionbar_settings"
-            android:title="@string/preferences_text131"
-            android:icon="@drawable/customize_actionbar_pref_icon"/>
+
 
     </PreferenceCategory>
 

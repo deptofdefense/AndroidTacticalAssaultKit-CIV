@@ -47,6 +47,7 @@ public final class Unsafe {
     {
         new DirectByteBuffer18(),
         new DirectByteBuffer23(),
+        new DirectByteBuffer31(),
     };
 
     private static DirectByteBufferApi[] _api = null;
@@ -1075,6 +1076,51 @@ public final class Unsafe {
         protected abstract void freeImpl(ByteBuffer buffer) throws Throwable;
         protected abstract Field getByteBufferField(Buffer buffer) throws Throwable;
     }
+
+
+    /**
+     * DirectByteBuffer implementation detail for Android 12 (api 31).
+     * (should be good back to pie, but an alternate/proven method already exists for pie - 11).
+     * In these versions, DirectByteBuffer built using JNI NewDirectByteBuffer() (as we do in 
+     * outer allocator) ties cleanup of the underlying buffer to the original
+     * DirectByteBuffer instance, regardless of how many times said original Buffer is
+     * sliced or otherwise used as a window into its internal buffer via other ByteBuffer instances.
+     * The internal shared tracking holds open a strong reference to the original DirectByteBuffer
+     * and clears it once the child/windowed instances have all ceased utilization.
+     * This is in contrast to earlier versions, where no strong ref was held and instead it required
+     * reflection acrobatics to get to the internal object (memory ref) that was shared across
+     * the various views into the direct buffer memory so that cleanup could be held off until
+     * all users were finished.
+     */
+    private static class DirectByteBuffer31 extends DirectByteBufferApi {
+
+        @Override
+        protected boolean isSupportedImpl() throws Throwable {
+            if (Build.VERSION.SDK_INT < 31) 
+                return false;
+
+            return true;
+        }
+
+        @Override
+        public Object getTrackingField(ByteBuffer buffer) {
+            if (!supported || !DirectByteBuffer_class.isInstance(buffer))
+                return null;
+            return buffer;
+        }
+
+        @Override
+        protected void freeImpl(ByteBuffer buffer) throws Throwable {
+        }
+
+        @Override
+        protected Field getByteBufferField(Buffer buffer) throws Throwable {
+            return null;
+        }
+    }
+
+
+
 
     /**
      * DirectByteBuffer implementation detail for Android 23

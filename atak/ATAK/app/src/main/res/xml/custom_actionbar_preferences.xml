@@ -3,7 +3,7 @@
     <SwitchPreference
         android:title="@string/pref_nav_orientation_title"
         android:summary="@string/pref_nav_orientation_summary"
-        android:defaultValue="false"
+        android:defaultValue="true"
         android:key="nav_orientation_right"
         android:switchTextOn="@string/right_caps"
         android:switchTextOff="@string/left_caps"/>

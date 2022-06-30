@@ -1,5 +1,13 @@
 # Version History
 
+## 0.38.2 (cherrypick `master@0.44.3`)
+
+* Add Android 12 compatible implementation for the Unsafe allocator
+
+## 0.38.1
+
+* Avoid potential _null_ dereference in CLI `WFSQuery`
+
 ## 0.38.0
 
 * Add support for rendering line segments in `GLBatchLineString`
