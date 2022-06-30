@@ -1,5 +1,11 @@
 # Version History
 
+## 4.5.1.2
+
+* Bug Fixes
+  * HereLink Blue - Union Robotics running a firmware that has all of the telephony id's set to "862391030003883", proactively blacklist that number as not unique.
+  * when set in preferences, the urn is not being transmitted correctly
+
 ## 4.5.1.1
 
 * Bug Fixes
