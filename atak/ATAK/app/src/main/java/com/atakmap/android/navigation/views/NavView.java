@@ -731,7 +731,7 @@ public class NavView extends RelativeLayout implements View.OnClickListener,
         // Update orientation of menu button
         LayoutParams menuLP = (LayoutParams) menuButton.getLayoutParams();
         final boolean alignRight = _prefs.get(PREF_NAV_ORIENTATION_RIGHT,
-                false);
+                true);
         final boolean ddVisible = _mapView.getWidth() < getWidth();
         if (alignRight) {
             menuButton.setImageResource(ddVisible

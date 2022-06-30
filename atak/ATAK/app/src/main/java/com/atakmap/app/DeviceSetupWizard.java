@@ -18,6 +18,7 @@ import com.atakmap.android.importfiles.sort.ImportMissionPackageSort;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.update.AppMgmtActivity;
+import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.preferences.MyPreferenceFragment;
 import com.atakmap.app.preferences.ToolsPreferenceFragment;
 import com.atakmap.comms.CotService;
@@ -75,9 +76,14 @@ class DeviceSetupWizard implements CredentialsDialog.Callback {
             init_settings();
             SharedPreferences.Editor editor = _controlPrefs.edit();
             editor.putBoolean("PerformedDeviceSetupWizard", true);
+            editor.putBoolean("PerformedLegacyPrompt", true);
             editor.apply();
         } else {
             init_creds();
+            if (!_controlPrefs.getBoolean("PerformedLegacyPrompt", false)) {
+                toolbarPrompt();
+                _controlPrefs.edit().putBoolean("PerformedLegacyPrompt", true).apply();
+            }
         }
     }
 
@@ -88,11 +94,15 @@ class DeviceSetupWizard implements CredentialsDialog.Callback {
             return;
         }
 
+
+
         String title = _context.getString(R.string.preferences_text422b);
         String message = _context.getString(R.string.choose_config_method);
 
         Resources r = _mapView.getResources();
         TileButtonDialog d = new TileButtonDialog(_mapView, _context, true);
+        d.addButton(r.getDrawable(R.drawable.customize_actionbar_pref_icon),
+                "Action Bar Experience");
         d.addButton(r.getDrawable(R.drawable.my_prefs_settings),
                 r.getString(R.string.identity_title));
         d.addButton(r.getDrawable(R.drawable.missionpackage_icon),
@@ -113,32 +123,35 @@ class DeviceSetupWizard implements CredentialsDialog.Callback {
                 if (which == TileButtonDialog.WHICH_CANCEL) {
                     init_creds();
                 } else if (which == 0) {
+                    toolbarPrompt();
+                } else if (which == 1) {
                     //callsign dialog
                     MyPreferenceFragment.promptIdentity(_context);
-                } else if (which == 1) {
+                } else if (which == 2) {
                     //import MP
                     ImportMissionPackageSort.importMissionPackage(_context);
-                } else if (which == 2) {
+                } else if (which == 3) {
                     //plugin loading
                     Intent mgmtPlugins = new Intent(_context,
                             AppMgmtActivity.class);
                     _context.startActivityForResult(mgmtPlugins,
                             ToolsPreferenceFragment.APP_MGMT_REQUEST_CODE);
-                } else if (which == 3) {
+                } else if (which == 4) {
                     //generic file import (including .prefs)
                     AtakBroadcast.getInstance().sendBroadcast(
                             new Intent(
                                     "com.atakmap.android.importfiles.IMPORT_FILE"));
-                } else if (which == 4) {
+                } else if (which == 5) {
                     // launch Quick Connect enrollment dialog
                     CertificateEnrollmentClient.getInstance().enroll(
                             MapView.getMapView().getContext(),
                             null, null, null, null,
                             null, true);
-                } else if (which == 5) {
+                } else if (which == 6) {
                     //open settings
                     AtakBroadcast.getInstance().sendBroadcast(
                             new Intent("com.atakmap.app.ADVANCED_SETTINGS"));
+
                 }
             }
         });
@@ -393,5 +406,27 @@ class DeviceSetupWizard implements CredentialsDialog.Callback {
                 });
         builder.setNegativeButton(R.string.no, null);
         builder.show();
+    }
+
+
+    private void toolbarPrompt() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(_context);
+        builder.setTitle("Tool Bar Setting");
+        builder.setCancelable(false);
+        builder.setMessage("Do you want to use the legacy toolbar (overflow on the right side of the screen) or move to the new toolbar (overflow on the left side of the screen)?\n\nYou can change this at any time in Settings->Display Preferences->Tool Bar Customization");
+        builder.setPositiveButton("Right Side (Legacy)", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                _controlPrefs.edit().putBoolean("nav_orientation_right", true).apply();
+            }
+        });
+        builder.setNegativeButton("Left Side (New)", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                _controlPrefs.edit().putBoolean("nav_orientation_right", false).apply();
+            }
+        });
+        builder.show();
+
     }
 }
