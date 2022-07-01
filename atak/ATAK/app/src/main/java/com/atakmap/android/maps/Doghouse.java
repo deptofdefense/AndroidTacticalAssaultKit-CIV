@@ -517,8 +517,9 @@ public final class Doghouse extends Polyline implements
         } else if (_northReference == NorthReference.TRUE) {
             bearing = _bearingToNext;
         } else {
-            bearing = ATAKUtilities.computeGridConvergence(_source.get(),
+            double gridConvergence = ATAKUtilities.computeGridConvergence(_source.get(),
                     _target.get());
+            bearing = AngleUtilities.wrapDeg(_bearingToNext - gridConvergence);
         }
         String bearingRepr = formatBearingString(bearing);
         setMetaString(
