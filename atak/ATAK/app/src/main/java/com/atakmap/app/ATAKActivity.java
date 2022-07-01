@@ -1006,7 +1006,8 @@ public class ATAKActivity extends MapActivity implements
     }
 
     protected void toggleOrientation() {
-        setRequestedOrientation(AtakPreferenceFragment.getOrientation(_mapView
+        if (_mapView != null) 
+            setRequestedOrientation(AtakPreferenceFragment.getOrientation(_mapView
                 .getContext()));
     }
 
