@@ -1,5 +1,10 @@
 # Version History
 
+## 4.5.1.4
+
+* Bug Fixes
+  * Change other location where the legacy toolbar preference is used to draw the drop downs correctly.
+
 ## 4.5.1.3
 
 * Bug Fixes
