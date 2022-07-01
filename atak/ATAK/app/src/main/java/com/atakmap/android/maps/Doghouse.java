@@ -505,22 +505,22 @@ public final class Doghouse extends Polyline implements
     }
 
     /**
-     * converts the bearing from 1 route point to the next by users current north reference preference
+     * Calculates the bearing from 1 route point to the next and sets it on the doghouse, displaying
+     * it using the user's current north reference preference.
      */
     private void setBearingToNext() {
         _bearingToNext = _source.get().bearingTo(_target.get());
-        double bearingMag;
+        double bearing;
         if (_northReference == NorthReference.MAGNETIC) {
-            bearingMag = ATAKUtilities.convertFromTrueToMagnetic(_source.get(),
+            bearing = ATAKUtilities.convertFromTrueToMagnetic(_source.get(),
                     _bearingToNext);
         } else if (_northReference == NorthReference.TRUE) {
-            bearingMag = ATAKUtilities.convertFromMagneticToTrue(_source.get(),
-                    _bearingToNext);
+            bearing = _bearingToNext;
         } else {
-            bearingMag = ATAKUtilities.computeGridConvergence(_source.get(),
+            bearing = ATAKUtilities.computeGridConvergence(_source.get(),
                     _target.get());
         }
-        String bearingRepr = formatBearingString(bearingMag);
+        String bearingRepr = formatBearingString(bearing);
         setMetaString(
                 DoghouseFields.BEARING_TO_NEXT.toString(), bearingRepr);
 
