@@ -212,7 +212,7 @@ public class SidePane implements OnTouchListener,
         // Used to offset the top of the right-side drop-down if the nav buttons
         // are placed in the top-right corner of the screen
         final boolean navRight = prefs.get(NavView.PREF_NAV_ORIENTATION_RIGHT,
-                false);
+                true);
         final boolean menuVisible = menuButton.getVisibility() != View.GONE;
         final int navBottom = Math.max(
                 navRight && menuVisible ? menuButton.getBottom() : 0,

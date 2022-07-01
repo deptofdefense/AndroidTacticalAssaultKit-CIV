@@ -363,7 +363,7 @@ public class ActionBarReceiver extends BroadcastReceiver implements
         // Align the embedded toolbar against the menu button or right side
         // of the screen
         boolean navRight = _prefs.getBoolean(
-                NavView.PREF_NAV_ORIENTATION_RIGHT, false);
+                NavView.PREF_NAV_ORIENTATION_RIGHT, true);
         if (navRight) {
             lp.removeRule(RelativeLayout.ALIGN_PARENT_END);
             lp.addRule(RelativeLayout.START_OF, R.id.tak_nav_menu_button);

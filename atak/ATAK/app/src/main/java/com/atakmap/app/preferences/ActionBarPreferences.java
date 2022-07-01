@@ -103,7 +103,7 @@ public class ActionBarPreferences extends AtakPreferenceFragment implements
             }
         }
 
-        if (prefs.get(NavView.PREF_NAV_ORIENTATION_RIGHT, false))
+        if (prefs.get(NavView.PREF_NAV_ORIENTATION_RIGHT, true))
             reverseButtons();
 
         applyNewBackground();
