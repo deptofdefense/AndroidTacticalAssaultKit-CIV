@@ -1,5 +1,10 @@
 # Version History
 
+## 4.5.1.8
+
+* Feature Additions
+  * Allow for both trusted and untrusted transparent keys for plugins.
+
 ## 4.5.1.7
 
 * Bug Fixes
