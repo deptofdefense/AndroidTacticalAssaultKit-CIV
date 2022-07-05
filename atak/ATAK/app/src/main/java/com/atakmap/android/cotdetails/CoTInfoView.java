@@ -36,8 +36,6 @@ import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import com.atakmap.android.cotdetails.extras.ExtraDetailsLayout;
-import com.atakmap.android.hashtags.view.RemarksLayout;
-
 import com.atakmap.android.cotselector.CoTSelector;
 import com.atakmap.android.drawing.details.GenericDetailsView;
 import com.atakmap.android.gui.ColorPalette;
@@ -45,6 +43,7 @@ import com.atakmap.android.gui.ColorPalette.OnColorSelectedListener;
 import com.atakmap.android.gui.CoordDialogView;
 import com.atakmap.android.gui.RangeAndBearingTableHandler;
 import com.atakmap.android.gui.RangeEntryDialog;
+import com.atakmap.android.hashtags.view.RemarksLayout;
 import com.atakmap.android.icons.Icon2525cTypeResolver;
 import com.atakmap.android.icons.UserIcon;
 import com.atakmap.android.image.ImageGalleryReceiver;
@@ -62,8 +61,8 @@ import com.atakmap.android.util.AttachmentManager;
 import com.atakmap.android.util.SimpleItemSelectedListener;
 import com.atakmap.android.util.SpeedFormatter;
 import com.atakmap.app.R;
-import com.atakmap.app.system.FlavorProvider;
-import com.atakmap.app.system.SystemComponentLoader;
+import com.atakmap.coremap.conversions.Angle;
+import com.atakmap.coremap.conversions.AngleUtilities;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.conversions.SpanUtilities;
@@ -72,11 +71,8 @@ import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.ErrorCategory;
 import com.atakmap.coremap.maps.coords.GeoPoint;
-
-import com.atakmap.coremap.conversions.Angle;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.NorthReference;
-import com.atakmap.coremap.conversions.AngleUtilities;
 import com.atakmap.map.CameraController;
 
 import java.util.Date;
@@ -709,14 +705,6 @@ public class CoTInfoView extends RelativeLayout
                         });
 
         selector = new CoTSelector(mapView);
-
-        // check to see what type is being built - capabilities wise
-        FlavorProvider fp = SystemComponentLoader.getFlavorProvider();
-        if (fp == null || !fp.hasMilCapabilities()) {
-            findViewById(R.id.cotInfoCotLayout).setVisibility(View.GONE);
-            findViewById(R.id.cotInfoCotTitle).setVisibility(View.GONE);
-        }
-
     }
 
     private void _updateColorButtonDrawable() {
