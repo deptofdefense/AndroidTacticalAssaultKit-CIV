@@ -1,5 +1,10 @@
 # Version History
 
+## 4.5.1.10
+
+* Bug Fixes
+  * Fix issue with chat message receipt while the overflow menu is open which causes the side pane no longer to function correctly.
+
 ## 4.5.1.9
 
 * Bug Fixes

@@ -4,6 +4,8 @@ package com.atakmap.android.navigation;
 import android.content.Context;
 import android.content.Intent;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.navigation.models.NavButtonIntentAction;
 import com.atakmap.android.navigation.models.NavButtonModel;
 import com.atakmap.android.tools.menu.ActionBroadcastData;
@@ -20,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import androidx.annotation.NonNull;
 import transapps.maps.plugin.tool.Tool;
 
 /**
@@ -247,7 +248,8 @@ public class NavButtonManager {
     }
 
     /**
-     * Notify listeners that a model has been modified
+     * Notify listeners that a model has been modified.    Please ensure this is run on the UI
+     * thread.
      * @param model Model that was modified
      */
     public void notifyModelChanged(NavButtonModel model) {
