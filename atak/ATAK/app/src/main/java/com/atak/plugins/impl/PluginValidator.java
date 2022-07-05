@@ -148,16 +148,25 @@ class PluginValidator {
                                 path.replace("base/dex/", "")
                                     .replace("base/lib/", "lib/"));
                     InputStream inputStream = null;
-                    String classesdexSha256;
+                    String classesdexSha256 = null;
+                    boolean missing = false;
                     try {
-                        inputStream = zipFile.getInputStream(dex);
-                        classesdexSha256 = HashingUtils.sha256sum(inputStream);
+                        // if dex is null, the file was not included in the app bundle
+                        // download from the store.   Since it is missing, there is no
+                        // reason to check the validity.
+                        if (dex != null) {
+                            inputStream = zipFile.getInputStream(dex);
+                            classesdexSha256 = HashingUtils.sha256sum(inputStream);
+                        } else {
+                            Log.e(TAG, "missing: " + path);
+                            missing = true;
+                        }
                     } finally {
                         if (inputStream != null)
                             inputStream.close();
                     }
 
-                    if (!sha256.equals(classesdexSha256)) {
+                    if (!missing && !sha256.equals(classesdexSha256)) {
                         Log.d(TAG, "valid signature but invalid hashes for: " + pkgname + "@" + path +
                                " took: " + (SystemClock.elapsedRealtime() - start) + "ms");
                         persistValidityRecord(pkgname, apkHash, INVALID, "");
