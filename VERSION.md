@@ -1,5 +1,10 @@
 # Version History
 
+## 4.5.1.9
+
+* Bug Fixes
+  * Allow for both trusted and untrusted transparent keys for plugins (fix for when shared libraries are omitted).
+
 ## 4.5.1.8
 
 * Feature Additions
