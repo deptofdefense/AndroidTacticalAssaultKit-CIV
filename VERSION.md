@@ -1,5 +1,10 @@
 # Version History
 
+## 4.5.1.12
+
+* Feature Addition
+  * Ukraine Translation
+
 ## 4.5.1.11
 
 * Feature Addition
