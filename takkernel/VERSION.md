@@ -1,5 +1,9 @@
 # Version History
 
+## 0.38.3 (cherrypick `master@0.58.2`)
+
+* Restore preload of mosaic root nodes on worker thread to mitigate lock contention
+
 ## 0.38.2 (cherrypick `master@0.44.3`)
 
 * Add Android 12 compatible implementation for the Unsafe allocator

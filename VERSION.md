@@ -1,5 +1,10 @@
 # Version History
 
+## 4.5.1.13
+
+* Bug Fixes
+  * ATAK performance is slow when using offline imagery stored on an SD card
+
 ## 4.5.1.12
 
 * Feature Addition
