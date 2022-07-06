@@ -604,6 +604,20 @@ outer:      for(MosaicDatabase2.QueryParameters p : params) {
             // dump everything -- we don't need it to persist
             retval.spatialCalc.endBatch(false);
         }
+
+        // instantiate (but do not initialize) renderables for all frames that
+        // are not currently loaded
+        GLResolvableMapRenderable renderable;
+        for(MosaicDatabase2.Frame frame : retval.frames) {
+            if(this.checkQueryThreadAbort())
+                break;
+
+            if(retval.loaded.contains(this.resolvePath(frame.path)))
+                continue;
+            renderable = this.createRootNode(frame);
+            if(renderable != null)
+                retval.renderablePreload.put(frame, renderable);
+        }
     }
 
     @Override
