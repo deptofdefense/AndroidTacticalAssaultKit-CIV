@@ -114,7 +114,7 @@ public final class GetRepoIndexOperation extends HTTPOperation {
             }
             url += AppMgmtUtils.REPOZ_INDEX_FILENAME;
         }
-        Log.d(TAG, "mode=" + mode.toString());
+        Log.d(TAG, "mode=" + mode);
 
         //update local filename
         if (mode == MODE.INF) {

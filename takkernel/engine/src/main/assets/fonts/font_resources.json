@@ -1,0 +1,40 @@
+{
+  "atlases": [
+    {
+      "fontName": "Arial",
+      "type": "sdf",
+      "jsonFilename": "arial_sdf.json",
+      "binFilename": "arial_sdf.bin"
+    },
+    {
+      "fontName": "Arial",
+      "type": "msdf",
+      "jsonFilename": "arial_msdf.json",
+      "binFilename": "arial_msdf.bin"
+    },
+    {
+      "fontName": "Courier",
+      "type": "sdf",
+      "jsonFilename": "cour_sdf.json",
+      "binFilename": "cour_sdf.bin"
+    },
+    {
+      "fontName": "Courier",
+      "type": "msdf",
+      "jsonFilename": "cour_msdf.json",
+      "binFilename": "cour_msdf.bin"
+    },
+    {
+      "fontName": "Segoe UI",
+      "type": "sdf",
+      "jsonFilename": "segoeui_sdf.json",
+      "binFilename": "segoeui_sdf.bin"
+    },
+    {
+      "fontName": "Segoe UI",
+      "type": "msdf",
+      "jsonFilename": "segoeui_msdf.json",
+      "binFilename": "segoeui_msdf.bin"
+    }
+  ]
+}

@@ -251,7 +251,7 @@ public class GLMapMenuButtonWidget extends GLAbstractButtonWidget implements
     public void onButtonStateChanged(AbstractButtonWidget button) {
 
         final WidgetBackground background = button.getBackground();
-        if (background != null) { 
+        if (background != null) {
             switch (button.getState()) {
                 case AbstractButtonWidget.STATE_PRESSED:
                 case AbstractButtonWidget.STATE_SELECTED:
@@ -267,10 +267,10 @@ public class GLMapMenuButtonWidget extends GLAbstractButtonWidget implements
                     _iconColor = button.getBackground()
                             .getColor(AbstractButtonWidget.STATE_PRESSED);
                     break;
-             }
+            }
         } else {
-             // make the broken state more obvious
-             _iconColor = Color.CYAN;
+            // make the broken state more obvious
+            _iconColor = Color.CYAN;
         }
         super.onButtonStateChanged(button);
     }

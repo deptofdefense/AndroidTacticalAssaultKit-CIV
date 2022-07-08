@@ -706,15 +706,15 @@ TAKErr GLText2::batchImpl(GLRenderBatch2 &batch,
     float v1;
 
     for (std::size_t i = 0; i < len; i++) { // for each character in string
-        // skip non-printable
-        if (((unsigned int)text[i + off] & 0xFFu) < 32u)
-            continue;
-
         char uri[5];
         std::size_t uri_size = 0;
         unsigned int c = decode(text, len, uri, i+off, uri_size);
         assert(uri_size != 0);
+        i += uri_size - 1;
+
         // skip non-printable
+        if (c < 32u)
+            continue;
 
         // if common character, use LUT
         if (c >= GLTEXT2_CHAR_START && c <= GLTEXT2_CHAR_END) {
@@ -818,15 +818,9 @@ TAKErr GLText2::batchImpl(GLRenderBatch2 &batch,
         TE_CHECKRETURN_CODE(code);
 
         // advance X position by scaled character width
-#if 1
         letterX += charWidth;
-#else
-        letterX += getTextFormat()->getCharPositionWidth(text, i + off);//charWidth;
-#endif
         if (letterX > scissorX1)
             break;
-
-        i += uri_size - 1;
     }
 
     return code;

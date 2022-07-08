@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:fadeScrollbars="false"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:weightSum="1"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_weight=".35"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="@string/title" />
+            <EditText
+                android:id="@+id/user_feedback_title"
+                android:layout_weight=".65"
+                android:singleLine="true"
+                android:nextFocusDown="@id/user_feedback_description"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"/>
+
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:weightSum="1"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_weight=".35"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="@string/feedback" />
+            <EditText
+                android:id="@+id/user_feedback_description"
+                android:layout_weight=".65"
+                android:inputType="textCapSentences|textMultiLine|textAutoCorrect"
+                android:gravity="top"
+                android:minLines="6"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"/>
+
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:weightSum="1"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_weight=".95"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="@string/associated_files" />
+
+            <ImageButton
+                android:id="@+id/add_user_feedback_files"
+                android:layout_gravity="end"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:padding="6dp"
+                android:layout_weight=".05"
+                style="@style/darkButton"
+                android:src="@drawable/attachment"/>
+        </LinearLayout>
+
+
+
+
+
+    </LinearLayout>
+</ScrollView>

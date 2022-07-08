@@ -173,7 +173,7 @@ public class WarningComponent extends AbstractWidgetMapComponent implements
                 new ToolsPreferenceFragment.ToolPreference(
                         _mapView.getContext().getString(
                                 R.string.alertPreferences),
-                        "Manage alerting behavior",
+                        "Adjust the Alert Preferences",
                         "alertPreference",
                         _mapView.getContext().getResources().getDrawable(
                                 R.drawable.emergency),
@@ -360,11 +360,11 @@ public class WarningComponent extends AbstractWidgetMapComponent implements
 
             int index = alerts.indexOf(alert);
             if (index >= 0) {
-                Log.d(TAG, "Updating alert: " + alert.toString());
+                Log.d(TAG, "Updating alert: " + alert);
                 alerts.remove(alert);
                 alerts.add(alert);
             } else {
-                Log.d(TAG, "Adding alert: " + alert.toString());
+                Log.d(TAG, "Adding alert: " + alert);
                 alerts.add(alert);
                 bAlert = true;
             }
@@ -472,11 +472,11 @@ public class WarningComponent extends AbstractWidgetMapComponent implements
             }
 
             if (!alerts.remove(alert)) {
-                Log.w(TAG, "Not alerting: " + alert.toString());
+                Log.w(TAG, "Not alerting: " + alert);
                 return;
             }
 
-            Log.d(TAG, "Removing alert: " + alert.toString());
+            Log.d(TAG, "Removing alert: " + alert);
         }
 
         alert(false);

@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "renderer/raster/tilematrix/GLTilePatch.h"
 #include "core/GeoPoint2.h"
 #include "math/Point2.h"
@@ -284,3 +285,4 @@ void GLTilePatch::getTiles(std::set<std::shared_ptr<GLTile>> *tiles, double minX
 const GLZoomLevel *GLTilePatch::getParent() {
     return parent_;
 }
+#endif

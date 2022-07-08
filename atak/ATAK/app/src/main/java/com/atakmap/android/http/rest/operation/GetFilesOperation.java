@@ -18,8 +18,6 @@ import java.util.List;
 
 /**
  * REST Operation to GET one or more files
- * 
- * 
  */
 public final class GetFilesOperation extends HTTPOperation {
     private static final String TAG = "GetFilesOperation";

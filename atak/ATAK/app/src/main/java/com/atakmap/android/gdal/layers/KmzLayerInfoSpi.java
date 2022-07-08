@@ -165,7 +165,8 @@ public class KmzLayerInfoSpi extends AbstractDatasetDescriptorSpi {
             if (mosaic == null)
                 return null;
             return Collections.singleton(mosaic);
-        } catch (XmlPullParserException | IllegalArgumentException | IOException e) {
+        } catch (XmlPullParserException | IllegalArgumentException
+                | IOException e) {
             Log.e(TAG, "Unexpected XML error creating KMZ layer", e);
             return null;
         } finally {
@@ -215,6 +216,10 @@ public class KmzLayerInfoSpi extends AbstractDatasetDescriptorSpi {
 
             inputStream = docFile.openStream();
             parser = XMLUtils.getXmlPullParser();
+
+            if (parser == null)
+                return false;
+
             parser.setInput(inputStream, null);
 
             AtomicInteger tagCount = new AtomicInteger(0);
@@ -453,7 +458,8 @@ public class KmzLayerInfoSpi extends AbstractDatasetDescriptorSpi {
             GeoPoint ul,
             GeoPoint ur, GeoPoint lr, GeoPoint ll)
             throws XmlPullParserException, IOException {
-        Map<String, String> latlonBox = getTextElements(parser, "LatLonBox",
+        final Map<String, String> latlonBox = getTextElements(parser,
+                "LatLonBox",
                 LATLON_BOX_PARSE_TAGS,
                 null);
         if (!latlonBox.keySet().containsAll(LATLON_BOX_MINIMUM_TAGS))
@@ -496,6 +502,7 @@ public class KmzLayerInfoSpi extends AbstractDatasetDescriptorSpi {
         }
 
         return true;
+
     }
 
     private static boolean getCornerCoordsLatLonQuad(XmlPullParser parser,
@@ -509,7 +516,11 @@ public class KmzLayerInfoSpi extends AbstractDatasetDescriptorSpi {
         if (!latlonQuad.keySet().containsAll(LATLON_QUAD_PARSE_TAGS))
             return false;
 
-        final String[] coords = latlonQuad.get("coordinates").trim()
+        String coordString = latlonQuad.get("coordinates");
+        if (coordString == null)
+            coordString = "";
+
+        final String[] coords = coordString.trim()
                 .split("\\s");
         return coords.length == 4 && parseLatLonQuadCoord(coords[0], ll)
                 && parseLatLonQuadCoord(coords[1], lr) &&

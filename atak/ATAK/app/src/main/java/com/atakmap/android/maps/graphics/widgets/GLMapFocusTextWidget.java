@@ -59,7 +59,8 @@ public class GLMapFocusTextWidget extends GLTextWidget implements
     public void drawWidgetContent() {
         // Update coordinate whenever draw position changes
         if (Double.compare(_drawLat, orthoView.currentPass.drawLat) != 0
-                || Double.compare(_drawLng, orthoView.currentPass.drawLng) != 0) {
+                || Double.compare(_drawLng,
+                        orthoView.currentPass.drawLng) != 0) {
             _drawLat = orthoView.currentPass.drawLat;
             _drawLng = orthoView.currentPass.drawLng;
 

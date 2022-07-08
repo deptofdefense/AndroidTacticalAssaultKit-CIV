@@ -46,7 +46,7 @@ public class CopyTask extends MissionPackageBaseTask {
         // work to be performed by background thread
         Thread.currentThread().setName(TAG);
 
-        Log.d(TAG, "Executing: " + toString());
+        Log.d(TAG, "Executing: " + this);
 
         File source = new File(_manifest.getPath());
         if (!FileSystemUtils.isFile(source)) {

@@ -199,11 +199,11 @@ public class LoadoutListDropDown extends NavigationStackItem
 
                 // Toggle the drop-down
             case TOGGLE_LOADOUT:
-                if (isVisible()) { 
+                if (isVisible()) {
                     if (_toolsDropdown != null && _toolsDropdown.isInEditMode())
-                         _toolsDropdown.onCloseButton();
-                    else 
-                         closeNavigationStack();
+                        _toolsDropdown.onCloseButton();
+                    else
+                        closeNavigationStack();
                 } else
                     showDropDown();
                 break;

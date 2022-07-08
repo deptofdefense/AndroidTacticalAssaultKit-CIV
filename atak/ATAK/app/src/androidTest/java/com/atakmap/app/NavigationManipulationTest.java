@@ -96,7 +96,8 @@ public class NavigationManipulationTest {
         DataInteraction loadoutToolsGridVH = onData(anything())
                 .inAdapterView(allOf(withId(R.id.tools_list),
                         childAtPosition(
-                                withClassName(is("android.widget.LinearLayout")),
+                                withClassName(
+                                        is("android.widget.LinearLayout")),
                                 1)))
                 .atPosition(27);
         loadoutToolsGridVH.perform(click());

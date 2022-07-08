@@ -39,7 +39,7 @@ import com.atakmap.math.PointD;
 import com.atakmap.math.Rectangle;
 import com.atakmap.spatial.GeometryTransformer;
 import com.atakmap.util.Collections2;
-import com.atakmap.util.Disposable;
+import gov.tak.api.util.Disposable;
 
 import java.io.File;
 import java.util.ArrayList;

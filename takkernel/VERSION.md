@@ -1,12 +1,314 @@
 # Version History
 
-## 0.38.3 (cherrypick `master@0.58.2`)
+## 0.59.1
 
-* Restore preload of mosaic root nodes on worker thread to mitigate lock contention
+* Fix regression with `GLGlobe::lookAt` honoring minimum zoom introduced in `0.42.0`
 
-## 0.38.2 (cherrypick `master@0.44.3`)
+## 0.59.0
+
+* bump to `jogl@2.2.4` for closer API compatibility with TAKX
+
+## 0.58.5
+
+* Fix logic error causing failure of `Interop.getObject`
+
+## 0.58.4
+
+* Fix `jcameracontroller.cpp` signature for `tiltTo` causing JNI method resolution failure
+
+## 0.58.3
+
+* Address CVEs
+  * CVE-2020-15522
+  * CVE-2020-28052
+  * CVE-2020-13956
+
+## 0.58.2
+
+* Preload mosaic root nodes on background thread
+
+## 0.58.1
+
+* Make Java `NodeContextResources.discardBuffers` instance based to avoid single render thread/context constraint
+
+## 0.58.0
+
+* Add default radial menu icon resources
+
+## 0.57.2
+
+* Make `GroupContactBase` public to resolve JDK limitations on "split packages" across modules.
+  This is NOT intended to make the API published, but is required by the JDK.
+
+## 0.57.1
+
+* Deprecate `GroupContact`, `GroupContactBuilder` and `GroupContactBuilderBase`
+* Create `GroupContactBuilderBase2`, replacing `GroupContactBuilderBase`
+* Fix persistence errors in `AttributeSet` by using JPA annotations vs Hibernate `Lifecycle` methods
+* Delete classes from `experimental.chat`, since they were moved out to TAKX 4 months ago.
+
+## 0.56.1
+
+* Support ModelInfo from zip comment for KMZ files containing only one model.
+
+## 0.56.0
+
+* Port updated submenu support for radial
+
+## 0.55.4
+
+* Re-order static initialization for `AtakAuthenticationDatabase`, `AtakCertificateDatabase` and `CertificateManager`
+
+## 0.55.3
+
+* Cleanup debugging for `Unsafe.allocateDirect` API discovery
+
+## 0.55.2
+
+* Handle potential `NullPointerException` in `Unsafe` due to `Class.getClassLoader()` may return `null`
+
+## 0.55.1
+
+* Crash dumps on Windows will attempt to capture full memory.
+
+## 0.55.0
+
+* Add `IPersistable` interface
+* Add persistence support for JRE flavor of `GroupContact`
+* `IGroupContact` adds _default_ `setParentContact`
+
+
+## 0.54.5
+
+* `DtedElevationSource` applies _flags_ filter appropriately on query params
+
+## 0.54.4
+
+* fix C++ surface mesh/model depth buffer based hit test
+
+## 0.54.3
+
+* MOBAC sources now correctly support `minZoom` greater than zero
+
+## 0.54.2
+
+* fix C++ `FDB` encoding for overloaded schemas
+
+## 0.54.1
+
+* fix issue with HTTPS redirects causing WMS/WMTS GetCapabilities to timeout for C++/CLI client
+
+## 0.54.0
+
+* port most recent changes to radial menu
+
+## 0.53.3
+
+* Add nullptr check to Tesselate_polygon to fix failing unit test
+
+## 0.53.2
+
+* Apply perspective divide in `GLLinesEmulation`
+
+## 0.53.1
+
+* Disable polygon tessellation threshold based on limited utility versus potential for resource exhaustion.
+
+## 0.53.0
+
+* Implement new C++ feature renderer
+* C++/CLI `GLBatchGeometryFeatureDataStoreRenderer` allows for select between old and new C++ impls
+* C++ `Tessellate` adds support for callback based processing to eliminate the need for pre-allocated buffers
+* Fix bug in C++ `IconPointStyleConstructor` overload for correctly setting absolute vs relative rotation
+* C++ `LineString` and `Polygon` allow for direct access to data buffers
+* Micro-optimize `TAK::Engine::Port::String` to avoid heap allocations for small strings
+
+
+## 0.52.2
+
+* Dispatch focus changed on surface resize as focus point is now managed as offset by the renderer, not by the controller/globe
+
+## 0.52.1
+
+* `GLText2` performs non-printable character check AFTER decode
+
+## 0.52.0
+
+* Refactor `TextFormatParams::fontName` `const char *` -> `TAK::Engine::Port::String` to retain ownership over memory
+
+## 0.51.14
+
+* Avoid potential empty viewport specification for surface rendering
+
+## 0.51.13
+
+* Improve C++ C3DT culling for perspective camera
+
+## 0.51.12
+
+* Update batch point rendering & lollipop behavior to render at terrain instead of altitude 0
+
+## 0.51.11
+
+* Mitigate potential crash when path exceeds max path length
+
+## 0.51.10
+
+* keep enums and the inner interface for RenderSurface (exclude them from obfuscation)
+
+## 0.51.9
+
+* Simplify client initialization of engine for Desktop Java deployment
+
+## 0.51.8
+
+* Support SceneInfo from zip comment for KMZ files containing only one model.
+
+## 0.51.7
+
+* Ensure context is attached in `GLScene` hit-test
+
+## 0.51.6
+
+* In SceneLayer::update, failing to write the zip file comment will not prevent the call to dispatchContentChangedNoSync.
+* Revert change from 0.50.0 where OGRFeatureDataStore no longer used RuntimeCachingFeatureDataStore but use a maxRenderQueryLimit of 10K.
+
+## 0.51.5
+
+* Consolidate CMake source file definitions
+
+## 0.51.4
+
+* Initialize texture handle to `GL_NONE` in the event that `glGenTextures` fails
+
+
+## 0.51.3
+
+* Skip attribute assignment if not defined for shader
+
+## 0.51.2
+
+* Pass correct name to `glInvalidateFramebuffer`
+
+## 0.51.1
+
+* Update model's zip comment before calling dispatchContentChangedNoSync.
+
+## 0.51.0
+
+* Java binding for C++ `DtedElevationSource`
+
+## 0.50.2
+
+* Gracefully handle situation where C++ `std::wstring` to CLI `System::String` fails due to an unsupported character.
+
+## 0.50.1
+
+* `GLBaseMap` tile size dropped to 64 pixels. Resolves issue with texture coordinate precision on MPU5 integrated display unit. This should also mitigate fill rate issues on some devices.
+* Make atmosphere enabled state configurable via `ConfigOptions`
+
+## 0.50.0
+
+* Fix `GLBatchGeometryFeatureDataStoreRenderer2::checkSpatialFilter` logic for more than one include/exclude filter.
+* Overloaded the `RuntimeCachingFeatureDataStore` constructor to allow clients to specify the maxRenderQueryLimit.
+* Changed `ZipFile::setGlobalComment` to return TE_IO if `zipOpen` fails to open the zip file.
+
+## 0.49.1
+
+* Fix copy-paste bug in C++ `AtakMapView::getBounds`
+
+## 0.49.0
+
+* Resolve precision issues with ECEF globe by ditching ECEF emulation in favor of packing ECEF verts into terrain tile using a reserved attribute
+
+## 0.48.0
+
+* Upgrade to TTP-Dist 2.6.1
+* Minor modifications to support Linux compilation with GCC 4.8.x
+
+## 0.47.0
+
+* prepare for the removal of direct access to the adapter for both AtakAuthenticationDatabase and AtakCredentialDatabase
+
+## 0.46.0
+
+* Add CLI `MobacMapSource2` to expose tile update interval
+* `MobacMapSourceFactory` parses out `<tileUpdate>` tag as refresh interval in milliseconds
+* implement automatic refresh monitor
+
+## 0.45.2
+
+* Add support for getting the raw url from `MobacMapSource`
+
+## 0.45.1
+
+* Fix off-by-one issue in C++ `MultiLayer2` that would result in failure to move a child layer to the last position.
+
+## 0.45.0
+
+* Add flag for CLI `GLAsynchronousMapRenderable` to allow for better consistency with legacy globe for image overlay selection
+
+## 0.44.3
 
 * Add Android 12 compatible implementation for the Unsafe allocator
+
+## 0.44.2
+
+* Pass through layer transparency setting to renderer for mobile imagery
+
+## 0.44.1
+
+* Use a recursive mutex to guard `AtakMapView` layers/callbacks to allow re-entry from callback
+
+## 0.44.0
+
+* legacy `GLGdalQuadTileNode` now works with globe surface renderer
+* make CLI `GLTiledMapLayer` part of public API
+* implement legacy adapter for tile reader/spi
+
+## 0.43.0
+
+* expose GLGlobeBase::release() via C++/CLI bindings
+* C++ GLMapView2 orderly destruct offscreen FBO in release() or leak from destructor if not on render thread
+* implement sharing of OSMDroidContainer instances to mitigate issues with concurrent writes
+* Propagate GLGlobeBase::animationTick to GLGlobeBase::State during render pump
+* Better define owner for C++/CLI ITileReader in GLTiledMapLayer to allow for positive release
+* Resolve issues with out-of-order destruct
+
+## 0.42.3
+
+* Fix int precision issue in `IO_truncate` causing a failure during Cesium conversion
+
+## 0.42.2
+
+* C++/CLI `GLAbstractDataStoreRasterLayer` honors subject visibility setting
+
+## 0.42.1
+
+* When determining number of resolution levels, continue to bisect until both dimensions are reduced to single tile
+
+## 0.42.0
+
+* Refactor `CameraController` to C++
+* C++ `AtakMapView` completely defer state to `MapRenderer2`
+* `MapSceneModel2` assignment copies `displayDpi`
+* Java `RenderSurface` interop
+* Java `GLGlobeBase` interop does static init if necessary
+* Collision handling becomes implementation detail of `GLGlobeBase` derivative
+* Access `SurfaceRendererControl` via `GLGlobeBase::getControl(...)` rather than specialization
+
+## 0.41.0
+
+* Massage location of embedded font files
+* Add new resource file describing embedded font files
+
+## 0.39.1
+
+* Give C++ `HttpProtocolHandler` a default timeout of 10s 
+
+## 0.39.0
+
+* Expose font files as resources via `TAK.Engine` assembly
 
 ## 0.38.1
 

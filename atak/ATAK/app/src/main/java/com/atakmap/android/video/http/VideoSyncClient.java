@@ -86,7 +86,7 @@ public class VideoSyncClient implements RequestManager.RequestListener {
 
             // notify user
             Log.d(TAG,
-                    "Video query request created for: " + request.toString());
+                    "Video query request created for: " + request);
 
             NotificationUtil.getInstance().postNotification(
                     request.getNotificationId(),
@@ -122,7 +122,7 @@ public class VideoSyncClient implements RequestManager.RequestListener {
             }
 
             // notify user
-            Log.d(TAG, "Video post request created for: " + request.toString());
+            Log.d(TAG, "Video post request created for: " + request);
 
             NotificationUtil.getInstance().postNotification(
                     request.getNotificationId(),

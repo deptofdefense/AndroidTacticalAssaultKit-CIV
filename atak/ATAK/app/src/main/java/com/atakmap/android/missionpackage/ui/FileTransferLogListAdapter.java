@@ -210,13 +210,13 @@ public class FileTransferLogListAdapter extends BaseAdapter {
         }
 
         _sort = sort;
-        Log.d(TAG, "Sorting by: " + sort.toString());
+        Log.d(TAG, "Sorting by: " + sort);
 
         switch (sort) {
             case DATE: {
                 Collections.sort(logs, DateComparator);
                 if (_sortReversed) {
-                    Log.d(TAG, "Reversing sort by: " + sort.toString());
+                    Log.d(TAG, "Reversing sort by: " + sort);
                     Collections.sort(logs,
                             Collections.reverseOrder(DateComparator));
                 }
@@ -225,7 +225,7 @@ public class FileTransferLogListAdapter extends BaseAdapter {
             case TYPE: {
                 Collections.sort(logs, TypeComparator);
                 if (_sortReversed) {
-                    Log.d(TAG, "Reversing sort by: " + sort.toString());
+                    Log.d(TAG, "Reversing sort by: " + sort);
                     Collections.sort(logs,
                             Collections.reverseOrder(TypeComparator));
                 }
@@ -235,7 +235,7 @@ public class FileTransferLogListAdapter extends BaseAdapter {
             default: {
                 Collections.sort(logs, NameComparator);
                 if (_sortReversed) {
-                    Log.d(TAG, "Reversing sort by: " + sort.toString());
+                    Log.d(TAG, "Reversing sort by: " + sort);
                     Collections.sort(logs,
                             Collections.reverseOrder(NameComparator));
                 }
@@ -267,7 +267,7 @@ public class FileTransferLogListAdapter extends BaseAdapter {
             return;
         }
 
-        Log.d(TAG, "Showing details of Log: " + log.toString());
+        Log.d(TAG, "Showing details of Log: " + log);
 
         View v = LayoutInflater.from(_context)
                 .inflate(R.layout.missionpackage_log_detail, null);

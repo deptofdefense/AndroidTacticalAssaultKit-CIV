@@ -38,6 +38,8 @@ import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import java.util.HashMap;
 import java.util.Map;
 
+import gov.tak.api.annotation.ModifierApi;
+
 /**
  * 
  * 
@@ -72,7 +74,10 @@ public class MissionSpecificPalletFragment extends Fragment implements
         void afterAction(Marker m);
     }
 
-    private final static Map<Integer, Slot> _slotMap = new HashMap<>();
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
+    protected final static Map<Integer, Slot> _slotMap = new HashMap<>();
 
     @Override
     public void onCreate(Bundle savedInstanceState) {

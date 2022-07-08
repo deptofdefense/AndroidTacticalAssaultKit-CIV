@@ -370,7 +370,7 @@ public:
 GLMapView2::GLMapView2(RenderContext &ctx, AtakMapView &aview,
                        int left, int bottom,
                        int right, int top) NOTHROWS :
-    GLGlobeBase(ctx, aview.getDisplayDpi(), MapCamera2::Scale),
+    GLGlobeBase(ctx, ctx.getRenderSurface()->getDpi(), MapCamera2::Scale),
     left(left), bottom(bottom),
     right(right), top(top), drawLat(0),
     drawLng(0), drawRotation(0), drawMapScale(0),
@@ -381,13 +381,13 @@ GLMapView2::GLMapView2(RenderContext &ctx, AtakMapView &aview,
     focusx(0), focusy(0), upperLeft(),
     upperRight(), lowerRight(), lowerLeft(),
     renderPump(0),
-    scene(aview.getDisplayDpi(),
-        static_cast<int>(aview.getWidth()),
-        static_cast<int>(aview.getHeight()),
+    scene(ctx.getRenderSurface()->getDpi(),
+        ctx.getRenderSurface()->getWidth(),
+        ctx.getRenderSurface()->getHeight(),
         aview.getProjection(),
         getPoint(aview),
-        getFocusX(aview),
-        getFocusY(aview),
+        (float)ctx.getRenderSurface()->getWidth()/2.f,
+        (float)ctx.getRenderSurface()->getHeight()/2.f,
         aview.getMapRotation(),
         aview.getMapTilt(),
         aview.getMapResolution()),
@@ -419,25 +419,21 @@ GLMapView2::GLMapView2(RenderContext &ctx, AtakMapView &aview,
     sceneModelVersion = drawVersion - 1;
 
     drawSrid = scene.projection->getSpatialReferenceID();
-    atakmap::core::GeoPoint oldCenter;
     GeoPoint2 center;
-    view.getPoint(&oldCenter);
-    atakmap::core::GeoPoint_adapt(&center, oldCenter);
+    scene.projection->inverse(&center, scene.camera.target);
     drawLat = center.latitude;
     drawLng = center.longitude;
     drawAlt = center.altitude;
-    drawRotation = view.getMapRotation();
-    drawTilt = view.getMapTilt();
-    drawMapScale = view.getMapScale();
-    drawMapResolution = view.getMapResolution(drawMapScale);
-    atakmap::math::Point<float> p;
-    view.getController()->getFocusPoint(&p);
-    focusx = p.x;
-    focusy = p.y;
+    drawRotation = scene.camera.azimuth;
+    drawTilt = 90.0 + scene.camera.elevation;
+    drawMapScale = atakmap::core::AtakMapView_getMapScale(scene.displayDpi, scene.gsd);
+    drawMapResolution = scene.gsd;
+    focusx = scene.focusX;
+    focusy = scene.focusY;
     this->left = 0;
-    this->right = (int)view.getWidth();
+    this->right = (int)scene.width;
     this->bottom = 0;
-    this->top = (int)view.getHeight();
+    this->top = (int)scene.height;
 
     animation.target.point.latitude = drawLat;
     animation.target.point.longitude = drawLng;
@@ -445,8 +441,8 @@ GLMapView2::GLMapView2(RenderContext &ctx, AtakMapView &aview,
     animation.target.mapScale = drawMapScale;
     animation.target.rotation = drawRotation;
     animation.target.tilt = drawTilt;
-    animation.target.focusx = focusx;
-    animation.target.focusy = focusy;
+    animation.target.focusOffset.x = focusx-(float)this->right/2.f;
+    animation.target.focusOffset.y = (float)this->top/2.f-focusy;
     animation.settled = false;
     animationFactor = 1.f;
     settled = false;
@@ -466,8 +462,8 @@ GLMapView2::GLMapView2(RenderContext &ctx, AtakMapView &aview,
     state.focus.geo.latitude = renderPasses[0].drawLat;
     state.focus.geo.longitude = renderPasses[0].drawLng;
     state.focus.geo.altitude = renderPasses[0].drawAlt;
-    state.focus.x = renderPasses[0].focusx;
-    state.focus.y = renderPasses[0].focusy;
+    state.focus.offsetX = renderPasses[0].focusx-renderPasses[0].viewport.width/2.f;
+    state.focus.offsetY = renderPasses[0].focusy-renderPasses[0].viewport.height/2.f;
     state.srid = renderPasses[0].drawSrid;
     state.resolution = renderPasses[0].drawMapResolution;
     state.rotation = renderPasses[0].drawRotation;
@@ -483,15 +479,22 @@ GLMapView2::GLMapView2(RenderContext &ctx, AtakMapView &aview,
 #endif
 }
 
-
-
 GLMapView2::~GLMapView2() NOTHROWS
 {
     GLMapView2::stop();
+
+    if(this->offscreen && this->offscreen->depthSamplerFbo) {
+        if (!context.isAttached()) {
+            Logger_log(TELL_Warning, "GLMapView2::release() not called prior to destruct; destruct off of render thread leaking GL resources");
+            this->offscreen->depthSamplerFbo.release();
+        }
+    }
 }
 
 TAKErr GLMapView2::start() NOTHROWS
 {
+    GLGlobeBase::start();
+
     this->terrain->start();
 
     this->view.addLayersChangedListener(this);
@@ -499,38 +502,18 @@ TAKErr GLMapView2::start() NOTHROWS
     view.getLayers(layers);
     refreshLayers(layers);
 
-    this->view.addMapElevationExaggerationFactorListener(this);
-    mapElevationExaggerationFactorChanged(&this->view, this->view.getElevationExaggerationFactor());
-
-    this->view.addMapProjectionChangedListener(this);
-    mapProjectionChanged(&this->view);
-
-    this->view.addMapMovedListener(this);
-    mapMoved(&this->view, false);
-
-    this->view.getController()->addFocusPointChangedListener(this);
-    atakmap::math::Point<float> focus;
-    this->view.getController()->getFocusPoint(&focus);
-    mapControllerFocusPointChanged(this->view.getController(), &focus);
-
-    this->view.addMapResizedListener(this);
-    {
-        WriteLock wlock(this->renderPasses0Mutex);
-        renderPasses[0].left = 0;
-        renderPasses[0].right = static_cast<int>(view.getWidth());
-        renderPasses[0].top = static_cast<int>(view.getHeight());
-        renderPasses[0].bottom = 0;
-    }
     this->tiltSkewOffset = ConfigOptions_getDoubleOptionOrDefault("glmapview.tilt-skew-offset", DEFAULT_TILT_SKEW_OFFSET);
     this->tiltSkewMult = ConfigOptions_getDoubleOptionOrDefault("glmapview.tilt-skew-mult", DEFAULT_TILT_SKEW_MULT);
 
-    this->displayDpi = view.getDisplayDpi();
+    view.attachRenderer(*this, false);
 
     return TE_Ok;
 }
 
 TAKErr GLMapView2::stop() NOTHROWS
 {
+    view.detachRenderer(*this);
+
     this->view.removeLayersChangedListener(this);
     this->view.removeMapElevationExaggerationFactorListener(this);
     this->view.removeMapProjectionChangedListener(this);
@@ -610,8 +593,8 @@ bool GLMapView2::initOffscreenRendering() NOTHROWS
     // 4096x4096 is the absoluate maximum texture we will try to allocate
     ivalue = std::min(ivalue, 4096);
 
-    const int offscreenTextureWidth = std::min((int)((float)view.getWidth()*wfactor), ivalue);
-    const int offscreenTextureHeight = std::min((int)((float)view.getHeight()*hfactor), ivalue);
+    const int offscreenTextureWidth = std::min((int)((float)state.width*wfactor), ivalue);
+    const int offscreenTextureHeight = std::min((int)((float)state.height*hfactor), ivalue);
 
     const int textureSize = std::max(offscreenTextureWidth, offscreenTextureHeight);
 
@@ -683,7 +666,7 @@ void GLMapView2::mapMoved(atakmap::core::AtakMapView* map_view, bool animate)
     map_view->getPoint(&p);
 
     GeoPoint2 p2;
-    lookAt(GeoPoint2(p.latitude, p.longitude, p.altitude, TAK::Engine::Core::AltitudeReference::HAE),
+    GLGlobeBase::lookAt(GeoPoint2(p.latitude, p.longitude, p.altitude, TAK::Engine::Core::AltitudeReference::HAE),
             map_view->getMapResolution(),
             map_view->getMapRotation(),
             map_view->getMapTilt(),
@@ -717,12 +700,16 @@ void GLMapView2::mapResized(atakmap::core::AtakMapView *mapView)
     const int h = (int)mapView->getHeight();
     if(w <= 0 || h <= 0)
         return;
-    setSurfaceSize((std::size_t)w, (std::size_t)h);
+    GLGlobeBase::setSurfaceSize((std::size_t)w, (std::size_t)h);
 }
 
 void GLMapView2::mapControllerFocusPointChanged(atakmap::core::AtakMapController *controller, const atakmap::math::Point<float> * const focus)
 {
-    setFocusPoint(focus->x, focus->y);
+    // We call `GLGlobeBase::setFocusPointOffset` here as `GLGlobeBase::setFocusPoint` calls virtual
+    // `setFocusPointOffset`, resulting in an infinite loop
+
+    // XXX - focus from controller is UL origin, should need to flip y
+    GLGlobeBase::setFocusPointOffset(focus->x-(float)state.width/2.f, focus->y-(float)state.height/2.f);
 }
 
 void GLMapView2::mapElevationExaggerationFactorChanged(atakmap::core::AtakMapView *map_view, const double factor)
@@ -798,9 +785,35 @@ void GLMapView2::render() NOTHROWS
         diagnosticMessages.clear();
     }
 }
+TAKErr GLMapView2::lookAt(const GeoPoint2 &at, const double resolution, const double azimuth, const double tilt, const MapRenderer::CameraCollision collision, const bool animate) NOTHROWS
+{
+
+    MapSceneModel2 lookAtScene;
+    {
+        ReadLock lock(renderPasses0Mutex);
+        lookAtScene = renderPasses[0].scene;
+    }
+
+    lookAtScene = MapSceneModel2(displayDpi,
+                        lookAtScene.width,
+                        lookAtScene.height,
+                        state.srid,
+                        at,
+                        lookAtScene.focusX, lookAtScene.focusY,
+                        azimuth,
+                        tilt,
+                        resolution);
+    GeoPoint2 atSurface;
+    lookAtScene.inverse(&atSurface, Point2<float>(lookAtScene.focusX, lookAtScene.focusY, 0.f));
+    return GLGlobeBase::lookAt(at, resolution, azimuth, tilt, collision, animate);
+}
 void GLMapView2::release() NOTHROWS
 {
     GLGlobeBase::release();
+
+    if(this->offscreen) {
+        this->offscreen.reset();
+    }
 }
 
 void GLMapView2::prepareScene() NOTHROWS
@@ -1167,8 +1180,8 @@ void GLMapView2::drawRenderables() NOTHROWS
                 // simply zooming out would request way more data than we are
                 // actually interested in
 #if 1
-                const int targetOffscreenTextureHeight = (int)std::ceil(scaleAdj*view.getHeight());
-                const int targetOffscreenTextureWidth = (int)view.getWidth();
+                const int targetOffscreenTextureHeight = (int)std::ceil(scaleAdj*renderPasses[0].scene.height);
+                const int targetOffscreenTextureWidth = (int)renderPasses[0].scene.width;
 
                 std::size_t offscreenTexWidth = std::min(targetOffscreenTextureWidth, static_cast<int>(offscreen->texture->getTexWidth()));
                 std::size_t offscreenTexHeight = std::min(targetOffscreenTextureHeight, static_cast<int>(offscreen->texture->getTexHeight()));
@@ -1180,8 +1193,8 @@ void GLMapView2::drawRenderables() NOTHROWS
                 offscreenTexHeight = offscreen->texture->getTexHeight();
 
 #else
-                const int targetOffscreenTextureWidth = (int)ceil((double)view.getWidth() / (scaleAdj*0.75));
-                const int targetOffscreenTextureHeight = (int)std::min(ceil((double)view.getHeight() * scaleAdj), (double)offscreen->texture->getTexHeight());
+                const int targetOffscreenTextureWidth = (int)ceil((double)renderPasses[0].scene.width / (scaleAdj*0.75));
+                const int targetOffscreenTextureHeight = (int)std::min(ceil((double)renderPasses[0].scene.height * scaleAdj), (double)offscreen->texture->getTexHeight());
 
                 std::size_t offscreenTexWidth = (std::size_t)targetOffscreenTextureWidth;
                 std::size_t offscreenTexHeight = (std::size_t)targetOffscreenTextureHeight;
@@ -1203,7 +1216,7 @@ void GLMapView2::drawRenderables() NOTHROWS
                     }
                 }
                 State_restore(this, this->renderPasses[0u]);
-                constructOffscreenRenderPass(!poleInView, drawMapResolution * scaleAdj, 0.0, true, static_cast<std::size_t>(view.getWidth()), static_cast<std::size_t>(view.getHeight()), 0, 0, static_cast<float>(offscreenTexWidth), static_cast<float>(offscreenTexHeight));
+                constructOffscreenRenderPass(!poleInView, drawMapResolution * scaleAdj, 0.0, true, renderPasses[0].scene.width, renderPasses[0].scene.height, 0, 0, static_cast<float>(offscreenTexWidth), static_cast<float>(offscreenTexHeight));
                 renderPasses[this->numRenderPasses-1u].drawMapResolution = drawMapResolution;
                 renderPasses[this->numRenderPasses-1u].drawMapScale = drawMapScale;
                 renderPasses[this->numRenderPasses-1u].debugDrawBounds = debugDrawBounds;
@@ -1321,8 +1334,8 @@ void GLMapView2::drawRenderables() NOTHROWS
             if(!debugDrawMesh) {
                 const GLTexture2 *tex = offscreenSurfaceRendering ? offscreen->texture.get() : offscreen->whitePixel.get();
                 drawTerrainTiles(*tex,
-                                 static_cast<std::size_t>(view.getWidth()),
-                                 static_cast<std::size_t>(view.getHeight()));
+                                 renderPasses[0].scene.width,
+                                 renderPasses[0].scene.height);
             }if(debugDrawMesh)
                 drawTerrainMeshes();
 
@@ -3166,16 +3179,6 @@ namespace
                     Logger_log(TELL_Error, "GLMapView::drawTerrainTiles : invalid primary hemisphere %d", (int)view.idlHelper.getPrimaryHemisphere());
                     return;
                 }
-            } else if(&shader == &shaders->md) {
-                // reconstruct the scene model in the secondary hemisphere
-                if (view.idlHelper.getPrimaryHemisphere() == GLAntiMeridianHelper::West)
-                    localFrame[1].translate(-360.0, 0.0, 0.0);
-                else if (view.idlHelper.getPrimaryHemisphere() == GLAntiMeridianHelper::East)
-                    localFrame[1].translate(360.0, 0.0, 0.0);
-                else {
-                    Logger_log(TELL_Error, "GLMapView::drawTerrainTiles : invalid primary hemisphere %d", (int)view.idlHelper.getPrimaryHemisphere());
-                    return;
-                }
             }
 
             // construct the MVP matrix
@@ -3200,6 +3203,7 @@ namespace
         glUniform4f(shader.base.uColor, r, g, b, a);
 
         glEnableVertexAttribArray(shader.base.aVertexCoords);
+        glEnableVertexAttribArray(shader.aEcefVertCoords);
 
         // draw terrain tiles
         std::size_t idx = 0u;
@@ -3210,6 +3214,7 @@ namespace
         }
 
         glDisableVertexAttribArray(shader.base.aVertexCoords);
+        glDisableVertexAttribArray(shader.aEcefVertCoords);
     }
 
     void drawTerrainMeshImpl(const GLMapView2::State &state, const TerrainTileShader &shader, const Matrix2 &mvp, const Matrix2 *local, const std::size_t numLocal, const GLTerrainTile &gltile, const float r, const float g, const float b, const float a) NOTHROWS
@@ -3240,18 +3245,12 @@ namespace
             matrix.setToIdentity();
         }
         matrix.set(mvp);
-        if(shader.uLocalTransform < 0) {
-            for(std::size_t i = numLocal; i >= 1; i--)
-                matrix.concatenate(local[i-1u]);
+        for(std::size_t i = numLocal; i >= 1; i--)
+            matrix.concatenate(local[i-1u]);
+        if(tile.data_proj.srid == state.drawSrid)
+            matrix.concatenate(tile.data_proj.localFrame);
+        else
             matrix.concatenate(tile.data.localFrame);
-        } else {
-            Matrix2 mx[TE_GLTERRAINTILE_MAX_LOCAL_TRANSFORMS];
-            for(std::size_t i = numLocal; i >= 1; i--)
-                mx[i-1u].set(local[i-1u]);
-            mx[0].concatenate(tile.data.localFrame);
-            glUniformMatrix4v(shader.uLocalTransform, mx, numLocal ? numLocal : 1u);
-        }
-
         glUniformMatrix4(shader.base.uMVP, matrix);
 
         // set the local frame for the offscreen texture
@@ -3273,7 +3272,7 @@ namespace
         }
 
         // render offscreen texture
-        const VertexDataLayout &layout = tile.data.value->getVertexDataLayout();
+        const VertexDataLayout& layout = tile.data.value->getVertexDataLayout();
 
         if(gltile.vbo) {
             // VBO
@@ -3288,7 +3287,11 @@ namespace
                 return;
             }
 
-            glVertexAttribPointer(shader.base.aVertexCoords, 3u, GL_FLOAT, false, static_cast<GLsizei>(layout.position.stride), static_cast<const uint8_t *>(vertexCoords) + layout.position.offset);
+            glVertexAttribPointer(shader.base.aVertexCoords, 3u, GL_FLOAT, false, static_cast<GLsizei>(layout.position.stride), static_cast<const uint8_t*>(vertexCoords) + layout.position.offset);
+            VertexArray ecefAttr;
+            if (VertexDataLayout_getVertexArray(&ecefAttr, layout, tile.ecefAttr) == TE_Ok) {
+                glVertexAttribPointer(shader.aEcefVertCoords, 3u, GL_FLOAT, false, static_cast<GLsizei>(ecefAttr.stride), (static_cast<const uint8_t*>(vertexCoords) + ecefAttr.offset));
+            }
         }
 
         std::size_t numIndicesWireframe = 0u;

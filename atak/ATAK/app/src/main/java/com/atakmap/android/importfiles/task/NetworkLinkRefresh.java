@@ -74,7 +74,7 @@ public class NetworkLinkRefresh {
         Log.d(TAG,
                 "Adding task every " + interval + " seconds "
                         + " for "
-                        + task.toString());
+                        + task);
 
         synchronized (this) {
             futureTasks
@@ -104,7 +104,7 @@ public class NetworkLinkRefresh {
 
         try {
             if (task.first.getFilename().equals(filename)) {
-                Log.d(TAG, "Cancelling task " + task.first.toString());
+                Log.d(TAG, "Cancelling task " + task.first);
                 task.second.cancel(true);
 
             }
@@ -191,7 +191,7 @@ public class NetworkLinkRefresh {
         public void run() {
             Thread.currentThread().setName(
                     "KMLNetworkLinkRefreshTask: " + _resource.getName());
-            Log.d(TAG, "Running: " + toString());
+            Log.d(TAG, "Running: " + this);
             requestDownload(_resource);
         }
 

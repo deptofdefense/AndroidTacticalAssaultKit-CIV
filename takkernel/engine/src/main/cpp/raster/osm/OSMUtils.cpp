@@ -4,6 +4,7 @@
 #include <cmath>
 
 #include "math/Utils.h"
+#include "port/STLVectorAdapter.h"
 
 namespace atakmap {
     namespace raster{
@@ -47,6 +48,26 @@ namespace atakmap {
 
                 std::vector<TAK::Engine::Port::String>::iterator iter;
                 for (iter = columns.begin(); iter != columns.end(); ++iter) {
+                    std::string s(*iter);
+                    if (colNames.find(s) == colNames.end())
+                        return false;
+                }
+
+                return true;
+            }
+
+            bool OSMUtils::isOSMDroidSQLite(TAK::Engine::DB::Database2 &database)
+            {
+
+                std::vector<TAK::Engine::Port::String> columns;
+                TAK::Engine::Port::STLVectorAdapter<TAK::Engine::Port::String> columns_a(columns);
+                if (TAK::Engine::DB::Databases_getColumnNames(columns_a, database, "tiles") != TAK::Engine::Util::TE_Ok)
+                    return false;
+                if (columns.size() != 3)
+                    return false;
+
+                const auto &colNames = OSMUtils::getInstance().colNames;
+                for (auto iter = columns.begin(); iter != columns.end(); ++iter) {
                     std::string s(*iter);
                     if (colNames.find(s) == colNames.end())
                         return false;

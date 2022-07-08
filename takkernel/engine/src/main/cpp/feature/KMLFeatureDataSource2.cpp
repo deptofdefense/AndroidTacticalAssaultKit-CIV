@@ -1,4 +1,4 @@
-
+#ifdef MSVC
 #include "feature/KMLFeatureDataSource2.h"
 #include <deque>
 #include <regex>
@@ -1324,3 +1324,4 @@ void determineExtrude(const KMLGeometry &geom, double &extrude) {
     extrude = shouldExtrude ? -1 : 0.0;
 }
 }  // namespace
+#endif

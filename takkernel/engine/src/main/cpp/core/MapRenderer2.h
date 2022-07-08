@@ -63,7 +63,7 @@ namespace TAK {
                  *                  scene model
                  * @return  The scene model
                  */
-                virtual Util::TAKErr getMapSceneModel(MapSceneModel2 *value, const bool instant, const DisplayOrigin origin) NOTHROWS = 0;
+                virtual Util::TAKErr getMapSceneModel(MapSceneModel2 *value, const bool instant, const DisplayOrigin origin) const NOTHROWS = 0;
 
                 virtual Util::TAKErr addOnCameraChangedListener(OnCameraChangedListener *l) NOTHROWS = 0;
                 virtual Util::TAKErr removeOnCameraChangedListener(OnCameraChangedListener *l) NOTHROWS = 0;

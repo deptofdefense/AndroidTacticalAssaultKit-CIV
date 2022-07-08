@@ -144,7 +144,7 @@ class ATAKCrashHandler implements ReportSender {
                     if (json == null) {
                         pw.println("\"report\":\"ACRA JSON empty\"");
                     } else {
-                        pw.println("\"report\":" + json.toString());
+                        pw.println("\"report\":" + json);
                     }
                 }
 
@@ -158,7 +158,7 @@ class ATAKCrashHandler implements ReportSender {
                                 CrashListener.CrashLogSection section = listener
                                         .onCrash();
                                 if (section != null && section.isValid()) {
-                                    pw.println("," + section.toString());
+                                    pw.println("," + section);
                                     pw.println();
                                 }
                             } catch (Throwable t) {

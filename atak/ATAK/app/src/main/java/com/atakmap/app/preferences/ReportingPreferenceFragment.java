@@ -9,6 +9,9 @@ import android.preference.Preference;
 import android.preference.PreferenceCategory;
 
 import com.atakmap.android.gui.PanEditTextPreference;
+import com.atakmap.android.gui.PanListPreference;
+import com.atakmap.android.gui.PanEditTextPreference;
+import com.atakmap.android.gui.PanListPreference;
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.android.preference.PreferenceSearchIndex;
 import com.atakmap.app.R;
@@ -20,7 +23,7 @@ public class ReportingPreferenceFragment extends AtakPreferenceFragment {
     private static ReportingPreferenceFragment _instance;
 
     private PreferenceCategory publishCategory;
-    private ListPreference reportingStrategyPref;
+    private PanListPreference reportingStrategyPref;
     private String _previousReportingStrategy = "";
     private PanEditTextPreference constantReportingRateUnreliablePref;
     private PanEditTextPreference constantReportingRateReliablePref;
@@ -33,7 +36,7 @@ public class ReportingPreferenceFragment extends AtakPreferenceFragment {
     private PanEditTextPreference dynamicReportingRateMaxReliablePref;
 
     private PreferenceCategory alternateContactCategory;
-    private ListPreference saSipAddressAssignment;
+    private PanListPreference saSipAddressAssignment;
     private PanEditTextPreference saSipAddress;
     private String _previousSaSipAddressAssignment = "";
 
@@ -71,33 +74,49 @@ public class ReportingPreferenceFragment extends AtakPreferenceFragment {
 
         publishCategory = (PreferenceCategory) findPreference(
                 "publishCategory");
-        reportingStrategyPref = (ListPreference) findPreference(
+        Preference locationReportingStrategy = findPreference(
                 "locationReportingStrategy");
-        constantReportingRateUnreliablePref = (PanEditTextPreference) findPreference(
-                "constantReportingRateUnreliable");
-        constantReportingRateUnreliablePref.checkValidInteger();
-        constantReportingRateReliablePref = (PanEditTextPreference) findPreference(
-                "constantReportingRateReliable");
-        constantReportingRateReliablePref.checkValidInteger();
+        reportingStrategyPref = (PanListPreference) locationReportingStrategy;
 
-        dynamicReportingRateStationaryUnreliablePref = (PanEditTextPreference) findPreference(
+        Preference dynamicReportingRateStationaryUnreliable = findPreference(
                 "dynamicReportingRateStationaryUnreliable");
+        dynamicReportingRateStationaryUnreliablePref = (PanEditTextPreference) dynamicReportingRateStationaryUnreliable;
         dynamicReportingRateStationaryUnreliablePref.checkValidInteger();
-        dynamicReportingRateStationaryReliablePref = (PanEditTextPreference) findPreference(
-                "dynamicReportingRateStationaryReliable");
-        dynamicReportingRateStationaryReliablePref.checkValidInteger();
-        dynamicReportingRateMinUnreliablePref = (PanEditTextPreference) findPreference(
+
+        Preference dynamicReportingRateMinUnreliable = findPreference(
                 "dynamicReportingRateMinUnreliable");
+        dynamicReportingRateMinUnreliablePref = (PanEditTextPreference) dynamicReportingRateMinUnreliable;
         dynamicReportingRateMinUnreliablePref.checkValidInteger();
-        dynamicReportingRateMinReliablePref = (PanEditTextPreference) findPreference(
-                "dynamicReportingRateMinReliable");
-        dynamicReportingRateMinReliablePref.checkValidInteger();
-        dynamicReportingRateMaxUnreliablePref = (PanEditTextPreference) findPreference(
+
+        Preference dynamicReportingRateMaxUnreliable = findPreference(
                 "dynamicReportingRateMaxUnreliable");
+        dynamicReportingRateMaxUnreliablePref = (PanEditTextPreference) dynamicReportingRateMaxUnreliable;
         dynamicReportingRateMaxUnreliablePref.checkValidInteger();
-        dynamicReportingRateMaxReliablePref = (PanEditTextPreference) findPreference(
+
+        Preference dynamicReportingRateStationaryReliable = findPreference(
+                "dynamicReportingRateStationaryReliable");
+        dynamicReportingRateStationaryReliablePref = (PanEditTextPreference) dynamicReportingRateStationaryReliable;
+        dynamicReportingRateStationaryReliablePref.checkValidInteger();
+
+        Preference dynamicReportingRateMinReliable = findPreference(
+                "dynamicReportingRateMinReliable");
+        dynamicReportingRateMinReliablePref = (PanEditTextPreference) dynamicReportingRateMinReliable;
+        dynamicReportingRateMinReliablePref.checkValidInteger();
+
+        Preference dynamicReportingRateMaxReliable = findPreference(
                 "dynamicReportingRateMaxReliable");
+        dynamicReportingRateMaxReliablePref = (PanEditTextPreference) dynamicReportingRateMaxReliable;
         dynamicReportingRateMaxReliablePref.checkValidInteger();
+
+        Preference constantReportingRateUnreliable = findPreference(
+                "constantReportingRateUnreliable");
+        constantReportingRateUnreliablePref = (PanEditTextPreference) constantReportingRateUnreliable;
+        constantReportingRateUnreliablePref.checkValidInteger();
+
+        Preference constantReportingRateReliable = findPreference(
+                "constantReportingRateReliable");
+        constantReportingRateReliablePref = (PanEditTextPreference) constantReportingRateReliable;
+        constantReportingRateReliablePref.checkValidInteger();
 
         if (reportingStrategyPref != null) {
             String value = reportingStrategyPref.getValue();
@@ -116,34 +135,6 @@ public class ReportingPreferenceFragment extends AtakPreferenceFragment {
                                         Preference arg0,
                                         Object arg1) {
                                     changeVisibility((String) arg1);
-                                    return true;
-                                }
-
-                            });
-        }
-
-        alternateContactCategory = (PreferenceCategory) findPreference(
-                "alternateContactCategory");
-        saSipAddressAssignment = (ListPreference) findPreference(
-                "saSipAddressAssignment");
-        saSipAddress = (PanEditTextPreference) findPreference("saSipAddress");
-        if (saSipAddressAssignment != null) {
-            String value = saSipAddressAssignment.getValue();
-            if (value == null) {
-                value = getString(R.string.voip_assignment_disabled);
-                saSipAddressAssignment.setValue(value);
-            }
-            changeVisibilityVoIP(value);
-
-            saSipAddressAssignment
-                    .setOnPreferenceChangeListener(
-                            new Preference.OnPreferenceChangeListener() {
-
-                                @Override
-                                public boolean onPreferenceChange(
-                                        Preference arg0,
-                                        Object arg1) {
-                                    changeVisibilityVoIP((String) arg1);
                                     return true;
                                 }
 

@@ -312,7 +312,8 @@ public class ToolbarBroadcastReceiver extends BroadcastReceiver {
         switch (abv.getPosition()) {
             case ActionBarView.TOP_LEFT: {
                 NavView navView = NavView.getInstance();
-                View menuButton = navView.findViewById(R.id.tak_nav_menu_button);
+                View menuButton = navView
+                        .findViewById(R.id.tak_nav_menu_button);
                 NavButton takButton = navView.findToolbarButton(toolbar);
                 if (childView == null)
                     childView = new NavButtonChildView(_mapView.getContext());

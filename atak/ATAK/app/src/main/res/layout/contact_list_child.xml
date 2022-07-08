@@ -14,6 +14,13 @@
         android:focusable="false"
         android:focusableInTouchMode="false"/>
 
+    <CheckBox
+        android:id="@+id/contact_list_filter_checkbox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/auto_margin"
+        android:gravity="center_vertical" />
+
     <ImageView
         android:id="@+id/contact_list_presence_icon"
         android:layout_width="32dp"

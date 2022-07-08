@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+        android:title="@string/dex_options">
+
+        <com.atakmap.android.gui.PanCheckBoxPreference
+            android:title="@string/enable_dex_controls"
+            android:defaultValue="false"
+            android:summary="@string/globe_display_summary"
+            android:key="dexControls"/>
+    </PreferenceCategory>
+</PreferenceScreen>

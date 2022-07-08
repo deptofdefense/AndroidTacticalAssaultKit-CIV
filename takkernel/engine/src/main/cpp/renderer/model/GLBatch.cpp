@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "renderer/model/GLBatch.h"
 
 #include <cmath>
@@ -924,3 +925,4 @@ TAKErr GLBatch::executeImpl_(ExecuteState_& execState, const Math::Matrix2& forw
 
     return code;
 }
+#endif

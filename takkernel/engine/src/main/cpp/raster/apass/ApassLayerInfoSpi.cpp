@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "raster/apass/ApassLayerInfoSpi.h"
 
 #include <memory>
@@ -373,3 +374,4 @@ namespace atakmap {
         }
     }
 }
+#endif

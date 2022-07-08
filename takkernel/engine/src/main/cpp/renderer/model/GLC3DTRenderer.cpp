@@ -1,4 +1,4 @@
-
+#ifdef MSVC
 #include "renderer/model/GLC3DTRenderer.h"
 #include "renderer/GLWorkers.h"
 #include "util/Tasking.h"
@@ -23,6 +23,7 @@
 #include "util/ConfigOptions.h"
 #include "renderer/core/GLContent.h"
 #include "core/ProjectionFactory3.h"
+#include "feature/GeometryTransformer.h"
 
 using namespace TAK::Engine::Renderer::Model;
 using namespace TAK::Engine::Renderer;
@@ -136,6 +137,7 @@ namespace {
         TAKErr gatherDepthSamplerDrawables(std::vector<GLDepthSamplerDrawable*>& result, int levelDepth, const TAK::Engine::Core::MapSceneModel2& sceneModel, float x, float y) NOTHROWS;
         
         TAK::Engine::Feature::Envelope2 aabb;
+        TAK::Engine::Feature::Envelope2 aabb_ecef;
         GeoPoint2 centroid;
         double radius_;
         double paddedRadius_;
@@ -288,10 +290,12 @@ namespace {
         uint64_t last_completed_frame_num_;
         std::unique_ptr<UpdateLists> pending_state_;
 
-        bool updateView(const ViewState& view) NOTHROWS;
+        bool updateView(const ViewState& view, const Frustum2& frustum) NOTHROWS;
 
-        bool updateTile(const ViewState& view, GLC3DTTile& tile, bool skipMaxSSESphere) NOTHROWS;
-        bool cullTile(const ViewState& view, GLC3DTTile& tile) NOTHROWS;
+        bool updateTile(const ViewState& view, const Frustum2& frustum, GLC3DTTile& tile, bool skipMaxSSESphere) NOTHROWS;
+        bool cullTile(const ViewState& view, const Frustum2& frustum, GLC3DTTile& tile) NOTHROWS;
+        bool cullTileFrustumMethod(const ViewState& view, const Frustum2& frustum, GLC3DTTile& tile) NOTHROWS;
+        bool cullTileLegacyMethod(const ViewState& view, GLC3DTTile& tile) NOTHROWS;
         void releaseTile(GLC3DTTile& tile) NOTHROWS;
     };
 
@@ -469,7 +473,8 @@ GLC3DTRenderer::GLC3DTRenderer(TAK::Engine::Core::RenderContext& ctx, const TAK:
     root_content_(new GLContentHolder()),
     info_(info),
     uri_(info.uri),
-    scene_control_(new SceneControlImpl(*this)) {
+    scene_control_(new SceneControlImpl(*this)),
+    render_context_(ctx) {
     content_context_.reset(new GLContentContext(ctx, tilesetLoadWorker(), loader_impl_));
 }
 
@@ -553,14 +558,23 @@ TAKErr GLC3DTRenderer::hitTest(GeoPoint2* value, const MapSceneModel2& sceneMode
     GeoPoint2 hitGeo;
     TAKErr code = TE_Ok;
 
-    if (content_context_->getRenderContext().isRenderThread())
+    auto& ctx = content_context_->getRenderContext();
+    if (ctx.isRenderThread())
     {
+        const bool current = ctx.isAttached();
+        if (!current)
+            ctx.attach();
         code = depthTestTask(hitGeo, this, sceneModel, screenX, screenY);
+        if (!current)
+            ctx.detach();
     }
     else
     {
         TAKErr awaitCode = Task_begin(GLWorkers_glThread(), depthTestTask, this, sceneModel, screenX, screenY)
             .await(hitGeo, code);
+        // XXX - temporary hack to prevent deadlock; update to have task queued by context
+        ctx.requestRefresh();
+
         // confirm task was executed
         if(awaitCode != TE_Ok)
             return awaitCode;
@@ -591,7 +605,8 @@ TAKErr GLC3DTRenderer::depthTestTask(TAK::Engine::Core::GeoPoint2& value, GLC3DT
             return code;
     }
 
-    float screenY = y;
+    const bool isOrtho = (sceneModel.camera.mode == MapCamera2::Scale);
+    float screenY = isOrtho ? y : sceneModel.height-y;
     double pointZ = 0.0;
     Matrix2 projection;
 
@@ -599,18 +614,37 @@ TAKErr GLC3DTRenderer::depthTestTask(TAK::Engine::Core::GeoPoint2& value, GLC3DT
     if (code != TE_Ok)
         return code;
 
-    TAK::Engine::Math::Point2<double> point(x, screenY, 0);
-    projection.transform(&point, point);
-    point.z = pointZ;
+    TAK::Engine::Math::Point2<double> point;
+    if (isOrtho) {
+        projection.transform(&point, TAK::Engine::Math::Point2<double>(x, screenY, 0));
+        point.z = pointZ;
 
-    Matrix2 mat;
-    if (projection.createInverse(&mat) != TE_Ok)
-        return TE_Done;
+        Matrix2 mat;
+        if (projection.createInverse(&mat) != TE_Ok)
+            return TE_Done;
 
-    mat.transform(&point, point);
+        mat.transform(&point, point);
 
-    // ortho -> projection
-    sceneModel.inverseTransform.transform(&point, point);
+        // ortho -> projection
+        sceneModel.inverseTransform.transform(&point, point);
+    } else {
+        // transform screen location at depth to NDC
+        point.x = (x / (float)(sceneModel.width)) * 2.0f - 1.0f;
+        point.y = (((float)sceneModel.height - y) / (float)(sceneModel.height)) * 2.0f - 1.0f;
+        //point.z = pointZ * 2.0f - 1.0f;
+        point.z = pointZ; // already NDC
+
+        // compute inverse transform
+        Matrix2 mat;
+        mat.set(sceneModel.camera.projection);
+        mat.concatenate(sceneModel.camera.modelView);
+
+        mat.createInverse(&mat);
+
+        // NDC -> projection
+        mat.transform(&point, point);
+    }
+
     // projection -> LLA
     code = sceneModel.projection->inverse(&value, point);
 
@@ -997,7 +1031,8 @@ namespace {
         if (recycle)
             ts->pending_state_ = std::move(recycle);
 
-        bool complete = ts->updateView(view);
+        Frustum2 frustum(view.scene.camera.projection, view.scene.camera.modelView);
+        bool complete = ts->updateView(view, frustum);
         if (complete) {
 
             for (auto& p : ts->pending_state_->unload_list) {
@@ -1051,7 +1086,7 @@ namespace {
         }
     }
 
-    bool TilesetImpl::updateView(const ViewState& view) NOTHROWS {
+    bool TilesetImpl::updateView(const ViewState& view, const Frustum2& frustum) NOTHROWS {
 
             if (!this->root_tile_)
             return false;
@@ -1060,7 +1095,7 @@ namespace {
             this->pending_state_.reset(new UpdateLists());
 
         this->pending_state_->clear();
-        bool updateResult = this->updateTile(view, *this->root_tile_, false);
+        bool updateResult = this->updateTile(view, frustum, *this->root_tile_, false);
 
         this->last_completed_frame_num_++;
 
@@ -1093,12 +1128,29 @@ namespace {
         return TE_Ok;
     }
 
-    bool TilesetImpl::cullTile(const ViewState& view, GLC3DTTile& tile) NOTHROWS {
+    bool TilesetImpl::cullTile(const ViewState& view, const Frustum2& frustum, GLC3DTTile& tile) NOTHROWS {
+        
+        if (view.scene.camera.mode == MapCamera2::Perspective && view.drawSrid == 4978)
+            return cullTileFrustumMethod(view, frustum, tile);
+        
+        return cullTileLegacyMethod(view, tile);
+    }
+
+    bool TilesetImpl::cullTileFrustumMethod(const ViewState& view, const Frustum2& frustum, GLC3DTTile& tile) NOTHROWS {
+        Point2<double> min(tile.aabb_ecef.minX, tile.aabb_ecef.minY, tile.aabb_ecef.minZ);
+        Point2<double> max(tile.aabb_ecef.maxX, tile.aabb_ecef.maxY, tile.aabb_ecef.maxZ);
+        AABB aabb(min, max);
+        return !frustum.intersects(aabb);
+    }
+
+    bool TilesetImpl::cullTileLegacyMethod(const ViewState& view, GLC3DTTile& tile) NOTHROWS {
         const double hradius = tile.paddedRadius_ / view.scene.gsd;
         const double vradius = (tile.aabb.maxZ - tile.aabb.minZ) / 2.0 / view.scene.gsd;
 
         Point2<double> scratchPoint;
-        view.scene.forward(&scratchPoint, tile.centroid);
+        view.scene.projection->forward(&scratchPoint, tile.centroid);
+        scratchPoint = view.scene.camera.modelView.transform(scratchPoint);
+
         const double cosTilt = cos((90.0 + view.scene.camera.elevation) * M_PI / 180.0);
         const double screenMinX = scratchPoint.x - hradius;
         const double screenMinY = scratchPoint.y - std::min((cosTilt * hradius + (1 - cosTilt) * vradius), hradius);
@@ -1109,6 +1161,7 @@ namespace {
         Rectangle2_intersects(rint,
             0.0, 0.0, (double)view.scene.width, (double)view.scene.height,
             screenMinX, screenMinY, screenMaxX, screenMaxY);
+
         return !rint;
     }
 
@@ -1124,7 +1177,7 @@ namespace {
         }
     }
 
-    bool TilesetImpl::updateTile(const ViewState& camera, GLC3DTTile& tile, bool skipMaxSSESphere) NOTHROWS {
+    bool TilesetImpl::updateTile(const ViewState& camera, const Frustum2& frustum, GLC3DTTile& tile, bool skipMaxSSESphere) NOTHROWS {
 
         // do a quick check up front against nominal resolution
 #if 1
@@ -1135,7 +1188,7 @@ namespace {
 #endif
 
         // make sure tile is in bounds
-        if (cullTile(camera, tile)) {
+        if (cullTile(camera, frustum, tile)) {
             releaseTile(tile);
             return false;
         }
@@ -1168,7 +1221,7 @@ namespace {
                 GLC3DTTile& child = tile.first_child_[i];
                 
                 // if child does not intersect viewport, skip
-                if (cullTile(camera, child)) {
+                if (cullTile(camera, frustum, child)) {
                     releaseTile(child);
                     continue;
                 }
@@ -1176,7 +1229,7 @@ namespace {
                 // draw the child, since we passed parent SSE test, the
                 // child must draw its content if replace
                 childrenToDraw++;
-                bool childResult = updateTile(camera, child, (tile.getRefine() == C3DTRefine::Replace));
+                bool childResult = updateTile(camera, frustum, child, (tile.getRefine() == C3DTRefine::Replace));
                 if (childResult)
                     childrenDrawn++;
             }
@@ -1284,6 +1337,9 @@ namespace {
         C3DTVolume boundingVolume;
         C3DTVolume_transform(&boundingVolume, tile.boundingVolume, transform_);
 
+        Projection2Ptr ecefProj(nullptr, nullptr);
+        ProjectionFactory3_create(ecefProj, 4978);
+
         if (boundingVolume.type == C3DTVolume::Region || boundingVolume.type == C3DTVolume::RegionAux) {
             
             const C3DTRegion& region = boundingVolume.object.region;
@@ -1322,8 +1378,6 @@ namespace {
                 center = box.center;
             }
 
-            Projection2Ptr ecefProj(nullptr, nullptr);
-            ProjectionFactory3_create(ecefProj, 4978);
             ecefProj->inverse(&this->centroid, center);
             
             const double metersDegLat = GeoPoint2_approximateMetersPerDegreeLatitude(this->centroid.latitude);;
@@ -1339,6 +1393,8 @@ namespace {
             aabb.maxY = centroid.latitude + (radius_ / metersDegLat);
             aabb.maxZ = centroid.altitude + radius_;
         }
+
+        TAK::Engine::Feature::GeometryTransformer_transform(&aabb_ecef, aabb, 4326, 4978);
     }
 
     GLC3DTTile::~GLC3DTTile() NOTHROWS {
@@ -1423,10 +1479,21 @@ namespace {
         RenderState state(RenderState_getCurrent());
         RenderState stored(state);
         float proj[16];
-        atakmap::renderer::GLES20FixedPipeline::getInstance()->readMatrix(atakmap::renderer::GLES20FixedPipeline::MM_GL_PROJECTION, proj);
+        if (view.renderPass->scene.camera.mode == MapCamera2::Scale) {
+            atakmap::renderer::GLES20FixedPipeline::getInstance()->readMatrix(atakmap::renderer::GLES20FixedPipeline::MM_GL_PROJECTION, proj);
+        } else {
+            double projd[16];
+            view.renderPass->scene.camera.projection.get(projd, Matrix2::COLUMN_MAJOR);
+            for (std::size_t i = 0u; i < 16u; i++)
+                proj[i] = (float)projd[i];
+        }
 
         if (parent_) {
-            Matrix2 matrix = view.renderPass->scene.forwardTransform;
+            Matrix2 matrix;
+            if (view.renderPass->scene.camera.mode == MapCamera2::Scale)
+                matrix = view.renderPass->scene.forwardTransform;
+            else
+                matrix = view.renderPass->scene.camera.modelView;
             matrix.concatenate(parent_->transform_);
             batch_->execute(state, matrix, proj);
         }
@@ -1444,8 +1511,20 @@ namespace {
         RenderState stored(state);
 
         float proj[16];
-        atakmap::renderer::GLES20FixedPipeline::getInstance()->readMatrix(atakmap::renderer::GLES20FixedPipeline::MM_GL_PROJECTION, proj);
-        batch_->execute(sampler, sceneModel.forwardTransform, proj);
+        Matrix2 modelView;
+        if (sceneModel.camera.mode == MapCamera2::Scale) {
+            atakmap::renderer::GLES20FixedPipeline::getInstance()->readMatrix(atakmap::renderer::GLES20FixedPipeline::MM_GL_PROJECTION, proj);
+            modelView = sceneModel.forwardTransform;
+        } else {
+            double projd[16];
+            sceneModel.camera.projection.get(projd, Matrix2::COLUMN_MAJOR);
+            for (std::size_t i = 0u; i < 16u; i++)
+                proj[i] = (float)projd[i];
+            modelView = sceneModel.camera.modelView;
+        }
+
+        // XXX - does model-view need to take into account parent here??
+        batch_->execute(sampler, modelView, proj);
         
         RenderState_makeCurrent(stored);
     }
@@ -2099,3 +2178,4 @@ TAKErr GLC3DTRenderer::LoaderImpl::load(TAK::Engine::Renderer::Core::GLMapRender
 
     return code;
 }
+#endif

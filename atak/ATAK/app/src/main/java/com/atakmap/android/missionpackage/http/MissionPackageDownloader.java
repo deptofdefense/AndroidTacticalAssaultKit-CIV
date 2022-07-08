@@ -181,7 +181,7 @@ public class MissionPackageDownloader implements RequestListener {
         // notify user
         Log.d(TAG,
                 "File Transfer download request created for: "
-                        + request.toString());
+                        + request);
         String tickerFilename = MissionPackageUtils.abbreviateFilename(
                 fileTransfer.getName(), 20);
         String sender = MissionPackageReceiver.getSender(fileTransfer);
@@ -215,7 +215,7 @@ public class MissionPackageDownloader implements RequestListener {
         // notify user
         Log.d(TAG,
                 "Mission Package Post request created for: "
-                        + request.toString());
+                        + request);
         String tickerFilename = MissionPackageUtils.abbreviateFilename(
                 request.getName(), 20);
 
@@ -259,7 +259,7 @@ public class MissionPackageDownloader implements RequestListener {
         // notify user
         Log.d(TAG,
                 "Mission Package query request created for: "
-                        + request.toString());
+                        + request);
 
         NotificationUtil.getInstance().postNotification(
                 request.getNotificationId(),
@@ -384,7 +384,7 @@ public class MissionPackageDownloader implements RequestListener {
             if (!inst.isDelete()) {
                 // all file contents should exist
                 Log.d(TAG,
-                        "Package received contents: " + manifest.toString());
+                        "Package received contents: " + manifest);
                 if (manifest.hasFiles()) {
                     for (MissionPackageContent content : manifest
                             .getFiles()) {
@@ -432,7 +432,7 @@ public class MissionPackageDownloader implements RequestListener {
             // downloaded file transfer successfully...
             Log.d(TAG,
                     "File Transfer Download Complete - Successfully downloaded file: "
-                            + ftr.toString()
+                            + ftr
                             + " to "
                             + downloadedFile.getAbsolutePath()
                             + ", number attempts: "
@@ -823,7 +823,7 @@ public class MissionPackageDownloader implements RequestListener {
                 fileRequest.createFileTransferDownloadRequest(), this);
         Log.d(TAG, "Mission Package download attempt #" + (currentAttempts + 1)
                 + " created for: "
-                + fileRequest.toString());
+                + fileRequest);
     }
 
     /**

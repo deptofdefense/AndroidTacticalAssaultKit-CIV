@@ -1,5 +1,27 @@
 # Version History
 
+## 4.6.0.0
+
+* Feature Additions
+  * User can configure toolbar to left or right side of screen
+  * Updated self-marker to allow color customizations via Settings > Display Preferences > Color/Tinting > My Location Color/Size
+  * End user bug reporting and feedback via Settings > Support > User Feedback. Reports are sent to the connected TAK Server.
+  * Updated user preferences L&F
+  * Drawing tools improvements
+    * Added minimum safe distance (MSD) to shapes. MSD may be controlled via a shape's radial menu.  
+    * Manual parameters input for Rectangle and Ellipse shapes
+    * End points for polyline may be manually edited via the details pane
+    * Additional line styles for shapes now available
+* Bug Fixes
+  * Better manage device screen always on mode when navigating.
+  * Added preference to Air Overlays plugin to disable Bluetooth/ADS-B scanning.
+  * Resolved issue with rendering KMZs using Rubber Sheet
+  * Resolved reported crash issue with screen lock (via play store).
+  * Resolved issue where a user could not attach pictures from the camera to a marker
+  * Resolved issue with Pathways not being displayed in 3D mode. 
+* Security
+  * Disabled HTTP transfer of Data Packages
+
 ## 4.5.1.13
 
 * Bug Fixes

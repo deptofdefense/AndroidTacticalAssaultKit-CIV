@@ -3,7 +3,6 @@ package com.atakmap.app;
 
 import com.atakmap.android.location.LocationMapComponent;
 
-import android.os.Bundle;
 import android.support.util.Base64;
 
 import com.atakmap.coremap.io.IOProvider;
@@ -22,7 +21,6 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
-import android.widget.TextView;
 import android.widget.Toast;
 import android.app.ProgressDialog;
 import android.app.Activity;
@@ -59,6 +57,11 @@ public class ATAKDatabaseHelper {
 
         final File testDb = FileSystemUtils.getItem("Databases/ChatDb2.sqlite");
 
+        AtakAuthenticationCredentials credentialsLeg = AtakAuthenticationDatabase
+                .getCredentials(
+                        AtakAuthenticationCredentials.TYPE_APK_DOWNLOADER,
+                        "com.atakmap.app");
+
         AtakAuthenticationCredentials credentials = AtakAuthenticationDatabase
                 .getCredentials(
                         AtakAuthenticationCredentials.TYPE_APK_DOWNLOADER,
@@ -67,22 +70,81 @@ public class ATAKDatabaseHelper {
         if (credentials == null)
             credentials = new AtakAuthenticationCredentials();
 
+        // force migration from original to v2
+        if (IOProviderFactory.exists(testDb) &&
+                credentials != null && credentialsLeg != null &&
+                FileSystemUtils.isEmpty(credentials.username) &&
+                !FileSystemUtils.isEmpty(credentialsLeg.username)) {
 
+            Log.d(TAG, "migration state detected...");
 
-        // DB doesn't exist and there is no key; create original key
-        if (!IOProviderFactory.exists(testDb) && (credentials == null
-                || FileSystemUtils.isEmpty(credentials.username))) {
+            String s = LocationMapComponent._determineDeviceUID(context);
+            try {
+                if (s != null) {
+                    s = s.hashCode() + s;
+                    s = Base64.encodeToString(
+                            s.getBytes(FileSystemUtils.UTF8_CHARSET),
+                            Base64.NO_WRAP);
+                    s = s.hashCode() + s;
+                }
+                final int status = rekey(new String[] {
+                        "Databases/ChatDb2.sqlite",
+                        "Databases/statesaver2.sqlite",
+                        "Databases/crumbs2.sqlite"
+                }, s, true);
+                if (status == REKEY_SUCCESS) {
 
-            changeKeyImpl(context, true, ksl);
-            return;
+                    AtakAuthenticationDatabase
+                            .saveCredentials(
+                                    AtakAuthenticationCredentials.TYPE_APK_DOWNLOADER,
+                                    "com.atakmap.app.v2",
+                                    "atakuser", s,
+                                    false);
+                    AtakAuthenticationDatabase.delete(
+                            AtakAuthenticationCredentials.TYPE_APK_DOWNLOADER,
+                            "com.atakmap.app");
+
+                    Log.d(TAG, "migration completed...");
+
+                }
+            } catch (Exception error) {
+                Log.e(TAG, "error occurred during migration", error);
+            }
+
         }
-        // DB doesn't exist but we have key; create
+
+        /**
+         * During an upgrade we were instructed to produce a hash based on a fingerprint
+         * that would survive a data reset or uninstall on a device.    This produces such 
+         * a fingerprint.   This is considered a weak passphrase since cracking the
+         * algorithm would expose all devices.
+         */
+        if (!IOProviderFactory.exists(testDb) || credentials == null
+                || FileSystemUtils.isEmpty(credentials.username)) {
+            try {
+
+                String s = LocationMapComponent._determineDeviceUID(context);
+                if (s != null) {
+                    s = s.hashCode() + s;
+                    s = Base64.encodeToString(
+                            s.getBytes(FileSystemUtils.UTF8_CHARSET),
+                            Base64.NO_WRAP);
+                    s = s.hashCode() + s;
+
+                    AtakAuthenticationDatabase.saveCredentials(
+                            AtakAuthenticationCredentials.TYPE_APK_DOWNLOADER,
+                            "com.atakmap.app.v2", "atakuser", s,
+                            false);
+
                     if (!IOProviderFactory.exists(testDb)) {
-            upgrade(context, ksl);
-            return;
+                        upgrade(context, ksl);
+                        return;
+                    }
+                }
+            } catch (Exception ignored) {
+            }
         }
 
-        // DB exists; check key
         if (IOProviderFactory.isDefault() && !checkKeyAgainstDatabase(testDb)) {
             AlertDialog.Builder ad = new AlertDialog.Builder(context);
             ad.setCancelable(false);
@@ -150,9 +212,15 @@ public class ATAKDatabaseHelper {
     }
 
     public static void removeDatabases() {
-        IOProviderFactory.delete(FileSystemUtils.getItem("Databases/ChatDb2.sqlite"), IOProvider.SECURE_DELETE);
-        IOProviderFactory.delete(FileSystemUtils.getItem("Databases/statesaver2.sqlite"), IOProvider.SECURE_DELETE);
-        IOProviderFactory.delete(FileSystemUtils.getItem("Databases/crumbs2.sqlite"), IOProvider.SECURE_DELETE);
+        IOProviderFactory.delete(
+                FileSystemUtils.getItem("Databases/ChatDb2.sqlite"),
+                IOProvider.SECURE_DELETE);
+        IOProviderFactory.delete(
+                FileSystemUtils.getItem("Databases/statesaver2.sqlite"),
+                IOProvider.SECURE_DELETE);
+        IOProviderFactory.delete(
+                FileSystemUtils.getItem("Databases/crumbs2.sqlite"),
+                IOProvider.SECURE_DELETE);
     }
 
     private static void promptForRemoval(final Context context,
@@ -266,20 +334,29 @@ public class ATAKDatabaseHelper {
     }
 
     public static void changeKey(final Context context) {
-        changeKeyImpl(context, false, null);
-    }
-
-    private static void changeKeyImpl(final Context context, final boolean init, final KeyStatusListener listener) {
         LayoutInflater inflater = LayoutInflater.from(context);
         final View dkView = inflater.inflate(R.layout.database_rekey, null);
 
-        dkView.findViewById(R.id.decision).setVisibility(View.GONE);
-        ((RadioButton) dkView.findViewById(R.id.self)).setChecked(true);
-        dkView.findViewById(R.id.key_entry).setEnabled(true);
+        String tmpkey = null;
+        try {
+            String s = LocationMapComponent._determineDeviceUID(context);
+            if (s != null) {
+                s = s.hashCode() + s;
+                s = Base64.encodeToString(
+                        s.getBytes(FileSystemUtils.UTF8_CHARSET),
+                        Base64.NO_WRAP);
+                s = s.hashCode() + s;
+                tmpkey = s;
+            }
+        } catch (Exception e) {
+            tmpkey = null;
+        }
 
-        if(init)
-            ((TextView) dkView.findViewById(R.id.introduction)).setText(R.string.create_encryption_passphrase);
-
+        if (tmpkey == null) {
+            dkView.findViewById(R.id.decision).setVisibility(View.GONE);
+            ((RadioButton) dkView.findViewById(R.id.self)).setChecked(true);
+            dkView.findViewById(R.id.key_entry).setEnabled(true);
+        }
         ((RadioGroup) dkView.findViewById(R.id.decision))
                 .setOnCheckedChangeListener(
                         new RadioGroup.OnCheckedChangeListener() {
@@ -290,6 +367,7 @@ public class ATAKDatabaseHelper {
                                         .setEnabled(checkedId == R.id.self);
                             }
                         });
+        final String autokey = tmpkey;
 
         final AlertDialog.Builder ad = new AlertDialog.Builder(context);
         ad.setCancelable(false);
@@ -299,26 +377,24 @@ public class ATAKDatabaseHelper {
                     public void onClick(DialogInterface dialog,
                             int id) {
                         final String key;
-                        EditText et = dkView
-                                .findViewById(R.id.key_entry);
-                        key = et.getText().toString();
+                        if (((RadioButton) dkView.findViewById(R.id.self))
+                                .isChecked()) {
+
+                            EditText et = dkView
+                                    .findViewById(R.id.key_entry);
+                            key = et.getText().toString();
+                        } else {
+                            key = autokey;
+                        }
 
                         if (FileSystemUtils.isEmpty(key)) {
-                            changeKeyImpl(context, init, listener);
+                            changeKey(context);
                         } else if (key.contains("'")) {
                             Toast.makeText(context,
                                     "The passphrase cannot contain a ' mark",
                                     Toast.LENGTH_LONG)
                                     .show();
-                            changeKeyImpl(context, init, listener);
-                        } else if(init) {
-                            AtakAuthenticationDatabase
-                                    .saveCredentials(
-                                            AtakAuthenticationCredentials.TYPE_APK_DOWNLOADER,
-                                            "com.atakmap.app.v2",
-                                            "atakuser", key,
-                                            false);
-                            promptForKey(context, listener);
+                            changeKey(context);
                         } else {
                             // please note, the actual encryption is triggered
                             // by the database classes.  This is because of the 
@@ -399,7 +475,8 @@ public class ATAKDatabaseHelper {
      * @param ctFile the file name for the encrypted database
      */
     public static void encryptDb(final File ptFile, final File ctFile) {
-        if (IOProviderFactory.exists(ptFile) && !IOProviderFactory.exists(ctFile)) {
+        if (IOProviderFactory.exists(ptFile)
+                && !IOProviderFactory.exists(ctFile)) {
 
             DatabaseIface ptDb = Databases.openOrCreateDatabase(
                     ptFile.getAbsolutePath());

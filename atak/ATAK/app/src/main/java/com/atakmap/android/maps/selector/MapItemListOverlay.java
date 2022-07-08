@@ -1,3 +1,4 @@
+
 package com.atakmap.android.maps.selector;
 
 import android.content.Context;
@@ -67,9 +68,10 @@ class MapItemListOverlay extends AbstractMapOverlay2 implements Disposable {
         paths.add(ID);
         AtakBroadcast.getInstance().sendBroadcast(new Intent(
                 HierarchyListReceiver.MANAGE_HIERARCHY)
-                .putStringArrayListExtra("list_item_paths", paths)
-                .putExtra("hier_userselect_handler", getClass().getName())
-                .putExtra("isRootList", true));
+                        .putStringArrayListExtra("list_item_paths", paths)
+                        .putExtra("hier_userselect_handler",
+                                getClass().getName())
+                        .putExtra("isRootList", true));
     }
 
     @Override
@@ -94,7 +96,7 @@ class MapItemListOverlay extends AbstractMapOverlay2 implements Disposable {
 
     @Override
     public HierarchyListItem getListModel(BaseAdapter om, long capabilities,
-                                          HierarchyListFilter filter) {
+            HierarchyListFilter filter) {
         final ListModel lm = _listModel;
         if (lm != null)
             lm.syncRefresh(om, filter);
@@ -110,7 +112,8 @@ class MapItemListOverlay extends AbstractMapOverlay2 implements Disposable {
         private ListModel(@NonNull MapItemList list) {
             _list = list;
             _selector = new MapItemListUserSelect(_mapView, list, this);
-            HierarchySelectHandler.register(MapItemListOverlay.class, _selector);
+            HierarchySelectHandler.register(MapItemListOverlay.class,
+                    _selector);
             this.asyncRefresh = true;
         }
 
@@ -119,7 +122,8 @@ class MapItemListOverlay extends AbstractMapOverlay2 implements Disposable {
          * select handler and list is active
          */
         void close() {
-            HierarchySelectHandler.unregister(MapItemListOverlay.class, _selector);
+            HierarchySelectHandler.unregister(MapItemListOverlay.class,
+                    _selector);
             final ListModel curList = _listModel;
             final BaseAdapter adapter = this.listener;
             if (curList == this && adapter instanceof HierarchyListAdapter) {
@@ -178,17 +182,20 @@ class MapItemListOverlay extends AbstractMapOverlay2 implements Disposable {
         }
 
         @Override
-        public boolean onCloseList(HierarchyListAdapter adapter, boolean forceClose) {
+        public boolean onCloseList(HierarchyListAdapter adapter,
+                boolean forceClose) {
             _selector.cancel(_context);
             return false;
         }
 
         @Override
-        public void onListVisible(HierarchyListAdapter adapter, boolean visible) {
+        public void onListVisible(HierarchyListAdapter adapter,
+                boolean visible) {
         }
 
         @Override
-        public boolean onBackButton(HierarchyListAdapter adapter, boolean deviceBack) {
+        public boolean onBackButton(HierarchyListAdapter adapter,
+                boolean deviceBack) {
             return false;
         }
 

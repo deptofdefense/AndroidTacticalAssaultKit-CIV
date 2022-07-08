@@ -322,12 +322,12 @@ public abstract class GeoFenceMonitor {
             int toRemove = itemsToTrackIndex(item);
             if (toRemove >= 0) {
                 Log.d(TAG, "No longer tracking: " + item.getUID()
-                        + " for fence: " + toString());
+                        + " for fence: " + this);
                 _itemsToTrack.remove(toRemove);
             } else {
                 Log.d(TAG, "Already not explicitly tracking: " + item.getUID()
                         + ", type: " + item.getType()
-                        + " for fence: " + toString());
+                        + " for fence: " + this);
             }
 
             return _itemsToTrack.size() < 1;
@@ -364,12 +364,12 @@ public abstract class GeoFenceMonitor {
 
     public synchronized boolean addItem(PointMapItem item) {
         Log.d(TAG, "Adding monitoring for item: " + item.getUID()
-                + " for fence: " + toString());
+                + " for fence: " + this);
 
         int index = itemsToTrackIndex(item);
         if (index >= 0) {
             Log.d(TAG, "Item already monitored: " + item.getUID()
-                    + " for fence: " + toString());
+                    + " for fence: " + this);
         } else {
             //add to tracked list
             _itemsToTrack.add(item);
@@ -513,7 +513,7 @@ public abstract class GeoFenceMonitor {
 
                 Log.d(TAG,
                         "creating CircleGeoFenceMonitor: "
-                                + monitor.toString());
+                                + monitor);
                 return monitor;
             } else if (shape instanceof Rectangle) {
                 RectangleGeoFenceMonitor monitor = new RectangleGeoFenceMonitor(
@@ -525,7 +525,7 @@ public abstract class GeoFenceMonitor {
 
                 Log.d(TAG,
                         "creating RectangleGeoFenceMonitor: "
-                                + monitor.toString());
+                                + monitor);
                 return monitor;
             } else if (shape instanceof DrawingShape) {
                 DrawingShape freeform = (DrawingShape) shape;
@@ -546,7 +546,7 @@ public abstract class GeoFenceMonitor {
 
                 Log.d(TAG,
                         "creating ClosedShapeGeoFenceMonitor: "
-                                + monitor.toString());
+                                + monitor);
                 return monitor;
             } else {
                 Log.w(TAG, "Unsupported fence map item: " + item.getUID()

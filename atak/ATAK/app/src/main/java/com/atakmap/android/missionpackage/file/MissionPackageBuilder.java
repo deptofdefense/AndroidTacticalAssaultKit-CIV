@@ -289,7 +289,7 @@ public class MissionPackageBuilder {
 
             return fileSize;
         } catch (IOException e) {
-            Log.e(TAG, "Failed to add File: " + content.toString(), e);
+            Log.e(TAG, "Failed to add File: " + content, e);
             _warnings.add("Skipping, Zip Error for File: "
                     + content.getManifestUid());
         }

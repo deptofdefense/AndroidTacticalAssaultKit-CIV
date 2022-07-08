@@ -95,36 +95,10 @@ public class HelloWorldMapComponent extends DropDownMapComponent {
     private WebViewDropDownReceiver wvdropDown;
     private HelloWorldMapOverlay mapOverlay;
     private View genericRadio;
-    private JoystickView _joystickView;
     private SpecialDetailHandler sdh;
     private CotDetailHandler aaaDetailHandler;
     private ContactLocationView.ExtendedSelfInfoFactory extendedselfinfo;
     private HelloWorldContactSender contactSender;
-
-    public static class JoystickView extends RelativeLayout {
-
-        public JoystickView(Context context, AttributeSet attrs) {
-            super(context, attrs);
-        }
-
-        @Override
-        public boolean onGenericMotionEvent(MotionEvent event) {
-            Log.d(TAG, "onGenericMotionEvent: " + event.toString());
-            return super.onGenericMotionEvent(event);
-        }
-
-        @Override
-        public boolean onKeyDown(int keyCode, KeyEvent event) {
-            Log.d(TAG, "onKeyDown: " + event.toString());
-            return super.onKeyDown(keyCode, event);
-        }
-
-        @Override
-        public boolean onKeyUp(int keyCode, KeyEvent event) {
-            Log.d(TAG, "onKeyUp: " + event.toString());
-            return super.onKeyUp(keyCode, event);
-        }
-    }
 
     @Override
     public void onStart(final Context context, final MapView view) {
@@ -399,12 +373,6 @@ public class HelloWorldMapComponent extends DropDownMapComponent {
                 return false;
             }
         });
-
-        //_joystickView = new JoystickView(context, (AttributeSet) new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        _joystickView = new JoystickView(context, null);
-
-        ViewGroup v = (ViewGroup) view.getParent().getParent();
-        v.addView(_joystickView);
 
         GeocodeManager.getInstance(context).registerGeocoder(fakeGeoCoder);
 

@@ -3,7 +3,6 @@ package com.atakmap.android.gridlines.graphics;
 
 import com.atakmap.android.maps.Polyline;
 import com.atakmap.android.maps.graphics.GLPolyline;
-import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.map.Globe;
@@ -414,8 +413,8 @@ public class GLZonesOverlay implements GLMapRenderable, GLMapRenderable2 {
             p = start;
 
             do {
-                d = dist(p.getLongitude(), p.getLatitude(), end.getLongitude(),
-                        end.getLatitude());
+                d = MathUtils.distance(p.getLongitude(), p.getLatitude(),
+                        end.getLongitude(), end.getLatitude());
                 if (d <= threshold)
                     break;
                 double dx = (end.getLongitude() - p.getLongitude()) / d;
@@ -436,13 +435,6 @@ public class GLZonesOverlay implements GLMapRenderable, GLMapRenderable2 {
 
         // zones have no elevation, just render them as part of the SURFACE pass.
         glline.draw(view, GLMapView.RENDER_PASS_SURFACE);
-    }
-
-    /** @deprecated use {@link MathUtils#distance(double, double, double, double)} */
-    @Deprecated
-    @DeprecatedApi(since = "4.3", forRemoval = true, removeAt = "4.6")
-    protected static double dist(double x0, double y0, double x1, double y1) {
-        return MathUtils.distance(x0, y0, x1, y1);
     }
 
     protected int _color;

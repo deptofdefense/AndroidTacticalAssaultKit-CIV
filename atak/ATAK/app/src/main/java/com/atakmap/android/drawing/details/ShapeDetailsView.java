@@ -251,29 +251,33 @@ public class ShapeDetailsView extends GenericDetailsView implements
         _noGps.setVisibility(GONE);
         rabtable.setVisibility(GONE);
 
-        _thickSeek.setOnSeekBarChangeListener(new SimpleSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar sb, int prog, boolean user) {
-                if (user) {
-                    double strokeWeight = 1 + (prog / 10d);
-                    _shape.setStrokeWeight(strokeWeight);
-                    _drawPrefs.setStrokeWeight(strokeWeight);
-                }
-            }
-        });
+        _thickSeek
+                .setOnSeekBarChangeListener(new SimpleSeekBarChangeListener() {
+                    @Override
+                    public void onProgressChanged(SeekBar sb, int prog,
+                            boolean user) {
+                        if (user) {
+                            double strokeWeight = 1 + (prog / 10d);
+                            _shape.setStrokeWeight(strokeWeight);
+                            _drawPrefs.setStrokeWeight(strokeWeight);
+                        }
+                    }
+                });
 
         _centerButton.setOnClickListener(this);
         _startPointBtn.setOnClickListener(this);
         _endPointBtn.setOnClickListener(this);
-        _transSeek.setOnSeekBarChangeListener(new SimpleSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar sb, int alpha, boolean user) {
-                if (user) {
-                    _shape.setFillAlpha(alpha);
-                    _drawPrefs.setFillAlpha(alpha);
-                }
-            }
-        });
+        _transSeek
+                .setOnSeekBarChangeListener(new SimpleSeekBarChangeListener() {
+                    @Override
+                    public void onProgressChanged(SeekBar sb, int alpha,
+                            boolean user) {
+                        if (user) {
+                            _shape.setFillAlpha(alpha);
+                            _drawPrefs.setFillAlpha(alpha);
+                        }
+                    }
+                });
 
         _heightButton.setOnClickListener(this);
 
@@ -566,7 +570,7 @@ public class ShapeDetailsView extends GenericDetailsView implements
 
             // Make sure the fill color properly matches the stroke color
             if (checked && _shape.getFillColor() == Color.WHITE) {
-                int color  = _shape.getStrokeColor();
+                int color = _shape.getStrokeColor();
                 int alpha = _transSeek.getProgress();
                 _shape.setFillColor((alpha << 24) | (color & 0xFFFFFF));
             }

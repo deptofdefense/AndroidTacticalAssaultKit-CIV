@@ -184,7 +184,10 @@ public class NavigationInstrumentPanel implements
 
         float minLayoutSize;
         if (mapView.isPortrait()) {
-            minLayoutSize = mapView.getWidth();
+            if (_prefs.getBoolean("nav_orientation_right", true))
+                minLayoutSize = mapView.getWidth() - 160; // account for the width of the  overflow
+            else
+                minLayoutSize = mapView.getWidth();
         } else {
             minLayoutSize = getWidth() / 2f;
         }

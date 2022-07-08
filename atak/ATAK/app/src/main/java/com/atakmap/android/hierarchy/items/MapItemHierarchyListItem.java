@@ -52,6 +52,8 @@ public class MapItemHierarchyListItem extends AbstractChildlessListItem
     public MapItemHierarchyListItem(MapView mapView, MapItem item) {
         this.mapView = mapView;
         this.item = item;
+        setLocalData("showLocation",
+                item.getMetaBoolean("omShowLocation", true));
     }
 
     /**************************************************************************/
@@ -143,6 +145,7 @@ public class MapItemHierarchyListItem extends AbstractChildlessListItem
     @Override
     public GeoPoint getPoint(GeoPoint point) {
         GeoPoint loc = null;
+
         if (this.item instanceof Arrow) {
             Arrow arrow = ((Arrow) this.item);
             loc = arrow.getPoint2().get();

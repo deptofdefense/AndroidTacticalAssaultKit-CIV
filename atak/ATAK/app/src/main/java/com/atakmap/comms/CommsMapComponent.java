@@ -370,7 +370,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
             mapView = view;
             nonStreamsEnabled = true;
             filesharingEnabled = false;
-            localWebServerPort = WebServer.DEFAULT_SERVER_PORT;
+            localWebServerPort = Commo.MPIO_LOCAL_PORT_DISABLE;
             secureLocalWebServerPort = WebServer.DEFAULT_SECURE_SERVER_PORT;
 
             final String uid = view.getSelfMarker().getUID();
@@ -1168,7 +1168,9 @@ public class CommsMapComponent extends AbstractMapComponent implements
                         try {
                             commo.removeInboundInterface(iface);
                         } catch (IllegalArgumentException iae) {
-                            Log.e(TAG, "unable to remove inbound interface for: " + iface);
+                            Log.e(TAG,
+                                    "unable to remove inbound interface for: "
+                                            + iface);
                         }
                     }
             }
@@ -1189,7 +1191,9 @@ public class CommsMapComponent extends AbstractMapComponent implements
                             try {
                                 commo.removeInboundInterface(iface);
                             } catch (IllegalArgumentException iae) {
-                                Log.e(TAG, "unable to remove inbound interface for: " + iface);
+                                Log.e(TAG,
+                                        "unable to remove inbound interface for: "
+                                                + iface);
                             }
                         }
                     }
@@ -1559,7 +1563,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
         } catch (CommoException ex) {
             Log.e(TAG,
                     "Invalid cot message or destination for tcp direct send to "
-                            + endpoint + " msg = " + e.toString());
+                            + endpoint + " msg = " + e);
         }
     }
 
@@ -1610,7 +1614,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
                 }
 
             } catch (CommoException ex) {
-                Log.e(TAG, "Invalid cot message for broadcast " + e.toString());
+                Log.e(TAG, "Invalid cot message for broadcast " + e);
             }
         } else {
 
@@ -1641,7 +1645,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
                 }
 
             } catch (CommoException ex) {
-                Log.e(TAG, "Invalid cot message for unicast " + e.toString());
+                Log.e(TAG, "Invalid cot message for unicast " + e);
             }
 
             if (failedContactUids != null) {
@@ -2426,6 +2430,8 @@ public class CommsMapComponent extends AbstractMapComponent implements
                 try {
                     commo.setMissionPackageLocalPort(
                             Commo.MPIO_LOCAL_PORT_DISABLE);
+                    commo.setMissionPackageLocalHttpsParams(
+                            Commo.MPIO_LOCAL_PORT_DISABLE, null, null);
                 } catch (CommoException ex) {
                     Log.e(TAG, "Error disabling local web server", ex);
                 }

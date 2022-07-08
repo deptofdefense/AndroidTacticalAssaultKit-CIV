@@ -16,7 +16,7 @@ namespace TAK {
                     class ENGINE_API SurfaceRendererControl
                     {
                     protected :
-                        ~SurfaceRendererControl() NOTHROWS = default;
+                        ~SurfaceRendererControl() NOTHROWS;
                     public :
                         /**
                          * Marks the visible region of the surface as dirty.
@@ -62,7 +62,7 @@ namespace TAK {
                         virtual int64_t getMinimumRefreshInterval() const NOTHROWS = 0;
                     };
 
-                    const char* SurfaceRendererControl_getType() NOTHROWS;
+                    ENGINE_API const char* SurfaceRendererControl_getType() NOTHROWS;
                 }
             }
         }

@@ -14,6 +14,7 @@ namespace TAK {
                 class CachingFeatureCursor;
             public:
                 RuntimeCachingFeatureDataStore(FeatureDataStore2Ptr &&impl) NOTHROWS;
+                RuntimeCachingFeatureDataStore(FeatureDataStore2Ptr &&impl, const int maxRenderQueryLimit) NOTHROWS;
             protected :
                 virtual Util::TAKErr isClientQuery(bool *value, const FeatureQueryParameters &other) NOTHROWS;
             public: // FeatureDataStore2
@@ -69,6 +70,7 @@ namespace TAK {
                 std::shared_ptr<RuntimeFeatureDataStore2> cache;
                 bool dirty;
                 Thread::Mutex mutex;
+                const int maxRenderQueryLimit;
             }; // FeatureDataStore
         }
     }

@@ -67,7 +67,7 @@ public class GRGMapReceiver extends BroadcastReceiver implements
     private final float[] _hsv = new float[3];
     private boolean _layerVisible;
 
-    @ModifierApi(since = "4.5", target="4.8", modifiers={})
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {})
     public GRGMapReceiver(MapView mapView, FeatureDataStore outlinesDB,
             PersistentRasterDataStore rasterDB, DatasetRasterLayer2 rasterLayer,
             GRGMapOverlay overlay) {
@@ -88,7 +88,7 @@ public class GRGMapReceiver extends BroadcastReceiver implements
         ClearContentRegistry.getInstance().registerListener(this);
     }
 
-    @ModifierApi(since = "4.5", target="4.8", modifiers={})
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {})
     public void dispose() {
         AtakBroadcast.getInstance().unregisterReceiver(this);
         ClearContentRegistry.getInstance().unregisterListener(this);

@@ -1,4 +1,4 @@
-
+#ifdef MSVC
 #include <regex>
 #include <sstream>
 #include <iomanip>
@@ -646,3 +646,4 @@ namespace {
 		return DirectSceneGraph;
 	}
 }
+#endif

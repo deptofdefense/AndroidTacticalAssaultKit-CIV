@@ -53,7 +53,7 @@ final class FirstPersonTool extends Tool implements
 
     public static final String TOOL_NAME = "com.atakmap.android.firstperson.FirstPersonTool";
 
-    @ModifierApi(since = "4.5", target="4.8", modifiers={})
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {})
     public FirstPersonTool(MapView mapView) {
         super(mapView, TOOL_NAME);
         _mapView = mapView;

@@ -7,6 +7,7 @@
 
 #include <core/GeoPoint2.h>
 #include <core/Layer.h>
+#include <core/MapRenderer2.h>
 #include <core/MapSceneModel2.h>
 #include <core/Projection2.h>
 
@@ -50,6 +51,29 @@ namespace TAKEngineJNI {
             template<>
             TAK::Engine::Util::TAKErr Interop_isWrapper<atakmap::core::Layer::VisibilityListener>(bool *value, JNIEnv &, jobject mlayer) NOTHROWS;
             TAK::Engine::Util::TAKErr Interop_isWrapper(bool *value, JNIEnv &, const atakmap::core::Layer::VisibilityListener &clayer) NOTHROWS;
+
+            // RenderContext
+            TAK::Engine::Util::TAKErr Interop_marshal(std::shared_ptr<TAK::Engine::Core::RenderContext> &value, JNIEnv &env, jobject mrenderContext) NOTHROWS;
+            TAK::Engine::Util::TAKErr Interop_marshal(TAK::Engine::Core::RenderContextPtr &value, JNIEnv &env, jobject mrenderContext) NOTHROWS;
+            TAK::Engine::Util::TAKErr Interop_marshal(Java::JNILocalRef &value, JNIEnv &env, const std::shared_ptr<TAK::Engine::Core::RenderContext> &crenderContext) NOTHROWS;
+            TAK::Engine::Util::TAKErr Interop_marshal(Java::JNILocalRef &value, JNIEnv &env, TAK::Engine::Core::RenderContextPtr &&crenderContext) NOTHROWS;
+            TAK::Engine::Util::TAKErr Interop_marshal(Java::JNILocalRef &value, JNIEnv &env, const TAK::Engine::Core::RenderContext &crenderContext) NOTHROWS;
+
+            template<>
+            TAK::Engine::Util::TAKErr Interop_isWrapper<TAK::Engine::Core::RenderContext>(bool *value, JNIEnv &, jobject mrenderContext) NOTHROWS;
+            TAK::Engine::Util::TAKErr Interop_isWrapper(bool *value, JNIEnv &, const TAK::Engine::Core::RenderContext &crenderContext) NOTHROWS;
+
+            // IMapRendererEnums
+            TAK::Engine::Util::TAKErr Interop_marshal(Java::JNILocalRef &value, JNIEnv &env, const TAK::Engine::Core::MapRenderer::CameraCollision ccameraCollision) NOTHROWS;
+            TAK::Engine::Util::TAKErr Interop_marshal(TAK::Engine::Core::MapRenderer::CameraCollision *value, JNIEnv &env, jobject mdisplayOrigin) NOTHROWS;
+            TAK::Engine::Util::TAKErr Interop_marshal(Java::JNILocalRef &value, JNIEnv &env, const TAK::Engine::Core::MapRenderer::DisplayMode cdisplayMode) NOTHROWS;
+            TAK::Engine::Util::TAKErr Interop_marshal(TAK::Engine::Core::MapRenderer::DisplayMode *value, JNIEnv &env, jobject mdisplayMode) NOTHROWS;
+            TAK::Engine::Util::TAKErr Interop_marshal(Java::JNILocalRef &value, JNIEnv &env, const TAK::Engine::Core::MapRenderer::DisplayOrigin cdisplayOrigin) NOTHROWS;
+            TAK::Engine::Util::TAKErr Interop_marshal(TAK::Engine::Core::MapRenderer::DisplayOrigin *value, JNIEnv &env, jobject mdisplayOrigin) NOTHROWS;
+            TAK::Engine::Util::TAKErr Interop_marshal(Java::JNILocalRef &value, JNIEnv &env, const TAK::Engine::Core::MapRenderer::InverseMode cinverseMode) NOTHROWS;
+            TAK::Engine::Util::TAKErr Interop_marshal(TAK::Engine::Core::MapRenderer::InverseMode *value, JNIEnv &env, jobject minverseMode) NOTHROWS;
+            TAK::Engine::Util::TAKErr Interop_marshal(Java::JNILocalRef &value, JNIEnv &env, const TAK::Engine::Core::MapRenderer::InverseResult cinverseResult) NOTHROWS;
+            TAK::Engine::Util::TAKErr Interop_marshal(TAK::Engine::Core::MapRenderer::InverseResult *value, JNIEnv &env, jobject minverseResult) NOTHROWS;
         }
     }
 }

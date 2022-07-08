@@ -1,4 +1,4 @@
-
+#ifdef MSVC
 #include "model/ASSIMPSceneSpi.h"
 
 #include <algorithm>
@@ -868,3 +868,4 @@ TAKErr ASSIMPSceneSpi::create(ScenePtr &scene, const char *URI, ProcessingCallba
 
     return procInfo.builder.build(scene);
 }
+#endif

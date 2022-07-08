@@ -33,7 +33,7 @@ public class BrightnessReceiver extends BroadcastReceiver implements
 
     private static SharedPreferences _prefs;
 
-    @ModifierApi(since = "4.5", target="4.8", modifiers={})
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {})
     public BrightnessReceiver(MapView mapView) {
         _mapView = mapView;
 
@@ -69,7 +69,7 @@ public class BrightnessReceiver extends BroadcastReceiver implements
         }
     }
 
-    @ModifierApi(since = "4.5", target="4.8", modifiers={})
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {})
     public void dismiss() {
         hideControl();
         _brightnessOverlay.scheduleDismissOnGLThread();

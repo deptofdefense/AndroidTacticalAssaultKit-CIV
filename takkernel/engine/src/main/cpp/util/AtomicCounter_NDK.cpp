@@ -1,4 +1,4 @@
-
+#ifdef __ANDROID__
 #include <stdatomic.h>
 #include "util/AtomicCounter.h"
 
@@ -11,3 +11,5 @@ int32_t AtomicCounter::add(int32_t amount) {
 int32_t AtomicCounter::currentValue() const {
     return atomic_load(&this->value);
 }
+
+#endif

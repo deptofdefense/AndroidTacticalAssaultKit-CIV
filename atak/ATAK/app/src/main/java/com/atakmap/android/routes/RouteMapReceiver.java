@@ -954,7 +954,7 @@ public class RouteMapReceiver extends BroadcastReceiver implements
 
                 Log.d(TAG,
                         "Updated notification for routes: "
-                                + manifest.toString());
+                                + manifest);
 
                 //kick off tasks to import
                 for (File importFile : toImport) {

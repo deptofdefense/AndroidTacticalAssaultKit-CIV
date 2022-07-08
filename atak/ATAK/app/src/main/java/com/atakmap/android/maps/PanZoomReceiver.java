@@ -43,8 +43,7 @@ public class PanZoomReceiver extends BroadcastReceiver {
                     for (int i = 0; i < pts.length; i++)
                         pts[i] = GeoPoint.parseGeoPoint(spts[i]);
                     ATAKUtilities.scaleToFit(_mapView, pts,
-                            _mapView.getWidth(), _mapView.getHeight(),
-                            terrainAdj);
+                            _mapView.getWidth(), _mapView.getHeight());
                 }
             } catch (Exception e) {
                 // prior to 3.3 we used a Parcelable call to obtain the actual
@@ -56,7 +55,6 @@ public class PanZoomReceiver extends BroadcastReceiver {
         }
 
         final double mapScale = arg1.getDoubleExtra("scale", Double.NaN);
-
 
         // in case someone does not pass in panTo point
         if (panTo == null) {
@@ -74,13 +72,16 @@ public class PanZoomReceiver extends BroadcastReceiver {
         }
 
         if (snap) {
-            CameraController.Programmatic.panTo(_mapView.getRenderer3(), panTo, true);
+            CameraController.Programmatic.panTo(_mapView.getRenderer3(), panTo,
+                    true);
             if (!Double.isNaN(mapScale))
-                CameraController.Programmatic.zoomTo(_mapView.getRenderer3(), mapScale, false);
+                CameraController.Programmatic.zoomTo(_mapView.getRenderer3(),
+                        mapScale, false);
         } else if (!Double.isNaN(mapScale)) {
             _mapView.getMapController().panZoomTo(panTo, mapScale, true);
         } else {
-            CameraController.Programmatic.panTo(_mapView.getRenderer3(), panTo, true);
+            CameraController.Programmatic.panTo(_mapView.getRenderer3(), panTo,
+                    true);
         }
     }
 

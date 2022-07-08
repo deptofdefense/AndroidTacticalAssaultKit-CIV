@@ -2,21 +2,20 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <PreferenceCategory 
         android:title="@string/offscreenIndPreferences">
-        <CheckBoxPreference 
+        <com.atakmap.android.gui.PanCheckBoxPreference
             android:summary="@string/preferences_text290"
             android:enabled="true" 
             android:defaultValue="true" 
             android:key="toggle_offscreen_indicators" 
             android:title="@string/preferences_text291"/>
-        <com.atakmap.android.gui.PanEditTextPreference 
+        <com.atakmap.android.gui.PanEditTextPreference
             android:summary="@string/preferences_text292"
             android:key="offscreen_indicator_dist_threshold" 
             android:title="@string/preferences_text293"
             android:inputType="number"
             android:defaultValue="10"/>
-        <com.atakmap.android.gui.PanEditTextPreference 
+        <com.atakmap.android.gui.PanEditTextPreference
             android:summary="@string/preferences_text294"
- 
             android:key="offscreen_indicator_timeout_threshold" 
             android:title="@string/preferences_text295"
             android:inputType="number"

@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "renderer/GL.h"
 
 #include "renderer/feature/GLBatchGeometryRenderer3.h"
@@ -109,8 +110,8 @@ using namespace atakmap::util::distance;
     "  float normalDir = (2.0*a_normal) - 1.0;\n" \
     "  float adjX = normalDir*(dx/dist)*((a_halfStrokeWidth+c_smoothBuffer)/u_viewportSize.y);\n" \
     "  float adjY = normalDir*(dy/dist)*((a_halfStrokeWidth+c_smoothBuffer)/u_viewportSize.x);\n" \
-    "  gl_Position.x = gl_Position.x - adjY;\n" \
-    "  gl_Position.y = gl_Position.y + adjX;\n" \
+    "  gl_Position.x = gl_Position.x - adjY*gl_Position.w;\n" \
+    "  gl_Position.y = gl_Position.y + adjX*gl_Position.w;\n" \
     "  v_color = a_color;\n" \
     "  v_normal = vec2(-normalDir*(dy/dist)*(a_halfStrokeWidth+c_smoothBuffer), normalDir*(dx/dist)*(a_halfStrokeWidth+c_smoothBuffer));\n" \
     "  f_pattern = a_pattern;\n" \
@@ -958,7 +959,7 @@ TAKErr GLBatchGeometryRenderer3::extrudePoints() NOTHROWS {
             std::unique_ptr<GLBatchLineString3> glLollipop;
             glLollipop.reset(new GLBatchLineString3(lbl->surface));
             auto *lineString = new atakmap::feature::LineString(atakmap::feature::Geometry::_3D);
-            lineString->addPoint(lbl->longitude, lbl->latitude, 0.0);
+            lineString->addPoint(lbl->longitude, lbl->latitude, lbl->terrainEl);
             lineString->addPoint(lbl->longitude, lbl->latitude, lbl->altitude);
             TAK::Engine::Feature::GeometryPtr_const geometry(lineString, atakmap::feature::destructGeometry);
             glLollipop->init(lbl->featureId, lbl->name, std::move(geometry), lbl->altitudeMode, 0.0, nullptr);
@@ -976,7 +977,7 @@ TAKErr GLBatchGeometryRenderer3::extrudePoints() NOTHROWS {
             std::unique_ptr<GLBatchLineString3> glLollipop;
             glLollipop.reset(new GLBatchLineString3(point->surface));
             auto *lineString = new atakmap::feature::LineString(atakmap::feature::Geometry::_3D);
-            lineString->addPoint(point->longitude, point->latitude, 0.0);
+            lineString->addPoint(point->longitude, point->latitude, point->terrainEl);
             lineString->addPoint(point->longitude, point->latitude, point->altitude);
             TAK::Engine::Feature::GeometryPtr_const geometry(lineString, atakmap::feature::destructGeometry);
             glLollipop->init(point->featureId, point->name, std::move(geometry), point->altitudeMode, 0.0, nullptr);
@@ -994,7 +995,7 @@ TAKErr GLBatchGeometryRenderer3::extrudePoints() NOTHROWS {
             std::unique_ptr<GLBatchLineString3> glLollipop;
             glLollipop.reset(new GLBatchLineString3(point->surface));
             auto *lineString = new atakmap::feature::LineString(atakmap::feature::Geometry::_3D);
-            lineString->addPoint(point->longitude, point->latitude, 0.0);
+            lineString->addPoint(point->longitude, point->latitude, point->terrainEl);
             lineString->addPoint(point->longitude, point->latitude, point->altitude);
             TAK::Engine::Feature::GeometryPtr_const geometry(lineString, atakmap::feature::destructGeometry);
             glLollipop->init(point->featureId, point->name, std::move(geometry), point->altitudeMode, 0.0, nullptr);
@@ -1141,6 +1142,16 @@ void GLBatchGeometryRenderer3::drawSurface(const GLGlobeBase &view) NOTHROWS
 
 void GLBatchGeometryRenderer3::drawSprites(const GLGlobeBase &view) NOTHROWS
 {
+    // reset the state to the defaults
+    // C# TO C++ CONVERTER TODO TASK: There is no C++ equivalent to 'unchecked' in this context:
+    // ORIGINAL LINE: this.state.color = unchecked((int)0xFFFFFFFF);
+    this->state.color = 0xFFFFFFFF;
+    this->state.lineWidth = 1.0f;
+    this->state.texId = 0;
+
+    int i = 0;
+    glGetIntegerv(GL_ACTIVE_TEXTURE, &i);
+    this->state.textureUnit = i;
     // points
 
     // XXX ----
@@ -1971,3 +1982,4 @@ namespace
         }
     }
 }
+#endif

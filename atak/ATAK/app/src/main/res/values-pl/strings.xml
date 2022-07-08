@@ -463,7 +463,7 @@
   <string name="preference_rab_show_eta_title">Wyświetl pozostały czas do przybycia na etykietach odległości i kierunku</string>
   <string name="preference_rab_show_eta_summary">Gdy sprawdzone, próba zostanie użyta do obliczenia ETA w oparciu o zasięg i aktualną prędkość. Gdy nie da się wykryć prędkości może być ona wprowadzona ręcznie poprzez  szczegóły Zasięgu i Kierunku.</string>
   <!--Elevation-->
-  <string name="preferences_text174">Wartość (HSV) podnosi wartości mapy termicznej w procentach (0-100)</string>
+  <string name="preferences_text174">Wartość (HSV) podnosi wartości mapy termicznej w procentach (0–100)</string>
   <!--Geocoder-->
   <string name="preferences_text175">Włącz wyszukiwanie Adresu (Geocoder)</string>
   <string name="preferences_text176">Możliwość dodania przycisku Adres </string>
@@ -565,7 +565,7 @@
   <string name="preferences_cert_enroll_key_length_desc">Długość w bitach dla klucza prywatnego RSA</string>
   <string name="preferences_cert_enroll_export">Włącz eksport certyfikatów klienta</string>
   <string name="preferences_cert_enroll_export_desc">Umożliwia eksportowanie certyfikatów uzyskanych podczas rekrutacji</string>
-  <string name="enroll_client_title">Inicjowanie ...</string>
+  <string name="enroll_client_title">Inicjowanie …</string>
   <string name="enroll_client_message">Rejestracja urządzenia na serwerze TAK</string>
   <string name="enroll_client_success">Rejestracja serwera TAK powiodła się</string>
   <string name="enroll_client_failure">Rejestracja serwera TAK nie powiodła się</string>
@@ -702,8 +702,9 @@
   <string name="preferences_text331">Kolor drużyny</string>
   <string name="preferences_text332">Użyj koloru swojej drużyny</string>
   <string name="preferences_text333">Użyj koloru niestandardowego</string>
-  <string name="preferences_text334">Zmień / utwórz niestandardowy kolor</string>
+  <string name="preferences_text334">Change/Create Icon Main Custom Color</string>
   <string name="preferences_text335">Wybierz kolor niestandardowy</string>
+  <string name="preferences_text470">Change/Create Icon Outline Custom Color</string>
   <!--Tadil-J-->
   <string name="preferences_text336">Typ pozycji własnej</string>
   <string name="preferences_text337">Numer początkowy dla Track Block</string>
@@ -888,7 +889,6 @@
   <string name="shape_tip">Narysuj kształt</string>
   <string name="telestrate_tip">Narysuj telestację</string>
   <!--Fire Tools-->
-  <string name="location_marker_scale">Klawisz skali znacznika lokalizacji</string>
   <string name="selected_actionbar_icon_color">Podstawowy kolor ikon w pasku narzędzi </string>
   <string name="selected_actionbar_background_color">Wybrany kolor tła paska narzędzi</string>
   <string name="default_actionbar_colors">Domyślny kolor paska narzędzi</string>
@@ -2441,7 +2441,7 @@
   <string name="radius_m">Promień (m)</string>
   <string name="meters">Metryki w czasie rzeczywistym</string>
   <string name="intensity">Intensywność</string>
-  <string name="transparency_summ">Przezroczystość nakładki mapy cieplnej elewacji w procentach (0-100)</string>
+  <string name="transparency_summ">Przezroczystość nakładki mapy cieplnej elewacji w procentach (0–100)</string>
   <string name="recalculate">Przelicz ponownie</string>
   <string name="show_by_default_elev">Domyślna mapa cieplna wysokości wyświetlana przy uruchomieniu</string>
   <string name="saturation">Nasycenie</string>
@@ -2621,7 +2621,7 @@
   <string name="radio_static_network_settings">Statyczne ustawienia sieci</string>
   <string name="radio_static_network_settings_invalid_message">Podany %s jest nieprawidłowy. Zaktualizuj, zanim przejdziesz dalej.</string>
   <string name="radio_using">"używając: "</string>
-  <string name="radio_connecting_ellipses">Łączę ...</string>
+  <string name="radio_connecting_ellipses">Łączę …</string>
   <string name="radio_error_configuring_ethernet">błąd podczas konfigurowania sieci Ethernet…</string>
   <string name="_network">" Sieć"</string>
   <string name="radio_physical_connection_controlled_internally">Fizyczne połączenie sieciowe jest kontrolowane wewnętrznie.</string>
@@ -3442,7 +3442,6 @@
   <string name="thick">Gruba</string>
   <string name="encryption_passphrase_prompt">Wprowadź hasło szyfrowania podane wcześniej podczas konfigurowania szyfrowania danych.</string>
   <string name="passphrase">Hasło</string>
-  <string name="create_encryption_passphrase">Wybierz nowe hasło szyfrowania dla swoich danych.</string>
   <string name="initial_encryption_passphrase">Wybierz nowe hasło szyfrowania dla swoich danych. Po pomyślnej zmianie hasła aplikacja zostanie zamknięta.</string>
   <string name="autogenerate">Automatyczne generowanie</string>
   <string name="user_supplied_stronger">Dostarczone przez użytkownika (Silniejsze)</string>
@@ -3712,11 +3711,11 @@
   <string name="unexpected_error">Wystąpił nieznany błąd</string>
   <string name="bullseye_radius_large">Promień Bullseye jest za duży</string>
   <string name="invalid_input">Nieprawidłowe dane wejściowe</string>
-  <string name="background_scanning">Skanowanie w tle ...</string>
-  <string name="copied_to_clipboard_generic">Skopiowane do schowka ...</string>
+  <string name="background_scanning">Skanowanie w tle …</string>
+  <string name="copied_to_clipboard_generic">Skopiowane do schowka …</string>
   <string name="no_exporters_registered">Brak zarejestrowanych eksporterów</string>
   <string name="scanning_apps">Skanowanie dostępnych aplikacji oraz wtyczek</string>
-  <string name="scanning">Skanowanie ...</string>
+  <string name="scanning">Skanowanie …</string>
   <string name="pointDroppingBehavior">Zachowanie podsczas zarządzania wskaźnikami</string>
   <string name="lockBehavior">Zachowanie blokowania</string>
   <string name="forceCenterMoving">Środek ciężkości podczas ruchu</string>
@@ -3935,7 +3934,7 @@
   <string name="title_bloodhound_details">Bloodhound Details</string>
   <string name="title_point_details">Point Details</string>
   <string name="point_dropper_coord_text">"---- ft MSL"</string>
-  <string name="splash_loading">Loading...</string>
+  <string name="splash_loading">Loading…</string>
   <string name="red_x">Red X</string>
   <string name="loadout_tools">View all tools &amp; plugins</string>
   <string name="loadout_all_tools">All tools &amp; plugins</string>
@@ -3957,7 +3956,7 @@
   <string name="download_size_label">Download Size:</string>
   <string name="downloading">Downloading:</string>
   <string name="download_location_msg">All downloads go to the local favorite section.</string>
-  <string name="download_progress_connecting">Connecting...</string>
+  <string name="download_progress_connecting">Connecting…</string>
   <string name="download_progress_complete">Complete</string>
   <string name="download_progress_cancelled">Cancelled</string>
   <string name="add_current_view">Add Current View</string>
@@ -3993,7 +3992,7 @@
   <string name="intensity_label">Intensity:</string>
   <string name="details_label">Details</string>
   <string name="viewshed_label">Viewshed</string>
-  <string name="downloading_message">Downloading...</string>
+  <string name="downloading_message">Downloading…</string>
   <string name="sun_moon_illumination">Sun/Moon Illumination</string>
   <string name="sun_moon_illumination_description">Illuminate maps using the position of the sun/moon.</string>
   <string name="simulated_date_and_time">Date and time:</string>
@@ -4043,7 +4042,7 @@
   <string name="ellipse_point3_prompt">Select depth of ellipse.</string>
   <string name="ellipse_edit_prompt">Drag or long-press markers to edit the ellipse.</string>
   <string name="ellipse_label_format">W: %1$s  L: %2$s</string>
-  <string name="pref_nav_orientation_title">Tool Bar Side</string>
+  <string name="pref_nav_orientation_title">Toolbar Side</string>
   <string name="pref_nav_orientation_summary">Set which side of the screen to display the main toolbar.</string>
   <string name="pref_self_coord_info">Self Coordinate Information</string>
   <string name="pref_self_coord_info_summary">Set where self coordinate information is displayed on the screen.</string>
@@ -4059,7 +4058,7 @@
   <string name="fill_color">Fill</string>
   <string name="failed_to_show_map_item_list">Failed to show map item list</string>
   <string name="elevation_server_title">Elevation Server</string>
-  <string name="elevation_server_summary">The publicly facing elevation server to pull data from</string>
+  <string name="elevation_server_summary">The publicly facing elevation server to pull data from.</string>
   <string name="elevation_downloader">Elevation Downloader</string>
   <string name="elevation_downloader_summary">Attempts to mass download elevation data for the entire world from the server and gives the user options for which hemisphere they are in.</string>
   <string name="stream_elevation_title">Stream Elevation Data</string>
@@ -4076,15 +4075,67 @@
   <string name="legacy_wr_redirect_title">Legacy Wave Relay Redirect</string>
   <string name="legacy_wr_redirect_summary">Enable when using ATAK with a Wave Relay Radio when the Wave Relay Radio Control Plugin is not installed. It is recommended that users install the Wave Relay Radio Plugin.</string>
   <string name="device_details_title">Device Details</string>
-  <string name="device_details_summary">Hardware Details for remote help and support</string>
+  <string name="device_details_summary">Hardware Details for remote help and support.</string>
   <string name="select_content_type_to_add">Select Content Type to Add</string>
   <string name="single_multip_layer_prompt">Single or Multiple layers</string>
   <string name="single">Single</string>
   <string name="multiple">Multiple</string>
   <string name="agregated_layer_title">Provide a name for the aggregated layer</string>
   <string name="layers_can_be_aggregated">The selected layers can be aggregated into a single layer, would you to create a single layer or multiple layers based on your selection?</string>
-  <string name="querying_the_server">Querying the Server...</string>
+  <string name="querying_the_server">Querying the Server…</string>
   <string name="unable_to_edit_feature">Unable to edit this feature</string>
   <string name="unable_to_edit_feature_set">Unable to edit this feature set</string>
   <string name="edit_features">Edit Features</string>
+  <string name="pref_missionpkg_legacy_http_en">Allow for HTTP transfers for legacy clients</string>
+  <string name="pref_missionpkg_legacy_http_title">Allow HTTP transfers</string>
+  <string name="select_harris_sa_radio">Select a Radio for Harris SA</string>
+  <string name="harris_sa_failed_to_configure">Failed to Configure Radio</string>
+    <string name="quick_pic_preferences">Quick Pic Preferences</string>
+  <string name="camera_app_summary">Select the application to be used for quick pictures</string>
+  <string name="camera_app_title">Camera Application</string>
+    <string name="user_feedback">User Feedback</string>
+  <string name="user_feedback_summary">Allows for user provided feedback to be captured and submitted to a TAK Server</string>
+    <string name="feedback">Feedback</string>
+    <string name="associated_files">Associated Files</string>
+    <string name="no_files_selected_to_remove">No files were selected to remove.</string>
+  <string name="unable_to_determine_file_type">Unable to determine the appropriate file type  for %s</string>
+  <string name="unable_to_find_application">Unable to find application to view %s</string>
+<string name="error_occurred_submtting_feedback">Error occurred submitting the user feedback for %s</string>
+
+    <string name="callsign_and_device_preferences">Callsign and Device Preferences</string>
+  <string name="control_preferences">Control Preferences</string>
+  <string name="network_preferences">Network Preferences</string>
+  <string name="legacy_preferences">Legacy Preferences</string>
+    <string name="about_atak">About ATAK</string>
+    <string name="callsign_prefs">Callsign Preferences</string>
+    <string name="bluetooth">Bluetooth</string>
+    <string name="contact_preferences">Contact Preferences</string>
+  <string name="encryp_pass">Encryption Password</string>
+    <string name="pref_manag">Preference Management</string>
+    <string name="spec_tool_pref">Specific Tool Preferences</string>
+    <string name="self_coord">Self Coordinate</string>
+    <string name="datalink_prefs">Datalink Preferences</string>
+  <string name="server_connections">Server Connections</string>
+    <string name="add_disp_opt">Additional Display Options</string>
+    <string name="disable_keyguard">Disable KeyGuard</string>
+  <string name="forced_air_mode">Forced Airplane Mode</string>
+    <string name="tak_suppor_info">TAK Support Information</string>
+  <string name="reset_hints">Reset Hints</string>
+  <string name="atak_docs">ATAK Documents</string>
+  <string name="device_details">Device Details</string>
+  <string name="tak_init_devic_conf">TAK Initial Device Configurations</string>
+    <string name="network_connections">Network Preferences</string>
+    <string name="adjust_network_connections">Adjust network connections</string>
+  <string name="modify_contact_settings">Modify contact settings</string>
+  <string name="filter">Filter</string>
+  <string name="filter_contacts">Filter Contacts</string>
+    <string name="hide_allFiltered">Hide Filtered Contacts</string>
+    <string name="additional_self_coord_controls">Additional Self Coordinate Controls</string>
+  <string name="additional_self_coord_control_summ">Changes to the actions associated with the Self Coordinate Display</string>
+    <string name="legacy_pref_summary">Display older legacy device preferences. These preferences may be removed in future versions.</string>
+    <string name="tak_server_setup">TAK Server Setup</string>
+    <string name="tak_server_setup_message">No TAK Server configured. Would you like to go to Network Settings?</string>
+    <string name="would_you_like_to_export_mission_pkg">Would you like to export the file as a mission package?</string>
+    <string name="import_file">Import File</string>
+    <string name="userfeedback_submit_message">Submitted %s to the support/log directory.   This feedback will be automatically published to the tak server if configured.</string>
 </resources>

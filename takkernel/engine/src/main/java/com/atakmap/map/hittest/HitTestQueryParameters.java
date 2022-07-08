@@ -107,7 +107,7 @@ public class HitTestQueryParameters {
         GeoPoint focus = GeoPoint.createMutable();
         MapRenderer2.InverseResult result = renderer.inverse(new PointD(point), focus,
                 MapRenderer2.InverseMode.RayCast, 0,
-                MapRenderer2.DisplayOrigin.Lowerleft);
+                MapRenderer2.DisplayOrigin.LowerLeft);
         if(result == MapRenderer2.InverseResult.None)
             return;
 

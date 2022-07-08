@@ -7,22 +7,25 @@
 #include "core/Datum.h"
 #include "core/GeoPoint.h"
 #include "core/GeoPoint2.h"
+#include "core/MapRenderer2.h"
 #include "core/MapSceneModel.h"
 #include "core/ProjectionFactory2.h"
 #include "math/Matrix.h"
 #include "math/Point2.h"
 #include "math/Vector4.h"
 #include "raster/osm/OSMUtils.h"
+#include "renderer/core/GLGlobe.h"
+#include "thread/Lock.h"
+#include "thread/Mutex.h"
 #include "util/Error.h"
 #include "util/MathUtils.h"
-
-#include "thread/Lock.h"
 
 using namespace atakmap::core;
 
 using namespace TAK::Engine::Core;
 using namespace TAK::Engine::Math;
 using namespace TAK::Engine::Thread;
+using namespace TAK::Engine::Util;
 
 using namespace atakmap::math;
 
@@ -32,43 +35,95 @@ using namespace atakmap::math;
 #define WGS84_EQUITORIAL_RADIUS         6378137.0
 #define WGS84_EQUITORIAL_CIRCUMFERENCE  (2.0*WGS84_EQUITORIAL_RADIUS*M_PI)
 
+namespace
+{
+    class StateRenderer :
+        public MapRenderer3,
+        public RenderContext,
+        public RenderSurface
+    {
+    public :
+        StateRenderer(const float width, const float height, const double dpi, const double gsd) NOTHROWS;
+    public : // MapRenderer
+        TAKErr registerControl(const Layer2 &layer, const char *type, void *ctrl) NOTHROWS override;
+        TAKErr unregisterControl(const Layer2 &layer, const char *type, void *ctrl) NOTHROWS override;
+        TAKErr visitControls(bool *visited, void *opaque, TAKErr(*visitor)(void *opaque, const Layer2 &layer, const Control &ctrl), const Layer2 &layer, const char *type) NOTHROWS override;
+        TAKErr visitControls(bool *visited, void *opaque, TAKErr(*visitor)(void *opaque, const Layer2 &layer, const Control &ctrl), const Layer2 &layer) NOTHROWS override;
+        TAKErr visitControls(void *opaque, TAKErr(*visitor)(void *opaque, const Layer2 &layer, const Control &ctrl)) NOTHROWS override;
+        TAKErr addOnControlsChangedListener(OnControlsChangedListener *l) NOTHROWS override;
+        TAKErr removeOnControlsChangedListener(OnControlsChangedListener *l) NOTHROWS override;
+        RenderContext &getRenderContext() const NOTHROWS override;
+    public : // MapRenderer2
+        TAKErr lookAt(const GeoPoint2 &from, const GeoPoint2 &at, const MapRenderer::CameraCollision collision, const bool animate) NOTHROWS override;
+        TAKErr lookAt(const GeoPoint2 &at, const double resolution, const double azimuth, const double tilt, const MapRenderer::CameraCollision collision, const bool animate) NOTHROWS override;
+        TAKErr lookFrom(const GeoPoint2 &from, const double azimuth, const double elevation, const MapRenderer::CameraCollision collision, const bool animate) NOTHROWS override;
+        bool isAnimating() const NOTHROWS override;
+        TAKErr setDisplayMode(const TAK::Engine::Core::MapRenderer::DisplayMode mode) NOTHROWS override;
+        MapRenderer::DisplayMode getDisplayMode() const NOTHROWS override;
+        MapRenderer::DisplayOrigin getDisplayOrigin() const NOTHROWS override;
+        TAKErr setFocusPoint(const float focusx, const float focusy) NOTHROWS override;
+        TAKErr getFocusPoint(float *focusx, float *focusy) const NOTHROWS override;
+        TAKErr setSurfaceSize(const std::size_t width, const std::size_t height) NOTHROWS override;
+        TAKErr inverse(MapRenderer::InverseResult *result, GeoPoint2 *value, const MapRenderer::InverseMode mode, const unsigned int hints, const Point2<double> &screen, const MapRenderer::DisplayOrigin) NOTHROWS override;
+        TAKErr getMapSceneModel(MapSceneModel2 *value, const bool instant, const DisplayOrigin origin) const NOTHROWS override;
+        TAKErr addOnCameraChangedListener(OnCameraChangedListener *l) NOTHROWS override;
+        TAKErr removeOnCameraChangedListener(OnCameraChangedListener *l) NOTHROWS override;
+        TAKErr addOnCameraChangedListener(OnCameraChangedListener2 *l) NOTHROWS override;
+        TAKErr removeOnCameraChangedListener(OnCameraChangedListener2 *l) NOTHROWS override;
+    public : // RenderContext
+        bool isRenderThread() const NOTHROWS override;
+        TAKErr queueEvent(void(*runnable)(void *) NOTHROWS, std::unique_ptr<void, void(*)(const void *)> &&opaque) NOTHROWS override;
+        void requestRefresh() NOTHROWS override;
+        TAKErr setFrameRate(const float rate) NOTHROWS override;
+        float getFrameRate() const NOTHROWS override;
+        void setContinuousRenderEnabled(const bool enabled) NOTHROWS override;
+        bool isContinuousRenderEnabled() NOTHROWS override;
+        bool supportsChildContext() const NOTHROWS override;
+        TAKErr createChildContext(std::unique_ptr<RenderContext, void(*)(const RenderContext *)> &value) NOTHROWS override;
+        bool isAttached() const NOTHROWS override;
+        bool attach() NOTHROWS override;
+        bool detach() NOTHROWS override;
+        bool isMainContext() const NOTHROWS override;
+        RenderSurface *getRenderSurface() const NOTHROWS override;
+    public : // RenderSurface
+        double getDpi() const NOTHROWS override;
+        void setDpi(double dpi) NOTHROWS;
+        std::size_t getWidth() const NOTHROWS override;
+        std::size_t getHeight() const NOTHROWS override;
+        void addOnSizeChangedListener(OnSizeChangedListener *l) NOTHROWS override;
+        void removeOnSizeChangedListener(const OnSizeChangedListener &l) NOTHROWS override;
+    public :
+        bool suppressCallbacks;
+    private :
+        mutable Mutex mutex_;
+        MapSceneModel2 state_;
+        float focus_off_x_;
+        float focus_off_y_;
+        std::set<OnCameraChangedListener*> camera_listeners_;
+        std::set<OnCameraChangedListener2*> camera_listeners2_;
+
+    };
+}
+
 float AtakMapView::DENSITY = 1.5f;
 
 AtakMapView::AtakMapView(float w, float h, double display_dpi) :
-    width_(w),
-    height_(h),
-    display_dpi_(display_dpi),
+    state_(new StateRenderer(w, h, display_dpi, AtakMapView_getMapResolution(display_dpi, MIN_MAP_SCALE))),
     full_equitorial_extent_pixels_(AtakMapView_getFullEquitorialExtentPixels(display_dpi)),
-    center_(0, 0),
-    focus_altitude_(0.0),
-    focus_alt_terminal_slant_(0.0),
-    scale_(MIN_MAP_SCALE),
     min_map_scale_(MIN_MAP_SCALE),
     max_map_scale_(MAX_MAP_SCALE),
-    rotation_(0.0),
-    tilt_(0.0),
     max_tilt_(84.0),
-    elevation_exaggeration_factor_(1.0),
-    animate_(false),
-    projection_(TAK::Engine::Core::ProjectionSpi2::nullProjectionPtr()),
-    controller_(nullptr),
-    map_mutex_ (TEMT_Recursive),
-    compute_focus_point_(true),
-    focus_off_x_(0.0),
-    focus_off_y_(0.0),
-    continue_scroll_enabled_(true)
+    controller_(nullptr)
 {
     controller_ = new AtakMapController(this);
-    Point<float> focus(w/2 + focus_off_x_, h/2 + focus_off_y_);
-    controller_->setDefaultFocusPoint(&focus);
-
-    setProjection(4326);
 
     static bool densitySet = false;
     if (!densitySet) {
-        DENSITY = static_cast<float>(this->display_dpi_ / 160.0f);
+        DENSITY = static_cast<float>(display_dpi / 160.0f);
         densitySet = true;
     }
+
+    state_->addOnCameraChangedListener((MapRenderer3::OnCameraChangedListener2*)this);
 }
 
 AtakMapView::~AtakMapView()
@@ -84,121 +139,121 @@ AtakMapController *AtakMapView::getController() const
 
 void AtakMapView::addLayer(Layer *layer)
 {
-    Lock lock(map_mutex_);
-
-    layers_.push_back(layer);
-    dispatchLayerAdded(layer);
+    Lock lock(layers_.mutex);
+    layers_.value.push_back(layer);
+    dispatchLayerAddedNoSync(layer);
 }
 
 void AtakMapView::addLayer(int idx, Layer *layer)
 {
-    Lock lock(map_mutex_);
+    Lock lock(layers_.mutex);
 
-    if(idx < 0 || (unsigned int)idx >= layers_.size())
+    if(idx < 0 || (unsigned int)idx >= layers_.value.size())
         throw 3;
 
-    auto it = layers_.begin();
+    auto it = layers_.value.begin();
     std::advance(it, idx);
-    layers_.insert(it, layer);
+    layers_.value.insert(it, layer);
 
-    dispatchLayerAdded(layer);
+    dispatchLayerAddedNoSync(layer);
 }
 
 void AtakMapView::removeLayer(Layer *layer)
 {
-    Lock lock(map_mutex_);
+    Lock lock(layers_.mutex);
 
     std::list<Layer *> removed;
-    std::list<Layer *>::iterator it;
-    for(it = layers_.begin(); it != layers_.end(); it++) {
+    for(auto it = layers_.value.begin(); it != layers_.value.end(); it++) {
         if(*it == layer) {
-            layers_.erase(it);
+            layers_.value.erase(it);
             removed.push_back(layer);
             break;
         }
     }
     if(!removed.empty())
-        dispatchLayersRemoved(removed);
+        dispatchLayersRemovedNoSync(removed);
 }
 
 void AtakMapView::removeAllLayers()
 {
-    Lock lock(map_mutex_);
+    Lock lock(layers_.mutex);
 
     std::list<Layer *> removed;
-    std::list<Layer *>::iterator it;
-    for(it = layers_.begin(); it != layers_.end(); it++)
+    for(auto it = layers_.value.begin(); it != layers_.value.end(); it++)
         removed.push_back(*it);
-    layers_.clear();
+    layers_.value.clear();
     if(!removed.empty())
-        dispatchLayersRemoved(removed);
+        dispatchLayersRemovedNoSync(removed);
 }
 
 void AtakMapView::setLayerPosition(Layer *layer, const int position)
 {
-    Lock lock(map_mutex_);
+    Lock lock(layers_.mutex);
 
-    std::list<Layer *>::iterator it;
+    std::list<Layer *>::iterator it = layers_.value.end();
     int oldPos = 0;
-    for(it = layers_.begin(); it != layers_.end(); it++) {
+    for(it = layers_.value.begin(); it != layers_.value.end(); it++) {
         if(*it == layer) {
             break;
         }
         oldPos++;
     }
     // layer was not found or the layer won't move, return
-    if(it == layers_.end() || oldPos == position)
+    if(it == layers_.value.end() || oldPos == position)
         return;
     // delete the layer
-    layers_.erase(it);
+    layers_.value.erase(it);
     // re-insert the layer
-    it = layers_.begin();
+    it = layers_.value.begin();
     std::advance(it, position);
-    layers_.insert(it, layer);
+    layers_.value.insert(it, layer);
 
-    dispatchLayerPositionChanged(layer, oldPos, position);
+    for(auto lit : layers_.listeners)
+    {
+        lit->mapLayerPositionChanged(this, layer, oldPos, position);
+    }
 }
 
 std::size_t AtakMapView::getNumLayers()
 {
-    Lock lock(map_mutex_);
-    return layers_.size();
+    Lock lock(layers_.mutex);
+    return layers_.value.size();
 }
 
 Layer *AtakMapView::getLayer(std::size_t position)
 {
-    Lock lock(map_mutex_);
+    Lock lock(layers_.mutex);
 
-    if(position >= layers_.size())
+    if(position >= layers_.value.size())
         return nullptr; // XXX - throw exception
 
-    auto it = layers_.begin();
+    auto it = layers_.value.begin();
     std::advance(it, position);
     return *it;
 }
 
 std::list<Layer *> AtakMapView::getLayers()
 {
-    Lock lock(map_mutex_);
-    return layers_;
+    Lock lock(layers_.mutex);
+    return layers_.value;
 }
 
 void AtakMapView::getLayers(std::list<Layer *> &retval)
 {
-    Lock lock(map_mutex_);
-    retval.insert(retval.end(), layers_.begin(), layers_.end());
+    Lock lock(layers_.mutex);
+    retval.insert(retval.end(), layers_.value.begin(), layers_.value.end());
 }
 
 void AtakMapView::addLayersChangedListener(MapLayersChangedListener *listener)
 {
-    Lock lock(map_mutex_);
-    layers_changed_listeners_.insert(listener);
+    Lock lock(layers_.mutex);
+    layers_.listeners.insert(listener);
 }
 
 void AtakMapView::removeLayersChangedListener(MapLayersChangedListener *listener)
 {
-    Lock lock(map_mutex_);
-    layers_changed_listeners_.erase(listener);
+    Lock lock(layers_.mutex);
+    layers_.listeners.erase(listener);
 }
 
 void AtakMapView::getPoint(GeoPoint *c) const
@@ -208,82 +263,67 @@ void AtakMapView::getPoint(GeoPoint *c) const
 
 void AtakMapView::getPoint(GeoPoint *c, const bool atFocusAlt) const
 {
-    TAK::Engine::Util::TAKErr code(TAK::Engine::Util::TE_Ok);
-    *c = center_;
-    if (atFocusAlt) {
-        Lock lock(map_mutex_);
-
-        GeoPoint2 point2;
-        GeoPoint_adapt(&point2, center_);
-
-        atakmap::math::Point<float> focusPoint;
-        controller_->getFocusPoint(&focusPoint);
-
-        // obtain scene model for camera location
-        MapSceneModel2 scene(this->getDisplayDpi(),
-                             static_cast<int>(this->getWidth()),
-                             static_cast<int>(this->getHeight()),
-                             this->getProjection(),
-                             GeoPoint2(point2.latitude, point2.longitude),
-                             focusPoint.x,
-                             focusPoint.y,
-                             this->rotation_,
-                             this->tilt_,
-                             this->getMapResolution());
-
-        // XXX - compute projected point at altitude adjusted slant
-        Point2<double> tgt2cam;
-        code = Vector2_subtract(&tgt2cam, scene.camera.location, scene.camera.target);
-        TE_CHECKRETURN(code);
-        code = Vector2_normalize(&tgt2cam, tgt2cam);
-        TE_CHECKRETURN(code);
-
-        Point2<double> focusProjected;
-        code = Vector2_multiply(&focusProjected, tgt2cam, focus_alt_terminal_slant_);
-        TE_CHECKRETURN(code);
-        code = Vector2_add(&focusProjected, scene.camera.target, focusProjected);
-        TE_CHECKRETURN(code);
-
-        // unproject point
-        code = scene.projection->inverse(&point2, focusProjected);
-        TE_CHECKRETURN(code);
-        *c = GeoPoint(point2);
+    TAKErr code(TE_Ok);
+    MapSceneModel2 scene;
+    {
+        ReadLock lock(map_mutex_);
+        auto &current = state();
+        current.getMapSceneModel(&scene, false, MapRenderer::UpperLeft);
     }
+
+    GeoPoint2 c2;
+    scene.projection->inverse(&c2, scene.camera.target);
+    *c = GeoPoint(c2);
 }
 
 double AtakMapView::getFocusAltitude() const
 {
-    return focus_altitude_;
+    GeoPoint focus;
+    getPoint(&focus);
+    return TE_ISNAN(focus.altitude) ? 0.0 : focus.altitude;
 }
 
 void AtakMapView::getBounds(GeoPoint *upperLeft, GeoPoint *lowerRight)
 {
-    Lock lock(map_mutex_);
-    MapSceneModel sm(this);
-    Point<float> p;
+    ReadLock lock(map_mutex_);
+    auto &current = state();
+    MapSceneModel2 sm;
+    current.getMapSceneModel(&sm, false, MapRenderer::UpperLeft);
 
-    p.x = 0;
-    p.y = 0;
-    sm.inverse(&p, upperLeft, true);
+    GeoPoint2 ul;
+    sm.inverse(&ul, Point2<float>(0.f, 0.f), true);
+    *upperLeft = GeoPoint(ul);
 
-    p.x = width_;
-    p.y = height_;
-    sm.inverse(&p, lowerRight, true);
+    GeoPoint2 lr;
+    sm.inverse(&lr, Point2<float>((float)sm.width, (float)sm.height), true);
+    *lowerRight = GeoPoint(lr);
 }
 
 double AtakMapView::getMapScale() const
 {
-    return scale_;
+    ReadLock lock(map_mutex_);
+    auto &current = state();
+    MapSceneModel2 sm;
+    current.getMapSceneModel(&sm, false, MapRenderer::UpperLeft);
+    return AtakMapView_getMapScale(sm.displayDpi, sm.gsd);
 }
 
 double AtakMapView::getMapRotation() const
 {
-    return rotation_;
+    ReadLock lock(map_mutex_);
+    auto &current = state();
+    MapSceneModel2 sm;
+    current.getMapSceneModel(&sm, false, MapRenderer::UpperLeft);
+    return sm.camera.azimuth;
 }
 
 double AtakMapView::getMapTilt() const
 {
-    return tilt_;
+    ReadLock lock(map_mutex_);
+    auto &current = state();
+    MapSceneModel2 sm;
+    current.getMapSceneModel(&sm, false, MapRenderer::UpperLeft);
+    return 90.0 + sm.camera.elevation;
 }
 
 double AtakMapView::getMinMapTilt(double resolution) const
@@ -326,12 +366,20 @@ void AtakMapView::setMaxMapTilt(double value)
 }
 double AtakMapView::getMapResolution() const
 {
-    return getMapResolution(scale_);
+    ReadLock lock(map_mutex_);
+    auto &current = state();
+    MapSceneModel2 sm;
+    current.getMapSceneModel(&sm, false, MapRenderer::UpperLeft);
+    return sm.gsd;
 }
 
 double AtakMapView::getMapResolution(const double s) const
 {
-    return AtakMapView_getMapResolution(display_dpi_, s);
+    ReadLock lock(map_mutex_);
+    auto &current = state();
+    MapSceneModel2 sm;
+    current.getMapSceneModel(&sm, false, MapRenderer::UpperLeft);
+    return AtakMapView_getMapResolution(sm.displayDpi, s);
 }
 
 double AtakMapView::getFullEquitorialExtentPixels() const
@@ -341,92 +389,156 @@ double AtakMapView::getFullEquitorialExtentPixels() const
 
 int AtakMapView::getProjection() const
 {
-    Lock lock(map_mutex_);
+    ReadLock lock(map_mutex_);
 
     // projection may never be NULL here
-    return projection_->getSpatialReferenceID();
+    auto &current = state();
+    MapSceneModel2 sm;
+    current.getMapSceneModel(&sm, false, MapRenderer::UpperLeft);
+    return sm.projection->getSpatialReferenceID();
 }
 
 bool AtakMapView::setProjection(const int srid)
 {
-    Lock lock(map_mutex_);
+    ReadLock lock(map_mutex_);
 
-    TAK::Engine::Core::ProjectionPtr2 proj = TAK::Engine::Core::ProjectionFactory2_getProjection(srid);
-    if(!proj)
-        return false;
+    auto &current = state();
 
-    if (projection_ == proj
-            || (projection_ && projection_->getSpatialReferenceID() ==
-                                      proj->getSpatialReferenceID())) {
+    MapRenderer::DisplayMode mode;
+    switch (srid) {
+    case 4326 :
+        mode = MapRenderer::Flat;
+        break;
+    case 4978 :
+        mode = MapRenderer::Globe;
+        break;
+    default :
         return false;
     }
 
-    // delete the old projection and update our reference
-    this->projection_ = std::move(proj);
+    state_->setDisplayMode(mode);
+    for (auto it = renderers_.begin(); it != renderers_.end(); it++)
+        (*it)->setDisplayMode(mode);
 
-    dispatchMapProjectionChanged();
+    // dispatch projection changed
+    {
+        ReadLock cblock(projection_changed_listeners_.mutex);
+        for (auto it : projection_changed_listeners_.value)
+        {
+            it->mapProjectionChanged(this);
+        }
+    }
+
     return true;
 }
 
 void AtakMapView::addMapProjectionChangedListener(MapProjectionChangedListener *listener)
 {
-    Lock lock(map_mutex_);
-    projection_changed_listeners_.insert(listener);
+    WriteLock lock(projection_changed_listeners_.mutex);
+    projection_changed_listeners_.value.insert(listener);
 }
 
 void AtakMapView::removeMapProjectionChangedListener(MapProjectionChangedListener *listener)
 {
-    Lock lock(map_mutex_);
-    projection_changed_listeners_.erase(listener);
+    WriteLock lock(projection_changed_listeners_.mutex);
+    projection_changed_listeners_.value.erase(listener);
 }
 
 double AtakMapView::mapResolutionAsMapScale(const double resolution) const
 {
-    return AtakMapView_getMapScale(display_dpi_, resolution);
+    ReadLock lock(map_mutex_);
+    auto &current = state();
+    MapSceneModel2 sm;
+    current.getMapSceneModel(&sm, false, MapRenderer::UpperLeft);
+    return AtakMapView_getMapScale(sm.displayDpi, resolution);
 }
 
 MapSceneModel *AtakMapView::createSceneModel()
 {
-    Lock lock(map_mutex_);
-    return new MapSceneModel(this);
+    ReadLock lock(map_mutex_);
+    auto &current = state();
+    MapSceneModel2 sm;
+    current.getMapSceneModel(&sm, false, MapRenderer::UpperLeft);
+    return new MapSceneModel(sm);
 }
 
 void AtakMapView::forward(const GeoPoint *geo, Point<float> *p)
 {
-    MapSceneModel *sm = createSceneModel();
-    sm->forward(geo, p);
-    delete sm;
+    MapSceneModel2 sm;
+    {
+        ReadLock lock(map_mutex_);
+        auto &current = state();
+        current.getMapSceneModel(&sm, false, MapRenderer::UpperLeft);
+    }
+    GeoPoint2 geo2;
+    GeoPoint_adapt(&geo2, *geo);
+    Point2<float> p2;
+    sm.forward(&p2, geo2);
+    p->x = p2.x;
+    p->y = p2.y;
+    p->z = p2.z;
 }
 
 void AtakMapView::inverse(const Point<float> *p, GeoPoint *geo)
 {
-    MapSceneModel *sm = createSceneModel();
-    if(!sm->inverse(p, geo, false)) {
+    MapSceneModel2 sm;
+    {
+        ReadLock lock(map_mutex_);
+        auto &current = state();
+        current.getMapSceneModel(&sm, false, MapRenderer::UpperLeft);
+    }
+    GeoPoint2 geo2;
+    if(sm.inverse(&geo2, Point2<float>(p->x, p->y, p->z)) != TE_Ok) {
         geo->latitude = NAN;
         geo->longitude = NAN;
         geo->altitude = NAN;
+    } else {
+        *geo = GeoPoint(geo2);
     }
-    delete sm;
 }
 
 double AtakMapView::getMinLatitude() const
 {
-    return projection_->getMinLatitude();
+    MapSceneModel2 sm;
+    {
+        ReadLock lock(map_mutex_);
+        auto &current = state();
+        current.getMapSceneModel(&sm, false, MapRenderer::UpperLeft);
+    }
+    return sm.projection->getMinLatitude();
 }
 
 double AtakMapView::getMaxLatitude() const
 {
-    return projection_->getMaxLatitude();
+    MapSceneModel2 sm;
+    {
+        ReadLock lock(map_mutex_);
+        auto &current = state();
+        current.getMapSceneModel(&sm, false, MapRenderer::UpperLeft);
+    }
+    return sm.projection->getMaxLatitude();
 }
 
 double AtakMapView::getMinLongitude() const
 {
-    return projection_->getMinLongitude();
+    MapSceneModel2 sm;
+    {
+        ReadLock lock(map_mutex_);
+        auto &current = state();
+        current.getMapSceneModel(&sm, false, MapRenderer::UpperLeft);
+    }
+    return sm.projection->getMinLongitude();
 }
 
 double AtakMapView::getMaxLongitude() const
 {
-    return projection_->getMaxLongitude();
+    MapSceneModel2 sm;
+    {
+        ReadLock lock(map_mutex_);
+        auto &current = state();
+        current.getMapSceneModel(&sm, false, MapRenderer::UpperLeft);
+    }
+    return sm.projection->getMaxLongitude();
 }
 
 double AtakMapView::getMinMapScale() const
@@ -450,264 +562,338 @@ void AtakMapView::setMaxMapScale(const double scale)
 }
 void AtakMapView::setSize(const float w, const float h)
 {
-    Lock lock(map_mutex_);
+    if (TE_ISNAN(w) || TE_ISNAN(h))
+        return;
+    if (w <= 0.f || h <= 0.f)
+        return;
 
-    width_ = w;
-    height_ = h;
+    ReadLock lock(map_mutex_);
+    auto current = static_cast<StateRenderer*>(state_);
+    MapSceneModel2 sm;
+    current->getMapSceneModel(&sm, false, MapRenderer2::UpperLeft);
+    if (sm.width == w && sm.height == h)
+        return;
 
-    Point<float> focus(w/2 + focus_off_x_, h/2 + focus_off_y_);
-    controller_->setDefaultFocusPoint(&focus);
+    current->setSurfaceSize((std::size_t)w, (std::size_t)h);
 
-    dispatchMapResized();
+    for(auto it : resized_listeners_)
+    {
+        it->mapResized(this);
+    }
 }
 
 float AtakMapView::getWidth() const
 {
-    return width_;
+    ReadLock lock(map_mutex_);
+    //auto &current = state();
+    auto &current = *static_cast<StateRenderer*>(state_);
+    MapSceneModel2 sm;
+    current.getMapSceneModel(&sm, false, MapRenderer::UpperLeft);
+    return (float)sm.width;
 }
 
 float AtakMapView::getHeight() const
 {
-    return height_;
+    ReadLock lock(map_mutex_);
+    //auto &current = state();
+    auto &current = *static_cast<StateRenderer*>(state_);
+    MapSceneModel2 sm;
+    current.getMapSceneModel(&sm, false, MapRenderer::UpperLeft);
+    return (float)sm.height;
 }
 
 void AtakMapView::addMapResizedListener(MapResizedListener *listener)
 {
-    Lock lock(map_mutex_);
+    WriteLock lock(map_mutex_);
     resized_listeners_.insert(listener);
 }
 
 void AtakMapView::removeMapResizedListener(MapResizedListener *listener)
 {
-    Lock lock(map_mutex_);
+    WriteLock lock(map_mutex_);
     resized_listeners_.erase(listener);
 }
 
 void AtakMapView::setDisplayDpi(double dpi)
 {
-    display_dpi_ = dpi;
+    if (TE_ISNAN(dpi))
+        return;
+    if (dpi <= 0.0)
+        return;
+
+    ReadLock lock(map_mutex_);
+    auto current = static_cast<StateRenderer*>(state_);
+    current->setDpi(dpi);
 }
 
 double AtakMapView::getDisplayDpi() const
 {
-    return display_dpi_;
+    ReadLock lock(map_mutex_);
+    auto &current = state();
+    MapSceneModel2 sm;
+    current.getMapSceneModel(&sm, false, MapRenderer::UpperLeft);
+    return sm.displayDpi;
 }
 
 void AtakMapView::setFocusPointOffset(float x, float y) NOTHROWS
 {
-    Point<float> focus;
-    controller_->getFocusPoint(&focus);
-    focus.x -= focus_off_x_;
-    focus.y -= focus_off_y_;
-    focus_off_x_ = x;
-    focus_off_y_ = y;
-    focus.x += focus_off_x_;
-    focus.y += focus_off_y_;
-    controller_->setDefaultFocusPoint(&focus);
+    ReadLock lock(map_mutex_);
+
+
+#define setFocusPointOffsetImpl(r) \
+    { \
+        float focusx = (float)(r).getRenderContext().getRenderSurface()->getWidth() / 2.f; \
+        float focusy = (float)(r).getRenderContext().getRenderSurface()->getHeight() / 2.f; \
+        if((r).getDisplayOrigin() == MapRenderer::LowerLeft) \
+            focusy -= y; \
+        else \
+            focusy += y; \
+        (r).setFocusPoint(focusx, focusy); \
+    }
+
+    setFocusPointOffsetImpl(*state_);
+    for (auto it = renderers_.begin(); it != renderers_.end(); it++)
+        setFocusPointOffsetImpl(**it);
 }
 
 bool AtakMapView::isContinuousScrollEnabled() const NOTHROWS
 {
-    return continue_scroll_enabled_;
+    return true;
 }
 void AtakMapView::setContinuousScrollEnabled(const bool v) NOTHROWS
-{
-    LockPtr lock(nullptr, nullptr);
-    Lock_create(lock, map_mutex_);
-    if (continue_scroll_enabled_ != v) {
-        continue_scroll_enabled_ = v;
-        dispatchContinuousScrollEnabledChanged();
-    }
-}
+{}
 bool AtakMapView::isAnimating() const NOTHROWS
 {
-    return animate_;
+    ReadLock lock(map_mutex_);
+    auto &current = state();
+    return current.isAnimating();
 }
 
 double AtakMapView::getElevationExaggerationFactor() const
 {
-    return elevation_exaggeration_factor_;
+    return elevation_exaggeration_factor_.value;
 }
 void AtakMapView::setElevationExaggerationFactor(double factor)
 {
     if (TE_ISNAN(factor) || factor < 0.0)
         return;
 
-    Lock lock(map_mutex_);
-    if (elevation_exaggeration_factor_ != factor) {
-        elevation_exaggeration_factor_ = factor;
-        dispatchElevationExaggerationFactorChanged();
+    Lock lock(elevation_exaggeration_factor_.mutex);
+    if (elevation_exaggeration_factor_.value != factor) {
+        elevation_exaggeration_factor_.value = factor;
+        for (auto it : elevation_exaggeration_factor_.listeners)
+        {
+            it->mapElevationExaggerationFactorChanged(this, factor);
+        }
     }
 }
 
 void AtakMapView::addMapElevationExaggerationFactorListener(MapElevationExaggerationFactorListener *listener)
 {
-    Lock lock(map_mutex_);
-    el_exaggeration_factor_changed_listeners_.insert(listener);
+    Lock lock(elevation_exaggeration_factor_.mutex);
+    elevation_exaggeration_factor_.listeners.insert(listener);
 }
 
 void AtakMapView::removeMapElevationExaggerationFactorListener(MapElevationExaggerationFactorListener *listener)
 {
-    Lock lock(map_mutex_);
-    el_exaggeration_factor_changed_listeners_.erase(listener);
+    Lock lock(elevation_exaggeration_factor_.mutex);
+    elevation_exaggeration_factor_.listeners.erase(listener);
 }
 
 void AtakMapView::addMapMovedListener(MapMovedListener *listener)
 {
-    Lock lock(map_mutex_);
-    moved_listeners_.insert(listener);
+    WriteLock lock(moved_listeners_.mutex);
+    moved_listeners_.value.insert(listener);
 }
 
 void AtakMapView::removeMapMovedListener(MapMovedListener *listener)
 {
-    Lock lock(map_mutex_);
-    moved_listeners_.erase(listener);
+    WriteLock lock(moved_listeners_.mutex);
+    moved_listeners_.value.erase(listener);
 }
 
 void AtakMapView::addMapContinuousScrollListener(MapContinuousScrollListener *l)
 {
-    LockPtr lock(nullptr, nullptr);
-    Lock_create(lock, map_mutex_);
-    continuous_scroll_listeners_.insert(l);
+    // no-op
 }
 void AtakMapView::removeMapContinuousScrollListener(MapContinuousScrollListener *l)
 {
-    LockPtr lock(nullptr, nullptr);
-    Lock_create(lock, map_mutex_);
-    continuous_scroll_listeners_.erase(l);
+    // no-op
 }
 
 void AtakMapView::updateView(const GeoPoint *c, double mapScale, double rot, bool anim)
 {
-    updateView(*c, mapScale, rot, tilt_, focus_altitude_, focus_alt_terminal_slant_, anim);
+    double tilt = 0.0;
+    {
+        ReadLock lock(map_mutex_);
+        auto &current = state();
+        MapSceneModel2 sm;
+        current.getMapSceneModel(&sm, false, MapRenderer::UpperLeft);
+        tilt = 90.0 + sm.camera.elevation;
+    }
+    updateView(*c, mapScale, rot, tilt, 0.0, 0.0, anim);
 }
 
 //void AtakMapView::updateView(const GeoPoint &c, const double mapScale, const double rot, const double ptilt, const double focusAlt, const bool anim)
 void AtakMapView::updateView(const GeoPoint &c, const double mapScale, const double rot, const double ptilt, const double focusAlt, const double focusAltSlant, const bool anim)
 {
-    Lock lock(map_mutex_);
+    ReadLock lock(map_mutex_);
 
-    center_.latitude = TAK::Engine::Util::MathUtils_clamp(
-            TE_ISNAN(c.latitude) ? 0.0 : c.latitude,
+    GeoPoint2 updateLLA;
+    GeoPoint_adapt(&updateLLA, c);
+    double updateScale = mapScale;
+    double updateRotation = rot;
+    double updateTilt = ptilt;
+
+    const double scale = getMapScale();
+
+    updateLLA.latitude = TAK::Engine::Util::MathUtils_clamp(
+            TE_ISNAN(updateLLA.latitude) ? 0.0 : updateLLA.latitude,
 #ifdef __ANDROID__
-            std::max(getMinLatitude(), -90.0+(1.0-scale_)),
-            std::min(getMaxLatitude(), 90.0-(1.0-scale_))
+            std::max(getMinLatitude(), -90.0+(1.0-scale)),
+            std::min(getMaxLatitude(), 90.0-(1.0-scale))
 #else
             getMinLatitude(),
             getMaxLatitude()
 #endif
             );
-    center_.longitude = c.longitude;
-    if(center_.longitude < -180.0)
-        center_.longitude += 360.0;
-    else if(center_.longitude > 180.0)
-        center_.longitude -= 360.0;
-    center_.altitude = c.altitude;
-    if(TE_ISNAN(center_.altitude))
-        center_.altitude = 0.0;
-    scale_ = TAK::Engine::Util::MathUtils_clamp(TE_ISNAN(mapScale) ? 0.0 : mapScale, getMinMapScale(), getMaxMapScale());
+    updateLLA.longitude = c.longitude;
+    if(updateLLA.longitude < -180.0)
+        updateLLA.longitude += 360.0;
+    else if(updateLLA.longitude > 180.0)
+        updateLLA.longitude -= 360.0;
+    updateLLA.altitude = c.altitude;
+    if(TE_ISNAN(updateLLA.altitude))
+        updateLLA.altitude = 0.0;
+    updateScale = TAK::Engine::Util::MathUtils_clamp(TE_ISNAN(mapScale) ? 0.0 : mapScale, getMinMapScale(), getMaxMapScale());
 
     if (TE_ISNAN(rot))
-        rotation_ = 0.0;
+        updateRotation = 0.0;
     else if (rot < 0.0)
-        rotation_ = fmod((360.0 + rot), 360.0);
+        updateRotation = fmod((360.0 + rot), 360.0);
     else if (rot >= 360.0)
-        rotation_ = fmod(rot, 360.0);
+        updateRotation = fmod(rot, 360.0);
     else
-        rotation_ = rot;
+        updateRotation = rot;
 
     
     if (TE_ISNAN(ptilt))
     {
-        tilt_ = 0.0;
+        updateTilt = 0.0;
     }
     else
     {   
         const double res = getMapResolution(mapScale);
         const double maxTilt = getMaxMapTilt(res);
 
-        tilt_ = TAK::Engine::Util::MathUtils_clamp(ptilt, 0.0, maxTilt);
+        updateTilt = TAK::Engine::Util::MathUtils_clamp(ptilt, 0.0, maxTilt);
     }
 
-    animate_ = anim;
-    focus_altitude_ = TE_ISNAN(focusAlt) ? 0.0 : focusAlt;
-    focus_alt_terminal_slant_ = TE_ISNAN(focusAltSlant) ? 0.0 : focusAltSlant;
-    dispatchMapMoved();
-}
+    double updateGsd = getMapResolution(updateScale);
 
-void AtakMapView::dispatchMapResized()
+    auto &current = state();
+    current.lookAt(updateLLA, updateGsd, updateRotation, updateTilt, MapRenderer::CameraCollision::Ignore, anim);
+}
+void AtakMapView::attachRenderer(MapRenderer3& renderer, const bool adoptState) NOTHROWS
 {
-    std::set<MapResizedListener *>::iterator it;
-    for(it = resized_listeners_.begin(); it != resized_listeners_.end(); it++)
-    {
-        (*it)->mapResized(this);
+    WriteLock lock(map_mutex_);
+    if (adoptState) {
+        auto& current = state();
+        MapSceneModel2 sm;
+        current.getMapSceneModel(&sm, false, MapRenderer::DisplayOrigin::UpperLeft);
+        GeoPoint2 focus;
+        sm.projection->inverse(&focus, sm.camera.target);
+
+        // focus offset
+        float focusOffsetX = sm.focusX - (float)sm.width / 2.f;
+        float focusOffsetY;
+        if(renderer.getDisplayOrigin() == MapRenderer::LowerLeft)
+            focusOffsetY = (float)sm.height / 2.f - sm.focusY;
+        else
+            focusOffsetY = sm.focusY - (float)sm.height / 2.f;
+
+        MapSceneModel2 sm_renderer;
+        renderer.getMapSceneModel(&sm_renderer, false, MapRenderer::DisplayOrigin::UpperLeft);
+        renderer.setFocusPoint((float)sm_renderer.width / 2.f + focusOffsetX, (float)sm_renderer.height / 2.f + focusOffsetY);
+
+        renderer.setDisplayMode(current.getDisplayMode());
+        renderer.lookAt(focus, sm.gsd, sm.camera.azimuth, 90.0 + sm.camera.elevation, MapRenderer::Ignore, false);
     }
+    renderer.addOnCameraChangedListener((MapRenderer3::OnCameraChangedListener2*)this);
+    renderers_.push_back(&renderer);
 }
-
-void AtakMapView::dispatchMapMoved()
+void AtakMapView::detachRenderer(const MapRenderer3& renderer) NOTHROWS
 {
-    std::set<MapMovedListener *>::iterator it;
-    for(it = moved_listeners_.begin(); it != moved_listeners_.end(); it++)
-    {
-        (*it)->mapMoved(this, animate_);
-    }
-}
-
-void AtakMapView::dispatchMapProjectionChanged()
-{
-    std::set<MapProjectionChangedListener *>::iterator it;
-    for(it = projection_changed_listeners_.begin(); it != projection_changed_listeners_.end(); it++)
-    {
-        (*it)->mapProjectionChanged(this);
-    }
-}
-
-void AtakMapView::dispatchElevationExaggerationFactorChanged()
-{
-    std::set<MapElevationExaggerationFactorListener *>::iterator it;
-    for (it = el_exaggeration_factor_changed_listeners_.begin(); it != el_exaggeration_factor_changed_listeners_.end(); it++)
-    {
-        (*it)->mapElevationExaggerationFactorChanged(this, this->elevation_exaggeration_factor_);
-    }
-}
-
-void AtakMapView::dispatchLayerAdded(Layer *layer)
-{
-    std::set<MapLayersChangedListener *>::iterator it;
-    for(it = layers_changed_listeners_.begin(); it != layers_changed_listeners_.end(); it++)
-    {
-        (*it)->mapLayerAdded(this, layer);
-    }
-}
-
-void AtakMapView::dispatchLayersRemoved(std::list<Layer *> removed)
-{
-    std::set<MapLayersChangedListener *>::iterator it;
-    std::list<Layer *>::iterator layersIt;
-    for(it = layers_changed_listeners_.begin(); it != layers_changed_listeners_.end(); it++)
-    {
-        for(layersIt = removed.begin(); layersIt != removed.end(); layersIt++)
-        {
-            (*it)->mapLayerRemoved(this, *layersIt);
+    WriteLock lock(map_mutex_);
+    if (renderers_.empty())
+        return;
+    const bool writeBack = (&renderer == renderers_.front());
+    for(auto it = renderers_.begin(); it != renderers_.end(); it++) {
+        if((*it) == &renderer) {
+            (*it)->removeOnCameraChangedListener((MapRenderer3::OnCameraChangedListener2*)this);
+            renderers_.erase(it);
+            break;
         }
     }
+    // if all renderers detached, write back state
+    if(writeBack) {
+        static_cast<StateRenderer *>(state_)->suppressCallbacks = true;
+        MapSceneModel2 sm;
+        renderer.getMapSceneModel(&sm, false, MapRenderer::UpperLeft);
+        GeoPoint2 focus;
+        sm.projection->inverse(&focus, sm.camera.target);
+
+        state_->setSurfaceSize(sm.width, sm.height);
+        state_->setFocusPoint(sm.focusX, sm.focusY);
+        state_->setDisplayMode(renderer.getDisplayMode());
+        state_->lookAt(focus, sm.gsd, sm.camera.azimuth, 90.0 + sm.camera.elevation, MapRenderer::Ignore, false);
+        static_cast<StateRenderer *>(state_)->suppressCallbacks = false;
+    }
+}
+TAKErr AtakMapView::onCameraChanged(const TAK::Engine::Core::MapRenderer2 &renderer) NOTHROWS
+{
+    if(!renderer.isAnimating())
+        dispatchMapMoved(false);
+    return TE_Ok;
+}
+TAKErr AtakMapView::onCameraChangeRequested(const MapRenderer2 &renderer) NOTHROWS
+{
+    dispatchMapMoved(renderer.isAnimating());
+    return TE_Ok;
+}
+MapRenderer3 &AtakMapView::state() const NOTHROWS
+{
+    if (renderers_.empty())
+        return *state_;
+    else
+        return *renderers_.front();
 }
 
-void AtakMapView::dispatchLayerPositionChanged(Layer *layer, const int oldPos, const int newPos)
+void AtakMapView::dispatchMapMoved(const bool animate)
 {
-    std::set<MapLayersChangedListener *>::iterator it;
-    for(it = layers_changed_listeners_.begin(); it != layers_changed_listeners_.end(); it++)
+    ReadLock lock(moved_listeners_.mutex);
+    for(auto it : moved_listeners_.value)
     {
-        (*it)->mapLayerPositionChanged(this, layer, oldPos, newPos);
+        it->mapMoved(this, animate);
     }
 }
 
-void AtakMapView::dispatchContinuousScrollEnabledChanged()
+void AtakMapView::dispatchLayerAddedNoSync(Layer *layer)
 {
-    std::set<MapContinuousScrollListener *>::iterator it;
-    for (it = continuous_scroll_listeners_.begin(); it != continuous_scroll_listeners_.end(); it++)
+    for(auto it : layers_.listeners)
     {
-        (*it)->mapContinuousScrollEnabledChanged(this, this->continue_scroll_enabled_);
+        it->mapLayerAdded(this, layer);
+    }
+}
+
+void AtakMapView::dispatchLayersRemovedNoSync(std::list<Layer *> removed)
+{
+    for(auto it : layers_.listeners)
+    {
+        for(auto layersIt : removed)
+        {
+            it->mapLayerRemoved(this, layersIt);
+        }
     }
 }
 
@@ -731,4 +917,337 @@ double atakmap::core::AtakMapView_getMapScale(const double dpi, const double res
 {
     const double displayResolution = ((1.0 / dpi) * (1.0 / INCHES_PER_METER));
     return (displayResolution / resolution);
+}
+
+namespace
+{
+    StateRenderer::StateRenderer(const float width, const float height, const double dpi, const double gsd) NOTHROWS :
+        state_(dpi, (std::size_t)width, (std::size_t)height, 4326, GeoPoint2(0.0, 0.0), width / 2.f, height / 2.f, 0.0, 0.0, gsd),
+        focus_off_x_(0.0),
+        focus_off_y_(0.0),
+        mutex_(TEMT_Recursive),
+        suppressCallbacks(false)
+    {}
+    
+    // MapRenderer
+    TAKErr StateRenderer::registerControl(const Layer2 &layer, const char *type, void *ctrl) NOTHROWS
+    {
+        return TE_Unsupported;
+    }
+    TAKErr StateRenderer::unregisterControl(const Layer2 &layer, const char *type, void *ctrl) NOTHROWS
+    {
+        return TE_Unsupported;
+    }
+    TAKErr StateRenderer::visitControls(bool *visited, void *opaque, TAKErr(*visitor)(void *opaque, const Layer2 &layer, const Control &ctrl), const Layer2 &layer, const char *type) NOTHROWS
+    {
+        return TE_Unsupported;
+    }
+    TAKErr StateRenderer::visitControls(bool *visited, void *opaque, TAKErr(*visitor)(void *opaque, const Layer2 &layer, const Control &ctrl), const Layer2 &layer) NOTHROWS
+    {
+        return TE_Unsupported;
+    }
+    TAKErr StateRenderer::visitControls(void *opaque, TAKErr(*visitor)(void *opaque, const Layer2 &layer, const Control &ctrl)) NOTHROWS
+    {
+        return TE_Unsupported;
+    }
+    TAKErr StateRenderer::addOnControlsChangedListener(OnControlsChangedListener *l) NOTHROWS
+    {
+        return TE_Unsupported;
+    }
+    TAKErr StateRenderer::removeOnControlsChangedListener(OnControlsChangedListener *l) NOTHROWS
+    {
+        return TE_Unsupported;
+    }
+    RenderContext &StateRenderer::getRenderContext() const NOTHROWS
+    {
+        return const_cast<StateRenderer &>(*this);
+    }
+    // MapRenderer2
+    TAKErr StateRenderer::lookAt(const GeoPoint2& from, const GeoPoint2& at, const MapRenderer::CameraCollision collision, const bool animate) NOTHROWS
+    {
+        return TE_Unsupported;
+    }
+    TAKErr StateRenderer::lookAt(const GeoPoint2 &at, const double resolution, const double azimuth, const double tilt, const MapRenderer::CameraCollision collision, const bool animate) NOTHROWS
+    {
+        if (TE_ISNAN(at.latitude) || TE_ISNAN(at.longitude))
+            return TE_InvalidArg;
+        if (TE_ISNAN(resolution))
+            return TE_InvalidArg;
+        if (TE_ISNAN(azimuth))
+            return TE_InvalidArg;
+        if (TE_ISNAN(tilt))
+            return TE_InvalidArg;
+
+        Lock lock(mutex_);
+        state_ = MapSceneModel2(
+            state_.displayDpi,
+            state_.width,
+            state_.height,
+            state_.projection->getSpatialReferenceID(),
+            at,
+            state_.focusX,
+            state_.focusY,
+            azimuth,
+            tilt,
+            resolution,
+            state_.camera.mode);
+
+        if (!suppressCallbacks) {
+            for (auto it : camera_listeners2_)
+                it->onCameraChangeRequested(*this);
+        }
+
+        return TE_Ok;
+    }
+    TAKErr StateRenderer::lookFrom(const GeoPoint2 &from, const double azimuth, const double elevation, const MapRenderer::CameraCollision collision, const bool animate) NOTHROWS
+    {
+        return TE_Unsupported;
+    }
+    bool StateRenderer::isAnimating() const NOTHROWS
+    {
+        return false;
+    }
+    TAKErr StateRenderer::setDisplayMode(const TAK::Engine::Core::MapRenderer::DisplayMode mode) NOTHROWS
+    {
+        int srid;
+        switch(mode) {
+        case MapRenderer::Flat :
+            srid = 4326;
+            break;
+        case MapRenderer::Globe :
+            srid = 4978;
+            break;
+        default :
+            return TE_InvalidArg;
+        }
+        Lock lock(mutex_);
+        if (state_.projection->getSpatialReferenceID() == srid)
+            return TE_Ok;
+
+        GeoPoint2 focus;
+        state_.projection->inverse(&focus, state_.camera.target);
+        state_ = MapSceneModel2(
+            state_.displayDpi,
+            state_.width,
+            state_.height,
+            srid,
+            focus,
+            state_.focusX,
+            state_.focusY,
+            state_.camera.azimuth,
+            90.0 + state_.camera.elevation,
+            state_.gsd,
+            state_.camera.nearMeters,
+            state_.camera.farMeters,
+            state_.camera.mode);
+        return TE_Ok;
+    }
+    MapRenderer::DisplayMode StateRenderer::getDisplayMode() const NOTHROWS
+    {
+        Lock lock(mutex_);
+        switch (state_.projection->getSpatialReferenceID()) {
+        case 4326:
+            return MapRenderer::Flat;
+        case 4978 :
+            return MapRenderer::Globe;
+        default :
+            return MapRenderer::Globe;
+        }
+    }
+    MapRenderer::DisplayOrigin StateRenderer::getDisplayOrigin() const NOTHROWS
+    {
+        return MapRenderer::UpperLeft;
+    }
+    TAKErr StateRenderer::setFocusPoint(const float focusx, const float focusy) NOTHROWS
+    {
+        if (TE_ISNAN(focusx) || TE_ISNAN(focusy))
+            return TE_InvalidArg;
+
+        focus_off_x_ = focusx - (float)state_.width / 2.f;
+        focus_off_y_ = focusx - (float)state_.width / 2.f;
+
+        Lock lock(mutex_);
+        GeoPoint2 focus;
+        state_.projection->inverse(&focus, state_.camera.target);
+        state_ = MapSceneModel2(
+            state_.displayDpi,
+            state_.width,
+            state_.height,
+            state_.projection->getSpatialReferenceID(),
+            focus,
+            focusx,
+            focusy,
+            state_.camera.azimuth,
+            90.0 + state_.camera.elevation,
+            state_.gsd,
+            state_.camera.nearMeters,
+            state_.camera.farMeters,
+            state_.camera.mode);
+        return TE_Ok;
+    }
+    TAKErr StateRenderer::getFocusPoint(float *focusx, float *focusy) const NOTHROWS
+    {
+        Lock lock(mutex_);
+        *focusx = state_.focusX;
+        *focusy = state_.focusY;
+        return TE_Ok;
+    }
+    TAKErr StateRenderer::setSurfaceSize(const std::size_t width, const std::size_t height) NOTHROWS
+    {
+        if (width == state_.width && height == state_.height)
+            return TE_Ok;
+
+        if (!width || !height)
+            return TE_InvalidArg;
+
+        Lock lock(mutex_);
+        GeoPoint2 focus;
+        state_.projection->inverse(&focus, state_.camera.target);
+        state_ = MapSceneModel2(
+            state_.displayDpi,
+            width,
+            height,
+            state_.projection->getSpatialReferenceID(),
+            focus,
+            (float)width / 2.f + focus_off_x_,
+            (float)height / 2.f + focus_off_y_,
+            state_.camera.azimuth,
+            90.0 + state_.camera.elevation,
+            state_.gsd,
+            state_.camera.nearMeters,
+            state_.camera.farMeters,
+            state_.camera.mode);
+        return TE_Ok;
+    }
+    TAKErr StateRenderer::inverse(MapRenderer::InverseResult *result, GeoPoint2 *value, const MapRenderer::InverseMode mode, const unsigned int hints, const Point2<double> &screen, const MapRenderer::DisplayOrigin) NOTHROWS
+    {
+        return TE_Unsupported;
+    }
+    TAKErr StateRenderer::getMapSceneModel(MapSceneModel2 *value, const bool instant, const MapRenderer::DisplayOrigin origin) const NOTHROWS
+    {
+        Lock lock(mutex_);
+        *value = state_;
+        if(origin == MapRenderer::LowerLeft)
+            TAK::Engine::Renderer::Core::GLGlobeBase_glScene(*value);
+        return TE_Ok;
+    }
+    TAKErr StateRenderer::addOnCameraChangedListener(OnCameraChangedListener* l) NOTHROWS
+    {
+        OnCameraChangedListener2* l2 = dynamic_cast<OnCameraChangedListener2*>(l);
+        if (l2)
+            return addOnCameraChangedListener(l2);
+        Lock lock(mutex_);
+        camera_listeners_.insert(l);
+        return TE_Ok;
+    }
+    TAKErr StateRenderer::removeOnCameraChangedListener(OnCameraChangedListener *l) NOTHROWS
+    {
+        OnCameraChangedListener2* l2 = dynamic_cast<OnCameraChangedListener2*>(l);
+        if (l2)
+            return removeOnCameraChangedListener(l2);
+        Lock lock(mutex_);
+        camera_listeners_.erase(l);
+        return TE_Ok;
+    }
+    TAKErr StateRenderer::addOnCameraChangedListener(OnCameraChangedListener2* l) NOTHROWS
+    {
+        Lock lock(mutex_);
+        camera_listeners2_.insert(l);
+        return TE_Ok;
+    }
+    TAKErr StateRenderer::removeOnCameraChangedListener(OnCameraChangedListener2 *l) NOTHROWS
+    {
+        Lock lock(mutex_);
+        camera_listeners2_.erase(l);
+        return TE_Ok;
+    }
+    // RenderContext
+    bool StateRenderer::isRenderThread() const NOTHROWS
+    {
+        return false;
+    }
+    TAKErr StateRenderer::queueEvent(void(*runnable)(void *) NOTHROWS, std::unique_ptr<void, void(*)(const void *)> &&opaque) NOTHROWS
+    {
+        return TE_Unsupported;
+    }
+    void StateRenderer::requestRefresh() NOTHROWS { }
+    TAKErr StateRenderer::setFrameRate(const float rate) NOTHROWS
+    {
+        return TE_Unsupported;
+    }
+    float StateRenderer::getFrameRate() const NOTHROWS
+    {
+        return 0.f;
+    }
+    void StateRenderer::setContinuousRenderEnabled(const bool enabled) NOTHROWS {}
+    bool StateRenderer::isContinuousRenderEnabled() NOTHROWS
+    {
+        return false;
+    }
+    bool StateRenderer::supportsChildContext() const NOTHROWS
+    {
+        return false;
+    }
+    TAKErr StateRenderer::createChildContext(std::unique_ptr<RenderContext, void(*)(const RenderContext*)>& value) NOTHROWS
+    {
+        return TE_Unsupported;
+    }
+    bool StateRenderer::isAttached() const NOTHROWS
+    {
+        return false;
+    }
+    bool StateRenderer::attach() NOTHROWS
+    {
+        return false;
+    }
+    bool StateRenderer::detach() NOTHROWS
+    {
+        return false;
+    }
+    bool StateRenderer::isMainContext() const NOTHROWS
+    {
+        return true;
+    }
+    RenderSurface *StateRenderer::getRenderSurface() const NOTHROWS
+    {
+        return const_cast<StateRenderer *>(this);
+    }
+    // RenderSurface
+    double StateRenderer::getDpi() const NOTHROWS
+    {
+        Lock lock(mutex_);
+        return state_.displayDpi;
+    }
+    void StateRenderer::setDpi(double dpi) NOTHROWS
+    {
+        Lock lock(mutex_);
+        GeoPoint2 focus;
+        state_.projection->inverse(&focus, state_.camera.target);
+        state_ = MapSceneModel2(
+            dpi,
+            state_.width,
+            state_.height,
+            state_.projection->getSpatialReferenceID(),
+            focus,
+            state_.focusX,
+            state_.focusY,
+            state_.camera.azimuth,
+            90.0 + state_.camera.elevation,
+            state_.gsd,
+            state_.camera.nearMeters,
+            state_.camera.farMeters,
+            state_.camera.mode);
+    }
+    std::size_t StateRenderer::getWidth() const NOTHROWS
+    {
+        return state_.width;
+    }
+    std::size_t StateRenderer::getHeight() const NOTHROWS
+    {
+        return state_.height;
+
+    }
+    void StateRenderer::addOnSizeChangedListener(OnSizeChangedListener* l) NOTHROWS {}
+    void StateRenderer::removeOnSizeChangedListener(const OnSizeChangedListener& l) NOTHROWS {}
+
 }

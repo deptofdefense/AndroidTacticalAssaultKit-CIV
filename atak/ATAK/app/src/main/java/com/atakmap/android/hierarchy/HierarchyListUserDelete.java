@@ -29,6 +29,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import gov.tak.api.annotation.ModifierApi;
+
 /**
  * Deletes all items selected by user in the Hierarchy List
  * 
@@ -42,7 +44,10 @@ public class HierarchyListUserDelete extends AsyncListUserSelect {
      * Close by default, clear if this flag is set
      */
     private boolean bCloseHierarchyWhenComplete;
-    private boolean confirmDelete = false;
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {
+            "private"
+    })
+    protected boolean confirmDelete = false;
 
     public HierarchyListUserDelete() {
         super("Delete", Actions.ACTION_DELETE);
@@ -151,14 +156,21 @@ public class HierarchyListUserDelete extends AsyncListUserSelect {
                 && !(item instanceof FileDatabaseMapGroupHierarchyListItem);
     }
 
-    private class DeleteItemsTask extends AsyncTask<Void, Integer, Boolean> {
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {
+            "private"
+    })
+
+    protected class DeleteItemsTask extends AsyncTask<Void, Integer, Boolean> {
 
         private final Context _context;
         private final Set<HierarchyListItem> _items;
         private final ProgressDialog _pd;
         private final Runnable _onFinished;
 
-        private DeleteItemsTask(Context ctx, Set<HierarchyListItem> items,
+        @ModifierApi(since = "4.5", target = "4.8", modifiers = {
+                "private"
+        })
+        protected DeleteItemsTask(Context ctx, Set<HierarchyListItem> items,
                 Runnable onFinished) {
             _context = ctx;
             _items = items;

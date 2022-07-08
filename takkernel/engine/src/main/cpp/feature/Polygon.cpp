@@ -183,6 +183,14 @@ Polygon::getInteriorRings ()
                            rings.end ());
   }
 
+std::pair<std::vector<LineString>::const_iterator,
+          std::vector<LineString>::const_iterator>
+Polygon::getRings ()
+    const
+  {
+    return std::make_pair (rings.begin (),
+                           rings.end ());
+  }
 
 ///
 ///  atakmap::feature::Geometry member functions.

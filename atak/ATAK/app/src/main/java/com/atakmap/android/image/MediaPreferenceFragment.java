@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
+import android.widget.Toast;
 
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.preference.PreferenceSearchIndex;
@@ -49,6 +50,9 @@ public class MediaPreferenceFragment extends AtakPreferenceFragment {
                                 @Override
                                 public boolean onPreferenceClick(
                                         Preference pref) {
+                                    Toast.makeText(layerCacheReset.getContext(),
+                                            "rescanning for new layers",
+                                            Toast.LENGTH_SHORT).show();
                                     Log.d(TAG,
                                             "rescanning for new layers created after caching operation");
                                     Intent scanIntent = new Intent(

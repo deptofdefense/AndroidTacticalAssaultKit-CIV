@@ -54,10 +54,10 @@ public class HarrisHelper {
 
     private final ControllerPppd cPppd;
 
-    HarrisHelper(Context c) {
+    HarrisHelper(Context c, HarrisSaRadioManager harrisSaRadioManager) {
         context = c;
         assetManager = c.getAssets();
-        cPppd = new ControllerPppd(c);
+        cPppd = new ControllerPppd(c, harrisSaRadioManager);
     }
 
     public void start() {

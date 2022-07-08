@@ -248,7 +248,7 @@ public class ImportFilesTask extends AsyncTask<Void, Void, Integer> {
                 new ImportJPEGSort(context, ".jpeg", validateExt, copyFile));
         sorters.add(new ImportCotSort(context, validateExt, copyFile));
         sorters.add(new ImportTilesetSort(context, validateExt, copyFile));
-        //sorters.add(new ImportImagerySort(context, validateExt, copyFile));
+
         sorters.add(new ImportSHPSort(context, validateExt, copyFile,
                 importInPlace));
 
@@ -359,7 +359,7 @@ public class ImportFilesTask extends AsyncTask<Void, Void, Integer> {
                         File destPath = sorter.getDestinationPath(file);
                         if (destPath == null) {
                             Log.w(TAG,
-                                    sorter.toString()
+                                    sorter
                                             + ", Unable to determine destination path for: "
                                             + file.getAbsolutePath());
                             continue;
@@ -367,7 +367,7 @@ public class ImportFilesTask extends AsyncTask<Void, Void, Integer> {
 
                         if (_sortedFiles.contains(destPath.getAbsolutePath())) {
                             Log.w(TAG,
-                                    sorter.toString()
+                                    sorter
                                             + ", Matched, but destination path already exists: "
                                             + destPath.getAbsolutePath());
                             break;
@@ -379,14 +379,14 @@ public class ImportFilesTask extends AsyncTask<Void, Void, Integer> {
                             numberSorted++;
                             _sortedFiles.add(destPath.getAbsolutePath());
                             Log.d(TAG,
-                                    sorter.toString() + ", Sorted: "
+                                    sorter + ", Sorted: "
                                             + file.getAbsolutePath()
                                             + " to "
                                             + destPath.getAbsolutePath());
                             break;
                         } else
                             Log.w(TAG,
-                                    sorter.toString()
+                                    sorter
                                             + ", Matched, but did not sort: "
                                             + file.getAbsolutePath());
                     } // end if sorter match was found

@@ -41,6 +41,7 @@ import com.atakmap.map.AtakMapView;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.elevation.ElevationData;
 import com.atakmap.map.elevation.ElevationManager;
+import com.atakmap.map.elevation.ElevationSource;
 import com.atakmap.map.gdal.GdalLibrary;
 import com.atakmap.map.gdal.VSIFileFileSystemHandler;
 import com.atakmap.map.layer.Layer;
@@ -48,6 +49,7 @@ import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.FeatureCursor;
 import com.atakmap.map.layer.feature.FeatureDataStore;
 import com.atakmap.map.layer.feature.PersistentDataSourceFeatureDataStore2;
+import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.feature.geometry.LineString;
 import com.atakmap.map.layer.opengl.GLLayer2;
 import com.atakmap.map.layer.opengl.GLLayer3;
@@ -237,21 +239,19 @@ public class ContourLinesOverlay extends AbstractHierarchyListItem
         lr = new GeoPoint(centerNS - padns, centerEW + padew);
         GeoPoint ll = new GeoPoint(centerNS - padns, centerEW - padew);
 
-        final MosaicDatabase2.Cursor cursor;
+        final ElevationSource.Cursor cursor;
 
         // build out the params for the AOI
-        ElevationManager.QueryParameters params = new ElevationManager.QueryParameters();
+        ElevationSource.QueryParameters params = new ElevationSource.QueryParameters();
         params.spatialFilter = DatasetDescriptor.createSimpleCoverage(
                 ul,
                 ur,
                 lr,
                 ll);
 
-        params.interpolate = true;
-        params.preferSpeed = true;
-        params.elevationModel = ElevationData.MODEL_TERRAIN; // use only terrain model
+        params.flags = ElevationData.MODEL_TERRAIN; // use only terrain model
 
-        cursor = ElevationManager.queryElevationData(params);
+        cursor = ElevationManager.queryElevationSources(params);
         if (cursor == null) {
             toast("No elevation data found for current map view.");
             updateProgress(-1);
@@ -261,10 +261,13 @@ public class ContourLinesOverlay extends AbstractHierarchyListItem
         while (cursor.moveToNext()) {
             if (cursor.getType().toLowerCase(LocaleUtil.getCurrent())
                     .contains("dted")) {
+
+                final Envelope bounds = cursor.getBounds().getEnvelope();
+
                 final DtedCell cell = new DtedCell();
-                cell.path = cursor.getPath();
-                cell.bounds = new GeoBounds(cursor.getUpperLeft(),
-                        cursor.getLowerRight());
+                cell.path = cursor.getUri();
+                cell.bounds = new GeoBounds(bounds.maxX, bounds.minX,
+                        bounds.minY, bounds.maxX);
                 try {
                     //DTED'#'
                     cell.dtedRank = Character.getNumericValue(cursor.getType()
@@ -454,7 +457,8 @@ public class ContourLinesOverlay extends AbstractHierarchyListItem
                                 }
                             }
 
-                            SpatialCalculator calculator = new SpatialCalculator.Builder().inMemory().build();
+                            SpatialCalculator calculator = new SpatialCalculator.Builder()
+                                    .inMemory().build();
 
                             List<GeoPoint> simplified = (List<GeoPoint>) calculator
                                     .simplify(

@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "raster/ImageryFileType.h"
 
 #include <algorithm>
@@ -198,3 +199,4 @@ namespace
         return true;
     }
 }
+#endif

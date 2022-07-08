@@ -278,8 +278,10 @@ public class GLRubberModel extends AbstractGLMapItem2 implements
         forward(view, _anchorPoint, _modelAnchorPoint);
 
         // Check if it's worth rendering the model from our current view
-        _noLod = _modelDim[0] / view.currentPass.drawMapResolution < MIN_RENDER_PX
-                || _modelDim[1] / view.currentPass.drawMapResolution < MIN_RENDER_PX;
+        _noLod = _modelDim[0]
+                / view.currentPass.drawMapResolution < MIN_RENDER_PX
+                || _modelDim[1]
+                        / view.currentPass.drawMapResolution < MIN_RENDER_PX;
     }
 
     public void updateDrawVersion(GLMapView view) {

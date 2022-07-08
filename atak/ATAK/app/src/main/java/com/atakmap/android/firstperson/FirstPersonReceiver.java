@@ -13,7 +13,6 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.elevation.ElevationManager;
 import com.atakmap.annotations.ModifierApi;
 
-
 /**
  * Broadcast receiver that can handle First Person events via intent.
  */
@@ -21,13 +20,12 @@ public class FirstPersonReceiver extends BroadcastReceiver {
 
     private final MapView _mapView;
 
-
     public static final String FIRSTPERSON = "com.atakmap.android.map.FIRSTPERSON";
     public static final String MAP_CLICKED = "com.atakmap.android.map.FIRSTPERSON_MAP_CLICKED";
 
     private static FirstPersonTool _firstPersonTool;
 
-    @ModifierApi(since = "4.5", target="4.8", modifiers={})
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {})
     public FirstPersonReceiver(MapView mapView) {
         _mapView = mapView;
         _firstPersonTool = new FirstPersonTool(_mapView);

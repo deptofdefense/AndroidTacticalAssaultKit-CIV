@@ -66,7 +66,7 @@ public final class IpConnector extends Connector {
     /**
      * This connector is used internal e.g. for PTP comms
      *
-     * @return
+     * @return always return false
      */
     @Override
     public boolean isUserConnector() {

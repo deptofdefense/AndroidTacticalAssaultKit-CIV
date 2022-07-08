@@ -501,14 +501,14 @@ public class GLViewShed2 extends GLHeatMap implements
             if (this.pointOfInterest != null && !Double.isNaN(radius)) {
                 // compute our ROI as the minimum bounding box of the radius
                 // around the point of interest
-                GeoPoint north = DistanceCalculations.metersFromAtBearing(
-                        this.pointOfInterest, radius, 0);
-                GeoPoint east = DistanceCalculations.metersFromAtBearing(
-                        this.pointOfInterest, radius, 90);
-                GeoPoint south = DistanceCalculations.metersFromAtBearing(
-                        this.pointOfInterest, radius, 180);
-                GeoPoint west = DistanceCalculations.metersFromAtBearing(
-                        this.pointOfInterest, radius, 270);
+                GeoPoint north = GeoCalculations.pointAtDistance(
+                        this.pointOfInterest, 0, radius);
+                GeoPoint east = GeoCalculations.pointAtDistance(
+                        this.pointOfInterest, 90, radius);
+                GeoPoint south = GeoCalculations.pointAtDistance(
+                        this.pointOfInterest, 180, radius);
+                GeoPoint west = GeoCalculations.pointAtDistance(
+                        this.pointOfInterest, 270, radius);
 
                 this.upperLeft.set(north.getLatitude(), west.getLongitude());
                 this.upperRight.set(north.getLatitude(), east.getLongitude());

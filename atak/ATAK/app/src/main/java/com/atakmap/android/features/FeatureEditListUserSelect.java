@@ -1,3 +1,4 @@
+
 package com.atakmap.android.features;
 
 import android.content.Context;
@@ -92,7 +93,7 @@ public class FeatureEditListUserSelect extends HierarchyListUserSelect {
 
     @Override
     public boolean processUserSelections(Context context,
-                                         Set<HierarchyListItem> items) {
+            Set<HierarchyListItem> items) {
 
         // Cached requests for merge checking
         final Map<String, List<FeatureEditRequest>> map = new HashMap<>();
@@ -103,7 +104,8 @@ public class FeatureEditListUserSelect extends HierarchyListUserSelect {
 
             // Make sure feature editing is supported
             FeatureEdit action = item.getAction(FeatureEdit.class);
-            if (action == null) continue;
+            if (action == null)
+                continue;
 
             // Pull database and associated query parameters from item
             FeatureDataStore2 db = action.getFeatureDatabase();
@@ -128,7 +130,8 @@ public class FeatureEditListUserSelect extends HierarchyListUserSelect {
                 HierarchyListReceiver.CLEAR_HIERARCHY));
 
         // Nothing to process
-        if (requests.isEmpty()) return false;
+        if (requests.isEmpty())
+            return false;
 
         // Open drop-down editor
         new FeatureEditDropdownReceiver(_mapView).show(getTitle(), requests);
@@ -143,7 +146,7 @@ public class FeatureEditListUserSelect extends HierarchyListUserSelect {
      * @return True if the other request was merged into an existing request
      */
     private boolean merge(List<FeatureEditRequest> existing,
-                       FeatureEditRequest other) {
+            FeatureEditRequest other) {
         for (FeatureEditRequest req : existing) {
 
             // If two request params are the same besides their set of feature

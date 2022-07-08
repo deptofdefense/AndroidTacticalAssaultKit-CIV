@@ -81,7 +81,7 @@ public class MissionPackageFileAttachmentHandler implements
 
         if (group.getManifest().hasFile(content)) {
             Log.i(TAG,
-                    group.toString() + " already contains filename: "
+                    group + " already contains filename: "
                             + file.getName());
             Toast.makeText(_context, _context.getString(
                     R.string.mission_package_already_contains_file,

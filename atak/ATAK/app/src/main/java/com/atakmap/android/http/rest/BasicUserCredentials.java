@@ -4,6 +4,8 @@ package com.atakmap.android.http.rest;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 
 /**
@@ -41,6 +43,7 @@ public class BasicUserCredentials implements Parcelable {
         return !FileSystemUtils.isEmpty(mBase64);
     }
 
+    @NonNull
     public String toString() {
         return String.format("%s", mBase64);
     }

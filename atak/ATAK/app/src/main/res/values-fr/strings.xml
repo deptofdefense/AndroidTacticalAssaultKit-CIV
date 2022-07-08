@@ -690,8 +690,9 @@
   <string name="preferences_text331">Couleur de l\'&#xE9;quipe</string>
   <string name="preferences_text332">Utilisez la couleur de votre &#xE9;quipe</string>
   <string name="preferences_text333">Utiliser une couleur personnalis&#xE9;e</string>
-  <string name="preferences_text334">Modifier / cr&#xE9;er une couleur personnalis&#xE9;e</string>
+  <string name="preferences_text334">Change/Create Icon Main Custom Color</string>
   <string name="preferences_text335">S&#xE9;lectionnez une couleur personnalis&#xE9;e</string>
+  <string name="preferences_text470">Change/Create Icon Outline Custom Color</string>
   <!--Tadil-J-->
   <string name="preferences_text336">Type de position automatique</string>
   <string name="preferences_text337">Num&#xE9;ro de d&#xE9;part du bloc de suivi</string>
@@ -876,7 +877,6 @@
   <string name="shape_tip">Dessiner la forme</string>
   <string name="telestrate_tip">Draw Telestration</string>
   <!--Fire Tools-->
-  <string name="location_marker_scale">location_marker_scale_key</string>
   <string name="selected_actionbar_icon_color">custom_actionbar_icon_color</string>
   <string name="selected_actionbar_background_color">selected_actionbar_background_color</string>
   <string name="default_actionbar_colors">default_actionbar_colors</string>
@@ -1327,7 +1327,7 @@
   <string name="point_dropper_hint4">Saviez-vous que vous pouvez &#xE9;galement faire glisser la palette d\'ic&#xF4;nes pour changer de jeu d\'ic&#xF4;nes?</string>
   <string name="point_dropper_pallet_dialog">S&#xE9;lectionner la palette d\'ic&#xF4;nes</string>
   <string name="point_dropper_text1">Entrez la port&#xE9;e et le d&#xE9;nivel&#xE9;:</string>
-  <string name="point_dropper_text2">- \ n-- ft MSL</string>
+  <string name="point_dropper_text2">- \ n— ft MSL</string>
   <string name="point_dropper_text3">De toi</string>
   <string name="point_dropper_text4">PAS DE DONN&#xC9;ES GPS\n</string>
   <string name="point_dropper_text5">Dimensions (LWH)</string>
@@ -3417,7 +3417,6 @@
   <string name="thick">&#xC9;pais</string>
   <string name="encryption_passphrase_prompt">Veuillez saisir la phrase secr&#xE8;te de chiffrement pr&#xE9;c&#xE9;demment fournie lors de la configuration du chiffrement des donn&#xE9;es.</string>
   <string name="passphrase">Mot de passe:</string>
-  <string name="create_encryption_passphrase">Veuillez s&#xE9;lectionner une nouvelle phrase secr&#xE8;te de chiffrement pour vos donn&#xE9;es.</string>
   <string name="initial_encryption_passphrase">Veuillez s&#xE9;lectionner une nouvelle phrase secr&#xE8;te de chiffrement pour vos donn&#xE9;es. Apr&#xE8;s avoir correctement modifi&#xE9; la phrase secr&#xE8;te, l\'application se ferme.</string>
   <string name="autogenerate">G&#xE9;n&#xE9;rer automatiquement</string>
   <string name="user_supplied_stronger">Fourni par l\'utilisateur (plus fort)</string>
@@ -3470,7 +3469,7 @@
   <string name="continuous_rendering">Rendu continu</string>
   <string name="continuous_rendering_summary">Le rendu continu est le mod&#xE8;le h&#xE9;rit&#xE9; pour la mise &#xE0; jour des graphiques &#xE0; l\'&#xE9;cran et a &#xE9;t&#xE9; remplac&#xE9; par un m&#xE9;canisme de rendu plus efficace. Activez cette fonction uniquement si des probl&#xE8;mes de rendu sont observ&#xE9;s lors de l\'utilisation du logiciel.</string>
   <string name="developer_tools">Developer Tools</string>
-  <string name="developer_tools_summary">Enable the Developer Tools in the Overlay Manager</string>
+  <string name="developer_tools_summary">Enable the Developer Tools in the Overlay Manager.</string>
   <string name="resection_workflow">Workflow de r&#xE9;section</string>
   <string name="resection">R&#xE9;section</string>
   <string name="resection_options">Resection Options</string>
@@ -3579,7 +3578,7 @@
   <string name="installBegin">Cliquez sur \'Commencer\' pour installer les produits %d r&#xE9;pertori&#xE9;s ci-dessous</string>
   <string name="uninstallBegin">Cliquez sur \'Commencer\' pour d&#xE9;sinstaller les produits %d r&#xE9;pertori&#xE9;s ci-dessous</string>
   <string name="compressing_zip">Compression de \'%s\'&#x2026;</string>
-  <string name="copied_to_clipboard_generic">Copi&#xE9; dans le presse-papier...</string>
+  <string name="copied_to_clipboard_generic">Copi&#xE9; dans le presse-papier…</string>
   <string name="bt_pair_error">Impossible d\'associer avec %s</string>
   <string name="creating_rubber_model">Cr&#xE9;ation d\'un mod&#xE8;le de superposition pour %s&#x2026;</string>
   <string name="creating_rubber_sheet">Cr&#xE9;ation d\'une feuille de superposition pour %s&#x2026;</string>
@@ -3663,10 +3662,10 @@
   <string name="route_download_range">Plage de t&#xE9;l&#xE9;chargement d\'itin&#xE9;raire (m)</string>
   <string name="rubber_sheet">Feuille de superposition</string>
   <string name="scale">&#xC9;chelle</string>
-  <string name="scanning">Annalyse...</string>
+  <string name="scanning">Annalyse…</string>
   <string name="scanning_apps">Analyse des applications et plugins disponibles</string>
   <string name="scanning_supported_bt_devices">Recherche de p&#xE9;riph&#xE9;riques BT pris en charge</string>
-  <string name="background_scanning">Num&#xE9;risation en arri&#xE8;re-plan ...</string>
+  <string name="background_scanning">Num&#xE9;risation en arri&#xE8;re-plan …</string>
   <string name="search_settings">Param&#xE8;tres de recherche</string>
   <string name="select_lock_pointitem">S&#xE9;lectionnez un seul marqueur ou &#xE9;l&#xE9;ment ponctuel</string>
   <string name="sheet_center_point">Point central de la feuille</string>
@@ -3734,9 +3733,9 @@
   <string name="outline_only">Outline Only</string>
   <string name="breadcrumb_color">Breadcrumb Color</string>
   <string name="preferences_text220a">Secure Server port</string>
-  <string name="preferences_text221a">Secure Port of the file sharing Server</string>
+  <string name="preferences_text221a">Secure port of the file sharing Server</string>
   <string name="preferences_text172">Render Speed</string>
-  <string name="preferences_text173">Render at full speed or limit to save battery</string>
+  <string name="preferences_text173">Render at full speed or limit to save battery.</string>
   <string name="fssystem_fiveline">"FS System "</string>
   <string name="login_to">Login to %s</string>
   <string name="show_password">Show Password</string>
@@ -3765,7 +3764,7 @@
   <string name="civ_SPI_prompt">Press the DP button to toggle between movable and pinned state. Long press to remove.</string>
   <string name="civ_fire_control_prefs">Digital Pointer Toolbar Preferences</string>
   <string name="civ_fires_prefs">Digital Pointer Preferences</string>
-  <string name="civ_adjust_fire_settings">Adjust preferences for the Digital Pointer toolbar</string>
+  <string name="civ_adjust_fire_settings">Adjust the Digital Pointer Toolbar Preferences</string>
   <string name="civ_cot2525C" translatable="false">Markers</string>
   <string name="civ_s2525C">Markers</string>
   <string name="civ_default_cot_mapping">Default Mapping</string>
@@ -3774,8 +3773,8 @@
   <string name="tadilj_id2">Datalink ID</string>
   <string name="tadilj_self_type">Which type of Datalink message to send for self-SA messages</string>
   <string name="tadilj_track_block">This is the start of the block of Datalink IDs that should be auto-assigned to hostiles</string>
-  <string name="tadilj_settings_summary">Manage settings for Datalink messages</string>
-  <string name="managePersistedIdsSummary">Tap to manage Persisted Datalink IDs</string>
+  <string name="tadilj_settings_summary">Adjust Datalink Messages Preferences</string>
+  <string name="managePersistedIdsSummary">Tap to manage Persisted Datalink IDs.</string>
   <string name="showTadiljIdsTitle">Show Datalink IDs</string>
   <string name="showTadiljIdsSummary">If checked other users\' Datalink IDs will appear on the map</string>
   <string name="replaceTadiljIdsCallsignTitle">Replace s with Datalink ID</string>
@@ -3789,14 +3788,14 @@
   <string name="civ_place_local_spi">Place Local DP</string>
   <string name="civ_spi_update_delay">DP Update Period</string>
   <string name="civ_spi_update_delay_summary">The maximum delay between sending updates for the DP point, if enabled (in seconds) even if the DP is not modified.   Moving a DP point locally will generate updates immediately.</string>
-  <string name="civ_bloodhound_text9">Enable Auto Zoom feature to display self and DP in map view when tool is first launched</string>
+  <string name="civ_bloodhound_text9">Enable Auto Zoom feature to display self and DP in map view when tool is first launched.</string>
   <string name="civ_imagery_change_summ">In this version, the Image Overlay tab has been fully migrated to the Overlay Manager.\nImage Overlay files, in TIF or KMZ file format, should be placed in the atak/grg folder on either the sdcard or the internal memory.\n\nImagery based map products (pfps, native, layers) should now be placed in the atak/imagery folder either on the sdcard or the internal memory.\n\nOverlay products like KML, KMZ, LPT, DRW, etc should be placed in the atak/overlay folder either on the sdcard or internal memory.</string>
   <string name="civ_point_dropper_text40">Invalid DP update delay set. Resetting to default value 5.</string>
   <string translatable="false" name="repeater_in_contact">In Contact</string>
   <string name="civ_fireSpiNumber">Number of DP</string>
-  <string name="civ_fireSpiNumberSummary">Number of DPs to show in the Digital Pointer toolbar</string>
+  <string name="civ_fireSpiNumberSummary">Number of DPs to show in the Digital Pointer toolbar.</string>
   <string name="civ_spi_redx_fah">DP/RedX FAH Width</string>
-  <string name="civ_spi_redx_fah_summary">Sets the width of the FAH cone (in degrees) when enabled from a DP or the Red X (rounds to the closest increment of 10)</string>
+  <string name="civ_spi_redx_fah_summary">Sets the width of the FAH cone (in degrees) when enabled from a DP or the Red X (rounds to the closest increment of 10).</string>
   <!-- already a mil equiv -->
   <string name="actionbar_firetools">Digital Pointer Tools</string>
   <!-- possibly unused -->
@@ -3932,7 +3931,7 @@
   <string name="title_bloodhound_details">Bloodhound Details</string>
   <string name="title_point_details">Point Details</string>
   <string name="point_dropper_coord_text">"---- ft MSL"</string>
-  <string name="splash_loading">Loading...</string>
+  <string name="splash_loading">Loading…</string>
   <string name="red_x">Red X</string>
   <string name="loadout_tools">View all tools &amp; plugins</string>
   <string name="loadout_all_tools">All tools &amp; plugins</string>
@@ -3954,7 +3953,7 @@
   <string name="download_size_label">Download Size:</string>
   <string name="downloading">Downloading:</string>
   <string name="download_location_msg">All downloads go to the local favorite section.</string>
-  <string name="download_progress_connecting">Connecting...</string>
+  <string name="download_progress_connecting">Connecting…</string>
   <string name="download_progress_complete">Complete</string>
   <string name="download_progress_cancelled">Cancelled</string>
   <string name="add_current_view">Add Current View</string>
@@ -3990,7 +3989,7 @@
   <string name="intensity_label">Intensity:</string>
   <string name="details_label">Details</string>
   <string name="viewshed_label">Viewshed</string>
-  <string name="downloading_message">Downloading...</string>
+  <string name="downloading_message">Downloading…</string>
   <string name="sun_moon_illumination">Sun/Moon Illumination</string>
   <string name="sun_moon_illumination_description">Illuminate maps using the position of the sun/moon.</string>
   <string name="simulated_date_and_time">Date and time:</string>
@@ -4040,7 +4039,7 @@
   <string name="ellipse_point3_prompt">Select depth of ellipse.</string>
   <string name="ellipse_edit_prompt">Drag or long-press markers to edit the ellipse.</string>
   <string name="ellipse_label_format">W: %1$s  L: %2$s</string>
-  <string name="pref_nav_orientation_title">Tool Bar Side</string>
+  <string name="pref_nav_orientation_title">Toolbar Side</string>
   <string name="pref_nav_orientation_summary">Set which side of the screen to display the main toolbar.</string>
   <string name="pref_self_coord_info">Self Coordinate Information</string>
   <string name="pref_self_coord_info_summary">Set where self coordinate information is displayed on the screen.</string>
@@ -4056,7 +4055,7 @@
   <string name="fill_color">Fill</string>
   <string name="failed_to_show_map_item_list">Failed to show map item list</string>
   <string name="elevation_server_title">Elevation Server</string>
-  <string name="elevation_server_summary">The publicly facing elevation server to pull data from</string>
+  <string name="elevation_server_summary">The publicly facing elevation server to pull data from.</string>
   <string name="elevation_downloader">Elevation Downloader</string>
   <string name="elevation_downloader_summary">Attempts to mass download elevation data for the entire world from the server and gives the user options for which hemisphere they are in.</string>
   <string name="stream_elevation_title">Stream Elevation Data</string>
@@ -4073,15 +4072,67 @@
   <string name="legacy_wr_redirect_title">Legacy Wave Relay Redirect</string>
   <string name="legacy_wr_redirect_summary">Enable when using ATAK with a Wave Relay Radio when the Wave Relay Radio Control Plugin is not installed. It is recommended that users install the Wave Relay Radio Plugin.</string>
   <string name="device_details_title">Device Details</string>
-  <string name="device_details_summary">Hardware Details for remote help and support</string>
+  <string name="device_details_summary">Hardware Details for remote help and support.</string>
   <string name="select_content_type_to_add">Select Content Type to Add</string>
   <string name="single_multip_layer_prompt">Single or Multiple layers</string>
   <string name="single">Single</string>
   <string name="multiple">Multiple</string>
   <string name="agregated_layer_title">Provide a name for the aggregated layer</string>
   <string name="layers_can_be_aggregated">The selected layers can be aggregated into a single layer, would you to create a single layer or multiple layers based on your selection?</string>
-  <string name="querying_the_server">Querying the Server...</string>
+  <string name="querying_the_server">Querying the Server…</string>
   <string name="unable_to_edit_feature">Unable to edit this feature</string>
   <string name="unable_to_edit_feature_set">Unable to edit this feature set</string>
   <string name="edit_features">Edit Features</string>
+  <string name="pref_missionpkg_legacy_http_en">Allow for HTTP transfers for legacy clients</string>
+  <string name="pref_missionpkg_legacy_http_title">Allow HTTP transfers</string>
+  <string name="select_harris_sa_radio">Select a Radio for Harris SA</string>
+  <string name="harris_sa_failed_to_configure">Failed to Configure Radio</string>
+    <string name="quick_pic_preferences">Quick Pic Preferences</string>
+  <string name="camera_app_summary">Select the application to be used for quick pictures</string>
+  <string name="camera_app_title">Camera Application</string>
+    <string name="user_feedback">User Feedback</string>
+  <string name="user_feedback_summary">Allows for user provided feedback to be captured and submitted to a TAK Server</string>
+    <string name="feedback">Feedback</string>
+    <string name="associated_files">Associated Files</string>
+    <string name="no_files_selected_to_remove">No files were selected to remove.</string>
+  <string name="unable_to_determine_file_type">Unable to determine the appropriate file type  for %s</string>
+  <string name="unable_to_find_application">Unable to find application to view %s</string>
+<string name="error_occurred_submtting_feedback">Error occurred submitting the user feedback for %s</string>
+
+    <string name="callsign_and_device_preferences">Callsign and Device Preferences</string>
+  <string name="control_preferences">Control Preferences</string>
+  <string name="network_preferences">Network Preferences</string>
+  <string name="legacy_preferences">Legacy Preferences</string>
+    <string name="about_atak">About ATAK</string>
+    <string name="callsign_prefs">Callsign Preferences</string>
+    <string name="bluetooth">Bluetooth</string>
+    <string name="contact_preferences">Contact Preferences</string>
+  <string name="encryp_pass">Encryption Password</string>
+    <string name="pref_manag">Preference Management</string>
+    <string name="spec_tool_pref">Specific Tool Preferences</string>
+    <string name="self_coord">Self Coordinate</string>
+    <string name="datalink_prefs">Datalink Preferences</string>
+  <string name="server_connections">Server Connections</string>
+    <string name="add_disp_opt">Additional Display Options</string>
+    <string name="disable_keyguard">Disable KeyGuard</string>
+  <string name="forced_air_mode">Forced Airplane Mode</string>
+    <string name="tak_suppor_info">TAK Support Information</string>
+  <string name="reset_hints">Reset Hints</string>
+  <string name="atak_docs">ATAK Documents</string>
+  <string name="device_details">Device Details</string>
+  <string name="tak_init_devic_conf">TAK Initial Device Configurations</string>
+    <string name="network_connections">Network Preferences</string>
+    <string name="adjust_network_connections">Adjust network connections</string>
+  <string name="modify_contact_settings">Modify contact settings</string>
+  <string name="filter">Filter</string>
+  <string name="filter_contacts">Filter Contacts</string>
+    <string name="hide_allFiltered">Hide Filtered Contacts</string>
+    <string name="additional_self_coord_controls">Additional Self Coordinate Controls</string>
+  <string name="additional_self_coord_control_summ">Changes to the actions associated with the Self Coordinate Display</string>
+    <string name="legacy_pref_summary">Display older legacy device preferences. These preferences may be removed in future versions.</string>
+    <string name="tak_server_setup">TAK Server Setup</string>
+  <string name="tak_server_setup_message">No TAK Server configured. Would you like to go to Network Settings?</string>
+    <string name="would_you_like_to_export_mission_pkg">Would you like to export the file as a mission package?</string>
+    <string name="import_file">Import File</string>
+    <string name="userfeedback_submit_message">Submitted %s to the support/log directory.   This feedback will be automatically published to the tak server if configured.</string>
 </resources>

@@ -91,7 +91,8 @@ public class GLTextWidget extends GLWidget implements TextWidget.OnTextChangedLi
             GLNinePatch ninePatch = GLRenderGlobals.get(getRenderContext()).getMediumNinePatch();
             if (ninePatch != null && _background != TextWidget.TRANSLUCENT) {
                 DrawState ninePatchDrawState = drawState.clone();
-                Matrix.translateM(ninePatchDrawState.modelMatrix, 0, 0f, -_pHeight, 0f);
+                Matrix.translateM(ninePatchDrawState.modelMatrix, 0, _margin[LEFT],
+                        -_pHeight + _margin[BOTTOM], 0f);
 
                 int prevProgram = shader.useProgram(true);
                 shader.setModelView(ninePatchDrawState.modelMatrix);
@@ -105,10 +106,9 @@ public class GLTextWidget extends GLWidget implements TextWidget.OnTextChangedLi
             }
 
             DrawState glTextDrawState = drawState.clone();
-            Matrix.translateM(glTextDrawState.modelMatrix, 0, _padding[LEFT],
+            Matrix.translateM(glTextDrawState.modelMatrix, 0, _padding[LEFT] + _margin[LEFT],
                     _mapTextFormat.getBaselineOffsetFromBottom()
-                            - _padding[TOP],
-                    0f);
+                            - _padding[TOP] + _margin[BOTTOM], 0f);
 
             int[] colors = _colors;
             if (_colors != null && _colorBuf != null

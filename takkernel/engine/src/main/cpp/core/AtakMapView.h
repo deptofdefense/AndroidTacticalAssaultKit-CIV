@@ -6,8 +6,10 @@
 #include <set>
 
 #include "core/GeoPoint.h"
+#include "core/MapRenderer3.h"
 #include "math/Matrix.h"
 #include "thread/Mutex.h"
+#include "thread/RWMutex.h"
 
 //XXX-- can we forward decl ProjectionPtr?
 #include "core/ProjectionFactory2.h"
@@ -18,42 +20,40 @@ namespace atakmap {
         class AtakMapController;
         class Layer;
         class MapSceneModel;
-//class Projection;
-//class ProjectionSpi;
 
-
-        class ENGINE_API AtakMapView
+        class ENGINE_API AtakMapView :
+            public TAK::Engine::Core::MapRenderer3::OnCameraChangedListener2
         {
-        public : // nested types
+        public: // nested types
             struct ENGINE_API MapLayersChangedListener;
             struct ENGINE_API MapMovedListener;
             struct ENGINE_API MapProjectionChangedListener;
             struct ENGINE_API MapResizedListener;
             struct ENGINE_API MapElevationExaggerationFactorListener;
             struct ENGINE_API MapContinuousScrollListener;
-        public : // constructor/destructor
+        public: // constructor/destructor
             AtakMapView(float width, float height, double displayDPI);
             ~AtakMapView();
-        public : // member functions
-            AtakMapController *getController() const;
+        public: // member functions
+            AtakMapController* getController() const;
 
-            void addLayer(Layer *layer);
-            void addLayer(int idx, Layer *layer);
-            void removeLayer(Layer *layer);
+            void addLayer(Layer* layer);
+            void addLayer(int idx, Layer* layer);
+            void removeLayer(Layer* layer);
             void removeAllLayers();
-            void setLayerPosition(Layer *layer, const int position);
+            void setLayerPosition(Layer* layer, const int position);
             std::size_t getNumLayers();
-            Layer *getLayer(std::size_t position);
-            std::list<Layer *> getLayers();
-            void getLayers(std::list<Layer *> &retval);
+            Layer* getLayer(std::size_t position);
+            std::list<Layer*> getLayers();
+            void getLayers(std::list<Layer*>& retval);
 
-            void addLayersChangedListener(MapLayersChangedListener *listener);
-            void removeLayersChangedListener(MapLayersChangedListener *listener);
+            void addLayersChangedListener(MapLayersChangedListener* listener);
+            void removeLayersChangedListener(MapLayersChangedListener* listener);
 
-            void getPoint(GeoPoint *center) const;
-            void getPoint(GeoPoint *center, const bool atFocusAltitude) const;
+            void getPoint(GeoPoint* center) const;
+            void getPoint(GeoPoint* center, const bool atFocusAltitude) const;
             double getFocusAltitude() const;
-            void getBounds(GeoPoint *upperLeft, GeoPoint *lowerRight);
+            void getBounds(GeoPoint* upperLeft, GeoPoint* lowerRight);
             double getMapScale() const;
             double getMapRotation() const;
             double getMapResolution() const;
@@ -67,15 +67,15 @@ namespace atakmap {
 
             bool setProjection(int srid);
 
-            void addMapProjectionChangedListener(MapProjectionChangedListener *l);
-            void removeMapProjectionChangedListener(MapProjectionChangedListener *l);
+            void addMapProjectionChangedListener(MapProjectionChangedListener* l);
+            void removeMapProjectionChangedListener(MapProjectionChangedListener* l);
 
             double mapResolutionAsMapScale(const double resolution) const;
 
-            MapSceneModel *createSceneModel();
+            MapSceneModel* createSceneModel();
 
-            void forward(const GeoPoint *geo, atakmap::math::Point<float> *p);
-            void inverse(const atakmap::math::Point<float> *p, GeoPoint *geo);
+            void forward(const GeoPoint* geo, atakmap::math::Point<float>* p);
+            void inverse(const atakmap::math::Point<float>* p, GeoPoint* geo);
 
             double getMinLatitude() const;
             double getMaxLatitude() const;
@@ -103,74 +103,74 @@ namespace atakmap {
             double getElevationExaggerationFactor() const;
             void setElevationExaggerationFactor(double factor);
 
-            void addMapResizedListener(MapResizedListener *l);
-            void removeMapResizedListener(MapResizedListener *l);
+            void addMapResizedListener(MapResizedListener* l);
+            void removeMapResizedListener(MapResizedListener* l);
 
-            void addMapMovedListener(MapMovedListener *l);
-            void removeMapMovedListener(MapMovedListener *l);
+            void addMapMovedListener(MapMovedListener* l);
+            void removeMapMovedListener(MapMovedListener* l);
 
-            void addMapElevationExaggerationFactorListener(MapElevationExaggerationFactorListener *l);
-            void removeMapElevationExaggerationFactorListener(MapElevationExaggerationFactorListener *l);
+            void addMapElevationExaggerationFactorListener(MapElevationExaggerationFactorListener* l);
+            void removeMapElevationExaggerationFactorListener(MapElevationExaggerationFactorListener* l);
 
-            void addMapContinuousScrollListener(MapContinuousScrollListener *l);
-            void removeMapContinuousScrollListener(MapContinuousScrollListener *l);
-        protected : // member functions
+            void addMapContinuousScrollListener(MapContinuousScrollListener* l);
+            void removeMapContinuousScrollListener(MapContinuousScrollListener* l);
+        protected: // member functions
             //Deprecated now, use the version that includes the tilt
-            void updateView(const GeoPoint *center, const double scale, const double rotation, const bool animate);
-        public :
-            void updateView(const GeoPoint &c, const double mapScale, const double rot, const double ptilt, const double focusAlt, const double focusAltTerminalSlant, const bool anim);
-        protected :
-            void dispatchMapResized();
+            void updateView(const GeoPoint* center, const double scale, const double rotation, const bool animate);
+        public:
+            void updateView(const GeoPoint& c, const double mapScale, const double rot, const double ptilt, const double focusAlt, const double focusAltTerminalSlant, const bool anim);
+        protected:
+            void dispatchMapMoved(const bool animate);
 
-            void dispatchMapMoved();
-
-            void dispatchMapProjectionChanged();
-            void dispatchElevationExaggerationFactorChanged();
-
-            void dispatchLayerAdded(Layer *layer);
-            void dispatchLayersRemoved(std::list<Layer *> layers);
-            void dispatchLayerPositionChanged(Layer *layer, const int oldPos, const int newPos);
-
-            void dispatchContinuousScrollEnabledChanged();
+            void dispatchLayerAddedNoSync(Layer* layer);
+            void dispatchLayersRemovedNoSync(std::list<Layer*> layers);
 
             friend class ENGINE_API AtakMapController;
 
-        private : // member fields
-            float width_;
-            float height_;
+        public:
+            void attachRenderer(TAK::Engine::Core::MapRenderer3& renderer, const bool adoptState) NOTHROWS;
+            void detachRenderer(const TAK::Engine::Core::MapRenderer3& renderer) NOTHROWS;
+        public:
+            TAK::Engine::Util::TAKErr onCameraChanged(const TAK::Engine::Core::MapRenderer2 &renderer) NOTHROWS override;
+            TAK::Engine::Util::TAKErr onCameraChangeRequested(const TAK::Engine::Core::MapRenderer2 &renderer) NOTHROWS override;
+        private:
+            TAK::Engine::Core::MapRenderer3& state() const NOTHROWS;
+        private: // member fields
             double full_equitorial_extent_pixels_;
-            GeoPoint center_;
-            double focus_altitude_;
-            double focus_alt_terminal_slant_;
-            double scale_;
             double min_map_scale_;
             double max_map_scale_;
-            double rotation_;
-            bool animate_;
-            double tilt_;
             double max_tilt_;
-            double elevation_exaggeration_factor_;
-            double display_dpi_;
-            TAK::Engine::Core::ProjectionPtr2 projection_;
-            bool compute_focus_point_;
-            bool continue_scroll_enabled_;
-
-            float focus_off_x_;
-            float focus_off_y_;
+            struct {
+                double value{ 1.0 };
+                std::set<MapElevationExaggerationFactorListener *> listeners;
+                mutable TAK::Engine::Thread::Mutex mutex;
+            } elevation_exaggeration_factor_;
 
             AtakMapController *controller_;
 
-            std::list<Layer *> layers_;
+            struct {
+                std::list<Layer*> value;
+                mutable TAK::Engine::Thread::Mutex mutex {TAK::Engine::Thread::TEMT_Recursive };
+                std::set<MapLayersChangedListener *> listeners;
+            } layers_;
 
-            // callbacks
-            std::set<MapLayersChangedListener *> layers_changed_listeners_;
+            TAK::Engine::Core::MapRenderer3 *state_;
+            std::list<TAK::Engine::Core::MapRenderer3 *> renderers_;
+
+            // callbacks            
             std::set<MapResizedListener *> resized_listeners_;
-            std::set<MapMovedListener *> moved_listeners_;
-            std::set<MapProjectionChangedListener *> projection_changed_listeners_;
+            struct {
+                mutable TAK::Engine::Thread::RWMutex mutex;
+                std::set<MapMovedListener*> value;
+            } moved_listeners_;
+            struct {
+                mutable TAK::Engine::Thread::RWMutex mutex;
+                std::set<MapProjectionChangedListener*> value;
+            } projection_changed_listeners_;
             std::set<MapElevationExaggerationFactorListener *> el_exaggeration_factor_changed_listeners_;
-            std::set<MapContinuousScrollListener*> continuous_scroll_listeners_;
 
-            mutable TAK::Engine::Thread::Mutex map_mutex_;
+            mutable TAK::Engine::Thread::RWMutex map_mutex_;
+            
         public :
             static float DENSITY;
         }; // end class AtakMapView

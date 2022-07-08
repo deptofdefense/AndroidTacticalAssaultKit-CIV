@@ -1095,7 +1095,7 @@ public class ProductInformationAdapter extends BaseAdapter {
                 new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        Log.d(TAG, "Loading per user: " + plugin.toString());
+                        Log.d(TAG, "Loading per user: " + plugin);
                         if (!SideloadedPluginProvider.installProduct(plugin)) {
                             Toast.makeText(_context,
                                     "Failed to load " + plugin.getSimpleName(),
@@ -1142,7 +1142,7 @@ public class ProductInformationAdapter extends BaseAdapter {
                 new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        Log.d(TAG, "Unloading per user: " + plugin.toString());
+                        Log.d(TAG, "Unloading per user: " + plugin);
                         SideloadedPluginProvider.unloadProduct(plugin);
                     }
                 })
@@ -1208,7 +1208,7 @@ public class ProductInformationAdapter extends BaseAdapter {
         }
 
         Log.d(TAG,
-                "showAppOverview: " + app.toString() + ", "
+                "showAppOverview: " + app + ", "
                         + status.toString());
 
         View detailView = _inflater.inflate(R.layout.app_mgmt_product_overview,
@@ -1272,7 +1272,7 @@ public class ProductInformationAdapter extends BaseAdapter {
                     new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            Log.d(TAG, "Update: " + app.toString());
+                            Log.d(TAG, "Update: " + app);
                             install(app);
                         }
                     });
@@ -1282,7 +1282,7 @@ public class ProductInformationAdapter extends BaseAdapter {
                     new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            Log.d(TAG, "Uninstall: " + app.toString());
+                            Log.d(TAG, "Uninstall: " + app);
                             uninstall(app);
                         }
                     });
@@ -1337,7 +1337,7 @@ public class ProductInformationAdapter extends BaseAdapter {
             return;
         }
 
-        Log.d(TAG, "showAppDetails: " + app.toString());
+        Log.d(TAG, "showAppDetails: " + app);
 
         View detailView = _inflater.inflate(R.layout.app_mgmt_product_details,
                 null);
@@ -1604,7 +1604,7 @@ public class ProductInformationAdapter extends BaseAdapter {
                     new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            Log.d(TAG, "Update: " + app.toString());
+                            Log.d(TAG, "Update: " + app);
                             install(app);
                         }
                     });
@@ -1614,7 +1614,7 @@ public class ProductInformationAdapter extends BaseAdapter {
                     new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            Log.d(TAG, "Uninstall: " + app.toString());
+                            Log.d(TAG, "Uninstall: " + app);
                             uninstall(app);
                         }
                     });
@@ -1675,7 +1675,7 @@ public class ProductInformationAdapter extends BaseAdapter {
                 .getProviderManager().getProvider(app);
         if (provider == null) {
             Log.w(TAG, "Cannot installProduct without provider: "
-                    + app.toString());
+                    + app);
             Toast.makeText(_context,
                     "Failed to install: " + app.getSimpleName(),
                     Toast.LENGTH_SHORT).show();
@@ -1704,7 +1704,7 @@ public class ProductInformationAdapter extends BaseAdapter {
                 new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        Log.d(TAG, "installProduct: " + app.toString());
+                        Log.d(TAG, "installProduct: " + app);
 
                         if (provider.isRemote()
                                 && app.getFileSize() > LARGE_FILE) {
@@ -1750,7 +1750,7 @@ public class ProductInformationAdapter extends BaseAdapter {
         final ProductProviderManager.Provider provider = _context
                 .getProviderManager().getProvider(app);
         if (provider == null) {
-            Log.w(TAG, "Cannot Uninstall without provider: " + app.toString());
+            Log.w(TAG, "Cannot Uninstall without provider: " + app);
             Toast.makeText(_context,
                     "Failed to uninstall: " + app.getSimpleName(),
                     Toast.LENGTH_SHORT).show();
@@ -1773,14 +1773,14 @@ public class ProductInformationAdapter extends BaseAdapter {
                 new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        Log.d(TAG, "Uninstall: " + app.toString());
+                        Log.d(TAG, "Uninstall: " + app);
                         try {
                             SideloadedPluginProvider.unloadProduct(app);
                             provider.uninstall(app);
 
                         } catch (Exception e) {
                             Log.w(TAG,
-                                    "Error during uninstall: " + app.toString(),
+                                    "Error during uninstall: " + app,
                                     e);
                         }
                     }
@@ -1851,7 +1851,7 @@ public class ProductInformationAdapter extends BaseAdapter {
         if (_filterTerm == null || _filterTerm == STATUS_FILTER.All) {
             statusFiltered.addAll(modeFiltered);
         } else {
-            Log.d(TAG, "Filter terms: " + _filterTerm.toString());
+            Log.d(TAG, "Filter terms: " + _filterTerm);
             for (ProductInformation app : modeFiltered) {
                 ProductStatus status = getStatus(app);
                 switch (_filterTerm) {

@@ -42,18 +42,13 @@ public abstract class AbstractSystemComponent {
         this.pluginContext = pluginContext;
     }
 
+    /**
+     * Sets the application context for this component.
+     * @param appContext the application context
+     */
     public void setAppContext(Context appContext) {
         this.appContext = appContext;
     }
-
-    /**
-     * Entry point to load the capabilities for the encryption.
-     * @deprecated
-     * @see #load(Callback)
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.3.1", forRemoval = true, removeAt = "4.6.0")
-    public abstract void load();
 
     /**
      * Allows for an implementation to be notified when the app enters the state of PAUSED, RESUMED
@@ -69,9 +64,5 @@ public abstract class AbstractSystemComponent {
      * perform utilize the callback.   If it returns false, it is guaranteed to call the callback in
      * all cases.
      */
-    public boolean load(Callback callback) {
-        load();
-        return true;
-    }
-
+    public abstract boolean load(Callback callback);
 }

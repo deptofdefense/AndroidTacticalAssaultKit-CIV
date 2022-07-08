@@ -16,7 +16,7 @@
 #include <set>
 
 #include "core/AtakMapView.h"
-#include "core/MapRenderer2.h"
+#include "core/MapRenderer3.h"
 #include "core/MapSceneModel2.h"
 #include "port/Platform.h"
 #include "renderer/core/controls/SurfaceRendererControl.h"
@@ -39,7 +39,8 @@ namespace TAK {
                 class GLMapRenderable2;
 
                 class ENGINE_API GLGlobeBase :
-                        public TAK::Engine::Core::MapRenderer2,
+                        public TAK::Engine::Core::MapRenderer3,
+                        public TAK::Engine::Core::RenderSurface::OnSizeChangedListener,
                         public atakmap::core::AtakMapView::MapLayersChangedListener
                 {
                 public :
@@ -47,6 +48,9 @@ namespace TAK {
                     {
                         State() NOTHROWS;
                         State(const GLGlobeBase& view) NOTHROWS;
+                        State(const State& view) NOTHROWS;
+
+                        State &operator=(const State& other) NOTHROWS;
 
                         double drawMapScale {2.5352504279048383E-9};
                         double drawMapResolution {0.0};
@@ -110,6 +114,16 @@ namespace TAK {
                             Elevation::GLTerrainTile *value {nullptr};
                             std::size_t count {0u};
                         } renderTiles;
+
+                        struct {
+                            TAK::Engine::Feature::Envelope2 *value {nullptr};
+                            std::size_t count {0u};
+                        } surfaceBounds;
+                    private :
+                        std::vector<TAK::Engine::Feature::Envelope2> surfaceBoundsData;
+
+                        friend class GLGlobe;
+                        friend class GLMapView2;
                     };
                 protected :
                     struct TargetView
@@ -124,8 +138,7 @@ namespace TAK {
                             bool override{false};
                         } clip;
 
-                        float focusx;
-                        float focusy;
+                        TAK::Engine::Math::Point2<float> focusOffset;
                     };
                 public:
                     /**
@@ -194,6 +207,15 @@ namespace TAK {
                     virtual Util::TAKErr addOnControlsChangedListener(TAK::Engine::Core::MapRenderer::OnControlsChangedListener *l) NOTHROWS override;
                     virtual Util::TAKErr removeOnControlsChangedListener(TAK::Engine::Core::MapRenderer::OnControlsChangedListener *l) NOTHROWS override;
                     virtual TAK::Engine::Core::RenderContext &getRenderContext() const NOTHROWS override;
+                public :
+                    /**
+                     * Retrieves the specified _renderer_ control.
+                     * @param l
+                     * @return
+                     */
+                    Util::TAKErr getControl(void **value, const char *type) const NOTHROWS;
+                protected :
+                    Util::TAKErr registerRendererControl(const char *type, void *ctrl) NOTHROWS;
                 public: // camera control
                     virtual Util::TAKErr lookAt(const TAK::Engine::Core::GeoPoint2 &from, const TAK::Engine::Core::GeoPoint2 &at, const TAK::Engine::Core::MapRenderer::CameraCollision collision, const bool animate) NOTHROWS;
                     virtual Util::TAKErr lookAt(const TAK::Engine::Core::GeoPoint2 &at, const double resolution, const double azimuth, const double tilt, const TAK::Engine::Core::MapRenderer::CameraCollision collision, const bool animate) NOTHROWS;
@@ -201,17 +223,28 @@ namespace TAK {
                     virtual bool isAnimating() const NOTHROWS;
                     virtual Util::TAKErr addOnCameraChangedListener(TAK::Engine::Core::MapRenderer2::OnCameraChangedListener *l) NOTHROWS override;
                     virtual Util::TAKErr removeOnCameraChangedListener(TAK::Engine::Core::MapRenderer2::OnCameraChangedListener *l) NOTHROWS override;
+                    virtual Util::TAKErr addOnCameraChangedListener(TAK::Engine::Core::MapRenderer3::OnCameraChangedListener2 *l) NOTHROWS override;
+                    virtual Util::TAKErr removeOnCameraChangedListener(TAK::Engine::Core::MapRenderer3::OnCameraChangedListener2 *l) NOTHROWS override;
                 protected :
                     virtual bool animate() NOTHROWS;
                 public :
                     virtual Util::TAKErr setDisplayMode(const TAK::Engine::Core::MapRenderer::DisplayMode mode) NOTHROWS;
                     virtual TAK::Engine::Core::MapRenderer::DisplayMode getDisplayMode() const NOTHROWS;
                     virtual TAK::Engine::Core::MapRenderer::DisplayOrigin getDisplayOrigin() const NOTHROWS;
+                    /** focus point defined relative to display origin */
                     virtual Util::TAKErr setFocusPoint(const float focusx, const float focusy) NOTHROWS;
+                    /** focus point defined relative to display origin */
+                    virtual Util::TAKErr setFocusPointOffset(const float offsetX, const float offsetY) NOTHROWS;
+                    /** focus point defined relative to display origin */
                     virtual Util::TAKErr getFocusPoint(float *focusx, float *focusy) const NOTHROWS;
+                    /** focus point defined relative to display origin */
+                    virtual Util::TAKErr getFocusPointOffset(float *offsetX, float *offsetY) const NOTHROWS;
                     virtual Util::TAKErr setSurfaceSize(const std::size_t width, const std::size_t height) NOTHROWS;
+                    virtual Util::TAKErr getSurfaceSize(std::size_t *width, std::size_t *height) const NOTHROWS;
                     virtual Util::TAKErr inverse(TAK::Engine::Core::MapRenderer::InverseResult *result, TAK::Engine::Core::GeoPoint2 *value, const TAK::Engine::Core::MapRenderer::InverseMode mode, const unsigned int hints, const Math::Point2<double> &screen, const TAK::Engine::Core::MapRenderer::DisplayOrigin) NOTHROWS = 0;
-                    virtual Util::TAKErr getMapSceneModel(TAK::Engine::Core::MapSceneModel2 *value, const bool instant, const DisplayOrigin origin) NOTHROWS;
+                    virtual Util::TAKErr getMapSceneModel(TAK::Engine::Core::MapSceneModel2 *value, const bool instant, const DisplayOrigin origin) const NOTHROWS;
+                public : // RenderSurface::OnSizeChanged
+                    void onSizeChanged(const TAK::Engine::Core::RenderSurface &surface, const std::size_t width, const std::size_t height) NOTHROWS override;
                 public: // MapLayersChangedListener
                     void mapLayerAdded(atakmap::core::AtakMapView* map_view, atakmap::core::Layer *layer) override;
                     void mapLayerRemoved(atakmap::core::AtakMapView *map_view, atakmap::core::Layer *layer) override;
@@ -273,8 +306,8 @@ namespace TAK {
                         struct
                         {
                             TAK::Engine::Core::GeoPoint2 geo;
-                            float x;
-                            float y;
+                            float offsetX;
+                            float offsetY;
                         } focus;
                         int srid;
                         double resolution;
@@ -304,11 +337,20 @@ namespace TAK {
                     std::unique_ptr<GLMapRenderable2, void(*)(const GLMapRenderable2 *)> basemap; //COVERED
                     std::unique_ptr<GLLabelManager, void(*)(const GLLabelManager *)> labelManager;
                 private : // controls
-                    Thread::Mutex controlsMutex;
-                    std::map<const TAK::Engine::Core::Layer2 *, std::map<std::string, std::set<void *>>> controls;
+                    struct {
+                        Thread::Mutex mutex;
+                        std::map<const TAK::Engine::Core::Layer2 *, std::map<std::string, std::set<void *>>> value;
+                    } layerControls;
+                    struct {
+                        mutable Thread::RWMutex mutex;
+                        std::map<std::string, void *> value;
+                    } rendererControls;
                     std::set<TAK::Engine::Core::MapRenderer::OnControlsChangedListener *> controlsListeners;
-                    Thread::Mutex cameraChangedMutex;
-                    std::set<TAK::Engine::Core::MapRenderer2::OnCameraChangedListener *> cameraListeners;
+                    struct {
+                        Thread::Mutex mutex;
+                        std::set<TAK::Engine::Core::MapRenderer2::OnCameraChangedListener *> value;
+                        std::set<TAK::Engine::Core::MapRenderer3::OnCameraChangedListener2 *> value2;
+                    } cameraListeners;
                 public:
                     virtual Controls::IlluminationControlImpl* getIlluminationControl() const NOTHROWS;
                 private :

@@ -36,7 +36,8 @@ namespace TAK {
         public ref class Commo {
         public:
             /**
-             * Use in a call to SetMissionPackageLocalPort to disable
+             * Use in a call to SetMissionPackageLocalPort or
+             * SetMissionPackageLocalHttpsParams to disable
              * local web server used for sending mission packages.
              */
             literal int MP_LOCAL_PORT_DISABLE = -1;
@@ -203,6 +204,11 @@ namespace TAK {
              * unavailable for use, or if setupMissionPackageIO has not yet
              * been successfully invoked; if this is returned, the server will
              * be disabled regardless of the state before the call.
+             *
+             * This method is now deprecated. The local http server
+             * functionality is slated for removal.
+             * Please ensure you are enabling the https server
+             * (see SetMissionPackageLocalHttpsParams())
              * </summary>
              *
              * <param name="localWebPort">
@@ -211,6 +217,7 @@ namespace TAK {
              * The port must be free at the time of invocation.
              * </param>
              */
+            [System::Obsolete("http server is deprecated due to security concerns and will be removed - use SetMissionPackageLocalHttpsParams()")]
             CommoResult SetMissionPackageLocalPort(int localWebPort);
 
            /**
@@ -228,11 +235,9 @@ namespace TAK {
             * On successful return, the https server will be configured to use the
             * specified port and new outbound transfers (sendMissionPackage())
             * will use this to host outbound transfers.
-            * Note that the https server also requires the http port to be enabled
-            * and configured on a different port as the https function utilizes
-            * the http server internally. If the http server is not enabled
-            * (see SetMissionPackageLocalPort()) the https server will remain
-            * in a configured but disabled state until the http server is activated.
+            * Note that prior versions of this library required the http server to
+            * be enabled for the https server to be supported;  this is no longer
+            * necessary.
             * If this call fails, transfers using the local https server will be
             * disabled until a future call completes successfully (in other words,
             * will act as if this had been called with MP_LOCAL_PORT_DISABLE).

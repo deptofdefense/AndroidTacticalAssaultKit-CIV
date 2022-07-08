@@ -53,7 +53,6 @@ import com.atakmap.android.toolbar.ToolListener;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.android.util.AfterTextChangedWatcher;
 import com.atakmap.android.util.Undoable;
-import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.Span;
@@ -69,7 +68,8 @@ import androidx.annotation.Nullable;
  * Generic details view for a map item
  */
 public abstract class GenericDetailsView extends RelativeLayout implements
-        OnSharedPreferenceChangeListener, ToolListener {
+        OnSharedPreferenceChangeListener, ToolListener,
+        MapItem.OnMetadataChangedListener {
 
     public static final String TAG = "GenericDetailsView";
 
@@ -244,6 +244,9 @@ public abstract class GenericDetailsView extends RelativeLayout implements
      */
     public boolean setItem(MapView mapView, MapItem item) {
         _mapView = mapView;
+        if (_item != null)
+            _item.removeOnMetadataChangedListener("labels_on", this);
+
         _item = item;
         if (_showLabels != null)
             _showLabels.setChecked(_item.hasMetaValue("labels_on"));
@@ -251,6 +254,10 @@ public abstract class GenericDetailsView extends RelativeLayout implements
             _extrasLayout.setItem(item);
         if (_lineStyleBtn != null && item instanceof Shape)
             setupLineStyleButton(_lineStyleBtn, (Shape) item);
+
+        if (_item != null)
+            _item.addOnMetadataChangedListener("labels_on", this);
+
         return item != null;
     }
 
@@ -393,6 +400,7 @@ public abstract class GenericDetailsView extends RelativeLayout implements
     public void onClose() {
         _unitPrefs.unregisterListener(this);
         ToolManagerBroadcastReceiver.getInstance().unregisterListener(this);
+        setItem(_mapView, null);
     }
 
     protected void sendSelected(final String uid) {
@@ -411,18 +419,6 @@ public abstract class GenericDetailsView extends RelativeLayout implements
         contactList.setAction(ContactPresenceDropdown.SEND_LIST);
         contactList.putExtra("targetUID", uid);
         AtakBroadcast.getInstance().sendBroadcast(contactList);
-    }
-
-    /**
-     * Get the height unit for a map item
-     * @param item Map item
-     * @return Height unit span
-     * @deprecated Use {@link UnitPreferences#getAltitudeUnits()} instead
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.6")
-    protected static Span getUnitSpan(MapItem item) {
-        return new UnitPreferences(MapView.getMapView()).getAltitudeUnits();
     }
 
     /**
@@ -582,21 +578,27 @@ public abstract class GenericDetailsView extends RelativeLayout implements
      * @param button Color button
      * @param shape Shape to update
      */
-    protected void setupShapeColorButton(@NonNull final ShapeColorButton button,
-                                         @NonNull final Shape shape) {
+    protected void setupShapeColorButton(@NonNull
+    final ShapeColorButton button,
+            @NonNull
+            final Shape shape) {
         button.setShape(shape);
-        button.setOnColorsSelectedListener(new ShapeColorButton.OnColorsSelectedListener() {
-            @Override
-            public void onColorsSelected(int strokeColor, int fillColor) {
-                // Update default shape color preferences
-                DrawingPreferences prefs = new DrawingPreferences(_mapView);
-                prefs.setShapeColor(strokeColor);
-                final boolean filled = MathUtils.hasBits(shape.getStyle(),
-                        Shape.STYLE_FILLED_MASK);
-                if (filled)
-                    prefs.setFillAlpha(Color.alpha(fillColor));
-            }
-        });
+        button.setOnColorsSelectedListener(
+                new ShapeColorButton.OnColorsSelectedListener() {
+                    @Override
+                    public void onColorsSelected(int strokeColor,
+                            int fillColor) {
+                        // Update default shape color preferences
+                        DrawingPreferences prefs = new DrawingPreferences(
+                                _mapView);
+                        prefs.setShapeColor(strokeColor);
+                        final boolean filled = MathUtils.hasBits(
+                                shape.getStyle(),
+                                Shape.STYLE_FILLED_MASK);
+                        if (filled)
+                            prefs.setFillAlpha(Color.alpha(fillColor));
+                    }
+                });
     }
 
     /**
@@ -605,8 +607,10 @@ public abstract class GenericDetailsView extends RelativeLayout implements
      * @param button The button/view to setup
      * @param shape The shape to set the line style for
      */
-    protected void setupLineStyleButton(@NonNull final View button,
-                                        @NonNull final Shape shape) {
+    protected void setupLineStyleButton(@NonNull
+    final View button,
+            @NonNull
+            final Shape shape) {
         updateLineStyleButton(button, shape);
         button.setOnClickListener(new OnClickListener() {
             @Override
@@ -626,8 +630,10 @@ public abstract class GenericDetailsView extends RelativeLayout implements
      * @param button The button/view to update
      * @param shape Shape to use for updating
      */
-    protected void updateLineStyleButton(@NonNull final View button,
-                                         @NonNull final Shape shape) {
+    protected void updateLineStyleButton(@NonNull
+    final View button,
+            @NonNull
+            final Shape shape) {
         String[] styles = getResources().getStringArray(R.array.line_styles);
         int s = shape.getStrokeStyle();
         if (button instanceof TextView)
@@ -640,24 +646,39 @@ public abstract class GenericDetailsView extends RelativeLayout implements
      * @param shape The shape to set the line style for
      * @param callback Callback fired when line style is set on the shape
      */
-    protected void promptLineStyle(@NonNull final Shape shape,
-                                   @Nullable final Runnable callback) {
+    protected void promptLineStyle(@NonNull
+    final Shape shape,
+            @Nullable
+            final Runnable callback) {
         AlertDialog.Builder b = new AlertDialog.Builder(getContext());
         b.setTitle(R.string.line_style);
         b.setSingleChoiceItems(R.array.line_styles, shape.getStrokeStyle(),
                 new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int style) {
-                if (style < 0)
-                    return;
-                shape.setStrokeStyle(style);
-                _drawPrefs.setStrokeStyle(style);
-                dialog.dismiss();
-                if (callback != null)
-                    callback.run();
-            }
-        });
+                    @Override
+                    public void onClick(DialogInterface dialog, int style) {
+                        if (style < 0)
+                            return;
+                        shape.setStrokeStyle(style);
+                        _drawPrefs.setStrokeStyle(style);
+                        dialog.dismiss();
+                        if (callback != null)
+                            callback.run();
+                    }
+                });
         b.setNegativeButton(R.string.cancel, null);
         b.show();
+    }
+
+    @Override
+    public void onMetadataChanged(final MapItem item, final String field) {
+        if (item == _item && field.equals("labels_on"))
+            post(new Runnable() {
+                @Override
+                public void run() {
+                    if (_showLabels != null)
+                        _showLabels
+                                .setChecked(item.getMetaBoolean(field, false));
+                }
+            });
     }
 }

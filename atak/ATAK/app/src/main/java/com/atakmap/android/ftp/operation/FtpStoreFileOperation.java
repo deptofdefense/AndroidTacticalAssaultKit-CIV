@@ -91,7 +91,7 @@ public final class FtpStoreFileOperation extends NetworkOperation {
             if (FtpStoreFileRequest.FTPS_PROTO.equals(fileUploadRequest
                     .getProtocol())) {
                 Log.d(TAG,
-                        "Connecting FTPS to: " + fileUploadRequest.toString() +
+                        "Connecting FTPS to: " + fileUploadRequest +
                                 ", retry count= "
                                 + fileUploadRequest.getRetryCount());
                 //TODO, don't trust all certs...
@@ -99,7 +99,7 @@ public final class FtpStoreFileOperation extends NetworkOperation {
                 // caCertPassword to its password
                 protoScheme = "ftps";
             } else {
-                Log.d(TAG, "Connecting FTP to: " + fileUploadRequest.toString()
+                Log.d(TAG, "Connecting FTP to: " + fileUploadRequest
                         +
                         ", retry count= " + fileUploadRequest.getRetryCount());
                 protoScheme = "ftp";

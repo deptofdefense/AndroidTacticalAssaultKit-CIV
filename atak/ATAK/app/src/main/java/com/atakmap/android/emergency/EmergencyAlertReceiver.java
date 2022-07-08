@@ -208,7 +208,6 @@ public class EmergencyAlertReceiver extends BroadcastReceiver {
         if (action == null)
             return;
 
-
         if (ALERT_EVENT.equals(action)) {
             CotEvent event = intent.getParcelableExtra("cotevent");
             if (event == null) {
@@ -261,7 +260,7 @@ public class EmergencyAlertReceiver extends BroadcastReceiver {
                         @Override
                         public void onClick(DialogInterface d, int id) {
                             Log.d(TAG, "Dismissing alert for: "
-                                    + alert.toString());
+                                    + alert);
                             remove(alert.getEventUid(), alert.getMessage());
                             if (alert.message != null
                                     && _mapView.getSelfMarker()
@@ -328,7 +327,7 @@ public class EmergencyAlertReceiver extends BroadcastReceiver {
                 MapItem item = _mapView.getRootGroup().deepFindUID(
                         alert.itemUid);
                 if (item instanceof PointMapItem) {
-                    Log.d(TAG, "Now found item for alert: " + alert.toString());
+                    Log.d(TAG, "Now found item for alert: " + alert);
                     alert.item = (PointMapItem) item;
                     WarningComponent.addAlert(alert);
                 }

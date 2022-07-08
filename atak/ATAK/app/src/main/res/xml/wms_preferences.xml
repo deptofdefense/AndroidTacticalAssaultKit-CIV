@@ -2,17 +2,16 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <PreferenceCategory 
         android:title="@string/wms_preferences">
-        <Preference android:title="@string/redeploy_wms_sources"
-                android:key="redeploywms" />
-        <Preference android:title="@string/wms_connect_tmeout"
-                android:key="wmsconnecttimeout" />
-
-        <CheckBoxPreference
+       <Preference android:title="@string/redeploy_wms_sources"
+                android:key="redeploywms"/>
+       <Preference android:title="@string/wms_connect_tmeout"
+                android:key="wmsconnecttimeout"/>
+        <com.atakmap.android.gui.PanCheckBoxPreference
             android:title="@string/preferences_text58"
             android:summary="@string/preferences_text59"
             android:defaultValue="true"
             android:key="volumemapswitcher" />
-       <CheckBoxPreference
+       <com.atakmap.android.gui.PanCheckBoxPreference
            android:title="@string/civ_enable_grg_interact"
            android:key="prefs_layer_grg_map_interaction"
            android:summary="@string/civ_enable_grg_interact_summ"

@@ -25,8 +25,8 @@ buildscript {
     apply from: '../../gradle/takrepo.gradle', to: project
     apply from: '../../gradle/versions.gradle', to: project
 
-    ext.ATAK_VERSION = "4.5.1"
-    ext.ATAK_VERSION_SUBMINOR = ".13"
+    ext.ATAK_VERSION = "4.6.0"
+    ext.ATAK_VERSION_SUBMINOR = ".0"
 
     ext.isDevKitEnabled = { ->
         return getProperty('takRepoMavenUrl', null) != null &&
@@ -249,16 +249,41 @@ android {
             dimension "application"
             applicationIdSuffix = ".civ"
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".CIV"]
-            buildConfigField 'String', 'REDEPLOY_VERSION', '"450b"'
+            buildConfigField 'String', 'REDEPLOY_VERSION', '"460b"'
             buildConfigField 'boolean', 'MESH_NETWORK_DEFAULT','true'
             ndk { abiFilters "armeabi-v7a", "arm64-v8a", "x86" }
+        }
+
+        civUIMods {
+            dimension "application"
+            applicationIdSuffix = ".civ.uimods"
+            manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".CIV"]
+            buildConfigField 'String', 'REDEPLOY_VERSION', '"460b"'
+            buildConfigField 'boolean', 'MESH_NETWORK_DEFAULT','true'
+            versionNameSuffix "[civ.uimods]"
+            ndk { abiFilters "armeabi-v7a", "arm64-v8a", "x86" }
+        }
+
+        dhsSmall {
+            // add in the dhs-ice build since it is a derivation of the civ and should be 
+            // completely compatible   but will not run on x86 devices.  This is due to a 
+            // size limitation in the Blackberry MDM of under   100mb.   This should only 
+            // be built on request and hopefully will be removed in a short time.
+
+            dimension "application"
+            applicationIdSuffix = ".civ.ice.dhs"
+            manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".CIV"]
+            buildConfigField 'String', 'REDEPLOY_VERSION', '"460b"'
+            buildConfigField 'boolean', 'MESH_NETWORK_DEFAULT','true'
+            versionNameSuffix "[ice.dhs]"
+            ndk { abiFilters "arm64-v8a" }
         }
 
         civSmall {
             dimension "application"
             applicationIdSuffix = ".civ"
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".CIV"]
-            buildConfigField 'String', 'REDEPLOY_VERSION', '"450b"'
+            buildConfigField 'String', 'REDEPLOY_VERSION', '"460b"'
             buildConfigField 'boolean', 'MESH_NETWORK_DEFAULT','true'
             versionNameSuffix "[playstore]"
             ndk { abiFilters "arm64-v8a" }
@@ -268,7 +293,7 @@ android {
             dimension "application"
             applicationIdSuffix = ".civ.dmuc"
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".CIV"]
-            buildConfigField 'String', 'REDEPLOY_VERSION', '"450b"'
+            buildConfigField 'String', 'REDEPLOY_VERSION', '"460b"'
             buildConfigField 'Boolean', 'MESH_NETWORK_DEFAULT','false'
             versionNameSuffix "[dmuc]"
             ndk { abiFilters "arm64-v8a" }
@@ -282,35 +307,17 @@ android {
 
     signingConfigs {
         sdk {
-            def kf = getValueFromPropertiesFile(project.rootProject.file('local.properties'), 'takDebugKeyFile')
-            def kfp = getValueFromPropertiesFile(project.rootProject.file('local.properties'), 'takDebugKeyFilePassword')
-            def ka = getValueFromPropertiesFile(project.rootProject.file('local.properties'), 'takDebugKeyAlias')
-            def kp = getValueFromPropertiesFile(project.rootProject.file('local.properties'), 'takDebugKeyPassword')
-
-            if (kf == null) {
-                 throw new GradleException("No signing key configured!")
-            }
-
-            storeFile file(kf)
-            if (kfp != null) storePassword kfp
-            if (ka != null) keyAlias ka
-            if (kp != null) keyPassword kp
+            storeFile file("../../android_keystore")
+            storePassword "tnttnt"
+            keyAlias "wintec_mapping"
+            keyPassword "tnttnt"
         }
 
         odk {
-            def kf = getValueFromPropertiesFile(project.rootProject.file('local.properties'), 'takDebugKeyFile')
-            def kfp = getValueFromPropertiesFile(project.rootProject.file('local.properties'), 'takDebugKeyFilePassword')
-            def ka = getValueFromPropertiesFile(project.rootProject.file('local.properties'), 'takDebugKeyAlias')
-            def kp = getValueFromPropertiesFile(project.rootProject.file('local.properties'), 'takDebugKeyPassword')
-
-            if (kf == null) {
-                 throw new GradleException("No signing key configured!")
-            }
-
-            storeFile file(kf)
-            if (kfp != null) storePassword kfp
-            if (ka != null) keyAlias ka
-            if (kp != null) keyPassword kp
+            storeFile file("../../android_keystore")
+            storePassword "tnttnt"
+            keyAlias "wintec_mapping"
+            keyPassword "tnttnt"
         }
 
 
@@ -321,7 +328,12 @@ android {
             def kp = getValueFromPropertiesFile(project.rootProject.file('local.properties'), 'takDebugKeyPassword')
 
             if (kf == null) {
-                 throw new GradleException("No signing key configured!")
+                 kf = '../../android_keystore'
+                 kfp = 'tnttnt'
+                 ka = 'wintec_mapping'
+                 kp = 'tnttnt'
+            } else {
+                 println("Using key file from local.properties: " + kf)
             }
  
             storeFile file(kf)
@@ -331,19 +343,10 @@ android {
         }
 
         release {
-            def kf = getValueFromPropertiesFile(project.rootProject.file('local.properties'), 'takReleaseKeyFile')
-            def kfp = getValueFromPropertiesFile(project.rootProject.file('local.properties'), 'takReleaseKeyFilePassword')
-            def ka = getValueFromPropertiesFile(project.rootProject.file('local.properties'), 'takReleaseKeyAlias')
-            def kp = getValueFromPropertiesFile(project.rootProject.file('local.properties'), 'takReleaseKeyPassword')
-
-            if (kf == null) {
-                 throw new GradleException("No signing key configured!")
-            }
-
-            storeFile file(kf)
-            if (kfp != null) storePassword kfp
-            if (ka != null) keyAlias ka
-            if (kp != null) keyPassword kp
+            storeFile file("../../android_keystore")
+            storePassword "tnttnt"
+            keyAlias "wintec_mapping"
+            keyPassword "tnttnt"
         }
     }
 
@@ -401,6 +404,14 @@ android {
 
         }
 
+
+        // for civUIMods
+        civUIMods.java.srcDirs 'src/civUIMods/java'
+        civUIMods.assets.srcDir 'src/civUIMods/assets'
+        civUIMods.res.srcDir 'src/civUIMods/res'
+        civUIMods.assets.srcDir 'src/full/assets'
+        
+
         // for civ
         civ.java.srcDirs = ['src/civ/java', 'src/common/java']
         civ.assets.srcDir 'src/civ/assets'
@@ -412,6 +423,20 @@ android {
         civSmall.assets.srcDir 'src/civ/assets'
         civSmall.res.srcDir 'src/civ/res'
         civSmall.assets.srcDir 'src/small/assets'
+
+
+        // for dhsSmall
+        dhsSmall.java.srcDirs = ['src/civ/java', 'src/common/java']
+        dhsSmall.assets.srcDir 'src/civ/assets'
+        dhsSmall.res.srcDir 'src/civ/res'
+        dhsSmall.assets.srcDir 'src/small/assets'
+
+        // for civSmall
+        dmucSmall.java.srcDirs = ['src/civ/java', 'src/common/java']
+        dmucSmall.assets.srcDir 'src/civ/assets'
+        dmucSmall.res.srcDir 'src/civ/res'
+        dmucSmall.assets.srcDir 'src/small/assets'
+
 
         debug.setRoot('build-types/debug')
         release.setRoot('build-types/release')
@@ -584,6 +609,45 @@ afterEvaluate {
 
     if (assembleOdkTask != null) {
         assembleOdkTask.finalizedBy(copyFilesSdk)
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Reports
+
+android.applicationVariants.all { variant ->
+    def outputTask = task "output${variant.name.capitalize()}DeprecatedApiReport" {
+        group 'Reports'
+        description 'Generates deprecation report for $variant.name.'
+        doFirst {
+            mkdir("./reports/outputs/deprecated-api-$variant.name")
+            file("./reports/outputs/deprecated-api-$variant.name/index.html") << "Coming soon"
+        }
+    }
+
+    def createTask = task "create${variant.name.capitalize()}DeprecatedApiReport" (type:Zip, dependsOn:outputTask)  {
+        group 'Reports'
+        archiveFileName = "deprecated-api-${variant.name}.zip"
+        destinationDirectory = file("./reports")
+        from "./reports/outputs/deprecated-api-$variant.name"
+    }
+}
+
+android.applicationVariants.all { variant ->
+    def outputTask = task "output${variant.name.capitalize()}IncubatingApiReport" {
+        group 'Reports'
+        description 'Generates incubating report for $variant.name.'
+        doFirst {
+            mkdir("./reports/outputs/incubating-api-$variant.name")
+            file("./reports/outputs/incubating-api-$variant.name/index.html") << "Coming soon"
+        }
+    }
+
+    def createTask = task "create${variant.name.capitalize()}IncubatingApiReport" (type:Zip, dependsOn:outputTask)  {
+        group 'Reports'
+        archiveFileName = "incubating-api-${variant.name}.zip"
+        destinationDirectory = file("./reports")
+        from "./reports/outputs/incubating-api-$variant.name"
     }
 }
 

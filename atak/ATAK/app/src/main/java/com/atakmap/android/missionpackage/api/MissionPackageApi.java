@@ -144,7 +144,7 @@ public class MissionPackageApi {
                     callbackClazz.getName());
         }
 
-        Log.d(TAG, "Saving " + manifest.toString()
+        Log.d(TAG, "Saving " + manifest
                 + ", with saving callback: "
                 + (callbackClazz == null ? "none" : callbackClazz.getName()));
         AtakBroadcast.getInstance().sendBroadcast(mpIntent);
@@ -274,7 +274,7 @@ public class MissionPackageApi {
             mpIntent.putExtra(MissionPackageApi.INTENT_EXTRA_SENDONLY, true);
         }
 
-        Log.d(TAG, "Sending " + manifest.toString()
+        Log.d(TAG, "Sending " + manifest
                 + ", with sender callback: "
                 + (callbackClassName == null ? "none" : callbackClassName));
         AtakBroadcast.getInstance().sendBroadcast(mpIntent);
@@ -404,7 +404,7 @@ public class MissionPackageApi {
                 MissionPackageApi.INTENT_EXTRA_MISSIONPACKAGEMANIFEST,
                 manifest);
 
-        Log.d(TAG, "Deleting " + manifest.toString());
+        Log.d(TAG, "Deleting " + manifest);
         AtakBroadcast.getInstance().sendBroadcast(mpIntent);
         return true;
     }

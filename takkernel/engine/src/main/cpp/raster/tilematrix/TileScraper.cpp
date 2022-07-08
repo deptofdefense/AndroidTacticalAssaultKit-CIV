@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "raster/tilematrix/TileScraper.h"
 #include "util/Memory.h"
 #include "port/STLVectorAdapter.h"
@@ -558,3 +559,4 @@ Util::TAKErr TileScraper::LegacyDownloader::downloadTileImpl(std::shared_ptr<Scr
     DownloadTask t(context, tileLevel, tileX, tileY);
     return t.run();
 }
+#endif

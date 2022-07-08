@@ -656,7 +656,7 @@ public class MissionPackageHierarchyListItem extends
             Thread.currentThread().setName("SaveAndSelectMapItemTask");
 
             // work to be performed by background thread
-            Log.d(TAG, "Executing: " + toString());
+            Log.d(TAG, "Executing: " + this);
 
             // launch select tool
             MissionPackageMapOverlay.startMapSelectTool(_context, _manifest);

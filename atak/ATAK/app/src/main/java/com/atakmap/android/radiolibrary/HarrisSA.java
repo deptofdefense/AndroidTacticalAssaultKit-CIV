@@ -45,16 +45,21 @@ public class HarrisSA {
     private final TextView radioState;
     private final Switch prcSwitch;
     private final MapView mapView;
+    private final HarrisSaRadioManager harrisSaRadioManager;
+
     public static final String TAG = "HarrisSA";
 
     public HarrisSA(final MapView mapView) {
         this.mapView = mapView;
         con = mapView.getContext();
-        harrisConfig = new HarrisConfigurator(con);
+
+        harrisSaRadioManager = new HarrisSaRadioManager(con);
+
+        harrisConfig = new HarrisConfigurator(con, harrisSaRadioManager);
         STATE_DISCONNECTING = con.getString(R.string.radio_state_disconnecting);
         STATE_CONNECTING = con.getString(R.string.radio_state_connecting);
 
-        falconSA = new HarrisHelper(con);
+        falconSA = new HarrisHelper(con, harrisSaRadioManager);
         LayoutInflater inf = LayoutInflater.from(con);
         _layout = inf.inflate(R.layout.radio_item_harris_sa, null);
 
@@ -388,15 +393,11 @@ public class HarrisSA {
     }
 
     public void dispose() {
-        if (falconSA != null)
-            falconSA.stop();
+        falconSA.stop();
         checkPPPThread(false);
-        if (falconSA != null) {
-            falconSA.dispose();
-        }
-        if (harrisConfig != null) {
-            harrisConfig.dispose();
-        }
+        harrisSaRadioManager.dispose();
+        falconSA.dispose();
+        harrisConfig.dispose();
     }
 
 }

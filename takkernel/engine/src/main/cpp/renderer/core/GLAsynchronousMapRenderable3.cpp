@@ -1,6 +1,7 @@
 #include "renderer/core/GLAsynchronousMapRenderable3.h"
 
 #include <sstream>
+#include <string>
 
 #include "feature/SpatialCalculator2.h"
 #include "util/Memory.h"
@@ -9,6 +10,7 @@ using namespace TAK::Engine::Renderer::Core;
 
 using namespace TAK::Engine::Feature;
 using namespace TAK::Engine::Port;
+using namespace TAK::Engine::Renderer::Core::Controls;
 using namespace TAK::Engine::Thread;
 using namespace TAK::Engine::Util;
 
@@ -19,6 +21,7 @@ GLAsynchronousMapRenderable3::GLAsynchronousMapRenderable3() NOTHROWS :
     invalid_(false),
     cancelled_(false),
     monitor_(TEMT_Recursive),
+    context_(nullptr),
     surface_ctrl_(nullptr)
 {
     prepared_state_.drawVersion = -1;
@@ -37,8 +40,14 @@ int GLAsynchronousMapRenderable3::getBackgroundThreadPriority() const NOTHROWS
 
 TAKErr GLAsynchronousMapRenderable3::getBackgroundThreadName(TAK::Engine::Port::String &value) NOTHROWS
 {
+#ifdef _MSC_VER
     std::string s = "GLAsyncMapRenderableThread-";
     s += std::to_string((uintptr_t)this);
+#else
+    std::ostringstream strm;
+    strm << "GLAsyncMapRenderableThread-" << ((uintptr_t)this);
+    const auto s = strm.str();
+#endif
 
     value = s.c_str();
     return TE_Ok;
@@ -64,6 +73,9 @@ void GLAsynchronousMapRenderable3::invalidateNoSync() NOTHROWS
     if (surface_ctrl_) {
         surface_ctrl_->markDirty();
     }
+    
+    if (context_)
+        context_->requestRefresh();
 }
 
 void GLAsynchronousMapRenderable3::invalidate() NOTHROWS
@@ -83,7 +95,10 @@ void GLAsynchronousMapRenderable3::draw(const GLGlobeBase &view, int renderPass)
     code = lock.status;
 
     if (!initialized_) {
-        surface_ctrl_ = view.getSurfaceRendererControl();
+        context_ = &view.context;
+        void *surfaceControl = nullptr;
+        if(view.getControl(&surfaceControl, SurfaceRendererControl_getType()) == TE_Ok)
+            surface_ctrl_ = static_cast<SurfaceRendererControl *>(surfaceControl);
 
         // force refresh
         prepared_state_.drawVersion = ~view.renderPasses[0u].drawVersion;
@@ -240,19 +255,24 @@ void GLAsynchronousMapRenderable3::WorkerThread::asyncRunImpl() {
 
                 // update release/renderable collections
                 {
+                    owner_.surface_dirty_regions_.clear();
+                    if (owner_.prepared_state_.crossesIDL) {
+                        owner_.surface_dirty_regions_.push_back(Envelope2(owner_.prepared_state_.westBound, owner_.prepared_state_.southBound, 0.0, 180.0, owner_.prepared_state_.northBound, 0.0));
+                        owner_.surface_dirty_regions_.push_back(Envelope2(-180.0, owner_.prepared_state_.southBound, 0.0, owner_.prepared_state_.eastBound, owner_.prepared_state_.northBound, 0.0));
+                    } else {
+                        owner_.surface_dirty_regions_.push_back(Envelope2(owner_.prepared_state_.westBound, owner_.prepared_state_.southBound, 0.0, owner_.prepared_state_.eastBound, owner_.prepared_state_.northBound, 0.0));
+                    }
                     WriteLock wlock(owner_.renderables_mutex_);
                     code = wlock.status;
                     TE_CHECKBREAK_CODE(code);
                     if (owner_.servicing_request_ && owner_.updateRenderableLists(*pendingData) == TE_Ok) {
                         owner_.prepared_state_ = queryState;
                         if (owner_.surface_ctrl_ && (owner_.getRenderPass()&(GLGlobeBase::Surface|GLGlobeBase::Surface2))) {
-                            if (owner_.prepared_state_.crossesIDL) {
-                                owner_.surface_ctrl_->markDirty(Envelope2(owner_.prepared_state_.westBound, owner_.prepared_state_.southBound, 0.0, 180.0, owner_.prepared_state_.northBound, 0.0), false);
-                                owner_.surface_ctrl_->markDirty(Envelope2(-180.0, owner_.prepared_state_.southBound, 0.0, owner_.prepared_state_.eastBound, owner_.prepared_state_.northBound, 0.0), false);
-                            } else {
-                                owner_.surface_ctrl_->markDirty(Envelope2(owner_.prepared_state_.westBound, owner_.prepared_state_.southBound, 0.0, owner_.prepared_state_.eastBound, owner_.prepared_state_.northBound, 0.0), false);
-                    }
-                }
+                            for (std::size_t i = 0u; i < owner_.surface_dirty_regions_.size(); i++)
+                                owner_.surface_ctrl_->markDirty(owner_.surface_dirty_regions_[i], false);
+                        }
+                        if (owner_.context_)
+                            owner_.context_->requestRefresh();
                     }
                 }
 
@@ -281,4 +301,3 @@ void GLAsynchronousMapRenderable3::WorkerThread::asyncRunImpl() {
 }
 
 GLAsynchronousMapRenderable3::QueryContext::~QueryContext() { }
-

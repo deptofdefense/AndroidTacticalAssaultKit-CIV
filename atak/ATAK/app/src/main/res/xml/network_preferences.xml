@@ -2,14 +2,20 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
          <PreferenceCategory
              android:title="@string/networkPreferences">
-             <Preference android:title="@string/networkConnectionPreferences"
+            <Preference
+                 android:key="serverConnections"
+                 android:title="@string/server_connections"
+                 android:summary="@string/adjust_network_connections" />
+            <Preference
                  android:key="networkSettings"
+                 android:title="@string/networkConnectionPreferences"
                  android:summary="@string/preferences_text266"
                  android:icon="@drawable/ic_menu_network_connections" />
-            <Preference android:title="@string/tadilj_settings"
-                android:key="tadiljSettings"
-                android:summary="@string/tadilj_settings_summary"
-                 android:icon="@drawable/tadilj_settings"/>
+            <Preference
+                 android:key="tadiljSettings"
+                 android:title="@string/datalink_prefs"
+                 android:summary="@string/tadilj_settings_summary"
+                 android:icon="@drawable/tadilj_settings" />
         </PreferenceCategory>
 
     </PreferenceScreen>

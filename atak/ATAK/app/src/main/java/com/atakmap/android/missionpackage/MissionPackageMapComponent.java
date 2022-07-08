@@ -36,6 +36,7 @@ import com.atakmap.android.missionpackage.ui.MissionPackagePreferenceFragment;
 import com.atakmap.android.widgets.AbstractWidgetMapComponent;
 import com.atakmap.app.R;
 import com.atakmap.app.preferences.ToolsPreferenceFragment;
+import com.atakmap.commoncommo.Commo;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.comms.CommsMapComponent;
@@ -473,15 +474,29 @@ public class MissionPackageMapComponent extends AbstractWidgetMapComponent
     private boolean enableCommsFileSharing() {
         int unsecurePort;
         int securePort;
+        boolean legacyEnabled;
         try {
-            unsecurePort = Integer
-                    .parseInt(_prefs.getString(WebServer.SERVER_PORT_KEY,
-                            String.valueOf(WebServer.DEFAULT_SERVER_PORT)));
-            if (unsecurePort < 1)
-                unsecurePort = WebServer.DEFAULT_SERVER_PORT;
+            legacyEnabled = _prefs.getBoolean(
+                    WebServer.SERVER_LEGACY_HTTP_ENABLED_KEY,
+                    false);
         } catch (Exception e) {
-            unsecurePort = WebServer.DEFAULT_SERVER_PORT;
+            legacyEnabled = false;
         }
+
+        if (legacyEnabled) {
+            try {
+                unsecurePort = Integer
+                        .parseInt(_prefs.getString(WebServer.SERVER_PORT_KEY,
+                                String.valueOf(WebServer.DEFAULT_SERVER_PORT)));
+                if (unsecurePort < 1)
+                    unsecurePort = WebServer.DEFAULT_SERVER_PORT;
+            } catch (Exception e) {
+                unsecurePort = WebServer.DEFAULT_SERVER_PORT;
+            }
+        } else {
+            unsecurePort = Commo.MPIO_LOCAL_PORT_DISABLE;
+        }
+
         try {
             securePort = Integer
                     .parseInt(_prefs.getString(WebServer.SECURE_SERVER_PORT_KEY,

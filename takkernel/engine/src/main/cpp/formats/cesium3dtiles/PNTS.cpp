@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include <algorithm>
 #include <deque>
 #include "formats/cesium3dtiles/PNTS.h"
@@ -409,3 +410,4 @@ TAKErr TAK::Engine::Formats::Cesium3DTiles::PNTS_write(const char* URI, uint8_t 
     return TE_Ok;
 
 }
+#endif

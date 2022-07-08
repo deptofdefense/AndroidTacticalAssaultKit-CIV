@@ -33,20 +33,3 @@ set(takengine_ANDROID_LIBS
 set(takengine_ANDROID_OPTS
     $<$<NOT:$<BOOL:${MSVC}>>:-O3>
 )
-
-set(takengine_ANDROID_SRCS
-    # Renderer
-    ${SRC_DIR}/renderer/BitmapFactory.cpp
-    ${SRC_DIR}/renderer/core/GLMapViewDebug.cpp
-
-    # Thread
-    ${SRC_DIR}/thread/impl/ThreadImpl_libpthread.cpp
-
-    # Util
-    ${SRC_DIR}/util/AtomicCounter_NDK.cpp
-)
-
-set(takengine_ANDROID_HEADERS
-    # simd
-    ${SRC_DIR}/simd/sse2neon.h
-)

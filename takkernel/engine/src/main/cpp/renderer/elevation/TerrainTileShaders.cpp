@@ -38,6 +38,7 @@ TerrainTileShader &TerrainTileShader::operator=(const TerrainTileShader &other) 
     uTexHeight = other.uTexHeight;
     uElevationScale = other.uElevationScale;
     aNoDataFlag = other.aNoDataFlag;
+    aEcefVertCoords = other.aEcefVertCoords;
     uMinAmbientLight = other.uMinAmbientLight;
     uLightSourceContribution = other.uLightSourceContribution;
     uLightSourceNormal = other.uLightSourceNormal;

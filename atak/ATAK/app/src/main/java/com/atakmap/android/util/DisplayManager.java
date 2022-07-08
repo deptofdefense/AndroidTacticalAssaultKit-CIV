@@ -28,20 +28,26 @@ public class DisplayManager {
      */
     static public void acquireTemporaryScreenLock(MapView mapView,
             String name) {
-        tempScreenLockHolders.add(name);
 
         Log.d(TAG, "acquire the temporary screen lock for: " + name);
         final Activity activity = ((Activity) mapView.getContext());
-        activity.getWindow()
-                .addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                tempScreenLockHolders.add(name);
+                activity.getWindow()
+                        .addFlags(
+                                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        final KeyguardManager km = (KeyguardManager) activity
-                .getSystemService(Context.KEYGUARD_SERVICE);
-        if (km != null) {
-            KeyguardManager.KeyguardLock kl = km
-                    .newKeyguardLock("atakKeyGuard");
-            kl.reenableKeyguard();
-        }
+                final KeyguardManager km = (KeyguardManager) activity
+                        .getSystemService(Context.KEYGUARD_SERVICE);
+                if (km != null) {
+                    KeyguardManager.KeyguardLock kl = km
+                            .newKeyguardLock("atakKeyGuard");
+                    kl.reenableKeyguard();
+                }
+            }
+        });
 
     }
 
@@ -52,28 +58,36 @@ public class DisplayManager {
      */
     static public void releaseTemporaryScreenLock(MapView mapView,
             String name) {
-        tempScreenLockHolders.remove(name);
 
-        Log.d(TAG, "release the temporary screen lock for: " + name);
-        if (tempScreenLockHolders.isEmpty()) {
-            final Activity activity = ((Activity) mapView.getContext());
-            final SharedPreferences pref = PreferenceManager
-                    .getDefaultSharedPreferences(activity);
+        final Activity activity = ((Activity) mapView.getContext());
 
-            if (!pref.getBoolean("atakScreenLock", false))
-                activity.getWindow().clearFlags(
-                        WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                tempScreenLockHolders.remove(name);
 
-            if (!pref.getBoolean("atakDisableKeyguard", false)) {
-                final KeyguardManager km = (KeyguardManager) activity
-                        .getSystemService(Context.KEYGUARD_SERVICE);
-                if (km != null) {
-                    KeyguardManager.KeyguardLock kl = km
-                            .newKeyguardLock("atakKeyGuard");
-                    kl.disableKeyguard();
+                Log.d(TAG, "release the temporary screen lock for: " + name);
+                if (tempScreenLockHolders.isEmpty()) {
+
+                    final SharedPreferences pref = PreferenceManager
+                            .getDefaultSharedPreferences(activity);
+
+                    if (!pref.getBoolean("atakScreenLock", false))
+                        activity.getWindow().clearFlags(
+                                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
+                    if (!pref.getBoolean("atakDisableKeyguard", false)) {
+                        final KeyguardManager km = (KeyguardManager) activity
+                                .getSystemService(Context.KEYGUARD_SERVICE);
+                        if (km != null) {
+                            KeyguardManager.KeyguardLock kl = km
+                                    .newKeyguardLock("atakKeyGuard");
+                            kl.disableKeyguard();
+                        }
+                    }
                 }
             }
-        }
+        });
     }
 
 }

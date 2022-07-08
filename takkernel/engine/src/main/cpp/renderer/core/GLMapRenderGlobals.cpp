@@ -24,7 +24,7 @@ using namespace atakmap::renderer;
 #define TE_GLMRG_ASYNC_BITMAP_LOADER_THREADS 8
 
 // platform specific adjustments
-#ifdef MSVC
+#ifdef _MSC_VER
 #undef TE_GLMRG_TEXTURE_ATLAS_SIZE
 #define TE_GLMRG_TEXTURE_ATLAS_SIZE 2048
 #endif
@@ -41,6 +41,7 @@ namespace
         std::unique_ptr<GLTextureAtlas2> atlas2;
         std::unique_ptr<GLTextureAtlas2> iconAtlas2;
         std::unique_ptr<GLTextureCache2> cache2;
+        GLuint whitePixel{ GL_NONE };
     };
 
     std::map<const RenderContext *, std::unique_ptr<Context>> contextMap;
@@ -260,6 +261,42 @@ TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_getLabelManager(TAK::Engi
     if (!entry->second->labelManager.get())
         entry->second->labelManager.reset(new TAK::Engine::Renderer::Core::GLLabelManager());
     *value = entry->second->labelManager.get();
+    return TE_Ok;
+}
+
+ENGINE_API TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_getWhitePixel(GLuint *value, const TAK::Engine::Core::RenderContext &ctx) NOTHROWS
+{
+    TAKErr code(TE_Ok);
+    Lock lock(contextMapMutex);
+    code = lock.status;
+    TE_CHECKRETURN_CODE(code);
+    std::map<const RenderContext*, std::unique_ptr<Context>>::iterator entry;
+    do {
+        entry = contextMap.find(&ctx);
+        if (entry == contextMap.end()) {
+            contextMap[&ctx] = std::unique_ptr<Context>(new Context);
+            continue;
+        }
+        break;
+    } while (true);
+    if (!entry->second->whitePixel) {
+        if (!ctx.isAttached())
+            return TE_IllegalState;
+        GLint t;
+        glGetIntegerv(GL_TEXTURE_BINDING_2D, &t);
+
+        glGenTextures(1u, &entry->second->whitePixel);
+        glBindTexture(GL_TEXTURE_2D, entry->second->whitePixel);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        const uint16_t px = 0xFFFFu;
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1u, 1u, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, &px);
+
+        glBindTexture(GL_TEXTURE_2D, t);
+    }
+    *value = entry->second->whitePixel;
     return TE_Ok;
 }
 

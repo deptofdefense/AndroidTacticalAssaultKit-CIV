@@ -191,9 +191,11 @@ public class GLDogHouse extends AbstractGLMapItem2 implements
                     localBearing += 90d;
                 }
                 _offset.x = translation * Math
-                        .sin(Math.toRadians(localBearing - ortho.currentPass.drawRotation));
+                        .sin(Math.toRadians(
+                                localBearing - ortho.currentPass.drawRotation));
                 _offset.y = translation * Math
-                        .cos(Math.toRadians(localBearing - ortho.currentPass.drawRotation));
+                        .cos(Math.toRadians(
+                                localBearing - ortho.currentPass.drawRotation));
 
                 // Calculate the point positions of the doghouse in model space
                 PointF nose = new PointF(0.0f, 1.0f * SEGMENT_SIZE);
@@ -259,11 +261,13 @@ public class GLDogHouse extends AbstractGLMapItem2 implements
 
             ssOriginX = (float) ortho.scratch.pointD.x + (float) (Math
                     .sin(Math.toRadians(
-                            bearing + bearingOffset - ortho.currentPass.drawRotation))
+                            bearing + bearingOffset
+                                    - ortho.currentPass.drawRotation))
                     * translation);
             ssOriginY = (float) ortho.scratch.pointD.y + (float) (Math
                     .cos(Math.toRadians(
-                            bearing + bearingOffset - ortho.currentPass.drawRotation))
+                            bearing + bearingOffset
+                                    - ortho.currentPass.drawRotation))
                     * translation);
 
             GLES20FixedPipeline

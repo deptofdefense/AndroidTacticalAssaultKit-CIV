@@ -104,6 +104,8 @@ public class CustomMobacMapSource extends AbstractMobacMapSource {
 
     @Override
     public final MobacMapTile loadTile(int zoom, int x, int y, Options opts) throws IOException {
+        if(zoom < minZoom)
+            return null;
         if (this.invertYCoordinate)
             y = ((1 << zoom) - 1) - y;
 

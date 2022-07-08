@@ -5,6 +5,7 @@
 
 #include "core/AtakMapView.h"
 #include "core/GeoPoint.h"
+#include "core/MapRenderer2.h"
 #include "core/MapSceneModel.h"
 #include "core/MapSceneModel2.h"
 #include "core/Projection.h"
@@ -21,10 +22,7 @@ using namespace TAK::Engine::Util;
 
 atakmap::core::AtakMapController::AtakMapController(atakmap::core::AtakMapView *mv) :
     mapView(mv),
-    defaultFocusPoint(0, 0),
-    focusPointOffset(0,0),
     focusChangedListeners(),
-    focusPointQueue(),
     controllerMutex(TEMT_Recursive)
 {}
 
@@ -53,21 +51,12 @@ void atakmap::core::AtakMapController::panZoomRotateTo(const GeoPoint *point, co
     if (!point || TE_ISNAN(point->latitude) ||  TE_ISNAN(point->longitude) || TE_ISNAN (scale))
         return;
 
-#ifdef  __ANDROID__
-    // XXX - hack carried over from Android, need to blame through to author
-    // and resolve original cause
-    if(mapView->getMapTilt() != 0.0) {
-        atakmap::math::Point<float> p = getFocusPointInternal ();
-        panByScaleRotate(p.x-defaultFocusPoint.x, p.y-defaultFocusPoint.y, scale, rotation, animate);
-        return;
-    }
-#endif
     mapView->updateView (*point,
                          scale,
                          rotation,
                          mapView->getMapTilt(),
-                         mapView->focus_altitude_,
-                         mapView->focus_alt_terminal_slant_,
+                         0.0,
+                         0.0,
                          animate);
 }
 
@@ -78,7 +67,8 @@ void atakmap::core::AtakMapController::panTo(const GeoPoint *point, const float 
     if (point && (TE_ISNAN(point->latitude) || TE_ISNAN(point->longitude)))
         return;
 
-    atakmap::math::Point<float> focusPoint = getFocusPointInternal ();
+    atakmap::math::Point<float> focusPoint;
+    getFocusPoint(&focusPoint);
 
     panTo (point, animate);
     panBy (focusPoint.x - viewx, viewy - focusPoint.y, animate);
@@ -98,7 +88,8 @@ void atakmap::core::AtakMapController::panBy(const float tx, const float ty, con
 
 void atakmap::core::AtakMapController::panByScaleRotate(const float x, const float y, const double scale, const double rotation, const bool animate)
 {
-    atakmap::math::Point<float> focusPoint = getFocusPointInternal ();
+    atakmap::math::Point<float> focusPoint;
+    getFocusPoint(&focusPoint);
 
     atakmap::core::GeoPoint focusGeo;
     mapView->getPoint(&focusGeo);
@@ -131,8 +122,8 @@ void atakmap::core::AtakMapController::panByScaleRotate(const float x, const flo
     mapView->updateView (atakmap::core::GeoPoint(tgt),
                          scale, rotation,
                          mapView->getMapTilt(),
-                         mapView->focus_altitude_,
-                         mapView->focus_alt_terminal_slant_,
+                         0.0,
+                         0.0,
                          animate);
 
 }
@@ -166,7 +157,8 @@ void atakmap::core::AtakMapController::rotateTo(double theta,
     GeoPoint2 point2;
     GeoPoint_adapt(&point2, point);
 
-    atakmap::math::Point<float> focusPoint = getFocusPointInternal();
+    atakmap::math::Point<float> focusPoint;
+    getFocusPoint(&focusPoint);
 
     // construct model to 'point' at surface with no rotate/no tilt
     MapSceneModel2 nadirSurface(mapView->getDisplayDpi(),
@@ -249,8 +241,8 @@ void atakmap::core::AtakMapController::zoomTo(const double scale, const bool ani
                          scale,
                          mapView->getMapRotation (),
                          mapView->getMapTilt(),
-                         mapView->focus_altitude_,
-                         mapView->focus_alt_terminal_slant_,
+                         0.0,
+                         0.0,
                          animate);
 }
 
@@ -285,8 +277,8 @@ void atakmap::core::AtakMapController::rotateTo(const double rotation, const boo
                          mapView->getMapScale (),
                          rotation,
                          mapView->getMapTilt(),
-                         mapView->focus_altitude_,
-                         mapView->focus_alt_terminal_slant_,
+                         0.0,
+                         0.0,
                          animate);
 }
 
@@ -298,8 +290,8 @@ void atakmap::core::AtakMapController::tiltTo(const double tilt, const bool anim
                         mapView->getMapScale(),
                         mapView->getMapRotation(),
                         tilt,
-                        mapView->focus_altitude_,
-                        mapView->focus_alt_terminal_slant_,
+                        0.0,
+                        0.0,
                         animate);
 }
 
@@ -311,8 +303,8 @@ void atakmap::core::AtakMapController::tiltTo(const double tilt, const double ro
                         mapView->getMapScale(),
                         rotation,
                         tilt,
-                        mapView->focus_altitude_,
-                        mapView->focus_alt_terminal_slant_,
+                        0.0,
+                        0.0,
                         animate);
 }
 
@@ -348,7 +340,8 @@ void atakmap::core::AtakMapController::tiltTo(double theta,
     GeoPoint2 point2;
     GeoPoint_adapt(&point2, point);
 
-    atakmap::math::Point<float> focusPoint = getFocusPointInternal();
+    atakmap::math::Point<float> focusPoint;
+    getFocusPoint(&focusPoint);
 
     // construct model to 'point' at surface with no rotate/no tilt
     MapSceneModel2 nadirSurface(mapView->getDisplayDpi(),
@@ -428,7 +421,8 @@ void atakmap::core::AtakMapController::updateBy(const double scale, const double
 {
     GeoPoint mapCenter;
     mapView->getPoint(&mapCenter);
-    atakmap::math::Point<float> focusPoint = getFocusPointInternal();
+    atakmap::math::Point<float> focusPoint;
+    getFocusPoint(&focusPoint);
     //This is of type projection in ATAK
     int proj = mapView->getProjection();
     MapSceneModel sm(mapView, proj, &mapCenter, focusPoint.x, focusPoint.y, rotation, tilt, scale);
@@ -467,8 +461,8 @@ void atakmap::core::AtakMapController::updateBy(const double scale, const double
                             scale,
                             rotation,
                             tilt,
-                            mapView->focus_altitude_,
-                            mapView->focus_alt_terminal_slant_,
+                            0.0,
+                            0.0,
                             animate);
     }
 }
@@ -487,55 +481,45 @@ void atakmap::core::AtakMapController::removeFocusPointChangedListener(MapContro
 
 void atakmap::core::AtakMapController::setDefaultFocusPoint(const atakmap::math::Point<float> *defaultFocus)
 {
-    Lock lock(controllerMutex);
-
-    defaultFocusPoint.x = (float)defaultFocus->x;
-    defaultFocusPoint.y = (float)defaultFocus->y;
-
-    if(focusPointQueue.empty())
-        dispatchFocusPointChanged();
+    setFocusPoint(defaultFocus);
 }
 
 void atakmap::core::AtakMapController::setFocusPoint(const atakmap::math::Point<float> *focus)
 {
-    Lock lock(controllerMutex);
-
-    focusPointQueue.push(atakmap::math::Point<float>((float)focus->x, (float)focus->y));
-    dispatchFocusPointChanged();
+    if (!focus)
+        return;
+    atakmap::math::Point<float> offset(*focus);
+    offset.x -= (float)mapView->getWidth() / 2.f;
+    offset.y -= (float)mapView->getHeight() / 2.f;
+    setFocusPointOffset(&offset);
 }
 
 void atakmap::core::AtakMapController::popFocusPoint()
 {
-    Lock lock(controllerMutex);
-
-    if(!focusPointQueue.empty()) {
-        focusPointQueue.pop();
-    }
-    dispatchFocusPointChanged();
+    // no-op
 }
 
 void atakmap::core::AtakMapController::resetFocusPoint()
 {
-    Lock lock(controllerMutex);
-
-    while(!focusPointQueue.empty()) {
-        focusPointQueue.pop();
-    }
-    dispatchFocusPointChanged();
+    // no-op
 }
 
 void atakmap::core::AtakMapController::getFocusPoint(atakmap::math::Point<float> *focus)
 {
-    Lock lock(controllerMutex);
+    if (!focus)
+        return;
 
-    atakmap::math::Point<float> internal = getFocusPointInternal();
-    focus->x = internal.x;
-    focus->y = internal.y;
+    TAK::Engine::Thread::ReadLock lock(mapView->map_mutex_);
+    auto &renderer = mapView->state();
+    TAK::Engine::Core::MapSceneModel2 sm;
+    renderer.getMapSceneModel(&sm, false, TAK::Engine::Core::MapRenderer::UpperLeft);
+    focus->x = sm.focusX;
+    focus->y = sm.focusY;
+    focus->z = 0.f;
 }
 
-void atakmap::core::AtakMapController::dispatchFocusPointChanged()
+void atakmap::core::AtakMapController::dispatchFocusPointChanged(const atakmap::math::Point<float> &focus)
 {
-    atakmap::math::Point<float> focus = getFocusPointInternal();
     std::set<MapControllerFocusPointChangedListener *>::iterator it;
     for(it = focusChangedListeners.begin(); it != focusChangedListeners.end(); it++)
     {
@@ -543,23 +527,16 @@ void atakmap::core::AtakMapController::dispatchFocusPointChanged()
     }
 }
 
-atakmap::math::Point<float> atakmap::core::AtakMapController::getFocusPointInternal() const
-{
-    if(focusPointQueue.empty())
-        return atakmap::math::Point<float>(defaultFocusPoint.x - focusPointOffset.x, defaultFocusPoint.y - focusPointOffset.y, defaultFocusPoint.z - focusPointOffset.z);
-    else
-    {
-        const atakmap::math::Point<float>& top = focusPointQueue.top();
-        return atakmap::math::Point<float>(top.x - focusPointOffset.x, top.y - focusPointOffset.y, top.z - focusPointOffset.z);
-    }
-}
-
 void atakmap::core::AtakMapController::setFocusPointOffset(const atakmap::math::Point<float> *focusOffset)
 {
+    TAK::Engine::Core::MapSceneModel2 sm;
+    {
+        TAK::Engine::Thread::ReadLock lock(mapView->map_mutex_);
+        auto& renderer = mapView->state();
+        renderer.getMapSceneModel(&sm, false, TAK::Engine::Core::MapRenderer::UpperLeft);
+    }
     Lock lock(controllerMutex);
-
-    focusPointOffset = *focusOffset;
-    dispatchFocusPointChanged();
+    dispatchFocusPointChanged(atakmap::math::Point<float>(sm.focusX, sm.focusY));
 }
 
 atakmap::core::MapControllerFocusPointChangedListener::~MapControllerFocusPointChangedListener() NOTHROWS

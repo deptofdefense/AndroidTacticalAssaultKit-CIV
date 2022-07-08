@@ -1,4 +1,4 @@
-
+#ifdef MSVC
 #include "renderer/core/GLContent.h"
 #include "renderer/GLWorkers.h"
 #include "util/Memory.h"
@@ -192,3 +192,4 @@ void GLContentHolder::unload() {
 GLContentHolder::LoadState GLContentHolder::getLoadState() const NOTHROWS {
     return (LoadState)impl_->state_.load(std::memory_order_acquire);
 }
+#endif

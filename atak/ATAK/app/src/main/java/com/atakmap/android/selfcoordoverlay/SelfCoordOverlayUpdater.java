@@ -47,7 +47,7 @@ import com.atakmap.coremap.maps.coords.Ellipsoid;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.MGRSPoint;
 import com.atakmap.coremap.maps.coords.NorthReference;
-import com.atakmap.util.Disposable;
+import gov.tak.api.util.Disposable;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
@@ -610,11 +610,11 @@ public class SelfCoordOverlayUpdater extends CotStreamListener implements
             coordText.append(locationStr);
             coordText.append("\n");
             coordText.append(altString);
-            coordText.append(line1Space.toString());
+            coordText.append(line1Space);
             coordText.append(orientationString);
             coordText.append("\n");
             coordText.append(speedString);
-            coordText.append(line2Space.toString());
+            coordText.append(line2Space);
             coordText.append(accuracyString);
 
             final String coordTextString = coordText.toString();

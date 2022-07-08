@@ -189,6 +189,9 @@ public class SystemComponentLoader {
         } catch (Exception e) {
             Log.d(TAG, "error occurred verifying signature", e);
         }
+
+        Log.w(TAG, "wrong signature (refusing to load) [" + pkgname + "]");
+
         return false;
     }
 
@@ -347,10 +350,6 @@ public class SystemComponentLoader {
                 return;
 
             encryptionComponent = (AbstractSystemComponent) c.newInstance();
-            if (!(encryptionComponent instanceof EncryptionProvider)) {
-                Log.d(TAG,
-                        "encryption component does not implement encryption provider, this is an error");
-            }
             encryptionComponent.setPluginContext(pluginContext);
             encryptionComponent.setAppContext(activity);
         } catch (Throwable e) {
@@ -450,17 +449,6 @@ public class SystemComponentLoader {
      */
     public static FlavorProvider getFlavorProvider() {
         return (FlavorProvider) flavorComponent;
-    }
-
-    /**
-     * Obtain an encryption provider if it is installed.
-     * @return null if no encryption capability is installed
-     * @deprecated
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.3.1", forRemoval = true, removeAt = "4.5.0")
-    public static EncryptionProvider getEncryptionProvider() {
-        return (EncryptionProvider) encryptionComponent;
     }
 
     /**

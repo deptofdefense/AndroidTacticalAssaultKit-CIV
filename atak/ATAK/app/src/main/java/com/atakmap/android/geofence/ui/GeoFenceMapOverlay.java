@@ -117,7 +117,7 @@ public class GeoFenceMapOverlay extends AbstractMapOverlay2 implements Delete {
                 if (!fence.isValid()) {
                     Log.w(TAG,
                             "Removing invalid GeoFence from db: "
-                                    + fence.toString());
+                                    + fence);
                     fencesToRemove.add(fence);
                     continue;
                 }
@@ -126,7 +126,7 @@ public class GeoFenceMapOverlay extends AbstractMapOverlay2 implements Delete {
                 if (item == null) {
                     Log.w(TAG,
                             "Removing missing GeoFence from db: "
-                                    + fence.toString());
+                                    + fence);
                     fencesToRemove.add(fence);
                 }
             } //end DB fence loop

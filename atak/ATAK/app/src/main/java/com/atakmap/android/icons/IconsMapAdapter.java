@@ -303,7 +303,7 @@ public class IconsMapAdapter extends BroadcastReceiver {
             if (existing != null) {
                 Log.d(TAG,
                         "Removing old version of iconset: "
-                                + existing.toString());
+                                + existing);
                 userIconDB.removeIconSet(existing);
             }
 
@@ -417,7 +417,7 @@ public class IconsMapAdapter extends BroadcastReceiver {
 
             Log.d(TAG,
                     "Added iconset: "
-                            + iconset.toString()
+                            + iconset
                             + " with "
                             + iconCount
                             +
@@ -428,7 +428,7 @@ public class IconsMapAdapter extends BroadcastReceiver {
             if (!iconset.isSkipResize())
                 Log.d(TAG,
                         "Normalized icon sizes to 32px square: "
-                                + iconset.toString());
+                                + iconset);
             NotificationUtil.getInstance().postNotification(
                     com.atakmap.android.util.ATAKConstants.getIconId(),
                     NotificationUtil.WHITE,

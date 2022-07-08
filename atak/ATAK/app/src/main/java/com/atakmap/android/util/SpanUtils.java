@@ -64,4 +64,5 @@ public class SpanUtils {
         public void updateDrawState(TextPaint tp) {
             tp.setTypeface(typeface);
         }
-    }}
+    }
+}

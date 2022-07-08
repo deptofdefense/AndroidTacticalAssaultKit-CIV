@@ -261,7 +261,8 @@ public class GLMarker2 extends GLPointMapItem2 implements
                     if (_iconVisibility != Marker.ICON_GONE) {
                         offy += (_icon.getHeight() / 2d);
                         offz += (float) (-0.00025
-                                * Math.cos(Math.toRadians(view.currentPass.drawTilt)));
+                                * Math.cos(Math
+                                        .toRadians(view.currentPass.drawTilt)));
                     }
                 }
             }
@@ -703,7 +704,8 @@ public class GLMarker2 extends GLPointMapItem2 implements
                 // indicated no arrow and heading
 
                 GLES20FixedPipeline.glPushMatrix();
-                float f = 360f - _heading + (float) ortho.currentPass.drawRotation;
+                float f = 360f - _heading
+                        + (float) ortho.currentPass.drawRotation;
                 // additional protection
                 if (Float.isNaN(f))
                     f = 0f;
@@ -714,7 +716,8 @@ public class GLMarker2 extends GLPointMapItem2 implements
             } else if ((_style & Marker.STYLE_ROTATE_HEADING_MASK) != 0) {
                 // draw the appropriate arrow on the map but do not rotate the icon
                 GLES20FixedPipeline.glPushMatrix();
-                float f = 360f - _heading + (float) ortho.currentPass.drawRotation;
+                float f = 360f - _heading
+                        + (float) ortho.currentPass.drawRotation;
                 // additional protection
                 if (Float.isNaN(f))
                     f = 0f;

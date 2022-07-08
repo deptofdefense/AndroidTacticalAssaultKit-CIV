@@ -1,3 +1,4 @@
+#ifdef MSVC
 ////============================================================================
 ////
 ////    FILE:           PersistentRasterDataStore.cpp
@@ -1846,3 +1847,4 @@ bool PersistentRasterDataStore::BackgroundCoverageResolver::isCanceled()
 }                                       // Close raster namespace.
 }                                       // Close atakmap namespace.
 
+#endif

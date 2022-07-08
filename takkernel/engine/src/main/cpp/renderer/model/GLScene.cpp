@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "renderer/GL.h"
 
 #include "renderer/model/GLScene.h"
@@ -367,9 +368,16 @@ TAKErr GLScene::hitTest(TAK::Engine::Core::GeoPoint2 *value, const TAK::Engine::
     GeoPoint2 hitGeo;
     if (!ctx_.isRenderThread()) {
         TAKErr awaitCode = Task_begin(GLWorkers_glThread(), depthTestTask, this, scene, x, y).await(hitGeo, code);
+        // XXX - temporary hack to prevent deadlock; update to have task queued by context
+        ctx_.requestRefresh();
         if (awaitCode != TE_Ok) return awaitCode;
     } else {
+        const bool current = ctx_.isAttached();
+        if (!current) 
+            ctx_.attach();
         code = depthTestTask(hitGeo, this, scene, x, y);
+        if (!current)
+            ctx_.detach();
     }
 
     if (code == TE_Ok)
@@ -461,7 +469,8 @@ TAKErr GLScene::depthTestTask(TAK::Engine::Core::GeoPoint2& value, GLScene* scen
             return code;
     }
 
-    float screenY = y;
+    const bool isOrtho = (sceneModel.camera.mode == MapCamera2::Scale);
+    float screenY = isOrtho ? y : sceneModel.height-y;
     double pointZ = 0.0;
     Matrix2 projection;
 
@@ -469,18 +478,37 @@ TAKErr GLScene::depthTestTask(TAK::Engine::Core::GeoPoint2& value, GLScene* scen
     if (code != TE_Ok)
         return code;
 
-    TAK::Engine::Math::Point2<double> point(x, screenY, 0);
-    projection.transform(&point, point);
-    point.z = pointZ;
+    TAK::Engine::Math::Point2<double> point;
+    if (isOrtho) {
+        projection.transform(&point, TAK::Engine::Math::Point2<double>(x, screenY, 0));
+        point.z = pointZ;
 
-    Matrix2 mat;
-    if (projection.createInverse(&mat) != TE_Ok)
-        return TE_Done;
+        Matrix2 mat;
+        if (projection.createInverse(&mat) != TE_Ok)
+            return TE_Done;
 
-    mat.transform(&point, point);
+        mat.transform(&point, point);
 
-    // ortho -> projection
-    sceneModel.inverseTransform.transform(&point, point);
+        // ortho -> projection
+        sceneModel.inverseTransform.transform(&point, point);
+    } else {
+        // transform screen location at depth to NDC
+        point.x = (x / (float)(sceneModel.width)) * 2.0f - 1.0f;
+        point.y = (((float)sceneModel.height - y) / (float)(sceneModel.height)) * 2.0f - 1.0f;
+        //point.z = pointZ * 2.0f - 1.0f;
+        point.z = pointZ; // already NDC
+
+        // compute inverse transform
+        Matrix2 mat;
+        mat.set(sceneModel.camera.projection);
+        mat.concatenate(sceneModel.camera.modelView);
+
+        mat.createInverse(&mat);
+
+        // NDC -> projection
+        mat.transform(&point, point);
+    }
+
     // projection -> LLA
     code = sceneModel.projection->inverse(&value, point);
 
@@ -910,3 +938,4 @@ bool GLScene::isXRayCapable() NOTHROWS
 {
     return static_cast<bool>(info_.capabilities & SceneInfo::CapabilitiesType::XRay);
 }
+#endif

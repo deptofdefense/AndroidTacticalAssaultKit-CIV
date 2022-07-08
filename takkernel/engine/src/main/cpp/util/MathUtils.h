@@ -38,6 +38,36 @@ namespace TAK {
                     (lr_v * (weightx)*(weighty))
                         );
             }
+
+            template<class T>
+            inline T MathUtils_min(const T a, const T b, const T c) NOTHROWS
+            {
+                const T u = (a < b) ? a : b;
+                return (u < c) ? u : c;
+            }
+
+            template<class T>
+            inline T MathUtils_min(const T a, const T b, const T c, const T d) NOTHROWS
+            {
+                const T u = (a < b) ? a : b;
+                const T v = (c < d) ? c : d;
+                return (u < v) ? u : v;
+            }
+
+            template<class T>
+            inline T MathUtils_max(const T a, const T b, const T c) NOTHROWS
+            {
+                const T u = (a > b) ? a : b;
+                return (u > c) ? u : c;
+            }
+
+            template<class T>
+            inline T MathUtils_max(const T a, const T b, const T c, const T d) NOTHROWS
+            {
+                const T u = (a > b) ? a : b;
+                const T v = (c > d) ? c : d;
+                return (u > v) ? u : v;
+            }
         }
     }
 }

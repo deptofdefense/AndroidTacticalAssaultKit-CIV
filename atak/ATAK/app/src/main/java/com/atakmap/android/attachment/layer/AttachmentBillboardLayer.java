@@ -7,11 +7,12 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.preference.AtakPreferences;
 import com.atakmap.map.layer.AbstractLayer;
 import com.atakmap.map.layer.control.ClampToGroundControl;
+import gov.tak.api.util.Disposable;
 import com.atakmap.util.Visitor;
 
 public class AttachmentBillboardLayer extends AbstractLayer implements
         SharedPreferences.OnSharedPreferenceChangeListener,
-        ClampToGroundControl {
+        ClampToGroundControl, Disposable {
 
     private final MapView _mapView;
     private final AtakPreferences _prefs;
@@ -44,6 +45,7 @@ public class AttachmentBillboardLayer extends AbstractLayer implements
     /**
      * Dispose of the layer.
      */
+    @Override
     public void dispose() {
         _mapView.getRenderer3().unregisterControl(this, this);
         _prefs.unregisterListener(this);

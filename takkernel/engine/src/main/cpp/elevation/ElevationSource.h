@@ -31,6 +31,8 @@ namespace TAK {
                 virtual Util::TAKErr removeOnContentChangedListener(OnContentChangedListener *l) NOTHROWS = 0;
             };
 
+            typedef std::unique_ptr<ElevationSource, void(*)(const ElevationSource*)> ElevationSourcePtr;
+
             ENGINE_API Util::TAKErr ElevationSource_accept(bool *value, ElevationChunkCursor &cursor, const ElevationSource::QueryParameters &filter) NOTHROWS;
             ENGINE_API bool ElevationSource_resolutionDesc(ElevationChunkCursor &a, ElevationChunkCursor &b) NOTHROWS;
             ENGINE_API bool ElevationSource_resolutionAsc(ElevationChunkCursor &a, ElevationChunkCursor &b) NOTHROWS;

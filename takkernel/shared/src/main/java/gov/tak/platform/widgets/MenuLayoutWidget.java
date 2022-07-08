@@ -1,12 +1,17 @@
 
 package gov.tak.platform.widgets;
 
+import android.graphics.Point;
 import android.graphics.PointF;
 
 import com.atakmap.coremap.log.Log;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 
+import gov.tak.api.commons.graphics.IIcon;
+import gov.tak.platform.commons.graphics.Icon;
 import gov.tak.api.widgets.IMapMenuButtonWidget;
 import gov.tak.api.widgets.IMapMenuWidget;
 import gov.tak.api.widgets.IMapWidget;
@@ -20,8 +25,11 @@ public class MenuLayoutWidget extends LayoutWidget implements IMenuLayoutWidget,
 
     public static final String TAG = "MenuLayoutWidget";
     private static final int RING_PADDING = 5;
+    private static final int DELAY_TIME = 40;
 
     private Object _mapItem = null;
+
+    private Stack<List> _menuStack = new Stack<>();
 
     @Override
     public Object getMapItem() {
@@ -74,6 +82,27 @@ public class MenuLayoutWidget extends LayoutWidget implements IMenuLayoutWidget,
         return submenuWidget;
     }
 
+    protected boolean _pushMenus() {
+        final int childCount = getChildWidgetCount();
+        // nothing to push
+        if(childCount < 1)   return false;
+
+        List<IMapWidget> state = new ArrayList<>(childCount);
+        for(int i = 0; i < childCount; i++)
+            state.add(getChildWidgetAt(i));
+        _menuStack.push(state);
+        return true;
+    }
+
+    protected boolean _popMenus() {
+        _clearAllMenus();
+        if(_menuStack.isEmpty())    return false;
+        List<IMapWidget> state = _menuStack.pop();
+        for(IMapWidget child : state)
+            addChildWidget(child);
+        return true;
+    }
+
     protected boolean _clearAllMenus() {
         boolean r = false;
         while (getChildWidgetCount() > 0) {
@@ -94,6 +123,7 @@ public class MenuLayoutWidget extends LayoutWidget implements IMenuLayoutWidget,
 
     public void clearMenu() {
         _clearAllMenus();
+        _menuStack.clear();
     }
 
     /**
@@ -103,7 +133,6 @@ public class MenuLayoutWidget extends LayoutWidget implements IMenuLayoutWidget,
         for (int i = 0; i < menuWidget.getChildWidgetCount(); ++i) {
             final IMapMenuButtonWidget button = (IMapMenuButtonWidget) menuWidget
                     .getChildWidgetAt(i);
-
             button.addOnPressListener(new OnPressListener() {
                 @Override
                 public void onMapWidgetPress(IMapWidget widget, MotionEvent event) {
@@ -145,8 +174,12 @@ public class MenuLayoutWidget extends LayoutWidget implements IMenuLayoutWidget,
 
     }
     protected void onMenuLongPress(IMapMenuButtonWidget mapWidget, IMapMenuWidget menuWidget) {
+        IMapMenuWidget submenuWidget = mapWidget.getSubmenu();
+        if (!mapWidget.isDisabled() && (null != submenuWidget))
+            _expandPressSubmenu(menuWidget, mapWidget);
 
     }
+
 
     protected void onSubMenuPress(IMapMenuButtonWidget parentButton, IMapMenuButtonWidget childButton, IMapMenuWidget submenuWidget, IParentWidget parent, MotionEvent event) {
 
@@ -184,27 +217,21 @@ public class MenuLayoutWidget extends LayoutWidget implements IMenuLayoutWidget,
             final IMapMenuButtonWidget childButton = (IMapMenuButtonWidget) submenuWidget
                     .getChildWidgetAt(i);
 
+            childButton.delayShow((i + 1) * DELAY_TIME);
             if (parentButton.isDisabled())
                 childButton.setDisabled(true);
-
-            final float radius = getChildMenuRadius(submenuWidget,
-                    parentButton);
-            childButton.setOrientation(childButton.getOrientationAngle(),
-                    radius);
 
             childButton.addOnPressListener(new OnPressListener() {
                 @Override
                 public void onMapWidgetPress(IMapWidget widget, MotionEvent event) {
-                    onSubMenuClick(parentButton, childButton, submenuWidget, event);
-
-                }
-            });
-
-            childButton.addOnClickListener(new OnClickListener() {
-                @Override
-                public void onMapWidgetClick(IMapWidget widget, MotionEvent event) {
-                    onSubMenuClick(parentButton, childButton, submenuWidget, event);
-
+                    if (childButton.isBackButton()) {
+                        // remove the back button
+                        childButton.getParent().removeChildWidget(childButton);
+                        // pop back to the parent
+                        _popMenus();
+                    } else {
+                        onSubMenuClick(parentButton, childButton, submenuWidget, event);
+                    }
                 }
             });
 
@@ -257,7 +284,6 @@ public class MenuLayoutWidget extends LayoutWidget implements IMenuLayoutWidget,
         }
         return widget;
     }
-
 
     IMapMenuWidget _openMenuOnMap(PointF p) {
         IMapMenuWidget widget = null;
@@ -336,44 +362,83 @@ public class MenuLayoutWidget extends LayoutWidget implements IMenuLayoutWidget,
         orientLayout(menuWidget, totalWeight);
     }
 
+    private static IMapMenuButtonWidget getExistingButtonWithIcon(IMapMenuWidget menuWidget,
+                                                             IMapMenuButtonWidget parentButton) {
+        for(IMapWidget widget : menuWidget.getChildren()) {
+            if(!(widget instanceof IMapMenuButtonWidget))
+                continue;
+
+            IMapMenuButtonWidget buttonWidget = (IMapMenuButtonWidget)widget;
+            if(buttonWidget.getWidgetIcon() != null)
+                return buttonWidget;
+        }
+        if(parentButton != null && parentButton.getParent() instanceof IMapMenuWidget) {
+            return getExistingButtonWithIcon((IMapMenuWidget)parentButton.getParent(), null);
+        }
+        return null;
+    }
+
     protected void layoutAsSubmenu(IMapMenuWidget menuWidget,
                                    IMapMenuButtonWidget parentButton) {
 
-        // get all buttons possible prior to culling, and their unit span
-        float submenuSpan = 0f; // an unreasonable default, but defined.
-        if (menuWidget.getExplicitSizing()) {
-            submenuSpan = menuWidget.getCoveredAngle()
-                    / menuWidget.getChildWidgetCount();
-        } else {
-            submenuSpan = parentButton.getButtonSpan();
-
-            // parentButton's orientation radius appears to be its inner dimension
-            // Size the submenu button for nominally equivalent arc length as its parent
-            final float parentRadius = parentButton.getOrientationRadius();
-            menuWidget.setInnerRadius(parentRadius);
-
-            final float parentWidth = parentButton.getButtonWidth();
-            menuWidget.setButtonWidth(parentWidth);
-        }
+        _pushMenus();
 
         // cull before we figure our dimensioning
+        _clearUntilMenu(menuWidget);
+
+        IMapMenuButtonWidget paramsButton = getExistingButtonWithIcon(menuWidget, parentButton);
+        MapMenuButtonWidget backButton = new MapMenuButtonWidget();
+        if(paramsButton != null) {
+            IIcon currentIcon = paramsButton.getWidgetIcon();
+
+            Icon.Builder builder = new Icon.Builder();
+            builder.setImageUri(0, "asset://icons/radial_back.png");
+            builder.setAnchor(currentIcon.getAnchorX(),
+                    currentIcon.getAnchorY());
+            builder.setSize(currentIcon.getWidth(), currentIcon.getHeight());
+            backButton.setState(AbstractButtonWidget.STATE_SELECTED);
+            backButton.setWidgetIcon(builder.build());
+            backButton.setIsBackButton(true);
+            backButton.setLayoutWeight(paramsButton.getLayoutWeight());
+            backButton.setButtonSize(paramsButton.getButtonSpan(),
+                    parentButton.getButtonWidth());
+            backButton.setOrientation(paramsButton.getOrientationAngle(),
+                    parentButton.getOrientationRadius());
+        }
+        else {
+            backButton.setText("Back");
+        }
+        backButton.setWidgetBackground(parentButton.getWidgetBackground());
+        backButton.delayShow(DELAY_TIME);
+        menuWidget.addChildWidgetAt(0, backButton);
+
         final float totalWeight = cullAndWeighButtons(menuWidget, true);
 
+        final float parentOrient = parentButton.getOrientationAngle();
+        final float parentWidth = parentButton.getButtonWidth();
+        // parentButton's orientation radius appears to be its inner dimension
+        // Size the submenu button for nominally equivalent arc length as its parent
+        final float parentRadius = parentButton.getOrientationRadius();
+        float submenuSpan = parentButton.getButtonSpan();
         float coveredAngle = submenuSpan * menuWidget.getChildWidgetCount();
         if (360f < coveredAngle) {
             submenuSpan = 360f / menuWidget.getChildWidgetCount();
             coveredAngle = 360f;
         }
+        final float startingAngle = normalizeAngle(parentOrient);
+
         menuWidget.setCoveredAngle(coveredAngle);
-
-        final float parentOrient = parentButton.getOrientationAngle();
-        final float startingAngle = normalizeAngle(
-                menuWidget.isClockwiseWinding()
-                        ? parentOrient + (coveredAngle - submenuSpan) / 2f
-                        : parentOrient - (coveredAngle - submenuSpan) / 2f);
         menuWidget.setStartAngle(startingAngle);
-
+        menuWidget.setInnerRadius(parentRadius);
+        menuWidget.setButtonWidth(parentWidth);
+        for (IMapWidget w : menuWidget.getChildren()) {
+            if (w instanceof MapMenuButtonWidget) {
+                MapMenuButtonWidget btn = (MapMenuButtonWidget) w;
+                btn.setButtonSize(btn.getButtonSpan(), parentWidth);
+            }
+        }
         orientLayout(menuWidget, totalWeight);
+        layoutAsMenu(menuWidget);
     }
 
     private MapMenuButtonWidget getSubmenuButton(

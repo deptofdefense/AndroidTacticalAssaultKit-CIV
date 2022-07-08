@@ -1,4 +1,4 @@
-
+#ifdef MSVC
 #include "formats/gltf/GLTF.h"
 #include "model/Scene.h"
 #include "formats/gltf/GLTF.h"
@@ -344,3 +344,4 @@ namespace {
         return code;
     }
 }
+#endif

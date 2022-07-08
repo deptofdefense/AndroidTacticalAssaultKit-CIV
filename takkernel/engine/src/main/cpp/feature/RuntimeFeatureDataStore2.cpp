@@ -1,4 +1,4 @@
-
+#ifdef MSVC
 #include "feature/RuntimeFeatureDataStore2.h"
 
 #include "feature/Style.h"
@@ -1386,3 +1386,4 @@ namespace {
     }
 
 }
+#endif

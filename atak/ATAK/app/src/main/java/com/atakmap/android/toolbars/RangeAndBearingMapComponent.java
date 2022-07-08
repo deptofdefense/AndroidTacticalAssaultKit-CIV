@@ -41,8 +41,6 @@ public class RangeAndBearingMapComponent extends AbstractMapComponent {
 
     @Override
     public void onCreate(Context context, Intent intent, MapView view) {
-        //CotEventFactory.registerCotEventSpi(new RangeAndBearingCotEventSpi(view));
-
         SharedPreferences sp = PreferenceManager
                 .getDefaultSharedPreferences(view.getContext());
 

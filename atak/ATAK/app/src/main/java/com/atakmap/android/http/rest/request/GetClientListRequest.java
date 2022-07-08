@@ -4,6 +4,8 @@ package com.atakmap.android.http.rest.request;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.http.rest.NetworkOperationManager;
 import com.atakmap.android.http.rest.operation.GetClientListOperation;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -55,6 +57,7 @@ public class GetClientListRequest implements Parcelable {
         return mNotificationId;
     }
 
+    @NonNull
     @Override
     public String toString() {
         if (!isValid())

@@ -14,53 +14,70 @@ using namespace TAK::Engine::Port;
 
 using namespace TAK::Engine::Util;
 
-namespace
-{
-    char* dupString(const char* str);
-    char *dupString(const char *str, std::size_t len);
-}
-
 String::String() NOTHROWS :
-    data(nullptr)
+    String(nullptr, 0)
 { }
 
 String::String(const char* s) NOTHROWS :
-    data(dupString(s))
+    String(s, !!s ? strlen(s) : 0u)
 { }
 
-String::String(const char* s, std::size_t len) NOTHROWS :
-    data(dupString(s, len))
-{ }
+String::String(const char* s, std::size_t len) NOTHROWS
+{
+    if(!s) {
+        data.heapAlloc = true;
+        data.heap.reset();
+        data.stack[0] = '\0';
+    } else {
+        if(len < stackStorageSize-1u) {
+            data.heapAlloc = false;
+        } else {
+            data.heap.reset(new char[len + 1u]);
+            data.heapAlloc = true;
+        }
+        char* value = data.heapAlloc ? data.heap.get() : data.stack;
+        if (len)
+            memcpy(value, s, len);
+        value[len] = '\0';
+    }
+}
 
-String::String(const String& rhs) NOTHROWS :
-    data(dupString(rhs.data))
-{ }
+String::String(const String& rhs) NOTHROWS
+{
+    *this = rhs;
+}
 
 String::~String() NOTHROWS
-{
-    delete[] data;
-}
+{}
 
 
 String& String::operator= (const String& rhs) NOTHROWS
 {
-    if (data != rhs.data)
-    {
-        // Delete the old, copy the new.
-        delete[] data;
-        data = dupString(rhs.data);
-    }
-
+    *this = rhs.get();
     return *this;
 }
 
 String& String::operator= (const char* rhs) NOTHROWS
 {
-    if (data != rhs)
+    if (get() != rhs)
     {
-        // Delete the old, copy the new.
-        delete[] data;
-        data = dupString(rhs);
+        if(!rhs) {
+            data.heapAlloc = true;
+            data.heap.reset();
+            data.stack[0] = '\0';
+        } else {
+            const std::size_t len = strlen(rhs);
+            if(len < stackStorageSize-1u) {
+                data.heapAlloc = false;
+            } else {
+                data.heap.reset(new char[len + 1u]);
+                data.heapAlloc = true;
+            }
+            char* value = data.heapAlloc ? data.heap.get() : data.stack;
+            if (len)
+                memcpy(value, rhs, len);
+            value[len] = '\0';
+        }
     }
 
     return *this;
@@ -68,9 +85,7 @@ String& String::operator= (const char* rhs) NOTHROWS
 
 bool String::operator== (const String& rhs) const NOTHROWS
 {
-    return data
-        ? rhs.data && !std::strcmp(data, rhs.data)
-        : !rhs.data;
+    return (*this) == (const char *)rhs;
 }
 
 bool String::operator!= (const String& rhs) const NOTHROWS
@@ -80,9 +95,9 @@ bool String::operator!= (const String& rhs) const NOTHROWS
 
 bool String::operator== (const char *rhs) const NOTHROWS
 {
-    return data
-        ? rhs && !std::strcmp(data, rhs)
-        : !rhs;
+    return !!get()
+        ? rhs && !std::strcmp(get(), rhs) :
+        !rhs;
 }
 
 bool String::operator!= (const char *rhs) const NOTHROWS
@@ -92,27 +107,27 @@ bool String::operator!= (const char *rhs) const NOTHROWS
 
 String::operator const char* () const NOTHROWS
 {
-    return data;
+    return get();
 }
 
 char& String::operator[] (int index) NOTHROWS
 {
-    return data[index];
+    return get()[index];
 }
 
 char String::operator[] (int index) const NOTHROWS
 {
-    return data[index];
+    return get()[index];
 }
 
 char* String::get() NOTHROWS
 {
-    return data;
+    return data.heapAlloc ? data.heap.get() : data.stack;
 }
 
 const char *String::get() const NOTHROWS
 {
-    return data;
+    return data.heapAlloc ? data.heap.get() : data.stack;
 }
 
 TAKErr TAK::Engine::Port::String_parseDouble(double *value, const char *str) NOTHROWS
@@ -272,25 +287,4 @@ bool TAK::Engine::Port::String_trim(TAK::Engine::Port::String &value, const char
         return false;
     value = strm.str().c_str();
     return true;
-}
-
-namespace
-{
-    char *dupString(const char *str)
-    {
-        if (!str)
-            return nullptr;
-        std::size_t len = strlen(str);
-        return dupString(str, len);
-    }
-    char* dupString(const char* str, const std::size_t len)
-    {
-        if (!str)
-            return nullptr;
-
-        array_ptr<char> retval(new char[len + 1]);
-        memcpy(retval.get(), str, len);
-        retval[len] = '\0';
-        return retval.release();
-    }
 }

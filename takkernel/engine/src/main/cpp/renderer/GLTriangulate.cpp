@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "GLTriangulate.h"
 #include <vector>
 #include <stdlib.h>
@@ -917,3 +918,4 @@ namespace
         verticesPtr = std::move(newVerticesPtr);
     }
 }
+#endif

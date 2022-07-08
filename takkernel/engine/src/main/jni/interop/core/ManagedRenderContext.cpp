@@ -35,21 +35,19 @@ namespace
         jmethodID getRenderSurface;
     } RenderContext_class;
 
-    bool checkInit(JNIEnv &env) NOTHROWS;
     bool RenderContext_class_init(JNIEnv &env) NOTHROWS;
+    jobject RenderContext_getRenderSurface(JNIEnv &env, jobject mcontext) NOTHROWS;
 }
 
 ManagedRenderContext::ManagedRenderContext(JNIEnv &env_, jobject impl_) NOTHROWS :
-    impl(env_.NewGlobalRef(impl_)),
-    parent(NULL)
-{
-    checkInit(env_);
-}
+    ManagedRenderContext(env_, impl_, NULL)
+{}
 ManagedRenderContext::ManagedRenderContext(JNIEnv &env_, jobject impl_, jobject parent_) NOTHROWS :
-        impl(env_.NewGlobalRef(impl_)),
-        parent(env_.NewGlobalRef(parent_))
+    impl(env_.NewGlobalRef(impl_)),
+    parent(parent ? env_.NewGlobalRef(parent_) : NULL),
+    surface(env_, RenderContext_getRenderSurface(env_, impl_))
 {
-    checkInit(env_);
+    static bool clinit = RenderContext_class_init(env_);
 }
 ManagedRenderContext::~ManagedRenderContext() NOTHROWS
 {
@@ -146,17 +144,11 @@ bool ManagedRenderContext::isMainContext() const NOTHROWS
 }
 RenderSurface *ManagedRenderContext::getRenderSurface() const NOTHROWS
 {
-    // XXX - TODO
-    return NULL;
+    return surface.impl ? const_cast<ManagedRenderSurface *>(&surface) : NULL;
 }
 
 namespace
 {
-    bool checkInit(JNIEnv &env) NOTHROWS
-    {
-        static bool clinit = RenderContext_class_init(env);
-        return clinit;
-    }
     bool RenderContext_class_init(JNIEnv &env) NOTHROWS
     {
 #define SET_METHOD_DEFINITION(c, m, sig) \
@@ -180,5 +172,10 @@ namespace
         SET_METHOD_DEFINITION(RenderContext_class, getRenderSurface, "()Lgov/tak/api/engine/map/RenderSurface;");
 
         return true;
+    }
+    jobject RenderContext_getRenderSurface(JNIEnv &env, jobject mcontext) NOTHROWS
+    {
+        static bool clinit = RenderContext_class_init(env);
+        return env.CallObjectMethod(mcontext, RenderContext_class.getRenderSurface);
     }
 }

@@ -409,7 +409,7 @@ public class DeviceProfileOperation extends HTTPOperation {
             FileSystemUtils.deleteFile(downloaded);
 
             if (manifest != null && manifest.isValid()) {
-                Log.d(TAG, "Imported: " + manifest.toString());
+                Log.d(TAG, "Imported: " + manifest);
             }
         } else {
             Log.d(TAG, "Not importing/deleting Package: "

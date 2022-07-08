@@ -243,8 +243,8 @@ Style* Style::parseStyle (const char* styleOGR)
                       scaling,
                       hAlign,
                       vAlign,
-                      !tmpSymbol->relativeAngle ? -tmpSymbol->angle : -tmpSymbol->relativeAngle, 
-                      !tmpSymbol->relativeAngle)
+                      !relativeRotation ? -tmpSymbol->angle : -tmpSymbol->relativeAngle, 
+                      !relativeRotation)
                       : new IconPointStyle(tmpSymbol->color,
                       tmpSymbol->names,
                       width, height,

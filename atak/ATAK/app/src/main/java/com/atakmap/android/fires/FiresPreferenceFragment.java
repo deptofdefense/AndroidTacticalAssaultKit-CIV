@@ -7,6 +7,10 @@ import android.preference.ListPreference;
 import android.preference.Preference;
 
 import com.atakmap.android.gui.PanEditTextPreference;
+import com.atakmap.android.gui.PanListPreference;
+import com.atakmap.android.gui.PanEditTextPreference;
+import com.atakmap.android.gui.PanEditTextPreference;
+import com.atakmap.android.gui.PanListPreference;
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.app.R;
 import com.atakmap.app.system.ResourceUtil;
@@ -32,10 +36,10 @@ public class FiresPreferenceFragment extends AtakPreferenceFragment {
      */
     private static void setTitle(Preference p, int resource) {
         p.setTitle(resource);
-        if (p instanceof EditTextPreference)
-            ((EditTextPreference) p).setDialogTitle(resource);
-        else if (p instanceof ListPreference)
-            ((ListPreference) p).setDialogTitle(resource);
+        if (p instanceof PanEditTextPreference)
+            ((PanEditTextPreference) p).setDialogTitle(resource);
+        else if (p instanceof PanListPreference)
+            ((PanListPreference) p).setDialogTitle(resource);
 
     }
 
@@ -47,22 +51,27 @@ public class FiresPreferenceFragment extends AtakPreferenceFragment {
         setTitle(p, ResourceUtil.getResource(R.string.civ_fires_prefs,
                 R.string.fires_prefs));
 
-        p = findPreference("spiUpdateDelay");
+        PanEditTextPreference spiUpdateDelay = (PanEditTextPreference) findPreference(
+                "spiUpdateDelay");
         setTitle(p, ResourceUtil.getResource(R.string.civ_spi_update_delay,
                 R.string.spi_update_delay));
         p.setSummary(
                 ResourceUtil.getResource(R.string.civ_spi_update_delay_summary,
                         R.string.spi_update_delay_summary));
 
-        p = findPreference("firesNumberOfSpis");
+        PanListPreference firesNumberOfSpis = (PanListPreference) findPreference(
+                "firesNumberOfSpis");
 
-        setTitle(p, ResourceUtil.getResource(R.string.civ_fireSpiNumber,
-                R.string.fireSpiNumber));
-        p.setSummary(ResourceUtil.getResource(R.string.civ_fireSpiNumberSummary,
-                R.string.fireSpiNumberSummary));
+        setTitle(firesNumberOfSpis,
+                ResourceUtil.getResource(R.string.civ_fireSpiNumber,
+                        R.string.fireSpiNumber));
+        firesNumberOfSpis.setSummary(
+                ResourceUtil.getResource(R.string.civ_fireSpiNumberSummary,
+                        R.string.fireSpiNumberSummary));
 
-        p = findPreference("spiFahSize");
-        ((PanEditTextPreference) p).setValidIntegerRange(0, 180);
+        PanEditTextPreference spiFahSize = (PanEditTextPreference) findPreference(
+                "spiFahSize");
+        spiFahSize.setValidIntegerRange(0, 180);
 
         setTitle(p, ResourceUtil.getResource(R.string.civ_spi_redx_fah,
                 R.string.spi_redx_fah));

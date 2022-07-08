@@ -52,6 +52,8 @@ import com.atakmap.util.ConfigOptions;
 import com.atakmap.util.ReadWriteLock;
 
 import gov.tak.api.annotation.DontObfuscate;
+import gov.tak.api.commons.graphics.DisplaySettings;
+import gov.tak.api.engine.map.IMapRendererEnums;
 import gov.tak.api.engine.map.MapRendererFactory;
 import gov.tak.api.engine.map.RenderSurface;
 
@@ -146,7 +148,7 @@ public class AtakMapView extends ViewGroup {
      * a <code>DENSITY</code> value of 0.5f and 480DPI would have a
      * <code>DENSITY</code> value of 2.0f.
      *
-     * @deprecated Use {@link #getDisplayDpi()}<code>*240f</code>
+     * @deprecated Use {@link #getDisplayDpi()}<code>/240f</code>
      */
     @Deprecated
     @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
@@ -301,6 +303,7 @@ public class AtakMapView extends ViewGroup {
         windowManager.getDefaultDisplay().getMetrics(displayMetrics);
 
         final double displayDpi = Math.min(Math.sqrt(displayMetrics.xdpi*displayMetrics.ydpi), displayMetrics.densityDpi);
+        DisplaySettings.setDpi((float)displayDpi);
         this.fullEquitorialExtentPixels = Globe.getFullEquitorialExtentPixels(displayDpi);
 
         //flagged during scan - can reenable if needed for testing
@@ -402,10 +405,10 @@ public class AtakMapView extends ViewGroup {
         this.renderer = this.glSurface.getGLMapView();
         this.renderSurface = this.renderer.getRenderContext().getRenderSurface();
 
-
         this.addOnDisplayFlagsChangedListener(this.glSurface);
 
         this.renderer.addOnCameraChangedListener(callbackForwarder);
+        this.glSurface.addOnSizeChangedListener(callbackForwarder);
     }
 
     protected void registerServiceProviders() {
@@ -970,7 +973,7 @@ public class AtakMapView extends ViewGroup {
                 throw new IllegalStateException();
             // Default focus point depends on default AB height, so update now
             float offy = (getDefaultActionBarHeight() / 2f);
-            if(renderer.getDisplayOrigin() == MapRenderer2.DisplayOrigin.Lowerleft)
+            if(renderer.getDisplayOrigin() == MapRenderer2.DisplayOrigin.LowerLeft)
                 offy *= -1f;
             renderer.setFocusPointOffset(0, offy);
             tMapSceneModel = renderer.getMapSceneModel(false, MapRenderer2.DisplayOrigin.UpperLeft);
@@ -1411,13 +1414,14 @@ public class AtakMapView extends ViewGroup {
     /**************************************************************************/
 
     private static class CallbackForwarder implements
+            RenderSurface.OnSizeChangedListener,
             Globe.OnMapMovedListener,
             Globe.OnLayersChangedListener,
             Globe.OnMapProjectionChangedListener,
             Globe.OnMapViewResizedListener,
             Globe.OnElevationExaggerationFactorChangedListener,
             Globe.OnContinuousScrollEnabledChangedListener,
-            MapRenderer2.OnCameraChangedListener {
+            MapRenderer2.OnCameraChangedListener2 {
 
         final WeakReference<AtakMapView> ownerRef;
         final ConcurrentLinkedQueue<OnMapMovedListener> _onMapMoved = new ConcurrentLinkedQueue<>();
@@ -1440,7 +1444,7 @@ public class AtakMapView extends ViewGroup {
         public void onMapMoved(boolean animate, boolean refreshSceneModel) {
             final AtakMapView view = this.ownerRef.get();
             if(refreshSceneModel)
-                view.tMapSceneModel = view.renderer.getMapSceneModel(false, MapRenderer2.DisplayOrigin.UpperLeft);
+            view.tMapSceneModel = view.renderer.getMapSceneModel(false, MapRenderer2.DisplayOrigin.UpperLeft);
             for(OnMapMovedListener l : _onMapMoved)
                 l.onMapMoved(view, animate);
         }
@@ -1512,7 +1516,29 @@ public class AtakMapView extends ViewGroup {
             // forwards `onCameraChanged` events to `onMapMoved`
             final boolean animating = renderer.isAnimating();
             if(!animating)
-                onMapMoved(renderer.isAnimating(), false);
+                onMapMoved(renderer.isAnimating(), true);
+        }
+
+        @Override
+        public void onCameraChangeRequested(MapRenderer2 renderer) {
+            // forwards `onCameraChangeRequested` events to `onMapMoved`
+            onMapMoved(renderer.isAnimating(), true);
+        }
+
+        @Override
+        public void onSizeChanged(RenderSurface surface, int width, int height) {
+            final AtakMapView view = this.ownerRef.get();
+            view.tMapSceneModel = view.renderer.getMapSceneModel(false, MapRenderer2.DisplayOrigin.UpperLeft);
+            for (OnMapViewResizedListener l : _onMapViewResized) {
+                l.onMapViewResized(view);
+            }
+
+            // dispatch focus changed
+            float focusOffsetX = view.renderer.getFocusPointOffsetX();
+            float focusOffsetY = view.renderer.getFocusPointOffsetY();
+            if(view.renderer.getDisplayOrigin() == IMapRendererEnums.DisplayOrigin.LowerLeft)
+                focusOffsetY *= -1;
+            view.getMapController().dispatchFocusChanged(width/2+focusOffsetX, height/2+focusOffsetY);
         }
     }
 

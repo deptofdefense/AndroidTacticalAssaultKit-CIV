@@ -2,54 +2,46 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
          <PreferenceCategory
              android:title="@string/preferences">
-             <CheckBoxPreference
-                 android:title="@string/legacy_settings"
-                 android:summary="@string/preferences_text2031"
-                 android:defaultValue="false"
-                 android:key="legacy_settings"
-                 android:icon="@drawable/home_settings"/>
-             <Preference
+            <Preference
                  android:title="@string/devicePreferences"
                  android:key="deviceSettings"
                  android:summary="@string/preferences_text198"
-                 android:icon="@drawable/my_prefs_settings"/>
-             <Preference
+                 android:icon="@drawable/my_prefs_settings" />
+            <Preference
                  android:title="@string/displayPreferences"
                  android:key="generalDisplayPref"
                  android:summary="@string/preferences_text199"
                  android:icon="@drawable/ic_display_settings" />
-             <Preference
+            <Preference
                  android:title="@string/networkPreferences"
                  android:key="settingsPref"
                  android:summary="@string/preferences_text200"
                  android:icon="@drawable/ic_menu_network" />
-             <Preference
+            <Preference
                  android:title="@string/bluetoothPreferences"
                  android:key="bluetoothPref"
                  android:icon="@drawable/bluetooth" />
-             <Preference
+            <Preference
                  android:title="@string/toolPreferences"
-                 android:key="toolsPref"
-                 android:summary="@string/preferences_text201"
-                 android:icon="@drawable/ic_menu_tools"/>
-             <Preference
+                 android:key="toolsPref" />
+            <Preference
                  android:title="@string/controlPreferences"
                  android:key="atakControlOptions"
                  android:summary="@string/preferences_text202"
-                 android:icon="@drawable/ic_menu_settings"/>
-             <Preference
+                 android:icon="@drawable/ic_menu_settings" />
+            <Preference
                  android:title="@string/accounts"
                  android:key="atakAccounts"
                  android:summary="@string/accounts_desc"
-                 android:icon="@drawable/passphrase"/>
+                 android:icon="@drawable/passphrase" />
           </PreferenceCategory>
          <PreferenceCategory android:title="@string/help">
-              <Preference android:title="@string/support"
+             <Preference android:title="@string/support"
                  android:key="documentation"
-                 android:summary="@string/preferences_text203"
-                 android:icon="@drawable/ic_menu_help"/>
-              <Preference android:title="@string/about"
+                  android:summary="@string/preferences_text203"
+                  android:icon="@drawable/ic_menu_help" />
+             <Preference android:title="@string/about"
                  android:key="about"
-                 android:icon="@drawable/ic_atak_launcher"/>
+                  android:icon="@drawable/ic_atak_launcher" />
          </PreferenceCategory>
 </PreferenceScreen>

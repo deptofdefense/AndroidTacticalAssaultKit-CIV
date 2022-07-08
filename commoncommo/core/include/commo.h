@@ -132,7 +132,10 @@ public:
     // successfully. NOTE: on failure, local web server is DISABLED.
     // NOTE: Changing the port or disabling may cause in-progress sends
     // of MPs to be aborted!
-    CommoResult setMissionPackageLocalPort(int localWebPort);
+    // Deprecated - local http server and this method will be removed 
+    //              in an upcoming version - use 
+    //              setMissionPackageLocalHttpsParams()
+    COMMO_DEPRECATED CommoResult setMissionPackageLocalPort(int localWebPort);
     
     // Enables or disables mission package sends via
     // TAK servers. By default, mission package sends via TAK server

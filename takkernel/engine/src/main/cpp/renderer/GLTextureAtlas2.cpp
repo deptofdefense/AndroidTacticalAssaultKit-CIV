@@ -368,11 +368,12 @@ TAKErr GLTextureAtlas2::addImage(int64_t *value, const char *uri, const Bitmap2 
     }
 
     if (currentTexId == 0) {
-        GLuint id;
+        GLuint id{0};
 
         glGenTextures(1, &id);
         if (id == 0) {
-            atakmap::util::Logger::log(atakmap::util::Logger::Error, "GLTextureAtlas2: failed to generate new texture id: %s", uri);
+            GLenum err = glGetError();
+            atakmap::util::Logger::log(atakmap::util::Logger::Error, "GLTextureAtlas2: failed to generate new texture id: %s, err: %u", uri, err);
             return TE_Err;
         }
         currentTexId = id;

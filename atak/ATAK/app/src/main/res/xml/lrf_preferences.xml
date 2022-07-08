@@ -4,10 +4,10 @@
     <PreferenceCategory
         android:title="@string/lrf_preferences"
         android:key="lrfCategory">
-        <CheckBoxPreference
+        <com.atakmap.android.gui.PanCheckBoxPreference
             android:title="@string/additional_lrf_title"
             android:key="nonBluetoothLaserRangeFinder"
             android:defaultValue="true"
-            android:summary="@string/additional_lrf_summary"/>
+            android:summary="@string/additional_lrf_summary" />
     </PreferenceCategory>
 </PreferenceScreen>

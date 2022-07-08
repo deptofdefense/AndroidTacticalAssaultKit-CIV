@@ -32,7 +32,7 @@ public class GRGDeepMapItemQuery extends FeatureDataStoreDeepMapItemQuery
     private final RasterLayer2 grgLayer;
     private final RasterDataStore grgDataStore;
 
-    @ModifierApi(since = "4.5", target="4.8", modifiers={})
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {})
     public GRGDeepMapItemQuery(FeatureLayer3 layer,
             AbstractDataStoreRasterLayer2 grgDataStore) {
         super(layer);

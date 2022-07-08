@@ -48,7 +48,11 @@ public class LoggingPreferenceFragment extends AtakPreferenceFragment {
 
         final Context context = getActivity();
 
-        Preference atakExportCrashLogs = findPreference("atakExportCrashLogs");
+        Preference collect_crashlogs = (Preference) findPreference(
+                "collect_crashlogs");
+
+        Preference atakExportCrashLogs = (Preference) findPreference(
+                "atakExportCrashLogs");
         atakExportCrashLogs
                 .setOnPreferenceClickListener(
                         new Preference.OnPreferenceClickListener() {
@@ -95,7 +99,7 @@ public class LoggingPreferenceFragment extends AtakPreferenceFragment {
                             }
                         });
 
-        Preference enableAutoUploadLogs = findPreference(
+        Preference enableAutoUploadLogs = (Preference) findPreference(
                 "enableAutoUploadLogs");
         enableAutoUploadLogs
                 .setOnPreferenceClickListener(
@@ -123,8 +127,7 @@ public class LoggingPreferenceFragment extends AtakPreferenceFragment {
                                 return true;
                             }
                         });
-
-        Preference advanced_logging = findPreference(
+        Preference advanced_logging = (Preference) findPreference(
                 "advanced_logging");
         advanced_logging
                 .setOnPreferenceClickListener(

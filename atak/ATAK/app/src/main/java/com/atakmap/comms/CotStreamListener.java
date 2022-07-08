@@ -302,7 +302,7 @@ public class CotStreamListener implements
         for (CotPortListActivity.CotPort i : _streams) {
             if (FileSystemUtils.isEquals(i.getConnectString(),
                     serverConnectString) && i.isConnected()) {
-                Log.d(TAG, _name + ":" + i.toString() + " is connected");
+                Log.d(TAG, _name + ":" + i + " is connected");
                 return true;
             }
         }
@@ -317,7 +317,7 @@ public class CotStreamListener implements
     public synchronized boolean isEnabled() {
         for (CotPortListActivity.CotPort i : _streams) {
             if (i.isEnabled()) {
-                Log.d(TAG, _name + ":" + i.toString() + " is enabled");
+                Log.d(TAG, _name + ":" + i + " is enabled");
                 return true;
             }
         }
@@ -352,7 +352,7 @@ public class CotStreamListener implements
 
         for (CotPortListActivity.CotPort i : _streams) {
             if (i.isConnected()) {
-                Log.d(TAG, _name + ":" + i.toString() + " - is connected");
+                Log.d(TAG, _name + ":" + i + " - is connected");
                 return i;
             }
         }

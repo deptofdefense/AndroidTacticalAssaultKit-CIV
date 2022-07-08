@@ -9,7 +9,7 @@
 buildscript {
 
     ext.PLUGIN_VERSION = "1.0"
-    ext.ATAK_VERSION = "4.5.1"
+    ext.ATAK_VERSION = "4.6.0"
 
     def takdevVersion = '2.+'
 
@@ -86,6 +86,13 @@ apply plugin: 'atak-takdev-plugin'
 
 dependencies {
 
+
+    // this is an example of global excludes since androidx.core is supplied by core atak.
+    //configurations.implementation {
+    //    exclude group: 'androidx.core', module: 'core-ktx'
+    //    exclude group: 'androidx.core', module: 'core'
+    //}
+
     implementation fileTree(dir: 'libs', include: '*.jar')
 
     // Recyclerview version depends on some androidx libraries which
@@ -93,6 +100,7 @@ dependencies {
     // bad things happen in the release builds after proguarding
     implementation ('androidx.recyclerview:recyclerview:1.1.0') {
         exclude module: 'collection'
+        // this is an example of a local exclude since androidx.core is supplied by core atak
         exclude module: 'core'
         exclude module: 'lifecycle'
         exclude module: 'core-common'
@@ -279,3 +287,14 @@ android {
         }
     }
 }
+
+// just in case any other dependencies make use of androidx.core, just make sure that the resolution strategy is set to the
+// currently supplied version.   This is not needed if the excludes are properly set up, but can be used.   
+//configurations.all {
+//    resolutionStrategy.eachDependency { details ->
+//        if (details.requested.group == 'androidx.core') {
+//            details.useVersion "1.2.0"
+//        }
+//    }
+//}
+

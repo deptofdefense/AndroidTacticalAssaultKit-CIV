@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "renderer/raster/tilereader/GLQuadTileNode2.h"
 
 #include <cstdint>
@@ -273,8 +274,22 @@ struct GLQuadTileNode2::IOCallbackOpaque
     }
 };
 
+TAKErr GLQuadTileNode2::create(TAK::Engine::Renderer::Core::GLMapRenderable2Ptr &value,
+                               TAK::Engine::Core::RenderContext& ctx,
+                               const ImageInfo& info,
+                               const ::TileReader::TileReaderFactory2Options& readerOpts,
+                               const Options& opts,
+                               const Initializer& init) NOTHROWS
+{
+    GLQuadTileNode2Ptr impl(nullptr, nullptr);
+    const TAKErr code = GLQuadTileNode2::create(impl, &ctx, &info, readerOpts, opts, init);
+    if (code == TE_Ok)
+        value = Core::GLMapRenderable2Ptr(impl.release(), Memory_deleter_const<Core::GLMapRenderable2, GLQuadTileNode2>);
+    return code;
+}
+
 TAKErr GLQuadTileNode2::create(GLQuadTileNode2Ptr &value, TAK::Engine::Core::RenderContext *context, const ImageInfo *info,
-                               ::TileReader::TileReaderFactory2Options &readerOpts, const Options &opts, const Initializer &init)
+                               const ::TileReader::TileReaderFactory2Options &readerOpts, const Options &opts, const Initializer &init)
 {
     TAKErr code(TE_Ok);
     GLQuadTileNode2Ptr root(new GLQuadTileNode2(), Memory_deleter_const<GLQuadTileNode2>);
@@ -374,7 +389,7 @@ GLQuadTileNode2::~GLQuadTileNode2()
     }
 }
 
-TAKErr GLQuadTileNode2::init(GLQuadTileNode2 *parent, int idx, NodeCore *core)
+TAKErr GLQuadTileNode2::init(GLQuadTileNode2 *parent, int idx, NodeCore *core) NOTHROWS
 {
     TAKErr code(TE_Ok);
     // *required* that this block happens before any possible error return
@@ -2372,7 +2387,7 @@ GLQuadTileNode2::NodeCore::~NodeCore() NOTHROWS
 }
 
 TAKErr GLQuadTileNode2::NodeCore::create(NodeCore **value, TAK::Engine::Core::RenderContext *context, const ImageInfo *info,
-                                         TileReaderFactory2Options &readerOpts, const Options &opts,
+                                         const TileReaderFactory2Options &readerOpts, const Options &opts,
                                          bool failOnReaderFailedInit, const Initializer &init)
 {
     TAKErr code(TE_Ok);
@@ -2383,7 +2398,7 @@ TAKErr GLQuadTileNode2::NodeCore::create(NodeCore **value, TAK::Engine::Core::Re
     DatasetProjection2Ptr imprecise(nullptr, nullptr);
     DatasetProjection2Ptr precise(nullptr, nullptr);
 
-    code = init.init(reader, imprecise, precise, info, readerOpts);
+    code = init.init(reader, imprecise, precise, info, TileReaderFactory2Options(readerOpts));
     if (code != TE_Ok && failOnReaderFailedInit)
         return code;
 
@@ -3009,3 +3024,4 @@ GLQuadTileNode2::PreciseVertexResolver::RenderRunnableOpaque::RenderRunnableOpaq
                                                                                    GLQuadTileNode2 *node, int targetGridWidth)
     : owner(owner), eventType(END_DRAW), node(node), targetGridWidth(targetGridWidth)
 {}
+#endif

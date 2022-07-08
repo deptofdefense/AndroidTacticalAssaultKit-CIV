@@ -254,7 +254,8 @@ public class LoadoutManager implements OnSharedPreferenceChangeListener {
     }
 
     @Override
-    public void onSharedPreferenceChanged(final SharedPreferences prefs, final String key) {
+    public void onSharedPreferenceChanged(final SharedPreferences prefs,
+            final String key) {
 
         if (key == null)
             return;
@@ -295,7 +296,7 @@ public class LoadoutManager implements OnSharedPreferenceChangeListener {
             }
         }
     }
-    
+
     /**
      * Persist or remove a loadout to/from preferences
      * @param loadout Loadout

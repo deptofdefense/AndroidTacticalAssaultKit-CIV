@@ -223,6 +223,11 @@ public class FOVFilter extends HierarchyListFilter {
         return new Vector2D(x, p.getLatitude(), alt);
     }
 
+    /**
+     * Turn a geopoint into a UTM-based vector2d.
+     * @param p the geopoint to use
+     * @return the vector2D representation.
+     */
     public static Vector2D geo2Vector(GeoPoint p) {
         return geo2Vector(p, 0);
     }

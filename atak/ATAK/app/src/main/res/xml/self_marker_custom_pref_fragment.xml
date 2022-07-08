@@ -1,40 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <PreferenceCategory android:title="@string/size">
-        <ListPreference
-            android:summary="@string/preferences_text328"
+        <com.atakmap.android.gui.PanListPreference
             android:title="@string/preferences_text329"
-            android:key="@string/location_marker_scale"
-            android:icon="@drawable/self_color_sizing"
+            android:key="location_marker_scale_key"
             android:defaultValue="-1"
             android:entryValues="@array/location_marker_entry_values"
             android:entries="@array/location_marker_enteries"/>
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/color">
-       <CheckBoxPreference android:title="@string/default_string"
+       <com.atakmap.android.gui.PanCheckBoxPreference android:title="@string/default_string"
            android:key="default_gps_icon"
-           android:checked="false"
-           android:icon="@drawable/self_color_default"
-           android:summary="@string/preferences_text330">
-       </CheckBoxPreference>
+           android:checked="false" />
 
-        <CheckBoxPreference
+        <com.atakmap.android.gui.PanCheckBoxPreference
             android:title="@string/preferences_text331"
             android:key="team_color_gps_icon"
-            android:checked="false"
-            android:summary="@string/preferences_text332">
-        </CheckBoxPreference>
+            android:checked="false" />
 
-        <CheckBoxPreference android:title="@string/custom"
-                            android:key="custom_color_gps_icon_pref"
-                            android:checked="false"
-                            android:summary="@string/preferences_text333">
-        </CheckBoxPreference>
+        <com.atakmap.android.gui.PanCheckBoxPreference android:title="@string/custom"
+            android:key="custom_color_gps_icon_pref"
+            android:checked="false" />
 
-        <Preference android:title="@string/preferences_text334"
-                    android:summary="@string/preferences_text335"
-                    android:key="change_custom_gps_color">
-        </Preference>
+       <Preference android:title="@string/preferences_text334"
+           android:key="change_custom_gps_color" />
+       <Preference android:title="@string/preferences_text470"
+           android:key="change_custom_gps_outline_color"/>
     </PreferenceCategory>
 </PreferenceScreen>

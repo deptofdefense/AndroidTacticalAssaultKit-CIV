@@ -12,6 +12,7 @@ import com.atakmap.android.importfiles.ui.ImportManagerFileBrowser;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.annotations.DeprecatedApi;
 
 // to properly inflate the view no matter what is displaying it 
 import com.atakmap.android.maps.MapView;
@@ -31,8 +32,23 @@ public class ImportFileBrowserDialog {
     private boolean _useProvider;
     private DialogDismissed _dismissListener;
 
+    /**
+     * Construct an import file browser dialog.
+     * @param mapView the mapView used to derive the context
+     * @deprecated see {@link #ImportFileBrowserDialog(Context)}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.6.0", forRemoval = true, removeAt = "4.9")
     public ImportFileBrowserDialog(MapView mapView) {
         _context = mapView.getContext();
+    }
+
+    /**
+     * Construct and ImportFileBrowserDialog with the context.
+     * @param context the context to use for the import file browser.
+     */
+    public ImportFileBrowserDialog(Context context) {
+        _context = context;
     }
 
     /**

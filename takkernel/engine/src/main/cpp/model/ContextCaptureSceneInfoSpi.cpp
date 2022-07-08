@@ -1,4 +1,4 @@
-
+#ifdef MSVC
 #include <vector>
 #include "model/ContextCaptureSceneInfoSpi.h"
 #include "util/IO2.h"
@@ -110,3 +110,4 @@ namespace {
 		return code;
 	}
 }
+#endif

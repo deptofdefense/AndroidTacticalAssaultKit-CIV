@@ -161,8 +161,7 @@ public class CotServiceRemote {
 
             final CommsMapComponent cmc = CommsMapComponent.getInstance();
             if (cmc != null)
-                 cl.onCotServiceConnected(cmc.getAllPortsBundle());
-
+                cl.onCotServiceConnected(cmc.getAllPortsBundle());
 
             // Deferred registration of the inputs/outputs listeners until after
             // a connection has occurred.

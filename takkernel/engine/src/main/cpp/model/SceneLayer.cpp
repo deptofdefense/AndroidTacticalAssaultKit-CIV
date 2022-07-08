@@ -606,10 +606,12 @@ TAKErr SceneLayer::update(const int64_t sid, const SceneInfo &info, const atakma
     code = store.updateFeature(FID(sid), info.name, *geom, nullptr, attrs);
     TE_CHECKRETURN_CODE(code);
 
-    dispatchContentChangedNoSync();
-
     code = writeZipCommentInfo(info, metadata);
-    TE_CHECKRETURN_CODE(code);
+    // Do not do TE_CHECKRETURN_CODE here. We need to write the zip comment
+    // before the dispatchContentChanged call but an error writing the zip
+    // comment should not prevent the call.
+
+    dispatchContentChangedNoSync();
 
     return code;
 }

@@ -42,12 +42,6 @@ constexpr const char* ECEF_LO_VSH_BASE =
 
 static std::string ECEF_LO_VSH = std::string(ECEF_LO_VSH_BASE) + std::string(LLA2ECEF_FN_SRC);
 
-constexpr const char* ECEF_MD_VSH_BASE =
-#include "shaders/HeatMapECEFMd.vert"
-;
-
-static const  std::string ECEF_MD_VSH = std::string(ECEF_MD_VSH_BASE) + std::string(LLA2ECEF_FN_SRC);
-
 constexpr const char* PLANAR_SHADER_VSH =
 #include "shaders/HeatMapPlanar.vert"
 ;
@@ -121,6 +115,7 @@ namespace
         s.base.base.aVertexCoords = glGetAttribLocation(s.base.base.handle, "aVertexCoords");
         s.base.base.aNormals = glGetAttribLocation(s.base.base.handle, "aNormals");
         s.base.aNoDataFlag = glGetAttribLocation(s.base.base.handle, "aNoDataFlag");
+        s.base.aEcefVertCoords = glGetAttribLocation(s.base.base.handle, "aEcefVertCoords");
         s.uMinEl = glGetUniformLocation(s.base.base.handle, "uMinEl");
         s.uMaxEl = glGetUniformLocation(s.base.base.handle, "uMaxEl");
         s.uSaturation = glGetUniformLocation(s.base.base.handle, "uSaturation");
@@ -139,10 +134,7 @@ namespace
         code = createShader(s.ecef.lo, ECEF_LO_VSH.c_str(), SHADER_FSH);
         TE_CHECKRETURN_CODE(code);
         s.ecef.base.lo = s.ecef.lo.base;
-        createShader(s.ecef.md, ECEF_MD_VSH.c_str(), SHADER_FSH);
-        TE_CHECKRETURN_CODE(code);
-        s.ecef.base.md = s.ecef.md.base;
-        createShader(s.ecef.hi, PLANAR_SHADER_VSH, SHADER_FSH);
+        createShader(s.ecef.hi, ECEF_LO_VSH.c_str(), SHADER_FSH);
         TE_CHECKRETURN_CODE(code);
         s.ecef.base.hi = s.ecef.hi.base;
 
@@ -153,9 +145,6 @@ namespace
         code = createShader(s.flat.lo, PLANAR_SHADER_VSH, SHADER_FSH);
         TE_CHECKRETURN_CODE(code);
         s.flat.base.lo = s.flat.lo.base;
-        createShader(s.flat.md, PLANAR_SHADER_VSH, SHADER_FSH);
-        TE_CHECKRETURN_CODE(code);
-        s.flat.base.md = s.flat.md.base;
         createShader(s.flat.hi, PLANAR_SHADER_VSH, SHADER_FSH);
         TE_CHECKRETURN_CODE(code);
         s.flat.base.hi = s.flat.hi.base;
@@ -280,7 +269,6 @@ Layer2 &GLElevationHeatMapLayer::getSubject() NOTHROWS
 }
 void GLElevationHeatMapLayer::draw(const GLGlobeBase& view, const int renderPass) NOTHROWS
 {
-
     if (!(renderPass & getRenderPass()))
         return;
     // not visible, return
@@ -356,15 +344,11 @@ void GLElevationHeatMapLayer::draw(const GLGlobeBase& view, const int renderPass
     if (view.renderPass->drawSrid == 4978) {
         if (ctx.shader.base.handle == shaders.ecef.hi.base.base.handle)
             s = shaders.ecef.hi;
-        else if (ctx.shader.base.handle == shaders.ecef.md.base.base.handle)
-            s = shaders.ecef.md;
         else // ctx.shader.base.handle == shaders.ecef.lo.base.base.handle
             s = shaders.ecef.lo;
     } else { // flat
         if (ctx.shader.base.handle == shaders.flat.hi.base.base.handle)
             s = shaders.flat.hi;
-        else if (ctx.shader.base.handle == shaders.flat.md.base.base.handle)
-            s = shaders.flat.md;
         else // ctx.shader.base.handle == shaders.flat.lo.base.base.handle
             s = shaders.flat.lo;
     }

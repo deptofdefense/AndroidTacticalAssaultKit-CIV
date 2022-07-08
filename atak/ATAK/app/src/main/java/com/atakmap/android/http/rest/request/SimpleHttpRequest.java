@@ -7,6 +7,8 @@ import org.json.JSONObject;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 
 /**
@@ -106,6 +108,7 @@ public class SimpleHttpRequest implements Parcelable {
         return mTag;
     }
 
+    @NonNull
     @Override
     public String toString() {
         if (!isValid())
@@ -174,7 +177,7 @@ public class SimpleHttpRequest implements Parcelable {
             throws JSONException {
         String tag = null;
         if (json.has("Tag"))
-            json.getString("Tag");
+            tag = json.getString("Tag");
 
         return new SimpleHttpRequest(
                 json.getString("BaseUrl"),

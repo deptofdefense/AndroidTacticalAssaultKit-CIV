@@ -763,7 +763,7 @@ public class CotMapComponent extends AbstractMapComponent implements
 
             if (SystemClock.elapsedRealtime()
                     - self.getMetaLong("gpsUpdateTick",
-                    0) > LocationMapComponent.GPS_TIMEOUT_MILLIS) {
+                            0) > LocationMapComponent.GPS_TIMEOUT_MILLIS) {
                 cotEvent.setHow(mapData.getString("how", "h-e"));
             } else {
                 cotEvent.setHow(mapData.getString("how", "m-g"));
@@ -1239,7 +1239,7 @@ public class CotMapComponent extends AbstractMapComponent implements
      * once since ATAK startup. Does not reach out to server, rather checks cached contacts
      *
      * @param connectString Pass null to get contacts for all servers
-     * @return
+     * @return the list of server contacts for a given server.
      */
     public List<ServerContact> getServerContacts(String connectString) {
         if (_serverListener == null)
@@ -1247,30 +1247,47 @@ public class CotMapComponent extends AbstractMapComponent implements
         return _serverListener.getServerContacts(connectString);
     }
 
+    /**
+     * Given a connection string and a uid return the server contact for a server
+     * @param connectString the connection string for a specific server or null for all the servers
+     * @param uid the uid for the contact
+     * @return the server contact or null if none can be found.
+     */
     public ServerContact getServerContact(String connectString, String uid) {
         if (_serverListener == null)
             return null;
         return _serverListener.getContact(connectString, uid);
     }
 
-    @Deprecated
-    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
-    public String getServerCallsign(String uid) {
-        return getServerCallsign(null, uid);
-    }
-
+    /**
+     * Given a connection string and a uid return the callsign for the user on the server
+     * @param connectString the connection string for a specific server or null for all the servers
+     * @param uid the uid for the contact
+     * @return the callsign for the user on the specific server or null if not found
+     */
     public String getServerCallsign(String connectString, String uid) {
         if (_serverListener == null)
             return null;
         return _serverListener.getCallsign(connectString, uid);
     }
 
+    /**
+     * Given a server hostname, retrieve the server version number
+     * @param hostname the hostname
+     * @return the server version
+     */
     public ServerVersion getServerVersion(String hostname) {
         if (_serverListener == null)
             return null;
         return _serverListener.getServerVersion(hostname);
     }
 
+    /**
+     * Given a server version, modify the currently known server information or add a new server
+     * version record if none exists
+     * @param ver the server version representing a server
+     * @return returns the server version or null if the server version is null or not valid
+     */
     public ServerVersion setServerVersion(ServerVersion ver) {
         if (_serverListener == null)
             return null;
@@ -1298,6 +1315,10 @@ public class CotMapComponent extends AbstractMapComponent implements
         return _serverListener.getServers();
     }
 
+    /**
+     * Returns true if one or more servers is configured
+     * @return true if there is one or more connected.
+     */
     public static boolean hasServer() {
         CotMapComponent inst = CotMapComponent.getInstance();
         if (inst != null) {
@@ -1309,8 +1330,10 @@ public class CotMapComponent extends AbstractMapComponent implements
     }
 
     /**
-     * Request the specified tool be downloaded from TAK Server
+     * Request the specified tool profile be downloaded from TAK Server
      * Note, could extend this to provide a DeviceProfileCallback, this currently uses a default impl
+     * @param tool the tool profile name
+     * @return true if the request is added
      */
     public boolean addToolProfileRequest(String tool) {
         if (_serverListener == null)
@@ -1318,6 +1341,11 @@ public class CotMapComponent extends AbstractMapComponent implements
         return _serverListener.addToolProfileRequest(tool);
     }
 
+    /**
+     * Remove the request that a specific tool profile be downloaded from the TAK Sever
+     * @param tool the tool profile name
+     * @return true if the request is removed.
+     */
     public boolean removeToolProfileRequest(String tool) {
         if (_serverListener == null)
             return false;

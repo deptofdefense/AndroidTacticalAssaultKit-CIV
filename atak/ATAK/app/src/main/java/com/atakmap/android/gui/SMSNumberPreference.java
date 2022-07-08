@@ -10,6 +10,7 @@ import android.preference.DialogPreference;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -41,6 +42,14 @@ public class SMSNumberPreference extends DialogPreference {
 
     public SMSNumberPreference(Context context, AttributeSet attrs) {
         super((appContext == null) ? context : appContext, attrs);
+    }
+
+    @Override
+    protected View onCreateView(ViewGroup parent) {
+        View v = super.onCreateView(parent);
+        if (!isEnabled())
+            v.setEnabled(false);
+        return v;
     }
 
     @Override

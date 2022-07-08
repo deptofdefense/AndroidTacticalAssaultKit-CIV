@@ -11,6 +11,8 @@ import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.View;
 
+import com.atakmap.annotations.ModifierApi;
+
 public class BPHAGridView extends View {
 
     private int _Rows = 2;
@@ -95,20 +97,24 @@ public class BPHAGridView extends View {
         path.lineTo(startLeft, startTop - _paintStroke.getStrokeWidth() / 2);
     }
 
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {})
     public int get_Rows() {
         return _Rows;
     }
 
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {})
     public void set_Rows(int _Rows) {
         this._Rows = _Rows;
         requestLayout();
         invalidate();
     }
 
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {})
     public int get_Columns() {
         return _Columns;
     }
 
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {})
     public void set_Columns(int _Columns) {
         this._Columns = _Columns;
         requestLayout();

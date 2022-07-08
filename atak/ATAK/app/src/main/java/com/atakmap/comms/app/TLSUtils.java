@@ -57,15 +57,13 @@ public class TLSUtils {
             return getDefaultTruststore(false);
         }
 
-        byte[] data = AtakCertificateDatabase.getAdapter()
-                .getCertificateForTypeAndServer(
-                        AtakCertificateDatabaseIFace.TYPE_TRUST_STORE_CA,
-                        server);
+        byte[] data = AtakCertificateDatabase.getCertificateForServer(
+                AtakCertificateDatabaseIFace.TYPE_TRUST_STORE_CA,
+                server);
 
         if (data != null && data.length > 0) {
             AtakAuthenticationCredentials caCertCredentials = AtakAuthenticationDatabase
-                    .getAdapter()
-                    .getCredentialsForType(
+                    .getCredentials(
                             AtakAuthenticationCredentials.TYPE_caPassword,
                             server);
 
@@ -96,12 +94,10 @@ public class TLSUtils {
     public static TrustStore getTruststoreForType(String truststoreType,
             String credentialType) {
         byte[] trsuststore = AtakCertificateDatabase
-                .getAdapter()
-                .getCertificateForType(truststoreType);
+                .getCertificate(truststoreType);
 
         AtakAuthenticationCredentials credentials = AtakAuthenticationDatabase
-                .getAdapter()
-                .getCredentialsForType(credentialType);
+                .getCredentials(credentialType);
 
         if (trsuststore != null && credentials != null
                 && !FileSystemUtils.isEmpty(credentials.password)) {
@@ -122,13 +118,11 @@ public class TLSUtils {
         //look for default truststore
         AtakAuthenticationCredentials caCertCredentials = null;
         byte[] data = AtakCertificateDatabase
-                .getAdapter()
-                .getCertificateForType(
+                .getCertificate(
                         AtakCertificateDatabaseIFace.TYPE_TRUST_STORE_CA);
         if (data != null && data.length > 0) {
             caCertCredentials = AtakAuthenticationDatabase
-                    .getAdapter()
-                    .getCredentialsForType(
+                    .getCredentials(
                             AtakAuthenticationCredentials.TYPE_caPassword);
 
             if (caCertCredentials != null
@@ -150,15 +144,13 @@ public class TLSUtils {
                     String server = ncs.getHost();
                     if (!FileSystemUtils.isEmpty(server)) {
                         data = AtakCertificateDatabase
-                                .getAdapter()
-                                .getCertificateForTypeAndServer(
+                                .getCertificateForServer(
                                         AtakCertificateDatabaseIFace.TYPE_TRUST_STORE_CA,
                                         server);
 
                         if (data != null && data.length > 0) {
                             caCertCredentials = AtakAuthenticationDatabase
-                                    .getAdapter()
-                                    .getCredentialsForType(
+                                    .getCredentials(
                                             AtakAuthenticationCredentials.TYPE_caPassword,
                                             server);
 
@@ -191,8 +183,7 @@ public class TLSUtils {
             boolean bFirstAvailable) {
         //look for default creds
         AtakAuthenticationCredentials creds = AtakAuthenticationDatabase
-                .getAdapter()
-                .getCredentialsForType(
+                .getCredentials(
                         AtakAuthenticationCredentials.TYPE_COT_SERVICE);
 
         if (creds != null && !FileSystemUtils.isEmpty(creds.username)) {
@@ -212,8 +203,7 @@ public class TLSUtils {
                     String server = ncs.getHost();
                     if (!FileSystemUtils.isEmpty(server)) {
                         creds = AtakAuthenticationDatabase
-                                .getAdapter()
-                                .getCredentialsForType(
+                                .getCredentials(
                                         AtakAuthenticationCredentials.TYPE_COT_SERVICE,
                                         server);
 
@@ -248,8 +238,7 @@ public class TLSUtils {
 
         //look for server creds
         AtakAuthenticationCredentials creds = AtakAuthenticationDatabase
-                .getAdapter()
-                .getCredentialsForType(
+                .getCredentials(
                         AtakAuthenticationCredentials.TYPE_COT_SERVICE,
                         server);
 
@@ -402,7 +391,7 @@ public class TLSUtils {
             trustManagerFactory.init(trustStore);
 
             sslContext = CertificateManager.createSSLContext(
-                             trustManagerFactory.getTrustManagers());
+                    trustManagerFactory.getTrustManagers());
         } finally {
             if (trustedIn != null)
                 trustedIn.close();

@@ -390,9 +390,11 @@ public class LoadoutItemModel {
 
             // Keep new tools before Settings and Quit
             Integer s = sortOrder.get("settings.xml");
-            if (s == null) s = models.size();
+            if (s == null)
+                s = models.size();
             Integer q = sortOrder.get("quit.xml");
-            if (q == null) q = models.size();
+            if (q == null)
+                q = models.size();
             int min = Math.min(s, q);
             models.addAll(min, noOrder);
 

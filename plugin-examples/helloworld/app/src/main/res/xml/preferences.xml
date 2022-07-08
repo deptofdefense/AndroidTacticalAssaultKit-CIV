@@ -50,5 +50,28 @@
         />
 
 
+    <PreferenceCategory
+        android:key="key_for_category2"
+        android:title="Test Preference Category 2 (in Plugins they cannot have any members)" />
+
+    <com.atakmap.android.gui.PanCheckBoxPreference
+        android:key="test5"
+        android:summary="Shows a quick check box example that shows or hides other preferences"
+        android:title="Example Check Box 2"
+        android:defaultValue="false"
+        />
+
+    <com.atakmap.android.gui.PanEditTextPreference
+        android:defaultValue=""
+        android:dependency="test5"
+        android:dialogTitle="Dependent Edit Text"
+        android:inputType="textNoSuggestions|textUri"
+        android:key="network_static_ip_address"
+        android:summary="This preference is dependent on the Example Check Box 2"
+        android:title="Dependent Edit Text" />
+
+
+<com.atakmap.android.network.ui.CredentialsPreference android:title="Chat Credentials" credentialsType="xmpp_credentials" android:key="takchatCredentials" android:summary="Set the full username (e.g. user@server) and password used for XMPP chat"/>
+
 </PreferenceScreen>
 

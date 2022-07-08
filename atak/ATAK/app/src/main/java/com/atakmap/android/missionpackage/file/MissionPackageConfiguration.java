@@ -207,7 +207,7 @@ public class MissionPackageConfiguration implements Parcelable {
             if (p != null && parameter.getName().equals(p.getName())) {
                 // found a match, just update existing parameter
                 p.setValue(parameter.getValue());
-                Log.d(TAG, "Updated parameter: " + p.toString());
+                Log.d(TAG, "Updated parameter: " + p);
                 return;
             }
         }
@@ -267,7 +267,7 @@ public class MissionPackageConfiguration implements Parcelable {
                     parcel.writeParcelable(parameter, flags);
             }
         } else
-            Log.w(TAG, "cannot parcel invalid: " + toString());
+            Log.w(TAG, "cannot parcel invalid: " + this);
     }
 
     protected MissionPackageConfiguration(Parcel in) {

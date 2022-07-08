@@ -46,7 +46,8 @@ public class Commo {
     }
 
     /**
-     * Value to pass to setMissionPackageLocalPort to indicate that
+     * Value to pass to setMissionPackageLocalPort or
+     * setMissionPackageLocalHttpsParams to indicate that
      * the local mission package serving web server should be disabled
      */ 
     public static final int MPIO_LOCAL_PORT_DISABLE = -1;
@@ -451,7 +452,11 @@ public class Commo {
      *                     The port must be free at the time of invocation.
      * @throw CommoException if the web port is not valid/available or
      *     setupMissionPackageIO has not yet been successfully invoked
+     * @deprecated the local http server functionality is slated for removal.
+     *     Please ensure you are enabling the https server
+     *     (see setMissionPackageLocalHttpsParams())
      */
+    @Deprecated
     public void setMissionPackageLocalPort(int localWebPort)
                                            throws CommoException
     {
@@ -474,11 +479,9 @@ public class Commo {
      * On successful return, the https server will be configured to use the
      * specified port and new outbound transfers (sendMissionPackage())
      * will use this to host outbound transfers.
-     * Note that the https server also requires the http port to be enabled
-     * and configured on a different port as the https function utilizes
-     * the http server internally. If the http server is not enabled
-     * (see setMissionPackageLocalPort()) the https server will remain
-     * in a configured but disabled state until the http server is activated.
+     * Note that prior versions of this library required the http server to
+     * be enabled for the https server to be supported;  this is no longer
+     * necessary.
      * If this call fails, transfers using the local https server will be
      * disabled until a future call completes successfully (in other words,
      * will act as if this had been called with MPIO_LOCAL_PORT_DISABLE).

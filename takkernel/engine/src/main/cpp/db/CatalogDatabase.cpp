@@ -26,6 +26,7 @@
 ////========================================================================////
 
 
+#ifdef MSVC
 #include "db/CatalogDatabase.h"
 
 #include <algorithm>
@@ -810,3 +811,4 @@ CatalogDatabase::Cursor::getPath () const throw (CursorError) {
 
 }                                       // Close db namespace.
 }                                       // Close atakmap namespace.
+#endif

@@ -1,3 +1,4 @@
+
 package com.atakmap.android.gui;
 
 import android.app.AlertDialog;
@@ -33,7 +34,8 @@ public class ShapeColorButton extends ImageButton
          * @param strokeColor Stroke color
          * @param fillColor Fill color
          */
-        void onColorsSelected(@ColorInt int strokeColor, @ColorInt int fillColor);
+        void onColorsSelected(@ColorInt int strokeColor,
+                @ColorInt int fillColor);
     }
 
     private Shape _shape = null;
@@ -53,7 +55,8 @@ public class ShapeColorButton extends ImageButton
         init();
     }
 
-    public ShapeColorButton(Context context, AttributeSet attrs, int defStyleAttr) {
+    public ShapeColorButton(Context context, AttributeSet attrs,
+            int defStyleAttr) {
         super(context, attrs, defStyleAttr, R.style.darkColorButton);
         init();
     }
@@ -184,36 +187,38 @@ public class ShapeColorButton extends ImageButton
         b.setTitle(R.string.select_a_color);
         b.setView(palette);
         if (_showFill) {
-            b.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface d, int w) {
-                    int stroke = palette.getStrokeColor();
-                    int fill = palette.getFillColor();
-                    setColors(stroke, fill);
-                    if (_shape != null) {
-                        _shape.setStrokeColor(stroke);
-                        _shape.setFillColor(fill);
-                    }
-                    if (_selectListener != null)
-                        _selectListener.onColorsSelected(stroke, fill);
-                }
-            });
+            b.setPositiveButton(R.string.ok,
+                    new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface d, int w) {
+                            int stroke = palette.getStrokeColor();
+                            int fill = palette.getFillColor();
+                            setColors(stroke, fill);
+                            if (_shape != null) {
+                                _shape.setStrokeColor(stroke);
+                                _shape.setFillColor(fill);
+                            }
+                            if (_selectListener != null)
+                                _selectListener.onColorsSelected(stroke, fill);
+                        }
+                    });
             b.setNegativeButton(R.string.cancel, null);
         }
         final AlertDialog d = b.show();
 
         // Only applies when fill is disabled
-        palette.setOnColorSelectedListener(new ColorPalette.OnColorSelectedListener() {
-            @Override
-            public void onColorSelected(int color, String label) {
-                d.dismiss();
-                setStrokeColor(color);
-                if (_shape != null)
-                    _shape.setStrokeColor(color);
-                if (_selectListener != null)
-                    _selectListener.onColorsSelected(color, color);
-            }
-        });
+        palette.setOnColorSelectedListener(
+                new ColorPalette.OnColorSelectedListener() {
+                    @Override
+                    public void onColorSelected(int color, String label) {
+                        d.dismiss();
+                        setStrokeColor(color);
+                        if (_shape != null)
+                            _shape.setStrokeColor(color);
+                        if (_selectListener != null)
+                            _selectListener.onColorsSelected(color, color);
+                    }
+                });
     }
 
     /**

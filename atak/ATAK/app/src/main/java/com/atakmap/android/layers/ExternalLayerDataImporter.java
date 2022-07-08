@@ -112,7 +112,8 @@ public class ExternalLayerDataImporter implements Importer {
             if (showNotifications)
                 LayersNotificationManager.notifyImportComplete(file, success);
             if (hidden) {
-                URIContentHandler h = URIContentManager.getInstance().getHandler(file);
+                URIContentHandler h = URIContentManager.getInstance()
+                        .getHandler(file);
                 if (h != null && h.isActionSupported(Visibility.class))
                     ((Visibility) h).setVisible(false);
             }

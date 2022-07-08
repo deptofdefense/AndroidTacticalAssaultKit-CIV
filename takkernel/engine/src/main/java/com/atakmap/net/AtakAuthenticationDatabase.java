@@ -49,9 +49,10 @@ public class AtakAuthenticationDatabase {
     @Deprecated
     @DeprecatedApi(since = "4.3", forRemoval = false)
     @ModifierApi(since = "4.3", target = "4.6", modifiers = {
-            "final"
+             "final"
     })
     public static synchronized AtakAuthenticationDatabaseAdapter getAdapter() {
+
         if (authenticationDatabaseAdapter == null) {
             authenticationDatabaseAdapter = new AtakAuthenticationDatabaseAdapter();
         }

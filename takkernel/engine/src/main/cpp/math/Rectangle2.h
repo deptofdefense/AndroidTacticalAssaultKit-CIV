@@ -30,9 +30,13 @@ namespace TAK
 
             template<typename T>
             Util::TAKErr Rectangle2_intersects(bool& intersects, T aX1, T aY1, T aX2, T aY2, T bX1, T bY1, T bX2, T bY2);
+            template<typename T>
+            bool Rectangle2_intersects(T aX1, T aY1, T aX2, T aY2, T bX1, T bY1, T bX2, T bY2);
 
             template<typename T>
             Util::TAKErr Rectangle2_intersects(bool& intersects, T aX1, T aY1, T aX2, T aY2, T bX1, T bY1, T bX2, T bY2, bool strict);
+            template<typename T>
+            bool Rectangle2_intersects(T aX1, T aY1, T aX2, T aY2, T bX1, T bY1, T bX2, T bY2, bool strict);
 
             template<typename T>
             Util::TAKErr Rectangle2_contains(bool& contains, T aX1, T aY1, T aX2, T aY2, T pX, T pY);
@@ -93,19 +97,31 @@ namespace TAK
             {
                 return Rectangle2_intersects(intersects, aX1, aY1, aX2, aY2, bX1, bY1, bX2, bY2, false);
             }
+            template<typename T>
+            inline bool Rectangle2_intersects(T aX1, T aY1, T aX2, T aY2, T bX1, T bY1, T bX2, T bY2)
+            {
+                return Rectangle2_intersects(aX1, aY1, aX2, aY2, bX1, bY1, bX2, bY2, false);
+            }
 
             template<typename T>
             inline Util::TAKErr Rectangle2_intersects(bool& intersects, T aX1, T aY1, T aX2, T aY2, T bX1, T bY1, T bX2, T bY2, bool edgeIsect)
+            {
+                intersects = Rectangle2_intersects(aX1, aY1, aX2, aY2, bX1, bY1, bX2, bY2, edgeIsect);
+                return Util::TE_Ok;
+            }
+            template<typename T>
+            inline bool Rectangle2_intersects(T aX1, T aY1, T aX2, T aY2, T bX1, T bY1, T bX2, T bY2, bool edgeIsect)
             {
                 const bool strictIsect = aX1 < bX2 &&
                                          aY1 < bY2 &&
                                          aX2 > bX1 &&
                                          aY2 > bY1;
+                bool intersects;
                 if(strictIsect || !edgeIsect)
                     intersects = strictIsect;
                 else
                     intersects = (aX1 == bX2) || (aY1 == bY2) || (aX2 == bX1) || (aY2 == bY1);
-                return Util::TE_Ok;
+                return intersects;
             }
 
             template<typename T>

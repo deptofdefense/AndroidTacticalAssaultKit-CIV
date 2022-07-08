@@ -6,6 +6,8 @@
 #include <core/RenderContext.h>
 #include <port/Platform.h>
 
+#include "interop/core/ManagedRenderSurface.h"
+
 namespace TAKEngineJNI {
     namespace Interop {
         namespace Core {
@@ -34,6 +36,7 @@ namespace TAKEngineJNI {
             public :
                 jobject impl;
                 jobject parent;
+                ManagedRenderSurface surface;
             };
         }
     }

@@ -88,6 +88,8 @@ import java.util.SortedSet;
 import java.util.Stack;
 import java.util.TreeSet;
 
+import gov.tak.api.annotation.ModifierApi;
+
 /**
  * This is the main list adapter used by Overlay Manager (OM)
  * List items are pulled from map overlays registered to
@@ -132,7 +134,10 @@ public class HierarchyListAdapter extends BaseAdapter implements
     private final int screenSize;
 
     // The view layout used to display OM
-    private HierarchyManagerView view;
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
+    protected HierarchyManagerView view;
 
     // Whether OM is busy starting up
     private boolean initiating = false;
@@ -144,7 +149,10 @@ public class HierarchyListAdapter extends BaseAdapter implements
     private boolean blockRefresh = false;
 
     // The top-level Overlay Manager list
-    private ListModelImpl model;
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
+    protected ListModelImpl model;
 
     // The current list being displayed
     protected HierarchyListItem currentList;
@@ -210,6 +218,11 @@ public class HierarchyListAdapter extends BaseAdapter implements
     private NorthReference northRef;
     private CoordinateFormat coordFmt;
     private boolean showingLocationItem;
+
+    private long navTime = -1;
+    private List<String> navPath = null;
+    private int navStartIndex = 0;
+    private boolean navInProgress = false;
 
     /**
      * Create a new Overlay Manager list adapter
@@ -1117,11 +1130,6 @@ public class HierarchyListAdapter extends BaseAdapter implements
         updateCheckAll();
     }
 
-    private long navTime = -1;
-    private List<String> navPath = null;
-    private int navStartIndex = 0;
-    private boolean navInProgress = false;
-
     /**
      * Navigate to a page based on a list of page UIDs
      *
@@ -1134,7 +1142,7 @@ public class HierarchyListAdapter extends BaseAdapter implements
         // In case overlay manager is still loading
         this.navInProgress = true;
 
-        Log.d(TAG, "Attempting to navigate to " + path.toString()
+        Log.d(TAG, "Attempting to navigate to " + path
                 + ", start = " + this.navStartIndex);
 
         // Cancel search if active
@@ -1454,7 +1462,10 @@ public class HierarchyListAdapter extends BaseAdapter implements
     protected class SelectionTask
             extends AsyncTask<Void, Integer, Set<HierarchyListItem>> {
 
-        private final ProgressDialog pd;
+        @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+                "private"
+        })
+        protected ProgressDialog pd;
         private final List<String> paths;
         private final HierarchyListUserSelect handler;
 
@@ -1714,7 +1725,10 @@ public class HierarchyListAdapter extends BaseAdapter implements
      * @param excludePath Excluded path
      * @return List of selected paths
      */
-    private List<String> selectAllExclude(HierarchyListItem parent,
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
+    protected List<String> selectAllExclude(HierarchyListItem parent,
             String parentPath, String excludePath) {
         List<String> ret = new ArrayList<>();
         if (parentPath.equals(excludePath))
@@ -1742,8 +1756,8 @@ public class HierarchyListAdapter extends BaseAdapter implements
      */
     private void updateCheckAll() {
         if (userSelectHandler != null && userSelectHandler.isMultiSelect()
-                && userSelectHandler.getButtonMode()
-                == ButtonMode.VISIBLE_WHEN_SELECTED)
+                && userSelectHandler
+                        .getButtonMode() == ButtonMode.VISIBLE_WHEN_SELECTED)
             processBtn.setVisibility(this.selectedPaths.isEmpty()
                     ? View.GONE
                     : View.VISIBLE);
@@ -1767,7 +1781,10 @@ public class HierarchyListAdapter extends BaseAdapter implements
      * @param itemPath The item path or null to find it
      * @return The checked value
      */
-    private int getCheckValue(HierarchyListItem item, String itemPath) {
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
+    protected int getCheckValue(HierarchyListItem item, String itemPath) {
         // Run through selected paths to see if they contain this item
         if (item == null)
             item = this.currentList;
@@ -1820,9 +1837,13 @@ public class HierarchyListAdapter extends BaseAdapter implements
      * @param path Path (i.e. "\Markers\Cot 2525C\Hostile"
      * @return True if path is equal to or under dir, false otherwise
      */
-    private boolean withinDir(String dir, String path) {
-        return dir.equals(PATH_SEPARATOR) || path.equals(dir) || path.startsWith(dir)
-                && path.charAt(dir.length()) == '\\';
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
+    protected boolean withinDir(String dir, String path) {
+        return dir.equals(PATH_SEPARATOR) || path.equals(dir)
+                || path.startsWith(dir)
+                        && path.charAt(dir.length()) == '\\';
     }
 
     /**

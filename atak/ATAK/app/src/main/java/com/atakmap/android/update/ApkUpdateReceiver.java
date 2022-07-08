@@ -204,10 +204,11 @@ public class ApkUpdateReceiver extends BroadcastReceiver {
         final boolean sig = AtakPluginRegistry.verifySignature(c, pkg);
 
         String reason = "";
-        
+
         final String versionBrand = ATAKConstants.getVersionBrand();
         if (!ATAKConstants.getPluginApi(true).equals(api) &&
-                !ATAKConstants.getPluginApi(true).replace(versionBrand, "CIV").equals(api)) {
+                !ATAKConstants.getPluginApi(true).replace(versionBrand, "CIV")
+                        .equals(api)) {
             reason = String.format(c.getString(R.string.reason1), api,
                     ATAKConstants.getPluginApi(true));
         }

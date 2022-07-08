@@ -147,7 +147,9 @@ TAKErr MultiLayer2::setLayerPosition(const Layer2 &layer, const std::size_t posi
     std::shared_ptr<Layer2> layerPtr(this->layers_[oldPos]);
 
     this->layers_.erase(this->layers_.begin()+oldPos);
-    if(position > oldPos) {
+    if (position == this->layers_.size()) {
+        this->layers_.push_back(layerPtr);
+    } else if(position > oldPos) {
         this->layers_.insert(this->layers_.begin() + (position-1), layerPtr);
     } else if(position < oldPos) {
         this->layers_.insert(this->layers_.begin() + position, layerPtr);

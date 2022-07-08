@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "renderer/raster/tilereader/GLTileMesh.h"
 #include "renderer/GLTexture2.h"
 #include "renderer/GLES20FixedPipeline.h"
@@ -394,3 +395,4 @@ int GLTileMesh::estimateSubdivisions(double x, double y, double width, double he
 
     return atakmap::math::max(subsX, subsY);
 }
+#endif

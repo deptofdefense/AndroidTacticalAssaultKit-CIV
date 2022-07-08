@@ -208,7 +208,7 @@ public class AttachmentBroadcastReceiver extends DropDownReceiver implements
                     notificationIntent, true);
 
             Log.d(TAG, "Updated notification for: " + callsign + ", "
-                    + manifest.toString());
+                    + manifest);
         } else if (GALLERY.equals(intent.getAction())) {
             Log.d(TAG, "Displaying Gallery");
             ImageGalleryReceiver.displayGallery();

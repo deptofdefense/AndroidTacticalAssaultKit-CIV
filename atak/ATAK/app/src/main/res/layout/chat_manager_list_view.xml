@@ -80,6 +80,14 @@
             android:orientation="horizontal">
 
             <ImageButton
+                android:id="@+id/chat_filter_multiselect_btn"
+                android:layout_width="32dp"
+                android:layout_height="match_parent"
+                android:padding="5dp"
+                android:background="@drawable/chat_title_background"
+                android:src="@drawable/multiselect" />
+
+            <ImageButton
                 android:id="@+id/chat_favorites_btn"
                 android:layout_width="32dp"
                 android:layout_height="match_parent"
@@ -203,6 +211,14 @@
         android:orientation="horizontal"
         android:gravity="end"
         android:background="#222">
+        <CheckBox
+            android:id="@+id/filtered_cb"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
+            android:layout_gravity="center_vertical"
+            android:textSize="12sp"
+            android:text="@string/hide_allFiltered"/>
         <CheckBox
             android:id="@+id/unread_cb"
             android:layout_width="wrap_content"

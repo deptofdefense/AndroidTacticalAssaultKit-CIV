@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory android:title="@string/other_misc_display_options">
+       <Preference
+            android:key="gridLinesPreference"
+            android:title="@string/gridLinePreferences"
+            android:summary="@string/preferences_text148"
+            android:icon="@drawable/ic_overlay_gridlines" />
+       <Preference
+            android:key="layerOutlinesPreference"
+            android:title="@string/imageryLayerPreferences"
+            android:summary="@string/preferences_text149"
+            android:icon="@drawable/ic_menu_maps" />
+       <Preference
+            android:key="atakOffScrIndiOptions"
+            android:title="@string/offscreenIndPreferences"
+            android:summary="@string/preferences_text150"
+            android:icon="@drawable/ic_overlay_offscrind" />
+       <Preference
+            android:key="overlayStylePreference"
+            android:title="@string/importStylePreferences"
+            android:summary="@string/preferences_text151"
+            android:icon="@drawable/ic_menu_import_file" />
+
+        <com.atakmap.android.gui.PanListPreference
+            android:defaultValue="33"
+            android:entries="@array/overlay_manager_size_names"
+            android:entryValues="@array/overlay_manager_size_values"
+            android:key="overlay_manager_width_height"
+            android:title="@string/preferences_text152"
+            android:summary="@string/preferences_text153" />
+
+        <com.atakmap.android.gui.PanListPreference
+            android:defaultValue="-1"
+            android:entries="@array/brightness_names"
+            android:entryValues="@array/brightness_values"
+            android:key="atakForcedBrightness"
+            android:summary="@string/preferences_text155"
+            android:title="@string/preferences_text154" />
+
+        <com.atakmap.android.gui.PanCheckBoxPreference
+            android:defaultValue="false"
+            android:key="atakScreenLock"
+            android:summary="@string/preferences_text157"
+            android:title="@string/preferences_text156" />
+
+        <com.atakmap.android.gui.PanCheckBoxPreference
+            android:defaultValue="true"
+            android:summary="@string/preferences_text159"
+            android:key="atakDisableSoftkeyIllumination"
+            android:title="@string/preferences_text158" />
+
+        <com.atakmap.android.gui.PanCheckBoxPreference
+            android:defaultValue="false"
+            android:key="atakControlReverseOrientation"
+            android:summary="@string/preferences_text161"
+            android:title="@string/preferences_text160" />
+
+        <com.atakmap.android.gui.PanCheckBoxPreference
+            android:defaultValue="false"
+            android:key="atakControlShortenLabels"
+            android:summary="@string/preferences_text163"
+            android:title="@string/preferences_text162" />
+
+        <com.atakmap.android.gui.PanCheckBoxPreference
+            android:defaultValue="true"
+            android:key="atakControlShowLabels"
+            android:summary="@string/preferences_text165"
+            android:title="@string/preferences_text164" />
+
+        <com.atakmap.android.gui.PanCheckBoxPreference
+            android:defaultValue="true"
+            android:summary="@string/preferences_text167"
+            android:key="atakControlOtherUserNotification"
+            android:title="@string/preferences_text166" />
+
+        <com.atakmap.android.gui.PanListPreference
+            android:defaultValue="90"
+            android:entries="@array/fade_notification_names"
+            android:entryValues="@array/fade_notification_values"
+            android:key="fade_notification"
+            android:summary="@string/preferences_text169"
+            android:title="@string/preferences_text168" />
+
+        <com.atakmap.android.gui.PanListPreference
+            android:defaultValue="Imagery"
+            android:entries="@array/imagery_tab_names"
+            android:entryValues="@array/imagery_tab_values"
+            android:key="imagery_tab_name"
+            android:summary="@string/preferences_text171"
+            android:title="@string/preferences_text170" />
+
+        <com.atakmap.android.gui.PanListPreference
+            android:defaultValue="0"
+            android:entries="@array/frame_limit_names"
+            android:entryValues="@array/frame_limit_values"
+            android:key="frame_limit"
+            android:summary="@string/preferences_text173"
+            android:title="@string/preferences_text172" />
+
+    </PreferenceCategory>
+</PreferenceScreen>

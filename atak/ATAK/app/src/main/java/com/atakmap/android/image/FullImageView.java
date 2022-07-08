@@ -6,9 +6,11 @@ import android.util.AttributeSet;
 import android.widget.ImageView;
 
 /**
- *
+ * An imageview that is able to set snap to the width in both directions for appropriate grid view
+ * layout in something like a gallery.
  */
 public class FullImageView extends ImageView {
+
     public FullImageView(Context context) {
         super(context);
     }

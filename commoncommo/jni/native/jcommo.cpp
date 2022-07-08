@@ -2168,6 +2168,10 @@ Java_com_atakmap_commoncommo_Commo_getBroadcastProtoNative
 }
 
 
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 JNIEXPORT jboolean JNICALL
 Java_com_atakmap_commoncommo_Commo_setMPLocalPortNative
     (JNIEnv *env, jclass selfCls, jlong nativePtr, jint jlocalPort)
@@ -2175,6 +2179,9 @@ Java_com_atakmap_commoncommo_Commo_setMPLocalPortNative
     CommoJNI *c = JLONG_TO_PTR(CommoJNI, nativePtr);
     return (c->commo->setMissionPackageLocalPort(jlocalPort) == COMMO_SUCCESS);
 }
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 
 
 JNIEXPORT void JNICALL

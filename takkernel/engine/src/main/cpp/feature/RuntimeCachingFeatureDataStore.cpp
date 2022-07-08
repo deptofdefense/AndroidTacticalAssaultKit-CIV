@@ -1,3 +1,4 @@
+#ifdef MSVC 
 #include "feature/RuntimeCachingFeatureDataStore.h"
 
 #include <cstddef>
@@ -12,8 +13,6 @@ using namespace TAK::Engine::Feature;
 
 using namespace TAK::Engine::Thread;
 using namespace TAK::Engine::Util;
-
-#define XXX_MAX_RENDER_QUERY_LIMIT 1000
 
 namespace
 {
@@ -73,7 +72,14 @@ private:
 
 RuntimeCachingFeatureDataStore::RuntimeCachingFeatureDataStore(FeatureDataStore2Ptr &&impl_) NOTHROWS :
     impl(std::move(impl_)),
-    dirty(true)
+    dirty(true),
+    maxRenderQueryLimit(1000)
+{}
+
+RuntimeCachingFeatureDataStore::RuntimeCachingFeatureDataStore(FeatureDataStore2Ptr &&impl_, const int maxRenderQueryLimit_) NOTHROWS :
+    impl(std::move(impl_)),
+    dirty(true),
+    maxRenderQueryLimit(maxRenderQueryLimit_)
 {}
 
 TAKErr RuntimeCachingFeatureDataStore::isClientQuery(bool *value, const FeatureQueryParameters &other) NOTHROWS
@@ -155,8 +161,8 @@ TAKErr RuntimeCachingFeatureDataStore::queryFeatures(FeatureCursorPtr &cursor, c
         int count;
         code = this->impl->queryFeaturesCount(&count, params);
         TE_CHECKRETURN_CODE(code);
-        if (count > XXX_MAX_RENDER_QUERY_LIMIT) {
-            Logger_log(TELL_Warning, "Requested render query contains %d features exceeding limit.", count);
+        if (count > maxRenderQueryLimit) {
+            Logger_log(TELL_Warning, "Requested render query contains %d features exceeding limit of %d.", count, maxRenderQueryLimit);
             // if a large number of features is requested, simply return the
             // empty cursor
             cursor = FeatureCursorPtr(new MultiplexingFeatureCursor(), Memory_deleter_const<FeatureCursor2, MultiplexingFeatureCursor>);
@@ -624,3 +630,4 @@ namespace
         return impl->moveToNext();
     }
 }
+#endif

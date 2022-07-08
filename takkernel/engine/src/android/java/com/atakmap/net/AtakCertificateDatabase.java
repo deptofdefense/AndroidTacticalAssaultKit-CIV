@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.util.Base64;
+import android.util.Pair;
+
 import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.annotations.ModifierApi;
 import com.atakmap.comms.NetConnectString;
@@ -272,6 +274,44 @@ public class AtakCertificateDatabase {
             return getAdapter().getCertificateForTypeAndServerAndPort(type, server, port);
         }
     }
+
+    /**
+     * Gets the certificate based on the given IP Address
+     *
+     * @param type the type
+     * @param IP   the IP address
+     * @return the Pair of certificate and server name.
+     */
+    public static Pair<byte[], String> getCertificateForIPaddress(final String type, final String IP) {
+        synchronized (getAdapter().lock) {
+            if (!initialized) {
+                Log.e(TAG, "calling getCertificateForTypeAndServerAndPort prior to initialization or after a clear content");
+                return null;
+            }
+
+            return getAdapter().getCertificateForIPaddress(type, IP);
+        }
+    }
+
+    /**
+     * Gets the certificate based on the given IP Address
+     *
+     * @param type the type
+     * @param IP   the IP address
+     * @param port the port
+     * @return the Pair of certificate and server name.
+     */
+    public static Pair<byte[], String> getCertificateForIPaddress(final String type, final String IP, final int port) {
+        synchronized (getAdapter().lock) {
+            if (!initialized) {
+                Log.e(TAG, "calling getCertificateForTypeAndServerAndPort prior to initialization or after a clear content");
+                return null;
+            }
+
+            return getAdapter().getCertificateForIPaddressAndPort(type, IP, port);
+        }
+    }
+
 
     /**
      * Sets the certificate for the requested type and server

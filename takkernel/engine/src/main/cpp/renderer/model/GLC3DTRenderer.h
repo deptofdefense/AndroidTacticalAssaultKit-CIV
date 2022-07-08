@@ -73,6 +73,7 @@ namespace TAK {
                     std::unique_ptr<TAK::Engine::Renderer::Core::GLContentContext> content_context_;
                     std::unique_ptr<TAK::Engine::Renderer::Core::GLContentHolder> root_content_;
                     std::unique_ptr<SceneControlImpl> scene_control_;
+                    TAK::Engine::Core::RenderContext &render_context_;
 
                     class LoaderImpl;
 

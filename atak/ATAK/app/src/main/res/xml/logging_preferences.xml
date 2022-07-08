@@ -3,7 +3,7 @@
 
     <PreferenceCategory
         android:title="@string/appLoggingPreferences">
-        <Preference
+       <Preference
             android:key="collect_crashlogs"
             android:selectable="false"
             android:persistent="false"
@@ -11,25 +11,25 @@
             android:summary="@string/crashlogs_summary"
             android:icon="@drawable/ic_menu_error"/>
 
-        <Preference
+       <Preference
             android:title="@string/preferences_text374"
             android:summary="@string/preferences_text375"
             android:key="atakExportCrashLogs"
             android:icon="@drawable/send_logs"/>
-        <CheckBoxPreference android:title="@string/preferences_text376"
+        <com.atakmap.android.gui.PanCheckBoxPreference android:title="@string/preferences_text376"
             android:key="enableAutoUploadLogs"
             android:summary="@string/autoUploadLogsSummary"
             android:defaultValue="false"
             android:icon="@drawable/upload_logs"/>
 
-        <CheckBoxPreference
+        <com.atakmap.android.gui.PanCheckBoxPreference
             android:defaultValue="false"
             android:key="collect_metrics"
             android:summary="@string/metricreport"
             android:title="@string/metric_report_title"
             android:icon="@drawable/metrics"/>
 
-        <CheckBoxPreference
+        <com.atakmap.android.gui.PanCheckBoxPreference
             android:defaultValue="false"
             android:key="realtime_metrics"
             android:summary="@string/metric_live"
@@ -37,7 +37,7 @@
             android:dependency="collect_metrics"
             android:icon="@drawable/ic_menu_network_connections"/>
 
-        <Preference
+       <Preference
             android:key="advanced_logging"
             android:summary="@string/advanced_logging"
             android:title="@string/advanced_logging_title"

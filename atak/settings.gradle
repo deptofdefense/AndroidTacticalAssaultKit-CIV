@@ -1,3 +1,19 @@
+// allow for a developer to short circuit the consideration process when doing
+// plugin development by listing only the relevant plugins in the project.lst 
+// file which does not get checked in.    
+// @param pluginDirname is the dirname of the plugin
+boolean considerPlugin(String pluginDirname) {
+
+    // think 'adbs' or 'adsb', 'AID'.   Leave empty if you want all plugins to be considered.
+    List<String> includeEm = []
+    if (new File('project.lst').exists()) {
+        new File( 'project.lst' ).eachLine { line ->
+            includeEm << line
+        }
+    }
+    return includeEm.isEmpty() || includeEm.contains(pluginDirname)
+}
+
 static def getValueFromPropertiesFile(File propFile, String key) {
     if(!propFile.isFile() || !propFile.canRead())
         return null
@@ -15,6 +31,9 @@ static def getValueFromPropertiesFile(File propFile, String key) {
 include ':ATAK'
 project(':ATAK').projectDir = new File(settingsDir, 'ATAK')
 include ':ATAK:app'
+include ':FlavorPlugin'
+project(':FlavorPlugin').projectDir = new File(settingsDir, 'FlavorPlugin')
+include ':FlavorPlugin:app'
 
 // if `takkernel` is present, include projects directly
 if((getValueFromPropertiesFile(file('local.properties'), 'takkernel.dependency.forceRemote') != 'true') &&
@@ -30,3 +49,210 @@ if((getValueFromPropertiesFile(file('local.properties'), 'takkernel.dependency.f
         include(':takkernel:controlled')
     }
 }
+
+void addPlugin(String pluginDirname) {
+    if (new File('plugins/' + pluginDirname).exists()) {
+        include (':' + pluginDirname)
+        project (':' + pluginDirname).projectDir = new File(settingsDir, 'plugins/' + pluginDirname)
+
+        // if the app directory exists assume it is modern
+        if (new File('plugins/' + pluginDirname + "/app").exists()) {
+            include (':' + pluginDirname + ":app")
+        }
+		
+		// Check if plugin is technically a library
+		if (new File('plugins/' + pluginDirname + "/lib").exists()) {
+			include (':' + pluginDirname + ":lib")
+		}
+    }
+}
+
+
+// Special Cases
+
+if (considerPlugin('atrax')) {
+    addPlugin('atrax')
+    if (new File('plugin/atrax/Trax CoT').exists()) {
+        include ':Trax CoT'
+        project (':Trax CoT').projectDir = new File(settingsDir, 'plugins/atrax/Trax CoT')
+    }
+    if (new File('plugin/atrax/Trax Utils').exists()) {
+        include ':Trax Utils'
+        project (':Trax Utils').projectDir = new File(settingsDir, 'plugins/atrax/Trax Utils')
+    }
+}
+if (considerPlugin('CBRN')) {
+    //addPlugin('CBRN') }
+    //include ':rn_wearable'
+    //project(':rn_wearable').projectDir = new File('plugins/CBRN/wear')
+}
+//if (considerPlugin('ParaNavSys')) {
+//    addPlugin('ParaNavSys')
+//    include ':ParaNavSysPluginLoggingLibrary'
+//    project(':ParaNavSysPluginLoggingLibrary').projectDir = new File('plugins/ParaNavSys/ParaNavSysPluginLoggingLibrary')
+//}
+if (considerPlugin('survivalaid')) {
+    addPlugin('survivalaid')
+    if (new File('plugins/survivialaid/subsampling-scale-image-view-3.10.0').exists()) {
+         include ':subsampling-scale-image-view-3.10.0'
+         project (':subsampling-scale-image-view-3.10.0').projectDir = new File(settingsDir, 'plugins/survivalaid/subsampling-scale-image-view-3.10.0')
+    }
+}
+if (considerPlugin('TacticalGraphics')) {
+    addPlugin('TacticalGraphics')
+    if (new File('plugins/TacticalGraphics/required/mil-sym-android-renderer').exists()) { 
+         include ':mil-sym-android'
+         project(':mil-sym-android').projectDir = new File(settingsDir, 'plugins/TacticalGraphics/required/mil-sym-android-renderer')
+    }
+}
+
+if (considerPlugin('accessadapter')) { addPlugin('accessadapter') }
+if (considerPlugin('adsb')) { addPlugin('adsb') }
+if (considerPlugin('AID')) { addPlugin('AID') }
+if (considerPlugin('airoverlays')) { addPlugin('airoverlays') }
+if (considerPlugin('altimeterlocator')) { addPlugin('altimeterlocator') }
+if (considerPlugin('aoupdate')) { addPlugin('aoupdate') }
+if (considerPlugin('ARRepeater')) { addPlugin('ARRepeater') }
+if (considerPlugin('art')) { addPlugin('art') }
+if (considerPlugin('Avalanche')) { addPlugin('Avalanche') }
+if (considerPlugin('batdok')) { addPlugin('batdok') }
+if (considerPlugin('BeartoothPlugin')) { addPlugin('BeartoothPlugin') }
+if (considerPlugin('BlockGenerator')) { addPlugin('BlockGenerator') }
+if (considerPlugin('bounce-viewer-atak')) { addPlugin('bounce-viewer-atak') }
+if (considerPlugin('BSIPlugin')) { addPlugin('BSIPlugin') }
+if (considerPlugin('bubblewrap')) { addPlugin('bubblewrap') }
+if (considerPlugin('CasPopup')) { addPlugin('CasPopup') }
+if (considerPlugin('Chokepoint')) { addPlugin('Chokepoint') }
+if (considerPlugin('cltd')) { addPlugin('cltd') }
+if (considerPlugin('CMissionPlanning')) { addPlugin('CMissionPlanning') }
+if (considerPlugin('CombatSwim')) { addPlugin('CombatSwim') }
+if (considerPlugin('commout')) { addPlugin('commout') }
+if (considerPlugin('commout-simplesocket')) { addPlugin('commout-simplesocket') }
+if (considerPlugin('CompassNav')) { addPlugin('CompassNav') }
+if (considerPlugin('CRUXTI')) { addPlugin('CRUXTI') }
+if (considerPlugin('csvreplay')) { addPlugin('csvreplay') }
+if (considerPlugin('CustomTiles')) { addPlugin('CustomTiles') }
+if (considerPlugin('DACO')) { addPlugin('DACO') }
+if (considerPlugin('daisy')) { addPlugin('daisy') }
+if (considerPlugin('datasync')) { addPlugin('datasync') }
+if (considerPlugin('deadreckoning')) { addPlugin('deadreckoning') }
+if (considerPlugin('drifter')) { addPlugin('drifter') }
+if (considerPlugin('DNC')) { addPlugin('DNC') }
+if (considerPlugin('DoghouseExtras')) { addPlugin('DoghouseExtras') }
+if (considerPlugin('Drive')) { addPlugin('Drive') }
+if (considerPlugin('Dronekit')) { addPlugin('Dronekit') }
+if (considerPlugin('DSMManager')) { addPlugin('DSMManager') }
+if (considerPlugin('DSPro')) { addPlugin('DSPro') }
+if (considerPlugin('effects')) { addPlugin('effects') }
+if (considerPlugin('emaps')) { addPlugin('emaps') }
+if (considerPlugin('Encrypt')) { addPlugin('Encrypt') }
+if (considerPlugin('eod')) { addPlugin('eod') }
+if (considerPlugin('ew-urc')) { addPlugin('ew-urc') }
+if (considerPlugin('ExCheck')) { addPlugin('ExCheck') }
+if (considerPlugin('ExRoute')) { addPlugin('ExRoute') }
+if (considerPlugin('externalbt')) { addPlugin('externalbt') }
+if (considerPlugin('ezaz')) { addPlugin('ezaz') }
+if (considerPlugin('flirbt')) { addPlugin('flirbt') }
+if (considerPlugin('fpl')) { addPlugin('fpl') }
+if (considerPlugin('GeoTakCam')) { addPlugin('GeoTakCam') }
+if (considerPlugin('GlenairStarpan')) { addPlugin('GlenairStarpan') }
+if (considerPlugin('gotennaConsumer')) { addPlugin('gotennaConsumer') }
+if (considerPlugin('gotennaPro')) { addPlugin('gotennaPro') }
+if (considerPlugin('GRGBuilder')) { addPlugin('GRGBuilder') }
+if (considerPlugin('GroundGuidance')) { addPlugin('GroundGuidance') }
+if (considerPlugin('GvLFStreamer')) { addPlugin('GvLFStreamer') }
+if (considerPlugin('HastyHLZ')) { addPlugin('HastyHLZ') }
+if (considerPlugin('Hello3D')) { addPlugin('Hello3D') }
+if (considerPlugin('HelloBuildings')) { addPlugin('HelloBuildings') }
+if (considerPlugin('helloworld')) { addPlugin('helloworld') }
+if (considerPlugin('hhptd')) { addPlugin('hhptd') }
+if (considerPlugin('hindsight')) { addPlugin('hindsight') }
+if (considerPlugin('HUD')) { addPlugin('HUD') }
+if (considerPlugin('icom')) { addPlugin('icom') }
+if (considerPlugin('ImportQR')) { addPlugin('ImportQR') }
+if (considerPlugin('intervalometer')) { addPlugin('intervalometer') }
+if (considerPlugin('ISP')) { addPlugin('ISP') }
+if (considerPlugin('ISRTK')) { addPlugin('ISRTK') }
+if (considerPlugin('Jolly')) { addPlugin('Jolly') }
+if (considerPlugin('jsmcomm')) { addPlugin('jsmcomm') }
+if (considerPlugin('JumpInfo')) { addPlugin('JumpInfo') }
+if (considerPlugin('jumpmaster')) { addPlugin('jumpmaster') }
+if (considerPlugin('kmludpsa')) { addPlugin('kmludpsa') }
+if (considerPlugin('LeanServices')) { addPlugin('LeanServices') }
+if (considerPlugin('Legionarius')) { addPlugin('Legionarius') }
+if (considerPlugin('lobster')) { addPlugin('lobster') }
+if (considerPlugin('LunchTimePlugin')) { addPlugin('LunchTimePlugin') }
+if (considerPlugin('MapManager2')) { addPlugin('MapManager2') }
+if (considerPlugin('mciut')) { addPlugin('mciut') }
+if (considerPlugin('milestone')) { addPlugin('milestone') }
+if (considerPlugin('miso')) { addPlugin('miso') }
+if (considerPlugin('mobileJECL')) { addPlugin('mobileJECL') }
+if (considerPlugin('MoDeep')) { addPlugin('MoDeep') }
+if (considerPlugin('mortar')) { addPlugin('mortar') }
+if (considerPlugin('movermobile')) { addPlugin('movermobile') }
+if (considerPlugin('mpusnrtool')) { addPlugin('mpusnrtool') }
+if (considerPlugin('neon')) { addPlugin('neon') }
+if (considerPlugin('nett')) { addPlugin('nett') }
+if (considerPlugin('NetworkReflector')) { addPlugin('NetworkReflector') }
+if (considerPlugin('ninja')) { addPlugin('ninja') }
+if (considerPlugin('nxgen')) { addPlugin('nxgen') }
+if (considerPlugin('oceusvpn')) { addPlugin('oceusvpn') }
+if (considerPlugin('osppre')) { addPlugin('osppre') }
+if (considerPlugin('OverheadPallet')) { addPlugin('OverheadPallet') }
+if (considerPlugin('pDDL')) { addPlugin('pDDL') }
+if (considerPlugin('platformsim')) { addPlugin('platformsim') }
+if (considerPlugin('PluginTemplate')) { addPlugin('PluginTemplate') }
+if (considerPlugin('PMTValidationHelper')) { addPlugin('PMTValidationHelper') }
+if (considerPlugin('PointMensurationTool')) { addPlugin('PointMensurationTool') }
+if (considerPlugin('prowl')) { addPlugin('prowl') }
+if (considerPlugin('QuickChat')) { addPlugin('QuickChat') }
+if (considerPlugin('QuickLog')) { addPlugin('QuickLog') }
+if (considerPlugin('Reports')) { addPlugin('Reports') }
+if (considerPlugin('rios')) { addPlugin('rios') }
+if (considerPlugin('RubberSheet')) { addPlugin('RubberSheet') }
+if (considerPlugin('samgear')) { addPlugin('samgear') }
+if (considerPlugin('sip')) { addPlugin('sip') }
+//if (considerPlugin('skyview')) { addPlugin('skyview') }
+if (considerPlugin('SlantReport')) { addPlugin('SlantReport') }
+if (considerPlugin('SniperToolkit')) { addPlugin('SniperToolkit') }
+if (considerPlugin('spotplot')) { addPlugin('spotplot') }
+if (considerPlugin('sseslantreport')) { addPlugin('sseslantreport') }
+if (considerPlugin('ssetool')) { addPlugin('ssetool') }
+if (considerPlugin('stackmanager')) { addPlugin('stackmanager') }
+if (considerPlugin('SwimErrorBoxes')) { addPlugin('SwimErrorBoxes') }
+if (considerPlugin('TacticalRoute')) { addPlugin('TacticalRoute') }
+if (considerPlugin('takchat')) { addPlugin('takchat') }
+if (considerPlugin('TakSubscription')) { addPlugin('TakSubscription') }
+if (considerPlugin('trackexport')) { addPlugin('trackexport') }
+if (considerPlugin('trailblazer')) { addPlugin('trailblazer') }
+if (considerPlugin('twRadio')) { addPlugin('twRadio') }
+if (considerPlugin('UASTool')) { addPlugin('UASTool') }
+if (considerPlugin('udot')) { addPlugin('udot') }
+if (considerPlugin('videooverlay')) { addPlugin('videooverlay') }
+if (considerPlugin('VISCAcam')) { addPlugin('VISCAcam') }
+if (considerPlugin('VISOR')) { addPlugin('VISOR') }
+if (considerPlugin('VMFBlueSA')) { addPlugin('VMFBlueSA') }
+if (considerPlugin('VNS')) { addPlugin('VNS') }
+if (considerPlugin('wamivideo')) { addPlugin('wamivideo') }
+if (considerPlugin('Wardriving')) { addPlugin('Wardriving') }
+if (considerPlugin('wasp')) { addPlugin('wasp') }
+if (considerPlugin('wave')) { addPlugin('wave') }
+if (considerPlugin('waverelay')) { addPlugin('waverelay') }
+if (considerPlugin('wde')) { addPlugin('wde') }
+if (considerPlugin('wearDemoPlugin')) { addPlugin('wearDemoPlugin') }
+if (considerPlugin('WebMercator')) { addPlugin('WebMercator') }
+if (considerPlugin('wxreport')) { addPlugin('wxreport') }
+if (considerPlugin('xslate-d10-optimization')) { addPlugin('xslate-d10-optimization') }
+if (considerPlugin('ZoneMessenger')) { addPlugin('ZoneMessenger') }
+if (considerPlugin('ATAKPluginTests')) { addPlugin('ATAKPluginTests') }
+if (considerPlugin('isacom-atakisa')) { addPlugin('isacom-atakisa') }
+if (considerPlugin('cloud')) { addPlugin('cloud') }
+if (considerPlugin('qm-elevation')) { addPlugin('qm-elevation') }
+if (considerPlugin('hadr')) { addPlugin('hadr') }
+if (considerPlugin('tapar')) { addPlugin('tapar') }
+if (considerPlugin('lastknownlocation')) { addPlugin('lastknownlocation') }
+if (considerPlugin('pdfdocuments')) { addPlugin('pdfdocuments') }
+if (considerPlugin('mission-api-lib')) { addPlugin('mission-api-lib') }
+if (considerPlugin('airupdate')) { addPlugin('airupdate') }
+if (considerPlugin('northstar')) { addPlugin('northstar') }
+if (considerPlugin('esri-for-tak')) { addPlugin('esri-for-tak') }

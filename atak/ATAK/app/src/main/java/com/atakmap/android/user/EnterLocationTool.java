@@ -231,7 +231,8 @@ public class EnterLocationTool extends Tool implements
                         if (marker != null) {
                             RecentlyAddedDropDownReceiver.instance
                                     .addToRecentList(marker);
-                            CameraController.Programmatic.panTo(_mapView.getRenderer3(),
+                            CameraController.Programmatic.panTo(
+                                    _mapView.getRenderer3(),
                                     p.get(), true);
                         }
 

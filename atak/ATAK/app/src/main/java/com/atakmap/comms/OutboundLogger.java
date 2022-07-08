@@ -127,11 +127,11 @@ class OutboundLogger implements CommsLogger,
             // write it out to file (if possible)
             StringBuilder toWrite = new StringBuilder(
                     new CoordinatedTime() + DELIMITER + direction + DELIMITER
-                            + event.toString());
+                            + event);
             toWrite.append(DELIMITER)
                     .append(destination);
             if (writer != null) {
-                writer.write(toWrite.toString() + LINE_SEPARATOR);
+                writer.write(toWrite + LINE_SEPARATOR);
                 writer.flush();
 
             }

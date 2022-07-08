@@ -118,15 +118,18 @@ public class ContactPresenceDropdown extends DropDownReceiver
     private ListView list;
 
     private ImageButton _newGroupBtn, _deleteGroupBtn, _addGroupUser,
-            _delGroupUser, _backBtn, _searchButton, _historyBtn, _favBtn;
+            _delGroupUser, _backBtn, _searchButton, _historyBtn, _favBtn,
+            _filterMultiselectBtn;
     private LinearLayout _groupActions, _checkAllLayout,
             _filtersLayout, _sendLayout;
     private SortSpinner _sortSpinner;
-    private CheckBox _checkAll, _unreadOnly, _showAll, _showAllTop;
+    private CheckBox _checkAll, _unreadOnly, _showAll, _showAllTop,
+            _hideFiltered;
     private Button _titleBtn, _actionBtn;
     private View _titleLayout, _titleArrow;
     private EditText _userEntryEt;
     private boolean _selectModeActive = false;
+    private boolean hideFiltered = false;
 
     // Connector filters
     private Spinner _connSpinner;
@@ -314,6 +317,16 @@ public class ContactPresenceDropdown extends DropDownReceiver
                 .findViewById(R.id.contact_send_layout);
         _filtersLayout = root.findViewById(R.id.filters_layout);
 
+        _filterMultiselectBtn = root
+                .findViewById(R.id.chat_filter_multiselect_btn);
+        _filterMultiselectBtn.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                pushMode(ViewMode.FILTER);
+                filterContacts();
+            }
+        });
+
         _addGroupUser = root.findViewById(
                 R.id.chat_contact_add_users_btn);
         _addGroupUser.setOnClickListener(new OnClickListener() {
@@ -409,6 +422,9 @@ public class ContactPresenceDropdown extends DropDownReceiver
         _unreadOnly = root.findViewById(R.id.unread_cb);
         _unreadOnly.setOnCheckedChangeListener(this);
 
+        _hideFiltered = root.findViewById(R.id.filtered_cb);
+        _hideFiltered.setOnCheckedChangeListener(this);
+
         list.setOnItemLongClickListener(new ListView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(final AdapterView<?> parent,
@@ -467,6 +483,10 @@ public class ContactPresenceDropdown extends DropDownReceiver
             adapter.showAll(checked);
         else if (cb == _unreadOnly)
             adapter.unreadOnly(checked);
+        else if (cb == _hideFiltered) {
+            hideFiltered = !hideFiltered;
+            adapter.hideFiltered(checked);
+        }
     }
 
     private void setConnectorFilter(String name) {
@@ -849,7 +869,7 @@ public class ContactPresenceDropdown extends DropDownReceiver
                 pushList((GroupContact) contact);
         } else if (contact instanceof IndividualContact) {
             if (!((IndividualContact) contact).onSelected(_prefs)) {
-                Log.w(TAG, "Failed to select row: " + contact.toString());
+                Log.w(TAG, "Failed to select row: " + contact);
             }
         }
     }
@@ -883,7 +903,8 @@ public class ContactPresenceDropdown extends DropDownReceiver
                 if (!IOProviderFactory.mkdir(fd))
                     Log.w(TAG,
                             "Failed to create directory: "
-                                    + fd.getAbsolutePath());
+                                    + ((fd == null) ? "fd == null"
+                                            : fd.getAbsolutePath()));
             }
         } catch (IOException ignored) {
         }
@@ -912,7 +933,7 @@ public class ContactPresenceDropdown extends DropDownReceiver
             File fd = f.getParentFile();
             if (!IOProviderFactory.exists(fd) && !IOProviderFactory.mkdir(fd)) {
                 Log.w(TAG, "Failed to create directory"
-                        + fd.getAbsolutePath());
+                        + ((fd == null) ? "fd == null" : fd.getAbsolutePath()));
                 return;
             }
             try (BufferedWriter writer = new BufferedWriter(
@@ -1099,6 +1120,49 @@ public class ContactPresenceDropdown extends DropDownReceiver
             adapter.refreshList("Updating search: " + terms);
     }
 
+    private void filterContacts() {
+        adapter.unSelectAll();
+        List<Contact> allContacts = adapter.getCurrentList()
+                .getAllContacts(false);
+        List<String> idsToSelect = new ArrayList<String>();
+        for (Contact c : allContacts) {
+            if (FilteredContactsManager.getInstance().isContactFiltered(c))
+                idsToSelect.add(c.contactUUID);
+        }
+        adapter.setSelectedUids(idsToSelect);
+
+        _actionBtn.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                List<Contact> selectedContacts = adapter.getSelected();
+                for (Contact c : selectedContacts) {
+                    if (!FilteredContactsManager.getInstance()
+                            .isContactFiltered(c)) {
+                        FilteredContactsManager.getInstance()
+                                .setContactFiltered(c, true, false);
+                    }
+                }
+
+                List<Contact> unselectedContacts = adapter.getUnselected();
+                for (Contact c : unselectedContacts) {
+                    if (FilteredContactsManager.getInstance()
+                            .isContactFiltered(c)) {
+                        FilteredContactsManager.getInstance()
+                                .setContactFiltered(c, false, false);
+                    }
+                }
+
+                // dispatch intent
+                FilteredContactsManager.getInstance()
+                        .fireFilteredContactsChangedIntent();
+                // update total unread indicator
+                Contacts.getInstance().updateTotalUnreadCount();
+
+                popMode();
+            }
+        });
+    }
+
     /**
      * Get the top list in the stack that isn't equal to 'list'
      * @param list List that should be ignored
@@ -1124,6 +1188,7 @@ public class ContactPresenceDropdown extends DropDownReceiver
         _filtersLayout.setVisibility(View.VISIBLE);
         _sendLayout.setVisibility(View.GONE);
         _showAllTop.setVisibility(View.GONE);
+        _filterMultiselectBtn.setVisibility(View.GONE);
         if (mode != ViewMode.GEO_CHAT) {
             _searchButton.setVisibility(View.GONE);
             _historyBtn.setVisibility(View.GONE);
@@ -1134,8 +1199,13 @@ public class ContactPresenceDropdown extends DropDownReceiver
         List<FilterMode> dispModes = new ArrayList<>();
         switch (mode) {
             case DEFAULT:
+                _filterMultiselectBtn.setVisibility(View.VISIBLE);
                 _searchButton.setVisibility(View.VISIBLE);
                 _favBtn.setVisibility(View.VISIBLE);
+                _hideFiltered.setVisibility(View.GONE);
+                _showAll.setVisibility(View.VISIBLE);
+                _unreadOnly.setVisibility(View.VISIBLE);
+                _hideFiltered.setChecked(hideFiltered);
                 break;
             case GEO_CHAT:
                 adapter.setExtraViewActive(true);
@@ -1211,6 +1281,19 @@ public class ContactPresenceDropdown extends DropDownReceiver
                 dispModes.add(FilterMode.UID_WHITELIST);
                 _titleBtn.setText(R.string.history);
                 _sortSpinner.setVisibility(View.GONE);
+                break;
+            case FILTER:
+                dispModes.add(FilterMode.INDIVIDUAL_CONTACTS_ONLY);
+                multiSelect(true);
+                _titleBtn.setText(R.string.filter_contacts);
+                _actionBtn.setText(R.string.filter);
+                _backBtn.setVisibility(View.VISIBLE);
+                _sortSpinner.setVisibility(View.GONE);
+                _searchButton.setVisibility(View.GONE);
+                _showAll.setVisibility(View.GONE);
+                _unreadOnly.setVisibility(View.GONE);
+                _hideFiltered.setVisibility(View.VISIBLE);
+                _hideFiltered.setChecked(hideFiltered);
                 break;
         }
         adapter.setDisplayModes(dispModes);

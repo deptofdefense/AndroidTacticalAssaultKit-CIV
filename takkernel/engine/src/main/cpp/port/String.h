@@ -3,12 +3,15 @@
 
 #include "port/Platform.h"
 #include "util/Error.h"
+#include "util/Memory.h"
 
 namespace TAK {
     namespace Engine {
         namespace Port {
             class ENGINE_API String
             {
+            private :
+                static constexpr std::size_t stackStorageSize = 24u;
             public: // constructors
                 String() NOTHROWS;
                 String(const char*) NOTHROWS;          // Copies supplied C string.
@@ -37,7 +40,11 @@ namespace TAK {
                 char* get() NOTHROWS;
                 const char *get() const NOTHROWS;
             private:
-                char* data;
+                struct {
+                    char stack[stackStorageSize];
+                    Util::array_ptr<char> heap;
+                    bool heapAlloc{true};
+                } data;
             };
 
             ENGINE_API Util::TAKErr String_parseDouble(double *value, const char *str) NOTHROWS;
