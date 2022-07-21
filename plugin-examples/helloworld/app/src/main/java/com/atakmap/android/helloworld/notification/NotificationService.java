@@ -2,6 +2,7 @@
 package com.atakmap.android.helloworld.notification;
 
 import com.atakmap.android.helloworld.plugin.BuildConfig;
+import com.atakmap.android.helloworld.plugin.INotificationService;
 import com.atakmap.android.helloworld.plugin.R;
 
 import android.app.NotificationChannel;
@@ -11,6 +12,7 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.IBinder;
 
+import android.os.RemoteException;
 import android.util.Log;
 
 import android.app.Notification;
@@ -40,10 +42,19 @@ import android.app.PendingIntent;
 public class NotificationService extends Service {
 
     private final static String TAG = "NotificationService";
+    private Notification.Builder nb;
+    private NotificationManager notificationManager;
+    private final int NOTIFICATION_ID = 9999;
+    private final INotificationService.Stub binder = new INotificationService.Stub() {
+        @Override
+        public void createNotification(int notificationId, String notificationText) throws RemoteException {
+            NotificationService.this.createNotification(notificationId,notificationText);
+        }
+    };
 
     @Override
     public IBinder onBind(Intent intent) {
-        return null;
+        return binder;
     }
 
     @Override
@@ -53,7 +64,7 @@ public class NotificationService extends Service {
         Log.d(TAG,
                 "getting ready to show the notification, can never use notification compat.");
 
-        NotificationManager notificationManager = (NotificationManager) getSystemService(
+        notificationManager = (NotificationManager) getSystemService(
                 NOTIFICATION_SERVICE);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -77,7 +88,6 @@ public class NotificationService extends Service {
         PendingIntent appIntent = PendingIntent.getActivity(this, 0,
                 atakFrontIntent, 0);
 
-        Notification.Builder nb;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             nb = new Notification.Builder(this,
                     "com.atakmap.android.helloworld.def");
@@ -85,14 +95,19 @@ public class NotificationService extends Service {
             nb = new Notification.Builder(this);
         }
 
-        nb.setContentTitle("Custom Notification").setContentText("Test Icon")
+        nb.setContentTitle("Custom Notification").setContentText("Notification service is running")
                 .setSmallIcon(R.drawable.abc)
                 .setContentIntent(appIntent);
         nb.setOngoing(false);
         nb.setAutoCancel(true);
 
-        notificationManager.notify(9999, nb.build());
-
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForeground(NOTIFICATION_ID, nb.build());
+        }
     }
 
+    private void createNotification(int notificationId, String notificationText) {
+        nb.setContentText(notificationText);
+        notificationManager.notify(notificationId, nb.build());
+    }
 }

@@ -488,6 +488,14 @@
                 android:text="Fake Content Provider" />
 
             <Button
+                android:id="@+id/pluginNotificationService"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Notification Service" />
+
+            <Button
                 android:id="@+id/pluginNotification"
                 style="@style/darkButton"
                 android:layout_width="wrap_content"

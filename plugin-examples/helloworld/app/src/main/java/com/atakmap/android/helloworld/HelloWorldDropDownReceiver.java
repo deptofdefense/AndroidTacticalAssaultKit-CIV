@@ -6,11 +6,13 @@ import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.ClipboardManager;
 
 import com.atakmap.android.helloworld.heatmap.GLSimpleHeatMapLayer;
 import com.atakmap.android.helloworld.heatmap.SimpleHeatMapLayer;
+import com.atakmap.android.helloworld.plugin.INotificationService;
 import com.atakmap.android.preference.AtakPreferences;
 
 import android.graphics.BitmapFactory;
@@ -18,6 +20,8 @@ import android.graphics.Canvas;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.VectorDrawable;
+import android.os.IBinder;
+import android.os.RemoteException;
 import android.util.Base64;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -238,6 +242,9 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
 
     private double currWidth = HALF_WIDTH;
     private double currHeight = HALF_HEIGHT;
+
+    // example service with binding
+    private INotificationService notificationService = null;
 
     private final CameraActivity.CameraDataListener cdl = new CameraActivity.CameraDataListener();
     private final CameraActivity.CameraDataReceiver cdr = new CameraActivity.CameraDataReceiver() {
@@ -1126,23 +1133,59 @@ public class HelloWorldDropDownReceiver extends DropDownReceiver implements
             }
         });
 
-        final Button pluginNotification = helloView
-                .findViewById(R.id.pluginNotification);
-        pluginNotification.setOnClickListener(new OnClickListener() {
+        final Button pluginNotificationService = helloView
+                .findViewById(R.id.pluginNotificationService);
+        pluginNotificationService.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
+                // for this button start the NotificationService and bind to it
                 Intent startServiceIntent = new Intent(
                         "com.atakmap.android.helloworld.notification.NotificationService");
+                // setting the package is required to start and bind services within ATAK
                 startServiceIntent
                         .setPackage("com.atakmap.android.helloworld.plugin");
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                    getMapView().getContext().startForegroundService(
-                            startServiceIntent);
-                else
-                    getMapView().getContext().startService(
-                            startServiceIntent);
+                ServiceConnection serviceConnection = new ServiceConnection() {
+                    @Override
+                    public void onServiceConnected(ComponentName name, IBinder service) {
+                        Log.d(TAG, "notification service connected");
+                        // services created in ATAK are always created in another process so
+                        // a local binder cannot be used and an AIDL interface or Messager approach
+                        // must be used, this example shows AIDL
+                        notificationService = INotificationService.Stub.asInterface(service);
+                    }
 
+                    @Override
+                    public void onServiceDisconnected(ComponentName name) {
+                        Log.d(TAG, "notification service disconnected");
+                    }
+                };
+                boolean result = getMapView().getContext().bindService(startServiceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+                Log.i(TAG, "notification service bind result: " + result);
+                if (!result) {
+                    Toast.makeText(getMapView().getContext(), "Unable to start Notification service", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
+        final Button pluginNotification = helloView
+                .findViewById(R.id.pluginNotification);
+        pluginNotification.setOnClickListener(new OnClickListener() {
+            int notificationId = 1;
+            @Override
+            public void onClick(View v) {
+                if (notificationService != null) {
+                    try {
+                        Log.i(TAG, "Creating notification using service");
+                        notificationService.createNotification(notificationId, "Notification " + notificationId);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "Error creating notification through service", e);
+                    }
+                    notificationId++;
+                } else {
+                    Log.w(TAG, "Notification service not available");
+                    Toast.makeText(getMapView().getContext(), "Notification service not available", Toast.LENGTH_SHORT).show();
+                }
             }
         });
 

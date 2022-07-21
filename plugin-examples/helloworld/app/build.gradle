@@ -13,7 +13,7 @@ buildscript {
 
     def takdevVersion = '2.+'
 
-    def getValueFromPropertiesFile = { propFile, key ->
+    ext.getValueFromPropertiesFile = { propFile, key ->
         if(!propFile.isFile() || !propFile.canRead())
             return null
         def prop = new Properties()
