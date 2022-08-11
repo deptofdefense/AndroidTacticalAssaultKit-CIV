@@ -56,11 +56,11 @@ $(libkml_configtouchfile): $(libkml_actouchfile)
 # the files are up to date;  it knows if anything needs to be done
 .PHONY: libkml_build
 libkml_build: $(libkml_configtouchfile)
-	$(MAKE) -C $(OUTDIR)/$(libkml_srcdir)
+	$(MAKE) -j `nproc` -C $(OUTDIR)/$(libkml_srcdir)
 
 $(libkml_src_libs): libkml_build
 	@echo "LibKML built"
 
 $(libkml_out_libs): $(libkml_src_libs)
-	$(MAKE) -C $(OUTDIR)/$(libkml_srcdir) install
+	$(MAKE) -j `nproc` -C $(OUTDIR)/$(libkml_srcdir) install
 	cd $(OUTDIR)/lib && ( test "`echo *.la`" = "*.la" && true || cd $(OUTDIR)/lib && for i in *.la ; do dos2unix $$i ; done )

@@ -21,7 +21,7 @@ gdal_ttp_zlib=$(gdal_ttp_zlib_$(GDAL_USE_TTP_ZLIB))
 
 
 $(gdal_configtouchfile): $(OUTDIR)/$(gdal_local_srcdir)/configure
-	cd $(OUTDIR)/$(gdal_local_srcdir) &&                                \
+	cd $(OUTDIR)/$(gdal_local_srcdir) &&                            \
 		CFLAGS="$(gdal_CFLAGS)"                                     \
 		CXXFLAGS="$(gdal_CXXFLAGS)"                                 \
 		LDFLAGS="$(gdal_LDFLAGS)"                                   \
@@ -48,8 +48,8 @@ $(gdal_configtouchfile): $(OUTDIR)/$(gdal_local_srcdir)/configure
 		--without-lerc                                              \
 		--with-pdfium=$(OUTDIR_CYGSAFE)/pdfium                      \
 		--with-pdfium-extra-lib-for-test=                           \
-                --without-pcre                                              \
-                --with-png=internal                                         \
+        --without-pcre                                              \
+        --with-png=internal                                         \
 		--enable-static                                             \
 		--prefix=$(OUTDIR_CYGSAFE)
 	touch $@
@@ -58,10 +58,10 @@ $(gdal_configtouchfile): $(OUTDIR)/$(gdal_local_srcdir)/configure
 # the files are up to date;  it knows if anything needs to be done
 .PHONY: gdal_build gdal_java gdal_java_data
 gdal_build: $(OUTDIR)/$(gdal_local_srcdir) $(gdal_configtouchfile)
-	$(MAKE) -C $(OUTDIR)/$(gdal_local_srcdir) $(gdal_BUILD_MAKEOVERRIDES)
+	$(MAKE) -j `nproc` -C $(OUTDIR)/$(gdal_local_srcdir) $(gdal_BUILD_MAKEOVERRIDES)
 
 gdal_java: $(OUTDIR)/$(gdal_local_srcdir) $(gdal_configtouchfile)
-	$(MAKE) -C $(OUTDIR)/$(gdal_local_srcdir)/swig                   \
+	$(MAKE) -j `nproc` -C $(OUTDIR)/$(gdal_local_srcdir)/swig    \
 		$(if $(SWIG),SWIG="$(call PATH_CYGSAFE,$(SWIG))",)       \
 		$(if $(gdal_KILL_JAVA_INCLUDE),JAVA_INCLUDE="",)         \
 		BINDINGS=java                                            \
@@ -83,10 +83,10 @@ $(gdal_local_javalibs): gdal_java gdal_java_data
 	@echo "gdal Java Bindings built"
 
 $(gdal_out_lib): $(gdal_local_libfile)
-	$(MAKE) -C $(OUTDIR)/$(gdal_local_srcdir) install
+	$(MAKE) -j `nproc` -C $(OUTDIR)/$(gdal_local_srcdir) install
 	cd $(OUTDIR)/lib && ( test "`echo *.la`" = "*.la" && true || cd $(OUTDIR)/lib && for i in *.la ; do dos2unix $$i ; done )
 
 $(gdal_out_javalibs): $(gdal_local_javalibs)
-	$(MAKE) -C $(OUTDIR)/$(gdal_local_srcdir)/swig BINDINGS=java install
+	$(MAKE) -j `nproc` -C $(OUTDIR)/$(gdal_local_srcdir)/swig BINDINGS=java install
 	cp $(OUTDIR)/$(gdal_local_srcdir)/swig/java/gdal.jar $(OUTDIR)/java/
 

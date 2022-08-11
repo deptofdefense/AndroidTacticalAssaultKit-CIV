@@ -35,7 +35,7 @@ $(protobuf_configtouchfile): $(protobuf_srctouchfile)
 # It also fails to link right on Windows hosting an android build
 .PHONY: protobuf_build
 protobuf_build: $(protobuf_hosttools_builttouchfile) $(protobuf_configtouchfile)
-	$(MAKE) -C $(OUTDIR)/$(protobuf_srcdir)                     \
+	$(MAKE) -j `nproc` -C $(OUTDIR)/$(protobuf_srcdir)       \
 		bin_PROGRAMS=""                                     
 
 $(protobuf_src_lib): protobuf_build
@@ -44,7 +44,7 @@ $(protobuf_src_lib): protobuf_build
 # Overrides bin_PROGRAMS since we don't need protoc (it's in host tools!)
 # It also fails to link right on Windows hosting an android build
 $(protobuf_out_lib): $(protobuf_src_lib)
-	$(MAKE) -C $(OUTDIR)/$(protobuf_srcdir)                     \
+	$(MAKE) -j `nproc` -C $(OUTDIR)/$(protobuf_srcdir)      \
 		mkinstalldirs="mkdir -p"                            \
 		bin_PROGRAMS=""                                     \
 		install

@@ -5,7 +5,7 @@ ifeq ($(and $(libxml2_CFLAGS),$(libxml2_installtargets)),)
 endif
 
 $(libxml2_configtouchfile): $(libxml2_srctouchfile)
-	cd $(OUTDIR)/$(libxml2_srcdir) &&                       \
+	cd $(OUTDIR)/$(libxml2_srcdir) &&                   \
 		CFLAGS="$(libxml2_CFLAGS)"                      \
 		LDFLAGS="$(libxml2_LDFLAGS)"                    \
 		CC="$(CC)"                                      \
@@ -19,8 +19,8 @@ $(libxml2_configtouchfile): $(libxml2_srctouchfile)
 		--disable-shared                                \
 		--enable-static                                 \
 		--without-python                                \
-                --without-lzma                                  \
-                --without-zlib                                  \
+        --without-lzma                                  \
+        --without-zlib                                  \
 		--prefix=$(OUTDIR_CYGSAFE)
 	touch $@
 
@@ -28,13 +28,13 @@ $(libxml2_configtouchfile): $(libxml2_srctouchfile)
 # the files are up to date;  it knows if anything needs to be done
 .PHONY: libxml2_build
 libxml2_build: $(libxml2_configtouchfile)
-	$(MAKE) -C $(OUTDIR)/$(libxml2_srcdir) $(libxml2_buildtarget)
+	$(MAKE) -j `nproc` -C $(OUTDIR)/$(libxml2_srcdir) $(libxml2_buildtarget)
 
 $(libxml2_src_lib): libxml2_build
 	@echo "Libxml built"
 
 $(libxml2_out_lib): $(libxml2_src_lib)
-	$(MAKE) -C $(OUTDIR)/$(libxml2_srcdir)                  \
+	$(MAKE) -j `nproc` -C $(OUTDIR)/$(libxml2_srcdir) \
 		mkinstalldirs="mkdir -p"                      \
 		$(libxml2_installtargets)
 	cd $(OUTDIR)/lib && ( test "`echo *.la`" = "*.la" && true || cd $(OUTDIR)/lib && for i in *.la ; do dos2unix $$i ; done )

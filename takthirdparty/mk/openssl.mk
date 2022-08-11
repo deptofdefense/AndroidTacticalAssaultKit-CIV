@@ -15,11 +15,12 @@ $(openssl_configtouchfile): $(openssl_srctouchfile)
 # the files are up to date;  it knows if anything needs to be done
 .PHONY: openssl_build
 openssl_build: $(openssl_configtouchfile)
-	$(MAKE) -C $(OUTDIR)/$(openssl_srcdir) Makefile build_libs build_apps openssl.pc libssl.pc libcrypto.pc
+	$(MAKE) -j `nproc` -C $(OUTDIR)/$(openssl_srcdir) Makefile build_libs
+	$(MAKE) -j `nproc` -C $(OUTDIR)/$(openssl_srcdir) build_apps openssl.pc libssl.pc libcrypto.pc
 
 $(openssl_src_libs): openssl_build
 	@echo "OpenSSL built"
 
 $(openssl_out_libs): $(openssl_src_libs)
-	$(MAKE) -C $(OUTDIR)/$(openssl_srcdir) install_sw
+	$(MAKE) -j `nproc` -C $(OUTDIR)/$(openssl_srcdir) install_sw
 	cd $(OUTDIR)/lib && ( test "`echo *.la`" = "*.la" && true || cd $(OUTDIR)/lib && for i in *.la ; do dos2unix $$i ; done )

@@ -8,7 +8,7 @@ geos_configtouchfile=$(OUTDIR)/$(geos_srcdir)/.configured
 
 
 $(geos_configtouchfile): $(geos_srctouchfile)
-	cd $(OUTDIR)/$(geos_srcdir) &&                       \
+	cd $(OUTDIR)/$(geos_srcdir) &&                   \
 		CFLAGS="$(geos_CFLAGS)"                      \
 		CXXFLAGS="$(geos_CXXFLAGS)"                  \
 		LDFLAGS="$(geos_LDFLAGS)"                    \
@@ -27,13 +27,13 @@ $(geos_configtouchfile): $(geos_srctouchfile)
 # the files are up to date;  it knows if anything needs to be done
 .PHONY: geos_build
 geos_build: $(geos_configtouchfile)
-	$(MAKE) -C $(OUTDIR)/$(geos_srcdir)
+	$(MAKE) -j `nproc` -C $(OUTDIR)/$(geos_srcdir)
 
 $(geos_src_lib): geos_build
 	@echo "geos built"
 
 $(geos_out_lib): $(geos_src_lib)
-	$(MAKE) -C $(OUTDIR)/$(geos_srcdir)                  \
+	$(MAKE) -j `nproc` -C $(OUTDIR)/$(geos_srcdir)   \
 		mkinstalldirs="mkdir -p"                     \
 		install
 	cd $(OUTDIR)/lib && ( test "`echo *.la`" = "*.la" && true || cd $(OUTDIR)/lib && for i in *.la ; do dos2unix $$i ; done )

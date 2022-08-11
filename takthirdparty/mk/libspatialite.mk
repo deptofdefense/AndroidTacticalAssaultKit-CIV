@@ -57,7 +57,7 @@ $(libspatialite_configtouchfile): $(libspatialite_srctouchfile)
 		--enable-geos                                \
 		--enable-proj                                \
 		--enable-iconv                               \
-                --enable-libxml2                             \
+        --enable-libxml2                             \
 		--disable-freexl                             \
 		--with-geosconfig=$(OUTDIR)/bin/geos-config  \
 		--disable-examples                           \
@@ -72,13 +72,13 @@ $(libspatialite_configtouchfile): $(libspatialite_srctouchfile)
 # the files are up to date;  it knows if anything needs to be done
 .PHONY: libspatialite_build
 libspatialite_build: $(libspatialite_configtouchfile)
-	$(MAKE) -C $(OUTDIR)/$(libspatialite_srcdir)
+	$(MAKE) -j `nproc` -C $(OUTDIR)/$(libspatialite_srcdir)
 
 $(libspatialite_src_lib): libspatialite_build
 	@echo "libspatialite built"
 
 $(libspatialite_out_lib): $(libspatialite_src_lib)
-	$(MAKE) -C $(OUTDIR)/$(libspatialite_srcdir)         \
+	$(MAKE) -j `nproc` -C $(OUTDIR)/$(libspatialite_srcdir)         \
 		mkinstalldirs="mkdir -p"                     \
 		install
 	cd $(OUTDIR)/lib && ( test "`echo *.la`" = "*.la" && true || cd $(OUTDIR)/lib && for i in *.la ; do dos2unix $$i ; done )

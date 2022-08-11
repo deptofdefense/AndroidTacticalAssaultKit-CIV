@@ -11,7 +11,7 @@ pri_local_libfile=$(pri_local_srcdir)/pricpp/src/pri/$(pri_libfile)
 # the file is up to date;  it knows if anything needs to be done
 .PHONY: $(pri_local_libfile)
 $(pri_local_libfile): $(pri_local_srcdir)
-	$(MAKE) -C $(pri_local_srcdir)/pricpp/src/pri CC=$(CC) CXX=$(CXX) \
+	$(MAKE) -j `nproc` -C $(pri_local_srcdir)/pricpp/src/pri CC=$(CC) CXX=$(CXX) \
 		PRI_CXXFLAGS="$(pri_CXXFLAGS) -I$(OUTDIR_CYGSAFE)/include -L$(OUTDIR_CYGSAFE)/lib" \
 		PRI_SOSUFFIX="$(LIB_SHAREDSUFFIX)"
 
