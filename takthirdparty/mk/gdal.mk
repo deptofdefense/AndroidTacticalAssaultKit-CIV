@@ -21,14 +21,14 @@ gdal_ttp_zlib=$(gdal_ttp_zlib_$(GDAL_USE_TTP_ZLIB))
 
 
 $(gdal_configtouchfile): $(OUTDIR)/$(gdal_local_srcdir)/configure
-	cd $(OUTDIR)/$(gdal_local_srcdir) &&                            \
+	cd $(OUTDIR)/$(gdal_local_srcdir)                            && \
 		CFLAGS="$(gdal_CFLAGS)"                                     \
 		CXXFLAGS="$(gdal_CXXFLAGS)"                                 \
 		LDFLAGS="$(gdal_LDFLAGS)"                                   \
 		CC="$(CC)"                                                  \
 		CPP="$(CPP)"                                                \
 		CXX="$(CXX)"                                                \
-		SO_EXT="$$(echo $$LIB_SHAREDSUFFIX |awk '{ s=substr($$0, 2); print $s; }' )"                             \
+		SO_EXT="$$(echo $$LIB_SHAREDSUFFIX |awk '{ s=substr($$0, 2); print $s; }' )" \
 		$(if $(LN_S),LN_S="$(LN_S)",)                               \
 		$(if $(gdal_LIBS),LIBS="$(gdal_LIBS)",)                     \
 		./configure                                                 \
@@ -48,8 +48,8 @@ $(gdal_configtouchfile): $(OUTDIR)/$(gdal_local_srcdir)/configure
 		--without-lerc                                              \
 		--with-pdfium=$(OUTDIR_CYGSAFE)/pdfium                      \
 		--with-pdfium-extra-lib-for-test=                           \
-        --without-pcre                                              \
-        --with-png=internal                                         \
+		--without-pcre                                              \
+		--with-png=internal                                         \
 		--enable-static                                             \
 		--prefix=$(OUTDIR_CYGSAFE)
 	touch $@
@@ -70,9 +70,9 @@ gdal_java: $(OUTDIR)/$(gdal_local_srcdir) $(gdal_configtouchfile)
 
 gdal_java_data:
 	rm -rf $(OUTDIR)/$(gdal_local_srcdir)/data/CVS
-	cd $(OUTDIR)/$(gdal_local_srcdir)/data &&                        \
+	cd $(OUTDIR)/$(gdal_local_srcdir)/data                        && \
             ls -1 > gdaldata.files
-	cd $(OUTDIR) &&                                                  \
+	cd $(OUTDIR)                                                  && \
             $(JAVA_HOME)/bin/jar cvf $(OUTDIR_CYGSAFE)/java/gdaldata.jar ./gdal/data
 	rm -f $(OUTDIR)/$(gdal_local_srcdir)/data/gdaldata.files
 

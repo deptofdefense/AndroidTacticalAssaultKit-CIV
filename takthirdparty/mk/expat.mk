@@ -9,7 +9,7 @@ include mk/expat-common.mk
 expat_src_lib=$(OUTDIR)/$(expat_srcdir)/$(expat_libfile)
 
 $(expat_configtouchfile): $(expat_srctouchfile)
-	cd $(OUTDIR)/$(expat_srcdir) &&                   \
+	cd $(OUTDIR)/$(expat_srcdir)                   && \
 		CFLAGS="$(expat_CFLAGS)"                      \
 		LDFLAGS="$(expat_LDFLAGS)"                    \
 		CC="$(CC)"                                    \

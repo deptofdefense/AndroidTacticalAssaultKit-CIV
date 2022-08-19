@@ -40,27 +40,26 @@ libspatialite_configtouchfile=$(OUTDIR)/$(libspatialite_srcdir)/.configured
 
 
 $(libspatialite_configtouchfile): $(libspatialite_srctouchfile)
-	cd $(OUTDIR)/$(libspatialite_srcdir) &&              \
-		CFLAGS="$(libspatialite_CFLAGS) -fvisibility=hidden -I$(OUTDIR_CYGSAFE)/include"         \
-		CPPFLAGS="$(CPPFLAGS) -I$(OUTDIR_CYGSAFE)/include"           \
-		LDFLAGS="$(libspatialite_LDFLAGS) -L$(OUTDIR_CYGSAFE)/lib"   \
-		CC="$(CC)"                                   \
-		CPP="$(CPP)"                                 \
-		CXX="$(CXX)"                                 \
-		LIBXML2_CFLAGS="$(shell $(OUTDIR)/libxml2/xml2-config --cflags)" \
-		LIBXML2_LIBS="$(shell $(OUTDIR)/libxml2/xml2-config --libs)"    \
-		LIBS="-lcrypto $(libspatialite_LIBS)"        \
-		LD_LIBRARY_PATH="$(OUTDIR)/lib"              \
-		./configure                                  \
-		$(CONFIGURE_TARGET)                          \
-		$(CONFIGURE_$(BUILD_TYPE))                   \
-		--enable-geos                                \
-		--enable-proj                                \
-		--enable-iconv                               \
-        --enable-libxml2                             \
-		--disable-freexl                             \
-		--with-geosconfig=$(OUTDIR)/bin/geos-config  \
-		--disable-examples                           \
+	cd $(OUTDIR)/$(libspatialite_srcdir)                                                 && \
+		CFLAGS="$(libspatialite_CFLAGS) -fvisibility=hidden -I$(OUTDIR_CYGSAFE)/include"    \
+		CPPFLAGS="$(CPPFLAGS) -I$(OUTDIR_CYGSAFE)/include"                                  \
+		LDFLAGS="$(libspatialite_LDFLAGS) -L$(OUTDIR_CYGSAFE)/lib"                          \
+		CC="$(CC)"                                                                          \
+		CPP="$(CPP)"                                                                        \
+		CXX="$(CXX)"                                                                        \
+		LIBXML2_CFLAGS="$(shell $(OUTDIR)/libxml2/xml2-config --cflags)"                    \
+		LIBXML2_LIBS="$(shell $(OUTDIR)/libxml2/xml2-config --libs)"                        \
+		LIBS="-lcrypto $(libspatialite_LIBS)"                                               \
+		./configure                                                                         \
+		$(CONFIGURE_TARGET)                                                                 \
+		$(CONFIGURE_$(BUILD_TYPE))                                                          \
+		--enable-geos                                                                       \
+		--enable-proj                                                                       \
+		--enable-iconv                                                                      \
+		--enable-libxml2                                                                    \
+		--disable-freexl                                                                    \
+		--with-geosconfig=$(OUTDIR)/bin/geos-config                                         \
+		--disable-examples                                                                  \
 		--prefix=$(OUTDIR_CYGSAFE)
 	touch $@
 
@@ -78,8 +77,8 @@ $(libspatialite_src_lib): libspatialite_build
 	@echo "libspatialite built"
 
 $(libspatialite_out_lib): $(libspatialite_src_lib)
-	$(MAKE) -j `nproc` -C $(OUTDIR)/$(libspatialite_srcdir)         \
-		mkinstalldirs="mkdir -p"                     \
+	$(MAKE) -j `nproc` -C $(OUTDIR)/$(libspatialite_srcdir) \
+		mkinstalldirs="mkdir -p"                            \
 		install
 	cd $(OUTDIR)/lib && ( test "`echo *.la`" = "*.la" && true || cd $(OUTDIR)/lib && for i in *.la ; do dos2unix $$i ; done )
 

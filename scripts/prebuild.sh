@@ -21,23 +21,23 @@ wait
 
 # Make the third party parts in parallel
 make -C ../takthirdparty \
-	TARGET=android-armeabi-v7a GDAL_USE_KDU=no \
-	build_spatialite \
-	build_commoncommo \
-	build_gdal \
-	build_assimp &
+    TARGET=android-armeabi-v7a GDAL_USE_KDU=no \
+    build_spatialite \
+    build_commoncommo \
+    build_gdal \
+    build_assimp &
 make -C ../takthirdparty \
-	TARGET=android-arm64-v8a GDAL_USE_KDU=no \
-	build_spatialite \
-	build_commoncommo \
-	build_gdal \
-	build_assimp &
+    TARGET=android-arm64-v8a GDAL_USE_KDU=no \
+    build_spatialite \
+    build_commoncommo \
+    build_gdal \
+    build_assimp &
 make -C ../takthirdparty \
-	TARGET=android-x86 GDAL_USE_KDU=no \
-	build_spatialite \
-	build_commoncommo \
-	build_gdal \
-	build_assimp &
+    TARGET=android-x86 GDAL_USE_KDU=no \
+    build_spatialite \
+    build_commoncommo \
+    build_gdal \
+    build_assimp &
 wait
 
 # find is faster and more precise than rm -rf
@@ -85,24 +85,24 @@ ANDROID_ABIS="arm64-v8a armeabi-v7a x86"
 for LASZIP_ANDROID_ABI in ${ANDROID_ABIS} ;
 do
     (
-		mkdir -p build-android-${LASZIP_ANDROID_ABI}
-    	pushd build-android-${LASZIP_ANDROID_ABI}
-    	cmake .. \
-			-G Ninja \
-			-DCMAKE_TOOLCHAIN_FILE=../cmake/android.toolchain.cmake \
-			-DCMAKE_BUILD_TYPE=Release \
-			-DANDROID_NDK=${ANDROID_NDK_HOME} \
-			-DANDROID_ABI=${LASZIP_ANDROID_ABI} \
-			-DANDROID_TOOLCHAIN=gcc \
-			-DANDROID_STL=gnustl_static \
-			-DANDROID_PLATFORM=android-24 \
-			-DCMAKE_CXX_FLAGS="-fexceptions -frtti -std=c++11" \
-			-DLASZIP_BUILD_STATIC=ON
-    	cmake --build .
-    	cp -r ../include .
-    	cp ../src/*.hpp ./include/laszip
-    	popd
-	) &
+        mkdir -p build-android-${LASZIP_ANDROID_ABI}
+        pushd build-android-${LASZIP_ANDROID_ABI}
+        cmake .. \
+            -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE=../cmake/android.toolchain.cmake \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DANDROID_NDK=${ANDROID_NDK_HOME} \
+            -DANDROID_ABI=${LASZIP_ANDROID_ABI} \
+            -DANDROID_TOOLCHAIN=gcc \
+            -DANDROID_STL=gnustl_static \
+            -DANDROID_PLATFORM=android-24 \
+            -DCMAKE_CXX_FLAGS="-fexceptions -frtti -std=c++11" \
+            -DLASZIP_BUILD_STATIC=ON
+        cmake --build .
+        cp -r ../include .
+        cp ../src/*.hpp ./include/laszip
+        popd
+    ) &
 done
 # Wait for all to complete
 wait
@@ -120,25 +120,25 @@ ANDROID_ABIS="arm64-v8a armeabi-v7a x86"
 # Compile all ABI in parallel
 for LIBLAS_ANDROID_ABI in ${ANDROID_ABIS} ;
 do
-	(
-    	mkdir -p build-android-${LIBLAS_ANDROID_ABI}
-    	pushd build-android-${LIBLAS_ANDROID_ABI}
-    	cmake .. \
-			-G Ninja \
-			-DCMAKE_TOOLCHAIN_FILE=../cmake/android.toolchain.cmake \
-			-DCMAKE_BUILD_TYPE=Release \
-			-DANDROID_NDK=${ANDROID_NDK_HOME} \
-			-DANDROID_ABI=${LIBLAS_ANDROID_ABI} \
-			-DANDROID_TOOLCHAIN=gcc \
-			-DANDROID_STL=gnustl_static \
-			-DANDROID_PLATFORM=android-24 \
-			-DCMAKE_CXX_FLAGS="-fexceptions -frtti -std=c++11" \
-			-DLASZIP_BUILD_STATIC=ON
-    	cmake --build . --target las_c
-    	cmake --build . --target las
-    	cp -r ../include .
-    	popd
-	) &
+    (
+        mkdir -p build-android-${LIBLAS_ANDROID_ABI}
+        pushd build-android-${LIBLAS_ANDROID_ABI}
+        cmake .. \
+            -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE=../cmake/android.toolchain.cmake \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DANDROID_NDK=${ANDROID_NDK_HOME} \
+            -DANDROID_ABI=${LIBLAS_ANDROID_ABI} \
+            -DANDROID_TOOLCHAIN=gcc \
+            -DANDROID_STL=gnustl_static \
+            -DANDROID_PLATFORM=android-24 \
+            -DCMAKE_CXX_FLAGS="-fexceptions -frtti -std=c++11" \
+            -DLASZIP_BUILD_STATIC=ON
+        cmake --build . --target las_c
+        cmake --build . --target las
+        cp -r ../include .
+        popd
+    ) &
 done
 # Wait for all to complete
 wait
