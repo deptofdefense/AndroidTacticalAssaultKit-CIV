@@ -120,7 +120,7 @@ jobs:
         echo "ndk.dir=$ANDROID_NDK" >> local.properties
         rm -rf ATAK/app/build
         bash ./gradlew generateJniHeaders
-        bash ./gradlew assembleCivSdk
+        bash ./gradlew assembleCivRelease
     - name: generate ATAK CIV SDK package
       run: |
         rm -rf takthirdparty
