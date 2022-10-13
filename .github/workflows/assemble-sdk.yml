@@ -1,7 +1,10 @@
 name: Assemble ATAK
 
 on:
-  pull_request:
+  push:
+    branches:
+      - master
+      - maak
 jobs:
   assemble:
     name: Build
@@ -92,19 +95,27 @@ jobs:
             (cd lib && (find . -maxdepth 1 -type f -not -name "*.so" -print0 | xargs -0 -I {} rm -f {})) ; \
             popd ; \
         done
-    - name: Create Keystore
+    - name: install ATAK SDK keystore
+      env:
+          ANDROID_KEYSTORE_FILE: ${{ secrets.SDK_KEYSTORE_FILE }}
+          ANDROID_KEYSTORE_ALIAS: ${{ secrets.SDK_KEYSTORE_ALIAS }}
+          ANDROID_KEYSTORE_STORE_PASSWORD: ${{ secrets.SDK_KEYSTORE_STORE_PASSWORD }}
+          ANDROID_KEYSTORE_KEY_PASSWORD: ${{ secrets.SDK_KEYSTORE_KEY_PASSWORD }}
       run: |
-        echo y | $JAVA_HOME/bin/keytool -genkeypair -dname "cn=ATAK CIV, ou=, o=, c=US" -alias $KEYSTORE_ALIAS -keypass $KEYSTORE_KEY_PASSWORD -keystore $HOME/secrets/android_keystore -storepass $KEYSTORE_STORE_PASSWORD -validity 10000
+        rm -rf $HOME/secrets
+        mkdir $HOME/secrets
+        echo "$ANDROID_KEYSTORE_FILE" > $HOME/secrets/sdk_keystore.base64
+        base64 -d $HOME/secrets/sdk_keystore.base64 > $HOME/secrets/sdk_keystore
         cd atak
         rm -rf local.properties
-        echo "takDebugKeyFile=$HOME/secrets/android_keystore" >> local.properties
-        echo "takDebugKeyFilePassword=$KEYSTORE_STORE_PASSWORD" >> local.properties
-        echo "takDebugKeyAlias=$KEYSTORE_ALIAS" >> local.properties
-        echo "takDebugKeyPassword=$KEYSTORE_KEY_PASSWORD" >> local.properties
-        echo "takReleaseKeyFile=$HOME/secrets/android_keystore" >> local.properties
-        echo "takReleaseKeyFilePassword=$KEYSTORE_STORE_PASSWORD" >> local.properties
-        echo "takReleaseKeyAlias=$KEYSTORE_ALIAS" >> local.properties
-        echo "takReleaseKeyPassword=$KEYSTORE_KEY_PASSWORD" >> local.properties
+        echo "takDebugKeyFile=$HOME/secrets/sdk_keystore" >> local.properties
+        echo "takDebugKeyFilePassword=$ANDROID_KEYSTORE_STORE_PASSWORD" >> local.properties
+        echo "takDebugKeyAlias=$ANDROID_KEYSTORE_ALIAS" >> local.properties
+        echo "takDebugKeyPassword=$ANDROID_KEYSTORE_KEY_PASSWORD" >> local.properties
+        echo "takReleaseKeyFile=$HOME/secrets/sdk_keystore" >> local.properties
+        echo "takReleaseKeyFilePassword=$ANDROID_KEYSTORE_STORE_PASSWORD" >> local.properties
+        echo "takReleaseKeyAlias=$ANDROID_KEYSTORE_ALIAS" >> local.properties
+        echo "takReleaseKeyPassword=$ANDROID_KEYSTORE_KEY_PASSWORD" >> local.properties
     - name: Assemble ATAK APK
       run: |
         cd atak
@@ -113,6 +124,7 @@ jobs:
         rm -rf ATAK/app/build
         bash ./gradlew generateJniHeaders
         bash ./gradlew assembleCivSdk
+        bash ./gradlew assembleCivRelease
     - name: generate ATAK CIV SDK package
       run: |
         rm -rf takthirdparty
@@ -143,8 +155,13 @@ jobs:
         popd
         mv pluginsdk atak-civ-sdk
     - name: Upload SDK build output
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: assembleCivSdk
         path: |
             atak-civ-sdk
+    - name: Upload ATAK APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: assembleCivRelease
+        path: ATAK/app/build/outputs/apk/civ/release/*.apk
