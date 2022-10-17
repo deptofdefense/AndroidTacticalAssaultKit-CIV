@@ -3967,4 +3967,5 @@
   <string name="edit_features">Edit Features</string>
   <string name="action_bar_experience">Action Bar Experience</string>
     <string name="first_person_tool_prompt">Tap location for First Person View</string>
+    <string name="grid_lines_overlay_name">Grid Lines</string>
 </resources>
