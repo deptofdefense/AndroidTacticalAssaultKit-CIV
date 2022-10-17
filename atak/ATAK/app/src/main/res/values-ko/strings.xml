@@ -3977,4 +3977,5 @@
     <string name="heatmap_overlay_name">Heatmap Overlay</string>
     <string name="first_person_tool_prompt">Tap location for First Person View</string>
     <string name="grid_lines_overlay_name">Grid Lines</string>
+    <string name="deep_count_information">(%d including sub-items)</string>
 </resources>

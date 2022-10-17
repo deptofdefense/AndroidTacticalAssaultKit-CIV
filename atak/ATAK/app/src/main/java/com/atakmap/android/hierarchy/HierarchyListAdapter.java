@@ -935,8 +935,7 @@ public class HierarchyListAdapter extends BaseAdapter implements
             if (childCount > 0) {
                 int deepCount = item.getDescendantCount();
                 if (deepCount > childCount)
-                    sb.append(" (").append(deepCount)
-                            .append(" including sub-items)");
+                    sb.append(context.getString(R.string.deep_count_information, deepCount));
             }
             h.desc.setText(sb.toString());
             h.desc.setVisibility(View.VISIBLE);
