@@ -4089,4 +4089,7 @@
   <string name="first_person_tool_prompt">Appuyer sur la carte pour activer la vue à la première personne</string>
   <string name="grid_lines_overlay_name">Quadrillage</string>
   <string name="deep_count_information">(%d incluant sous-items)</string>
+  <string name="file_overlays_name">Calques de fichier</string>
+  <string name="markers_overlay_name">Marqueurs</string>
+  <string name="other_overlays">Autres calques</string>
 </resources>

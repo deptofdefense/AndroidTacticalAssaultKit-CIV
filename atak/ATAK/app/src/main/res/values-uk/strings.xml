@@ -3969,5 +3969,8 @@
     <string name="first_person_tool_prompt">Tap location for First Person View</string>
     <string name="grid_lines_overlay_name">Grid Lines</string>
     <string name="deep_count_information">(%d including sub-items)</string>
+    <string name="file_overlays_name">File Overlays</string>
+    <string name="markers_overlay_name">Markers</string>
+    <string name="other_overlays">Other Overlays</string>
 </resources>
 
