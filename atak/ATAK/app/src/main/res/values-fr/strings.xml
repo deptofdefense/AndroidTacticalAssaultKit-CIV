@@ -4096,4 +4096,7 @@
   <string name="offscreen_indicator_overlay_name">Indicateurs hors écran</string>
   <string name="remove_all_landmarks">Supprimer tous les repères?</string>
   <string name="no_gps_capitalized">AUCUN GPS</string>
+  <string name="track_style_solid">Solid</string>
+  <string name="track_style_arrows">Arrows</string>
+  <string name="track_style_dashed">Dashed</string>
 </resources>

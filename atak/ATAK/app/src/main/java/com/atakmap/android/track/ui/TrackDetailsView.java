@@ -125,8 +125,8 @@ public class TrackDetailsView extends LinearLayout implements
     }
 
     public void init(MapView mapView, MapGroup mapGroup, TrackDetails track,
-            TrackHistoryDropDown trackHandler, DropDownReceiver dropDown,
-            boolean hideOnClose) {
+                     TrackHistoryDropDown trackHandler, DropDownReceiver dropDown,
+                     boolean hideOnClose) {
         _track = track;
         _trackHandler = trackHandler;
         _dropDown = dropDown;
@@ -256,7 +256,7 @@ public class TrackDetailsView extends LinearLayout implements
 
         _trackColor.setColorFilter(_track.getColor(),
                 PorterDuff.Mode.MULTIPLY);
-        _trackStyle.setText(_track.getSummary());
+        _trackStyle.setText(ctx.getString(TrackDetails.Style.valueOf(_track.getSummary()).getStringRes()));
 
         setStartDateTime(_track.getStartTime());
         _totalTime.setText(MathUtils.GetTimeRemainingString(_track
@@ -300,11 +300,11 @@ public class TrackDetailsView extends LinearLayout implements
         else if (id == R.id.track_details_create_new)
             TrackHistoryDropDown.promptNewTrack(_prefs, _mapView, true);
 
-        // Search tracks
+            // Search tracks
         else if (id == R.id.track_details_search)
             _trackHandler.showTrackSearchView(null, false);
 
-        // Pan to track start point
+            // Pan to track start point
         else if (id == R.id.track_details_startLayout) {
             final GeoPointMetaData gpm = _track.getStartPoint();
             if (gpm != null)
@@ -388,20 +388,24 @@ public class TrackDetailsView extends LinearLayout implements
         else if (id == R.id.track_details_styleBtn) {
             final AlertDialog.Builder b = new AlertDialog.Builder(ctx);
             b.setTitle(R.string.select_track_style);
-            final ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(
+            final ArrayAdapter<LineStyle> arrayAdapter = new ArrayAdapter<>(
                     ctx, android.R.layout.select_dialog_singlechoice);
-            arrayAdapter.add(TrackDetails.Style.Solid.toString());
-            arrayAdapter.add(TrackDetails.Style.Arrows.toString());
-            arrayAdapter.add(TrackDetails.Style.Dashed.toString());
+            final LineStyle solid = new LineStyle(TrackDetails.Style.Solid, ctx);
+            final LineStyle arrows = new LineStyle(TrackDetails.Style.Arrows, ctx);
+            final LineStyle dashed = new LineStyle(TrackDetails.Style.Dashed, ctx);
 
-            int trackStyle = arrayAdapter.getPosition(_track.getSummary());
+            arrayAdapter.add(solid);
+            arrayAdapter.add(arrows);
+            arrayAdapter.add(dashed);
+
+            int selectedTrackStyle = TrackDetails.Style.valueOf(_track.getSummary()).ordinal();
 
             b.setNegativeButton(R.string.cancel, null);
-            b.setSingleChoiceItems(arrayAdapter, trackStyle,
+            b.setSingleChoiceItems(arrayAdapter, selectedTrackStyle,
                     new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface d, int w) {
-                            _track.setStyle(arrayAdapter.getItem(w), ctx);
+                            _track.setStyle(arrayAdapter.getItem(w).getValue());
                             refresh();
                             if (_trackHandler != null)
                                 _trackHandler.onTrackChanged(_track);
@@ -446,7 +450,7 @@ public class TrackDetailsView extends LinearLayout implements
         else if (id == R.id.track_details_export && _track != null)
             TrackHistoryDropDown.exportTrack(_mapView, _track);
 
-        // Open elevation profile
+            // Open elevation profile
         else if (id == R.id.track_details_graph && _track != null) {
             if (_track.getCount() < 2) {
                 Toast.makeText(ctx, R.string.track_no_2_points,
@@ -632,5 +636,25 @@ public class TrackDetailsView extends LinearLayout implements
                 refresh();
             }
         });
+    }
+
+    private static class LineStyle
+    {
+        private final TrackDetails.Style _value;
+        private final String _displayedName;
+
+        private LineStyle(final TrackDetails.Style value, final Context context) {
+            _value = value;
+            _displayedName = context.getString(value.getStringRes());
+        }
+
+        public TrackDetails.Style getValue() {
+            return _value;
+        }
+
+        @Override
+        public String toString() {
+            return _displayedName;
+        }
     }
 }

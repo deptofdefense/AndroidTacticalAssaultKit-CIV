@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
+import androidx.annotation.StringRes;
+
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
@@ -16,6 +18,7 @@ import com.atakmap.android.track.crumb.CrumbDatabase;
 import com.atakmap.android.track.maps.TrackPolyline;
 import com.atakmap.android.util.AltitudeUtilities;
 import com.atakmap.android.util.SpeedFormatter;
+import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.conversions.SpanUtilities;
 import com.atakmap.coremap.log.Log;
@@ -24,7 +27,7 @@ import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 /**
  * A convenience wrapper around a Polyline
  *
- * 
+ *
  */
 public class TrackDetails
         implements SharedPreferences.OnSharedPreferenceChangeListener {
@@ -53,14 +56,21 @@ public class TrackDetails
      * Enumeration desired styles, note must match Polyline BASIC_LINE_STYLE_*
      */
     public enum Style {
-        Solid(Polyline.BASIC_LINE_STYLE_SOLID),
-        Dashed(Polyline.BASIC_LINE_STYLE_DASHED),
-        Arrows(TrackPolyline.BASIC_LINE_STYLE_ARROWS);
+        Solid(Polyline.BASIC_LINE_STYLE_SOLID, R.string.track_style_solid),
+        Arrows(TrackPolyline.BASIC_LINE_STYLE_ARROWS, R.string.track_style_arrows),
+        Dashed(Polyline.BASIC_LINE_STYLE_DASHED, R.string.track_style_dashed);
 
         final int styleValue;
+        final int _stringRes;
 
-        Style(int v) {
+        Style(int v, @StringRes int stringRes) {
             styleValue = v;
+            _stringRes = stringRes;
+        }
+
+        @StringRes
+        public int getStringRes() {
+            return _stringRes;
         }
     }
 
@@ -200,20 +210,20 @@ public class TrackDetails
         return _trackPolyline.getBasicLineStyle();
     }
 
-    public void setStyle(String style, Context context) {
+    public void setStyle(String style) {
         if (style == null) {
             Log.w(TAG, "Unable to set empty style");
             return;
         }
 
         try {
-            setStyle(Style.valueOf(style.trim()), context);
+            setStyle(Style.valueOf(style.trim()));
         } catch (IllegalArgumentException e) {
             Log.w(TAG, "Unable to set invalid style: " + style, e);
         }
     }
 
-    public void setStyle(TrackDetails.Style style, Context context) {
+    public void setStyle(TrackDetails.Style style) {
         _trackPolyline.setBasicLineStyle(style.styleValue);
         _trackPolyline
                 .setMetaString("linestyle", getStyleLabel(_trackPolyline));
@@ -307,13 +317,13 @@ public class TrackDetails
     public String getUserUID() {
         return ""
                 + _trackPolyline.getMetaString(
-                        CrumbDatabase.META_TRACK_NODE_UID, "");
+                CrumbDatabase.META_TRACK_NODE_UID, "");
     }
 
     public String getUserCallsign() {
         return ""
                 + _trackPolyline.getMetaString(
-                        CrumbDatabase.META_TRACK_NODE_TITLE, "");
+                CrumbDatabase.META_TRACK_NODE_TITLE, "");
     }
 
     @Override

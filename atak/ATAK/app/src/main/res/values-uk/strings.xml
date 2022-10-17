@@ -3976,5 +3976,8 @@
     <string name="offscreen_indicator_overlay_name">Off-Screen Indicators</string>
     <string name="remove_all_landmarks">Remove all Landmarks?</string>
     <string name="no_gps_capitalized">NO GPS</string>
+    <string name="track_style_solid">Solid</string>
+    <string name="track_style_arrows">Arrows</string>
+    <string name="track_style_dashed">Dashed</string>
 </resources>
 
