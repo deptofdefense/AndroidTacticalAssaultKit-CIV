@@ -4092,4 +4092,5 @@
   <string name="file_overlays_name">Calques de fichier</string>
   <string name="markers_overlay_name">Marqueurs</string>
   <string name="other_overlays">Autres calques</string>
+  <string name="center_designator_overlay_name">Désignateur de centre</string>
 </resources>
