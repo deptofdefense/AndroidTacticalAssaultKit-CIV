@@ -9,6 +9,7 @@ import android.os.Bundle;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.user.MapClickTool;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
+import com.atakmap.app.R;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.elevation.ElevationManager;
 import com.atakmap.annotations.ModifierApi;
@@ -43,7 +44,7 @@ public class FirstPersonReceiver extends BroadcastReceiver {
         switch (action) {
             case FIRSTPERSON:
                 bundle.putString("prompt",
-                        "Tap location for First Person View");
+                        context.getString(R.string.first_person_tool_prompt));
                 bundle.putParcelable("callback", new Intent(MAP_CLICKED));
                 ToolManagerBroadcastReceiver.getInstance().startTool(
                         MapClickTool.TOOL_NAME, bundle);

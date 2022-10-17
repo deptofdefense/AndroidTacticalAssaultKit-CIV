@@ -4107,4 +4107,5 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
   <string name="edit_features">Edit Features</string>
   <string name="action_bar_experience">Action Bar Experience</string>
     <string name="heatmap_overlay_name">Heatmap Overlay</string>
+    <string name="first_person_tool_prompt">Tap location for First Person View</string>
 </resources>

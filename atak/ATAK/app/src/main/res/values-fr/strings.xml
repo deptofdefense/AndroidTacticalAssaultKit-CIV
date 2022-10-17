@@ -4086,4 +4086,5 @@
   <string name="edit_features">Edit Features</string>
   <string name="action_bar_experience">Experience de la barre d\'actions</string>
   <string name="heatmap_overlay_name">Élévation</string>
+  <string name="first_person_tool_prompt">Appuyer sur la carte pour activer la vue à la première personne</string>
 </resources>
