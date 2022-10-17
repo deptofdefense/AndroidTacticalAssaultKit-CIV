@@ -3964,5 +3964,6 @@
 <string name="edit_features">Змінити функції</string>
 
     <string name="location_marker_scale">location_marker_scale_key</string>
+    <string name="action_bar_experience">Action Bar Experience</string>
 </resources>
 

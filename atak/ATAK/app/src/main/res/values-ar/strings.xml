@@ -4105,4 +4105,5 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
   <string name="unable_to_edit_feature">Unable to edit this feature</string>
   <string name="unable_to_edit_feature_set">Unable to edit this feature set</string>
   <string name="edit_features">Edit Features</string>
+  <string name="action_bar_experience">Action Bar Experience</string>
 </resources>

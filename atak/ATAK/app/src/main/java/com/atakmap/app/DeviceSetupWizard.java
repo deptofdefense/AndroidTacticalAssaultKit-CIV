@@ -102,7 +102,7 @@ class DeviceSetupWizard implements CredentialsDialog.Callback {
         Resources r = _mapView.getResources();
         TileButtonDialog d = new TileButtonDialog(_mapView, _context, true);
         d.addButton(r.getDrawable(R.drawable.customize_actionbar_pref_icon),
-                "Action Bar Experience");
+                _context.getString(R.string.action_bar_experience));
         d.addButton(r.getDrawable(R.drawable.my_prefs_settings),
                 r.getString(R.string.identity_title));
         d.addButton(r.getDrawable(R.drawable.missionpackage_icon),
