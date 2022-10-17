@@ -545,7 +545,7 @@ public class SelfCoordOverlayUpdater extends CotStreamListener implements
                     || SystemClock.elapsedRealtime()
                             - item.getMetaLong("gpsUpdateTick",
                                     0) > LocationMapComponent.GPS_TIMEOUT_MILLIS) {
-                source = "NO GPS";
+                source = _context.getString(R.string.no_gps_capitalized);
                 firstLine = Color.RED;
 
                 accuracyString = "+/- ---m";

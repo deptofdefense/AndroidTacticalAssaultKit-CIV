@@ -32,8 +32,6 @@ public class SelfCoordBottomBar extends FrameLayout implements
         SharedPreferences.OnSharedPreferenceChangeListener,
         View.OnClickListener {
 
-    private static final String TAG = "SelfCoordBottomBar";
-
     private final AtakPreferences _prefs;
     private SelfCoordText _lastText;
 
@@ -143,7 +141,7 @@ public class SelfCoordBottomBar extends FrameLayout implements
                         : getResources().getColor(R.color.pale_silver));
             } else if (FileSystemUtils.isEmpty(text.location)) {
                 // Default to NO GPS text
-                source.setText("NO GPS");
+                source.setText(getContext().getString(R.string.no_gps_capitalized));
                 source.setTextColor(Color.RED);
             } else
                 source.setVisibility(GONE);
@@ -151,7 +149,8 @@ public class SelfCoordBottomBar extends FrameLayout implements
 
         // Make the callsign bold
         SpannableStringBuilder sb = new SpannableStringBuilder();
-        sb.append("Callsign: ");
+        sb.append(getContext().getString(R.string.callsign));
+        sb.append(":");
         sb.append(text.callsign,
                 new StyleSpan(android.graphics.Typeface.BOLD),
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
