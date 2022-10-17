@@ -4093,4 +4093,5 @@
   <string name="markers_overlay_name">Marqueurs</string>
   <string name="other_overlays">Autres calques</string>
   <string name="center_designator_overlay_name">Désignateur de centre</string>
+  <string name="offscreen_indicator_overlay_name">Indicateurs hors écran</string>
 </resources>

@@ -4114,4 +4114,5 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
     <string name="markers_overlay_name">Markers</string>
     <string name="other_overlays">Other Overlays</string>
     <string name="center_designator_overlay_name">Center Designator</string>
+    <string name="offscreen_indicator_overlay_name">Off-Screen Indicators</string>
 </resources>
