@@ -30,9 +30,11 @@
                 android:focusableInTouchMode="false"/>
             <Button
                 android:id="@+id/start_nav"
-                android:layout_width="40dp"
+                android:layout_width="wrap_content"
                 android:layout_height="32dp"
                 android:layout_marginStart="2dp"
+                android:minWidth="40dp"
+                android:paddingHorizontal="4dp"
                 android:text="@string/go_caps"
                 android:enabled="true"
                 style="@style/darkButton"/>
