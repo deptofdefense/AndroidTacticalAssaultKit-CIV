@@ -1184,7 +1184,7 @@
   <string name="rb_coord_title">Entrez les coordonnées : </string>
   <string name="rb_coord_title_readonly">Convertir les coordonnées : </string>
   <string name="bloodhound_dialog">Configurer Bloodhound</string>
-  <string name="bloodhound_dialog2">Sélectionnez \nDepuis la carte</string>
+  <string name="bloodhound_dialog2">Sélectionnez \ndepuis la carte</string>
   <string name="rb_circle_dialog">Entrez un nouveau rayon dans </string>
   <string name="custom">Personnaliser</string>
   <string name="custom_color_dialog">Choisissez une couleur personnalisée </string>
@@ -1547,7 +1547,7 @@
   <string name="video_text61">Une erreur fatale s\'est produite lors du traitement du média.</string>
   <string name="video_text62">Gérer la lecture vidéo</string>
   <string name="video_text63">Ignorer le KLV intégré</string>
-  <string name="video_text64">Réseau\nPréféré</string>
+  <string name="video_text64">Réseau\npréféré</string>
   <string name="video_text66">Alias</string>
   <string name="video_text67">Expiration réseau (s)</string>
   <string name="video_text68">Mise en mémoire tampon (ajoute de la latence)</string>
@@ -2623,7 +2623,7 @@
   <string name="select_via_nmap_view">Sélectionnez via\nla carte</string>
   <string name="add_content">Ajouter du contenu</string>
   <string name="add_map_item">Ajouter un élément de carte</string>
-  <string name="include_nattachments">Inclure\nPièces jointes</string>
+  <string name="include_nattachments">Inclure\npièces jointes</string>
   <string name="add_files">Ajouter des fichiers</string>
   <string name="item_name">Nom de l\'article</string>
   <string name="package_name">Nom du paquet</string>
@@ -2809,10 +2809,10 @@
   <string name="import_manager">Gestionnaire d\'importation</string>
   <string name="importmgr_kml_network_link_configuration">Configuration de liaison réseau KML</string>
   <string name="url">URL</string>
-  <string name="importmgr_auto_nrefresh">Rafraîchissement \nAutomatique</string>
+  <string name="importmgr_auto_nrefresh">Rafraîchissement \nautomatique</string>
   <string name="importmgr_interval">Intervalle :</string>
   <string name="seconds">secondes</string>
-  <string name="importmgr_remove_local_content_nupon_shutdown">Supprimer le contenu local\nAprès l\'arrêt</string>
+  <string name="importmgr_remove_local_content_nupon_shutdown">Supprimer le contenu local\naprès l\'arrêt</string>
   <string name="updated">Mise à jour</string>
   <string name="importmgr_error_log_post_started">Publication du journal d\'erreurs démarré…</string>
   <string name="importmgr_sending_to">Envoi à %s</string>
