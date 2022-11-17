@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
   <!--General-->
-  <string name="of">de</string>
+  <string name="of"> de </string>
   <string name="hide">Cacher</string>
   <string name="show">Afficher</string>
   <string name="home">Accueil</string>
@@ -59,7 +59,7 @@
   <string name="remarks">Remarques</string>
   <string name="elevation_profile">Profil d\'altitude</string>
   <string name="are_you_sure">Êtes-vous sûr?</string>
-  <string name="remove">Retirer</string>
+  <string name="remove">Retirer </string>
   <string name="rename">Renommer</string>
   <string name="ok">OK</string>
   <string name="recently_added">Points récemment ajoutés</string>
@@ -256,7 +256,7 @@
   <string name="preferences_text390">Rechercher des applications</string>
   <string name="preferences_text391">Sélectionnez les plugins à charger</string>
   <string name="preferences_text392">Chargement du plugin</string>
-  <string name="preferences_text393">Chargement de plugins dans</string>
+  <string name="preferences_text393">Chargement de plugins dans </string>
   <string name="app_mgmt_text3">Mises à jour disponibles</string>
   <string name="app_mgmt_product_repo">Cache de dépôt de produits</string>
   <string name="app_mgmt_filter_All">Tout</string>
@@ -396,8 +396,8 @@
   <string name="preferences_text98">Préférences de rapport</string>
   <string name="preferences_text99">Envoyer la position sur le réseau</string>
   <string name="preferences_text469">Ajustez comment cet appareil rapporte sa propre position</string>
-  <string name="preferences_text465">(Dynamique)</string>
-  <string name="preferences_text466">(Constant)</string>
+  <string name="preferences_text465">(Dynamique) </string>
+  <string name="preferences_text466">(Constant) </string>
   <string name="preferences_text101">Stratégie de rapport</string>
   <string name="preferences_text102">Dynamique</string>
   <string name="preferences_text103">Taux de rapport dynamique stationnaire (peu fiable)</string>
@@ -503,7 +503,7 @@
   <string name="preferences_text202">Accéder aux options de contrôle</string>
   <string name="preferences_text2020">Ajuster des options supplémentaires</string>
   <string name="preferences_text203">Support et documentation du programme</string>
-  <string name="preferences_text414">API plugin :</string>
+  <string name="preferences_text414">API plugin : </string>
   <string name="preferences_text415">Afficher le CLUF</string>
   <!--Media-->
   <string name="preferences_text204">Effacer les pièces jointes des marqueurs (p. ex. images)</string>
@@ -779,12 +779,12 @@
   <string name="preferences_text425">J\'accepte</string>
   <string name="preferences_text426">Je refuse.</string>
   <string name="preferences_text428">Souhaitez-vous définir votre </string>
-  <string name="preferences_text429">et les paramètres associés?</string>
+  <string name="preferences_text429"> et les paramètres associés?</string>
   <string name="preferences_text432">Sélectionner un fichier de préférences externe</string>
   <string name="preferences_text433">Préférences importées avec succès.</string>
   <string name="preferences_text434">L\'importation des préférences a échoué.</string>
-  <string name="preferences_text435">l\'importation a échoué.</string>
-  <string name="preferences_text436">importé avec succès.</string>
+  <string name="preferences_text435"> l\'importation a échoué.</string>
+  <string name="preferences_text436"> importé avec succès.</string>
   <string name="preferences_text437">En attente de la fin des suppressions \\u2026</string>
   <string name="preferences_text4371">Souhaitez-vous configurer les plugins ATAK?</string>
   <string name="preferences_text4372">Importer des fichiers</string>
@@ -843,7 +843,7 @@
   <string name="feet_units">pi</string>
   <string name="miles_units">mi</string>
   <string name="nm_units">NM</string>
-  <string name="del">"Suppr "</string>
+  <string name="del">" Suppr "</string>
   <string name="del_title">Suppr</string>
   <!--Ground Speed-->
   <string name="kmph_units">km/h</string>
@@ -851,14 +851,14 @@
   <string name="knots_units">nd</string>
   <string name="fps_units">fps</string>
   <!--Heading and Bearing-->
-  <string name="mag">MAG</string>
-  <string name="mag_space">MAG </string>
+  <string name="mag"> MAG</string>
+  <string name="mag_space"> MAG </string>
   <!--Altitude-->
   <string name="feet_above_dip">Pieds au-dessus de DIP</string>
   <string name="feet_above_ground">Pieds au-dessus du sol</string>
-  <string name="ft_msl">pi MSL</string>
+  <string name="ft_msl"> pi MSL</string>
   <string name="ft_msl2">- pi MSL</string>
-  <string name="ft_msl3">pi MSL</string>
+  <string name="ft_msl3"> pi MSL</string>
   <string name="ft_msl4">--- pi MSL</string>
   <!--Current Location-->
   <string name="mgrs">MGRS</string>
@@ -993,7 +993,7 @@
   <string name="SPI_prompt">Appuyez sur le bouton SPI pour basculer entre l\'état déplaçable et l\'état fixe. Appuyez longuement pour retirer.</string>
   <string name="laser_basket_prompt">Appuyez sur le marqueur laser. Doit être %s,\nou appuyer sur le marqueur de la cible pour calculer à partir de votre position.</string>
   <string name="laser_basket_prompt3"> marqueur pour continuer.</string>
-  <string name="laser_basket_prompt2">Votre position est actuellement indisponible. Assurez-vous que votre position\nest disponible ou appuyez</string>
+  <string name="laser_basket_prompt2">Votre position est actuellement indisponible. Assurez-vous que votre position\nest disponible ou appuyez </string>
   <!--Maps & Favorites-->
   <string name="select_area_prompt">Appuyez sur le coin supérieur gauche</string>
   <string name="select_area_prompt2">Appuyez sur le coin inférieur droit</string>
@@ -1190,8 +1190,8 @@
   <string name="custom_color_dialog">Choisissez une couleur personnalisée </string>
   <string name="head">Tête</string>
   <string name="tail">Queue</string>
-  <string name="rb_text1">D</string>
-  <string name="rb_text2">R</string>
+  <string name="rb_text1">D </string>
+  <string name="rb_text2">R </string>
   <string name="rb_text3">° M</string>
   <string name="rb_text4">Point relatif :</string>
   <string name="bearing_title">Relèvement :</string>
@@ -1223,7 +1223,7 @@
   <!--Routes-->
   <string name="routes_text1">Insérer le prochain point de contrôle</string>
   <string name="routes_text2">Le point relatif doit être compris entre 1 et </string>
-  <string name="routes_text3">Supprimer la route :</string>
+  <string name="routes_text3">Supprimer la route : </string>
   <string name="routes_text4">L\'emplacement actuel n\'est pas disponible. Navigation interrompue</string>
   <string name="routes_text5">Route introuvable.</string>
   <string name="routes_text6">La navigation a échoué</string>
@@ -1232,13 +1232,13 @@
   <string name="routes_text9">Nouvelle route</string>
   <string name="routes_text10">Sélectionnez le fichier à importer (KML ou GPX)</string>
   <string name="routes_text11">Veuillez fournir un nom d\'itinéraire</string>
-  <string name="routes_text12">Route exportée</string>
-  <string name="routes_text13">a été exporté vers : </string>
+  <string name="routes_text12"> Route exportée</string>
+  <string name="routes_text13"> a été exporté vers : </string>
   <string name="routes_text14">Écraser le fichier existant?</string>
   <string name="routes_text15">"Exportation de route : "</string>
   <string name="routes_text16">Format d\'exportation non pris en charge</string>
-  <string name="routes_text17">exporté vers : </string>
-  <string name="routes_text18">Route :</string>
+  <string name="routes_text17"> exporté vers : </string>
+  <string name="routes_text18"> Route :</string>
   <string name="routes_text19">Impossible de créer l\'itinéraire</string>
   <string name="routes_text20">" Routes"</string>
   <string name="routes_text21">Route importée : </string>
@@ -1351,7 +1351,7 @@
   <string name="point_dropper_text23">Écraser </string>
   <string name="point_dropper_text24">Vérifier l\'écrasement</string>
   <string name="point_dropper_text26">Jeu d\'icônes chargé</string>
-  <string name="point_dropper_text27">Jeu d\'icônes chargé: </string>
+  <string name="point_dropper_text27">Jeu d\'icônes chargé : </string>
   <string name="point_dropper_text28">Chargement du jeu d\'icônes</string>
   <string name="point_dropper_text29">Suppression du jeu d\'icônes</string>
   <string name="point_dropper_text30">Suppression de \u2026</string>
@@ -1365,7 +1365,7 @@
   <string name="point_dropper_text37">L\'un des deux premiers champs est vide.</string>
   <string name="point_dropper_text38">Au moins un champ est incorrect.</string>
   <string name="point_dropper_text41">Tâche?</string>
-  <string name="point_dropper_text42">- nouvelle image</string>
+  <string name="point_dropper_text42"> - nouvelle image</string>
   <string name="point_dropper_text43">Nouvelle image</string>
   <string name="point_dropper_text44">Aucun numéro de téléphone fourni…</string>
   <string name="point_dropper_text45">Aucune application téléphonique installée…</string>
@@ -1396,7 +1396,7 @@
   <string name="iconset_export_fail2">Impossible d\'exporter le jeu d\'icônes</string>
   <string name="mapping_title">Sélectionnez le mappage CoT par défaut</string>
   <string name="mapping_checkbox">Forcer toutes les icônes sur ce jeu d\'icônes</string>
-  <string name="mapping_selected">(*Sélectionné)</string>
+  <string name="mapping_selected"> (*Sélectionné)</string>
   <string name="spot_map">Points de couleur</string>
   <string name="mapping_iconset"> jeu d\'icônes</string>
   <string name="mapping_dialog">Sélectionnez le jeu d\'icônes (Zip)</string>
@@ -1440,8 +1440,8 @@
   <string name="gain">Gain : </string>
   <string name="description">Description</string>
   <string name="preview">Aperçu</string>
-  <string name="location_error">Erreur de position</string>
-  <string name="last_report">Dernière mise à jour</string>
+  <string name="location_error">Erreur de position </string>
+  <string name="last_report">Dernière mise à jour </string>
   <string name="battery">Batterie</string>
   <string name="speed_title">Vitesse :</string>
   <string name="course">Course :</string>
@@ -1471,11 +1471,11 @@
   <string name="password2">Mot de passe</string>
   <string name="username_colon">Nom d\'utilisateur :</string>
   <string name="password_colon">Mot de passe :</string>
-  <string name="knots">noeuds</string>
+  <string name="knots"> noeuds</string>
   <string name="prone">Couché</string>
   <string name="include_attachments">Inclure des pièces jointes?</string>
-  <string name="speed_spaces">La vitesse : </string>
-  <string name="course_spaces">Course :</string>
+  <string name="speed_spaces"> Vitesse : </string>
+  <string name="course_spaces"> Orientation : </string>
   <string name="aircraft">Avion</string>
   <string name="waypt">WayPt</string>
   <string name="op">OP</string>
@@ -1527,8 +1527,8 @@
   <string name="video_text41">La valeur de délai d\'expiration réseau que vous avez spécifiée n\'est pas valide</string>
   <string name="video_text42">Vidéo déconnectée</string>
   <string name="video_text43">Alias vidéo modifié</string>
-  <string name="video_text44">alias reçu : </string>
-  <string name="video_text45">a été modifié</string>
+  <string name="video_text44"> alias reçu : </string>
+  <string name="video_text45"> a été modifié</string>
   <string name="video_text46">Nouvel alias vidéo</string>
   <string name="video_text47">Nouvelle vidéo reçue : </string>
   <string name="video_text48">Conseils entrer d\'alias vidéo</string>
@@ -1591,11 +1591,11 @@
   <string name="nineline_text15">Sélectionnez un ami sur la carte.</string>
   <string name="nineline_text16">EGRESS personnalisé</string>
   <string name="nineline_text17">Format de coordonnées</string>
-  <string name="nineline_text19">DC :</string>
+  <string name="nineline_text19">DC : </string>
   <string name="nineline_text20">Appuyez sur la carte pour placer le point de visée</string>
   <string name="nineline_text21">Sélectionnez une position initiale personnalisée à partir de la carte.</string>
-  <string name="nineline_text22">Points de visée</string>
-  <string name="nineline_text23">Élévation : </string>
+  <string name="nineline_text22">Points de visée </string>
+  <string name="nineline_text23"> Élévation : </string>
   <string name="nineline_text25">Supprimer la menace sol-air</string>
   <string name="nineline_text26">Arme</string>
   <string name="nineline_text27">Dir de la cible : </string>
@@ -1610,7 +1610,7 @@
   <string name="nineline_text36">Définir la valeur minimale FAH</string>
   <string name="nineline_text37">Définir la valeur du centre FAH</string>
   <string name="nineline_text38">Définir la valeur de largeur FAH</string>
-  <string name="nineline_text39">OU RÉCIPROQUE</string>
+  <string name="nineline_text39"> OU RÉCIPROQUE</string>
   <string name="nineline_text40">"Direction de l'attaque finale : "</string>
   <string name="nineline_text41">Aucune distance PI définie, calcul PI-vers-Cible non disponible</string>
   <string name="nineline_text42">Configuration automatique depuis PI</string>
@@ -1632,7 +1632,7 @@
   <string name="nineline_text58">Restez entre </string>
   <string name="nineline_text59">Zone de coordination de l\'espace aérien : </string>
   <string name="nineline_text60">Retour</string>
-  <string name="nineline_text61">Temps GPS :</string>
+  <string name="nineline_text61">Temps GPS : </string>
   <string name="nineline_text62">"Temps système : "</string>
   <string name="nineline_text63">FAH</string>
   <string name="nineline_text64">Centre</string>
@@ -1661,9 +1661,9 @@
   <string name="nineline_text87">PTL :</string>
   <string name="nineline_text88">Sélectionnez un désignateur sur la carte</string>
   <string name="nineline_text89">MARQUÉ PAR </string>
-  <string name="nineline_text90">LASER,</string>
-  <string name="nineline_text91">CODE</string>
-  <string name="nineline_text92">LASER,</string>
+  <string name="nineline_text90"> LASER, </string>
+  <string name="nineline_text91">CODE </string>
+  <string name="nineline_text92">LASER, </string>
   <string name="nineline_text93">Type de marque</string>
   <string name="nineline_text94">TTT</string>
   <string name="nineline_text98">Sélectionnez une unité armée amie sur la carte.</string>
@@ -1678,7 +1678,7 @@
   <string name="callforfire_text4">Description de la cible</string>
   <string name="callforfire_text5">(INDICATEUR D\'APPEL D\'AÉRONEF)</string>
   <string name="callforfire_text6">, 5 LINES,</string>
-  <string name="callforfire_text8">CONTRÔLE, </string>
+  <string name="callforfire_text8"> CONTRÔLE, </string>
   <string name="callforfire_text11">, MUNITIONS DEMANDÉES : </string>
   <string name="callforfire_text12">5 lines</string>
   <string name="callforfire_text14">, C\'EST </string>
@@ -1688,19 +1688,19 @@
   <string name="callforfire_text18">(EMPLACEMENT PERSONNALISÉ)\n</string>
   <string name="callforfire_text19">NON MARQUÉ</string>
   <string name="callforfire_text20">(MARQUE PERSONNALISÉE)</string>
-  <string name="callforfire_text22">TARGET LOCATION</string>
+  <string name="callforfire_text22">POSITION DE LA CIBLE </string>
   <string name="callforfire_text24">DESCRIPTION DE LA CIBLE : </string>
   <string name="callforfire_text25">(DESCRIPTION PERSONNALISÉE)</string>
   <string name="callforfire_text26">MARQUE CIBLE : </string>
-  <string name="callforfire_text28">\nCode Laser :</string>
+  <string name="callforfire_text28">\nCode Laser : </string>
   <string name="callforfire_text29">MARQUES D\'OPPORTUNITÉ</string>
   <string name="callforfire_text30">Sélectionnez une unité amie sur la carte.</string>
   <string name="callforfire_text31">DC : </string>
   <string name="callforfire_text32">(votre indicatif)</string>
   <string name="suppression_text1">(SIGNAL D\'APPEL FSCC OU FDC) C EST </string>
-  <string name="suppression_text2">C\'EST </string>
+  <string name="suppression_text2"> C\'EST </string>
   <string name="suppression_text3">(NUMÉRO CIBLE)</string>
-  <string name="suppression_text4">NUMÉRO CIBLE </string>
+  <string name="suppression_text4"> NUMÉRO CIBLE </string>
   <string name="suppression_text5">(EMPLACEMENT PERSONNALISÉ)</string>
   <string name="suppression_text6">DURÉE </string>
   <string name="suppression_text7">, TERMINER.</string>
@@ -1710,8 +1710,8 @@
   <string name="readout_text2">(MÉTHODE D\'ATTAQUE),\n</string>
   <string name="readout_text3">Munitions demandées : \n</string>
   <string name="readout_text4">INFORMER LORSQUE VOUS ÊTES PRÊT POUR 9 lines.</string>
-  <string name="readout_text5">HAUTEUR AU-DESSUS D\'ELLIPSOIDE</string>
-  <string name="readout_text6">AU-DESSUS DU NIVEAU DU SOL</string>
+  <string name="readout_text5"> HAUTEUR AU-DESSUS D\'ELLIPSOIDE</string>
+  <string name="readout_text6"> AU-DESSUS DU NIVEAU DU SOL</string>
   <string name="readout_text7">Tirer à DROITE</string>
   <string name="readout_text8">Tirer à GAUCHE</string>
   <string name="readout_text9">"9. SORTIE "</string>
@@ -1722,8 +1722,8 @@
   <string name="readout_text14">PRÊT À LIRE 4, 6 ET RESTRICTIONS.</string>
   <string name="readout_text15">9-Line Brief AAR</string>
   <string name="readout_text16">Appels consultatifs </string>
-  <string name="readout_text17">Danger proche :</string>
-  <string name="readout_text18">Initiales du commandant :</string>
+  <string name="readout_text17">Danger proche : </string>
+  <string name="readout_text18">Initiales du commandant : </string>
   <string name="readout_text19">(TIMING)</string>
   <string name="linenine_text1">L Pull</string>
   <string name="linenine_text2">Entrez sortie personnalisée</string>
@@ -1784,7 +1784,7 @@
   <string name="unnamed">Anonyme</string>
   <string name="none_caps">AUCUN</string>
   <!-- do not translate Keyhole A-E and Overhead -->
-  <string name="key">Keyhole</string>
+  <string name="key">Keyhole </string>
   <string name="notice">Remarque</string>
   <string name="changing_elevation">Modification de l\'élévation de : </string>
   <string name="are_you_sure2">.\nÊtes-vous sûr?</string>
@@ -1792,17 +1792,17 @@
   <string name="copy">COPIER</string>
   <string name="text_copied">Texte de lecture copié dans le presse-papiers</string>
   <string name="marked_by">MARQUÉ PAR : </string>
-  <string name="degrees_space">VOUS </string>
-  <string name="to">à </string>
+  <string name="degrees_space"> DEG </string>
+  <string name="to"> à </string>
   <string name="unknown">Inconnue</string>
   <string name="self_danger_close">"DANGER PROCHE    "</string>
   <string name="self_to_target">Moi à cible</string>
   <string name="custom_caps">PERSONNALISÉ</string>
   <string name="generic">Générique </string>
   <string name="ellipses">…</string>
-  <string name="type_fiveline">Type</string>
+  <string name="type_fiveline">Type </string>
   <string name="duration">Durée </string>
-  <string name="target_location">Position de la cible</string>
+  <string name="target_location">Position de la cible </string>
   <string name="grid">Quadrillage</string>
   <string name="number">Nombre</string>
   <string name="target_number">Numéro cible</string>
@@ -1812,7 +1812,7 @@
   <string name="set_duration">Définir la durée de suppression</string>
   <string name="set_number">Définir le numéro cible</string>
   <!-- do not translate suppress_caps -->
-  <string name="type_caps">TYPE</string>
+  <string name="type_caps">TYPE </string>
   <string name="bomb_on_target">BOMBE SUR CIBLE</string>
   <string name="bomb_on_coordinate">BOMBE SUR COORDONNÉE</string>
   <string name="offset">Décalage : </string>
@@ -1833,7 +1833,7 @@
   <string name="low">Faible</string>
   <string name="high">Haute</string>
   <string name="none_lower">Aucun</string>
-  <string name="direction">Direction</string>
+  <string name="direction">Direction </string>
   <string name="direction_no_colon">Direction</string>
   <string name="unselect_all">Tout désélectionner</string>
   <string name="kts">nd</string>
@@ -1908,9 +1908,9 @@
   <string name="notification_text20">Erreur IO; reconnexion en cours</string>
   <string name="notification_text21">Erreur inconnue</string>
   <string name="notification_text22">Dérive du temps système détectée</string>
-  <string name="notification_text23">Avertissement : l\'heure est différente de l\'heure GPS signalée de plus de 10 secondes, correction temporaire de l\'heure système. Heure GPS rapportée :</string>
+  <string name="notification_text23">Avertissement : l\'heure est différente de l\'heure GPS signalée de plus de 10 secondes, correction temporaire de l\'heure système. Heure GPS rapportée : </string>
   <string name="notification_text24">Avertissement : l\'heure est différente de l\'heure GPS signalée par </string>
-  <string name="notification_text25">secondes. L\'heure GPS signalée est : </string>
+  <string name="notification_text25"> secondes. L\'heure GPS signalée est : </string>
   <string name="notification_text26">" et l'heure système signalée est : "</string>
   <string name="notification_text27">" alertes\nCliquez ici pour plus de détails"</string>
   <string name="notification_text28">Connexion réussie à </string>
@@ -1926,7 +1926,7 @@
   <string name="action">Action</string>
   <string name="close">Fermer</string>
   <string name="select_group">Sélectionnez un groupe</string>
-  <string name="version">Version</string>
+  <string name="version">Version </string>
   <string name="exporting">Exportation </string>
   <string name="importing">Importation </string>
   <string name="rows">Lignes : </string>
@@ -1978,7 +1978,7 @@
   <string name="details_text49">Joindre un fichier</string>
   <string name="details_text51">Le contact existe déjà avec cet uid</string>
   <string name="details_text53">1 Sélection, taille : </string>
-  <string name="details_text54">Sélections, taille totale : </string>
+  <string name="details_text54"> Sélections, taille totale : </string>
   <string name="details_text55">Le numéro à ajouter doit comprendre entre 11 et 15 chiffres.</string>
   <string name="details_text56">Gestionnaire de numéros SMS</string>
   <string name="details_text57">Le nombre de sonneries doit être supérieur ou égal à 1</string>
@@ -1998,7 +1998,7 @@
   <string name="import_cancelled">Importation annulée</string>
   <string name="overwrite_existing">Remplacer la pièce jointe existante?</string>
   <string name="overwrite">Écraser : </string>
-  <string name="sent">"envoyé: "</string>
+  <string name="sent">" envoyé: "</string>
   <string name="file_transfer_complete">Téléchargement des fichiers terminé</string>
   <string name="camera">Caméra</string>
   <string name="image">Image</string>
@@ -2160,9 +2160,9 @@
   <string name="stream">Diffuser</string>
   <string name="working">Travailler \u2026</string>
   <string name="select_custom_color">Sélectionnez une couleur personnalisée</string>
-  <string name="to_import">importer</string>
+  <string name="to_import"> pour importer</string>
   <string name="version_space">Version </string>
-  <string name="loading">Chargement</string>
+  <string name="loading"> Chargement</string>
   <string name="connection_info">Informations de connexion : %1$s (%2$s) </string>
   <string name="enter_credentials">Entrez les informations d\'identification</string>
   <string name="secure_delete">Suppression sécurisée</string>
@@ -2174,7 +2174,7 @@
   <string name="unable_to_config">Impossible de configurer </string>
   <string name="error_connecting">Erreur de connexion à </string>
   <string name="remove_connection">Supprimer la connexion?</string>
-  <string name="subdirectory">sous-dossier.</string>
+  <string name="subdirectory"> sous-dossier.</string>
   <string name="are_you_sure_remove_inputs">Voulez-vous vraiment supprimer toutes les entrées?</string>
   <string name="select_file_to_import">Sélectionnez le fichier à importer</string>
   <!--Go To-->
@@ -2520,7 +2520,7 @@
   <string name="tracking">Suivi</string>
   <string name="elevation_">Élévation </string>
   <string name="default1">défaut</string>
-  <string name="_to_">à </string>
+  <string name="_to_"> à </string>
   <string name="specify_elevation">Spécifiez l\'élévation</string>
   <string name="status">Statut</string>
   <string name="status_colon">Statut :</string>
@@ -2556,7 +2556,7 @@
   <string name="radio_cable_configuration">Configuration cable</string>
   <string name="radio_connection_attempt_exceeded">nombre de tentatives de connexion dépassé, échec de la connexion</string>
   <string name="radio_loss_connection">"perte de connexion : "</string>
-  <string name="radio_retry_">réessayez </string>
+  <string name="radio_retry_"> réessayez </string>
   <string name="invalid_address">Adresse invalide</string>
   <string name="radio_enter_valid_address">Entrez une adresse valide</string>
   <string name="radio_uncheck_dhcp">Décochez pour définir l\'adresse statique</string>
@@ -2585,8 +2585,8 @@
   <string name="radio_no_scan_in_progress">Aucun scan en cours</string>
   <string name="radio_configuration">" Configuration"</string>
   <string name="radio_starting_internal_test_video">démarrage de la vidéo de test interne (le basculement peut prendre jusqu\'à 8 secondes)</string>
-  <string name="radio_port">Port :</string>
-  <string name="radio_sideband">Bande latérale </string>
+  <string name="radio_port"> Port : </string>
+  <string name="radio_sideband"> Bande latérale </string>
   <string name="radio_verify_network_addressing">Veuillez vérifier que la configuration réseau est correcte pour le EUD connecté à l\'appareil.</string>
   <string name="radio_invalid_analog_ip_or_port">IP ou port analogique non valide, non enregistré</string>
   <string name="radio_invalid_digital_ip_or_port">IP ou port numérique non valide, non enregistré</string>
@@ -2601,7 +2601,7 @@
   <string name="radio_using">"utilisant : "</string>
   <string name="radio_connecting_ellipses">Connexion en cours…</string>
   <string name="radio_error_configuring_ethernet">erreur de configuration Ethernet…</string>
-  <string name="_network">Réseau</string>
+  <string name="_network"> Réseau</string>
   <string name="radio_physical_connection_controlled_internally">La connexion réseau physique est contrôlée à l\'interne.</string>
   <string name="radio_network_missing">" Réseau manquant"</string>
   <string name="radio_physical_connection_between_rover_and_eud_disappeared">La connexion réseau physique entre le %s et le EUD a disparu.</string>
@@ -3161,7 +3161,7 @@
   <string name="isrv_rover">Rover</string>
   <string name="rover_controls">Contrôles Rover</string>
   <string name="isrv_network_setting">Préférences du réseau mobile</string>
-  <string name="video_text31">KLV Port Rover :</string>
+  <string name="video_text31">KLV Port Rover : </string>
   <string name="video_text32">Rover Sideband KLV</string>
   <string name="video_text65">Rover Sideband KLV</string>
   <string name="radio_rover_tre_quirks_mode">Mode Rover TRE Quirks</string>
@@ -3198,7 +3198,7 @@
   <string name="nineline_display_settings">Préférences d\'affichage 9-lignes</string>
   <string name="nineline_text95">Temps de ciblage : </string>
   <string name="nineline_text13">Gestionnaire 9-Ligne multiples</string>
-  <string name="nineline_text18">9-ligne</string>
+  <string name="nineline_text18">9-ligne </string>
   <string name="nineline_text96">Vous avez reçu une mise à jour pour le \n 9-ligne actuellement ouvert.</string>
   <string name="nineline_text97">Veuillez sélectionner une nouvelle couleur de titre pour le marqueur 9-ligne choisi.</string>
   <string name="nineline">9 lignes</string>
@@ -3575,7 +3575,7 @@
   <string name="read_image_cancelled">Annulation de la lecture de l\'Image : %s</string>
   <string name="read_model_cancelled">Annulation de la lecture du modèle : %s</string>
   <string name="invalid_bloodhound_item">ne peut pas démarrer Bloodhound vers cet élément</string>
-  <string name="preference_doghouse_north_ref_desc">Cochez pour afficher les unités de référence au nord (°M) sur les valeurs de relèvement. Décochez pour masquer ces unités.</string>
+  <string name="preference_doghouse_north_ref_desc"> Cochez pour afficher les unités de référence au nord (°M) sur les valeurs de relèvement. Décochez pour masquer ces unités. </string>
   <string name="installBegin">Cliquez sur \'Commencer\' pour installer les produits %d répertoriés ci-dessous</string>
   <string name="uninstallBegin">Cliquez sur \'Commencer\' pour désinstaller les produits %d répertoriés ci-dessous</string>
   <string name="compressing_zip">Compression de \'%s\'…</string>
@@ -3620,7 +3620,7 @@
   <string name="heading">Orientation</string>
   <string name="heading_fmt">Orientation : %s</string>
   <string name="host">Hôte</string>
-  <string name="preference_rab_show_eta_summary">Si cette case est cochée, une tentative sera faite pour calculer l\'ETA en fonction de votre distance et de votre vitesse actuelle. Si la vitesse ne peut pas être détectée, elle peut être saisie manuellement via les détails du Distance et Relèvement</string>
+  <string name="preference_rab_show_eta_summary"> Si cette case est cochée, une tentative sera faite pour calculer l\'ETA en fonction de votre distance et de votre vitesse actuelle. Si la vitesse ne peut pas être détectée, elle peut être saisie manuellement via les détails du Distance et Relèvement </string>
   <string name="preferences_text701s">Si coché, les journaux de débogage (Logcat et trafic réseau) seront téléverser sur le serveur TAK</string>
   <string name="import_model">Importer un modèle 3D</string>
   <string name="import_model_msg">Options d\'importation pour %s :</string>
@@ -3780,7 +3780,7 @@
   <string name="replaceTadiljIdsCallsignTitle">Remplacer avec ID Datalink</string>
   <string name="replaceTadiljIdsCallsignSummary">Dans le widget de Ma Position, remplacer l\'identifiant d\'appel par l\'ID.</string>
   <string name="preferences_text438">Réinitialiser le décalage Datalink</string>
-  <string name="details_text50">Entrez les informations Datalink :</string>
+  <string name="details_text50">Entrez les informations Datalink : </string>
   <string name="details_text52">"Effacer les contacts Datalink? "</string>
   <string name="civ_stringSPIDesc">Basculer l\'outil DP.</string>
   <string name="civ_quick_select_spi">Sélection DP rapide</string>
