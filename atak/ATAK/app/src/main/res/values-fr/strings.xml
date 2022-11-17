@@ -502,7 +502,7 @@
   <string name="preferences_text201">Accéder aux préférences des outils et des plugins.</string>
   <string name="preferences_text202">Accéder aux options de contrôle</string>
   <string name="preferences_text2020">Ajuster des options supplémentaires</string>
-  <string name="preferences_text203">Support &amp; Documentation du programme</string>
+  <string name="preferences_text203">Support et documentation du programme</string>
   <string name="preferences_text414">API plugin:</string>
   <string name="preferences_text415">Afficher le CLUF</string>
   <!--Media-->
@@ -701,7 +701,7 @@
   <!--Tools-->
   <string name="preferences_text341">Gérer les plugins et autres applications</string>
   <string name="preferences_text439">Informations d\'assistance</string>
-  <string name="preferences_text440">Exporter les journaux de débogage &amp; d\'erreurs maintenant?</string>
+  <string name="preferences_text440">Exporter les journaux de débogage et d\'erreurs maintenant?</string>
   <string name="preferences_text441">Conseils d\'entraînement</string>
   <string name="preferences_text442">Tous les conseils d\'entraînement ont été réactivés.</string>
   <string name="preferences_text443">Il est recommandé d\'utiliser le lecteur Acrobat officiel.\nLa visualisation des documents dans d\'autres applications PDF Android peut ne pas fonctionner correctement.</string>
@@ -868,8 +868,8 @@
   <!--R&B-->
   <string name="bloodhound_tip">Outil Bloodhound</string>
   <string name="dynamic_rb_tip">Ligne D et R dynamique</string>
-  <string name="rb_circle_tip">Cercle R &amp; B</string>
-  <string name="rb_line_tip">Ligne R &amp; B</string>
+  <string name="rb_circle_tip">Cercle R et B</string>
+  <string name="rb_line_tip">Ligne R et B</string>
   <!--Drawing Tools-->
   <string name="circle_tip">Dessiner un cercle</string>
   <string name="rectangle_tip">Dessiner un rectangle</string>
@@ -1179,7 +1179,7 @@
   <!-- Dropdown Text -->
   <!--R&B-->
   <string name="rb_color_dialog">Choisissez la couleur de distance et de relèvement</string>
-  <string name="rb_editor_title">Éditeur D&amp;R</string>
+  <string name="rb_editor_title">Éditeur D et R</string>
   <string name="rb_editor_move">Déplacer le point</string>
   <string name="rb_coord_title">Entrez les coordonnées: </string>
   <string name="rb_coord_title_readonly">Convertir les coordonnées: </string>
@@ -2106,7 +2106,7 @@
   <string name="tool_text4">Aucune opération à annuler\u2026</string>
   <string name="tool_text5">Échec de l\'opération d\'annulation\u2026</string>
   <string name="tool_text6">Échec de l\'opération d\'annulation\u2026</string>
-  <string name="tool_text3">Glisser &amp; Déposer Configurer les outils</string>
+  <string name="tool_text3">Glisser et déposer pour configurer les outils</string>
   <string name="tool_text7">Entrez l\'étiquette</string>
   <string name="tool_text8">L\'étiquette doit être unique: </string>
   <string name="tool_text9">Trop de plan de barres d\'outils, supprimez-en un avant d\'en enregistrer un nouveau</string>
@@ -2139,7 +2139,7 @@
   <string name="label_required">L\'étiquette est obligatoire</string>
   <string name="label_may_not_be_reused">Le libellé \'Default\' ne peut pas être réutilisé</string>
   <string name="failed_to_add">Échec de l\'ajout: </string>
-  <string name="rb_circle_prefix">Cercle R &amp; B \u0020</string>
+  <string name="rb_circle_prefix">Cercle R et B \u0020</string>
   <string name="address_lookup_error">Une erreur de recherche d\'adresse s\'est produite</string>
   <string name="address_not_found">Adresse introuvable</string>
   <string name="sync_now">Synchroniser maintenant</string>
@@ -3027,9 +3027,9 @@
   <string name="bloodhound_to">Appuyez sur un élément de la carte pour la destination Bloodhound.</string>
   <string name="hidden">Caché</string>
   <string name="overflow">Excédentaire</string>
-  <string name="drag_amp_drop_overflow_tools_here">Faites glisser &amp; Déposer les outils excédentaires ici</string>
-  <string name="drag_amp_drop_hidden_tools_here">Faites glisser &amp; Déposer les outils cachés ici</string>
-  <string name="drag_amp_drop_action_bar_tools_here">Faites glisser &amp; Déposer les outils de la barre d\'outils ici</string>
+  <string name="drag_amp_drop_overflow_tools_here">Faites glisser et déposer les outils excédentaires ici</string>
+  <string name="drag_amp_drop_hidden_tools_here">Faites glisser et déposer les outils cachés ici</string>
+  <string name="drag_amp_drop_action_bar_tools_here">Faites glisser et déposer les outils de la barre d\'outils ici</string>
   <string name="action_bar">Barre d\'outils</string>
   <string name="plugin">Plugin</string>
   <string name="package_string">Paquet</string>
@@ -3293,7 +3293,7 @@
   <string name="app_mgmt_text1">Gestionnaire produits TAK</string>
   <string name="app_mgmt_bundled">Applications de support intégrés ATAK</string>
   <string name="app_mgmt_settings">Préférences du gestionnaire de produits TAK</string>
-  <string name="app_mgmt_app_plugins">TAK Apps &amp; Plugins</string>
+  <string name="app_mgmt_app_plugins">TAK Apps et Plugins</string>
   <string name="app_mgmt_update_server_details">Activer pour autoriser les mises à jour Over The Air à partir d\'un serveur de mise à jour TAK distant</string>
   <string name="app_mgmt_edit_remote_repo">Modifier l\'URL du serveur de mise à jour TAK distant</string>
   <string name="app_mgmt_update_server_truststore">Mettre à jour l\'emplacement SSL/TLS TrustStore du serveur</string>
