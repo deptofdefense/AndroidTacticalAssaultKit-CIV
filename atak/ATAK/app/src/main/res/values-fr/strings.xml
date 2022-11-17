@@ -407,7 +407,7 @@
   <string name="preferences_text111">Taux de rapport dynamique minimum (fiable)</string>
   <string name="preferences_text113">Taux de rapport dynamique maximum (fiable)</string>
   <string name="preferences_text115">Taux de rapport constant (peu fiable)</string>
-  <string name="preferences_text116">Intervalle constant entre les envois de messages d\'information de position en secondes pour les protocoles non fiables (par exemple, multidiffusion)</string>
+  <string name="preferences_text116">Intervalle constant entre les envois de messages d\'information de position en secondes pour les protocoles non fiables (p. ex. multidiffusion)</string>
   <string name="preferences_text117">Taux de rapport constant (fiable)</string>
   <string name="preferences_text119">Rapporter l\'emplacement avant d\'obtenir l\'information de position</string>
   <string name="preferences_text120">Si activé, rapporte la position avec (lat=0,lon=0) avant la réception d\'un signal GPS ou le placement manuel du marqueur automatique.</string>
@@ -435,7 +435,7 @@
   <string name="preferences_text148">Gérer le comportement et l\'apparence des lignes du quadrillage</string>
   <string name="preferences_text149">Gérer le comportement et l\'apparence des contours des calques</string>
   <string name="preferences_text150">Gérer les options d\'indicateur hors écran</string>
-  <string name="preferences_text151">Les styles de forme par défaut sont définis lors de l\'importation de formats de données qui ne prennent pas en charge les styles (par exemple, Shapefile, GPX)</string>
+  <string name="preferences_text151">Les styles de forme par défaut sont définis lors de l\'importation de formats de données qui ne prennent pas en charge les styles (p. ex. Shapefile, GPX)</string>
   <string name="preferences_text152">Largeur / Hauteur du gestionnaire de calques</string>
   <string name="preferences_text153">Ajuster la largeur / hauteur de la fenêtre du gestionnaire de calques</string>
   <string name="preferences_text154">Forcer la luminosité de l\'application</string>
@@ -506,7 +506,7 @@
   <string name="preferences_text414">API plugin:</string>
   <string name="preferences_text415">Afficher le CLUF</string>
   <!--Media-->
-  <string name="preferences_text204">Effacer les pièces jointes des marqueurs (par exemple, images)</string>
+  <string name="preferences_text204">Effacer les pièces jointes des marqueurs (p. ex. images)</string>
   <string name="preferences_text205">Effacer les pièces jointes</string>
   <string name="preferences_text206">Effacez toutes les données d\'application sur cet appareil</string>
   <string name="preferences_text207">Effacer toutes les données d\'application lors de la fermeture</string>
@@ -561,7 +561,7 @@
   <string name="enroll_client_failure">L\'enregistrement du serveur TAK a échoué</string>
   <string name="device_profile_failure">Échec de la demande de profil du serveur TAK</string>
   <string name="device_profile_enable_on_connect">Appliquer les mises à jour du profil du serveur TAK</string>
-  <string name="device_profile_enable_on_connect_desc">Activer pour autoriser ATAK et les plugins à importer des profils de serveur (par exemple, paramètres et données) à partir du serveur TAK</string>
+  <string name="device_profile_enable_on_connect_desc">Activer pour autoriser ATAK et les plugins à importer des profils de serveur (p. ex. paramètres et données) à partir du serveur TAK</string>
   <string name="enroll_client_success_title">Inscription complète</string>
   <string name="enroll_client_failure_title">Échec de l\'enregistrement</string>
   <string name="profile_downloading_content">Téléchargement de %s</string>
@@ -601,7 +601,7 @@
   <string name="preferences_text266">Ajuster les connexions réseau</string>
   <string name="preferences_text267">Ajuster les préférences GPS réseau</string>
   <string name="preferences_text268">Prise en charge Bluetooth</string>
-  <string name="preferences_text269">Activer la recherche de périphériques Bluetooth, par exemple LRF et GPS</string>
+  <string name="preferences_text269">Activer la recherche de périphériques Bluetooth, p. ex. LRF et GPS</string>
   <string name="preferences_text270">Temps de reconnexion Bluetooth</string>
   <string name="preferences_text271">Nombre de secondes pour tenter de rétablir les connexions Bluetooth interrompues</string>
   <string name="preferences_text411">Paramètres réseau</string>
@@ -3149,9 +3149,9 @@
   <string name="preferences_text454">Il s\'agit de l\'indicatif de contact pour l\'événement Ma position</string>
   <string name="preferences_text455">"Indicatif d'appel événement Ma position "</string>
   <string name="preferences_text456">Entrez indicatif d\'appel de contact pour l\'événement Ma position</string>
-  <string name="preferences_text104">Taux de rapport en secondes (par exemple une fois toutes les 30 secondes en restant immobile) pour les protocoles non fiables (par exemple multidiffusion). Remarque: d\'autres événements peuvent également déclencher des rapports (par exemple, un changement d\'indicatif d\'appel)</string>
-  <string name="preferences_text106">Taux de rapport minimum en secondes (par exemple une fois toutes les 20 secondes en cas de déplacement lent) pour les protocoles non fiables (par exemple, multidiffusion). Remarque: d\'autres événements peuvent également déclencher des rapports (par exemple, un changement d\'indicatif d\'appel)</string>
-  <string name="preferences_text108">Taux de rapport maximal en secondes (par exemple toutes les deux secondes lors d\'un déplacement rapide) pour les protocoles non fiables (par exemple, multidiffusion). Remarque: d\'autres événements peuvent également déclencher des rapports (par exemple, un changement d\'indicatif d\'appel)</string>
+  <string name="preferences_text104">Taux de rapport en secondes (p. ex. une fois toutes les 30 secondes en restant immobile) pour les protocoles non fiables (p. ex. multidiffusion). Remarque: d\'autres événements peuvent également déclencher des rapports (p. ex. un changement d\'indicatif d\'appel)</string>
+  <string name="preferences_text106">Taux de rapport minimum en secondes (p. ex. une fois toutes les 20 secondes en cas de déplacement lent) pour les protocoles non fiables (p. ex. multidiffusion). Remarque: d\'autres événements peuvent également déclencher des rapports (p. ex. un changement d\'indicatif d\'appel)</string>
+  <string name="preferences_text108">Taux de rapport maximal en secondes (p. ex. toutes les deux secondes lors d\'un déplacement rapide) pour les protocoles non fiables (p. ex. multidiffusion). Remarque: d\'autres événements peuvent également déclencher des rapports (p. ex. un changement d\'indicatif d\'appel)</string>
   <string name="tacrover_e_quirks_mode">Mode TacRover-E Quirks</string>
   <string name="tre_firmware_warning">activer uniquement si vous ne pouvez pas vous connecter à la vidéo analogique ---------  cela s\'applique pour combinaisons spécifiques --------- \tfirmware 1.1 sur 192.168.50.1 uniquement \t ou    firmware 1.3 sur 192.168.80.1 uniquement</string>
   <string name="isrv_control_prefs">Préférences de contrôle Rover</string>
@@ -3209,12 +3209,12 @@
   <string name="stale_out_disconnected_users_summary">Activez pour éliminer immédiatement les utilisateurs distants lorsqu\'ils se déconnectent de TAK Server ou lorsque vous vous déconnectez de TAK Server. Désactiver pour utiliser le dernier temps d\'expiration reçu.</string>
   <string name="MARTI_sync_server">Serveur TAK</string>
   <string name="tak_server_status">État du réseau TAK</string>
-  <string name="preferences_text118">Intervalle constant entre le rapport des messages self-SA en secondes pour des protocoles fiables (par exemple, serveur TAK)</string>
+  <string name="preferences_text118">Intervalle constant entre le rapport des messages self-SA en secondes pour des protocoles fiables (p. ex. serveur TAK)</string>
   <string name="preferences_text227">Appuyez pour gérer les connexions au serveur TAK</string>
   <string name="tak_server_client_cert">Certificat client Server TAK</string>
-  <string name="preferences_text110">Taux de rapport en secondes (par exemple une fois toutes les 180 secondes en restant immobile) pour des protocoles fiables (par exemple, serveur TAK) Remarque: d\'autres événements peuvent également déclencher des rapports (par exemple, un changement d\'indicatif d\'appel)</string>
-  <string name="preferences_text112">Taux de rapport minimum en secondes (par exemple une fois toutes les 20 secondes en cas de déplacement lent) pour les protocoles non fiables (par exemple, serveur TAK). Remarque: d\'autres événements peuvent également déclencher des rapports (par exemple, un changement d\'indicatif d\'appel)</string>
-  <string name="preferences_text114">Taux de rapport maximal en secondes (par exemple toutes les deux secondes lors d\'un déplacement rapide) pour des protocoles fiables (par exemple, serveur TAK). Remarque: d\'autres événements peuvent également déclencher des rapports (par exemple, un changement d\'indicatif d\'appel)</string>
+  <string name="preferences_text110">Taux de rapport en secondes (p. ex. une fois toutes les 180 secondes en restant immobile) pour des protocoles fiables (p. ex. serveur TAK) Remarque: d\'autres événements peuvent également déclencher des rapports (p. ex. un changement d\'indicatif d\'appel)</string>
+  <string name="preferences_text112">Taux de rapport minimum en secondes (p. ex. une fois toutes les 20 secondes en cas de déplacement lent) pour les protocoles non fiables (p. ex. serveur TAK). Remarque: d\'autres événements peuvent également déclencher des rapports (p. ex. un changement d\'indicatif d\'appel)</string>
+  <string name="preferences_text114">Taux de rapport maximal en secondes (p. ex. toutes les deux secondes lors d\'un déplacement rapide) pour des protocoles fiables (p. ex. serveur TAK). Remarque: d\'autres événements peuvent également déclencher des rapports (p. ex. un changement d\'indicatif d\'appel)</string>
   <string name="mission_package_toolname">Outil de paquets de données</string>
   <string name="mission_package_prefix">DP</string>
   <string name="missionpackage_control_prefs">Préférences de contrôle du paquet de données</string>
@@ -3354,7 +3354,7 @@
   <string name="summary_legacy_toolbar_mode">Permet l\'affichage des outils comme dans les versions précédentes de l\'application.</string>
   <string name="legacy_point_drop_naming">Ancienne convention de dénomination des points</string>
   <string name="legacy_point_drop_naming_summary">Utilise l\'ancienne méthode pour nommer un point en fonction de l\'indicatif d\'appel de l\'utilisateur au lieu de générer un nom en fonction du type.</string>
-  <string name="load_category_of_setting_summary">Chargez une catégorie de paramètres à partir du fichier. Par exemple, une catégorie peut être toutes les préférences traitant du rapport de position ou de l\'affichage.</string>
+  <string name="load_category_of_setting_summary">Chargez une catégorie de paramètres à partir du fichier. p. ex. une catégorie peut être toutes les préférences traitant du rapport de position ou de l\'affichage.</string>
   <string name="designate_map_center">Désigner le centre de la carte</string>
   <string name="designate_map_center_summary">Affichez un réticule visible à l\'écran et affichez en plus les coordonnées en bas de l\'écran.</string>
   <string name="display_self_coord">Afficher les informations de ma position</string>
@@ -3874,8 +3874,8 @@
   <string name="location_permission_step3">Étape 3:</string>
   <string name="general_permission_step1">Étape 1:</string>
   <string name="general_permission_step2">Étape 2 : Vérifier la liste des non autorisés</string>
-  <string name="resection_required_data_label">Données requises (par exemple, DTED)</string>
-  <string name="resection_required_hardware">Matériel requis (par exemple, PLRF)</string>
+  <string name="resection_required_data_label">Données requises (p. ex. DTED)</string>
+  <string name="resection_required_hardware">Matériel requis (p. ex. PLRF)</string>
   <string name="resection_classic_tool_required_data">Aucune donnée spéciale requise</string>
   <string name="resection_classic_tool_required_hardware">Aucun équipement spécial requis</string>
   <string name="lollipop_visibility">Visibilité des bâtonnets lorsqu\'incliné</string>
