@@ -1998,7 +1998,7 @@
   <string name="import_cancelled">Importation annulée</string>
   <string name="overwrite_existing">Remplacer la pièce jointe existante?</string>
   <string name="overwrite">Écraser : </string>
-  <string name="sent">" envoyé: "</string>
+  <string name="sent">" envoyé : "</string>
   <string name="file_transfer_complete">Téléchargement des fichiers terminé</string>
   <string name="camera">Caméra</string>
   <string name="image">Image</string>
@@ -2223,7 +2223,7 @@
   <string name="track_style">Style de trace</string>
   <string name="track_time_ago_1">Il ya 1 heure</string>
   <string name="elapsed_time">Temps écoulé</string>
-  <string name="elapsed2">Écoulé:</string>
+  <string name="elapsed2">Écoulé :</string>
   <string name="loss_1">Perte</string>
   <string name="loss_2">Perte :</string>
   <string name="min_1">Min</string>
@@ -2651,7 +2651,7 @@
   <string name="mission_package_compressing">Compression de %s, veuillez patienter…</string>
   <string name="mission_package_failed_to_create">Impossible de créer le paquet : %s</string>
   <string name="mission_package_deploying">Déploiement de %s, veuillez patienter…</string>
-  <string name="mission_package_posting_package">Envoi du paquet à: %s</string>
+  <string name="mission_package_posting_package">Envoi du paquet à : %s</string>
   <string name="failed_to_post_package">Impossible de publier le package : %s</string>
   <string name="mission_package_notifying_receivers">Notification des destinataires…</string>
   <string name="package_already_on_server">Paquet déjà sur le serveur : %s</string>
@@ -2675,7 +2675,7 @@
   <string name="mission_package_download_from_sender_failed_after_attempts">%1$s de %2$s a échoué après %3$d tentatives : %4$s</string>
   <string name="failed_to_extract_mission_package">Impossible d\'extraire %1$s : %2$s</string>
   <string name="mission_package_uploaded_message">%1$s envoyé à %2$s</string>
-  <string name="mission_package_sent_message">%1$s envoyé: %2$s</string>
+  <string name="mission_package_sent_message">%1$s envoyé : %2$s</string>
   <string name="mission_package_download_from_sender_has_failed_attempts">%1$s de %2$s a échoué %3$d sur %4$d tentatives</string>
   <string name="mission_package_request_data_error">Erreur de données</string>
   <string name="mission_package_request_custom_error">Erreur personnalisée</string>
@@ -2746,8 +2746,8 @@
   <string name="mission_package_invalid_file_sharing_port">Port de partage de fichiers non valide : %1$d, réinitialisation par défaut : %2$d</string>
   <string name="mission_package_download_attempts_must_be_greater_than_0">Les tentatives de téléchargement (%1$d) doivent être supérieures à 0, réinitialisation par défaut : %2$d</string>
   <string name="mission_package_max_file_transfer_size_must_be_greater_than_0">La taille maximale de transfert de fichiers doit être supérieure à 0, réinitialisation par défaut : %d</string>
-  <string name="mission_package_timeout_must_be_greater_than_0">Le délai d\'expiration (%1$d) doit être supérieur à 0 et inférieur à %2$d. Réinitialisation à: %3$d</string>
-  <string name="mission_package_timeout_must_be_numeric">Le délai d\'expiration doit être une valeur numérique, réinitialisée à: %d</string>
+  <string name="mission_package_timeout_must_be_greater_than_0">Le délai d\'expiration (%1$d) doit être supérieur à 0 et inférieur à %2$d. Réinitialisation à : %3$d</string>
+  <string name="mission_package_timeout_must_be_numeric">Le délai d\'expiration doit être une valeur numérique, réinitialisée à : %d</string>
   <string name="mission_package_file_sharing_is_disabled">Le partage de fichiers est actuellement désactivé, activez via Paramètres -> Préférences d\'outils</string>
   <string name="mission_package_no_logs_saved">Aucun journal actuellement enregistré</string>
   <string name="mission_package_no_map_item_selected">Aucun élément de carte sélectionné</string>
@@ -3071,9 +3071,9 @@
   <string name="line_4">Ligne 4</string>
   <string name="line_5">Ligne 5</string>
   <string name="tgt_description">Description Cible </string>
-  <string name="plugin_uninstalled">Le plugin a été désinstallé:</string>
+  <string name="plugin_uninstalled">Le plugin a été désinstallé :</string>
   <string name="plugin_prompt">Voulez-vous charger ce plugin installé dans %1$s?\n\t%2$s</string>
-  <string name="loaded_plugins">Plugin chargé: %1$s</string>
+  <string name="loaded_plugins">Plugin chargé : %1$s</string>
   <string name="load_plugins">Charger le plugin : %1$s</string>
   <string name="opening_file">Ouverture du fichier…</string>
   <string name="no_file_viewer_found">Aucune application trouvée</string>
@@ -3274,7 +3274,7 @@
   <string name="very_large_mission_package">Paquet de données très volumineux</string>
   <string name="tap_map_item_for_mission_package">Appuyez sur un élément de la carte pour votre paquet de données</string>
   <string name="unable_to_determine_mission_package_id">Impossible de déterminer l\'ID du paquet de données</string>
-  <string name="mission_package_added">Paquet de données ajouté: %s</string>
+  <string name="mission_package_added">Paquet de données ajouté : %s</string>
   <string name="mission_package_updated">Paquet de données mis à jour : %s</string>
   <string name="no_mission_package_provided">Aucun paquet de données fourni</string>
   <string name="no_supported_data_selected_to_update_mission_package">Aucune donnée prise en charge n\'a été sélectionnée pour mettre à jour le paquet de données</string>
@@ -3319,7 +3319,7 @@
   <string name="pref_curved_display">Ajuster pour écran incurvé</string>
   <string name="pref_curved_display_desc">Activez pour ajuster le contenu afin qu\'il tienne dans un écran avec des coins incurvés.</string>
   <string name="enroll_for_client_certificate">S\'inscrire au certificat client</string>
-  <string name="availability_colon">Disponibilité:</string>
+  <string name="availability_colon">Disponibilité :</string>
   <string name="weight">Poids</string>
   <string name="instruction_hint">Lorsque ce symbole apparaît dans la partie supérieure droite de l\'écran, il vous fournira des informations sur l\'action que vous effectuez. Appuyez dessus pour afficher ou masquer les informations.</string>
   <string name="module">Module :</string>
@@ -3985,7 +3985,7 @@
   <string name="swap">Échanger</string>
   <string name="height_above_label">Hauteur au-dessus :</string>
   <string name="radius_label">Rayon :</string>
-  <string name="intensity_label">Intensité:</string>
+  <string name="intensity_label">Intensité :</string>
   <string name="details_label">Détails</string>
   <string name="viewshed_label">Champ de vision</string>
   <string name="downloading_message">Téléchargement…</string>
