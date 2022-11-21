@@ -4083,7 +4083,7 @@
   <string name="unable_to_edit_feature_set">Impossible de modifier ce groupe de repères</string>
   <string name="edit_features">Modifier les repères</string>
 
-  <string name="action_bar_experience">Experience de la barre d\'actions</string>
+  <string name="action_bar_experience">Expérience de la barre d\'actions</string>
   <string name="no_gps_capitalized">AUCUN GPS</string>
   <string name="file_overlays_name">Calques de fichier</string>
   <string name="markers_overlay_name">Marqueurs</string>
