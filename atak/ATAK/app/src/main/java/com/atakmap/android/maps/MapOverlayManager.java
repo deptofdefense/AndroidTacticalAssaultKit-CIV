@@ -65,7 +65,7 @@ public class MapOverlayManager {
 
         return addOverlay(
                 MapOverlayParent.getOrAddParent(this.mapView, "otheroverlays",
-                        "Other Overlays",
+                        mapView.getContext().getString(R.string.other_overlays),
                         iconUri, 99, false),
                 overlay);
     }
@@ -89,7 +89,7 @@ public class MapOverlayManager {
 
         return addOverlay(
                 MapOverlayParent.getOrAddParent(this.mapView, "fileoverlays",
-                        "File Overlays",
+                        this.mapView.getContext().getString(R.string.file_overlays_name),
                         iconUri, 9, false),
                 overlay);
     }
@@ -112,7 +112,7 @@ public class MapOverlayManager {
     public synchronized boolean addMarkersOverlay(MapOverlay overlay) {
         return addOverlay(
                 MapOverlayParent.getOrAddParent(mapView, "markerroot",
-                        "Markers",
+                        this.mapView.getContext().getString(R.string.markers_overlay_name),
                         "asset://icons/affiliations.png", 2, false),
                 overlay);
     }

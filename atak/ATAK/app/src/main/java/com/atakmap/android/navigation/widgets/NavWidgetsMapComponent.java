@@ -31,6 +31,7 @@ public class NavWidgetsMapComponent extends AbstractMapComponent
         SharedPreferences.OnSharedPreferenceChangeListener {
 
     private UnitPreferences _prefs;
+    private MapView _mapView;
 
     // Scale bar
     private LinearLayoutWidget beLayout;
@@ -45,6 +46,7 @@ public class NavWidgetsMapComponent extends AbstractMapComponent
     public void onCreate(Context context, Intent intent, MapView view) {
 
         _prefs = new UnitPreferences(view);
+        _mapView = view;
 
         RootLayoutWidget root = (RootLayoutWidget) view.getComponentExtra(
                 "rootLayoutWidget");
@@ -105,6 +107,8 @@ public class NavWidgetsMapComponent extends AbstractMapComponent
     @Override
     public void onOverlayManagerBind(OverlayManager manager) {
         cbOverlay = manager.registerOverlay("Center Designator");
+        cbOverlay.setFriendlyName(
+                _mapView.getContext().getString(R.string.center_designator_overlay_name));
         cbOverlay.setVisible(cb.isVisible());
         cbOverlay.setIconUri(ATAKUtilities.getResourceUri(
                 R.drawable.ic_center_designator));

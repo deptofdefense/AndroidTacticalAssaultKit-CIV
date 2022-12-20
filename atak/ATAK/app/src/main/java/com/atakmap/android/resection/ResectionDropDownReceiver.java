@@ -275,8 +275,7 @@ public class ResectionDropDownReceiver extends DropDownReceiver
                 AlertDialog.Builder b = new AlertDialog.Builder(MapView
                         .getMapView().getContext());
                 b.setTitle(_context.getString(R.string.confirmation_dialogue))
-                        // todo put this string in @strings
-                        .setMessage("Remove all Landmarks?")
+                        .setMessage(_context.getString(R.string.remove_all_landmarks))
                         .setPositiveButton(R.string.yes,
                                 new DialogInterface.OnClickListener() {
                                     @Override

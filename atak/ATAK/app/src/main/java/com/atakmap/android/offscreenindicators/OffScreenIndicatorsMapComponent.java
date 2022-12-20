@@ -81,6 +81,8 @@ public class OffScreenIndicatorsMapComponent extends AbstractMapComponent {
         public void onOverlayManagerBind(OverlayManager manager) {
             _overlayManager = manager;
             offScrIndOverlay = manager.registerOverlay("Off-Screen Indicators");
+            offScrIndOverlay.setFriendlyName(
+                    mapView.getContext().getString(R.string.offscreen_indicator_overlay_name));
             offScrIndOverlay.setVisible(_offscreenCtrl.getEnabled());
             offScrIndOverlay
                     .setIconUri("android.resource://"

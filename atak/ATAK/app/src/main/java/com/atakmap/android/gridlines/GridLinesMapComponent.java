@@ -61,6 +61,8 @@ public class GridLinesMapComponent extends AbstractMapComponent implements
     public void onOverlayManagerBind(OverlayManager manager) {
         _overlayManager = manager;
         _gridLinesOverlay = manager.registerOverlay("Grid Lines");
+        _gridLinesOverlay
+                .setFriendlyName(_mapView.getContext().getString(R.string.grid_lines_overlay_name));
         _gridLinesOverlay.setVisible(_showByDefault);
         _gridLinesOverlay
                 .setIconUri("android.resource://" +

@@ -117,7 +117,7 @@ public class ElevationOverlaysMapComponent extends AbstractMapComponent
         heatMapOverlay = new HeatMapOverlay();
         terrainSlopeOverlay = new TerrainSlopeLayer("Terrain Slope Angle");
 
-        overlayLayer = new CardLayer("Heatmap Overlay");
+        overlayLayer = new CardLayer(context.getString(R.string.heatmap_overlay_name));
         overlayLayer.add(heatMapOverlay,
                 context.getString(HeatMapMode.Elevation.id));
         overlayLayer.add(terrainSlopeOverlay,
