@@ -28,15 +28,15 @@ function(validate_java_exists project_name)
     endif()
 	
 	# Execute Java to determine if 64-bit architecture
-	execute_process(COMMAND "${JAVA_EXEC_COMMAND}" -d64 -version
-					RESULT_VARIABLE JAVA_ARCHITECTURE_EXIT_CODE
-					OUTPUT_QUIET
-					ERROR_QUIET)
+#	execute_process(COMMAND "${JAVA_EXEC_COMMAND}" -d64 -version
+#					RESULT_VARIABLE JAVA_ARCHITECTURE_EXIT_CODE
+#					OUTPUT_QUIET
+#					ERROR_QUIET)
 
 	# Store the result of the architecture check as a BOOL.
-	if(JAVA_ARCHITECTURE_EXIT_CODE EQUAL 0)
+#	if(JAVA_ARCHITECTURE_EXIT_CODE EQUAL 0)
 		set(JAVA_IS_64_BIT TRUE)
-	endif()
+#	endif()
 
 	# If we're targeting 32-bit and the Java executable on the path is 32-bit, log that the correct executable was found.
 	# Otherwise, if a 64-bit executable was found, throw an error.
@@ -56,4 +56,3 @@ function(validate_java_exists project_name)
 		endif()
 	endif()
 endfunction()
-

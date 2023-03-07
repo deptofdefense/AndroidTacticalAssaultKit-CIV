@@ -21,14 +21,12 @@ install : release
 MrsidLibrary.cpp : MrsidLibrary.h
 
 $(LIBS) : MrsidLibrary.cpp
-                 
-MrsidLibrary.h : $(TOPDIR)/ATAKMapEngine/lib/src/main/java/com/lizardtech/android/mrsid/MrsidImageReaderImp.java
-	javah -classpath $(CLASSPATH) \
-                 -o $@ \
-                 com.lizardtech.android.mrsid.MrsidImageReaderImp
+               
+MrsidLibrary.h : 
+	javac -classpath $(CLASSPATH) -h . $(TOPDIR)/ATAKMapEngine/lib/src/main/java/com/lizardtech/android/mrsid/MrsidImageReaderImp.java
+	mv com_lizardtech_android_mrsid_MrsidImageReaderImp.h $@
                  
 release : $(LIBS)
 	tar xvf *.tar.gz 
 	$(ANDROID_NDK)/ndk-build
-
 

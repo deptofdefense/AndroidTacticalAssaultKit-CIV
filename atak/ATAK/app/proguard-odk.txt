@@ -258,3 +258,5 @@
 -keepclassmembers class * {
     @gov.tak.api.annotation.DontObfuscate *;
 }
+
+-ignorewarnings

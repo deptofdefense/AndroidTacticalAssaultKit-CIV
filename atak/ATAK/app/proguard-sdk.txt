@@ -304,3 +304,5 @@
 
 # make sure jassimp is happy
 -keep class jassimp.** {*;}
+
+-ignorewarnings

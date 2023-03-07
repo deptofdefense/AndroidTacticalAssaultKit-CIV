@@ -35,7 +35,8 @@ ${JAVA_HOME}/bin/javac com/atakmap/jnicrash/*.java || fail "compiling java sourc
 ${JAVA_HOME}/bin/jar cf jnicrash.jar com/atakmap/jnicrash/*.class || fail "creating JAR file"
 
 echo "Generating JNI headers"
-${JAVA_HOME}/bin/javah -o jni/jjnicrash.h com.atakmap.jnicrash.JNICrash || fail "generating JNI headers"
+${JAVA_HOME}/bin/javac -h jni/ com/atakmap/jnicrash/*.java || fail "generating JNI headers"
+mv jni/com_atakmap_jnicrash_JNICrash.h jni/jjnicrash.h
 
 ${ANDROID_NDK}/ndk-build || fail "building native sources"
 
@@ -46,4 +47,3 @@ for i in arm64-v8a armeabi-v7a x86 ; do
 done
 
 echo "Build and install complete!"
-

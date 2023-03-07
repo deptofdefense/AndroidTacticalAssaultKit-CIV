@@ -1,8 +1,8 @@
 apply from: configProject.file('gradle/conan.gradle'), to: project
-apply from: configProject.file('gradle/javah.gradle'), to: project
+apply from: configProject.file('gradle/javac.gradle'), to: project
 
-javah {
-    input file('src/main/jni/javah.properties')
+javac {
+    input file('src/main/jni/javac.properties')
     outputDir file('src/main/jni/')
 }
 
@@ -116,6 +116,9 @@ task cleanCMakeExports(type: Delete) {
 clean.dependsOn cleanCMakeExports
 
 afterEvaluate {
+    project.android.libraryVariants.all { variant ->
+        variant.javaCompileProvider.get().finalizedBy('generateJniHeaders')
+    }
     tasks.getByName('preExternalNativeBuild').dependsOn('generateJniHeaders')
 
     if (isJavaKernelBuild) {

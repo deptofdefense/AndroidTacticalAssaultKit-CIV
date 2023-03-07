@@ -97,7 +97,6 @@ ifndef JAVA_HOME
 endif
 
 JAVAC = "$(JAVA_HOME)/bin/javac"
-JAVAH = "$(JAVA_HOME)/bin/javah"
 JROOT=$(COMMOPATH)/jni
 CLASSP=$(JROOT)
 
@@ -105,8 +104,7 @@ CLASSP=$(JROOT)
 FILES_TO_CLEAN += $(wildcard j*.h)
 JSRCS=$(JROOT)/com/atakmap/commoncommo
 PACKAGE=com.atakmap.commoncommo
-
-JAVAHCMD=$(JAVAH) -classpath $(CLASSP) -o $@
+JAVACCMD=$(JAVAC) -classpath $(CLASSP) -h .
 
 autoheaders: $(subst .cpp,.h,$(wildcard j*.cpp))
 
@@ -114,21 +112,20 @@ autoheaders: $(subst .cpp,.h,$(wildcard j*.cpp))
 
 commojni_common.o: commojni_common.cpp commojni_common.h commojni_impl.h
 
-jcommo.h: $(JSRCS)/Commo.class
-	$(JAVAHCMD) $(PACKAGE).Commo
+jcommo.h:
+	$(JAVACCMD) $(JSRCS)/Commo.java
+	mv com_atakmap_commoncommo_Commo.h $@
 jcommo.o: jcommo.cpp jcommo.h commojni_common.h commojni_impl.h
 
-jcotpointdata.h: $(JSRCS)/CoTPointData.class
-	$(JAVAHCMD) $(PACKAGE).CoTPointData
+jcotpointdata.h:
+	$(JAVACCMD) $(JSRCS)/CoTPointData.java
+	mv com_atakmap_commoncommo_CoTPointData.h $@
 jcotpointdata.o: jcotpointdata.cpp jcotpointdata.h commojni_common.h
 
-jcloudclient.h: $(JSRCS)/CloudClient.class
-	$(JAVAHCMD) $(PACKAGE).CloudClient
+jcloudclient.h:
+	$(JAVACCMD) $(JSRCS)/CloudClient.java
+	mv com_atakmap_commoncommo_CloudClient.h $@
 jcloudclient.o: jcloudclient.cpp jcloudclient.h commojni_common.h
-
-jnifileioprovider.h: $(JSRCS)/FileIOProvider.class
-	$(JAVAHCMD) $(PACKAGE).FileIOProvider
-jnifileioprovider.o: jnifileioprovider.cpp jnifileioprovider.h commojni_common.h commojni_impl.h
 
 
 %.class: %.java
