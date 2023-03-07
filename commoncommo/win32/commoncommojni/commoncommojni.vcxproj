@@ -118,9 +118,12 @@
     </Link>
     <PreBuildEvent>
       <Command>cd $(ProjectDir)\..\..\jni\native
-"$(JAVA_HOME)\bin\javah" -classpath .. -o jcommo.h com.atakmap.commoncommo.Commo
-"$(JAVA_HOME)\bin\javah" -classpath .. -o jcotpointdata.h com.atakmap.commoncommo.CoTPointData
-"$(JAVA_HOME)\bin\javah" -classpath .. -o jcloudclient.h com.atakmap.commoncommo.CloudClient
+"$(JAVA_HOME)\bin\javac" -classpath .. -h . ..\com\atakmap\commoncommo\Commo.java
+mv com_atakmap_commoncommo_Commo.h jcommo.h
+"$(JAVA_HOME)\bin\javac" -classpath .. -h . ..\com\atakmap\commoncommo\CoTPointData.java
+mv com_atakmap_commoncommo_CoTPointData.h jcotpointdata.h
+"$(JAVA_HOME)\bin\javac" -classpath .. -h . ..\com\atakmap\commoncommo\CloudClient.java
+mv com_atakmap_commoncommo_CloudClient.h jcloudclient.h
 </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -142,9 +145,12 @@
     </Link>
     <PreBuildEvent>
       <Command>cd $(ProjectDir)\..\..\jni\native
-"$(JAVA_HOME)\bin\javah" -classpath .. -o jcommo.h com.atakmap.commoncommo.Commo
-"$(JAVA_HOME)\bin\javah" -classpath .. -o jcotpointdata.h com.atakmap.commoncommo.CoTPointData
-"$(JAVA_HOME)\bin\javah" -classpath .. -o jcloudclient.h com.atakmap.commoncommo.CloudClient
+"$(JAVA_HOME)\bin\javac" -classpath .. -h . ..\com\atakmap\commoncommo\Commo.java
+mv com_atakmap_commoncommo_Commo.h jcommo.h
+"$(JAVA_HOME)\bin\javac" -classpath .. -h . ..\com\atakmap\commoncommo\CoTPointData.java
+mv com_atakmap_commoncommo_CoTPointData.h jcotpointdata.h
+"$(JAVA_HOME)\bin\javac" -classpath .. -h . ..\com\atakmap\commoncommo\CloudClient.java
+mv com_atakmap_commoncommo_CloudClient.h jcloudclient.h
 </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -170,9 +176,12 @@
     </Link>
     <PreBuildEvent>
       <Command>cd $(ProjectDir)\..\..\jni\native
-"$(JAVA_HOME)\bin\javah" -classpath .. -o jcommo.h com.atakmap.commoncommo.Commo
-"$(JAVA_HOME)\bin\javah" -classpath .. -o jcotpointdata.h com.atakmap.commoncommo.CoTPointData
-"$(JAVA_HOME)\bin\javah" -classpath .. -o jcloudclient.h com.atakmap.commoncommo.CloudClient
+"$(JAVA_HOME)\bin\javac" -classpath .. -h . ..\com\atakmap\commoncommo\Commo.java
+mv com_atakmap_commoncommo_Commo.h jcommo.h
+"$(JAVA_HOME)\bin\javac" -classpath .. -h . ..\com\atakmap\commoncommo\CoTPointData.java
+mv com_atakmap_commoncommo_CoTPointData.h jcotpointdata.h
+"$(JAVA_HOME)\bin\javac" -classpath .. -h . ..\com\atakmap\commoncommo\CloudClient.java
+mv com_atakmap_commoncommo_CloudClient.h jcloudclient.h
 </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -198,9 +207,12 @@
     </Link>
     <PreBuildEvent>
       <Command>cd $(ProjectDir)\..\..\jni\native
-"$(JAVA_HOME)\bin\javah" -classpath .. -o jcommo.h com.atakmap.commoncommo.Commo
-"$(JAVA_HOME)\bin\javah" -classpath .. -o jcotpointdata.h com.atakmap.commoncommo.CoTPointData
-"$(JAVA_HOME)\bin\javah" -classpath .. -o jcloudclient.h com.atakmap.commoncommo.CloudClient
+"$(JAVA_HOME)\bin\javac" -classpath .. -h . ..\com\atakmap\commoncommo\Commo.java
+mv com_atakmap_commoncommo_Commo.h jcommo.h
+"$(JAVA_HOME)\bin\javac" -classpath .. -h . ..\com\atakmap\commoncommo\CoTPointData.java
+mv com_atakmap_commoncommo_CoTPointData.h jcotpointdata.h
+"$(JAVA_HOME)\bin\javac" -classpath .. -h . ..\com\atakmap\commoncommo\CloudClient.java
+mv com_atakmap_commoncommo_CloudClient.h jcloudclient.h
 </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>

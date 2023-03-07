@@ -123,7 +123,13 @@ abstract class AndroidPluginExternalNativeBuild extends ExternalNativeBuild {
                         def buildVariant = project.getTaskAndroidBuildVariant(project, externalNativeBuildTask)
                         project.android.defaultConfig.ndk.abiFilters.each { arch ->
                             project.exec {
-                                workingDir "${project.projectDir}/.cxx/cmake/${buildVariant.name}/${arch}/"
+                                def variant = "Debug"
+                                if (buildVariant.name == "release") {
+                                    variant = "RelWithDebInfo"
+                                }
+                                def workDir = project.file("${project.projectDir}/.cxx/${variant}")
+                                def archDir = project.fileTree(dir: workDir, include: "/**/${arch}/").first().getParentFile()
+                                setWorkingDir(archDir)
                                 commandLine "${cmakeDir}cmake", '--build', '.', '--target', requestedBuildTarget
                             }
                         }

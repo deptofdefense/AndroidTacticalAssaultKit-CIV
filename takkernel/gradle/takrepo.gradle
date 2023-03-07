@@ -24,6 +24,7 @@ repositories {
             username takrepoUser
             password takrepoPassword
         }
+        allowInsecureProtocol = true 
     }
 }
 

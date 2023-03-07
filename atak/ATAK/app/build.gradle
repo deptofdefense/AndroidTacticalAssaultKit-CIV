@@ -43,11 +43,13 @@ buildscript {
                 username = mavenUser
                 password = mavenPassword
             }
+            allowInsecureProtocol = true
         }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.2.2'
+        classpath 'com.android.tools.build:gradle:7.0.2'
         classpath "org.jacoco:org.jacoco.core:$jacocoVersion"
+        classpath 'com.guardsquare:proguard-gradle:7.3.1'
         if(isDevKitEnabled()) {
             classpath "com.atakmap.gradle:atak-gradle-devkit:${takDevkitVersion}"
         }
@@ -65,6 +67,7 @@ allprojects {
                 username = mavenUser
                 password = mavenPassword
             }
+            allowInsecureProtocol = true
         }
     }
 }
@@ -72,6 +75,7 @@ allprojects {
 apply plugin: 'com.android.application'
 apply plugin: 'jacoco'
 apply plugin: 'maven-publish'
+apply plugin: 'com.guardsquare.proguard' 
 if(isDevKitEnabled()) {
     apply plugin: 'atak-devkit-plugin'
 }
@@ -217,7 +221,7 @@ def getCurrentFlavor() {
 
 android {
     compileSdkVersion 30
-    buildToolsVersion "30.0.2"
+    buildToolsVersion "30.0.3"
     useLibrary 'org.apache.http.legacy'
 
 
@@ -237,8 +241,8 @@ android {
     }
 
     compileOptions {
-         sourceCompatibility JavaVersion.VERSION_1_8
-         targetCompatibility JavaVersion.VERSION_1_8
+         sourceCompatibility JavaVersion.VERSION_11
+         targetCompatibility JavaVersion.VERSION_11
     }
 
     flavorDimensions "application"
@@ -353,17 +357,14 @@ android {
 
         release {
             buildConfigField 'String', 'DEV_BANNER', '""'
-            minifyEnabled true
-            proguardFile 'proguard-release.txt'
+            minifyEnabled false
             signingConfig signingConfigs.release
         }
 
         debug {
             buildConfigField 'String', 'DEV_BANNER', '""'
             isDefault = true 
-            minifyEnabled true
-            proguardFile 'proguard-debug.txt'
-            testProguardFiles 'proguard-debug.txt'
+            minifyEnabled false
             testCoverageEnabled (project.hasProperty('coverage'))
             signingConfig signingConfigs.debug
             if (project.hasProperty('coverage')) 
@@ -373,8 +374,7 @@ android {
         sdk {
             buildConfigField 'String', 'DEV_BANNER', '"DEVELOPER BUILD"'
             debuggable true
-            minifyEnabled true
-            proguardFile 'proguard-sdk.txt'
+            minifyEnabled false
             signingConfig signingConfigs.sdk
             matchingFallbacks = ['debug']
         }
@@ -382,8 +382,7 @@ android {
         odk {
             buildConfigField 'String', 'DEV_BANNER', '"TEST BUILD"'
             debuggable true
-            minifyEnabled true
-            proguardFile 'proguard-odk.txt'
+            minifyEnabled false
             signingConfig signingConfigs.sdk
             matchingFallbacks = ['release']
         }
@@ -428,6 +427,30 @@ android {
     }
 }
 
+proguard {
+    configurations {
+        release {
+            defaultConfiguration 'proguard-android.txt'
+            configuration 'proguard-debug.txt'
+        }
+
+        debug {
+            defaultConfiguration 'proguard-android.txt'
+            configuration 'proguard-debug.txt'
+        }
+
+        sdk {
+            defaultConfiguration 'proguard-android.txt'
+            configuration 'proguard-sdk.txt'
+        }
+
+        odk {
+            defaultConfiguration 'proguard-android.txt'
+            configuration 'proguard-odk.txt'
+        }
+    }
+}
+
 // `takkernel` dependencies declared after the `android` block so that all
 // build types are declared
 dependencies {
@@ -448,59 +471,154 @@ dependencies {
 // copies over the minified.jar file which contains a completely deobfuscated jar file
 // of all the classes used when running ATAK to include the dependency libraries
 // such as the support libraries.
+task combineJarsDebug {
+    outputs.file("${project.projectDir}"+"/build/intermediates/transforms/ProguardTransform/"+getCurrentFlavor()+"/debug/output.jar")
+    doLast {
+        def folderDirectory = project.file("${project.projectDir}"+"/build/intermediates/transforms/ProguardTransform/"+getCurrentFlavor()+"/debug")
+        if(folderDirectory.exists()) {
+            def result = project.exec {
+                setWorkingDir(folderDirectory)
+                commandLine 'unzip', '-o', '[0-9]*.jar', '-d', 'generatedDebugJarFiles'
+            }
+            if (result.exitValue == 0) {
+                project.exec {
+                    setWorkingDir(folderDirectory)
+                    def commandLineArgs = ['jar', 'cvf', 'output.jar']
+                    folderDirectory.listFiles().findAll { it.isDirectory() }.each { folder ->
+                        commandLineArgs += ['-C', folder.name, '.']
+                    }
+                    commandLine commandLineArgs
+                }
+            }
+        }
+    }
+}
+
+task combineJarsOdk {
+    outputs.file("${project.projectDir}"+"/build/intermediates/transforms/ProguardTransform/"+getCurrentFlavor()+"/odk/output.jar")
+    doLast {
+        def folderDirectory = project.file("${project.projectDir}"+"/build/intermediates/transforms/ProguardTransform/"+getCurrentFlavor()+"/odk")
+        if(folderDirectory.exists()) {
+            def result = project.exec {
+                setWorkingDir(folderDirectory)
+                commandLine 'unzip', '-o', '[0-9]*.jar', '-d', 'generatedOdkJarFiles'
+            }
+            if (result.exitValue == 0) {
+                project.exec {
+                    setWorkingDir(folderDirectory)
+                    def commandLineArgs = ['jar', 'cvf', 'output.jar']
+                    folderDirectory.listFiles().findAll { it.isDirectory() }.each { folder ->
+                        commandLineArgs += ['-C', folder.name, '.']
+                    }
+                    commandLine commandLineArgs
+                }
+            }
+        }
+    }
+}
+
+task combineJarsSdk {
+    outputs.file("${project.projectDir}"+"/build/intermediates/transforms/ProguardTransform/"+getCurrentFlavor()+"/sdk/output.jar")
+    doLast {
+        def folderDirectory = project.file("${project.projectDir}"+"/build/intermediates/transforms/ProguardTransform/"+getCurrentFlavor()+"/sdk")
+        if(folderDirectory.exists()) {
+            def result = project.exec {
+                setWorkingDir(folderDirectory)
+                commandLine 'unzip', '-o', '[0-9]*.jar', '-d', 'generatedSdkJarFiles'
+            }
+            if (result.exitValue == 0) {
+                project.exec {
+                    setWorkingDir(folderDirectory)
+                    def commandLineArgs = ['jar', 'cvf', 'output.jar']
+                    folderDirectory.listFiles().findAll { it.isDirectory() }.each { folder ->
+                        commandLineArgs += ['-C', folder.name, '.']
+                    }
+                    commandLine commandLineArgs
+                }
+            }
+        }
+    }
+}
+
+task combineJarsRelease {
+    outputs.file("${project.projectDir}"+"/build/intermediates/transforms/ProguardTransform/"+getCurrentFlavor()+"/release/output.jar")
+    doLast {
+        def folderDirectory = project.file("${project.projectDir}"+"/build/intermediates/transforms/ProguardTransform/"+getCurrentFlavor()+"/release")
+        if(folderDirectory.exists()) {
+            def result = project.exec {
+                setWorkingDir(folderDirectory)
+                commandLine 'unzip', '-o', '[0-9]*.jar', '-d', 'generatedReleaseJarFiles'
+            }
+            if (result.exitValue == 0) {
+                project.exec {
+                    setWorkingDir(folderDirectory)
+                    def commandLineArgs = ['jar', 'cvf', 'output.jar']
+                    folderDirectory.listFiles().findAll { it.isDirectory() }.each { folder ->
+                        commandLineArgs += ['-C', folder.name, '.']
+                    }
+                    commandLine commandLineArgs
+                }
+            }
+        }
+    }
+}
+
 task copyFilesDebug {
-    doLast { 
+    dependsOn combineJarsDebug
+    doLast {
         copy {
-          from "./build/intermediates/shrunk_jar/" + getCurrentFlavor() + "Debug/minified.jar"
+          from "./build/intermediates/transforms/ProguardTransform/" + getCurrentFlavor() + "/debug/output.jar"
           into "./build/libs"
-          rename("minified.jar", "main.jar")
+          rename("output.jar", "main.jar")
         }
         mkdir ("./build/libs/" + ATAK_VERSION + "." + getCurrentFlavor().toUpperCase())
         copy {
-          from "build/intermediates/shrunk_jar/" + getCurrentFlavor() + "Debug/minified.jar"
+          from "build/intermediates/transforms/ProguardTransform/" + getCurrentFlavor() + "/debug/output.jar"
           into "./build/libs/" + ATAK_VERSION + "." + getCurrentFlavor().toUpperCase()
-          rename("minified.jar", "main.jar")
+          rename("output.jar", "main.jar")
           println "deployed main.jar to: " + "./build/libs/" + ATAK_VERSION + "." + getCurrentFlavor().toUpperCase()
         }
     }
 }
 
-task copyFilesRelease { 
+task copyFilesRelease {
+    dependsOn combineJarsRelease
     doLast { 
         // temporary location
         mkdir ("./build/outputs/mapping/release/")
         copy {
-          from "build/outputs/mapping/" + getCurrentFlavor() + "Release/mapping.txt"
+          from "build/outputs/proguard/" + getCurrentFlavor() + "Release/mapping/mapping.txt"
           into "./build/outputs/mapping/release"
         }
         copy {
-          from "build/outputs/mapping/" + getCurrentFlavor() + "Release/mapping.txt"
+          from "build/outputs/proguard/" + getCurrentFlavor() + "Release/mapping/mapping.txt"
           into "./build/libs/"
           rename("mapping.txt", "mapping-" + getCurrentFlavor() + "-" + getVersionName() + "-" + getVersionCode()  + ".txt")
         }
         copy {
-          from "build/outputs/mapping/" + getCurrentFlavor() + "Release/mapping.txt"
+          from "build/outputs/proguard/" + getCurrentFlavor() + "Release/mapping/mapping.txt"
           into "./build/libs/"
         }
         mkdir ("./build/outputs/libs/" + ATAK_VERSION + "." + getCurrentFlavor().toUpperCase())
         copy {
-          from "build/outputs/mapping/" + getCurrentFlavor() + "/release/mapping.txt"
+          from "build/outputs/proguard/" + getCurrentFlavor() + "Release/mapping/mapping.txt"
           into "./build/libs/" + ATAK_VERSION + "." + getCurrentFlavor().toUpperCase()
           println "deployed mapping.txt to: " + "./build/libs/" + ATAK_VERSION + "." + getCurrentFlavor().toUpperCase()
         }
     }
 }
+
 task copyFilesSdk {
+    dependsOn combineJarsSdk
     doLast {
         copy {
           println "constructed plugin debug jar file for: " +  getCurrentFlavor()
-          from "./build/intermediates/shrunk_jar/" + getCurrentFlavor() + "Sdk/minified.jar"
+          from "./build/intermediates/transforms/ProguardTransform/" + getCurrentFlavor() + "/sdk/output.jar"
           into "./build/libs"
-          rename("minified.jar", "main.jar")
+          rename("output.jar", "main.jar")
         }
     }
 }
-
 
 configurations {
     civilianApiJar {
@@ -519,13 +637,29 @@ configurations {
 
 
 afterEvaluate {
+    Task proguardDebugTask =  project.tasks.findByName("transformClassesAndResourcesWithProguardTransformFor" + getCommandFlavor() + "Debug")
+    Task proguardOdkTask =  project.tasks.findByName("transformClassesAndResourcesWithProguardTransformFor" + getCommandFlavor() + "Odk")
+    Task proguardSdkTask =  project.tasks.findByName("transformClassesAndResourcesWithProguardTransformFor" + getCommandFlavor() + "Sdk")
+    Task proguardReleaseTask =  project.tasks.findByName("transformClassesAndResourcesWithProguardTransformFor" + getCommandFlavor() + "Release")
 
-    artifacts {
+    if(proguardDebugTask != null){
+        proguardDebugTask.finalizedBy(combineJarsDebug)
+    }
+    if(proguardOdkTask != null){
+        proguardOdkTask.finalizedBy(combineJarsOdk)
+    }
+    if(proguardSdkTask != null){
+        proguardSdkTask.finalizedBy(combineJarsSdk)
+    }
+    if(proguardReleaseTask != null){
+        proguardReleaseTask.finalizedBy(combineJarsRelease)
+    }
+ artifacts {
 
         // need an unobfuscated jar, which is provided by the "debug" build type
-        Task apiTask = project.tasks.findByName('minifyCivDebugWithProguard')
+        Task apiTask = project.tasks.findByName('combineJarsDebug')
         File apiJar = apiTask.outputs.files.filter {
-            'minified.jar' == it.name
+            'output.jar' == it.name
         }.singleFile
 
         // one API jar to rule them all ...
@@ -538,14 +672,13 @@ afterEvaluate {
             'civ' == variant.flavorName
         }.all { variant ->
             // buildType specific artifacts ...
-            Task mappingTask = project.tasks.findByName("minify${variant.name.capitalize()}WithProguard")
-            File mappingFile = mappingTask.outputs.files.filter {
-                'mapping.txt' == it.name
-            }.singleFile
-
-            // the mapping artifact ...
-            "${variant.name}Mapping"(mappingFile) {
-                builtBy(mappingTask)
+            Task mappingTask = project.tasks.findByName("transformClassesAndResourcesWithProguardTransformFor" +variant.name.capitalize())
+            def mappingFile = file("${project.projectDir}"+"/build/outputs/proguard/civ"+ variant.name.capitalize().substring(3)+"/mapping/mapping.txt")
+            if(mappingFile.exists()) {
+                // the mapping artifact ...
+                "${variant.name}Mapping"(mappingFile) {
+                    builtBy(mappingTask)
+                }
             }
         }
     }

@@ -1,11 +1,11 @@
 // Gradle script to declare our external dependency versions
 ext {
     // android platform dependencies
-    androidBuildToolsVersion  = '30.0.2'
-    androidCompileSdkVersion = 29
+    androidBuildToolsVersion  = '30.0.3'
+    androidCompileSdkVersion = 30
     androidMinSdkVersion = 21
-    androidTargetSdkVersion = 29
-    androidToolsBuildGradleVersion = '4.2.2'
+    androidTargetSdkVersion = 30
+    androidToolsBuildGradleVersion = '7.0.2'
     androidNdkVersion = '12.1.2977051'
 
     // general dependencies

@@ -1,10 +1,10 @@
 /**
  * Extension defining
  */
-class Javah {
+class Javac {
     /**
      * Input properties file. Keys are the generated output header file name, values are comma-separated list of the
-     * Java class(es) -- as fully qualified classname -- provided as input into the `javah` process.
+     * Java class(es) -- as fully qualified classname -- provided as input into the `javac` process.
      */
     File input
     /**
@@ -25,7 +25,7 @@ abstract class GenerateJniHeaders extends DefaultTask {
     @Input
     abstract Property<File> getOutputDir()
 
-    /** @return classpath to be provided to the `javah` process. */
+    /** @return classpath to be provided to the `javac` process. */
     @Input
     abstract Property<Collection<File>> getClasspath()
 
@@ -59,10 +59,10 @@ abstract class GenerateJniHeaders extends DefaultTask {
         generateConfig.getOrElse(Collections.emptyMap()).each { headerFile, sourceClasses ->
             sourceClasses.each { fullyQualifiedClassName ->
                 // find file on classpath
-                def javahInputFilesPaths = project.isAndroidKernelBuild ?
+                def javacInputFilesPaths = project.isAndroidKernelBuild ?
                         project.android.sourceSets.main.java.srcDirs :
                         project.sourceSets.main.java.srcDirs
-                for (def sp : javahInputFilesPaths) {
+                for (def sp : javacInputFilesPaths) {
                     def javaFile = new File(sp, fullyQualifiedClassName.replaceAll("\\.", "/") + ".java")
                     if (javaFile.exists()) {
                         value += javaFile
@@ -84,29 +84,48 @@ abstract class GenerateJniHeaders extends DefaultTask {
         return value
     }
 
-    /** Generates header files from Java classes via `javah` process. */
+    /** Generates header files from Java classes via `javac` process. */
     @TaskAction
     void generate() {
         String classpathArg = ""
         classpath.getOrElse(Collections.emptySet()).each { cp ->
             classpathArg += File.pathSeparator + cp.getAbsolutePath()
         }
-
         generateConfig.getOrElse(Collections.emptyMap()).each { header, classes ->
-            project.exec {
+            String jniFolder = "../engine/src/main/jni/"
+            def rootDirectory = project.file("../engine/src/")
+            def result = project.exec {
                 // create command line args
-                ArrayList<String> clargs = ['javah', '-classpath', classpathArg, "-o", header]
-                clargs.addAll(classes)
-
-                // execute javah
+                ArrayList<String> clargs = ['javac', '-classpath', classpathArg, "-h", jniFolder]
+                classes.each { fullyQualifiedClassName ->
+                    // find file on classpath
+                        def javaFile = fullyQualifiedClassName.replaceAll("\\.", "/") + ".java"
+                        def javaFileWithPath = project.fileTree(dir: rootDirectory, include: "**/"+javaFile, exclude:"**/jre/**/"+javaFile).first()
+                        clargs.addAll(javaFileWithPath)
+                    }
                 commandLine clargs
+            }
+            if(result.exitValue == 0){
+                header.write("")
+                classes.each {className ->
+                    String generatedFileName = className.replace(".","_")+".h"
+                    def file = new File(outputDir.getOrNull() , generatedFileName)
+                    if(file.exists()) {
+                        def headerFileText = file.text
+                        header.append(headerFileText)
+                        file.delete()
+                    }
+                    else {
+                        println "No Header file is generated for : " + header.canonicalFile
+                    }
+                }
             }
         }
     }
 }
 
-// Create the `javah` extension on the project
-project.extensions.create("javah", Javah)
+// Create the `javac` extension on the project
+project.extensions.create("javac", Javac)
 
 // Inject the `generateJniHeaders` task
 project.afterEvaluate {
@@ -116,8 +135,8 @@ project.afterEvaluate {
 
         //classpath = project.files()
         classpath = new HashSet<>()
-        input = javah.input
-        outputDir = javah.outputDir
+        input = javac.input
+        outputDir = javac.outputDir
 
         String classesTask = null
         def cp = new HashSet<>()
@@ -130,16 +149,16 @@ project.afterEvaluate {
             classesTask = 'classes'
         } else if(project.isAndroidKernelBuild) {
             // select variant for dependency, giving deference to `release`
-            def javahClasspathVariant = project.getAndroidBuildVariant(project, 'release')
+            def javacClasspathVariant = project.getAndroidBuildVariant(project, 'release')
 
             // set up classpath
-            cp += javahClasspathVariant.javaCompile.classpath
-            cp += files(javahClasspathVariant.javaCompile.destinationDir)
+            cp += javacClasspathVariant.javaCompileProvider.get().classpath
+            cp += files(javacClasspathVariant.javaCompileProvider.get().destinationDir)
 
             cp += new File("${android.sdkDirectory.path}/platforms/${android.compileSdkVersion}/android.jar")
 
             // define task dependency
-            classesTask = "compile${javahClasspathVariant.name.capitalize()}JavaWithJavac"
+            classesTask = "compile${javacClasspathVariant.name.capitalize()}JavaWithJavac"
         } else {
             throw new GradleException("Unsupported kernel build target: ${kernelBuildTarget}")
         }
