@@ -316,8 +316,7 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLLabelManager_setTextFormat
 
     if (glLabelManager != NULL) {
         JNIStringUTF fontNameString(*env, fontName);
-        TextFormatParams format((TAK::Engine::Port::String) fontNameString,
-                                                        size);
+        TextFormatParams format(fontNameString.get(), size);
         format.bold = bold;
         format.italic = italic;
         format.underline = underline;
