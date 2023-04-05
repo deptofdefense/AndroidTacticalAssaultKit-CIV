@@ -4,6 +4,8 @@ package com.atakmap.android.emergency.tool;
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
+
+import com.atakmap.annotations.ModifierApi;
 import com.atakmap.coremap.log.Log;
 
 import android.content.SharedPreferences;
@@ -46,14 +48,32 @@ public class EmergencyTool extends DropDownReceiver implements
         EmergencyListener, DropDown.OnStateListener {
     public static final String TAG = "EmergencyTool";
     public static final String EMERGENCY_WIDGET = "EmergencyTool";
-    private final MapView mapView;
-    private final Context context;
-    private final SharedPreferences sharedPrefs;
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {
+            "private"
+    })
+    protected final MapView mapView;
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {
+            "private"
+    })
+    protected final Context context;
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {
+            "private"
+    })
+    protected final SharedPreferences sharedPrefs;
 
     private Spinner repeatTypeSpinner;
-    private Switch repeaterSwitch1;
-    private Switch repeaterSwitch2;
-    private CheckBox sendSMSCB;
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {
+            "private"
+    })
+    protected Switch repeaterSwitch1;
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {
+            "private"
+    })
+    protected Switch repeaterSwitch2;
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {
+            "private"
+    })
+    protected CheckBox sendSMSCB;
 
     //private ListView otherBeaconsList;
     //private Timer timer = new Timer();
@@ -175,7 +195,7 @@ public class EmergencyTool extends DropDownReceiver implements
                         repeaterSwitch1.setChecked(!areRepeaterTogglesLocked());
                         repeaterSwitch2.setChecked(!areRepeaterTogglesLocked());
                         Log.e(TAG, "Unknown repeat type requested: "
-                                + selectedItem.toString());
+                                + selectedItem);
                         sendSMSCB.setEnabled(true);
                     }
                 } else {
@@ -206,7 +226,10 @@ public class EmergencyTool extends DropDownReceiver implements
 
     }
 
-    private boolean areRepeaterTogglesLocked() {
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {
+            "private"
+    })
+    protected boolean areRepeaterTogglesLocked() {
         return repeaterSwitch1.isChecked() && repeaterSwitch2.isChecked();
     }
 

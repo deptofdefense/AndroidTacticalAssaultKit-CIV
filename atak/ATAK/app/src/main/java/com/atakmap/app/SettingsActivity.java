@@ -37,6 +37,7 @@ import com.atakmap.android.util.ATAKConstants;
 import com.atakmap.app.preferences.MainPreferencesFragment;
 import com.atakmap.app.preferences.MyPreferenceFragment;
 import com.atakmap.app.preferences.PreferenceSearchDialog;
+import com.atakmap.app.preferences.SearchPreferenceActivity;
 import com.atakmap.app.preferences.ToolsPreferenceFragment;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
@@ -272,9 +273,13 @@ public class SettingsActivity extends MetricPreferenceActivity implements
         if (menu != null) {
             MenuItem item = menu.findItem(R.id.action_home_settings);
             item.setVisible(home);
-
+            if (BuildConfig.FLAVOR == "civUIMods") {
+                item = menu.findItem(R.id.backBtn);
+                item.setVisible(home);
+            }
             item = menu.findItem(R.id.action_home_search);
             item.setVisible(search);
+
         }
     }
 
@@ -404,12 +409,23 @@ public class SettingsActivity extends MetricPreferenceActivity implements
             }
         } else if (i == R.id.action_home_search) {
             search();
+        } else if (i == R.id.closeButton) {
+            finish();
+        } else if (i == R.id.backBtn) {
+            super.onBackPressed();
         }
         return true;
     }
 
     private void search() {
-        new PreferenceSearchDialog(this).show();
+        if (BuildConfig.FLAVOR == "civUIMods") {
+            Intent mgmtPlugins = new Intent(MapView.getMapView().getContext(),
+                    SearchPreferenceActivity.class);
+            startActivityForResult(mgmtPlugins,
+                    SearchPreferenceActivity.PREFERENCE_SEARCH_CODE);
+        } else {
+            new PreferenceSearchDialog(this).show();
+        }
     }
 
     @Override

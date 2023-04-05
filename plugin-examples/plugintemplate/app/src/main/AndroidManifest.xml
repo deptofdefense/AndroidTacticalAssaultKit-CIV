@@ -14,7 +14,9 @@
         <meta-data android:name="app_desc" android:value="@string/app_desc"/>
 
 
-       <!-- allow for plugin discovery -->
+       <!-- This fictitious activity entry allow for ATAK 4.6.0.2 and newer to perform 
+            plugin discovery  android devices.  If this is removed, the plugin will 
+            not be able to be discovered or loaded.  -->
        <activity android:name="com.atakmap.app.component"
            tools:ignore="MissingClass">
            <intent-filter android:label="@string/app_name">

@@ -23,6 +23,8 @@ namespace Renderer {
 namespace Raster {
 namespace TileReader {
 
+class GLQuadTileNode3;
+
 class GLQuadTileNode2;
 typedef std::unique_ptr<GLQuadTileNode2, void (*)(const GLQuadTileNode2 *)> GLQuadTileNode2Ptr;
 
@@ -77,7 +79,7 @@ class ENGINE_API GLQuadTileNode2 : public Core::GLResolvableMapRenderable2,
 
     class NodeCore
     {
-       public:
+   public:
         std::shared_ptr<TAK::Engine::Raster::TileReader::TileReader2> tileReader;
         std::shared_ptr<TAK::Engine::Raster::TileReader::TileReader2::AsynchronousIO> asyncio;
         /** Projects between the image coordinate space and WGS84. */
@@ -155,15 +157,20 @@ class ENGINE_API GLQuadTileNode2 : public Core::GLResolvableMapRenderable2,
         ~NodeCore() NOTHROWS;
        public:
         static Util::TAKErr create(NodeCore **v, TAK::Engine::Core::RenderContext *context, const TAK::Engine::Raster::ImageInfo *info,
-                                   TAK::Engine::Raster::TileReader::TileReaderFactory2Options &readerOpts, const Options &opts,
+                                   const TAK::Engine::Raster::TileReader::TileReaderFactory2Options &readerOpts, const Options &opts,
                                    bool failOnReaderFailedInit, const Initializer &init);
     };
 
    public:
     //
+    static Util::TAKErr create(Core::GLMapRenderable2Ptr &value,
+                               TAK::Engine::Core::RenderContext &context, const TAK::Engine::Raster::ImageInfo &info,
+                               const TAK::Engine::Raster::TileReader::TileReaderFactory2Options &readerOpts, const Options &opts,
+                               const Initializer &init) NOTHROWS;
+
     static Util::TAKErr create(GLQuadTileNode2Ptr &value,
                                TAK::Engine::Core::RenderContext *context, const TAK::Engine::Raster::ImageInfo *info,
-                               TAK::Engine::Raster::TileReader::TileReaderFactory2Options &readerOpts, const Options &opts,
+                               const TAK::Engine::Raster::TileReader::TileReaderFactory2Options &readerOpts, const Options &opts,
                                const Initializer &init);
     virtual ~GLQuadTileNode2();
 
@@ -172,7 +179,7 @@ class ENGINE_API GLQuadTileNode2 : public Core::GLResolvableMapRenderable2,
 
    private:
     GLQuadTileNode2();
-    Util::TAKErr init(GLQuadTileNode2 *parent, int idx, NodeCore *core);
+    Util::TAKErr init(GLQuadTileNode2 *parent, int idx, NodeCore *core) NOTHROWS;
 
    public:
     void setColor(int color);

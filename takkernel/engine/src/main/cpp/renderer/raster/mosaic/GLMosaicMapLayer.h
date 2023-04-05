@@ -7,7 +7,7 @@
 #include "raster/MosaicDatasetDescriptor.h"
 #include "raster/tilereader/TileReader2.h"
 #include "renderer/core/GLAsynchronousMapRenderable3.h"
-#include "renderer/raster/tilereader/GLQuadTileNode2.h"
+#include "renderer/raster/tilereader/GLQuadTileNode3.h"
 #include "renderer/raster/GLMapLayer2.h"
 #include "renderer/raster/ImagerySelectionControl.h"
 #include "core/MapRenderer.h"
@@ -31,7 +31,7 @@ namespace TAK {
                         virtual void release() NOTHROWS;
 
                        protected:
-                        virtual Util::TAKErr createRootNode(TileReader::GLQuadTileNode2Ptr &value, const TAK::Engine::Raster::Mosaic::MosaicDatabase2::Frame &frame) NOTHROWS;
+                        virtual Util::TAKErr createRootNode(TileReader::GLQuadTileNode3Ptr &value, const TAK::Engine::Raster::Mosaic::MosaicDatabase2::Frame &frame) NOTHROWS;
 
                        public:
                         // GLMapLayer2 methods
@@ -76,7 +76,7 @@ namespace TAK {
                        public:
                         static bool frameSort(const TAK::Engine::Raster::Mosaic::MosaicDatabase2::Frame &f0,
                                               const TAK::Engine::Raster::Mosaic::MosaicDatabase2::Frame &f1);
-                        typedef std::map<TAK::Engine::Raster::Mosaic::MosaicDatabase2::Frame, std::shared_ptr<TileReader::GLQuadTileNode2>,
+                        typedef std::map<TAK::Engine::Raster::Mosaic::MosaicDatabase2::Frame, std::shared_ptr<TileReader::GLQuadTileNode3>,
                                          decltype(frameSort) *> SortedFrameMap;
 
                        protected:
@@ -101,7 +101,7 @@ namespace TAK {
                          * have its <code>resume</code> method invoked on the GL thread before the next call
                          * <code>super.draw</code>.
                          */
-                        std::list<std::shared_ptr<TileReader::GLQuadTileNode2>> resurrected_frames_;
+                        std::list<std::shared_ptr<TileReader::GLQuadTileNode3>> resurrected_frames_;
 
                         atakmap::raster::MosaicDatasetDescriptor *info_;
                         Port::String selected_type_;

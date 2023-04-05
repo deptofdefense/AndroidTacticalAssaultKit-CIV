@@ -62,6 +62,16 @@ public class GenericFragmentAdapter extends Fragment {
 
     }
 
+    /**
+     * Remove the view from the mapping so it can be freed from memory
+     */
+    public void removeView() {
+        if (mapping.remove(uid) != null) {
+            Log.d(TAG, "Removing view: " + uid + " retained size: "
+                    + mapping.size());
+        }
+    }
+
     @Override
     public View onCreateView(final LayoutInflater inflater,
             final ViewGroup container,
@@ -93,12 +103,7 @@ public class GenericFragmentAdapter extends Fragment {
     @Override
     public void onDestroy() {
         onDestroyView();
-        mapping.remove(uid);
+        removeView();
         super.onDestroy();
-        // XXX: it might be better to place this in onDetach vs onDestroy
-        Log.d(TAG,
-                "onDestroy: removing view: " + uid + " retained size: "
-                        + mapping.size());
     }
-
 }

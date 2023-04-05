@@ -141,7 +141,8 @@ public final class GLMapGroup2 implements MapGroup.OnItemListChangedListener,
                 String glClassName = packageName + ".GL" + className;
                 glClass = Class.forName(glClassName);
             }
-        } catch (ClassCastException | SecurityException | IllegalArgumentException e) {
+        } catch (ClassCastException | SecurityException
+                | IllegalArgumentException e) {
             // Log.e(TAG, "Unable to instatiate GL class for map item of class " +
             // itemClass.getName());
             // Log.e(TAG, "error: ", e);
@@ -413,7 +414,8 @@ public final class GLMapGroup2 implements MapGroup.OnItemListChangedListener,
 
                 try {
                     return (GLMapItem2) ctor.newInstance(surface, item);
-                } catch (InstantiationException | InvocationTargetException | IllegalAccessException ignored) {
+                } catch (InstantiationException | InvocationTargetException
+                        | IllegalAccessException ignored) {
                 }
             }
 

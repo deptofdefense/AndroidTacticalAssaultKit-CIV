@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "renderer/GL.h"
 
 #include "renderer/core/GLContentIndicator.h"
@@ -188,3 +189,4 @@ void GLContentIndicator::start() NOTHROWS
 {}
 void GLContentIndicator::stop() NOTHROWS
 {}
+#endif

@@ -103,7 +103,8 @@ public:
     void setCallsign(const char *callsign);
     
     void setMPTransferSettings(const MPTransferSettings &settings);
-    void setLocalPort(int localPort) COMMO_THROW (std::invalid_argument);
+    int setLocalPort(int localPort) COMMO_THROW (std::invalid_argument);
+    int getBoundLocalPort() const;
     void setLocalHttpsPort(int localPort);
 
 
@@ -372,6 +373,11 @@ private:
     CURLM *uploadCurlMultiCtx;
 
     struct MHD_Daemon *webserver;
+    // externally requested port - ...DISABLE for requesting no listening
+    // on public interface
+    int desiredWebPort;
+    // actual bound port - ...DISABLE means not bound. This can be a
+    // valid port whilst desired is DISABLE since we still listen on loopback
     int webPort;
     int httpsProxyPort;
 
@@ -447,7 +453,7 @@ private:
                         const std::string &ackUid,
                         const TxTransferContext *ctx,
                         const ContactUID *contact,
-                        const int localHttpsPort);
+                        bool peerHosted);
 
     std::string getLocalUrl(int transferId);
 

@@ -1,4 +1,3 @@
-
 package com.atakmap.map.layer.raster.mobac;
 
 import java.io.File;
@@ -127,14 +126,15 @@ public class MobacMapSourceLayerInfoSpi extends AbstractDatasetDescriptorSpi {
         }
         
         builder.setExtra("mobileimagery.type", "mobac");
-        
+
+        // dataset metadata min zoom is always zero
         builder.setUri(f.getAbsolutePath());
         builder.setName(mapSource.getName());
         builder.setImageryType(mapSource.getName());
-        builder.setLevelOffset(mapSource.getMinZoom());
-        builder.setLevelCount(mapSource.getMaxZoom() - mapSource.getMinZoom() + 1);
-        builder.setGridWidth((1 << mapSource.getMinZoom()) * gridZeroWidth);
-        builder.setGridHeight((1 << mapSource.getMinZoom()) * gridZeroHeight);
+        builder.setLevelOffset(0);
+        builder.setLevelCount(mapSource.getMaxZoom() + 1);
+        builder.setGridWidth(gridZeroWidth);
+        builder.setGridHeight(gridZeroHeight);
         builder.setImageExt("." + mapSource.getTileType());
         // XXX - forcing everything to 256x256 in the client for 2.0
         builder.setTilePixelWidth(256);

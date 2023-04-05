@@ -130,7 +130,8 @@ public abstract class GLInstancedRenderable implements GLMapRenderable2 {
 
         // Map has been moved - need to update LCS
         if (!view.scene.equals(_lcs.sceneModel)) {
-            view.scratch.geo.set(view.currentPass.drawLat, view.currentPass.drawLng);
+            view.scratch.geo.set(view.currentPass.drawLat,
+                    view.currentPass.drawLng);
             view.scratch.geo.set(GeoPoint.UNKNOWN);
             view.scene.mapProjection.forward(view.scratch.geo,
                     view.scratch.pointD);

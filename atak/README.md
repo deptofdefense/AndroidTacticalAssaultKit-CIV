@@ -5,9 +5,7 @@ ATAK is a Moving Map capability for the Android OS. The moving map capability is
 core civilian capability that is built first and then flavored with either the military or 
 fms capabilities.  Full development resources can be found at wiki.tak.gov.
 
-ATAK is compiled to use targetSdkVersion 29 but still provide support for the minSdkVersion 21.    
-Be careful when developing new code within core to make sure that appropriate safeguards are in 
-place that retain system compatibility for minSdkVersion 21.
+ATAK is compiled to use targetSdkVersion 29 but still provide support for the minSdkVersion 21.    Be careful when developing new code within core to make sure that appropriate safeguards are in place that retain system compatibility for minSdkVersion 21.
 
 
 Developer Notes
@@ -40,9 +38,12 @@ takRepoUsername=**username**
 takRepoPassword=**password**
 
 # recommended
-sdk.dir=/opt/android-sdk-linux                  # example path to the android sdk
-ndk.dir=/opt/android-ndk-r12b                   # example path to the android ndk 12b
-cmake.dir=/opt/android-sdk-linux/cmake/3.18.1   # example path to the correct cmake (required at this time)
+## example path to the android sdk
+sdk.dir=/opt/android-sdk-linux
+## path to the android ndk 12b
+ndk.dir=/opt/android-ndk-r12b
+## example path to the correct cmake (required at this time)
+cmake.dir=/opt/android-sdk-linux/cmake/3.18.1
 
 ```
 
@@ -169,7 +170,7 @@ application.  This is done through a special classloader that knows how to join 
 class files from the plugin application at run time.    During compile time, the plugin only needs
 to reference the classes using the provided keyword.
 
-HelloWorld Plugin [project](https://git.takmaps.com/samples/helloworld)
+HelloWorld Plugin [project](https://git.tak.gov/samples/helloworld)
 -----------------
 
 A good example of a plugin that does several different tasks is the Helloworld plugin.  

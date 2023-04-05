@@ -187,6 +187,13 @@ class ENGINE_API LineString
         throw (std::out_of_range);
 
     //
+    // Returns the raw point data
+    const double *
+    getPoints()
+        const
+        throw ();
+
+    //
     // Returns true if getPointCount() > 0 && first point matches last point.
     //
     bool

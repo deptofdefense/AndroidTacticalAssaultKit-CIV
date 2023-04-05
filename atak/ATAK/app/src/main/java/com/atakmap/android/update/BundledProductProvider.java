@@ -63,7 +63,7 @@ public class BundledProductProvider extends BaseProductProvider {
                             50, "Extracting repo cache icons"));
                 }
 
-                Log.d(TAG, "Processing bundled repo: " + repo.toString());
+                Log.d(TAG, "Processing bundled repo: " + repo);
                 for (ProductInformation product : repo.getProducts()) {
                     boolean bUpdateAvailable = false;
                     if (AppMgmtUtils.isInstalled(_context,
@@ -74,7 +74,7 @@ public class BundledProductProvider extends BaseProductProvider {
                         if (installedVersion < product.getRevision()) {
                             Log.d(TAG,
                                     "Product has been updated: "
-                                            + product.toString());
+                                            + product);
                             bUpdateAvailable = true;
                         }
                     }
@@ -172,7 +172,7 @@ public class BundledProductProvider extends BaseProductProvider {
                     assetManager.open("apks/" + product.getAppUri()),
                     new FileOutputStream(apkfile));
         } catch (Exception e) {
-            Log.e(TAG, "failed to install: " + product.toString(), e);
+            Log.e(TAG, "failed to install: " + product, e);
             return null;
         }
 

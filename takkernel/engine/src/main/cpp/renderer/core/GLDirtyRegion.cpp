@@ -1,5 +1,7 @@
 #include "renderer/core/GLDirtyRegion.h"
 
+#include <cmath>
+
 #include "feature/SpatialCalculator2.h"
 
 using namespace TAK::Engine::Renderer::Core;
@@ -8,6 +10,8 @@ using namespace TAK::Engine::Feature;
 
 namespace
 {
+    Envelope2 emptyEnvelope(NAN, NAN, NAN, NAN, NAN, NAN);
+
     bool intersects(const Envelope2& a, const Envelope2* b, const std::size_t n) NOTHROWS
     {
         for (std::size_t i = 0; i < n; i++)
@@ -82,4 +86,13 @@ GLDirtyRegion& GLDirtyRegion::operator =(const GLDirtyRegion& other) NOTHROWS
     this->east = other.east;
     this->west = other.west;
     return *this;
+}
+const Envelope2& GLDirtyRegion::operator[](const std::size_t idx) const NOTHROWS
+{
+    if (idx < west.regions.size())
+        return west.regions[idx];
+    else if ((idx - west.regions.size()) < east.regions.size())
+        return east.regions[(idx - west.regions.size())];
+    else
+        return emptyEnvelope;
 }

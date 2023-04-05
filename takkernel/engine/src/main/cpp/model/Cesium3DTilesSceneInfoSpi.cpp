@@ -1,4 +1,4 @@
-
+#ifdef MSVC
 #include <vector>
 #include "model/Cesium3DTilesSceneInfoSpi.h"
 #include "util/IO2.h"
@@ -324,3 +324,4 @@ namespace {
 		return TE_Done;
 	}
 }
+#endif

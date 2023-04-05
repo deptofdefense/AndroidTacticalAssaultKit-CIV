@@ -44,7 +44,7 @@ public class ExtractFileTask extends MissionPackageBaseTask {
         Thread.currentThread().setName("ExtractFileTask");
 
         // work to be performed by background thread
-        Log.d(TAG, "Executing: " + toString());
+        Log.d(TAG, "Executing: " + this);
 
         final File source = new File(_manifest.getPath());
         if (!FileSystemUtils.isFile(source)) {

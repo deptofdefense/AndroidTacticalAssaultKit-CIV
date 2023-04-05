@@ -3,6 +3,7 @@ package com.atakmap.android.image;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 
@@ -10,6 +11,7 @@ import com.atakmap.android.hashtags.StickyHashtags;
 import com.atakmap.android.hashtags.attachments.AttachmentContent;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.widget.Toast;
@@ -24,6 +26,7 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.annotations.DeprecatedApi;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -45,7 +48,14 @@ public class ImageActivity {
     private final File _output;
     private final ActionBroadcastData _broadcast;
     private final boolean _multiCapture;
+    private boolean useGeoTakCam = false;
 
+    /**
+     * @deprecated #see ImageActivity(MapView mapView, File outImage, String uid,
+     *             ActionBroadcastData broadcast, boolean multiCapture)
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.6", forRemoval = true, removeAt = "4.9")
     public ImageActivity(final Context context,
             final String uid,
             final ActionBroadcastData broadcast,
@@ -61,6 +71,14 @@ public class ImageActivity {
         _multiCapture = false;
     }
 
+    /**
+     * Construct an activity facade to handle a quick pic request
+     * @param mapView the map view
+     * @param outImage the image output or the directory if it is multicapture
+     * @param uid the uid for the map item
+     * @param broadcast the details to broadcast
+     * @param multiCapture if this is in support of multicapture
+     */
     public ImageActivity(MapView mapView, File outImage, String uid,
             ActionBroadcastData broadcast, boolean multiCapture) {
         _mapView = mapView;
@@ -100,14 +118,30 @@ public class ImageActivity {
         }
     };
 
+    public void useTakGeoCam(final boolean useGeoTakCam) {
+        this.useGeoTakCam = useGeoTakCam;
+    }
+
     public void start() {
         DocumentedIntentFilter f = new DocumentedIntentFilter(
                 ATAKActivity.ACTIVITY_FINISHED,
                 "Fired when ATAK is ready to process a captured image");
         AtakBroadcast.getInstance().registerReceiver(activityResultReceiver, f);
-        Intent i = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        i.putExtra(MediaStore.EXTRA_OUTPUT,
-                FileProviderHelper.fromFile(_context, _tmpFile));
+        Intent i;
+        Uri uri = FileProviderHelper.fromFile(_context, _tmpFile);
+
+        if (useGeoTakCam) {
+            i = new Intent("com.atakmap.android.Image.IMAGE_CAPTURE");
+            i.setComponent(new ComponentName("com.partech.geocamera",
+                    "com.partech.geocamera.MainActivity"));
+            FileProviderHelper.setReadAccess(i);
+            _context.grantUriPermission("com.partech.geocamera", uri,
+                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+        } else {
+            i = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        }
+
+        i.putExtra(MediaStore.EXTRA_OUTPUT, uri);
         if (_multiCapture)
             i.putExtra("multiCapture", true);
         try {

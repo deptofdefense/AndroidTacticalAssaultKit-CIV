@@ -2,9 +2,11 @@
 package com.atakmap.android.gui;
 
 import android.content.Context;
-import android.preference.Preference;
 import android.preference.CheckBoxPreference;
+import android.preference.Preference;
 import android.util.AttributeSet;
+import android.view.View;
+import android.view.ViewGroup;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -43,6 +45,14 @@ public class PanCheckBoxPreference extends CheckBoxPreference {
 
     public PanCheckBoxPreference(Context context) {
         super(context);
+    }
+
+    @Override
+    protected View onCreateView(ViewGroup parent) {
+        View v = super.onCreateView(parent);
+        if (!isEnabled())
+            v.setEnabled(false);
+        return v;
     }
 
 }

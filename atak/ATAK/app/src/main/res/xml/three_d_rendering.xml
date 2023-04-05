@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+        android:title="@string/rendering_3d_options">
+
+        <com.atakmap.android.gui.PanCheckBoxPreference
+            android:title="@string/globe_display"
+            android:defaultValue="true"
+            android:key="atakGlobeModeEnabled" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

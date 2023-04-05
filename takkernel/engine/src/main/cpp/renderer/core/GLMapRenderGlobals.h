@@ -31,6 +31,8 @@ namespace TAK {
 				ENGINE_API TAK::Engine::Util::TAKErr GLMapRenderGlobals_getTextureCache2(TAK::Engine::Renderer::GLTextureCache2 **value, const TAK::Engine::Core::RenderContext &ctx) NOTHROWS;
 				ENGINE_API TAK::Engine::Util::TAKErr GLMapRenderGlobals_getLabelManager(TAK::Engine::Renderer::Core::GLLabelManager** value, const TAK::Engine::Core::RenderContext &ctx) NOTHROWS;
 
+				ENGINE_API TAK::Engine::Util::TAKErr GLMapRenderGlobals_getWhitePixel(GLuint *value, const TAK::Engine::Core::RenderContext &ctx) NOTHROWS;
+
 				ENGINE_API TAK::Engine::Util::TAKErr GLMapRenderGlobals_getTextureUnitLimit(std::size_t *limit) NOTHROWS;
 				ENGINE_API TAK::Engine::Util::TAKErr GLMapRenderGlobals_setTextureUnitLimit(const std::size_t limit) NOTHROWS;
             }

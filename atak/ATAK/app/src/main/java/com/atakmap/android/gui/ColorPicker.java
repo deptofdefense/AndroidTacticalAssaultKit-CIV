@@ -13,6 +13,8 @@ import com.atakmap.app.R;
 
 import androidx.annotation.ColorInt;
 
+import gov.tak.api.annotation.ModifierApi;
+
 /**
  * A view containing 3 or 4 {@link SeekBar} allowing the user to specify a
  * custom color outside of the preset defaults
@@ -94,7 +96,10 @@ public class ColorPicker extends LinearLayout {
     /**
      * Update the color preview box
      */
-    private void updateColorPreview() {
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {
+            "private"
+    })
+    protected void updateColorPreview() {
         int color = getColor();
         if (!enableAlphaSlider)
             color = 0xFF000000 | (color & 0xFFFFFF);

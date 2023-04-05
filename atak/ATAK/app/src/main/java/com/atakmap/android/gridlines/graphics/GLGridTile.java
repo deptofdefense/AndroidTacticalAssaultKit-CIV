@@ -176,16 +176,21 @@ class GLGridTile {
             if (MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SPRITES)
                     && ortho.currentPass.drawTilt < 40d) {
                 if (projSrid != ortho.currentPass.drawSrid) {
-                    swp = ortho.currentPass.scene.mapProjection.forward(sw, null);
-                    sep = ortho.currentPass.scene.mapProjection.forward(se, null);
-                    nwp = ortho.currentPass.scene.mapProjection.forward(nw, null);
+                    swp = ortho.currentPass.scene.mapProjection.forward(sw,
+                            null);
+                    sep = ortho.currentPass.scene.mapProjection.forward(se,
+                            null);
+                    nwp = ortho.currentPass.scene.mapProjection.forward(nw,
+                            null);
                     projSrid = ortho.drawSrid;
                 }
                 if (lastDrawVersionM != ortho.currentPass.drawVersion) {
-                    ortho.currentPass.scene.forward.transform(swp, ortho.scratch.pointD);
+                    ortho.currentPass.scene.forward.transform(swp,
+                            ortho.scratch.pointD);
                     swx = (float) ortho.scratch.pointD.x;
                     swy = (float) ortho.scratch.pointD.y;
-                    ortho.currentPass.scene.forward.transform(sep, ortho.scratch.pointD);
+                    ortho.currentPass.scene.forward.transform(sep,
+                            ortho.scratch.pointD);
                     sex = (float) ortho.scratch.pointD.x;
                     sey = (float) ortho.scratch.pointD.y;
                     ortho.scene.forward.transform(nwp, ortho.scratch.pointD);

@@ -1164,7 +1164,6 @@ public class Marker extends PointMapItem implements Exportable, Capturable {
                     int color = getAffiliationColor(this);
                     istyle.setColor(KMLUtil.convertKmlColor(color));
 
-
                     //set white pushpin and Google Earth will tint based on color above
                     com.ekito.simpleKML.model.Icon icon = new com.ekito.simpleKML.model.Icon();
                     icon.setHref(
@@ -1178,7 +1177,8 @@ public class Marker extends PointMapItem implements Exportable, Capturable {
                         String kmzIconPath = null;
                         if (imageUri.startsWith("sqlite")) {
                             //query sqlite to get iconset UID and icon filename
-                            UserIcon userIcon = UserIcon.GetIcon(imageUri, false,
+                            UserIcon userIcon = UserIcon.GetIcon(imageUri,
+                                    false,
                                     MapView.getMapView().getContext());
                             if (userIcon != null && userIcon.isValid()) {
                                 kmzIconPath = "icons" + File.separatorChar
@@ -1379,7 +1379,7 @@ public class Marker extends PointMapItem implements Exportable, Capturable {
 
         //be sure at least one image
         if (!FileSystemUtils.isEmpty(kmzAttachmentsPath))
-            base = base + sb.toString();
+            base = base + sb;
 
         base = base + "</body>";
         base = base + "</html>";

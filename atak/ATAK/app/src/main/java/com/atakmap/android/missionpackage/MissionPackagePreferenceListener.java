@@ -85,6 +85,7 @@ public class MissionPackagePreferenceListener implements
                 }
                 break;
             }
+            case WebServer.SERVER_LEGACY_HTTP_ENABLED_KEY:
             case WebServer.SECURE_SERVER_PORT_KEY:
             case WebServer.SERVER_PORT_KEY: {
                 // TODO use int directly?

@@ -148,7 +148,7 @@ public class MapOverlayConfig {
         this._filter = null;
         for (MapOverlayFilter f : _filters) {
             if (f == null || !f.isValid()) {
-                Log.w(TAG, "Skipping invalid filter for: " + toString());
+                Log.w(TAG, "Skipping invalid filter for: " + this);
                 continue;
             }
 
@@ -166,7 +166,7 @@ public class MapOverlayConfig {
             }
 
             if (cur == null) {
-                Log.w(TAG, "Skipping invalid filter for: " + toString());
+                Log.w(TAG, "Skipping invalid filter for: " + this);
                 continue;
             }
 

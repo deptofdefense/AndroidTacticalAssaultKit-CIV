@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "raster/tilematrix/TileClient.h"
 
 using namespace TAK::Engine::Raster::TileMatrix;
@@ -37,3 +38,4 @@ CacheRequestListener::~CacheRequestListener() NOTHROWS
 
 TileClient::~TileClient() NOTHROWS
 {}
+#endif

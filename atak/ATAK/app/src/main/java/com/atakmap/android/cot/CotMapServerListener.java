@@ -210,7 +210,7 @@ public class CotMapServerListener extends CotStreamListener implements
         }
 
         // notify user
-        Log.d(TAG, "Server version request created for: " + request.toString());
+        Log.d(TAG, "Server version request created for: " + request);
 
         if (notificationId >= 0) {
             NotificationUtil.getInstance().postNotification(
@@ -250,7 +250,7 @@ public class CotMapServerListener extends CotStreamListener implements
         }
 
         // notify user
-        Log.d(TAG, "Client list request created for: " + request.toString());
+        Log.d(TAG, "Client list request created for: " + request);
 
         if (notificationId >= 0) {
             NotificationUtil.getInstance().postNotification(
@@ -386,7 +386,7 @@ public class CotMapServerListener extends CotStreamListener implements
             return null;
         }
 
-        Log.d(TAG, "setServerVersion: " + ver.toString());
+        Log.d(TAG, "setServerVersion: " + ver);
 
         //see if any missing details, favor new details
         ServerVersion existing = serverVersionMap.get(ver.getNetConnect());
@@ -672,6 +672,8 @@ public class CotMapServerListener extends CotStreamListener implements
     /**
      * Request the specified tool profile be downloaded from TAK Server
      * Note, could extend this to provide a DeviceProfileCallback, this currently uses a default impl
+     * @param tool the tool profile name
+     * @return true if the request is added
      */
     public boolean addToolProfileRequest(String tool) {
         Log.d(TAG, "addToolProfileRequest: " + tool);
@@ -681,6 +683,11 @@ public class CotMapServerListener extends CotStreamListener implements
         }
     }
 
+    /**
+     * Remove the request that a specific tool profile be downloaded from the TAK Sever
+     * @param tool the tool profile name
+     * @return true if the request is removed.
+     */
     public boolean removeToolProfileRequest(String tool) {
         Log.d(TAG, "removeToolProfileRequest: " + tool);
 

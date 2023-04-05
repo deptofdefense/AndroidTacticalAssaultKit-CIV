@@ -677,8 +677,8 @@ CommoResult Commo::setMissionPackageLocalPort(int localWebPort)
     }
 
     try {
-        impl->missionPkgMgmt->setLocalPort(localWebPort);
-        impl->httpsProxy->setLocalHttpPort(localWebPort);
+        int p = impl->missionPkgMgmt->setLocalPort(localWebPort);
+        impl->httpsProxy->setLocalHttpPort(p);
         return COMMO_SUCCESS;
     } catch (std::invalid_argument &) {
         return COMMO_ILLEGAL_ARGUMENT;
@@ -760,9 +760,22 @@ CommoResult Commo::setMissionPackageLocalHttpsParams(int port,
     
     CommoResult ret = impl->httpsProxy->setServerParams(port, cert, 
                                                         certLen, certPass);
-    if (ret == COMMO_SUCCESS)
+    if (ret == COMMO_SUCCESS) {
+        int httpPort;
+        if (port != MP_LOCAL_PORT_DISABLE && 
+                (httpPort = impl->missionPkgMgmt->getBoundLocalPort()) == MP_LOCAL_PORT_DISABLE) {
+            try {
+                httpPort = impl->missionPkgMgmt->setLocalPort(MP_LOCAL_PORT_DISABLE);
+                impl->httpsProxy->setLocalHttpPort(httpPort);
+            } catch (std::invalid_argument &) {
+                // Could not setup http side;  turn https back off and error
+                impl->httpsProxy->setServerParams(MP_LOCAL_PORT_DISABLE, NULL, 0, NULL);
+                impl->missionPkgMgmt->setLocalHttpsPort(MP_LOCAL_PORT_DISABLE);
+                return COMMO_ILLEGAL_ARGUMENT;
+            }
+        }
         impl->missionPkgMgmt->setLocalHttpsPort(port);
-    else
+    } else
         impl->missionPkgMgmt->setLocalHttpsPort(MP_LOCAL_PORT_DISABLE);
 
     return ret;

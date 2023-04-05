@@ -76,7 +76,7 @@ public class CompressionTask extends MissionPackageBaseTask {
         // work to be performed by background thread
         Thread.currentThread().setName("CompressionTask");
 
-        Log.d(TAG, "Executing: " + toString());
+        Log.d(TAG, "Executing: " + this);
 
         String retVal = compressMissionPackage();
 
@@ -172,7 +172,7 @@ public class CompressionTask extends MissionPackageBaseTask {
                 if (_followUpTask != null) {
                     Log.d(TAG,
                             "Launching follow on task: "
-                                    + _followUpTask.toString());
+                                    + _followUpTask);
                     // TODO account for follow on task when determining progress allocations...
                     _followUpTask.setProgressDialog(_progressDialog);
                     _followUpTask.execute();

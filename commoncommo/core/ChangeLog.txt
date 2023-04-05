@@ -1,3 +1,27 @@
+** Release 1.6.0 - 2022-01-03
+API CHANGES
+* Commo::setMissionPackageLocalPort() (and equivalent in various language 
+  bindings) is now deprecated and will be removed in an upcoming release.
+  The embedded http server will be removed at the same time.
+  Applications should migrate now to using
+  Commo::setMissionPackageLocalHttpsParams() to configure the embedded
+  https web server. Additionally, prior to this version, the https server
+  depended on the http server being active/configured.  This restriction has
+  been removed and the https server now functions standalone.
+  See COMMO-10
+
+MISCELLANEOUS
+* Peer-to-peer file transfers will now inheritly use https URLs when the
+  local https server is enabled, rather than passing ancillary https-enabling
+  information alongside a legacy http URL. Receipt of a file transfer
+  request with ancillary https-enabling information will continue to be
+  processed as it has been to enabled interoperability with legacy senders
+  for the time being.  This support will be removed in an upcoming
+  release.  See COMMO-10.
+* Minor changes to internal implementation to remove c++11 constructs
+  not supported by earlier versions of gcc - enables building using 
+  gcc 4.8.x, most notably on CentOS/RHEL 7
+
 ** Release 1.5.3 - 2021-11-23
 BUG FIXES
 * Any CoT message from a streaming server (TAK server) connection with a

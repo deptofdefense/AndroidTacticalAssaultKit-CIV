@@ -38,13 +38,13 @@ class CircleGeoFenceMonitor extends GeoFenceMonitor {
         List<GeoFenceAlerting.Alert> ret = new ArrayList<>();
 
         if (FileSystemUtils.isEmpty(items)) {
-            Log.w(TAG, "No items to track: " + toString());
+            Log.w(TAG, "No items to track: " + this);
             return ret;
         }
 
         GeoPointMetaData center = _circle.getCenter();
         if (center == null) {
-            Log.w(TAG, "check center point item not valid: " + toString());
+            Log.w(TAG, "check center point item not valid: " + this);
             return ret;
         }
 

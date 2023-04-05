@@ -139,3 +139,30 @@ TAKErr TAK::Engine::Renderer::BitmapFactory2_decode(BitmapPtr &result, const cha
     return code;
 }
 
+TAKErr TAK::Engine::Renderer::BitmapFactory2_encode(const char *path, const Bitmap2 &bitmap, const BitmapEncodeOptions &opts) NOTHROWS
+{
+    return TE_Unsupported;
+}
+TAKErr TAK::Engine::Renderer::BitmapFactory2_encode(uint8_t* value, std::size_t* len, const std::size_t capacity, const Bitmap2 &bitmap, const BitmapEncodeOptions &opts) NOTHROWS
+{
+    TAKErr code(TE_Ok);
+    if (!value || !len)
+        return TE_InvalidArg;
+
+    MemoryOutput2 sink;
+    code = sink.open(value, capacity);
+    TE_CHECKRETURN_CODE(code);
+    code = BitmapFactory2_encode(sink, bitmap, opts);
+    TE_CHECKRETURN_CODE(code);
+
+    std::size_t remaining;
+    code = sink.remaining(&remaining);
+    TE_CHECKRETURN_CODE(code);
+
+    *len = (capacity - remaining);
+    return code;
+}
+TAKErr TAK::Engine::Renderer::BitmapFactory2_encode(Util::DataOutput2 &sink, const Bitmap2 &bitmap, const BitmapEncodeOptions &opts) NOTHROWS
+{
+    return TE_Unsupported;
+}

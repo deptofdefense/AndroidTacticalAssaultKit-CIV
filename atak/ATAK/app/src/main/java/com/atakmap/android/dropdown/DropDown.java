@@ -2,11 +2,13 @@
 package com.atakmap.android.dropdown;
 
 import androidx.fragment.app.Fragment;
+import gov.tak.api.util.Disposable;
+
 import android.view.View;
 
 import com.atakmap.coremap.log.Log;
 
-public final class DropDown {
+public final class DropDown implements Disposable {
 
     public static final String TAG = "DropDown";
 
@@ -54,6 +56,13 @@ public final class DropDown {
         this.ignoreBackButton = ignoreBackButton;
         _side = DropDownSide.RIGHT_SIDE;
         this.ddr = ddr;
+    }
+
+    @Override
+    public void dispose() {
+        // Cleanup the view reference if it hasn't been already
+        if (fragment instanceof GenericFragmentAdapter)
+            ((GenericFragmentAdapter) fragment).removeView();
     }
 
     DropDownSide getSide() {

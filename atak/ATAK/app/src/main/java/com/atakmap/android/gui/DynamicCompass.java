@@ -15,6 +15,8 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import androidx.annotation.Nullable;
+
 import com.atakmap.android.gui.drawable.ShadowDrawable;
 import com.atakmap.android.navigation.views.NavView;
 import com.atakmap.android.navigation.views.buttons.NavButtonDrawable;
@@ -22,8 +24,6 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.Angle;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
-
-import androidx.annotation.Nullable;
 
 /**
  * A compass with several options for moving the map camera
@@ -128,9 +128,17 @@ public class DynamicCompass extends RelativeLayout {
 
     /**
      * Set the heading value of the compass
-     * @param heading Value to set heading indicator to
+     * @param heading Value to set heading indicator to - the final heading
+     *                is scaled between (0,360]
      */
     public void setHeading(float heading) {
+        if (Double.isNaN(heading))
+            return;
+
+        heading = heading % 360;
+        if (heading <= 0)
+            heading+=360;
+
         this.heading = heading;
     }
 
@@ -191,7 +199,7 @@ public class DynamicCompass extends RelativeLayout {
                 headingInt = heading;
                 headingTxt.setHeading(heading);
                 headingTxt.setUnits(Angle.DEGREE);
-                compassArrow.setRotation(360 - heading);
+                compassArrow.setRotation(heading);
             }
         }
         headingTxt.setVisibility(headingVisible ? VISIBLE : GONE);

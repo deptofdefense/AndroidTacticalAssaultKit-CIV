@@ -19,7 +19,8 @@ public class IconUtilitiesTest extends ATAKInstrumentedTest {
     @Test
     public void get_icon() {
         Context appContext = ApplicationProvider.getApplicationContext();
-        Bitmap bmp = IconUtilities.getBitmap(appContext, R.drawable.lpt_white_star_drawable);
+        Bitmap bmp = IconUtilities.getBitmap(appContext,
+                R.drawable.lpt_white_star_drawable);
         String encoded = IconUtilities.encodeBitmap(bmp);
         Assert.assertTrue(encoded != null && encoded.startsWith("base64://"));
         Assert.assertNotNull(IconUtilities.decodeBitmap(encoded));

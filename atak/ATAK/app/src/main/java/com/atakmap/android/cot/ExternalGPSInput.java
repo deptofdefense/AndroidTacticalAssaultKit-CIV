@@ -55,7 +55,6 @@ public class ExternalGPSInput implements Runnable {
 
     private final MapView _mapView;
 
-
     private final int _port;
     private DatagramSocket socket;
 

@@ -304,7 +304,7 @@ TAKErr ZipFile::setGlobalComment(const char *path, const char *comment) NOTHROWS
             return TE_IO;
         return TE_Ok;
     }
-    return TE_Ok;
+    return TE_IO;
 }
 
 //

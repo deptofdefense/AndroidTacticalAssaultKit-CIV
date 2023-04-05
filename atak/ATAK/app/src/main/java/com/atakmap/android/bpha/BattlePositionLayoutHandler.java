@@ -44,7 +44,14 @@ public class BattlePositionLayoutHandler implements View.OnClickListener {
 
     }
 
+    /**
+     * The Selection Event Handler
+     */
     public interface BattlePositionSelectorEventHandler {
+        /**
+         * The callback for the the specific grid is selected
+         * @param bpha the selected battle position holding area
+         */
         void onGridSelected(BattlePositionHoldingArea bpha);
     }
 

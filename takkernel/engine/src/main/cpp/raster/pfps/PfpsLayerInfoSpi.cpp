@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "PfpsLayerInfoSpi.h"
 
 #include <platformstl/filesystem/path.hpp>
@@ -152,3 +153,4 @@ namespace atakmap {
     }
 }
 
+#endif

@@ -1,3 +1,4 @@
+#ifdef MSVC
 ////============================================================================
 ////
 ////    FILE:           LayerDatabase.cpp
@@ -1132,3 +1133,4 @@ LayerDatabase::Cursor::Cursor (const std::shared_ptr<db::Cursor> &subject)
 
 }                                       // Close raster namespace.
 }                                       // Close atakmap namespace.
+#endif

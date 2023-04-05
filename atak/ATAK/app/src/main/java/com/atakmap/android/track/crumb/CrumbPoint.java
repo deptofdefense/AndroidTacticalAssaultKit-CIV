@@ -68,6 +68,6 @@ public class CrumbPoint {
 
     @Override
     public String toString() {
-        return gpm.toString() + " " + speed + " " + bearing + " " + timestamp;
+        return gpm + " " + speed + " " + bearing + " " + timestamp;
     }
 }

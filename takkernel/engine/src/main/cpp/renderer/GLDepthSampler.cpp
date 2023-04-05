@@ -24,19 +24,21 @@ using namespace atakmap::renderer;
 
 namespace {
     const char* DEPTH_VERT_SHADER =
+        TE_GLSL_VERSION_300_ES
         "precision highp float;"
         "uniform mat4 uMVP;"
-        "attribute vec3 aVertexCoords;"
-        "varying float depth;"
+        "in vec3 aVertexCoords;"
+        "out float vDepth;"
         "void main() {"
             "vec4 vcoords = uMVP * vec4(aVertexCoords.xyz, 1.0);"
-            "depth = (vcoords.z + 1.0) * 0.5;"
+            "vDepth = ((vcoords.z/vcoords.w) + 1.0) * 0.5;"
             "gl_Position = vcoords;"
         "}";
 
-    constexpr const char* DEPTH_FRAG_SHADER_SRC =
+    constexpr const char* DEPTH_FRAG_SHADER_SRC_BASE =
         #include "elevation/shaders/Depth.frag"
         ;
+    const std::string DEPTH_FRAG_SHADER_SRC = std::string(TE_GLSL_VERSION_300_ES) + std::string(DEPTH_FRAG_SHADER_SRC_BASE);
 
     constexpr const char* ID_VERT_SHADER =
         #include "shaders/DepthSamplerID.vert"
@@ -46,12 +48,14 @@ namespace {
         #include "shaders/DepthSamplerID.frag"
         ;
     
-    constexpr const char* FULLSIZE_QUAD_VERT_SHADER_SRC =
+    constexpr const char* FULLSIZE_QUAD_VERT_SHADER_SRC_BASE =
         #include "shaders/FullsizeQuad.vert"
         ;
-    constexpr const char* FULLSIZE_QUAD_FRAG_SHADER_SRC =
+    const std::string FULLSIZE_QUAD_VERT_SHADER_SRC = std::string(TE_GLSL_VERSION_300_ES) + std::string(FULLSIZE_QUAD_VERT_SHADER_SRC_BASE);
+    constexpr const char* FULLSIZE_QUAD_FRAG_SHADER_SRC_BASE =
         #include "shaders/FullsizeQuad.frag"
         ;
+    const std::string FULLSIZE_QUAD_FRAG_SHADER_SRC = std::string(TE_GLSL_VERSION_300_ES) + std::string(FULLSIZE_QUAD_FRAG_SHADER_SRC_BASE);
 
     const int VIEWPORT_WIDTH = 4;
     const int VIEWPORT_HEIGHT = 4;
@@ -66,14 +70,14 @@ namespace {
     std::shared_ptr<const Shader2> get_shared_depth_encoding_program(const TAK::Engine::Core::RenderContext& ctx) {
         static std::shared_ptr<const Shader2> inst;
         if (!inst)
-            Shader_compile(inst, ctx, DEPTH_VERT_SHADER, DEPTH_FRAG_SHADER_SRC);
+            Shader_compile(inst, ctx, DEPTH_VERT_SHADER, DEPTH_FRAG_SHADER_SRC.c_str());
         return inst;
     }
 
     std::shared_ptr<const Shader2> get_shared_fs_quad_program(const TAK::Engine::Core::RenderContext& ctx) {
         static std::shared_ptr<const Shader2> inst;
         if (!inst)
-            Shader_compile(inst, ctx, FULLSIZE_QUAD_VERT_SHADER_SRC, FULLSIZE_QUAD_FRAG_SHADER_SRC);
+            Shader_compile(inst, ctx, FULLSIZE_QUAD_VERT_SHADER_SRC.c_str(), FULLSIZE_QUAD_FRAG_SHADER_SRC.c_str());
         return inst;
     }
 }
@@ -106,7 +110,20 @@ void GLDepthSampler::beginProj(const TAK::Engine::Core::MapSceneModel2& sceneMod
 
     GLES20FixedPipeline::getInstance()->glMatrixMode(GLES20FixedPipeline::MM_GL_PROJECTION);
     GLES20FixedPipeline::getInstance()->glPushMatrix();
-    GLES20FixedPipeline::getInstance()->glOrthof(0, (float)sceneModel.width, 0, (float)sceneModel.height, (float)sceneModel.camera.near, -2.f);
+    if (sceneModel.camera.mode == TAK::Engine::Core::MapCamera2::Scale) {
+        GLES20FixedPipeline::getInstance()->glOrthof(0, (float)sceneModel.width, 0, (float)sceneModel.height, (float)sceneModel.camera.near, -2.f);
+    } else {
+#if 0
+        GLES20FixedPipeline::getInstance()->glOrthof(0, (float)sceneModel.width, 0, (float)sceneModel.height, (float)sceneModel.camera.near, (float)sceneModel.camera.far);
+#else
+        double dmx[16u];
+        float fmx[16u];
+        sceneModel.camera.projection.get(dmx, TAK::Engine::Math::Matrix2::COLUMN_MAJOR);
+        for (std::size_t i = 0u; i < 16u; i++)
+            fmx[i] = (float)dmx[i];
+        GLES20FixedPipeline::getInstance()->glLoadMatrixf(fmx);
+#endif
+    }
 }
 
 void GLDepthSampler::endProj() NOTHROWS {

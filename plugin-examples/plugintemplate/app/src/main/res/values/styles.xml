@@ -2,11 +2,13 @@
 
     <!-- Application theme. -->
     <style name="ATAKPluginTheme" parent="@android:style/Theme.Holo">
+        <item name="android:textAppearanceLargePopupMenu">@style/PopupMenuTextAppearance</item>
         <item name="android:buttonStyle">@android:style/Widget.Button</item>
         <item name="android:imageButtonStyle">@android:style/Widget.Button</item>
         <item name="android:buttonStyleToggle">@android:style/Widget.Button</item>
         <item name="android:spinnerStyle">@style/ATAKSpinner</item>
         <item name="android:spinnerItemStyle">@style/ATAKSpinnerItem</item>
+        <item name="android:spinnerDropDownItemStyle">@style/ATAKSpinnerDropDownItem</item>
         <item name="android:editTextStyle">@style/ATAKEditText</item>
     </style>
 
@@ -74,6 +76,19 @@
         <item name="android:imeOptions">flagNoFullscreen</item>
     </style>
 
+    <style name="ATAKSpinnerItem">
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:dropDownVerticalOffset">0dip</item>
+        <item name="android:dropDownHorizontalOffset">0dip</item>
+        <item name="android:dropDownWidth">wrap_content</item>
+        <item name="android:gravity">left|center_vertical</item>
+    </style>
+ 
+    <style name="ATAKSpinnerDropDownItem" parent="@style/ATAKSpinnerItem">
+        <item name="android:paddingStart">@dimen/auto_margin</item>
+    </style>
+
+
     <!-- ====== Style for use in 9-line and other dropdowns that have very restricted space. ====== -->
     <style name="FullDropdownStyle" parent="@style/ATAKTheme">
         <item name="android:buttonStyle">@style/unpaddedButton</item>
@@ -82,16 +97,16 @@
     </style>
 
 
-    <!-- In the new theme, sometimes the spinner text color is turning white. -->
-    <style name="ATAKSpinnerItem" parent="@style/AppTheme">
-        <item name="android:textColor">@android:color/black</item>
-    </style>
-
     <style name="unpaddedButton" parent="@android:style/Widget.Button">
         <item name="android:paddingTop">0dp</item>
         <item name="android:paddingBottom">3dp</item>
         <item name="android:textSize">@dimen/fontSize</item>
     </style>
+
+    <style name="PopupMenuTextAppearance" parent="android:TextAppearance.Large">
+        <item name="android:textColor">@color/white</item>
+    </style>
+
 
 
     <!-- ==== Style for ISRV Dark Buttons ==== -->

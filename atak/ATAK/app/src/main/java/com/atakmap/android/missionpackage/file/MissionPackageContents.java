@@ -77,7 +77,7 @@ public class MissionPackageContents implements Parcelable {
         }
 
         if (_contents.remove(content))
-            Log.d(TAG, "Replacing content: " + content.toString());
+            Log.d(TAG, "Replacing content: " + content);
 
         return _contents.add(content);
     }
@@ -152,7 +152,7 @@ public class MissionPackageContents implements Parcelable {
                     parcel.writeParcelable(content, flags);
             }
         } else
-            Log.w(TAG, "cannot parcel invalid: " + toString());
+            Log.w(TAG, "cannot parcel invalid: " + this);
     }
 
     protected MissionPackageContents(Parcel in) {

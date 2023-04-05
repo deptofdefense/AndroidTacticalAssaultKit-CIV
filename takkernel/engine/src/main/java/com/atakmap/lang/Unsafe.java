@@ -67,6 +67,10 @@ public final class Unsafe {
                     break;
                 }
             }
+            if(_api[0] != null)
+                Log.i(TAG, "Unsafe.allocateDirect lifetime management supported by " + _api[0].api);
+            else
+                Log.w(TAG, "Unsafe.allocateDirect lifetime management not supported");
         }
         return _api[0];
     }
@@ -992,11 +996,20 @@ public final class Unsafe {
     public static native void setDoubles(long pointer, double v0, double v1, double v2);
     public static native void setDoubles(long pointer, double v0, double v1, double v2, double v3);
 
+    private static ClassLoader getClassLoader(Class<?> c) {
+        final ClassLoader classLoader = c.getClassLoader();
+        return (classLoader != null) ? classLoader : ClassLoader.getSystemClassLoader();
+    }
     private static abstract class DirectByteBufferApi {
         Boolean supported = null;
         Map<Class<?>, Field> byteBufferField = new HashMap<Class<?>, Field>();
         Class<?> DirectByteBuffer_class = null;
+        final String api;
 
+
+        protected DirectByteBufferApi(String api) {
+            this.api = api;
+        }
 
         public boolean isSupported() {
             if(supported == null) {
@@ -1005,14 +1018,12 @@ public final class Unsafe {
                 supported = Boolean.FALSE;
                 try {
                     do {
-                        DirectByteBuffer_class = ByteBuffer.class.getClassLoader().loadClass("java/nio/DirectByteBuffer");
+                        DirectByteBuffer_class = getClassLoader(ByteBuffer.class).loadClass("java/nio/DirectByteBuffer");
                         if(DirectByteBuffer_class == null)
                             break;
                         supported = isSupportedImpl();
                     } while(false);
-                } catch(Throwable t) {
-                    Log.w(TAG, "blah", t);
-                }
+                } catch(Throwable ignored) {}
             }
             return supported;
         }
@@ -1094,6 +1105,10 @@ public final class Unsafe {
      */
     private static class DirectByteBuffer31 extends DirectByteBufferApi {
 
+        DirectByteBuffer31() {
+            super("Android 31");
+        }
+
         @Override
         protected boolean isSupportedImpl() throws Throwable {
             if (Build.VERSION.SDK_INT < 31) 
@@ -1130,6 +1145,10 @@ public final class Unsafe {
         Method DirectByteBuffer_cleaner = null;
         Class Cleaner_class = null;
         Method Cleaner_clean = null;
+
+        DirectByteBuffer23() {
+            super("Android 23");
+        }
 
         @Override
         protected boolean isSupportedImpl() throws Throwable {
@@ -1168,7 +1187,7 @@ public final class Unsafe {
             }
             if(DirectByteBuffer_cleaner == null)
                 return false;
-            Cleaner_class = ByteBuffer.class.getClassLoader().loadClass("sun/misc/Cleaner");
+            Cleaner_class = getClassLoader(ByteBuffer.class).loadClass("sun/misc/Cleaner");
             if(Cleaner_class == null)
                 return false;
             Cleaner_clean = Cleaner_class.getDeclaredMethod("clean");
@@ -1215,9 +1234,13 @@ public final class Unsafe {
         private Field MappedByteBuffer_block = null;
         private Method DirectByteBuffer_free = null;
 
+        DirectByteBuffer18() {
+            super("Android 18");
+        }
+
         @Override
         protected boolean isSupportedImpl() throws Throwable {
-            MappedByteBuffer_class = ByteBuffer.class.getClassLoader().loadClass("java/nio/MappedByteBuffer");
+            MappedByteBuffer_class = getClassLoader(ByteBuffer.class).loadClass("java/nio/MappedByteBuffer");
             if(MappedByteBuffer_class == null)
                 return false;
             MappedByteBuffer_block = MappedByteBuffer_class.getDeclaredField("block");

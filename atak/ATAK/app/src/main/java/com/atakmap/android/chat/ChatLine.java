@@ -3,6 +3,8 @@ package com.atakmap.android.chat;
 
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.maps.MapView;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
@@ -60,6 +62,7 @@ public class ChatLine {
         return timeSent == null ? timeReceived : timeSent;
     }
 
+    @NonNull
     public String toString() {
         Long time = getTimeSentOrReceived();
         String timestamp = time != null ? ("(" + new Date(time) + ") ") : "";

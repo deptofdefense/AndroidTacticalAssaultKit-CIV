@@ -75,19 +75,16 @@ public class KeyManagerFactory implements KeyManagerFactoryIFace {
             // look for connection specific certs first
             //
             byte[] clientCert = AtakCertificateDatabase
-                    .getAdapter()
-                    .getCertificateForTypeAndServer(
+                    .getCertificateForServer(
                             AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE,
                             server);
             AtakAuthenticationCredentials clientCertCredentials = AtakAuthenticationDatabase
-                    .getAdapter()
-                    .getCredentialsForType(
+                    .getCredentials(
                             AtakAuthenticationCredentials.TYPE_clientPassword,
                             server);
 
             if (clientCert == null) {
                 Pair<byte[], String> results = AtakCertificateDatabase
-                        .getAdapter()
                         .getCertificateForIPaddress(
                                 AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE,
                                 server);
@@ -98,8 +95,7 @@ public class KeyManagerFactory implements KeyManagerFactoryIFace {
                     server = results.second;
 
                     clientCertCredentials = AtakAuthenticationDatabase
-                            .getAdapter()
-                            .getCredentialsForType(
+                            .getCredentials(
                                     AtakAuthenticationCredentials.TYPE_clientPassword,
                                     server);
                 }
@@ -110,12 +106,10 @@ public class KeyManagerFactory implements KeyManagerFactoryIFace {
             //
             if (clientCert == null) {
                 clientCert = AtakCertificateDatabase
-                        .getAdapter()
-                        .getCertificateForType(
+                        .getCertificate(
                                 AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE);
                 clientCertCredentials = AtakAuthenticationDatabase
-                        .getAdapter()
-                        .getCredentialsForType(
+                        .getCredentials(
                                 AtakAuthenticationCredentials.TYPE_clientPassword);
             }
 
@@ -172,23 +166,20 @@ public class KeyManagerFactory implements KeyManagerFactoryIFace {
             // look for connection specific certs first
             //
             byte[] clientCert = AtakCertificateDatabase
-                    .getAdapter()
-                    .getCertificateForTypeAndServerAndPort(
+                    .getCertificateForServerAndPort(
                             AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE,
                             netConnectString.getHost(),
                             netConnectString.getPort());
 
             // TODO need to pull by server and port
             AtakAuthenticationCredentials clientCertCredentials = AtakAuthenticationDatabase
-                    .getAdapter()
-                    .getCredentialsForType(
+                    .getCredentials(
                             AtakAuthenticationCredentials.TYPE_clientPassword,
                             netConnectString.getHost());
 
             if (clientCert == null) {
                 Pair<byte[], String> results = AtakCertificateDatabase
-                        .getAdapter()
-                        .getCertificateForIPaddressAndPort(
+                        .getCertificateForIPaddress(
                                 AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE,
                                 netConnectString.getHost(),
                                 netConnectString.getPort());
@@ -199,8 +190,7 @@ public class KeyManagerFactory implements KeyManagerFactoryIFace {
                     String server = results.second;
 
                     clientCertCredentials = AtakAuthenticationDatabase
-                            .getAdapter()
-                            .getCredentialsForType(
+                            .getCredentials(
                                     AtakAuthenticationCredentials.TYPE_clientPassword,
                                     server);
                 }
@@ -211,12 +201,10 @@ public class KeyManagerFactory implements KeyManagerFactoryIFace {
             //
             if (clientCert == null) {
                 clientCert = AtakCertificateDatabase
-                        .getAdapter()
-                        .getCertificateForType(
+                        .getCertificate(
                                 AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE);
                 clientCertCredentials = AtakAuthenticationDatabase
-                        .getAdapter()
-                        .getCredentialsForType(
+                        .getCredentials(
                                 AtakAuthenticationCredentials.TYPE_clientPassword);
             }
 

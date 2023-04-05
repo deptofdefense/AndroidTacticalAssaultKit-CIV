@@ -32,7 +32,7 @@ public class AlphaBetaFilter {
 
     /**
      * Produce the next value based on a measurement and a delta.
-     * @param measurement the measument
+     * @param measurement the measurement
      * @param delta the delta
      */
     private void _update(final double measurement, final double delta) {

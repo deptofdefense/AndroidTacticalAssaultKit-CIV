@@ -336,16 +336,6 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
     }
 
     /**
-     * @deprecated use {@link #testLinesHit(MapView, int, int, Vector2D, GeoPoint)}
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
-    protected final GeoPoint testLinesHit(MapView view, int startIdx,
-            int endIdx, Vector2D touch) {
-        return testLinesHit(view, startIdx, endIdx, touch, null);
-    }
-
-    /**
      * @deprecated Implementation moved to
      * {@link AbstractGLMapItem2#hitTest(MapRenderer3, HitTestQueryParameters)}
      */

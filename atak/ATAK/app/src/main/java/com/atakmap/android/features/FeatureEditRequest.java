@@ -1,3 +1,4 @@
+
 package com.atakmap.android.features;
 
 import com.atakmap.map.layer.feature.DataStoreException;
@@ -20,7 +21,7 @@ class FeatureEditRequest {
     public final FeatureQueryParameters params;
 
     FeatureEditRequest(@NonNull FeatureDataStore2 db,
-                       @NonNull FeatureQueryParameters params) {
+            @NonNull FeatureQueryParameters params) {
         this.database = db;
         this.params = params;
     }
@@ -31,7 +32,8 @@ class FeatureEditRequest {
      */
     Set<Long> getFeatureSetIds() {
         return params.featureSetFilter != null
-                ? params.featureSetFilter.ids : null;
+                ? params.featureSetFilter.ids
+                : null;
     }
 
     /**
@@ -51,16 +53,18 @@ class FeatureEditRequest {
      * @return True if equal
      */
     boolean equals(FeatureEditRequest other,
-                   boolean excludeIDs,
-                   boolean excludeSetIDs) {
+            boolean excludeIDs,
+            boolean excludeSetIDs) {
         return Objects.equals(database.getUri(), other.database.getUri()) &&
                 paramsEquals(params, other.params, excludeIDs, excludeSetIDs);
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         FeatureEditRequest that = (FeatureEditRequest) o;
         return Objects.equals(database.getUri(), that.database.getUri()) &&
                 paramsEquals(params, that.params, false, false);
@@ -80,10 +84,11 @@ class FeatureEditRequest {
      * @return True if equal
      */
     private boolean paramsEquals(FeatureQueryParameters p1,
-                                 FeatureQueryParameters p2,
-                                 boolean excludeIDs,
-                                 boolean excludeSetIDs) {
-        if (p1 == p2) return true;
+            FeatureQueryParameters p2,
+            boolean excludeIDs,
+            boolean excludeSetIDs) {
+        if (p1 == p2)
+            return true;
         return p1.visibleOnly == p2.visibleOnly &&
                 p1.minimumTimestamp == p2.minimumTimestamp &&
                 p1.maximumTimestamp == p2.maximumTimestamp &&
@@ -111,10 +116,12 @@ class FeatureEditRequest {
      * @return True if equal
      */
     private boolean paramsEquals(FeatureSetQueryParameters p1,
-                                 FeatureSetQueryParameters p2,
-                                 boolean excludeIDs) {
-        if (p1 == p2) return true;
-        if (p1 == null || p2 == null) return false;
+            FeatureSetQueryParameters p2,
+            boolean excludeIDs) {
+        if (p1 == p2)
+            return true;
+        if (p1 == null || p2 == null)
+            return false;
         return Double.compare(p2.minResolution, p1.minResolution) == 0 &&
                 Double.compare(p2.maxResolution, p1.maxResolution) == 0 &&
                 p1.visibleOnly == p2.visibleOnly &&
@@ -145,8 +152,10 @@ class FeatureEditRequest {
      * @return Hash code
      */
     private int paramsHash(FeatureSetQueryParameters p) {
-        if (p == null) return 0;
-        return Objects.hash(p.ids, p.names, p.types, p.providers, p.minResolution,
+        if (p == null)
+            return 0;
+        return Objects.hash(p.ids, p.names, p.types, p.providers,
+                p.minResolution,
                 p.maxResolution, p.visibleOnly, p.limit, p.offset);
     }
 }

@@ -111,10 +111,10 @@ public class DeviceProfileClient {
         }
 
         if (ret != null) {
-            Log.d(TAG, "callbackRecieved: " + request.toString());
+            Log.d(TAG, "callbackRecieved: " + request);
             return true;
         } else {
-            Log.d(TAG, "callbackRecieved not found: " + request.toString());
+            Log.d(TAG, "callbackRecieved not found: " + request);
             return false;
         }
     }
@@ -168,7 +168,7 @@ public class DeviceProfileClient {
 
         if (!deviceProfileRequest.isValid()) {
             Log.w(TAG, "getProfile request invalid: "
-                    + deviceProfileRequest.toString());
+                    + deviceProfileRequest);
             return false;
         }
 
@@ -176,12 +176,12 @@ public class DeviceProfileClient {
         if (deviceProfileRequest.getOnConnect() &&
                 !prefs.getBoolean("deviceProfileEnableOnConnect", false)) {
             Log.d(TAG, "getProfile disabled, skipping: "
-                    + deviceProfileRequest.toString());
+                    + deviceProfileRequest);
             return false;
         }
 
         // Kick off async HTTP request to post to server
-        Log.d(TAG, "getProfile request: " + deviceProfileRequest.toString());
+        Log.d(TAG, "getProfile request: " + deviceProfileRequest);
         if (callback != null) {
             synchronized (this) {
                 _pendingCallbacks.put(deviceProfileRequest.getId(), callback);

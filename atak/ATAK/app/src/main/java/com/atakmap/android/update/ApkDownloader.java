@@ -150,7 +150,7 @@ public class ApkDownloader implements RequestListener {
             }
         }
 
-        Log.d(TAG, "Downloading APK " + request.toString());
+        Log.d(TAG, "Downloading APK " + request);
     }
 
     @Override
@@ -214,7 +214,7 @@ public class ApkDownloader implements RequestListener {
                 return;
             }
 
-            Log.d(TAG, "Downloaded: " + initialRequest.toString());
+            Log.d(TAG, "Downloaded: " + initialRequest);
             NotificationUtil.getInstance().clearNotification(
                     initialRequest.getNotificationId());
             if (initialRequest.isInstall()) {

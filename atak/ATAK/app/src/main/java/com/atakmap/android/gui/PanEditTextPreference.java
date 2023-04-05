@@ -8,6 +8,8 @@ import android.os.Bundle;
 import android.preference.EditTextPreference;
 import android.preference.Preference;
 import android.util.AttributeSet;
+import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Toast;
@@ -83,6 +85,14 @@ public class PanEditTextPreference extends EditTextPreference {
         super((appContext == null) ? context : appContext);
         pContext = context;
         setFilters(new InputFilter[0], false);
+    }
+
+    @Override
+    protected View onCreateView(ViewGroup parent) {
+        View v = super.onCreateView(parent);
+        if (!isEnabled())
+            v.setEnabled(false);
+        return v;
     }
 
     /**
@@ -259,7 +269,8 @@ public class PanEditTextPreference extends EditTextPreference {
      * @param maxVal the maximumn value supported by rhe preference
      * @param allowForBlank allow for empty entry for the preference
      */
-    public void setValidIntegerRange(final int minVal, final int maxVal, boolean allowEmpty) {
+    public void setValidIntegerRange(final int minVal, final int maxVal,
+            boolean allowEmpty) {
         setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
             @Override
             public boolean onPreferenceChange(Preference preference,

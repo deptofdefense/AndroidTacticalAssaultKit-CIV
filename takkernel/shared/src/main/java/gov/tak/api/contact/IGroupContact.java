@@ -26,5 +26,27 @@ public interface IGroupContact extends IContact {
     default IGroupContact getParentContact() {
         return null; // default to null for root nodes
     }
-}
 
+    /**
+     * Sets the parent of a group contact. This method allows for avoiding a "chicken and egg" problem
+     * in which a group member must contain a parent contact, and the parent contact must contain
+     * said group member.
+     *
+     * @param parentContact The parent contact to set on this group contact
+     * @since 0.55.0
+     */
+    default void setParentContact(@Nullable IGroupContact parentContact) {
+        // No-op
+    }
+
+    /**
+     * Set the collection of group members, replacing existing members.
+     * <p>
+     * <em>Note:</em> This default implementation is useless/wrong, but is required to avoid an API breaking change
+     *
+     * @param groupMembers New set of group members
+     * @since 0.56.2
+     */
+    default void setGroupMembers(@NonNull Set<IContact> groupMembers) {
+    }
+}

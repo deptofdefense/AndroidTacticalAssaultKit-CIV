@@ -13,21 +13,23 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-import gov.tak.api.annotation.NonNull;
-import org.hibernate.CallbackException;
-import org.hibernate.Session;
+
 import org.hibernate.annotations.Type;
-import org.hibernate.classic.Lifecycle;
+
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.Map;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Lob;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.Iterator;
-import java.util.Map;
+import javax.persistence.PostLoad;
+import javax.persistence.PrePersist;
+import javax.persistence.PreUpdate;
+
+import gov.tak.api.annotation.NonNull;
 
 /**
  * Typed collection of key/value tuples.  Nulls are not allowed as keys or as values.
@@ -37,7 +39,7 @@ import java.util.Map;
  * @since 0.17.0
  */
 @Entity
-public class AttributeSet extends AttributeSetBase implements Lifecycle {
+public class AttributeSet extends AttributeSetBase {
     private static final ObjectMapper mapper = new ObjectMapper();
 
     static {
@@ -71,7 +73,7 @@ public class AttributeSet extends AttributeSetBase implements Lifecycle {
      */
     @SuppressWarnings("CopyConstructorMissesField") // Not copying id
     public AttributeSet(@NonNull AttributeSet source) {
-        super(new AttributeSet(source.extern())); // Force update of source JSON
+        super(source);
     }
 
     /**
@@ -88,33 +90,26 @@ public class AttributeSet extends AttributeSetBase implements Lifecycle {
      * @return The JSON encoded form of our attributes
      */
     public String toJson() {
-        return extern();
-    }
-
-    @Override
-    public boolean onSave(Session s) throws CallbackException {
         extern();
-        return Lifecycle.NO_VETO;
+        return attributesAsJson;
     }
 
+    /**
+     * Overridden to force a change to our persistent data so Hibernate will properly update the DB.
+     *
+     * @since 0.56.2
+     */
     @Override
-    public boolean onUpdate(Session s) throws CallbackException {
-        return onSave(s);
-    }
+    protected void contentsChanged(String name, Object oldValue, Object newValue) {
+        super.contentsChanged(name, oldValue, newValue);
 
-    @Override
-    public boolean onDelete(Session s) throws CallbackException {
-        return Lifecycle.NO_VETO;
-    }
-
-    @Override
-    public void onLoad(Session s, Serializable id) {
-        intern();
+        attributesAsJson = "dirty"; // Force Hibernate to notice the change
     }
 
     /**
      * Internalize the {@code attributesAsJson}, creating the {@code attributeMap}.
      */
+    @PostLoad
     private void intern() {
         try {
             attributeMap.putAll(mapper.readValue(attributesAsJson, new AttributeMapTypeReference()));
@@ -126,14 +121,14 @@ public class AttributeSet extends AttributeSetBase implements Lifecycle {
     /**
      * Externalize the {@code attributeMap}, creating the {@code attributesAsJson}.
      */
-    private String extern() {
+    @PrePersist
+    @PreUpdate
+    private void extern() {
         try {
             attributesAsJson = mapper.writeValueAsString(attributeMap);
         } catch (JsonProcessingException e) {
             Log.e("AttributeSet", "Failed to create JSON form of '" + attributeMap + "'", e);
         }
-
-        return attributesAsJson;
     }
 
     /**
@@ -199,11 +194,7 @@ public class AttributeSet extends AttributeSetBase implements Lifecycle {
     private static final class AttributeValueSerializer extends StdSerializer<AttributeValue> {
         @SuppressWarnings("unused") // Required by Jackson
         protected AttributeValueSerializer() {
-            this(null);
-        }
-
-        protected AttributeValueSerializer(Class<AttributeValue> vc) {
-            super(vc);
+            super((Class<AttributeValue>) null);
         }
 
         @Override
@@ -223,11 +214,7 @@ public class AttributeSet extends AttributeSetBase implements Lifecycle {
     private static final class AttributeValueDeserializer extends StdDeserializer<AttributeValue> {
         @SuppressWarnings("unused") // Required by Jackson
         protected AttributeValueDeserializer() {
-            this(null);
-        }
-
-        protected AttributeValueDeserializer(Class<?> vc) {
-            super(vc);
+            super((Class<?>) null);
         }
 
         @NonNull

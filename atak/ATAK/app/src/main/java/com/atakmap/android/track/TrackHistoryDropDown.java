@@ -1009,7 +1009,7 @@ public class TrackHistoryDropDown extends DropDownReceiver implements
 
             boolean bSuccess = intent.getBooleanExtra("success", false);
             if (!bSuccess) {
-                Log.w(TAG, "Export failed: " + params.toString());
+                Log.w(TAG, "Export failed: " + params);
                 return;
             }
 
@@ -1033,7 +1033,7 @@ public class TrackHistoryDropDown extends DropDownReceiver implements
             }
 
             //file was exported, see if user wants to send it...
-            Log.d(TAG, "Export successful: " + params.toString());
+            Log.d(TAG, "Export successful: " + params);
             sendFile(params);
         } else if (SERVERTRACKSEXPORTED.equals(intent.getAction())) {
             final ExportTrackParams params = intent
@@ -1045,7 +1045,7 @@ public class TrackHistoryDropDown extends DropDownReceiver implements
 
             boolean bSuccess = intent.getBooleanExtra("success", false);
             if (!bSuccess) {
-                Log.w(TAG, "Server Export failed: " + params.toString());
+                Log.w(TAG, "Server Export failed: " + params);
                 return;
             }
 
@@ -1081,7 +1081,7 @@ public class TrackHistoryDropDown extends DropDownReceiver implements
             final String callbackAction = intent
                     .getStringExtra("callbackAction");
 
-            Log.d(TAG, "Server Export successful: " + params.toString());
+            Log.d(TAG, "Server Export successful: " + params);
             String baseUrl = intent.getStringExtra("baseUrl");
             if (!FileSystemUtils.isEmpty(baseUrl)) {
                 Log.d(TAG, "Sending Server Export to: " + baseUrl);
@@ -1097,7 +1097,7 @@ public class TrackHistoryDropDown extends DropDownReceiver implements
 
             final CotPort[] servers = getServers();
             if (servers == null || servers.length == 0) {
-                Log.w(TAG, "No Servers to Export tracks: " + params.toString());
+                Log.w(TAG, "No Servers to Export tracks: " + params);
                 Toast.makeText(
                         _context,
                         _context.getString(
@@ -1193,7 +1193,7 @@ public class TrackHistoryDropDown extends DropDownReceiver implements
                 groupRole, filePath, callbackAction, params);
 
         // notify user
-        Log.d(TAG, "Server post created for: " + request.toString());
+        Log.d(TAG, "Server post created for: " + request);
 
         NotificationUtil.getInstance().postNotification(
                 request.getNotificationId(),
@@ -1232,7 +1232,7 @@ public class TrackHistoryDropDown extends DropDownReceiver implements
 
         // notify user
         Log.d(TAG,
-                "Server query created for: " + request.toString());
+                "Server query created for: " + request);
 
         NotificationUtil.getInstance().postNotification(
                 request.getNotificationId(),
@@ -1297,7 +1297,7 @@ public class TrackHistoryDropDown extends DropDownReceiver implements
             }
 
             //dismiss notification
-            Log.d(TAG, "Queried User Tracks: " + queryRequest.toString());
+            Log.d(TAG, "Queried User Tracks: " + queryRequest);
             NotificationUtil.getInstance().clearNotification(
                     queryRequest.getNotificationId());
 
@@ -1327,7 +1327,7 @@ public class TrackHistoryDropDown extends DropDownReceiver implements
                 return;
             }
 
-            Log.d(TAG, "Successfully posted tracks: " + postRequest.toString());
+            Log.d(TAG, "Successfully posted tracks: " + postRequest);
             NotificationUtil.getInstance().postNotification(
                     postRequest.getNotificationId(),
                     R.drawable.ic_menu_selfhistory, NotificationUtil.GREEN,

@@ -50,6 +50,7 @@ $(libspatialite_configtouchfile): $(libspatialite_srctouchfile)
 		LIBXML2_CFLAGS="$(shell $(OUTDIR)/libxml2/xml2-config --cflags)" \
 		LIBXML2_LIBS="$(shell $(OUTDIR)/libxml2/xml2-config --libs)"    \
 		LIBS="-lcrypto $(libspatialite_LIBS)"        \
+		LD_LIBRARY_PATH="$(OUTDIR)/lib"              \
 		./configure                                  \
 		$(CONFIGURE_TARGET)                          \
 		$(CONFIGURE_$(BUILD_TYPE))                   \

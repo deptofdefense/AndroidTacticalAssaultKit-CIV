@@ -5,6 +5,8 @@ import android.content.Context;
 import android.os.Bundle;
 import android.preference.MultiSelectListPreference;
 import android.util.AttributeSet;
+import android.view.View;
+import android.view.ViewGroup;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -62,6 +64,14 @@ public class PanMultiSelectListPreference extends MultiSelectListPreference {
         } else {
             return appContext;
         }
+    }
+
+    @Override
+    protected View onCreateView(ViewGroup parent) {
+        View v = super.onCreateView(parent);
+        if (!isEnabled())
+            v.setEnabled(false);
+        return v;
     }
 
     /**

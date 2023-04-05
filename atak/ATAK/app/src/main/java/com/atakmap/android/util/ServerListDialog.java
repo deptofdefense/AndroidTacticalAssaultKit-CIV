@@ -87,7 +87,7 @@ public class ServerListDialog {
                         callback.onSelected(null);
                     return;
                 }
-                Log.d(TAG, "Selected server: " + server.toString());
+                Log.d(TAG, "Selected server: " + server);
                 if (callback != null)
                     callback.onSelected(server);
             }

@@ -103,27 +103,16 @@ public class NotificationUtil {
     /**
      * Color choices for icons.
      */
-    @ModifierApi(since = "4.2", target = "4.5", modifiers = {
-            "public", "static", "final"
-    })
-    public static NotificationColor GREEN = new NotificationColor(Color.GREEN);
-    @ModifierApi(since = "4.2", target = "4.5", modifiers = {
-            "public", "static", "final"
-    })
-    public static NotificationColor RED = new NotificationColor(Color.RED);
-    @ModifierApi(since = "4.2", target = "4.5", modifiers = {
-            "public", "static", "final"
-    })
-    public static NotificationColor YELLOW = new NotificationColor(
+    public static final NotificationColor GREEN = new NotificationColor(
+            Color.GREEN);
+    public static final NotificationColor RED = new NotificationColor(
+            Color.RED);
+    public static final NotificationColor YELLOW = new NotificationColor(
             Color.YELLOW);
-    @ModifierApi(since = "4.2", target = "4.5", modifiers = {
-            "public", "static", "final"
-    })
-    public static NotificationColor WHITE = new NotificationColor(Color.WHITE);
-    @ModifierApi(since = "4.2", target = "4.5", modifiers = {
-            "public", "static", "final"
-    })
-    public static NotificationColor BLUE = new NotificationColor(Color.BLUE);
+    public static final NotificationColor WHITE = new NotificationColor(
+            Color.WHITE);
+    public static final NotificationColor BLUE = new NotificationColor(
+            Color.BLUE);
 
     public static final String TAG = "NotificationUtil";
 

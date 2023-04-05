@@ -4,6 +4,8 @@ package com.atakmap.android.http.rest.request;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.http.rest.NetworkOperationManager;
 import com.atakmap.android.http.rest.operation.GetCotHistoryOperation;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -82,6 +84,7 @@ public class GetCotHistoryRequest implements Parcelable {
         return mParse;
     }
 
+    @NonNull
     @Override
     public String toString() {
         if (!isValid())

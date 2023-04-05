@@ -151,14 +151,13 @@ public class GLBatchPolygon extends GLBatchLineString {
             this.polyTriangles = null;
             try {
                 if (needsFill) {
-                    // XXX - we currently always pass in a threshold if tessellated
-                    //       rather than also checking 'needsTessellate'. this is
-                    //       because the vertex data in the source exterior ring
-                    //       could be sufficient tessellated already, but the
-                    //       triangles derived from tessellating the polygon may
-                    //       exceed the threshold. should look at computing an MBB
-                    //       and comparing diagonal length with threshold for a
-                    //       short circuit
+                    // tessellation threshold is ignored for fill based on several reasons. For
+                    // surface polygons, it provides no tangible benefit. For sprite polygons, it
+                    // could enable the shape to have circa constant height above ellipsoid for very
+                    // large shapes HOWEVER those same large shapes are likely to result in many
+                    // triangles which may exceed memory. Other refreence software (e.g. Google
+                    // Earth) does not appear to perform this kind of tessellation, so we will not
+                    // implement at this time
                     if (_hasInnerRings) {
                         this.polyTriangles = Tessellate.polygon(this.renderPoints,
                                                             24,
@@ -166,14 +165,14 @@ public class GLBatchPolygon extends GLBatchLineString {
                                     _numVertices,
                                     _startIndices,
                                     _numPolygons,
-                                    this.tessellated ? this.threshold : 0d,
+                                    0d,
                                     true);
                     } else {
                         this.polyTriangles = Tessellate.polygon(this.renderPoints,
                                 24,
                                 3,
                                                             this.numRenderPoints-1,
-                                this.tessellated ? this.threshold : 0d,
+                                0d,
                                                             true);
 
                     }
@@ -260,7 +259,7 @@ public class GLBatchPolygon extends GLBatchLineString {
                                 _numVertices,
                                 _startIndices,
                                 _numPolygons,
-                                this.tessellated ? this.threshold : 0d,
+                                0d,
                                 true);
                     for (int i = 2; i < this.polyTriangles.limit(); i += 3) {
                         this.polyTriangles.put(i, centerAlt + this.polyTriangles.get(i));

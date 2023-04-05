@@ -341,27 +341,6 @@ public abstract class AbstractParentWidget extends MapWidget2
         return hit;
     }
 
-    /**
-     * @deprecated use {@link #seekWidgetHit(MotionEvent, float, float)}
-     * @param x
-     * @param y
-     * @return
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    @Override
-    public MapWidget seekHit(float x, float y) {
-        final long time = System.currentTimeMillis();
-        final gov.tak.platform.ui.MotionEvent event = gov.tak.platform.ui.MotionEvent
-                .obtain(time, time, gov.tak.platform.ui.MotionEvent.ACTION_DOWN,
-                        x, y, 0);
-        final IMapWidget widget = seekWidgetHit(event, x, y);
-        if (widget instanceof MapWidget)
-            return (MapWidget) widget;
-
-        return null;
-    }
-
     @Override
     public boolean onChildWidgetCanBeAdded(int index, IMapWidget widget) {
         return true;

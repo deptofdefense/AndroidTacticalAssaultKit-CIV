@@ -1,4 +1,4 @@
-
+#ifdef MSVC
 #include "model/DAESceneInfoSpi.h"
 #include "util/IO2.h"
 
@@ -56,3 +56,4 @@ TAK::Engine::Util::TAKErr DAESceneInfoSpi::create(TAK::Engine::Port::Collection<
     model->uri = path;
     return scenes.add(model);
 }
+#endif

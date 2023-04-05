@@ -30,7 +30,7 @@ public class ServerGroup {
     private final String type;
     private final int bitpos;
     private boolean active;
-    private String description;
+    private final String description;
 
     public ServerGroup(String name, String direction, long created,
             String type, int bitpos, boolean active, String description) {

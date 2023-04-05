@@ -87,9 +87,9 @@ public class CrumbTrail extends MapItem implements FOVFilter.Filterable,
     }
 
     public CrumbTrail(final MapView mapView,
-                      final PointMapItem target,
-                      final SharedPreferences prefs,
-                      final String uid) {
+            final PointMapItem target,
+            final SharedPreferences prefs,
+            final String uid) {
         this(mapView, target, prefs, uid, false, false);
     }
 
@@ -284,13 +284,13 @@ public class CrumbTrail extends MapItem implements FOVFilter.Filterable,
             return;
 
         if (lastPoint != null) {
-            final double distance = GeoCalculations.slantDistanceTo(lastPoint, newP);
+            final double distance = GeoCalculations.slantDistanceTo(lastPoint,
+                    newP);
             final double direction = GeoCalculations.bearingTo(lastPoint, newP);
 
             // Set direction of last crumb based on bearing
             if (last != null)
                 last.setDirection(direction);
-
 
             // Check if we should add a new breadcrumb based on distance thresh
             double threshM;
@@ -328,7 +328,7 @@ public class CrumbTrail extends MapItem implements FOVFilter.Filterable,
             crumb = new CircleCrumb(newP, color, 0);
         else
             crumb = new Crumb(newP, color, UUID.randomUUID()
-                .toString());
+                    .toString());
 
         crumb.setSize(size);
         crumb.setDrawLineToSurface(drawLineToSurface);

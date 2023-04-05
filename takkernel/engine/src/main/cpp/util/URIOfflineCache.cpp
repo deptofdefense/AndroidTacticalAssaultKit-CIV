@@ -1,4 +1,4 @@
-
+#ifdef MSVC
 #include "util/URIOfflineCache.h"
 #include "util/URI.h"
 #include "util/DataOutput2.h"
@@ -375,3 +375,4 @@ namespace {
         return sizeVal;
     }
 }
+#endif

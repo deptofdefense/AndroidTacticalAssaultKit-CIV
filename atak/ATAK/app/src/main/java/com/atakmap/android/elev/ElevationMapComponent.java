@@ -3,8 +3,6 @@ package com.atakmap.android.elev;
 
 import java.io.File;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Set;
 
@@ -14,7 +12,6 @@ import android.content.Intent;
 import com.atakmap.android.elev.dt2.Dt2FileWatcher;
 import com.atakmap.android.elev.dt2.Dt2OutlineMapOverlay;
 import com.atakmap.android.elev.dt2.Dt2ElevationData;
-import com.atakmap.android.elev.dt2.Dt2MosaicDatabase;
 import com.atakmap.android.maps.AbstractMapComponent;
 import com.atakmap.android.maps.MapEvent;
 import com.atakmap.android.maps.MapEventDispatcher;
@@ -28,16 +25,19 @@ import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.map.elevation.ElevationManager;
+import com.atakmap.map.elevation.ElevationSource;
 import com.atakmap.map.elevation.ElevationSourceManager;
+import com.atakmap.map.formats.dted.DtedElevationSource;
 import com.atakmap.map.formats.srtm.SrtmElevationSource;
+import com.atakmap.util.Collections2;
 
 public class ElevationMapComponent extends AbstractMapComponent {
 
     final public static String TAG = "ElevationMapComponent";
 
     private MapView _mapView;
-    private final Set<Dt2MosaicDatabase> dt2dbs = Collections
-            .newSetFromMap(new IdentityHashMap<Dt2MosaicDatabase, Boolean>());
+    private final Set<ElevationSource> dt2dbs = Collections2
+            .newIdentityHashSet();
     private Dt2OutlineMapOverlay _outlineOverlay;
     private ElevationDownloader _downloader;
     private ElevationContentChangedDispatcher _dt2Content;
@@ -53,7 +53,7 @@ public class ElevationMapComponent extends AbstractMapComponent {
                 new ToolsPreferenceFragment.ToolPreference(
                         _mapView.getContext().getString(
                                 R.string.elevationPreferences),
-                        "Manage elevation display preferences",
+                        "Adjust Elevation Display Preferences",
                         "dtedPreference",
                         _mapView.getContext().getResources().getDrawable(
                                 R.drawable.ic_overlay_dted),
@@ -70,13 +70,11 @@ public class ElevationMapComponent extends AbstractMapComponent {
                 rootDirs);
         String[] dt2paths = findDtedPaths();
         for (String dt2path : dt2paths) {
-            Dt2MosaicDatabase db = new Dt2MosaicDatabase();
-            db.open(new File(dt2path));
-            dt2dbs.add(db);
+            dt2dbs.add(DtedElevationSource.create(dt2path));
         }
 
-        for (Dt2MosaicDatabase db : dt2dbs)
-            ElevationManager.registerElevationSource(db);
+        for (ElevationSource db : dt2dbs)
+            ElevationSourceManager.attach(db);
 
         String[] srtmPaths = findDataPaths("SRTM");
         for (String srtmPath : srtmPaths)
@@ -116,9 +114,10 @@ public class ElevationMapComponent extends AbstractMapComponent {
 
     @Override
     protected void onDestroyImpl(Context context, MapView view) {
-        for (Dt2MosaicDatabase db : dt2dbs) {
-            ElevationManager.unregisterElevationSource(db);
-            db.close();
+        for (ElevationSource db : dt2dbs) {
+            ElevationSourceManager.detach(db);
+            if (db instanceof gov.tak.api.util.Disposable)
+                ((gov.tak.api.util.Disposable) db).dispose();
         }
         dt2dbs.clear();
 

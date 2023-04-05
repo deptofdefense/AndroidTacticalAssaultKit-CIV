@@ -21,7 +21,7 @@ public abstract class GLAbstractButtonWidget extends GLWidget implements
             MapRenderer renderContext) {
         super(subject, renderContext);
 
-        _bgColor = Color.WHITE;
+        _bgColor = _iconColor = Color.WHITE;
         if (subject.getWidgetBackground() != null) {
             _bgColor = subject.getWidgetBackground().getColor(subject.getState());
         }
@@ -169,7 +169,7 @@ public abstract class GLAbstractButtonWidget extends GLWidget implements
         }
 
         if (_image != null)
-            drawButtonIcon(drawState, Color.WHITE, _image);
+            drawButtonIcon(drawState, _iconColor, _image);
 
         if (_textDirty) {
             if (_glText == null) {
@@ -236,7 +236,7 @@ public abstract class GLAbstractButtonWidget extends GLWidget implements
         }
     }
 
-    protected int _bgColor;
+    protected int _bgColor, _iconColor;
     GLImageCache.Entry _imageEntry;
     GLImage _image;
     protected int _anchorx, _anchory, _iconWidth, _iconHeight;

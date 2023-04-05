@@ -1,4 +1,4 @@
-
+#ifdef MSVC
 #include "formats/gltf/GLTF.h"
 
 using namespace TAK::Engine::Formats::GLTF;
@@ -100,3 +100,4 @@ namespace {
         return code == TE_EOF ? TE_Ok : code;
     }
 }
+#endif

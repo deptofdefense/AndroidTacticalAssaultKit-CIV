@@ -1,3 +1,4 @@
+#ifdef MSVC
 /***************************************************************************
  *  Copyright 2021 PAR Government Systems
  *
@@ -70,3 +71,4 @@ bool DrsSchemaDefinition::matches(const char* filePath, const OGRFeatureDefn&) c
     String_compareIgnoreCase(&drs, ext, ".drs");
     return (drs == 0);
 }
+#endif

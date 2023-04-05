@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+        android:title="@string/staledataPreferences">
+        <com.atakmap.android.gui.PanCheckBoxPreference
+            android:title="@string/stale_out_disconnected_users"
+            android:summary="@string/stale_out_disconnected_users_summary"
+            android:defaultValue="true"
+            android:key="staleRemoteDisconnects"/>
+        <com.atakmap.android.gui.PanCheckBoxPreference
+            android:title="@string/preferences_text42"
+            android:summary="@string/preferences_text44"
+            android:defaultValue="true"
+            android:key="expireEverything"/>
+        <com.atakmap.android.gui.PanListPreference
+            android:entryValues="@array/delete_stale_values"
+            android:entries="@array/delete_stale_names"
+            android:summary="@string/preferences_text45"
+            android:key="expireStaleItemsTime"
+            android:title="@string/stale_item_cleanup"
+            android:dependency="expireEverything"
+            android:defaultValue="5" />
+        <com.atakmap.android.gui.PanCheckBoxPreference
+            android:title="@string/preferences_text46"
+            android:summary="@string/preferences_text47"
+            android:defaultValue="true"
+            android:key="expireUnknowns"/>
+    </PreferenceCategory>
+</PreferenceScreen>

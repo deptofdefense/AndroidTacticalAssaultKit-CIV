@@ -39,6 +39,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import gov.tak.api.widgets.IMapWidget;
+
 public class RadialMenuTest extends ATAKInstrumentedTest {
 
     private static class NullFactory implements MapMenuFactory {
@@ -309,7 +311,12 @@ public class RadialMenuTest extends ATAKInstrumentedTest {
                                 assertEquals(mapItem, layoutBase.getMapItem());
                                 dispatcher.setReferenceItem(mapItem);
                                 layoutBase.onFocusPointChanged(80, 20);
-                                layoutBase.seekHit(80, 20); // can't test return as onLayout never called through ViewGroup
+                                final long time = System.currentTimeMillis();
+                                final gov.tak.platform.ui.MotionEvent gEvent = gov.tak.platform.ui.MotionEvent
+                                        .obtain(time, time,
+                                                gov.tak.platform.ui.MotionEvent.ACTION_DOWN,
+                                                80, 20, 0);
+                                layoutBase.seekWidgetHit(gEvent, 80, 20);
                                 walkMenuWidget(dispatcher, layoutBase,
                                         menuWidget);
                             }

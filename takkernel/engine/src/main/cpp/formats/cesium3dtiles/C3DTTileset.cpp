@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "formats/cesium3dtiles/C3DTTileset.h"
 
 #include "util/DataInput2.h"
@@ -773,19 +774,23 @@ namespace {
         TAK::Engine::Port::String* tilesetPath,
         C3DTFileType *type,
         const char* URI) NOTHROWS {
+        bool exists = false;
+        if (IO_existsV(&exists, URI) != TE_Ok || !exists)
+            return false;
 
         TAK::Engine::Port::String dir;
         TAK::Engine::Port::String ts;
 
         bool isDir = false;
-        IO_isDirectoryV(&isDir, URI);
+        if (IO_isDirectoryV(&isDir, URI) != TE_Ok)
+            return false;
         if (isDir) {
             dir = URI;
             TAK::Engine::Port::StringBuilder sb;
             if (TAK::Engine::Port::StringBuilder_combine(sb, URI, TAK::Engine::Port::Platform_pathSep(), "tileset.json") != TE_Ok) {
                 return false;
             }
-            bool exists = false;
+            exists = false;
             IO_existsV(&exists, sb.c_str());
             if (!exists) {
                 return isZipURI(URI) && isZipTilesetWithRootFolder(filePath, dirPath, tilesetPath, type, URI);
@@ -795,7 +800,8 @@ namespace {
             if (type) *type = C3DTFileType_TilesetJSON;
         } else {
             TAK::Engine::Port::String name;
-            IO_getName(name, URI);
+            if (IO_getName(name, URI) != TE_Ok)
+                return false;
             if (determineFileType(type, name) != TE_Ok)
                 return false;
 
@@ -1025,3 +1031,4 @@ namespace {
         return TE_Ok;
     }
 }
+#endif

@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "renderer/GL.h"
 
 #include "renderer/feature/GLBatchGeometryFeatureDataStoreRenderer2.h"
@@ -141,8 +142,8 @@ int GLBatchGeometryFeatureDataStoreRenderer2::getRenderPass() NOTHROWS
 }
 
 void GLBatchGeometryFeatureDataStoreRenderer2::start() NOTHROWS {
-    this->spatial_filter_control_ = std::unique_ptr<SpatialFilterControlImpl>(new SpatialFilterControlImpl(*this));
-    this->controls_[SpatialFilterControl_getType()] = spatial_filter_control_.get();
+    this->spatial_filter_control_.reset(new SpatialFilterControlImpl(*this));
+    this->controls_[SpatialFilterControl_getType()] = static_cast<SpatialFilterControl *>(spatial_filter_control_.get());
 }
 
 void GLBatchGeometryFeatureDataStoreRenderer2::stop() NOTHROWS
@@ -296,10 +297,16 @@ TAKErr GLBatchGeometryFeatureDataStoreRenderer2::queryImpl(QueryContext &ctx, co
 
     const bool crossIdl = (state.westBound > state.eastBound);
 
-    double simplifyFactor = distance(state.upperLeft.longitude,
-        state.upperLeft.latitude, state.lowerRight.longitude,
-        state.lowerRight.latitude) /
-        distance(state.left, state.top, state.right, state.bottom) * 2;
+    double simplifyFactor;
+    if (state.scene.camera.mode == TAK::Engine::Core::MapCamera2::Perspective) {
+        simplifyFactor = (state.drawMapResolution /
+            TAK::Engine::Core::GeoPoint2_approximateMetersPerDegreeLatitude(state.drawLat)) * 2.0;
+    } else {
+        simplifyFactor = distance(state.upperLeft.longitude,
+            state.upperLeft.latitude, state.lowerRight.longitude,
+            state.lowerRight.latitude) /
+            distance(state.left, state.top, state.right, state.bottom) * 2.0;
+    }
 
     FeatureDataStore2::FeatureQueryParameters params;
     params.visibleOnly = true;
@@ -311,13 +318,14 @@ TAKErr GLBatchGeometryFeatureDataStoreRenderer2::queryImpl(QueryContext &ctx, co
     mbb.addPoint(state.westBound, state.southBound);
     mbb.addPoint(state.westBound, state.northBound);
 
-    if (include_spatial_filter_envelope_) {
+    {
+        const auto include_spatial_filter_envelope = spatial_filter_control_->impl.getIncludeMinimumBoundingBox();
         auto mbb_envelope = mbb.getEnvelope();
 
-        mbb_envelope.minX = std::max(mbb_envelope.minX, include_spatial_filter_envelope_->minX);
-        mbb_envelope.minY = std::max(mbb_envelope.minY, include_spatial_filter_envelope_->minY);
-        mbb_envelope.maxX = std::min(mbb_envelope.maxX, include_spatial_filter_envelope_->maxX);
-        mbb_envelope.maxY = std::min(mbb_envelope.maxY, include_spatial_filter_envelope_->maxY);
+        mbb_envelope.minX = std::max(mbb_envelope.minX, include_spatial_filter_envelope.minX);
+        mbb_envelope.minY = std::max(mbb_envelope.minY, include_spatial_filter_envelope.minY);
+        mbb_envelope.maxX = std::min(mbb_envelope.maxX, include_spatial_filter_envelope.maxX);
+        mbb_envelope.maxY = std::min(mbb_envelope.maxY, include_spatial_filter_envelope.maxY);
 
         mbb.setX(0, mbb_envelope.minX);
         mbb.setY(0, mbb_envelope.maxY);
@@ -460,7 +468,7 @@ TAKErr GLBatchGeometryFeatureDataStoreRenderer2::queryImpl(QueryContext &ctx, co
                 }
 
                 bool fits_filter;
-                code = checkSpatialFilter(fits_filter, geomPtr);
+                code = spatial_filter_control_->impl.accept(&fits_filter, *geomPtr);
                 TE_CHECKBREAK_CODE(code);
                 if (!fits_filter) continue;
 
@@ -730,112 +738,6 @@ TAKErr GLBatchGeometryFeatureDataStoreRenderer2::getControl(void **ctrl, const c
     return TE_Ok;
 }
 
-TAKErr GLBatchGeometryFeatureDataStoreRenderer2::setSpatialFilter(const std::vector<std::shared_ptr<SpatialFilter>> &spatial_filters) NOTHROWS {
-    TAKErr code(TE_Ok);
-
-    invalidateNoSync();
-
-    include_spatial_filter_envelope_.reset();
-    spatial_calculator_.reset();
-    include_filter_ids_.clear();
-    exclude_filter_ids_.clear();
-
-    if (spatial_filters.empty()) return code;
-
-    spatial_calculator_ = std::shared_ptr<SpatialCalculator2>(new SpatialCalculator2());
-
-    for (const auto &filter : spatial_filters) {
-        SpatialFilterType filter_type;
-        code = filter->getType(filter_type);
-        TE_CHECKBREAK_CODE(code);
-
-        Polygon2 *filter_geometry;
-        code = filter->getFilterGeometry(&filter_geometry);
-        TE_CHECKBREAK_CODE(code);
-
-        if (filter_type == SpatialFilterType::Include) {
-            Envelope2 include_envelope;
-            code = filter_geometry->getEnvelope(&include_envelope);
-            TE_CHECKBREAK_CODE(code);
-            if (include_spatial_filter_envelope_.get() == nullptr) {
-                include_spatial_filter_envelope_.reset(new Envelope2(include_envelope));
-            } else {
-                include_spatial_filter_envelope_->minX = std::min(include_envelope.minX, include_spatial_filter_envelope_->minX);
-                include_spatial_filter_envelope_->minY = std::min(include_envelope.minY, include_spatial_filter_envelope_->minY);
-                include_spatial_filter_envelope_->maxX = std::max(include_envelope.maxX, include_spatial_filter_envelope_->maxX);
-                include_spatial_filter_envelope_->maxY = std::max(include_envelope.maxY, include_spatial_filter_envelope_->maxY);
-            }
-
-            int64_t include_handle;
-            code = spatial_calculator_->createGeometry(&include_handle, *filter_geometry);
-            TE_CHECKBREAK_CODE(code);
-            include_filter_ids_.push_back(include_handle);
-        } else {
-            int64_t exclude_handle;
-            code = spatial_calculator_->createGeometry(&exclude_handle, *filter_geometry);
-            TE_CHECKBREAK_CODE(code);
-            exclude_filter_ids_.push_back(exclude_handle);
-        }
-    }
-
-    return code;
-}
-
-TAKErr GLBatchGeometryFeatureDataStoreRenderer2::checkSpatialFilter(bool &fits_filter, GeometryPtr_const &geom) const NOTHROWS {
-    if (include_filter_ids_.empty() && exclude_filter_ids_.empty()) {
-        fits_filter = true;
-        return TE_Ok;
-    }
-
-    fits_filter = !include_filter_ids_.empty();
-
-    Geometry2Ptr geom2(nullptr, nullptr);
-    TAKErr code = LegacyAdapters_adapt(geom2, *geom);
-    TE_CHECKRETURN_CODE(code);
-
-    int64_t geom_id;
-    code = spatial_calculator_->createGeometry(&geom_id, *geom2.get());
-    TE_CHECKRETURN_CODE(code);
-    for (int64_t include_filter_id : include_filter_ids_) {
-        bool in_include_filter;
-        code = spatial_calculator_->contains(&in_include_filter, include_filter_id, geom_id);
-        TE_CHECKRETURN_CODE(code);
-        if (!in_include_filter) {
-            fits_filter = false;
-            break;
-        }
-        code = spatial_calculator_->intersects(&in_include_filter, include_filter_id, geom_id);
-        TE_CHECKRETURN_CODE(code);
-        if (!in_include_filter) {
-            fits_filter = false;
-            break;
-        }
-    }
-
-    // No need to check exclude filters if we don't fit in the include filters
-    if (!fits_filter) return code;
-
-    for (int64_t exclude_filter_id : exclude_filter_ids_) {
-        bool in_exclude_filter;
-        code = spatial_calculator_->contains(&in_exclude_filter, exclude_filter_id, geom_id);
-        TE_CHECKRETURN_CODE(code);
-        if (in_exclude_filter) {
-            fits_filter = false;
-            break;
-        }
-        code = spatial_calculator_->intersects(&in_exclude_filter, exclude_filter_id, geom_id);
-        TE_CHECKRETURN_CODE(code);
-        if (in_exclude_filter) {
-            fits_filter = false;
-            break;
-        }
-    }
-
-    code = spatial_calculator_->deleteGeometry(geom_id);
-
-    return code;
-}
-
 GLBatchGeometryFeatureDataStoreRenderer2::HitTestImpl::HitTestImpl(GLBatchGeometryFeatureDataStoreRenderer2 &owner_) :
     owner(owner_)
 {}
@@ -848,24 +750,9 @@ TAKErr GLBatchGeometryFeatureDataStoreRenderer2::HitTestImpl::hitTest(Collection
 GLBatchGeometryFeatureDataStoreRenderer2::SpatialFilterControlImpl::SpatialFilterControlImpl(GLBatchGeometryFeatureDataStoreRenderer2 &owner) NOTHROWS : owner_(owner) {}
 
 TAKErr GLBatchGeometryFeatureDataStoreRenderer2::SpatialFilterControlImpl::setSpatialFilters(Collection<std::shared_ptr<SpatialFilter>> *spatial_filters) NOTHROWS {
-    std::vector<std::shared_ptr<SpatialFilter>> spatial_filters_vector;
-    if (!spatial_filters->empty()) {
-        Collection<std::shared_ptr<SpatialFilter>>::IteratorPtr iterator(nullptr, nullptr);
-        TAKErr code = spatial_filters->iterator(iterator);
-        TE_CHECKRETURN_CODE(code);
-        do {
-            std::shared_ptr<SpatialFilter> filter;
-            code = iterator->get(filter);
-            TE_CHECKBREAK_CODE(code);
-
-            spatial_filters_vector.push_back(filter);
-
-            code = iterator->next();
-            TE_CHECKBREAK_CODE(code);
-        } while (true);
-    }
-
-    return owner_.setSpatialFilter(spatial_filters_vector);
+    TAKErr code = impl.setSpatialFilters(spatial_filters);
+    owner_.invalidate();
+    return code;
 }
 
 namespace
@@ -942,3 +829,4 @@ namespace
         queryCount(0LL)
     {}
 }
+#endif

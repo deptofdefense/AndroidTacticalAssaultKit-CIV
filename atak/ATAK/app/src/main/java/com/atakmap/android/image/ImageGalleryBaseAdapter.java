@@ -659,7 +659,8 @@ public abstract class ImageGalleryBaseAdapter
                     if (mi instanceof PointMapItem) {
                         // Pan to map item synchronously before displaying content
 
-                        CameraController.Programmatic.panTo(mapView.getRenderer3(),
+                        CameraController.Programmatic.panTo(
+                                mapView.getRenderer3(),
                                 ((PointMapItem) mi).getPoint(), true);
                     }
                     AtakBroadcast.getInstance().sendBroadcast(

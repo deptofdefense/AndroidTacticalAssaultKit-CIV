@@ -2,10 +2,8 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <PreferenceCategory
         android:title="@string/tadilj_settings">
-        <Preference
+       <Preference
             android:key="tadiljPersistedIds"
-            android:title="@string/preferences_text340"
-            android:summary="@string/managePersistedIdsSummary"
-            />
+            android:title="@string/preferences_text340"/>
     </PreferenceCategory>
 </PreferenceScreen>

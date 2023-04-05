@@ -13,23 +13,24 @@ import java.util.Objects;
  * @since 0.17.0
  */
 abstract class Contact implements IContact {
-    private final String uniqueContactId;
-    private final String displayName;
-    private final AttributeSet attributes;
+
+    protected String uniqueId;
+    protected String displayName;
+    protected AttributeSet attributes;
 
     /**
-     * @param uniqueContactId The unique ID of this contact, cannot be null nor blank (i.e. must contain non-whitespace
-     *                        characters)
-     * @param displayName     The display name of this contact, cannot be null nor blank (i.e. must contain non-whitespace
-     *                        characters)
-     * @param attributes      The attributes associated with this contact, cannot be null
+     * @param uniqueId    The unique ID of this contact, cannot be null nor blank (i.e. must contain non-whitespace
+     *                    characters)
+     * @param displayName The display name of this contact, cannot be null nor blank (i.e. must contain non-whitespace
+     *                    characters)
+     * @param attributes  The attributes associated with this contact, cannot be null
      */
-    protected Contact(@NonNull String uniqueContactId, @NonNull String displayName, @NonNull AttributeSet attributes) {
-        this.uniqueContactId = Objects.requireNonNull(uniqueContactId, "Unique Contact ID cannot be null.");
+    protected Contact(@NonNull String uniqueId, @NonNull String displayName, @NonNull AttributeSet attributes) {
+        this.uniqueId = Objects.requireNonNull(uniqueId, "Unique Contact ID cannot be null.");
         this.displayName = Objects.requireNonNull(displayName, "Contact display name cannot be null.");
         this.attributes = Objects.requireNonNull(attributes, "Contact attributes cannot be null.");
 
-        if (StringUtils.isBlank(uniqueContactId)) {
+        if (StringUtils.isBlank(uniqueId)) {
             throw new IllegalArgumentException("Unique Contact ID must not be blank.");
         }
         if (StringUtils.isBlank(displayName)) {
@@ -40,7 +41,7 @@ abstract class Contact implements IContact {
     @NonNull
     @Override
     public String getUniqueId() {
-        return uniqueContactId;
+        return uniqueId;
     }
 
     @NonNull
@@ -52,7 +53,6 @@ abstract class Contact implements IContact {
     @NonNull
     @Override
     public AttributeSet getAttributes() {
-        // TODO: Return a read-only copy of the attributes for full immutability
         return attributes;
     }
 
@@ -67,12 +67,21 @@ abstract class Contact implements IContact {
 
         Contact contact = (Contact) object;
 
-        return uniqueContactId.equals(contact.uniqueContactId);
+        return getUniqueId().equals(contact.getUniqueId());
     }
 
     @Override
     public int hashCode() {
-        return uniqueContactId.hashCode();
+        return getUniqueId().hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "Contact{" +
+                "uniqueId='" + uniqueId + '\'' +
+                ", displayName='" + displayName + '\'' +
+                ", attributes=" + attributes +
+                '}';
     }
 }
 

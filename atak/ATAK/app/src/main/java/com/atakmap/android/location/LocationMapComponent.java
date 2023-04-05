@@ -9,8 +9,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.PointF;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.LayerDrawable;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -31,6 +34,7 @@ import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.provider.Settings.Secure;
 import android.telephony.TelephonyManager;
+import android.util.Base64;
 import android.view.Display;
 import android.view.Surface;
 import android.view.WindowManager;
@@ -72,6 +76,7 @@ import com.atakmap.map.MapRenderer3;
 import com.atakmap.map.elevation.ElevationManager;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
@@ -120,6 +125,9 @@ public class LocationMapComponent extends AbstractMapComponent implements
     final private static double PRECISION_7 = 10000000;
     final private static double PRECISION_6 = 1000000;
     final private static double PRECISION_4 = 1000;
+
+    final private static int SELF_MARKER_WIDTH = 32;
+    final private static int SELF_MARKER_HEIGHT = 43;
 
     private String _deviceCallsign;
     private String _deviceType;
@@ -1356,7 +1364,8 @@ public class LocationMapComponent extends AbstractMapComponent implements
         if (key.equals("location_marker_scale_key") ||
                 key.equals("custom_gps_icon_setting") ||
                 key.equals("locationTeam") ||
-                key.equals("custom_color_selected")) {
+                key.equals("custom_color_selected") ||
+                key.equals("custom_outline_color_selected")) {
             refreshGpsIcon();
         }
 
@@ -1769,32 +1778,57 @@ public class LocationMapComponent extends AbstractMapComponent implements
                     "Cyan");
             final String userCustomColor = locationPrefs.getString(
                     "custom_color_selected", "#FFFFFF");
+            final String userCustomStrokeColor = locationPrefs.getString(
+                    "custom_outline_color_selected", "#FFFFFF");
+
+            final Drawable selfMarker = context
+                    .getDrawable(R.drawable.ic_self_tintable);
+            final Drawable selfStroke = context
+                    .getDrawable(R.drawable.ic_self_stroke_tintable);
 
             switch (userSelfColor) {
                 case 0: //default
-                    builder.setImageUri(0, "android.resource://" +
-                            context.getPackageName() + "/"
-                            + R.drawable.ic_self);
-                    builder.setSize(size, size);
+                    selfMarker.setTint(0xff44b2dd);
+                    selfStroke.setTint(Color.WHITE);
                     break;
                 case 1: //use team color , image is created when user selects using team color
-                    builder.setImageUri(0, "android.resource://" +
-                            context.getPackageName() + "/"
-                            + R.drawable.ic_self_white);
-                    builder.setColor(0,
+                    selfMarker.setTint(
                             Icon2525cIconAdapter.teamToColor(userTeam));
-                    builder.setSize(size, size);
+                    selfStroke.setTint(Color.WHITE);
                     break;
                 case 2:
-                    builder.setImageUri(0, "android.resource://" +
-                            context.getPackageName() + "/"
-                            + R.drawable.ic_self_white);
-                    builder.setColor(0, Color.parseColor(userCustomColor));
-                    builder.setSize(size, size);
+                    selfMarker.setTint(Color.parseColor(userCustomColor));
+                    selfStroke.setTint(Color.parseColor(userCustomStrokeColor));
                     break;
                 default:
                     break;
             }
+
+            final LayerDrawable composite = new LayerDrawable(new Drawable[] {
+                    selfMarker, selfStroke
+            });
+            final Bitmap marker = ATAKUtilities.getBitmap(composite);
+
+            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            marker.compress(Bitmap.CompressFormat.PNG, 100, baos);
+            final byte[] b = baos.toByteArray();
+            final String encoded = "base64://" + Base64.encodeToString(b,
+                    Base64.NO_WRAP | Base64.URL_SAFE);
+
+            final int width;
+            final int height;
+
+            if (size == -1) {
+                width = SELF_MARKER_WIDTH;
+                height = SELF_MARKER_HEIGHT;
+            } else {
+                float factor = size / (float) SELF_MARKER_WIDTH;
+                width = size;
+                height = ((int) (SELF_MARKER_HEIGHT * factor));
+            }
+
+            builder.setImageUri(0, encoded);
+            builder.setSize(width, height);
             _locationMarker.setIcon(builder.build());
         }
     }
@@ -2126,11 +2160,13 @@ public class LocationMapComponent extends AbstractMapComponent implements
 
             serialNumber = (String) get.invoke(c, "sys.serialnumber",
                     Build.UNKNOWN);
-            if (serialNumber.equalsIgnoreCase(Build.UNKNOWN)) {
+            if (serialNumber != null
+                    && serialNumber.equalsIgnoreCase(Build.UNKNOWN)) {
                 serialNumber = (String) get.invoke(c, "ril.serialnumber",
                         Build.UNKNOWN);
             }
-            if (serialNumber.equalsIgnoreCase(Build.UNKNOWN)) {
+            if (serialNumber != null
+                    && serialNumber.equalsIgnoreCase(Build.UNKNOWN)) {
                 try {
                     if (Build.SERIAL != null
                             && !Build.UNKNOWN.equalsIgnoreCase(Build.SERIAL)) {
@@ -2222,7 +2258,8 @@ public class LocationMapComponent extends AbstractMapComponent implements
         // id is set to 862391030003883.
         if (telephonyDeviceId != null &&
                 (telephonyDeviceId.equalsIgnoreCase(Build.UNKNOWN) ||
-                        (telephonyDeviceId.equalsIgnoreCase("862391030003883") )))
+                        (telephonyDeviceId
+                                .equalsIgnoreCase("862391030003883"))))
             return null;
 
         return telephonyDeviceId;
@@ -2246,7 +2283,7 @@ public class LocationMapComponent extends AbstractMapComponent implements
 
             try {
                 telephonyLineNumber = tm.getLine1Number();
-            } catch (SecurityException se) {
+            } catch (SecurityException ignored) {
             }
         } else {
             Log.d(TAG, "unable to get the line number");

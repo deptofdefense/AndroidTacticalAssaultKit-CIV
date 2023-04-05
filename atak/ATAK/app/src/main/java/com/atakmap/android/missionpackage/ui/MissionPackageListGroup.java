@@ -97,7 +97,7 @@ public class MissionPackageListGroup {
     }
 
     public String toString() {
-        return _manifest.toString() + ", " + isModified();
+        return _manifest + ", " + isModified();
     }
 
     public boolean removeItem(MissionPackageListItem item) {
@@ -105,9 +105,9 @@ public class MissionPackageListGroup {
                 _items.remove(item);
 
         if (success)
-            Log.d(TAG, "Removed item: " + item + " from " + toString());
+            Log.d(TAG, "Removed item: " + item + " from " + this);
         else
-            Log.w(TAG, "Failed to locate file: " + item + " in " + toString());
+            Log.w(TAG, "Failed to locate file: " + item + " in " + this);
         return success;
     }
 
@@ -141,7 +141,7 @@ public class MissionPackageListGroup {
         }
 
         if (_manifest.getFiles().contains(adapt.getContent())) {
-            Log.d(TAG, "File already in package: " + adapt.toString());
+            Log.d(TAG, "File already in package: " + adapt);
             return true;
         }
 
@@ -155,7 +155,7 @@ public class MissionPackageListGroup {
             success &= _items.add(adapt);
         }
         Log.d(TAG, "Added file: " + file.getAbsolutePath() + " to "
-                + toString());
+                + this);
         return success;
     }
 
@@ -210,10 +210,10 @@ public class MissionPackageListGroup {
         if (invalidate)
             invalidate();
         if (success)
-            Log.d(TAG, "Added: " + uids.length + " map items to " + toString());
+            Log.d(TAG, "Added: " + uids.length + " map items to " + this);
         else
             Log.w(TAG, "Errors while adding: " + uids.length + " map items to "
-                    + toString());
+                    + this);
     }
 
     public boolean removeMapItem(MissionPackageListMapItem item) {
@@ -248,7 +248,7 @@ public class MissionPackageListGroup {
      * out to disk
      */
     public void rebase() {
-        Log.d(TAG, "Rebasing " + _manifest.toString());
+        Log.d(TAG, "Rebasing " + _manifest);
         _baseline = new MissionPackageManifest(_manifest);
     }
 
@@ -271,7 +271,7 @@ public class MissionPackageListGroup {
     }
 
     public void removeContents() {
-        Log.d(TAG, "Removing group content: " + this.toString());
+        Log.d(TAG, "Removing group content: " + this);
         for (MissionPackageListItem item : getItems()) {
             item.removeContent();
         }

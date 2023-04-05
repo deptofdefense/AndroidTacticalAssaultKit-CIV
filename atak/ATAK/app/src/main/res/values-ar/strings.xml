@@ -643,13 +643,14 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
   <string name="preferences_text331">لون المجموعه</string>
   <string name="preferences_text332">استخدم لون مجموعتك </string>
   <string name="preferences_text333">استخدم لون مخصص</string>
-  <string name="preferences_text334">تغيير/إنشاء لون مخصص</string>
+  <string name="preferences_text334">Change/Create Icon Main Custom Color</string>
   <string name="preferences_text335">إختيار لون مخصصr</string>
   <string name="preferences_text336"> نوع موقفك  </string>
   <string name="preferences_text337"> رقم البدء لمقطع المسار </string>
   <string name="preferences_text338">إعادة ضبط  الرقم المعادِل  </string>
   <string name="preferences_text339">أعد ضبط الرقم المُعادِل   لمجموعة مسار  الارقام   إلى الصفر</string>
   <string name="preferences_text340">إدارة استمرار ظهور هوَيًات المستخدمين  </string>
+  <string name="preferences_text470">Change/Create Icon Outline Custom Color</string>
   <!--الادوات  -->
   <string name="preferences_text341">إدارة الإضافات وتطبيقات اخرى  </string>
   <string name="preferences_text439">معلومات الاسناد</string>
@@ -805,7 +806,6 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
   <!--إختصاص القفز -->
   <!--ادوات الرمي -->
   <string name="laser_basket_tip">سلة الليزر</string>
-  <string name="location_marker_scale">location_marker_scale_key </string>
   <string name="selected_actionbar_icon_color">لون_الآيقونه_شريط الافعال _التخصيص  </string>
   <string name="selected_actionbar_background_color">إنتخب_شريط الافعال (الادوات)_لون خلفية الشاشه _اللون </string>
   <string name="default_actionbar_colors">افتراضي_شريط الافعال(الادوات)_الالوان  </string>
@@ -3415,7 +3415,7 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
   <string name="continuous_rendering"> التقديم المستمر </string>
   <string name="continuous_rendering_summary">التقديم المستمر هو النموذج القديم لتحديث الرسومات على الشاشة وتم استبداله بآلية التقديم الأكثر كفاءة. قم بتمكين هذه الميزة فقط إذا كانت هناك مشكلات متعلقة بالعرض عند استخدام البرنامج.</string>
   <string name="developer_tools">Developer Tools</string>
-  <string name="developer_tools_summary">Enable the Developer Tools in the Overlay Manager</string>
+  <string name="developer_tools_summary">Enable the Developer Tools in the Overlay Manager.</string>
   <string name="resection_workflow"> سير العمل استئصال </string>
   <string name="resection">استئصال</string>
   <string name="resection_options">خيارات الاستئصال</string>
@@ -3470,7 +3470,7 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
   <string name="metric_live">Enable usage and metrics data to be sent to TAK Server periodically while app is running</string>
   <string name="crashlogs_summary">Details about app crashes are recorded in directory: support/logs</string>
   <string name="crashlogs_title">Crash logs</string>
-  <string name="advanced_logging">Manage advanced logging of debug and low level app data</string>
+  <string name="advanced_logging">Manage advanced logging of debug and low level app data.</string>
   <string name="metric_live_title">Live Metrics</string>
   <string name="advanced_logging_title">Advanced Logging</string>
   <string name="advanced_logging_disclaimer_title">Logging Impact on Performance</string>
@@ -3480,7 +3480,7 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
   <string name="deletesseslant">Delete SSE Slant</string>
   <string name="manually">Manually</string>
   <string name="resolve">Resolve</string>
-  <string name="grid_type_summary">Select the type of values used to represent the lines</string>
+  <string name="grid_type_summary">Select the type of values used to represent the grid lines.</string>
   <string name="grid_type_title">Grid Line Display Type</string>
   <string name="additional_information">Additional Information</string>
   <string name="resection_point">POINT</string>
@@ -3491,7 +3491,7 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
   <string name="my_plugins_summary">Tap to select TAK plugins</string>
   <string name="my_servers">TAK Servers</string>
   <string name="my_servers_summary">Tap to configure TAK Server connections</string>
-  <string name="no_servers_title">Network Connections</string>
+  <string name="no_servers_title">Network Preferences</string>
   <string name="no_servers_summary">Tap to configure TAK Server and network connections</string>
   <string name="no_servers_message">Import TAK Server datapackage, manually add TAK Server, or manage advanced network connections</string>
   <string name="add_tak_server">Add TAK Server</string>
@@ -3505,7 +3505,7 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
   <string name="devicePreferences">Device Preferences</string>
   <string name="morePreferences">Show All Preferences</string>
   <string name="legacy_settings">Legacy Settings View</string>
-  <string name="preferences_text2031">Enable to display all preferences when opening settings</string>
+  <string name="preferences_text2031">Enable to display all preferences when opening Settings.</string>
   <string name="advancedloggingPreferences">Advanced Logging Preferences</string>
   <string name="app_mgmt_update_large_file_title">Download Large Product</string>
   <string name="app_mgmt_update_large_file_message">Download %1$s (%2$s) from Update Server now?</string>
@@ -3515,7 +3515,7 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
   <string name="preferences_text2020">Adjust additional options</string>
   <string name="preferences_text_area">Area Units</string>
   <string name="preferences_text3721">TAK Device Configuration</string>
-  <string name="preferences_text3731">Touch to display TAK Device Configuration screen</string>
+  <string name="preferences_text3731">Select to display TAK Device Configuration screen.</string>
   <string name="preferences_text4371">Would you like to configure ATAK plugins?</string>
   <string name="preferences_text4372">Import files</string>
   <string name="preferences_text4373">Network Configuration Options</string>
@@ -3568,11 +3568,11 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
   <string name="usability_settings">Usability Settings</string>
   <string name="enable_faux">Enable the Faux Navigation Bar</string>
   <string name="enable_faux_reverse">Reverse the buttons on the Faux Navigation Bar</string>
-  <string name="enable_faux_reverse_summ">Reverses the buttons on the faux nav bar so that the back button is at the bottom in landscape and on the left in portrait.</string>
+  <string name="enable_faux_reverse_summ">Reverses the buttons on the faux navigation bar, so that the back button is at the bottom in landscape and on the left in portrait.</string>
   <string name="rendering_3d_options">3-D / Rendering Options</string>
   <string name="hsppplink">Point-to-Point Link High Speed Capable</string>
   <string name="preferences_cert_enroll_key_length">Certificate Enrollment Key Length</string>
-  <string name="preferences_cert_enroll_key_length_desc">Length in bits for RSA private key</string>
+  <string name="preferences_cert_enroll_key_length_desc">Length in bits for RSA private key.</string>
   <string name="preferences_route_walking">Walking</string>
   <string name="preferences_route_walking_off_route_bubble_title">Walking Off Route Bubble Radius</string>
   <string name="preferences_route_driving">Driving</string>
@@ -3583,7 +3583,7 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
   <string name="preferences_route_swimming_off_route_bubble_title">Swimming Off Route Bubble Radius</string>
   <string name="preferences_route_watercraft">Watercraft</string>
   <string name="preferences_route_watercraft_off_route_bubble_title">Watercraft Off Route Bubble Radius</string>
-  <string name="preferences_route_off_route_bubble">When outside of this distance, you will be considered off the route while navigating</string>
+  <string name="preferences_route_off_route_bubble">When outside of this distance, you will be considered off the route while navigating.</string>
   <string name="open_route_around">Open Route Around Region Manager</string>
   <string name="manage_route_around_regions">Manage route around regions</string>
   <string name="coloring_and_tinting">Color / Tinting</string>
@@ -3591,7 +3591,7 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
   <string name="hsppplink_summary">When selected, the Point-to-Point link on the system is considered high speed capable. This should not be enabled unless instructed. Newer radios are capable of supporting high speed tunnels that are point to point. Older radios support serial based point to point connections that are not high speed capable. For those older radios, turning this on will oversaturate link effectively disabling the capability.</string>
   <string name="download_tiles_min">No tiles selected for download.</string>
   <string name="preference_rab_show_eta_title">Display ETA on Range and Bearing Labels</string>
-  <string name="preference_rab_show_eta_summary">If checked, an attempt will be made to compute ETA based on your range and current speed. If speed cannot be detected, it can be manually entered through the Range and Bearing details</string>
+  <string name="preference_rab_show_eta_summary">If checked, an attempt will be made to compute ETA based on your range and current speed. If speed cannot be detected, it can be manually entered through the Range and Bearing details.</string>
   <string name="preference_doghouse_north_ref_title">Display °M Unit in Doghouse</string>
   <string name="preference_doghouse_north_ref_desc">Check to show the North Reference units (°M) on bearing readings in doghouses. Uncheck to hide those units.</string>
   <string name="route_download_range">Route Download Range (m)</string>
@@ -3660,7 +3660,7 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
   <string name="stale_item_cleanup">Stale item clean up time</string>
   <string name="attempt_disable_media_scanner">Attempt to Disable Media Scanner</string>
   <string name="preferences_text701">Upload Debug Logs</string>
-  <string name="preferences_text701s">If checked debug logs (Logcat and Network Traffic) will be uploaded to TAK Server</string>
+  <string name="preferences_text701s">If checked debug logs (Logcat and Network Traffic) will be uploaded to TAK Server.</string>
   <string name="network_data_restriction">Warning: Network Data Restriction Enabled</string>
   <string name="network_data_restriction_summary">Tap and enable \'Allow background data usage\' to allow the app to access the network without restriction.</string>
   <string name="ps_restriction">Warning: Power Saving Restriction Enabled</string>
@@ -3733,7 +3733,7 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
   <string name="pointDroppingBehavior">Point Dropping Behavior</string>
   <string name="lockBehavior">Lock Behavior</string>
   <string name="forceCenterMoving">Force Center while Moving</string>
-  <string name="forceCenterMovingSummary">Enabling this preference will result in the self marker remaining centered while moving in track up mode, This overrides the default behavior of floating the self icon to the bottom of the screen when moving to give the user a more 360 degree view.</string>
+  <string name="forceCenterMovingSummary">Enabling this preference will result in the self marker remaining centered while moving in track up mode. This overrides the default behavior of floating the self icon to the bottom of the screen when moving to give the user a more 360 degree view.</string>
   <string name="mission_package_remarks_hint">Enter description and #hashtags here</string>
   <string name="install_date">Install Date</string>
   <string name="update_date">Update Date</string>
@@ -3757,7 +3757,7 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
   <string name="outline_only">Outline Only</string>
   <string name="breadcrumb_color">Breadcrumb Color</string>
   <string name="preferences_text220a">Secure Server port</string>
-  <string name="preferences_text221a">Secure Port of the file sharing Server</string>
+  <string name="preferences_text221a">Secure port of the file sharing Server</string>
   <string name="fssystem_fiveline">"FS System "</string>
   <string name="login_to">Login to %s</string>
   <string name="show_password">Show Password</string>
@@ -3786,7 +3786,7 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
   <string name="civ_SPI_prompt">Press the DP button to toggle between movable and pinned state. Long press to remove.</string>
   <string name="civ_fire_control_prefs">Digital Pointer Toolbar Preferences</string>
   <string name="civ_fires_prefs">Digital Pointer Preferences</string>
-  <string name="civ_adjust_fire_settings">Adjust preferences for the Digital Pointer toolbar</string>
+  <string name="civ_adjust_fire_settings">Adjust the Digital Pointer Toolbar Preferences</string>
   <string name="civ_cot2525C" translatable="false">Markers</string>
   <string name="civ_s2525C">Markers</string>
   <string name="civ_default_cot_mapping">Default Mapping</string>
@@ -3795,8 +3795,8 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
   <string name="tadilj_id2">Datalink ID</string>
   <string name="tadilj_self_type">Which type of Datalink message to send for self-SA messages</string>
   <string name="tadilj_track_block">This is the start of the block of Datalink IDs that should be auto-assigned to hostiles</string>
-  <string name="tadilj_settings_summary">Manage settings for Datalink messages</string>
-  <string name="managePersistedIdsSummary">Tap to manage Persisted Datalink IDs</string>
+  <string name="tadilj_settings_summary">Adjust Datalink Messages Preferences</string>
+  <string name="managePersistedIdsSummary">Tap to manage Persisted Datalink IDs.</string>
   <string name="showTadiljIdsTitle">Show Datalink IDs</string>
   <string name="showTadiljIdsSummary">If checked other users\' Datalink IDs will appear on the map</string>
   <string name="replaceTadiljIdsCallsignTitle">Replace s with Datalink ID</string>
@@ -3810,14 +3810,14 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
   <string name="civ_place_local_spi">Place Local DP</string>
   <string name="civ_spi_update_delay">DP Update Period</string>
   <string name="civ_spi_update_delay_summary">The maximum delay between sending updates for the DP point, if enabled (in seconds) even if the DP is not modified.   Moving a DP point locally will generate updates immediately.</string>
-  <string name="civ_bloodhound_text9">Enable Auto Zoom feature to display self and DP in map view when tool is first launched</string>
+  <string name="civ_bloodhound_text9">Enable Auto Zoom feature to display self and DP in map view when tool is first launched.</string>
   <string name="civ_imagery_change_summ">In this version, the Image Overlay tab has been fully migrated to the Overlay Manager.\nImage Overlay files, in TIF or KMZ file format, should be placed in the atak/grg folder on either the sdcard or the internal memory.\n\nImagery based map products (pfps, native, layers) should now be placed in the atak/imagery folder either on the sdcard or the internal memory.\n\nOverlay products like KML, KMZ, LPT, DRW, etc should be placed in the atak/overlay folder either on the sdcard or internal memory.</string>
   <string name="civ_point_dropper_text40">Invalid DP update delay set. Resetting to default value 5.</string>
   <string translatable="false" name="repeater_in_contact">In Contact</string>
   <string name="civ_fireSpiNumber">Number of DP</string>
-  <string name="civ_fireSpiNumberSummary">Number of DPs to show in the Digital Pointer toolbar</string>
+  <string name="civ_fireSpiNumberSummary">Number of DPs to show in the Digital Pointer toolbar.</string>
   <string name="civ_spi_redx_fah">DP/RedX FAH Width</string>
-  <string name="civ_spi_redx_fah_summary">Sets the width of the FAH cone (in degrees) when enabled from a DP or the Red X (rounds to the closest increment of 10)</string>
+  <string name="civ_spi_redx_fah_summary">Sets the width of the FAH cone (in degrees) when enabled from a DP or the Red X (rounds to the closest increment of 10).</string>
   <!-- already a mil equiv -->
   <string name="actionbar_firetools">Digital Pointer Tools</string>
   <!-- possibly unused -->
@@ -4011,7 +4011,7 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
   <string name="intensity_label">Intensity:</string>
   <string name="details_label">Details</string>
   <string name="viewshed_label">Viewshed</string>
-  <string name="downloading_message">Downloading...</string>
+  <string name="downloading_message">Downloading…</string>
   <string name="sun_moon_illumination">Sun/Moon Illumination</string>
   <string name="sun_moon_illumination_description">Illuminate maps using the position of the sun/moon.</string>
   <string name="simulated_date_and_time">Date and time:</string>
@@ -4061,7 +4061,7 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
   <string name="ellipse_point3_prompt">Select depth of ellipse.</string>
   <string name="ellipse_edit_prompt">Drag or long-press markers to edit the ellipse.</string>
   <string name="ellipse_label_format">W: %1$s  L: %2$s</string>
-  <string name="pref_nav_orientation_title">Tool Bar Side</string>
+  <string name="pref_nav_orientation_title">Toolbar Side</string>
   <string name="pref_nav_orientation_summary">Set which side of the screen to display the main toolbar.</string>
   <string name="pref_self_coord_info">Self Coordinate Information</string>
   <string name="pref_self_coord_info_summary">Set where self coordinate information is displayed on the screen.</string>
@@ -4077,7 +4077,7 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
   <string name="fill_color">Fill</string>
   <string name="failed_to_show_map_item_list">Failed to show map item list</string>
   <string name="elevation_server_title">Elevation Server</string>
-  <string name="elevation_server_summary">The publicly facing elevation server to pull data from</string>
+  <string name="elevation_server_summary">The publicly facing elevation server to pull data from.</string>
   <string name="elevation_downloader">Elevation Downloader</string>
   <string name="elevation_downloader_summary">Attempts to mass download elevation data for the entire world from the server and gives the user options for which hemisphere they are in.</string>
   <string name="stream_elevation_title">Stream Elevation Data</string>
@@ -4094,15 +4094,67 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
   <string name="legacy_wr_redirect_title">Legacy Wave Relay Redirect</string>
   <string name="legacy_wr_redirect_summary">Enable when using ATAK with a Wave Relay Radio when the Wave Relay Radio Control Plugin is not installed. It is recommended that users install the Wave Relay Radio Plugin.</string>
   <string name="device_details_title">Device Details</string>
-  <string name="device_details_summary">Hardware Details for remote help and support</string>
+  <string name="device_details_summary">Hardware Details for remote help and support.</string>
   <string name="select_content_type_to_add">Select Content Type to Add</string>
   <string name="single_multip_layer_prompt">Single or Multiple layers</string>
   <string name="single">Single</string>
   <string name="multiple">Multiple</string>
   <string name="agregated_layer_title">Provide a name for the aggregated layer</string>
   <string name="layers_can_be_aggregated">The selected layers can be aggregated into a single layer, would you to create a single layer or multiple layers based on your selection?</string>
-  <string name="querying_the_server">Querying the Server...</string>
+  <string name="querying_the_server">Querying the Server…</string>
   <string name="unable_to_edit_feature">Unable to edit this feature</string>
   <string name="unable_to_edit_feature_set">Unable to edit this feature set</string>
   <string name="edit_features">Edit Features</string>
+  <string name="pref_missionpkg_legacy_http_en">Allow for HTTP transfers for legacy clients</string>
+  <string name="pref_missionpkg_legacy_http_title">Allow HTTP transfers</string>
+  <string name="select_harris_sa_radio">Select a Radio for Harris SA</string>
+  <string name="harris_sa_failed_to_configure">Failed to Configure Radio</string>
+    <string name="quick_pic_preferences">Quick Pic Preferences</string>
+  <string name="camera_app_summary">Select the application to be used for quick pictures</string>
+  <string name="camera_app_title">Camera Application</string>
+    <string name="user_feedback">User Feedback</string>
+  <string name="user_feedback_summary">Allows for user provided feedback to be captured and submitted to a TAK Server</string>
+    <string name="feedback">Feedback</string>
+    <string name="associated_files">Associated Files</string>
+    <string name="no_files_selected_to_remove">No files were selected to remove.</string>
+  <string name="unable_to_determine_file_type">Unable to determine the appropriate file type  for %s</string>
+  <string name="unable_to_find_application">Unable to find application to view %s</string>
+<string name="error_occurred_submtting_feedback">Error occurred submitting the user feedback for %s</string>
+
+  <string name="callsign_and_device_preferences">Callsign and Device Preferences</string>
+  <string name="control_preferences">Control Preferences</string>
+  <string name="network_preferences">Network Preferences</string>
+  <string name="legacy_preferences">Legacy Preferences</string>
+  <string name="about_atak">About ATAK</string>
+  <string name="callsign_prefs">Callsign Preferences</string>
+  <string name="bluetooth">Bluetooth</string>
+  <string name="contact_preferences">Contact Preferences</string>
+  <string name="encryp_pass">Encryption Password</string>
+  <string name="pref_manag">Preference Management</string>
+  <string name="spec_tool_pref">Specific Tool Preferences</string>
+  <string name="self_coord">Self Coordinate</string>
+  <string name="datalink_prefs">Datalink Preferences</string>
+  <string name="server_connections">Server Connections</string>
+  <string name="add_disp_opt">Additional Display Options</string>
+  <string name="disable_keyguard">Disable KeyGuard</string>
+  <string name="forced_air_mode">Forced Airplane Mode</string>
+  <string name="tak_suppor_info">TAK Support Information</string>
+  <string name="reset_hints">Reset Hints</string>
+  <string name="atak_docs">ATAK Documents</string>
+  <string name="device_details">Device Details</string>
+  <string name="tak_init_devic_conf">TAK Initial Device Configurations</string>
+    <string name="network_connections">Network Preferences</string>
+    <string name="adjust_network_connections">Adjust network connections</string>
+  <string name="modify_contact_settings">Modify contact settings</string>
+  <string name="filter">Filter</string>
+  <string name="filter_contacts">Filter Contacts</string>
+    <string name="hide_allFiltered">Hide Filtered Contacts</string>
+    <string name="additional_self_coord_controls">Additional Self Coordinate Controls</string>
+  <string name="additional_self_coord_control_summ">Changes to the actions associated with the Self Coordinate Display</string>
+    <string name="legacy_pref_summary">Display older legacy device preferences. These preferences may be removed in future versions.</string>
+    <string name="tak_server_setup">TAK Server Setup</string>
+  <string name="tak_server_setup_message">No TAK Server configured. Would you like to go to Network Settings?</string>
+    <string name="would_you_like_to_export_mission_pkg">Would you like to export the file as a mission package?</string>
+    <string name="import_file">Import File</string>
+    <string name="userfeedback_submit_message">Submitted %s to the support/log directory.   This feedback will be automatically published to the tak server if configured.</string>
 </resources>

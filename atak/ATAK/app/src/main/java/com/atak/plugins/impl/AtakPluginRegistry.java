@@ -32,6 +32,7 @@ import com.atakmap.android.util.ATAKConstants;
 import com.atakmap.app.BuildConfig;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
+import gov.tak.api.util.Disposable;
 
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.ElementList;
@@ -78,7 +79,6 @@ public final class AtakPluginRegistry {
             "308202c43082024aa0030201020214643352031f1da2384eadb9eaf1daed408eac13da300a06082a8648ce3d040302308197310b30090603550406130255533111300f06035504080c0856697267696e69613115301306035504070c0c466f72742042656c766f6972310c300a060355040a0c0354414b31173015060355040b0c0e50726f647563742043656e7465723137303506035504030c2e54414b2050726f647563742043656e746572204154414b205472757374656420506c7567696e2052656c656173653020170d3230303532313039333530365a180f32303530303531343039333530365a308197310b30090603550406130255533111300f06035504080c0856697267696e69613115301306035504070c0c466f72742042656c766f6972310c300a060355040a0c0354414b31173015060355040b0c0e50726f647563742043656e7465723137303506035504030c2e54414b2050726f647563742043656e746572204154414b205472757374656420506c7567696e2052656c656173653076301006072a8648ce3d020106052b81040022036200044feb54baeaf9a24f3dc0181daf8a2871840f2c3209b1f2135da72b5ee356a06ae36ca5b5542c7b21da5b7e7a8d17af93b0e6d49e8a6076f988e4b011a106e68c0f740eece9f1bd71254d0b1498ee923598dd5c8ad6eef3856f024b24fccdb528a3533051301d0603551d0e04160414c22b57a8e00e0a32ebc128d7833762bf65dbc49e301f0603551d23041830168014c22b57a8e00e0a32ebc128d7833762bf65dbc49e300f0603551d130101ff040530030101ff300a06082a8648ce3d0403020368003065023055cea4a942e0d6d4710a3fa506eb1163f6d39cec289cf3b5ac9368a709564bd0426850c455178ba357b40dfdf46c2d5f023100f5b493c98edc08744d42625db0040b33e05334a39a41d33759fc8f4270089932532085904cbeedddcd4bf3719213df7e",
             "308202c73082024ea00302010202143efff3c9fc6b6865c29bb23af07fa7645727e650300a06082a8648ce3d040302308199310b30090603550406130255533111300f06035504080c0856697267696e69613115301306035504070c0c466f72742042656c766f6972310c300a060355040a0c0354414b31173015060355040b0c0e50726f647563742043656e7465723139303706035504030c3054414b2050726f647563742043656e746572204154414b20556e7472757374656420506c7567696e2052656c656173653020170d3230313030383135343631375a180f32303530313030313135343631375a308199310b30090603550406130255533111300f06035504080c0856697267696e69613115301306035504070c0c466f72742042656c766f6972310c300a060355040a0c0354414b31173015060355040b0c0e50726f647563742043656e7465723139303706035504030c3054414b2050726f647563742043656e746572204154414b20556e7472757374656420506c7567696e2052656c656173653076301006072a8648ce3d020106052b8104002203620004bbf9dba5553faaee4558788805494c1a3d8bc0a5eca4c59bce62fcb68b979993877f5c65190454e1700c98184163d022b8d91648ca6898b41b2cf56b26ce19e3794a4bdeb1c7c08f021d8fb7b258b904d94c52ab1ffb223975bd6365127083cfa3533051301d0603551d0e04160414893a2594bd35f780183a882731d180de056b8326301f0603551d23041830168014893a2594bd35f780183a882731d180de056b8326300f0603551d130101ff040530030101ff300a06082a8648ce3d040302036700306402306a0b7e55fb2eb46584bf79dbac99720ed368cd0f9e4c333893aaa1763104472ce60c899136cb3fb3a847ee7d6dc9029602300afbc42742092b1f499cb7febd33543c0a24afe21aee6820d1b917375bd0204406751c647d76071cd61e16c1042d796a",
     };
-
 
     private boolean allTrusted = true;
 
@@ -191,7 +191,8 @@ public final class AtakPluginRegistry {
             Log.d(TAG, "error occurred verifying signature", e);
         }
 
-        if(PluginValidator.checkAppTransparencySignature(context, pkgname, ACCEPTABLE_KEY_LIST))
+        if (PluginValidator.checkAppTransparencySignature(context, pkgname,
+                ACCEPTABLE_KEY_LIST))
             return true;
 
         Log.d(TAG, "signature mismatch[" + pkgname + "]");
@@ -221,9 +222,6 @@ public final class AtakPluginRegistry {
         return false;
     }
 
-
-
-
     /**
      * Verifies that a specific package can be trusted.
      * @param context the context to use
@@ -232,11 +230,14 @@ public final class AtakPluginRegistry {
      */
     public static boolean verifyTrust(final Context context,
             final String pkgname) {
-        final String[] trustedShortHash = new String[] {"213df7e", "f05b36e", "a9b8ee0", "089ce303"};
-        final List<String> trustedKeys = new ArrayList<>(trustedShortHash.length);
-        for(String publicKey : ACCEPTABLE_KEY_LIST) {
-            for(String shortHash : trustedShortHash) {
-                if(publicKey.endsWith(shortHash)) {
+        final String[] trustedShortHash = new String[] {
+                "213df7e", "f05b36e", "a9b8ee0", "089ce303"
+        };
+        final List<String> trustedKeys = new ArrayList<>(
+                trustedShortHash.length);
+        for (String publicKey : ACCEPTABLE_KEY_LIST) {
+            for (String shortHash : trustedShortHash) {
+                if (publicKey.endsWith(shortHash)) {
                     trustedKeys.add(publicKey);
                 }
             }
@@ -247,7 +248,7 @@ public final class AtakPluginRegistry {
                     PackageManager.GET_SIGNATURES);
             for (final Signature sig : pi.signatures) {
                 final String val = sig.toCharsString();
-                for(String trustedKey : trustedKeys) {
+                for (String trustedKey : trustedKeys) {
                     if (val.equals(trustedKey))
                         return true;
                 }
@@ -256,13 +257,14 @@ public final class AtakPluginRegistry {
         } catch (Exception ignored) {
         }
 
-
         // Need to perform both a check against the wider acceptable key list in order to properly
         // cache the case where a public key in the acceptable key list verifies the validity of the
         // app transparency signature/message.  Then check the much more narrow scoped keys to see
         // if it is trusted.
-        if (PluginValidator.checkAppTransparencySignature(context, pkgname, ACCEPTABLE_KEY_LIST) &&
-                PluginValidator.checkAppTransparencySignature(context, pkgname, (String[])trustedKeys.toArray(new String[0])))
+        if (PluginValidator.checkAppTransparencySignature(context, pkgname,
+                ACCEPTABLE_KEY_LIST) &&
+                PluginValidator.checkAppTransparencySignature(context, pkgname,
+                        (String[]) trustedKeys.toArray(new String[0])))
             return true;
 
         return false;
@@ -446,11 +448,11 @@ public final class AtakPluginRegistry {
                     // add it to the list of plugin descriptors
                     pluginDescriptorSet.add(plugin);
                     Log.d(TAG, "Adding plugin app: "
-                            + app.toString() + ", total plugins: "
+                            + app + ", total plugins: "
                             + pluginDescriptorSet.size());
                 } else {
                     Log.d(TAG, "Skipping non plugin app: "
-                            + app.toString());
+                            + app);
                 }
                 numCompleted++;
 
@@ -583,7 +585,7 @@ public final class AtakPluginRegistry {
                 if (ext == null) {
                     Log.w(TAG,
                             "failed to load extension: "
-                                    + extension.toString());
+                                    + extension);
                     continue;
                 }
                 ret.add(ext);
@@ -605,7 +607,7 @@ public final class AtakPluginRegistry {
     private <T> T loadExtension(Extension extension) {
         Object ret = null;
         if (extension.parent == null || extension.parent.appInfo == null) {
-            Log.w(TAG, "plugin extension invalid: " + extension.toString());
+            Log.w(TAG, "plugin extension invalid: " + extension);
             return null;
         }
 
@@ -1084,7 +1086,7 @@ public final class AtakPluginRegistry {
                     .getBoolean(SHOULD_LOAD + plugin.getPackageName(),
                             false);
 
-            Log.d(TAG, plugin.toString() + " will "
+            Log.d(TAG, plugin + " will "
                     + (plugin.shouldLoad ? "load" : "NOT load"));
 
             //if we processed plugin.xml, lets also pull plugin-api from AndroidManifest.xml
@@ -1295,9 +1297,9 @@ public final class AtakPluginRegistry {
                                             + extension.impl);
 
                         }
-                        //Note, below we handle tool unloading by removing BroadcastReceivers and ActionBar menus
-                        //TODO what if tool.getTool().onActivate is still active for this tool?
-                        // i.e. user recently launched tool via action bar Do we need to de-activate?
+
+                        if (o instanceof Disposable)
+                            ((Disposable) o).dispose();
                     }
                 }
                 PluginLayoutInflater.dispose();
@@ -1384,7 +1386,7 @@ public final class AtakPluginRegistry {
                 if (!plugin.shouldLoad) {
                     Log.d(TAG,
                             "!should load, skipping Lifecycle plugins extensions: "
-                                    + plugin.toString());
+                                    + plugin);
                     continue;
                 }
 
@@ -1447,7 +1449,7 @@ public final class AtakPluginRegistry {
                 if (!plugin.shouldLoad) {
                     Log.d(TAG,
                             "!should load, skipping ToolDescriptor plugin extensions: "
-                                    + plugin.toString());
+                                    + plugin);
                     continue;
                 }
 

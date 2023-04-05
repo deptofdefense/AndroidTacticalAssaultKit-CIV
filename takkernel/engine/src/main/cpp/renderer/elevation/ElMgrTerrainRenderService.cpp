@@ -5,6 +5,7 @@
 #include <cassert>
 
 #include "core/GeoPoint2.h"
+#include "core/ProjectionFactory3.h"
 #include "elevation/ElevationManager.h"
 #include "elevation/ElevationSource.h"
 #include "elevation/ElevationSourceManager.h"
@@ -201,6 +202,7 @@ namespace
         const std::size_t numVerts = (numPostVerts + numSkirtVerts);
         const std::size_t vb_size = numVerts *
                                         ((3u * sizeof(float)) + // position
+                                         (3u * sizeof(float)) + // ecef position
                                          (4u*sizeof(int8_t)) + // normal
                                          sizeof(float)); // no data mask
         const std::size_t buf_size = ib_size + vb_size;
@@ -307,6 +309,68 @@ namespace
     TAKErr fetch(std::shared_ptr<TerrainTile> &value, double *els, const double resolution, const Envelope2 &mbb, const int srid, const std::size_t numPostsLat, const std::size_t numPostsLng, const MemBuffer2 &edgeIndices, const bool fetchEl, const bool constrainQueryRes, const bool fillWithHiRes, BlockPoolAllocator &allocator, PoolAllocator<TerrainTile> &tileAllocator) NOTHROWS;
     TAKErr derive(std::shared_ptr<TerrainTile> &value, const Envelope2 &mbb, const int srid, const std::size_t numPostsLat, const std::size_t numPostsLng, const MemBuffer2 &edgeIndices, const TerrainTile &deriveFrom, BlockPoolAllocator &allocator, PoolAllocator<TerrainTile> &tileAllocator) NOTHROWS;
     TAKErr subscribeOnContentChangedListener(void *opaque, ElevationSource &src) NOTHROWS;
+
+    struct TerrainTileBuilder
+    {
+    public :
+        Envelope2 mbb;
+        std::size_t numPostsLat;
+        std::size_t numPostsLng;
+        double cellHeightLat;
+        double cellWidthLng;
+        double localOriginX;
+        double localOriginY;
+        double localOriginZ;
+        std::size_t numEdgeVertices;
+        std::size_t numSkirtIndices;
+        std::size_t numIndices;
+        std::size_t skirtOffset;
+        std::size_t numPostVerts;
+        std::size_t numSkirtVerts;
+        std::size_t numVerts;
+        double* els{ nullptr };
+        VertexDataLayout layout;
+        const MemBuffer2 &edgeIndices_;
+    public :
+        TerrainTileBuilder(const Envelope2& mbb, const std::size_t numPostsLat, const std::size_t numPostsLng, const MemBuffer2 &edgeIndices) NOTHROWS;
+    public :
+        TAKErr build(std::shared_ptr<TerrainTile>& value, const float skirtHeight, BlockPoolAllocator& allocator, PoolAllocator<TerrainTile>& tileAllocator) NOTHROWS;
+    private :
+        virtual TAKErr fillPositions(MemBuffer2& positions, MemBuffer2& noDataMask, bool& hasData, double& minEl, double& maxEl) NOTHROWS = 0;
+        virtual TAKErr generateNormals(MemBuffer2& normals, const MemBuffer2& edgeIndices, const bool hasData) NOTHROWS = 0;
+    };
+
+    struct FetchTileBuilder : public TerrainTileBuilder
+    {
+    public :
+        double* els;
+        double resolution;
+    public :
+        FetchTileBuilder(const Envelope2& mbb, const std::size_t numPostsLat, const std::size_t numPostsLng, const MemBuffer2 &edgeIndices, double *els, const double resolution) NOTHROWS;
+    private :
+        virtual TAKErr fillPositions(MemBuffer2& positions, MemBuffer2& noDataMask, bool& hasData, double& minEl, double& maxEl) NOTHROWS override;
+        virtual TAKErr generateNormals(MemBuffer2& normals, const MemBuffer2& edgeIndices, const bool hasData) NOTHROWS override;
+    };
+
+    struct NoDataTileBuilder : public TerrainTileBuilder
+    {
+    public :
+        NoDataTileBuilder(const Envelope2& mbb, const std::size_t numPostsLat, const std::size_t numPostsLng, const MemBuffer2 &edgeIndices) NOTHROWS;
+    private :
+        virtual TAKErr fillPositions(MemBuffer2& positions, MemBuffer2& noDataMask, bool& hasData, double& minEl, double& maxEl) NOTHROWS override;
+        virtual TAKErr generateNormals(MemBuffer2& normals, const MemBuffer2& edgeIndices, const bool hasData) NOTHROWS override;
+    };
+
+    struct DeriveTileBuilder : public TerrainTileBuilder
+    {
+    public :
+        DeriveTileBuilder(const Envelope2& mbb, const std::size_t numPostsLat, const std::size_t numPostsLng, const MemBuffer2& edgeIndices, const TerrainTile& deriveFrom) NOTHROWS;
+    private :
+        virtual TAKErr fillPositions(MemBuffer2& positions, MemBuffer2& noDataMask, bool& hasData, double& minEl, double& maxEl) NOTHROWS override;
+        virtual TAKErr generateNormals(MemBuffer2& normals, const MemBuffer2& edgeIndices, const bool hasData) NOTHROWS override;
+    public :
+        const TerrainTile& deriveFrom;
+    };
 }
 
 ElMgrTerrainRenderService::ElMgrTerrainRenderService(RenderContext &renderer_) NOTHROWS :
@@ -354,21 +418,12 @@ ElMgrTerrainRenderService::ElMgrTerrainRenderService(RenderContext &renderer_) N
     request.srid = -1;
     request.sceneVersion = -1;
 
-#ifdef _MSC_VER
-    const bool hiresMode = !!ConfigOptions_getIntOptionOrDefault("glmapview.surface-rendering-v2", 1);
-#else
-    const bool hiresMode = !!ConfigOptions_getIntOptionOrDefault("glmapview.surface-rendering-v2", 1);
-#endif
-
-    // default to legacy values if not using high-res mode
-    if(hiresMode) {
-        fetchResolutionAdjustment = 2.0;
+    fetchResolutionAdjustment = 2.0;
 #ifdef __ANDROID__
-        nodeSelectResolutionAdjustment = 4.0;
+    nodeSelectResolutionAdjustment = 4.0;
 #else
-        nodeSelectResolutionAdjustment = 1.0;
+    nodeSelectResolutionAdjustment = 4.0;
 #endif
-    }
 
     fetchResolutionAdjustment = getDoubleOpt("terrain.resadj", fetchResolutionAdjustment);
 
@@ -974,7 +1029,7 @@ bool ElMgrTerrainRenderService::QuadNode::collect(ElMgrTerrainRenderService::Wor
 #ifdef __ANDROID__
             bool recurse = (sse > 5.0);
 #else
-            bool recurse = (sse > 2.0);
+            bool recurse = (sse > 5.0);
 #endif
             if(recurse) {
                 bool isect = false;
@@ -1214,354 +1269,13 @@ namespace
 {
     TAKErr fetch(std::shared_ptr<TerrainTile> &value_, double *els, const double resolution, const Envelope2 &mbb, const int srid, const std::size_t numPostsLat, const std::size_t numPostsLng, const MemBuffer2 &edgeIndices_, const bool fetchEl, const bool constrainQueryRes, const bool fillWithHiRes, BlockPoolAllocator &allocator, PoolAllocator<TerrainTile> &tileAllocator) NOTHROWS
     {
-        TAKErr code(TE_Ok);
-        std::shared_ptr<TerrainTile> value;
-        const double cellHeightLat = ((mbb.maxY - mbb.minY) / (numPostsLat - 1));
-        const double cellWidthLng = ((mbb.maxX - mbb.minX) / (numPostsLng - 1));
-        // number of edge vertices is equal to perimeter length, plus one, to
-        // close the linestring
-        const std::size_t numEdgeVertices = ((numPostsLat-1u)*2u)+((numPostsLng-1u)*2u) + 1u;
-
         if (fetchEl) {
-            // fetch requested region plus a one post border for normals generation
-            double *pts = els + ((numPostsLat+2u) * (numPostsLng+2u));
-            std::size_t numPosts = 0u;
-            for (int postLat = -1; postLat < (int)(numPostsLat+1u); postLat++) {
-                double ptLat =  mbb.minY + cellHeightLat * postLat;
-                if(ptLat > 90.0)
-                    ptLat = 180.0 - ptLat;
-                else if(ptLat < -90.0)
-                    ptLat = -180.0 - ptLat;
-                for (int postLng = -1; postLng < (int)(numPostsLng+1u); postLng++) {
-                    double ptLng = mbb.minX + cellWidthLng * postLng;
-                    if(ptLng < -180.0)
-                        ptLng += 360.0;
-                    else if(ptLng > 180.0)
-                        ptLng -= 360.0;
-                    pts[numPosts*2u] = ptLng;
-                    pts[numPosts*2u+1u] = ptLat;
-                    numPosts++;
-                }
-            }
-
-            ElevationSource::QueryParameters params;
-            params.order = TAK::Engine::Port::Collection<ElevationSource::QueryParameters::Order>::Ptr(new TAK::Engine::Port::STLVectorAdapter<ElevationSource::QueryParameters::Order>(), Memory_deleter_const<TAK::Engine::Port::Collection<ElevationSource::QueryParameters::Order>, TAK::Engine::Port::STLVectorAdapter<ElevationSource::QueryParameters::Order>>);
-            code = params.order->add(ElevationSource::QueryParameters::ResolutionDesc);
-            TE_CHECKRETURN_CODE(code);
-            if(constrainQueryRes)
-                params.maxResolution = resolution;
-            code = Polygon2_fromEnvelope(params.spatialFilter, mbb);
-            TE_CHECKRETURN_CODE(code);
-
-            // try to fill all values using high-to-low res elevation chunks
-            // covering the AOI
-            if(ElevationManager_getElevation(els, numPosts, pts+1u, pts, 2u, 2u, 1u, params) == TE_Done && constrainQueryRes) {
-                // if there are holes, fill in using low-to-high res elevation
-                // chunks covering the AOI
-                params.order = TAK::Engine::Port::Collection<ElevationSource::QueryParameters::Order>::Ptr(new TAK::Engine::Port::STLVectorAdapter<ElevationSource::QueryParameters::Order>(), Memory_deleter_const<TAK::Engine::Port::Collection<ElevationSource::QueryParameters::Order>, TAK::Engine::Port::STLVectorAdapter<ElevationSource::QueryParameters::Order>>);
-                code = params.order->add(ElevationSource::QueryParameters::ResolutionAsc);
-                params.maxResolution = NAN;
-
-                std::size_t numpts2 = 0u;
-                array_ptr<double> pts2(new double[(numPostsLat*numPostsLng)*3u]);
-                for(std::size_t i = 0u; i < (numPostsLat*numPostsLng); i++) {
-                    if (TE_ISNAN(els[i])) {
-                        pts2[numpts2*3u] = pts[i*2+1u];
-                        pts2[numpts2*3u+1u] = pts[i*2+1u];
-                        pts2[numpts2*3+2u] = NAN;
-
-                        numpts2++;
-                    }
-                }
-
-                // fetch the elevations
-                ElevationManager_getElevation(pts2.get()+2u, (numPostsLat*numPostsLng), pts2.get()+1u, pts2.get(), 3u, 3u, 3u, params);
-
-                // fill the holes
-                std::size_t pts2Idx = 0;
-                for(std::size_t i = 0u; i < (numPostsLat*numPostsLng); i++) {
-                    if (TE_ISNAN(els[i])) {
-                        els[i] = pts2[pts2Idx*3u+2u];
-                        pts2Idx++;
-                        if(pts2Idx == numpts2)
-                            break;
-                    }
-                }
-            }
-        }
-
-        const double localOriginX = (mbb.minX+mbb.maxX)/2.0;
-        const double localOriginY = (mbb.minY+mbb.maxY)/2.0;
-        const double localOriginZ = 0.0;
-
-        {
-            std::unique_ptr<TerrainTile, void(*)(const TerrainTile *)> tileptr(nullptr, nullptr);
-            code = tileAllocator.allocate(tileptr);
-            TE_CHECKRETURN_CODE(code);
-
-            value = std::move(tileptr);
-        }
-        value->data.srid = 4326;
-        value->data.localFrame.setToTranslate(localOriginX, localOriginY, localOriginZ);
-
-        const float skirtHeight = 500.0;
-
-        std::size_t numSkirtIndices;
-        code = Skirt_getNumOutputIndices(&numSkirtIndices, GL_TRIANGLE_STRIP, numEdgeVertices);
-        const std::size_t numIndices = GLTexture2_getNumQuadMeshIndices(numPostsLat - 1u, numPostsLng - 1u)
-                               + 2u // degenerate link to skirt
-                               + numSkirtIndices;
-
-        const std::size_t skirtOffset = GLTexture2_getNumQuadMeshIndices(numPostsLat - 1u, numPostsLng - 1u);
-
-        const std::size_t ib_size = numIndices * sizeof(uint16_t);
-
-        const std::size_t numPostVerts = numPostsLat * numPostsLng;
-        const std::size_t numSkirtVerts = Skirt_getNumOutputVertices(numEdgeVertices);
-        const std::size_t numVerts = (numPostVerts + numSkirtVerts);
-
-        std::unique_ptr<void, void(*)(const void *)> buf(nullptr, nullptr);
-        // allocate the mesh data from the pool
-        code = allocator.allocate(buf);
-
-        MemBuffer2 indices(static_cast<uint16_t *>(buf.get()), numIndices);
-        code = createHeightmapMeshIndices(indices, edgeIndices_, numPostsLat, numPostsLng);
-        TE_CHECKRETURN_CODE(code);
-
-        // duplicate the `edgeIndices` buffer for independent position/limit
-        MemBuffer2 edgeIndices(edgeIndices_.get(), edgeIndices_.size());
-        edgeIndices.limit(edgeIndices_.limit());
-        edgeIndices.position(edgeIndices_.position());
-
-        // all positions followed by all normals followed by no data mask
-        VertexDataLayout layout;
-        layout.interleaved = true;
-        layout.attributes = TEVA_Position | TEVA_Normal | TEVA_Reserved0;
-        // position
-        layout.position.offset = 0u;
-        layout.position.type = TEDT_Float32;
-        layout.position.size = 3u;
-        layout.position.stride = layout.position.size * DataType_size(layout.position.type);
-        // normal
-        layout.normal.offset = layout.position.offset + (numVerts * layout.position.stride);
-        layout.normal.type = TEDT_Int8;
-        layout.normal.stride = 4u*sizeof(int8_t);
-        layout.normal.size = 3u;
-        // no data mask
-        layout.reserved[0u].offset = layout.normal.offset + (numVerts*layout.normal.stride);
-        layout.reserved[0u].type = TEDT_Float32;
-        layout.reserved[0u].stride = sizeof(float);
-        layout.reserved[0u].size = 1u;
-
-        // set up buffers for positions, normals and no-data-mask as separate views into allocated block
-        MemBuffer2 positions(static_cast<uint8_t *>(buf.get())+ib_size+layout.position.offset, numVerts*layout.position.stride);
-        MemBuffer2 normals(static_cast<uint8_t*>(buf.get()) + ib_size + layout.normal.offset, numVerts*layout.normal.stride);
-        MemBuffer2 noDataMask(static_cast<uint8_t*>(buf.get()) + ib_size + layout.reserved[0].offset, numVerts*layout.reserved[0u].stride);
-
-        bool hasData = fetchEl && !TE_ISNAN(els[0]);
-        double minEl = !hasData ? 0.0 : els[0];
-        double maxEl = !hasData ? 0.0 : els[0];
-        for (std::size_t postLat = 0u; postLat < numPostsLat; postLat++) {
-            std::size_t postRowIdx = 1u+((numPostsLng+2u)*(postLat+1u));
-            // tile row
-            for(std::size_t postLng = 0u; postLng < numPostsLng; postLng++) {
-                const double el = !fetchEl ? NAN : els[postRowIdx + postLng];
-                const bool elnan = TE_ISNAN(el);
-                const double lat = mbb.minY+cellHeightLat*postLat;
-                const double lng = mbb.minX+cellWidthLng*postLng;
-                const double hae = elnan ? 0.0 : el;
-
-                if (!elnan) {
-                    if(hae < minEl)         minEl = hae;
-                    else if(hae > maxEl)    maxEl = hae;
-                    hasData = true;
-                } else if(fetchEl) {
-                    // reset invalid source elevations for normal generation
-                    els[postRowIdx + postLng] = 0.0;
-                }
-
-                // reset any no data elevation in data region for normal generation
-                if (fetchEl && elnan)
-                    els[postRowIdx + postLng] = 0.0;
-
-                float xyz[3u] = {
-                    (float)(lng-localOriginX),
-                    (float)(lat-localOriginY),
-                    (float)(hae-localOriginZ),
-                };
-                code = positions.put<float>(xyz, 3u);
-                TE_CHECKBREAK_CODE(code);
-                // no data mask
-                code = noDataMask.put<float>(!elnan ? 1.f : 0.f);
-                TE_CHECKBREAK_CODE(code);
-            }
-            TE_CHECKBREAK_CODE(code);
-        }
-        TE_CHECKRETURN_CODE(code);
-        positions.flip();
-
-        code = Skirt_createVertices<float, uint16_t>(positions,
-                GL_TRIANGLE_STRIP,
-                3u*sizeof(float),
-                &edgeIndices,
-                numEdgeVertices,
-                skirtHeight);
-        TE_CHECKRETURN_CODE(code);
-
-        MeshPtr terrainMesh(nullptr, nullptr);
-
-
-
-        // normal generation
-        {
-            if (hasData) {
-                // ensure no NANs on border
-                for (std::size_t i = 0u; i < (numPostsLng + 2u); i++) {
-                    if (TE_ISNAN(els[i]))
-                        els[i] = 0.0;
-                    if (TE_ISNAN(els[((numPostsLat+1u) * (numPostsLng+2u)) + i]))
-                        els[((numPostsLat+1u) * (numPostsLng+2u)) + i] = 0.0;
-                }
-                for (std::size_t i = 0u; i < (numPostsLat + 2u); i++) {
-                    const std::size_t rowStartIdx = i * (numPostsLng + 2u);
-                    if (TE_ISNAN(els[rowStartIdx]))
-                        els[rowStartIdx] = 0.0;
-                    if (TE_ISNAN(els[rowStartIdx + (numPostsLng+1u)]))
-                        els[rowStartIdx + (numPostsLng+1u)] = 0.0;
-                }
-
-                // point source data at the first post in the requested region (ignoring border)
-                MemBuffer2 elssrc(reinterpret_cast<const uint8_t*>(els + (numPostsLng+2u) + 1u), (numPostsLat+2u)*(numPostsLng+2u)*sizeof(double));
-
-                VertexArray postLayout;
-                postLayout.offset = 0u;
-                postLayout.stride = sizeof(double);
-                postLayout.type = TEDT_Float64;
-
-                VertexArray normalLayout = layout.normal;
-                normalLayout.offset = 0u;
-
-                const double scaleX = TAK::Engine::Core::GeoPoint2_approximateMetersPerDegreeLongitude((mbb.minY + mbb.maxY) / 2.0) * cellWidthLng;
-                const double scaleY = TAK::Engine::Core::GeoPoint2_approximateMetersPerDegreeLatitude((mbb.minY + mbb.maxY) / 2.0) * cellHeightLat;
-                const double scaleZ = 1.0;
-                code = Heightmap_generateNormals(normals, elssrc, numPostsLng, numPostsLat, postLayout, postLayout.stride * (numPostsLng + 2u), normalLayout, normalLayout.stride * numPostsLng, false, scaleX, scaleY, scaleZ);
-                TE_CHECKRETURN_CODE(code);
-            } else {
-                const int8_t nUp[4u] = { 0x0, 0x0, 0x7F, 0x0 };
-                for (std::size_t i = 0; i < (numPostsLat*numPostsLng); i++) {
-                    normals.put<int8_t>(nUp, 4u);
-                }
-            }
-            // set the normals on the skirt to corresponding vert.
-            // `Skirt_createVertices` will automate this for us.
-            normals.position(0u);
-            normals.limit(layout.normal.stride*numPostVerts);
-            code = Skirt_createVertices<int8_t, uint16_t>(normals,
-                    GL_TRIANGLE_STRIP,
-                    layout.normal.stride,
-                    &edgeIndices,
-                    numEdgeVertices,
-                    0);
-            TE_CHECKRETURN_CODE(code);
-        }
-
-
-        Envelope2 aabb;
-        aabb.minX = mbb.minX - localOriginX;
-        aabb.minY = mbb.minY - localOriginY;
-        aabb.minZ = (minEl-skirtHeight) - localOriginZ;
-        aabb.maxX = mbb.maxX - localOriginX;
-        aabb.maxY = mbb.maxY - localOriginY;
-        aabb.maxZ = maxEl - localOriginZ;
-
-        // create the mesh
-        code = MeshBuilder_buildInterleavedMesh(
-            terrainMesh,
-            TEDM_TriangleStrip,
-            TEWO_Clockwise,
-            layout,
-            0u,
-            nullptr,
-            aabb,
-            numVerts,
-            positions.get(),
-            TEDT_UInt16,
-            indices.limit() / sizeof(uint16_t),
-            indices.get(),
-            std::move(buf));
-
-        TE_CHECKRETURN_CODE(code);
-
-        value->data.srid = 4326;
-        value->data.value = std::move(terrainMesh);
-        value->data.localFrame.setToTranslate(localOriginX, localOriginY, localOriginZ);
-        value->data.interpolated = true;
-        value->skirtIndexOffset = skirtOffset;
-        value->aabb_wgs84 = value->data.value->getAABB();
-        value->aabb_wgs84.minX += localOriginX;
-        value->aabb_wgs84.minY += localOriginY;
-        value->aabb_wgs84.minZ += localOriginZ;
-        value->aabb_wgs84.maxX += localOriginX;
-        value->aabb_wgs84.maxY += localOriginY;
-        value->aabb_wgs84.maxZ += localOriginZ;
-        value->hasData = hasData;
-
-        value->heightmap = true;
-        value->posts_x = numPostsLng;
-        value->posts_y = numPostsLat;
-        value->invert_y_axis = true;
-        value->noDataAttr = TEVA_Reserved0;
-
-        if(srid != value->data.srid) {
-            VertexDataLayout layout_update = value->data.value->getVertexDataLayout();
-            MeshTransformOptions srcOpts;
-            srcOpts.srid = value->data.srid;
-            srcOpts.localFrame = Matrix2Ptr(&value->data.localFrame, Memory_leaker_const<Matrix2>);
-            srcOpts.layout = VertexDataLayoutPtr(&layout_update, Memory_leaker_const<VertexDataLayout>);
-            MeshTransformOptions dstOpts;
-            dstOpts.srid = srid;
-
-            MeshPtr transformed(nullptr, nullptr);
-            MeshTransformOptions transformedOpts;
-            code = Mesh_transform(transformed, &transformedOpts, *value->data.value, srcOpts, dstOpts, nullptr);
-            TE_CHECKRETURN_CODE(code);
-
-            value->data.value = std::move(transformed);
-            value->data.srid = transformedOpts.srid;
-            if(transformedOpts.localFrame.get())
-                value->data.localFrame.set(*transformedOpts.localFrame);
-            else
-                value->data.localFrame.setToIdentity();
-        }
-
-        // XXX - small downstream "optimization" pending implementation of depth hittest
-        if(srid == 4326) {
-            ElevationChunk::Data &node = value->data;
-            MeshPtr transformed(nullptr, nullptr);
-            VertexDataLayout srcLayout(node.value->getVertexDataLayout());
-            srcLayout.attributes = TEVA_Position; // hit-test only requires position data
-            MeshTransformOptions transformedOpts;
-            MeshTransformOptions srcOpts;
-            srcOpts.layout = VertexDataLayoutPtr(&srcLayout, Memory_leaker_const<VertexDataLayout>);
-            srcOpts.srid = node.srid;
-            srcOpts.localFrame = Matrix2Ptr(&node.localFrame, Memory_leaker_const<Matrix2>);
-            MeshTransformOptions dstOpts;
-            dstOpts.srid = 4978;
-            code = Mesh_transform(transformed, &transformedOpts, *node.value, srcOpts, dstOpts, nullptr);
-            TE_CHECKRETURN_CODE(code);
-
-            assert(!!transformed);
-
-            value->data_proj.srid = transformedOpts.srid;
-            if (transformedOpts.localFrame.get())
-                value->data_proj.localFrame = *transformedOpts.localFrame;
-            value->data_proj.value = std::move(transformed);
+            FetchTileBuilder ttb(mbb, numPostsLat, numPostsLng, edgeIndices_, els, constrainQueryRes ? resolution : NAN);
+            return ttb.build(value_, 500.0, allocator, tileAllocator);
         } else {
-            value->data_proj.value.reset();
-            value->data_proj.srid = -1;
+            NoDataTileBuilder ttb(mbb, numPostsLat, numPostsLng, edgeIndices_);
+            return ttb.build(value_, 500.0, allocator, tileAllocator);
         }
-        value_ = value;
-        return code;
     }
     double getHeightMapElevation(const TerrainTile &tile, const double latitude, const double longitude) NOTHROWS
     {
@@ -1642,16 +1356,91 @@ namespace
     }
     TAKErr derive(std::shared_ptr<TerrainTile>& value_, const Envelope2& mbb, const int srid, const std::size_t numPostsLat, const std::size_t numPostsLng, const MemBuffer2& edgeIndices_, const TerrainTile& deriveFrom, BlockPoolAllocator& allocator, PoolAllocator<TerrainTile>& tileAllocator) NOTHROWS
     {
-        TAKErr code(TE_Ok);
-        std::shared_ptr<TerrainTile> value;
+        if(deriveFrom.hasData) {
+            DeriveTileBuilder ttb(mbb, numPostsLat, numPostsLng, edgeIndices_, deriveFrom);
+            return ttb.build(value_, 500.0, allocator, tileAllocator);
+        } else {
+            NoDataTileBuilder ttb(mbb, numPostsLat, numPostsLng, edgeIndices_);
+            return ttb.build(value_, 500.0, allocator, tileAllocator);
+        }
+    }
 
+    bool intersects(const Frustum2& frustum, const TAK::Engine::Feature::Envelope2& aabbWCS, const int srid, const double lng) NOTHROWS
+    {
+        return (frustum.intersects(AABB(TAK::Engine::Math::Point2<double>(aabbWCS.minX, aabbWCS.minY, aabbWCS.minZ), TAK::Engine::Math::Point2<double>(aabbWCS.maxX, aabbWCS.maxY, aabbWCS.maxZ))) ||
+            ((srid == 4326) && lng * ((aabbWCS.minX + aabbWCS.maxX) / 2.0) < 0 &&
+                frustum.intersects(
+                    AABB(TAK::Engine::Math::Point2<double>(aabbWCS.minX - (360.0 * sgn((aabbWCS.minX + aabbWCS.maxX) / 2.0)), aabbWCS.minY, aabbWCS.minZ),
+                        TAK::Engine::Math::Point2<double>(aabbWCS.maxX - (360.0 * sgn((aabbWCS.minX + aabbWCS.maxX) / 2.0)), aabbWCS.maxY, aabbWCS.maxZ)))));
+    }
+    TAKErr subscribeOnContentChangedListener(void *opaque, ElevationSource &src) NOTHROWS
+    {
+        auto *arg = static_cast<SubscribeOnContentChangedListenerBundle *>(opaque);
+        LockPtr lock(nullptr, nullptr);
+        if(arg->mutex)
+            Lock_create(lock, *arg->mutex);
+        src.addOnContentChangedListener(arg->listener);
+        if(arg->sources)
+            arg->sources->insert(&src);
+        return TE_Ok;
+    }
+
+    TerrainTileBuilder::TerrainTileBuilder(const Envelope2 &mbb, const std::size_t numPostsLat, const std::size_t numPostsLng, const MemBuffer2 &edgeIndices) NOTHROWS :
+        edgeIndices_(edgeIndices)
+    {
+        this->mbb = mbb;
+        this->numPostsLat = numPostsLat;
+        this->numPostsLng = numPostsLng;
+
+        cellHeightLat = ((mbb.maxY - mbb.minY) / (numPostsLat - 1));
+        cellWidthLng = ((mbb.maxX - mbb.minX) / (numPostsLng - 1));
         // number of edge vertices is equal to perimeter length, plus one, to
         // close the linestring
-        const std::size_t numEdgeVertices = ((numPostsLat-1u)*2u)+((numPostsLng-1u)*2u) + 1u;
+        numEdgeVertices = ((numPostsLat-1u)*2u)+((numPostsLng-1u)*2u) + 1u;
 
-        double localOriginX = (mbb.minX+mbb.maxX)/2.0;
-        double localOriginY = (mbb.minY+mbb.maxY)/2.0;
-        double localOriginZ = (deriveFrom.aabb_wgs84.minZ+deriveFrom.aabb_wgs84.maxZ)/2.0;
+        localOriginX = (mbb.minX+mbb.maxX)/2.0;
+        localOriginY = (mbb.minY+mbb.maxY)/2.0;
+        localOriginZ = 0.0;
+
+        Skirt_getNumOutputIndices(&numSkirtIndices, GL_TRIANGLE_STRIP, numEdgeVertices);
+        numIndices = GLTexture2_getNumQuadMeshIndices(numPostsLat - 1u, numPostsLng - 1u)
+                                + 2u // degenerate link to skirt
+                                + numSkirtIndices;
+
+        skirtOffset = GLTexture2_getNumQuadMeshIndices(numPostsLat - 1u, numPostsLng - 1u);
+
+        numPostVerts = numPostsLat * numPostsLng;
+        numSkirtVerts = Skirt_getNumOutputVertices(numEdgeVertices);
+        numVerts = (numPostVerts + numSkirtVerts);
+
+        // all positions followed by all normals followed by no data mask
+        layout.interleaved = true;
+        layout.attributes = TEVA_Position | TEVA_Normal | TEVA_Reserved0 | TEVA_Reserved1;
+        // position
+        layout.position.offset = 0u;
+        layout.position.type = TEDT_Float32;
+        layout.position.size = 3u;
+        layout.position.stride = layout.position.size * DataType_size(layout.position.type);
+        // normal
+        layout.normal.offset = layout.position.offset + (numVerts * layout.position.stride);
+        layout.normal.type = TEDT_Int8;
+        layout.normal.stride = 4u*sizeof(int8_t);
+        layout.normal.size = 3u;
+        // no data mask
+        layout.reserved[0u].offset = layout.normal.offset + (numVerts*layout.normal.stride);
+        layout.reserved[0u].type = TEDT_Float32;
+        layout.reserved[0u].stride = sizeof(float);
+        layout.reserved[0u].size = 1u;
+        // ecef position
+        layout.reserved[1u].offset = layout.reserved[0u].offset + (numVerts * layout.reserved[0u].stride);
+        layout.reserved[1u].type = TEDT_Float32;
+        layout.reserved[1u].size = 3u;
+        layout.reserved[1u].stride = layout.reserved[1u].size * DataType_size(layout.reserved[1u].type);
+    }
+
+    TAKErr TerrainTileBuilder::build(std::shared_ptr<TerrainTile> &value, const float skirtHeight, BlockPoolAllocator &allocator, PoolAllocator<TerrainTile> &tileAllocator) NOTHROWS
+    {
+        TAKErr code(TE_Ok);
 
         {
             std::unique_ptr<TerrainTile, void(*)(const TerrainTile *)> tileptr(nullptr, nullptr);
@@ -1663,20 +1452,7 @@ namespace
         value->data.srid = 4326;
         value->data.localFrame.setToTranslate(localOriginX, localOriginY, localOriginZ);
 
-        const float skirtHeight = 500.0;
-
-        std::size_t numSkirtIndices;
-        code = Skirt_getNumOutputIndices(&numSkirtIndices, GL_TRIANGLE_STRIP, numEdgeVertices);
-        const std::size_t numIndices = GLTexture2_getNumQuadMeshIndices(numPostsLat - 1u, numPostsLng - 1u)
-                               + 2u // degenerate link to skirt
-                               + numSkirtIndices;
-
-        const std::size_t skirtOffset = GLTexture2_getNumQuadMeshIndices(numPostsLat - 1u, numPostsLng - 1u);
-
         const std::size_t ib_size = numIndices * sizeof(uint16_t);
-        const std::size_t numPostVerts = numPostsLat * numPostsLng;
-        const std::size_t numSkirtVerts = Skirt_getNumOutputVertices(numEdgeVertices);
-        const std::size_t numVerts = (numPostVerts + numSkirtVerts);
 
         std::unique_ptr<void, void(*)(const void *)> buf(nullptr, nullptr);
         // allocate the mesh data from the pool
@@ -1691,30 +1467,22 @@ namespace
         edgeIndices.limit(edgeIndices_.limit());
         edgeIndices.position(edgeIndices_.position());
 
-        double minEl = deriveFrom.hasData ? getHeightMapElevation(deriveFrom, mbb.minY, mbb.minX) : 0.0;
-        double maxEl = deriveFrom.hasData ? getHeightMapElevation(deriveFrom, mbb.minY, mbb.minX) : 0.0;
+        // set up buffers for positions, normals and no-data-mask as separate views into allocated block
+        MemBuffer2 positions(static_cast<uint8_t *>(buf.get())+ib_size+layout.position.offset, numVerts*layout.position.stride);
+        MemBuffer2 normals(static_cast<uint8_t*>(buf.get()) + ib_size + layout.normal.offset, numVerts*layout.normal.stride);
+        MemBuffer2 noDataMask(static_cast<uint8_t*>(buf.get()) + ib_size + layout.reserved[0].offset, numVerts* layout.reserved[0u].stride);
+        MemBuffer2 ecef(static_cast<uint8_t*>(buf.get()) + ib_size + layout.reserved[1].offset, numVerts*layout.reserved[1u].stride);
 
-        MemBuffer2 positions(static_cast<uint8_t *>(buf.get())+ib_size, getTerrainMeshSize(numPostsLat));
-        for (std::size_t postLat = 0u; postLat < numPostsLat; postLat++) {
-            // tile row
-            for(std::size_t postLng = 0u; postLng < numPostsLng; postLng++) {
-                const double lat = mbb.minY+((mbb.maxY-mbb.minY)/(numPostsLat-1))*postLat;
-                const double lng = mbb.minX+((mbb.maxX-mbb.minX)/(numPostsLng-1))*postLng;
-                const double hae = deriveFrom.hasData ? getHeightMapElevation(deriveFrom, lat, lng) : 0.0;
 
-                const double x = lng-localOriginX;
-                const double y = lat-localOriginY;
-                const double z = hae-localOriginZ;
-
-                code = positions.put<float>((float)x);
-                TE_CHECKBREAK_CODE(code);
-                code = positions.put<float>((float)y);
-                TE_CHECKBREAK_CODE(code);
-                code = positions.put<float>((float)z);
-                TE_CHECKBREAK_CODE(code);
-            }
-            TE_CHECKBREAK_CODE(code);
-        }
+        // fill the positions
+        bool hasData;
+        double minEl;
+        double maxEl;
+        code = fillPositions(positions, noDataMask, hasData, minEl, maxEl);
+//            if(hasData) {
+//                positions.reset();
+//                code = fillPositions(positions, noDataMask, hasData, minEl, maxEl);
+//            }
         TE_CHECKRETURN_CODE(code);
         positions.flip();
 
@@ -1726,62 +1494,38 @@ namespace
                 skirtHeight);
         TE_CHECKRETURN_CODE(code);
 
-        MeshPtr terrainMesh(nullptr, nullptr);
+        // ecef vert generation
+        Projection2Ptr ecefProjection(nullptr, nullptr);
+        code = ProjectionFactory3_create(ecefProjection, 4978);
+        TE_CHECKRETURN_CODE(code)
 
-        // all positions followed by all normals
-        VertexDataLayout layout;
-        layout.interleaved = true;
-        layout.attributes = TEVA_Position | TEVA_Normal;
-        layout.position.offset = 0u;
-        layout.position.stride = 12u;
-        layout.position.type = TEDT_Float32;
-        layout.normal.offset = (numVerts * 3u) * sizeof(float);
-        layout.normal.stride = 4u*sizeof(int8_t);
-        layout.normal.type = TEDT_Int8;
-
-        // normal generation
+        TAK::Engine::Math::Point2<double> ecefLocalOrigin;
+        // transform translation into destination spatial reference
         {
-            positions.limit(positions.size());
-            positions.position(layout.normal.offset);
-            if (deriveFrom.hasData) {
-                for (std::size_t postLat = 0u; postLat < numPostsLat; postLat++) {
-                    // tile row
-                    for(std::size_t postLng = 0u; postLng < numPostsLng; postLng++) {
-                        const double lat = mbb.minY+((mbb.maxY-mbb.minY)/(numPostsLat-1))*postLat;
-                        const double lng = mbb.minX+((mbb.maxX-mbb.minX)/(numPostsLng-1))*postLng;
-                        const TAK::Engine::Math::Point2<float> normal = getHeightMapNormal(deriveFrom, lat, lng);
-
-                        const int8_t n[4u] =
-                        {
-                            (int8_t)(normal.x*0x7F),
-                            (int8_t)(normal.y*0x7F),
-                            (int8_t)(normal.z*0x7F),
-                            0x0
-                        };
-                        code = positions.put<int8_t>(n, 4u);
-                        TE_CHECKBREAK_CODE(code);
-                    }
-                    TE_CHECKBREAK_CODE(code);
-                }
-                TE_CHECKRETURN_CODE(code);
-            } else {
-                const int8_t nUp[4u] = { 0x0, 0x0, 0x7F, 0x0 };
-                for (std::size_t i = 0; i < (numPostsLat*numPostsLng); i++) {
-                    positions.put<int8_t>(nUp, 4u);
-                }
-            }
-            // set the normals on the skirt to corresponding vert.
-            // `Skirt_createVertices` will automate this for us.
-            positions.limit(layout.normal.offset+layout.normal.stride*numPostVerts);
-            positions.position(layout.normal.offset);
-            code = Skirt_createVertices<int8_t, uint16_t>(positions,
-                    GL_TRIANGLE_STRIP,
-                    layout.normal.stride,
-                    &edgeIndices,
-                    numEdgeVertices,
-                    0);
+            GeoPoint2 geo(localOriginY, localOriginX, localOriginZ, AltitudeReference::HAE);
+            code = ecefProjection->forward(&ecefLocalOrigin, geo);
             TE_CHECKRETURN_CODE(code);
         }
+
+        {
+            positions.reset();
+            float xyz[3];
+            while ((code = positions.get<float>(xyz, 3)) == TE_Ok) {
+                TAK::Engine::Math::Point2<double> ecefPoint;
+                ecefProjection->forward(&ecefPoint, GeoPoint2(xyz[1] + localOriginY, xyz[0] + localOriginX, xyz[2] + localOriginZ, AltitudeReference::HAE));
+                ecefPoint.x -= ecefLocalOrigin.x;
+                ecefPoint.y -= ecefLocalOrigin.y;
+                ecefPoint.z -= ecefLocalOrigin.z;
+                float ecefxyz[3] = { float(ecefPoint.x), float(ecefPoint.y), float(ecefPoint.z) };
+                code = ecef.put<float>(ecefxyz, 3u);
+                TE_CHECKRETURN_CODE(code);
+            }
+            if (code == TE_EOF) code = TE_Ok;
+            TE_CHECKRETURN_CODE(code);
+        }
+
+        // normal generation
+        code = generateNormals(normals, edgeIndices, hasData);
 
         Envelope2 aabb;
         aabb.minX = mbb.minX - localOriginX;
@@ -1792,6 +1536,7 @@ namespace
         aabb.maxZ = maxEl - localOriginZ;
 
         // create the mesh
+        MeshPtr terrainMesh(nullptr, nullptr);
         code = MeshBuilder_buildInterleavedMesh(
             terrainMesh,
             TEDM_TriangleStrip,
@@ -1821,82 +1566,377 @@ namespace
         value->aabb_wgs84.maxX += localOriginX;
         value->aabb_wgs84.maxY += localOriginY;
         value->aabb_wgs84.maxZ += localOriginZ;
-        value->hasData = deriveFrom.hasData;
+        value->hasData = hasData;
 
         value->heightmap = true;
         value->posts_x = numPostsLng;
         value->posts_y = numPostsLat;
         value->invert_y_axis = true;
-
-        if(srid != value->data.srid) {
-            VertexDataLayout layout_update = value->data.value->getVertexDataLayout();
-            MeshTransformOptions srcOpts;
-            srcOpts.srid = value->data.srid;
-            srcOpts.localFrame = Matrix2Ptr(&value->data.localFrame, Memory_leaker_const<Matrix2>);
-            srcOpts.layout = VertexDataLayoutPtr(&layout_update, Memory_leaker_const<VertexDataLayout>);
-            MeshTransformOptions dstOpts;
-            dstOpts.srid = srid;
-
-            MeshPtr transformed(nullptr, nullptr);
-            MeshTransformOptions transformedOpts;
-            code = Mesh_transform(transformed, &transformedOpts, *value->data.value, srcOpts, dstOpts, nullptr);
-            TE_CHECKRETURN_CODE(code);
-
-            value->data.value = std::move(transformed);
-            value->data.srid = transformedOpts.srid;
-            if(transformedOpts.localFrame.get())
-                value->data.localFrame.set(*transformedOpts.localFrame);
-            else
-                value->data.localFrame.setToIdentity();
-        }
+        value->noDataAttr = TEVA_Reserved0;
+        value->ecefAttr = TEVA_Reserved1;
 
         // XXX - small downstream "optimization" pending implementation of depth hittest
-        if(srid == 4326) {
+        {
             ElevationChunk::Data &node = value->data;
             MeshPtr transformed(nullptr, nullptr);
-            VertexDataLayout srcLayout(node.value->getVertexDataLayout());
-            MeshTransformOptions transformedOpts;
-            MeshTransformOptions srcOpts;
-            srcOpts.layout = VertexDataLayoutPtr(&srcLayout, Memory_leaker_const<VertexDataLayout>);
-            srcOpts.srid = node.srid;
-            srcOpts.localFrame = Matrix2Ptr(&node.localFrame, Memory_leaker_const<Matrix2>);
-            MeshTransformOptions dstOpts;
-            dstOpts.srid = 4978;
-            code = Mesh_transform(transformed, &transformedOpts, *node.value, srcOpts, dstOpts, nullptr);
-            TE_CHECKRETURN_CODE(code);
+            VertexDataLayout dataProjLayout{ layout };
+            // ECEF position is reserved1
+            dataProjLayout.position = dataProjLayout.reserved[1];
+            dataProjLayout.attributes &= ~TEVA_Reserved1;
+            // transform AABB
+            Envelope2 dataProjAabb;
+            GeometryTransformer_transform(
+                &dataProjAabb,
+                value->aabb_wgs84,
+                4326, 4978);
+            // WCS -> LCS
+            dataProjAabb.minX -= ecefLocalOrigin.x;
+            dataProjAabb.minY -= ecefLocalOrigin.y;
+            dataProjAabb.minZ -= ecefLocalOrigin.z;
+            dataProjAabb.maxX -= ecefLocalOrigin.x;
+            dataProjAabb.maxY -= ecefLocalOrigin.y;
+            dataProjAabb.maxZ -= ecefLocalOrigin.z;
 
-            assert(!!transformed);
+            std::unique_ptr<void, void(*)(const void*)> bufref(new std::shared_ptr<TAK::Engine::Model::Mesh>(value->data.value), Memory_void_deleter_const<std::shared_ptr<TAK::Engine::Model::Mesh>>);
+            code = MeshBuilder_buildInterleavedMesh(
+                transformed,
+                value->data.value->getDrawMode(),
+                value->data.value->getFaceWindingOrder(),
+                dataProjLayout,
+                0u, nullptr, // materials, known to be null
+                dataProjAabb,
+                value->data.value->getNumVertices(),
+                positions.get(),
+                TEDT_UInt16,
+                indices.limit() / sizeof(uint16_t),
+                indices.get(),
+                std::move(bufref));
 
-            value->data_proj.srid = transformedOpts.srid;
-            if (transformedOpts.localFrame.get())
-                value->data_proj.localFrame = *transformedOpts.localFrame;
+            value->data_proj.localFrame = Matrix2();
+            value->data_proj.localFrame.setToTranslate(ecefLocalOrigin.x, ecefLocalOrigin.y, ecefLocalOrigin.z);
+            value->data_proj.srid = 4978;
+
             value->data_proj.value = std::move(transformed);
-        } else {
-            value->data_proj.value.reset();
-            value->data_proj.srid = -1;
         }
 
-        value_ = value;
         return code;
     }
 
-    bool intersects(const Frustum2& frustum, const TAK::Engine::Feature::Envelope2& aabbWCS, const int srid, const double lng) NOTHROWS
+    FetchTileBuilder::FetchTileBuilder(const Envelope2& mbb, const std::size_t numPostsLat, const std::size_t numPostsLng, const MemBuffer2 &edgeIndices, double *els, const double resolution) NOTHROWS :
+        TerrainTileBuilder(mbb, numPostsLat, numPostsLng, edgeIndices),
+        els(els),
+        resolution(resolution)
+    {}
+    TAKErr FetchTileBuilder::fillPositions(MemBuffer2 &positions, MemBuffer2 &noDataMask, bool &hasData, double &minEl, double &maxEl) NOTHROWS
     {
-        return (frustum.intersects(AABB(TAK::Engine::Math::Point2<double>(aabbWCS.minX, aabbWCS.minY, aabbWCS.minZ), TAK::Engine::Math::Point2<double>(aabbWCS.maxX, aabbWCS.maxY, aabbWCS.maxZ))) ||
-            ((srid == 4326) && lng * ((aabbWCS.minX + aabbWCS.maxX) / 2.0) < 0 &&
-                frustum.intersects(
-                    AABB(TAK::Engine::Math::Point2<double>(aabbWCS.minX - (360.0 * sgn((aabbWCS.minX + aabbWCS.maxX) / 2.0)), aabbWCS.minY, aabbWCS.minZ),
-                        TAK::Engine::Math::Point2<double>(aabbWCS.maxX - (360.0 * sgn((aabbWCS.minX + aabbWCS.maxX) / 2.0)), aabbWCS.maxY, aabbWCS.maxZ)))));
+        TAKErr code(TE_Ok);
+
+        {
+            const bool constrainQueryRes = !TE_ISNAN(resolution);
+
+            // fetch requested region plus a one post border for normals generation
+            double *pts = els + ((numPostsLat+2u) * (numPostsLng+2u));
+            std::size_t numPosts = 0u;
+            for (int postLat = -1; postLat < (int)(numPostsLat+1u); postLat++) {
+                double ptLat =  mbb.minY + cellHeightLat * postLat;
+                if(ptLat > 90.0)
+                    ptLat = 180.0 - ptLat;
+                else if(ptLat < -90.0)
+                    ptLat = -180.0 - ptLat;
+                for (int postLng = -1; postLng < (int)(numPostsLng+1u); postLng++) {
+                    double ptLng = mbb.minX + cellWidthLng * postLng;
+                    if(ptLng < -180.0)
+                        ptLng += 360.0;
+                    else if(ptLng > 180.0)
+                        ptLng -= 360.0;
+                    pts[numPosts*2u] = ptLng;
+                    pts[numPosts*2u+1u] = ptLat;
+                    numPosts++;
+                }
+            }
+
+            ElevationSource::QueryParameters params;
+            params.order = TAK::Engine::Port::Collection<ElevationSource::QueryParameters::Order>::Ptr(new TAK::Engine::Port::STLVectorAdapter<ElevationSource::QueryParameters::Order>(), Memory_deleter_const<TAK::Engine::Port::Collection<ElevationSource::QueryParameters::Order>, TAK::Engine::Port::STLVectorAdapter<ElevationSource::QueryParameters::Order>>);
+            code = params.order->add(ElevationSource::QueryParameters::ResolutionDesc);
+            TE_CHECKRETURN_CODE(code);
+            if(constrainQueryRes)
+                params.maxResolution = resolution;
+            code = Polygon2_fromEnvelope(params.spatialFilter, mbb);
+            TE_CHECKRETURN_CODE(code);
+
+            // try to fill all values using high-to-low res elevation chunks
+            // covering the AOI
+            if(ElevationManager_getElevation(els, numPosts, pts+1u, pts, 2u, 2u, 1u, params) == TE_Done && constrainQueryRes) {
+                // if there are holes, fill in using low-to-high res elevation
+                // chunks covering the AOI
+                params.order = TAK::Engine::Port::Collection<ElevationSource::QueryParameters::Order>::Ptr(new TAK::Engine::Port::STLVectorAdapter<ElevationSource::QueryParameters::Order>(), Memory_deleter_const<TAK::Engine::Port::Collection<ElevationSource::QueryParameters::Order>, TAK::Engine::Port::STLVectorAdapter<ElevationSource::QueryParameters::Order>>);
+                code = params.order->add(ElevationSource::QueryParameters::ResolutionAsc);
+                params.maxResolution = NAN;
+
+                std::size_t numpts2 = 0u;
+                array_ptr<double> pts2(new double[(numPostsLat*numPostsLng)*3u]);
+                for(std::size_t i = 0u; i < (numPostsLat*numPostsLng); i++) {
+                    if (TE_ISNAN(els[i])) {
+                        pts2[numpts2*3u] = pts[i*2+1u];
+                        pts2[numpts2*3u+1u] = pts[i*2+1u];
+                        pts2[numpts2*3+2u] = NAN;
+
+                        numpts2++;
+                    }
+                }
+
+                // fetch the elevations
+                ElevationManager_getElevation(pts2.get()+2u, (numPostsLat*numPostsLng), pts2.get()+1u, pts2.get(), 3u, 3u, 3u, params);
+
+                // fill the holes
+                std::size_t pts2Idx = 0;
+                for(std::size_t i = 0u; i < (numPostsLat*numPostsLng); i++) {
+                    if (TE_ISNAN(els[i])) {
+                        els[i] = pts2[pts2Idx*3u+2u];
+                        pts2Idx++;
+                        if(pts2Idx == numpts2)
+                            break;
+                    }
+                }
+            }
+        }
+
+        hasData = !TE_ISNAN(els[0]);
+        minEl = !hasData ? 0.0 : els[0];
+        maxEl = !hasData ? 0.0 : els[0];
+        for (std::size_t postLat = 0u; postLat < numPostsLat; postLat++) {
+            std::size_t postRowIdx = 1u+((numPostsLng+2u)*(postLat+1u));
+            // tile row
+            for(std::size_t postLng = 0u; postLng < numPostsLng; postLng++) {
+                const double el = els[postRowIdx + postLng];
+                const bool elnan = TE_ISNAN(el);
+                const double lat = mbb.minY+cellHeightLat*postLat;
+                const double lng = mbb.minX+cellWidthLng*postLng;
+                const double hae = elnan ? 0.0 : el;
+
+                if (!elnan) {
+                    if(hae < minEl)         minEl = hae;
+                    else if(hae > maxEl)    maxEl = hae;
+                    hasData = true;
+                } else {
+                    // reset invalid source elevations for normal generation
+                    els[postRowIdx + postLng] = 0.0;
+                }
+
+                float xyz[3u] = {
+                    (float)(lng-localOriginX),
+                    (float)(lat-localOriginY),
+                    (float)(hae-localOriginZ),
+                };
+                code = positions.put<float>(xyz, 3u);
+                TE_CHECKBREAK_CODE(code);
+                // no data mask
+                code = noDataMask.put<float>(!elnan ? 1.f : 0.f);
+                TE_CHECKBREAK_CODE(code);
+            }
+            TE_CHECKBREAK_CODE(code);
+        }
+        TE_CHECKRETURN_CODE(code);
+
+        return code;
     }
-    TAKErr subscribeOnContentChangedListener(void *opaque, ElevationSource &src) NOTHROWS
+    TAKErr FetchTileBuilder::generateNormals(MemBuffer2 &normals, const MemBuffer2 &edgeIndices, const bool hasData) NOTHROWS
     {
-        auto *arg = static_cast<SubscribeOnContentChangedListenerBundle *>(opaque);
-        LockPtr lock(nullptr, nullptr);
-        if(arg->mutex)
-            Lock_create(lock, *arg->mutex);
-        src.addOnContentChangedListener(arg->listener);
-        if(arg->sources)
-            arg->sources->insert(&src);
-        return TE_Ok;
+        TAKErr code(TE_Ok);
+
+        if (hasData) {
+            // ensure no NANs on border
+            for (std::size_t i = 0u; i < (numPostsLng + 2u); i++) {
+                if (TE_ISNAN(els[i]))
+                    els[i] = 0.0;
+                if (TE_ISNAN(els[((numPostsLat+1u) * (numPostsLng+2u)) + i]))
+                    els[((numPostsLat+1u) * (numPostsLng+2u)) + i] = 0.0;
+            }
+            for (std::size_t i = 0u; i < (numPostsLat + 2u); i++) {
+                const std::size_t rowStartIdx = i * (numPostsLng + 2u);
+                if (TE_ISNAN(els[rowStartIdx]))
+                    els[rowStartIdx] = 0.0;
+                if (TE_ISNAN(els[rowStartIdx + (numPostsLng+1u)]))
+                    els[rowStartIdx + (numPostsLng+1u)] = 0.0;
+            }
+
+            // point source data at the first post in the requested region (ignoring border)
+            MemBuffer2 elssrc(reinterpret_cast<const uint8_t*>(els + (numPostsLng+2u) + 1u), (numPostsLat+2u)*(numPostsLng+2u)*sizeof(double));
+
+            VertexArray postLayout;
+            postLayout.offset = 0u;
+            postLayout.stride = sizeof(double);
+            postLayout.type = TEDT_Float64;
+
+            VertexArray normalLayout = layout.normal;
+            normalLayout.offset = 0u;
+
+            const double scaleX = TAK::Engine::Core::GeoPoint2_approximateMetersPerDegreeLongitude((mbb.minY + mbb.maxY) / 2.0) * cellWidthLng;
+            const double scaleY = TAK::Engine::Core::GeoPoint2_approximateMetersPerDegreeLatitude((mbb.minY + mbb.maxY) / 2.0) * cellHeightLat;
+            const double scaleZ = 1.0;
+            code = Heightmap_generateNormals(normals, elssrc, numPostsLng, numPostsLat, postLayout, postLayout.stride * (numPostsLng + 2u), normalLayout, normalLayout.stride * numPostsLng, false, scaleX, scaleY, scaleZ);
+            TE_CHECKRETURN_CODE(code);
+        } else {
+            const int8_t nUp[4u] = { 0x0, 0x0, 0x7F, 0x0 };
+            for (std::size_t i = 0; i < (numPostsLat*numPostsLng); i++) {
+                normals.put<int8_t>(nUp, 4u);
+            }
+        }
+        // set the normals on the skirt to corresponding vert.
+        // `Skirt_createVertices` will automate this for us.
+        normals.position(0u);
+        normals.limit(layout.normal.stride*numPostVerts);
+        code = Skirt_createVertices<int8_t, uint16_t>(normals,
+                GL_TRIANGLE_STRIP,
+                layout.normal.stride,
+                &edgeIndices,
+                numEdgeVertices,
+                0);
+        TE_CHECKRETURN_CODE(code);
+
+        return code;
+    }
+
+    NoDataTileBuilder::NoDataTileBuilder(const Envelope2& mbb, const std::size_t numPostsLat, const std::size_t numPostsLng, const MemBuffer2 &edgeIndices) NOTHROWS :
+        TerrainTileBuilder(mbb, numPostsLat, numPostsLng, edgeIndices)
+    {}
+    TAKErr NoDataTileBuilder::fillPositions(MemBuffer2 &positions, MemBuffer2 &noDataMask, bool &hasData, double &minEl, double &maxEl) NOTHROWS
+    {
+        TAKErr code(TE_Ok);
+
+        const bool fetchEl = !!els;
+        hasData = false;
+        minEl = 0.0;
+        maxEl = 0.0;
+        for (std::size_t postLat = 0u; postLat < numPostsLat; postLat++) {
+            std::size_t postRowIdx = 1u+((numPostsLng+2u)*(postLat+1u));
+            // tile row
+            for(std::size_t postLng = 0u; postLng < numPostsLng; postLng++) {
+                const double lat = mbb.minY+cellHeightLat*postLat;
+                const double lng = mbb.minX+cellWidthLng*postLng;
+                const double hae = 0.0;
+
+                float xyz[3u] = {
+                    (float)(lng-localOriginX),
+                    (float)(lat-localOriginY),
+                    (float)(hae-localOriginZ),
+                };
+                code = positions.put<float>(xyz, 3u);
+                TE_CHECKBREAK_CODE(code);
+                // no data mask
+                code = noDataMask.put<float>(0.f);
+                TE_CHECKBREAK_CODE(code);
+            }
+            TE_CHECKBREAK_CODE(code);
+        }
+        TE_CHECKRETURN_CODE(code);
+
+        return code;
+    }
+    TAKErr NoDataTileBuilder::generateNormals(MemBuffer2 &normals, const MemBuffer2 &edgeIndices, const bool hasData) NOTHROWS
+    {
+        TAKErr code(TE_Ok);
+        const int8_t nUp[4u] = { 0x0, 0x0, 0x7F, 0x0 };
+        for (std::size_t i = 0; i < (numPostsLat*numPostsLng); i++) {
+            normals.put<int8_t>(nUp, 4u);
+        }
+
+        // set the normals on the skirt to corresponding vert.
+        // `Skirt_createVertices` will automate this for us.
+        normals.position(0u);
+        normals.limit(layout.normal.stride*numPostVerts);
+        code = Skirt_createVertices<int8_t, uint16_t>(normals,
+                GL_TRIANGLE_STRIP,
+                layout.normal.stride,
+                &edgeIndices,
+                numEdgeVertices,
+                0);
+        TE_CHECKRETURN_CODE(code);
+
+        return code;
+    }
+
+    DeriveTileBuilder::DeriveTileBuilder(const Envelope2& mbb, const std::size_t numPostsLat, const std::size_t numPostsLng, const MemBuffer2 &edgeIndices, const TerrainTile &deriveFrom) NOTHROWS :
+        TerrainTileBuilder(mbb, numPostsLat, numPostsLng, edgeIndices),
+        deriveFrom(deriveFrom)
+    {}
+
+    TAKErr DeriveTileBuilder::fillPositions(MemBuffer2& positions, MemBuffer2& noDataMask, bool& hasData, double& minEl, double& maxEl) NOTHROWS
+    {
+        TAKErr code(TE_Ok);
+        const std::size_t ib_size = numIndices * sizeof(uint16_t);
+
+        minEl = getHeightMapElevation(deriveFrom, mbb.minY, mbb.minX);
+        maxEl = minEl;
+        hasData = deriveFrom.hasData && !TE_ISNAN(minEl);
+
+        for (std::size_t postLat = 0u; postLat < numPostsLat; postLat++) {
+            // tile row
+            for(std::size_t postLng = 0u; postLng < numPostsLng; postLng++) {
+                const double lat = mbb.minY+((mbb.maxY-mbb.minY)/(numPostsLat-1))*postLat;
+                const double lng = mbb.minX+((mbb.maxX-mbb.minX)/(numPostsLng-1))*postLng;
+                const double el = getHeightMapElevation(deriveFrom, lat, lng);
+                const bool elnan = TE_ISNAN(el);
+                const double hae = elnan ? 0.0 : el;
+
+                const double x = lng-localOriginX;
+                const double y = lat-localOriginY;
+                const double z = hae-localOriginZ;
+
+                float xyz[3] = { (float)x, (float)y, (float)z };
+                code = positions.put<float>(xyz, 3u);
+                TE_CHECKBREAK_CODE(code);
+
+                code = noDataMask.put<float>(elnan ? 0.f : 1.f);
+                TE_CHECKBREAK_CODE(code);
+            }
+            TE_CHECKBREAK_CODE(code);
+        }
+        TE_CHECKRETURN_CODE(code);
+
+        return code;
+    }
+    TAKErr DeriveTileBuilder::generateNormals(MemBuffer2& normals, const MemBuffer2& edgeIndices, const bool hasData) NOTHROWS
+    {
+        TAKErr code(TE_Ok);
+        if (hasData) {
+            for (std::size_t postLat = 0u; postLat < numPostsLat; postLat++) {
+                // tile row
+                for(std::size_t postLng = 0u; postLng < numPostsLng; postLng++) {
+                    const double lat = mbb.minY+((mbb.maxY-mbb.minY)/(numPostsLat-1))*postLat;
+                    const double lng = mbb.minX+((mbb.maxX-mbb.minX)/(numPostsLng-1))*postLng;
+                    const TAK::Engine::Math::Point2<float> normal = getHeightMapNormal(deriveFrom, lat, lng);
+
+                    const int8_t n[4u] =
+                    {
+                        (int8_t)(normal.x*0x7F),
+                        (int8_t)(normal.y*0x7F),
+                        (int8_t)(normal.z*0x7F),
+                        0x0
+                    };
+                    code = normals.put<int8_t>(n, 4u);
+                    TE_CHECKBREAK_CODE(code);
+                }
+                TE_CHECKBREAK_CODE(code);
+            }
+            TE_CHECKRETURN_CODE(code);
+        } else {
+            const int8_t nUp[4u] = { 0x0, 0x0, 0x7F, 0x0 };
+            for (std::size_t i = 0; i < (numPostsLat*numPostsLng); i++) {
+                normals.put<int8_t>(nUp, 4u);
+            }
+        }
+        // set the normals on the skirt to corresponding vert.
+        // `Skirt_createVertices` will automate this for us.
+        normals.position(0u);
+        normals.limit(layout.normal.stride*numPostVerts);
+        code = Skirt_createVertices<int8_t, uint16_t>(normals,
+                GL_TRIANGLE_STRIP,
+                layout.normal.stride,
+                &edgeIndices,
+                numEdgeVertices,
+                0);
+
+        return code;
     }
 }

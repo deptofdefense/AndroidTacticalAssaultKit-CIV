@@ -227,7 +227,7 @@ public class ZMist extends LinearLayout {
                     newText.append(buttonPressedText);
                 }
                 mistDetail.setText(newText.toString());
-                Log.d("JUDD_DEBUG", "New Text = " + newText.toString());
+                Log.d("JUDD_DEBUG", "New Text = " + newText);
 
                 // move cursor to the end
                 mistDetail.setSelection(mistDetail.getText().length());

@@ -14,7 +14,8 @@ import transapps.maps.plugin.tool.Group;
 import transapps.maps.plugin.tool.Tool;
 import transapps.maps.plugin.tool.ToolDescriptor;
 
-abstract public class AbstractPluginTool extends Tool implements ToolDescriptor {
+abstract public class AbstractPluginTool extends Tool
+        implements ToolDescriptor {
 
     private final Context context;
     private final String shortDescription;
@@ -31,10 +32,10 @@ abstract public class AbstractPluginTool extends Tool implements ToolDescriptor 
      * @param action the action
      */
     public AbstractPluginTool(Context context,
-                              String shortDescription,
-                              String description,
-                              Drawable icon,
-                              String action) {
+            String shortDescription,
+            String description,
+            Drawable icon,
+            String action) {
         this.context = context;
         this.shortDescription = shortDescription;
         this.description = description;
@@ -71,10 +72,10 @@ abstract public class AbstractPluginTool extends Tool implements ToolDescriptor 
 
     @Override
     final public void onActivate(Activity arg0,
-                                 MapView arg1,
-                                 ViewGroup arg2,
-                                 Bundle arg3,
-                                 ToolCallback arg4) {
+            MapView arg1,
+            ViewGroup arg2,
+            Bundle arg3,
+            ToolCallback arg4) {
 
         // Hack to close the dropdown that automatically opens when a tool
         // plugin is activated.

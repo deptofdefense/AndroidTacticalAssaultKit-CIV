@@ -31,6 +31,7 @@ namespace TAK {
                     bool invert_y_axis{false};
 
                     TAK::Engine::Model::VertexAttribute noDataAttr{ (TAK::Engine::Model::VertexAttribute)0 };
+                    TAK::Engine::Model::VertexAttribute ecefAttr { (TAK::Engine::Model::VertexAttribute)0 };
                 };
             }
         }

@@ -11,7 +11,7 @@ ifeq (CYGWIN, $(findstring CYGWIN, $(HOST_UNAME)))
     PLATFORM=win32
     SEP=;
     LN_S=cp
-    SWIG=C:\\swigwin-1.3.31\\swig.exe
+    SWIG=C:\\swigwin-4.0.1\\swig.exe
     PATH_CYGSAFE=$(shell cygpath -m $(1))
     PATH_WIN=$(shell cygpath -w $(1))
 else

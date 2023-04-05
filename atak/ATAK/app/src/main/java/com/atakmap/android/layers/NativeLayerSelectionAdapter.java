@@ -35,7 +35,7 @@ import com.atakmap.map.layer.raster.RasterDataStore.DatasetDescriptorCursor;
 import com.atakmap.map.layer.raster.RasterDataStore.DatasetQueryParameters;
 import com.atakmap.map.layer.raster.nativeimagery.NativeImageryRasterLayer2;
 import com.atakmap.spatial.SpatialCalculator;
-import com.atakmap.util.Disposable;
+import gov.tak.api.util.Disposable;
 
 import java.io.File;
 import java.text.DecimalFormat;
@@ -520,7 +520,8 @@ class NativeLayerSelectionAdapter extends LayerSelectionAdapter
 
         @Override
         public void run() {
-            final SpatialCalculator calc = new SpatialCalculator.Builder().inMemory().build();
+            final SpatialCalculator calc = new SpatialCalculator.Builder()
+                    .inMemory().build();
             try {
                 int compute = 0;
                 while (true) {

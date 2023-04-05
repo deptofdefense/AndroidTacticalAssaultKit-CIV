@@ -255,7 +255,7 @@ TAKErr GLMegaTexture::compressTile(const TileIndex &tile, const std::size_t mip)
     // reset reference to the newly compressed tile
     entry->second = compressed;
 #endif
-    return code;
+    return TE_Unsupported;
 }
 void GLMegaTexture::releaseTile(const TileIndex& tile, const bool sendToPool) NOTHROWS
 {

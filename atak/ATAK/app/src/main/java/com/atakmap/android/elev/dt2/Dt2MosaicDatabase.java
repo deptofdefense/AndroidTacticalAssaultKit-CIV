@@ -15,6 +15,13 @@ import com.atakmap.map.layer.feature.geometry.Geometry;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
 import com.atakmap.map.layer.raster.mosaic.MosaicDatabase2;
 
+import gov.tak.api.annotation.DeprecatedApi;
+
+/**
+ * @deprecated use {@link com.atakmap.map.formats.dted.DtedElevationSource}
+ */
+@Deprecated
+@DeprecatedApi(since = "4.6", forRemoval = true, removeAt = "4.9")
 public class Dt2MosaicDatabase implements MosaicDatabase2 {
 
     private final static Geometry world = DatasetDescriptor

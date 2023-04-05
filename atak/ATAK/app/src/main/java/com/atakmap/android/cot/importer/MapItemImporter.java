@@ -23,6 +23,7 @@ import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.util.Collections2;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -33,6 +34,19 @@ import java.util.Set;
  */
 public abstract class MapItemImporter extends CotEventTypeImporter {
 
+    /**
+     * Callback interface to allow external components to determines whether or not an imported
+     * item should post a notification.
+     */
+    public interface NotificationFilter {
+        /**
+         * @param item  The imported item
+         * @return  <code>true</code> to post a notification on import, <code>false</code> if no
+         *          notification should be posted
+         */
+        boolean accept(MapItem item);
+    }
+
     private static final String TAG = "MapItemImporter";
 
     protected static final String FROM_STATESAVER = "StateSaver";
@@ -40,6 +54,9 @@ public abstract class MapItemImporter extends CotEventTypeImporter {
 
     protected static final NotificationIdRecycler NOTIFICATION_ID = new NotificationIdRecycler(
             8880, 5);
+
+    private final static Set<NotificationFilter> _notificationFilters = Collections2
+            .newIdentityHashSet();
 
     protected final MapView _mapView;
     protected final Context _context;
@@ -228,6 +245,13 @@ public abstract class MapItemImporter extends CotEventTypeImporter {
     protected void postNotification(MapItem item) {
         if (item == null)
             return;
+
+        synchronized (_notificationFilters) {
+            for (NotificationFilter filter : _notificationFilters)
+                if (!filter.accept(item))
+                    return;
+        }
+
         String ticker = _context.getString(R.string.new_event);
         String title = ATAKUtilities.getDisplayName(item);
         String msg = "";
@@ -245,5 +269,18 @@ public abstract class MapItemImporter extends CotEventTypeImporter {
                         .putExtra("uid", item.getUID())
                         .putExtra("immediateUnfocus", true),
                 true);
+    }
+
+    public static void addNotificationFilter(NotificationFilter filter) {
+        synchronized (_notificationFilters) {
+            _notificationFilters.add(filter);
+        }
+    }
+
+    public static synchronized void removeNotificationFilter(
+            NotificationFilter filter) {
+        synchronized (_notificationFilters) {
+            _notificationFilters.remove(filter);
+        }
     }
 }

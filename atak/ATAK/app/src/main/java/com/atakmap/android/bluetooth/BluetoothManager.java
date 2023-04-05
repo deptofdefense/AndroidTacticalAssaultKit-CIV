@@ -7,11 +7,11 @@ import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import android.widget.Toast;
 
 import com.atakmap.android.bluetooth.BluetoothDevicesConfig.BluetoothDeviceConfig;
 import com.atakmap.android.ipc.AtakBroadcast;
+import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
@@ -22,8 +22,8 @@ import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -544,7 +544,7 @@ public class BluetoothManager {
                     Log.d(TAG,
                             "unsupported bluetooth device: "
                                     + d.getName()
-                                    + ", " + d.toString()
+                                    + ", " + d
                                     + ". " + e.getMessage());
                 }
             }

@@ -1,3 +1,4 @@
+
 package com.atakmap.android.gui.drawable;
 
 import android.content.res.Resources;

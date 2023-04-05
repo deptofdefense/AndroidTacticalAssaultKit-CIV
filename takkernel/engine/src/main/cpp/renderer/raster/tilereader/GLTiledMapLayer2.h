@@ -11,8 +11,6 @@
 #include "renderer/core/GLMapRenderable2.h"
 #include "renderer/core/GLGlobeBase.h"
 #include "renderer/raster/GLMapLayer2.h"
-#include "renderer/raster/tilereader/GLQuadTileNode2.h"
-
 
 namespace TAK {
     namespace Engine {
@@ -40,7 +38,7 @@ namespace TAK {
                         class ColorControlImpl;
                     private :
                         atakmap::raster::DatasetDescriptorUniquePtr desc;
-                        GLQuadTileNode2Ptr impl;
+                        Core::GLMapRenderable2Ptr impl;
                         std::shared_ptr<TAK::Engine::Raster::TileReader::TileReader2> prealloced;
                         bool initialized;
                         std::map<std::string, void *> controls_;

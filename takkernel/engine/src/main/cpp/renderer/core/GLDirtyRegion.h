@@ -32,6 +32,7 @@ namespace TAK {
                     void compact() NOTHROWS;
                 public :
                     GLDirtyRegion& operator =(const GLDirtyRegion &other) NOTHROWS;
+                    const TAK::Engine::Feature::Envelope2& operator[](const std::size_t idx) const NOTHROWS;
                 private :
                     Region east;
                     Region west;

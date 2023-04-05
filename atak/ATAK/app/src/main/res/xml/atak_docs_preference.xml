@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+        android:title="@string/documentation">
+       <Preference
+            android:title="@string/changeLog"
+            android:key="atakChangeLog"
+            android:icon="@drawable/document" />
+       <Preference android:title="@string/userManual"
+            android:key="atakDocumentation"
+            android:icon="@drawable/document" />
+       <Preference android:title="@string/addendum"
+            android:key="atakFlavorAddendum"
+            android:icon="@drawable/document" />
+       <Preference android:title="@string/atakDatasets"
+            android:key="atakDatasets"
+            android:icon="@drawable/document" />
+    </PreferenceCategory>
+</PreferenceScreen>

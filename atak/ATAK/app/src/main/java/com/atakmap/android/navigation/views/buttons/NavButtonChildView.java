@@ -386,9 +386,11 @@ public class NavButtonChildView extends LinearLayout {
         } else {
             // Default behavior
             if (anchorWidth > anchorHeight)
-                params.setMargins(anchorX, anchorY + anchorHeight + margin, 0, 0);
+                params.setMargins(anchorX, anchorY + anchorHeight + margin, 0,
+                        0);
             else
-                params.setMargins(anchorX + anchorWidth + margin, anchorY, 0, 0);
+                params.setMargins(anchorX + anchorWidth + margin, anchorY, 0,
+                        0);
         }
         this.setLayoutParams(params);
     }

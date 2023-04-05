@@ -99,14 +99,23 @@ namespace TAK {
 
                 ENGINE_API Util::TAKErr TileMatrix_getTileBounds(Feature::Envelope2* bounds, const TileMatrix& matrix, const int level, const int tileX,
                                                                  const int tileY) NOTHROWS;
+                ENGINE_API Util::TAKErr TileMatrix_getTileBounds(Feature::Envelope2* bounds,
+                                                                 const double originX, const double originY, const TileMatrix::ZoomLevel &zoom,
+                                                                 const int tileX, const int tileY) NOTHROWS;
 
                 ENGINE_API Util::TAKErr TileMatrix_getTilePixel(TAK::Engine::Math::Point2<double>* pixel, const TileMatrix& matrix, const std::size_t level,
                                                                 const int tileX, const int tileY,
                                             const double projX, const double projY) NOTHROWS;
+                ENGINE_API Util::TAKErr TileMatrix_getTilePixel(TAK::Engine::Math::Point2<double>* pixel,
+                                                                const double originX, const double originY, const TileMatrix::ZoomLevel &zoom,
+                                                                const int tileX, const int tileY, const double projX, const double projY) NOTHROWS;
 
                 ENGINE_API Util::TAKErr TileMatrix_getTilePoint(Math::Point2<double>* point, const TileMatrix& matrix, const std::size_t level, const int tileX,
                                                                 const int tileY, const int pixelX,
                                             const int pixelY) NOTHROWS;
+                ENGINE_API Util::TAKErr TileMatrix_getTilePoint(Math::Point2<double>* point,
+                                                                const double originX, const double originY, const TileMatrix::ZoomLevel &zoom,
+                                                                const int tileX, const int tileY, const int pixelX, const int pixelY) NOTHROWS;
 
                 ENGINE_API bool TileMatrix_isQuadtreeable(const TileMatrix& matrix) NOTHROWS;
 

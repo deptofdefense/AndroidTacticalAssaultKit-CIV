@@ -31,7 +31,7 @@ public final class HTTPRequestManager extends RequestManager {
         return sInstance;
     }
 
-    // Note Service used in super ctor, should match our RequestService subclass
+    // Note Service used in super constructor, should match our RequestService subclass
     private HTTPRequestManager(Context context) {
         super(context, HTTPRequestService.class);
     }

@@ -1,3 +1,4 @@
+
 package com.atakmap.android.navigation.views.loadout;
 
 import android.content.Context;
@@ -27,7 +28,8 @@ public class LoadoutToolsGridView extends GridView {
         super(context, attrs);
     }
 
-    public LoadoutToolsGridView(Context context, AttributeSet attrs, int defStyleAttr) {
+    public LoadoutToolsGridView(Context context, AttributeSet attrs,
+            int defStyleAttr) {
         super(context, attrs, defStyleAttr);
     }
 
@@ -101,7 +103,7 @@ public class LoadoutToolsGridView extends GridView {
      * @param bottom Bottom of the rectangle
      */
     private void drawAtRect(Canvas canvas, Drawable dr,
-                            int left, int top, int right, int bottom) {
+            int left, int top, int right, int bottom) {
         Rect oldBounds = new Rect(dr.getBounds());
         dr.setBounds(left, top, right, bottom);
         dr.draw(canvas);

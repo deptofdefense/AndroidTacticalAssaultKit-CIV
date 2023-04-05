@@ -1,4 +1,4 @@
-
+#ifdef MSVC
 #include <algorithm>
 #include <libxml/xmlreader.h>
 #include "feature/KMLModels.h"
@@ -75,3 +75,4 @@ KML_BASE_BP(Container, Feature);
 KML_OBJ_BP(Document, Container);
 KML_OBJ_BP(Folder, Container);
 KML_OBJ_BP_N(DOM, Object, "kml");
+#endif

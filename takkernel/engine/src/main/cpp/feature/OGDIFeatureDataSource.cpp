@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "feature/OGDIFeatureDataSource.h"
 
 #include <cmath>
@@ -1224,3 +1225,4 @@ namespace
 		return TE_Ok;
 	}
 }
+#endif

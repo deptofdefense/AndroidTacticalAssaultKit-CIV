@@ -206,9 +206,8 @@ public class ContactListDetailHandler
                         // endpoint, then use the last local one received.
 
                         if (ncs.matches("stcp", "*", -1)) {
-                            NetConnectString localAddr = ContactUtil
+                            ncs = ContactUtil
                                     .getIpAddress(castedContact);
-                            ncs = localAddr;
                         }
 
                         //Log.d(TAG, "contact local endpoint considered not stale, not changing the endpoint: " + callsign + " last seen: " + lastLocalUpdate + " stale: " + stale + "keeping: " + ncs);

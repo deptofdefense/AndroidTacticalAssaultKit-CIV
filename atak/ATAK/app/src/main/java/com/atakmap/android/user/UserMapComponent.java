@@ -34,6 +34,7 @@ import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.android.toolbar.tools.MovePointTool;
 import com.atakmap.android.user.icon.SpotMapReceiver;
 import com.atakmap.android.util.ATAKUtilities;
+import com.atakmap.annotations.ModifierApi;
 import com.atakmap.app.R;
 import com.atakmap.app.preferences.GeocoderPreferenceFragment;
 import com.atakmap.app.preferences.ToolsPreferenceFragment;
@@ -61,12 +62,27 @@ public class UserMapComponent extends AbstractMapComponent {
 
     public static final String CLAMP_TOGGLE = "com.atakmap.android.maps.CLAMP_TOGGLE";
 
-    private MapView _mapView;
-    private TaskableMarkerListAdapter _taskMarkerList;
-    private MapGroup _userGroup, _spotMapGroup, _usericonGroup, _missionGroup,
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
+    protected MapView _mapView;
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
+    protected TaskableMarkerListAdapter _taskMarkerList;
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
+    protected MapGroup _userGroup, _spotMapGroup, _usericonGroup, _missionGroup,
             _casevacGroup;
-    private Map<String, MapGroup> _userGroups;
-    private CamLockerReceiver _camLockReceiver;
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
+    protected Map<String, MapGroup> _userGroups;
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
+    protected CamLockerReceiver _camLockReceiver;
 
     @Override
     public void onCreate(Context context, Intent intent, MapView view) {
@@ -150,7 +166,10 @@ public class UserMapComponent extends AbstractMapComponent {
 
     }
 
-    private void _initUserGroups(String[] names, String[] overlays) {
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
+    protected void _initUserGroups(String[] names, String[] overlays) {
         // TODO: Why are we creating a Hostile group under both "User Objects"
         // TODO: and "Cursor on Target"??? (see CotMapAdapter)
         _userGroup = new DefaultMapGroup("User Objects");
@@ -405,7 +424,10 @@ public class UserMapComponent extends AbstractMapComponent {
                 });
     }
 
-    private void _registerIfTaskable(final Marker marker) {
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
+    protected void _registerIfTaskable(final Marker marker) {
         if (marker.hasMetaValue("tasks")) {
             _taskMarkerList.addMarker(marker);
             _mapView.getMapData().putBoolean("disableTasking", false);
@@ -439,7 +461,10 @@ public class UserMapComponent extends AbstractMapComponent {
         }
     }
 
-    private final MapEventDispatcher.MapEventDispatchListener _itemAddedListner = new MapEventDispatcher.MapEventDispatchListener() {
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
+    protected final MapEventDispatcher.MapEventDispatchListener _itemAddedListner = new MapEventDispatcher.MapEventDispatchListener() {
         @Override
         public void onMapEvent(MapEvent event) {
             if (event.getItem() instanceof Marker) {
@@ -455,7 +480,10 @@ public class UserMapComponent extends AbstractMapComponent {
         }
     };
 
-    private final BroadcastReceiver clampToggleReceiver = new BroadcastReceiver() {
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
+    protected final BroadcastReceiver clampToggleReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();

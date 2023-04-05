@@ -1,6 +1,8 @@
 
 package com.atakmap.android.http.rest;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.cot.CotMapComponent;
 import com.atakmap.android.http.rest.request.GetServerVersionRequest;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -82,6 +84,7 @@ public class ServerVersion {
         return !FileSystemUtils.isEmpty(netConnect);
     }
 
+    @NonNull
     @Override
     public String toString() {
         if (!isValid())
@@ -130,9 +133,8 @@ public class ServerVersion {
      * Prior to TAK Server 1.3.6 API ver=2 the 'tool' param was not supported
      *
      * @param hostname hostname (not Server Connect String or base URL)
-     * @return
+     * @return true if the tool parameter is needed for the hostname
      */
-
     public static boolean includeToolParam(String hostname) {
         ServerVersion ver = CotMapComponent.getInstance().getServerVersion(
                 hostname);
@@ -142,7 +144,7 @@ public class ServerVersion {
                     .getApiVersion() >= ServerVersion.MPT_TOOL_PARAM_MIN_VERSION;
             Log.d(TAG,
                     "query bIncludeTool=" + bIncludeTool + ", "
-                            + ver.toString());
+                            + ver);
         } else {
             Log.d(TAG, "Server version not set for: " + hostname);
             bIncludeTool = false;

@@ -54,7 +54,7 @@ abstract class BluetoothClientConnection extends BluetoothConnection {
 
         if (socket != null) {
             try {
-                Log.d(TAG, "Closing previous socket: " + socket.toString());
+                Log.d(TAG, "Closing previous socket: " + socket);
                 socket.close();
             } catch (IOException ioe) {
                 Log.w(TAG, "socket close exception", ioe);

@@ -3,25 +3,25 @@
   xmlns:android="http://schemas.android.com/apk/res/android">
     <PreferenceCategory 
     android:title="@string/alert_preferences">
-        <CheckBoxPreference
+        <com.atakmap.android.gui.PanCheckBoxPreference
             android:title="@string/notification"
             android:key="alert_notification"
             android:summary="@string/preferences_text1"
             android:defaultValue="true" />
-        <CheckBoxPreference
-                android:title="@string/individual_alert_notifications"
-                android:summary="@string/individual_alert_notifications_desc"
-                android:defaultValue="false"
-                android:key="individual_alert_notification"
-                android:dependency="alert_notification"
-                android:disableDependentsState="false"/>
-        <CheckBoxPreference
+        <com.atakmap.android.gui.PanCheckBoxPreference
+            android:title="@string/individual_alert_notifications"
+            android:summary="@string/individual_alert_notifications_desc"
+            android:defaultValue="false"
+            android:key="individual_alert_notification"
+            android:dependency="alert_notification"
+            android:disableDependentsState="false"/>
+        <com.atakmap.android.gui.PanCheckBoxPreference
             android:title="@string/preferences_text2"
             android:key="alert_audible"
             android:summary="@string/preferences_text3"
             android:defaultValue="false"
             android:dependency="alert_notification"/>
-        <CheckBoxPreference
+        <com.atakmap.android.gui.PanCheckBoxPreference
             android:title="@string/preferences_text4"
             android:key="alert_vibration"
             android:summary="@string/preferences_text5"

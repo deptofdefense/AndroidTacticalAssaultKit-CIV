@@ -12,7 +12,6 @@ import com.atakmap.app.R;
 
 public class LayersManagerView extends AbstractLayersManagerView {
 
-
     private ImageButton _upButton;
     private ImageButton _downButton;
     private CompoundButton _autoSelectButton;

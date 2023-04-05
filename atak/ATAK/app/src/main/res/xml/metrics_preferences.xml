@@ -5,7 +5,7 @@
         android:title="@string/metricreport_pref"
         android:key="key_for_category"/>
 
-    <Preference
+   <Preference
         android:key="loggingDisclaimer"
         android:selectable="false"
         android:persistent="false"
@@ -13,14 +13,14 @@
         android:summary="@string/advanced_logging_disclaimer_summary"
         android:icon="@drawable/metrics"/>
 
-    <CheckBoxPreference
+    <com.atakmap.android.gui.PanCheckBoxPreference
         android:defaultValue="false"
         android:key="collect_metrics"
         android:summary="@string/metricreport"
         android:title="@string/metric_report_title"
-        android:icon="@drawable/metrics"/>
+        android:icon="@drawable/metrics" />
 
-    <CheckBoxPreference
+    <com.atakmap.android.gui.PanCheckBoxPreference
         android:defaultValue="false"
         android:key="realtime_metrics"
         android:summary="@string/metric_live"
@@ -28,13 +28,13 @@
         android:dependency="collect_metrics"
         android:icon="@drawable/ic_menu_network_connections"/>
 
-    <CheckBoxPreference android:title="@string/advanced_cot_recorder"
+    <com.atakmap.android.gui.PanCheckBoxPreference android:title="@string/advanced_cot_recorder"
         android:key="generate_full_pool"
         android:checked="false"
         android:dependency="collect_metrics"
         android:summary="@string/advanced_cot_recorder_summ" />
 
-    <CheckBoxPreference android:title="@string/advanced_detail_recorder"
+    <com.atakmap.android.gui.PanCheckBoxPreference android:title="@string/advanced_detail_recorder"
         android:key="generate_detail_pool"
         android:checked="false"
         android:dependency="collect_metrics"

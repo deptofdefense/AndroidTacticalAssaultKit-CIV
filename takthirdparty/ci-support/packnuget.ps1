@@ -5,9 +5,9 @@ $source = $p2
 Remove-Item TTP-Dist -Recurse -Force -ErrorAction 'SilentlyContinue' 
 mkdir TTP-Dist
 Set-Location TTP-Dist
-mkdir lib
+mkdir lib/netstandard2.0
 mkdir build/x64
-Copy-Item ../../win64-release/csharp/*_csharp.dll lib
+Copy-Item ../../win64-release/csharp/*_csharp.dll lib/netstandard2.0
 Copy-Item ../../win64-release/csharp/*_wrap.dll build/x64
 Copy-Item -Path ../../win64-release/lib/*.dll -Destination build/x64 -Exclude @('charset-1.dll', 'gdalalljni.dll', 'geos.dll', 'lti_dsdk_cdll_9.5.dll')
 

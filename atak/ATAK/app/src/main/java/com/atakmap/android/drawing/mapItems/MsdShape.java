@@ -1,3 +1,4 @@
+
 package com.atakmap.android.drawing.mapItems;
 
 import android.graphics.Color;
@@ -156,7 +157,7 @@ public class MsdShape extends Polyline implements
 
         // Only the first 4 points of the rectangle is used
         if (_shape instanceof Rectangle) {
-            points = new GeoPoint[]{
+            points = new GeoPoint[] {
                     points[0], points[1], points[2], points[3]
             };
         }
@@ -164,7 +165,8 @@ public class MsdShape extends Polyline implements
         int len = points.length;
 
         // Invalid shape
-        if (len < 2) return;
+        if (len < 2)
+            return;
 
         // Just use the shape's points
         if (_range <= 0) {
@@ -237,7 +239,8 @@ public class MsdShape extends Polyline implements
 
             // Check if the current edge convergence is clockwise
             double bDiff = b2 - b1;
-            if (bDiff < 0) bDiff += 360;
+            if (bDiff < 0)
+                bDiff += 360;
             boolean bClockwise = bDiff < 180;
             boolean nextIntersects = Math.abs(bDiff - 180) > 1e-6
                     && clockwise != bClockwise;
@@ -313,10 +316,10 @@ public class MsdShape extends Polyline implements
      * @param pts Points list to add to
      */
     private void addArc(final GeoPoint pt,
-                        double b1,
-                        double b2,
-                        final boolean clockwise,
-                        final List<GeoPoint> pts) {
+            double b1,
+            double b2,
+            final boolean clockwise,
+            final List<GeoPoint> pts) {
 
         if (clockwise && b1 > b2)
             b2 += 360;
@@ -327,11 +330,15 @@ public class MsdShape extends Polyline implements
         int s2 = getCircleStep(b2);
 
         if (clockwise) {
-            if (s1 * CIRCLE_STEP <= b1) s1++;
-            if (s2 * CIRCLE_STEP >= b2) s2--;
+            if (s1 * CIRCLE_STEP <= b1)
+                s1++;
+            if (s2 * CIRCLE_STEP >= b2)
+                s2--;
         } else {
-            if (s1 * CIRCLE_STEP >= b1) s1--;
-            if (s2 * CIRCLE_STEP <= b2) s2++;
+            if (s1 * CIRCLE_STEP >= b1)
+                s1--;
+            if (s2 * CIRCLE_STEP <= b2)
+                s2++;
         }
 
         int s = s1;
@@ -371,7 +378,7 @@ public class MsdShape extends Polyline implements
      */
     @Nullable
     private static GeoPoint getIntersection(GeoPoint p00, GeoPoint p01,
-                                            GeoPoint p10, GeoPoint p11) {
+            GeoPoint p10, GeoPoint p11) {
         if (p00 == null || p01 == null || p10 == null || p11 == null)
             return null;
         Vector2D seg00 = toVec(p00);

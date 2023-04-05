@@ -10,7 +10,7 @@ import android.graphics.PointF;
 import android.graphics.RectF;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-
+import com.atakmap.annotations.ModifierApi;
 import com.atakmap.android.imagecapture.CanvasHelper;
 import com.atakmap.android.imagecapture.CapturePP;
 import com.atakmap.android.imagecapture.PointA;
@@ -18,8 +18,6 @@ import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.coremap.conversions.Angle;
 import com.atakmap.coremap.conversions.AngleUtilities;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.log.Log;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -57,6 +55,11 @@ public class SensorFOV extends Shape implements MapItem.OnGroupChangedListener,
 
     private final ConcurrentLinkedQueue<OnMetricsChangedListener> _onChanged = new ConcurrentLinkedQueue<>();
 
+    /**
+     * Construct a field of view with a provided unique identifier.   The rest of the parameters for
+     * a sensor field of view are set by the setMetrics call.
+     * @param uid the unique identifier
+     */
     public SensorFOV(final String uid) {
         this(MapItem.createSerialId(), new DefaultMetaDataHolder(), uid);
         setLabels(false);
@@ -64,8 +67,8 @@ public class SensorFOV extends Shape implements MapItem.OnGroupChangedListener,
         arrow.setMetaBoolean("nevercot", true);
         arrow.setMetaBoolean("addToObjList", false);
         arrow.setClickable(false);
-        arrow.setStrokeColor(Color.argb(20, 211, 211, 211));
-        arrow.setStrokeWeight(1f);
+        arrow.setStrokeColor(getStrokeColor());
+        arrow.setStrokeWeight(getStrokeWeight());
         arrow.setText("");
         arrow.setAltitudeMode(Feature.AltitudeMode.ClampToGround);
         addOnGroupChangedListener(this);
@@ -105,9 +108,9 @@ public class SensorFOV extends Shape implements MapItem.OnGroupChangedListener,
 
         return new GeoPoint[] {
                 _point.get(),
-                DistanceCalculations.metersFromAtBearing(_point.get(), _extent,
+                GeoCalculations.pointAtDistance(_point.get(), _extent,
                         _azimuth - (_fov / 2.0f)),
-                DistanceCalculations.metersFromAtBearing(_point.get(), _extent,
+                GeoCalculations.pointAtDistance(_point.get(), _extent,
                         _azimuth + (_fov / 2.0f))
         };
 
@@ -123,7 +126,8 @@ public class SensorFOV extends Shape implements MapItem.OnGroupChangedListener,
      * units of the various items:
      * @param azimuth  the azimuth is in Degrees True
      * @param fov field of view in angular degrees
-     * @param extent in meters.
+     * @param extent in meters bounded between Integer.MAX_VALUE and Integer.MIN_VALUD.   If the value
+     *               exceeds the bounds it will be capped at the MAX or MIN value.
      */
     public void setMetrics(float azimuth, float fov, float extent) {
         this.setMetrics(azimuth, fov, extent, false, 100);
@@ -132,26 +136,26 @@ public class SensorFOV extends Shape implements MapItem.OnGroupChangedListener,
     /**
      * When setting the metrics that define the sensor, please pay attention to the 
      * units of the various items:
-     * @param azimuth  the azimuth is in Degrees True
+     * @param azimuth  the azimuth is in degrees true
      * @param fov field of view in angular degrees
-     * @param extent in meters.
+     * @param extent in meters bounded between Integer.MAX_VALUE and Integer.MIN_VALUD.   If the value
+     *               exceeds the bounds it will be capped at the MAX or MIN value.
      * @param bLabels display FoV edges/angles as labels
      * @param rangeLines spacing for range lines in meters
      */
     public void setMetrics(float azimuth, float fov, float extent,
             boolean bLabels, float rangeLines) {
-        Log.d(TAG, "setMetrics: " + bLabels + ", rangeLines: " + rangeLines);
 
-        _azimuth = azimuth;
-        _fov = fov;
-        _extent = extent;
-        _rangeLines = rangeLines;
+        _azimuth = checkAndSet(azimuth);
+        _fov = checkAndSet(fov);
+        _extent = checkAndSet(extent);
+        _rangeLines = checkAndSet(rangeLines);
         setLabels(bLabels);
         arrow.setPoint1(_point);
         arrow.setPoint2(GeoPointMetaData
-                .wrap(DistanceCalculations.metersFromAtBearing(_point.get(),
-                        _extent,
-                        _azimuth)));
+                .wrap(GeoCalculations.pointAtDistance(_point.get(),
+                        _azimuth,
+                        _extent)));
 
         onMetricsChanged();
         this.onPointsChanged();
@@ -190,7 +194,7 @@ public class SensorFOV extends Shape implements MapItem.OnGroupChangedListener,
                 labelL = AngleUtilities.format(l0, bearingUnits) + "T";
             }
 
-            //set right lable
+            //set right label
             l0 = (_azimuth + _fov / 2);
             //            if (_northReference == NorthReference.GRID) {
             //                double gridConvergence = ATAKUtilities
@@ -247,10 +251,18 @@ public class SensorFOV extends Shape implements MapItem.OnGroupChangedListener,
                 (int) (255 * _blue));
     }
 
+    /**
+     * Adds a metric change listener if that is called when sensor field of view properties are changed
+     * @param l the change listener
+     */
     public void addOnMetricsChangedListener(OnMetricsChangedListener l) {
         _onChanged.add(l);
     }
 
+    /**
+     * Removes a metric change listener if that is called when sensor field of view properties are changed
+     * @param l the change listener
+     */
     public void removeOnMetricsChangedListener(OnMetricsChangedListener l) {
         _onChanged.remove(l);
     }
@@ -261,26 +273,54 @@ public class SensorFOV extends Shape implements MapItem.OnGroupChangedListener,
         }
     }
 
+    /**
+     * A change listener for properties on the sensor field of view.
+     */
     public interface OnMetricsChangedListener {
+        /**
+         * The method called when the metrics have changed for a sensor field of view.
+         * @param fov the specific sensor field of view that has changed.
+         */
         void onMetricsChanged(SensorFOV fov);
     }
 
+    /**
+     * Returns the azimuth of the sensor field of view in degrees from true north.
+     * @return the azimuth
+     */
     public float getAzimuth() {
         return _azimuth;
     }
 
+    /**
+     * Returns the field of view for the sensor in degrees
+     * @return the sensor field of view size in degrees
+     */
     public float getFOV() {
         return _fov;
     }
 
+    /**
+     * The extent of the sensor field of view, or the distance between the sensor point and the
+     * farthest distance visible.
+     * @return the distance in meters
+     */
     public float getExtent() {
         return _extent;
     }
 
+    /**
+     * The distance measurement for range lines associated with a sensor field of view.
+     * @return the distance between range lines in meters
+     */
     public float getRangeLines() {
         return _rangeLines;
     }
 
+    /**
+     * If the sensor field of view is supposed to show labels.
+     * @return boolean if the sensor field of view has labels turned on.
+     */
     public boolean isShowLabels() {
         return _labels;
     }
@@ -290,14 +330,26 @@ public class SensorFOV extends Shape implements MapItem.OnGroupChangedListener,
                 && !FileSystemUtils.isEmpty(labelR);
     }
 
+    /**
+     * Retrieve the left label of the sensor field of view
+     * @return the label
+     */
     public String getLabelL() {
         return labelL;
     }
 
+    /**
+     * Retrieve the right label of the sensor field of view
+     * @return the label
+     */
     public String getLabelR() {
         return labelR;
     }
 
+    /**
+     * Retrieve the point of the sensor for the sensor field of view
+     * @return the sensor point
+     */
     public GeoPointMetaData getPoint() {
         return _point;
     }
@@ -318,15 +370,32 @@ public class SensorFOV extends Shape implements MapItem.OnGroupChangedListener,
      * @param color the color in ARGB format.
      */
     @Override
-    public void setColor(int color) {
+    public void setColor(final int color) {
         float a = ((0xFF000000 & color) >> 16) / 256f;
         float r = ((0x00FF0000 & color) >> 16) / 256f;
         float g = ((0x0000FF00 & color) >> 8) / 256f;
         float b = ((0x000000FF & color)) / 256f;
         setAlpha(a);
         setColor(r, g, b);
+
     }
 
+    @Override
+    public void setStrokeWeight(double strokeWeight) {
+        arrow.setStrokeWeight(strokeWeight);
+        super.setStrokeWeight(strokeWeight);
+    }
+
+    @Override
+    public void setStrokeColor(int strokeColor) {
+        arrow.setStrokeColor(strokeColor);
+        super.setStrokeColor(strokeColor);
+    }
+
+    /**
+     * The sensor position for the sensor field of view
+     * @param point the point
+     */
     public void setPoint(GeoPointMetaData point) {
         if (point == null) {
             point = GeoPointMetaData.wrap(GeoPoint.ZERO_POINT);
@@ -334,9 +403,9 @@ public class SensorFOV extends Shape implements MapItem.OnGroupChangedListener,
         _point = point;
         arrow.setPoint1(_point);
         arrow.setPoint2(GeoPointMetaData
-                .wrap(DistanceCalculations.metersFromAtBearing(_point.get(),
-                        _extent,
-                        _azimuth)));
+                .wrap(GeoCalculations.pointAtDistance(_point.get(),
+                        _azimuth,
+                        _extent)));
         onPointsChanged();
     }
 
@@ -347,14 +416,14 @@ public class SensorFOV extends Shape implements MapItem.OnGroupChangedListener,
             // Include center and cone edges
             points.addAll(Arrays.asList(getPoints()));
             // Include arrow tip
-            points.add(DistanceCalculations.metersFromAtBearing(
+            points.add(GeoCalculations.pointAtDistance(
                     _point.get(), _extent, _azimuth));
             // Include max bounds covered by the FOV
             double minDeg = _azimuth - (_fov / 2), maxDeg = _azimuth
                     + (_fov / 2);
             for (int deg = 0; deg < 360; deg += 90) {
                 if (angleWithin(deg, minDeg, maxDeg))
-                    points.add(DistanceCalculations.metersFromAtBearing(
+                    points.add(GeoCalculations.pointAtDistance(
                             _point.get(), _extent, deg));
             }
         }
@@ -372,14 +441,14 @@ public class SensorFOV extends Shape implements MapItem.OnGroupChangedListener,
         // Store forward returns for all points
         Bundle data = new Bundle();
         if (_point != null && _point.get().isValid()) {
-            PointF top = capture.forward(DistanceCalculations
-                    .metersFromAtBearing(_point.get(), _extent, 0));
-            PointF right = capture.forward(DistanceCalculations
-                    .metersFromAtBearing(_point.get(), _extent, 90));
-            PointF bottom = capture.forward(DistanceCalculations
-                    .metersFromAtBearing(_point.get(), _extent, 180));
-            PointF left = capture.forward(DistanceCalculations
-                    .metersFromAtBearing(_point.get(), _extent, 270));
+            PointF top = capture.forward(
+                    GeoCalculations.pointAtDistance(_point.get(), _extent, 0));
+            PointF right = capture.forward(
+                    GeoCalculations.pointAtDistance(_point.get(), _extent, 90));
+            PointF bottom = capture.forward(GeoCalculations
+                    .pointAtDistance(_point.get(), _extent, 180));
+            PointF left = capture.forward(GeoCalculations
+                    .pointAtDistance(_point.get(), _extent, 270));
             RectF oval = new RectF(left.x, top.y, right.x, bottom.y);
             data.putParcelable("oval", oval);
             Bundle arrowBundle = arrow.preDrawCanvas(capture);
@@ -390,9 +459,9 @@ public class SensorFOV extends Shape implements MapItem.OnGroupChangedListener,
             if (isDrawLabels()) {
                 // Include left label
                 PointF p0 = capture.forward(_point.get());
-                GeoPoint gp1 = DistanceCalculations
-                        .metersFromAtBearing(_point.get(), _extent,
-                                _azimuth - _fov / 2);
+                GeoPoint gp1 = GeoCalculations.pointAtDistance(_point.get(),
+                        _extent,
+                        _azimuth - _fov / 2);
 
                 PointF p1 = capture.forward(gp1);
                 MapView mv = MapView.getMapView();
@@ -407,9 +476,9 @@ public class SensorFOV extends Shape implements MapItem.OnGroupChangedListener,
 
                 // Include right label
                 PointF rp0 = capture.forward(_point.get());
-                GeoPoint rgp1 = DistanceCalculations
-                        .metersFromAtBearing(_point.get(), _extent,
-                                _azimuth + _fov / 2);
+                GeoPoint rgp1 = GeoCalculations.pointAtDistance(_point.get(),
+                        _extent,
+                        _azimuth + _fov / 2);
 
                 PointF rp1 = capture.forward(rgp1);
                 GeoPointMetaData rc = GeoPointMetaData
@@ -500,6 +569,14 @@ public class SensorFOV extends Shape implements MapItem.OnGroupChangedListener,
         }
     }
 
+    /**
+     * Return true if an angle is within a given min and max value
+     * @param deg the angle in degrees
+     * @param minDeg the minimum angle in degrees
+     * @param maxDeg the maximum angle in degrees
+     * @return true if the given angle is within the minDeg and maxDeg
+     */
+    @ModifierApi(since = "4.6", modifiers = "private")
     public static boolean angleWithin(double deg, double minDeg,
             double maxDeg) {
         minDeg = CanvasHelper.deg360(minDeg);
@@ -511,5 +588,15 @@ public class SensorFOV extends Shape implements MapItem.OnGroupChangedListener,
             maxDeg += 360;
         }
         return deg >= minDeg && deg <= maxDeg;
+    }
+
+    private static float checkAndSet(final float f) {
+        if (!Float.isNaN(f)) {
+            if (f > Integer.MAX_VALUE)
+                return Integer.MAX_VALUE;
+            else if (f < Integer.MIN_VALUE)
+                return Integer.MIN_VALUE;
+        }
+        return f;
     }
 }

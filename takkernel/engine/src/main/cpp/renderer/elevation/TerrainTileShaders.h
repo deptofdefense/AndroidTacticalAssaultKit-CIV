@@ -35,7 +35,8 @@ namespace TAK {
                     GLint uTexWidth {-1};
                     GLint uTexHeight {-1};
                     GLint uElevationScale {-1};
-                    GLint aNoDataFlag {-1};
+                    GLint aNoDataFlag{ -1 };
+                    GLint aEcefVertCoords{ -1 };
                     // fragment shader
                     GLint uMinAmbientLight {-1};
                     GLint uLightSourceContribution{-1};

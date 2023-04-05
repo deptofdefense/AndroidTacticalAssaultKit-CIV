@@ -15,6 +15,7 @@ import com.atakmap.android.contact.Contact;
 import com.atakmap.android.contact.ContactPresenceDropdown;
 import com.atakmap.android.contact.ContactUtil;
 import com.atakmap.android.contact.Contacts;
+import com.atakmap.android.contact.FilteredContactsManager;
 import com.atakmap.android.contact.GroupContact;
 import com.atakmap.android.contact.IndividualContact;
 import com.atakmap.android.contact.PluginConnector;
@@ -30,7 +31,6 @@ import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import com.atakmap.android.maps.AbstractMapComponent;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.util.NotificationUtil;
-import com.atakmap.annotations.ModifierApi;
 import com.atakmap.app.R;
 import com.atakmap.app.preferences.ToolsPreferenceFragment;
 import com.atakmap.comms.CotServiceRemote;
@@ -130,6 +130,25 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
                             boolean added = addMessageToConversation(
                                     fullMsg);
 
+                            // If contact is filtered, then skip
+                            if (FilteredContactsManager.getInstance()
+                                    .anyContactsFiltered()) {
+                                if (GeoChatService.DEFAULT_CHATROOM_NAME
+                                        .equals(conversationId)) {
+                                    String senderUid = fullMsg
+                                            .getString("senderUid");
+                                    if (senderUid != null) {
+                                        if (FilteredContactsManager
+                                                .getInstance()
+                                                .isContactFiltered(senderUid))
+                                            return;
+                                    }
+                                } else {
+                                    if (FilteredContactsManager.getInstance()
+                                            .isContactFiltered(conversationId))
+                                        return;
+                                }
+                            }
                             boolean notify = PreferenceManager
                                     .getDefaultSharedPreferences(
                                             context)
@@ -165,7 +184,6 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
         }
     };
 
-
     public interface ChatMessageListener {
         /**
          * Replacement for the intent that current listens for the chat messages received
@@ -176,11 +194,6 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
     }
 
     private final ConcurrentLinkedQueue<ChatMessageListener> chatMessageListeners = new ConcurrentLinkedQueue<>();
-
-
-
-
-
 
     /**
      * sends message intent out to plugin(ChatmessagePopups) when
@@ -1039,7 +1052,7 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
                 if (message != null) {
                     Log.d(TAG,
                             "received an intent to open chat window for message: "
-                                    + message.toString());
+                                    + message);
 
                     String conversationId = message
                             .getString("conversationId");
@@ -1243,6 +1256,8 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
         chatPrefs = null;
         if (chatService != null)
             chatService.dispose();
+        if (FilteredContactsManager.getInstance() != null)
+            FilteredContactsManager.getInstance().dispose();
 
     }
 
@@ -1251,10 +1266,7 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
         Contacts.getInstance().updateTotalUnreadCount();
     }
 
-    @ModifierApi(since = "4.2", target = "4.5", modifiers = {
-            "public", "static", "final"
-    })
-    public static String CHAT_ROOM_DROPDOWN_CLOSED = "com.atakmap.chat.chatroom_closed";
+    public static final String CHAT_ROOM_DROPDOWN_CLOSED = "com.atakmap.chat.chatroom_closed";
 
     public class ChatDropDownReceiver extends DropDownReceiver {
 
@@ -1411,7 +1423,6 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
         return chatMesssageRenderer;
     }
 
-
     /**
      * Replacement for the intent currently in use for listenering to all chat messages
      * incoming to the system.  Adds a chat message listener to be notified.
@@ -1419,7 +1430,7 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
      * will be deprecated as of 4.8
      * @param cml the chat message listener that is to be notified.
      */
-    public void addChatMessageListener(ChatMessageListener cml)  {
+    public void addChatMessageListener(ChatMessageListener cml) {
         chatMessageListeners.add(cml);
     }
 
@@ -1430,7 +1441,7 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
      * will be deprecated as of 4.8
      * @param cml the chat message listener that is to be notified.
      */
-    public void removeChatMessageListener(ChatMessageListener cml)  {
+    public void removeChatMessageListener(ChatMessageListener cml) {
         chatMessageListeners.remove(cml);
     }
 
@@ -1444,6 +1455,5 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
             }
         }
     }
-
 
 }

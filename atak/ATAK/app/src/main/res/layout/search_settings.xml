@@ -22,7 +22,7 @@
         android:background="#666"/>
 
     <ListView
-        android:id="@+id/settings_list"
+        android:id="@android:id/list"
         android:fadeScrollbars="false"
         android:layout_width="fill_parent"
         android:layout_height="0dp"

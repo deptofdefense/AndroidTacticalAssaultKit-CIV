@@ -1044,9 +1044,10 @@ public class RangeAndBearingMapItem extends Arrow implements
                                         NorthReference.MAGNETIC.getValue())))));
                 break;
             case "rab_brg_units_pref":
-                setBearingUnits(Angle.findFromValue(Integer.parseInt(sp.getString(
-                        key,
-                        String.valueOf(Angle.DEGREE.getValue())))));
+                setBearingUnits(
+                        Angle.findFromValue(Integer.parseInt(sp.getString(
+                                key,
+                                String.valueOf(Angle.DEGREE.getValue())))));
                 break;
             case "rab_rng_units_pref":
                 try {

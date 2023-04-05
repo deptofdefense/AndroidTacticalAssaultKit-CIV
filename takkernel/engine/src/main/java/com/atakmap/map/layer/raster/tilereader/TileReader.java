@@ -855,7 +855,7 @@ public abstract class TileReader implements Controls {
         long numTilesY = (long) Math.ceil((double) height / (double) tileHeight);
 
         int retval = 1;
-        while (numTilesX > 1 && numTilesY > 1) {
+        while (numTilesX > 1 || numTilesY > 1) {
             width = Math.max(width >> 1L, 1L);
             height = Math.max(height >> 1L, 1L);
             numTilesX = (long) Math.ceil((double) width / (double) tileWidth);

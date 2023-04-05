@@ -523,7 +523,7 @@ public class BreadcrumbReceiver extends BroadcastReceiver implements
                             + params.getFormat(),
                     null, false);
 
-            Log.d(TAG, "Exporting Track History: " + params.toString());
+            Log.d(TAG, "Exporting Track History: " + params);
             new ExportTrackHistoryTask(view, params).execute();
         } else if (TrackHistoryDropDown.CLEAR_TRACKS
                 .equals(intent.getAction())) {

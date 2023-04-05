@@ -963,7 +963,7 @@ bool GLLabel::place(GLLabel::LabelPlacement &placement, const GLGlobeBase& view,
 
 
 #ifndef __ANDROID__
-        if (offy != 0.0 && view.renderPass->drawTilt > 0.0) {
+        if ((hints_&AutoSurfaceOffsetAdjust) && offy != 0.0 && view.renderPass->drawTilt > 0.0) {
             offy *= (float)(1.0f + view.renderPass->drawTilt / 100.0f);
         }
 #else
@@ -1287,8 +1287,8 @@ void GLLabel::validate(const GLGlobeBase& view, const GLText2 &gl_text) NOTHROWS
             // if rotation was not explicitly specified, make relative
             if (!rotation_.explicit_)
                 rotation_.absolute_ = false;
-
-            textLoc = adjustSurfaceLabelAnchor(view, textLoc, altitude_mode_);
+            if(hints_&AutoSurfaceOffsetAdjust)
+                textLoc = adjustSurfaceLabelAnchor(view, textLoc, altitude_mode_);
 
             transformed_anchor_.clear();
             transformed_anchor_.push_back(LabelPlacement());
@@ -1375,7 +1375,8 @@ void GLLabel::validate(const GLGlobeBase& view, const GLText2 &gl_text) NOTHROWS
                             view.renderPass->scene.forward(&axisb, rotAxisEP);
                         }
 
-                        textLoc = adjustSurfaceLabelAnchor(view, textLoc, altitude_mode_);
+                        if(hints_&AutoSurfaceOffsetAdjust)
+                            textLoc = adjustSurfaceLabelAnchor(view, textLoc, altitude_mode_);
 
                         transformed_anchor_.push_back(LabelPlacement());
 
@@ -1391,7 +1392,8 @@ void GLLabel::validate(const GLGlobeBase& view, const GLText2 &gl_text) NOTHROWS
                     //       labels with adequately sized screenspace geometry
                     transformed_anchor_.clear();
                     for(auto &a : anchors) {
-                        textLoc = adjustSurfaceLabelAnchor(view, a.lla, altitude_mode_);
+                        if(hints_&AutoSurfaceOffsetAdjust)
+                            textLoc = adjustSurfaceLabelAnchor(view, a.lla, altitude_mode_);
 
                         LabelPlacement placement;
                         Point2<double> pos_projected;

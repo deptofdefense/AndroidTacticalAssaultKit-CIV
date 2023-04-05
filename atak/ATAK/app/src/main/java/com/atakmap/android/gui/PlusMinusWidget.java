@@ -72,7 +72,7 @@ public class PlusMinusWidget extends LinearLayout {
 
             } else {
                 Log.d("TAG", "Unknown attribute for "
-                        + getClass().toString() + ": " + attr);
+                        + getClass() + ": " + attr);
 
             }
         }

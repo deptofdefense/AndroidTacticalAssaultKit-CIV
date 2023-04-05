@@ -308,7 +308,7 @@ public abstract class AtakPreferenceFragment extends PreferenceFragment {
                 Object value = bundle.get(key);
                 if (value != null) {
                     Log.d(tag, "key: " + key + " value: "
-                            + value.toString());
+                            + value);
                 }
             }
             Log.d(tag, "end");

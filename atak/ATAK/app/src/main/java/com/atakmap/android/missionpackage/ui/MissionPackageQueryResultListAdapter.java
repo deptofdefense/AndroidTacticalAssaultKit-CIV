@@ -299,13 +299,13 @@ public class MissionPackageQueryResultListAdapter extends BaseAdapter {
         }
 
         _sort = sort;
-        Log.d(TAG, "Sorting by: " + sort.toString());
+        Log.d(TAG, "Sorting by: " + sort);
 
         switch (sort) {
             case DATE: {
                 Collections.sort(_available, DateComparator);
                 if (_sortReversed) {
-                    Log.d(TAG, "Reversing sort by: " + sort.toString());
+                    Log.d(TAG, "Reversing sort by: " + sort);
                     Collections.sort(_available,
                             Collections.reverseOrder(DateComparator));
                 }
@@ -314,7 +314,7 @@ public class MissionPackageQueryResultListAdapter extends BaseAdapter {
             case SIZE: {
                 Collections.sort(_available, SizeComparator);
                 if (_sortReversed) {
-                    Log.d(TAG, "Reversing sort by: " + sort.toString());
+                    Log.d(TAG, "Reversing sort by: " + sort);
                     Collections.sort(_available,
                             Collections.reverseOrder(SizeComparator));
                 }
@@ -323,7 +323,7 @@ public class MissionPackageQueryResultListAdapter extends BaseAdapter {
             case USER: {
                 Collections.sort(_available, UserComparator);
                 if (_sortReversed) {
-                    Log.d(TAG, "Reversing sort by: " + sort.toString());
+                    Log.d(TAG, "Reversing sort by: " + sort);
                     Collections.sort(_available,
                             Collections.reverseOrder(UserComparator));
                 }
@@ -333,7 +333,7 @@ public class MissionPackageQueryResultListAdapter extends BaseAdapter {
             default: {
                 Collections.sort(_available, NameComparator);
                 if (_sortReversed) {
-                    Log.d(TAG, "Reversing sort by: " + sort.toString());
+                    Log.d(TAG, "Reversing sort by: " + sort);
                     Collections.sort(_available,
                             Collections.reverseOrder(NameComparator));
                 }
@@ -355,7 +355,7 @@ public class MissionPackageQueryResultListAdapter extends BaseAdapter {
             return;
         }
 
-        Log.d(TAG, "Showing details of result: " + result.toString());
+        Log.d(TAG, "Showing details of result: " + result);
 
         View v = _inflater.inflate(R.layout.missionpackage_queryresults_detail,
                 null);
@@ -388,7 +388,7 @@ public class MissionPackageQueryResultListAdapter extends BaseAdapter {
                 new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        Log.d(TAG, "Importing: " + result.toString());
+                        Log.d(TAG, "Importing: " + result);
                         AtakBroadcast.getInstance().sendBroadcast(new Intent(
                                 DropDownManager.CLOSE_DROPDOWN));
                         AtakBroadcast

@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "renderer/raster/tilematrix/GLTile.h"
 
 #include "feature/GeometryTransformer.h"
@@ -601,3 +602,4 @@ GLTile::BorrowRecord::~BorrowRecord() {
     from->borrowers.erase(owner);
     delete mesh;
 }
+#endif

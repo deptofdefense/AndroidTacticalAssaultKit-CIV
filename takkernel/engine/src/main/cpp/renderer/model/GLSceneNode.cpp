@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "renderer/model/GLSceneNode.h"
 
 #include "core/ProjectionFactory3.h"
@@ -951,3 +952,4 @@ void GLSceneNode::LODMeshes::glRelease(void *opaque) NOTHROWS
     auto *arg = static_cast<LODMeshes *>(opaque);
     arg->release();
 }
+#endif

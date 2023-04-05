@@ -6,13 +6,13 @@ import android.os.SystemClock;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.PointMapItem;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.log.Log;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
 import java.util.Timer;
 import java.util.TimerTask;
-import com.atakmap.coremap.log.Log;
-import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
 /**
  * Management tool for handling the dead reckoning implementations.
@@ -148,11 +148,11 @@ public class DeadReckoningManager implements
                             //Log.d(TAG, "speed ratio: " + speedCorrection);
                         }
 
-                        double mult = (currTime - time) / etime;
+                        final double mult = (currTime - time) / etime;
                         //Log.d(TAG, "dist: " + dist + " mult: " + mult);
 
-                        GeoPoint np = DistanceCalculations.metersFromAtBearing(
-                                curr, dist * mult * speedCorrection, dir);
+                        GeoPoint np = GeoCalculations.pointAtDistance(curr, dir,
+                                dist * mult * speedCorrection, 0.0);
 
                         np = new GeoPoint(np.getLatitude(), np.getLongitude(),
                                 curr.getAltitude(), curr.getCE(), curr.getLE());

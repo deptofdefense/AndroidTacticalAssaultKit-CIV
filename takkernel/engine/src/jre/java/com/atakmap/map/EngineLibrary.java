@@ -7,13 +7,19 @@ import com.atakmap.coremap.loader.NativeLoader;
 import com.atakmap.filesystem.HashingUtils;
 import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.math.MathUtils;
+import com.atakmap.net.AtakAuthenticationDatabase;
+import com.atakmap.net.AtakCertificateDatabase;
+import com.atakmap.net.CertificateManager;
+import com.atakmap.opengl.GLSLUtil;
 import com.atakmap.opengl.GLText;
 import com.atakmap.util.ConfigOptions;
+import gov.tak.api.commons.graphics.DisplaySettings;
 import gov.tak.api.engine.map.IRenderContextSpi;
 import gov.tak.api.engine.map.RenderContext;
 import gov.tak.api.engine.map.RenderContextFactory;
 import gov.tak.platform.commons.opengl.JOGLGLES;
 import gov.tak.platform.engine.JOGLRenderContext;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import javax.media.opengl.GL;
 import javax.media.opengl.GLAutoDrawable;
@@ -22,6 +28,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.Security;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -262,8 +269,18 @@ public final class EngineLibrary {
             ConfigOptions.setOption("gltext.use-font-bins", 0);
 
             GLRenderGlobals.appContext = runtimeContext;
+            GLSLUtil.setContext(runtimeContext);
+
             // force static initialization to install default `TextFormatFactory`
             GLText.localize(null);
+
+            Security.addProvider(new BouncyCastleProvider());
+
+            AtakAuthenticationDatabase.initialize(runtimeContext);
+            AtakCertificateDatabase.initialize(runtimeContext);
+            CertificateManager.getInstance().initialize(runtimeContext);
+
+            DisplaySettings.setDpi(300f);
         } catch (Throwable t) {
             System.err.println("EngineLibrary: Failed to load native libraries\n" + t);
         }

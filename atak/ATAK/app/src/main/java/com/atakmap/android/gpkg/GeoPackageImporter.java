@@ -102,7 +102,7 @@ public class GeoPackageImporter implements Importer {
     //
     //==================================
 
-    @ModifierApi(since = "4.5", target="4.8", modifiers={})
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {})
     public GeoPackageImporter(MapView view,
             String layerName,
             String iconURI) {

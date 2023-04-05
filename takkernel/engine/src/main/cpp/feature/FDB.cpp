@@ -3959,8 +3959,7 @@ TAKErr FDB::encodeAttributes(FDB &impl, InsertContext &ctx, const atakmap::util:
 
             // add a secondary type for the key as a new schema row
             if (schemaSpec->type != typeCode->second) {
-                std::map<int, std::shared_ptr<AttributeSpec>>::iterator secondarySchema;
-                secondarySchema = schemaSpec->secondaryDefs.find(typeCode->second);
+                const auto secondarySchema = schemaSpec->secondaryDefs.find(typeCode->second);
                 if (secondarySchema == schemaSpec->secondaryDefs.end()) {
                     std::shared_ptr<AttributeSpec> secondarySpec;
                     code = insertAttrSchema(secondarySpec, ctx, *impl.database_, *key, metadata);
@@ -3970,6 +3969,8 @@ TAKErr FDB::encodeAttributes(FDB &impl, InsertContext &ctx, const atakmap::util:
                     impl.id_to_attr_schema_[secondarySpec->id] = secondarySpec;
 
                     schemaSpec = secondarySpec.get();
+                } else {
+                    schemaSpec = secondarySchema->second.get();
                 }
             }
         }

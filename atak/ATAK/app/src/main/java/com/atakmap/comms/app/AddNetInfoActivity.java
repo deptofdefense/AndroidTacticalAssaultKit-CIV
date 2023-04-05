@@ -364,8 +364,7 @@ public class AddNetInfoActivity extends MetricActivity {
 
         if (host != null && !useDefaultCerts) {
             AtakAuthenticationCredentials caCreds = AtakAuthenticationDatabase
-                    .getAdapter()
-                    .getCredentialsForType(
+                    .getCredentials(
                             AtakAuthenticationCredentials.TYPE_caPassword,
                             host);
             if (caCreds != null &&
@@ -375,7 +374,7 @@ public class AddNetInfoActivity extends MetricActivity {
             }
 
             AtakAuthenticationCredentials clientCertCreds = AtakAuthenticationDatabase
-                    .getAdapter().getCredentialsForType(
+                    .getCredentials(
                             AtakAuthenticationCredentials.TYPE_clientPassword,
                             host);
             if (clientCertCreds != null &&
@@ -414,7 +413,6 @@ public class AddNetInfoActivity extends MetricActivity {
         tcpRadio.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.d("", "clicked tcpRadio button");
                 keystoreLayout.setVisibility(View.GONE);
                 truststoreLayout.setVisibility(View.GONE);
                 certCheckboxLayout.setVisibility(View.GONE);
@@ -533,16 +531,20 @@ public class AddNetInfoActivity extends MetricActivity {
 
                         String server = getAddress();
                         if (useDefaultCertsCheckbox.isChecked()) {
+                            Integer port = getPort();
+                            // do not continue with a null port
+                            if (port == null)
+                                return;
 
                             // clear out certs that may have been stored with this connection
                             AtakCertificateDatabase
                                     .deleteCertificateForServerAndPort(
                                             AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE,
-                                            server, getPort());
+                                            server, port);
                             AtakCertificateDatabase
                                     .deleteCertificateForServerAndPort(
                                             AtakCertificateDatabaseIFace.TYPE_TRUST_STORE_CA,
-                                            server, getPort());
+                                            server, port);
 
                             // clear out cert passwords that may have been stored with this connection
                             AtakAuthenticationDatabase
@@ -768,6 +770,10 @@ public class AddNetInfoActivity extends MetricActivity {
 
                         String server = getAddress();
                         Integer port = getPort();
+                        // do not continue with a null port
+                        if (port == null)
+                            return;
+
                         AtakCertificateDatabase.saveCertificateForServerAndPort(
                                 type,
                                 server, port, contents);

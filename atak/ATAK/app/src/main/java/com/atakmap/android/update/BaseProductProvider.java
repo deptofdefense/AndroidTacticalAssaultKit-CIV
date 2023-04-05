@@ -92,7 +92,7 @@ public abstract class BaseProductProvider implements
     @Override
     public boolean installed(String pkg) {
         if (contains(pkg)) {
-            Log.d(TAG, toString() + ": installed, " + pkg);
+            Log.d(TAG, this + ": installed, " + pkg);
             if (_cache.installed(_context, pkg)) {
                 Log.d(TAG, "installProduct Updated: " + pkg);
                 return true;
@@ -105,7 +105,7 @@ public abstract class BaseProductProvider implements
     @Override
     public boolean uninstalled(String pkg) {
         if (contains(pkg)) {
-            Log.d(TAG, toString() + ": uninstalled, " + pkg);
+            Log.d(TAG, this + ": uninstalled, " + pkg);
             if (_cache.uninstalled(_context, pkg)) {
                 Log.d(TAG, "Uninstall Updated: " + pkg);
                 return true;
@@ -124,7 +124,7 @@ public abstract class BaseProductProvider implements
         ProductRepository repo = ProductRepository.parseRepo(_context,
                 repoType, repoIndex);
         if (repo != null && repo.isValid()) {
-            Log.d(TAG, "Updating local repo: " + repo.toString());
+            Log.d(TAG, "Updating local repo: " + repo);
         } else {
             Log.d(TAG, "Clearing local repo: " + repoIndex);
             repo = null;

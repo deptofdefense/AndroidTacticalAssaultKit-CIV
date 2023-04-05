@@ -1,129 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-        <Preference android:title="@string/mediaPreferences"
-                android:key="mediaPreference"
-                android:summary="@string/preferences_text43"
-                android:icon="@drawable/media_prefs_camera"/>
-        <PreferenceCategory
-            android:title="@string/pointDroppingBehavior">
-            <CheckBoxPreference
-                android:title="@string/legacy_point_drop_naming"
-                android:summary="@string/legacy_point_drop_naming_summary"
-                android:defaultValue="false"
-                android:key="legacyPointDropNaming" />
-        </PreferenceCategory>
-        <PreferenceCategory
-            android:title="@string/lockBehavior">
-            <CheckBoxPreference
-                android:title="@string/forceCenterMoving"
-                android:summary="@string/forceCenterMovingSummary"
-                android:defaultValue="false"
-                android:key="disableFloatToBottom" />
-        </PreferenceCategory>
-        <PreferenceCategory
-            android:title="@string/staledataPreferences">
-            <CheckBoxPreference
-                android:title="@string/stale_out_disconnected_users"
-                android:summary="@string/stale_out_disconnected_users_summary"
-                android:defaultValue="true"
-                android:key="staleRemoteDisconnects" />
-            <CheckBoxPreference
-                android:title="@string/preferences_text42"
-                android:summary="@string/preferences_text44"
-                android:defaultValue="true"
-                android:key="expireEverything" />
-            <ListPreference
-                android:entryValues="@array/delete_stale_values"
-                android:entries="@array/delete_stale_names"
-                android:summary="@string/preferences_text45"
-                android:key="expireStaleItemsTime"
-                android:title="@string/stale_item_cleanup"
-                android:dependency="expireEverything"
-                android:defaultValue="5" />
-            <CheckBoxPreference
-                android:title="@string/preferences_text46"
-                android:summary="@string/preferences_text47"
-                android:defaultValue="true"
-                android:key="expireUnknowns" />
-        </PreferenceCategory>
-        <PreferenceCategory
-            android:title="@string/usertouchPreferences">
-             <CheckBoxPreference
-                 android:title="@string/preferences_text48"
-                 android:summary="@string/preferences_text49"
-                 android:defaultValue="false"
-                 android:key="atakControlQuitOnBack" />
-             <CheckBoxPreference
-                 android:title="@string/preferences_text50"
-                 android:summary="@string/preferences_text51"
-                 android:defaultValue="true"
-                 android:key="atakControlAskToQuit" />
-
-             <ListPreference
-                 android:title="@string/preferences_text52"
-                 android:summary="@string/preferences_text53"
-                 android:entryValues="@array/longpress_map_values"
-                 android:entries="@array/longpress_map_names"
-                 android:defaultValue="actionbar"
-                 android:key="atakLongPressMap" />
-
-             <CheckBoxPreference
-                 android:title="@string/preferences_text56"
-                 android:summary="@string/preferences_text57"
-                 android:defaultValue="false"
-                 android:key="atakDoubleTapToZoom" />
-         </PreferenceCategory>
-         <PreferenceCategory android:title="@string/preferences_text360">
-             <ListPreference
-                 android:title="@string/preferences_text361"
-                 android:key="self_coord_action"
-                 android:entryValues="@array/tap_selfoverlay_values"
-                 android:entries="@array/tap_selfoverlay_names"
-                 android:defaultValue="panto"
-                 android:summary="@string/preferences_text362"/>
-            <CheckBoxPreference
-                android:title="@string/preferences_text363"
-                android:summary="@string/preferences_text364"
-                android:defaultValue="false"
-                android:key="selfcoord_legacy_enlarge" />
-         </PreferenceCategory>
-         <PreferenceCategory
-             android:title="@string/otherPreferences">
-             <CheckBoxPreference android:title="@string/attempt_disable_media_scanner"
-                 android:key="disable_mediaserver"
-                 android:checked="false"
-                 android:summary="@string/disable_mediaserver"/>
-             <CheckBoxPreference
-                 android:title="@string/preferences_text60"
-                 android:summary="@string/preferences_text61"
-                 android:defaultValue="false"
-                 android:key="atakDisableKeyguard" />
-            <ListPreference
-                android:title="@string/preferences_text62"
-                android:entryValues="@array/airplane_values"
-                android:entries="@array/airplane_names"
-                android:summary="@string/preferences_text63"
-                android:key="atakForceAirplaneRadioList"
-                android:defaultValue="none" />
-             <CheckBoxPreference
-                 android:title="@string/preferences_text64"
-                 android:summary="@string/preferences_text65"
-                 android:defaultValue="true"
-                 android:key="atakControlMaximumTextureUnits"/>
-             <CheckBoxPreference
-                 android:title="@string/preferences_text66"
-                 android:summary="@string/preferences_text67"
-                 android:defaultValue="true"
-                 android:key="atakControlEnableTextureCopy"/>
-             <CheckBoxPreference
-                 android:title="@string/continuous_rendering"
-                 android:summary="@string/continuous_rendering_summary"
-                 android:defaultValue="false"
-                 android:key="atakContinuousRender"/>
-             <CheckBoxPreference
-                 android:title="@string/developer_tools"
-                 android:summary="@string/developer_tools_summary"
-                 android:defaultValue="false"
-                 android:key="atakDeveloperTools"/>
-         </PreferenceCategory>
+    <PreferenceCategory android:title="@string/control_preferences">
+       <Preference
+            android:key="mediaPreference"
+            android:title="@string/mediaPreferences"
+            android:summary="@string/preferences_text43"
+            android:icon="@drawable/media_prefs_camera" />
+       <Preference
+            android:key="lockBehavior"
+            android:title="@string/lockBehavior"
+            android:summary="@string/forceCenterMovingSummary" />
+       <Preference
+            android:key="staleData"
+            android:title="@string/staledataPreferences"
+            android:summary="@string/stale_out_disconnected_users_summary" />
+       <Preference
+            android:key="userTouch"
+            android:title="@string/usertouchPreferences"
+            android:summary="@string/preferences_text49" />
+       <Preference
+            android:key="selfCoordinate"
+            android:title="@string/additional_self_coord_controls"
+            android:summary="@string/additional_self_coord_control_summ"
+            android:icon="@drawable/ic_pref_self_coord_info" />
+    </PreferenceCategory>
 </PreferenceScreen>

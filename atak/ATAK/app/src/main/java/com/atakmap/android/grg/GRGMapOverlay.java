@@ -97,7 +97,7 @@ public final class GRGMapOverlay extends FeatureDataStoreMapOverlay {
     private final RasterDataStore _grgLayersDb;
     private GRGMapOverlayListModel _listModel;
 
-    @ModifierApi(since = "4.5", target="4.8", modifiers={})
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {})
     public GRGMapOverlay(MapView view, RasterLayer2 layer,
             RasterDataStore grgLayersDb, FeatureLayer3 coveragesLayer) {
         super(view.getContext(),
@@ -127,7 +127,7 @@ public final class GRGMapOverlay extends FeatureDataStoreMapOverlay {
                 "prefs_layer_grg_map_interaction");
     }
 
-    @ModifierApi(since = "4.5", target="4.8", modifiers={})
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {})
     public void dispose() {
         if (_prefs != null && _prefListener != null) {
             _prefs.unregisterListener(_prefListener);

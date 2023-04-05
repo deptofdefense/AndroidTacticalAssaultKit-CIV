@@ -21,6 +21,7 @@ import com.atakmap.coremap.io.IOProvider;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.net.AtakAuthenticationCredentials;
+import com.atakmap.net.AtakAuthenticationDatabase;
 import com.atakmap.net.AtakAuthenticationDatabaseIFace;
 import com.atakmap.net.AtakCertificateDatabase;
 import com.atakmap.net.AtakCertificateDatabaseIFace;
@@ -52,8 +53,6 @@ public class CotService implements OnSharedPreferenceChangeListener,
     private final Context context;
 
     private static final Object staticDatabaseIFaceLock = new Object();
-    private static AtakCertificateDatabaseIFace _staticAtakCertificateDatabase = null;
-    private static AtakAuthenticationDatabaseIFace _staticAtakAuthenticationDatabase = null;
 
     private static final Object propertyFileLock = new Object();
 
@@ -343,14 +342,13 @@ public class CotService implements OnSharedPreferenceChangeListener,
         if (connectParts[2].equals("ssl")) {
 
             // retrieve the certificates. look for a connection specific cert
-            trustStore = CotService.getCertificateDatabase()
-                    .getCertificateForTypeAndServerAndPort(
+            trustStore = AtakCertificateDatabase
+                    .getCertificateForServerAndPort(
                             AtakCertificateDatabaseIFace.TYPE_TRUST_STORE_CA,
                             connectParts[0],
                             Integer.parseInt(connectParts[1]));
-            clientCert = CotService
-                    .getCertificateDatabase()
-                    .getCertificateForTypeAndServerAndPort(
+            clientCert = AtakCertificateDatabase
+                    .getCertificateForServerAndPort(
                             AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE,
                             connectParts[0],
                             Integer.parseInt(connectParts[1]));
@@ -360,9 +358,8 @@ public class CotService implements OnSharedPreferenceChangeListener,
 
             // try getting the global cert
             if (!useConnectionTrustStore) {
-                trustStore = CotService
-                        .getCertificateDatabase()
-                        .getCertificateForType(
+                trustStore = AtakCertificateDatabase
+                        .getCertificate(
                                 AtakCertificateDatabaseIFace.TYPE_TRUST_STORE_CA);
             }
 
@@ -372,9 +369,8 @@ public class CotService implements OnSharedPreferenceChangeListener,
             // dont pull in default certs if the connection uses enrollment. enrollment
             // always stores the cert with the connection
             if (!useConnectionClientCert && !enrollForCertificateWithTrust) {
-                clientCert = CotService
-                        .getCertificateDatabase()
-                        .getCertificateForType(
+                clientCert = AtakCertificateDatabase
+                        .getCertificate(
                                 AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE);
             }
 
@@ -414,28 +410,24 @@ public class CotService implements OnSharedPreferenceChangeListener,
             AtakAuthenticationCredentials clientCertCredentials;
 
             if (useConnectionTrustStore) {
-                caCertCredentials = CotService
-                        .getAuthenticationDatabase()
-                        .getCredentialsForType(
+                caCertCredentials = AtakAuthenticationDatabase
+                        .getCredentials(
                                 AtakAuthenticationCredentials.TYPE_caPassword,
                                 connectParts[0]);
             } else {
-                caCertCredentials = CotService
-                        .getAuthenticationDatabase()
-                        .getCredentialsForType(
+                caCertCredentials = AtakAuthenticationDatabase
+                        .getCredentials(
                                 AtakAuthenticationCredentials.TYPE_caPassword);
             }
 
             if (useConnectionClientCert) {
-                clientCertCredentials = CotService
-                        .getAuthenticationDatabase()
-                        .getCredentialsForType(
+                clientCertCredentials = AtakAuthenticationDatabase
+                        .getCredentials(
                                 AtakAuthenticationCredentials.TYPE_clientPassword,
                                 connectParts[0]);
             } else {
-                clientCertCredentials = CotService
-                        .getAuthenticationDatabase()
-                        .getCredentialsForType(
+                clientCertCredentials = AtakAuthenticationDatabase
+                        .getCredentials(
                                 AtakAuthenticationCredentials.TYPE_clientPassword);
             }
 
@@ -543,7 +535,7 @@ public class CotService implements OnSharedPreferenceChangeListener,
             CotPort.appendString(b, CotPort.ERROR_KEY, "Invalid certificate");
         } else if (!validity.isValid()) {
             Log.w(TAG, "Cert invalid for: " + hostname + ", "
-                    + validity.toString());
+                    + validity);
             TLSUtils.promptCertificateError(context, hostname,
                     "TLS Certificate invalid", true);
             //leave enabled so red dot server notification will be displayed
@@ -552,7 +544,7 @@ public class CotService implements OnSharedPreferenceChangeListener,
         } else if (!validity.isValid(2)) {
             //expires very soon, use interactive dialog
             Log.w(TAG, "Cert expires very soon for: " + hostname + ", "
-                    + validity.toString());
+                    + validity);
             CotPort.appendString(b, CotPort.ERROR_KEY,
                     "TLS certificate expires in " + validity.daysRemaining()
                             + " days");
@@ -563,7 +555,7 @@ public class CotService implements OnSharedPreferenceChangeListener,
         } else if (!validity.isValid(14)) {
             //expires in a couple weeks, non interactive notification
             Log.w(TAG, "Cert expires soon for: " + hostname + ", "
-                    + validity.toString());
+                    + validity);
             CotPort.appendString(b, CotPort.ERROR_KEY,
                     "TLS certificate expires in " + validity.daysRemaining()
                             + " days");
@@ -573,7 +565,7 @@ public class CotService implements OnSharedPreferenceChangeListener,
                     false);
         } else {
             Log.d(TAG, "Cert is valid for: " + hostname + ", "
-                    + validity.toString());
+                    + validity);
         }
     }
 
@@ -739,8 +731,8 @@ public class CotService implements OnSharedPreferenceChangeListener,
 
             String username = null;
             String password = null;
-            AtakAuthenticationCredentials credentials = getAuthenticationDatabase()
-                    .getCredentialsForType(
+            AtakAuthenticationCredentials credentials = AtakAuthenticationDatabase
+                    .getCredentials(
                             AtakAuthenticationCredentials.TYPE_COT_SERVICE,
                             ncs.getHost());
             if (credentials != null) {
@@ -839,8 +831,8 @@ public class CotService implements OnSharedPreferenceChangeListener,
 
             String username = null;
             String password = null;
-            AtakAuthenticationCredentials credentials = getAuthenticationDatabase()
-                    .getCredentialsForType(
+            AtakAuthenticationCredentials credentials = AtakAuthenticationDatabase
+                    .getCredentials(
                             AtakAuthenticationCredentials.TYPE_COT_SERVICE,
                             ncs.getHost());
             if (credentials != null) {
@@ -936,7 +928,7 @@ public class CotService implements OnSharedPreferenceChangeListener,
                 NetConnectString ncs = NetConnectString
                         .fromString(connectString);
 
-                getAuthenticationDatabase().saveCredentialsForType(
+                AtakAuthenticationDatabase.saveCredentials(
                         AtakAuthenticationCredentials.TYPE_COT_SERVICE,
                         ncs.getHost(),
                         (cacheUsername == null) ? "" : cacheUsername,
@@ -986,22 +978,22 @@ public class CotService implements OnSharedPreferenceChangeListener,
         String server = ncs.getHost();
         int port = ncs.getPort();
 
-        getAuthenticationDatabase().invalidateForType(
+        AtakCertificateDatabase.deleteCertificateForServer(
                 AtakAuthenticationCredentials.TYPE_COT_SERVICE,
                 server);
 
-        getCertificateDatabase().deleteCertificateForTypeAndServerAndPort(
+        AtakCertificateDatabase.deleteCertificateForServerAndPort(
                 AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE,
                 server, port);
 
-        getCertificateDatabase().deleteCertificateForTypeAndServerAndPort(
+        AtakCertificateDatabase.deleteCertificateForServerAndPort(
                 AtakCertificateDatabaseIFace.TYPE_TRUST_STORE_CA,
                 server, port);
 
-        getAuthenticationDatabase().invalidateForType(
+        AtakAuthenticationDatabase.delete(
                 AtakAuthenticationCredentials.TYPE_clientPassword, server);
 
-        getAuthenticationDatabase().invalidateForType(
+        AtakAuthenticationDatabase.delete(
                 AtakAuthenticationCredentials.TYPE_caPassword, server);
 
         final File configFile = getConnectionConfig(context, prefsName,
@@ -1011,28 +1003,6 @@ public class CotService implements OnSharedPreferenceChangeListener,
 
     public void onDestroy() {
         ClearContentRegistry.getInstance().unregisterListener(this);
-    }
-
-    public static void setCertificateDatabase(
-            final AtakCertificateDatabaseIFace certificateDatabase) {
-        synchronized (staticDatabaseIFaceLock) {
-            _staticAtakCertificateDatabase = certificateDatabase;
-        }
-        Log.d(TAG, "setting _staticAtakCertificateDatabase");
-    }
-
-    public static AtakCertificateDatabaseIFace getCertificateDatabase() {
-        synchronized (staticDatabaseIFaceLock) {
-            return _staticAtakCertificateDatabase;
-        }
-    }
-
-    public static void setAuthenticationDatabase(
-            final AtakAuthenticationDatabaseIFace authenticationDatabase) {
-        synchronized (staticDatabaseIFaceLock) {
-            _staticAtakAuthenticationDatabase = authenticationDatabase;
-        }
-        Log.d(TAG, "setting _staticAtakAuthenticationDatabase");
     }
 
     public void refreshAllStreams() {
@@ -1051,12 +1021,6 @@ public class CotService implements OnSharedPreferenceChangeListener,
                     removeStreaming(connStr, soft);
                 }
             }
-        }
-    }
-
-    public static AtakAuthenticationDatabaseIFace getAuthenticationDatabase() {
-        synchronized (staticDatabaseIFaceLock) {
-            return _staticAtakAuthenticationDatabase;
         }
     }
 

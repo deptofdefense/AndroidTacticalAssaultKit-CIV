@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "renderer/GL.h"
 #include "renderer/feature/GLBatchGeometryCollection3.h"
 
@@ -277,3 +278,4 @@ TAKErr GLBatchGeometryCollection3::getChildren(Collection<std::shared_ptr<GLBatc
 
     return code;
 }
+#endif

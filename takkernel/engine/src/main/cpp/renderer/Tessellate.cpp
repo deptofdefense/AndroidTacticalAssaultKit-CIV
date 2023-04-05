@@ -1,6 +1,7 @@
 #include "renderer/Tessellate.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <list>
 #include <vector>
@@ -17,6 +18,13 @@ using namespace TAK::Engine::Util;
 
 namespace
 {
+    struct PolygonDefinition
+    {
+        VertexData data;
+        std::size_t vertexCount{ 0u };
+        std::size_t startIndex{ 0u };
+    };
+
     struct TessCallback
     {
     public :
@@ -26,9 +34,24 @@ namespace
         bool error;
         std::size_t srcCount;
         std::size_t dstCount;
+        std::size_t outerRingCount;
         std::size_t combineCount;
         std::vector<std::size_t> indices;
         std::vector<Point2<double>> combinedVertices;
+        TessellateCallback *impl{ nullptr };
+        TAK::Engine::Math::Point2<double> triangle[3u];
+        bool exteriorVertex[3u];
+        std::size_t idx{ 0u };
+        GLenum mode{ GL_TRIANGLES };
+        Algorithm algorithm;
+        double threshold{ 0.0 };
+        ReadVertexFn readV{ nullptr };
+        struct {
+            PolygonDefinition* value{ nullptr };
+            std::size_t count{ 0u };
+            PolygonDefinition* last{ nullptr };
+        } rings;
+        VertexData layout;
     };
 
     void VertexData_deleter(const VertexData *value);
@@ -59,6 +82,7 @@ namespace
     void TessCallback_edgeFlagData(GLboolean flag, void *opaque);
     void TessCallback_vertexData_count(void *vertexData, void *opaque);
     void TessCallback_vertexData_assemble(void *vertexData, void *opaque);
+    void TessCallback_vertexData_cb(void *vertexData, void *opaque);
     void TessCallback_endData(void *opaque);
     void TessCallback_combinData_count(GLfloat coords[3], void *d[4], GLfloat w[4], void **outData, void *opaque);
     void TessCallback_combinData_assemble(GLfloat coords[3], void *d[4], GLfloat w[4], void **outData, void *opaque);
@@ -178,9 +202,9 @@ namespace
         std::size_t count;
     };
 
-    TAKErr polygon(TessCallback *value, const VertexData &src, const std::size_t totalVertexCount, const int *counts, const int *startIndices, const std::size_t numPolygons, ReadVertexFn it, _GLUfuncptr vertexDataCallback, _GLUfuncptr combineCallback) NOTHROWS;
+    TAKErr polygon(TessCallback *value, const PolygonDefinition *rings, const std::size_t numPolygons, const std::size_t totalVertexCount, ReadVertexFn it, _GLUfuncptr vertexDataCallback, _GLUfuncptr combineCallback) NOTHROWS;
 
-    TAKErr triangle_r(VertexSink &sink, const Point2<double> &a, const Point2<double> &b, const Point2<double> &c, const double dab, const double dbc, const double dca, const double threshold, Algorithm alg, std::size_t depth) NOTHROWS;
+    TAKErr triangle_r(TessellateCallback &sink, const Point2<double>& a, const Point2<double>& b, const Point2<double>& c, const double dab, const double dbc, const double dca, const double threshold, Algorithm alg, std::size_t depth) NOTHROWS;
 
     TAKErr getVertex(Point2<double> *xyz, const VertexData &src, const TessCallback &cb, const std::size_t i, ReadVertexFn vertRead) NOTHROWS
     {
@@ -231,96 +255,161 @@ Algorithm &TAK::Engine::Renderer::Tessellate_WGS84Algorithm() NOTHROWS
     return a;
 }
 
+TessellateCallback::~TessellateCallback() NOTHROWS
+{}
+
 TAKErr TAK::Engine::Renderer::Tessellate_polygon(VertexDataPtr &value, std::size_t *dstCount, const VertexData &src, const std::size_t count, const double threshold, Algorithm &algorithm, ReadVertexFn vertRead, WriteVertexFn vertWrite) NOTHROWS
 {
     int startIndices[] = {0};
     int counts[] = {(int)count};
     return Tessellate_polygon(value, dstCount, src, counts, startIndices, 1, threshold, algorithm, vertRead, vertWrite);
 }
-
+TAKErr TAK::Engine::Renderer::Tessellate_polygon(TessellateCallback &value, const VertexData &src, const std::size_t count, const double threshold, Algorithm &algorithm, ReadVertexFn vertRead) NOTHROWS
+{
+    int startIndices[] = {0};
+    int counts[] = {(int)count};
+    return Tessellate_polygon(value, src, counts, startIndices, 1, threshold, algorithm, vertRead);
+}
 TAKErr TAK::Engine::Renderer::Tessellate_polygon(VertexDataPtr &value, std::size_t *dstCount, const VertexData &src, const int *counts, const int *startIndices, const int numPolygons, const double threshold, Algorithm &algorithm, ReadVertexFn vertRead, WriteVertexFn vertWrite) NOTHROWS
 {
     TAKErr code(TE_Ok);
-
     if(!dstCount)
         return TE_InvalidArg;
+
+
+    struct Count : public TessellateCallback
+    {
+        TAKErr point(const Point2<double>& p) NOTHROWS override
+        {
+            n++;
+            return TE_Ok;
+        }
+        std::size_t n{ 0u };
+    } count;
+
+    code = Tessellate_polygon(count, src, counts, startIndices, numPolygons, threshold, algorithm, vertRead);
+    TE_CHECKRETURN_CODE(code);
+
+    code = VertexData_allocate(value, src.stride, src.size, count.n);
+    TE_CHECKRETURN_CODE(code);
+
+    struct Assemble : public TessellateCallback
+    {
+        TAKErr point(const Point2<double>& p) NOTHROWS override
+        {
+            return writeV(*buf, layout, p);
+        }
+        WriteVertexFn writeV{ nullptr };
+        VertexData layout;
+        MemBuffer2* buf{ nullptr };
+    } assemble;
+
+    MemBuffer2 dstbuf((uint8_t*)value->data, (count.n* value->stride));
+    assemble.writeV = vertWrite;
+    assemble.layout = src;
+    assemble.buf = &dstbuf;
+
+    code = Tessellate_polygon(assemble, src, counts, startIndices, numPolygons, threshold, algorithm, vertRead);
+    TE_CHECKRETURN_CODE(code);
+
+    return code;
+
+}
+TAKErr TAK::Engine::Renderer::Tessellate_polygon(TessellateCallback &value, const VertexData& src, const int* counts, const int* startIndices, const int numPolygons, const double threshold, Algorithm& algorithm, ReadVertexFn vertRead) NOTHROWS
+{
+    TAKErr code(TE_Ok);
+
     if(!src.data)
         return TE_InvalidArg;
     if (src.size != 2u && src.size != 3u)
         return TE_InvalidArg;
     if (counts == nullptr || startIndices == nullptr)
         return TE_InvalidArg;
+    if (!vertRead)
+        return TE_InvalidArg;
+
+    if (numPolygons < 1)
+        return TE_Ok; // nothing to do
+
+
+    std::vector<PolygonDefinition> rings;
+    rings.reserve(numPolygons);
+
     std::size_t totalVertexCount = 0;
     for (std::size_t i = 0; i < numPolygons; i++) {
+        PolygonDefinition ring;
+        ring.data = src;
+        ring.data.data = reinterpret_cast<uint8_t*>(src.data) + (src.stride * startIndices[i]);
+        ring.startIndex = (std::size_t)startIndices[i];
+        ring.vertexCount = (std::size_t)counts[i];
+        rings.push_back(ring);
+
         totalVertexCount += counts[i];
         if (counts[i] < 3u)
             return TE_InvalidArg;
     }
+    
+    // XXX - adjust iteration order for proper winding
 
-    // count the number of output vertices (original+combined)
     TessCallback cb(src, totalVertexCount);
-    code = polygon(&cb, src, totalVertexCount, counts, startIndices, numPolygons, vertRead, (_GLUfuncptr)TessCallback_vertexData_count, (_GLUfuncptr)TessCallback_combinData_count);
+    cb.impl = &value;
+    cb.algorithm = algorithm;
+    cb.threshold = threshold;
+    cb.readV = vertRead;
+    cb.layout = src;
+    cb.rings.value = &rings.at(0);
+    cb.rings.count = rings.size();
+
+    code = polygon(&cb, &rings.at(0), numPolygons, totalVertexCount, vertRead, (_GLUfuncptr)TessCallback_vertexData_cb, (_GLUfuncptr)TessCallback_combinData_assemble);
     TE_CHECKRETURN_CODE(code);
-
-    // store all output vertices (original+combined)
-    cb.indices.reserve(cb.dstCount);
-    cb.combinedVertices.reserve(cb.combineCount);
-    cb.dstCount = 0u;
-    cb.combineCount = 0u;
-    code = polygon(&cb, src, totalVertexCount, counts, startIndices, numPolygons, vertRead, (_GLUfuncptr)TessCallback_vertexData_assemble, (_GLUfuncptr)TessCallback_combinData_assemble);
-    TE_CHECKRETURN_CODE(code);
-
-    // iterate tessellation indices, subdividing triangles as necessary and aggregating into output
-
-    if (threshold) {
-        VertexSink sink(vertWrite, src);
-
-        for (std::size_t idx = 0u; idx < cb.indices.size(); idx += 3) {
-            Point2<double> a;
-            Point2<double> b;
-            Point2<double> c;
-
-            code = getVertex(&a, src, cb, idx, vertRead);
-            TE_CHECKBREAK_CODE(code);
-            code = getVertex(&b, src, cb, idx+1, vertRead);
-            TE_CHECKBREAK_CODE(code);
-            code = getVertex(&c, src, cb, idx+2, vertRead);
-            TE_CHECKBREAK_CODE(code);
-
-            code = triangle_r(sink, a, b, c, algorithm.distance(a,b), algorithm.distance(b,c), algorithm.distance(c, a), threshold, algorithm, 0u);
-            TE_CHECKBREAK_CODE(code)
-        }
-        TE_CHECKRETURN_CODE(code);
-
-        // generate output from 'finished'
-        *dstCount = sink.count;
-        code = VertexData_allocate(value, src.stride, src.size, *dstCount);
-        TE_CHECKRETURN_CODE(code);
-
-        MemBuffer2 dstbuf((uint8_t *)value->data, value->stride**dstCount);
-        code = sink.transfer(dstbuf);
-        TE_CHECKRETURN_CODE(code);
-        return TE_Ok;
-    } else {
-        *dstCount = cb.indices.size();
-        code = VertexData_allocate(value, src.stride, src.size, *dstCount);
-        TE_CHECKRETURN_CODE(code);
-
-        MemBuffer2 dstbuf((uint8_t *)value->data, value->stride**dstCount);
-        for (std::size_t i = 0u; i < *dstCount; i++) {
-            Point2<double> xyz;
-            code = getVertex(&xyz, src, cb, i, vertRead);
-            TE_CHECKBREAK_CODE(code);
-            code = vertWrite(dstbuf, *value, xyz);
-            TE_CHECKBREAK_CODE(code);
-        }
-        TE_CHECKRETURN_CODE(code);
-    }
 
     return code;
-
 }
 
+TAKErr TAK::Engine::Renderer::Tessellate_polygon(TessellateCallback &value, const VertexData *polygons, const int *counts, const int numPolygons, const size_t totalVertexCount, const double threshold, Algorithm &algorithm, ReadVertexFn vertRead)
+{
+    TAKErr code(TE_Ok);
+
+    if (!polygons)
+        return TE_InvalidArg;
+    if (!counts)
+        return TE_InvalidArg;
+    if (!vertRead)
+        return TE_InvalidArg;
+
+    if (numPolygons < 1)
+        return TE_Ok; // nothing to do
+
+
+    std::vector<PolygonDefinition> rings;
+    rings.reserve(numPolygons);
+
+    for (std::size_t i = 0; i < numPolygons; i++) {
+        PolygonDefinition ring;
+        ring.data = polygons[i];
+        ring.startIndex = rings.empty() ? 0u : (rings.back().startIndex + rings.back().vertexCount);
+        ring.vertexCount = (std::size_t)counts[i];
+        rings.push_back(ring);
+
+        if (counts[i] < 3u)
+            return TE_InvalidArg;
+    }
+
+    // XXX - adjust iteration order for proper winding
+
+    TessCallback cb(polygons[0], totalVertexCount);
+    cb.impl = &value;
+    cb.algorithm = algorithm;
+    cb.threshold = threshold;
+    cb.readV = vertRead;
+    cb.layout = polygons[0];
+    cb.rings.value = &rings.at(0);
+    cb.rings.count = rings.size();
+
+    code = polygon(&cb, &rings.at(0), numPolygons, totalVertexCount, vertRead, (_GLUfuncptr)TessCallback_vertexData_cb, (_GLUfuncptr)TessCallback_combinData_assemble);
+    TE_CHECKRETURN_CODE(code);
+    return code;
+}
 
 namespace
 {
@@ -329,7 +418,8 @@ namespace
         error(false),
         srcCount(count_),
         dstCount(0u),
-        combineCount(0u)
+        combineCount(0u),
+        outerRingCount(srcCount)
     {}
 
     void VertexData_deleter(const VertexData *value)
@@ -494,7 +584,8 @@ namespace
 
     void TessCallback_beginData(GLenum type, void *opaque)
     {
-        //TessCallback &cb = *static_cast<TessCallback *>(opaque);
+        TessCallback &cb = *static_cast<TessCallback *>(opaque);
+        cb.mode = type;
     }
     void TessCallback_edgeFlagData(GLboolean flag, void *opaque)
     {
@@ -511,9 +602,73 @@ namespace
         cb.indices.push_back((std::size_t)(intptr_t)vertexData);
         cb.dstCount++;
     }
+    void TessCallback_vertexData_cb(void *vertexData, void *opaque)
+    {
+        TessCallback &cb = *static_cast<TessCallback *>(opaque);
+        const std::size_t idx = (std::size_t)(intptr_t)vertexData;
+        Point2<double> p;
+        if (idx < cb.srcCount) {
+            auto ring = cb.rings.last;
+            do {
+                // check last ring
+                if(ring && (idx >= ring->startIndex && (idx-ring->startIndex) < ring->vertexCount))
+                    break;
+                for (std::size_t i = 0u; i < cb.rings.count; i++) {
+                    ring = cb.rings.value + i;
+                    if((idx >= ring->startIndex && (idx-ring->startIndex) < ring->vertexCount))
+                        break;
+                }
+                cb.rings.last = ring;
+            } while (false);
+            MemBuffer2 buf((const uint8_t *)ring->data.data, (ring->data.stride * ring->vertexCount));
+            buf.position((idx-ring->startIndex) * cb.layout.stride);
+            cb.readV(&p, buf, cb.layout);
+            cb.exteriorVertex[cb.idx] = idx < cb.outerRingCount;
+        } else {
+            p = cb.combinedVertices[idx - cb.srcCount];
+            cb.exteriorVertex[cb.idx] = false;
+        }
+        if (cb.idx < 3u)
+            cb.triangle[cb.idx++] = p;
+
+        if (cb.idx == 3u) {
+            // flush triangle to sink
+            if (cb.threshold) {
+                cb.error = triangle_r(
+                    *cb.impl,
+                    cb.triangle[0u],
+                    cb.triangle[1u],
+                    cb.triangle[2u],
+                    cb.algorithm.distance(cb.triangle[0u], cb.triangle[1u]),
+                    cb.algorithm.distance(cb.triangle[1u], cb.triangle[2u]),
+                    cb.algorithm.distance(cb.triangle[2u], cb.triangle[0u]),
+                    cb.threshold,
+                    cb.algorithm,
+                    0u) != TE_Ok;
+            } else {
+                cb.impl->point(cb.triangle[0u], cb.exteriorVertex[0u]);
+                cb.impl->point(cb.triangle[1u], cb.exteriorVertex[1u]);
+                cb.impl->point(cb.triangle[2u], cb.exteriorVertex[2u]);
+            }
+
+            switch (cb.mode) {
+            case GL_TRIANGLES :
+                cb.idx = 0u;
+                break;
+            case GL_TRIANGLE_STRIP:
+                cb.triangle[0u] = cb.triangle[1u];
+            case GL_TRIANGLE_FAN :
+                cb.triangle[1u] = cb.triangle[2u];
+                cb.idx = 2u;
+                break;
+            default :
+                break;
+            }
+        }
+    }
     void TessCallback_endData(void *opaque)
     {
-        //TessCallback &cb = *static_cast<TessCallback *>(opaque);
+        TessCallback &cb = *static_cast<TessCallback *>(opaque);
     }
     void TessCallback_combinData_count(GLfloat coords[3], void *d[4], GLfloat w[4], void **outData, void *opaque)
     {
@@ -534,7 +689,7 @@ namespace
         cb.error = true;
     }
 
-    TAKErr polygon(TessCallback *value, const VertexData &src, const std::size_t totalVertexCount, const int *counts, const int *startIndices, const std::size_t numPolygons, ReadVertexFn it, _GLUfuncptr vertexDataCallback, _GLUfuncptr combineCallback) NOTHROWS
+    TAKErr polygon(TessCallback *value, const PolygonDefinition *rings, const std::size_t numPolygons, const std::size_t totalVertexCount, ReadVertexFn it, _GLUfuncptr vertexDataCallback, _GLUfuncptr combineCallback) NOTHROWS
     {
         TAKErr code(TE_Ok);
 
@@ -543,14 +698,14 @@ namespace
         if (!it)
             return TE_InvalidArg;
 
-        auto windingRule = static_cast<float>(GLU_TESS_WINDING_ODD);
+        const GLenum windingRule = GLU_TESS_WINDING_ODD;
         float tolerance = 0.0f;
         std::unique_ptr<GLUtesselator, void(*)(GLUtesselator *)> tess(gluNewTess(), gluDeleteTess);
         if (!tess.get())
             return TE_OutOfMemory;
 
         // properties
-        gluTessProperty(tess.get(), GLU_TESS_WINDING_RULE, windingRule);
+        gluTessProperty(tess.get(), GLU_TESS_WINDING_RULE, (GLfloat)windingRule);
         gluTessProperty(tess.get(), GLU_TESS_TOLERANCE, tolerance);
         // callbacks
         gluTessCallback(tess.get(), GLU_TESS_COMBINE_DATA, combineCallback);
@@ -560,21 +715,24 @@ namespace
         gluTessCallback(tess.get(), GLU_TESS_ERROR_DATA, (_GLUfuncptr)TessCallback_errorData);
         gluTessCallback(tess.get(), GLU_TESS_VERTEX_DATA, vertexDataCallback);
 
-        MemBuffer2 data((const uint8_t *)src.data, src.stride * totalVertexCount);
-
-        code = it(&value->origin, data, src);
-        TE_CHECKRETURN_CODE(code);
-        code = data.position(0u); // rewind
-        TE_CHECKRETURN_CODE(code);
+        {
+            // capture first vertex of exterior ring as relative origin
+            MemBuffer2 data((const uint8_t*)rings[0].data.data, rings[0].data.stride * rings[0].vertexCount);
+            code = it(&value->origin, data, rings[0].data);
+            TE_CHECKRETURN_CODE(code);
+        }
 
         gluTessBeginPolygon(tess.get(), value);
-        for (std::size_t i = 0; i < numPolygons; i++) {
-            gluTessBeginContour(tess.get());
+        for (std::size_t ringIdx = 0; ringIdx < numPolygons; ringIdx++) {
+            const auto& ring = rings[ringIdx];
 
-            std::size_t idx = 0;
-            while ((idx < counts[i]) && data.remaining() && !value->error) {
+            // create a `MemBuffer2` view of the ring data
+            MemBuffer2 data((const uint8_t*)ring.data.data, ring.data.stride*ring.vertexCount);
+
+            gluTessBeginContour(tess.get());
+            for (std::size_t idx = 0; idx < ring.vertexCount; idx++) {
                 Point2<double> xyz;
-                code = it(&xyz, data, src);
+                code = it(&xyz, data, ring.data);
                 TE_CHECKBREAK_CODE(code);
                 
                 if (TE_ISNAN(xyz.x) || TE_ISNAN(xyz.y)) {
@@ -587,8 +745,10 @@ namespace
                 xyzf[1] = static_cast<float>(xyz.y - value->origin.y);
                 //xyzf[2] = xyz.z - value->origin.z;
                 xyzf[2] = 0.0f;
-                gluTessVertex(tess.get(), xyzf, (void *)(intptr_t)(idx + startIndices[i]));
-                idx++;
+                gluTessVertex(tess.get(), xyzf, (void *)(intptr_t)(idx + ring.startIndex));
+                // stop on error
+                if (value->error)
+                    break;
             }
             gluTessEndContour(tess.get());
         }
@@ -600,7 +760,7 @@ namespace
         return value->error ? TE_Err : code;
     }
 
-    TAKErr triangle_r(VertexSink &sink, const Point2<double> &a, const Point2<double> &b, const Point2<double> &c, const double dab, const double dbc, const double dca, const double threshold, Algorithm alg, std::size_t depth) NOTHROWS
+    TAKErr triangle_r(TessellateCallback &sink, const Point2<double>& a, const Point2<double>& b, const Point2<double>& c, const double dab, const double dbc, const double dca, const double threshold, Algorithm alg, std::size_t depth) NOTHROWS
     {
         TAKErr code(TE_Ok);
         //Logger_log(TELL_Info, "triangle_r[%u] {a={%lf,%lf} b={%lf,%lf} c={%lf,%lf}}", depth, a.x, a.y, b.x, b.y, c.x, c.y);
@@ -620,13 +780,21 @@ namespace
         code = triangle_r(sink, sa, sb, sc, dsab, dsbc, dsca, threshold, alg, depth+1); \
         TE_CHECKRETURN_CODE(code); \
     } else { \
-        code = sink.writeTriangle(sa, sb, sc); \
+        code = sink.point(sa); \
+        TE_CHECKRETURN_CODE(code); \
+        code = sink.point(sb); \
+        TE_CHECKRETURN_CODE(code); \
+        code = sink.point(sc); \
         TE_CHECKRETURN_CODE(code); \
     }
 
         // no tessellation
         if(subs == 0) {
-            code = sink.writeTriangle(a, b, c);
+            code = sink.point(a);
+            TE_CHECKRETURN_CODE(code);
+            code = sink.point(b);
+            TE_CHECKRETURN_CODE(code);
+            code = sink.point(c);
             TE_CHECKRETURN_CODE(code);
             return code;
         } else if(subs == 3u) {

@@ -324,7 +324,8 @@ public class ActionBarReceiver extends BroadcastReceiver implements
         // 1) The right-drop down is visible
         // 2) The overflow menu is NOT visible
         // 3) The top tool buttons ARE visible
-        boolean embedded = _activeToolView.getEmbedState() == ActionBarView.EMBEDDED;
+        boolean embedded = _activeToolView
+                .getEmbedState() == ActionBarView.EMBEDDED;
         boolean ddVisible = mv.getWidth() < NavView.getInstance().getWidth();
         boolean buttonsVisible = NavView.getInstance().buttonsVisible();
         if (embedded && ddVisible && buttonsVisible) {
@@ -352,8 +353,8 @@ public class ActionBarReceiver extends BroadcastReceiver implements
         toolbarDrawer.removeAllViews();
         addToolbarView(dropDownToolbar, _activeToolView);
 
-        RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams)
-                dropDownToolbar.getLayoutParams();
+        RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) dropDownToolbar
+                .getLayoutParams();
 
         // Set the height of the toolbar to match the nav bar
         float size = toolbarDrawer.getResources().getDimension(

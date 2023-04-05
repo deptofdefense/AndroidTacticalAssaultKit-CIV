@@ -15,12 +15,14 @@
 #include "core/AtakMapView.h"
 #include "core/MapRenderer.h"
 #include "core/MapSceneModel2.h"
+#include "feature/Envelope2.h"
 #include "model/VertexDataLayout.h"
 #include "port/Platform.h"
 #include "renderer/GLOffscreenFramebuffer.h"
 #include "renderer/core/ColorControl.h"
 #include "renderer/core/GLAntiMeridianHelper.h"
 #include "renderer/core/GLGlobeBase.h"
+#include "renderer/core/controls/SurfaceRendererControl.h"
 #include "renderer/elevation/GLTerrainTile_decls.h"
 #include "renderer/elevation/TerrainRenderService.h"
 #include "renderer/core/controls/IlluminationControlImpl.h"
@@ -37,12 +39,7 @@ namespace TAK {
                 class GLMapRenderable2;
 
                 class ENGINE_API GLGlobe :
-                    public GLGlobeBase,
-                    public atakmap::core::AtakMapView::MapMovedListener,
-                    public atakmap::core::AtakMapView::MapProjectionChangedListener,
-                    public atakmap::core::AtakMapView::MapElevationExaggerationFactorListener,
-                    public atakmap::core::AtakMapView::MapResizedListener,
-                    public atakmap::core::MapControllerFocusPointChangedListener
+                    public GLGlobeBase
                 {
                 private:
                     struct MeshColor
@@ -87,21 +84,12 @@ namespace TAK {
                     virtual void release() NOTHROWS override;
                     virtual Util::TAKErr getTerrainMeshElevation(double *value, const double latitude, const double longitude) const NOTHROWS override;
                     virtual Elevation::TerrainRenderService &getTerrainRenderService() const NOTHROWS override;
+                    virtual Util::TAKErr lookAt(const TAK::Engine::Core::GeoPoint2 &at, const double resolution, const double azimuth, const double tilt, const TAK::Engine::Core::MapRenderer::CameraCollision collision, const bool animate) NOTHROWS override;
                 public : // render debugging
                     bool isRenderDiagnosticsEnabled() const NOTHROWS;
                     void setRenderDiagnosticsEnabled(const bool enabled) NOTHROWS;
                     void addRenderDiagnosticMessage(const char *msg) NOTHROWS;
                     bool isContinuousScrollEnabled() const NOTHROWS;
-                public: // MapMovedListener
-                    void mapMoved(atakmap::core::AtakMapView *map_, const bool animate) override;
-                public: // MapProjectionChangedListener
-                    void mapProjectionChanged(atakmap::core::AtakMapView* map_view) override;
-                public : // MapResizedListener
-                    void mapResized(atakmap::core::AtakMapView *mapView);
-                public:
-                    void mapElevationExaggerationFactorChanged(atakmap::core::AtakMapView *map_view, const double factor) override;
-                public: // MapControllerFocusPointChangedListener
-                    void mapControllerFocusPointChanged(atakmap::core::AtakMapController *controller, const atakmap::math::Point<float> * const focus) override;
                 public:
                     TAK::Engine::Util::TAKErr intersectWithTerrain2(TAK::Engine::Core::GeoPoint2 *retGP, const TAK::Engine::Core::MapSceneModel2 &map_scene, const float x, const float y) const NOTHROWS;
                     virtual Util::TAKErr inverse(TAK::Engine::Core::MapRenderer::InverseResult *result, TAK::Engine::Core::GeoPoint2 *value, const TAK::Engine::Core::MapRenderer::InverseMode mode, const unsigned int hints, const Math::Point2<double> &screen, const TAK::Engine::Core::MapRenderer::DisplayOrigin origin) NOTHROWS override;
@@ -152,7 +140,7 @@ namespace TAK {
                      * @param value
                      * @return
                      */
-                    Util::TAKErr getSurfaceBounds(Port::Collection<Feature::Envelope2> &value) const NOTHROWS;
+                    Util::TAKErr getSurfaceBounds(Port::Collection<TAK::Engine::Feature::Envelope2> &value) const NOTHROWS;
                 public :
                     void setAtmosphereEnabled(const bool enabled) NOTHROWS;
                     bool isAtmosphereEnabled() const NOTHROWS;
@@ -197,7 +185,14 @@ namespace TAK {
                             TAK::Engine::Renderer::GLOffscreenFramebuffer tileCullFbo;
                             GLuint tileCullPbo { GL_NONE };
                             std::vector<std::shared_ptr<const TAK::Engine::Renderer::Elevation::TerrainTile>> terrainTiles;
-                            std::vector<std::size_t> visIndices;
+                            struct {
+                                /** indices of visible tiles */
+                                std::vector<std::size_t> value;
+                                /** indices of tiles computed strictly _inside_ of frustum */
+                                std::vector<std::size_t> inside;
+                                /** indices of tiles computed as intersecting but not strictly _inside_ frustum */
+                                std::vector<std::size_t> intersect;
+                            } visIndices;
                             bool processed {false};
                         } computeContext[2u];
 
@@ -246,7 +241,9 @@ namespace TAK {
                     std::vector<std::string> diagnosticMessages;
 
                     std::vector<MeshColor> meshDrawModes;
-                    std::unique_ptr<GLGlobeSurfaceRenderer> surfaceRenderer;
+                    std::unique_ptr<Controls::SurfaceRendererControl, void(*)(const Controls::SurfaceRendererControl *)> surfaceRenderer;
+
+                    bool usePboCull;
                 public :
                     atakmap::core::AtakMapView &view; //COVERED
                 private:
@@ -265,7 +262,6 @@ namespace TAK {
                     friend class GLGlobeSurfaceRenderer;
                     friend struct State;
                     friend void GLMapViewDebug_drawVisibleSurface(GLGlobe &) NOTHROWS;
-                    void GLGlobe_lookAt(GLGlobe &, const TAK::Engine::Core::GeoPoint2 &, const double, const double, const double, const double, const TAK::Engine::Core::MapRenderer::CameraCollision, const bool) NOTHROWS;
                 };
 
                 /**

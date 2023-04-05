@@ -93,7 +93,7 @@ public class ImportFileDownloader extends NetworkLinkDownloader {
         // notify user
         Log.d(TAG,
                 "Import File download request created for: "
-                        + request.toString());
+                        + request);
 
         if (ImportFileTask.checkFlag(_flags,
                 ImportRemoteFileTask.FlagNotifyUserSuccess)) {
@@ -267,7 +267,7 @@ public class ImportFileDownloader extends NetworkLinkDownloader {
                 return;
             }
 
-            Log.d(TAG, "Preparing to sort: " + initialRequest.toString());
+            Log.d(TAG, "Preparing to sort: " + initialRequest);
 
             // async task to sort file to proper location
             ImportRemoteFileTask task = new ImportRemoteFileTask(_context,

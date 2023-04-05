@@ -8,6 +8,7 @@ import com.atakmap.io.ZipVirtualFile;
 import com.atakmap.map.layer.model.ModelFileUtils;
 import com.atakmap.map.layer.model.ModelInfo;
 import com.atakmap.map.layer.model.ModelInfoSpi;
+import com.atakmap.map.layer.model.zipcomment.ZipCommentGeoreferencer;
 import com.atakmap.map.projection.ProjectionFactory;
 import com.atakmap.math.Matrix;
 import com.atakmap.coremap.log.Log;
@@ -147,6 +148,7 @@ public class DaeModelInfoSpi implements ModelInfoSpi {
 
     Set<ModelInfo> modelInfos(List<ModelTuple> models) {
         Set<ModelInfo> result = new HashSet<>();
+        final boolean checkZipComment = models.size() == 1; // Currently only supported for KMZ with a single model.
         for (ModelTuple entry : models) {
             final String name = entry.name;
             final Element model = entry.model;
@@ -162,16 +164,24 @@ public class DaeModelInfoSpi implements ModelInfoSpi {
                 else
                     info.name = "unknown file";
             }
-            String altMode = getTextContent(model, new String[]{"altitudeMode"});
-            info.altitudeMode = parseAltMode(altMode);
 
             String modelPath = getTextContent(model, new String[]{"Link", "href"});
             String parentPath = kmlFile.getParentFile().getPath();
             if (parentPath.contains(".kmz/")) {
-                int endOfParentPath = parentPath.indexOf(".kmz/") + 5;
+                int endOfParentPath = parentPath.indexOf(".kmz/") + 4;
                 parentPath = parentPath.substring(0, endOfParentPath);
+            } else {
+                parentPath = parentPath.replaceAll("/+$", "");
             }
             info.uri = parentPath + File.separator + modelPath;
+
+            if (checkZipComment && ZipCommentGeoreferencer.locate(info)) {
+                    result.add(info);
+                    continue;
+            }
+
+            String altMode = getTextContent(model, new String[]{"altitudeMode"});
+            info.altitudeMode = parseAltMode(altMode);
 
             int upAxis = determineUpAxis(info.uri);
             if (upAxis == DOES_NOT_EXIST) {

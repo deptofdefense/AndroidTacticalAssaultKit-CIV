@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "formats/pfps/DrsDriverDefinition.h"
 
 #include <ogr_feature.h>
@@ -123,3 +124,4 @@ TAKErr DrsDriverDefinition::getStyleImpl(TAK::Engine::Port::String& value, const
     }
     return BasicStrokeStyle(0xFF000000 | stroke_color, static_cast<float>(stroke_width)).toOGR(value);
 }
+#endif

@@ -3,6 +3,7 @@ package com.atakmap.map;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.math.PointD;
 
+import gov.tak.api.annotation.DeprecatedApi;
 import gov.tak.api.engine.map.IMapRendererEnums;
 
 /**
@@ -13,8 +14,15 @@ import gov.tak.api.engine.map.IMapRendererEnums;
  */
 public interface MapRenderer2 extends MapRendererBase, IMapRendererEnums {
 
+    /** @deprecated use {@link OnCameraChangedListener2} */
+    @Deprecated
+    @DeprecatedApi(since = "4.5", forRemoval = true, removeAt = "4.8")
     interface OnCameraChangedListener {
         void onCameraChanged(MapRenderer2 renderer);
+    }
+
+    interface OnCameraChangedListener2 extends OnCameraChangedListener {
+        void onCameraChangeRequested(MapRenderer2 renderer);
     }
 
     /**

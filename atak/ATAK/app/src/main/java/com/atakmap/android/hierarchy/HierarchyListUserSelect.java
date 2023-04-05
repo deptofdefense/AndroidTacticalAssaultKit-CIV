@@ -228,7 +228,7 @@ public abstract class HierarchyListUserSelect extends HierarchyListFilter {
     /**
      * Get the filter to be used in getChildCount and getDescendantCount
      * Default impl does not filter
-     * @return
+     * @return the export filters being used
      */
     protected ExportFilters getFilter() {
         if (_filter == null) {
@@ -255,8 +255,8 @@ public abstract class HierarchyListUserSelect extends HierarchyListFilter {
     /**
      * Return true if item should be displayed, otherwise item will be hidden
      * 
-     * @param item
-     * @return
+     * @param item the HierarchyListItem to be considered
+     * @return true if it should be displayed
      */
     @Override
     public boolean accept(HierarchyListItem item) {
@@ -288,8 +288,8 @@ public abstract class HierarchyListUserSelect extends HierarchyListFilter {
     /**
      * Default impl filters out misc list items (not MapItem, MapGroup, MapOverlay)
      *
-     * @param item
-     * @return
+     * @param item the HierarchyListItem to be considered
+     * @return true if the item is to be filtered out
      */
     protected boolean filterListItemImpl(HierarchyListItem item) {
         //Log.d(TAG, "filterListItemImpl " + item.getClass().getName()); 
@@ -300,8 +300,8 @@ public abstract class HierarchyListUserSelect extends HierarchyListFilter {
      * Default impl filters out if item is not in mapItemUIDs
      * If mapItemsUIDs is empty, does not filter
      *
-     * @param item
-     * @return
+     * @param item the MapItem to be used
+     * @return true if the item is to be filtered out
      */
     protected boolean filterItem(MapItem item) {
         if (item == null)

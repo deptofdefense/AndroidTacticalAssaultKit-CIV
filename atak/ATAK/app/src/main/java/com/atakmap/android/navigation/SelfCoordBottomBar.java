@@ -1,3 +1,4 @@
+
 package com.atakmap.android.navigation;
 
 import com.atakmap.android.navigation.views.NavView;
@@ -116,8 +117,8 @@ public class SelfCoordBottomBar extends FrameLayout implements
         if (!display)
             return;
 
-        Boolean portraitMode = getResources().getConfiguration().orientation
-                == Configuration.ORIENTATION_PORTRAIT;
+        Boolean portraitMode = getResources()
+                .getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
 
         // Initialize the layout if needed
         if (layout == null || layout.getTag() != portraitMode)
@@ -151,7 +152,6 @@ public class SelfCoordBottomBar extends FrameLayout implements
 
         // Make the callsign bold
         SpannableStringBuilder sb = new SpannableStringBuilder();
-        sb.append("Callsign: ");
         sb.append(text.callsign,
                 new StyleSpan(android.graphics.Typeface.BOLD),
                 Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);

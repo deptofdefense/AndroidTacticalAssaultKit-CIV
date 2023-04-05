@@ -294,7 +294,8 @@ public class Wedge extends Polyline {
         // Get the distance in meters so we can apply the multiplier for the
         // wedge's radius.
         double azimuth = GeoCalculations.bearingTo(pointX, pointZ);
-        double distance = GeoCalculations.distanceTo(pointX, pointZ) * this.multiplier;
+        double distance = GeoCalculations.distanceTo(pointX, pointZ)
+                * this.multiplier;
         double fraction = 1.0 / NUM_SEGMENTS;
 
         // include the starting point and make the ending point the same as the starting point

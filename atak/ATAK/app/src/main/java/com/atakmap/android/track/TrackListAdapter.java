@@ -405,7 +405,7 @@ public class TrackListAdapter extends BaseAdapter implements
             case TIME: {
                 Collections.sort(results, timeComparator);
                 if (_sortReversed) {
-                    Log.d(TAG, "Reversing sort by: " + sort.toString());
+                    Log.d(TAG, "Reversing sort by: " + sort);
                     Collections.sort(results,
                             Collections.reverseOrder(timeComparator));
                 }
@@ -415,7 +415,7 @@ public class TrackListAdapter extends BaseAdapter implements
             default: {
                 Collections.sort(results, nameComparator);
                 if (_sortReversed) {
-                    Log.d(TAG, "Reversing sort by: " + sort.toString());
+                    Log.d(TAG, "Reversing sort by: " + sort);
                     Collections.sort(results,
                             Collections.reverseOrder(nameComparator));
                 }

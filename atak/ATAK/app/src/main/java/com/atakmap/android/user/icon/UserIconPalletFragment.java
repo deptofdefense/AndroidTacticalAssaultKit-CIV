@@ -272,7 +272,7 @@ public class UserIconPalletFragment extends Fragment {
                 UserIcon icon = iconsetAdapter.mGroupIcons.get(position);
                 if (icon == null || !icon.isValid()) {
                     Log.e(TAG, "Unable to load icon: "
-                            + (icon == null ? "" : (", " + icon.toString())));
+                            + (icon == null ? "" : (", " + icon)));
                     return;
                 }
 

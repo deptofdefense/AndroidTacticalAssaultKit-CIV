@@ -1356,7 +1356,9 @@ public class CoTInfoView extends RelativeLayout
                                     if (author_marker != null) {
                                         GeoPoint gp = author_marker
                                                 .getPoint();
-                                        CameraController.Programmatic.panTo(mapView.getRenderer3(), gp, false);
+                                        CameraController.Programmatic.panTo(
+                                                mapView.getRenderer3(), gp,
+                                                false);
                                     }
                                 }
                             });

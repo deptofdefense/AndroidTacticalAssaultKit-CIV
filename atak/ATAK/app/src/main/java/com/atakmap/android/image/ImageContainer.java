@@ -218,7 +218,7 @@ public abstract class ImageContainer implements OnTouchListener,
 
             if (ds == null) {
                 Log.e(TAG,
-                        "No dataset produced from file " + nitfFile.toString());
+                        "No dataset produced from file " + nitfFile);
                 return null;
             }
 
@@ -355,7 +355,8 @@ public abstract class ImageContainer implements OnTouchListener,
                         }
                     }
                 }
-                final NITFGraphics[] sorted = nitfCGM.toArray(new NITFGraphics[0]);
+                final NITFGraphics[] sorted = nitfCGM
+                        .toArray(new NITFGraphics[0]);
                 // Draw in order based on display level
                 Arrays.sort(sorted, NITF_Z_Comparator);
                 for (NITFGraphics g : sorted)
@@ -628,7 +629,8 @@ public abstract class ImageContainer implements OnTouchListener,
             panButton.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    CameraController.Programmatic.panTo(getMapView().getRenderer3(),
+                    CameraController.Programmatic.panTo(
+                            getMapView().getRenderer3(),
                             imageLocation, false);
                 }
             });
@@ -876,7 +878,8 @@ public abstract class ImageContainer implements OnTouchListener,
         panButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                CameraController.Programmatic.panTo(getMapView().getRenderer3(), imageLocation,
+                CameraController.Programmatic.panTo(getMapView().getRenderer3(),
+                        imageLocation,
                         false);
             }
         });

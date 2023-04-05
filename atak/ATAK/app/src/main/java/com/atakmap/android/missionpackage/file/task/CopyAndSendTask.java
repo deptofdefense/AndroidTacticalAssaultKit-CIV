@@ -69,7 +69,7 @@ public class CopyAndSendTask extends MissionPackageBaseTask {
         // work to be performed by background thread
         Thread.currentThread().setName("CopyAndSendTask");
 
-        Log.d(TAG, "Executing: " + toString());
+        Log.d(TAG, "Executing: " + this);
 
         File source = new File(_manifest.getPath());
         if (!FileSystemUtils.isFile(source)) {

@@ -1,6 +1,6 @@
-<menu buttonRadius='65' buttonSpan='45' buttonWidth='90' buttonBg='bgs/button.xml'>
+<menu buttonRadius='65' buttonSpan='40' buttonWidth='90' buttonBg='bgs/button.xml'>
     
-     <button angle='-90' icon='icons/delete.png'
+    <button angle='-90' icon='icons/delete.png'
             onClick='actions/remove.xml'
             disabled='!{${removable}}' />
 
@@ -33,5 +33,10 @@
     <button icon='icons/edit2.png'
             disabled='${disable_polar}'
             onClick='actions/polarCoords.xml'/>
+
+    <button icon='icons/clamp.png'
+            onClick='actions/clamp_toggle.xml'
+            selected='${clampedToGround}'/>
+
 
 </menu>

@@ -19,6 +19,7 @@ import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.update.AppMgmtActivity;
 import com.atakmap.android.util.ATAKUtilities;
+import com.atakmap.app.preferences.CallSignAndDeviceFragment;
 import com.atakmap.app.preferences.MyPreferenceFragment;
 import com.atakmap.app.preferences.ToolsPreferenceFragment;
 import com.atakmap.comms.CotService;
@@ -82,7 +83,8 @@ class DeviceSetupWizard implements CredentialsDialog.Callback {
             init_creds();
             if (!_controlPrefs.getBoolean("PerformedLegacyPrompt", false)) {
                 toolbarPrompt();
-                _controlPrefs.edit().putBoolean("PerformedLegacyPrompt", true).apply();
+                _controlPrefs.edit().putBoolean("PerformedLegacyPrompt", true)
+                        .apply();
             }
         }
     }
@@ -93,8 +95,6 @@ class DeviceSetupWizard implements CredentialsDialog.Callback {
                     + "/" + wizardPageTotal);
             return;
         }
-
-
 
         String title = _context.getString(R.string.preferences_text422b);
         String message = _context.getString(R.string.choose_config_method);
@@ -126,7 +126,7 @@ class DeviceSetupWizard implements CredentialsDialog.Callback {
                     toolbarPrompt();
                 } else if (which == 1) {
                     //callsign dialog
-                    MyPreferenceFragment.promptIdentity(_context);
+                    CallSignAndDeviceFragment.promptIdentity(_context);
                 } else if (which == 2) {
                     //import MP
                     ImportMissionPackageSort.importMissionPackage(_context);
@@ -239,7 +239,7 @@ class DeviceSetupWizard implements CredentialsDialog.Callback {
                     if (validity == null) {
                         launchEnrollment = true;
                     } else {
-                        Log.d(TAG, validity.toString() + ", " +
+                        Log.d(TAG, validity + ", " +
                                 validity.daysRemaining() + " days remaining");
 
                         if (!validity.isValid() ||
@@ -408,24 +408,30 @@ class DeviceSetupWizard implements CredentialsDialog.Callback {
         builder.show();
     }
 
-
     private void toolbarPrompt() {
         AlertDialog.Builder builder = new AlertDialog.Builder(_context);
         builder.setTitle("Tool Bar Setting");
         builder.setCancelable(false);
-        builder.setMessage("Do you want to use the legacy toolbar (overflow on the right side of the screen) or move to the new toolbar (overflow on the left side of the screen)?\n\nYou can change this at any time in Settings->Display Preferences->Tool Bar Customization");
-        builder.setPositiveButton("Right Side (Legacy)", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                _controlPrefs.edit().putBoolean("nav_orientation_right", true).apply();
-            }
-        });
-        builder.setNegativeButton("Left Side (New)", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                _controlPrefs.edit().putBoolean("nav_orientation_right", false).apply();
-            }
-        });
+        builder.setMessage(
+                "Do you want to use the legacy toolbar (overflow on the right side of the screen) or move to the new toolbar (overflow on the left side of the screen)?\n\nYou can change this at any time in Settings->Display Preferences->Tool Bar Customization");
+        builder.setPositiveButton("Right Side (Legacy)",
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        _controlPrefs.edit()
+                                .putBoolean("nav_orientation_right", true)
+                                .apply();
+                    }
+                });
+        builder.setNegativeButton("Left Side (New)",
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        _controlPrefs.edit()
+                                .putBoolean("nav_orientation_right", false)
+                                .apply();
+                    }
+                });
         builder.show();
 
     }

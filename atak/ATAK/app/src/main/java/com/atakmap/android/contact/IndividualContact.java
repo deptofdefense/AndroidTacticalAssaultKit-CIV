@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -220,7 +221,7 @@ public class IndividualContact extends Contact
      */
     public synchronized Collection<Connector> getConnectors(boolean bUserOnly) {
         if (!bUserOnly) {
-            return Collections.unmodifiableCollection(connectors.values());
+            return Collections.unmodifiableCollection(new HashSet<>(connectors.values()));
         } else {
             List<Connector> ret = new ArrayList<>();
             for (Connector c : connectors.values()) {
@@ -464,13 +465,13 @@ public class IndividualContact extends Contact
                             ContactConnectorManager.ConnectorFeature.Profile,
                             1);
             if (FileSystemUtils.isEmpty(profiles)) {
-                Log.d(TAG, "No profile found: " + toString());
+                Log.d(TAG, "No profile found: " + this);
                 return null;
             }
 
             Object obj = profiles.get(0);
             if (!(obj instanceof ActionBroadcastData)) {
-                Log.w(TAG, "Invalid profile found: " + toString());
+                Log.w(TAG, "Invalid profile found: " + this);
                 return null;
             }
 
@@ -544,7 +545,7 @@ public class IndividualContact extends Contact
         if (!hasLocation())
             return false;
 
-        Log.d(TAG, "zooming for individual:  " + this.toString());
+        Log.d(TAG, "zooming for individual:  " + this);
 
         //zoom map
         final GeoPoint gp = ((PointMapItem) mapItem).getPoint();
@@ -585,7 +586,7 @@ public class IndividualContact extends Contact
             int totalUnread = getUnreadCount();
             if (totalUnread == 0) {
                 //no unread, display default comms icon w/no unread overlay
-                Log.d(TAG, "Default comms for individual:  " + this.toString());
+                Log.d(TAG, "Default comms for individual:  " + this);
                 return CotMapComponent
                         .getInstance()
                         .getContactConnectorMgr()
@@ -612,7 +613,7 @@ public class IndividualContact extends Contact
                     //multiple connectors with unread
                     Log.d(TAG,
                             "Multiple comms clicked for individual: "
-                                    + this.toString());
+                                    + this);
                     ActionBroadcastData intent = getDefaultProfile();
                     if (intent != null
                             && ContactDetailDropdown.CONTACT_DETAILS
@@ -630,7 +631,7 @@ public class IndividualContact extends Contact
                     //display that connector with unread count overlay
                     Log.d(TAG,
                             "Unread comms clicked for individual: "
-                                    + this.toString()
+                                    + this
                                     + ", "
                                     + ((unreadConnector != null)
                                             ? unreadConnector

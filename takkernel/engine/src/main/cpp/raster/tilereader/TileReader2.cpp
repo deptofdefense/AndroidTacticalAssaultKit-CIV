@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "raster/tilereader/TileReader2.h"
 
 #include <algorithm>
@@ -441,7 +442,7 @@ TAKErr TAK::Engine::Raster::TileReader::TileReader2_getNumResolutionLevels(size_
     auto numTilesY = (int64_t)ceil((double)height / (double)tileHeight);
 
     *value = 1;
-    while (numTilesX > 1 && numTilesY > 1) {
+    while (numTilesX > 1 || numTilesY > 1) {
         width = std::max(width >> 1LL, 1LL);
         height = std::max(height >> 1LL, 1LL);
         numTilesX = (int64_t)ceil((double)width / (double)tileWidth);
@@ -654,9 +655,7 @@ TileReader2::AsynchronousIO::AsynchronousIO() NOTHROWS :
 {}
 
 TileReader2::AsynchronousIO::AsynchronousIO(const int64_t maxIdle_) NOTHROWS : tasks(),
-                                                                               currentTask(nullptr),
-                                                                               syncOn(Thread::TEMT_Recursive),
-                                                                               cv(),
+                                                                               monitor(Thread::TEMT_Recursive),
                                                                                thread(nullptr, nullptr),
                                                                                dead(true),
                                                                                started(false),
@@ -672,11 +671,10 @@ TAKErr TileReader2::AsynchronousIO::release() NOTHROWS
 {
     TAKErr code(TE_Ok);
     {
-        Thread::LockPtr lock(nullptr, nullptr);
-        TAK::Engine::Thread::Lock_create(lock, syncOn);
+        Thread::Monitor::Lock lock(monitor);
         code = this->abortRequests(nullptr);
         this->dead = true;
-        this->cv.broadcast(*lock.get());
+        lock.broadcast();
     }
     return code;
 }
@@ -685,20 +683,26 @@ TAKErr TileReader2::AsynchronousIO::abortRequests(TileReader2 *reader) NOTHROWS
 {
     TAKErr code(TE_Ok);
     {
-        Thread::Lock lock(syncOn);
+        Thread::Monitor::Lock lock(monitor);
 
         auto requests = this->tasks.find(reader);
         if (requests != this->tasks.end()) {
-            requests->second.clear();
-            for (auto request : requests->second)
-                ReadRequest_abort(*request);
+            requests->second->abort();
             this->tasks.erase(requests);
         }
 
-        if (currentTask && (!reader || currentTask->owner.get() == reader)) {
-            // leave currentTask alone; it belongs to the io thread and that will clean it up
-            ReadRequest_abort(*currentTask);
-            code = TE_Ok;
+        for (auto& currentTask : currentTasks) {
+            if (currentTask && (!reader || currentTask->owner.get() == reader)) {
+                // leave currentTask alone; it belongs to the io thread and that will clean it up
+                ReadRequest_abort(*currentTask);
+            }
+        }
+
+        for (auto& task : heads) {
+            if (task.second && (!reader || task.second->owner.get() == reader)) {
+                // leave currentTask alone; it belongs to the io thread and that will clean it up
+                ReadRequest_abort(*task.second);
+            }
         }
     }
     return code;
@@ -710,7 +714,7 @@ TAKErr TileReader2::AsynchronousIO::asyncRead(const std::shared_ptr<ReadRequest>
 
     rr->callback->requestCreated(rr->id);
     {
-        Thread::Lock lock(syncOn);
+        Thread::Monitor::Lock lock(monitor);
 
         this->dead = false;
         if (!this->started) {
@@ -728,48 +732,21 @@ TAKErr TileReader2::AsynchronousIO::asyncRead(const std::shared_ptr<ReadRequest>
             }
         }
         if (this->started) {
-            std::vector<std::shared_ptr<ReadRequest>> &requests = this->tasks[rr->owner.get()];
-            requests.push_back(rr);
-            struct Cmp
-            {
-                ReadRequestPrioritizer* cmp{ nullptr };
-                bool operator()(const std::shared_ptr<ReadRequest>& a, const std::shared_ptr<ReadRequest>& b) NOTHROWS
-                {
-                    // REMEMBER: requests are pulled of the _tail_ of the queue
+            std::shared_ptr<RequestQueue> requests;
+            const auto &qentry = this->tasks.find(rr->owner.get());
+            if(qentry == this->tasks.end()) {
+                requests = std::make_shared<RequestQueue>();
+                this->tasks[rr->owner.get()] = requests;
+            } else {
+                requests = qentry->second;
+            }
+            std::shared_ptr<ReadRequestPrioritizer> prioritizer;
+            const auto& pentry = this->requestPrioritizers.find(rr->owner.get());
+            if (pentry != this->requestPrioritizers.end())
+                prioritizer = pentry->second;
+            requests->push_back(rr, prioritizer);
 
-                    // canceled requests bubble to the top
-                    if (a->canceled && b->canceled)
-                        return a->id > b->id;
-                    else if (a->canceled)
-                        return false;
-                    else if (b->canceled)
-                        return true;
-
-                    // if a prioritizer is defined, use it
-                    if (cmp) {
-                        const bool a_b = cmp->compare(*a, *b);
-                        const bool b_a = cmp->compare(*b, *a);
-                        // if not equal, return priorization
-                        if (a_b != b_a)
-                            return a_b;
-                    }
-
-                    // prioritize high resolution tiles over low resolution tiles
-                    if(a->level < b->level)
-                        return false;
-                    else if(a->level > b->level)
-                        return true;
-                    else
-                        return a->id<b->id; // LIFO on read requests
-                }
-            };
-            Cmp cmp;
-            auto prioritizer = this->requestPrioritizers.find(rr->owner.get());
-            if (prioritizer != this->requestPrioritizers.end())
-                cmp.cmp = prioritizer->second.get();
-            std::sort(requests.begin(), requests.end(), cmp);
-
-            this->cv.signal(lock);
+            lock.signal();
         }
     }
     return code;
@@ -777,7 +754,7 @@ TAKErr TileReader2::AsynchronousIO::asyncRead(const std::shared_ptr<ReadRequest>
 
 void TileReader2::AsynchronousIO::setReadRequestPrioritizer(const TileReader2& reader, ReadRequestPrioritizerPtr&& prioritizer) NOTHROWS
 {
-    Thread::Lock lock(syncOn);
+    Thread::Monitor::Lock lock(monitor);
     if (!prioritizer) {
         this->requestPrioritizers.erase(&reader);
     } else {
@@ -793,61 +770,101 @@ TAKErr TileReader2::AsynchronousIO::runImpl() NOTHROWS
         std::size_t length{ 0u };
     } readBuffer;
 
+    std::shared_ptr<ReadRequest> task;
     while (true) {
-        std::shared_ptr<ReadRequest> task;
-        // synchronized (this->syncOn)
+        // the queue to validate, may be `nullptr`
+        std::shared_ptr<RequestQueue> queue;
+
         {
-            Thread::Lock lock(syncOn);
+            Thread::Monitor::Lock lock(monitor);
 
             // Clear executing reference
-            currentTask.reset();
+            if (task) {
+                currentTasks.erase(task);
+                task.reset();
+            }
 
             if (this->dead) {
                 this->started = false;
                 break;
             }
 
-            if (this->tasks.size() < 1) {
-                auto start = std::chrono::high_resolution_clock::now();
+            if (this->tasks.empty()) {
+                auto start = Port::Platform_systime_millis();
 
-                code = this->cv.wait(lock, this->maxIdle);
+                code = lock.wait(this->maxIdle);
                 TE_CHECKBREAK_CODE(code);
 
-                auto end = std::chrono::high_resolution_clock::now();
-                auto timSpan = end - start;
+                auto end = Port::Platform_systime_millis();
+                auto timeSpan = end - start;
                 // check if the thread has idle'd out
-                if (this->maxIdle > 0L && (timSpan.count()) > this->maxIdle)
+                if (this->maxIdle > 0L && timeSpan > this->maxIdle)
                     this->dead = true;
                 // wake up and re-run the sync block
                 continue;
             }
 
-            std::vector<std::shared_ptr<ReadRequest>>* requests = &this->tasks.begin()->second;
-            for (auto it = this->tasks.begin(); it != this->tasks.end(); it++) {
-                if (it->second.back()->id < requests->back()->id)
-                    requests = &it->second;
+            for (auto it = this->tasks.begin(); it != this->tasks.end(); ) {
+                // if there is no "head" request for the reader, try to pop the queue
+                if (heads.find(it->first) == heads.end()) {
+                    auto request = it->second->pop_back();
+                    // the request may not be available if the queue is validating
+                    if (request)
+                        heads[it->first] = request; // assign the request
+                    else
+                        queue = it->second; // mark the queue for validate
+                }
+                // if queue is empty, discard entry
+                if(it->second->empty())
+                    it = this->tasks.erase(it);
+                else
+                    it++;
             }
 
-            task = requests->back();
-            requests->pop_back();
-            if (requests->empty())
-                this->tasks.erase(task->owner.get());
-            currentTask = task;
+            if (!heads.empty()) {
+                // select task as FIFO head
+                {
+                    auto head = heads.begin();
+                    for (auto it = head; it != heads.end(); it++) {
+                        if (it->second->id < head->second->id) {
+                            head = it;
+                        }
+                    }
+                    task = head->second;
+                    this->heads.erase(head);
+                }
+
+                // mark the request as executing
+                currentTasks.insert(task);
+                // if no queue is marked for validation, validate the queue associated with the task
+                if (!queue) {
+                    auto entry = this->tasks.find(task->owner.get());
+                    if (entry != this->tasks.end())
+                        queue = entry->second;
+                }
+            }
         }
 
-        do {
-            std::size_t req;
-            if (task->owner->getTransferSize(&req, task->dstW, task->dstH) != TE_Ok)
-                break;
-            if (readBuffer.length < req) {
-                readBuffer.length = 0u;
-                readBuffer.data.reset(new(std::nothrow) uint8_t[req]);
-                if (!readBuffer.data.get())
+        // execute the task
+        if(task) {
+            do {
+                std::size_t req;
+                if (task->owner->getTransferSize(&req, task->dstW, task->dstH) != TE_Ok)
                     break;
-                readBuffer.length = req;
-            }
-            ReadRequest_run(readBuffer.data.get(), *task);
-        } while (false);
+                if (readBuffer.length < req) {
+                    readBuffer.length = 0u;
+                    readBuffer.data.reset(new(std::nothrow) uint8_t[req]);
+                    if (!readBuffer.data.get())
+                        break;
+                    readBuffer.length = req;
+                }
+                ReadRequest_run(readBuffer.data.get(), *task);
+            } while (false);
+        }
+
+        // validate the queue. if there is no task, block, otherwise return immediately
+        if (queue)
+            queue->validate(!task);
     }
     return code;
 }
@@ -857,3 +874,121 @@ void *TileReader2::AsynchronousIO::threadRun(void *threadData)
     static_cast<TileReader2::AsynchronousIO *>(threadData)->runImpl();
     return nullptr;
 }
+
+
+std::shared_ptr<TileReader2::ReadRequest> TileReader2::AsynchronousIO::RequestQueue::pop_back() NOTHROWS
+{
+    Thread::Monitor::Lock lock(mutex);
+    std::shared_ptr<ReadRequest> request;
+    if (!validating && !references.empty() && ((queue.size() + canceled.size()) == references.size())) {
+        if (!canceled.empty()) {
+            // canceled requests are always processed first
+
+            // pop the head of the canceled list (FIFO)
+            request = *canceled.begin();
+            canceled.erase(canceled.begin());
+        } else {
+            // pop the head of the prioritized queue
+            request = queue.back();
+            queue.pop_back();
+        }
+        references.erase(request);
+    }
+    return request;
+}
+void TileReader2::AsynchronousIO::RequestQueue::push_back(const std::shared_ptr<ReadRequest> &request, const std::shared_ptr<ReadRequestPrioritizer> &p) NOTHROWS
+{
+    Thread::Monitor::Lock lock(mutex);
+    references.insert(request);
+    prioritizer = p;
+    dirty = true;
+}
+bool TileReader2::AsynchronousIO::RequestQueue::empty() NOTHROWS
+{
+    Thread::Monitor::Lock lock(mutex);
+    return references.empty();
+}
+bool TileReader2::AsynchronousIO::RequestQueue::validate(const bool wait) NOTHROWS
+{
+    struct Cmp
+    {
+        ReadRequestPrioritizer* cmp{ nullptr };
+        bool operator()(const std::shared_ptr<ReadRequest>& a, const std::shared_ptr<ReadRequest>& b) NOTHROWS
+        {
+            // REMEMBER: requests are pulled of the _tail_ of the queue
+
+            // if a prioritizer is defined, use it
+            if (cmp) {
+                const bool a_b = cmp->compare(*a, *b);
+                const bool b_a = cmp->compare(*b, *a);
+                // if not equal, return priorization
+                if (a_b != b_a)
+                    return a_b;
+            }
+
+            // prioritize high resolution tiles over low resolution tiles
+            if(a->level < b->level)
+                return false;
+            else if(a->level > b->level)
+                return true;
+            else
+                return a->id<b->id; // LIFO on read requests
+        }
+    };
+    Cmp cmp;
+
+    {
+        Thread::Monitor::Lock lock(mutex);
+        while(true) {
+            if (!dirty)
+                return true;
+            if (!validating)
+                break;
+            if(wait) {
+                lock.wait();
+            } else {
+                return false;
+            }
+        }
+        // clear dirty flag
+        dirty = false;
+        // mark as validating
+        validating = true;
+
+        // sync the queue and canceled list
+        queue.clear();
+        canceled.clear();
+        for (const auto& request : references) {
+            if (request->canceled)
+                canceled.insert(request);
+            else
+                queue.push_back(request);
+        }
+
+        cmp.cmp = prioritizer.get();
+    }
+
+    // sort the queue
+    std::sort(queue.begin(), queue.end(), cmp);
+
+    {
+        Thread::Monitor::Lock lock(mutex);
+        // no longer validating
+        validating = false;
+        lock.broadcast();
+    }
+    return true;
+}
+void TileReader2::AsynchronousIO::RequestQueue::abort() NOTHROWS
+{
+    Thread::Monitor::Lock lock(mutex);
+    for (auto& request : references)
+        request->cancel();
+    references.clear();
+    canceled.clear();
+    dirty = true;
+    // if not currently validating, we can safely clear the queue
+    if (!validating)
+        queue.clear();
+}
+#endif

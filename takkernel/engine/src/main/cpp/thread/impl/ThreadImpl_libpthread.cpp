@@ -1,3 +1,4 @@
+#ifndef MSVC
 #include "thread/Thread.h"
 #include "thread/impl/CondImpl.h"
 #include "thread/impl/MutexImpl.h"
@@ -464,3 +465,4 @@ namespace
         return core->entry(core->opaque);
     }
 }
+#endif //#ifndef MSVC

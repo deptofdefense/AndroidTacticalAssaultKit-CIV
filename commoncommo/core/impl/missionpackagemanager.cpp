@@ -130,6 +130,7 @@ MissionPackageManager::MissionPackageManager(CommoLogger *logger,
                 uploadRequestsMonitor(),
                 uploadCurlMultiCtx(NULL),
                 webserver(NULL),
+                desiredWebPort(MP_LOCAL_PORT_DISABLE),
                 webPort(MP_LOCAL_PORT_DISABLE),
                 httpsProxyPort(MP_LOCAL_PORT_DISABLE),
                 eventQueue(),
@@ -293,59 +294,102 @@ void MissionPackageManager::setMPTransferSettings(const MPTransferSettings &sett
     xferSettings = settings;
 }
 
-void MissionPackageManager::setLocalPort(int localPort)
+int MissionPackageManager::setLocalPort(int localPort)
         COMMO_THROW (std::invalid_argument)
 {
     Lock lock(txTransfersMutex);
     
-    InternalUtils::logprintf(logger, CommoLogger::LEVEL_INFO, "Changing local web server port to %d from current %d", localPort, webPort);
-    if (localPort == webPort)
-        // All good, nothing to change
-        return;
-    
+    if (localPort == desiredWebPort && webPort != MP_LOCAL_PORT_DISABLE)
+        // All good, nothing to change.
+        // (note that we do proceed no matter what if not currently bound)
+        // Return already-bound port
+        return webPort;
+    InternalUtils::logprintf(logger, CommoLogger::LEVEL_INFO, "Changing local web server port to %d from current %d", localPort, desiredWebPort);
     
     // Shut things down before we do anything else
     if (webserver) {
         MHD_stop_daemon(webserver);
         webserver = NULL;
         webPort = MP_LOCAL_PORT_DISABLE;
+        desiredWebPort = MP_LOCAL_PORT_DISABLE;
     }
     
     abortLocalTransfers();
 
-
     if (localPort == MP_LOCAL_PORT_DISABLE) {
-        InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, "Web server disabled by request");
-        // We are done
-        return;
-    }
+        InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, "Web server disable requested, swapping to loopback-only operation");
+        // Try binding on loopback only to an ephemeral port
+        NetAddress *lba = NetAddress::create("127.0.0.1", NetAddress::WILDCARD_PORT);
+        const struct sockaddr *loopbackSockaddr = lba->getSockAddr();
+
+        webserver = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY,
+                                     0,
+                                     NULL, NULL,
+                                     webThreadAccessHandlerCallbackRedir,
+                                     this, 
+                                     MHD_OPTION_SOCK_ADDR,
+                                     loopbackSockaddr,
+                                     MHD_OPTION_END);
     
-    if (localPort < 0 || localPort > USHRT_MAX) {
+        delete lba;
+
+    } else if (localPort < 0 || localPort > USHRT_MAX) {
         InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Desired web server port is invalid");
         throw std::invalid_argument("Web server port out of range");
+    } else {
+        // Try to start on user-desired port on all interfaces
+        webserver = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY,
+                                     (unsigned short)localPort,
+                                     NULL, NULL,
+                                     webThreadAccessHandlerCallbackRedir,
+                                     this, MHD_OPTION_END);
     }
 
-    webserver = MHD_start_daemon(MHD_USE_SELECT_INTERNALLY,
-                                 (unsigned short)localPort,
-                                 NULL, NULL,
-                                 webThreadAccessHandlerCallbackRedir,
-                                 this, MHD_OPTION_END);
     if (!webserver) {
         InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Could not start web server on specified port %d", localPort);
         throw std::invalid_argument(
                 "Could not start internal web server on specified port");
     }
-    InternalUtils::logprintf(logger, CommoLogger::LEVEL_INFO, "Local web server started successfully on port %d", localPort);
+    
+    int boundPort = MP_LOCAL_PORT_DISABLE;
+    if (localPort == MP_LOCAL_PORT_DISABLE) {
+        // Obtain port from ephemeral port creation used
+        // solely for https proxying on loopback
+        const union MHD_DaemonInfo *inf = MHD_get_daemon_info(webserver, MHD_DAEMON_INFO_BIND_PORT);
+        if (!inf) {
+            InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Could obtain bound webserver port number - webserver disabled");
+
+            MHD_stop_daemon(webserver);
+            webserver = NULL;
+
+            throw std::invalid_argument(
+                    "Could not obtain bound loopback https support port - https functionality will be impaired");
+        }
+        boundPort = inf->port;
+    } else {
+        // on port desired
+        boundPort = localPort;
+    }
+    InternalUtils::logprintf(logger, CommoLogger::LEVEL_INFO, "Local web server started successfully on port %d %s",
+            boundPort, 
+            localPort == MP_LOCAL_PORT_DISABLE ? "on loopback interface only" : "on all interfaces");
     
     // Success!
-    webPort = localPort;
+    desiredWebPort = localPort;
+    webPort = boundPort;
+    return webPort;
+}
+
+int MissionPackageManager::getBoundLocalPort() const
+{
+    return webPort;
 }
 
 void MissionPackageManager::setLocalHttpsPort(int localPort)
 {
     Lock lock(txTransfersMutex);
     
-    InternalUtils::logprintf(logger, CommoLogger::LEVEL_INFO, "Changing local https server port to %d from current %d", localPort, httpsProxyPort);
+    InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, "Changing local https server port to %d from current %d", localPort, httpsProxyPort);
     if (localPort == httpsProxyPort)
         // All good, nothing to change
         return;
@@ -356,7 +400,7 @@ void MissionPackageManager::setLocalHttpsPort(int localPort)
 
 
     if (localPort == MP_LOCAL_PORT_DISABLE) {
-        InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, "Use of https proxy server disabled by request");
+        InternalUtils::logprintf(logger, CommoLogger::LEVEL_INFO, "Use of https proxy server disabled by request");
     } else {
         InternalUtils::logprintf(logger, CommoLogger::LEVEL_INFO, "Now using local https proxy on port %d", localPort);
     }
@@ -590,7 +634,7 @@ atakmap::commoncommo::CommoResult MissionPackageManager::sendFileStart(
     std::map<const InternalContactUID *, std::string>::iterator ackIter;
     for (ackIter = txCtx->localContactToAck.begin(); 
                  ackIter != txCtx->localContactToAck.end(); ++ackIter) {
-        if (localUrl.empty() || sendCoTRequest(localUrl, ackIter->second, txCtx, ackIter->first, httpsProxyPort) == COMMO_CONTACT_GONE) {
+        if (localUrl.empty() || sendCoTRequest(localUrl, ackIter->second, txCtx, ackIter->first, true) == COMMO_CONTACT_GONE) {
             if (transfersDisabled) {
                 InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR,
                     "MP Send to local contact failed - transfers disabled locally");
@@ -689,7 +733,7 @@ atakmap::commoncommo::CommoResult MissionPackageManager::sendCoTRequest(
                     const std::string &ackUid,
                     const TxTransferContext *ctx,
                     const ContactUID *contact,
-                    const int localHttpsPort)
+                    bool peerHosted)
 {
     char uuidBuf[COMMO_UUID_STRING_BUFSIZE];
     clientio->createUUID(uuidBuf);
@@ -707,16 +751,16 @@ atakmap::commoncommo::CommoResult MissionPackageManager::sendCoTRequest(
                        ourCallsign,
                        ourContactUID,
                        ackUid,
-                       localHttpsPort == MP_LOCAL_PORT_DISABLE ? false : true,
-                       localHttpsPort);
+                       peerHosted,
+                       MP_LOCAL_PORT_DISABLE);
     callsignMutex.unlock();
     CoTMessage msg(logger, uuidBuf, point, filexfer);
 
     std::string dbguid((const char *)contact->contactUID, contact->contactUIDLen);
     InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG,
-            "MP Send to %s - cot download request sending out for URL %s (localhttps = %d)",
+            "MP Send to %s - cot download request sending out for URL %s%s",
             dbguid.c_str(), downloadUrl.c_str(),
-            localHttpsPort);
+            peerHosted ? " (peerhosted)" : "");
     ContactList cList(1, &contact);
     return contactMgr->sendCoT(&cList, &msg);
 }
@@ -1225,7 +1269,7 @@ void MissionPackageManager::uploadThreadUploadCompleted(TxUploadContext *upCtx, 
             char uuidBuf[COMMO_UUID_STRING_BUFSIZE];
             clientio->createUUID(uuidBuf);
             uuidBuf[COMMO_UUID_STRING_BUFSIZE-1] = '\0';
-            if (sendCoTRequest(upCtx->urlFromServer, uuidBuf, upCtx->owner, *iter, MP_LOCAL_PORT_DISABLE) == COMMO_CONTACT_GONE) {
+            if (sendCoTRequest(upCtx->urlFromServer, uuidBuf, upCtx->owner, *iter, false) == COMMO_CONTACT_GONE) {
                 queueEvent(MPStatusEvent::createTxFinal(upCtx->owner->id,
                     *iter,
                     MP_TRANSFER_FINISHED_CONTACT_GONE,
@@ -1593,18 +1637,20 @@ void MissionPackageManager::receiveThreadProcess()
             }
 
             InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, 
-                            "Initiating download of %s from %s at %s URL %s%s%s%s"
+                            "Initiating download of %s from %s at %s URL %s%s%s%s%s"
                             "(attempt %d of %d)", ftc->request->name.c_str(),
                             ftc->request->senderCallsign.c_str(),
                             ftc->usingSenderURL ? "sender" : "alternate",
                             url.c_str(), 
-                            ftc->request->peerHosted ? " (peer hosted, url" : "",
+                            ftc->request->peerHosted ? " (peer hosted, url " : "",
                             ftc->request->peerHosted ? 
                              (ftc->request->httpsPort != MP_LOCAL_PORT_DISABLE ?
-                                " protocol and port adjusted, orig URL " : 
-                                " protocol adjusted, orig URL " ) : "",
-                            ftc->request->peerHosted ? 
+                                "protocol and port adjusted, orig URL " : 
+                                "unchanged " ) : "",
+                            (ftc->request->peerHosted && 
+                             ftc->request->httpsPort != MP_LOCAL_PORT_DISABLE) ? 
                                 ftc->request->senderUrl.c_str() : "",
+                            ftc->request->peerHosted ? ")" : "",
                             ftc->currentRetryCount,
                             ftc->settings.getNumTries());
 
@@ -1847,7 +1893,11 @@ std::string MissionPackageManager::getLocalUrl(int transferId)
 {
     // ATAK example: http://192.168.167.167:8080/getfile?file=9&amp;sender=GEMINI
     std::stringstream ss;
-    ss << "http://";
+    bool https = httpsProxyPort != MP_LOCAL_PORT_DISABLE;
+    if (https)
+        ss << "https://";
+    else
+        ss << "http://";
     std::string ip = hwIfScanner->getPrimaryAddressString();
     if (ip.empty())
         return "";
@@ -1855,7 +1905,7 @@ std::string MissionPackageManager::getLocalUrl(int transferId)
     std::string csLocal;
     ss << ip
        << ":"
-       << webPort
+       << (https ? httpsProxyPort : webPort)
        << "/getfile?file="
        << transferId;
 

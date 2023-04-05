@@ -164,6 +164,7 @@ public class StreamManagementUtilsTest extends ATAKInstrumentedTest {
                 "name",
                 "rtmp://demo.unifiedvideo.com/live/4?token=e02532a591f14f16a233521ab907a150");
 
+        assertNotNull(ce);
         assertEquals(ce.getProtocol(), ConnectionEntry.Protocol.RTMP);
         assertEquals(
                 "rtmp://demo.unifiedvideo.com:1935/live/4?token=e02532a591f14f16a233521ab907a150&timeout=5",
@@ -175,10 +176,22 @@ public class StreamManagementUtilsTest extends ATAKInstrumentedTest {
         ConnectionEntry ce = StreamManagementUtils.createConnectionEntryFromUrl(
                 "name",
                 "rtmp://demo.unifiedvideo.com/?token=e02532a591f14f16a233521ab907a150&token2=shb");
-
+        assertNotNull(ce);
         assertEquals(ce.getProtocol(), ConnectionEntry.Protocol.RTMP);
         assertEquals(
                 "rtmp://demo.unifiedvideo.com:1935/?token=e02532a591f14f16a233521ab907a150&token2=shb&timeout=5",
                 ConnectionEntry.getURL(ce));
+    }
+
+    @Test
+    public void testSrtExample() {
+        ConnectionEntry ce = StreamManagementUtils.createConnectionEntryFromUrl(
+                "srt",
+                "srt://192.168.1.1:2000?parameter1=value1&parameter2=value2");
+        assertNotNull(ce);
+        assertEquals("192.168.1.1", ce.getAddress());
+        assertEquals(2000, ce.getPort());
+        assertEquals("srt", ce.getProtocol().toString());
+        assertEquals(ce.getPath(), "?parameter1=value1&parameter2=value2");
     }
 }

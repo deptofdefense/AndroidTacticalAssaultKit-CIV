@@ -4,6 +4,7 @@ package com.atakmap.android.channels;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 
 import com.atakmap.android.channels.ui.overlay.ChannelsOverlay;
@@ -11,6 +12,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.dropdown.DropDown.OnStateListener;
 import com.atakmap.android.selfcoordoverlay.SelfCoordOverlayUpdater.ConnectedButtonWidgetCallback;
 import com.atakmap.annotations.ModifierApi;
+import com.atakmap.app.R;
 import com.atakmap.app.SettingsActivity;
 import com.atakmap.app.preferences.NetworkConnectionPreferenceFragment;
 import com.atakmap.comms.TAKServer;
@@ -28,7 +30,7 @@ public class ChannelsReceiver extends BroadcastReceiver implements
 
     /**************************** CONSTRUCTOR *****************************/
 
-    @ModifierApi(since = "4.5", target="4.8", modifiers={})
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {})
     public ChannelsReceiver(final MapView mapView,
             final Context context) {
 
@@ -71,23 +73,27 @@ public class ChannelsReceiver extends BroadcastReceiver implements
     private void displayServerSetupDialog() {
         try {
             new AlertDialog.Builder(MapView.getMapView().getContext())
-                    .setTitle("TAK Server Setup")
+                    .setTitle(R.string.tak_server_setup)
                     .setMessage(
-                            "No TAK Server configured. Would you like to go to Network Settings?")
+                            R.string.tak_server_setup_message)
                     .setPositiveButton(
-                            "Yes",
-                            (d, w) -> SettingsActivity.start(
-                                    NetworkConnectionPreferenceFragment.class))
-                    .setNegativeButton("Cancel", null)
+                            R.string.yes,
+                            new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface d, int w) {
+                                    SettingsActivity.start(
+                                            NetworkConnectionPreferenceFragment.class);
+                                }
+                            })
+                    .setNegativeButton(R.string.cancel, null)
                     .show();
         } catch (Exception e) {
-            Log.e(TAG, e.getMessage(), e);
+            Log.e(TAG, "error: ", e);
         }
     }
 
     @Override
     public void onConnectedButtonWidgetClick() {
-        Log.d(TAG, "in onConnectedButtonWidgetClick!!!");
         displayActiveGroupsOverlay();
     }
 

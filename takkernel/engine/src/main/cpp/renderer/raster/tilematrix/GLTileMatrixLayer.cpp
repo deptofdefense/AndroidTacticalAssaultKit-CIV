@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "renderer/raster/tilematrix/GLTileMatrixLayer.h"
 #include "renderer/GLES20FixedPipeline.h"
 #include "renderer/RendererUtils.h"
@@ -293,3 +294,4 @@ TAK::Engine::Util::TAKErr GLTileMatrixLayer::getControl(void **ctrl, const char 
 #endif
     return TAK::Engine::Util::TE_InvalidArg;
 }
+#endif

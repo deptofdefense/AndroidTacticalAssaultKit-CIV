@@ -7,6 +7,7 @@
 #include "renderer/GLMatrix.h"
 #include "renderer/GLSLUtil.h"
 #include "thread/Mutex.h"
+#include "core/ProjectionFactory3.h"
 
 using namespace TAK::Engine::Renderer::Elevation;
 
@@ -20,49 +21,16 @@ using namespace TAK::Engine::Renderer::Core;
 using namespace TAK::Engine::Thread;
 using namespace TAK::Engine::Util;
 
-#if 0
-#define LLA2ECEF_FN_SRC \
-    "vec3 lla2ecef(in vec3 lla) {\n" \
-    "   float a = 6228.6494140625;\n" \
-    "   float b = 6207.76593188006;\n" \
-    "   float latRad = radians(lla.y);\n" \
-    "   float cosLat = cos(latRad);\n" \
-    "   float sinLat = sin(latRad);\n" \
-    "   float lonRad = radians(lla.x);\n" \
-    "   float cosLon = cos(lonRad);\n" \
-    "   float sinLon = sin(lonRad);\n" \
-    "   float a2_b2 = (a*a) / (b*b);\n" \
-    "   float b2_a2 = (b*b) / (a*a);\n" \
-    "   float cden = sqrt((cosLat*cosLat) + (b2_a2 * (sinLat*sinLat)));\n" \
-    "   float lden = sqrt((a2_b2 * (cosLat*cosLat)) + (sinLat*sinLat));\n" \
-    "   float X = ((a / cden * 1024.0) + lla.z) * (cosLat*cosLon);\n" \
-    "   float Y = ((a / cden * 1024.0) + lla.z) * (cosLat*sinLon);\n" \
-    "   float Z = ((b / lden * 1024.0) + lla.z) * sinLat;\n" \
-    "   return vec3(X, Y, Z);\n" \
-    "}\n"
-#else
-constexpr const char* LLA2ECEF_FN_SRC =
-#include "shaders/lla2ecef.frag"
-;
-
-#endif
-
-
-constexpr const char* OFFSCREEN_ECEF_VERT_LO_SHADER_SRC_BASE =
+constexpr const char* COLOR_ECEF_VERT_SHADER_SRC_BASE =
 #include "shaders/TerrainTileECEFLo.vert"
 ;
 
-const std::string OFFSCREEN_ECEF_VERT_LO_SHADER_SRC = std::string(TE_GLSL_VERSION_300_ES) + std::string(OFFSCREEN_ECEF_VERT_LO_SHADER_SRC_BASE) + LLA2ECEF_FN_SRC;
+const std::string COLOR_ECEF_VERT_SHADER_SRC = std::string(TE_GLSL_VERSION_300_ES) + std::string(COLOR_ECEF_VERT_SHADER_SRC_BASE);
 
-constexpr const char* OFFSCREEN_ECEF_VERT_MD_SHADER_SRC_BASE =
-#include "shaders/TerrainTileECEFMd.vert"
-;
-const std::string OFFSCREEN_ECEF_VERT_MD_SHADER_SRC = std::string(TE_GLSL_VERSION_300_ES) + std::string(OFFSCREEN_ECEF_VERT_MD_SHADER_SRC_BASE) + LLA2ECEF_FN_SRC;
-
-constexpr const char* OFFSCREEN_ECEF_VERT_PLANAR_SHADER_SRC_BASE =
+constexpr const char* COLOR_PLANAR_VERT_SHADER_SRC_BASE =
 #include "shaders/TerrainTilePlanar.vert"
 ;
-const std::string OFFSCREEN_PLANAR_VERT_SHADER_SRC = std::string(TE_GLSL_VERSION_300_ES) + std::string(OFFSCREEN_ECEF_VERT_PLANAR_SHADER_SRC_BASE);
+const std::string COLOR_PLANAR_VERT_SHADER_SRC = std::string(TE_GLSL_VERSION_300_ES) + std::string(COLOR_PLANAR_VERT_SHADER_SRC_BASE);
 
 
 #if 0
@@ -125,17 +93,11 @@ const std::string COLOR_FRAG_SHADER_SRC = std::string(TE_GLSL_VERSION_300_ES) + 
 "}\n"
 #endif
 
-constexpr const char* DEPTH_ECEF_VERT_LO_SHADER_SRC_BASE =
+constexpr const char* DEPTH_ECEF_VERT_SHADER_SRC_BASE =
 #include "shaders/TerrainTileDepthECEFLo.vert"
 ;
 
-const std::string DEPTH_ECEF_VERT_LO_SHADER_SRC = std::string(TE_GLSL_VERSION_300_ES) + std::string(DEPTH_ECEF_VERT_LO_SHADER_SRC_BASE) + std::string(LLA2ECEF_FN_SRC);
-
-constexpr const char* DEPTH_ECEF_VERT_MD_SHADER_SRC_BASE =
-#include "shaders/TerrainTileDepthECEFMd.vert"
-;
-
-const std::string DEPTH_ECEF_VERT_MD_SHADER_SRC = std::string(TE_GLSL_VERSION_300_ES) + std::string(DEPTH_ECEF_VERT_MD_SHADER_SRC_BASE) + std::string(LLA2ECEF_FN_SRC);
+const std::string DEPTH_ECEF_VERT_SHADER_SRC = std::string(TE_GLSL_VERSION_300_ES) + std::string(DEPTH_ECEF_VERT_SHADER_SRC_BASE);
 
 constexpr const char* DEPTH_PLANAR_VERT_SHADER_SRC_BASE =
 #include "shaders/TerrainTileDepthPlanar.vert"
@@ -149,25 +111,13 @@ constexpr const char* DEPTH_FRAG_SHADER_SRC_BASE =
 
 const std::string DEPTH_FRAG_SHADER_SRC = std::string(TE_GLSL_VERSION_300_ES) + std::string(DEPTH_FRAG_SHADER_SRC_BASE);
 
-#define FLAT_MD_THRESHOLD 0.0
 #define FLAT_HI_THRESHOLD 0.0
 
-#if !defined(__ANDROID__)
-// use MD shader at 100m GSD for non-Android
-#define GLOBE_MD_THRESHOLD 100.0
-#elif defined(__aarch64__)
-// disable MD shader for Android arm64
-#define GLOBE_MD_THRESHOLD 0.0
-#else
-// use MD shader at 20m GSD for Android arm32 and x86
-#define GLOBE_MD_THRESHOLD 20.0
-#endif
-#define GLOBE_HI_THRESHOLD 1.5
+#define GLOBE_HI_THRESHOLD 0.0
 
 
 namespace
 {
-    TAKErr lla2ecef_transform(Matrix2 *value, const Projection2 &ecef, const Matrix2 *localFrame) NOTHROWS;
     void setOrtho(Matrix2 *value, const double left, const double right, const double bottom, const double top, const double zNear, const double zFar) NOTHROWS;
     void drawTerrainTilesImpl(const GLGlobeBase::State *renderPasses, const std::size_t numRenderPasses, const TerrainTileShader &shader, const Matrix2 &mvp, const Matrix2 *local, const std::size_t numLocal, const GLTexture2 &texture, const GLTerrainTile *terrainTiles, const std::size_t numTiles, const float r, const float g, const float b, const float a) NOTHROWS;
     void glUniformMatrix4(GLint location, const Matrix2 &matrix, const Matrix2::MatrixOrder order = Matrix2::COLUMN_MAJOR) NOTHROWS;
@@ -176,7 +126,7 @@ namespace
     void glSceneModel(MapSceneModel2 &scene) NOTHROWS;
     TAKErr createTerrainTileShader(TerrainTileShader *value, const char *vertShaderSrc, const char *fragShaderSrc) NOTHROWS;
     TAKErr createTerrainTileShaders(TerrainTileShaders *value,
-                                  const char *hiVertShaderSrc, const char *mdVertShaderSrc, const char *loVertShaderSrc,
+                                  const char *vertShaderSrc,
                                   const char *fragShaderSrc) NOTHROWS;
     GLenum glType(const DataType tedt) NOTHROWS;
     void configureLightingUniforms(const TerrainTileRenderContext &ctx, const TerrainTileShader &shader) NOTHROWS;
@@ -214,56 +164,11 @@ TerrainTileRenderContext TAK::Engine::Renderer::Elevation::GLTerrainTile_begin(c
     }
 
     // select shader
-    if(scene.displayModel->earth->getGeomClass() == TAK::Engine::Math::GeometryModel2::ELLIPSOID) {
-        if(gsd <= shaders.hi_threshold) {
-            Matrix2 tx;
-            tx.setToTranslate(focus.longitude, focus.latitude, 0.0);
-            lla2ecef_transform(&ctx.localFrame.primary[0], *scene.projection, &tx);
-            ctx.localFrame.primary[0].translate(-focus.longitude, -focus.latitude, 0.0);
-            ctx.numLocalFrames++;
-        } else if (gsd <= shaders.md_threshold) {
-            const auto &ellipsoid = static_cast<const Ellipsoid2 &>(*scene.displayModel->earth);
-
-            const double a = ellipsoid.radiusX;
-            const double b = ellipsoid.radiusZ;
-
-            const double cosLat0d = cos(focus.latitude*M_PI/180.0);
-            const double cosLng0d = cos(focus.longitude*M_PI/180.0);
-            const double sinLat0d = sin(focus.latitude*M_PI/180.0);
-            const double sinLng0d = sin(focus.longitude*M_PI/180.0);
-
-            const double a2_b2 = (a*a)/(b*b);
-            const double b2_a2 = (b*b)/(a*a);
-            const double cden = sqrt((cosLat0d*cosLat0d) + (b2_a2 * (sinLat0d*sinLat0d)));
-            const double lden = sqrt((a2_b2 * (cosLat0d*cosLat0d)) + (sinLat0d*sinLat0d));
-
-            // scale by ellipsoid radii
-            ctx.localFrame.primary[2].setToScale(a/cden, a/cden, b/lden);
-            // calculate coefficients for lat/lon => ECEF conversion, using small angle approximation
-            ctx.localFrame.primary[2].concatenate(Matrix2(
-                    -cosLat0d*sinLng0d, -cosLng0d*sinLat0d, sinLat0d*sinLng0d, cosLat0d*cosLng0d,
-                    cosLat0d*cosLng0d, -sinLat0d*sinLng0d, -sinLat0d*cosLng0d, cosLat0d*sinLng0d,
-                    0, cosLat0d, 0, sinLat0d,
-                    0, 0, 0, 1
-            ));
-            // convert degrees to radians
-            ctx.localFrame.primary[2].scale(M_PI/180.0, M_PI/180.0, M_PI/180.0*M_PI/180.0);
-            ctx.numLocalFrames++;
-
-            // degrees are relative to focus
-            ctx.localFrame.primary[1].setToTranslate(-focus.longitude, -focus.latitude, 0);
-            ctx.numLocalFrames++;
-
-            // degrees are relative to focus
-            ctx.localFrame.primary[0].setToIdentity();
-            ctx.numLocalFrames++;
-        }
-    }
-
     ctx.shader = (gsd <= shaders.hi_threshold) ?
                                 shaders.hi :
-                                (gsd <= shaders.md_threshold) ?
-                                shaders.md : shaders.lo;
+                (gsd <= shaders.md_threshold) ?
+                                shaders.md :
+                                shaders.lo;
 
     glUseProgram(ctx.shader.base.handle);
     GLint activeTexture;
@@ -289,33 +194,15 @@ TerrainTileRenderContext TAK::Engine::Renderer::Elevation::GLTerrainTile_begin(c
         }
     }
 
-    // if the projection is planar or we're not using the lo-res ECEF shader,
-    // may need to handle IDL crossings
-    bool handleIdlCrossing = ((scene.displayModel->earth->getGeomClass() == GeometryModel2::PLANE) ||
-            (ctx.shader.base.handle != shaders.lo.base.handle));
+    // if the projection is planar, may need to handle IDL crossings
+    bool handleIdlCrossing = (scene.displayModel->earth->getGeomClass() == GeometryModel2::PLANE);
     if(handleIdlCrossing) {
 #define sgn(a) ((a) < 0.0 ? -1.0 : 1.0)
         // construct segment in screen space along the IDL
         Point2<double> idlNxy;
         Point2<double> idlSxy;
-        if(scene.projection->getSpatialReferenceID() == 4978) {
-            // if the projection is ECEF, we can't simply transform the pole
-            // locations to screen xy. we'll create an ENU frame with the
-            // current focus as the origin and plot the IDL meridian in that
-            // coordinate system for cartesian evaluation
-            Matrix2 lla2enu;
-            Matrix2 localOrigin;
-            localOrigin.setToTranslate(focus.longitude, focus.latitude, 0.0);
-            lla2ecef_transform(&lla2enu, *scene.projection, &localOrigin);
-
-            lla2enu.transform(&idlNxy, Point2<double>((sgn(focus.longitude) *180.0)-focus.longitude, 90.0-focus.latitude, 0.0));
-            scene.forwardTransform.transform(&idlNxy, idlNxy);
-            lla2enu.transform(&idlSxy, Point2<double>((sgn(focus.longitude) *180.0)-focus.longitude, -90.0-focus.latitude, 0.0));
-            scene.forwardTransform.transform(&idlSxy, idlSxy);
-        } else {
-            scene.forward(&idlNxy, GeoPoint2(90.0, sgn(focus.longitude) * 180.0));
-            scene.forward(&idlSxy, GeoPoint2(-90.0, sgn(focus.longitude) * 180.0));
-        }
+        scene.forward(&idlNxy, GeoPoint2(90.0, sgn(focus.longitude) * 180.0));
+        scene.forward(&idlSxy, GeoPoint2(-90.0, sgn(focus.longitude) * 180.0));
 
         // find distance from focus xy to IDL screenspace segment
         //https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
@@ -356,18 +243,6 @@ TerrainTileRenderContext TAK::Engine::Renderer::Elevation::GLTerrainTile_begin(c
                     hemi2.gsd,
                     hemi2.camera.mode);
             glSceneModel(hemi2);
-        } else if(ctx.shader.base.handle == shaders.hi.base.handle) {
-            // reconstruct the scene model in the secondary hemisphere
-            if (focus.longitude  < 0.0)
-                ctx.localFrame.secondary[0].translate(-360.0, 0.0, 0.0);
-            else
-                ctx.localFrame.secondary[0].translate(360.0, 0.0, 0.0);
-        } else if(ctx.shader.base.handle == shaders.md.base.handle) {
-            // reconstruct the scene model in the secondary hemisphere
-            if (focus.longitude  < 0.0)
-                ctx.localFrame.secondary[1].translate(-360.0, 0.0, 0.0);
-            else
-                ctx.localFrame.secondary[1].translate(360.0, 0.0, 0.0);
         }
 
         // construct the MVP matrix
@@ -389,6 +264,7 @@ TerrainTileRenderContext TAK::Engine::Renderer::Elevation::GLTerrainTile_begin(c
     glEnableVertexAttribArray(ctx.shader.base.aVertexCoords);
     glEnableVertexAttribArray(ctx.shader.base.aNormals);
     glEnableVertexAttribArray(ctx.shader.aNoDataFlag);
+    glEnableVertexAttribArray(ctx.shader.aEcefVertCoords);
 
     return ctx;
 }
@@ -437,6 +313,7 @@ void TAK::Engine::Renderer::Elevation::GLTerrainTile_end(TerrainTileRenderContex
     glDisableVertexAttribArray(ctx.shader.base.aVertexCoords);
     glDisableVertexAttribArray(ctx.shader.base.aNormals);
     glDisableVertexAttribArray(ctx.shader.aNoDataFlag);
+    glDisableVertexAttribArray(ctx.shader.aEcefVertCoords);
     glUseProgram(0);
 }
 
@@ -468,20 +345,20 @@ TerrainTileShaders TAK::Engine::Renderer::Elevation::GLTerrainTile_getColorShade
         case 4978 :
         {
             createTerrainTileShaders(&shaders,
-                OFFSCREEN_PLANAR_VERT_SHADER_SRC.c_str(), OFFSCREEN_ECEF_VERT_MD_SHADER_SRC.c_str(), OFFSCREEN_ECEF_VERT_LO_SHADER_SRC.c_str(),
-                    fragShaderSrc.c_str());
-            shaders.hi_threshold = GLOBE_HI_THRESHOLD;
-            shaders.md_threshold = GLOBE_MD_THRESHOLD;
+                                     COLOR_ECEF_VERT_SHADER_SRC.c_str(),
+                                     fragShaderSrc.c_str());
+            shaders.hi_threshold = 0.0;
+            shaders.md_threshold = 0.0;
             colorShaders[&ctx][key] = shaders;
             break;
         }
         case 4326 :
         {
             createTerrainTileShaders(&shaders,
-                                   OFFSCREEN_PLANAR_VERT_SHADER_SRC.c_str(), OFFSCREEN_PLANAR_VERT_SHADER_SRC.c_str(), OFFSCREEN_PLANAR_VERT_SHADER_SRC.c_str(),
+                                   COLOR_PLANAR_VERT_SHADER_SRC.c_str(),
                                    fragShaderSrc.c_str());
-            shaders.hi_threshold = FLAT_HI_THRESHOLD;
-            shaders.md_threshold = FLAT_MD_THRESHOLD;
+            shaders.hi_threshold = 0.0;
+            shaders.md_threshold = 0.0;
             colorShaders[&ctx][key] = shaders;
             break;
         }
@@ -509,21 +386,21 @@ TerrainTileShaders TAK::Engine::Renderer::Elevation::GLTerrainTile_getDepthShade
         case 4978 :
         {
             createTerrainTileShaders(&shaders,
-                    DEPTH_ECEF_VERT_LO_SHADER_SRC.c_str(), DEPTH_ECEF_VERT_MD_SHADER_SRC.c_str(), DEPTH_PLANAR_VERT_SHADER_SRC.c_str(),
+                    DEPTH_ECEF_VERT_SHADER_SRC.c_str(),
                     DEPTH_FRAG_SHADER_SRC.c_str());
 
-            shaders.hi_threshold = GLOBE_HI_THRESHOLD;
-            shaders.md_threshold = GLOBE_MD_THRESHOLD;
+            shaders.hi_threshold = 0.0;
+            shaders.md_threshold = 0.0;
             depthShaders[&ctx][srid] = shaders;
             break;
         }
         case 4326 :
         {
             createTerrainTileShaders(&shaders,
-                    DEPTH_PLANAR_VERT_SHADER_SRC.c_str(), DEPTH_PLANAR_VERT_SHADER_SRC.c_str(), DEPTH_PLANAR_VERT_SHADER_SRC.c_str(),
+                    DEPTH_PLANAR_VERT_SHADER_SRC.c_str(),
                     DEPTH_FRAG_SHADER_SRC.c_str());
-            shaders.hi_threshold = FLAT_HI_THRESHOLD;
-            shaders.md_threshold = FLAT_MD_THRESHOLD;
+            shaders.hi_threshold = 0.0;
+            shaders.md_threshold = 0.0;
             depthShaders[&ctx][srid] = shaders;
             break;
         }
@@ -546,65 +423,6 @@ namespace
             static_cast<float>(zNear), static_cast<float>(zFar));
         for(std::size_t i = 0u; i < 16u; i++)
             value->set(i%4, i/4, mxf[i]);
-    }
-
-    TAKErr lla2ecef_transform(Matrix2 *value, const Projection2 &ecef, const Matrix2 *localFrame) NOTHROWS
-    {
-        TAKErr code(TE_Ok);
-
-        Matrix2 mx;
-
-        Point2<double> pointD(0.0, 0.0, 0.0);
-        GeoPoint2 geo;
-
-        // if draw projection is ECEF and source comes in as LLA, we can
-        // transform from LLA to ECEF by creating a local ENU CS and
-        // chaining the following conversions (all via matrix)
-        // 1. LCS -> LLA
-        // 2. LLA -> ENU
-        // 3. ENU -> ECEF
-        // 4. ECEF -> NDC (via MapSceneModel 'forward' matrix)
-
-        // obtain origin as LLA
-        pointD.x = 0;
-        pointD.y = 0;
-        pointD.z = 0;
-        if(localFrame)
-            localFrame->transform(&pointD, pointD);
-        // transform origin to ECEF
-        geo.latitude = pointD.y;
-        geo.longitude = pointD.x;
-        geo.altitude = pointD.z;
-        geo.altitudeRef = TAK::Engine::Core::AltitudeReference::HAE;
-
-        code = ecef.forward(&pointD, geo);
-        TE_CHECKRETURN_CODE(code);
-
-        // construct ENU -> ECEF
-#define __RADIANS(x) ((x)*M_PI/180.0)
-        const double phi = __RADIANS(geo.latitude);
-        const double lambda = __RADIANS(geo.longitude);
-
-        mx.translate(pointD.x, pointD.y, pointD.z);
-
-        Matrix2 enu2ecef(
-                -sin(lambda), -sin(phi)*cos(lambda), cos(phi)*cos(lambda), 0.0,
-                cos(lambda), -sin(phi)*sin(lambda), cos(phi)*sin(lambda), 0.0,
-                0, cos(phi), sin(phi), 0.0,
-                0.0, 0.0, 0.0, 1.0
-        );
-
-        mx.concatenate(enu2ecef);
-
-        // construct LLA -> ENU
-        const double metersPerDegLat = GeoPoint2_approximateMetersPerDegreeLatitude(geo.latitude);
-        const double metersPerDegLng = GeoPoint2_approximateMetersPerDegreeLongitude(geo.latitude);
-
-        mx.scale(metersPerDegLng, metersPerDegLat, 1.0);
-
-        value->set(mx);
-
-        return code;
     }
 
     void drawTerrainTilesImpl(const GLGlobeBase::State *renderPasses, const std::size_t numRenderPasses, const TerrainTileShader &shader, const Matrix2 &mvp, const Matrix2 *local, const std::size_t numLocal, const GLTexture2 &ignored0, const GLTerrainTile *terrainTiles, const std::size_t numTiles, const float r, const float g, const float b, const float a) NOTHROWS
@@ -684,17 +502,13 @@ namespace
         Matrix2 matrix;
 
         matrix.set(mvp);
-        if(shader.uLocalTransform < 0) {
-            for(std::size_t i = numLocal; i >= 1; i--)
-                matrix.concatenate(local[i-1u]);
+        for(std::size_t i = numLocal; i >= 1; i--)
+            matrix.concatenate(local[i-1u]);
+        // transform LCS to WCS
+        if(shader.aEcefVertCoords > 0)
+            matrix.concatenate(tile.data_proj.localFrame);
+        else
             matrix.concatenate(tile.data.localFrame);
-        } else {
-            Matrix2 mx[TE_GLTERRAINTILE_MAX_LOCAL_TRANSFORMS];
-            for(std::size_t i = numLocal; i >= 1; i--)
-                mx[i-1u].set(local[i-1u]);
-            mx[0].concatenate(tile.data.localFrame);
-            glUniformMatrix4v(shader.uLocalTransform, mx, numLocal ? numLocal : 1u);
-        }
 
         glUniformMatrix4(shader.base.uMVP, matrix);
 
@@ -704,10 +518,9 @@ namespace
 
         // set the local frame for the offscreen texture
         matrix.set(lla2tex);
-        if (shader.uLocalTransform < 0) {
-            // offscreen is in LLA, so we only need to convert the tile vertices from the LCS to WCS
-            matrix.concatenate(tile.data.localFrame);
-        }
+        // offscreen is in LLA, so we only need to convert the tile vertices from the LCS to WCS
+        matrix.concatenate(tile.data.localFrame);
+
         glUniformMatrix4(shader.uModelViewOffscreen, matrix);
 
         glUniform4f(shader.base.uColor, r, g, b, a);
@@ -757,46 +570,19 @@ namespace
             glVertexAttrib3f(shader.base.aNormals, 0.f, 0.f, 1.f);
         glVertexAttrib1f(shader.aNoDataFlag, 1.f); // default the no data flag
         if (tile.noDataAttr && (layout.attributes&tile.noDataAttr)) {
-            const VertexArray *noDataArr = nullptr;
-            switch (tile.noDataAttr) {
-            case TEVA_Position: noDataArr = &layout.position; break;
-            case TEVA_TexCoord0: noDataArr = &layout.texCoord0; break;
-            case TEVA_TexCoord1: noDataArr = &layout.texCoord1; break;
-            case TEVA_TexCoord2: noDataArr = &layout.texCoord2; break;
-            case TEVA_TexCoord3: noDataArr = &layout.texCoord3; break;
-            case TEVA_TexCoord4: noDataArr = &layout.texCoord4; break;
-            case TEVA_TexCoord5: noDataArr = &layout.texCoord5; break;
-            case TEVA_TexCoord6: noDataArr = &layout.texCoord6; break;
-            case TEVA_TexCoord7: noDataArr = &layout.texCoord7; break;
-            case TEVA_Normal: noDataArr = &layout.normal; break;
-            case TEVA_Color: noDataArr = &layout.color; break;
-            case TEVA_Reserved0: noDataArr = &layout.reserved[0u]; break;
-            case TEVA_Reserved1: noDataArr = &layout.reserved[1u]; break;
-            case TEVA_Reserved2: noDataArr = &layout.reserved[2u]; break;
-            case TEVA_Reserved3: noDataArr = &layout.reserved[3u]; break;
-            case TEVA_Reserved4: noDataArr = &layout.reserved[4u]; break;
-            case TEVA_Reserved5: noDataArr = &layout.reserved[5u]; break;
-            case TEVA_Reserved6: noDataArr = &layout.reserved[6u]; break;
-            case TEVA_Reserved7: noDataArr = &layout.reserved[7u]; break;
-            case TEVA_Reserved8: noDataArr = &layout.reserved[8u]; break;
-            case TEVA_Reserved9: noDataArr = &layout.reserved[9u]; break;
-            case TEVA_Reserved10: noDataArr = &layout.reserved[10u]; break;
-            case TEVA_Reserved11: noDataArr = &layout.reserved[11u]; break;
-            case TEVA_Reserved12: noDataArr = &layout.reserved[12u]; break;
-            case TEVA_Reserved13: noDataArr = &layout.reserved[13u]; break;
-            case TEVA_Reserved14: noDataArr = &layout.reserved[14u]; break;
-            case TEVA_Reserved15: noDataArr = &layout.reserved[15u]; break;
-            case TEVA_Reserved16: noDataArr = &layout.reserved[16u]; break;
-            case TEVA_Reserved17: noDataArr = &layout.reserved[17u]; break;
-            case TEVA_Reserved18: noDataArr = &layout.reserved[18u]; break;
-            case TEVA_Reserved19: noDataArr = &layout.reserved[19u]; break;
-            case TEVA_Reserved20: noDataArr = &layout.reserved[20u]; break;
-            default: break;
-            }
-            if (noDataArr) {
-                const GLenum noDataFlagType = glType(noDataArr->type);
+            VertexArray noDataArr;
+            if (VertexDataLayout_getVertexArray(&noDataArr, layout, tile.noDataAttr) == TE_Ok) {
+                const GLenum noDataFlagType = glType(noDataArr.type);
                 if (noDataFlagType)
-                    glVertexAttribPointer(shader.aNoDataFlag, 1u, noDataFlagType, !DataType_isFloating(noDataArr->type), static_cast<GLsizei>(noDataArr->stride), (const void*)(base + noDataArr->offset));
+                    glVertexAttribPointer(shader.aNoDataFlag, 1u, noDataFlagType, !DataType_isFloating(noDataArr.type), static_cast<GLsizei>(noDataArr.stride), (const void*)(base + noDataArr.offset));
+            }
+        }
+        if (tile.ecefAttr && (layout.attributes & tile.ecefAttr)) {
+            VertexArray ecefAttr;
+            if (VertexDataLayout_getVertexArray(&ecefAttr, layout, tile.ecefAttr) == TE_Ok) {
+                const GLenum ecefFlagType = glType(ecefAttr.type);
+                if (ecefFlagType)
+                    glVertexAttribPointer(shader.aEcefVertCoords, 3u, ecefFlagType, !DataType_isFloating(ecefAttr.type), static_cast<GLsizei>(ecefAttr.stride), (const void*)(base + ecefAttr.offset));
             }
         }
         glBindBuffer(GL_ARRAY_BUFFER, GL_NONE);
@@ -874,6 +660,7 @@ namespace
         value->base.aVertexCoords = glGetAttribLocation(value->base.handle, "aVertexCoords");
         value->base.aNormals = glGetAttribLocation(value->base.handle, "aNormals");
         value->aNoDataFlag = glGetAttribLocation(value->base.handle, "aNoDataFlag");
+        value->aEcefVertCoords = glGetAttribLocation(value->base.handle, "aEcefVertCoords");
         // fragment shader handles
         value->base.uTexture = glGetUniformLocation(value->base.handle, "uTexture");
         value->base.uColor = glGetUniformLocation(value->base.handle, "uColor");
@@ -884,22 +671,17 @@ namespace
         return code;
     }
     TAKErr createTerrainTileShaders(TerrainTileShaders *value,
-                                  const char *hiVertShaderSrc, const char *mdVertShaderSrc, const char *loVertShaderSrc,
+                                  const char *vertShaderSrc,
                                   const char *fragShaderSrc) NOTHROWS
     {
         TAKErr code(TE_Ok);
-        if(hiVertShaderSrc) {
-            code = createTerrainTileShader(&value->hi, hiVertShaderSrc, fragShaderSrc);
+        if(vertShaderSrc) {
+            code = createTerrainTileShader(&value->hi, vertShaderSrc, fragShaderSrc);
             TE_CHECKRETURN_CODE(code);
         }
-        if(mdVertShaderSrc) {
-            code = createTerrainTileShader(&value->md, mdVertShaderSrc, fragShaderSrc);
-            TE_CHECKRETURN_CODE(code);
-        }
-        if(loVertShaderSrc) {
-            code = createTerrainTileShader(&value->lo, loVertShaderSrc, fragShaderSrc);
-            TE_CHECKRETURN_CODE(code);
-        }
+        
+        value->md = value->hi;
+        value->lo = value->hi;
 
         return code;
     }

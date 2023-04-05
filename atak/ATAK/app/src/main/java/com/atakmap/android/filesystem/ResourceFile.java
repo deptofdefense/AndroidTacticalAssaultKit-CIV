@@ -11,18 +11,17 @@ import com.atakmap.android.wfs.WFSImporter;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
-import com.atakmap.spatial.file.DrwFileDatabase;
+import com.atakmap.coremap.locale.LocaleUtil;
+import com.atakmap.spatial.file.FalconViewSpatialDb;
 import com.atakmap.spatial.file.GMLSpatialDb;
 import com.atakmap.spatial.file.GpxFileSpatialDb;
 import com.atakmap.spatial.file.KmlFileSpatialDb;
-import com.atakmap.spatial.file.LptFileDatabase;
 import com.atakmap.spatial.file.ShapefileSpatialDb;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
-import com.atakmap.coremap.locale.LocaleUtil;
 
 /**
  * Parcelable asset file on the device
@@ -76,13 +75,24 @@ public class ResourceFile implements Parcelable {
         HTM("text/html", "htm", "asset://icons/generic_doc.png"),
         HTML("text/html", "html", "asset://icons/generic_doc.png"),
         XLS("application/vnd.ms-excel", "xls", "asset://icons/generic_doc.png"),
+
+        DPKG("application/x-datapackage",
+                "dpkg",
+                "asset://icons/missionpackage.png"),
+        FPKG("application/x-feedbackpackage",
+                "fpkg",
+                "asset://icons/feedback.png"),
+
         XLSX("application/vnd.ms-excel",
                 "xlsx",
                 "asset://icons/generic_doc.png"),
         PRJ("application/vnd.ms-project",
                 "mpp",
                 "asset://icons/generic_doc.png"),
-        ZIP("application/zip", "zip", "asset://icons/generic_doc.png"),
+        PEM("application/x-pem-file", "pem", "asset://icons/digitalcert.png"),
+        P12("application/x-pkcs12", "p12", "asset://icons/digitalcert.png"),
+        PFX("application/x-pkcs12", "pfx", "asset://icons/digitalcert.png"),
+        ZIP("application/zip", "zip", "asset://icons/zip.png"),
         PDF("application/pdf", "pdf", "asset://icons/pdf.png"),
         XML(WFSImporter.MIME_XML, "xml", "asset://icons/generic_doc.png"),
         KML(KmlFileSpatialDb.KML_FILE_MIME_TYPE,
@@ -106,10 +116,10 @@ public class ResourceFile implements Parcelable {
         SHPZ(ShapefileSpatialDb.SHP_FILE_MIME_TYPE,
                 "shpz",
                 "asset://icons/esri.png"),
-        DRW(DrwFileDatabase.DRW_FILE_MIME_TYPE,
+        DRW(FalconViewSpatialDb.MIME_TYPE,
                 "drw",
                 "asset://icons/geojson.png"),
-        LPT(LptFileDatabase.LPT_FILE_MIME_TYPE,
+        LPT(FalconViewSpatialDb.MIME_TYPE,
                 "lpt",
                 "asset://icons/geojson.png"),
         CSV("text/csv", "csv", "asset://icons/generic_doc.png"),

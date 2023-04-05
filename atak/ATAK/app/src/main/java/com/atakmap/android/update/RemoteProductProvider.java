@@ -77,8 +77,8 @@ public class RemoteProductProvider extends BaseProductProvider {
     /**
      * Only execute from non-UI thread
      *
-     * @param l
-     * @return
+     * @param l the listener for the rebuild action
+     * @return the ProductRepository as a result of calling rebuild
      */
     @Override
     public ProductRepository rebuild(
@@ -243,8 +243,8 @@ public class RemoteProductProvider extends BaseProductProvider {
     /**
      * Extract the repo cache into apk/support/remote
      *
-     * @param infz
-     * @return
+     * @param infz the infz file to extract
+     * @return true if the file extracted correctly
      */
     public static boolean extract(File infz) {
         return extract(infz, FileSystemUtils.getItem(REMOTE_REPO_CACHE_PATH));
@@ -280,7 +280,10 @@ public class RemoteProductProvider extends BaseProductProvider {
                         .getMapView().getContext(), infz, true,
                         new DefaultIOProvider());
 
-                dest.delete();
+                if (!dest.delete()) {
+                    Log.w(TAG, "could not delete the current destination folder"
+                            + dest);
+                }
                 if (!dest.mkdirs()) {
                     Log.w(TAG,
                             "Cannot create repo index "
@@ -304,14 +307,15 @@ public class RemoteProductProvider extends BaseProductProvider {
 
     /**
      * Extract the repo cache into the specified destination directory
-     * @param infz
-     * @param dest
-     * @return
+     * @param infz the infz file describing the metadata for all apk offerings
+     * @param dest the destination to extract the infz file to
+     * @return true if the extraction is successful
      */
     public static boolean extract(File infz, File dest) {
         if (infz == null || !infz.exists()) {
             Log.w(TAG,
-                    "Cannot extract invalid file: " + infz.getAbsolutePath());
+                    "Cannot extract invalid file: " + ((infz == null) ? "null"
+                            : infz.getAbsolutePath()));
             return false;
         }
 
@@ -347,7 +351,7 @@ public class RemoteProductProvider extends BaseProductProvider {
 
     /**
      * Leverage HTTPRequestService to download APK
-     * @param product
+     * @param product the product to install.
      */
     @Override
     public void install(final ProductInformation product) {
@@ -361,7 +365,7 @@ public class RemoteProductProvider extends BaseProductProvider {
             //TODO toast?
             Log.w(TAG,
                     "Cannot install without remote repo URL: "
-                            + product.toString());
+                            + product);
             return;
         }
 
@@ -430,7 +434,7 @@ public class RemoteProductProvider extends BaseProductProvider {
         }
 
         if (repo != null && repo.isValid()) {
-            Log.d(TAG, "Updating local repo: " + repo.toString());
+            Log.d(TAG, "Updating local repo: " + repo);
         } else {
             Log.d(TAG, "Clearing local repo: " + repoIndex);
             repo = null;
@@ -444,7 +448,7 @@ public class RemoteProductProvider extends BaseProductProvider {
         //do not prompt, just proceed to download and install
         Toast.makeText(_context, "Installing " + product.getSimpleName(),
                 Toast.LENGTH_SHORT).show();
-        Log.d(TAG, "download and install: " + product.toString() + " from: "
+        Log.d(TAG, "download and install: " + product + " from: "
                 + repoApkUrl);
 
         //add to list of outstanding installs

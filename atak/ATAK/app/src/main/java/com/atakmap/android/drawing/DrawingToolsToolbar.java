@@ -3,8 +3,6 @@ package com.atakmap.android.drawing;
 
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -45,7 +43,6 @@ public class DrawingToolsToolbar extends DropDownReceiver implements
     private final Context _context;
     private final MapGroup _drawingGroup;
     private final DrawingToolsMapReceiver _drawingMapReceiver;
-    private final SharedPreferences _prefs;
 
     private List<Tool> _tools = null;
     private ShapeCreationTool _shapeTool;
@@ -82,8 +79,6 @@ public class DrawingToolsToolbar extends DropDownReceiver implements
         _drawingGroup = drawingGroup;
 
         _drawingMapReceiver = RouteMapReceiver;
-
-        _prefs = PreferenceManager.getDefaultSharedPreferences(_context);
 
         final LayoutInflater inflater = LayoutInflater.from(context);
         _layout = (ActionBarView) inflater.inflate(

@@ -134,7 +134,7 @@ final public class ImportTXTSort extends ImportInternalSDResolver {
             String content = String.valueOf(buffer, 0, numRead);
             for (TxtType t : types) {
                 if (content.contains(t.signature)) {
-                    Log.d(TAG, "Match ATAK TXT content: " + t.toString());
+                    Log.d(TAG, "Match ATAK TXT content: " + t);
                     return t;
                 }
             }

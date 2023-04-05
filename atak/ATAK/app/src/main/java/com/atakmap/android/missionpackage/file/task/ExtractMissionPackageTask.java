@@ -47,7 +47,7 @@ public class ExtractMissionPackageTask extends MissionPackageBaseTask {
         Thread.currentThread().setName("ExtractMissionPackageTask");
 
         // work to be performed by background thread
-        Log.d(TAG, "Executing: " + toString());
+        Log.d(TAG, "Executing: " + this);
 
         if (!FileSystemUtils.isFile(_missionPackageZipFile)) {
             // nothing to delete

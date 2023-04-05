@@ -297,7 +297,7 @@ int TileReader::getNumResolutionLevels(int64_t width, int64_t height, int64_t ti
     auto numTilesY = (int64_t)ceil((double)height / (double)tileHeight);
 
     int retval = 1;
-    while (numTilesX > 1 && numTilesY > 1) {
+    while (numTilesX > 1 || numTilesY > 1) {
         width = math::max(width >> 1, INT64_C(1));
         height = math::max(height >> 1, INT64_C(1));
         numTilesX = (int64_t)ceil((double)width / (double)tileWidth);

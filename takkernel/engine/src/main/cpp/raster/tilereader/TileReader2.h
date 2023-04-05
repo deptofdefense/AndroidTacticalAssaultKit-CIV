@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "thread/Cond.h"
+#include "thread/Monitor.h"
 #include "thread/Mutex.h"
 #include "thread/ThreadPool.h"
 
@@ -558,6 +559,42 @@ namespace TAK {
                  * @author Developer
                  */
                 class TileReader2::AsynchronousIO {
+                   private:
+                    /** Reader specific request queue */
+                    struct RequestQueue {
+                        /**
+                         * Returns the head of the queue. If the queue is empty or currently validating, `nullptr` is returned.
+                         */
+                        std::shared_ptr<ReadRequest> pop_back() NOTHROWS;
+                        void push_back(const std::shared_ptr<ReadRequest> &request, const std::shared_ptr<ReadRequestPrioritizer> &prioritizer) NOTHROWS;
+                        /**
+                         * Returns `true` if there are no items in the queue.
+                         */
+                        bool empty() NOTHROWS;
+                        /**
+                         * Validates (sorts) the queue, if needed.
+                         * @param wait  If `false` this function will return immediately if another thread is validating the queue; if `true` the function will block until the queue is valid.
+                         * @return  `true` if the queue is valid, `false` otherwise.
+                         */
+                        bool validate(const bool wait) NOTHROWS;
+                        /**
+                         * Cancels all requests in the queue, then clears.
+                         */
+                        void abort() NOTHROWS;
+                    private :
+                        /** priority sorted queue of requests */
+                        std::vector<std::shared_ptr<ReadRequest>> queue;
+                        /** requests marked as canceled */
+                        std::set<std::shared_ptr<ReadRequest>> canceled;
+                        /** master reference list of all requests */
+                        std::set<std::shared_ptr<ReadRequest>> references;
+                        /** indicates that `queue` and `canceled` are out of sync with `references` */
+                        bool dirty;
+                        /** `true` if currently validating */
+                        bool validating;
+                        Thread::Monitor mutex;
+                        std::shared_ptr<ReadRequestPrioritizer> prioritizer;
+                    };
                    public:
                     typedef bool (*AsyncCancelCheck)(TileReader2 *reader, AsyncRunnable requestAction, void *requestOpaque,
                                                      void *cancelOpaque);
@@ -599,12 +636,13 @@ namespace TAK {
                     static void *threadRun(void *threadData);
 
                    private:
-                    std::map<const TileReader2 *, ReadRequestPrioritizerPtr> requestPrioritizers;
-                    std::map<const TileReader2 *, std::vector<std::shared_ptr<TileReader2::ReadRequest>>> tasks;
+                    std::map<const TileReader2 *, std::shared_ptr<ReadRequestPrioritizer>> requestPrioritizers;
+                    std::map<const TileReader2 *, std::shared_ptr<RequestQueue>> tasks;
+                    std::map<const TileReader2 *, std::shared_ptr<ReadRequest>> heads;
+
                     // Valid only when holding lock
-                    std::shared_ptr<TileReader2::ReadRequest> currentTask;
-                    Thread::Mutex syncOn;
-                    Thread::CondVar cv;
+                    std::set<std::shared_ptr<TileReader2::ReadRequest>> currentTasks;
+                    Thread::Monitor monitor;
                     Thread::ThreadPoolPtr thread;
                     bool dead;
                     bool started;
@@ -640,3 +678,4 @@ namespace TAK {
     }  // namespace Engine
 }  // namespace TAK
 #endif
+

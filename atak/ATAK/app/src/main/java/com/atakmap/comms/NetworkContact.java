@@ -46,7 +46,7 @@ public class NetworkContact implements Parcelable {
         this.role = role;
         this.connectionEndpoint = endpoint;
         if (endpoint != null) {
-            Log.d(TAG, "new networkContact: " + this.toString());
+            Log.d(TAG, "new networkContact: " + this);
             this.connectionEndpoint.setCallsign(callsign); //double check
         }
         this.refresh(new CoordinatedTime().getMilliseconds());
@@ -67,7 +67,7 @@ public class NetworkContact implements Parcelable {
         this.connectionEndpoint = NetConnectString.fromString(source
                 .readString());
         if (this.connectionEndpoint != null) {
-            Log.d(TAG, "new networkContact: " + this.toString());
+            Log.d(TAG, "new networkContact: " + this);
             this.connectionEndpoint.setCallsign(callsign); //double check
         }
     }

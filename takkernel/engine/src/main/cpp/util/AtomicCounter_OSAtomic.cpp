@@ -1,4 +1,4 @@
-
+#ifdef  __APPLE__
 #include <libkern/OSAtomic.h>
 #include "util/AtomicCounter.h"
 
@@ -11,3 +11,4 @@ int32_t AtomicCounter::add(int32_t amount) {
 int32_t AtomicCounter::currentValue() const {
     return this->value;
 }
+#endif

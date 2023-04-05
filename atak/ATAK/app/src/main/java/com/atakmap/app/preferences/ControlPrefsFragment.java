@@ -30,7 +30,6 @@ public class ControlPrefsFragment extends AtakPreferenceFragment {
         super.onCreate(savedInstanceState);
 
         addPreferencesFromResource(getResourceID());
-
         Preference mediaPreference = findPreference("mediaPreference");
         mediaPreference
                 .setOnPreferenceClickListener(
@@ -42,6 +41,46 @@ public class ControlPrefsFragment extends AtakPreferenceFragment {
                                 return false;
                             }
                         });
+
+        Preference staleData = findPreference("staleData");
+        staleData.setOnPreferenceClickListener(
+                new Preference.OnPreferenceClickListener() {
+                    @Override
+                    public boolean onPreferenceClick(Preference preference) {
+                        showScreen(new StaleDataPreferenceFragment());
+                        return true;
+                    }
+                });
+
+        Preference lockBehavior = findPreference("lockBehavior");
+        lockBehavior.setOnPreferenceClickListener(
+                new Preference.OnPreferenceClickListener() {
+                    @Override
+                    public boolean onPreferenceClick(Preference preference) {
+                        showScreen(new LockingBehaviorFragment());
+                        return true;
+                    }
+                });
+
+        Preference userTouch = findPreference("userTouch");
+        userTouch.setOnPreferenceClickListener(
+                new Preference.OnPreferenceClickListener() {
+                    @Override
+                    public boolean onPreferenceClick(Preference preference) {
+                        showScreen(new UserTouchPreferenceFragment());
+                        return true;
+                    }
+                });
+
+        Preference selfCoordinate = findPreference("selfCoordinate");
+        selfCoordinate.setOnPreferenceClickListener(
+                new Preference.OnPreferenceClickListener() {
+                    @Override
+                    public boolean onPreferenceClick(Preference preference) {
+                        showScreen(new SelfCoordinatePreferenceFragment());
+                        return true;
+                    }
+                });
     }
 
 }

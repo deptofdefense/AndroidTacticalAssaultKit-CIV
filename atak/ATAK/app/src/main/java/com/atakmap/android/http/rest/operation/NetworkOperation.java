@@ -21,6 +21,11 @@ public abstract class NetworkOperation implements RequestService.Operation {
 
     public static final int STATUSCODE_UNKNOWN = -1;
 
+    /**
+     * Given a connection error return a human readable string corresponding to the error message
+     * @param ce the connection error
+     * @return the human readable string
+     */
     public static String getErrorMessage(RequestManager.ConnectionError ce) {
         if (ce == null)
             return MapView.getMapView().getContext()
