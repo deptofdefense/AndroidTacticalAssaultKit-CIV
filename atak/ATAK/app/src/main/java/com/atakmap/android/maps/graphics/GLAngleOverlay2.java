@@ -25,15 +25,18 @@ import com.atakmap.map.elevation.ElevationManager;
 import com.atakmap.map.layer.control.SurfaceRendererControl;
 import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.geometry.Envelope;
+import com.atakmap.map.layer.feature.geometry.Point;
 import com.atakmap.map.layer.feature.geometry.opengl.GLBatchLineString;
 import com.atakmap.map.layer.feature.geometry.opengl.GLGeometry;
 import com.atakmap.map.layer.feature.style.BasicStrokeStyle;
 import com.atakmap.map.layer.feature.style.CompositeStyle;
 import com.atakmap.map.layer.feature.style.Style;
+import com.atakmap.map.opengl.GLLabelManager;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.PointD;
+import com.atakmap.math.Rectangle;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLNinePatch;
 import com.atakmap.opengl.GLText;
@@ -59,13 +62,16 @@ class GLAngleOverlay2 extends GLShape2 implements
     GLMapView ortho;
     GeoPoint centerGP;
     PointF center = new PointF();
+    PointD tmpPoint = new PointD();
     double offsetAngle = 0;
 
     boolean invalid = false;
 
     float radius;
 
-    final GLSurfaceLabel[] labelPoints = new GLSurfaceLabel[12];
+    final GLLabelManager labelManager;
+    final GeoPoint[] labelPoints = new GeoPoint[12];
+    final int[] labelIds = new int[12];
     GLText _label;
 
     SurfaceRendererControl surfaceCtrl;
@@ -96,6 +102,8 @@ class GLAngleOverlay2 extends GLShape2 implements
             AutoSizeAngleOverlayShape subject) {
         super(surface, subject,
                 GLMapView.RENDER_PASS_SURFACE | GLMapView.RENDER_PASS_SPRITES);
+        labelManager = ((GLMapView) surface).getLabelManager();
+        Arrays.fill(labelIds, GLLabelManager.NO_ID);
         isAutoSize = !(subject instanceof AngleOverlayShape);
 
         sw = subject;
@@ -246,6 +254,12 @@ class GLAngleOverlay2 extends GLShape2 implements
     public void release() {
         super.release();
 
+        for (int i = 0; i < labelIds.length; ++i) {
+            if (labelIds[i] != GLLabelManager.NO_ID) {
+                labelManager.removeLabel(labelIds[i]);
+                labelIds[i] = GLLabelManager.NO_ID;
+            }
+        }
         glthirtyHash = release(glthirtyHash);
         thirtyHash = release(thirtyHash);
         if (glcenterMarker != null) {
@@ -572,13 +586,23 @@ class GLAngleOverlay2 extends GLShape2 implements
     void updateLabelPoints() {
         ortho.currentPass.scene.forward(centerGP, center);
         for (int d = 0; d < thirtyHash.length; d++) {
-            if (labelPoints[d] == null)
-                labelPoints[d] = new GLSurfaceLabel();
+            if (labelIds[d] == GLLabelManager.NO_ID) {
+                labelIds[d] = labelManager.addLabel();
+                labelManager.setVisible(labelIds[d], false);
+            }
             final GeoPoint[] points = thirtyHash[d].getPoints();
             // Playstore Crash Log: GLAngleOverlay2 ArrayOutOfBoundsException
             // seems like this could only happen when calling release improperly.
-            if (points.length > 1)
-                labelPoints[d].setLocation(points[1]);
+            if (points.length > 1) {
+                GeoPoint point = points[1];
+                double alt = point.getAltitude();
+                if (Double.isNaN(alt))
+                    alt = 0d;
+
+                labelPoints[d] = point;
+                labelManager.setGeometry(labelIds[d], new Point(
+                        point.getLongitude(), point.getLatitude(), alt));
+            }
         }
     }
 
@@ -632,25 +656,26 @@ class GLAngleOverlay2 extends GLShape2 implements
             glcardinal.draw(ortho, GLGeometry.VERTICES_PROJECTED);
     }
 
-    void drawTextLabel(int idx, String text, int rotation) {
+    void drawTextLabel(int idx, String text, int rotation, boolean flipped) {
         if (isAutoSize || !((AngleOverlayShape) sw).showSimpleSpokeView()) {
-            labelPoints[idx].update(ortho);
             //Move labels outside the ring here
-            final float halfLabelHeight = (labelPoints[idx]._textHeight + 8f)
-                    / 2f;
-            float yOffset = (float) Math.cos(Math.toRadians(rotation))
-                    * halfLabelHeight;
-            float xOffset = (float) Math.sin(Math.toRadians(rotation))
-                    * halfLabelHeight;
-            labelPoints[idx].setTextOffset(xOffset, yOffset);
+            double halfLabelHeight = (labelManager.getSize(labelIds[idx],
+                    null).Height + 8)
+                    / 2.0;
+            double yOffset = flipped ? -halfLabelHeight : halfLabelHeight;
 
-            labelPoints[idx].draw(ortho);
+            labelManager.setDesiredOffset(labelIds[idx], 0, yOffset, 0);
+            labelManager.setVerticalAlignment(labelIds[idx],
+                    GLLabelManager.VerticalAlignment.Middle);
+            labelManager.setAlignment(labelIds[idx],
+                    GLLabelManager.TextAlignment.Right);
+            labelManager.setVisible(labelIds[idx], true);
+
             return;
         }
 
-        labelPoints[idx].update(ortho);
-
-        PointD startVert = labelPoints[idx]._textPoint;
+        ortho.currentPass.scene.forward(labelPoints[idx], tmpPoint);
+        PointD startVert = tmpPoint;
 
         text = GLText.localize(text);
 
@@ -804,11 +829,11 @@ class GLAngleOverlay2 extends GLShape2 implements
             azimuth = "G";
         int roundedOffsetAngle = (int) Math.round(offsetAngle);
         //check if the labels should show in to out or out to in direction
-        for (int i = 0; i < labelPoints.length; i++) {
+        for (int i = 0; i < labelIds.length; i++) {
             String text;
             int rotation;
             int index360 = !sw.isShowingEdgeToCenter() ? 0
-                    : (labelPoints.length / 2);
+                    : (labelIds.length / 2);
             if (i == index360) {
                 text = sw.isShowingMils()
                         ? AngleUtilities.formatNoUnitsNoDecimal(360,
@@ -826,11 +851,19 @@ class GLAngleOverlay2 extends GLShape2 implements
                         : String.valueOf(degrees);
                 rotation = (i * 30) + roundedOffsetAngle;
             }
-
-            labelPoints[i].setText(text);
-            labelPoints[i].setRotation(rotation, true);
-            labelPoints[i].setBackgroundColor(0f, 0f, 0f, 0.4f);
-            drawTextLabel(i, text, rotation);
+            //make sure not to display upside down text views
+            int drawRotation = 360 - (rotation % 360);
+            boolean flipped = false;
+            if (drawRotation > 90 && drawRotation < 270) {
+                drawRotation = (drawRotation + 180) % 360;
+                flipped = true;
+            }
+            labelManager.setText(labelIds[i], text);
+            labelManager.setRotation(labelIds[i], drawRotation, true);
+            labelManager.setBackgroundColor(labelIds[i],
+                    Color.argb(102, 0, 0, 0));
+            labelManager.setFill(labelIds[i], true);
+            drawTextLabel(i, text, rotation, flipped);
         }
     }
 

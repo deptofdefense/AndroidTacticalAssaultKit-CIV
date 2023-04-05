@@ -1,11 +1,6 @@
 
 package com.atakmap.android.update;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -18,8 +13,8 @@ import com.atakmap.android.importfiles.ui.ImportManagerView;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.missionpackage.MissionPackageReceiver;
 import com.atakmap.android.video.VideoBrowserDropDownReceiver;
-import com.atakmap.app.R;
 import com.atakmap.app.BuildConfig;
+import com.atakmap.app.R;
 import com.atakmap.app.preferences.GeocoderPreferenceFragment;
 import com.atakmap.app.preferences.PreferenceControl;
 import com.atakmap.app.system.FlavorProvider;
@@ -29,6 +24,11 @@ import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 /**
  *
@@ -63,7 +63,10 @@ public class AppVersionUpgrade {
                 FileSystemUtils.SUPPORT_DIRECTORY + File.separatorChar + "docs"
                         + File.separatorChar + "ATAK_User_Guide.pdf");
         if (!userGuideFile.exists() || redeploy) {
-            userGuideFile.getParentFile().mkdirs();
+            File pFile = userGuideFile.getParentFile();
+            if (pFile == null || !pFile.mkdirs())
+                Log.e(TAG, "could not make the user guide directory");
+
             try (FileOutputStream pdfStream = new FileOutputStream(
                     userGuideFile)) {
                 FileSystemUtils.copyFromAssets(
@@ -97,7 +100,7 @@ public class AppVersionUpgrade {
                     new FileInputStream(f),
                     true,
                     FileSystemUtils.UTF8_CHARSET);
-            if (s.contains("atakmap.com")) {
+            if (s.contains("atakmap.com") || s.contains("takmaps.com")) {
                 Log.d(TAG, "removing outdated support.inf file");
                 if (f.delete())
                     Log.d(TAG, "unable to delete outdated support.inf file");
@@ -143,8 +146,8 @@ public class AppVersionUpgrade {
             if (fp != null)
                 fp.deployWMSPointers();
 
-
-            final String active = prefs.getString("lastViewedLayer.active", null);
+            final String active = prefs.getString("lastViewedLayer.active",
+                    null);
             if (active == null) {
                 // ATAK-14138 - Default to OpenStreetMap
                 SharedPreferences.Editor e = prefs.edit();

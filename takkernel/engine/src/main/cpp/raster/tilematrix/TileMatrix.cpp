@@ -70,7 +70,7 @@ TAKErr TAK::Engine::Raster::TileMatrix::TileMatrix_getTileIndex(Point2<double>* 
 }
 
 TAKErr TAK::Engine::Raster::TileMatrix::TileMatrix_getTileBounds(Envelope2* bounds, const TileMatrix& matrix, int level,
-	int tileX, int tileY) NOTHROWS 
+	int tileX, int tileY) NOTHROWS
 {
 	if (bounds == nullptr)
 		return TE_InvalidArg;
@@ -80,17 +80,21 @@ TAKErr TAK::Engine::Raster::TileMatrix::TileMatrix_getTileBounds(Envelope2* boun
 	code = TileMatrix_findZoomLevel(&zoom, matrix, level);
 	TE_CHECKRETURN_CODE(code);
 
-	//Envelope retval = new Envelope(Double.NaN, Double.NaN, 0, Double.NaN, Double.NaN, 0);
+	return TileMatrix_getTileBounds(bounds, matrix.getOriginX(), matrix.getOriginY(), zoom, tileX, tileY);
+}
+TAKErr TAK::Engine::Raster::TileMatrix::TileMatrix_getTileBounds(Feature::Envelope2* bounds,
+                                                                 const double originX, const double originY, const TileMatrix::ZoomLevel &zoom,
+                                                                 const int tileX, const int tileY) NOTHROWS
+{
 
 	Point2<double> point;
-	point = getTilePointImpl(matrix.getOriginX(), matrix.getOriginY(), zoom, tileX, tileY, 0, zoom.tileHeight);
+	point = getTilePointImpl(originX, originY, zoom, tileX, tileY, 0, zoom.tileHeight);
 	bounds->minX = point.x;
 	bounds->minY = point.y;
-	point = getTilePointImpl(matrix.getOriginX(), matrix.getOriginY(), zoom, tileX, tileY, zoom.tileWidth, 0);
+	point = getTilePointImpl(originX, originY, zoom, tileX, tileY, zoom.tileWidth, 0);
 	bounds->maxX = point.x;
 	bounds->maxY = point.y;
-
-	return code;
+	return TE_Ok;
 }
 
 TAKErr TAK::Engine::Raster::TileMatrix::TileMatrix_getTilePixel(TAK::Engine::Math::Point2<double>* pixel, const TileMatrix& matrix, const std::size_t level,
@@ -105,12 +109,19 @@ TAKErr TAK::Engine::Raster::TileMatrix::TileMatrix_getTilePixel(TAK::Engine::Mat
 	code = TileMatrix_findZoomLevel(&zoom, matrix, level);
 	TE_CHECKRETURN_CODE(code);
 
-	const double tileOriginX = matrix.getOriginX() + (tileX*zoom.pixelSizeX*zoom.tileWidth);
-	const double tileOriginY = matrix.getOriginY() - (tileY*zoom.pixelSizeY*zoom.tileHeight);
+	return TileMatrix_getTilePixel(pixel, matrix.getOriginX(), matrix.getOriginY(), zoom, tileX, tileY, projX, projY);
+}
+
+TAKErr TAK::Engine::Raster::TileMatrix::TileMatrix_getTilePixel(TAK::Engine::Math::Point2<double>* pixel,
+                                                                const double originX, const double originY, const TileMatrix::ZoomLevel &zoom,
+                                                                const int tileX, const int tileY, const double projX, const double projY) NOTHROWS
+{
+	const double tileOriginX = originX + (tileX*zoom.pixelSizeX*zoom.tileWidth);
+	const double tileOriginY = originY - (tileY*zoom.pixelSizeY*zoom.tileHeight);
 
 	pixel->x = (projX - tileOriginX) / zoom.pixelSizeX;
 	pixel->y = (tileOriginY - projY) / zoom.pixelSizeY;
-	return code;
+	return TE_Ok;
 }
 
 TAKErr TAK::Engine::Raster::TileMatrix::TileMatrix_getTilePoint(Math::Point2<double>* point, const TileMatrix& matrix, const std::size_t level, const int tileX,
@@ -125,8 +136,14 @@ TAKErr TAK::Engine::Raster::TileMatrix::TileMatrix_getTilePoint(Math::Point2<dou
 	code = TileMatrix_findZoomLevel(&zoom, matrix, level);
 	TE_CHECKRETURN_CODE(code);
 
-	*point = getTilePointImpl(matrix.getOriginX(), matrix.getOriginY(), zoom, tileX, tileY, pixelX, pixelY);
-	return code;
+	return TileMatrix_getTilePoint(point, matrix.getOriginX(), matrix.getOriginY(), zoom, tileX, tileY, pixelX, pixelY);
+}
+TAKErr TAK::Engine::Raster::TileMatrix::TileMatrix_getTilePoint(Math::Point2<double>* point,
+																const double originX, const double originY, const TileMatrix::ZoomLevel &zoom,
+																const int tileX, const int tileY, const int pixelX, const int pixelY) NOTHROWS
+{
+	*point = getTilePointImpl(originX, originY, zoom, tileX, tileY, pixelX, pixelY);
+	return TE_Ok;
 }
 
 bool TAK::Engine::Raster::TileMatrix::TileMatrix_isQuadtreeable(const TileMatrix& matrix) NOTHROWS

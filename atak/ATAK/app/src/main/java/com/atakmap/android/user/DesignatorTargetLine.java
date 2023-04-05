@@ -273,7 +273,8 @@ public class DesignatorTargetLine implements
         final GeoPoint tPoint = target.getPoint();
 
         // compute the angle to the designator
-        double rawBearing = GeoCalculations.bearingTo(designator.getPoint(), tPoint);
+        double rawBearing = GeoCalculations.bearingTo(designator.getPoint(),
+                tPoint);
 
         // use the bearing of the given designator
         int bearing = (int) Math.round(ATAKUtilities

@@ -35,17 +35,18 @@
             style="@style/SelfCoordBarText"
             android:textColor="@color/mint_green"/>
 
-        <TextView
-            android:id="@+id/callsign"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            tools:text="@string/callsign"
-            style="@style/SelfCoordBarText"/>
-
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:layout_height="wrap_content">
+            <TextView
+                android:id="@+id/callsign"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:layout_weight="1"
+                tools:text="@string/callsign"
+                style="@style/SelfCoordBarText"/>
 
             <TextView
                 android:id="@+id/location"
@@ -55,17 +56,7 @@
                 tools:text="@string/location"
                 style="@style/SelfCoordBarText"/>
 
-            <TextView
-                android:id="@+id/altitude"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="end"
-                tools:text="@string/altitude_title"
-                style="@style/SelfCoordBarText"/>
-
         </LinearLayout>
-
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -73,10 +64,18 @@
             android:orientation="horizontal">
 
             <TextView
+                android:id="@+id/altitude"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight=".5"
+                tools:text="@string/altitude_title"
+                style="@style/SelfCoordBarText"/>
+
+            <TextView
                 android:id="@+id/heading"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
+                android:layout_weight=".3"
                 tools:text="@string/heading"
                 style="@style/SelfCoordBarText"/>
 
@@ -84,8 +83,7 @@
                 android:id="@+id/speed"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center_horizontal"
+                android:layout_weight=".3"
                 tools:text="@string/speed"
                 style="@style/SelfCoordBarText"/>
 
@@ -93,8 +91,7 @@
                 android:id="@+id/accuracy"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="end"
+                android:layout_weight=".5"
                 tools:text="@string/accuracy"
                 style="@style/SelfCoordBarText"/>
 

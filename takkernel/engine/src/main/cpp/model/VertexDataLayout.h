@@ -77,6 +77,7 @@ namespace TAK {
              * @param texCoordIndex The texture coordinate index. Valid values are 0 through 7 (inclusive)
              */
             ENGINE_API Util::TAKErr VertexDataLayout_getTexCoordArray(VertexArray *value, const VertexDataLayout &layout, const int texCoordIndex) NOTHROWS;
+            ENGINE_API Util::TAKErr VertexDataLayout_getVertexArray(VertexArray *value, const VertexDataLayout &layout, const VertexAttribute attr) NOTHROWS;
         }
     }
 }

@@ -42,7 +42,7 @@ public class DownloadProgressTracker {
     /**
      * Estimated millis remaining in this download, time last notified user Millis
      */
-    long timeRemainingMillis = 0, lastUpdateMillis = 0;
+    long timeRemainingMillis = 0, lastUpdateMillis;
 
     /**
      * Speed of the current block, smoothed average speed of the entire download bytes per millis
@@ -52,7 +52,7 @@ public class DownloadProgressTracker {
     /**
      * Total size of download Number of bytes
      */
-    double totalLength = 0;
+    double totalLength;
 
     /**
      * Flag that at least one byte was successfully downloaded
@@ -60,9 +60,7 @@ public class DownloadProgressTracker {
     boolean bProgressMade = false;
 
     /**
-     * ctor
-     * 
-     * @param totalLength
+     * @param totalLength the total length expected
      */
     public DownloadProgressTracker(double totalLength) {
         this.totalLength = totalLength > 0 ? totalLength : 1D; // don't divide by 0
@@ -83,8 +81,8 @@ public class DownloadProgressTracker {
      * Update internal state for amount of data received If conditions are met for starting a new
      * block, then additional internal state is updated
      * 
-     * @param len
-     * @param currentTime
+     * @param len the length of the content received
+     * @param currentTime the current time in milliseconds
      * @return true if we should update/notify user
      */
     public boolean contentReceived(int len, long currentTime) {
@@ -103,10 +101,7 @@ public class DownloadProgressTracker {
         // do we know total size? required for full progress reporting...
         if (totalLength <= 1) {
             // just notify based on time...
-            if (currentTime - lastUpdateMillis > TIME_NOTIFICATION_DELTA)
-                return true;
-            else
-                return false;
+            return currentTime - lastUpdateMillis > TIME_NOTIFICATION_DELTA;
         }
 
         // see if time to notify user and start new block
@@ -141,7 +136,7 @@ public class DownloadProgressTracker {
     /**
      * User has been notified, finish updating internal state to start new block
      * 
-     * @param currentTime
+     * @param currentTime the current time for the notification in millis since epoch
      */
     public void notified(long currentTime) {
         lastProgress = currentProgress;
@@ -163,7 +158,7 @@ public class DownloadProgressTracker {
     /**
      * Percentage
      * 
-     * @return
+     * @return the percentage as an integer between 0 and 100.
      */
     public int getCurrentProgress() {
         return currentProgress;
@@ -172,7 +167,7 @@ public class DownloadProgressTracker {
     /**
      * Bytes per Millisecond
      * 
-     * @return
+     * @return the bytes per millisecond
      */
     public double getAverageSpeed() {
         return averageSpeedBPM;
@@ -181,16 +176,24 @@ public class DownloadProgressTracker {
     /**
      * Milliseconds (estimated)
      * 
-     * @return
+     * @return the number of milliseconds left in the transfer
      */
     public long getTimeRemaining() {
         return timeRemainingMillis;
     }
 
+    /**
+     * Sets the current length of the download
+     * @param length the current length in bytes
+     */
     public void setCurrentLength(long length) {
         currentLength = length;
     }
 
+    /**
+     * Returns the current set length of the download
+     * @return the length in bytes
+     */
     public long getCurrentLength() {
         return currentLength;
     }

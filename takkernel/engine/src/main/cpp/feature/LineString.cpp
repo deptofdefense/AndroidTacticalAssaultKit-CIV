@@ -210,6 +210,13 @@ LineString::getZ (std::size_t index)
     return points[index * getDimension () + 2];
   }
 
+const double *
+LineString::getPoints ()
+    const
+    throw ()
+  {
+    return points.empty() ? nullptr : &points.at(0);
+  }
 void
 LineString::setPoint (std::size_t index,
                       const Point& point)

@@ -45,6 +45,7 @@
 #include "renderer/core/GLLayerFactory2.h"
 #include "renderer/core/GLLabelManager.h"
 #include "renderer/core/GLMapViewDebug.h"
+#include "renderer/core/controls/SurfaceRendererControl.h"
 #include "renderer/elevation/GLTerrainTile.h"
 #include "renderer/elevation/ElMgrTerrainRenderService.h"
 #include "thread/Monitor.h"
@@ -55,7 +56,6 @@
 #include "GLGlobe.h"
 
 using namespace TAK::Engine::Renderer::Core;
-using namespace TAK::Engine::Renderer::Core::Controls;
 
 using namespace TAK::Engine::Core;
 using namespace TAK::Engine::Elevation;
@@ -63,6 +63,7 @@ using namespace TAK::Engine::Math;
 using namespace TAK::Engine::Model;
 using namespace TAK::Engine::Port;
 using namespace TAK::Engine::Renderer;
+using namespace TAK::Engine::Renderer::Core::Controls;
 using namespace TAK::Engine::Renderer::Elevation;
 using namespace TAK::Engine::Thread;
 using namespace TAK::Engine::Util;
@@ -85,6 +86,13 @@ namespace {
     const double recommendedGridSampleDistance = 0.125;
     double maxeldiff = 1000.0;
     double maxSkewAdj = 1.25;
+
+    enum Intersect
+    {
+        Inside,
+        Intersects,
+        Outside,
+    };
 
     struct AsyncAnimateBundle
     {
@@ -155,6 +163,30 @@ namespace {
         GLGlobe &view;
         int64_t start;
         bool enabled;
+    };
+
+    class SurfaceControlImpl : public SurfaceRendererControl
+    {
+    public :
+        SurfaceControlImpl(GLGlobeBase &owner, const double collideRadius) NOTHROWS;
+    public :
+        void markDirty() NOTHROWS override;
+        void markDirty(const TAK::Engine::Feature::Envelope2 region, const bool streaming) NOTHROWS override;
+        TAKErr enableDrawMode(const TAK::Engine::Model::DrawMode mode) NOTHROWS override;
+        TAKErr disableDrawMode(const TAK::Engine::Model::DrawMode mode) NOTHROWS override;
+        bool isDrawModeEnabled(const TAK::Engine::Model::DrawMode mode) const NOTHROWS override;
+        TAKErr setColor(const TAK::Engine::Model::DrawMode drawMode, const unsigned int color, const TAK::Engine::Renderer::Core::ColorControl::Mode colorMode) NOTHROWS override;
+        unsigned int getColor(const TAK::Engine::Model::DrawMode mode) const NOTHROWS override;
+        TAKErr getColorMode(TAK::Engine::Renderer::Core::ColorControl::Mode *value, const TAK::Engine::Model::DrawMode mode) const NOTHROWS override;
+        TAKErr setCameraCollisionRadius(double radius) NOTHROWS override;
+        double getCameraCollisionRadius() const NOTHROWS override;
+        TAKErr getSurfaceBounds(TAK::Engine::Port::Collection<TAK::Engine::Feature::Envelope2> &value) const NOTHROWS override;
+        void setMinimumRefreshInterval(const int64_t millis) NOTHROWS override;
+        int64_t getMinimumRefreshInterval() const NOTHROWS override;
+    public :
+        GLGlobeBase &owner;
+        GLGlobeSurfaceRenderer surface;
+        double collideRadius;
     };
 
     GeoPoint2 getPoint(const AtakMapView &view) NOTHROWS
@@ -318,22 +350,24 @@ namespace {
      * @param tile
      * @return
      */
-    bool cull(const MapSceneModel2 &scene, const Frustum2 &frustum, const int drawSrid, const bool handleIdlCrossing, const double drawLng, const TerrainTile &tile) NOTHROWS
+    Intersect cullx(const MapSceneModel2 &scene, const Frustum2 &frustum, const int drawSrid, const bool handleIdlCrossing, const double drawLng, const TerrainTile &tile) NOTHROWS
     {
         TAK::Engine::Feature::Envelope2 aabbWCS(tile.aabb_wgs84);
         TAK::Engine::Feature::GeometryTransformer_transform(&aabbWCS, aabbWCS, 4326, drawSrid);
 
+        bool inside1 = true;
+        bool inside2 = true;
         const bool isect =
-            (frustum.intersects(AABB(Point2<double>(aabbWCS.minX, aabbWCS.minY, aabbWCS.minZ),
+            (frustum.intersects(inside1, AABB(Point2<double>(aabbWCS.minX, aabbWCS.minY, aabbWCS.minZ),
                                      Point2<double>(aabbWCS.maxX, aabbWCS.maxY, aabbWCS.maxZ))) ||
             (handleIdlCrossing && drawLng * ((aabbWCS.minX + aabbWCS.maxX) / 2.0) < 0 &&
-                frustum.intersects(
+                frustum.intersects(inside2,
                     AABB(Point2<double>(aabbWCS.minX - (360.0 * sgn((aabbWCS.minX + aabbWCS.maxX) / 2.0)), aabbWCS.minY, aabbWCS.minZ),
                         Point2<double>(aabbWCS.maxX - (360.0 * sgn((aabbWCS.minX + aabbWCS.maxX) / 2.0)), aabbWCS.maxY, aabbWCS.maxZ)))));
 
         // does not intersect frustum
         if(!isect)
-            return true;
+            return Intersect::Outside;
 
         // check far plane
         Point2<double> tilectr((aabbWCS.maxX+aabbWCS.minX)/2.0, (aabbWCS.maxY+aabbWCS.minY)/2.0, (aabbWCS.maxZ+aabbWCS.minZ)/2.0);
@@ -361,10 +395,16 @@ namespace {
                         tilectr.z-scene.camera.location.z*scene.displayModel->projectionZToNominalMeters
                         ));
         // bounding sphere outside of far meters
-        return (distance > (radius+scene.camera.farMeters));
+        if(distance > (radius+scene.camera.farMeters))
+            return Intersect::Outside;
+
+        if(drawSrid == 4978 && distance > (radius+GeoPoint2_distanceToHorizon(scene.camera.agl)))
+            return Intersect::Outside;
+
+        return (inside1 && inside2) ? Intersect::Inside : Intersect::Intersects;
     }
 
-    void computeSurfaceBounds(GLGlobe &view, const std::vector<GLTerrainTile> &visibleTiles) NOTHROWS
+    void computeSurfaceBounds(GLGlobe &view, const std::vector<GLTerrainTile> &visibleTiles, const bool diagnosticMessagesEnabled) NOTHROWS
     {
         // compute MBB of all visible tiles
         // XXX - handle IDL cross
@@ -504,18 +544,33 @@ namespace {
         view.renderPasses[0].upperRight = GeoPoint2(view.renderPasses[0].northBound, view.renderPasses[0].eastBound);
         view.renderPasses[0].lowerRight = GeoPoint2(view.renderPasses[0].southBound, view.renderPasses[0].eastBound);
         view.renderPasses[0].lowerLeft = GeoPoint2(view.renderPasses[0].southBound, view.renderPasses[0].westBound);
-        {
+        if(diagnosticMessagesEnabled) {
             std::ostringstream dbg;
             dbg << "COMPUTED BOUNDS " << view.renderPasses[0].northBound << "," << view.renderPasses[0].westBound << " " << view.renderPasses[0].southBound << "," << view.renderPasses[0].eastBound << " IDL=" << view.renderPasses[0].crossesIDL;
             view.addRenderDiagnosticMessage(dbg.str().c_str());
         }
 
-        {
+        if(diagnosticMessagesEnabled) {
             std::ostringstream dbg;
             dbg << "constrain " << (surfaceRadius < M_PI*TAK::Engine::Core::Ellipsoid2::WGS84.semiMinorAxis) << " radius=" << surfaceRadius << "(" << farMeters << "@" << cam.altitude << ") n=" << north.latitude << " w=" << west.longitude << " s=" << south.latitude << " e=" << east.longitude;
             view.addRenderDiagnosticMessage(dbg.str().c_str());
         }
     }
+
+    /**
+     * Determines if the camera will collide with the terrain surface (per the `collideRadius`) and
+     * if so, adjusts the camera or focus location, per the collision strategy.
+     *
+     * @param cam               The adjusted camera location
+     * @param focus             The adjusted focus
+     * @param tilt              The adjusted tilt
+     * @param view              The globe renderer
+     * @param sm
+     * @param collideRadius     The collision radius, in meters
+     * @param collision         The collision strategy
+     * @return
+     */
+    TAKErr handleCollision(GeoPoint2 *cam, GeoPoint2 *focus, double *tilt, const GLGlobe &view, const MapSceneModel2 &sm, const double collideRadius, const MapRenderer::CameraCollision collision) NOTHROWS;
 }
 
 void GLGlobe::cullTerrainTiles_cpu() NOTHROWS
@@ -566,7 +621,7 @@ void GLGlobe::cullTerrainTiles_cpu() NOTHROWS
     m.concatenate(offscreen.computeScene.camera.modelView);
     Frustum2 frustum(m);
     for (std::size_t i = 0u; i < offscreen.computeContext[read_idx].terrainTiles.size(); i++) {
-        if (!cull(offscreen.computeScene, frustum, srid, handleIdlCrossing, focus.longitude, *offscreen.computeContext[read_idx].terrainTiles[i])) {
+        if (cullx(offscreen.computeScene, frustum, srid, handleIdlCrossing, focus.longitude, *offscreen.computeContext[read_idx].terrainTiles[i]) != Intersect::Outside) {
             const auto &tile = offscreen.computeContext[read_idx].terrainTiles[i];
             const intptr_t p = (intptr_t)(void*)tile.get();
             if (vis.find(p) == vis.end())
@@ -653,8 +708,10 @@ void GLGlobe::cullTerrainTiles_pbo() NOTHROWS
 
     glDisable(GL_BLEND);
 
-    offscreen.computeContext[write_idx].visIndices.clear();
-    offscreen.computeContext[write_idx].visIndices.reserve(offscreen.computeContext[write_idx].terrainTiles.size());
+    offscreen.computeContext[write_idx].visIndices.intersect.clear();
+    offscreen.computeContext[write_idx].visIndices.intersect.reserve(offscreen.computeContext[write_idx].terrainTiles.size());
+    offscreen.computeContext[write_idx].visIndices.inside.clear();
+    offscreen.computeContext[write_idx].visIndices.inside.reserve(offscreen.computeContext[write_idx].terrainTiles.size());
 
     DebugTimer dt("Cull [draw tiles]", *this, diagnosticMessagesEnabled);
 
@@ -703,11 +760,25 @@ void GLGlobe::cullTerrainTiles_pbo() NOTHROWS
     for(std::size_t i = 0u; i < offscreen.computeContext[write_idx].terrainTiles.size(); i++) {
         const auto &tile = offscreen.computeContext[write_idx].terrainTiles[i];
         auto gltile = offscreen.gltiles.find(tile.get());
-        if (cull(offscreen.computeScene, frustum, srid, handleIdlCrossing, focus.longitude, *offscreen.computeContext[write_idx].terrainTiles[i]))
+        const Intersect isect = cullx(offscreen.computeScene, frustum, srid, handleIdlCrossing, focus.longitude, *offscreen.computeContext[write_idx].terrainTiles[i]);
+        if (isect == Intersect::Outside) {
+            // tile is outside frustum, skip
             continue;
+        }
+
+        offscreen.computeContext[write_idx].visIndices.value.push_back(i);
+#ifndef __ANDROID__
+        if(isect == Intersect::Inside) {
+            // tile is inside frustum, save
+            offscreen.computeContext[write_idx].visIndices.inside.push_back(i);
+            continue;
+        }
+#endif
+
+        // tile intersects frustum, queue for PBO render
 
         // encode ID as RGBA
-        const std::size_t id = offscreen.computeContext[write_idx].visIndices.size();
+        const std::size_t id = offscreen.computeContext[write_idx].visIndices.intersect.size();
         const float a = (((id+1u) >> 24) & 0xFF) / 255.f;
         const float b = (((id+1u) >> 16) & 0xFF) / 255.f;
         const float g = (((id+1u) >> 8) & 0xFF) / 255.f;
@@ -720,12 +791,18 @@ void GLGlobe::cullTerrainTiles_pbo() NOTHROWS
         }
         GLTerrainTile_drawTerrainTiles(ctx, lla2tex, &gltt, 1u, r, g, b, a);
         // mark visible
-        offscreen.computeContext[write_idx].visIndices.push_back(i);
+        offscreen.computeContext[write_idx].visIndices.intersect.push_back(i);
     }
     GLTerrainTile_end(ctx);
     dt.stop();
 
-    const std::vector<std::size_t> *visIndices = &offscreen.computeContext[write_idx].visIndices;
+    if(diagnosticMessagesEnabled) {
+        std::ostringstream strm;
+        strm << "Cull Tiles inside=" << offscreen.computeContext[write_idx].visIndices.inside.size() << " intersect " << offscreen.computeContext[write_idx].visIndices.intersect.size();
+        addRenderDiagnosticMessage(strm.str().c_str());
+    }
+
+    const std::vector<std::size_t> *visIndices = &offscreen.computeContext[write_idx].visIndices.value;
     bool confirmed = true;
 
     if (fbo_r.handle) { // read from the back buffer
@@ -740,7 +817,7 @@ void GLGlobe::cullTerrainTiles_pbo() NOTHROWS
 #define PROCESS_BUF_SIZE 4096u
             uint32_t visb[PROCESS_BUF_SIZE];
             // reserve a chunk for the visible IDs
-            const std::size_t idReserved = offscreen.computeContext[read_idx].visIndices.size()+1u;
+            const std::size_t idReserved = offscreen.computeContext[read_idx].visIndices.intersect.size()+1u;
             const std::size_t idReservedOff = (PROCESS_BUF_SIZE-idReserved);
             memset(visb+idReservedOff, 0u, idReserved*sizeof(uint32_t));
 
@@ -812,13 +889,13 @@ void GLGlobe::cullTerrainTiles_pbo() NOTHROWS
                 // reconstruct the index from the ID
                 const std::size_t visIndicesIdx = i-1u;
                 // toggle the global ID
-                visResolved.push_back(offscreen.computeContext[read_idx].visIndices[visIndicesIdx]);
+                visResolved.push_back(offscreen.computeContext[read_idx].visIndices.intersect[visIndicesIdx]);
             }
             // compact the visible indices, marking previously not visible tiles as dirty
-            offscreen.computeContext[read_idx].visIndices.clear();
+            offscreen.computeContext[read_idx].visIndices.value.clear();
             const intptr_t *lastConfirmed = &offscreen.visibleTiles.lastConfirmed.at(0);
             for (std::size_t i = 0u; i < visResolved.size(); i++) {
-                offscreen.computeContext[read_idx].visIndices.push_back(visResolved[i]);
+                offscreen.computeContext[read_idx].visIndices.value.push_back(visResolved[i]);
 
                 const TerrainTile& tt = *offscreen.computeContext[read_idx].terrainTiles[visResolved[i]];
                 const intptr_t p = (intptr_t)(void*)&tt;
@@ -835,9 +912,27 @@ void GLGlobe::cullTerrainTiles_pbo() NOTHROWS
                 if(isDirty)
                     surfaceRenderer->markDirty(tt.aabb_wgs84, false);
             }
+            for (auto insideIdx : offscreen.computeContext[read_idx].visIndices.inside) {
+                offscreen.computeContext[read_idx].visIndices.value.push_back(insideIdx);
+
+                const TerrainTile& tt = *offscreen.computeContext[read_idx].terrainTiles[insideIdx];
+                const intptr_t p = (intptr_t)(void*)&tt;
+                bool isDirty = true;
+                // we could use a map or set here, however, given the size of
+                // data being processed, the brute force search over the array
+                // probably wins out due to CPU cache
+                for(std::size_t j = 0u; j < offscreen.visibleTiles.lastConfirmed.size(); j++) {
+                    if(p == lastConfirmed[j]) {
+                        isDirty = false;
+                        break;
+                    }
+                }
+                if(isDirty)
+                    surfaceRenderer->markDirty(tt.aabb_wgs84, false);
+            }
 
             // confirmed
-            visIndices = &offscreen.computeContext[read_idx].visIndices;
+            visIndices = &offscreen.computeContext[read_idx].visIndices.value;
             vi.stop();
         } else {
             // the read buffer is out of sync or the read buffer could not be
@@ -846,6 +941,10 @@ void GLGlobe::cullTerrainTiles_pbo() NOTHROWS
             confirmed = !rgba;
         }
         glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
+#ifndef __ANDROID__
+        // orphan
+        glBufferData(GL_PIXEL_PACK_BUFFER, fbo_r.textureWidth*fbo_r.textureHeight*sizeof(uint32_t), nullptr, GL_DYNAMIC_READ);
+#endif
         glBindBuffer(GL_PIXEL_PACK_BUFFER, GL_NONE);
     }
     DebugTimer ct("Cull [set confirmed tiles]", *this, diagnosticMessagesEnabled);
@@ -869,7 +968,7 @@ void GLGlobe::cullTerrainTiles_pbo() NOTHROWS
     if (blend_enabled)
         glEnable(GL_BLEND);
 
-    GLenum invalid = GL_DEPTH_BUFFER_BIT;
+    GLenum invalid = GL_DEPTH_ATTACHMENT;
     glInvalidateFramebuffer(GL_FRAMEBUFFER, 1u, &invalid);
     glBindFramebuffer(GL_FRAMEBUFFER, boundFbo);
 }
@@ -922,7 +1021,8 @@ GLGlobe::GLGlobe(RenderContext &ctx, AtakMapView &aview,
     tiltSkewOffset(DEFAULT_TILT_SKEW_OFFSET),
     tiltSkewMult(DEFAULT_TILT_SKEW_MULT),
     diagnosticMessagesEnabled(false),
-    inRenderPump(false)
+    inRenderPump(false),
+    surfaceRenderer(nullptr, nullptr)
 {
     elevationScaleFactor = aview.getElevationExaggerationFactor();
 
@@ -952,21 +1052,17 @@ GLGlobe::GLGlobe(RenderContext &ctx, AtakMapView &aview,
             renderPasses[0].sceneModelForwardMatrix[i] = (float)forwardmx[i];
     }
     renderPasses[0].drawSrid = renderPasses[0].scene.projection->getSpatialReferenceID();
-    atakmap::core::GeoPoint oldCenter;
     GeoPoint2 center;
-    view.getPoint(&oldCenter);
-    atakmap::core::GeoPoint_adapt(&center, oldCenter);
+    renderPasses[0u].scene.projection->inverse(&center, renderPasses[0u].scene.camera.target);
     renderPasses[0].drawLat = center.latitude;
     renderPasses[0].drawLng = center.longitude;
     renderPasses[0].drawAlt = center.altitude;
-    renderPasses[0].drawRotation = view.getMapRotation();
-    renderPasses[0].drawTilt = view.getMapTilt();
-    renderPasses[0].drawMapScale = view.getMapScale();
-    renderPasses[0].drawMapResolution = view.getMapResolution(renderPasses[0].drawMapScale);
-    atakmap::math::Point<float> p;
-    view.getController()->getFocusPoint(&p);
-    renderPasses[0].focusx = p.x;
-    renderPasses[0].focusy = p.y;
+    renderPasses[0].drawRotation = renderPasses[0u].scene.camera.azimuth;
+    renderPasses[0].drawTilt = 90.0 + renderPasses[0u].scene.camera.elevation;
+    renderPasses[0].drawMapScale = atakmap::core::AtakMapView_getMapScale(renderPasses[0u].scene.displayDpi, renderPasses[0u].scene.gsd);
+    renderPasses[0].drawMapResolution = renderPasses[0u].scene.gsd;
+    renderPasses[0].focusx = renderPasses[0u].scene.focusX;
+    renderPasses[0].focusy = renderPasses[0u].scene.focusY;
     renderPasses[0].near = (float)renderPasses[0].scene.camera.near;
     renderPasses[0].far = (float)renderPasses[0].scene.camera.far;
 
@@ -976,8 +1072,8 @@ GLGlobe::GLGlobe(RenderContext &ctx, AtakMapView &aview,
     animation.target.mapScale = renderPasses[0].drawMapScale;
     animation.target.rotation = renderPasses[0].drawRotation;
     animation.target.tilt = renderPasses[0].drawTilt;
-    animation.target.focusx = renderPasses[0].focusx;
-    animation.target.focusy = renderPasses[0].focusy;
+    animation.target.focusOffset.x = renderPasses[0].focusx-(float)view.getWidth()/2.f;
+    animation.target.focusOffset.y = (float)view.getHeight()/2.f-renderPasses[0].focusy;
     animation.settled = false;
     animationFactor = 1.f;
     settled = false;
@@ -988,16 +1084,16 @@ GLGlobe::GLGlobe(RenderContext &ctx, AtakMapView &aview,
     this->renderPasses[0u].texture = 0;
     this->renderPasses[0u].basemap = true;
     this->renderPasses[0u].debugDrawBounds = this->debugDrawBounds;
-    this->renderPasses[0u].viewport.x = static_cast<float>(left);
-    this->renderPasses[0u].viewport.y = static_cast<float>(bottom);
-    this->renderPasses[0u].viewport.width = static_cast<float>(right-left);
-    this->renderPasses[0u].viewport.height = static_cast<float>(top-bottom);
+    this->renderPasses[0u].viewport.x = 0.f;
+    this->renderPasses[0u].viewport.y = 0.f;
+    this->renderPasses[0u].viewport.width = (float)view.getWidth();
+    this->renderPasses[0u].viewport.height = (float)view.getHeight();
 
     state.focus.geo.latitude = renderPasses[0].drawLat;
     state.focus.geo.longitude = renderPasses[0].drawLng;
     state.focus.geo.altitude = renderPasses[0].drawAlt;
-    state.focus.x = renderPasses[0].focusx;
-    state.focus.y = renderPasses[0].focusy;
+    state.focus.offsetX = renderPasses[0].scene.focusX-(float)renderPasses[0].scene.width/2.f;
+    state.focus.offsetY = (float)renderPasses[0].viewport.height/2.f-renderPasses[0].scene.focusY;
     state.srid = renderPasses[0].drawSrid;
     state.resolution = renderPasses[0].drawMapResolution;
     state.rotation = renderPasses[0].drawRotation;
@@ -1011,8 +1107,9 @@ GLGlobe::GLGlobe(RenderContext &ctx, AtakMapView &aview,
 #else
     this->gpuTerrainIntersect = !!ConfigOptions_getIntOptionOrDefault("glmapview.surface-rendering-v2", 1);
 #endif
+    this->usePboCull = !!ConfigOptions_getIntOptionOrDefault("glmapview.use-pbo-cull", 1);
 
-    surfaceRenderer.reset(new GLGlobeSurfaceRenderer(*this));
+    surfaceRenderer = std::unique_ptr<SurfaceRendererControl, void(*)(const SurfaceRendererControl *)>(new SurfaceControlImpl(*this, 10.0), Memory_deleter_const<SurfaceRendererControl, SurfaceControlImpl>);
 
     MeshColor triangles; triangles.mode = TEDM_Triangles; triangles.enabled = true;
     MeshColor lines; lines.mode = TEDM_Lines; lines.enabled = false;
@@ -1022,6 +1119,10 @@ GLGlobe::GLGlobe(RenderContext &ctx, AtakMapView &aview,
     meshDrawModes.push_back(points);
 
     offscreen.terrainTiles2 = &offscreen.computeContext[0u].terrainTiles;
+
+    registerRendererControl(SurfaceRendererControl_getType(), surfaceRenderer.get());
+
+    setAtmosphereEnabled(!!ConfigOptions_getIntOptionOrDefault("glmapview.atmosphere.enabled", 1));
 }
 
 GLGlobe::~GLGlobe() NOTHROWS
@@ -1031,6 +1132,8 @@ GLGlobe::~GLGlobe() NOTHROWS
 
 TAKErr GLGlobe::start() NOTHROWS
 {
+    GLGlobeBase::start();
+
     this->terrain->start();
 
     this->view.addLayersChangedListener(this);
@@ -1038,44 +1141,18 @@ TAKErr GLGlobe::start() NOTHROWS
     view.getLayers(layers);
     refreshLayers(layers);
 
-    this->view.addMapElevationExaggerationFactorListener(this);
-    mapElevationExaggerationFactorChanged(&this->view, this->view.getElevationExaggerationFactor());
-
-    this->view.addMapProjectionChangedListener(this);
-    mapProjectionChanged(&this->view);
-
-    this->view.addMapMovedListener(this);
-    mapMoved(&this->view, false);
-
-    this->view.getController()->addFocusPointChangedListener(this);
-    atakmap::math::Point<float> focus;
-    this->view.getController()->getFocusPoint(&focus);
-    mapControllerFocusPointChanged(this->view.getController(), &focus);
-
-    this->view.addMapResizedListener(this);
-    {
-        WriteLock wlock(this->renderPasses0Mutex);
-        renderPasses[0].left = 0;
-        renderPasses[0].right = static_cast<int>(view.getWidth());
-        renderPasses[0].top = static_cast<int>(view.getHeight());
-        renderPasses[0].bottom = 0;
-    }
     this->tiltSkewOffset = ConfigOptions_getDoubleOptionOrDefault("glmapview.tilt-skew-offset", DEFAULT_TILT_SKEW_OFFSET);
     this->tiltSkewMult = ConfigOptions_getDoubleOptionOrDefault("glmapview.tilt-skew-mult", DEFAULT_TILT_SKEW_MULT);
 
-    this->displayDpi = view.getDisplayDpi();
+    view.attachRenderer(*this, false);
 
     return TE_Ok;
 }
 
 TAKErr GLGlobe::stop() NOTHROWS
 {
+    view.detachRenderer(*this);
     this->view.removeLayersChangedListener(this);
-    this->view.removeMapElevationExaggerationFactorListener(this);
-    this->view.removeMapProjectionChangedListener(this);
-    this->view.removeMapMovedListener(this);
-    this->view.removeMapResizedListener(this);
-    this->view.getController()->removeFocusPointChangedListener(this);
 
     GLGlobeBase::stop();
 
@@ -1125,67 +1202,9 @@ void GLGlobe::initOffscreenShaders() NOTHROWS
     offscreen.planar.pick = GLTerrainTile_getColorShader(this->context, 4326, 0u);
     offscreen.planar.depth = GLTerrainTile_getDepthShader(this->context, 4326);
 }
-void GLGlobe::mapMoved(atakmap::core::AtakMapView* map_view, bool animate)
-{
-    atakmap::core::GeoPoint p;
-    map_view->getPoint(&p);
-
-    GeoPoint2 p2;
-    lookAt(GeoPoint2(p.latitude, p.longitude, p.altitude, TAK::Engine::Core::AltitudeReference::HAE),
-            map_view->getMapResolution(),
-            map_view->getMapRotation(),
-            map_view->getMapTilt(),
-            CameraCollision::Ignore,
-            animate);
-}
-
 TAKErr GLGlobe::createLayerRenderer(GLLayer2Ptr &value, Layer2 &subject) NOTHROWS
 {
     return GLLayerFactory2_create(value, *this, subject);
-}
-
-void GLGlobe::mapProjectionChanged(atakmap::core::AtakMapView* map_view)
-{
-    int srid = map_view->getProjection();
-    switch(srid) {
-        case 4978 :
-            setDisplayMode(MapRenderer::Globe);
-            break;
-        case 4326 :
-            setDisplayMode(MapRenderer::Flat);
-            break;
-        default :
-            break;
-    }
-}
-
-void GLGlobe::mapResized(atakmap::core::AtakMapView *mapView)
-{
-    const int w = (int)mapView->getWidth();
-    const int h = (int)mapView->getHeight();
-    if(w <= 0 || h <= 0)
-        return;
-    setSurfaceSize((std::size_t)w, (std::size_t)h);
-}
-
-void GLGlobe::mapControllerFocusPointChanged(atakmap::core::AtakMapController *controller, const atakmap::math::Point<float> * const focus)
-{
-    setFocusPoint(focus->x, focus->y);
-}
-
-void GLGlobe::mapElevationExaggerationFactorChanged(atakmap::core::AtakMapView *map_view, const double factor)
-{
-    std::unique_ptr<std::pair<GLGlobe &, double>> opaque(new std::pair<GLGlobe &, double>(*this, factor));
-    if (context.isRenderThread())
-        glElevationExaggerationFactorChanged(opaque.release());
-    else
-        context.queueEvent(glElevationExaggerationFactorChanged, std::unique_ptr<void, void(*)(const void *)>(opaque.release(), Memory_leaker_const<void>));
-}
-
-void GLGlobe::glElevationExaggerationFactorChanged(void *opaque) NOTHROWS
-{
-    std::unique_ptr<std::pair<GLGlobe &, double>> arg(static_cast<std::pair<GLGlobe &, double> *>(opaque));
-    arg->first.elevationScaleFactor = arg->second;
 }
 
 void GLGlobe::render() NOTHROWS
@@ -1204,28 +1223,30 @@ void GLGlobe::render() NOTHROWS
         atakmap::renderer::GLES20FixedPipeline::getInstance()->glOrthof((float)renderPasses[0].left, (float)renderPasses[0].right, (float)renderPasses[0].bottom, (float)renderPasses[0].top, 1.f, -1.f);
         atakmap::renderer::GLES20FixedPipeline::getInstance()->glMatrixMode(GLES20FixedPipeline::MatrixMode::MM_GL_MODELVIEW);
         atakmap::renderer::GLES20FixedPipeline::getInstance()->glLoadIdentity();
-        {
-            std::ostringstream dbg;
-            dbg << "Render Pump " << renderPumpElapsed << "ms";
-            diagnosticMessages.push_back(dbg.str());
-        }
-        {
-            std::ostringstream dbg;
-            dbg << "Near " << renderPasses[0].scene.camera.nearMeters << " Far " << renderPasses[0].scene.camera.farMeters;
-            diagnosticMessages.push_back(dbg.str());
-        }
-        {
-            // XXX - print slippy zoom level
-            //value->camera.location.z = (value->gsd*((float)height / 2.0) / std::tan((HVFOV)*M_PI / 180.0));
-            GeoPoint2 cam;
-            renderPasses[0].scene.projection->inverse(&cam, renderPasses[0].scene.camera.location);
-            const double gsd = (cam.altitude*std::tan(22.5*M_PI/180.0)) / (renderPasses[0].scene.height / 2.0);
-            const double lod = atakmap::raster::osm::OSMUtils::mapnikTileLeveld(gsd, 0.0);
-            std::ostringstream dbg;
-            double el = 0.0;
-            getTerrainMeshElevation(&el, cam.latitude, cam.longitude);
-            dbg << "Camera  " << cam.altitude << "m HAE " << (cam.altitude-el) << "m AGL";
-            diagnosticMessages.push_back(dbg.str());
+        if(diagnosticMessagesEnabled) {
+            {
+                std::ostringstream dbg;
+                dbg << "Render Pump " << renderPumpElapsed << "ms";
+                diagnosticMessages.push_back(dbg.str());
+            }
+            {
+                std::ostringstream dbg;
+                dbg << "Near " << renderPasses[0].scene.camera.nearMeters << " Far " << renderPasses[0].scene.camera.farMeters;
+                diagnosticMessages.push_back(dbg.str());
+            }
+            {
+                // XXX - print slippy zoom level
+                //value->camera.location.z = (value->gsd*((float)height / 2.0) / std::tan((HVFOV)*M_PI / 180.0));
+                GeoPoint2 cam;
+                renderPasses[0].scene.projection->inverse(&cam, renderPasses[0].scene.camera.location);
+                const double gsd = (cam.altitude*std::tan(22.5*M_PI/180.0)) / (renderPasses[0].scene.height / 2.0);
+                const double lod = atakmap::raster::osm::OSMUtils::mapnikTileLeveld(gsd, 0.0);
+                std::ostringstream dbg;
+                double el = 0.0;
+                getTerrainMeshElevation(&el, cam.latitude, cam.longitude);
+                dbg << "Camera  " << cam.altitude << "m HAE " << (cam.altitude-el) << "m AGL GSD " << ((int)(renderPasses[0].scene.gsd*100.0)/100.0) << "m";
+                diagnosticMessages.push_back(dbg.str());
+            }
         }
 #if 0
         {
@@ -1253,7 +1274,7 @@ void GLGlobe::render() NOTHROWS
 void GLGlobe::release() NOTHROWS
 {
     GLGlobeBase::release();
-    surfaceRenderer->release();
+    static_cast<SurfaceControlImpl &>(*surfaceRenderer).surface.release();
 }
 
 void GLGlobe::prepareScene() NOTHROWS
@@ -1272,7 +1293,7 @@ void GLGlobe::computeBounds() NOTHROWS
     double localel = NAN;
     if(getTerrainMeshElevation(&localel, camlla.latitude, camlla.longitude) == TE_Ok && !TE_ISNAN(localel))
         renderPasses[0u].scene.camera.agl = std::max(0.10, fabs(camlla.altitude-localel));
-    computeSurfaceBounds(*this, offscreen.visibleTiles.value);
+    computeSurfaceBounds(*this, offscreen.visibleTiles.value, diagnosticMessagesEnabled);
 }
 
 int GLGlobe::getTerrainVersion() const NOTHROWS
@@ -1302,7 +1323,7 @@ TAKErr GLGlobe::visitTerrainTiles(TAKErr(*visitor)(void *opaque, const std::shar
 }
 GLGlobeSurfaceRenderer& GLGlobe::getSurfaceRenderer() const NOTHROWS
 {
-    return *surfaceRenderer;
+    return static_cast<SurfaceControlImpl &>(*surfaceRenderer).surface;
 }
 TAKErr GLGlobe::getSurfaceBounds(TAK::Engine::Port::Collection<TAK::Engine::Feature::Envelope2> &value) const NOTHROWS
 {
@@ -1348,17 +1369,32 @@ void GLGlobe::drawRenderables() NOTHROWS
     {
         WriteLock wlock(renderPasses0Mutex);
 
+        this->renderPasses[this->numRenderPasses] = this->renderPasses[0u];
         this->renderPasses[this->numRenderPasses].renderPass =
                 GLGlobe::Sprites | GLGlobe::Scenes | GLGlobe::XRay;
         this->renderPasses[this->numRenderPasses].texture = 0;
         this->renderPasses[this->numRenderPasses].basemap = false;
         this->renderPasses[this->numRenderPasses].debugDrawBounds = this->debugDrawBounds;
+        // viewport
         this->renderPasses[this->numRenderPasses].viewport.x = static_cast<float>(renderPasses[0].left);
         this->renderPasses[this->numRenderPasses].viewport.y = static_cast<float>(renderPasses[0].bottom);
         this->renderPasses[this->numRenderPasses].viewport.width = static_cast<float>(renderPasses[0].right - renderPasses[0].left);
         this->renderPasses[this->numRenderPasses].viewport.height = static_cast<float>(renderPasses[0].top - renderPasses[0].bottom);
+        // render tiles
         this->renderPasses[this->numRenderPasses].renderTiles.value = offscreen.visibleTiles.value.empty() ? nullptr : &offscreen.visibleTiles.value.at(0);
         this->renderPasses[this->numRenderPasses].renderTiles.count = offscreen.visibleTiles.value.size();
+        // suface bounds
+        this->renderPasses[this->numRenderPasses].surfaceBoundsData.clear();
+        if (offscreen.visibleTiles.value.empty()) {
+            this->renderPasses[this->numRenderPasses].surfaceBounds.value = nullptr;
+        } else {
+            this->renderPasses[this->numRenderPasses].surfaceBoundsData.reserve(offscreen.visibleTiles.value.size());
+            for (auto& t : offscreen.visibleTiles.value)
+                this->renderPasses[this->numRenderPasses].surfaceBoundsData.push_back(t.tile->aabb_wgs84);
+            this->renderPasses[this->numRenderPasses].surfaceBounds.value = &this->renderPasses[this->numRenderPasses].surfaceBoundsData.at(0);
+        }
+        this->renderPasses[this->numRenderPasses].surfaceBounds.count = this->renderPasses[this->numRenderPasses].surfaceBoundsData.size();
+
         this->numRenderPasses++;
     }
     this->renderPass = this->renderPasses;
@@ -1409,7 +1445,7 @@ void GLGlobe::drawRenderables() NOTHROWS
 
     // update the surface
     DebugTimer sru_timer("Surface Update", *this, diagnosticMessagesEnabled);
-    surfaceRenderer->update(5LL);
+    static_cast<SurfaceControlImpl &>(*surfaceRenderer).surface.update(5LL);
     sru_timer.stop();
 
     // record depth state before rendering skybox
@@ -1459,7 +1495,7 @@ void GLGlobe::drawRenderables() NOTHROWS
                 // TODO
             }
             if (isDrawModeEnabled(TEDM_Triangles)) {
-                surfaceRenderer->draw();
+                static_cast<SurfaceControlImpl &>(*surfaceRenderer).surface.draw();
                 // XXX - quickfix for supporting subterranean objects
                 if((getColor(TEDM_Triangles)&0xFF000000) != 0xFF000000)
                     glClear(GL_DEPTH_BUFFER_BIT);
@@ -1521,7 +1557,7 @@ void GLGlobe::drawRenderables(const GLGlobe::State &renderState) NOTHROWS
     this->renderPass = &renderState;
     this->idlHelper.update(*this);
 
-    GLGlobeBase::drawRenderables(renderState);
+     GLGlobeBase::drawRenderables(renderState);
 
     // restore the view state
     this->renderPass = renderPasses;
@@ -1644,12 +1680,12 @@ bool GLGlobe::animate() NOTHROWS {
     if(retval) {
         // the animation was updated, pull `nearMeters` off of new scene
         sm.set(displayDpi,
-               (std::size_t)view.getWidth(),
-               (std::size_t)view.getHeight(),
+               state.width,
+               state.height,
                renderPasses[0].drawSrid,
                animation.current.point,
-               animation.current.focusx,
-               animation.current.focusy,
+               (float)state.width/2.f + animation.current.focusOffset.x,
+               (float)state.height/2.f - animation.current.focusOffset.y,
                animation.current.rotation,
                animation.current.tilt,
                AtakMapView_getMapResolution(displayDpi, animation.current.mapScale),
@@ -1686,12 +1722,12 @@ bool GLGlobe::animate() NOTHROWS {
     if(retval) {
         offscreen.computeScene.set(
             displayDpi,
-            (std::size_t)view.getWidth(),
-            (std::size_t)view.getHeight(),
+            (std::size_t)state.width,
+            (std::size_t)state.height,
             renderPasses[0].drawSrid,
             animation.current.point,
-            animation.current.focusx,
-            animation.current.focusy,
+            (float)state.width/2.f + animation.current.focusOffset.x,
+            (float)state.height/2.f - animation.current.focusOffset.y,
             animation.current.rotation,
             animation.current.tilt,
             AtakMapView_getMapResolution(displayDpi, animation.current.mapScale),
@@ -1736,7 +1772,8 @@ bool GLGlobe::animate() NOTHROWS {
             offscreen.computeScene.width, offscreen.computeScene.height,
             state.srid,
             animation.target.point,
-            animation.target.focusx, animation.target.focusy,
+            (float)state.width/2.f + animation.target.focusOffset.x,
+            (float)state.height/2.f - animation.target.focusOffset.y,
             animation.target.rotation,
             animation.target.tilt,
             atakmap::core::AtakMapView_getMapResolution(offscreen.computeScene.displayDpi, animation.target.mapScale),
@@ -1809,9 +1846,13 @@ bool GLGlobe::animate() NOTHROWS {
         const bool wasConfirmed = offscreen.visibleTiles.confirmed;
 
         // if the visible tile compute pipe is not fully processed, push data through
-        if(!offscreen.computeContext[terrain_write_idx].processed || !offscreen.computeContext[terrain_read_idx].processed) {
+        if(!offscreen.computeContext[terrain_write_idx].processed || !offscreen.computeContext[terrain_read_idx].processed)
+        {
 #ifndef __APPLE__
-            cullTerrainTiles_pbo();
+            if(usePboCull)
+                cullTerrainTiles_pbo();
+            else
+                cullTerrainTiles_cpu();
 #else
             cullTerrainTiles_cpu();
 #endif
@@ -1973,7 +2014,45 @@ TerrainRenderService &GLGlobe::getTerrainRenderService() const NOTHROWS
 {
     return *this->terrain;
 }
+TAKErr GLGlobe::lookAt(const GeoPoint2& focus_, const double resolution_, const double azimuth, const double tilt_, const CameraCollision collision, const bool animate) NOTHROWS
+{
+    GeoPoint2 focus(focus_);
+    if (TE_ISNAN(focus.altitude))
+        focus.altitude = 0.0;
+    double resolution = resolution_;
+    double tilt = tilt_;
 
+    if(resolution > view.getMapResolution(view.getMinMapScale()))
+        resolution = view.getMapResolution(view.getMinMapScale());
+
+    // handle collisions for perspective camera
+    MapSceneModel2 sm;
+    getMapSceneModel(&sm, false, DisplayOrigin::UpperLeft);
+    if (sm.camera.mode == MapCamera2::Perspective && collision != CameraCollision::Ignore) {
+        // construct the target model
+        sm = MapSceneModel2(
+            sm.displayDpi,
+            sm.width,
+            sm.height,
+            sm.projection->getSpatialReferenceID(),
+            focus,
+            sm.focusX, sm.focusY,
+            azimuth,
+            tilt,
+            resolution,
+            MapCamera2::Perspective);
+
+        // obtain new camera location
+        GeoPoint2 cam;
+        sm.projection->inverse(&cam, sm.camera.location);
+
+        // recompute the look-at parameters per the collision handling specified
+        TAKErr code = handleCollision(&cam, &focus, &tilt, *this, sm, static_cast<SurfaceControlImpl&>(*surfaceRenderer).collideRadius, collision);
+        TE_CHECKRETURN_CODE(code);
+    }
+
+    return GLGlobeBase::lookAt(focus, resolution, azimuth, tilt, collision, animate);
+}
 TAKErr GLGlobe::intersectWithTerrain2(GeoPoint2 *value, const MapSceneModel2 &map_scene, const float x, const float y) const NOTHROWS
 {
 #if 0
@@ -2349,120 +2428,9 @@ Controls::IlluminationControlImpl *GLGlobe::getIlluminationControl() const NOTHR
     return const_cast<IlluminationControlImpl *>(&illuminationControl);
 }
 
-TAKErr handleCollision(GeoPoint2 *cam, GeoPoint2 *focus, double *tilt, const GLGlobe &view, const MapSceneModel2 &sm,
-    const double collideRadius, const MapRenderer::CameraCollision collision) 
-{
-    const double tilt_ = *tilt;
-    double el = 0;
-    if(view.getTerrainMeshElevation(&el, cam->latitude, cam->longitude) != TE_Ok || TE_ISNAN(el))
-        el = 0.0;
-    // if the camera is within the collide radius, adjust
-    const bool isCollide = (collideRadius > 0.0 && (cam->altitude - collideRadius) < el);
-    if(isCollide && (collision == MapRenderer::Abort)) 
-    {
-        return TE_Done;
-    }
-    else if(isCollide && (collision == MapRenderer::AdjustFocus)) 
-    {
-        // adjust the focus to avoid the collision; the camera<->target view
-        // vector direction and magnitude is maintained by translating both the
-        // camera and the target away from the terrain.
-        Point2<double> vv = Vector2_subtract(sm.camera.target, sm.camera.location);
-        vv.x *= sm.displayModel->projectionXToNominalMeters;
-        vv.y *= sm.displayModel->projectionYToNominalMeters;
-        vv.z *= sm.displayModel->projectionZToNominalMeters;
-        const double camtgt = Vector2_length(vv);
-
-        const double camGsdRange = camtgt + focus->altitude;
-        const double adj = (el - (cam->altitude - collideRadius));
-        focus->altitude += adj;
-
-        // XXX - resolution adjustment here doesn't seem to make a noticeable
-        //       difference and is resulting in the camera getting "stuck" when
-        //       localel < 0.0. disabling for time being.
-#if 0
-        if (focus.altitude > 0.0)
-            resolution = sm.gsd*(camtgt + fabs(focus.altitude)) / camGsdRange;
-        else
-            resolution = sm.gsd*camGsdRange / (camtgt + fabs(focus.altitude));
-#endif
-    }
-    else if(isCollide && (collision == MapRenderer::AdjustCamera)) 
-    {
-        // adjust the camera to avoid the collision; the target point location
-        // is maintained and the elevation angle is adjusted to avoid the
-        // collision
-        Point2<double> vv = Vector2_subtract(sm.camera.target, sm.camera.location);
-        vv.x *= sm.displayModel->projectionXToNominalMeters;
-        vv.y *= sm.displayModel->projectionYToNominalMeters;
-        vv.z *= sm.displayModel->projectionZToNominalMeters;
-        const double camtgt = Vector2_length(vv);
-
-        const double adj = (el - (cam->altitude - collideRadius));
-
-        // adjust camera altitude
-        cam->altitude += adj;
-        // compute new tilt for adjusted camera position
-        // Note: resolution remains constant to maintain view vector magnitude
-        GeoPoint2 origFocus;
-        sm.projection->inverse(&origFocus, sm.camera.target);
-        Point2<double> focusup_xyz;
-        sm.projection->forward(&focusup_xyz, GeoPoint2(origFocus.latitude, origFocus.longitude, origFocus.altitude + 100.0, origFocus.altitudeRef));
-        Point2<double> target_up = Vector2_subtract(focusup_xyz, sm.camera.target);
-        target_up.x *= sm.displayModel->projectionXToNominalMeters;
-        target_up.y *= sm.displayModel->projectionYToNominalMeters;
-        target_up.z *= sm.displayModel->projectionZToNominalMeters;
-        Vector2_normalize(&target_up, target_up);
-        Point2<double> adjcamloc;
-        sm.projection->forward(&adjcamloc, *cam);
-        Point2<double> los = Vector2_subtract(adjcamloc, sm.camera.target);
-        los.x *= sm.displayModel->projectionXToNominalMeters;
-        los.y *= sm.displayModel->projectionYToNominalMeters;
-        los.z *= sm.displayModel->projectionZToNominalMeters;
-        Vector2_normalize(&los, los);
-        // angle is the dot product between the view and up vectors at the target
-        const double dot = Vector2_dot(los, target_up);
-        *tilt = (acos(dot) / M_PI * 180.0);
-        // tilt should never increase. due to precision issues, small tilt is
-        // periodically observed to be introduced when collision occurs in
-        // nadir.
-        if(TE_ISNAN(*tilt) || *tilt > tilt_) 
-            *tilt = tilt_;
-    }
-    return TE_Ok;
-}
 TAKErr TAK::Engine::Renderer::Core::GLGlobe_lookAt(GLGlobe &view, const GeoPoint2 &focus_, const double resolution_, const double rotation, const double tilt_, const double collideRadius, const MapRenderer::CameraCollision collision, const bool animate) NOTHROWS {
-    GeoPoint2 focus(focus_);
-    if(TE_ISNAN(focus.altitude))
-        focus.altitude = 0.0;
-    double resolution = resolution_;
-    double tilt = tilt_;
-
-    //    sm = new MapSceneModel(getSurface().getDpi(), sm.width, sm.height, sm.mapProjection, new GeoPoint(at.getLatitude(), at.getLongitude(), alt), sm.focusx, sm.focusy, sm.camera.azimuth, sm.camera.elevation+90d, sm.gsd, true);
-    //    final double range0 = (sm.gsd/(sm.height/2d)) / Math.tan(Math.toRadians(sm.camera.fov/2d));
-    //    final double CT0 = range0 - sm.mapProjection.inverse(sm.camera.target, null).getAltitude();    
-    atakmap::math::Point<float> focusxy;
-    view.view.getController()->getFocusPoint(&focusxy);
-    MapSceneModel2 sm(
-            view.view.getDisplayDpi(),
-            (std::size_t)view.view.getWidth(),
-            (std::size_t)view.view.getHeight(),
-            view.view.getProjection(),
-            focus,
-            focusxy.x, focusxy.y,
-            view.view.getMapRotation(),
-            view.view.getMapTilt(),
-            view.view.getMapResolution(),
-            MapCamera2::Perspective);    // obtain local mesh elevation at camera location
-    GeoPoint2 cam;
-    sm.projection->inverse(&cam, sm.camera.location);
-
-    TAKErr code = handleCollision(&cam, &focus, &tilt, view, sm, collideRadius, collision);
-    TE_CHECKRETURN_CODE(code);
-
-    const double mapScale = atakmap::core::AtakMapView_getMapScale(view.view.getDisplayDpi(), resolution);
-    view.view.updateView(GeoPoint2(focus), mapScale, rotation, tilt, NAN, NAN, animate);
-    return TE_Ok;
+    // handled via override
+    return view.lookAt(focus_, resolution_, rotation, tilt_, collision, animate);
 }
 TAKErr TAK::Engine::Renderer::Core::GLGlobe_lookFrom(GLGlobe &view, const TAK::Engine::Core::GeoPoint2 &from_, const double rotation,
     const double elevation, const double collideRadius, const TAK::Engine::Core::MapRenderer::CameraCollision collision, const bool animate) NOTHROWS 
@@ -2471,23 +2439,19 @@ TAKErr TAK::Engine::Renderer::Core::GLGlobe_lookFrom(GLGlobe &view, const TAK::E
     if(TE_ISNAN(from.altitude)) 
         from.altitude = 0.0;
 
-    double gsd = MapSceneModel2_gsd(from.altitude, HVFOV*2, (std::size_t)view.view.getHeight());
+    MapSceneModel2 sm;
+    view.getMapSceneModel(&sm, false, MapRenderer::UpperLeft);
 
-    double tilt = 90 + elevation;
+    double gsd = MapSceneModel2_gsd(from.altitude, HVFOV*2, sm.height);
+    double tilt = 90.0 + elevation;
 
-    //    sm = new MapSceneModel(getSurface().getDpi(), sm.width, sm.height, sm.mapProjection, new GeoPoint(at.getLatitude(),
-    //    at.getLongitude(), alt), sm.focusx, sm.focusy, sm.camera.azimuth, sm.camera.elevation+90d, sm.gsd, true); final double range0 =
-    //    (sm.gsd/(sm.height/2d)) / Math.tan(Math.toRadians(sm.camera.fov/2d)); final double CT0 = range0 -
-    //    sm.mapProjection.inverse(sm.camera.target, null).getAltitude();
-    atakmap::math::Point<float> focusxy;
-    view.view.getController()->getFocusPoint(&focusxy);
-    MapSceneModel2 sm(
-            view.view.getDisplayDpi(),
-            (std::size_t)view.view.getWidth(),
-            (std::size_t)view.view.getHeight(),
-            view.view.getProjection(),
+    sm = MapSceneModel2(
+            sm.displayDpi,
+            sm.width,
+            sm.height,
+            sm.projection->getSpatialReferenceID(),
             from,
-            focusxy.x, focusxy.y,
+            sm.focusX, sm.focusY,
             rotation,
             tilt,
             gsd, 
@@ -2508,8 +2472,8 @@ TAKErr TAK::Engine::Renderer::Core::GLGlobe_lookFrom(GLGlobe &view, const TAK::E
     GeoPoint2 origFocus;
     sm.projection->inverse(&origFocus, sm.camera.target);
     
-    gsd = MapSceneModel2_gsd(cam.altitude, HVFOV * 2, (std::size_t)view.view.getHeight());
-    double scale = AtakMapView_getMapScale(view.view.getDisplayDpi(), gsd);
+    gsd = MapSceneModel2_gsd(cam.altitude, HVFOV * 2, sm.height);
+    double scale = AtakMapView_getMapScale(sm.displayDpi, gsd);
 
     view.view.updateView(origFocus, scale, rotation, tilt, origFocus.altitude, NAN, animate);
     return TE_Ok;
@@ -2517,6 +2481,72 @@ TAKErr TAK::Engine::Renderer::Core::GLGlobe_lookFrom(GLGlobe &view, const TAK::E
 
 namespace
 {
+    SurfaceControlImpl::SurfaceControlImpl(GLGlobeBase &owner_, const double collideRadius_) NOTHROWS :
+        owner(owner_),
+        surface(static_cast<GLGlobe &>(owner_)),
+        collideRadius(collideRadius_)
+    {}
+
+    void SurfaceControlImpl::markDirty() NOTHROWS
+    {
+        surface.markDirty();
+    }
+    void SurfaceControlImpl::markDirty(const TAK::Engine::Feature::Envelope2 region, const bool streaming) NOTHROWS
+    {
+        surface.markDirty(region, streaming);
+    }
+    TAKErr SurfaceControlImpl::enableDrawMode(const TAK::Engine::Model::DrawMode mode) NOTHROWS
+    {
+        static_cast<GLGlobe &>(owner).enableDrawMode(mode);
+        return TE_Ok;
+    }
+    TAKErr SurfaceControlImpl::disableDrawMode(const TAK::Engine::Model::DrawMode mode) NOTHROWS
+    {
+        static_cast<GLGlobe &>(owner).disableDrawMode(mode);
+        return TE_Ok;
+    }
+    bool SurfaceControlImpl::isDrawModeEnabled(const TAK::Engine::Model::DrawMode mode) const NOTHROWS
+    {
+        return static_cast<GLGlobe &>(owner).isDrawModeEnabled(mode);
+    }
+    TAKErr SurfaceControlImpl::setColor(const TAK::Engine::Model::DrawMode drawMode, const unsigned int color, const TAK::Engine::Renderer::Core::ColorControl::Mode colorMode) NOTHROWS
+    {
+        static_cast<GLGlobe &>(owner).setColor(drawMode, color, colorMode);
+        return TE_Ok;
+    }
+    unsigned int SurfaceControlImpl::getColor(const TAK::Engine::Model::DrawMode mode) const NOTHROWS
+    {
+        return static_cast<GLGlobe &>(owner).getColor(mode);
+    }
+    TAKErr SurfaceControlImpl::getColorMode(TAK::Engine::Renderer::Core::ColorControl::Mode *value, const TAK::Engine::Model::DrawMode mode) const NOTHROWS
+    {
+        *value = static_cast<GLGlobe &>(owner).getColorMode(mode);
+        return TE_Ok;
+    }
+    TAKErr SurfaceControlImpl::setCameraCollisionRadius(double radius) NOTHROWS
+    {
+        if(TE_ISNAN(radius) || radius < 0.0)
+            return TE_InvalidArg;
+        collideRadius = radius;
+        return TE_Ok;
+    }
+    double SurfaceControlImpl::getCameraCollisionRadius() const NOTHROWS
+    {
+        return collideRadius;
+    }
+    TAKErr SurfaceControlImpl::getSurfaceBounds(TAK::Engine::Port::Collection<TAK::Engine::Feature::Envelope2> &value) const NOTHROWS
+    {
+        return static_cast<GLGlobe &>(owner).getSurfaceBounds(value);
+    }
+    void SurfaceControlImpl::setMinimumRefreshInterval(const int64_t millis) NOTHROWS
+    {
+        surface.setMinimumRefreshInterval(millis);
+    }
+    int64_t SurfaceControlImpl::getMinimumRefreshInterval() const NOTHROWS
+    {
+        return surface.getMinimumRefreshInterval();
+    }
+
     void glUniformMatrix4(GLint location, const Matrix2 &matrix) NOTHROWS
     {
         double matrixD[16];
@@ -2944,12 +2974,6 @@ namespace
                     localFrame[0].translate(-360.0, 0.0, 0.0);
                 else
                     localFrame[0].translate(360.0, 0.0, 0.0);
-            } else if(&shader == &shaders->md) {
-                // reconstruct the scene model in the secondary hemisphere
-                if (view2.drawLng < 0.0)
-                    localFrame[1].translate(-360.0, 0.0, 0.0);
-                else
-                    localFrame[1].translate(360.0, 0.0, 0.0);
             }
 
             // construct the MVP matrix
@@ -2972,6 +2996,7 @@ namespace
         glUniform4f(shader.base.uColor, r, g, b, a);
 
         glEnableVertexAttribArray(shader.base.aVertexCoords);
+        glEnableVertexAttribArray(shader.aEcefVertCoords);
 
         // draw terrain tiles
         std::size_t idx = 0u;
@@ -2986,6 +3011,7 @@ namespace
         }
 
         glDisableVertexAttribArray(shader.base.aVertexCoords);
+        glDisableVertexAttribArray(shader.aEcefVertCoords);
     }
 
     void drawTerrainMeshImpl(const GLGlobe::State &state, const TerrainTileShader &shader, const Matrix2 &mvp, const Matrix2 *local, const std::size_t numLocal, const GLTerrainTile &gltile, const float r, const float g, const float b, const float a) NOTHROWS
@@ -3016,17 +3042,13 @@ namespace
             matrix.setToIdentity();
         }
         matrix.set(mvp);
-        if(shader.uLocalTransform < 0) {
-            for(std::size_t i = numLocal; i >= 1; i--)
-                matrix.concatenate(local[i-1u]);
+        for(std::size_t i = numLocal; i >= 1; i--)
+            matrix.concatenate(local[i-1u]);
+
+        if(shader.aEcefVertCoords >= 0)
+            matrix.concatenate(tile.data_proj.localFrame);
+        else
             matrix.concatenate(tile.data.localFrame);
-        } else {
-            Matrix2 mx[TE_GLTERRAINTILE_MAX_LOCAL_TRANSFORMS];
-            for(std::size_t i = numLocal; i >= 1; i--)
-                mx[i-1u].set(local[i-1u]);
-            mx[0].concatenate(tile.data.localFrame);
-            glUniformMatrix4v(shader.uLocalTransform, mx, numLocal ? numLocal : 1u);
-        }
 
         glUniformMatrix4(shader.base.uMVP, matrix);
 
@@ -3054,6 +3076,10 @@ namespace
             // VBO
             glBindBuffer(GL_ARRAY_BUFFER, gltile.vbo);
             glVertexAttribPointer(shader.base.aVertexCoords, 3u, GL_FLOAT, false, static_cast<GLsizei>(layout.position.stride), (void *)layout.position.offset);
+            VertexArray ecefAttr;
+            if (VertexDataLayout_getVertexArray(&ecefAttr, layout, tile.ecefAttr) == TE_Ok) {
+                glVertexAttribPointer(shader.aEcefVertCoords, 3u, GL_FLOAT, false, static_cast<GLsizei>(ecefAttr.stride), (void *)ecefAttr.offset);
+            }
             glBindBuffer(GL_ARRAY_BUFFER, GL_NONE);
         } else {
             const void *vertexCoords;
@@ -3062,7 +3088,10 @@ namespace
                 Logger_log(TELL_Error, "GLGlobe::drawTerrainTile : failed to obtain vertex coords, code=%d", code);
                 return;
             }
-
+            VertexArray ecefAttr;
+            if (VertexDataLayout_getVertexArray(&ecefAttr, layout, tile.ecefAttr) == TE_Ok) {
+                glVertexAttribPointer(shader.aEcefVertCoords, 3u, GL_FLOAT, false, static_cast<GLsizei>(ecefAttr.stride), (static_cast<const uint8_t*>(vertexCoords) + ecefAttr.offset));
+            }
             glVertexAttribPointer(shader.base.aVertexCoords, 3u, GL_FLOAT, false, static_cast<GLsizei>(layout.position.stride), static_cast<const uint8_t *>(vertexCoords) + layout.position.offset);
         }
 
@@ -3176,5 +3205,89 @@ namespace
         value->set(mx);
 
         return code;
+    }
+
+    TAKErr handleCollision(GeoPoint2 *cam, GeoPoint2 *focus, double *tilt, const GLGlobe &view, const MapSceneModel2 &sm,
+        const double collideRadius, const MapRenderer::CameraCollision collision) NOTHROWS
+    {
+        const double tilt_ = *tilt;
+        double el = 0;
+        if(view.getTerrainMeshElevation(&el, cam->latitude, cam->longitude) != TE_Ok || TE_ISNAN(el))
+            el = 0.0;
+        // if the camera is within the collide radius, adjust
+        const bool isCollide = (collideRadius > 0.0 && (cam->altitude - collideRadius) < el);
+        //Logger_log(TELL_Info, "GLGlobe::handleCollision collision %u %u localel=%lf camel=%lf radius=%lf", (unsigned)collision, (unsigned)isCollide, el, cam->altitude, collideRadius);
+        if(isCollide && (collision == MapRenderer::Abort))
+        {
+            return TE_Done;
+        }
+        else if(isCollide && (collision == MapRenderer::AdjustFocus))
+        {
+            // adjust the focus to avoid the collision; the camera<->target view
+            // vector direction and magnitude is maintained by translating both the
+            // camera and the target away from the terrain.
+            Point2<double> vv = Vector2_subtract(sm.camera.target, sm.camera.location);
+            vv.x *= sm.displayModel->projectionXToNominalMeters;
+            vv.y *= sm.displayModel->projectionYToNominalMeters;
+            vv.z *= sm.displayModel->projectionZToNominalMeters;
+            const double camtgt = Vector2_length(vv);
+
+            const double camGsdRange = camtgt + focus->altitude;
+            const double adj = (el - (cam->altitude - collideRadius));
+            focus->altitude += adj;
+
+            // XXX - resolution adjustment here doesn't seem to make a noticeable
+            //       difference and is resulting in the camera getting "stuck" when
+            //       localel < 0.0. disabling for time being.
+    #if 0
+            if (focus.altitude > 0.0)
+                resolution = sm.gsd*(camtgt + fabs(focus.altitude)) / camGsdRange;
+            else
+                resolution = sm.gsd*camGsdRange / (camtgt + fabs(focus.altitude));
+    #endif
+        }
+        else if(isCollide && (collision == MapRenderer::AdjustCamera))
+        {
+            // adjust the camera to avoid the collision; the target point location
+            // is maintained and the elevation angle is adjusted to avoid the
+            // collision
+            Point2<double> vv = Vector2_subtract(sm.camera.target, sm.camera.location);
+            vv.x *= sm.displayModel->projectionXToNominalMeters;
+            vv.y *= sm.displayModel->projectionYToNominalMeters;
+            vv.z *= sm.displayModel->projectionZToNominalMeters;
+            const double camtgt = Vector2_length(vv);
+
+            const double adj = (el - (cam->altitude - collideRadius));
+
+            // adjust camera altitude
+            cam->altitude += adj;
+            // compute new tilt for adjusted camera position
+            // Note: resolution remains constant to maintain view vector magnitude
+            GeoPoint2 origFocus;
+            sm.projection->inverse(&origFocus, sm.camera.target);
+            Point2<double> focusup_xyz;
+            sm.projection->forward(&focusup_xyz, GeoPoint2(origFocus.latitude, origFocus.longitude, origFocus.altitude + 100.0, origFocus.altitudeRef));
+            Point2<double> target_up = Vector2_subtract(focusup_xyz, sm.camera.target);
+            target_up.x *= sm.displayModel->projectionXToNominalMeters;
+            target_up.y *= sm.displayModel->projectionYToNominalMeters;
+            target_up.z *= sm.displayModel->projectionZToNominalMeters;
+            Vector2_normalize(&target_up, target_up);
+            Point2<double> adjcamloc;
+            sm.projection->forward(&adjcamloc, *cam);
+            Point2<double> los = Vector2_subtract(adjcamloc, sm.camera.target);
+            los.x *= sm.displayModel->projectionXToNominalMeters;
+            los.y *= sm.displayModel->projectionYToNominalMeters;
+            los.z *= sm.displayModel->projectionZToNominalMeters;
+            Vector2_normalize(&los, los);
+            // angle is the dot product between the view and up vectors at the target
+            const double dot = Vector2_dot(los, target_up);
+            *tilt = (acos(dot) / M_PI * 180.0);
+            // tilt should never increase. due to precision issues, small tilt is
+            // periodically observed to be introduced when collision occurs in
+            // nadir.
+            if(TE_ISNAN(*tilt) || *tilt > tilt_)
+                *tilt = tilt_;
+        }
+        return TE_Ok;
     }
 }

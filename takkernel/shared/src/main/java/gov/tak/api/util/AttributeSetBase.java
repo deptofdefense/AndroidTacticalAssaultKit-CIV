@@ -499,7 +499,7 @@ class AttributeSetBase {
         final Object newValue = newAttributeValue.value;
 
         if (!Objects.deepEquals(oldValue, newValue)) {
-            propertyChangeSupport.firePropertyChange(name, oldValue, newValue);
+            contentsChanged(name, oldValue, newValue);
         }
     }
 
@@ -512,7 +512,16 @@ class AttributeSetBase {
         final AttributeValue oldAttributeValue = attributeMap.remove(name);
 
         final Object oldValue = oldAttributeValue == null ? null : oldAttributeValue.value;
-        propertyChangeSupport.firePropertyChange(name, oldValue, null);
+        contentsChanged(name, oldValue, null);
+    }
+
+    /**
+     * Fire a property change notification with the given property name and values.
+     *
+     * @since 0.56.2
+     */
+    protected void contentsChanged(String name, Object oldValue, Object newValue) {
+        propertyChangeSupport.firePropertyChange(name, oldValue, newValue);
     }
 
     /**

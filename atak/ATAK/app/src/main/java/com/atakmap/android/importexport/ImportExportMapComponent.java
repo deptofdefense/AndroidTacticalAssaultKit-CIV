@@ -708,7 +708,7 @@ public class ImportExportMapComponent extends AbstractMapComponent implements
         if (!resource.isValid()) {
             Log.w(TAG,
                     "Unable to download invalid resource: "
-                            + resource.toString());
+                            + resource);
             return;
         }
 

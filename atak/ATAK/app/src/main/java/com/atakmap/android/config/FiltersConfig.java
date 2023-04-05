@@ -34,8 +34,6 @@ public class FiltersConfig {
 
     /**
      * An individual Filter in the list of filters
-     * 
-     * 
      */
     public class Filter {
 

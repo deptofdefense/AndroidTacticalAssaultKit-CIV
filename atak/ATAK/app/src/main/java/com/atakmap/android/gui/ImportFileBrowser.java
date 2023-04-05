@@ -267,16 +267,6 @@ public class ImportFileBrowser extends LinearLayout implements
         }
     }
 
-    /** @deprecated Use {@link #getModifiedDate(Long)} */
-    @Deprecated
-    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
-    public static String getModifiedDate(File file) {
-        if (!IOProviderFactory.exists(file))
-            return "";
-        else
-            return getModifiedDate(IOProviderFactory.lastModified(file));
-    }
-
     public static String getModifiedDate(Long time) {
         SimpleDateFormat sdf = new SimpleDateFormat("dd MMM yyyy HH:mm:ss",
                 LocaleUtil.getCurrent());

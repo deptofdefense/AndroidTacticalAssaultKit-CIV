@@ -43,6 +43,10 @@ dependencies {
 
         api("org.slf4j:slf4j-api:$slf4jApiVersion")
 
+        // bouncycastle (BKS keystore)
+        compile "org.bouncycastle:bcprov-jdk15on:${bouncyCastleVersion}"
+        compile "org.bouncycastle:bcpkix-jdk15on:${bouncyCastleVersion}"
+
         // Use JUnit test framework
         testImplementation("junit:junit:${junitVersion}")
 
@@ -75,6 +79,11 @@ if(isJavaKernelBuild) {
             {
                 into 'assets/certs'
             }
+			from('src/main/assets/icons')
+            {
+                into 'assets/icons'
+            }
+
         }
     }
 

@@ -20,7 +20,6 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
@@ -30,10 +29,8 @@ import android.os.StrictMode;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
-import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
@@ -89,10 +86,8 @@ import com.atakmap.app.preferences.LocationSettingsActivity;
 import com.atakmap.app.preferences.NetworkSettingsActivity;
 import com.atakmap.app.preferences.PreferenceControl;
 import com.atakmap.app.system.AbstractSystemComponent;
-import com.atakmap.app.system.EncryptionProvider;
 import com.atakmap.app.system.FlavorProvider;
 import com.atakmap.app.system.SystemComponentLoader;
-import com.atakmap.comms.CotService;
 import com.atakmap.comms.app.KeyManagerFactory;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.filesystem.RemovableStorageHelper;
@@ -122,6 +117,9 @@ import com.atakmap.spatial.SpatialCalculator;
 import com.atakmap.util.ConfigOptions;
 import com.atakmap.util.zip.IoUtils;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.xml.sax.SAXException;
 
 import java.io.File;
@@ -133,7 +131,6 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -207,86 +204,45 @@ public class ATAKActivity extends MapActivity implements
         // Support potential asynchronous load each one of the system components
         final AbstractSystemComponent[] components = SystemComponentLoader
                 .getComponents();
+
         for (AbstractSystemComponent component : components) {
             if (component != null) {
-                if (!component.load(new AbstractSystemComponent.Callback() {
-                    @Override
-                    public void setupComplete(int condition) {
-                        if (condition == AbstractSystemComponent.Callback.FAILED_STOP) {
-                            acceptedPermissions = false; // short circuit the shutdown
-                            ATAKActivity.this.finish();
-                        } else {
-                            if (component instanceof EncryptionProvider)
-                                SystemComponentLoader
-                                        .disableEncryptionProvider(
-                                                ATAKActivity.this);
-                            runOnUiThread(new Runnable() {
-                                public void run() {
-                                    onCreate(null);
-                                }
-                            });
-                        }
-                    }
-                })) {
-                    onCreateWaitMode();
-                    return;
-                }
-            }
-        }
+                try {
+                    if (!component.load(new AbstractSystemComponent.Callback() {
+                        @Override
+                        public void setupComplete(int condition) {
+                            if (condition == AbstractSystemComponent.Callback.FAILED_STOP) {
+                                acceptedPermissions = false; // short circuit the shutdown
+                                ATAKActivity.this.finish();
+                            } else if (condition == AbstractSystemComponent.Callback.FAILED_CONTINUE) {
 
-        // Currently the Encryption plugin implementation requires some asynchronous interaction before
-        // continuing to load ATAK.
-        final EncryptionProvider encryptionProvider = SystemComponentLoader
-                .getEncryptionProvider();
-        if (encryptionProvider != null) {
-            if (!encryptionProvider.setup(new EncryptionProvider.Callback() {
-                @Override
-                public void complete(int condition, @NonNull String title,
-                        @NonNull Drawable icon,
-                        @NonNull String msg) {
-                    if (!encryptionCallbackValid) {
-                        Log.e(TAG,
-                                "encryption provider callback no longer valid");
+                                // if the new provider fails, then just make sure that the system is
+                                // using the default provider.
+                                if (component.getClass().getCanonicalName()
+                                        .equals("com.atakmap.android.EncryptionComponent"))
+                                    SystemComponentLoader
+                                            .disableEncryptionProvider(
+                                                    ATAKActivity.this);
+                                runOnUiThread(new Runnable() {
+                                    public void run() {
+                                        onCreate(null);
+                                    }
+                                });
+                            } else if (condition == AbstractSystemComponent.Callback.SUCCESSFUL) {
+                                runOnUiThread(new Runnable() {
+                                    public void run() {
+                                        onCreate(null);
+                                    }
+                                });
+                            }
+                        }
+                    })) {
+                        onCreateWaitMode();
                         return;
                     }
-                    encryptionCallbackValid = false;
-
-                    if (condition != EncryptionProvider.Callback.SETUP_SUCCESSFUL) {
-                        SystemComponentLoader
-                                .disableEncryptionProvider(ATAKActivity.this);
-                        // will clean this up after the first structural review of the code
-                        final AlertDialog.Builder alertBuilder = new AlertDialog.Builder(
-                                ATAKActivity.this);
-
-                        // will clean this up after the first structural review of the code
-                        View view = LayoutInflater.from(ATAKActivity.this)
-                                .inflate(R.layout.dialog_message, null);
-                        TextView tv = view.findViewById(R.id.block1);
-                        view.findViewById(R.id.block2).setVisibility(View.GONE);
-                        view.findViewById(R.id.block3).setVisibility(View.GONE);
-                        tv.setText(msg);
-
-                        alertBuilder
-                                .setTitle(title)
-                                .setIcon(icon)
-                                .setView(view)
-                                .setPositiveButton(R.string.ok, null);
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                alertBuilder.show();
-                            }
-                        });
-
-                    }
-                    onCreate(null);
-
+                } catch (Exception e) {
+                    Log.e(TAG, "severe error", e);
                 }
-            })) {
-                onCreateWaitMode();
-                return;
-            } else {
-                encryptionCallbackValid = false;
             }
         }
 
@@ -318,8 +274,6 @@ public class ATAKActivity extends MapActivity implements
 
         AtakCertificateDatabase.migrateCertificatesToSqlcipher(this);
 
-        CertificateManager.setCertificateDatabase(AtakCertificateDatabase
-                .getAdapter());
         CertificateManager.getInstance().initialize(this);
         CertificateManager
                 .setKeyManagerFactory(KeyManagerFactory.getInstance(this));
@@ -528,32 +482,11 @@ public class ATAKActivity extends MapActivity implements
 
         ToolbarBroadcastReceiver.getInstance().initialize(_mapView);
 
-        //final StartupProgressDialog progressDialog = new StartupProgressDialog(this);
-
-        // disable menu button in favor of a overflow menu item
-        try {
-            ViewConfiguration config = ViewConfiguration.get(this);
-            Field menuKeyField = ViewConfiguration.class
-                    .getDeclaredField("sHasPermanentMenuKey");
-            if (menuKeyField != null) {
-                menuKeyField.setAccessible(true);
-                menuKeyField.setBoolean(config, false);
-            }
-        } catch (Exception ex) {
-            Log.d(TAG, "disabling the menu button failed");
-        }
-
-        //progressDialog.show();
-
         PowerManager pm = (PowerManager) getSystemService(
                 Context.POWER_SERVICE);
         _wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
                 "com.atakmap.app:atakWakeLock");
         _wakeLock.acquire();
-
-        CotService.setCertificateDatabase(AtakCertificateDatabase.getAdapter());
-        CotService.setAuthenticationDatabase(AtakAuthenticationDatabase
-                .getAdapter());
 
         DocumentedIntentFilter filter = new DocumentedIntentFilter(
                 Intent.ACTION_SHUTDOWN,
@@ -684,19 +617,6 @@ public class ATAKActivity extends MapActivity implements
             Log.e(TAG, "unable to find the constructor", e);
         }
 
-        try {
-            final Class<?> clazz = Class.forName("android.app.ActivityThread");
-            final Method m = clazz.getDeclaredMethod("currentActivityThread");
-            m.setAccessible(true);
-            final Object activityThread = m.invoke(null);
-            final Field warningShown = clazz
-                    .getDeclaredField("mHiddenApiWarningShown");
-            warningShown.setAccessible(true);
-            warningShown.setBoolean(activityThread, true);
-            Log.d(TAG, "Android PI+ warning flag set to already shown");
-        } catch (Exception e) {
-            Log.e(TAG, "unable to set the Android PI warning shown flag");
-        }
     }
 
     @Override
@@ -848,6 +768,10 @@ public class ATAKActivity extends MapActivity implements
         FileSystemUtils.ensureDataDirectory("Databases", false);
         FileSystemUtils.ensureDataDirectory("attachments", false);
         FileSystemUtils.ensureDataDirectory(PreferenceControl.DIRNAME, false);
+        FileSystemUtils.ensureDataDirectory("fonts", false);
+        ConfigOptions.setOption("default-font-atlas-path",
+                FileSystemUtils.getItem("fonts").getAbsolutePath());
+        ConfigOptions.setOption("default-font-name", "Arial");
 
         // Copy README file into the root directory
         FileSystemUtils.copyFromAssetsToStorageFile(getApplicationContext(),
@@ -885,6 +809,8 @@ public class ATAKActivity extends MapActivity implements
                         + "cottimedebug"));
 
         extractPrivateResource("wmm_cof", "world-magnetic-model-file", false);
+
+        extractFontsFromAssembly();
 
         _unitChangeReceiver = new UnitChangeReceiver(_mapView);
         Log.d(TAG, "Created UnitChangeReceiver");
@@ -1005,10 +931,41 @@ public class ATAKActivity extends MapActivity implements
         }
     }
 
+    private void extractFontsFromAssembly() {
+        try {
+            String fontResourcesPath = "fonts/font_resources.json";
+            File fontResourcesFile = FileSystemUtils.getItem(fontResourcesPath);
+            FileSystemUtils.copyFromAssetsToStorageFile(getApplicationContext(),
+                    fontResourcesPath, fontResourcesPath, true);
+            JSONObject jsonObject = new JSONObject(
+                    new String(FileSystemUtils.read(fontResourcesFile),
+                            FileSystemUtils.UTF8_CHARSET));
+            writeFontAssetsToStorage(jsonObject);
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to extract fonts from assembly", e);
+        }
+    }
+
+    private void writeFontAssetsToStorage(JSONObject jsonRootObject)
+            throws JSONException {
+        JSONArray jsonAtlases = jsonRootObject.getJSONArray("atlases");
+        for (int i = 0; i < jsonAtlases.length(); i++) {
+            JSONObject jsonAtlas = jsonAtlases.getJSONObject(i);
+            String jsonFilename = "fonts/"
+                    + jsonAtlas.getString("jsonFilename");
+            String binFilename = "fonts/" + jsonAtlas.getString("binFilename");
+            FileSystemUtils.copyFromAssetsToStorageFile(getApplicationContext(),
+                    binFilename, binFilename, true);
+            FileSystemUtils.copyFromAssetsToStorageFile(getApplicationContext(),
+                    jsonFilename, jsonFilename, true);
+        }
+    }
+
     protected void toggleOrientation() {
-        if (_mapView != null) 
-            setRequestedOrientation(AtakPreferenceFragment.getOrientation(_mapView
-                .getContext()));
+        if (_mapView != null)
+            setRequestedOrientation(
+                    AtakPreferenceFragment.getOrientation(_mapView
+                            .getContext()));
     }
 
     /**
@@ -1972,11 +1929,11 @@ public class ATAKActivity extends MapActivity implements
             if (output != null) {
                 try {
                     if (tr != null) {
-                        output.println(new CoordinatedTime().toString() + " ["
+                        output.println(new CoordinatedTime() + " ["
                                 + tag + "]: " + msg + "\n"
                                 + android.util.Log.getStackTraceString(tr));
                     } else if (!onlyErrors) {
-                        output.println(new CoordinatedTime().toString() + " ["
+                        output.println(new CoordinatedTime() + " ["
                                 + tag + "]: " + msg);
                     }
                     output.flush();

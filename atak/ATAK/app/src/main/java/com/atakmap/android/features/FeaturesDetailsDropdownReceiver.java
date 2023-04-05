@@ -16,7 +16,6 @@ import android.webkit.WebViewClient;
 import android.webkit.WebResourceResponse;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.TabHost;
 import android.widget.TabHost.TabContentFactory;
 import android.widget.TextView;
@@ -56,8 +55,8 @@ public class FeaturesDetailsDropdownReceiver extends DropDownReceiver implements
         super(mapView);
         this.spatialDb = spatialDb;
 
-        final LayoutInflater inflater =
-                LayoutInflater.from( getMapView().getContext());
+        final LayoutInflater inflater = LayoutInflater
+                .from(getMapView().getContext());
 
         WebView wv = null;
         try {
@@ -83,7 +82,8 @@ public class FeaturesDetailsDropdownReceiver extends DropDownReceiver implements
             webSettings.setDisplayZoomControls(false);
 
             this.htmlViewer.setWebViewClient(new WebViewClient() {
-                public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                public WebResourceResponse shouldInterceptRequest(WebView view,
+                        WebResourceRequest request) {
                     String url = request.getUrl().toString();
                     //Log.d(TAG, "shouldInterceptRequest: " + url);
                     if (url.startsWith("file:///android_asset/")) {
@@ -109,7 +109,7 @@ public class FeaturesDetailsDropdownReceiver extends DropDownReceiver implements
                                                 + url,
                                         ioe);
                                 return null;
-                            }// general exception occurred
+                            } // general exception occurred
 
                         }
                     }
@@ -273,7 +273,6 @@ public class FeaturesDetailsDropdownReceiver extends DropDownReceiver implements
                 LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.0f));
         outer.addView(htmlLayout);
 
-
         if (htmlViewer != null) {
             htmlLayout.addView(htmlViewer);
         } else {
@@ -281,7 +280,8 @@ public class FeaturesDetailsDropdownReceiver extends DropDownReceiver implements
             tv.setText(R.string.webview_not_installed);
             htmlLayout.addView(tv);
         }
-        final int size = res.getDimensionPixelSize(R.dimen.nav_child_button_size);
+        final int size = res
+                .getDimensionPixelSize(R.dimen.nav_child_button_size);
         final int p = res.getDimensionPixelSize(R.dimen.auto_space_big);
         editButton = new ImageButton(context, null,
                 0, R.style.darkButton);

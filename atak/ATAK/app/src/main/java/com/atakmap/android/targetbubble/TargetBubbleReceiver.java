@@ -1,65 +1,59 @@
 
 package com.atakmap.android.targetbubble;
 
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.view.GestureDetector;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 
-import android.graphics.Color;
-
 import com.atakmap.android.drawing.mapItems.DrawingCircle;
 import com.atakmap.android.editableShapes.EditablePolyline;
+import com.atakmap.android.gui.CoordDialogView;
+import com.atakmap.android.gui.FastMGRS;
+import com.atakmap.android.ipc.AtakBroadcast;
+import com.atakmap.android.maps.MapData;
 import com.atakmap.android.maps.MapEventDispatcher;
+import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapMode;
+import com.atakmap.android.maps.MapTouchController;
+import com.atakmap.android.maps.MapView;
+import com.atakmap.android.maps.MetaMapPoint;
+import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.preference.AtakPreferences;
 import com.atakmap.android.selfcoordoverlay.SelfCoordOverlayUpdater;
+import com.atakmap.android.targetbubble.MapTargetBubble.OnLocationChangedListener;
 import com.atakmap.android.targetbubble.graphics.GLMapTargetBubble;
-
-import com.atakmap.android.maps.MapTouchController;
 import com.atakmap.android.util.EditAction;
 import com.atakmap.android.util.Undoable;
-import com.atakmap.coremap.io.IOProviderFactory;
-import com.atakmap.coremap.maps.assets.Icon;
 import com.atakmap.android.widgets.LayoutWidget;
 import com.atakmap.android.widgets.MapWidget;
 import com.atakmap.android.widgets.MarkerIconWidget;
-import com.atakmap.android.gui.FastMGRS;
-import com.atakmap.android.ipc.AtakBroadcast;
-import com.atakmap.android.maps.MapItem;
-import com.atakmap.android.maps.MapView;
-import com.atakmap.android.maps.MapData;
-import com.atakmap.android.maps.MetaMapPoint;
-import com.atakmap.android.maps.PointMapItem;
-import com.atakmap.android.targetbubble.MapTargetBubble.OnLocationChangedListener;
+import com.atakmap.app.R;
+import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
-
+import com.atakmap.coremap.maps.assets.Icon;
+import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.coremap.maps.time.CoordinatedTime;
+import com.atakmap.map.AtakMapController;
 import com.atakmap.map.CameraController;
 import com.atakmap.map.MapRenderer2;
 import com.atakmap.map.MapSceneModel;
 import com.atakmap.map.elevation.ElevationManager;
-
-import com.atakmap.coremap.maps.coords.GeoPoint;
-
-import com.atakmap.coremap.maps.coords.GeoPointMetaData;
-import com.atakmap.coremap.maps.time.CoordinatedTime;
-import com.atakmap.map.AtakMapController;
-import com.atakmap.android.gui.CoordDialogView;
-import com.atakmap.coremap.conversions.CoordinateFormat;
-import com.atakmap.app.R;
 import com.atakmap.util.Visitor;
-
-import android.view.LayoutInflater;
-import android.app.AlertDialog;
-import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -317,7 +311,8 @@ public class TargetBubbleReceiver extends BroadcastReceiver implements
             _setMapDataTargetPoint();
         }
 
-        hidSelfWidget = SelfCoordOverlayUpdater.getInstance().showGPSWidget(false);
+        hidSelfWidget = SelfCoordOverlayUpdater.getInstance()
+                .showGPSWidget(false);
 
         AtakBroadcast.getInstance().sendBroadcast(
                 new Intent(MapMode.NORTH_UP.getIntent()));
@@ -340,8 +335,27 @@ public class TargetBubbleReceiver extends BroadcastReceiver implements
         FastMGRS entry = new FastMGRS(_mapView, false,
                 new FastMGRS.OnEnterListener() {
                     @Override
-                    public void onEnter(GeoPointMetaData gp) {
-                        onTargetBubbleDismiss(gp);
+                    public void onEnter(GeoPointMetaData newgpm) {
+
+                        GeoPointMetaData prevgpm = _editPoint
+                                .getGeoPointMetaData();
+
+                        // if the altitude was hand entered, then go ahead and maintain the
+                        // hand entered elevation.   Otherwise grab the elevation from the
+                        // terrain.
+                        if (prevgpm.getAltitudeSource()
+                                .equals(GeoPointMetaData.USER)) {
+                            GeoPoint pgp = prevgpm.get();
+                            GeoPoint ngp = newgpm.get();
+                            newgpm.set(new GeoPoint(ngp.getLatitude(),
+                                    ngp.getLongitude(),
+                                    pgp.getAltitude()))
+                                    .setAltitudeSource(GeoPointMetaData.USER);
+                        } else {
+                            newgpm = ElevationManager
+                                    .getElevationMetadata(newgpm.get());
+                        }
+                        onTargetBubbleDismiss(newgpm);
                     }
                 });
         entry.show();

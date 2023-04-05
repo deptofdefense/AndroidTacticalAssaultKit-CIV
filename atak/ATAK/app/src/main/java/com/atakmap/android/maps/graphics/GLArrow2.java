@@ -13,6 +13,7 @@ import com.atakmap.android.maps.MapTextFormat;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Shape;
 import com.atakmap.android.maps.Shape.OnPointsChangedListener;
+import com.atakmap.annotations.ModifierApi;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.Vector3D;
@@ -48,7 +49,6 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
     protected String _text;
     protected static final double div_pi_4 = Math.PI / 4f;
 
-
     protected final static boolean XRAY_ENABLED = true;
 
     /**
@@ -65,7 +65,10 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
 
     private boolean _forceClamp = false;
     private boolean _nadirClamp = false;
-    private boolean _clampToGround = false;
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {
+            "private"
+    })
+    protected boolean _clampToGround = false;
     private Envelope _geomBounds;
 
     private final GLBatchLineString impl;
@@ -131,6 +134,7 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
             });
 
     }
+
     @Override
     public void onStyleChanged(Shape shape) {
         super.onStyleChanged(shape);
@@ -142,7 +146,6 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
         super.onStrokeColorChanged(subject);
         safeRefreshStyle();
     }
-
 
     @Override
     public void onStrokeWeightChanged(Shape subject) {
@@ -157,7 +160,8 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
         if (_labelID != GLLabelManager.NO_ID) {
             _labelManager.setAltitudeMode(_labelID, altitudeMode);
         }
-        _clampToGround = altitudeMode.equals(Feature.AltitudeMode.ClampToGround);
+        _clampToGround = altitudeMode
+                .equals(Feature.AltitudeMode.ClampToGround);
 
     }
 

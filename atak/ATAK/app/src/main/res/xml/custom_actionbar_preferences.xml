@@ -1,21 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-    <SwitchPreference
+    <com.atakmap.android.gui.PanSwitchPreference
         android:title="@string/pref_nav_orientation_title"
         android:summary="@string/pref_nav_orientation_summary"
-        android:defaultValue="true"
-        android:key="nav_orientation_right"
         android:switchTextOn="@string/right_caps"
-        android:switchTextOff="@string/left_caps"/>
-    <Preference
+        android:switchTextOff="@string/left_caps"
+        android:key="nav_orientation_right"/>
+   <Preference
         android:title="@string/preferences_text72"
         android:summary="@string/preferences_text73"
         android:key="@string/selected_actionbar_icon_color"/>
-    <Preference
+   <Preference
         android:title="@string/preferences_text74"
         android:summary="@string/preferences_text75"
         android:key="@string/selected_actionbar_background_color"/>
-    <Preference
+   <Preference
         android:title="@string/preferences_text76"
         android:summary="@string/preferences_text77"
         android:key="@string/default_actionbar_colors"/>

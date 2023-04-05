@@ -216,11 +216,15 @@ TAKErr MemoryOutput2::open(uint8_t *buffer, const std::size_t len) NOTHROWS
 TAKErr MemoryOutput2::close() NOTHROWS
 {
     bytes = nullptr;
+    totalLen = 0u;
+    curOffset = 0u;
     return TE_Ok;
 }
 
 TAKErr MemoryOutput2::writeByte(const uint8_t value) NOTHROWS
 {
+    if (!bytes)
+        return TE_IllegalState;
     if (curOffset >= totalLen) {
         Logger::log(Logger::Error, "MemoryOutput2: EOF");
         return TE_IO;
@@ -236,6 +240,8 @@ TAKErr MemoryOutput2::write(const uint8_t *buf, const std::size_t len) NOTHROWS
     if (len == 0)
         return TE_Ok;
 
+    if (!bytes)
+        return TE_IllegalState;
     size_t rem = totalLen - curOffset;
     if (len > rem)
         return TE_IO;
@@ -247,6 +253,10 @@ TAKErr MemoryOutput2::write(const uint8_t *buf, const std::size_t len) NOTHROWS
 
 TAKErr MemoryOutput2::skip(const std::size_t n) NOTHROWS
 {
+    if (!n)
+        return TE_Ok;
+    if (!bytes)
+        return TE_IllegalState;
     size_t rem = totalLen - curOffset;
     if (n > rem) {
         Logger::log(Logger::Error, "MemoryOutput2: Skipping indicated number of bytes would go past EOF");
@@ -260,6 +270,8 @@ TAKErr MemoryOutput2::skip(const std::size_t n) NOTHROWS
 
 TAKErr MemoryOutput2::remaining(std::size_t *value) NOTHROWS
 {
+    if (!bytes)
+        return TE_IllegalState;
     *value = totalLen - curOffset;
     return TE_Ok;
 }

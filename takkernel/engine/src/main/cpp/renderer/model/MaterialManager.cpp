@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "renderer/model/MaterialManager.h"
 
 #include "port/StringBuilder.h"
@@ -226,3 +227,4 @@ namespace
         return code;
     }
 }
+#endif

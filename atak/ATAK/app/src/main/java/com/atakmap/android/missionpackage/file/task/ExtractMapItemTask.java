@@ -38,7 +38,7 @@ public class ExtractMapItemTask extends MissionPackageBaseTask {
         Thread.currentThread().setName("ExtractMapItemTask");
 
         // work to be performed by background thread
-        Log.d(TAG, "Executing: " + toString());
+        Log.d(TAG, "Executing: " + this);
 
         File source = new File(_manifest.getPath());
         if (!FileSystemUtils.isFile(source)) {
@@ -54,7 +54,7 @@ public class ExtractMapItemTask extends MissionPackageBaseTask {
 
         if (FileSystemUtils.isEmpty(MissionPackageExtractor.ExtractCoT(
                 getContext(), source, _content, true))) {
-            Log.e(TAG, "Failed to extract Map Item" + _content.toString());
+            Log.e(TAG, "Failed to extract Map Item" + _content);
             cancel("Failed to extract Map Item");
         }
 

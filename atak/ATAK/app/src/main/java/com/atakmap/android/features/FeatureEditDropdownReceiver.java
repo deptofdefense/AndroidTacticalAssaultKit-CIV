@@ -45,7 +45,7 @@ public class FeatureEditDropdownReceiver extends DropDownReceiver
     }
 
     public FeatureEditDropdownReceiver(MapView mapView,
-                                       DataSourceFeatureDataStore db) {
+            DataSourceFeatureDataStore db) {
         this(mapView, Adapters.adapt(db));
     }
 

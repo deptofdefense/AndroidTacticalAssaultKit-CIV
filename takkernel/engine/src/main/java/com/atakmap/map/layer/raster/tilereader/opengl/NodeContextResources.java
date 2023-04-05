@@ -17,8 +17,8 @@ final class NodeContextResources {
     final ByteBuffer coordStreamBuffer;
     final FloatBuffer coordStreamBufferF;
     final ShortBuffer coordStreamBufferS;
-    final static int[] discardBuffers = new int[16];
-    static int numNumDiscardBuffers = 0;
+    final int[] discardBuffers = new int[16];
+    int numNumDiscardBuffers = 0;
 
     NodeContextResources() {
         // large enough to hold all mesh indices or vertex data or interleaved quad for texture-copy (position.xy+texcoord.uv)

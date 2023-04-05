@@ -1,4 +1,4 @@
-
+#ifdef MSVC
 #include <stdexcept>
 #include <list>
 
@@ -832,3 +832,4 @@ namespace {
     }
 }
 
+#endif

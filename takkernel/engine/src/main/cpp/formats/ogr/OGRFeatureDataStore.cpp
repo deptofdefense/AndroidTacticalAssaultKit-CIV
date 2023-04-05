@@ -381,7 +381,41 @@ TAKErr OGRFeatureDataStore::ConfigureForQuery(OGRLayerH layer, const FeatureSetD
     OGR_L_ResetReading(layer);
     if (!params.featureIds->empty())
     {
-        // XXX - 
+        const size_t numFeatureIds = params.featureIds->size();
+        Collection<int64_t>::IteratorPtr iter(nullptr, nullptr);
+        code = params.featureIds->iterator(iter);
+        TE_CHECKRETURN_CODE(code);
+
+        std::ostringstream whereClause;
+        whereClause << "\"FID\"";
+        whereClause << (numFeatureIds == 1 ? " = " : " IN (");
+
+        for (size_t i = 0; i < numFeatureIds; i++)
+        {
+            int64_t val;
+            code = iter->get(val);
+            TE_CHECKBREAK_CODE(code);
+            const int64_t fid = val & 0xFFFFFFFFLL;
+            if (i == 0)
+                whereClause << fid;
+            else
+                whereClause << ", " << fid;
+            code = iter->next();
+            TE_CHECKBREAK_CODE(code);
+        }
+        if (code == TE_Done)
+            code = TE_Ok;
+        TE_CHECKRETURN_CODE(code);
+
+        if (numFeatureIds > 1)
+            whereClause << ")";
+
+        const OGRErr ogrRet = OGR_L_SetAttributeFilter(layer, whereClause.str().c_str());
+        if (ogrRet != OGRERR_NONE) {
+            const std::string select = whereClause.str();
+            Logger_log(TELL_Warning, "WFSClient: OGR_L_SetAttributeFilter returned OGRErr %d for whereClause \"%s\"", ogrRet, select.c_str());
+            return TE_InvalidArg;
+        }
     }
     if (!params.featureNames->empty())
     {

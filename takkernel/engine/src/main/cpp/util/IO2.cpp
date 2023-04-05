@@ -261,6 +261,8 @@ TAKErr TAK::Engine::Util::IO_getParentFile(Port::String &value, const char *path
 TAKErr TAK::Engine::Util::IO_getName(Port::String &value, const char *path) NOTHROWS
 {
     try {
+        if (platformstl::basic_path<char>::max_size() < strlen(path)) 
+            return TE_Err;
         platformstl::basic_path<char> p(path);
         value = p.get_file();
         return TE_Ok;
@@ -522,19 +524,19 @@ TAKErr TAK::Engine::Util::IO_mkdirs(const char* dirPath) NOTHROWS
 TAKErr TAK::Engine::Util::IO_truncate(const char* filename, std::size_t size) NOTHROWS {
 #ifdef _MSC_VER
 
-    int fh, result;
-    unsigned int nbytes = BUFSIZ;
+    HANDLE hFile = CreateFile(filename, GENERIC_WRITE, 0, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
 
-    // Open a file
-    if (_sopen_s(&fh, filename, _O_RDWR | _O_CREAT, _SH_DENYNO,
-        _S_IREAD | _S_IWRITE) == 0) {
-        result = _chsize(fh, (long)size);
-        _close(fh);
-    }
-    else return TE_IO;
-    if (result == 0)
-        return TE_Ok;
-    return TE_IO;
+    std::unique_ptr<std::remove_pointer<HANDLE>::type,
+        decltype(&::CloseHandle)> filePointer(hFile, &::CloseHandle);
+
+    if (hFile == INVALID_HANDLE_VALUE)
+        return TE_IO;
+    if (SetFilePointerEx(hFile, *reinterpret_cast<LARGE_INTEGER*>(&size), nullptr, FILE_BEGIN) == 0)
+        return TE_IO;
+    if (SetEndOfFile(hFile) == 0)
+        return TE_IO;
+    
+    return TE_Ok;
 #else
     File file(filename, "w");
     if (!file)
@@ -958,7 +960,11 @@ TAKErr TAK::Engine::Util::IO_getZipComment(Port::String &out, const char *vpath)
 TAKErr TAK::Engine::Util::IO_setZipComment(const char *vpath, const char *comment) NOTHROWS {
     std::pair<std::string, std::string> split = splitVPath(vpath);
     if (split.second.length() > 0) {
-        TAKErr code = ZipFile::setGlobalComment(split.first.c_str(), comment);
+        const char* zipFileName = split.first.c_str();
+        TAKErr code = ZipFile::setGlobalComment(zipFileName, comment);
+        if (code != TE_Ok) {
+            Logger_log(TELL_Error, "IO_setZipComment: Unable to set zip comment in file, \"%s\". The file might be read-only.", zipFileName);
+        }
         TE_CHECKRETURN_CODE(code);
         return code;
     }

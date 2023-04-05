@@ -1072,4 +1072,10 @@
         <item>@string/line_outlined</item>
     </string-array>
 
+    <string-array name="camera_app_entries">
+        <item>System</item>
+        <item>TakGeoCam</item>
+    </string-array>
+
+
 </resources>

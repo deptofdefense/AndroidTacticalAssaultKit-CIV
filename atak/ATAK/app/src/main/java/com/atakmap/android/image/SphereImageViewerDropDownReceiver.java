@@ -38,8 +38,7 @@ public class SphereImageViewerDropDownReceiver extends DropDownReceiver
 
     /**************************** CONSTRUCTOR *****************************/
 
-
-    @ModifierApi(since = "4.5", target="4.8", modifiers={})
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {})
     public SphereImageViewerDropDownReceiver(final MapView mapView) {
         super(mapView);
 

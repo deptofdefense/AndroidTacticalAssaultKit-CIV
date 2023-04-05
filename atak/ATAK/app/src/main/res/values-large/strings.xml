@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="spec_tool_pref">Specific Tool Preferences</string>
+    <string name="reset_hints">Reset Hints</string>
+</resources>

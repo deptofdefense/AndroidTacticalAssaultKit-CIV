@@ -966,8 +966,9 @@ public class GLFahArrowWidget extends GLShapeWidget implements
                             if (_target != null && _designator != null) {
                                 // only rebuild the circle when the distance of the designator changes
                                 // by 10% of saved distance
-                                double newRange = GeoCalculations.distanceTo(_designator,
-                                                _target);
+                                double newRange = GeoCalculations.distanceTo(
+                                        _designator,
+                                        _target);
                                 if (Double.isNaN(_savedRange)) {
                                     _savedRange = newRange;
                                     _buildConeCircle();

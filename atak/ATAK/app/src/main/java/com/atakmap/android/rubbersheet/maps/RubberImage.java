@@ -103,7 +103,8 @@ public class RubberImage extends AbstractSheet {
                     mv.inverse(left, bottom, AtakMapView.InverseMode.RayCast)
                             .get()
             };
-            CameraController.Programmatic.rotateTo(mv.getRenderer3(), mRot, false);
+            CameraController.Programmatic.rotateTo(mv.getRenderer3(), mRot,
+                    false);
         }
         return new RubberImage(data);
     }

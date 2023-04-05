@@ -97,8 +97,10 @@ import gov.tak.api.annotation.ModifierApi;
  * findSelf that otherwise will be copy-pasted 20 times.
  */
 public class ATAKUtilities {
-    private final static char[] HEX_DIGITS = new char[]
-        { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+    private final static char[] HEX_DIGITS = new char[] {
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c',
+            'd', 'e', 'f'
+    };
 
     private static final String TAG = "ATAKUtilities";
 
@@ -805,26 +807,6 @@ public class ATAKUtilities {
     }
 
     /**
-     * @deprecated "terrainAdj" parameter no longer supported
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.3", forRemoval = true, removeAt = "4.6")
-    public static boolean scaleToFit(MapView mv, GeoBounds bounds,
-            int widthPad, int heightPad, boolean terrainAdj) {
-        return scaleToFit(mv, bounds, widthPad, heightPad);
-    }
-
-    /**
-     * @deprecated "terrainAdj" parameter no longer supported
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.3", forRemoval = true, removeAt = "4.6")
-    public static boolean scaleToFit(MapView mv, GeoPoint[] points,
-            int widthPad, int heightPad, boolean terrainAdj) {
-        return scaleToFit(mv, points, widthPad, heightPad);
-    }
-
-    /**
      * Computes the maximum GSD that should be specified when focusing on a
      * point. This ensures an appropriate minimum camera offset. In general,
      * this method is only recommended for points that are elevated above the
@@ -1050,9 +1032,9 @@ public class ATAKUtilities {
         UTMPoint uP = MutableUTMPoint.fromLatLng(Ellipsoid.WGS_84,
                 p.getLatitude(),
                 p.getLongitude(), null);
-        Vector2D vP = geo2Vector(p);
-        Vector2D vSeg1 = geo2Vector(seg1);
-        Vector2D vSeg0 = geo2Vector(seg0);
+        Vector2D vP = FOVFilter.geo2Vector(p);
+        Vector2D vSeg1 = FOVFilter.geo2Vector(seg1);
+        Vector2D vSeg0 = FOVFilter.geo2Vector(seg0);
         double adjusted;
         if (azimuth >= 0d && azimuth <= 180d) {
             adjusted = Math.toRadians(azimuth);
@@ -1070,24 +1052,6 @@ public class ATAKUtilities {
             return GeoCalculations.distanceTo(p, gpIntersect);
         }
         return Double.POSITIVE_INFINITY;
-    }
-
-    /**
-     * Turn a geopoint into a UTM-based vector2d.
-     * @param p the geopoint to use
-     * @return the vector2D representation.
-     *
-     * @deprecated UTM-based vectors can't handle intersection/contains
-     * checks across different UTM zones.
-     * Use {@link FOVFilter#geo2Vector(GeoPoint)} instead
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.3", forRemoval = true, removeAt = "4.6")
-    public static Vector2D geo2Vector(GeoPoint p) {
-        UTMPoint uP = UTMPoint.fromGeoPoint(p);
-        double alt = !p.isAltitudeValid() ? 0d
-                : p.getAltitude();
-        return new Vector2D(uP.getEasting(), uP.getNorthing(), alt);
     }
 
     /**
@@ -1611,11 +1575,11 @@ public class ATAKUtilities {
      */
     public static String bytesToHex(byte[] arr) {
         StringBuilder retval = new StringBuilder();
-        retval.ensureCapacity(arr.length*2);
-        for(int i = 0; i < arr.length; i++) {
+        retval.ensureCapacity(arr.length * 2);
+        for (int i = 0; i < arr.length; i++) {
             final int v = arr[i];
-            retval.append(HEX_DIGITS[(v>>4)&0xF]);
-            retval.append(HEX_DIGITS[(v&0xF)]);
+            retval.append(HEX_DIGITS[(v >> 4) & 0xF]);
+            retval.append(HEX_DIGITS[(v & 0xF)]);
         }
         return retval.toString();
     }
@@ -1627,22 +1591,22 @@ public class ATAKUtilities {
      * @throws IllegalArgumentException if the string contains a non hex character
      */
     public static byte[] hexToBytes(String hex) {
-        byte[] retval = new byte[(hex.length()+1)/2];
-        for(int i = hex.length()-1; i >= 0; i -= 2) {
+        byte[] retval = new byte[(hex.length() + 1) / 2];
+        for (int i = hex.length() - 1; i >= 0; i -= 2) {
             int v = 0;
             v |= decodeHex(hex.charAt(i));
-            if(i > 0)
-                v |= decodeHex(hex.charAt(i-1))<<4;
-            retval[i/2] = (byte)v;
+            if (i > 0)
+                v |= decodeHex(hex.charAt(i - 1)) << 4;
+            retval[i / 2] = (byte) v;
         }
         return retval;
     }
 
     private static int decodeHex(char c) {
-        if(c >= '0' && c <= '9') {
-            return (int)(c-'0');
-        } else if((c&~0x20) >= 'A' && (c&~0x20) <= 'F') {
-            return (int)((char)(c&~0x20)-'A') + 10;
+        if (c >= '0' && c <= '9') {
+            return (int) (c - '0');
+        } else if ((c & ~0x20) >= 'A' && (c & ~0x20) <= 'F') {
+            return (int) ((char) (c & ~0x20) - 'A') + 10;
         } else {
             throw new IllegalArgumentException("Not a hex character: " + c);
         }

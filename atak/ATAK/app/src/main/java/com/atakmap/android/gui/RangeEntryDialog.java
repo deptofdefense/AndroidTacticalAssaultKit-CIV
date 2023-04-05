@@ -168,23 +168,24 @@ public class RangeEntryDialog implements DialogInterface.OnDismissListener {
                     }
                 });
 
-
         _input.postDelayed(
                 new Runnable() {
                     @Override
                     public void run() {
                         _input.setSelection(_input.getText().length());
                         _input.requestFocus();
-                        InputMethodManager imm = ((InputMethodManager) MapView.getMapView()
+                        InputMethodManager imm = ((InputMethodManager) MapView
+                                .getMapView()
                                 .getContext()
-                                .getSystemService(Context.INPUT_METHOD_SERVICE));
+                                .getSystemService(
+                                        Context.INPUT_METHOD_SERVICE));
 
                         if (imm != null)
-                            imm.showSoftInput(_input, InputMethodManager.SHOW_IMPLICIT);
+                            imm.showSoftInput(_input,
+                                    InputMethodManager.SHOW_IMPLICIT);
 
                     }
                 }, 100);
-
 
     }
 

@@ -19,8 +19,6 @@ public class RetryRequest implements Parcelable {
      * Note, if other operations end up needing to be delayed, lets make this more generic and build
      * it into the HTTP Operation base classes. E.g. could implement a "FixedDelay" that sleeps for
      * a set amount of time
-     * 
-     * 
      */
     public interface OperationDelay {
 
@@ -49,10 +47,18 @@ public class RetryRequest implements Parcelable {
         mNotificationId = notificationId;
     }
 
+    /**
+     * Based on the retry count, determin the delay used in between retries
+     * @return the operational delay to be used between retries.
+     */
     public OperationDelay getDelay() {
         return new BackoffDelay(mRetryCount);
     }
 
+    /**
+     * Returns true if the retry request is valid
+     * @return true if the retry count is greater than or equal to 0.
+     */
     public boolean isValid() {
         return mRetryCount >= 0;
     }

@@ -11,6 +11,7 @@
 #include "feature/SpatialCalculator2.h"
 #include "renderer/GLRenderContext.h"
 #include "renderer/core/GLAsynchronousMapRenderable3.h"
+#include "renderer/feature/DefaultSpatialFilterControl.h"
 #include "renderer/feature/GLBatchGeometryRenderer3.h"
 #include "feature/SpatialFilter.h"
 #include "renderer/feature/SpatialFilterControl.h"
@@ -69,9 +70,6 @@ namespace TAK {
                 public:
                     Util::TAKErr getControl(void **ctrl, const char *type) const NOTHROWS;
                 private:
-                    Util::TAKErr setSpatialFilter(const std::vector<std::shared_ptr<Engine::Feature::SpatialFilter>> &spatial_filters) NOTHROWS;
-                    Util::TAKErr checkSpatialFilter(bool &fits_filter, Engine::Feature::GeometryPtr_const &geom) const NOTHROWS;
-                private:
                     //System::Collections::Generic::Dictionary<int, Statistics> queryStats;
                     std::list<TAK::Engine::Renderer::Core::GLMapRenderable2 *> renderList;
                     TAK::Engine::Core::RenderContext &surface;
@@ -90,11 +88,6 @@ namespace TAK {
 
                     std::unique_ptr<SpatialFilterControlImpl> spatial_filter_control_;
                     std::map<std::string, void *> controls_;
-
-                    std::shared_ptr<Engine::Feature::SpatialCalculator2> spatial_calculator_;
-                    std::vector<int64_t> include_filter_ids_;
-                    std::vector<int64_t> exclude_filter_ids_;
-                    std::shared_ptr<Engine::Feature::Envelope2> include_spatial_filter_envelope_;
 
                 protected:
                     std::shared_ptr<atakmap::core::Service> hittest;
@@ -126,6 +119,8 @@ namespace TAK {
                     SpatialFilterControlImpl(GLBatchGeometryFeatureDataStoreRenderer2 &owner) NOTHROWS;
                 public:
                     Util::TAKErr setSpatialFilters(Port::Collection<std::shared_ptr<Engine::Feature::SpatialFilter>> *spatial_filters) NOTHROWS override;
+                public :
+                    DefaultSpatialFilterControl impl;
                 private:
                     GLBatchGeometryFeatureDataStoreRenderer2 &owner_;
                 };

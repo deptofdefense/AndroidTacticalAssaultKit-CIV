@@ -1,67 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <Preference
+   <Preference
         android:key="loggingDisclaimer"
-        android:selectable="false"
         android:persistent="false"
-        android:title="@string/advanced_logging_disclaimer_title"
+        android:selectable="false"
         android:summary="@string/advanced_logging_disclaimer_summary"
-        android:icon="@drawable/metrics"/>
+        android:icon="@drawable/metrics"
+        android:title="@string/advanced_logging_disclaimer_title" />
 
-    <PreferenceCategory
-        android:title="@string/debugPreferences">
-            <CheckBoxPreference
-                android:title="@string/preferences_text68"
-                android:summary="@string/preferences_text69"
-                android:defaultValue="false"
-                android:key="loggingfile"
-                android:icon="@drawable/ic_android_display_settings"/>
-        <CheckBoxPreference
-            android:title="@string/preferences_text70"
-            android:summary="@string/preferences_text71"
+    <PreferenceCategory android:title="@string/debugPreferences">
+        <com.atakmap.android.gui.PanCheckBoxPreference
             android:defaultValue="false"
-            android:key="loggingfile_error_only"
+            android:summary="@string/preferences_text69"
+            android:icon="@drawable/ic_android_display_settings"
+            android:key="loggingfile"
+            android:title="@string/preferences_text68" />
+        <com.atakmap.android.gui.PanCheckBoxPreference
+            android:defaultValue="false"
             android:dependency="loggingfile"
             android:disableDependentsState="true"
-            android:icon="@drawable/ic_menu_error"/>
-        <CheckBoxPreference
-                android:title="@string/preferences_text701"
-                android:summary="@string/preferences_text701s"
-                android:defaultValue="false"
-                android:key="loggingfile_upload_debug"
-                android:dependency="loggingfile"
-                android:disableDependentsState="true"
-                android:icon="@drawable/upload_logs"/>
+            android:summary="@string/preferences_text71"
+            android:key="loggingfile_error_only"
+            android:icon="@drawable/ic_menu_error"
+            android:title="@string/preferences_text70" />
+        <com.atakmap.android.gui.PanCheckBoxPreference
+            android:defaultValue="false"
+            android:dependency="loggingfile"
+            android:disableDependentsState="true"
+            android:summary="@string/preferences_text701s"
+            android:key="loggingfile_upload_debug"
+            android:icon="@drawable/upload_logs"
+            android:title="@string/preferences_text701" />
     </PreferenceCategory>
 
-    <PreferenceCategory
-        android:title="@string/networklogging_pref">
-        <CheckBoxPreference
+    <PreferenceCategory android:title="@string/networklogging_pref">
+        <com.atakmap.android.gui.PanCheckBoxPreference
             android:defaultValue="false"
             android:key="collect_metrics"
             android:summary="@string/metricreport"
-            android:title="@string/metric_report_title"
-            android:icon="@drawable/metrics"/>
-
-        <CheckBoxPreference
-            android:key="lognettraffictofile"
-            android:title="@string/preferences_text252"
-            android:summary="@string/preferences_text252_summary"
+            android:icon="@drawable/metrics"
+            android:title="@string/metric_report_title" />
+        <com.atakmap.android.gui.PanCheckBoxPreference
             android:defaultValue="false"
-            android:icon="@drawable/network"/>
-        <CheckBoxPreference android:title="@string/advanced_cot_recorder"
-            android:key="generate_full_pool"
+            android:summary="@string/preferences_text252_summary"
+            android:key="lognettraffictofile"
+            android:icon="@drawable/network"
+            android:title="@string/preferences_text252" />
+        <com.atakmap.android.gui.PanCheckBoxPreference
             android:checked="false"
             android:dependency="collect_metrics"
             android:summary="@string/advanced_cot_recorder_summ"
-            android:icon="@drawable/network"/>
-
-        <CheckBoxPreference android:title="@string/advanced_detail_recorder"
-            android:key="generate_detail_pool"
+            android:icon="@drawable/network"
+            android:key="generate_full_pool"
+            android:title="@string/advanced_cot_recorder" />
+        <com.atakmap.android.gui.PanCheckBoxPreference
             android:checked="false"
             android:dependency="collect_metrics"
             android:summary="@string/advanced_detail_recorder_summ"
-            android:icon="@drawable/network"/>
+            android:icon="@drawable/network"
+            android:key="generate_detail_pool"
+            android:title="@string/advanced_detail_recorder" />
     </PreferenceCategory>
 </PreferenceScreen>

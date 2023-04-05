@@ -4,6 +4,8 @@ package com.atakmap.android.gui;
 import android.content.Context;
 import android.content.Intent;
 import android.util.AttributeSet;
+import android.view.View;
+import android.view.ViewGroup;
 
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.network.ui.CredentialsPreference;
@@ -36,6 +38,14 @@ public class EncryptedPanEditTextPreference extends PanEditTextPreference {
         }
 
         return text;
+    }
+
+    @Override
+    protected View onCreateView(ViewGroup parent) {
+        View v = super.onCreateView(parent);
+        if (!isEnabled())
+            v.setEnabled(false);
+        return v;
     }
 
     @Override

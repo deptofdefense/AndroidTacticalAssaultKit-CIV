@@ -19,6 +19,8 @@ import com.atakmap.lang.ref.Cleaner;
 import com.atakmap.util.Disposable;
 import com.atakmap.util.ReadWriteLock;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import gov.tak.api.annotation.DontObfuscate;
 
 @DontObfuscate
@@ -59,6 +61,7 @@ public final class MapSceneModel implements Disposable {
     Object owner;
     Cleaner cleaner;
 
+    static AtomicBoolean marshalInit = new AtomicBoolean(false);
 
     public MapSceneModel(double displayDPI, int width, int height,
                         Projection proj, GeoPoint focusGeo, float focusX, float focusY,
@@ -75,6 +78,22 @@ public final class MapSceneModel implements Disposable {
       null);
 
         this.continuousScroll = continuousScroll;
+
+        if(marshalInit.compareAndSet(false, true)) {
+            // XXX - force static initialization of `gov.tak..MapSceneModel`
+            final gov.tak.api.engine.map.MapSceneModel sm = new gov.tak.api.engine.map.MapSceneModel(
+                    displayDPI,
+                    width, height,
+                    gov.tak.platform.engine.map.coords.ProjectionFactory.getProjection(proj.getSpatialReferenceID()),
+                    new gov.tak.api.engine.map.coords.GeoPoint(focusGeo.getLatitude(), focusGeo.getLongitude(), focusGeo.getAltitude()),
+                    focusX, focusY,
+                    rotation,
+                    tilt,
+                    resolution,
+                    continuousScroll
+            );
+            sm.dispose();
+        }
     }
 
     /**

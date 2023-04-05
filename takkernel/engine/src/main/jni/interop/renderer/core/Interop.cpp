@@ -58,10 +58,14 @@ namespace
 // GLMapView interop
 TAKErr TAKEngineJNI::Interop::Renderer::Core::Interop_marshal(std::shared_ptr<TAK::Engine::Renderer::Core::GLGlobeBase> &value, JNIEnv &env, jobject mview) NOTHROWS
 {
+    if(!checkInit(env))
+        return TE_IllegalState;
     return GLGlobeBase_interop.marshal(value, env, mview);
 }
 TAKErr TAKEngineJNI::Interop::Renderer::Core::Interop_marshal(Java::JNILocalRef &value, JNIEnv &env, const TAK::Engine::Renderer::Core::GLGlobeBase &cview) NOTHROWS
 {
+    if(!checkInit(env))
+        return TE_IllegalState;
     return GLGlobeBase_interop.marshal(value, env, cview);
 }
 

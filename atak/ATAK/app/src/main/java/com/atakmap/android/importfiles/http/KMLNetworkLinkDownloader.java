@@ -155,7 +155,7 @@ public class KMLNetworkLinkDownloader extends NetworkLinkDownloader {
 
         // notify user
         Log.d(TAG, "Import KML Network Link download request created for: "
-                + request.toString());
+                + request);
 
         if (request.showNotifications())
             postNotification(request.getNotificationId(),
@@ -350,7 +350,10 @@ public class KMLNetworkLinkDownloader extends NetworkLinkDownloader {
     private static void setAcceptAllVerifier(URLConnection connection) {
         if (connection instanceof javax.net.ssl.HttpsURLConnection) {
             try {
-                javax.net.ssl.SSLContext sc = CertificateManager.createSSLContext(new TrustManager[] { CertificateManager.SelfSignedAcceptingTrustManager });
+                javax.net.ssl.SSLContext sc = CertificateManager
+                        .createSSLContext(new TrustManager[] {
+                                CertificateManager.SelfSignedAcceptingTrustManager
+                });
                 ((javax.net.ssl.HttpsURLConnection) connection)
                         .setSSLSocketFactory(sc.getSocketFactory());
             } catch (Exception ignored) {
@@ -488,7 +491,7 @@ public class KMLNetworkLinkDownloader extends NetworkLinkDownloader {
                                     _context.getCacheDir());
                     if (tempKML != null) {
                         Log.d(TAG, "Extracting KMZ downloaded file: "
-                                + curRequest.toString());
+                                + curRequest);
                         downloadedFile = tempKML;
                     } else {
                         Log.d(TAG,

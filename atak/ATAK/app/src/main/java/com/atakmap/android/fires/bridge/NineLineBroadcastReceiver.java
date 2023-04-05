@@ -75,7 +75,6 @@ public abstract class NineLineBroadcastReceiver extends DropDownReceiver
     public abstract void addExternalNineLineProcessor(final Drawable icon,
             String txt, final ExternalNineLineProcessor enlp);
 
-
     /**
      * Add a MapItem that can be used as an Initial Point or Egress Control Point.
      * @param point the map item that can be used.

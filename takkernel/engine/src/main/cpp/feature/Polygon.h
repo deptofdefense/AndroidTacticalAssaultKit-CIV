@@ -128,6 +128,11 @@ class ENGINE_API Polygon
     getInteriorRings ()
         const;
 
+    std::pair<std::vector<LineString>::const_iterator,
+              std::vector<LineString>::const_iterator>
+    getRings ()
+        const;
+
 
     //==================================
     //  Geometry INTERFACE

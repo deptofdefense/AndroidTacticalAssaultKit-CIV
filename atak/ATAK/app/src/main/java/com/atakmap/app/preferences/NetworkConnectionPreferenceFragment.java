@@ -1,29 +1,24 @@
 
 package com.atakmap.app.preferences;
 
-import java.io.File;
-import java.io.IOException;
-import java.security.SecureRandom;
-import java.util.List;
-
-import android.util.Base64;
-
 import android.app.AlertDialog;
-import android.content.DialogInterface;
-import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
-
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Environment;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
-import android.widget.Toast;
+import android.preference.PreferenceManager;
+import android.util.Base64;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import com.atakmap.android.gui.ImportFileBrowserDialog;
 import com.atakmap.android.gui.PanEditTextPreference;
+import com.atakmap.android.gui.PanEditTextPreference;
+
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.preference.AtakPreferenceFragment;
@@ -39,6 +34,11 @@ import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.net.AtakCertificateDatabase;
 import com.atakmap.net.AtakCertificateDatabaseIFace;
+
+import java.io.File;
+import java.io.IOException;
+import java.security.SecureRandom;
+import java.util.List;
 
 public class NetworkConnectionPreferenceFragment
         extends AtakPreferenceFragment {
@@ -70,7 +70,8 @@ public class NetworkConnectionPreferenceFragment
         super.onCreate(savedInstanceState);
 
         addPreferencesFromResource(getResourceID());
-        Preference manageInputs = findPreference("manageInputsLink");
+        Preference manageInputs = (Preference) findPreference(
+                "manageInputsLink");
         manageInputs
                 .setOnPreferenceClickListener(new OnPreferenceClickListener() {
                     @Override
@@ -80,8 +81,8 @@ public class NetworkConnectionPreferenceFragment
                         return false;
                     }
                 });
-
-        Preference manageOutputs = findPreference("manageOutputsLink");
+        Preference manageOutputs = (Preference) findPreference(
+                "manageOutputsLink");
         manageOutputs
                 .setOnPreferenceClickListener(new OnPreferenceClickListener() {
                     @Override
@@ -92,7 +93,8 @@ public class NetworkConnectionPreferenceFragment
                     }
                 });
 
-        Preference manageStreams = findPreference("manageStreamingLink");
+        Preference manageStreams = (Preference) findPreference(
+                "manageStreamingLink");
         manageStreams
                 .setOnPreferenceClickListener(new OnPreferenceClickListener() {
                     @Override
@@ -103,7 +105,7 @@ public class NetworkConnectionPreferenceFragment
                     }
                 });
 
-        final Preference caLocation = findPreference("caLocation");
+        final Preference caLocation = (Preference) findPreference("caLocation");
         caLocation
                 .setOnPreferenceClickListener(new OnPreferenceClickListener() {
                     @Override
@@ -117,7 +119,8 @@ public class NetworkConnectionPreferenceFragment
                     }
                 });
 
-        final Preference certLocation = findPreference("certificateLocation");
+        final Preference certLocation = (Preference) findPreference(
+                "certificateLocation");
         certLocation
                 .setOnPreferenceClickListener(new OnPreferenceClickListener() {
                     @Override
@@ -131,7 +134,7 @@ public class NetworkConnectionPreferenceFragment
                     }
                 });
 
-        final Preference nonStreamingEncryption = findPreference(
+        final Preference nonStreamingEncryption = (Preference) findPreference(
                 "configureNonStreamingEncryption");
         nonStreamingEncryption
                 .setOnPreferenceClickListener(new OnPreferenceClickListener() {

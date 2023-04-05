@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "math/Utils.h"
 #include "math/Rectangle.h"
 #include "util/MathUtils.h"
@@ -284,3 +285,4 @@ bool GLZoomLevel::release(bool unusedOnly, int renderPump) {
         return patches.empty();
     }
 }
+#endif

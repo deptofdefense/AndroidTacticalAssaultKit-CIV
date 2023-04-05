@@ -192,7 +192,6 @@ class ChatMessage {
         this.protocol = protocol;
     }
 
-
     void setReceiveTime(CoordinatedTime receiveTime) {
         this.receiveTime = receiveTime;
     }

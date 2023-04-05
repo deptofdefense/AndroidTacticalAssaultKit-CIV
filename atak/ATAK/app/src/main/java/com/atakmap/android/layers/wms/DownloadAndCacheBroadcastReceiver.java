@@ -1,19 +1,15 @@
 
 package com.atakmap.android.layers.wms;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
 import android.widget.Toast;
 
 import com.atakmap.android.layers.LayerDownloader;
 import com.atakmap.android.layers.LayersManagerBroadcastReceiver;
 import com.atakmap.android.layers.OnlineLayersDownloadManager;
 import com.atakmap.android.util.NotificationUtil;
-import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 
-public class DownloadAndCacheBroadcastReceiver extends BroadcastReceiver
+public class DownloadAndCacheBroadcastReceiver
         implements LayerDownloader.Callback {
 
     private final OnlineLayersDownloadManager downloader;
@@ -111,10 +107,4 @@ public class DownloadAndCacheBroadcastReceiver extends BroadcastReceiver
         }
     }
 
-    @Override
-    @Deprecated
-    @DeprecatedApi(since = "4.2.1", forRemoval = true, removeAt = "4.4")
-    public void onReceive(final Context context, final Intent intent) {
-        // Now uses LayerDownloader.Callback
-    }
 }

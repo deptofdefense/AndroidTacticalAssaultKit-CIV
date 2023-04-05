@@ -94,12 +94,6 @@ public class Polyline extends Shape {
 
     private static final GeoPointMetaData[] _EMPTY_POINTS = {};
 
-    @Deprecated
-    @DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.6")
-    public interface OnAltitudeModeChangedListener
-            extends MapItem.OnAltitudeModeChangedListener {
-    }
-
     public interface OnHeightStyleChangedListener {
         /**
          * Height style flag has been modified

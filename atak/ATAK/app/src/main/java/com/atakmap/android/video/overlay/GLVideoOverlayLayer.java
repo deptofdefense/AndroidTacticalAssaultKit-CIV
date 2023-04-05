@@ -171,7 +171,10 @@ public class GLVideoOverlayLayer extends GLAbstractLayer implements
             Matrix.multiplyMM(mvp, 0, mvandp, 0, mvandp, 16);
             program.draw(GLES30.GL_TRIANGLE_FAN, numVertices,
                     vertexCoordinates, textureCoordinates,
-                    mvp, texTransform, textureHandler.getTexId());
+                    mvp, texTransform,
+                    textureHandler.getAdjustedSourceWidth(),
+                    textureHandler.getAdjustedSourceHeight(),
+                    textureHandler.getTexId());
         } catch (GLOperationException ex) {
             Log.e(getClass().getName(), "Failed to draw frame", ex);
         }

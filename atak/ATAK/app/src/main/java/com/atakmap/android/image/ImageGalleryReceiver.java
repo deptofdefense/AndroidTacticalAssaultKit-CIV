@@ -28,6 +28,7 @@ import com.atakmap.android.dropdown.DropDownReceiver;
 import com.atakmap.android.gui.AlertDialogHelper;
 import com.atakmap.android.gui.TileButtonDialog;
 import com.atakmap.android.image.gallery.GalleryContentProvider;
+import com.atakmap.android.image.quickpic.QuickPicReceiver;
 import com.atakmap.android.importfiles.ui.ImportManagerFileBrowser;
 import com.atakmap.android.hierarchy.filters.SearchFilter;
 import com.atakmap.android.importexport.ExportFileMarshal;
@@ -40,6 +41,7 @@ import com.atakmap.android.missionpackage.MissionPackageMapComponent;
 import com.atakmap.android.missionpackage.MissionPackageUtils;
 import com.atakmap.android.missionpackage.api.MissionPackageApi;
 import com.atakmap.android.missionpackage.file.MissionPackageManifest;
+import com.atakmap.android.preference.AtakPreferences;
 import com.atakmap.android.tools.ActionBarReceiver;
 import com.atakmap.android.tools.ActionBarView;
 import com.atakmap.android.tools.menu.ActionBroadcastData;
@@ -264,7 +266,9 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
                 Log.d(TAG, "Processing directory: " + dirPath);
                 List<File> fileList = AttachmentManager.getAttachments(uid);
 
-                onDeleteAction = onAddAction = curPath = null;
+                onDeleteAction = null;
+                onAddAction = null;
+                curPath = null;
 
                 if (intent.getExtras().getBoolean("focusmap", false)) {
                     Intent focus = new Intent();
@@ -290,10 +294,14 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
                     if (FileSystemUtils.isFile(path)) {
                         File f = new File(path);
                         String uid = null;
-                        if (f.getParentFile().getParent()
-                                .endsWith("attachments")) {
-                            uid = f.getParentFile().getName();
-                            manifest.addMapItem(uid);
+                        File parentFile = f.getParentFile();
+                        if (parentFile != null) {
+                            String parentFileStr = parentFile.getParent();
+                            if (parentFileStr != null && parentFileStr
+                                    .endsWith("attachments")) {
+                                uid = f.getParentFile().getName();
+                                manifest.addMapItem(uid);
+                            }
                         }
                         manifest.addFile(f, uid);
                         // Include extra metadata if available
@@ -535,9 +543,8 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
         return gallery;
     }
 
-    private ActionBarView prepareToolbar(final View gallery,
-            final ImageGalleryBaseAdapter adapter,
-            final DropDown.OnStateListener stateListener) {
+    private ActionBarView prepareToolbar(
+            final ImageGalleryBaseAdapter adapter) {
         ActionBarView tb = getToolbarView();
 
         View importFile = tb.findViewById(R.id.importFile);
@@ -596,9 +603,8 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
                 adapter.getDropDownStateListener());
 
         adapter.customizeGalleryView(gallery);
-        adapter.customizeToolbarView(prepareToolbar(gallery,
-                adapter,
-                stateListener));
+        adapter.customizeToolbarView(prepareToolbar(
+                adapter));
 
         adapter.registerDataSetObserver(new DataSetObserver() {
             @Override
@@ -636,9 +642,8 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
                 adapter.getDropDownStateListener());
 
         adapter.customizeGalleryView(gallery);
-        adapter.customizeToolbarView(prepareToolbar(gallery,
-                adapter,
-                stateListener));
+        adapter.customizeToolbarView(prepareToolbar(
+                adapter));
 
         adapter.registerDataSetObserver(new DataSetObserver() {
             @Override
@@ -705,15 +710,15 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
                         if (img != null)
                             fullfilePath = img.getAbsolutePath();
                     } else if (curPath != null) {
-                        uid = null;
                         fullfilePath = curPath;
                     }
                     if (uid != null && fullfilePath != null) {
-                        ImageActivity imageActivity = new ImageActivity(
-                                mapView, new File(fullfilePath), uid,
-                                new ActionBroadcastData(PIC_CAPTURED, null),
-                                true);
-                        imageActivity.start();
+
+                        QuickPicReceiver.chooser(mapView,
+                                new AtakPreferences(mapView.getContext()),
+                                new File(fullfilePath), uid,
+                                new File(fullfilePath).getParentFile(),
+                                new ActionBroadcastData(PIC_CAPTURED, null));
                     }
                 }
 
@@ -1075,7 +1080,7 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
             }
         } catch (Exception e) {
             Log.w(TAG, "Failed to get field from URI: "
-                    + contentURI.toString(), e);
+                    + contentURI, e);
         }
 
         return null;
@@ -1186,8 +1191,7 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
                                         .openInputStream(
                                                 dataUri);
                                 canOpen = true;
-                            } catch (Exception e) {
-                                canOpen = false;
+                            } catch (Exception ignored) {
                             } finally {
                                 try {
                                     if (is != null)

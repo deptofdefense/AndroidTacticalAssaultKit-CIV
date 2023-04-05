@@ -119,11 +119,6 @@ public abstract class DropDownReceiver extends BroadcastReceiver {
     private final MapEventDispatchListener medl = new MapEventDispatchListener() {
         @Override
         public void onMapEvent(MapEvent event) {
-            if (isVisible())
-                Log.d(TAG,
-                        "printline left in to demonstrate issue with spot details: "
-                                + event.getItem());
-
             if (event.getType().equals(MapEvent.ITEM_REMOVED)) {
                 if (!isClosed() && selected != null
                         && (event.getItem() == selected)) {
@@ -346,11 +341,13 @@ public abstract class DropDownReceiver extends BroadcastReceiver {
 
                 // Make sure layout parameters for the view are set
                 // to match_parent by default
-                LayoutParams lp = contentView.getLayoutParams();
-                if (lp == null) {
-                    lp = new LayoutParams(LayoutParams.MATCH_PARENT,
-                            LayoutParams.MATCH_PARENT);
-                    contentView.setLayoutParams(lp);
+                if (contentView != null) {
+                    LayoutParams lp = contentView.getLayoutParams();
+                    if (lp == null) {
+                        lp = new LayoutParams(LayoutParams.MATCH_PARENT,
+                                LayoutParams.MATCH_PARENT);
+                        contentView.setLayoutParams(lp);
+                    }
                 }
 
                 _dropDown = new DropDown(contentView, ignoreBackButton,
@@ -611,6 +608,9 @@ public abstract class DropDownReceiver extends BroadcastReceiver {
             }
 
             hideDetails();
+            _dropDown.dispose();
+            // XXX - We should also set _dropDown to null here but this may
+            // result in other issues such as NPEs
         }
 
         _closed = true;

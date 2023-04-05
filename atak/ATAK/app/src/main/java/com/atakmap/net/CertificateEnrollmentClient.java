@@ -215,7 +215,7 @@ public class CertificateEnrollmentClient implements
 
         // notify user
         Log.d(TAG,
-                "CertificateConfigRequest created for: " + request.toString());
+                "CertificateConfigRequest created for: " + request);
 
         showProgress(true);
 
@@ -232,7 +232,7 @@ public class CertificateEnrollmentClient implements
 
         // notify user
         Log.d(TAG,
-                "CertificateSigningRequest created for: " + request.toString());
+                "CertificateSigningRequest created for: " + request);
 
         showProgress(true);
 
@@ -269,7 +269,7 @@ public class CertificateEnrollmentClient implements
                             Bundle resultData) {
                         Log.d(TAG,
                                 "onDeviceProfileRequestComplete finished successfully: "
-                                        + request.toString());
+                                        + request);
 
                         showProgress(false);
                         if (status) {
@@ -287,7 +287,7 @@ public class CertificateEnrollmentClient implements
                 })) {
 
             //if enrollment profile is disabled, then proceed
-            Log.d(TAG, "getProfile not sent: " + request.toString());
+            Log.d(TAG, "getProfile not sent: " + request);
             view.post(new Runnable() {
                 @Override
                 public void run() {

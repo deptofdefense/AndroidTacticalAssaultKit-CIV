@@ -22,6 +22,11 @@ import com.atakmap.map.layer.raster.ImageInfo;
 import com.atakmap.math.Rectangle;
 import com.atakmap.util.zip.IoUtils;
 
+import gov.tak.api.annotation.DeprecatedApi;
+
+/** @deprecated */
+@Deprecated
+@DeprecatedApi(since = "4.6", forRemoval = true, removeAt = "4.9")
 public class Dt2ElevationData extends AbstractElevationData {
 
     private static final String TAG = "Dt2ElevationData";

@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "renderer/model/GLMesh.h"
 
 #include <cmath>
@@ -430,7 +431,11 @@ void GLMesh::draw(const Core::GLGlobeBase& view, RenderState& state, const int r
 void GLMesh::prepareTransform(const ViewState_& viewState/*, Renderer::RenderState& state*/) NOTHROWS
 {
     Matrix2 mx;
-    mx.set(viewState.scene.forwardTransform);
+    if(viewState.scene.camera.mode == MapCamera2::Perspective) {
+        mx.set(viewState.scene.camera.modelView);
+    } else {
+        mx.set(viewState.scene.forwardTransform);
+    }
 
     if (altitude_mode_ != TEAM_Absolute) {
         TAK::Engine::Math::Point2<double> pointD(model_anchor_point_);
@@ -481,10 +486,14 @@ void GLMesh::prepareTransform(const ViewState_& viewState/*, Renderer::RenderSta
     }
 
     // fill the transformation matrices
-    float mxf[16];
-    atakmap::renderer::GLES20FixedPipeline::getInstance()->readMatrix(atakmap::renderer::GLES20FixedPipeline::MM_GL_PROJECTION, mxf);
-    for (std::size_t i = 0u; i < 16u; i++)
-        transform_.projection.set(i % 4u, i / 4u, mxf[i]);
+    if(viewState.scene.camera.mode == MapCamera2::Perspective) {
+        transform_.projection.set(viewState.scene.camera.projection);
+    } else {
+        float mxf[16];
+        atakmap::renderer::GLES20FixedPipeline::getInstance()->readMatrix(atakmap::renderer::GLES20FixedPipeline::MM_GL_PROJECTION, mxf);
+        for (std::size_t i = 0u; i < 16u; i++)
+            transform_.projection.set(i % 4u, i / 4u, mxf[i]);
+    }
     transform_.modelView.set(mx);
     transform_.texture.setToIdentity();
 }
@@ -1103,3 +1112,4 @@ TAKErr GLMesh::getShader(std::shared_ptr<const Shader> &value, RenderContext &ct
     Shader_get(value, ctx, attrs);
     return TE_Ok;
 }
+#endif

@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "feature/OGDIDriverDefinition.h"
 
 #include <ogr_feature.h>
@@ -308,3 +309,4 @@ const char* OGDIDriverDefinition::Spi::getType() const NOTHROWS
 {
 	return OGDI_DRIVER_NAME;
 }
+#endif

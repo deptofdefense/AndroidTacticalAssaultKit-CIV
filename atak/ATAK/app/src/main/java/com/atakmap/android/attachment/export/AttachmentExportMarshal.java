@@ -34,6 +34,8 @@ import java.util.List;
 public class AttachmentExportMarshal extends ExportFileMarshal {
     private static final String TAG = "AttachmentExportMarshal";
 
+    private final List<AttachmentMapOverlay.MapItemAttachment> exports;
+
     /**
      * Simple file wrapper compatible ExportMarshal
      */
@@ -60,8 +62,6 @@ public class AttachmentExportMarshal extends ExportFileMarshal {
                 return null;
         }
     }
-
-    private final List<AttachmentMapOverlay.MapItemAttachment> exports;
 
     /**
      * Builds a Marshall capable of exporting Attachments as a zip file.

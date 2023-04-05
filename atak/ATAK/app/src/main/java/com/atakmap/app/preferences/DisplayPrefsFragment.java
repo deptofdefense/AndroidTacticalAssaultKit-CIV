@@ -1,37 +1,18 @@
 
 package com.atakmap.app.preferences;
 
-import android.content.ActivityNotFoundException;
 import android.content.Context;
-import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.preference.CheckBoxPreference;
-import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
-import android.preference.PreferenceManager;
-import android.widget.Toast;
 
-import com.atakmap.android.gridlines.GridLinesPreferenceFragment;
-import com.atakmap.android.layers.app.ImportStyleDefaultPreferenceFragment;
-import com.atakmap.android.layers.app.LayerPreferenceFragment;
-import com.atakmap.android.offscreenindicators.OffscreenIndicatorsPrefsFragment;
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.android.preference.PreferenceSearchIndex;
-import com.atakmap.android.preference.UnitDisplayPreferenceFragment;
 import com.atakmap.app.R;
-import com.atakmap.coremap.log.Log;
 
 public class DisplayPrefsFragment extends AtakPreferenceFragment {
 
     public static final String TAG = "DisplayPrefsFragment";
-    private CheckBoxPreference largeTextModePreference;
-    private CheckBoxPreference largeActionBarPreference;
-    private ListPreference relativeOverlaysScalingRadioListPreference;
-    private ListPreference label_text_sizePreference;
-    private Preference my_location_icon_preference;
-    private ListPreference overlayManagerWidthHeight;
 
     public static java.util.List<PreferenceSearchIndex> index(Context context) {
         return index(context,
@@ -50,164 +31,69 @@ public class DisplayPrefsFragment extends AtakPreferenceFragment {
 
         addPreferencesFromResource(getResourceID());
 
-        SharedPreferences sp = PreferenceManager
-                .getDefaultSharedPreferences(getActivity());
-
-        my_location_icon_preference = findPreference("my_location_icon_color");
-        my_location_icon_preference
+        Preference basicDisplayPreference = (Preference) findPreference(
+                "basic_display_settings");
+        basicDisplayPreference
                 .setOnPreferenceClickListener(new OnPreferenceClickListener() {
                     @Override
                     public boolean onPreferenceClick(Preference preference) {
-                        showScreen(new SelfMarkerCustomFragment());
+                        showScreen(new BasicDisplayPrefFragment());
                         return true;
                     }
                 });
 
-        Preference actionbarCustomize = findPreference("my_actionbar_settings");
-        actionbarCustomize
+        Preference usableSettings = (Preference) findPreference(
+                "usableSettings");
+        usableSettings
                 .setOnPreferenceClickListener(new OnPreferenceClickListener() {
                     @Override
                     public boolean onPreferenceClick(Preference preference) {
-                        showScreen(new ActionBarPreferences());
+                        showScreen(new UsabilityPreferenceFragment());
                         return true;
                     }
                 });
 
-        Preference rabPreference = findPreference("unitPreferences");
-        rabPreference
+        Preference dexOptions = (Preference) findPreference("dexOptions");
+        dexOptions
                 .setOnPreferenceClickListener(new OnPreferenceClickListener() {
                     @Override
                     public boolean onPreferenceClick(Preference preference) {
-                        showScreen(new UnitDisplayPreferenceFragment());
+                        showScreen(new DexOptionsPreferenceFragment());
                         return true;
                     }
                 });
 
-        Preference p = findPreference("displaySettings");
-        p.setOnPreferenceClickListener(new OnPreferenceClickListener() {
+        Preference threeDRendering = (Preference) findPreference("3DRendering");
+        threeDRendering
+                .setOnPreferenceClickListener(new OnPreferenceClickListener() {
 
-            @Override
-            public boolean onPreferenceClick(Preference preference) {
+                    @Override
+                    public boolean onPreferenceClick(Preference preference) {
+                        showScreen(new ThreeDRenderingFragment());
+                        return true;
+                    }
+                });
 
-                try {
-                    startActivityForResult(new Intent(
-                            android.provider.Settings.ACTION_DISPLAY_SETTINGS),
-                            0);
-                } catch (ActivityNotFoundException ignored) {
-
-                    // TODO: Translate this after it has been backported to 4.1.1
-                    Toast.makeText(getActivity(),
-                            "This program was unable to launch the system level display preference.",
-                            Toast.LENGTH_SHORT).show();
-
-                }
-                return true;
-            }
-        });
-
-        Preference gridLinesPreference = findPreference("gridLinesPreference");
+        Preference gridLinesPreference = (Preference) findPreference(
+                "colorTinting");
         gridLinesPreference
                 .setOnPreferenceClickListener(new OnPreferenceClickListener() {
                     @Override
                     public boolean onPreferenceClick(Preference preference) {
-                        showScreen(new GridLinesPreferenceFragment());
+                        showScreen(new ColorAndTintingPreferenceFragment());
                         return true;
                     }
                 });
 
-        Preference layerOutlinesPreference = findPreference(
-                "layerOutlinesPreference");
+        Preference layerOutlinesPreference = (Preference) findPreference(
+                "additionalDisplay");
         layerOutlinesPreference
                 .setOnPreferenceClickListener(new OnPreferenceClickListener() {
                     @Override
                     public boolean onPreferenceClick(Preference preference) {
-                        showScreen(new LayerPreferenceFragment());
+                        showScreen(new OtherDisplayPreferenceFragment());
                         return true;
                     }
                 });
-
-        Preference overlayStylePreference = findPreference(
-                "overlayStylePreference");
-        overlayStylePreference
-                .setOnPreferenceClickListener(new OnPreferenceClickListener() {
-                    @Override
-                    public boolean onPreferenceClick(Preference preference) {
-                        showScreen(new ImportStyleDefaultPreferenceFragment());
-                        return true;
-                    }
-                });
-
-        Preference offscreenIndicatorsPreference = findPreference(
-                "atakOffScrIndiOptions");
-        offscreenIndicatorsPreference
-                .setOnPreferenceClickListener(new OnPreferenceClickListener() {
-                    @Override
-                    public boolean onPreferenceClick(Preference preference) {
-                        showScreen(new OffscreenIndicatorsPrefsFragment());
-                        return true;
-                    }
-                });
-
-        overlayManagerWidthHeight = (ListPreference) findPreference(
-                "overlay_manager_width_height");
-        //only allow on tablet devices?????
-        if (!getActivity().getResources()
-                .getBoolean(R.bool.isTablet)) {
-            overlayManagerWidthHeight.setEnabled(false);
-        }
-
-        largeTextModePreference = (CheckBoxPreference) findPreference(
-                "largeTextMode");
-        largeActionBarPreference = (CheckBoxPreference) findPreference(
-                "largeActionBar");
-        relativeOverlaysScalingRadioListPreference = (ListPreference) findPreference(
-                "relativeOverlaysScalingRadioList");
-        label_text_sizePreference = (ListPreference) findPreference(
-                "label_text_size");
-
-        largeTextModePreference
-                .setOnPreferenceChangeListener(
-                        new Preference.OnPreferenceChangeListener() {
-
-                            @Override
-                            public boolean onPreferenceChange(Preference arg0,
-                                    Object arg1) {
-
-                                if (arg1 == null) {
-                                    Log.w(TAG, "onPreferenceChange: " + arg0 +
-                                            " but the argument is null");
-                                    return false;
-                                }
-                                if (!(arg1 instanceof Boolean)) {
-                                    Log.w(TAG, "onPreferenceChange: " + arg1
-                                            + " of type: "
-                                            + arg1.getClass().getName());
-                                    return false;
-                                }
-
-                                setSizePrefs((Boolean) arg1);
-                                return true;
-                            }
-                        });
-
-        boolean b = sp.getBoolean("largeTextMode", false);
-        largeActionBarPreference.setEnabled(!b);
-        relativeOverlaysScalingRadioListPreference.setEnabled(!b);
-        label_text_sizePreference.setEnabled(!b);
-    }
-
-    private void setSizePrefs(boolean b) {
-        Log.d(TAG, "Set large text mode: " + b);
-
-        //set pref, of 3 child prefs
-        largeActionBarPreference.setChecked(b);
-        relativeOverlaysScalingRadioListPreference
-                .setValue(b ? "1.50" : "1.00");
-        label_text_sizePreference.setValue(b ? "18" : "14");
-
-        //set enabled, of 3 child prefs
-        largeActionBarPreference.setEnabled(!b);
-        relativeOverlaysScalingRadioListPreference.setEnabled(!b);
-        label_text_sizePreference.setEnabled(!b);
     }
 }

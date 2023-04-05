@@ -741,7 +741,7 @@ public class FavoriteListAdapter extends BaseAdapter {
             return;
         }
 
-        Log.d(TAG, "add: " + favorite.toString());
+        Log.d(TAG, "add: " + favorite);
         try {
             mData.add(favorite);
             notifyDataSetChanged();

@@ -10,6 +10,7 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.rubbersheet.maps.GLRubberModel;
 import com.atakmap.android.vehicle.model.VehicleModel;
 import com.atakmap.android.vehicle.model.VehicleModelInfo;
+import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
@@ -20,6 +21,7 @@ import com.atakmap.map.MapRenderer3;
 import com.atakmap.map.MapSceneModel;
 import com.atakmap.map.hittest.HitTestResult;
 import com.atakmap.map.layer.model.Mesh;
+import com.atakmap.map.layer.model.Model;
 import com.atakmap.map.layer.model.ModelInfo;
 import com.atakmap.map.layer.model.Models;
 import com.atakmap.map.hittest.HitTestQueryParameters;
@@ -228,28 +230,29 @@ public class GLVehicleModel extends GLRubberModel implements
      * @return Result if hit
      */
     private HitTestResult hitTestModel(HitTestQueryParameters params) {
-        if (_model == null || _scene == null)
+        MapSceneModel localScene = _scene;
+        Model localModel = _model;
+
+        if (localModel == null || localScene == null || params == null)
             return null;
 
         // The current transformation matrix of the model
         Matrix localFrame;
-        if (_scene.mapProjection.getSpatialReferenceID() == 4978)
+        if (localScene.mapProjection.getSpatialReferenceID() == 4978)
             localFrame = _localECEF;
         else
             localFrame = _matrix;
 
-        GeoPoint geo = GeoPoint.createMutable();
-        int numMeshes = _model.getNumMeshes();
+        final GeoPoint geo = GeoPoint.createMutable();
+        final int numMeshes = localModel.getNumMeshes();
         for (int i = 0; i < numMeshes; i++) {
-
-            Mesh mesh = _model.getMesh(i);
-
+            final Mesh mesh = localModel.getMesh(i);
             // Note: this method accepts 'null' local frame, in which case it
             // assumes that LCS == WCS
-            GeometryModel gm = Models.createGeometryModel(mesh, localFrame);
-            if (_scene.inverse(params.point, geo, gm) == null)
+            final GeometryModel gm = Models.createGeometryModel(mesh,
+                    localFrame);
+            if (localScene.inverse(params.point, geo, gm) == null)
                 continue;
-
             return new HitTestResult(_subject, geo);
         }
 

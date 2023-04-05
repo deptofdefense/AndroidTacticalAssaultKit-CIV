@@ -11,6 +11,7 @@ import android.preference.PreferenceManager;
 import android.telephony.SmsManager;
 import android.telephony.TelephonyManager;
 
+import com.atakmap.annotations.ModifierApi;
 import com.atakmap.coremap.log.Log;
 import android.annotation.SuppressLint;
 import com.atakmap.android.emergency.sms.SMSGenerator;
@@ -39,18 +40,36 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class EmergencyManager {
     private static EmergencyManager _instance;
-    private static final String TAG = "EmergencyManager";
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {
+            "private"
+    })
+    protected static final String TAG = "EmergencyManager";
 
     private final Context context;
-    private final MapView mapView;
-    private boolean emergencyOn;
-    private EmergencyType emergencyType = EmergencyType.NineOneOne;
-    private final AtomicInteger idCounter = new AtomicInteger(0);
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {
+            "private"
+    })
+    protected final MapView mapView;
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {
+            "private"
+    })
+    protected boolean emergencyOn;
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {
+            "private"
+    })
+    protected EmergencyType emergencyType = EmergencyType.NineOneOne;
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {
+            "private"
+    })
+    protected final AtomicInteger idCounter = new AtomicInteger(0);
     private final Set<EmergencyListener> emergencyListeners;
     private final Map<String, EmergencyBeacon> emergencyBeacons;
-    private final SharedPreferences sharedPrefs;
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {
+            "private"
+    })
+    protected final SharedPreferences sharedPrefs;
 
-    private EmergencyManager(final MapView mapView) {
+    protected EmergencyManager(final MapView mapView) {
         Log.i(TAG, "Creating new EmergencyManager instance");
 
         this.mapView = mapView;
@@ -189,7 +208,7 @@ public class EmergencyManager {
         notifyListenersOfStateChange();
     }
 
-    private void notifyListenersOfStateChange() {
+    protected void notifyListenersOfStateChange() {
         for (EmergencyListener listener : emergencyListeners) {
             listener.emergencyStateChanged(emergencyOn, emergencyType);
         }
@@ -320,7 +339,7 @@ public class EmergencyManager {
     }
 
     @SuppressLint("HardwareIds")
-    private String getSelfEmergencyUid(String myUid) {
+    protected String getSelfEmergencyUid(String myUid) {
         TelephonyManager tm;
         tm = (TelephonyManager) getContext().getSystemService(
                 Context.TELEPHONY_SERVICE);
@@ -383,7 +402,7 @@ public class EmergencyManager {
         }
     }
 
-    private void notifyPlugins(CotEvent event) {
+    protected void notifyPlugins(CotEvent event) {
         // Notify plugins to send an emergency message
         Intent intent = new Intent(EmergencyConstants.PLUGIN_SEND_EMERGENCY);
         intent.putExtra(EmergencyConstants.PLUGIN_SEND_EMERGENCY_EXTRA,

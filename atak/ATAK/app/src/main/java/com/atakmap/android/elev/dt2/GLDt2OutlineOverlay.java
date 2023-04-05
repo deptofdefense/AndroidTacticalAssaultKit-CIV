@@ -163,11 +163,14 @@ public class GLDt2OutlineOverlay extends GLAbstractLayer2
             eastBound = Math.max(eastBound, lng);
         }
 
-        int interval = (int) Math.ceil(ortho.currentPass.drawMapResolution / 2000);
+        int interval = (int) Math
+                .ceil(ortho.currentPass.drawMapResolution / 2000);
         int minLng = (int) Math.floor(westBound / interval) * interval;
         int maxLng = (int) Math.floor(eastBound / interval) * interval;
-        int minLat = (int) Math.floor(ortho.currentPass.southBound / interval) * interval;
-        int maxLat = (int) Math.floor(ortho.currentPass.northBound / interval) * interval;
+        int minLat = (int) Math.floor(ortho.currentPass.southBound / interval)
+                * interval;
+        int maxLat = (int) Math.floor(ortho.currentPass.northBound / interval)
+                * interval;
 
         BitSet[] coverages = _dtedWatcher.getCoverages();
         BitSet coverage = _dtedWatcher.getFullCoverage();

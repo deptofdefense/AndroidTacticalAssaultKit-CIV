@@ -62,7 +62,6 @@ public class CrumbDatabase {
     public static final double VALUE_UNKNOWN = GeoPoint.UNKNOWN;
     private static final int MAX_TITLE_LENGTH = 30;
 
-
     private final Set<Crumb> crumbsToProcess = new HashSet<>();
     private final ExecutorService pool = Executors
             .newSingleThreadExecutor(new NamedThreadFactory(
@@ -76,7 +75,6 @@ public class CrumbDatabase {
     private final ConcurrentLinkedQueue<OnCrumbListener> _listeners = new ConcurrentLinkedQueue<>();
 
     private final Object lock = new Object();
-
 
     public interface OnCrumbListener {
         void onCrumbAdded(int trackId, Crumb c);
@@ -231,9 +229,6 @@ public class CrumbDatabase {
 
         initDatabase();
 
-
-
-
     }
 
     void onUpgrade(DatabaseIface db, int oldVersion, int newVersion) {
@@ -258,7 +253,7 @@ public class CrumbDatabase {
                 db.execute("ALTER TABLE " + SEGMENT_TABLE_NAME
                         + " ADD COLUMN " + SEG_COLUMN_USER_UID + " TEXT", null);
                 db.execute("ALTER TABLE " + SEGMENT_TABLE_NAME
-                                + " ADD COLUMN " + SEG_COLUMN_USER_TITLE + " TITLE",
+                        + " ADD COLUMN " + SEG_COLUMN_USER_TITLE + " TITLE",
                         null);
 
                 //populate those columns from breadcrumbs table
@@ -296,7 +291,7 @@ public class CrumbDatabase {
                                             + "= ? WHERE " + SEG_COLUMN_ID + "="
                                             + trackDbId;
                                     //Log.d(TAG, "Setting segment user title: " + sql);
-                                    db.execute(sql, new String[]{
+                                    db.execute(sql, new String[] {
                                             migrationTitle
                                     });
                                 } else {
@@ -310,7 +305,7 @@ public class CrumbDatabase {
                                             + "= ? WHERE " + SEG_COLUMN_ID + "="
                                             + trackDbId;
                                     //Log.d(TAG, "Setting segment user UID: " + sql);
-                                    db.execute(sql, new String[]{
+                                    db.execute(sql, new String[] {
                                             migrationUID
                                     });
                                 } else {
@@ -366,9 +361,9 @@ public class CrumbDatabase {
                 db.execute(initSpatialMetadataSql, null);
 
                 db.execute("SELECT AddGeometryColumn('"
-                                + BREADCRUMB_TABLE_NAME2
-                                + "', '" + COLUMN_POINT_GEOM
-                                + "', 4326, 'POINT', 'XY')",
+                        + BREADCRUMB_TABLE_NAME2
+                        + "', '" + COLUMN_POINT_GEOM
+                        + "', 4326, 'POINT', 'XY')",
                         null);
 
                 //copy from legacy table to new table
@@ -458,8 +453,8 @@ public class CrumbDatabase {
             db.execute(initSpatialMetadataSql, null);
 
             db.execute("SELECT AddGeometryColumn('"
-                            + BREADCRUMB_TABLE_NAME2
-                            + "', '" + COLUMN_POINT_GEOM + "', 4326, 'POINT', 'XY')",
+                    + BREADCRUMB_TABLE_NAME2
+                    + "', '" + COLUMN_POINT_GEOM + "', 4326, 'POINT', 'XY')",
                     null);
 
             db.setVersion(DATABASE_VERSION);
@@ -522,14 +517,16 @@ public class CrumbDatabase {
 
                 try {
                     db.execute(
-                            "DROP TABLE IF EXISTS " + BREADCRUMB_TABLE_NAME2, null);
+                            "DROP TABLE IF EXISTS " + BREADCRUMB_TABLE_NAME2,
+                            null);
                 } catch (Exception e) {
                     Log.w(TAG, "Failed to delete crumbs table", e);
                 }
 
                 try {
                     db.execute(
-                            "DROP TABLE IF EXISTS " + LEGACY_BREADCRUMB_TABLE_NAME,
+                            "DROP TABLE IF EXISTS "
+                                    + LEGACY_BREADCRUMB_TABLE_NAME,
                             null);
                 } catch (Exception e) {
                     Log.w(TAG, "Failed to delete legacy crumbs table", e);
@@ -566,8 +563,8 @@ public class CrumbDatabase {
                 if (result.moveToNext()) {
                     mostRecentSegment_id = result.getInt(SEG_COLUMN_ID_INDEX);
                 } //else {
-                //Log.d(TAG, "No segments found: " + sql);
-                //}
+                  //Log.d(TAG, "No segments found: " + sql);
+                  //}
             } catch (Exception e) {
                 Log.w(TAG, "Failed to find any track segments, " + e);
                 mostRecentSegment_id = -1;
@@ -588,7 +585,7 @@ public class CrumbDatabase {
      *              available track color.
      */
     public void persist(final PointMapItem m,
-                                     final long timestamp, final SharedPreferences prefs) {
+            final long timestamp, final SharedPreferences prefs) {
 
         double speed = m.getMetaDouble("Speed", Double.NaN);
         double bearing = VALUE_UNKNOWN;
@@ -612,7 +609,7 @@ public class CrumbDatabase {
                         GeoPointMetaData.UNKNOWN),
                 m.getMetaString(GeoPointMetaData.ALTITUDE_SOURCE,
                         GeoPointMetaData.UNKNOWN),
-                prefs);
+                prefs, false);
     }
 
     /**
@@ -627,12 +624,13 @@ public class CrumbDatabase {
      * @param bearing   Bearing in true degrees
      * @param trackId   Track id #
      * @param prefs     Optionally used to create segment if one does not exist for userUid
+     * @param immediate perist the crumb immediately
      */
     private void persist(final GeoPoint gp, String userUid,
-                                      String userTitle,
-                                      final long timestamp, final double speed, final double bearing,
-                                      int trackId, String geopointSource, String altitudeSource,
-                                      final SharedPreferences prefs) {
+            String userTitle,
+            final long timestamp, final double speed, final double bearing,
+            int trackId, String geopointSource, String altitudeSource,
+            final SharedPreferences prefs, boolean immediate) {
         try {
             //see if we were provided a track ID
             if (trackId < 0) {
@@ -648,7 +646,6 @@ public class CrumbDatabase {
             //Log.d(TAG, "creating crumb: " + userUid + ", " + timestamp +
             //    ", with segment id: " + trackId);
 
-
             Crumb c = new Crumb(gp, UUID.randomUUID().toString());
             c.setDirection(bearing);
             c.timestamp = timestamp;
@@ -658,7 +655,6 @@ public class CrumbDatabase {
             c.setMetaString("tmpgpSource", geopointSource);
             c.setMetaString("tmpaltSource", altitudeSource);
             synchronized (CrumbDatabase.this) {
-                crumbsToProcess.add(c);
                 if (worker == null) {
                     worker = new Handler();
                     try {
@@ -667,7 +663,12 @@ public class CrumbDatabase {
                         Log.d(TAG, "rejected execution");
                     }
                 }
-                this.notify();
+                if (immediate) {
+                    worker.insert(c);
+                } else {
+                    crumbsToProcess.add(c);
+                    this.notify();
+                }
             }
 
             // Notify listeners
@@ -688,7 +689,7 @@ public class CrumbDatabase {
      * @return
      */
     private int createSegment(long timestamp, String userTitle, String userUid,
-                              final SharedPreferences prefs) {
+            final SharedPreferences prefs) {
         createSegment(timestamp, BreadcrumbReceiver.getNextColor(prefs),
                 BreadcrumbReceiver.getTrackTitle(prefs),
                 BreadcrumbReceiver.DEFAULT_LINE_STYLE, userTitle, userUid,
@@ -710,9 +711,9 @@ public class CrumbDatabase {
      * @param bStitch   true will result in the new segement being joined with the previous segment
      */
     public void createSegment(final long timestamp,
-                                           final int color,
-                                           String title, final String style, String userTitle, String userUid,
-                                           boolean bStitch) {
+            final int color,
+            String title, final String style, String userTitle, String userUid,
+            boolean bStitch) {
 
         if (FileSystemUtils.isEmpty(title) || timestamp < 0) {
             Log.w(TAG, "Unable to create segment w/out title and timestamp");
@@ -740,14 +741,15 @@ public class CrumbDatabase {
                 StatementIface insertStmt = null;
                 try {
                     insertStmt = crumbdb
-                            .compileStatement("INSERT INTO " + SEGMENT_TABLE_NAME +
-                                    "(" + SEG_COLUMN_TIMESTAMP + ", " +
-                                    SEG_COLUMN_TITLE + ", " +
-                                    SEG_COLUMN_STYLE + ", " +
-                                    SEG_COLUMN_COLOR + ", " +
-                                    SEG_COLUMN_USER_UID + ", " +
-                                    SEG_COLUMN_USER_TITLE + ") " +
-                                    "VALUES (?, ?, ?, ?, ?, ?)");
+                            .compileStatement(
+                                    "INSERT INTO " + SEGMENT_TABLE_NAME +
+                                            "(" + SEG_COLUMN_TIMESTAMP + ", " +
+                                            SEG_COLUMN_TITLE + ", " +
+                                            SEG_COLUMN_STYLE + ", " +
+                                            SEG_COLUMN_COLOR + ", " +
+                                            SEG_COLUMN_USER_UID + ", " +
+                                            SEG_COLUMN_USER_TITLE + ") " +
+                                            "VALUES (?, ?, ?, ?, ?, ?)");
 
                     insertStmt.bind(1, timestamp);
                     insertStmt.bind(2, title);
@@ -773,15 +775,17 @@ public class CrumbDatabase {
                             persist(c.gp, userUid, userTitle, c.timestamp,
                                     c.speed, c.bearing, -1,
                                     c.gpm.getGeopointSource(),
-                                    c.gpm.getAltitudeSource(), null);
+                                    c.gpm.getAltitudeSource(), null, true);
                         }
                     } catch (SQLiteException e) {
                         Log.w(TAG,
-                                "error occurred stitching segment: " + timestamp,
+                                "error occurred stitching segment: "
+                                        + timestamp,
                                 e.getCause());
                     } catch (Exception e) {
                         Log.w(TAG,
-                                "error occurred stitching segment: " + timestamp,
+                                "error occurred stitching segment: "
+                                        + timestamp,
                                 e);
                     }
                 }
@@ -971,7 +975,7 @@ public class CrumbDatabase {
      * @return a list of tracks that meet the criteria
      */
     public List<TrackPolyline> getTracks(String uid,
-                                         long startTime, long endTime, TrackProgress progress) {
+            long startTime, long endTime, TrackProgress progress) {
         List<TrackPolyline> tracks = new ArrayList<>();
         if (FileSystemUtils.isEmpty(uid)) {
             Log.w(TAG, "Unable to get crumbs w/out user UID");
@@ -1027,7 +1031,8 @@ public class CrumbDatabase {
                     }
                     c = crumbPointFromCursor(result);
                     //store crumbs by track/segment ID
-                    int trackIdForCrumb = result.getInt(COLUMN_SEGMENT_ID_INDEX);
+                    int trackIdForCrumb = result
+                            .getInt(COLUMN_SEGMENT_ID_INDEX);
                     if (trackIdForCrumb < 0) {
                         Log.w(TAG, "No track id for crumb");
                         continue;
@@ -1065,7 +1070,7 @@ public class CrumbDatabase {
     }
 
     public List<TrackPolyline> getTracks(String uid,
-                                                      long startTime, long endTime) {
+            long startTime, long endTime) {
         return getTracks(uid, startTime, endTime, null);
     }
 
@@ -1217,7 +1222,7 @@ public class CrumbDatabase {
      * @return New track polyline
      */
     public TrackPolyline getTrack(String callsign, String uid, long timestamp,
-                                  List<Crumb> crumbs) {
+            List<Crumb> crumbs) {
         if (FileSystemUtils.isEmpty(uid)) {
             Log.w(TAG, "Cannot create track w/out uid");
             return null;
@@ -1238,7 +1243,7 @@ public class CrumbDatabase {
             for (Crumb c : crumbs) {
                 GeoPoint gp = c.getPoint();
                 if (gp == null || !gp.isValid()) {
-                    Log.w(TAG, "Ignoring invalid crumb point: " + c.toString());
+                    Log.w(TAG, "Ignoring invalid crumb point: " + c);
                     continue;
                 }
 
@@ -1384,9 +1389,10 @@ public class CrumbDatabase {
         CursorIface result = null;
         synchronized (lock) {
             try {
-                int currentTrackId = getCurrentSegmentId(uid, SEG_COLUMN_TIMESTAMP);
+                int currentTrackId = getCurrentSegmentId(uid,
+                        SEG_COLUMN_TIMESTAMP);
 
-                result = crumbdb.query(sql, new String[]{
+                result = crumbdb.query(sql, new String[] {
                         callsign, uid
                 });
 
@@ -1415,7 +1421,7 @@ public class CrumbDatabase {
      * @return the track representing the title and uid pair
      */
     public TrackPolyline getTrackByTrackTitle(final String title,
-                                              final String uid) {
+            final String uid) {
         String sql = "SELECT * FROM " + SEGMENT_TABLE_NAME +
                 " WHERE " + SEG_COLUMN_TITLE + "= ? AND " + SEG_COLUMN_USER_UID
                 + "= ? LIMIT 1";
@@ -1426,9 +1432,10 @@ public class CrumbDatabase {
         CursorIface result = null;
         synchronized (lock) {
             try {
-                int currentTrackId = getCurrentSegmentId(uid, SEG_COLUMN_TIMESTAMP);
+                int currentTrackId = getCurrentSegmentId(uid,
+                        SEG_COLUMN_TIMESTAMP);
 
-                result = crumbdb.query(sql, new String[]{
+                result = crumbdb.query(sql, new String[] {
                         title, uid
                 });
 
@@ -1470,7 +1477,7 @@ public class CrumbDatabase {
      * @return the list of track polylines that match
      */
     public List<TrackPolyline> getTracks(final String uid,
-                                                      boolean bHideTemp, boolean bDisplayAll, TrackProgress progress) {
+            boolean bHideTemp, boolean bDisplayAll, TrackProgress progress) {
         //query all segments, mapped by ID. Note Polyline point lists are currently immutable so we
         //also track list of points here
         List<TrackPolyline> tracks = new ArrayList<>();
@@ -1480,7 +1487,8 @@ public class CrumbDatabase {
         CursorIface result = null;
         synchronized (lock) {
             try {
-                int currentTrackId = getCurrentSegmentId(uid, SEG_COLUMN_TIMESTAMP);
+                int currentTrackId = getCurrentSegmentId(uid,
+                        SEG_COLUMN_TIMESTAMP);
 
                 //now get list of segments
                 String sql = "SELECT * FROM " + SEGMENT_TABLE_NAME +
@@ -1488,7 +1496,7 @@ public class CrumbDatabase {
                         + SEG_COLUMN_TIMESTAMP + " DESC";
                 Log.d(TAG, "getTracks: " + sql);
 
-                result = crumbdb.query(sql, new String[]{
+                result = crumbdb.query(sql, new String[] {
                         uid
                 });
                 if (progress != null)
@@ -1576,7 +1584,7 @@ public class CrumbDatabase {
      * @return a list of tracks for a given set of track ids.
      */
     public List<TrackPolyline> getTracks(final int[] trackIds,
-                                                      TrackProgress progress) {
+            TrackProgress progress) {
         if (trackIds == null || trackIds.length < 1) {
             Log.w(TAG, "Cannot create tracks w/out track IDs");
             return null;
@@ -1665,7 +1673,7 @@ public class CrumbDatabase {
      * @return a track polyline from the database cursor
      */
     private TrackPolyline trackFromCursor(CursorIface cursor,
-                                          int mostRecentTrackForUID) {
+            int mostRecentTrackForUID) {
         if (cursor == null) {
             Log.w(TAG, "Cannot create track w/out cursor");
             return null;
@@ -1700,7 +1708,7 @@ public class CrumbDatabase {
                 META_TRACK_CURRENT,
                 mostRecentTrackForUID >= 0
                         && (p.getMetaInteger(META_TRACK_DBID,
-                        -1) == mostRecentTrackForUID));
+                                -1) == mostRecentTrackForUID));
 
         //Log.d(TAG, "Created track Polyline for track: " + p.getMetaString("title", null) + ", " + p.getMetaInteger(META_TRACK_DBID, -1));
         return p;
@@ -1737,7 +1745,7 @@ public class CrumbDatabase {
                         + SEG_COLUMN_TITLE + "= ? WHERE " + SEG_COLUMN_ID + "="
                         + track_dbid;
 
-                crumbdb.execute(sql, new String[]{
+                crumbdb.execute(sql, new String[] {
                         name
                 });
             } catch (Exception e) {
@@ -1759,7 +1767,7 @@ public class CrumbDatabase {
                         + SEG_COLUMN_COLOR + "= ? WHERE " + SEG_COLUMN_ID + "="
                         + track_dbid;
 
-                crumbdb.execute(sql, new String[]{
+                crumbdb.execute(sql, new String[] {
                         color
                 });
             } catch (Exception e) {
@@ -1781,7 +1789,7 @@ public class CrumbDatabase {
                         + SEG_COLUMN_STYLE + "= ? WHERE " + SEG_COLUMN_ID + "="
                         + track_dbid;
 
-                crumbdb.execute(sql, new String[]{
+                crumbdb.execute(sql, new String[] {
                         style
                 });
             } catch (Exception e) {
@@ -1805,8 +1813,8 @@ public class CrumbDatabase {
      * @return
      */
     public int setServerTrack(String callsign, String uid, long startTime,
-                              Track track,
-                              SharedPreferences prefs) {
+            Track track,
+            SharedPreferences prefs) {
         if (FileSystemUtils.isEmpty(callsign) || FileSystemUtils.isEmpty(uid)) {
             Log.w(TAG, "Cannot set server track without callsign/uid");
             return -1;
@@ -1822,7 +1830,7 @@ public class CrumbDatabase {
                 + callsign
                 + " "
                 + KMLUtil.KMLDateTimeFormatter.get().format(startTime)
-                .replace(':', '-');
+                        .replace(':', '-');
         //clamp title length
         if (segTitle.length() > MAX_TITLE_LENGTH) {
             Log.d(TAG, "Clamping segment title: " + segTitle);
@@ -1852,7 +1860,8 @@ public class CrumbDatabase {
                         crumbdb.execute(sql, null);
                     }
                 } else {
-                    Log.d(TAG, "No previous server tracks to delete for: " + uid);
+                    Log.d(TAG,
+                            "No previous server tracks to delete for: " + uid);
                 }
 
                 //wrap new segment with title & uid
@@ -1877,44 +1886,47 @@ public class CrumbDatabase {
                 List<String> le = null;
                 if (track.getExtendedData() != null
                         && !FileSystemUtils.isEmpty(track.getExtendedData()
-                        .getSchemaDataList())) {
+                                .getSchemaDataList())) {
                     for (SchemaData sd : track.getExtendedData()
                             .getSchemaDataList()) {
                         if (sd != null
                                 && !FileSystemUtils.isEmpty(sd
-                                .getSchemaDataExtension())) {
+                                        .getSchemaDataExtension())) {
                             Log.d(TAG,
-                                    "Processing SchemaData: " + sd.getSchemaUrl());
+                                    "Processing SchemaData: "
+                                            + sd.getSchemaUrl());
                             for (Object sde : sd.getSchemaDataExtension()) {
                                 if (sde instanceof SimpleArrayData) {
                                     SimpleArrayData sad = (SimpleArrayData) sde;
                                     if (FileSystemUtils.isEmpty(speed)
                                             && FileSystemUtils.isEquals("speed",
-                                            sad.getName())) {
+                                                    sad.getName())) {
                                         //Log.d(TAG, "Processing track speed");
                                         speed = sad.getValue();
                                     } else if (FileSystemUtils.isEmpty(ce)
                                             && FileSystemUtils.isEquals("ce",
-                                            sad.getName())) {
+                                                    sad.getName())) {
                                         //Log.d(TAG, "Processing track ce error");
                                         ce = sad.getValue();
                                     } else if (FileSystemUtils.isEmpty(le)
                                             && FileSystemUtils.isEquals("le",
-                                            sad.getName())) {
+                                                    sad.getName())) {
                                         //Log.d(TAG, "Processing track le error");
                                         le = sad.getValue();
                                     }
                                 } else {
                                     if (sde != null)
-                                        Log.d(TAG, "Skipping non SimpleArrayData: "
-                                                + sde.getClass().getName());
+                                        Log.d(TAG,
+                                                "Skipping non SimpleArrayData: "
+                                                        + sde.getClass()
+                                                                .getName());
                                 }
                             }
                         }
 
                         if (sd != null
                                 && !FileSystemUtils
-                                .isEmpty(sd.getSimpleDataList())) {
+                                        .isEmpty(sd.getSimpleDataList())) {
                             for (SimpleData sde : sd.getSimpleDataList()) {
                                 if (sde != null) {
                                     //currently not using SimpleData
@@ -1978,12 +1990,14 @@ public class CrumbDatabase {
                         }
                     }
 
-                    GeoPointMetaData geoPoint = KMLUtil.parseKMLCoord(coord.get(i),
+                    GeoPointMetaData geoPoint = KMLUtil.parseKMLCoord(
+                            coord.get(i),
                             curCe,
                             curLe);
                     if (geoPoint == null) {
-                        Log.w(TAG, "Skipping invalid track point: " + coord.get(i)
-                                + " at index " + i);
+                        Log.w(TAG,
+                                "Skipping invalid track point: " + coord.get(i)
+                                        + " at index " + i);
                         continue;
                     }
 
@@ -1997,7 +2011,8 @@ public class CrumbDatabase {
                                 //Log.d(TAG, "Parsed bearing: " + bearing);
                             }
                         } catch (NumberFormatException e) {
-                            Log.w(TAG, "Failed to parse angle: " + angles.get(i),
+                            Log.w(TAG,
+                                    "Failed to parse angle: " + angles.get(i),
                                     e);
                             bearing = VALUE_UNKNOWN;
                         }
@@ -2013,7 +2028,8 @@ public class CrumbDatabase {
                                 //Log.d(TAG, "Parsed curSpeed: " + curSpeed);
                             }
                         } catch (NumberFormatException e) {
-                            Log.w(TAG, "Failed to parse speed: " + speed.get(i), e);
+                            Log.w(TAG, "Failed to parse speed: " + speed.get(i),
+                                    e);
                             curSpeed = VALUE_UNKNOWN;
                         }
                     }
@@ -2022,7 +2038,7 @@ public class CrumbDatabase {
                     persist(geoPoint.get(), uid, callsign, timestamp, curSpeed,
                             bearing,
                             trackId, geoPoint.getGeopointSource(),
-                            geoPoint.getAltitudeSource(), null);
+                            geoPoint.getAltitudeSource(), null, true);
                 } //end gx:track point list
 
                 //end transaction & return trackDB id
@@ -2037,7 +2053,6 @@ public class CrumbDatabase {
 
         return -1;
     }
-
 
     public void addCrumbListener(OnCrumbListener l) {
         if (!_listeners.contains(l))
@@ -2055,9 +2070,6 @@ public class CrumbDatabase {
             l.onCrumbAdded(trackId, c);
 
     }
-
-
-
 
     class Handler implements Runnable {
 
@@ -2091,7 +2103,8 @@ public class CrumbDatabase {
                 try {
                     // batch process the crumbs for efficiency
                     Thread.sleep(500);
-                } catch (Exception ignored) { }
+                } catch (Exception ignored) {
+                }
 
                 synchronized (CrumbDatabase.this) {
                     if (crumbsToProcess.size() < 1) {
@@ -2101,7 +2114,8 @@ public class CrumbDatabase {
                         }
                         continue;
                     }
-                    localCrumbsToProcess.addAll(CrumbDatabase.this.crumbsToProcess);
+                    localCrumbsToProcess
+                            .addAll(CrumbDatabase.this.crumbsToProcess);
                     CrumbDatabase.this.crumbsToProcess.clear();
                 }
 
@@ -2116,11 +2130,10 @@ public class CrumbDatabase {
                             GeoPoint gp = c.getPoint();
                             double bearing = c.bearing;
                             double speed = c.speed;
-                            String geopointSource =
-                                    c.getMetaString("tmpgpSource", GeoPointMetaData.UNKNOWN);
-                            String altitudeSource =
-                                    c.getMetaString("tmpaltSource", GeoPointMetaData.UNKNOWN);
-
+                            String geopointSource = c.getMetaString(
+                                    "tmpgpSource", GeoPointMetaData.UNKNOWN);
+                            String altitudeSource = c.getMetaString(
+                                    "tmpaltSource", GeoPointMetaData.UNKNOWN);
 
                             try {
                                 insertStmt.bind(1, trackId);
@@ -2159,9 +2172,58 @@ public class CrumbDatabase {
             }
             try {
                 insertStmt.close();
-            } catch (Exception ignored) { }
+            } catch (Exception ignored) {
+            }
 
             CrumbDatabase.this.worker = null;
+        }
+
+        void insert(Crumb c) {
+            synchronized (lock) {
+                try {
+                    crumbdb.beginTransaction();
+                    int trackId = c.trackDBID;
+                    long timestamp = c.timestamp;
+                    GeoPoint gp = c.getPoint();
+                    double bearing = c.bearing;
+                    double speed = c.speed;
+                    String geopointSource = c.getMetaString("tmpgpSource",
+                            GeoPointMetaData.UNKNOWN);
+                    String altitudeSource = c.getMetaString("tmpaltSource",
+                            GeoPointMetaData.UNKNOWN);
+
+                    try {
+                        insertStmt.bind(1, trackId);
+                        insertStmt.bind(2, timestamp);
+                        insertStmt.bind(3, gp.getLatitude());
+                        insertStmt.bind(4, gp.getLongitude());
+                        insertStmt.bind(5, gp.getAltitude());
+                        insertStmt.bind(6, gp.getCE());
+                        insertStmt.bind(7, gp.getLE());
+                        insertStmt.bind(8, bearing);
+                        insertStmt.bind(9, speed);
+                        insertStmt.bind(10, geopointSource);
+                        insertStmt.bind(11, altitudeSource);
+                        insertStmt.bind(12, gp.getLongitude());
+                        insertStmt.bind(13, gp.getLatitude());
+                        insertStmt.execute();
+                    } finally {
+                        insertStmt.clearBindings();
+                    }
+                    crumbdb.setTransactionSuccessful();
+                } catch (Exception e) {
+                    Log.d(TAG, "transaction error", e);
+                } finally {
+                    try {
+                        crumbdb.endTransaction();
+                        //Log.d(TAG, "success processing: " +
+                        //        (SystemClock.elapsedRealtime() - start));
+                    } catch (Exception e) {
+                        Log.d(TAG, "end transaction error", e);
+                        endTransactionError = true;
+                    }
+                }
+            }
         }
     }
 }

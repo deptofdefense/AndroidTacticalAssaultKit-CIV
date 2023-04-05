@@ -1,4 +1,4 @@
-﻿
+﻿#ifdef MSVC
 #include "renderer/GL.h"
 
 #include "feature/Style.h"
@@ -260,3 +260,4 @@ TAKErr GLBatchPolygon3::projectVertices(const float** result, const GLGlobeBase&
 
     return code;
 }
+#endif

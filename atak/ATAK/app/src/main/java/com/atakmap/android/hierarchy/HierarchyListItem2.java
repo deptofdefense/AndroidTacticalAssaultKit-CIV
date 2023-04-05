@@ -124,5 +124,4 @@ public interface HierarchyListItem2 extends HierarchyListItem {
      */
     double[] getDropDownSize();
 
-    /**************************************************************************/
 }

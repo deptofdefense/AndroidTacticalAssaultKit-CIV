@@ -4,8 +4,11 @@ package com.atakmap.android.image.quickpic;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
+import android.view.View;
 import android.widget.Toast;
 
+import com.atakmap.android.gui.TileButtonDialog;
 import com.atakmap.android.image.ExifHelper;
 import com.atakmap.android.image.ImageActivity;
 import com.atakmap.android.image.ImageContainer;
@@ -19,7 +22,9 @@ import com.atakmap.android.maps.Marker;
 import com.atakmap.android.missionpackage.api.MissionPackageApi;
 import com.atakmap.android.missionpackage.file.MissionPackageManifest;
 import com.atakmap.android.missionpackage.file.NameValuePair;
+import com.atakmap.android.preference.AtakPreferences;
 import com.atakmap.android.tools.menu.ActionBroadcastData;
+import com.atakmap.android.update.AppMgmtUtils;
 import com.atakmap.android.user.PlacePointTool;
 import com.atakmap.android.util.AttachmentManager;
 import com.atakmap.android.util.NotificationUtil;
@@ -55,6 +60,8 @@ public class QuickPicReceiver extends BroadcastReceiver {
 
     public static final String QUICK_PIC_IMAGE_TYPE = "b-i-x-i";
 
+    public static final String CAMERA_CHOOSER_PREF = "quickpic.camera_chooser";
+
     /**
      * Intent/Action to generate once image is captured
      */
@@ -63,8 +70,9 @@ public class QuickPicReceiver extends BroadcastReceiver {
 
     private MapView _mapView;
     private static volatile MapGroup _quickPicMapGroup;
+    private final AtakPreferences preferences;
 
-    @ModifierApi(since = "4.5", target="4.8", modifiers={})
+    @ModifierApi(since = "4.5", target = "4.8", modifiers = {})
     public QuickPicReceiver(Context context, MapView mapView) {
         _mapView = mapView;
 
@@ -80,6 +88,8 @@ public class QuickPicReceiver extends BroadcastReceiver {
                 }
             }
         }
+
+        preferences = new AtakPreferences(mapView.getContext());
     }
 
     public static MapGroup getMapGroup() {
@@ -104,10 +114,8 @@ public class QuickPicReceiver extends BroadcastReceiver {
                             "jpg");
             if (img != null) {
                 File dir = img.getParentFile();
-                ImageActivity ia = new ImageActivity(_mapView, img, uid,
-                        _callbackIntent, IOProviderFactory.exists(dir)
-                                || IOProviderFactory.mkdirs(dir));
-                ia.start();
+
+                chooser(_mapView, preferences, img, uid, dir, _callbackIntent);
             }
         }
 
@@ -248,7 +256,7 @@ public class QuickPicReceiver extends BroadcastReceiver {
                     notificationIntent, true);
 
             Log.d(TAG, "Updated notification for: " + callsign + ", "
-                    + manifest.toString());
+                    + manifest);
         }
 
         // View quick-pic image
@@ -322,6 +330,85 @@ public class QuickPicReceiver extends BroadcastReceiver {
             AtakBroadcast.getInstance().sendBroadcast(new Intent(
                     ImageDropDownReceiver.IMAGE_REFRESH)
                             .putExtra("uid", uid));
+        }
+    }
+
+    /**
+     * Chooser for the camera since on Android 11 you can only launch the system camera.
+     *
+     * @param _mapView the mapview to use
+     * @param preferences the preferences
+     * @param img the directory or file to capture the image into
+     * @param uid the uid associated with the capture
+     * @param dir the parent directory of the img
+     * @param intent the broadcast data to return when the image is taken.
+     */
+    public static void chooser(MapView _mapView,
+            AtakPreferences preferences,
+            File img,
+            String uid,
+            File dir,
+            ActionBroadcastData intent) {
+
+        ImageActivity ia = new ImageActivity(_mapView, img, uid, intent,
+                dir != null && (IOProviderFactory.exists(dir)
+                        || IOProviderFactory.mkdirs(dir)));
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+            ia.start();
+        } else if (!AppMgmtUtils.isInstalled(_mapView.getContext(),
+                "com.partech.geocamera")) {
+            // blank this out so that when a user uninstalls and reinstalls TAK GeoCam
+            // after using the system camera for a while, it then forces the user to be
+            // repompted.
+            preferences.remove(CAMERA_CHOOSER_PREF);
+            ia.start();
+        } else {
+            String currentCameraApp = preferences.get(CAMERA_CHOOSER_PREF,
+                    "Prompt");
+            if (currentCameraApp.equals("System")) {
+                ia.start();
+            } else if (currentCameraApp.equals("TakGeoCam")) {
+                ia.useTakGeoCam(true);
+                ia.start();
+            } else {
+                TileButtonDialog tileButtonDialog = new TileButtonDialog(
+                        _mapView);
+                tileButtonDialog.setTitle(R.string.android_11_warning);
+                tileButtonDialog.setMessage(
+                        "Android 11 no longer allows for custom camera apps to be seamlessly used by applications.  Do you want to make use of TAK GeoCam or the System Camera application?");
+                TileButtonDialog.TileButton tb = tileButtonDialog.createButton(
+                        _mapView.getContext().getDrawable(R.drawable.camera),
+                        "System Camera");
+                tb.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        preferences.set(CAMERA_CHOOSER_PREF, "System");
+                        ia.start();
+                    }
+                });
+                tileButtonDialog.addButton(tb);
+
+                tb = tileButtonDialog.createButton(
+                        AppMgmtUtils.getAppDrawable(_mapView.getContext(),
+                                "com.partech.geocamera"),
+                        "TAK GeoCam");
+                tb.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        preferences.set(CAMERA_CHOOSER_PREF, "TakGeoCam");
+                        ia.useTakGeoCam(true);
+                        ia.start();
+                    }
+                });
+                tileButtonDialog.addButton(tb);
+                _mapView.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        tileButtonDialog.show();
+                    }
+                });
+            }
         }
     }
 

@@ -170,7 +170,7 @@ public class GeoFenceManager implements GeoFenceComponent.GeoFenceListener,
             return;
         }
 
-        Log.d(TAG, "onFenceAdded: " + monitor.toString());
+        Log.d(TAG, "onFenceAdded: " + monitor);
 
         //get distance from user and gather initial monitor list
         //only items in this range at "this" moment will be monitored (for performance)
@@ -387,7 +387,7 @@ public class GeoFenceManager implements GeoFenceComponent.GeoFenceListener,
             }
         } else {
             //nothing changed? just set fence
-            Log.d(TAG, "onFenceChanged: " + fence.toString());
+            Log.d(TAG, "onFenceChanged: " + fence);
             monitor.setFence(fence);
         }
     }
@@ -543,7 +543,7 @@ public class GeoFenceManager implements GeoFenceComponent.GeoFenceListener,
 
             //check that fence is still valid e.g. if edited down to 2 points
             if (!monitor.isValid()) {
-                Log.w(TAG, "Fence no longer valid: " + monitor.toString());
+                Log.w(TAG, "Fence no longer valid: " + monitor);
                 _toRemove.add(monitor);
                 continue;
             }
@@ -552,7 +552,7 @@ public class GeoFenceManager implements GeoFenceComponent.GeoFenceListener,
             //Note, we also have this check due to inconsistent behavior across Shapes...
             if (_group.deepFindItem("uid",
                     monitor.getItem().getUID()) == null) {
-                Log.w(TAG, "Fence no longer exists: " + monitor.toString());
+                Log.w(TAG, "Fence no longer exists: " + monitor);
                 _toRemove.add(monitor);
                 continue;
             }
@@ -603,7 +603,7 @@ public class GeoFenceManager implements GeoFenceComponent.GeoFenceListener,
                 .getMonitoredTypes() == GeoFence.MonitoredTypes.Custom
                 ||
                 !monitor.getFence().isTracking()) {
-            Log.d(TAG, "Skipping re-scan of " + monitor.toString());
+            Log.d(TAG, "Skipping re-scan of " + monitor);
             return;
         }
 
@@ -616,11 +616,11 @@ public class GeoFenceManager implements GeoFenceComponent.GeoFenceListener,
         }
 
         //long start = android.os.SystemClock.elapsedRealtime();
-        Log.d(TAG, "Re-scanning " + monitor.toString());
+        Log.d(TAG, "Re-scanning " + monitor);
 
         List<PointMapItem> itemsToScan = monitor.getRescanItems();
         if (FileSystemUtils.isEmpty(itemsToScan)) {
-            Log.d(TAG, "No items to re-scan for " + monitor.toString());
+            Log.d(TAG, "No items to re-scan for " + monitor);
             return;
         }
 
@@ -664,7 +664,7 @@ public class GeoFenceManager implements GeoFenceComponent.GeoFenceListener,
         } else if (count > 0) {
             Log.d(TAG,
                     "Added " + count + " items to monitor: "
-                            + monitor.toString());
+                            + monitor);
             //toast(_context.getString(
             //        R.string.geofence_now_monitoring_additional_items,
             //        count, ShapeUtils.getShapeName(monitor.getItem())));
@@ -768,7 +768,7 @@ public class GeoFenceManager implements GeoFenceComponent.GeoFenceListener,
             }
             item.removeMetaData(GeoFenceConstants.MARKER_MONITOR_UIDS);
             Log.w(TAG, "Selected no items currently inside fence: "
-                    + monitor.toString());
+                    + monitor);
 
             // people just want to know if the fence has been breached not when a item is being considered
 
@@ -781,7 +781,7 @@ public class GeoFenceManager implements GeoFenceComponent.GeoFenceListener,
                     uids);
             Log.d(TAG, "onItemsSelected Monitoring " + selected.size()
                     + " items currently inside fence search area: "
-                    + monitor.toString());
+                    + monitor);
 
             // people just want to know if the fence has been breached not when a item is being considered
             //notifyMonitoring(selected.size(), monitor);

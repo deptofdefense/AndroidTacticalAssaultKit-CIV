@@ -862,7 +862,7 @@ public class DangerCloseAdapter extends BaseAdapter
                         sBuilder.append("\n");
 
                     sBuilder.append(i.toString());
-                    Log.d(TAG, "write: " + sBuilder.toString());
+                    Log.d(TAG, "write: " + sBuilder);
                     writer.write(sBuilder.toString());
 
                 }
@@ -1061,7 +1061,8 @@ public class DangerCloseAdapter extends BaseAdapter
                             new File(location + item));
                     transformer.transform(source, result);
 
-                } catch (ParserConfigurationException | TransformerException | SAXException e) {
+                } catch (ParserConfigurationException | TransformerException
+                        | SAXException e) {
                     Log.w(TAG, e);
                 }
 
@@ -1203,7 +1204,8 @@ public class DangerCloseAdapter extends BaseAdapter
 
             customNode = custom;
 
-        } catch (ParserConfigurationException | IOException | TransformerException | SAXException e) {
+        } catch (ParserConfigurationException | IOException
+                | TransformerException | SAXException e) {
             Log.e(TAG, "error: ", e);
         }
     }
@@ -1222,7 +1224,8 @@ public class DangerCloseAdapter extends BaseAdapter
                 checkEachItemForActiveStatus(dom.getChildNodes());
                 flightsNode = dom.getFirstChild(); // OSRMunitions
 
-            } catch (ParserConfigurationException | SAXException | IOException e) {
+            } catch (ParserConfigurationException | SAXException
+                    | IOException e) {
                 Log.e(TAG, "error: ", e);
             }
         }

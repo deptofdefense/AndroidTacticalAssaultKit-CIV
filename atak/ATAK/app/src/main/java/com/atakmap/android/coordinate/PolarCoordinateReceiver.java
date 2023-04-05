@@ -37,7 +37,6 @@ import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.conversions.SpanUtilities;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.conversion.EGM96;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
@@ -244,7 +243,8 @@ public class PolarCoordinateReceiver extends BroadcastReceiver implements
                         //init UI
                         _bearingText.setText(TWO_DEC_FORMAT.format(bearing));
 
-                         final double slantRange = GeoCalculations.slantDistanceTo(
+                        final double slantRange = GeoCalculations
+                                .slantDistanceTo(
                                         _relativeMarker.getPoint(),
                                         _destMarker.getPoint());
                         if (!Double.isNaN(slantRange)) {

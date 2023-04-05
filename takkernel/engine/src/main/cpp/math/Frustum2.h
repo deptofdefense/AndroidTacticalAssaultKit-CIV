@@ -30,6 +30,13 @@ namespace TAK
                 void update(const Matrix2 &proj, const Matrix2 &model) NOTHROWS;
                 bool intersects(const Sphere2 &s) const NOTHROWS;
                 bool intersects(const AABB &a) const NOTHROWS;
+                /**
+                 * @param inside    Returns whether the AABB is inside the frustum or intersects
+                 *                  one of its planes
+                 * @param a         An AABB
+                 * @return  <code>true</code> if the AABB intersects the frustum
+                 */
+                bool intersects(bool &inside, const AABB &a) const NOTHROWS;
                 double depthIfInside(const Sphere2 &s) const NOTHROWS;
                 Matrix2 getClip() const NOTHROWS;
             private :

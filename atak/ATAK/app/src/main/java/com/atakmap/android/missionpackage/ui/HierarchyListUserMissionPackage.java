@@ -120,7 +120,7 @@ public class HierarchyListUserMissionPackage extends HierarchyListUserSelect {
         }
 
         if (FileSystemUtils.isEmpty(exports)) {
-            Log.w(TAG, "No exportables selected (2) " + marshal.toString());
+            Log.w(TAG, "No exportables selected (2) " + marshal);
             NotificationUtil.getInstance().postNotification(
                     R.drawable.ic_network_error_notification_icon,
                     NotificationUtil.RED,

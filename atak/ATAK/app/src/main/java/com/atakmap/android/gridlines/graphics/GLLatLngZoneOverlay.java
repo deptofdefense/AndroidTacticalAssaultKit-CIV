@@ -4,7 +4,6 @@ package com.atakmap.android.gridlines.graphics;
 import com.atakmap.android.maps.Polyline;
 import com.atakmap.android.maps.graphics.GLPolyline;
 import com.atakmap.android.maps.graphics.GLSegmentFloatingLabel;
-import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
@@ -168,8 +167,8 @@ public class GLLatLngZoneOverlay extends GLZonesOverlay {
             p = start;
 
             do {
-                d = dist(p.getLongitude(), p.getLatitude(), end.getLongitude(),
-                        end.getLatitude());
+                d = MathUtils.distance(p.getLongitude(), p.getLatitude(),
+                        end.getLongitude(), end.getLatitude());
                 if (d <= threshold)
                     break;
                 double dx = (end.getLongitude() - p.getLongitude()) / d;
@@ -288,13 +287,6 @@ public class GLLatLngZoneOverlay extends GLZonesOverlay {
                 }
             }
         }
-    }
-
-    /** @deprecated use {@link @drawLinesImpl(GLMapView, int)} */
-    @Deprecated
-    @DeprecatedApi(since = "4.3", forRemoval = true, removeAt = "4.6")
-    protected void drawLinesImpl(GLMapView map) {
-        drawLinesImpl(map, GLMapView.RENDER_PASS_SURFACE);
     }
 
     protected void drawLinesImpl(GLMapView map, int renderPass) {

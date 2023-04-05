@@ -55,7 +55,7 @@ public class MissionPackageEventHandler implements IMissionPackageEventHandler {
 
         if (group.getManifest().hasFile(content)) {
             Log.i(TAG,
-                    group.toString() + " already contains filename: "
+                    group + " already contains filename: "
                             + file.getName());
             Toast.makeText(_context, _context.getString(
                     R.string.mission_package_already_contains_file,
@@ -66,7 +66,7 @@ public class MissionPackageEventHandler implements IMissionPackageEventHandler {
         }
 
         // add file to package
-        Log.d(TAG, "Adding file: " + content.toString());
+        Log.d(TAG, "Adding file: " + content);
         return group.addFile(content, file);
     }
 
@@ -90,7 +90,7 @@ public class MissionPackageEventHandler implements IMissionPackageEventHandler {
         }
 
         // unzip Mission Package file
-        Log.d(TAG, "Exracting file: " + content.toString());
+        Log.d(TAG, "Exracting file: " + content);
         String parent = FileSystemUtils
                 .sanitizeWithSpacesAndSlashes(MissionPackageFileIO
                         .getMissionPackageFilesPath(atakDataDir
@@ -169,7 +169,7 @@ public class MissionPackageEventHandler implements IMissionPackageEventHandler {
                 // check if we will be overwriting an existing file
                 File destPath = sorter.getDestinationPath(file);
                 if (destPath == null) {
-                    Log.w(TAG, sorter.toString()
+                    Log.w(TAG, sorter
                             + ", Unable to determine destination path for: "
                             + file.getAbsolutePath());
                     continue;
@@ -178,12 +178,12 @@ public class MissionPackageEventHandler implements IMissionPackageEventHandler {
                 // now attempt to sort (i.e. move the file to proper location)
                 if (sorter.beginImport(file, flags)) {
                     Log.d(TAG,
-                            sorter.toString() + ", Sorted: "
+                            sorter + ", Sorted: "
                                     + file.getAbsolutePath() + " to "
                                     + destPath.getAbsolutePath());
                     return destPath.getAbsolutePath();
                 } else
-                    Log.w(TAG, sorter.toString()
+                    Log.w(TAG, sorter
                             + ", Matched, but did not sort: "
                             + file.getAbsolutePath());
             } // end if sorter match was found

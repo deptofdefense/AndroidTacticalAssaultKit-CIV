@@ -6,8 +6,6 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
-import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
 
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.android.update.AppMgmtActivity;
@@ -70,7 +68,6 @@ public class ToolsPreferenceFragment extends AtakPreferenceFragment {
     }
 
     static final List<ToolPreference> prefs = new ArrayList<>();
-    final private List<Preference> removeList = new ArrayList<>();
 
     public ToolsPreferenceFragment() {
         super(R.xml.tools_preferences, R.string.toolPreferences);
@@ -157,60 +154,20 @@ public class ToolsPreferenceFragment extends AtakPreferenceFragment {
             }
         });
 
-        synchronized (this) {
-            removeList.clear();
-        }
-
-        createPreferenceScreen();
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        createPreferenceScreen();
+        Preference specificToolPref = findPreference("specTools");
+        specificToolPref
+                .setOnPreferenceClickListener(new OnPreferenceClickListener() {
+                    @Override
+                    public boolean onPreferenceClick(Preference preference) {
+                        showScreen(new SpecificPreferenceFragment());
+                        return true;
+                    }
+                });
     }
 
     @Override
     public synchronized void onDestroy() {
-        removeList.clear();
         super.onDestroy();
-    }
-
-    private synchronized void createPreferenceScreen() {
-
-        for (Preference r : removeList)
-            removePreference(r);
-        removeList.clear();
-
-        final SharedPreferences _mainControlPrefs = PreferenceManager
-                .getDefaultSharedPreferences(getActivity());
-        for (final ToolPreference tp : prefs) {
-            Preference p = new Preference(getActivity());
-            p.setTitle(tp.title);
-            p.setSummary(tp.summary);
-            p.setKey(tp.key);
-            p.setIcon(tp.icon);
-            p.setOnPreferenceClickListener(new OnPreferenceClickListener() {
-                @Override
-                public boolean onPreferenceClick(final Preference preference) {
-                    showScreen(
-                            tp.pFrag,
-                            getSubTitle(getString(R.string.toolPreferences),
-                                    tp.title));
-                    return true;
-                }
-            });
-            final String statePref = "showPreferenceItem_" + tp.key;
-
-            //Log.d(TAG, "'" + statePref + "'");
-            if (!_mainControlPrefs.getBoolean(statePref, true)) {
-                p.setEnabled(false);
-                p.setShouldDisableView(true);
-            }
-
-            getPreferenceScreen().addPreference(p);
-            removeList.add(p);
-        }
     }
 
 }

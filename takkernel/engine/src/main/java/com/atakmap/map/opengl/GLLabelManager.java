@@ -145,6 +145,9 @@ public class GLLabelManager {
 
     /**
      * Sets the desired offset for a label.
+     * The offset vector is applied after any configured rotation (the
+     * supplied offset vector is considered relative to xyz origin axis that
+     * have been rotated by any configured rotation)
      * @param id the id of the label.
      * @param desiredOffset the desired offset as described by a vector (x, y, z)
      */
@@ -233,8 +236,10 @@ public class GLLabelManager {
 
     /**
      * Sets the fill state for a label (filled or unfilled).
+     * @see #setBackgroundColor(int, int)
      * @param id the id of the label.
-     * @param fill true if the text will be filled or false if it just an outline
+     * @param fill true if the label will be filled with the background color or false if
+     *             just the label text is to be rendered
      */
     public void setFill(int id, boolean fill) {
         setFill(pointer, id, fill);
@@ -259,6 +264,9 @@ public class GLLabelManager {
 
     /**
      * Sets the desired offset for a label.
+     * The offsets are applied after any configured rotation (the
+     * supplied offsets are considered relative to xyz origin axis that
+     * have been rotated by any configured rotation)
      * @param id the id of the label.
      * @param x the desired offset in the x direction
      * @param y the desired offset in the y direction
@@ -278,9 +286,10 @@ public class GLLabelManager {
     }
 
     /**
-     * Given an existing label id, set the background color of the text
+     * Given an existing label id, set the background color.
+     * @see #setFill(int, boolean).
      * @param id the id of the label.
-     * @param color the background color of the text
+     * @param color the background fill color of the label
      */
     public void setBackgroundColor(int id, int color) {
         setBackColor(pointer, id, color);
@@ -297,7 +306,8 @@ public class GLLabelManager {
     }
 
     /**
-     * Given an existing label id, set the size.   
+     * Given an existing label id, set the size.
+     * Obtained size is only meaningful for visible labels.
      * @param id the id of the label.
      * @param sizeRect the preallocated allocated rectangle that is the size of the text fully
      * rendered

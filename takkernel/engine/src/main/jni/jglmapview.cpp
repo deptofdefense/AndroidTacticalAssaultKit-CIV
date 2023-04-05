@@ -61,6 +61,7 @@ namespace
         jfieldID currentScene;
 
         jmethodID dispatchCameraChanged;
+        jmethodID dispatchCameraChangeRequested;
 
         struct
         {
@@ -95,13 +96,14 @@ namespace
         } State_class;
     } GLMapView_class;
 
-    class CameraChangedForwarder : public MapRenderer2::OnCameraChangedListener
+    class CameraChangedForwarder : public MapRenderer3::OnCameraChangedListener2
     {
     public :
         CameraChangedForwarder(JNIEnv &env, jobject impl) NOTHROWS;
         ~CameraChangedForwarder() NOTHROWS;
     public :
         TAKErr onCameraChanged(const MapRenderer2 &renderer) NOTHROWS override;
+        TAKErr onCameraChangeRequested(const MapRenderer2 &renderer) NOTHROWS override;
     private :
         jobject impl;
     };
@@ -143,6 +145,11 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_destruct
   (JNIEnv *env, jclass clazz, jobject mpointer)
 {
     Pointer_destruct<GLGlobeBase>(env, mpointer);
+}
+JNIEXPORT jlong JNICALL Java_com_atakmap_map_opengl_GLMapView_asMapRenderer
+  (JNIEnv *env, jclass jclazz, jlong ptr)
+{
+    return INTPTR_TO_JLONG((MapRenderer2 *)JLONG_TO_INTPTR(GLGlobeBase, ptr));
 }
 JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_render
   (JNIEnv *env, jclass clazz, jlong ptr)
@@ -306,8 +313,12 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_markDirty__J
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return;
     }
-    GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
-    cview->getSurfaceRenderer().markDirty();
+
+    void *ctrl = nullptr;
+    if(cglobe->getControl(&ctrl, SurfaceRendererControl_getType()) != TE_Ok)
+        return;
+    SurfaceRendererControl *surfaceControl = static_cast<SurfaceRendererControl *>(ctrl);
+    surfaceControl->markDirty();
 }
 JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_markDirty__JDDDDZ
   (JNIEnv *env, jclass clazz, jlong ptr, jdouble minX, jdouble minY, jdouble maxX, jdouble maxY, jboolean streaming)
@@ -317,8 +328,11 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_markDirty__JDDDDZ
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return;
     }
-    GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
-    cview->getSurfaceRenderer().markDirty(TAK::Engine::Feature::Envelope2(minX, minY, 0.0, maxX, maxY, 0.0), streaming);
+    void *ctrl = nullptr;
+    if(cglobe->getControl(&ctrl, SurfaceRendererControl_getType()) != TE_Ok)
+        return;
+    SurfaceRendererControl *surfaceControl = static_cast<SurfaceRendererControl *>(ctrl);
+    surfaceControl->markDirty(TAK::Engine::Feature::Envelope2(minX, minY, 0.0, maxX, maxY, 0.0), streaming);
 }
 JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_enableDrawMode
   (JNIEnv *env, jclass clazz, jlong ptr, jint tedm)
@@ -328,8 +342,11 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_enableDrawMode
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return;
     }
-    GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
-    cview->enableDrawMode((TAK::Engine::Model::DrawMode)tedm);
+    void *ctrl = nullptr;
+    if(cglobe->getControl(&ctrl, SurfaceRendererControl_getType()) != TE_Ok)
+        return;
+    SurfaceRendererControl *surfaceControl = static_cast<SurfaceRendererControl *>(ctrl);
+    surfaceControl->enableDrawMode((TAK::Engine::Model::DrawMode)tedm);
 }
 JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_disableDrawMode
   (JNIEnv *env, jclass clazz, jlong ptr, jint tedm)
@@ -339,8 +356,11 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_disableDrawMode
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return;
     }
-    GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
-    cview->disableDrawMode((TAK::Engine::Model::DrawMode)tedm);
+    void *ctrl = nullptr;
+    if(cglobe->getControl(&ctrl, SurfaceRendererControl_getType()) != TE_Ok)
+        return;
+    SurfaceRendererControl *surfaceControl = static_cast<SurfaceRendererControl *>(ctrl);
+    surfaceControl->disableDrawMode((TAK::Engine::Model::DrawMode)tedm);
 }
 JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_GLMapView_isDrawModeEnabled
   (JNIEnv *env, jclass clazz, jlong ptr, jint tedm)
@@ -350,8 +370,11 @@ JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_GLMapView_isDrawModeEnabl
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return false;
     }
-    GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
-    return cview->isDrawModeEnabled((TAK::Engine::Model::DrawMode)tedm);
+    void *ctrl = nullptr;
+    if(cglobe->getControl(&ctrl, SurfaceRendererControl_getType()) != TE_Ok)
+        return false;
+    SurfaceRendererControl *surfaceControl = static_cast<SurfaceRendererControl *>(ctrl);
+    surfaceControl->isDrawModeEnabled((TAK::Engine::Model::DrawMode)tedm);
 }
 JNIEXPORT jint JNICALL Java_com_atakmap_map_opengl_GLMapView_getDrawModeColor
   (JNIEnv *env, jclass clazz, jlong ptr, jint tedm)
@@ -361,8 +384,11 @@ JNIEXPORT jint JNICALL Java_com_atakmap_map_opengl_GLMapView_getDrawModeColor
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return -1;
     }
-    GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
-    return cview->getColor((TAK::Engine::Model::DrawMode)tedm);
+    void *ctrl = nullptr;
+    if(cglobe->getControl(&ctrl, SurfaceRendererControl_getType()) != TE_Ok)
+        return -1;
+    SurfaceRendererControl *surfaceControl = static_cast<SurfaceRendererControl *>(ctrl);
+    return surfaceControl->getColor((TAK::Engine::Model::DrawMode)tedm);
 }
 JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_setDrawModeColor
   (JNIEnv *env, jclass clazz, jlong ptr, jint tedm, jint color)
@@ -372,8 +398,11 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_setDrawModeColor
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return;
     }
-    GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
-    return cview->setColor((TAK::Engine::Model::DrawMode)tedm, color, TAK::Engine::Renderer::Core::ColorControl::Modulate);
+    void *ctrl = nullptr;
+    if(cglobe->getControl(&ctrl, SurfaceRendererControl_getType()) != TE_Ok)
+        return;
+    SurfaceRendererControl *surfaceControl = static_cast<SurfaceRendererControl *>(ctrl);
+    surfaceControl->setColor((TAK::Engine::Model::DrawMode)tedm, color, TAK::Engine::Renderer::Core::ColorControl::Modulate);
 }
 JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_getSurfaceBounds
   (JNIEnv *env, jclass clazz, jlong ptr, jobject msurfaceBounds)
@@ -383,7 +412,11 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_getSurfaceBounds
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return;
     }
-    GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
+
+    void *ctrl = nullptr;
+    if(cglobe->getControl(&ctrl, SurfaceRendererControl_getType()) != TE_Ok)
+        return;
+    SurfaceRendererControl *surfaceControl = static_cast<SurfaceRendererControl *>(ctrl);
 
     struct BoundsWrapper : public TAK::Engine::Port::Collection<TAK::Engine::Feature::Envelope2>
     {
@@ -426,7 +459,35 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_getSurfaceBounds
     BoundsWrapper csurfaceBounds;
     csurfaceBounds.env = env;
     csurfaceBounds.mimpl = msurfaceBounds;
-    cview->getSurfaceBounds(csurfaceBounds);
+    surfaceControl->getSurfaceBounds(csurfaceBounds);
+}
+JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_setCollideRadius
+  (JNIEnv *env, jclass clazz, jlong ptr, jdouble radius)
+{
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return;
+    }
+    void *ctrl = nullptr;
+    if(cglobe->getControl(&ctrl, SurfaceRendererControl_getType()) != TE_Ok)
+        return;
+    SurfaceRendererControl *surfaceControl = static_cast<SurfaceRendererControl *>(ctrl);
+    surfaceControl->setCameraCollisionRadius(radius);
+}
+JNIEXPORT jdouble JNICALL Java_com_atakmap_map_opengl_GLMapView_getCollideRadius
+  (JNIEnv *env, jclass clazz, jlong ptr)
+{
+    GLGlobeBase *cglobe = JLONG_TO_INTPTR(GLGlobeBase, ptr);
+    if(!cglobe) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return 0.0;
+    }
+    void *ctrl = nullptr;
+    if(cglobe->getControl(&ctrl, SurfaceRendererControl_getType()) != TE_Ok)
+        return 0.0;
+    SurfaceRendererControl *surfaceControl = static_cast<SurfaceRendererControl *>(ctrl);
+    return surfaceControl->getCameraCollisionRadius();
 }
 JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_setIlluminationEnabled
   (JNIEnv *env, jclass clazz, jlong ptr, jboolean enabled)
@@ -935,17 +996,6 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_setDisplayMode
         default :
             break;
     }
-    if(type == com_atakmap_map_opengl_GLMapView_IMPL_IFACE) {
-        // no-op
-    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V1) {
-        GLMapView2 *cview = static_cast<GLMapView2 *>(cglobe);
-        cview->view.setProjection(srid);
-    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V2) {
-        GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
-        cview->view.setProjection(srid);
-    } else {
-        // no-op
-    }
 }
 JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_GLMapView_lookAt
   (JNIEnv *env, jclass clazz, jlong ptr, jdouble lat, jdouble lng, jdouble alt, jdouble res, jdouble rot, jdouble tilt, jdouble collision, jint mcollide, jboolean animate, jint type)
@@ -972,32 +1022,13 @@ JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_GLMapView_lookAt
         default :
             return false;
     }
-    if(type == com_atakmap_map_opengl_GLMapView_IMPL_IFACE) {
-        return cglobe->lookAt(
-            TAK::Engine::Core::GeoPoint2(lat, lng, alt, TAK::Engine::Core::AltitudeReference::HAE),
-            res,
-            rot,
-            tilt,
-            ccollide,
-            animate) == TE_Ok;
-    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V1) {
-        GLMapView2 *cview = static_cast<GLMapView2 *>(cglobe);
-        const double mapScale = atakmap::core::AtakMapView_getMapScale(cview->view.getDisplayDpi(), res);
-        cview->view.updateView(atakmap::core::GeoPoint(lat, lng, alt, atakmap::core::AltitudeReference::HAE), mapScale, rot, tilt, NAN, NAN, animate);
-        return true;
-    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V2) {
-        GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
-        return GLGlobe_lookAt(*cview,
-            TAK::Engine::Core::GeoPoint2(lat, lng, alt, TAK::Engine::Core::AltitudeReference::HAE),
-            res,
-            rot,
-            tilt,
-            collision,
-            ccollide,
-            animate) == TE_Ok;
-    } else {
-        return false;
-    }
+    return cglobe->lookAt(
+        TAK::Engine::Core::GeoPoint2(lat, lng, alt, TAK::Engine::Core::AltitudeReference::HAE),
+        res,
+        rot,
+        tilt,
+        ccollide,
+        animate) == TE_Ok;
 }
 JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_GLMapView_lookFrom
   (JNIEnv *env, jclass clazz, jlong ptr, jdouble lat, jdouble lng, jdouble alt, jdouble rot, jdouble elevation, jdouble collision, jint mcollide, jboolean animate, jint type)
@@ -1053,101 +1084,16 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_opengl_GLMapView_getMapSceneModel
         return NULL;
     }
 
-    if(instant) {
-        MapSceneModel2Ptr retval(NULL, NULL);
-        {
-            ReadLock rlock(cglobe->renderPasses0Mutex);
-            retval = MapSceneModel2Ptr(new MapSceneModel2(cglobe->renderPasses[0].scene),
-                                       Memory_deleter_const<MapSceneModel2>);
-        }
-        if(!llOrigin) {
-            // flip forward/inverse matrices
-            retval->inverseTransform.translate(0.0, retval->height, 0.0);
-            retval->inverseTransform.scale(1.0, -1.0, 1.0);
+    TAKErr code(TE_Ok);
+    MapSceneModel2 retval;
+    code = cglobe->getMapSceneModel(&retval, instant, llOrigin ? MapRenderer::LowerLeft : MapRenderer::UpperLeft);
+    if(ATAKMapEngineJNI_checkOrThrow(env, code))
+        return NULL;
 
-
-            retval->forwardTransform.preConcatenate(Matrix2(1.0, 0.0, 0.0, 0.0,
-                                                            0.0, -1.0, 0.0, 0.0,
-                                                            0.0, 0.0, 1.0, 0.0,
-                                                            0.0, 0.0, 0.0, 1.0));
-            retval->forwardTransform.preConcatenate(Matrix2(1.0, 0.0, 0.0, 0.0,
-                                                            0.0, 1.0, 0.0, retval->height,
-                                                            0.0, 0.0, 1.0, 0.0,
-                                                            0.0, 0.0, 0.0, 1.0));
-        }
-
-        return NewPointer(env, std::move(retval));
-    } else {
-        double dpi;
-        std::size_t width;
-        std::size_t height;
-        int srid;
-        GeoPoint2 focus;
-        float focusx, focusy;
-        double rotation;
-        double tilt;
-        double resolution;
-        MapCamera2::Mode mode;
-        if(type == com_atakmap_map_opengl_GLMapView_IMPL_IFACE) {
-            // XXX -
-            return NULL;
-        } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V1) {
-            GLMapView2 *cview = static_cast<GLMapView2 *>(cglobe);
-            atakmap::math::Point<float> focusxy;
-            cview->view.getController()->getFocusPoint(&focusxy);
-            atakmap::core::GeoPoint geolegacy;
-            cview->view.getPoint(&geolegacy);
-            GeoPoint_adapt(&focus, geolegacy);
-            dpi = cview->view.getDisplayDpi();
-            width = (std::size_t)cview->view.getWidth();
-            height = (std::size_t)cview->view.getHeight();
-            srid = cview->view.getProjection();
-            focusx = focusxy.x;
-            focusy = focusxy.y;
-            rotation = cview->view.getMapRotation();
-            tilt = cview->view.getMapTilt();
-            resolution = cview->view.getMapResolution();
-            mode = MapCamera2::Scale;
-        } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V2) {
-            GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
-            atakmap::math::Point<float> focusxy;
-            cview->view.getController()->getFocusPoint(&focusxy);
-            atakmap::core::GeoPoint geolegacy;
-            cview->view.getPoint(&geolegacy);
-            GeoPoint_adapt(&focus, geolegacy);
-            dpi = cview->view.getDisplayDpi();
-            width = (std::size_t)cview->view.getWidth();
-            height = (std::size_t)cview->view.getHeight();
-            srid = cview->view.getProjection();
-            focusx = focusxy.x;
-            focusy = focusxy.y;
-            rotation = cview->view.getMapRotation();
-            tilt = cview->view.getMapTilt();
-            resolution = cview->view.getMapResolution();
-            mode = MapCamera2::Perspective;
-        } else {
-            return NULL;
-        }
-
-        MapSceneModel2Ptr retval(new MapSceneModel2(dpi,
-                                                    width,
-                                                    height,
-                                                    srid,
-                                                    focus,
-                                                    focusx, focusy,
-                                                    rotation,
-                                                    tilt,
-                                                    resolution,
-                                                    mode),
-                                 Memory_deleter_const<MapSceneModel2>);
-        // flip forward/inverse matrices
-        if(llOrigin)
-            GLGlobeBase_glScene(*retval);
-
-        return NewPointer(env, std::move(retval));
-    }
+    // XXX - can we return raw pointer here??? are there any cases where we're seeing promoted
+    //       `shared_ptr` usage?
+    return NewPointer(env, MapSceneModel2Ptr(new MapSceneModel2(retval), Memory_deleter_const<MapSceneModel2>));
 }
-
 JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_GLMapView_isAnimating
   (JNIEnv *env, jclass clazz, jlong ptr)
 {
@@ -1167,17 +1113,8 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_setFocusPointOffset
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return;
     }
-    if(type == com_atakmap_map_opengl_GLMapView_IMPL_IFACE) {
-        // no-op
-    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V1) {
-        GLMapView2 *cview = static_cast<GLMapView2 *>(cglobe);
-        cview->view.setFocusPointOffset(x, -1.0f*y);
-    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V2) {
-        GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
-        cview->view.setFocusPointOffset(x, -1.0f*y);
-    } else {
-        // no-op
-    }
+
+    cglobe->setFocusPointOffset(x, y);
 }
 JNIEXPORT jfloat JNICALL Java_com_atakmap_map_opengl_GLMapView_getFocusPointOffsetX
   (JNIEnv *env, jclass clazz, jlong ptr, jint type)
@@ -1187,21 +1124,12 @@ JNIEXPORT jfloat JNICALL Java_com_atakmap_map_opengl_GLMapView_getFocusPointOffs
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return 0.0f;
     }
-    if(type == com_atakmap_map_opengl_GLMapView_IMPL_IFACE) {
-        return 0.0f;
-    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V1) {
-        GLMapView2 *cview = static_cast<GLMapView2 *>(cglobe);
-        atakmap::math::Point<float> focus;
-        cview->view.getController()->getFocusPoint(&focus);
-        return focus.x-(cview->view.getWidth()/2.0f);
-    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V2) {
-        GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
-        atakmap::math::Point<float> focus;
-        cview->view.getController()->getFocusPoint(&focus);
-        return focus.x-(cview->view.getWidth()/2.0f);
-    } else {
-        return 0.0f;
-    }
+
+    float offx;
+    float offy;
+    cglobe->getFocusPointOffset(&offx, &offy);
+
+    return offx;
 }
 JNIEXPORT jfloat JNICALL Java_com_atakmap_map_opengl_GLMapView_getFocusPointOffsetY
   (JNIEnv *env, jclass clazz, jlong ptr, jint type)
@@ -1211,21 +1139,12 @@ JNIEXPORT jfloat JNICALL Java_com_atakmap_map_opengl_GLMapView_getFocusPointOffs
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return 0.0f;
     }
-    if(type == com_atakmap_map_opengl_GLMapView_IMPL_IFACE) {
-        return 0.0f;
-    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V1) {
-        GLMapView2 *cview = static_cast<GLMapView2 *>(cglobe);
-        atakmap::math::Point<float> focus;
-        cview->view.getController()->getFocusPoint(&focus);
-        return (cview->view.getHeight()/2.0f) - focus.y;
-    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V2) {
-        GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
-        atakmap::math::Point<float> focus;
-        cview->view.getController()->getFocusPoint(&focus);
-        return (cview->view.getHeight()/2.0f) - focus.y;
-    } else {
-        return 0.0f;
-    }
+
+    float offx;
+    float offy;
+    cglobe->getFocusPointOffset(&offx, &offy);
+
+    return offy;
 }
 JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_setSize
   (JNIEnv *env, jclass clazz, jlong ptr, jint width, jint height, jint type)
@@ -1235,17 +1154,7 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_setSize
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return;
     }
-    if(type == com_atakmap_map_opengl_GLMapView_IMPL_IFACE) {
-        cglobe->setSurfaceSize(width, height);
-    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V1) {
-        GLMapView2 *cview = static_cast<GLMapView2 *>(cglobe);
-        cview->view.setSize(width, height);
-    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V2) {
-        GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
-        cview->view.setSize(width, height);
-    } else {
-        // no-op
-    }
+    cglobe->setSurfaceSize(width, height);
 }
 JNIEXPORT jlong JNICALL Java_com_atakmap_map_opengl_GLMapView_addCameraChangedListener
   (JNIEnv *env, jclass clazz, jlong ptr, jobject mview)
@@ -1257,7 +1166,7 @@ JNIEXPORT jlong JNICALL Java_com_atakmap_map_opengl_GLMapView_addCameraChangedLi
     }
 
     std::unique_ptr<CameraChangedForwarder> clistener(new CameraChangedForwarder(*env, mview));
-    cglobe->addOnCameraChangedListener(clistener.get());
+    cglobe->addOnCameraChangedListener((MapRenderer3::OnCameraChangedListener2 *)clistener.get());
     return INTPTR_TO_JLONG(clistener.release());
 }
 JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_removeCameraChangedListener
@@ -1270,7 +1179,7 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_removeCameraChanged
         return;
     }
     if(cglobe)
-        cglobe->removeOnCameraChangedListener(clistener.get());
+        cglobe->removeOnCameraChangedListener((MapRenderer3::OnCameraChangedListener2 *)clistener.get());
 }
 JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_setDisplayDpi
   (JNIEnv *env, jclass clazz, jlong ptr, jdouble dpi, jint type)
@@ -1280,17 +1189,7 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_setDisplayDpi
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return;
     }
-    if(type == com_atakmap_map_opengl_GLMapView_IMPL_IFACE) {
-        cglobe->displayDpi = dpi;
-    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V1) {
-        GLMapView2 *cview = static_cast<GLMapView2 *>(cglobe);
-        cview->view.setDisplayDpi(dpi);
-    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V2) {
-        GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
-        cview->view.setDisplayDpi(dpi);
-    } else {
-        // no-op
-    }
+    cglobe->displayDpi = dpi;
 }
 JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_GLMapView_inverse
   (JNIEnv *env, jclass clazz, jlong ptr, jdouble x, jdouble y, jdouble z, jint mmode, jobject mlla)
@@ -1346,17 +1245,8 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_setElevationExagger
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return;
     }
-    if(type == com_atakmap_map_opengl_GLMapView_IMPL_IFACE) {
-        cglobe->elevationScaleFactor = factor;
-    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V1) {
-        GLMapView2 *cview = static_cast<GLMapView2 *>(cglobe);
-        cview->view.setElevationExaggerationFactor(factor);
-    } else if(type == com_atakmap_map_opengl_GLMapView_IMPL_V2) {
-        GLGlobe *cview = static_cast<GLGlobe *>(cglobe);
-        cview->view.setElevationExaggerationFactor(factor);
-    } else {
-        // no-op
-    }
+
+    cglobe->elevationScaleFactor = factor;
 }
 JNIEXPORT jdouble JNICALL Java_com_atakmap_map_opengl_GLMapView_getElevationExaggerationFactor
   (JNIEnv *env, jclass clazz, jlong ptr)
@@ -1503,6 +1393,22 @@ namespace
         env->CallVoidMethod(limpl, GLMapView_class.dispatchCameraChanged);
         return TE_Ok;
     }
+    TAKErr CameraChangedForwarder::onCameraChangeRequested(const MapRenderer2 &renderer) NOTHROWS
+    {
+        if(!impl)
+            return TE_Done;
+        LocalJNIEnv env;
+        // check if reference was cleared
+        Java::JNILocalRef limpl(*env, env->NewLocalRef(impl));
+        if(ATAKMapEngineJNI_equals(env, limpl, NULL)) {
+            env->DeleteWeakGlobalRef(impl);
+            impl = NULL;
+            return TE_Done;
+        }
+        // dispatch camera changed
+        env->CallVoidMethod(limpl, GLMapView_class.dispatchCameraChangeRequested);
+        return TE_Ok;
+    }
 
     bool checkInit(JNIEnv &env) NOTHROWS
     {
@@ -1562,6 +1468,7 @@ namespace
 #undef SET_FIELD_DEFINITION
 
         GLMapView_class.dispatchCameraChanged = env.GetMethodID(GLMapView_class.id, "dispatchCameraChanged", "()V");
+        GLMapView_class.dispatchCameraChangeRequested = env.GetMethodID(GLMapView_class.id, "dispatchCameraChangeRequested", "()V");
 
         return true;
     }

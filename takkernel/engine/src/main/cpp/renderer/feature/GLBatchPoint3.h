@@ -106,6 +106,7 @@ namespace TAK {
                     double screen_x;
                     double screen_y;
                     double altitude;
+                    double terrainEl;
                     double posProjectedEl;
                     int posProjectedSrid;
                     Math::Point2<double> posProjected;

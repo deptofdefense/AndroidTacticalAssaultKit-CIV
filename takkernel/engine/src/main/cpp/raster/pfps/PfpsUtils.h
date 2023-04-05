@@ -1,6 +1,7 @@
 #ifndef ATAKMAP_RASTER_PFPSUTILS_H_INCLUDED
 #define ATAKMAP_RASTER_PFPSUTILS_H_INCLUDED
 
+#include <climits>
 #include "PfpsMapType.h"
 #include "raster/mosaic/ATAKMosaicDatabase.h"
 

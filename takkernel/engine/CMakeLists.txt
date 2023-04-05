@@ -23,13 +23,13 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/../engine/cmake/support/conan.cmake)
 # Required conan packages. Generates conan file as well as cmake find package scripts.
 if(NOT ANDROID)
     conan_cmake_configure(REQUIRES
-                            GLES-stub/1.1.0
+                            GLES-stub/2.0.0
                             khronos/1.0
                             stl-soft/1.9.119
                             tinygltf-tak/2.4.1
                             tinygltfloader-tak/0.9.5
-                            ttp-dist/2.5.1
-                            libLAS/1.8.2b1
+                            ttp-dist/2.6.1
+                            libLAS/1.8.2c
                           GENERATORS
                             cmake_find_package)
 else()
@@ -37,8 +37,8 @@ else()
                             stl-soft/1.9.119
                             tinygltf-tak/2.4.1
                             tinygltfloader-tak/0.9.5
-                            ttp-dist/2.5.1
-                            libLAS/1.8.2b1
+                            ttp-dist/2.6.1
+                            libLAS/1.8.2c
                           GENERATORS
                             cmake_find_package)
 endif()

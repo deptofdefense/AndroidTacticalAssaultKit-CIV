@@ -2,12 +2,15 @@
 
 #include "elevation/ElevationChunkFactory.h"
 #include "elevation/ElevationData.h"
+#include "elevation/MultiplexingElevationChunkCursor.h"
 #include "formats/dted/DtedSampler.h"
+#include "port/STLListAdapter.h"
 #include "port/StringBuilder.h"
 #include "util/IO2.h"
 #include "util/Memory.h"
 
 #include <algorithm>
+#include <list>
 
 using namespace TAK::Engine::Formats::DTED;
 
@@ -75,7 +78,13 @@ const char *DtedElevationSource::getName() const NOTHROWS
 }
 TAKErr DtedElevationSource::query(ElevationChunkCursorPtr &value, const QueryParameters &params) NOTHROWS
 {
-    value = ElevationChunkCursorPtr(new CursorImpl(dir_, params), Memory_deleter_const<ElevationChunkCursor, CursorImpl>);
+    if(!params.flags || (*params.flags)&ElevationData::MODEL_TERRAIN) {
+        value = ElevationChunkCursorPtr(new CursorImpl(dir_, params), Memory_deleter_const<ElevationChunkCursor, CursorImpl>);
+    } else {
+        std::list<std::shared_ptr<ElevationChunkCursor>> empty;
+        TAK::Engine::Port::STLListAdapter<std::shared_ptr<ElevationChunkCursor>> empty_w(empty);
+        value = ElevationChunkCursorPtr(new MultiplexingElevationChunkCursor(empty_w), Memory_deleter_const<ElevationChunkCursor, MultiplexingElevationChunkCursor>);
+    }
     return TE_Ok;
 }
 Envelope2 DtedElevationSource::getBounds() const NOTHROWS

@@ -43,4 +43,8 @@ public interface IMapMenuButtonWidget extends IRadialButtonWidget {
     boolean isDisabled();
 
     float getLayoutWeight();
+    default void delayShow(int delay) {}
+    default boolean isBackButton() { return false; }
+    default boolean isDelaying() { return false; }
+    default float getDelayAlpha() { return 1.f; }
 }

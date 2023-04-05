@@ -190,7 +190,7 @@ public class MissionPackageContent extends MissionPackageConfiguration {
             parcel.writeString(_manifestUid);
             parcel.writeInt(_ignore ? 1 : 0);
         } else
-            Log.w(TAG, "cannot parcel invalid: " + toString());
+            Log.w(TAG, "cannot parcel invalid: " + this);
     }
 
     public static final Parcelable.Creator<MissionPackageContent> CREATOR = new Parcelable.Creator<MissionPackageContent>() {

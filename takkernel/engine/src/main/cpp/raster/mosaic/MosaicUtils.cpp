@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "MosaicUtils.h"
 #include "raster/PrecisionImageryFactory.h"
 #include "raster/pfps/PfpsUtils.h"
@@ -285,3 +286,4 @@ namespace atakmap {
         }
     }
 }
+#endif

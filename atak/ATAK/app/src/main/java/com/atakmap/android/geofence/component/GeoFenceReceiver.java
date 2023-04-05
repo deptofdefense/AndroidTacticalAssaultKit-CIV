@@ -226,7 +226,7 @@ public class GeoFenceReceiver extends BroadcastReceiver implements
             }
 
             //Store in DB
-            Log.d(TAG, "Adding received GeoFence: " + fence.toString());
+            Log.d(TAG, "Adding received GeoFence: " + fence);
             GeoFenceDatabase.InsertOrUpdateResult result = _database
                     .insertOrUpdate(fence);
             switch (result) {
@@ -242,7 +242,7 @@ public class GeoFenceReceiver extends BroadcastReceiver implements
                 default:
                 case Failure:
                     Log.w(TAG,
-                            "Failed to insert or update: " + fence.toString());
+                            "Failed to insert or update: " + fence);
             }
 
             //now notify user
@@ -546,7 +546,7 @@ public class GeoFenceReceiver extends BroadcastReceiver implements
                             public void onClick(DialogInterface dialog,
                                     int id) {
                                 Log.d(TAG, "Dismissing alerts for: "
-                                        + monitor.toString());
+                                        + monitor);
                                 _component.getManager().dismiss(monitor, false);
                             }
                         });
@@ -633,7 +633,7 @@ public class GeoFenceReceiver extends BroadcastReceiver implements
         //has accessed the fence, in that case need to pass it off for
         //monitoring
         if (updated.equals(fence) && _processedFences.contains(item.getUID())) {
-            Log.d(TAG, "Geofence unchanged: " + fence.toString());
+            Log.d(TAG, "Geofence unchanged: " + fence);
             return;
         }
 
@@ -650,7 +650,7 @@ public class GeoFenceReceiver extends BroadcastReceiver implements
                 break;
             default:
             case Failure:
-                Log.w(TAG, "Failed to insert or update: " + updated.toString());
+                Log.w(TAG, "Failed to insert or update: " + updated);
         }
 
         Log.d(TAG, "persisting uid: " + item.getUID());

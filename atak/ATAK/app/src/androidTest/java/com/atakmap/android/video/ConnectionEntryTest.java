@@ -262,4 +262,32 @@ public class ConnectionEntryTest extends ATAKInstrumentedTest {
                 "gopher://eighties-4eva.net/video-stream");
         Assert.assertEquals(ce.getProtocol().toString(), "raw");
     }
+
+    @Test
+    public void connectionEntrySrt() {
+        ConnectionEntry ce = new ConnectionEntry("test",
+                "srt://compass.vidterra.com:1935?streamid=play/68b7c23ce50a8816a208aaadf1c41d51");
+        Assert.assertEquals(ce.getProtocol(), ConnectionEntry.Protocol.SRT);
+        Assert.assertEquals(ce.getPath(),
+                "?streamid=play/68b7c23ce50a8816a208aaadf1c41d51");
+
+        ConnectionEntry ce1 = new ConnectionEntry("test",
+                "srt://gw.vidterra.com:5999?passphrase=Password123");
+        Assert.assertEquals(ce1.getProtocol(), ConnectionEntry.Protocol.SRT);
+        Assert.assertEquals(ce1.getPassphrase(), "Password123");
+        Assert.assertEquals(ce1.getPath(), "");
+
+        ConnectionEntry ce2 = new ConnectionEntry("test",
+                "https://compass.vidterra.com/stream/239.67.53.0:8208");
+        Assert.assertEquals(ce2.getProtocol(), ConnectionEntry.Protocol.HTTPS);
+        Assert.assertEquals(ce2.getPath(), "/stream/239.67.53.0:8208");
+
+        ConnectionEntry ce3 = new ConnectionEntry("test",
+                "srt://compass.vidterra.com:1935?passphrase=Password123&streamid=play/68b7c23ce50a8816a208aaadf1c41d51");
+        Assert.assertEquals(ce3.getProtocol(), ConnectionEntry.Protocol.SRT);
+        Assert.assertEquals(ce1.getPassphrase(), "Password123");
+        Assert.assertEquals(ce3.getPath(),
+                "?streamid=play/68b7c23ce50a8816a208aaadf1c41d51");
+
+    }
 }

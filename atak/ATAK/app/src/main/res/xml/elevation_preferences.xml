@@ -11,12 +11,12 @@
             android:defaultValue="tak.gov"
             android:inputType="textUri" />
 
-        <com.atakmap.android.gui.PanPreference
+       <Preference
             android:title="@string/elevation_downloader"
             android:key="prefs_dted_download"
             android:summary="@string/elevation_downloader_summary" />
 
-        <CheckBoxPreference
+        <com.atakmap.android.gui.PanCheckBoxPreference
             android:title="@string/stream_elevation_title"
             android:key="prefs_dted_stream"
             android:summary="@string/stream_elevation_summary"
@@ -25,7 +25,7 @@
 
     <PreferenceCategory 
     android:title="@string/elevationPreferences">
-        <CheckBoxPreference 
+        <com.atakmap.android.gui.PanCheckBoxPreference
             android:title="@string/show_by_default"
             android:key="prefs_dted_visible"
             android:summary="@string/show_by_default_elev"

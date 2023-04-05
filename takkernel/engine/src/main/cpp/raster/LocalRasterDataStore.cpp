@@ -1,3 +1,4 @@
+#ifdef MSVC
 ////============================================================================
 ////
 ////    FILE:           LocalRasterDataStore.cpp
@@ -348,3 +349,4 @@ LocalRasterDataStore::addFileInternal (const char* filePath,
 
 }                                       // Close raster namespace.
 }                                       // Close atakmap namespace.
+#endif

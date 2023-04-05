@@ -1,12 +1,12 @@
+#ifdef MSVC
 #include "feature/KmlFeatureDataSource.h"
 
 #include <queue>
 #include <regex>
 #include <set>
-
+#include <stdio.h>
 #include <kml/engine.h>
 #include <kml/dom.h>
-
 
 #include "formats/ogr/OGRUtils.h"
 #include "core/AtakMapView.h"
@@ -1798,3 +1798,4 @@ namespace
     }
 
 }
+#endif

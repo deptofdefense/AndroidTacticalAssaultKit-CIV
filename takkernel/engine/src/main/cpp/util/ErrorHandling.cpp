@@ -259,7 +259,14 @@ namespace TAK
 				ExpParam.ExceptionPointers = pExceptionPtrs;
 				ExpParam.ClientPointers = TRUE;
 
-				MiniDumpWriteDump(hProcess, dwProcessId, hDumpFile, MiniDumpWithDataSegs, &ExpParam, nullptr, nullptr);
+				constexpr auto minidumpType = static_cast<MINIDUMP_TYPE>(
+					MiniDumpNormal |
+					MiniDumpWithDataSegs |
+					MiniDumpWithFullMemory |
+					MiniDumpWithIndirectlyReferencedMemory |
+					MiniDumpIgnoreInaccessibleMemory);
+
+				MiniDumpWriteDump(hProcess, dwProcessId, hDumpFile, minidumpType, &ExpParam, nullptr, nullptr);
 			}
 
 			class SymHandler {

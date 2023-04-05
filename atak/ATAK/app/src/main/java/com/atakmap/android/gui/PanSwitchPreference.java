@@ -5,6 +5,8 @@ import android.content.Context;
 import android.preference.Preference;
 import android.preference.SwitchPreference;
 import android.util.AttributeSet;
+import android.view.View;
+import android.view.ViewGroup;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -40,6 +42,14 @@ public class PanSwitchPreference extends SwitchPreference {
 
     public PanSwitchPreference(Context context) {
         super(context);
+    }
+
+    @Override
+    protected View onCreateView(ViewGroup parent) {
+        View v = super.onCreateView(parent);
+        if (!isEnabled())
+            v.setEnabled(false);
+        return v;
     }
 
 }

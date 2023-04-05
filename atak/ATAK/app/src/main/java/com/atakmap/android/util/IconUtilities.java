@@ -1,3 +1,4 @@
+
 package com.atakmap.android.util;
 
 import android.content.Context;
@@ -35,7 +36,8 @@ public class IconUtilities {
      *              icon is considered permanently set and can only be changed by manually calling
      *              this method again.
      */
-    public static void setIcon(Context context, Marker marker, @DrawableRes int res, boolean adapt) {
+    public static void setIcon(Context context, Marker marker,
+            @DrawableRes int res, boolean adapt) {
 
         final Bitmap icon = getBitmap(context, res);
         final String encoded = encodeBitmap(icon);
@@ -45,8 +47,8 @@ public class IconUtilities {
         if (encoded == null) {
             marker.setIcon(null);
         } else {
-            Icon.Builder markerIconBuilder = new Icon.Builder().
-                    setImageUri(0, encoded);
+            Icon.Builder markerIconBuilder = new Icon.Builder().setImageUri(0,
+                    encoded);
             marker.setIcon(markerIconBuilder.build());
         }
     }
@@ -58,7 +60,8 @@ public class IconUtilities {
      * @return Bitmap representation of the drawable or null if failed
      */
     @Nullable
-    public static Bitmap getBitmap(Context context, @DrawableRes int drawableId) {
+    public static Bitmap getBitmap(Context context,
+            @DrawableRes int drawableId) {
         Drawable drawable = ContextCompat.getDrawable(context, drawableId);
 
         // Drawable not found
@@ -80,7 +83,7 @@ public class IconUtilities {
      */
     @NonNull
     public static Bitmap getBitmap(@NonNull Drawable drawable,
-                                   int width, int height) {
+            int width, int height) {
         Bitmap bitmap = Bitmap.createBitmap(width, height,
                 Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);

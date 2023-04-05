@@ -12,11 +12,10 @@ import com.atakmap.database.impl.DatabaseImpl;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-
 @ModifierApi(since = "4.3", target = "4.6", modifiers = {
         "final"
 })
-public final class AtakAuthenticationDatabaseAdapter implements AtakAuthenticationDatabaseIFace {
+ public final class AtakAuthenticationDatabaseAdapter implements AtakAuthenticationDatabaseIFace {
 
     /**
      * 30 days in milliseconds.

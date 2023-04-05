@@ -27,14 +27,14 @@ function(validate_java_exists project_name)
         message(FATAL_ERROR "Unable to find a JDK installation, please set JAVA_HOME or add the Java executable to your PATH.")
     endif()
 	
-	# Execute Java to determine if 64-bit architecture
-	execute_process(COMMAND "${JAVA_EXEC_COMMAND}" -d64 -version
+	# Execute Java to determine if 32-bit architecture
+	execute_process(COMMAND "${JAVA_EXEC_COMMAND}" -d32 -version
 					RESULT_VARIABLE JAVA_ARCHITECTURE_EXIT_CODE
 					OUTPUT_QUIET
 					ERROR_QUIET)
 
 	# Store the result of the architecture check as a BOOL.
-	if(JAVA_ARCHITECTURE_EXIT_CODE EQUAL 0)
+	if(NOT JAVA_ARCHITECTURE_EXIT_CODE EQUAL 0)
 		set(JAVA_IS_64_BIT TRUE)
 	endif()
 

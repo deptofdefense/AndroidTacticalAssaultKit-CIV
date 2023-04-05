@@ -171,7 +171,7 @@ public final class GLBaseMap implements GLMapRenderable {
                 return;
 
             int id = context.getResources().getIdentifier("worldmap_4326", "drawable", context.getPackageName());
-            this.srcReader = new BitmapTileReader(context, id, 128, 128, null, TileReader.getMasterIOThread());
+            this.srcReader = new BitmapTileReader(context, id, 64, 64, null, TileReader.getMasterIOThread());
         
             this.srcInfo = new ImageInfo(
                     this.srcReader.getUri(),

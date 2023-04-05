@@ -1,3 +1,4 @@
+
 package com.atakmap.android.drawing.details;
 
 import android.app.AlertDialog;
@@ -12,8 +13,6 @@ import android.widget.Toast;
 
 import com.atakmap.android.drawing.mapItems.MsdShape;
 import com.atakmap.android.gui.ColorButton;
-import com.atakmap.android.importexport.handlers.ParentMapItem;
-import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Shape;
@@ -34,8 +33,10 @@ import androidx.annotation.NonNull;
  */
 public class ShapeMsdDialog {
 
-    private static final DecimalFormat _one = LocaleUtil.getDecimalFormat("0.0");
-    private static final DecimalFormat _two = LocaleUtil.getDecimalFormat("0.00");
+    private static final DecimalFormat _one = LocaleUtil
+            .getDecimalFormat("0.0");
+    private static final DecimalFormat _two = LocaleUtil
+            .getDecimalFormat("0.00");
 
     private final MapView _mapView;
     private final Context _context;
@@ -53,7 +54,8 @@ public class ShapeMsdDialog {
      * Show dialog for setting the minimum safe distance for a shape
      * @param shape Shape to set MSD
      */
-    public void show(@NonNull final Shape shape) {
+    public void show(@NonNull
+    final Shape shape) {
         final double range;
         final int color;
 
@@ -94,48 +96,53 @@ public class ShapeMsdDialog {
 
         // Option to remove the existing shape
         if (existing != null) {
-            b.setNeutralButton(R.string.remove, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface d, int w) {
-                    existing.removeFromGroup();
-                    shape.persist(_mapView.getMapEventDispatcher(),
-                            null, getClass());
-                }
-            });
+            b.setNeutralButton(R.string.remove,
+                    new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface d, int w) {
+                            existing.removeFromGroup();
+                            shape.persist(_mapView.getMapEventDispatcher(),
+                                    null, getClass());
+                        }
+                    });
         }
 
         final AlertDialog d = b.show();
-        d.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                _units = (Span) unitsSp.getSelectedItem();
-                try {
-                    final double newRange = SpanUtilities.convert(
-                            rangeTxt.getText().toString(), _units, Span.METER);
-                    final int newColor = colorBtn.getColor();
+        d.getButton(DialogInterface.BUTTON_POSITIVE)
+                .setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        _units = (Span) unitsSp.getSelectedItem();
+                        try {
+                            final double newRange = SpanUtilities.convert(
+                                    rangeTxt.getText().toString(), _units,
+                                    Span.METER);
+                            final int newColor = colorBtn.getColor();
 
-                    // Check that range is greater than zero
-                    if (newRange <= 0) {
-                        Toast.makeText(_context, R.string.nineline_text10,
-                                Toast.LENGTH_LONG).show();
-                        return;
+                            // Check that range is greater than zero
+                            if (newRange <= 0) {
+                                Toast.makeText(_context,
+                                        R.string.nineline_text10,
+                                        Toast.LENGTH_LONG).show();
+                                return;
+                            }
+
+                            _prefs.setRangeSystem(_units.getType());
+
+                            MsdShape msd = existing != null ? existing
+                                    : new MsdShape(_mapView, shape);
+                            msd.setRange(newRange);
+                            msd.setStrokeColor(newColor);
+                            msd.addToShapeGroup();
+                            shape.persist(_mapView.getMapEventDispatcher(),
+                                    null, getClass());
+                        } catch (Exception e) {
+                            Log.e("ShapeMsdDialog",
+                                    "error entering information", e);
+                        }
+                        d.dismiss();
                     }
-
-                    _prefs.setRangeSystem(_units.getType());
-
-                    MsdShape msd = existing != null ? existing
-                            : new MsdShape(_mapView, shape);
-                    msd.setRange(newRange);
-                    msd.setStrokeColor(newColor);
-                    msd.addToShapeGroup();
-                    shape.persist(_mapView.getMapEventDispatcher(),
-                            null, getClass());
-                } catch (Exception e) {
-                    Log.e("ShapeMsdDialog", "error entering information", e);
-                }
-                d.dismiss();
-            }
-        });
+                });
     }
 
     /**
@@ -143,7 +150,8 @@ public class ShapeMsdDialog {
      * @param shape Parent shape
      * @return MSD shape or null if not found
      */
-    private MsdShape findExistingMSD(@NonNull final Shape shape) {
+    private MsdShape findExistingMSD(@NonNull
+    final Shape shape) {
         MapItem existing = _mapView.getMapItem(shape.getUID() + ".msd");
         return existing instanceof MsdShape ? (MsdShape) existing : null;
     }

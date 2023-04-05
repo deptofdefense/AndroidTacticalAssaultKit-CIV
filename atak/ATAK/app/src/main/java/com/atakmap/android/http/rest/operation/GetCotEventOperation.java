@@ -106,7 +106,7 @@ public class GetCotEventOperation extends HTTPOperation {
                 Log.d(TAG,
                         "Parsed CoT event of size: " + responseBody.length());
             else
-                Log.d(TAG, "resonse body is empty");
+                Log.d(TAG, "response body is empty");
 
             Bundle output = new Bundle();
             output.putParcelable(PARAM_REQUEST, queryRequest);

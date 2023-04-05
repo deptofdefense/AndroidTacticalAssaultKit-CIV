@@ -452,7 +452,7 @@ public class UserIconSet {
             serializer.write(this, sw);
             return sw.toString();
         } catch (Exception e) {
-            Log.e(TAG, "Failed to save iconset: " + toString(), e);
+            Log.e(TAG, "Failed to save iconset: " + this, e);
             return "";
         }
     }

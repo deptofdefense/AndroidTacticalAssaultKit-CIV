@@ -338,7 +338,7 @@ public class ImportFileTask extends
             // check if we will be overwriting an existing file
             File destPath = sorter.getDestinationPath(file);
             if (destPath == null) {
-                Log.w(TAG, sorter.toString()
+                Log.w(TAG, sorter
                         + ", Unable to determine destination path for: "
                         + file.getAbsolutePath());
                 continue;
@@ -362,14 +362,14 @@ public class ImportFileTask extends
                     String existingMD5 = HashingUtils.md5sum(destPath);
                     if (existingMD5 != null && existingMD5.equals(newMD5)) {
                         Log.d(TAG,
-                                sorter.toString()
+                                sorter
                                         + ", File has not been updated, discarding: "
                                         + file.getAbsolutePath()
                                         + " based on MD5: " + newMD5);
                         if (!IOProviderFactory.delete(file,
                                 IOProvider.SECURE_DELETE))
                             Log.w(TAG,
-                                    sorter.toString()
+                                    sorter
                                             + ", Failed to delete un-updated file: "
                                             + file.getAbsolutePath());
                         // sorter matched and we decided not to sort/move, lets return
@@ -458,7 +458,7 @@ public class ImportFileTask extends
             // now attempt to sort (i.e. move the file to proper location)
             if (sorter.beginImport(file, flags)) {
                 Log.d(TAG,
-                        sorter.toString() + ", initiated import of: "
+                        sorter + ", initiated import of: "
                                 + file.getAbsolutePath() + " to "
                                 + destPath.getAbsolutePath());
                 // use extension (except the period) as type
@@ -472,7 +472,7 @@ public class ImportFileTask extends
                 return new Result(destPath, type, newMD5, sorter);
             } else
                 Log.w(TAG,
-                        sorter.toString() + ", Matched, but did not sort: "
+                        sorter + ", Matched, but did not sort: "
                                 + file.getAbsolutePath());
         } // end if sorter match was found
 

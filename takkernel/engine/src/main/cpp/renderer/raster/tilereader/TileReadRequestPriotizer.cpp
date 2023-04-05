@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "renderer/raster/tilereader/TileReadRequestPrioritizer.h"
 
 #include "math/Rectangle.h"
@@ -36,22 +37,24 @@ bool TileReadRequestPrioritizer::compare(const TileReader2::ReadRequest& a, cons
     const bool HI_PRI = false;
     const bool LO_PRI = true;
 
-    bool aIsect = false;
-    bool bIsect = false;
-    for(std::size_t i = 0u; i < rois_.size(); i++) {
-        aIsect |= atakmap::math::Rectangle<int64_t>::intersects((int64_t)rois_[i].x, (int64_t)rois_[i].y, (int64_t)(rois_[i].x+rois_[i].width), (int64_t)(rois_[i].y+rois_[i].height), a.srcX, a.srcY, a.srcX+a.srcW-1, a.srcY+a.srcH-1);
-        bIsect |= atakmap::math::Rectangle<int64_t>::intersects((int64_t)rois_[i].x, (int64_t)rois_[i].y, (int64_t)(rois_[i].x+rois_[i].width), (int64_t)(rois_[i].y+rois_[i].height), b.srcX, b.srcY, b.srcX+b.srcW-1, b.srcY+b.srcH-1);
-        if(aIsect && bIsect)
-            break;
-    }
+    if (!rois_.empty()) {
+        bool aIsect = false;
+        bool bIsect = false;
+        for (std::size_t i = 0u; i < rois_.size(); i++) {
+            aIsect |= atakmap::math::Rectangle<int64_t>::intersects((int64_t)rois_[i].x, (int64_t)rois_[i].y, (int64_t)(rois_[i].x + rois_[i].width), (int64_t)(rois_[i].y + rois_[i].height), a.srcX, a.srcY, a.srcX + a.srcW - 1, a.srcY + a.srcH - 1);
+            bIsect |= atakmap::math::Rectangle<int64_t>::intersects((int64_t)rois_[i].x, (int64_t)rois_[i].y, (int64_t)(rois_[i].x + rois_[i].width), (int64_t)(rois_[i].y + rois_[i].height), b.srcX, b.srcY, b.srcX + b.srcW - 1, b.srcY + b.srcH - 1);
+            if (aIsect && bIsect)
+                break;
+        }
 
-    // if both requests intersect the ROI(s), prioritize based on level
-    if(aIsect && bIsect && a.level != b.level)
-        return compareLevel(opts_.progressiveLoad, a.level, b.level);
-    else if(aIsect && !bIsect)
-        return HI_PRI; // only A intersects ROI(s)
-    else if(!aIsect && bIsect)
-        return LO_PRI; // only B intersects ROI(s)
+        // if both requests intersect the ROI(s), prioritize based on level
+        if (aIsect && bIsect && a.level != b.level)
+            return compareLevel(opts_.progressiveLoad, a.level, b.level);
+        else if (aIsect && !bIsect)
+            return HI_PRI; // only A intersects ROI(s)
+        else if (!aIsect && bIsect)
+            return LO_PRI; // only B intersects ROI(s)
+    }
 
     // either A and B both intersect ROIs (at same level) or neither do. In
     // both cases, we're going to prioritize based on distance of the
@@ -78,3 +81,4 @@ bool TileReadRequestPrioritizer::compare(const TileReader2::ReadRequest& a, cons
     // prioritize based on level
     return compareLevel(opts_.progressiveLoad, a.level, b.level);
 }
+#endif

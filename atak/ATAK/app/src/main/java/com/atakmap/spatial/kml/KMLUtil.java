@@ -317,6 +317,10 @@ public class KMLUtil {
                             case "href":
                                 link.setHref(getValue(parser, null));
                                 break;
+                            case "httpQuery":
+                                link.setHttpQuery(
+                                        fixEncoding(getValue(parser, null)));
+                                break;
                             case "refreshInterval":
                                 link.setRefreshInterval(Float.parseFloat(
                                         getValue(parser, "-1")));
@@ -359,6 +363,17 @@ public class KMLUtil {
         if (eventType == XmlPullParser.TEXT)
             return parser.getText();
         return def;
+    }
+
+    /**
+     * Simple encoding fix for kml httpQuery (note this is very simple)
+     * @param orig the original string
+     * @return the fixed encoding
+     */
+    private static String fixEncoding(String orig) {
+        return orig.replaceAll("&lt;", "<").replaceAll("&gt;", ">")
+                .replaceAll("&apos;", "'").replaceAll("&quot;", "\"")
+                .replaceAll("&amp;", "&");
     }
 
     /**
@@ -1312,7 +1327,12 @@ public class KMLUtil {
         return (parentName + "-" + label).trim();
     }
 
-    public static String getURL(Link link) {
+    /**
+     * Given a link, support the href and httpQuery if provided.
+     * @param link the Link specified by the KML
+     * @return the entire uri from the link
+     */
+    public static String getURL(final Link link) {
         if (link == null) {
             Log.e(TAG, "Empty KML Link");
             return null;
@@ -1327,14 +1347,10 @@ public class KMLUtil {
             return null;
         }
 
-        // TODO research and determine if we should support httpquery in general,
-        // or is it only used to specify GE/KML version numbers
-        // String query = link.getHttpQuery();
-        // if(!FileSystemUtils.isEmpty(query))
-        // {
-        // //TODO URL encode required here?
-        // url += "?" + query;
-        // }
+        String query = link.getHttpQuery();
+        if (!FileSystemUtils.isEmpty(query)) {
+            url += "?" + query;
+        }
 
         // TODO any reason to support link ViewFormat?
 

@@ -356,14 +356,14 @@ public class MissionPackageUtils {
             MissionPackageManifest c = MissionPackageManifest.fromXml(
                     fi.fileMetadata(), f.getAbsolutePath(), true);
             if (c == null || !c.isValid()) {
-                Log.w(TAG, "Failed to load Manifest: " + fi.toString());
+                Log.w(TAG, "Failed to load Manifest: " + fi);
                 continue;
             }
 
             MissionPackageListGroup uiWrapper = MissionPackageManifestAdapter
                     .adapt(c, fi.userName(), group);
             if (uiWrapper == null || !uiWrapper.isValid()) {
-                Log.w(TAG, "Failed to load Manifest wrapper: " + fi.toString());
+                Log.w(TAG, "Failed to load Manifest wrapper: " + fi);
                 continue;
             }
 

@@ -638,7 +638,7 @@ public class AppMgmtActivity extends MetricActivity {
 
         final List<ProductInformation> selected = _appAdapter.getSelected();
         Log.d(TAG,
-                "multiDone " + mode.toString() + ", size: " + selected.size());
+                "multiDone " + mode + ", size: " + selected.size());
 
         //TODO wizard may need to notify user that ATAK must be restarted, and then force exit
 
@@ -665,7 +665,7 @@ public class AppMgmtActivity extends MetricActivity {
                                 if (provider == null) {
                                     Log.w(TAG,
                                             "Cannot install without provider: "
-                                                    + app.toString());
+                                                    + app);
                                     Toast.makeText(AppMgmtActivity.this,
                                             String.format(getString(
                                                     R.string.failed_to_install),
@@ -702,7 +702,7 @@ public class AppMgmtActivity extends MetricActivity {
                                 if (provider == null) {
                                     Log.w(TAG,
                                             "Cannot uninstall without provider: "
-                                                    + app.toString());
+                                                    + app);
                                     Toast.makeText(AppMgmtActivity.this,
                                             "Failed to uninstall: "
                                                     + app.getSimpleName(),
@@ -743,11 +743,11 @@ public class AppMgmtActivity extends MetricActivity {
                                         app.getPackageName())) {
                                     Log.d(TAG,
                                             "process Already loaded: "
-                                                    + app.toString());
+                                                    + app);
                                     return;
                                 }
 
-                                Log.d(TAG, "process load: " + app.toString());
+                                Log.d(TAG, "process load: " + app);
                                 SideloadedPluginProvider.installProduct(app);
                             }
 
@@ -773,7 +773,7 @@ public class AppMgmtActivity extends MetricActivity {
                                         } else {
                                             Log.d(TAG,
                                                     "postProcess Already unloaded: "
-                                                            + p.toString());
+                                                            + p);
                                         }
                                     }
 

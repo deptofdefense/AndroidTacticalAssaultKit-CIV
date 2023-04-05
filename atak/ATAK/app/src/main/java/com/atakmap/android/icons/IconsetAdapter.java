@@ -71,20 +71,20 @@ public class IconsetAdapter extends BaseAdapter {
         }
 
         if (!iconset.isValid()) {
-            Log.w(TAG, "Skipping invalid iconset: " + iconset.toString());
+            Log.w(TAG, "Skipping invalid iconset: " + iconset);
             return false;
         }
 
         for (UserIconSet c : _iconsets) {
             if (c.equals(iconset)) {
                 Log.d(TAG,
-                        "Skipping already existing iconset: " + c.toString());
+                        "Skipping already existing iconset: " + c);
                 return false;
             }
         }
 
         if (!_iconsets.add(iconset)) {
-            Log.w(TAG, "Failed to add iconset: " + iconset.toString());
+            Log.w(TAG, "Failed to add iconset: " + iconset);
             return false;
         }
 
@@ -130,13 +130,13 @@ public class IconsetAdapter extends BaseAdapter {
         if (!iconset.isValid()) {
             Log.w(TAG,
                     "Unable to instantiate row view for position, for invalid resource "
-                            + iconset.toString());
+                            + iconset);
             return LayoutInflater.from(_context).inflate(R.layout.empty, parent,
                     false);
         }
 
         Log.i(TAG, " building view for index " + position + "; Resource: "
-                + iconset.toString());
+                + iconset);
 
         TextView txtName = convertView
                 .findViewById(R.id.iconset_child_name);
@@ -385,7 +385,7 @@ public class IconsetAdapter extends BaseAdapter {
             String iconsetXml = iconset.save();
             if (FileSystemUtils.isEmpty(iconsetXml)) {
                 Log.w(TAG,
-                        "Failed to export iconset XML: " + iconset.toString());
+                        "Failed to export iconset XML: " + iconset);
                 NotificationUtil.getInstance().postNotification(
                         R.drawable.ic_network_error_notification_icon,
                         NotificationUtil.RED,
@@ -411,7 +411,7 @@ public class IconsetAdapter extends BaseAdapter {
                             _context).getIconBytes(icon.getId());
                     if (FileSystemUtils.isEmpty(bitMap)) {
                         throw new IOException("Failed to export icon: "
-                                + icon.toString());
+                                + icon);
                     }
 
                     addFile(zos, icon.getGroup(), icon.getFileName(), bitMap);

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory android:title="@string/preferences_text360">
+        <com.atakmap.android.gui.PanListPreference
+            android:title="@string/pref_self_coord_info"
+            android:key="self_coord_info_display"
+            android:summary="@string/pref_self_coord_info_summary"
+            android:entries="@array/self_coord_display_names"
+            android:entryValues="@array/self_coord_display_values"
+            android:defaultValue="bottom_right"
+            android:icon="@drawable/ic_pref_self_coord_info" />
+        <com.atakmap.android.gui.PanListPreference
+            android:title="@string/preferences_text361"
+            android:key="self_coord_action"
+            android:entryValues="@array/tap_selfoverlay_values"
+            android:entries="@array/tap_selfoverlay_names"
+            android:defaultValue="panto"
+            android:summary="@string/preferences_text362" />
+        <com.atakmap.android.gui.PanCheckBoxPreference
+            android:title="@string/preferences_text363"
+            android:defaultValue="false"
+            android:summary="@string/preferences_text364"
+            android:key="selfcoord_legacy_enlarge" />
+
+    </PreferenceCategory>
+</PreferenceScreen>

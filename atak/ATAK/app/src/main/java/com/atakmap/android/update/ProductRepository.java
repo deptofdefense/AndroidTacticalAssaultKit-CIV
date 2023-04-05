@@ -117,13 +117,13 @@ public class ProductRepository {
     final void getUniqueProducts(Map<String, ProductInformation> map) {
         for (ProductInformation p : _products) {
             if (map.containsKey(p.getPackageName())) {
-                Log.d(TAG, "ignoring: " + p.toString());
+                Log.d(TAG, "ignoring: " + p);
             } else {
                 map.put(p.getPackageName(), p);
             }
         }
 
-        Log.d(TAG, toString() + ", getUniqueProducts size: " + map.size());
+        Log.d(TAG, this + ", getUniqueProducts size: " + map.size());
     }
 
     /**
@@ -164,7 +164,7 @@ public class ProductRepository {
                     if (installedVersion < product.getRevision()) {
                         Log.d(TAG,
                                 "Product has been updated: "
-                                        + product.toString());
+                                        + product);
                         ret.add(product);
                     }
                 }
@@ -190,7 +190,7 @@ public class ProductRepository {
                         context, product.getPackageName());
                 if (installedVersion < product.getRevision()) {
                     Log.d(TAG,
-                            "Product has been updated: " + product.toString());
+                            "Product has been updated: " + product);
                     return true;
                 }
             }
@@ -288,7 +288,7 @@ public class ProductRepository {
         }
 
         if (toRemove != null) {
-            Log.d(TAG, "Removing: " + pkg + ", " + this.toString());
+            Log.d(TAG, "Removing: " + pkg + ", " + this);
             _products.remove(toRemove);
             return true;
         }
@@ -306,7 +306,7 @@ public class ProductRepository {
                 || hasProduct(product.getPackageName()))
             return false;
 
-        Log.d(TAG, "Adding: " + product.toString() + ", " + this.toString());
+        Log.d(TAG, "Adding: " + product + ", " + this);
         _products.add(product);
         return true;
     }

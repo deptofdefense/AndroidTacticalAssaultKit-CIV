@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-    <CheckBoxPreference
+    <com.atakmap.android.gui.PanCheckBoxPreference
         android:title="@string/preferences_text213"
         android:summary="@string/preferences_text214"
         android:key="filesharingEnabled"
@@ -20,6 +20,11 @@
             android:key="fileshareDownloadAttempts"
             android:inputType="number"
             android:defaultValue="10"/>
+        <com.atakmap.android.gui.PanCheckBoxPreference
+            android:title="@string/pref_missionpkg_legacy_http_title"
+            android:summary="@string/pref_missionpkg_legacy_http_en"
+            android:key="filesharingWebServerLegacyHttpEnabled"
+            android:defaultValue="false"/>
         <com.atakmap.android.gui.PanEditTextPreference
             android:title="@string/preferences_text220"
             android:summary="@string/preferences_text221"
@@ -46,7 +51,7 @@
             android:inputType="number"
             android:defaultValue="10"
             />
-        <CheckBoxPreference
+        <com.atakmap.android.gui.PanCheckBoxPreference
             android:title="@string/pref_mp_all_servers"
             android:summary="@string/pref_mp_all_servers_desc"
             android:key="filesharingAllServers"

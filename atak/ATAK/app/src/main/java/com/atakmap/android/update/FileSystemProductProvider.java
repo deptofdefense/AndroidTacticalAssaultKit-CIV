@@ -77,7 +77,7 @@ public class FileSystemProductProvider extends BaseProductProvider {
         }
 
         if (repo != null && repo.isValid()) {
-            Log.d(TAG, "Updating local repo: " + repo.toString());
+            Log.d(TAG, "Updating local repo: " + repo);
         } else {
             Log.d(TAG, "Clearing local repo: " + repoIndex);
             repo = null;
@@ -143,7 +143,7 @@ public class FileSystemProductProvider extends BaseProductProvider {
             return null;
         }
 
-        Log.d(TAG, "wrap empty repo: " + repo.toString());
+        Log.d(TAG, "wrap empty repo: " + repo);
         return repo;
     }
 
@@ -197,7 +197,7 @@ public class FileSystemProductProvider extends BaseProductProvider {
             return null;
         }
 
-        Log.d(TAG, "wrap repo: " + repo.toString());
+        Log.d(TAG, "wrap repo: " + repo);
         return repo;
     }
 

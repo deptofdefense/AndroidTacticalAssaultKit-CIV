@@ -7,6 +7,7 @@
 
 #include "formats/s3tc/S3TC.h"
 #include "math/Matrix.h"
+#include "math/Matrix2.h"
 #include "renderer/GLES20FixedPipeline.h"
 #include "util/DataOutput2.h"
 #include "util/MemBuffer2.h"
@@ -15,6 +16,7 @@
 using namespace TAK::Engine::Renderer;
 
 using namespace TAK::Engine::Formats::S3TC;
+using namespace TAK::Engine::Math;
 using namespace TAK::Engine::Util;
 
 namespace {
@@ -495,43 +497,22 @@ std::size_t TAK::Engine::Renderer::GLTexture2_getNumQuadMeshVertices(const std::
     return (numCellsX + 1) * (numCellsY + 1);
 }
 
-TAKErr TAK::Engine::Renderer::GLTexture2_createQuadMeshTexCoords(float *buffer,
-                                                                 const atakmap::math::Point<float> &upperLeft,
-                                                                 const atakmap::math::Point<float> &upperRight,
-                                                                 const atakmap::math::Point<float> &lowerRight,
-                                                                 const atakmap::math::Point<float> &lowerLeft,
-                                                                 const std::size_t numCellsX, const std::size_t numCellsY) NOTHROWS
+TAKErr TAK::Engine::Renderer::GLTexture2_createQuadMeshTexCoords(float* buffer,
+    const atakmap::math::Point<float>& upperLeft,
+    const atakmap::math::Point<float>& upperRight,
+    const atakmap::math::Point<float>& lowerRight,
+    const atakmap::math::Point<float>& lowerLeft,
+    const std::size_t numCellsX, const std::size_t numCellsY) NOTHROWS
 {
-    using namespace atakmap::math;
-
-    Matrix gridToTexCoord = Matrix();
-    Matrix::mapQuads(0, 0, // grid UL
-        static_cast<double>(numCellsX), 0, // grid UR
-        static_cast<double>(numCellsX), static_cast<double>(numCellsY), // gridLR
-        0, static_cast<double>(numCellsY), // gridLL
-        upperLeft.x, upperLeft.y,
-        upperRight.x, upperRight.y,
-        lowerRight.x, lowerRight.y,
-        lowerLeft.x, lowerLeft.y, &gridToTexCoord);
-
-    Point<double> gridCoord(0, 0);
-    Point<double> texCoord(0, 0);
-
-    for (std::size_t y = 0; y <= numCellsY; y++) {
-        gridCoord.y = static_cast<double>(y);
-        for (std::size_t x = 0; x <= numCellsX; x++) {
-            gridCoord.x = static_cast<double>(x);
-
-            gridToTexCoord.transform(&gridCoord, &texCoord);
-
-            *buffer++ = (float)texCoord.x;
-            *buffer++ = (float)texCoord.y;
-        }
-    }
-
-    return TE_Ok;
+    const std::size_t numVerts = GLTexture2_getNumQuadMeshVertices(numCellsX, numCellsY);
+    MemBuffer2 bbuffer(buffer, numVerts * 2u);
+    return GLTexture2_createQuadMeshTexCoords(bbuffer,
+        Point2<float>(upperLeft.x, upperLeft.y),
+        Point2<float>(upperRight.x, upperRight.y),
+        Point2<float>(lowerRight.x, lowerRight.y),
+        Point2<float>(lowerLeft.x, lowerLeft.y),
+        numCellsX, numCellsY);
 }
-
 TAKErr TAK::Engine::Renderer::GLTexture2_createQuadMeshTexCoords(float *buffer,
                                                                  const float width, const float height,
                                                                  std::size_t numCellsX, std::size_t numCellsY) NOTHROWS
@@ -543,6 +524,43 @@ TAKErr TAK::Engine::Renderer::GLTexture2_createQuadMeshTexCoords(float *buffer,
         for (std::size_t x = 0; x <= numCellsX; x++) {
             *buffer++ = (width * ((float)x / (float)(numCellsX + 1)));
             *buffer++ = (height * ((float)y / (float)(numCellsY + 1)));
+        }
+    }
+
+    return TE_Ok;
+}
+TAKErr TAK::Engine::Renderer::GLTexture2_createQuadMeshTexCoords(MemBuffer2 &value,
+                                                                const Math::Point2<float> &upperLeft,
+                                                                const Math::Point2<float> &upperRight,
+                                                                const Math::Point2<float> &lowerRight,
+                                                                const Math::Point2<float> &lowerLeft,
+                                                                const std::size_t numCellsX, const std::size_t numCellsY) NOTHROWS
+{
+    TAKErr code(TE_Ok);
+    Matrix2 gridToTexCoord;
+    code = Matrix2_mapQuads(&gridToTexCoord,
+        0.0, 0.0, // grid UL
+        static_cast<double>(numCellsX), 0.0, // grid UR
+        static_cast<double>(numCellsX), static_cast<double>(numCellsY), // gridLR
+        0.0, static_cast<double>(numCellsY), // gridLL
+        upperLeft.x, upperLeft.y,
+        upperRight.x, upperRight.y,
+        lowerRight.x, lowerRight.y,
+        lowerLeft.x, lowerLeft.y);
+    TE_CHECKRETURN_CODE(code);
+
+    Point2<double> gridCoord(0, 0);
+    Point2<double> texCoord(0, 0);
+
+    for (std::size_t y = 0; y <= numCellsY; y++) {
+        gridCoord.y = static_cast<double>(y);
+        for (std::size_t x = 0; x <= numCellsX; x++) {
+            gridCoord.x = static_cast<double>(x);
+
+            gridToTexCoord.transform(&texCoord, gridCoord);
+
+            value.put<float>((float)texCoord.x);
+            value.put<float>((float)texCoord.y);
         }
     }
 
@@ -581,6 +599,18 @@ TAKErr TAK::Engine::Renderer::GLTexture2_createQuadMeshIndexBuffer(MemBuffer2 &v
 
 TAKErr TAK::Engine::Renderer::GLTexture2_getFormatAndDataType(int *format, int *datatype, const Bitmap2::Format bitmapFormat) NOTHROWS
 {
+    TAKErr code(TE_Ok);
+    GLenum glformat, gldatatype;
+    code = GLTexture2_getFormatAndDataType(&glformat, &gldatatype, bitmapFormat);
+    if(code == TE_Ok) {
+        *format = (int)glformat;
+        *datatype = (int)gldatatype;
+    }
+    return code;
+
+}
+TAKErr TAK::Engine::Renderer::GLTexture2_getFormatAndDataType(GLenum *format, GLenum *datatype, const Bitmap2::Format bitmapFormat) NOTHROWS
+{
     switch (bitmapFormat)
     {
     case Bitmap2::RGBA32 :
@@ -618,6 +648,10 @@ TAKErr TAK::Engine::Renderer::GLTexture2_getFormatAndDataType(int *format, int *
 }
 
 TAKErr TAK::Engine::Renderer::GLTexture2_getBitmapFormat(Bitmap2::Format *value, const int format, const int datatype) NOTHROWS
+{
+    return GLTexture2_getBitmapFormat(value, (GLenum)format, (GLenum)datatype);
+}
+TAKErr TAK::Engine::Renderer::GLTexture2_getBitmapFormat(Bitmap2::Format *value, const GLenum format, const GLenum datatype) NOTHROWS
 {
     switch (format) {
     case GL_RGBA:

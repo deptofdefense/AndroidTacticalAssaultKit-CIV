@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "LAS.h"
 
 #include <chrono>
@@ -1358,3 +1359,4 @@ ENGINE_API TAKErr TAK::Engine::Formats::LAS::LAS_createTiles(const char* lasFile
     TE_CHECKRETURN_CODE(cleanupDirectory(outputPath));
     return code;
 }
+#endif

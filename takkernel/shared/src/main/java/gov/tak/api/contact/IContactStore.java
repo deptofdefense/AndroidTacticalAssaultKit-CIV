@@ -2,9 +2,6 @@ package gov.tak.api.contact;
 
 import gov.tak.api.annotation.DeprecatedApi;
 import gov.tak.api.annotation.NonNull;
-import gov.tak.api.experimental.chat.IChatService;
-import gov.tak.api.experimental.chat.IChatServiceClient;
-import gov.tak.api.experimental.chat.IChatServiceProvider;
 import gov.tak.platform.contact.ContactStore;
 
 /**
@@ -42,9 +39,7 @@ public interface IContactStore {
      * <p>
      * This method should not be called from an {@link IContactListener} or any form of UI layer that is not directly
      * responsible for managing and communicating with contacts through a chat service of some kind (which should never
-     * be the case). Instead, an {@link IChatServiceProvider} and supporting components should handle contact
-     * management. However, group contact management <em>can</em> be requested from a UI layer by registering said layer
-     * as an {@link IChatServiceClient}. See {@link IChatService} for more information.
+     * be the case).
      *
      * @param contact The contact to add
      */
@@ -57,9 +52,7 @@ public interface IContactStore {
      * <p>
      * This method should not be called from an {@link IContactListener} or any form of UI layer that is not directly
      * responsible for managing and communicating with contacts through a chat service of some kind (which should never
-     * be the case). Instead, an {@link IChatServiceProvider} and supporting components should handle contact
-     * management. However, group contact management <em>can</em> be requested from a UI layer by registering said layer
-     * as an {@link IChatServiceClient}. See {@link IChatService} for more information.
+     * be the case).
      *
      * @param contact The updated contact
      * @throws IllegalArgumentException If there is no existing contact to update
@@ -72,9 +65,7 @@ public interface IContactStore {
      * <p>
      * This method should not be called from an {@link IContactListener} or any form of UI layer that is not directly
      * responsible for managing and communicating with contacts through a chat service of some kind (which should never
-     * be the case). Instead, an {@link IChatServiceProvider} and supporting components should handle contact
-     * management. However, group contact management <em>can</em> be requested from a UI layer by registering said layer
-     * as an {@link IChatServiceClient}. See {@link IChatService} for more information.
+     * be the case).
      *
      * @param uniqueContactId The unique ID of the contact to remove
      */

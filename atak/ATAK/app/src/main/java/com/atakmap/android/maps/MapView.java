@@ -89,7 +89,10 @@ public class MapView extends AtakMapView {
     private Marker self;
     private OnSharedPreferenceChangeListener prefListener;
 
-    private static double maximumTilt = Double.NaN;
+    // NOTE: `DeveloperOptions` static initialization _needs_ to be invoked prior to
+    // `GLMapView` construct to initialize `ConfigOptions`
+    private static double maximumTilt = DeveloperOptions.getDoubleOption(
+            "mapengine.atakmapview.maximum-tilt", Double.NaN);
 
     public static final String GDAL_DIRNAME = "Databases" + File.separatorChar
             + "GDAL";
@@ -606,22 +609,6 @@ public class MapView extends AtakMapView {
         return new LinkedList<>();
     }
 
-    /**
-     * Returns a precise point, derived from the underlying imagery, based on the specified point as
-     * projected into the current view.
-     *
-     * @param geoPoint A coordinate
-     * @return A precise coordinate, possibly containing CE/LE and elevation information that is
-     *         derived from the underlying imagery.
-     *
-     * @deprecated  Will be removed without replacement
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
-    public GeoPointMetaData getPrecisePoint(GeoPointMetaData geoPoint) {
-        return null;
-    }
-
     public RasterLayer2 getRasterLayerAt2(final GeoPoint point) {
         List<RasterLayer2> rasterLayers = new LinkedList<>();
         findLayers(RasterLayer2.class, this.renderStack, rasterLayers);
@@ -891,32 +878,6 @@ public class MapView extends AtakMapView {
         return this.getPoint();
     }
 
-    /**
-     * Create a hit box for detecting touch events
-     * @param center Center point of hit box
-     * @param radius Inner radius of hit box in pixels
-     * @return GeoBounds hit box
-     * @deprecated No longer efficient with perspective camera rendering
-     *             Utilize screen point data from the GL thread where possible
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.6")
-    public GeoBounds createHitbox(GeoPoint center, double radius) {
-        PointF c = forward(center);
-        radius = Math.hypot(radius, radius);
-        GeoPoint inv = inverse((float) (c.x + radius),
-                (float) (c.y + radius)).get();
-        double ra = Math.abs(inv.getLatitude() - center.getLatitude());
-        double ro = Math.abs(inv.getLongitude() - center.getLongitude());
-
-        GeoBounds hitBox = new GeoBounds(center.getLatitude() + ra,
-                center.getLongitude() - ro,
-                center.getLatitude() - ra,
-                center.getLongitude() + ro);
-        hitBox.setWrap180(isContinuousScrollEnabled());
-        return hitBox;
-    }
-
     @Override
     protected void onSizeChanged(final int w, final int h, final int oldw,
             final int oldh) {
@@ -982,10 +943,10 @@ public class MapView extends AtakMapView {
      */
     public double getMaxMapTilt() {
         if (Double.isNaN(maximumTilt))
-            maximumTilt = ConfigOptions.getOption("atakmapview.maximum-tilt",
-                    com.atakmap.map.MapSceneModel.isPerspectiveCameraEnabled()
+            maximumTilt = com.atakmap.map.MapSceneModel
+                    .isPerspectiveCameraEnabled()
                             ? 89d
-                            : 75d);
+                            : 75d;
         return maximumTilt;
     }
 

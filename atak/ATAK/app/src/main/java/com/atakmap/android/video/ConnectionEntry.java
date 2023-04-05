@@ -325,8 +325,29 @@ public class ConnectionEntry implements Serializable {
         String query = u.getQuery();
         if (FileSystemUtils.isEmpty(query))
             setPath(u.getPath());
-        else
+        else if (protocol == Protocol.SRT) {
+            // parse out passphrase
+            // retain additional query elements
+            final String[] pairs = query.split("&");
+            String newQuery = "";
+            for (String nv : pairs) {
+                if (nv.startsWith("passphrase=")) {
+                    final String value = nv.replace("passphrase=", "");
+                    if (!FileSystemUtils.isEmpty(value))
+                        setPassphrase(value);
+                } else {
+                    if (!newQuery.isEmpty())
+                        newQuery = newQuery + "&";
+                    newQuery = newQuery + nv;
+                }
+            }
+            if (!newQuery.isEmpty())
+                setPath(u.getPath() + "?" + newQuery);
+            else
+                setPath(u.getPath());
+        } else {
             setPath(u.getPath() + "?" + query);
+        }
 
         if ((this.protocol == Protocol.RTSP)) {
             String q = u.getQuery();
@@ -809,7 +830,7 @@ public class ConnectionEntry implements Serializable {
 
         Protocol p = ce.getProtocol();
 
-        if (ce.getProtocol().equals(Protocol.RAW)) {
+        if (p == Protocol.RAW) {
             url = ce.getAddress();
             return url.trim();
         } else if (p == Protocol.UDP || p == Protocol.RTSP

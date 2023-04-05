@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory android:title="@string/callsign_and_device_preferences">
+       <Preference
+            android:title="@string/callsign_prefs"
+            android:key="callSignPrefs"
+            android:summary="@string/preferences_text198"
+            android:icon="@drawable/my_prefs_settings" />
+       <Preference
+            android:title="@string/devicePreferences"
+            android:key="devicePrefs"
+            android:summary="@string/preferences_text199"
+            android:icon="@drawable/ic_display_settings" />
+       <Preference
+            android:title="@string/bluetooth"
+            android:key="bluetooth"
+            android:icon="@drawable/bluetooth"
+            android:summary="@string/preferences_text269" />
+       <Preference
+            android:title="@string/contact_preferences"
+            android:key="contactPrefs"
+            android:icon="@drawable/ic_menu_contact" />
+       <Preference
+            android:title="@string/reportingPreferences"
+            android:key="reportingPrefs" />
+       <Preference
+            android:title="@string/encryp_pass"
+            android:key="encryptPassword" />
+       <Preference
+            android:title="@string/pref_manag"
+            android:key="prefManage" />
+    </PreferenceCategory>
+</PreferenceScreen>

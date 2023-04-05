@@ -373,7 +373,7 @@ public class TaskCotReceiver extends BroadcastReceiver implements
 
         b.setRequestNotify(NetworkUtils.getIP() + ":4242:tcp"); // TODO AS make me configurable
         b.setRemarksSource("TaskFromAndroid");
-        String taskUID = subjUID + ".Task." + new CoordinatedTime().toString();
+        String taskUID = subjUID + ".Task." + new CoordinatedTime();
         b.setUID(taskUID);
         b.setTaskType(taskType);
 

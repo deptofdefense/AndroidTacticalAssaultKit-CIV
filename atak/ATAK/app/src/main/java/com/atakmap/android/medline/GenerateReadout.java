@@ -42,7 +42,7 @@ final public class GenerateReadout {
         sb.append(con.getString(R.string.readout_text1));
         sb.append(con.getString(R.string.readout_text4));
         line00.setText(sb.toString());
-        fullString.append(sb.toString());
+        fullString.append(sb);
         fullString.append("\n\n");
         sb.setLength(0);
 
@@ -51,7 +51,7 @@ final public class GenerateReadout {
         sb.append("1. ");
         sb.append(v.getLineOneText());
         line01.setText(sb.toString());
-        fullString.append(sb.toString());
+        fullString.append(sb);
         fullString.append("\n");
         sb.setLength(0);
 
@@ -62,7 +62,7 @@ final public class GenerateReadout {
         sb.append(" ");
         sb.append("Freq: ").append(v.getFreq());
         line02.setText(sb.toString());
-        fullString.append(sb.toString());
+        fullString.append(sb);
         fullString.append("\n");
         sb.setLength(0);
 
@@ -71,7 +71,7 @@ final public class GenerateReadout {
         sb.append("3. ");
         sb.append(v.getLineThreeText());
         line03.setText(sb.toString());
-        fullString.append(sb.toString());
+        fullString.append(sb);
         fullString.append("\n");
         sb.setLength(0);
 
@@ -86,7 +86,7 @@ final public class GenerateReadout {
             sb.append(lineFour);
         }
         line04.setText(sb.toString());
-        fullString.append(sb.toString());
+        fullString.append(sb);
         fullString.append("\n");
         sb.setLength(0);
 
@@ -95,7 +95,7 @@ final public class GenerateReadout {
         sb.append("5. ");
         sb.append(v.getLineFiveText());
         line05.setText(sb.toString());
-        fullString.append(sb.toString());
+        fullString.append(sb);
         fullString.append("\n");
         sb.setLength(0);
 
@@ -104,7 +104,7 @@ final public class GenerateReadout {
         sb.append("6. ");
         sb.append(v.getLineSixText());
         line06.setText(sb.toString());
-        fullString.append(sb.toString());
+        fullString.append(sb);
         fullString.append("\n");
         sb.setLength(0);
 
@@ -118,7 +118,7 @@ final public class GenerateReadout {
             sb.append(lineSeven);
         }
         line07.setText(sb.toString());
-        fullString.append(sb.toString());
+        fullString.append(sb);
         fullString.append("\n");
         sb.setLength(0);
 
@@ -127,7 +127,7 @@ final public class GenerateReadout {
         sb.append("8. ");
         sb.append(v.getLineEightText());
         line08.setText(sb.toString());
-        fullString.append(sb.toString());
+        fullString.append(sb);
         fullString.append("\n");
         sb.setLength(0);
 
@@ -142,7 +142,7 @@ final public class GenerateReadout {
             sb.append(lineNine);
         }
         line09.setText(sb.toString());
-        fullString.append(sb.toString());
+        fullString.append(sb);
         fullString.append("\n");
         sb.setLength(0);
 

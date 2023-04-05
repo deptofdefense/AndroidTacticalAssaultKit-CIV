@@ -1,3 +1,4 @@
+
 package com.atakmap.android.selfcoordoverlay;
 
 /**

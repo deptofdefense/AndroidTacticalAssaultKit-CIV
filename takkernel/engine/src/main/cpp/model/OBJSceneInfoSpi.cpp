@@ -1,4 +1,4 @@
-
+#ifdef MSVC
 #include "model/OBJSceneInfoSpi.h"
 #include "util/IO2.h"
 #include "port/STLVectorAdapter.h"
@@ -80,3 +80,4 @@ TAKErr OBJSceneInfoSpi::create(TAK::Engine::Port::Collection<SceneInfoPtr> &scen
 
     return filesVector.empty() ? TE_Unsupported : code;
 }
+#endif

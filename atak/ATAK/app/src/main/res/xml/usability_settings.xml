@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+        android:title="@string/usability_settings">
+
+        <com.atakmap.android.gui.PanCheckBoxPreference
+            android:title="@string/preferences_text137"
+            android:defaultValue="false"
+            android:summary="@string/preferences_text138"
+            android:icon="@drawable/large_text_pref"
+            android:key="largeTextMode"/>
+
+        <com.atakmap.android.gui.PanCheckBoxPreference
+            android:title="@string/preferences_text139"
+            android:defaultValue="false"
+            android:summary="@string/preferences_text140"
+            android:icon="@drawable/large_actionbar"
+            android:key="largeActionBar" />
+
+        <com.atakmap.android.gui.PanListPreference
+            android:title="@string/preferences_text141"
+            android:entryValues="@array/overlays_scaling_values"
+            android:entries="@array/overlays_scaling_names"
+            android:summary="@string/preferences_text142"
+            android:icon="@drawable/large_icon"
+            android:key="relativeOverlaysScalingRadioList"
+            android:defaultValue="1.00" />
+
+        <com.atakmap.android.gui.PanListPreference
+            android:title="@string/preferences_text143"
+            android:entryValues="@array/label_scaling_values"
+            android:entries="@array/label_scaling_names"
+            android:key="label_text_size"
+            android:summary="@string/preferences_text144"
+            android:icon="@drawable/text_size"
+            android:defaultValue="14" />
+
+        <com.atakmap.android.gui.PanCheckBoxPreference
+            android:key="dim_map_with_brightness_key"
+            android:defaultValue="false"
+            android:icon="@drawable/ic_menu_map_brightness"
+            android:summary="@string/preferences_text145"
+            android:title="@string/preferences_text146"/>
+
+        <com.atakmap.android.gui.PanCheckBoxPreference
+            android:title="@string/pref_curved_display"
+            android:defaultValue="false"
+            android:icon="@drawable/ic_curved_display"
+            android:summary="@string/pref_curved_display_desc"
+            android:key="atakAdjustCurvedDisplay" />
+
+       <Preference
+            android:title="@string/androidPreferences"
+            android:summary="@string/preferences_text147"
+            android:icon="@drawable/ic_android_display_settings"
+            android:key="displaySettings" />
+
+
+        <com.atakmap.android.gui.PanCheckBoxPreference
+            android:title="@string/enable_faux"
+            android:defaultValue="false"
+            android:summary="@string/faux_nav_bar_text"
+            android:icon="@drawable/nav_bar"
+            android:key="faux_nav_bar" />
+
+        <com.atakmap.android.gui.PanCheckBoxPreference
+            android:title="@string/enable_faux_reverse"
+            android:defaultValue="false"
+            android:summary="@string/enable_faux_reverse_summ"
+            android:icon="@drawable/rev_nav_bar"
+            android:dependency="faux_nav_bar"
+            android:key="faux_nav_bar_reverse" />
+
+    </PreferenceCategory>
+</PreferenceScreen>

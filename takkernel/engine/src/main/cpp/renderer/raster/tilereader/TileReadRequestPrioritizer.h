@@ -26,6 +26,8 @@ namespace TAK {
                         int64_t focus_y_;
                         std::vector<atakmap::math::Rectangle<double>> rois_;
                         friend class GLQuadTileNode2;
+                        friend class GLQuadTileNode3;
+                        friend class NodeCore;
                     };
                 }
             }

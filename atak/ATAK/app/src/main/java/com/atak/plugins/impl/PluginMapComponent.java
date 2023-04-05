@@ -68,7 +68,8 @@ public class PluginMapComponent extends AbstractMapComponent implements
                 .getDefaultSharedPreferences(context);
 
         registerReceiver(context, uninstallReceiver,
-                new AtakBroadcast.DocumentedIntentFilter("com.atakmap.app.APP_REMOVED"));
+                new AtakBroadcast.DocumentedIntentFilter(
+                        "com.atakmap.app.APP_REMOVED"));
 
         Thread t = new Thread(new Runnable() {
             @Override
@@ -404,14 +405,11 @@ public class PluginMapComponent extends AbstractMapComponent implements
         return pluginIconMap.get(id);
     }
 
-
-
     private final BroadcastReceiver uninstallReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();
             final String pkgName = intent.getStringExtra("package");
-
 
             // if the package is uninstalled, make sure to invalidate the
             // hash cache for that particular package

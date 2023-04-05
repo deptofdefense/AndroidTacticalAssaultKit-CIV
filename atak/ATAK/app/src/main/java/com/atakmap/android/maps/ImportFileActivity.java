@@ -38,7 +38,13 @@ public class ImportFileActivity extends MetricActivity {
 
         final Intent intent = getIntent();
         final String action = intent.getAction();
-        final Uri uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
+        Uri uri = null;
+
+        try {
+            uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
+        } catch (Exception e) {
+            Log.e(TAG, "error getting parcelable", e);
+        }
 
         if (action == null || uri == null) {
             Log.d(TAG, "unable to open: " + action + " " + uri);

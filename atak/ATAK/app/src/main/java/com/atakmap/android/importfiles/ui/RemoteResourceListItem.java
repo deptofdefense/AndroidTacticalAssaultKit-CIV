@@ -173,7 +173,7 @@ public class RemoteResourceListItem extends AbstractHierarchyListItem2
                         @Override
                         public void onClick(DialogInterface d, int w) {
                             Log.d(TAG, "Downloading resource: "
-                                    + _resource.toString());
+                                    + _resource);
                             ImportExportMapComponent.getInstance()
                                     .download(_resource, true);
                         }
@@ -190,43 +190,15 @@ public class RemoteResourceListItem extends AbstractHierarchyListItem2
         // Share resource
         else if (id == R.id.importmgr_resource_btnShare) {
             Log.v(TAG, "Sending remote resource CoT");
-            String callsign = _view.getDeviceCallsign();
-            CotEvent event = _resource.toCot(callsign,
-                    CotMapComponent.getLastPoint(_view, _prefs));
-            File tmp = FileSystemUtils
-                    .getItem(FileSystemUtils.TMP_DIRECTORY);
-            if (event == null || !event.isValid()
-                    || !IOProviderFactory.exists(tmp)
-                            && !IOProviderFactory.mkdirs(tmp)) {
-                Log.w(TAG, "Faild to send Remote Resource CoT");
-                Toast.makeText(_context,
-                        R.string.importmgr_failed_to_send_resource,
-                        Toast.LENGTH_LONG).show();
-                return;
+
+            final MissionPackageManifest manifest = getMissionPackage();
+            if (manifest != null) {
+                SendDialog.Builder b = new SendDialog.Builder(_view);
+                b.setName(getTitle());
+                b.setIcon(getIconDrawable());
+                b.setMissionPackage(manifest);
+                b.show();
             }
-
-            File cotFile = new File(tmp, FileSystemUtils
-                    .sanitizeFilename(getTitle() + ".cot"));
-            try (OutputStream os = IOProviderFactory.getOutputStream(cotFile)) {
-                FileSystemUtils.write(os, event.toString());
-            } catch (Exception e) {
-                Log.e(TAG, "Failed to write remote resource CoT", e);
-                Toast.makeText(_context,
-                        R.string.importmgr_failed_to_send_resource,
-                        Toast.LENGTH_LONG).show();
-                return;
-            }
-
-            // Create temp manifest with the proper name
-            MissionPackageManifest manifest = MissionPackageApi
-                    .CreateTempManifest(getTitle(), true, true, null);
-            manifest.addFile(cotFile, null);
-
-            SendDialog.Builder b = new SendDialog.Builder(_view);
-            b.setName(getTitle());
-            b.setIcon(getIconDrawable());
-            b.setMissionPackage(manifest);
-            b.show();
         }
 
         // Delete resource
@@ -392,5 +364,41 @@ public class RemoteResourceListItem extends AbstractHierarchyListItem2
         public boolean isVisible() {
             return (getVisibility() != Visibility2.INVISIBLE);
         }
+    }
+
+    private MissionPackageManifest getMissionPackage() {
+
+        String callsign = _view.getDeviceCallsign();
+        CotEvent event = _resource.toCot(callsign,
+                CotMapComponent.getLastPoint(_view, _prefs));
+        File tmp = FileSystemUtils
+                .getItem(FileSystemUtils.TMP_DIRECTORY);
+        if (event == null || !event.isValid()
+                || !IOProviderFactory.exists(tmp)
+                && !IOProviderFactory.mkdirs(tmp)) {
+            Log.w(TAG, "Faild to send Remote Resource CoT");
+            Toast.makeText(_context,
+                    R.string.importmgr_failed_to_send_resource,
+                    Toast.LENGTH_LONG).show();
+            return null;
+        }
+
+        File cotFile = new File(tmp, FileSystemUtils
+                .sanitizeFilename(getTitle() + ".cot"));
+        try (OutputStream os = IOProviderFactory.getOutputStream(cotFile)) {
+            FileSystemUtils.write(os, event.toString());
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to write remote resource CoT", e);
+            Toast.makeText(_context,
+                    R.string.importmgr_failed_to_send_resource,
+                    Toast.LENGTH_LONG).show();
+            return null;
+        }
+
+        // Create temp manifest with the proper name
+        MissionPackageManifest manifest = MissionPackageApi
+                .CreateTempManifest(getTitle(), true, true, null);
+        manifest.addFile(cotFile, null);
+        return manifest;
     }
 }

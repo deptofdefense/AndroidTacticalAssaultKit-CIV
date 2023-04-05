@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "thread/Thread.h"
 #include "thread/impl/CondImpl.h"
 #include "thread/impl/MutexImpl.h"
@@ -339,3 +340,4 @@ void ThreadImpl::handle_deleter(HANDLE value)
     CloseHandle(value);
 }
 }
+#endif

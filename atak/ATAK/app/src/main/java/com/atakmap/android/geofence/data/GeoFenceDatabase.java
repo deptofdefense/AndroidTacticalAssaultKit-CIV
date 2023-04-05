@@ -87,7 +87,7 @@ public class GeoFenceDatabase {
             }
         }
         if (ret != null) {
-            Log.d(TAG, "Loaded geofence: " + ret.toString());
+            Log.d(TAG, "Loaded geofence: " + ret);
             return ret;
         }
 

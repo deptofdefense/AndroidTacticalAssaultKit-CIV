@@ -147,7 +147,8 @@ public class RubberSheetEditTool extends RectangleEditTool
         _oldTiltEnabled = _mapView.getMapTouchController()
                 .getTiltEnabledState() == MapTouchController.STATE_TILT_ENABLED;
         if (_oldTilt != 0d)
-            CameraController.Programmatic.tiltTo(_mapView.getRenderer3(), 0, false);
+            CameraController.Programmatic.tiltTo(_mapView.getRenderer3(), 0,
+                    false);
         MapTouchController.goTo(_sheet, false);
 
         // Register listeners on top of the current stack used by the rectangle
@@ -186,7 +187,8 @@ public class RubberSheetEditTool extends RectangleEditTool
             _sheet.persist(_mapView.getMapEventDispatcher(), null, getClass());
         unregisterListeners();
         _mapView.getMapTouchController().setUserOrientation(_oldFreeRotate);
-        CameraController.Programmatic.tiltTo(_mapView.getRenderer3(), _oldTilt, false);
+        CameraController.Programmatic.tiltTo(_mapView.getRenderer3(), _oldTilt,
+                false);
         NavView.getInstance().setTiltEnabled(_oldTiltEnabled);
         _subText.setVisible(false);
         super.onToolEnd();

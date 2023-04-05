@@ -33,6 +33,7 @@
             android:layout_weight=".25"
             android:inputType="number"
             android:maxLength="5"
+            android:imeOptions="actionDone"
             android:hint="@string/point_dropper_text11"
             android:textSize="@dimen/draper_title_font"/>
 

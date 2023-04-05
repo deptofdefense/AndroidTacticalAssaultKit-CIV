@@ -231,7 +231,7 @@ public class MissionPackageManifest implements Parcelable {
         _lastSavedPath = _path;
         setName(name);
         _path = getPath(dir, name);
-        Log.d(TAG, "setName: " + toString() + ", old path: " + _lastSavedPath);
+        Log.d(TAG, "setName: " + this + ", old path: " + _lastSavedPath);
     }
 
     /**
@@ -448,7 +448,7 @@ public class MissionPackageManifest implements Parcelable {
             NameValuePair p = file
                     .getParameter(MissionPackageContent.PARAMETER_LOCALPATH);
             if (p == null || !p.isValid()) {
-                Log.w(TAG, "Skipping invalid file: " + file.toString());
+                Log.w(TAG, "Skipping invalid file: " + file);
                 continue;
             }
 
@@ -573,7 +573,7 @@ public class MissionPackageManifest implements Parcelable {
      * @return
      */
     boolean toXml(File file) {
-        Log.d(TAG, "Saving Package Manifest: " + toString() + ", to file "
+        Log.d(TAG, "Saving Package Manifest: " + this + ", to file "
                 + file.getAbsolutePath());
         Serializer serializer = new Persister();
 
@@ -581,7 +581,7 @@ public class MissionPackageManifest implements Parcelable {
             serializer.write(this, fos);
             return true;
         } catch (Exception e) {
-            Log.e(TAG, "Failed to save manifest: " + toString(), e);
+            Log.e(TAG, "Failed to save manifest: " + this, e);
             return false;
         }
     }
@@ -622,7 +622,7 @@ public class MissionPackageManifest implements Parcelable {
         }
 
         if (out == null || !out.isValid()) {
-            Log.e(TAG, "Failed to save manifest: " + toString());
+            Log.e(TAG, "Failed to save manifest: " + this);
             return "";
         }
 
@@ -631,7 +631,7 @@ public class MissionPackageManifest implements Parcelable {
             serializer.write(out, sw);
             return sw.toString();
         } catch (Exception e) {
-            Log.e(TAG, "Failed to save manifest: " + toString(), e);
+            Log.e(TAG, "Failed to save manifest: " + this, e);
             return "";
         }
     }

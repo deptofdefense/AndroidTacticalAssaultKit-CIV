@@ -478,11 +478,11 @@ public class UserIconDatabase extends SQLiteOpenHelper {
 
         UserIconSet existing = getIconSet(iconset.getUid(), false, false);
         if (existing != null) {
-            Log.w(TAG, "Iconset already exists: " + iconset.toString());
+            Log.w(TAG, "Iconset already exists: " + iconset);
             return -1;
         }
 
-        Log.d(TAG, "Adding iconset: " + iconset.toString());
+        Log.d(TAG, "Adding iconset: " + iconset);
         ContentValues insertValues = new ContentValues();
         insertValues.put(UserIconSet.COLUMN_ICONSETS_NAME, iconset.getName());
         insertValues.put(UserIconSet.COLUMN_ICONSETS_UID, iconset.getUid());
@@ -595,7 +595,7 @@ public class UserIconDatabase extends SQLiteOpenHelper {
         } catch (SQLException e) {
             Log.w(TAG,
                     "Failed to increment use count for icon: "
-                            + icon.toString(),
+                            + icon,
                     e);
         }
     }
@@ -625,7 +625,7 @@ public class UserIconDatabase extends SQLiteOpenHelper {
                     whereArgs) != -1;
         } catch (Exception ex) {
             Log.e(TAG, "Failed to set selected group for iconset: "
-                    + iconset.toString(), ex);
+                    + iconset, ex);
             return false;
         }
     }

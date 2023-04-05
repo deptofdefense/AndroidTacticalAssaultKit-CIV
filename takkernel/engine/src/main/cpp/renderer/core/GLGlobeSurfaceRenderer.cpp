@@ -30,7 +30,12 @@ using namespace TAK::Engine::Util;
 #define MT_TILE_SIZE 512
 #define DEFAULT_SURFACE_REFRESH_INTERVAL 3000
 #define FORCE_PAUSE 0
-
+#define SURFACE_CHECKERBOARD 0
+#ifdef __ANDROID__
+#define INIT_MAX_LOD_COMPRESSION 4u
+#else
+#define INIT_MAX_LOD_COMPRESSION 1u
+#endif
 namespace
 {
     GLMegaTexture::TileIndex getIndex(const TerrainTile &tile) NOTHROWS;
@@ -92,7 +97,8 @@ GLGlobeSurfaceRenderer::GLGlobeSurfaceRenderer(GLGlobe &owner_) NOTHROWS :
     dirty(true),
     streamDirty(false),
     refreshInterval(DEFAULT_SURFACE_REFRESH_INTERVAL),
-    lastRefresh(Platform_systime_millis())
+    lastRefresh(Platform_systime_millis()),
+    maxLodCompression(INIT_MAX_LOD_COMPRESSION)
 {}
 GLGlobeSurfaceRenderer::~GLGlobeSurfaceRenderer() NOTHROWS
 {}
@@ -100,8 +106,7 @@ GLGlobeSurfaceRenderer::~GLGlobeSurfaceRenderer() NOTHROWS
 void GLGlobeSurfaceRenderer::update(const std::size_t limitMillis) NOTHROWS
 {
     // XXX - this is _really_ slow on windows...
-#ifdef __ANDROID__
-    {
+    if(owner.diagnosticMessagesEnabled) {
         std::size_t total = 0, shared, pool = 0;
         {
             GLMegaTexture *mt[2];
@@ -123,7 +128,6 @@ void GLGlobeSurfaceRenderer::update(const std::size_t limitMillis) NOTHROWS
             owner.addRenderDiagnosticMessage(strm.str().c_str());
         }
     }
-#endif
     if (paused)
         return;
 
@@ -168,9 +172,11 @@ void GLGlobeSurfaceRenderer::update(const std::size_t limitMillis) NOTHROWS
         // `dirty` handling is complete
         dirty = false;
 
-        // buffer is not populated, entire buffer is dirty
-        if (!front.getNumAvailableTiles())
+        // buffer is not populated or basemap has changed, entire buffer is dirty
+        if (!front.getNumAvailableTiles() || (updateContext.basemap != owner.basemap.get()))
             updateContext.dirtyRegions.push_back(Envelope2(-180.0, -90.0, 0.0, 180.0, 90.0, 0.0));
+
+        updateContext.basemap = owner.basemap.get();
 
         // update the resolve tiles list
         TAK::Engine::Port::STLVectorAdapter<std::shared_ptr<const TerrainTile>> tiles_a(updateContext.resolveTiles);
@@ -187,11 +193,13 @@ void GLGlobeSurfaceRenderer::update(const std::size_t limitMillis) NOTHROWS
             // force population of all if there is no fully populated surface texture
             isDirty |= !front.getNumAvailableTiles();
 
-            // if the tile does not intersect any dirty region, check the
-            // `front` buffer to see if it is already available. If not, mark
-            // it as an offscreen dirty region
-            if (!isDirty && !front.getTile(getIndex(*updateContext.resolveTiles[i]))) {
-                updateContext.dirtyTiles.offscreen.push_back(i);
+            if (!isDirty) {
+                // if the tile does not intersect any dirty region, check the
+                // `front` buffer to see if it is already available. If not, mark
+                // it as an offscreen dirty region
+                if (!front.getTile(getIndex(*updateContext.resolveTiles[i]))) {
+                    updateContext.dirtyTiles.offscreen.push_back(i);
+                }
             }
 
             // if dirty, queue it for update
@@ -214,8 +222,6 @@ void GLGlobeSurfaceRenderer::update(const std::size_t limitMillis) NOTHROWS
         //       to only sort if the `dirtyTiles` list exceeds some heuristic;
         //       an extra MS for an update that is expected to span several
         //       frames is not as significant of an impact.
-
-        updateContext.resadj = pow(2.0, atakmap::raster::osm::OSMUtils::mapnikTileLeveld(owner.renderPasses[0].scene.gsd, 0.0)-(double)atakmap::raster::osm::OSMUtils::mapnikTileLevel(owner.renderPasses[0].scene.gsd));
 
         lastRefresh = Platform_systime_millis();
         updateContext.pump++;
@@ -248,7 +254,6 @@ void GLGlobeSurfaceRenderer::update(const std::size_t limitMillis) NOTHROWS
     struct GLMapView2Restore
     {
         GLMapView2::State state;
-        GLMapView2::State renderPass1;
         GLMapView2::State renderPass2;
         const GLMapView2::State* renderPass;
         std::size_t numPasses;
@@ -258,7 +263,6 @@ void GLGlobeSurfaceRenderer::update(const std::size_t limitMillis) NOTHROWS
 
     GLMapView2Restore restore;
     restore.state = GLMapView2::State(owner);
-    restore.renderPass1 = owner.renderPasses[1u];
     restore.renderPass2 = owner.renderPasses[2u];
     restore.renderPass = owner.renderPass;
     restore.numPasses = owner.numRenderPasses;
@@ -267,14 +271,19 @@ void GLGlobeSurfaceRenderer::update(const std::size_t limitMillis) NOTHROWS
 
     const int64_t timesup = limitMillis ? (Platform_systime_millis()+limitMillis) : 0LL;
 
+    updateContext.pc.offscreen.interrupted |= !timesup;
+
     bool transfer = false;
+    // update visble tiles, respecting limit
     if(updateContext.pc.visible.pc < updateContext.dirtyTiles.visible.size())
         transfer |= updateTiles(updateContext.pc.visible, updateContext.dirtyTiles.visible, false, !updateContext.stream ? timesup : 0LL);
+    // if a limit is specified and we have remaining time, update offscreen
+    // tiles marked dirty. we don't bother updating offscreen if no limit is
+    // specified as tiles are always resolved in the pump they become visible.
     if((timesup && Platform_systime_millis() < timesup) && updateContext.pc.offscreen.pc < updateContext.dirtyTiles.offscreen.size())
         transfer |= updateTiles(updateContext.pc.offscreen, updateContext.dirtyTiles.offscreen, true, timesup);
 
     // reset the map render state
-    owner.renderPasses[1u] = restore.renderPass1;
     owner.renderPasses[2u] = restore.renderPass2;
     owner.renderPass = restore.renderPass;
     owner.numRenderPasses = restore.numPasses;
@@ -287,7 +296,7 @@ void GLGlobeSurfaceRenderer::update(const std::size_t limitMillis) NOTHROWS
     glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 
     // check if work is complete
-    const bool workComplete = ((updateContext.pc.visible.pc+updateContext.pc.offscreen.pc) == updateContext.limit);
+    const bool workComplete = !limitMillis || ((updateContext.pc.visible.pc+updateContext.pc.offscreen.pc) == updateContext.limit);
 
     // transfer data if available
     if(transfer) {
@@ -359,7 +368,7 @@ bool GLGlobeSurfaceRenderer::updateTiles(ProgramCounter &pc, const std::vector<s
         const GLMegaTexture::TileIndex key = getIndex(tile);
 
         // bind the megatexture tile
-        back.bindTile(key.level, key.column, key.row, std::min<unsigned>((unsigned)(updateContext.level0-key.level)/2u, 4u));
+        back.bindTile(key.level, key.column, key.row, std::min<unsigned>((unsigned)(updateContext.level0-key.level)/2u, (unsigned)maxLodCompression));
 
         // configure multi-pass and render pump for consumption by renderable
         owner.multiPartPass = !isRenderPumpComplete();
@@ -376,10 +385,8 @@ bool GLGlobeSurfaceRenderer::updateTiles(ProgramCounter &pc, const std::vector<s
         pumpState.drawSrid = 4326;
         pumpState.left = 0;
         pumpState.right = (int)tileSize * MT_SURFACE_RELATIVE_SCALE;
-        pumpState.right = (int)(pumpState.right*updateContext.resadj);
         pumpState.bottom = 0;
         pumpState.top = (int)tileSize * MT_SURFACE_RELATIVE_SCALE;
-        pumpState.top = (int)(pumpState.top*updateContext.resadj);
         pumpState.northBound = tile.aabb_wgs84.maxY;
         pumpState.westBound = tile.aabb_wgs84.minX;
         pumpState.southBound = tile.aabb_wgs84.minY;
@@ -688,6 +695,17 @@ void GLGlobeSurfaceRenderer::draw() NOTHROWS
             GLTerrainTile_bindTexture(ctx, front.getTile(mt_lo.key.level, mt_lo.key.column, mt_lo.key.row), mt_lo.texture.size, mt_lo.texture.size);
             drawsThisTile++;
 
+#if SURFACE_CHECKERBOARD
+                const std::size_t x_ = mt_lo.key.column;
+                const std::size_t y_ = mt_lo.key.row;
+                r = 1.f;
+                b = 1.f;
+                if ((x_ + y_) % 2u)
+                    r = 0.f;
+                else
+                    b = 0.f;
+#endif
+
             GLTerrainTile_drawTerrainTiles(ctx, mt_xform, &tile, 1u, r, g, b, a);
 
             // exact match, done
@@ -748,6 +766,17 @@ void GLGlobeSurfaceRenderer::draw() NOTHROWS
                 draws++;
                 GLTerrainTile_bindTexture(ctx, front.getTile((*idx).level, (*idx).column, (*idx).row), tileSize, tileSize);
                 drawsThisTile++;
+
+#if SURFACE_CHECKERBOARD
+                    const std::size_t x_ = (*idx).column;
+                    const std::size_t y_ = (*idx).row;
+                    r = 1.f;
+                    b = 1.f;
+                    if ((x_ + y_) % 2u)
+                        r = 0.f;
+                    else
+                        b = 0.f;
+#endif
 
                 GLTerrainTile_drawTerrainTiles(ctx, mt_xform, &tile, 1u, r, g, b, a);
             }

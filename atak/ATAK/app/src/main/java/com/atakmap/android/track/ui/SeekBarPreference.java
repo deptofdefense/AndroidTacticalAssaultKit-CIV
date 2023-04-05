@@ -64,6 +64,15 @@ public class SeekBarPreference extends DialogPreference implements
     }
 
     @Override
+    public void setEnabled(boolean enabled) {
+        super.setEnabled(enabled);
+        if (!enabled) {
+            super.setLayoutResource(
+                    R.layout.preference_layout_switch_prefs_grey_out);
+        }
+    }
+
+    @Override
     public void onProgressChanged(SeekBar seekBar, int progress,
             boolean fromUser) {
         value = progress;

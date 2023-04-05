@@ -176,7 +176,8 @@ public class GLModelRenderer2 implements GLMapRenderable2, ModelHitTestControl {
                 && Rectangle.intersects(featureBounds.minX, featureBounds.minY,
                         featureBounds.maxX, featureBounds.maxY, view.westBound,
                         view.currentPass.southBound,
-                view.currentPass.eastBound, view.currentPass.northBound)) {
+                        view.currentPass.eastBound,
+                        view.currentPass.northBound)) {
             synchronized (this) {
                 this.drawSrid = view.currentPass.drawSrid;
                 if (this.modelInfo == null

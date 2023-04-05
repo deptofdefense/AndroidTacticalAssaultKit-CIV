@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
-    >
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
     <PreferenceCategory
         android:title="@string/mediaPreferences">
-        
+
         <com.atakmap.android.gui.PanEditTextPreference
             android:key="secureDeleteTimeout"
             android:title="@string/preferences_text209"
@@ -13,16 +12,30 @@
             android:inputType = "number"
             android:enabled="true"/>
 
-        <Preference
+       <Preference
             android:key="mediaLayerCacheForceRescan"
             android:summary="@string/preferences_text211"
             android:title="@string/preferences_text212" />
 
-        <CheckBoxPreference
+        <com.atakmap.android.gui.PanCheckBoxPreference
             android:title="@string/prefs_use_klv_elevation"
             android:key="prefs_use_klv_elevation"
             android:summary="@string/prefs_use_klv_elevation_sum"
             android:defaultValue="false" />
+
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/quick_pic_preferences">
+        <com.atakmap.android.gui.PanListPreference
+
+            android:summary="@string/camera_app_summary"
+            android:title="@string/camera_app_title"
+            android:key="quickpic.camera_chooser"
+            android:icon="@drawable/camera"
+            android:defaultValue="System"
+            android:entryValues="@array/camera_app_entries"
+            android:entries="@array/camera_app_entries"/>
     </PreferenceCategory>
 
 </PreferenceScreen>

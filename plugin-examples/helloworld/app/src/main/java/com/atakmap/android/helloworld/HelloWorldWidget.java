@@ -18,6 +18,9 @@ import com.atakmap.android.widgets.MarkerIconWidget;
 
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 
+import com.atakmap.map.opengl.GLRenderGlobals;
+
+
 import android.content.BroadcastReceiver;
 import com.atakmap.coremap.log.Log;
 
@@ -61,7 +64,7 @@ public class HelloWorldWidget extends AbstractWidgetMapComponent implements
                 //imageUri = "file:///sdcard/custom_marker.png";
 
                 widget.setPoint((mapView.getWidth() / 2f)
-                        - (MapView.DENSITY * ICON_WIDTH / 2) + 72, 160f);
+                        - (GLRenderGlobals.getRelativeScaling() * ICON_WIDTH / 2) + 72, 160f);
 
                 Icon.Builder builder = new Icon.Builder();
                 builder.setAnchor(0, 0);

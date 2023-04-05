@@ -4,6 +4,8 @@ package com.atakmap.android.http.rest.request;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.http.rest.NetworkOperationManager;
 import com.atakmap.android.http.rest.operation.GetFileOperation;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -48,12 +50,11 @@ public class GetFileRequest implements Parcelable {
     }
 
     /**
-     * ctor
      *
-     * @parm url URL to download
+     * @param url URL to download
      * @param filename Name of file to create locally
      * @param dir Where to store file locally
-     * @param notificationId
+     * @param notificationId the notification id to use
      * @param creds basic user credentials
      */
     public GetFileRequest(String url, String filename, String dir,
@@ -104,7 +105,7 @@ public class GetFileRequest implements Parcelable {
     /**
      * Check if truststore and credential types are set
      *
-     * @return
+     * @return true if the trustore and credential types are set
      */
     public boolean useTruststore() {
         return !FileSystemUtils.isEmpty(_trustStoreType)
@@ -144,6 +145,7 @@ public class GetFileRequest implements Parcelable {
         return _notificationId;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return String.format("%s, %s/%s", _url, _destDir, _destFilename);

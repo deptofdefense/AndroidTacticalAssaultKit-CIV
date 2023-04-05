@@ -8,9 +8,8 @@ import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
 
-import com.atakmap.android.preference.PreferenceSearchIndex;
-
 import com.atakmap.android.preference.AtakPreferenceFragment;
+import com.atakmap.android.preference.PreferenceSearchIndex;
 import com.atakmap.android.util.ATAKConstants;
 import com.atakmap.app.R;
 
@@ -117,7 +116,6 @@ public class MainPreferencesFragment extends AtakPreferenceFragment implements
         Preference aboutPref = findPreference("about");
         aboutPref.setOnPreferenceClickListener(this);
         aboutPref.setIcon(ATAKConstants.getIcon());
-
     }
 
     @Override

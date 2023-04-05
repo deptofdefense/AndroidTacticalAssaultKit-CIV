@@ -4,6 +4,7 @@ import gov.tak.api.annotation.DontObfuscate;
 
 @DontObfuscate
 public interface RenderSurface {
+    @DontObfuscate
     interface OnSizeChangedListener {
         void onSizeChanged(RenderSurface surface, int width, int height);
     }

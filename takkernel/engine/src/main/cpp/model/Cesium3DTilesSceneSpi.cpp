@@ -1,4 +1,4 @@
-
+#ifdef MSVC
 #include "model/Cesium3DTilesSceneSpi.h"
 #include "math/Matrix2.h"
 #include "port/Collection.h"
@@ -507,3 +507,4 @@ namespace {
         return code;
     }
 }
+#endif

@@ -1,3 +1,4 @@
+#ifdef MSVC
 #include "renderer/GLLinesEmulation.h"
 
 #include <cinttypes>
@@ -32,8 +33,8 @@ using namespace atakmap::renderer;
                 "  float m = sqrt(dx*dx + dy*dy);\n" \
                 "  float adjX = aNormalDir*(dx/m)*(radius/uViewport.y);\n" \
                 "  float adjY = aNormalDir*(dy/m)*(radius/uViewport.x);\n" \
-                "  gl_Position.x = gl_Position.x - adjY;\n" \
-                "  gl_Position.y = gl_Position.y + adjX;\n" \
+                "  gl_Position.x = gl_Position.x - adjY*gl_Position.w;\n" \
+                "  gl_Position.y = gl_Position.y + adjX*gl_Position.w;\n" \
                 "}"
 
 #define VERT_SHADER_SRC_2D_1 VERT_SHADER_SRC_1(VERT_SHADER_VERTIMPL_2D)
@@ -507,3 +508,4 @@ namespace
         return true;
     }
 }
+#endif

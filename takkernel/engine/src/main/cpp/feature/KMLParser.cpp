@@ -1,4 +1,4 @@
-
+#ifdef MSVC
 #include <string.h>
 #include <vector>
 #include <libxml/xmlreader.h>
@@ -1189,3 +1189,4 @@ const KMLObject *KMLParser::fieldObject() const NOTHROWS {
 KMLPtr<KMLObject> KMLParser::fieldObjectPtr() const NOTHROWS {
     return fObj;
 }
+#endif

@@ -133,7 +133,7 @@ public class ImportManagerDropdown extends DropDownReceiver {
         }
 
         // initiate download file with auto-retry, and then send ACK
-        Log.d(TAG, "New Remote Resource received: " + resource.toString());
+        Log.d(TAG, "New Remote Resource received: " + resource);
         getMapView().post(new Runnable() {
             @Override
             public void run() {
@@ -184,7 +184,7 @@ public class ImportManagerDropdown extends DropDownReceiver {
                                     resource.getName()),
                             intent, true);
         } else {
-            Log.d(TAG, "Not adding resource: " + resource.toString());
+            Log.d(TAG, "Not adding resource: " + resource);
         }
     }
 

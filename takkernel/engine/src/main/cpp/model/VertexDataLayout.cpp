@@ -220,3 +220,44 @@ TAKErr TAK::Engine::Model::VertexDataLayout_getTexCoordArray(VertexArray *value,
 
     return TE_Ok;
 }
+
+TAKErr TAK::Engine::Model::VertexDataLayout_getVertexArray(VertexArray *value, const VertexDataLayout &layout, const VertexAttribute attr) NOTHROWS
+{
+    switch (attr) {
+    case TEVA_Position: *value = layout.position; break;
+    case TEVA_TexCoord0: *value = layout.texCoord0; break;
+    case TEVA_TexCoord1: *value = layout.texCoord1; break;
+    case TEVA_TexCoord2: *value = layout.texCoord2; break;
+    case TEVA_TexCoord3: *value = layout.texCoord3; break;
+    case TEVA_TexCoord4: *value = layout.texCoord4; break;
+    case TEVA_TexCoord5: *value = layout.texCoord5; break;
+    case TEVA_TexCoord6: *value = layout.texCoord6; break;
+    case TEVA_TexCoord7: *value = layout.texCoord7; break;
+    case TEVA_Normal: *value = layout.normal; break;
+    case TEVA_Color: *value = layout.color; break;
+    case TEVA_Reserved0: *value = layout.reserved[0u]; break;
+    case TEVA_Reserved1: *value = layout.reserved[1u]; break;
+    case TEVA_Reserved2: *value = layout.reserved[2u]; break;
+    case TEVA_Reserved3: *value = layout.reserved[3u]; break;
+    case TEVA_Reserved4: *value = layout.reserved[4u]; break;
+    case TEVA_Reserved5: *value = layout.reserved[5u]; break;
+    case TEVA_Reserved6: *value = layout.reserved[6u]; break;
+    case TEVA_Reserved7: *value = layout.reserved[7u]; break;
+    case TEVA_Reserved8: *value = layout.reserved[8u]; break;
+    case TEVA_Reserved9: *value = layout.reserved[9u]; break;
+    case TEVA_Reserved10: *value = layout.reserved[10u]; break;
+    case TEVA_Reserved11: *value = layout.reserved[11u]; break;
+    case TEVA_Reserved12: *value = layout.reserved[12u]; break;
+    case TEVA_Reserved13: *value = layout.reserved[13u]; break;
+    case TEVA_Reserved14: *value = layout.reserved[14u]; break;
+    case TEVA_Reserved15: *value = layout.reserved[15u]; break;
+    case TEVA_Reserved16: *value = layout.reserved[16u]; break;
+    case TEVA_Reserved17: *value = layout.reserved[17u]; break;
+    case TEVA_Reserved18: *value = layout.reserved[18u]; break;
+    case TEVA_Reserved19: *value = layout.reserved[19u]; break;
+    case TEVA_Reserved20: *value = layout.reserved[20u]; break;
+    default: return TE_InvalidArg;
+    }
+
+    return TE_Ok;
+}

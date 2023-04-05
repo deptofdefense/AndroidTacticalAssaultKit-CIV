@@ -29,14 +29,15 @@ import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.android.util.ATAKConstants;
 import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
-import com.atakmap.comms.CotService;
+
 import com.atakmap.comms.CotServiceRemote;
 import com.atakmap.comms.NetConnectString;
 import com.atakmap.comms.TAKServer;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.net.AtakAuthenticationCredentials;
-import com.atakmap.net.AtakAuthenticationDatabaseIFace;
+import com.atakmap.net.AtakAuthenticationDatabase;
+import com.atakmap.net.AtakCertificateDatabase;
 import com.atakmap.net.AtakCertificateDatabaseIFace;
 import com.atakmap.net.CertificateEnrollmentClient;
 
@@ -364,31 +365,30 @@ public abstract class CotPortListActivity extends MetricActivity {
                 currentlyEditingCotPort.getConnectString() == null)
             return;
 
-        AtakCertificateDatabaseIFace certDB = CotService
-                .getCertificateDatabase();
-        AtakAuthenticationDatabaseIFace authDB = CotService
-                .getAuthenticationDatabase();
-
         NetConnectString oldNcs = NetConnectString.fromString(
                 currentlyEditingCotPort.getConnectString());
         String oldServer = oldNcs.getHost();
 
-        byte[] clientCert = certDB.getCertificateForTypeAndServerAndPort(
-                AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE,
-                oldServer, oldNcs.getPort());
-        byte[] caCert = certDB.getCertificateForTypeAndServerAndPort(
+        byte[] clientCert = AtakCertificateDatabase
+                .getCertificateForServerAndPort(
+                        AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE,
+                        oldServer, oldNcs.getPort());
+        byte[] caCert = AtakCertificateDatabase.getCertificateForServerAndPort(
                 AtakCertificateDatabaseIFace.TYPE_TRUST_STORE_CA,
                 oldServer, oldNcs.getPort());
-        AtakAuthenticationCredentials clientCertPw = authDB
-                .getCredentialsForType(
+        AtakAuthenticationCredentials clientCertPw = AtakAuthenticationDatabase
+                .getCredentials(
                         AtakAuthenticationCredentials.TYPE_clientPassword,
                         oldServer);
-        AtakAuthenticationCredentials caCertPw = authDB.getCredentialsForType(
-                AtakAuthenticationCredentials.TYPE_caPassword,
-                oldServer);
+        AtakAuthenticationCredentials caCertPw = AtakAuthenticationDatabase
+                .getCredentials(
+                        AtakAuthenticationCredentials.TYPE_caPassword,
+                        oldServer);
 
-        AtakAuthenticationCredentials creds = authDB.getCredentialsForType(
-                AtakAuthenticationCredentials.TYPE_COT_SERVICE, oldServer);
+        AtakAuthenticationCredentials creds = AtakAuthenticationDatabase
+                .getCredentials(
+                        AtakAuthenticationCredentials.TYPE_COT_SERVICE,
+                        oldServer);
 
         // Remove old one (from CotService)
         removeFromRemote(
@@ -412,27 +412,27 @@ public abstract class CotPortListActivity extends MetricActivity {
         String newServer = newNcs.getHost();
 
         if (clientCert != null) {
-            certDB.saveCertificateForTypeAndServerAndPort(
+            AtakCertificateDatabase.saveCertificateForServerAndPort(
                     AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE,
                     newServer, newNcs.getPort(), clientCert);
         }
 
         if (caCert != null) {
-            certDB.saveCertificateForTypeAndServerAndPort(
+            AtakCertificateDatabase.saveCertificateForServerAndPort(
                     AtakCertificateDatabaseIFace.TYPE_TRUST_STORE_CA,
                     newServer, newNcs.getPort(), caCert);
         }
 
         if (clientCertPw != null && clientCertPw.password != null
                 && clientCertPw.password.length() != 0) {
-            authDB.saveCredentialsForType(
+            AtakAuthenticationDatabase.saveCredentials(
                     AtakAuthenticationCredentials.TYPE_clientPassword,
                     newServer, "", clientCertPw.password, false);
         }
 
         if (caCertPw != null && caCertPw.password != null
                 && caCertPw.password.length() != 0) {
-            authDB.saveCredentialsForType(
+            AtakAuthenticationDatabase.saveCredentials(
                     AtakAuthenticationCredentials.TYPE_caPassword,
                     newServer, "", caCertPw.password, false);
         }
@@ -451,22 +451,22 @@ public abstract class CotPortListActivity extends MetricActivity {
 
         // cleanup any dangling certs if the server changed
         if (!newServer.equalsIgnoreCase(oldServer)) {
-            certDB.deleteCertificateForTypeAndServerAndPort(
+            AtakCertificateDatabase.deleteCertificateForServerAndPort(
                     AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE,
                     oldServer, oldNcs.getPort());
 
-            certDB.deleteCertificateForTypeAndServerAndPort(
+            AtakCertificateDatabase.deleteCertificateForServerAndPort(
                     AtakCertificateDatabaseIFace.TYPE_TRUST_STORE_CA,
                     oldServer, oldNcs.getPort());
 
-            authDB.invalidateForType(
+            AtakAuthenticationDatabase.delete(
                     AtakAuthenticationCredentials.TYPE_clientPassword,
                     oldServer);
 
-            authDB.invalidateForType(
+            AtakAuthenticationDatabase.delete(
                     AtakAuthenticationCredentials.TYPE_caPassword,
                     oldServer);
-            authDB.invalidateForType(
+            AtakAuthenticationDatabase.delete(
                     AtakAuthenticationCredentials.TYPE_COT_SERVICE,
                     oldServer);
         }
@@ -497,8 +497,8 @@ public abstract class CotPortListActivity extends MetricActivity {
         if (creds == null
                 || !FileSystemUtils.isEquals(username, creds.username)
                 || !FileSystemUtils.isEquals(password, creds.password)
-                || CotService.getCertificateDatabase()
-                        .getCertificateForTypeAndServerAndPort(
+                || AtakCertificateDatabase
+                        .getCertificateForServerAndPort(
                                 AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE,
                                 newServer, newNcs.getPort()) == null) {
             CertificateEnrollmentClient.getInstance().enroll(this,

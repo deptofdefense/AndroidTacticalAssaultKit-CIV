@@ -25,8 +25,8 @@ buildscript {
     apply from: '../../gradle/takrepo.gradle', to: project
     apply from: '../../gradle/versions.gradle', to: project
 
-    ext.ATAK_VERSION = "4.5.1"
-    ext.ATAK_VERSION_SUBMINOR = ".13"
+    ext.ATAK_VERSION = "4.6.0"
+    ext.ATAK_VERSION_SUBMINOR = ".0"
 
     ext.isDevKitEnabled = { ->
         return getProperty('takRepoMavenUrl', null) != null &&
@@ -249,7 +249,7 @@ android {
             dimension "application"
             applicationIdSuffix = ".civ"
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".CIV"]
-            buildConfigField 'String', 'REDEPLOY_VERSION', '"450b"'
+            buildConfigField 'String', 'REDEPLOY_VERSION', '"460b"'
             buildConfigField 'boolean', 'MESH_NETWORK_DEFAULT','true'
             ndk { abiFilters "armeabi-v7a", "arm64-v8a", "x86" }
         }
@@ -258,7 +258,7 @@ android {
             dimension "application"
             applicationIdSuffix = ".civ"
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".CIV"]
-            buildConfigField 'String', 'REDEPLOY_VERSION', '"450b"'
+            buildConfigField 'String', 'REDEPLOY_VERSION', '"460b"'
             buildConfigField 'boolean', 'MESH_NETWORK_DEFAULT','true'
             versionNameSuffix "[playstore]"
             ndk { abiFilters "arm64-v8a" }
@@ -268,7 +268,7 @@ android {
             dimension "application"
             applicationIdSuffix = ".civ.dmuc"
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".CIV"]
-            buildConfigField 'String', 'REDEPLOY_VERSION', '"450b"'
+            buildConfigField 'String', 'REDEPLOY_VERSION', '"460b"'
             buildConfigField 'Boolean', 'MESH_NETWORK_DEFAULT','false'
             versionNameSuffix "[dmuc]"
             ndk { abiFilters "arm64-v8a" }

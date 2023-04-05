@@ -1,3 +1,4 @@
+
 package com.atakmap.android.features;
 
 import com.atakmap.android.hierarchy.action.Action;

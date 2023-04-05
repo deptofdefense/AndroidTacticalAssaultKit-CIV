@@ -227,7 +227,7 @@ public class LayersMapComponent extends AbstractMapComponent
         ToolsPreferenceFragment.register(
                 new ToolsPreferenceFragment.ToolPreference(
                         "Map Data Preferences",
-                        "",
+                        "Adjust the Map Data Preferences",
                         "wmsPreferences",
                         context.getResources().getDrawable(
                                 R.drawable.ic_menu_maps),
@@ -591,8 +591,8 @@ public class LayersMapComponent extends AbstractMapComponent
                 return;
 
             this.rasterLayers.show(active);
-            final LayerSelectionAdapter lsa =
-                    this.layerToAdapter.get(this.rasterLayers.get());
+            final LayerSelectionAdapter lsa = this.layerToAdapter
+                    .get(this.rasterLayers.get());
 
             if (lsa == null)
                 return;

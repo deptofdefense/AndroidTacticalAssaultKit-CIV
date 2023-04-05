@@ -56,7 +56,7 @@ public class ImportSupportInfoSort extends ImportInternalSDResolver {
         try {
             for (TYPE t : TYPE.values()) {
                 if (t._filename.equalsIgnoreCase(file.getName())) {
-                    Log.d(TAG, "Match Support Info content: " + t.toString());
+                    Log.d(TAG, "Match Support Info content: " + t);
                     return t;
                 }
             }

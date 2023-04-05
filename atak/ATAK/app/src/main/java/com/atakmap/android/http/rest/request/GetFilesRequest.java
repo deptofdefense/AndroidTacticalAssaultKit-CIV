@@ -4,6 +4,8 @@ package com.atakmap.android.http.rest.request;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.http.rest.NetworkOperationManager;
 import com.atakmap.android.http.rest.operation.GetFilesOperation;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -27,10 +29,9 @@ public class GetFilesRequest implements Parcelable {
     private final List<GetFileRequest> _requests;
 
     /**
-     * ctor
      * 
-     * @param uid
-     * @param requests
+     * @param uid the unique identifier for the request
+     * @param requests the list of individual requests that make up this larger bundled request
      */
     public GetFilesRequest(String uid, List<GetFileRequest> requests,
             int notificationId) {
@@ -39,10 +40,18 @@ public class GetFilesRequest implements Parcelable {
         _notificationId = notificationId;
     }
 
+    /**
+     * Return the UID associated with the request.
+     * @return the uid
+     */
     public String getUID() {
         return _uid;
     }
 
+    /**
+     * The number of sub file requests associated with this request if the reuest is valid
+     * @return 0 if the request is not valid otherwise the number of individual file requests.
+     */
     public int getCount() {
         if (!isValid())
             return 0;
@@ -50,6 +59,10 @@ public class GetFilesRequest implements Parcelable {
         return _requests.size();
     }
 
+    /**
+     * Get the notification id associated with the request
+     * @return the integer notification id
+     */
     public int getNotificationId() {
         return _notificationId;
     }
@@ -69,10 +82,15 @@ public class GetFilesRequest implements Parcelable {
         return true;
     }
 
+    /**
+     * The list of requests that make up this request.
+     * @return the list that was used when the request was created.
+     */
     public List<GetFileRequest> getRequests() {
         return _requests;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return String.format(LocaleUtil.getCurrent(), "%s Request count: %d",

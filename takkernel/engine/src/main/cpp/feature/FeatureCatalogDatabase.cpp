@@ -1,3 +1,4 @@
+#ifdef MSVC
 ////============================================================================
 ////
 ////    FILE:           FeatureCatalogDatabase.cpp
@@ -343,3 +344,4 @@ FeatureCatalogDatabase::whereCatalogSQL ()
 
 }                                       // Close feature namespace.
 }                                       // Close atakmap namespace.
+#endif

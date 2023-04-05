@@ -1,4 +1,4 @@
-
+#ifdef MSVC
 #include "renderer/GL.h"
 
 #include "math/Ellipsoid.h"
@@ -786,3 +786,4 @@ namespace
         return tessellatedPoints;
     }
 }
+#endif

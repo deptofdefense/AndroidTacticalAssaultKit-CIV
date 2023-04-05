@@ -89,6 +89,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
+import gov.tak.api.annotation.ModifierApi;
+
 public class HierarchyListReceiver extends BroadcastReceiver implements
         OnClickListener, OnCheckedChangeListener,
         SharedPreferences.OnSharedPreferenceChangeListener {
@@ -120,8 +122,14 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
         return _instance;
     }
 
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
     protected HIERARCHY_MODE mode = HIERARCHY_MODE.NONE;
     private final Stack<HIERARCHY_MODE> previousMode = new Stack<>();
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
     protected final double[] overlayManagerSizeValues = new double[4];
     private final MapOverlayManager overlayManager;
     protected HierarchyManagerView content;
@@ -313,23 +321,8 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
                 handleClearHierarchy();
                 break;
             case CLOSE_HIERARCHY:
-                Parcelable closeIntent = intent
-                        .getParcelableExtra("closeIntent");
-                final List<Intent> l = new ArrayList<>();
-                if (closeIntent instanceof Intent) {
-                    l.add((Intent) closeIntent);
-                } else {
-                    Parcelable[] closeIntents = intent.getParcelableArrayExtra(
-                            "closeIntents");
-                    if (!FileSystemUtils.isEmpty(closeIntents)) {
-                        for (Parcelable p : closeIntents) {
-                            if (p instanceof Intent)
-                                l.add((Intent) p);
-                        }
-                    }
-                }
+                final List<Intent> l = getIntents(intent);
                 closeDropDown(l);
-
                 break;
             case REFRESH_HIERARCHY:
                 // Handles "hier_mode" and "list_item_paths"
@@ -341,6 +334,31 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
         }
     }
 
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
+    protected List<Intent> getIntents(Intent intent) {
+        Parcelable closeIntent = intent
+                .getParcelableExtra("closeIntent");
+        final List<Intent> l = new ArrayList<>();
+        if (closeIntent instanceof Intent) {
+            l.add((Intent) closeIntent);
+        } else {
+            Parcelable[] closeIntents = intent.getParcelableArrayExtra(
+                    "closeIntents");
+            if (!FileSystemUtils.isEmpty(closeIntents)) {
+                for (Parcelable p : closeIntents) {
+                    if (p instanceof Intent)
+                        l.add((Intent) p);
+                }
+            }
+        }
+        return l;
+    }
+
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
     protected void handleClearHierarchy() {
         if (adapter != null)
             adapter.clearHandler();
@@ -348,6 +366,9 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
             setPreviousMode();
     }
 
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
     protected void handleManageHierarchy(Intent intent) {
         final String handlerClassName = intent
                 .getStringExtra("hier_userselect_handler");
@@ -544,6 +565,9 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
         }
     }
 
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
     protected void multiselectPrompt() {
         // Find handlers that support external usage, if any
         List<HierarchyListUserSelect> handlers = HierarchySelectHandler
@@ -821,7 +845,10 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
      * adjust values for overlay manager size, if device is not a tablet and user preference is not 33%
      * attach the normal defaults values of 50%
      */
-    private void determineDropDownSizeBasedOnDeviceState() {
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
+    protected void determineDropDownSizeBasedOnDeviceState() {
 
         double landscapeW = DropDownReceiver.HALF_WIDTH;
         double landscapeH = DropDownReceiver.FULL_HEIGHT;
@@ -851,6 +878,9 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
         overlayManagerSizeValues[3] = portraitH;
     }
 
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
     protected void exportPrompt() {
         ExportDialog d = new ExportDialog(_mapView);
         d.setCallback(new ExportDialog.Callback() {
@@ -866,6 +896,9 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
         d.show();
     }
 
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
     protected void sendFile(File file) {
         if (file == null)
             return;
@@ -896,6 +929,9 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
         b.show();
     }
 
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
     protected void clearHierarchyPrompt() {
         AlertDialog.Builder builder = new AlertDialog.Builder(_context);
         builder.setTitle(R.string.delete_dialog)
@@ -1074,6 +1110,9 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
         }
     }
 
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
     protected void setCurrentMode(HIERARCHY_MODE m) {
         if (m == null)
             return;
@@ -1085,6 +1124,9 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
         setViewToMode();
     }
 
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
     protected void setPreviousMode() {
         if (mode == HIERARCHY_MODE.ITEM_SELECTED) {
             if (adapter != null)
@@ -1104,6 +1146,9 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
         setViewToMode();
     }
 
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
     protected boolean isModeInStack(HIERARCHY_MODE mode) {
         return this.mode == mode || previousMode.contains(mode);
     }
@@ -1325,6 +1370,9 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
      * @param parent Parent view group
      * @param child Child view
      */
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
     protected static void replaceView(ViewGroup parent, View child) {
         if (parent == null)
             return;
@@ -1456,6 +1504,9 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
             l.onCurrentListChanged(adapter, oldList, newList);
     }
 
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
     protected class HierarchyListItemClickListener implements
             OnItemClickListener, OnItemLongClickListener {
 
@@ -1563,13 +1614,22 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
         }
     }
 
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+            "private"
+    })
     protected class HierarchyListDropDown extends DropDownReceiver
             implements IToolbarExtension, OnStateListener {
 
         private final ActionBarView _toolbarView;
         private final ActionBarReceiver _toolbarReceiver;
         private List<Intent> _onCloseIntents;
+        @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+                "private"
+        })
         protected HierarchyListAdapter _adapter;
+        @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+                "private"
+        })
         protected boolean _showingDropDown;
 
         // Used to check if we already fired onCloseList
@@ -1581,16 +1641,25 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
             _toolbarReceiver = ActionBarReceiver.getInstance();
         }
 
+        @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+                "private"
+        })
         protected void showDropDown() {
             showDropDown(content, 0, overlayManagerSizeValues[1],
                     overlayManagerSizeValues[2], 0, true, this);
             _showingDropDown = true;
         }
 
+        @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+                "private"
+        })
         protected void setCloseIntents(List<Intent> intents) {
             _onCloseIntents = intents;
         }
 
+        @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+                "private"
+        })
         protected boolean onCloseList(boolean forceClose) {
             if (_adapter == null) {
                 _onCloseListListener = null;
@@ -1783,6 +1852,9 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
             _onCloseListListener = null;
         }
 
+        @ModifierApi(since = "4.6", target = "4.9", modifiers = {
+                "private"
+        })
         protected boolean isShowing() {
             return _showingDropDown || isVisible();
         }

@@ -72,7 +72,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * 
+ *
  */
 public class EnterLocationDropDownReceiver extends DropDownReceiver implements
         OnStateListener, View.OnAttachStateChangeListener {
@@ -312,7 +312,7 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
             for (UserIconSet iconset : iconsets) {
                 if (iconset != null && iconset.isValid()) {
                     pallets.add(new UserIconPallet(iconset));
-                    Log.d(TAG, "Adding pallet: " + iconset.toString());
+                    Log.d(TAG, "Adding pallet: " + iconset);
                 } else {
                     Log.w(TAG, "Skipping invalid icon pallet: "
                             + (iconset == null ? "" : iconset.toString()));
@@ -325,7 +325,7 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
 
     /**
      * Return intent to create the point
-     * 
+     *
      */
     public MapItem processPoint(final GeoPointMetaData point,
             final MapItem clicked) {
@@ -808,7 +808,7 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
                                 .equals(_selectedIconPallet.getUid())) {
                             Log.d(TAG,
                                     "Pallet already active: "
-                                            + pallet.toString());
+                                            + pallet);
                         } else {
                             setPallet(pallet.getUid());
                         }
@@ -1014,7 +1014,7 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
 
             //remove fragment for specified pallet
             if (toRemove != null) {
-                Log.d(TAG, "Removing pallet: " + toRemove.toString()
+                Log.d(TAG, "Removing pallet: " + toRemove
                         + " at pos " + pos);
                 FragmentManager fm = toRemove.getFragment()
                         .getFragmentManager();
@@ -1043,7 +1043,7 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
                             continue;
                         }
 
-                        Log.d(TAG, "Removing pallet: " + p.toString()
+                        Log.d(TAG, "Removing pallet: " + p
                                 + " at pos: " + i);
                         fm.beginTransaction().remove(p.getFragment()).commit();
                     }
@@ -1063,7 +1063,7 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
         synchronized void addPallet(IconPallet pallet, int order) {
             IconPallet existing = getPallet(pallet.getUid());
             if (existing != null) {
-                Log.w(TAG, "Pallet already exists: " + pallet.toString());
+                Log.w(TAG, "Pallet already exists: " + pallet);
                 return;
             }
 

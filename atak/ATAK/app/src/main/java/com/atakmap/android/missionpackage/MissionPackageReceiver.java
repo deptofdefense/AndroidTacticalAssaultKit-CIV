@@ -390,22 +390,22 @@ public class MissionPackageReceiver extends BroadcastReceiver implements
                                 MissionPackageApi.INTENT_EXTRA_RECEIVERS);
 
                 if (bSendOnly) {
-                    Log.d(TAG, "Send Only: " + contents.toString());
+                    Log.d(TAG, "Send Only: " + contents);
                     //no save, just quick send
                     if (toUIDs == null || toUIDs.length < 1) {
                         //no contacts specified, lets ask user how to send
                         Log.d(TAG,
                                 "Prompting for send or post: "
-                                        + contents.toString());
+                                        + contents);
                         send(contents, null, true, cb);
                     } else {
                         //if contacts are specified, lets just send it to them
-                        Log.d(TAG, "Intent Send Only: " + contents.toString());
+                        Log.d(TAG, "Intent Send Only: " + contents);
                         _component.getFileIO().send(contents, toUIDs, cb);
                     }
                 } else {
                     //save, then send
-                    Log.d(TAG, "Intent Save and Send: " + contents.toString());
+                    Log.d(TAG, "Intent Save and Send: " + contents);
                     // Do not delete upon error, invoking component can handle appropriately via their
                     // callback
                     //TODO support save and then post to server if netContact is empty
@@ -414,7 +414,7 @@ public class MissionPackageReceiver extends BroadcastReceiver implements
                         //no contacts specified, lets ask user how to send
                         Log.d(TAG,
                                 "Prompting for save and send or post: "
-                                        + contents.toString());
+                                        + contents);
 
                         final MissionPackageBaseTask.Callback fCb = cb;
                         final MissionPackageManifest fContents = contents;
@@ -444,7 +444,7 @@ public class MissionPackageReceiver extends BroadcastReceiver implements
                     }
                 }
             } else {
-                Log.d(TAG, "Intent Save: " + contents.toString());
+                Log.d(TAG, "Intent Save: " + contents);
                 _component.getFileIO().save(contents, cb);
             }
         } else if (MISSIONPACKAGE_SEND.equals(action)
@@ -546,10 +546,10 @@ public class MissionPackageReceiver extends BroadcastReceiver implements
             }
 
             if (bSave) {
-                Log.d(TAG, "Saving changes to " + group.toString());
+                Log.d(TAG, "Saving changes to " + group);
                 _component.getFileIO().save(group.getManifest(), cb);
             } else {
-                Log.d(TAG, "Not saving changes to " + group.toString());
+                Log.d(TAG, "Not saving changes to " + group);
             }
         } else if (MISSIONPACKAGE_DELETE.equals(action)) {
             if (extras == null)
@@ -570,7 +570,7 @@ public class MissionPackageReceiver extends BroadcastReceiver implements
             }
 
             //remove from DB and file system
-            Log.v(TAG, "Deleting Mission Package: " + manifest.toString());
+            Log.v(TAG, "Deleting Mission Package: " + manifest);
             final String mPath = FileSystemUtils
                     .sanitizeWithSpacesAndSlashes(manifest
                             .getPath());
@@ -1359,7 +1359,7 @@ public class MissionPackageReceiver extends BroadcastReceiver implements
         if (manifest.isEmpty()) {
             toast(R.string.mission_package_cannot_send_empty_package);
             Log.d(TAG, "Cannot send empty package "
-                    + manifest.toString());
+                    + manifest);
             return;
         }
 
@@ -1725,7 +1725,7 @@ public class MissionPackageReceiver extends BroadcastReceiver implements
             File downloadedFile = new File(manifest.getPath());
             if (!inst.isDelete()) {
                 // all file contents should exist
-                Log.d(TAG, "Package received contents: " + manifest.toString());
+                Log.d(TAG, "Package received contents: " + manifest);
                 for (MissionPackageContent content : manifest.getFiles()) {
                     if (content.isIgnore())
                         continue; // don't validate b/c extractor skips it

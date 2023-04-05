@@ -1,9 +1,9 @@
 
 package gov.tak.platform.widgets;
 
+
 import gov.tak.api.util.Visitor;
 import gov.tak.api.widgets.IMapMenuWidget;
-import com.atakmap.coremap.log.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,13 +17,18 @@ public class MapMenuButtonWidget extends RadialButtonWidget implements IMapMenuB
     public final static String TAG = "MapMenuButtonWidget";
 
     private IMapMenuWidget _submenuWidget;
-    private boolean _showSubmenuPref;
+    private boolean _showSubmenuPref = true;
     private boolean _disableActionSwap = false;
     private boolean _disableIconSwap = false;
     private OnButtonClickHandler _onClickAction = null;
     private List<String> _prefKeys = new ArrayList<>();
     private List<String> _prefValues = new ArrayList<>();
     private float _layoutWeight = 1f;
+    private boolean _isBackButton = false;
+    private int _startAlpha = 10;
+    private int _endAlpha = 255;
+    private long _delayStartMS;
+    private int _delayDurationMS;
 
     // allow for up to 5 selection criteria so that is can do a better job at showing the user
     // that there might be a submenu active (icon swapping is nice)
@@ -189,4 +194,43 @@ public class MapMenuButtonWidget extends RadialButtonWidget implements IMapMenuB
         }
 
     }
+    @Override
+    public void delayShow(int milliSeconds) {
+        _delayDurationMS = milliSeconds;
+        _delayStartMS = System.currentTimeMillis();
+    }
+
+    @Override
+    public float getDelayAlpha() {
+        if (isDelaying()) {
+            long curTime = System.currentTimeMillis();
+            if (curTime >= _delayStartMS + _delayDurationMS) {
+                _startAlpha = _endAlpha;
+                _delayStartMS = _delayDurationMS = 0;
+            } else {
+                float t = (float) (curTime - _delayStartMS)
+                        / _delayDurationMS;
+                return (_startAlpha * (1 - t)) + (_endAlpha * t);
+            }
+        }
+        return _endAlpha;
+    }
+
+    @Override
+    public boolean isDelaying() {
+        return _delayStartMS > 0;
+    }
+    @Override
+    public boolean isBackButton() {
+        return _isBackButton;
+    }
+    /**
+     * Set this as a back button in a submenu
+     *
+     * @param isBackButton back button state
+     */
+    public void setIsBackButton(boolean isBackButton) {
+        this._isBackButton = isBackButton;
+    }
+
 }

@@ -67,7 +67,7 @@ void TAK::Engine::Renderer::Core::GLMapViewDebug_drawCameraRangeRing(const GLGlo
     xyz.reserve(180u*size);
 
     for(std::size_t i = 0u; i < 180u; i++) {
-        GeoPoint2 lla = GeoPoint2_pointAtDistance(GeoPoint2(cam.latitude, cam.longitude), i*2, radiusMeters, true);
+        GeoPoint2 lla = GeoPoint2_pointAtDistance(GeoPoint2(cam.latitude, cam.longitude), static_cast<double>(i*2), radiusMeters, true);
         TAK::Engine::Math::Point2<double> p;
         view.renderPass->scene.forward(&p, lla);
         xyz.push_back((float)p.x);
@@ -186,9 +186,9 @@ namespace
 
         atakmap::renderer::GLES20FixedPipeline::getInstance()->glEnableClientState(atakmap::renderer::GLES20FixedPipeline::CS_GL_VERTEX_ARRAY);
 
-        atakmap::renderer::GLES20FixedPipeline::getInstance()->glVertexPointer(size, GL_FLOAT, 0, pos);
+        atakmap::renderer::GLES20FixedPipeline::getInstance()->glVertexPointer(static_cast<int>(size), GL_FLOAT, 0, pos);
 
-        atakmap::renderer::GLES20FixedPipeline::getInstance()->glDrawArrays(mode, 0, count);
+        atakmap::renderer::GLES20FixedPipeline::getInstance()->glDrawArrays(mode, 0, static_cast<int>(count));
 
         atakmap::renderer::GLES20FixedPipeline::getInstance()->glDisableClientState(atakmap::renderer::GLES20FixedPipeline::CS_GL_VERTEX_ARRAY);
 

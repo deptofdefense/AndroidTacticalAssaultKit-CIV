@@ -1,6 +1,7 @@
 #pragma once
 
 #include "feature/Polygon2.h"
+#include "feature/SpatialCalculator2.h"
 #include "port/Platform.h"
 #include "util/Error.h"
 

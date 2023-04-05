@@ -8,14 +8,19 @@ namespace TAK {
     namespace Engine {
         namespace Renderer {
             namespace Raster {
-                class ENGINE_API TileClientControl {
+                class ENGINE_API TileClientControl
+                {
+                public :
+                    virtual ~TileClientControl() NOTHROWS = 0;
+                public :
                     virtual void setOfflineOnlyMode(bool offlineOnly) = 0;
                     virtual bool isOfflineOnlyMode() = 0;
                     virtual void refreshCache() = 0;
                     virtual void setCacheAutoRefreshInterval(int64_t milliseconds) = 0;
                     virtual int64_t getCacheAutoRefreshInterval() = 0;
-
                 };
+
+                ENGINE_API const char *TileClientControl_getType() NOTHROWS;
             }
         }
     }

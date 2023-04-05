@@ -26,11 +26,24 @@ namespace TAK {
             public :
                 template<class ... Args>
                 TAKErr allocate(std::unique_ptr<T, void(*)(const T *)> &value, Args ... args) NOTHROWS;
+                template<class ... Args>
+                TAKErr allocate(std::unique_ptr<void, void(*)(const void *)> &value, Args ... args) NOTHROWS;
             private :
                 template<class Ts>
-                static void deleter(const Ts *value)
+                static void deleter_t(const Ts *value)
                 {
                     // in place destruct the object
+                    value->~Ts();
+
+                    // deallocate
+                    const Deleter &deleter = *reinterpret_cast<const Deleter *>(reinterpret_cast<const unsigned char *>(value) + sizeof(Ts));
+                    deleter.fn(value);
+                }
+                template<class Ts>
+                static void deleter_v(const void *opaque)
+                {
+                    // in place destruct the object
+                    const Ts* value = static_cast<const Ts *>(opaque);
                     value->~Ts();
 
                     // deallocate
@@ -61,7 +74,23 @@ namespace TAK {
                 // set the deleter
                 typename PoolAllocator<T>::Deleter &deleter = *reinterpret_cast<typename PoolAllocator<T>::Deleter *>(static_cast<unsigned char *>(alloced.get()) + sizeof(T));
                 deleter.fn = alloced.get_deleter();
-                value = std::unique_ptr<T, void(*)(const T *)>(reinterpret_cast<T *>(static_cast<unsigned char *>(alloced.release())), PoolAllocator<T>::deleter);
+                value = std::unique_ptr<T, void(*)(const T *)>(reinterpret_cast<T *>(static_cast<unsigned char *>(alloced.release())), PoolAllocator<T>::deleter_t);
+                return code;
+            }
+            template<class T>
+            template<class ... Args>
+            TAKErr PoolAllocator<T>::allocate(std::unique_ptr<void, void(*)(const void *)> &value, Args ... args) NOTHROWS
+            {
+                TAKErr code(TE_Ok);
+                std::unique_ptr<void, void(*)(const void *)> alloced(nullptr, nullptr);
+                code = impl.allocate(alloced, true);
+                TE_CHECKRETURN_CODE(code);
+                // in-place construct the object
+                new (alloced.get()) T(&args...);
+                // set the deleter
+                typename PoolAllocator<T>::Deleter &deleter = *reinterpret_cast<typename PoolAllocator<T>::Deleter *>(static_cast<unsigned char *>(alloced.get()) + sizeof(T));
+                deleter.fn = alloced.get_deleter();
+                value = std::unique_ptr<void, void(*)(const void *)>(reinterpret_cast<T *>(static_cast<unsigned char *>(alloced.release())), PoolAllocator<T>::deleter_v<T>);
                 return code;
             }
         }
