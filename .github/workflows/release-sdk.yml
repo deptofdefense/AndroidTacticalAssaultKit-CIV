@@ -8,7 +8,7 @@ on:
 jobs:
   assemble:
     name: Build
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     container:
       image: openjdk:8-jdk
     defaults:
