@@ -1,5 +1,11 @@
 # Version History
 
+## 4.6.0.2
+
+* Bug Fixes
+  * correction of Ukraine typographic errors
+  * fix support for legacy LayerDrawables in ATAK for rendering custom badging over existing icons
+
 ## 4.6.0.1
 
 * Bug Fixes

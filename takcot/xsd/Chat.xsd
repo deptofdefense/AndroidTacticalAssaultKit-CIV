@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:include schemaLocation="details/__chat.xsd"/>
+    <xs:include schemaLocation="details/__chatreceipt.xsd"/>
+    <xs:include schemaLocation="events/point.xsd"/>
+    <xs:element name="event" type="eventType"/>
+    <xs:complexType name="linkType">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute type="xs:string" name="uid"/>
+                <xs:attribute type="xs:string" name="type"/>
+                <xs:attribute type="xs:string" name="relation"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="remarksType">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute type="xs:string" name="source"/>
+                <xs:attribute type="xs:string" name="sourceID"/>
+                <xs:attribute type="xs:string" name="to"/>
+                <xs:attribute type="xs:dateTime" name="time"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="detailType">
+        <xs:choice>
+            <xs:sequence>
+                <xs:element ref="__chat"/>
+                <xs:element type="linkType" name="link"/>
+                <xs:element type="remarksType" name="remarks"/>
+            </xs:sequence>
+            <xs:sequence>
+                <xs:element ref="__chatreceipt"/>
+                <xs:element type="linkType" name="link"/>
+            </xs:sequence>
+        </xs:choice>
+    </xs:complexType>
+    <xs:complexType name="eventType">
+        <xs:sequence>
+            <xs:element type="event_point" name="point"/>
+            <xs:element type="detailType" name="detail"/>
+        </xs:sequence>
+        <xs:attribute type="xs:float" name="version"/>
+        <xs:attribute type="xs:string" name="uid"/>
+        <xs:attribute type="xs:string" name="type"/>
+        <xs:attribute type="xs:dateTime" name="time"/>
+        <xs:attribute type="xs:dateTime" name="start"/>
+        <xs:attribute type="xs:dateTime" name="stale"/>
+        <xs:attribute type="xs:string" name="how"/>
+    </xs:complexType>
+</xs:schema>

@@ -3,6 +3,7 @@
     <com.atakmap.android.gui.PanSwitchPreference
         android:title="@string/pref_nav_orientation_title"
         android:summary="@string/pref_nav_orientation_summary"
+        android:defaultValue="true"
         android:switchTextOn="@string/right_caps"
         android:switchTextOff="@string/left_caps"
         android:key="nav_orientation_right"/>

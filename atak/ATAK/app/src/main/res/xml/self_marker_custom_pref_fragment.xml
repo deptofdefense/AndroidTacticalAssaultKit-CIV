@@ -4,6 +4,7 @@
         <com.atakmap.android.gui.PanListPreference
             android:title="@string/preferences_text329"
             android:key="location_marker_scale_key"
+            android:icon="@drawable/self_color_sizing"
             android:defaultValue="-1"
             android:entryValues="@array/location_marker_entry_values"
             android:entries="@array/location_marker_enteries"/>
@@ -12,6 +13,7 @@
     <PreferenceCategory android:title="@string/color">
        <com.atakmap.android.gui.PanCheckBoxPreference android:title="@string/default_string"
            android:key="default_gps_icon"
+           android:icon="@drawable/self_color_default"
            android:checked="false" />
 
         <com.atakmap.android.gui.PanCheckBoxPreference
@@ -22,10 +24,13 @@
         <com.atakmap.android.gui.PanCheckBoxPreference android:title="@string/custom"
             android:key="custom_color_gps_icon_pref"
             android:checked="false" />
-
-       <Preference android:title="@string/preferences_text334"
+       <Preference
+           android:title="@string/preferences_text334"
+           android:icon="@drawable/self_color_custom"
            android:key="change_custom_gps_color" />
-       <Preference android:title="@string/preferences_text470"
+       <Preference
+           android:title="@string/preferences_text470"
+           android:icon="@drawable/self_color_custom"
            android:key="change_custom_gps_outline_color"/>
     </PreferenceCategory>
 </PreferenceScreen>
