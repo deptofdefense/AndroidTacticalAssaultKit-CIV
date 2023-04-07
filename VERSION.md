@@ -1,5 +1,13 @@
 # Version History
 
+## 4.6.0.1
+
+* Bug Fixes
+  * handle the case where the RerouteDialog can throw an IllegalStateException (playstore)
+  * follow the altitude unit preference for the display and entry of the height in viewshed screens
+  * encode and decode unicode representation for the basic XML escaped values so invalid characters in the preferences file will not cause issues (xml values that would need to be escaped) 
+  * correctly pad with zeros and only return the number if it is negative
+
 ## 4.6.0.0
 
 * Feature Additions
