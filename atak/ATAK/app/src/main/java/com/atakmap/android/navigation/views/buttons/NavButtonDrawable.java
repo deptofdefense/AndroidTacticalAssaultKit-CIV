@@ -311,7 +311,10 @@ public class NavButtonDrawable extends Drawable implements Drawable.Callback {
         //_baseDrawable.setColorFilter(null);
 
         // Draw the base drawable to the scratch bitmap
-        drawToScratch(_baseDrawable);
+        if (_baseDrawable instanceof LayerDrawable)
+            drawToScratch(((LayerDrawable) _baseDrawable).getDrawable(0));
+        else
+            drawToScratch(_baseDrawable);
 
         // Generate and render shadow
         if (_shadowRadius > 0) {

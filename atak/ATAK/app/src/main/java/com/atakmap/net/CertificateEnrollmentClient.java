@@ -98,6 +98,12 @@ public class CertificateEnrollmentClient implements
         this.certificateEnrollmentCompleteCallback = certificateEnrollmentCompleteCallback;
 
         this.view = MapView.getMapView();
+        if (view == null) { 
+            // Possibly caused by ATAK crashing while the preference screen is open
+            Log.d(TAG, "mapview is null, cannot enroll");
+            return;
+        }
+        
         this.appCtx = view.getContext();
 
         view.post(new Runnable() {
