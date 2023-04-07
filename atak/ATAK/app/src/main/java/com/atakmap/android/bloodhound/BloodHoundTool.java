@@ -307,11 +307,15 @@ public class BloodHoundTool extends ButtonTool implements
     }
 
     /**
-     * Pad a number by the specified number of places.
+     * Pad a positive number by the specified number of places.   If the
+     * number is negative - just return the same number.
      * @param value the number of places
      * @return 0 padded number.
      */
     public static String pad3(int value) {
+        if (value < 0)
+            return Integer.toString(value);
+
         if (value < 9)
             return "00" + value;
         else if (value < 99)
@@ -1370,6 +1374,8 @@ public class BloodHoundTool extends ButtonTool implements
             int v = (int) Math.round(relativeBearing);
             if (v > 180)
                 v = -(360 - v);
+
+            if (v < 0) v+=360;
 
             bearingString = pad3(v);
 

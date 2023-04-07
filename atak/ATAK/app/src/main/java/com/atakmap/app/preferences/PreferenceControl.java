@@ -191,7 +191,7 @@ public class PreferenceControl implements ConnectionListener {
                     // do nothing
                 } else {
                     sb.append("<entry key=\"");
-                    sb.append(key.replaceAll("&", "&amp;"));
+                    sb.append(encode(key));
                     sb.append("\" class=\"");
                     sb.append(strClass);
                     sb.append("\">");
@@ -202,12 +202,16 @@ public class PreferenceControl implements ConnectionListener {
                         Set<?> set = (Set<?>) value;
                         for (Object v : set) {
                             sb.append("<element>");
+                            if (v instanceof String)
+                                v = encode((String)v);
                             sb.append(v);
                             sb.append("</element>\r\n");
                         }
-                    } else
+                    } else {
+                        if (value instanceof String)
+                            value = encode((String)value);
                         sb.append(value);
-
+                    }
                     sb.append("</entry>\r\n");
                 }
             }
@@ -510,8 +514,8 @@ public class PreferenceControl implements ConnectionListener {
             if (!entry.getNodeName().equals("entry"))
                 continue;
 
-            String key = entry.getAttributes()
-                    .getNamedItem("key").getNodeValue();
+            String key = decode(entry.getAttributes()
+                    .getNamedItem("key").getNodeValue());
             String value = "";
             Node firstChild;
             if ((firstChild = entry
@@ -526,7 +530,7 @@ public class PreferenceControl implements ConnectionListener {
 
             switch (className) {
                 case "class java.lang.String":
-                    editor.putString(key, value);
+                    editor.putString(key, decode(value));
                     retval.add(key);
                     break;
                 case "class java.lang.Boolean":
@@ -556,7 +560,7 @@ public class PreferenceControl implements ConnectionListener {
                                 continue;
                             firstChild = el.getFirstChild();
                             if (firstChild != null)
-                                valueSet.add(firstChild.getNodeValue());
+                                valueSet.add(decode(firstChild.getNodeValue()));
                         }
                         editor.putStringSet(key, valueSet);
                         retval.add(key);
@@ -1115,5 +1119,44 @@ public class PreferenceControl implements ConnectionListener {
         } catch (Exception e) {
             return false;
         }
+    }
+
+
+    /**
+     * This method is private to enable easier backporting to prior versions.   This
+     * encodes the following into the appropriate unicode
+     * "   &quot;   \u0022
+     * '   &apos;   \u0027
+     * <   &lt;     \u003c
+     * >   &gt;     \u003e
+     * &   &amp;    \u0026
+     * @param v the unencoded string
+     * @return the encoded string
+     */
+    private String encode(final String v) {
+        return v.replaceAll("\"", "\\\\u0022")
+                .replaceAll("'", "\\\\u0027")
+                .replaceAll("<", "\\\\u003c")
+                .replaceAll(">", "\\\\u003e")
+                .replaceAll("&", "\\\\u0026");
+    }
+
+    /**
+     * This method is private to enable easier backporting to prior versions.   This
+     * decodes the unicode into the appropriate value
+     * "   &quot;   \u0022
+     * '   &apos;   \u0027
+     * <   &lt;     \u003c
+     * >   &gt;     \u003e
+     * &   &amp;    \u0026
+     * @param v the encoded string
+     * @return the unencoded string
+     */
+    private String decode(String v) {
+        return v.replaceAll("\\\\u0022", "\"")
+                .replaceAll("\\\\u0027", "'")
+                .replaceAll("\\\\u003c", "<")
+                .replaceAll("\\\\u003e", ">")
+                .replaceAll("\\\\u0026", "&");
     }
 }
