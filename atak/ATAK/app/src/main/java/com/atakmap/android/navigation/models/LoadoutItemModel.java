@@ -3,6 +3,8 @@ package com.atakmap.android.navigation.models;
 
 import android.text.TextUtils;
 
+import androidx.annotation.Nullable;
+
 import com.atakmap.android.math.MathUtils;
 import com.atakmap.android.navigation.NavButtonManager;
 import com.atakmap.android.navigation.views.loadout.LoadoutManager;
@@ -20,8 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-
-import androidx.annotation.Nullable;
 
 /**
  * Model used for a button loadout (the tool buttons in the top left)
@@ -396,8 +396,16 @@ public class LoadoutItemModel {
             if (q == null)
                 q = models.size();
             int min = Math.min(s, q);
-            models.addAll(min, noOrder);
 
+            try {
+                models.addAll(min, noOrder);
+            } catch (Exception e) {
+                // Playstore Crash: NullPointerException during menu sorting
+                // Experienced on a Nokia 3.1 A Android 9 (SDK 28) - unable
+                // to find steps for reproduction.   Just add to the end of the
+                // models.
+                models.addAll(noOrder);
+            }
             // Update sort order with new tools included
             setSortOrder(models);
         }

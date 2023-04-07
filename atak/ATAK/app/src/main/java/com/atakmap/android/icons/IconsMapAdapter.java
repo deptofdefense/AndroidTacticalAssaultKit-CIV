@@ -6,7 +6,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
@@ -18,11 +17,9 @@ import com.atakmap.android.maps.Marker;
 import com.atakmap.android.user.icon.Icon2525cPallet;
 import com.atakmap.android.user.icon.SpotMapPallet;
 import com.atakmap.android.user.icon.UserIconPalletFragment;
-import com.atakmap.android.util.ATAKConstants;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.IOProvider;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
@@ -75,38 +72,6 @@ public class IconsMapAdapter extends BroadcastReceiver {
      */
     public static synchronized UserIconDatabase initializeUserIconDB(
             Context context, SharedPreferences prefs) {
-        File iconDB = new File(UserIconDatabase.DATABASE_NAME);
-        boolean iconDBexists = IOProviderFactory.exists(iconDB);
-
-        //check if the latest default iconset is loaded
-        String versionCode = String.valueOf(ATAKConstants.getVersionCode());
-        if (FileSystemUtils.isEmpty(versionCode))
-            versionCode = "unknown";
-
-        //check which default iconset is loaded (based on ATAK version)
-        //force load if DB does not exist
-        String currentVersion = prefs.getString(
-                "iconset.default.loaded.version", "");
-
-        if (!iconDBexists
-                || !versionCode.equals(currentVersion)) {
-            Log.d(TAG, "Replacing iconset version: " + currentVersion);
-            //if the copy succeeded, make a note in the preferences
-            Editor editor = prefs.edit();
-            editor.putString("iconset.default.loaded.version", versionCode);
-            editor.apply();
-            Log.d(TAG, "Updated to iconset version: " + versionCode);
-
-            // XXX - this is not per-provider sufficient
-
-            // delete the file, this will trigger the UserIconDatabase to rebuild
-            IOProviderFactory.delete(new File(UserIconDatabase.DATABASE_NAME),
-                    IOProvider.SECURE_DELETE);
-        } else {
-            Log.d(TAG,
-                    "Already running latest iconset version: " + versionCode);
-        }
-
         return UserIconDatabase.instance(context);
     }
 

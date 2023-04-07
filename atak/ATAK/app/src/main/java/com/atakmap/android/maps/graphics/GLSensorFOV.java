@@ -80,6 +80,10 @@ public class GLSensorFOV extends GLShape2 implements OnMetricsChangedListener,
         refreshStyle();
     }
 
+    /**
+     * Ensures that the labels exist
+     * @return true if the labels did not exist and were created.
+     */
     protected boolean ensureLabel() {
         if (_labelIDl == GLLabelManager.NO_ID) {
             //Log.d("GLSensorFOV", "ensureLabel");
@@ -164,7 +168,11 @@ public class GLSensorFOV extends GLShape2 implements OnMetricsChangedListener,
         if (_surfaceControl == null)
             _surfaceControl = ortho.getControl(SurfaceRendererControl.class);
 
-        ensureLabel();
+        if(ensureLabel()) {
+            // if the labels did not previously exist, go ahead and update the
+            // polygon to reassociated them with the sensor field of view.
+            updatePolygon();
+        }
 
         _poly.draw(ortho);
 
@@ -227,6 +235,8 @@ public class GLSensorFOV extends GLShape2 implements OnMetricsChangedListener,
                     l.release();
             rangeLines = null;
         }
+
+        removeLabel();
     }
 
     @Override

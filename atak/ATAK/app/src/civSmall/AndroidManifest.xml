@@ -6,4 +6,8 @@
     <!-- for the civilian small version, do not include the SEND_SMS permission -->
     <uses-permission android:name="android.permission.SEND_SMS" tools:node="remove"/>
 
+    <!-- for the civilian small version, do not include the QUERY_ALL_PACKAGES permission -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" tools:node="remove" />
+
+
 </manifest>
