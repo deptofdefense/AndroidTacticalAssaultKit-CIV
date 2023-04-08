@@ -9,11 +9,11 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
-import javax.xml.parsers.ParserConfigurationException;
 
 import java.io.StringReader;
 import java.util.Stack;
 
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
@@ -81,18 +81,7 @@ class CotContentHandler implements ContentHandler {
 
     @Override
     public void characters(final char[] ch, final int start, final int length) {
-
-        // we get all the bs whitespace here too
-        boolean isLegit = false;
-        for (int i = start; i < start + length; ++i) {
-            if (!Character.isWhitespace(ch[i])) {
-                isLegit = true;
-                break;
-            }
-        }
-
-        // it is the value of a detail
-        if (isLegit && _detailStack.size() > 0) {
+        if (_detailStack.size() > 0) {
             _innerTextBuilder.append(ch, start, length);
         }
     }
@@ -108,7 +97,7 @@ class CotContentHandler implements ContentHandler {
         if (_detailStack.size() > 0) {
             CotDetail detail = _detailStack.pop();
             if (_innerTextBuilder.length() > 0) {
-                detail.setInnerText(_innerTextBuilder.toString());
+                detail.setInnerText(_innerTextBuilder.toString().trim());
                 _innerTextBuilder.setLength(0);
             }
             if (_detailStack.size() == 0) {

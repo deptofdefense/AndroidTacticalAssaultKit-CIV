@@ -1,6 +1,13 @@
 
 package com.atakmap.coremap.io;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+
 import com.atakmap.android.androidtest.ATAKInstrumentedTest;
 import com.atakmap.android.androidtest.util.FileUtils;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -27,13 +34,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.URI;
 import java.nio.channels.FileChannel;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 /**
  * Test class for IOProviderFactory
@@ -425,7 +425,6 @@ public class IOProviderFactoryTest extends ATAKInstrumentedTest {
     public void register_test() throws IOException {
         IOProvider fiop;
         IOProviderFactory.registerProvider(fiop = createDummyProvider());
-        IOProviderFactory.unregisterProvider(fiop);
     }
 
     @Test
@@ -444,7 +443,6 @@ public class IOProviderFactoryTest extends ATAKInstrumentedTest {
             Assert.assertTrue(new File("/sdcard/encrypted/test.txt").exists());
             Assert.assertTrue(IOProviderFactory.delete(f, 0));
         } finally {
-            IOProviderFactory.unregisterProvider(provider);
         }
     }
 
@@ -463,7 +461,6 @@ public class IOProviderFactoryTest extends ATAKInstrumentedTest {
             Assert.assertTrue(new File("/sdcard/encrypted/test.txt").exists());
             Assert.assertTrue(IOProviderFactory.delete(f, 0));
         } finally {
-            IOProviderFactory.unregisterProvider(provider);
         }
     }
 
@@ -506,7 +503,6 @@ public class IOProviderFactoryTest extends ATAKInstrumentedTest {
                     FileSystemUtils.UTF8_CHARSET);
             Assert.assertEquals(file2Text, result);
         } finally {
-            IOProviderFactory.unregisterProvider(provider);
         }
     }
 
@@ -543,7 +539,6 @@ public class IOProviderFactoryTest extends ATAKInstrumentedTest {
             Assert.assertEquals("listFiles1.txt", files[0].getName());
             Assert.assertEquals("listFiles4.txt", files[1].getName());
         } finally {
-            IOProviderFactory.unregisterProvider(provider);
         }
     }
 
@@ -557,7 +552,6 @@ public class IOProviderFactoryTest extends ATAKInstrumentedTest {
 
         @Override
         public void close() {
-            IOProviderFactory.unregisterProvider(provider);
         }
     }
 
@@ -576,7 +570,7 @@ public class IOProviderFactoryTest extends ATAKInstrumentedTest {
                 return super.createDatabase(info);
             }
         };
-        IOProviderFactory.registerProvider(mock, true);
+        IOProviderFactory.registerProvider(mock);
         try {
             try (FileUtils.AutoDeleteFile f = FileUtils.AutoDeleteFile
                     .createTempFile()) {
@@ -586,7 +580,6 @@ public class IOProviderFactoryTest extends ATAKInstrumentedTest {
                 assertFalse(createDatabaseInvoked[0]);
             }
         } finally {
-            IOProviderFactory.unregisterProvider(mock);
         }
     }
 
@@ -603,14 +596,13 @@ public class IOProviderFactoryTest extends ATAKInstrumentedTest {
                 return super.createDatabase(info);
             }
         };
-        IOProviderFactory.registerProvider(mock, false);
+        IOProviderFactory.registerProvider(mock);
         try {
             final Pointer pointer = IOProviderFactory
                     .DatabaseProvider_create("/dev/null");
             assertNull(pointer);
             assertTrue(createDatabaseInvoked[0]);
         } finally {
-            IOProviderFactory.unregisterProvider(mock);
         }
     }
 }

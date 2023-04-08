@@ -1,17 +1,17 @@
 
 package com.atakmap.coremap.cot.event;
 
-import com.atakmap.android.androidtest.ATAKInstrumentedTest;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+
+import com.atakmap.android.androidtest.ATAKInstrumentedTest;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class CotEventTester extends ATAKInstrumentedTest {
@@ -60,6 +60,15 @@ public class CotEventTester extends ATAKInstrumentedTest {
         assertEquals("test", testDetail.getElementName());
         assertEquals("1", testDetail.getAttribute("a"));
         assertEquals("extra", testDetail.getInnerText());
+    }
+
+    @Test
+    public void validEncoded() {
+        CotEvent ce = CotEvent.parse(getValid4());
+        CotDetail cd = ce.getDetail();
+        CotDetail testDetail = cd.getChild(0);
+        assertEquals("test", testDetail.getElementName());
+        assertEquals("Бі не по", testDetail.getInnerText());
     }
 
     private String getInvalid1() {
@@ -123,5 +132,17 @@ public class CotEventTester extends ATAKInstrumentedTest {
                 "hae=\"9999999.0\" lat=\"41.11903\" lon=\"-75.42835\"/><detail><test a=\"1\">extra</test></event>";
 
     }
+
+    private String getValid4() {
+        return "<?xml version=\"1.0\" standalone=\"yes\"?>" +
+                "<event version=\"2.0\" type=\"b-t-f\" access=\"\" uid=\"1649717607000\" " +
+                "time=\"2022-04-11T22:53:27.000Z\" start=\"2022-04-11T22:53:27.000Z\" " +
+                "stale=\"2022-04-11T22:53:42.000Z\" how=\"m-c\" qos=\"1-r-c\">" +
+                "<point lat=\"0\" lon=\"0\" hae=\"0\" ce=\"9999999\" le=\"9999999\"/>" +
+                "<detail><test>&#x411;&#x456; &#x43D;&#x435; &#x43F;&#x43E;</test></detail></event>";
+
+    }
+
+
 
 }

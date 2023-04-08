@@ -1,6 +1,9 @@
 
 package com.atakmap.map.layer.raster.gdal;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+
 import android.content.Context;
 
 import androidx.test.platform.app.InstrumentationRegistry;
@@ -12,8 +15,6 @@ import com.atakmap.coremap.io.MockIOProvider;
 import com.atakmap.map.gdal.GdalLibrary;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
 import com.atakmap.map.layer.raster.DatasetDescriptorSpiArgs;
-
-import static org.junit.Assert.*;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -32,7 +33,7 @@ public class GdalLayerInfoTest extends ATAKInstrumentedTest {
         GdalLibrary.init(gdalDataDir);
 
         MockIOProvider mockIOProvider = new MockIOProvider();
-        IOProviderFactory.registerProvider(mockIOProvider, false);
+        IOProviderFactory.registerProvider(mockIOProvider);
     }
 
     @Test

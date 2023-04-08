@@ -1,6 +1,13 @@
 
 package com.atakmap.comms;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+
 import com.atakmap.android.androidtest.ATAKInstrumentedTest;
 import com.atakmap.commoncommo.CommoException;
 import com.atakmap.commoncommo.FileIOProvider;
@@ -30,13 +37,6 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 /**
  * This class tests the functionality of the native FileIOProvider by attempting a SimpleFileIO file
@@ -90,7 +90,6 @@ public class FileIOProviderTest extends ATAKInstrumentedTest {
      */
     @After
     public void afterTest() {
-        IOProviderFactory.unregisterProvider(_dummyProvider);
         _tester.deregisterFileIOProvider(_testProvider);
         _testChannel = null;
     }

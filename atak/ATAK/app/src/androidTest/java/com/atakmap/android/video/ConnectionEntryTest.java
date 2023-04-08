@@ -285,9 +285,19 @@ public class ConnectionEntryTest extends ATAKInstrumentedTest {
         ConnectionEntry ce3 = new ConnectionEntry("test",
                 "srt://compass.vidterra.com:1935?passphrase=Password123&streamid=play/68b7c23ce50a8816a208aaadf1c41d51");
         Assert.assertEquals(ce3.getProtocol(), ConnectionEntry.Protocol.SRT);
-        Assert.assertEquals(ce1.getPassphrase(), "Password123");
+        Assert.assertEquals(ce3.getPassphrase(), "Password123");
         Assert.assertEquals(ce3.getPath(),
                 "?streamid=play/68b7c23ce50a8816a208aaadf1c41d51");
 
+    }
+
+    @Test
+    public void connectionEntrySrt2() {
+        ConnectionEntry ce = new ConnectionEntry("test",
+                "srt://34.219.213.241:9005?timeout=12000000&passphrase=DemoOfSanta");
+        Assert.assertEquals(ce.getProtocol(), ConnectionEntry.Protocol.SRT);
+        Assert.assertEquals(ce.getNetworkTimeout(), 12000000);
+        Assert.assertEquals(ce.getPassphrase(), "DemoOfSanta");
+        Assert.assertEquals(ce.getPort(), 9005);
     }
 }
