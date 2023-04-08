@@ -66,27 +66,16 @@ jobs:
        set -o pipefail
     - name: set up Android NDK
       run: |
-       echo "% mkdir -p ${ANDROID_HOME}/ndk"
        mkdir -p ${ANDROID_HOME}/ndk
-       echo "% pushd ${ANDROID_HOME}/ndk"
        pushd ${ANDROID_HOME}/ndk
-       echo "% wget --quiet --tries=0 --output-document=android-ndk-r${ATAK_NDK_VERSION}.zip https://dl.google.com/android/repository/android-ndk-r${ATAK_NDK_VERSION}-linux-x86_64.zip"
        wget --quiet --tries=0 --output-document=android-ndk-r${ATAK_NDK_VERSION}.zip https://dl.google.com/android/repository/android-ndk-r${ATAK_NDK_VERSION}-linux-x86_64.zip
-       echo "% unzip -qq  android-ndk-r${ATAK_NDK_VERSION}.zip"
        unzip -qq  android-ndk-r${ATAK_NDK_VERSION}.zip
-       echo "% mv android-ndk-r${ATAK_NDK_VERSION} 12.1.2977051"
        mv android-ndk-r${ATAK_NDK_VERSION} 12.1.2977051
-       echo "% rm -f android-ndk-r${ATAK_NDK_VERSION}.zip"
        rm -f android-ndk-r${ATAK_NDK_VERSION}.zip
-       echo "% wget --quiet --tries=0 --output-document=android-ndk-r${TAKKERNEL_NDK_VERSION}.zip https://dl.google.com/android/repository/android-ndk-r${TAKKERNEL_NDK_VERSION}-linux.zip"
        wget --quiet --tries=0 --output-document=android-ndk-r${TAKKERNEL_NDK_VERSION}.zip https://dl.google.com/android/repository/android-ndk-r${TAKKERNEL_NDK_VERSION}-linux.zip
-       echo "% unzip -qq  android-ndk-r${TAKKERNEL_NDK_VERSION}.zip"
        unzip -qq  android-ndk-r${TAKKERNEL_NDK_VERSION}.zip
-       echo "% mv android-ndk-r${TAKKERNEL_NDK_VERSION} 23.1.7779620"
        mv android-ndk-r${TAKKERNEL_NDK_VERSION} 23.1.7779620
-       echo "% rm -f android-ndk-r${TAKKERNEL_NDK_VERSION}.zip"
        rm -f android-ndk-r${TAKKERNEL_NDK_VERSION}.zip
-       echo "% popd"
        popd
     - name: set up CMake
       run: |

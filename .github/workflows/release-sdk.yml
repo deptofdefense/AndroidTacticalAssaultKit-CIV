@@ -72,7 +72,7 @@ jobs:
        unzip -qq  android-ndk-r${ATAK_NDK_VERSION}.zip
        mv android-ndk-r${ATAK_NDK_VERSION} 12.1.2977051
        rm -f android-ndk-r${ATAK_NDK_VERSION}.zip
-       wget --quiet --tries=0 --output-document=android-ndk-r${TAKKERNEL_NDK_VERSION}.zip https://dl.google.com/android/repository/android-ndk-r${TAKKERNEL_NDK_VERSION}-linux-x86_64.zip
+       wget --quiet --tries=0 --output-document=android-ndk-r${TAKKERNEL_NDK_VERSION}.zip https://dl.google.com/android/repository/android-ndk-r${TAKKERNEL_NDK_VERSION}-linux.zip
        unzip -qq  android-ndk-r${TAKKERNEL_NDK_VERSION}.zip
        mv android-ndk-r${TAKKERNEL_NDK_VERSION} 23.1.7779620
        rm -f android-ndk-r${TAKKERNEL_NDK_VERSION}.zip
