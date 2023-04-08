@@ -1,7 +1,11 @@
 
 package com.atakmap.map.gdal;
 
+import static org.junit.Assert.assertTrue;
+
 import android.content.Context;
+
+import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.atakmap.android.androidtest.ATAKInstrumentedTest;
 import com.atakmap.coremap.io.DefaultIOProvider;
@@ -12,10 +16,6 @@ import org.junit.Test;
 
 import java.io.File;
 import java.util.ArrayList;
-
-import androidx.test.platform.app.InstrumentationRegistry;
-
-import static org.junit.Assert.assertTrue;
 
 public class VSIFileFileSystemHandlerTest extends ATAKInstrumentedTest {
     @BeforeClass
@@ -47,7 +47,6 @@ public class VSIFileFileSystemHandlerTest extends ATAKInstrumentedTest {
 
             assertTrue(records.contains(expectedRecord));
         } finally {
-            IOProviderFactory.unregisterProvider(dbgprovider);
         }
     }
 
@@ -71,7 +70,6 @@ public class VSIFileFileSystemHandlerTest extends ATAKInstrumentedTest {
 
             assertTrue(records.contains(expectedRecord));
         } finally {
-            IOProviderFactory.unregisterProvider(dbgprovider);
         }
     }
 }

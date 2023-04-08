@@ -1,5 +1,11 @@
 # Version History
 
+## 4.6.0.4
+
+* Bug Fixes
+  * correct SRT appending an extra timeout at the end of the connection entry
+  * correct issue with Ukraine text where the white space separation would disappear.
+
 ## 4.6.0.3
 
 * Bug Fixes

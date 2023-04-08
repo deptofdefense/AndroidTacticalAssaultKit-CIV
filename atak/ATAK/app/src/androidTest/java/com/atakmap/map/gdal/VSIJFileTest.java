@@ -1,6 +1,13 @@
 
 package com.atakmap.map.gdal;
 
+import static org.gdal.gdalconst.gdalconstConstants.GA_Update;
+import static org.gdal.gdalconst.gdalconstConstants.GDT_Byte;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
+
 import android.content.Context;
 
 import androidx.test.platform.app.InstrumentationRegistry;
@@ -11,10 +18,6 @@ import com.atakmap.coremap.io.IOProvider;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.io.MockProvider;
 import com.atakmap.map.gdal.MockVSIJFileFileSystemHandler.ExceptionalHandlerController;
-
-import static org.gdal.gdalconst.gdalconstConstants.GA_Update;
-import static org.gdal.gdalconst.gdalconstConstants.GDT_Byte;
-import static org.junit.Assert.*;
 
 import org.gdal.gdal.Band;
 import org.gdal.gdal.Dataset;
@@ -634,7 +637,6 @@ public class VSIJFileTest extends ATAKInstrumentedTest {
         try {
             test_kml_no_vsi();
         } finally {
-            IOProviderFactory.unregisterProvider(provider);
         }
     }
 
