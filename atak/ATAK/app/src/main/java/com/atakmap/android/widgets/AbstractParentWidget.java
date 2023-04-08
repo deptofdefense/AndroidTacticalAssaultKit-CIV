@@ -20,7 +20,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import gov.tak.api.widgets.IParentWidget;
 import gov.tak.api.widgets.IMapWidget;
-import gov.tak.platform.ui.MotionEvent;
 import gov.tak.platform.widgets.WidgetList;
 
 @Deprecated

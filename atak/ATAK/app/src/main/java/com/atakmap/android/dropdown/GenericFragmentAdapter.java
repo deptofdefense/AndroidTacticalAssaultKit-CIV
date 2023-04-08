@@ -2,6 +2,8 @@
 package com.atakmap.android.dropdown;
 
 import android.os.Bundle;
+
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -40,7 +42,7 @@ public class GenericFragmentAdapter extends Fragment {
     }
 
     @Override
-    public void onSaveInstanceState(Bundle outState) {
+    public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         Log.d(TAG,
                 "onSaveInstanceState: saving the uid in case the fragment has not been destroyed: "
@@ -73,7 +75,8 @@ public class GenericFragmentAdapter extends Fragment {
     }
 
     @Override
-    public View onCreateView(final LayoutInflater inflater,
+    public View onCreateView(@NonNull
+    final LayoutInflater inflater,
             final ViewGroup container,
             final Bundle savedInstanceState) {
         Log.d(TAG, "onCreateView: getting a fragment view for: " + uid);

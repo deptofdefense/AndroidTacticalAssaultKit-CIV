@@ -1,6 +1,7 @@
 
 package com.atakmap.android.user.icon;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
 import com.atakmap.android.maps.MapView;
@@ -38,6 +39,7 @@ public class SpotMapPallet implements IconPallet {
         return fragment;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "SpotMapPallet";

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen
-  xmlns:android="http://schemas.android.com/apk/res/android">
+    xmlns:android="http://schemas.android.com/apk/res/android">
     <PreferenceCategory
         android:title="@string/preferences_text98"
         android:key="publishCategory">
@@ -29,14 +29,12 @@
             android:key="dynamicReportingRateStationaryUnreliable"
             android:title="@string/preferences_text103"
             android:summary="@string/preferences_text104"
-
             android:defaultValue="30"
             android:inputType = "number"/>
         <com.atakmap.android.gui.PanEditTextPreference
             android:key="dynamicReportingRateMinUnreliable"
             android:title="@string/preferences_text105"
             android:summary="@string/preferences_text106"
-
             android:defaultValue="20"
             android:inputType = "number"/>
         <com.atakmap.android.gui.PanEditTextPreference

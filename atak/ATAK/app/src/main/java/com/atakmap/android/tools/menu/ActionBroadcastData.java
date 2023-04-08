@@ -5,8 +5,11 @@ import android.content.Intent;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 
 import org.simpleframework.xml.Element;
@@ -14,7 +17,6 @@ import org.simpleframework.xml.ElementList;
 
 import java.util.ArrayList;
 import java.util.List;
-import com.atakmap.coremap.locale.LocaleUtil;
 
 /**
  * 
@@ -109,6 +111,7 @@ public class ActionBroadcastData implements Parcelable {
         return 31 * ((getAction() == null ? 0 : getAction().hashCode()));
     }
 
+    @NonNull
     @Override
     public String toString() {
         return String.format(LocaleUtil.getCurrent(), "%s %s", getAction(),
@@ -179,7 +182,7 @@ public class ActionBroadcastData implements Parcelable {
             }
         }
 
-        Log.d(TAG, "Sending intent for: " + data.toString());
+        Log.d(TAG, "Sending intent for: " + data);
         AtakBroadcast.getInstance().sendBroadcast(intent);
     }
 }

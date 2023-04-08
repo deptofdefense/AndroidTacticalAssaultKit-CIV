@@ -3,7 +3,7 @@ package gov.tak.platform.contact;
 import gov.tak.api.annotation.NonNull;
 import gov.tak.api.contact.IContact;
 import gov.tak.api.util.AttributeSet;
-import org.apache.commons.lang.StringUtils;
+import gov.tak.platform.lang.Strings;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -58,7 +58,7 @@ public abstract class ContactBuilder<C extends IContact, B extends ContactBuilde
     public B withUniqueContactId(@NonNull String uniqueContactId) {
         Objects.requireNonNull(uniqueContactId, "Cannot use null contact ID when building an IContact instance.");
 
-        if (StringUtils.isBlank(uniqueContactId)) {
+        if (Strings.isBlank(uniqueContactId)) {
             throw new IllegalArgumentException("Cannot use blank contact ID when building an IContact instance.");
         }
 
@@ -79,7 +79,7 @@ public abstract class ContactBuilder<C extends IContact, B extends ContactBuilde
     public B withDisplayName(@NonNull String displayName) {
         Objects.requireNonNull(displayName, "Cannot use null display name when building an IContact instance.");
 
-        if (StringUtils.isBlank(displayName)) {
+        if (Strings.isBlank(displayName)) {
             throw new IllegalArgumentException("Cannot use blank display name when building an IContact instance.");
         }
 

@@ -40,6 +40,7 @@ namespace TAK {
                     virtual ~UpdateListener() NOTHROWS = 0;
                     virtual Util::TAKErr onBoundsChanged(const TAK::Engine::Feature::Envelope2 &aabb, const double minGsd, const double maxGsd) NOTHROWS = 0;
                     virtual Util::TAKErr onClampToGroundOffsetComputed(const double tz) NOTHROWS = 0;
+                    virtual Util::TAKErr onXrayColorChanged(const unsigned int color) NOTHROWS = 0;
                 };
 
                 ENGINE_API const char *SceneObjectControl_getType() NOTHROWS;

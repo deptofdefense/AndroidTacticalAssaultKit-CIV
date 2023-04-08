@@ -1,25 +1,21 @@
 package com.atakmap.map.layer.model;
 
-import com.atakmap.annotations.DeprecatedApi;
+import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.math.Matrix;
 
 import gov.tak.api.annotation.DontObfuscate;
+import gov.tak.api.util.Disposable;
 
-/**
- * @deprecated use {@link Mesh}
- */
-@Deprecated
-@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
 @DontObfuscate
-public interface Model extends Mesh {
+public interface Model extends Disposable {
 
-    public final static int INSTANCE_ID_NONE = 0;
+    int INSTANCE_ID_NONE = 0;
 
     /**
      * Returns the number of meshes within this model
      * @return
      */
-    public int getNumMeshes();
+    int getNumMeshes();
 
     /**
      * Get the mesh at a given index, post-transformed. Equivalent to invoking
@@ -27,7 +23,7 @@ public interface Model extends Mesh {
      * @param i
      * @return
      */
-    public Mesh getMesh(int i);
+    Mesh getMesh(int i);
 
     /**
      * Retrieves the specified mesh.
@@ -38,7 +34,7 @@ public interface Model extends Mesh {
      *                      will not have its local transform applied.
      * @return
      */
-    public Mesh getMesh(int i, boolean postTransform);
+    Mesh getMesh(int i, boolean postTransform);
 
     /**
      * Retrieves the transform associated with the specified mesh.
@@ -47,18 +43,20 @@ public interface Model extends Mesh {
      * @return  The transform for the mesh, or <code>null</code> if the mesh
      *          does not have an associated transform
      */
-    public Matrix getTransform(int meshId);
+    Matrix getTransform(int meshId);
 
     /**
      * Reserved for future scene node information
      * @return
      */
-    public SceneNode getRootSceneNode();
+    SceneNode getRootSceneNode();
 
     /**
      * Returns the instance ID associated with the given mesh
      * @param meshId
      * @return
      */
-    public int getInstanceId(int meshId);
+    int getInstanceId(int meshId);
+
+    Envelope getAABB();
 }

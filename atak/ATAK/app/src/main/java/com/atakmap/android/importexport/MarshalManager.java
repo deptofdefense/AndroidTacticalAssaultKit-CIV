@@ -114,7 +114,7 @@ public class MarshalManager {
             return null;
         Iterator<Marshal> iter = s.iterator();
 
-        String retval = null;
+        String retval;
         while (iter.hasNext()) {
             Marshal m = iter.next();
             retval = m.marshal(uri);

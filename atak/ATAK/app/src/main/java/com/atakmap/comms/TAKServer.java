@@ -3,6 +3,8 @@ package com.atakmap.comms;
 
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.http.rest.ServerVersion;
 import com.atakmap.annotations.FortifyFinding;
 import com.atakmap.comms.app.CotPortListActivity;
@@ -191,6 +193,7 @@ public class TAKServer {
             this.data.remove(ERROR_KEY);
     }
 
+    @NonNull
     @Override
     public String toString() {
         if (data != null) {

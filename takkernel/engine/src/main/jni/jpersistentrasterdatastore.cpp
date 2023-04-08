@@ -1,4 +1,4 @@
-#include "jpersistentrasterdatastore.h"
+#include "com_atakmap_map_layer_raster_PersistentRasterDataStore.h"
 
 #include <cstdint>
 #include <cstdio>

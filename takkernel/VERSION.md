@@ -1,5 +1,160 @@
 # Version History
 
+## 1.10.5
+
+* Advance streambuf end pointer in DataInput2Streambuf
+
+## 1.10.4
+
+* `GLQuadTileNode4` address potential `NullPointerException` for renderers without surface control
+
+## 1.10.3
+
+* `DatabaseInformation.getUri(String &)` should not check for `NULL`-ness
+
+## 1.10.2
+
+* `GdalTileReader` supports concurrent read lanes for different subsample rates
+
+## 1.10.1
+
+* `GLGlobeSurfaceRenderer` sorts dirty tiles before updates
+
+## 1.10.0
+
+* Java `GLQuadTileNode4` prefetches nodes to be rendered based on surface bounds at render pump start
+
+## 1.9.0
+
+* Refactor outlines data store to `:takkernel:engine`
+
+## 1.8.0
+
+* Refactor `DatabaseInformation::getUri()` and `::getPassphrase()` `const char *` -> `TAK::Engine::Port::String` to retain ownership over memory
+
+## 1.7.3
+
+* `GLLabelManager` interprets text size of zero as default for consistency pre `0.61.0`
+
+## 1.7.2
+
+* Make `OGR_Content2` constructor exception free
+* `OGR_Content2` constructs path via chaining as appropriate
+* make `NativeFeatureDataSource` JNI implementation more permissive, but stay within bounds of contract, to avoid unhandled exceptions
+
+## 1.7.1
+
+* Initialize various fields on `Shader` and `Shader2` structs to address misbehavior observed in some runtimes
+
+## 1.7.0
+
+* Overload _interactive_ `CameraController` pan functions to allow client to specify whether or not to perform smooth pan over poles
+
+## 1.6.0
+
+* Introduce new `ICertificateStore` and `ICredentialsStore` as API replacement for legacy certificate and authentication databases
+* Replace legacy certificate and authentication database implementation
+
+## 1.5.0
+
+* Add new `Strings.isBlank(String)` to remove _implementation_ dependency `apache-commons-slim` from `:shared` 
+
+## 1.4.2
+
+* Apply some threshold to mitigate globe rotating on pan when zoomed fully out
+
+## 1.4.1
+
+* Pass through allocator instance for PFI blocks
+
+## 1.4.0
+
+* Enable JNI dependencies for desktop 
+  * Attach desktop engine runtime JAR to test dependencies/classpath
+  * Utilize separate source set root, `jniTest`, for tests with JNI dependencies to better support Android <> Desktop crossplatform development
+
+## 1.3.0
+
+* Android `AtakCertificateDatabaseAdapter` derives from common `AtakCertificateDatabaseAdapterBase`
+
+## 1.2.0
+
+* add in documentation to the AtakAuthenticationDatabaseIFace 
+* add in `AtakAuthenticationDatabaseIFace.PERPETUAL` constant -1 for (which mirrors the desired behavior and underlying current impl
+* `AtakCertificateDatabaseIFace` and `AtakAuthenticationDatabaseIFace` extend from `Disposable` instead of providing the own definition, helps with both intended behavior as well as proguard issues (where two interfaces define dispose and then obfuscation ends up not correctly obfuscating the method the same way (cant have two names at once)
+
+
+## 1.1.1
+
+* correct orientation when panning across pole to avoid spinning globe
+
+## 1.1.0
+
+* expose `apache-commons-lang-slim` as API dependency on AAR
+
+## 1.0.4
+
+* Assume user has canceled if CLI `HttpConnectionHandler` does not receive credentials
+
+## 1.0.3
+
+* Add config option `"overlays.default-label-render-resolution"` to control default label render resolution
+
+## 1.0.2
+* Update TTP dependency to 2.7.2 to pick up OpenSSL update to address CVE-2022-0778
+
+## 1.0.1
+
+* `GLBatchGeometryFeatureDataStoreRenderer3` uses default icon dimension constraint of `64`
+* `GLBatchGeometryFeatureDataStoreRenderer3` pulls icon dimension constraint from _config options_
+
+## 1.0.0
+
+* Upgrade Android to NDK23
+* Utilize NDK supplied CMake toolchain file
+* Utilize `javac -h` for JNI header generation
+* Local compilation compatibility through JDK17
+* Remove sources for thirdparty dependencies; replace with managed dependencies or remove without replacement
+* Remove deprecated code marked for removal 4.5 or earlier
+
+## 0.63.0
+
+* Added new FeatureDataStore wrappers
+  * FeatureDataStoreProxy
+  * FeatureDataStoreLruCacheLogic
+* OGRFeatureDataStore uses these new FDS wrappers instead of `RuntimeCachingFeatureDataStore`
+* Added `atakmap::feature::Envelope::operator==`
+* Added `TAK::Engine::Feature::FeatureDataStore2::FeatureQueryParameters::operator==`
+* Added `TAK::Engine::Feature::FeatureDataStore2::FeatureSetQueryParameters::operator==`
+* Added `TAK::Engine::Feature::FeatureDataStore2` copy constructor
+* Fixed issues in `RuntimeFeatureDataStore2`
+  * Cursor returned by `RuntimeFeatureDataStore2::queryFeatures` now behaves like other cursors.  Call `moveToNext` before attempting to `get` the first item.
+  * Removed `bulkModify` tracking from `RuntimeFeatureDataStore2`.  It's handled by `AbstractFeatureDataStore2`.
+  * `RuntimeFeatureDataStore2::insertFeatureImpl` will call `setContentChanged` before returning when `inserted` is true
+  * `RuntimeFeatureDataStore2::deleteAllFeaturesImpl` will call `dispatchDataStoreContentChangedNoSync`
+* Added `TE_CHECKLOGCONTINUE_CODE` to use in loops when a message should be logged and then continue rather than break
+
+## 0.62.0
+
+* Add _xray color_ property to C++ `SceneInfo`
+* C++ scene renderer uses `SceneInfo::xrayColor`
+
+## 0.61.0
+
+* Reimplement `GLLabelManager` text rendering via SDF
+
+## 0.60.0
+
+* Add LOB intersect to Java `GeoCalculations`
+
+## 0.59.3
+
+* Fix submenu inner/outer radius highlight having extra width
+
+## 0.59.2
+
+* Added additional file validation checks for Cesium JSON files
+
 ## 0.59.1
 
 * Fix regression with `GLGlobe::lookAt` honoring minimum zoom introduced in `0.42.0`

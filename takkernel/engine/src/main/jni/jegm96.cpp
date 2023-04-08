@@ -1,4 +1,4 @@
-#include "jegm96.h"
+#include "com_atakmap_coremap_maps_conversion_EGM96.h"
 
 #include <cmath>
 

@@ -19,6 +19,7 @@
             android:dependency="network_config"
             android:disableDependentsState="true"
             android:key="network_dhcp"
+
             android:summary="@string/preferences_text188"
             android:title="DHCP" />
 

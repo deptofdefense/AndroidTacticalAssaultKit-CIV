@@ -60,7 +60,7 @@ import com.atakmap.math.Rectangle;
  * @deprecated use {@link GLQuadTileNode3}
  */
 @Deprecated
-@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
+@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.9")
 public class GLQuadTileNode2 implements
                                     GLResolvableMapRenderable,
                                     TileReader.AsynchronousReadRequestListener,
@@ -2093,18 +2093,7 @@ public class GLQuadTileNode2 implements
         }
     }
 
-    protected static class GridVertex {
-        public GeoPoint value;
-        public boolean resolved;
-        public PointD projected;
-        public int projectedSrid;
-
-        public GridVertex() {
-            value = GeoPoint.createMutable();
-            resolved = false;
-            projected = new PointD(0d, 0d);
-            projectedSrid = -1;
-        }
+    protected static class GridVertex extends com.atakmap.map.layer.raster.tilereader.opengl.GridVertex {
     }
 
     protected static interface VertexResolver extends com.atakmap.map.layer.raster.tilereader.opengl.VertexResolver<GLQuadTileNode2> {}
@@ -2139,7 +2128,7 @@ public class GLQuadTileNode2 implements
         }
 
         @Override
-        public void project(GLMapView view, long imgSrcX, long imgSrcY, GridVertex vert) {
+        public void project(GLMapView view, long imgSrcX, long imgSrcY, com.atakmap.map.layer.raster.tilereader.opengl.GridVertex vert) {
             this.scratchImg.x = imgSrcX;
             this.scratchImg.y = imgSrcY;
             this.node.imageToGround(this.scratchImg, vert.value, null);
@@ -2351,7 +2340,7 @@ public class GLQuadTileNode2 implements
         }
 
         @Override
-        public void project(GLMapView view, long imgSrcX, long imgSrcY, GridVertex retval) {
+        public void project(GLMapView view, long imgSrcX, long imgSrcY, com.atakmap.map.layer.raster.tilereader.opengl.GridVertex retval) {
             GeoPoint geo = null;
             if (!view.targeting) {
                 this.requested++;
@@ -2607,16 +2596,7 @@ public class GLQuadTileNode2 implements
      */
     @Deprecated
     @DeprecatedApi(since="4.1", forRemoval = true, removeAt = "4.4")
-    public static interface Initializer {
-        public static class Result {
-            public TileReader reader;
-            public DatasetProjection2 imprecise;
-            public DatasetProjection2 precise;
-            public Throwable error;
-        }
-        
-        public Result init(ImageInfo info, TileReaderFactory.Options opts);
-        public void dispose(Result result);
+    public static interface Initializer extends NodeInitializer {
     }
 
     /**

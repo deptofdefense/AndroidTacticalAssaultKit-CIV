@@ -1,4 +1,4 @@
-#include "jmatrix.h"
+#include "com_atakmap_math_Matrix.h"
 
 #include <cmath>
 

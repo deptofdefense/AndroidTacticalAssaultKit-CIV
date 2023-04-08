@@ -1,10 +1,10 @@
-#include "jtessellate.h"
+#include "com_atakmap_opengl_Tessellate.h"
 
 #include <renderer/Tessellate.h>
 #include <interop/JNIIntArray.h>
 
 #include "common.h"
-#include "junsafe.h"
+#include "com_atakmap_lang_Unsafe.h"
 #include "interop/JNIDoubleArray.h"
 #include "interop/JNIFloatArray.h"
 

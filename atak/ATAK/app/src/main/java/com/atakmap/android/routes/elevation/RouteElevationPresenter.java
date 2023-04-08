@@ -1,11 +1,6 @@
 
 package com.atakmap.android.routes.elevation;
 
-import java.util.List;
-
-import org.achartengine.model.XYMultipleSeriesDataset;
-import org.achartengine.model.XYSeries;
-
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.widget.LinearLayout;
@@ -20,12 +15,15 @@ import com.atakmap.android.routes.elevation.service.AnalyticsElevationService;
 import com.atakmap.coremap.conversions.ConversionFactors;
 import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.maps.conversion.EGM96;
-
-import com.atakmap.coremap.maps.coords.GeoPoint.AltitudeReference;
-
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.coremap.maps.coords.GeoPoint.AltitudeReference;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.map.layer.feature.Feature.AltitudeMode;
+
+import org.achartengine.model.XYMultipleSeriesDataset;
+import org.achartengine.model.XYSeries;
+
+import java.util.List;
 
 class RouteElevationPresenter implements ChartSelectionListener {
 
@@ -74,6 +72,9 @@ class RouteElevationPresenter implements ChartSelectionListener {
         seekerBarPanelPresenter.updateMslText(point.get());
         seekerBarPanelPresenter.updateGainText(0);
         seekerBarPanelPresenter.updateSlopeText(0);
+
+        Long l = (Long) point.getMetaData("date");
+        seekerBarPanelPresenter.updateTime((l == null) ? -1 : l);
 
         // Seek to marker when elevation profile is open
         if (RouteElevationBroadcastReceiver.getInstance().isDropDownOpen()) {

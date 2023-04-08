@@ -1,4 +1,4 @@
-#include "jnativeelevationchunk.h"
+#include "com_atakmap_map_elevation_NativeElevationChunk.h"
 
 #include <cmath>
 

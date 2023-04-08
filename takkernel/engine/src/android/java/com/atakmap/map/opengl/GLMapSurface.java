@@ -36,7 +36,7 @@ public class GLMapSurface extends GLSurfaceView implements RenderContext, Render
 
     private static Thread glThread;
 
-    private static float lastDensity = AtakMapView.DENSITY;
+    private static float lastDensity = GLRenderGlobals.getRelativeDisplayDensity();
 
     private int _getConfigAttr(EGL10 egl, EGLDisplay display, EGLConfig config, int attr) {
         int[] attr_value = {
@@ -417,7 +417,7 @@ public class GLMapSurface extends GLSurfaceView implements RenderContext, Render
         queueEvent(new Runnable() {
             @Override
             public void run() {
-                if(AtakMapView.DENSITY != lastDensity && glMapView != null) {
+                if(GLRenderGlobals.getRelativeDisplayDensity() != lastDensity && glMapView != null) {
                     glMapView.release();
                     
                     // XXX - would be REALLY nice to keep this wholly on the
@@ -428,7 +428,7 @@ public class GLMapSurface extends GLSurfaceView implements RenderContext, Render
                     final GLRenderGlobals glbls = GLRenderGlobals.peek(GLMapSurface.this);
                     if(glbls != null)
                         glbls.getImageCache().release();
-                    lastDensity = AtakMapView.DENSITY;
+                    lastDensity = GLRenderGlobals.getRelativeDisplayDensity();
 
                     // reset any cached text metrics/assets
                     GLText.invalidateCache();

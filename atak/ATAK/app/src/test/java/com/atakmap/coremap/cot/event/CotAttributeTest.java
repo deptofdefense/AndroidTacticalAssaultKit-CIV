@@ -19,7 +19,7 @@ public class CotAttributeTest {
         CotAttribute attr = new CotAttribute("test_name", "test_value");
 
         assertNotNull(attr.getName());
-        assertTrue(attr.getName().equals("test_name"));
+        assertEquals("test_name", attr.getName());
     }
 
     @Test
@@ -28,7 +28,7 @@ public class CotAttributeTest {
         CotAttribute attr = new CotAttribute("test_name", "test_value");
 
         assertNotNull(attr.getValue());
-        assertTrue(attr.getValue().equals("test_value"));
+        assertEquals("test_value", attr.getValue());
     }
 
     @Test
@@ -37,6 +37,6 @@ public class CotAttributeTest {
         CotAttribute attr = new CotAttribute("test_name", null);
 
         assertNotNull(attr.getValue());
-        assertTrue(attr.getValue().equals(""));
+        assertEquals("", attr.getValue());
     }
 }

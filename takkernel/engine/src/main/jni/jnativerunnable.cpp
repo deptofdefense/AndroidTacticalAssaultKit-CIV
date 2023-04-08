@@ -1,4 +1,4 @@
-#include "jnativerunnable.h"
+#include "com_atakmap_interop_NativeRunnable.h"
 
 #include "common.h"
 #include "interop/Pointer.h"

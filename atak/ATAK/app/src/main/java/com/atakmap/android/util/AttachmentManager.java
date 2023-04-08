@@ -414,7 +414,7 @@ public class AttachmentManager {
             File f = new File(dir, filename);
             if (IOProviderFactory.isDirectory(f))
                 return false;
-            
+
             return !(fn.endsWith(".lnk") || fn.endsWith(".aux.xml"));
         }
     };

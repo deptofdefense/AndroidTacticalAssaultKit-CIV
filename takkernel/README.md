@@ -41,10 +41,10 @@ aarbundle    \
 
 ### Setup
 
-1. Ensure [Java 8 or 9](https://adoptium.net/?variant=openjdk8) is present on system and the `JAVA_HOME` environment 
+1. Ensure [Java 8 or later](https://adoptium.net/?variant=openjdk8) is present on system and the `JAVA_HOME` environment 
    variable is set to reference the correct location (e.g. "C:\Program Files\Eclipse Adoptium\jdk-8.0.322.6-hotspot").
 
-2. Download and install [CMake](https://cmake.org/download/). Make sure it is added to `PATH`.
+2. Download and install [CMake 3.14.7 or later](https://cmake.org/download/). Make sure it is added to `PATH`.
 
 3. Download and install [Python 3+](https://www.python.org/downloads/). Make sure it is added to `PATH`.
 

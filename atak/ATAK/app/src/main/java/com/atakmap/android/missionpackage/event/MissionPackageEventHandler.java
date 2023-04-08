@@ -83,7 +83,7 @@ public class MissionPackageEventHandler implements IMissionPackageEventHandler {
             File atakDataDir, byte[] buffer, List<ImportResolver> sorters)
             throws IOException {
 
-        ZipEntry entry = zipFile.getEntry(content.getManifestUid());
+        ZipEntry entry = zipFile.getEntry(manifest.getZipPath(content.getManifestUid()));
         if (entry == null) {
             throw new IOException("Package does not contain manifest content: "
                     + content.getManifestUid());

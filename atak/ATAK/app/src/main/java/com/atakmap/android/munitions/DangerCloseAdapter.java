@@ -1,11 +1,6 @@
 
 package com.atakmap.android.munitions;
 
-import com.atakmap.app.system.FlavorProvider;
-import com.atakmap.app.system.SystemComponentLoader;
-import com.atakmap.coremap.io.IOProviderFactory;
-import com.atakmap.coremap.locale.LocaleUtil;
-
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -27,7 +22,11 @@ import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.app.R;
+import com.atakmap.app.system.FlavorProvider;
+import com.atakmap.app.system.SystemComponentLoader;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.IOProviderFactory;
+import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.xml.XMLUtils;
 
@@ -90,7 +89,7 @@ public class DangerCloseAdapter extends BaseAdapter
          *                  may not be valid when looked up using MapView.getMapItem().
          * @return the modified view.
          */
-        public View adapt(ViewHolder viewHolder, View v, String targetUID);
+        View adapt(ViewHolder viewHolder, View v, String targetUID);
     }
 
     private final Context _context;

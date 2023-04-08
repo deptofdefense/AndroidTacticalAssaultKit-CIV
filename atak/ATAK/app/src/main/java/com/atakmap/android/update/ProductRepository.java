@@ -3,6 +3,8 @@ package com.atakmap.android.update;
 
 import android.content.Context;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
@@ -199,6 +201,7 @@ public class ProductRepository {
         return false;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return _localIndexCache

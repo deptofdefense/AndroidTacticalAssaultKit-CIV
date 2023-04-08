@@ -25,6 +25,11 @@
             TAK::Engine::Util::Logger_log(TAK::Engine::Util::LogLevel::TELL_Error, "break %s@%d code=%d", __FILE__, __LINE__, (c)); \
         break; \
     }
+#define TE_CHECKLOGCONTINUE_CODE(c, lvl) \
+    if((c) != TAK::Engine::Util::TE_Ok)  {\
+        TAK::Engine::Util::Logger_log(lvl, "continue %s@%d code=%d", __FILE__, __LINE__, (c)); \
+        continue; \
+    }
 #define TE_CHECKLOGRETURN_CODE(c, lvl, what, ...) \
     if((c) != TAK::Engine::Util::TE_Ok) { \
         atakmap::util::Logger::log(lvl, what, __VA_ARGS__); \

@@ -3,6 +3,9 @@ package com.atakmap.android.munitions;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.AdapterView;
@@ -19,18 +22,16 @@ import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.ToggleButton;
-import android.graphics.Color;
 
 import com.atakmap.android.dropdown.DropDown;
-import com.atakmap.android.munitions.util.MunitionsHelper;
-import com.atakmap.android.util.SimpleItemSelectedListener;
-
 import com.atakmap.android.dropdown.DropDownReceiver;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.PointMapItem;
+import com.atakmap.android.munitions.util.MunitionsHelper;
 import com.atakmap.android.util.Circle;
+import com.atakmap.android.util.SimpleItemSelectedListener;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
@@ -38,9 +39,6 @@ import com.atakmap.coremap.log.Log;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
-
-import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
 
 /**
  * 
@@ -266,15 +264,16 @@ public class DangerCloseReceiver extends DropDownReceiver implements
                 Circle circ = (Circle) foundItem;
                 boolean labelsOn = circ.hasMetaValue("labels_on");
                 if (labelsOn) {
-                    circ.removeMetaData("labels_on");
                     circ.setLabel(null);
+                    circ.removeMetaData("labels_on");
                 } else {
-                    circ.setMetaBoolean("labels_on", true);
                     int radiusInMeters = (int) Math.round(circ.getRadius());
                     if (radiusInMeters >= 1000)
-                        circ.setLabel(radiusInMeters / 1000 + "km");
+                        circ.setLineLabel(radiusInMeters / 1000 + "km");
                     else
-                        circ.setLabel(radiusInMeters + "m");
+                        circ.setLineLabel(radiusInMeters + "m");
+                    
+                    circ.setMetaBoolean("labels_on", true);
                 }
                 break;
 

@@ -1,4 +1,4 @@
-#include "jprojectionfactory.h"
+#include "com_atakmap_map_projection_ProjectionFactory.h"
 
 #include <core/ProjectionFactory3.h>
 #include <core/ProjectionSpi3.h>

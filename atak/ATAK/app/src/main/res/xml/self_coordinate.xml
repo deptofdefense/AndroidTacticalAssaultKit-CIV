@@ -10,6 +10,14 @@
             android:defaultValue="bottom_right"
             android:icon="@drawable/ic_pref_self_coord_info" />
         <com.atakmap.android.gui.PanListPreference
+            android:title="@string/pref_self_coord_info"
+            android:key="self_coord_info_display"
+            android:summary="@string/pref_self_coord_info_summary"
+            android:entries="@array/self_coord_display_names"
+            android:entryValues="@array/self_coord_display_values"
+            android:defaultValue="bottom_right"
+            android:icon="@drawable/ic_pref_self_coord_info" />
+        <com.atakmap.android.gui.PanListPreference
             android:title="@string/preferences_text361"
             android:key="self_coord_action"
             android:entryValues="@array/tap_selfoverlay_values"

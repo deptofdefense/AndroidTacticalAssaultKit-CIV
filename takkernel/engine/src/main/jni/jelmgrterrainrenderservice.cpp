@@ -1,4 +1,4 @@
-#include "jnativeterrainternderservice.h"
+#include "com_atakmap_map_opengl_ElMgrTerrainRenderService.h"
 
 #include <vector>
 

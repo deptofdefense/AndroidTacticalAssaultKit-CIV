@@ -1,5 +1,5 @@
 #include "common.h"
-#include "jglninepatch.h"
+#include "com_atakmap_opengl_GLNinePatch.h"
 
 #include <cmath>
 

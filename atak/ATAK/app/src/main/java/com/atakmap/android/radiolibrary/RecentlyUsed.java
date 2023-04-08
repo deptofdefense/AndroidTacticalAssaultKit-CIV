@@ -10,6 +10,8 @@ import android.preference.PreferenceManager;
 import android.view.View;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.app.R;
 import com.atakmap.coremap.log.Log;
 
@@ -62,6 +64,7 @@ public class RecentlyUsed {
             return frequency + "," + moduleType + "," + channel;
         }
 
+        @NonNull
         @Override
         public String toString() {
             if (frequency > 0) {

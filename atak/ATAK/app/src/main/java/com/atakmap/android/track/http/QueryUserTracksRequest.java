@@ -4,6 +4,8 @@ package com.atakmap.android.track.http;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.track.TrackHistoryDropDown;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.foxykeep.datadroid.requestmanager.Request;
@@ -67,6 +69,7 @@ public class QueryUserTracksRequest implements Parcelable {
         return mEndTime;
     }
 
+    @NonNull
     @Override
     public String toString() {
         if (!isValid())

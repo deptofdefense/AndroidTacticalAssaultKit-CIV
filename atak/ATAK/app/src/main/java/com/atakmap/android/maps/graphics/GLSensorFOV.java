@@ -168,7 +168,7 @@ public class GLSensorFOV extends GLShape2 implements OnMetricsChangedListener,
         if (_surfaceControl == null)
             _surfaceControl = ortho.getControl(SurfaceRendererControl.class);
 
-        if(ensureLabel()) {
+        if (ensureLabel()) {
             // if the labels did not previously exist, go ahead and update the
             // polygon to reassociated them with the sensor field of view.
             updatePolygon();

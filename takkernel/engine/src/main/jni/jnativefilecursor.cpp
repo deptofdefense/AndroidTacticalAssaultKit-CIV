@@ -1,4 +1,4 @@
-#include "jnativefilecursor.h"
+#include "com_atakmap_map_layer_feature_NativeFileCursor.h"
 
 #include <feature/DataSourceFeatureDataStore2.h>
 #include "common.h"

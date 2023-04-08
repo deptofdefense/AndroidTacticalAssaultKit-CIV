@@ -157,8 +157,8 @@ public class LineStringTests extends AbstractGeometryTests {
         LineString linestring = new LineString(2);
         linestring.addPoint(xy[0], xy[1]);
 
-        Assert.assertTrue(xy[0] == linestring.getX(0));
-        Assert.assertTrue(xy[1] == linestring.getY(0));
+        Assert.assertEquals(xy[0], linestring.getX(0), 0.0);
+        Assert.assertEquals(xy[1], linestring.getY(0), 0.0);
     }
 
     @Test
@@ -167,9 +167,9 @@ public class LineStringTests extends AbstractGeometryTests {
         LineString linestring = new LineString(3);
         linestring.addPoint(xyz[0], xyz[1]);
 
-        Assert.assertTrue(xyz[0] == linestring.getX(0));
-        Assert.assertTrue(xyz[1] == linestring.getY(0));
-        Assert.assertTrue(0d == linestring.getZ(0));
+        Assert.assertEquals(xyz[0], linestring.getX(0), 0.0);
+        Assert.assertEquals(xyz[1], linestring.getY(0), 0.0);
+        Assert.assertEquals(0d, linestring.getZ(0), 0.0);
     }
 
     @Test(expected = IllegalStateException.class)
@@ -187,9 +187,9 @@ public class LineStringTests extends AbstractGeometryTests {
         LineString linestring = new LineString(3);
         linestring.addPoint(xyz[0], xyz[1], xyz[2]);
 
-        Assert.assertTrue(xyz[0] == linestring.getX(0));
-        Assert.assertTrue(xyz[1] == linestring.getY(0));
-        Assert.assertTrue(xyz[2] == linestring.getZ(0));
+        Assert.assertEquals(xyz[0], linestring.getX(0), 0.0);
+        Assert.assertEquals(xyz[1], linestring.getY(0), 0.0);
+        Assert.assertEquals(xyz[2], linestring.getZ(0), 0.0);
     }
 
     @Test
@@ -203,8 +203,8 @@ public class LineStringTests extends AbstractGeometryTests {
             linestring.addPoint(xy[i * 2], xy[i * 2 + 1]);
 
         for (int i = 0; i < numPoints; i++) {
-            Assert.assertTrue(xy[i * 2] == linestring.getX(i));
-            Assert.assertTrue(xy[i * 2 + 1] == linestring.getY(i));
+            Assert.assertEquals(xy[i * 2], linestring.getX(i), 0.0);
+            Assert.assertEquals(xy[i * 2 + 1], linestring.getY(i), 0.0);
         }
     }
 
@@ -219,9 +219,9 @@ public class LineStringTests extends AbstractGeometryTests {
             linestring.addPoint(xy[i * 2], xy[i * 2 + 1]);
 
         for (int i = 0; i < numPoints; i++) {
-            Assert.assertTrue(xy[i * 2] == linestring.getX(i));
-            Assert.assertTrue(xy[i * 2 + 1] == linestring.getY(i));
-            Assert.assertTrue(0d == linestring.getZ(i));
+            Assert.assertEquals(xy[i * 2], linestring.getX(i), 0.0);
+            Assert.assertEquals(xy[i * 2 + 1], linestring.getY(i), 0.0);
+            Assert.assertEquals(0d, linestring.getZ(i), 0.0);
         }
     }
 
@@ -249,9 +249,9 @@ public class LineStringTests extends AbstractGeometryTests {
             linestring.addPoint(xyz[i * 3], xyz[i * 3 + 1], xyz[i * 3 + 2]);
 
         for (int i = 0; i < numPoints; i++) {
-            Assert.assertTrue(xyz[i * 3] == linestring.getX(i));
-            Assert.assertTrue(xyz[i * 3 + 1] == linestring.getY(i));
-            Assert.assertTrue(xyz[i * 3 + 2] == linestring.getZ(i));
+            Assert.assertEquals(xyz[i * 3], linestring.getX(i), 0.0);
+            Assert.assertEquals(xyz[i * 3 + 1], linestring.getY(i), 0.0);
+            Assert.assertEquals(xyz[i * 3 + 2], linestring.getZ(i), 0.0);
         }
     }
 
@@ -322,7 +322,7 @@ public class LineStringTests extends AbstractGeometryTests {
         final double newvalue = Double
                 .longBitsToDouble(~Double.doubleToLongBits(oldvalue));
         linestring.setX(index, newvalue);
-        Assert.assertTrue(linestring.getX(index) == newvalue);
+        Assert.assertEquals(linestring.getX(index), newvalue, 0.0);
     }
 
     @Test
@@ -338,7 +338,7 @@ public class LineStringTests extends AbstractGeometryTests {
         final double newvalue = Double
                 .longBitsToDouble(~Double.doubleToLongBits(oldvalue));
         linestring.setY(index, newvalue);
-        Assert.assertTrue(linestring.getY(index) == newvalue);
+        Assert.assertEquals(linestring.getY(index), newvalue, 0.0);
     }
 
     @Test(expected = IllegalStateException.class)
@@ -354,7 +354,7 @@ public class LineStringTests extends AbstractGeometryTests {
         final double newvalue = Double
                 .longBitsToDouble(~Double.doubleToLongBits(oldvalue));
         linestring.setZ(index, newvalue);
-        Assert.assertTrue(linestring.getZ(index) == newvalue);
+        Assert.assertEquals(linestring.getZ(index), newvalue, 0.0);
     }
 
     @Test
@@ -370,7 +370,7 @@ public class LineStringTests extends AbstractGeometryTests {
         final double newvalue = Double
                 .longBitsToDouble(~Double.doubleToLongBits(oldvalue));
         linestring.setX(index, newvalue);
-        Assert.assertTrue(linestring.getX(index) == newvalue);
+        Assert.assertEquals(linestring.getX(index), newvalue, 0.0);
     }
 
     @Test
@@ -387,7 +387,7 @@ public class LineStringTests extends AbstractGeometryTests {
         final double newvalue = Double
                 .longBitsToDouble(~Double.doubleToLongBits(oldvalue));
         linestring.setY(index, newvalue);
-        Assert.assertTrue(linestring.getY(index) == newvalue);
+        Assert.assertEquals(linestring.getY(index), newvalue, 0.0);
     }
 
     @Test
@@ -404,7 +404,7 @@ public class LineStringTests extends AbstractGeometryTests {
         final double newvalue = Double
                 .longBitsToDouble(~Double.doubleToLongBits(oldvalue));
         linestring.setZ(index, newvalue);
-        Assert.assertTrue(linestring.getZ(index) == newvalue);
+        Assert.assertEquals(linestring.getZ(index), newvalue, 0.0);
     }
 
     // set point invalid index
@@ -495,8 +495,8 @@ public class LineStringTests extends AbstractGeometryTests {
         for (int i = 0; i < numPoints; i++) {
             final double x = linestring.getX(i);
             final double y = linestring.getY(i);
-            Assert.assertTrue(x == xy[i * pointsDim]);
-            Assert.assertTrue(y == xy[i * pointsDim + 1]);
+            Assert.assertEquals(x, xy[i * pointsDim], 0.0);
+            Assert.assertEquals(y, xy[i * pointsDim + 1], 0.0);
         }
     }
 
@@ -525,9 +525,9 @@ public class LineStringTests extends AbstractGeometryTests {
             final double x = linestring.getX(i);
             final double y = linestring.getY(i);
             final double z = linestring.getZ(i);
-            Assert.assertTrue(x == xy[i * pointsDim]);
-            Assert.assertTrue(y == xy[i * pointsDim + 1]);
-            Assert.assertTrue(z == 0d);
+            Assert.assertEquals(x, xy[i * pointsDim], 0.0);
+            Assert.assertEquals(y, xy[i * pointsDim + 1], 0.0);
+            Assert.assertEquals(0d, z, 0.0);
         }
     }
 
@@ -544,9 +544,9 @@ public class LineStringTests extends AbstractGeometryTests {
             final double x = linestring.getX(i);
             final double y = linestring.getY(i);
             final double z = linestring.getZ(i);
-            Assert.assertTrue(x == xy[i * pointsDim]);
-            Assert.assertTrue(y == xy[i * pointsDim + 1]);
-            Assert.assertTrue(z == xy[i * pointsDim + 2]);
+            Assert.assertEquals(x, xy[i * pointsDim], 0.0);
+            Assert.assertEquals(y, xy[i * pointsDim + 1], 0.0);
+            Assert.assertEquals(z, xy[i * pointsDim + 2], 0.0);
         }
     }
 
@@ -564,8 +564,8 @@ public class LineStringTests extends AbstractGeometryTests {
             linestring.get(p, i);
             final double x = linestring.getX(i);
             final double y = linestring.getY(i);
-            Assert.assertTrue(p.getX() == xy[i * pointsDim]);
-            Assert.assertTrue(p.getY() == xy[i * pointsDim + 1]);
+            Assert.assertEquals(p.getX(), xy[i * pointsDim], 0.0);
+            Assert.assertEquals(p.getY(), xy[i * pointsDim + 1], 0.0);
         }
     }
 
@@ -583,9 +583,9 @@ public class LineStringTests extends AbstractGeometryTests {
             linestring.get(p, i);
             final double x = linestring.getX(i);
             final double y = linestring.getY(i);
-            Assert.assertTrue(p.getX() == xy[i * pointsDim]);
-            Assert.assertTrue(p.getY() == xy[i * pointsDim + 1]);
-            Assert.assertTrue(p.getZ() == 0d);
+            Assert.assertEquals(p.getX(), xy[i * pointsDim], 0.0);
+            Assert.assertEquals(p.getY(), xy[i * pointsDim + 1], 0.0);
+            Assert.assertEquals(0d, p.getZ(), 0.0);
         }
     }
 
@@ -603,9 +603,9 @@ public class LineStringTests extends AbstractGeometryTests {
             linestring.get(p, i);
             final double x = linestring.getX(i);
             final double y = linestring.getY(i);
-            Assert.assertTrue(p.getX() == xy[i * pointsDim]);
-            Assert.assertTrue(p.getY() == xy[i * pointsDim + 1]);
-            Assert.assertTrue(p.getZ() == 0d);
+            Assert.assertEquals(p.getX(), xy[i * pointsDim], 0.0);
+            Assert.assertEquals(p.getY(), xy[i * pointsDim + 1], 0.0);
+            Assert.assertEquals(0d, p.getZ(), 0.0);
         }
     }
 
@@ -623,9 +623,9 @@ public class LineStringTests extends AbstractGeometryTests {
             linestring.get(p, i);
             final double x = linestring.getX(i);
             final double y = linestring.getY(i);
-            Assert.assertTrue(p.getX() == xy[i * pointsDim]);
-            Assert.assertTrue(p.getY() == xy[i * pointsDim + 1]);
-            Assert.assertTrue(p.getZ() == xy[i * pointsDim + 2]);
+            Assert.assertEquals(p.getX(), xy[i * pointsDim], 0.0);
+            Assert.assertEquals(p.getY(), xy[i * pointsDim + 1], 0.0);
+            Assert.assertEquals(p.getZ(), xy[i * pointsDim + 2], 0.0);
         }
     }
 
@@ -700,9 +700,9 @@ public class LineStringTests extends AbstractGeometryTests {
             final double x = xy[i * pointsDim];
             final double y = xy[i * pointsDim + 1];
 
-            Assert.assertTrue(x == linestring.getX(i));
-            Assert.assertTrue(y == linestring.getY(i));
-            Assert.assertTrue(0d == linestring.getZ(i));
+            Assert.assertEquals(x, linestring.getX(i), 0.0);
+            Assert.assertEquals(y, linestring.getY(i), 0.0);
+            Assert.assertEquals(0d, linestring.getZ(i), 0.0);
         }
     }
 
@@ -721,8 +721,8 @@ public class LineStringTests extends AbstractGeometryTests {
             final double x = xy[i * pointsDim];
             final double y = xy[i * pointsDim + 1];
 
-            Assert.assertTrue(x == linestring.getX(i));
-            Assert.assertTrue(y == linestring.getY(i));
+            Assert.assertEquals(x, linestring.getX(i), 0.0);
+            Assert.assertEquals(y, linestring.getY(i), 0.0);
         }
     }
 

@@ -23,7 +23,7 @@ public class ExportMarshalAdapter extends ArrayAdapter<ExportMarshalMetadata> {
 
     private final Context context;
     private final int layoutResourceId;
-    private ExportMarshalMetadata[] data = null;
+    private ExportMarshalMetadata[] data;
 
     public ExportMarshalAdapter(Context context, int layoutResourceId,
             ExportMarshalMetadata[] data) {
@@ -38,7 +38,7 @@ public class ExportMarshalAdapter extends ArrayAdapter<ExportMarshalMetadata> {
     public View getView(int position, View convertView,
             @NonNull ViewGroup parent) {
         View row = convertView;
-        ExportMarshalHolder holder = null;
+        ExportMarshalHolder holder;
 
         if (row == null) {
             LayoutInflater inflater = ((Activity) context).getLayoutInflater();

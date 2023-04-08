@@ -1,6 +1,8 @@
 
 package com.atakmap.android.grg;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.importexport.ExportFilters;
 import com.atakmap.android.importexport.Exportable;
 import com.atakmap.android.importexport.FormatNotSupportedException;
@@ -40,6 +42,7 @@ public class ImageOverlay extends Shape implements Exportable {
         return this.layerInfo;
     }
 
+    @NonNull
     public String toString() {
         return this.layerInfo.getName();
     }

@@ -146,7 +146,8 @@ public class MissionPackageFileAttachmentHandler implements
             File toUnzip = new File(parent, content.getManifestUid().substring(
                     index + 1));
 
-            ZipEntry entry = zipFile.getEntry(content.getManifestUid());
+            ZipEntry entry =
+                    zipFile.getEntry(manifest.getZipPath(content.getManifestUid()));
             if (entry == null) {
                 throw new IOException(
                         "Package does not contain manifest content: "

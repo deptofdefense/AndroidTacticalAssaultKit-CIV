@@ -425,7 +425,7 @@ DrawingTool::parseOGR_Color (const char* color)
 
     if ((len != 7 && len != 9)
         || *color != '#'
-#if (defined(MSVC) || defined(__ANDROID__))
+#if (defined(MSVC))
         || std::find_if (color + 1, color + len,
                          std::not1 (std::bind1st (std::ptr_fun<const char *, int> (strchr),
                                                   "0123456789ABCDEFabcdef")))

@@ -52,7 +52,7 @@ public class RadioDropDownReceiver extends DropDownReceiver {
             b.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    boolean success = false;
+                    boolean success;
                     try {
                         success = launchThirdParty(
                                 "com.harris.rfcd.android.kdu",

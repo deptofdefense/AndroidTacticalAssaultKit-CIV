@@ -1,4 +1,4 @@
-#include "jdatatype.h"
+#include "com_atakmap_interop_DataType.h"
 
 #include <port/Platform.h>
 

@@ -7,6 +7,11 @@ import android.preference.Preference;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+
+import com.atakmap.android.maps.MapView;
+import com.atakmap.app.R;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -48,6 +53,15 @@ public class PanPreference extends Preference {
         View v = super.onCreateView(parent);
         if (!isEnabled())
             v.setEnabled(false);
+
+        if (v instanceof LinearLayout) {
+            LinearLayout layout = (LinearLayout) v;
+            MapView view = MapView.getMapView();
+            ImageView iv = new ImageView(view.getContext());
+            iv.setImageDrawable(
+                    view.getContext().getDrawable(R.drawable.arrow_right));
+            layout.addView(iv);
+        }
         return v;
     }
 

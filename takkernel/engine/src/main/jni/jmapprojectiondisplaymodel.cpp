@@ -1,4 +1,4 @@
-#include "jmapprojectiondisplaymodel.h"
+#include "com_atakmap_map_projection_MapProjectionDisplayModel.h"
 
 #include <core/MapProjectionDisplayModel.h>
 #include <util/Memory.h>

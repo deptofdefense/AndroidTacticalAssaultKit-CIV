@@ -17,7 +17,6 @@ import android.widget.Toast;
 
 import com.atakmap.android.gui.ImportFileBrowserDialog;
 import com.atakmap.android.gui.PanEditTextPreference;
-import com.atakmap.android.gui.PanEditTextPreference;
 
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapView;

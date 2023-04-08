@@ -71,6 +71,7 @@ public class HashtagSet extends AbstractSet<String>
         map.clear();
     }
 
+    @NonNull
     public HashtagSet clone() {
         try {
             HashtagSet newSet = (HashtagSet) super.clone();

@@ -1,6 +1,12 @@
 
 package com.atakmap.android.menu;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.graphics.PointF;
@@ -32,14 +38,6 @@ import java.lang.reflect.Field;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
-import gov.tak.api.widgets.IMapWidget;
 
 public class RadialMenuTest extends ATAKInstrumentedTest {
 
@@ -275,7 +273,7 @@ public class RadialMenuTest extends ATAKInstrumentedTest {
                             MotionEvent event = eventBuilder.build();
                             layoutBase.onClick(event);
 
-                            MapMenuWidget menuWidget = null;
+                            MapMenuWidget menuWidget;
 
                             // open on map without a menu to clear
                             menuWidget = layoutBase.openMenuOnMap(geoPoint);
@@ -359,7 +357,7 @@ public class RadialMenuTest extends ATAKInstrumentedTest {
                                         menuWidget);
                             }
 
-                            MapMenuButtonWidget contactButton = null;
+                            MapMenuButtonWidget contactButton;
                             final String contactIconAsset = "asset://icons/contact.png";
                             final Marker friendly = new Marker(
                                     UUID.randomUUID().toString());

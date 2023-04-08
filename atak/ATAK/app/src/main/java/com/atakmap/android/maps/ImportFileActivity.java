@@ -13,6 +13,7 @@ import android.widget.Toast;
 
 import com.atakmap.android.importexport.ImportExportMapComponent;
 import com.atakmap.android.metrics.activity.MetricActivity;
+import com.atakmap.android.util.PendingIntentHelper;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
@@ -97,7 +98,9 @@ public class ImportFileActivity extends MetricActivity {
             // requires the use of currentTimeMillis
             PendingIntent contentIntent = PendingIntent.getActivity(this,
                     (int) System.currentTimeMillis(),
-                    atakFrontIntent, PendingIntent.FLAG_CANCEL_CURRENT);
+                    atakFrontIntent,
+                    PendingIntentHelper
+                            .adaptFlags(PendingIntent.FLAG_CANCEL_CURRENT));
             try {
                 contentIntent.send();
             } catch (Exception e) {

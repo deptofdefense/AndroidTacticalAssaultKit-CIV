@@ -1,4 +1,4 @@
-#include "jgeometry.h"
+#include "com_atakmap_map_layer_feature_geometry_Geometry.h"
 
 #include <memory>
 #include <sstream>

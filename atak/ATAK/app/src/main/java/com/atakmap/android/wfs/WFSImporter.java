@@ -20,8 +20,9 @@ import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.comms.CommsMapComponent.ImportResult;
 import com.atakmap.filesystem.HashingUtils;
+import com.atakmap.map.layer.feature.Adapters;
 import com.atakmap.map.layer.feature.FeatureDataStore;
-import com.atakmap.map.layer.feature.FeatureLayer;
+import com.atakmap.map.layer.feature.FeatureLayer3;
 import com.atakmap.map.layer.feature.wfs.WFSFeatureDataStore3;
 import com.atakmap.map.layer.feature.wfs.WFSSchemaHandler;
 import com.atakmap.map.layer.feature.wfs.WFSSchemaHandlerRegistry;
@@ -120,9 +121,9 @@ public class WFSImporter extends AbstractImporter {
         // create the layer
         WFSSchemaHandler schema = WFSSchemaHandlerRegistry.get(address);
         String name = (schema != null) ? schema.getName() : address;
-        final FeatureLayer layer = new FeatureLayer(name, dataStore);
 
-        this.wfs.add(uri.toString(), mime, layer);
+        this.wfs.add(uri.toString(), mime,
+                new FeatureLayer3(name, Adapters.adapt(dataStore)));
 
         return ImportResult.SUCCESS;
     }
@@ -164,7 +165,7 @@ public class WFSImporter extends AbstractImporter {
         }
         String uriStr = handler != null ? handler.getUri() : uri.toString();
         if (!FileSystemUtils.isEmpty(uriStr)) {
-            FeatureLayer layer = this.wfs.remove(uriStr);
+            FeatureLayer3 layer = this.wfs.remove2(uriStr);
             if (layer != null)
                 layer.getDataStore().dispose();
             File workingDir = getWorkingDir(uriStr);

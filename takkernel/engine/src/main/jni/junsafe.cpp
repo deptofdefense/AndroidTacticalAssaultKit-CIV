@@ -9,7 +9,7 @@
 #endif
 
 #include "common.h"
-#include "junsafe.h"
+#include "com_atakmap_lang_Unsafe.h"
 
 /*
  * Class:     com_atakmap_lang_Unsafe

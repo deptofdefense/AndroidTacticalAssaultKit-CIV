@@ -175,7 +175,7 @@ public class MapEventDispatcher {
 
     public void removeMapEventListenerFromBase(String eventType,
             MapEventDispatchListener l) {
-        _Listeners ll = null;
+        _Listeners ll;
         synchronized (_listenerStack) {
             ll = _listenerStack.get(0).get(eventType);
         }
@@ -269,7 +269,7 @@ public class MapEventDispatcher {
         _Listeners ll = getListenersNoSync(event.getType(), false);
         if (ll != null && !ll.ignore) {
             for (MapEventDispatchListener mapEventDispatchListener : ll.list) {
-                MapEventDispatchListener l = null;
+                MapEventDispatchListener l;
                 l = mapEventDispatchListener;
                 try {
 

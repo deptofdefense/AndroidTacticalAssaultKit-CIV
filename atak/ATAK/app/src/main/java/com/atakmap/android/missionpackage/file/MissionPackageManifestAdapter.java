@@ -160,7 +160,7 @@ public class MissionPackageManifestAdapter {
     public static MissionPackageListFileItem FileContentToUI(
             MissionPackageContent content,
             File file) {
-        Icon icon = null;
+        Icon icon;
         ResourceFile.MIMEType t = ResourceFile.getMIMETypeForFile(file
                 .getName());
         if (t != null) {

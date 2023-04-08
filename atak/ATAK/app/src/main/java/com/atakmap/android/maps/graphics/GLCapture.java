@@ -203,7 +203,6 @@ public abstract class GLCapture {
                 * 4);
         buf.order(ByteOrder.nativeOrder());
         final IntBuffer rgba = buf.asIntBuffer();
-        buf = null;
 
         // XXX - need to vertical flip y to account for GL coordinate space?
         GLES20FixedPipeline.glReadPixels(this.x, this.y, this.width,
@@ -244,8 +243,6 @@ public abstract class GLCapture {
             bitmap.setPixels(scan, 0, this.width, 0, (this.height - i - 1),
                     this.width, 1);
         }
-        rgba = null;
-        scan = null;
 
         callback.onCaptureComplete(this, bitmap);
     }

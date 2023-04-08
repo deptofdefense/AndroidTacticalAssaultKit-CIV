@@ -290,10 +290,18 @@ public class GLPolyline extends GLShape2 implements
 
         Style s;
         if (basicStyle == Polyline.BASIC_LINE_STYLE_DASHED)
-            s = new PatternStrokeStyle(0x3F, 8, this.strokeColor,
+            s = new PatternStrokeStyle(1, (short) 0x3F3F,
+                    Color.red(this.strokeColor) / 255f,
+                    Color.green(this.strokeColor) / 255f,
+                    Color.blue(this.strokeColor) / 255f,
+                    Color.alpha(this.strokeColor) / 255f,
                     this.strokeWeight);
         else if (basicStyle == Polyline.BASIC_LINE_STYLE_DOTTED)
-            s = new PatternStrokeStyle(0x03, 8, this.strokeColor,
+            s = new PatternStrokeStyle(1, (short) 0x0303,
+                    Color.red(this.strokeColor) / 255f,
+                    Color.green(this.strokeColor) / 255f,
+                    Color.blue(this.strokeColor) / 255f,
+                    Color.alpha(this.strokeColor) / 255f,
                     this.strokeWeight);
         else if (basicStyle == Polyline.BASIC_LINE_STYLE_OUTLINED) {
             BasicStrokeStyle bg = new BasicStrokeStyle(

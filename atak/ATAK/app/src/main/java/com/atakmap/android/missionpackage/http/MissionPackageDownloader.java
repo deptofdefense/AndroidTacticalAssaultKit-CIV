@@ -379,7 +379,7 @@ public class MissionPackageDownloader implements RequestListener {
                     ftr.getSize()));
 
             // handle single file or Mission Package
-            NameValuePair p = null;
+            NameValuePair p;
             File downloadedFile = new File(manifest.getPath());
             if (!inst.isDelete()) {
                 // all file contents should exist

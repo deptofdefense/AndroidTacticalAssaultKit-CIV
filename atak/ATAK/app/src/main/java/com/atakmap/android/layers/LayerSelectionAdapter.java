@@ -12,10 +12,14 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.preference.AtakPreferences;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
-import com.atakmap.map.layer.feature.FeatureDataStore;
+import com.atakmap.map.layer.feature.AttributeSet;
+import com.atakmap.map.layer.feature.FeatureDataStore2;
+import com.atakmap.map.layer.feature.FeatureDefinition2;
 import com.atakmap.map.layer.feature.geometry.Geometry;
+import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.map.layer.raster.AbstractDataStoreRasterLayer2;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
+import com.atakmap.map.layer.raster.OutlinesFeatureDataStore2;
 import com.atakmap.map.layer.raster.RasterDataStore;
 import com.atakmap.map.layer.raster.RasterLayer2;
 import com.atakmap.math.MathUtils;
@@ -34,7 +38,7 @@ import java.util.Set;
 public abstract class LayerSelectionAdapter extends BaseAdapter implements
         RasterDataStore.OnDataStoreContentChangedListener,
         Disposable,
-        FeatureDataStore.OnDataStoreContentChangedListener {
+        FeatureDataStore2.OnDataStoreContentChangedListener {
 
     /**************************************************************************/
 
@@ -61,12 +65,12 @@ public abstract class LayerSelectionAdapter extends BaseAdapter implements
     protected final AtakPreferences _prefs;
     LayersManagerBroadcastReceiver zoomRec;
     LayersManagerView view;
-    final FeatureDataStore outlinesDatastore;
+    final OutlinesFeatureDataStore2 outlinesDatastore;
 
     private final Set<OnItemSelectedListener> listeners;
 
     public LayerSelectionAdapter(RasterLayer2 layer,
-            FeatureDataStore outlinesDataStore,
+            OutlinesFeatureDataStore2 outlinesDataStore,
             MapView mapView,
             Context context) {
         this.layer = layer;
@@ -97,7 +101,7 @@ public abstract class LayerSelectionAdapter extends BaseAdapter implements
         return this.layer;
     }
 
-    final FeatureDataStore getOutlinesDataStore() {
+    final FeatureDataStore2 getOutlinesDataStore() {
         return this.outlinesDatastore;
     }
 
@@ -383,7 +387,27 @@ public abstract class LayerSelectionAdapter extends BaseAdapter implements
     }
 
     @Override
-    public void onDataStoreContentChanged(FeatureDataStore dataStore) {
+    public void onDataStoreContentChanged(FeatureDataStore2 dataStore) {
+        this.invalidate(false);
+    }
+
+    @Override
+    public void onFeatureInserted(FeatureDataStore2 dataStore, long fid, FeatureDefinition2 def, long version) {
+        this.invalidate(false);
+    }
+
+    @Override
+    public void onFeatureUpdated(FeatureDataStore2 dataStore, long fid, int modificationMask, String name, Geometry geom, Style style, AttributeSet attribs, int attribsUpdateType) {
+        this.invalidate(false);
+    }
+
+    @Override
+    public void onFeatureDeleted(FeatureDataStore2 dataStore, long fid) {
+        this.invalidate(false);
+    }
+
+    @Override
+    public void onFeatureVisibilityChanged(FeatureDataStore2 dataStore, long fid, boolean visible) {
         this.invalidate(false);
     }
 

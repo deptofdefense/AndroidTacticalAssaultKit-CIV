@@ -1,6 +1,7 @@
 
 package com.atakmap.android.lrf;
 
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.Intent;
@@ -44,6 +45,7 @@ public class LRFMapComponent extends AbstractMapComponent
                     public void pairingError(final BluetoothDevice device) {
                         if (device != null)
                             view.post(new Runnable() {
+                                @SuppressLint("MissingPermission")
                                 public void run() {
                                     Toast.makeText(view.getContext(),
                                             String.format(

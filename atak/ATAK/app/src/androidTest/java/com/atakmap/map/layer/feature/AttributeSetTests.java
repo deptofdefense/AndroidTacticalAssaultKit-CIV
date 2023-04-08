@@ -113,7 +113,7 @@ public class AttributeSetTests extends ATAKInstrumentedTest {
         attrs.setAttribute(key, v1);
         attrs.setAttribute(key, v2);
         Assert.assertEquals(Double.TYPE, attrs.getAttributeType(key));
-        Assert.assertTrue(attrs.getDoubleAttribute(key) == v2);
+        Assert.assertEquals(attrs.getDoubleAttribute(key), v2, 0.0);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -263,7 +263,7 @@ public class AttributeSetTests extends ATAKInstrumentedTest {
         final String key = UUID.randomUUID().toString();
         AttributeSet attrs = new AttributeSet();
         attrs.setAttribute(key, i);
-        Assert.assertTrue(attrs.getDoubleAttribute(key) == i);
+        Assert.assertEquals(attrs.getDoubleAttribute(key), i, 0.0);
     }
 
     @Test
@@ -297,7 +297,7 @@ public class AttributeSetTests extends ATAKInstrumentedTest {
         final String key = UUID.randomUUID().toString();
         AttributeSet attrs = new AttributeSet();
         attrs.setAttribute(key, i);
-        Assert.assertTrue(Arrays.equals(attrs.getBinaryAttribute(key), i));
+        Assert.assertArrayEquals(attrs.getBinaryAttribute(key), i);
     }
 
     @Test
@@ -315,7 +315,7 @@ public class AttributeSetTests extends ATAKInstrumentedTest {
         AttributeSet attrs = new AttributeSet();
         attrs.setAttribute(key, i);
         int[] value = attrs.getIntArrayAttribute(key);
-        Assert.assertTrue(Arrays.equals(value, i));
+        Assert.assertArrayEquals(value, i);
     }
 
     @Test
@@ -333,7 +333,7 @@ public class AttributeSetTests extends ATAKInstrumentedTest {
         AttributeSet attrs = new AttributeSet();
         attrs.setAttribute(key, i);
         long[] value = attrs.getLongArrayAttribute(key);
-        Assert.assertTrue(Arrays.equals(value, i));
+        Assert.assertArrayEquals(value, i);
     }
 
     @Test
@@ -351,7 +351,7 @@ public class AttributeSetTests extends ATAKInstrumentedTest {
         AttributeSet attrs = new AttributeSet();
         attrs.setAttribute(key, i);
         double[] value = attrs.getDoubleArrayAttribute(key);
-        Assert.assertTrue(Arrays.equals(value, i));
+        Assert.assertArrayEquals(value, i, 0.0);
     }
 
     @Test
@@ -369,7 +369,7 @@ public class AttributeSetTests extends ATAKInstrumentedTest {
         AttributeSet attrs = new AttributeSet();
         attrs.setAttribute(key, i);
         String[] value = attrs.getStringArrayAttribute(key);
-        Assert.assertTrue(Arrays.equals(value, i));
+        Assert.assertArrayEquals(value, i);
     }
 
     @Test
@@ -390,7 +390,7 @@ public class AttributeSetTests extends ATAKInstrumentedTest {
         Assert.assertNotNull(value);
         Assert.assertEquals(value.length, i.length);
         for (int j = 0; j < value.length; j++)
-            Assert.assertTrue(Arrays.equals(value[j], i[j]));
+            Assert.assertArrayEquals(value[j], i[j]);
     }
 
     @Test
@@ -404,7 +404,7 @@ public class AttributeSetTests extends ATAKInstrumentedTest {
         for (String key : keys)
             attrs.setAttribute(key, 1);
 
-        Assert.assertTrue(keys.equals(attrs.getAttributeNames()));
+        Assert.assertEquals(keys, attrs.getAttributeNames());
     }
 
     @Test
@@ -422,7 +422,7 @@ public class AttributeSetTests extends ATAKInstrumentedTest {
         attrs.setAttribute(key, child);
         AttributeSet rchild = attrs.getAttributeSetAttribute(key);
         Assert.assertNotNull(rchild != null);
-        Assert.assertTrue(child.equals(rchild));
+        Assert.assertEquals(child, rchild);
     }
 
     static byte[] randomByteArray(int minSize, int maxSize) {

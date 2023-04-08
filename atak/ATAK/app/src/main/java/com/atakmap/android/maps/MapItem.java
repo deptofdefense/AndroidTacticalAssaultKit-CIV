@@ -8,6 +8,8 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Parcelable;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.data.URIHelper;
 import com.atakmap.android.hashtags.HashtagManager;
 import com.atakmap.android.hashtags.util.HashtagSet;
@@ -288,6 +290,7 @@ public abstract class MapItem extends FilterMetaDataHolder implements
      *
      * @return Title, type, UID
      */
+    @NonNull
     @Override
     public String toString() {
         String title = getTitle();

@@ -9,6 +9,9 @@ import android.graphics.PointF;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.os.Parcel;
+
+import androidx.annotation.NonNull;
+
 import com.atakmap.coremap.log.Log;
 
 import java.util.ArrayList;
@@ -317,6 +320,7 @@ public class TextRect extends RectF {
             paint.setTextAlign(align);
         }
 
+        @NonNull
         @Override
         public String toString() {
             return _line;
@@ -337,6 +341,7 @@ public class TextRect extends RectF {
             return _color;
         }
 
+        @NonNull
         @Override
         public String toString() {
             return _str;

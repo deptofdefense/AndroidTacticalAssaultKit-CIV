@@ -7,6 +7,11 @@ import android.preference.Preference;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
+import android.widget.LinearLayout;
+
+import com.atakmap.app.BuildConfig;
+import com.atakmap.app.R;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,7 +23,6 @@ import java.util.Map;
  * This preference will store a boolean into the SharedPreferences.
  * This has been modified to allow for a pluginIcon attribute which will allow for icons
  * to be used in the entity.
-
  */
 public class PanCheckBoxPreference extends CheckBoxPreference {
 
@@ -50,9 +54,35 @@ public class PanCheckBoxPreference extends CheckBoxPreference {
     @Override
     protected View onCreateView(ViewGroup parent) {
         View v = super.onCreateView(parent);
-        if (!isEnabled())
+        if (BuildConfig.FLAVOR == "civUIMods") {
+            LinearLayout ll = (LinearLayout) v;
+            final int childCount = ll.getChildCount();
+            for (int i = 0; i < childCount; i++) {
+                View childView = ll.getChildAt(i);
+                if (childView instanceof LinearLayout) {
+                    LinearLayout linearChildLinearLayout = (LinearLayout) childView;
+                    final int linearChildViewCount = linearChildLinearLayout
+                            .getChildCount();
+                    for (int j = 0; j < linearChildViewCount; j++) {
+                        View linearChild = linearChildLinearLayout
+                                .getChildAt(j);
+                        if (linearChild instanceof CheckBox) {
+                            CheckBox checkBox = (CheckBox) linearChild;
+                            checkBox.setButtonDrawable(R.drawable.btn_check);
+                        }
+                    }
+                }
+            }
+        }
+        if (!isEnabled()) {
             v.setEnabled(false);
+        }
         return v;
+    }
+
+    @Override
+    protected void onBindView(View view) {
+        super.onBindView(view);
     }
 
 }

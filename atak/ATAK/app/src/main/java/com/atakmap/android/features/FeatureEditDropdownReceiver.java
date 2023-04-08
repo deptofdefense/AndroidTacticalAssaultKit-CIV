@@ -35,7 +35,8 @@ public class FeatureEditDropdownReceiver extends DropDownReceiver
         this(mapView, (FeatureDataStore2) null);
     }
 
-    public FeatureEditDropdownReceiver(MapView mapView, FeatureDataStore2 db) {
+    public FeatureEditDropdownReceiver(MapView mapView,
+            @Nullable FeatureDataStore2 db) {
         super(mapView);
         _db = db;
         LayoutInflater inflater = (LayoutInflater) getMapView().getContext()

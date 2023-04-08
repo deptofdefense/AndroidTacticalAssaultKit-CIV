@@ -2,35 +2,36 @@
 package com.atakmap.app;
 
 import android.annotation.SuppressLint;
-import android.app.Service;
 import android.app.Activity;
-
-import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
+import android.app.AlarmManager;
+import android.app.Notification;
+import android.app.PendingIntent;
+import android.app.Service;
 import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.location.GnssStatus;
+import android.location.GpsStatus;
 import android.location.GpsStatus.Listener;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.os.Bundle;
-
-import android.app.AlarmManager;
-import android.content.Context;
-
-import com.atakmap.android.util.NotificationUtil;
-
-import android.os.IBinder;
-import android.speech.tts.UtteranceProgressListener;
 import android.media.AudioManager;
-
-import android.app.Notification;
-import android.app.PendingIntent;
 import android.os.Build;
+import android.os.Bundle;
+import android.os.IBinder;
+import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
+
+import androidx.annotation.NonNull;
+
+import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import com.atakmap.android.util.ATAKConstants;
+import com.atakmap.android.util.NotificationUtil;
+import com.atakmap.android.util.PendingIntentHelper;
 import com.atakmap.coremap.log.Log;
 
 import java.util.Locale;
-import android.speech.tts.TextToSpeech;
 
 /**
  * Allows for certain functions to run as part of a Service so that they are not impacted by
@@ -130,7 +131,10 @@ public class BackgroundServices extends Service implements LocationListener,
         // requires the use of currentTimeMillis
         PendingIntent contentIntent = PendingIntent.getActivity(this,
                 (int) System.currentTimeMillis(),
-                atakFrontIntent, PendingIntent.FLAG_CANCEL_CURRENT);
+                atakFrontIntent,
+                PendingIntentHelper
+                        .adaptFlags(PendingIntent.FLAG_CANCEL_CURRENT));
+
         Notification.Builder nBuilder;
         if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             nBuilder = new Notification.Builder(this);
@@ -158,7 +162,39 @@ public class BackgroundServices extends Service implements LocationListener,
         if (mLocationManager != null) {
             if (Permissions.checkPermission(this,
                     android.Manifest.permission.ACCESS_COARSE_LOCATION))
-                mLocationManager.addGpsStatusListener(this);
+                //if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                // XXX Use this until the compileSdk is bumped to 31
+                if (Build.VERSION.SDK_INT >= 32) {
+                    mLocationManager.registerGnssStatusCallback(
+                            new GnssStatus.Callback() {
+                                @Override
+                                public void onStarted() {
+                                    onGpsStatusChanged(
+                                            GpsStatus.GPS_EVENT_STARTED);
+                                }
+
+                                @Override
+                                public void onStopped() {
+                                    onGpsStatusChanged(
+                                            GpsStatus.GPS_EVENT_STOPPED);
+                                }
+
+                                @Override
+                                public void onFirstFix(int ttffMillis) {
+                                    onGpsStatusChanged(
+                                            GpsStatus.GPS_EVENT_FIRST_FIX);
+                                }
+
+                                @Override
+                                public void onSatelliteStatusChanged(
+                                        @NonNull GnssStatus status) {
+                                    onGpsStatusChanged(
+                                            GpsStatus.GPS_EVENT_SATELLITE_STATUS);
+                                }
+                            });
+                } else {
+                    mLocationManager.addGpsStatusListener(this);
+                }
         }
 
         audioManager = (AudioManager) this

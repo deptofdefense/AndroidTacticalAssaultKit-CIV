@@ -1,6 +1,8 @@
 
 package com.atakmap.android.track.ui;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.http.rest.ServerContact;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
@@ -71,6 +73,7 @@ public class TrackUser {
         return 31 * hash;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return callsign + " has " + numberTracks + " tracks";

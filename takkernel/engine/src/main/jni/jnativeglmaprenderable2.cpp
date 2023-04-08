@@ -1,4 +1,4 @@
-#include "jnativeglmaprenderable2.h"
+#include "com_atakmap_map_opengl_NativeGLMapRenderable2.h"
 
 #include <core/LegacyAdapters.h>
 #include <renderer/core/GLMapRenderable2.h>

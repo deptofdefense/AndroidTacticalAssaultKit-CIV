@@ -49,7 +49,7 @@
             android:summary="@string/pref_curved_display_desc"
             android:key="atakAdjustCurvedDisplay" />
 
-       <Preference
+       <com.atakmap.android.gui.PanPreference
             android:title="@string/androidPreferences"
             android:summary="@string/preferences_text147"
             android:icon="@drawable/ic_android_display_settings"

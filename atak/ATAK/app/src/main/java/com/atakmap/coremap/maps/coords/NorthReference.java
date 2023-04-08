@@ -1,6 +1,8 @@
 
 package com.atakmap.coremap.maps.coords;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.coremap.conversions.Angle;
 import com.atakmap.coremap.conversions.AngleUtilities;
@@ -46,6 +48,7 @@ public enum NorthReference {
         return _name;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return _name;

@@ -1,6 +1,8 @@
 
 package com.atakmap.android.image.nitf.CGM;
 
+import androidx.annotation.NonNull;
+
 /**
  *
  */
@@ -74,6 +76,7 @@ public enum CGMElement {
         return "null";
     }
 
+    @NonNull
     public String toString() {
         return name().concat("(").concat(String.valueOf(elementClass))
                 .concat(")");

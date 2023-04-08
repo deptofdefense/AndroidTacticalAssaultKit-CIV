@@ -10,6 +10,7 @@ set(takenginejni_WINDOWS_DEFS
 set(takenginejni_WINDOWS_INCS
     ${khronos_INCLUDE_DIRS}
     ${JNI_INCLUDE_DIRS}
+    ${SRC_DIR}/../../../build/java/generated/jni
 )
 
 set(takenginejni_WINDOWS_LIBS

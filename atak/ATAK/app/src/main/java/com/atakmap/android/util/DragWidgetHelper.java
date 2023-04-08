@@ -8,6 +8,7 @@ import android.view.MotionEvent;
 
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.widgets.MapWidget;
+import com.atakmap.map.opengl.GLRenderGlobals;
 
 public class DragWidgetHelper implements
         MapWidget.OnClickListener, MapWidget.OnMoveListener,
@@ -17,7 +18,7 @@ public class DragWidgetHelper implements
     private boolean dragging;
     private final SharedPreferences prefs;
     private final String preferenceKey;
-    private final float DENSITY = MapView.DENSITY;
+    private final float DENSITY = GLRenderGlobals.getRelativeScaling();
     private final MapView mapView;
     private final MapWidget mw;
 

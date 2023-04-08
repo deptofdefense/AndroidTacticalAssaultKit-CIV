@@ -1,6 +1,8 @@
 
 package com.atakmap.android.missionpackage.ui;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.data.URIContentHandler;
 import com.atakmap.android.data.URIContentManager;
 import com.atakmap.android.hashtags.HashtagContent;
@@ -82,6 +84,7 @@ public class MissionPackageListFileItem extends MissionPackageListItem {
         FileSystemUtils.delete(f);
     }
 
+    @NonNull
     @Override
     public String toString() {
         return getPath();

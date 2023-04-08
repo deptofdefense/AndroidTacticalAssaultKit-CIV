@@ -8,6 +8,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.emergency.tool.EmergencyManager;
 import com.atakmap.android.hierarchy.HierarchyListReceiver;
 import com.atakmap.android.ipc.AtakBroadcast;
@@ -97,6 +99,7 @@ public class EmergencyAlertReceiver extends BroadcastReceiver {
             return hashcode;
         }
 
+        @NonNull
         @Override
         public String toString() {
             return type + " " + message + " " + itemUid;
@@ -208,76 +211,85 @@ public class EmergencyAlertReceiver extends BroadcastReceiver {
         if (action == null)
             return;
 
-        if (ALERT_EVENT.equals(action)) {
-            CotEvent event = intent.getParcelableExtra("cotevent");
-            if (event == null) {
-                Log.w(TAG, "Failed to process w/out CoT event");
-                return;
+        switch (action) {
+            case ALERT_EVENT: {
+                CotEvent event = intent.getParcelableExtra("cotevent");
+                if (event == null) {
+                    Log.w(TAG, "Failed to process w/out CoT event");
+                    return;
+                }
+
+                EmergencyAlert alert = fromCot(event, true);
+                if (alert == null || !alert.isValid()) {
+                    Log.w(TAG, "Invalid alert for CoT: " + event.getUID());
+                    return;
+                }
+
+                if (!add(alert)) {
+                    Log.w(TAG,
+                            "Failed to add alert for CoT: " + event.getUID());
+
+                }
+                break;
             }
+            case CANCEL_EVENT: {
+                CotEvent event = intent.getParcelableExtra("cotevent");
+                if (event == null) {
+                    Log.w(TAG, "Failed to process w/out CoT event");
+                    return;
+                }
 
-            EmergencyAlert alert = fromCot(event, true);
-            if (alert == null || !alert.isValid()) {
-                Log.w(TAG, "Invalid alert for CoT: " + event.getUID());
-                return;
+                String message = "";
+                EmergencyAlert alert = fromCot(event, false);
+                if (alert != null)
+                    message = alert.message;
+
+                if (!remove(event.getUID(), message)) {
+                    Log.w(TAG, "Failed to remove alert for CoT: "
+                            + event.getUID());
+
+                }
+                break;
             }
+            case REMOVE_ALERT: {
+                String uid = intent.getStringExtra("uid");
+                if (FileSystemUtils.isEmpty(uid))
+                    return;
 
-            if (!add(alert)) {
-                Log.w(TAG, "Failed to add alert for CoT: " + event.getUID());
+                final EmergencyAlert alert = getAlert(uid);
+                if (alert == null)
+                    return;
 
-            }
-        } else if (CANCEL_EVENT.equals(action)) {
-            CotEvent event = intent.getParcelableExtra("cotevent");
-            if (event == null) {
-                Log.w(TAG, "Failed to process w/out CoT event");
-                return;
-            }
-
-            String message = "";
-            EmergencyAlert alert = fromCot(event, false);
-            if (alert != null)
-                message = alert.message;
-
-            if (!remove(event.getUID(), message)) {
-                Log.w(TAG, "Failed to remove alert for CoT: " + event.getUID());
-
-            }
-        } else if (REMOVE_ALERT.equals(action)) {
-            String uid = intent.getStringExtra("uid");
-            if (FileSystemUtils.isEmpty(uid))
-                return;
-
-            final EmergencyAlert alert = getAlert(uid);
-            if (alert == null)
-                return;
-
-            AlertDialog.Builder b = new AlertDialog.Builder(_context);
-            b.setTitle(R.string.confirm_delete);
-            b.setIcon(R.drawable.ic_menu_delete_32);
-            b.setMessage(_context.getString(R.string.delete_emergency_alert,
-                    alert.getMessage()));
-            b.setPositiveButton(R.string.delete2,
-                    new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface d, int id) {
-                            Log.d(TAG, "Dismissing alert for: "
-                                    + alert);
-                            remove(alert.getEventUid(), alert.getMessage());
-                            if (alert.message != null
-                                    && _mapView.getSelfMarker()
-                                            .getMetaString("callsign", "")
-                                            .contains(alert.message)) {
-                                EmergencyManager em = EmergencyManager
-                                        .getInstance();
-                                if (em != null)
-                                    em.cancelRepeat();
+                AlertDialog.Builder b = new AlertDialog.Builder(_context);
+                b.setTitle(R.string.confirm_delete);
+                b.setIcon(R.drawable.ic_menu_delete_32);
+                b.setMessage(_context.getString(R.string.delete_emergency_alert,
+                        alert.getMessage()));
+                b.setPositiveButton(R.string.delete2,
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface d, int id) {
+                                Log.d(TAG, "Dismissing alert for: "
+                                        + alert);
+                                remove(alert.getEventUid(), alert.getMessage());
+                                if (alert.message != null
+                                        && _mapView.getSelfMarker()
+                                                .getMetaString("callsign", "")
+                                                .contains(alert.message)) {
+                                    EmergencyManager em = EmergencyManager
+                                            .getInstance();
+                                    if (em != null)
+                                        em.cancelRepeat();
+                                }
+                                AtakBroadcast.getInstance()
+                                        .sendBroadcast(new Intent(
+                                                HierarchyListReceiver.REFRESH_HIERARCHY));
                             }
-                            AtakBroadcast.getInstance()
-                                    .sendBroadcast(new Intent(
-                                            HierarchyListReceiver.REFRESH_HIERARCHY));
-                        }
-                    });
-            b.setNegativeButton(R.string.cancel, null);
-            b.show();
+                        });
+                b.setNegativeButton(R.string.cancel, null);
+                b.show();
+                break;
+            }
         }
     }
 

@@ -1,6 +1,8 @@
 
 package com.atakmap.android.importfiles.sort;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 
@@ -33,6 +35,7 @@ public class ImportSupportInfoSort extends ImportInternalSDResolver {
             _folder = folder;
         }
 
+        @NonNull
         @Override
         public String toString() {
             return String.format("%s %s %s", super.toString(), _filename,

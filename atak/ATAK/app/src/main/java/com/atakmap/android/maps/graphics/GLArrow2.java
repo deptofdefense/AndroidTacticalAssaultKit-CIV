@@ -37,7 +37,6 @@ import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLText;
 
 import java.nio.FloatBuffer;
-import java.util.ConcurrentModificationException;
 
 public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
         OnTextChangedListener, MapItem.OnAltitudeModeChangedListener {

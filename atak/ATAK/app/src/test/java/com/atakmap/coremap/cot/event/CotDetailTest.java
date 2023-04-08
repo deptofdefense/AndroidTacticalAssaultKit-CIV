@@ -20,7 +20,7 @@ public class CotDetailTest {
 
         // fields
         assertNotNull(detail.getElementName());
-        assertTrue(detail.getElementName().equals("detail"));
+        assertEquals("detail", detail.getElementName());
         assertNull(detail.getInnerText());
 
         // attrs

@@ -3,7 +3,6 @@ package com.atakmap.android.tilecapture;
 
 import android.graphics.Matrix;
 
-import com.atakmap.annotations.ModifierApi;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 
 /**

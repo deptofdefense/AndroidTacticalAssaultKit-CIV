@@ -5,6 +5,8 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.preference.PreferenceManager;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.maps.AnchoredMapItem;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
@@ -240,6 +242,7 @@ public class RangeRing extends PointMapItem implements AnchoredMapItem,
         _target.setMetaInteger("dangerclose", 0);
     }
 
+    @NonNull
     @Override
     public String toString() {
         if (_weapon != null)

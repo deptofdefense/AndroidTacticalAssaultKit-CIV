@@ -1,4 +1,4 @@
-#include "jcameracontroller.h"
+#include "com_atakmap_map_CameraController.h"
 
 #include <core/CameraController.h>
 #include <core/GeoPoint2.h>
@@ -32,7 +32,7 @@ using namespace TAKEngineJNI;
     }
 
 JNIEXPORT void JNICALL Java_com_atakmap_map_CameraController_panBy
-  (JNIEnv *env, jclass clazz, jlong ptr, jfloat tx, jfloat ty, jint mcollide, jboolean animate)
+  (JNIEnv *env, jclass clazz, jlong ptr, jfloat tx, jfloat ty, jint mcollide, jboolean poleSmoothScroll, jboolean animate)
 {
     MapRenderer2 *renderer = JLONG_TO_INTPTR(MapRenderer2, ptr);
     if(!renderer) {
@@ -41,10 +41,10 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_CameraController_panBy
     }
     MapRenderer::CameraCollision ccollide;
     JCAMERA_CONTROLLER_MARSHAL_COLLIDE(mcollide, ccollide);
-    CameraController_panBy(*renderer, tx, ty, ccollide, animate);
+    CameraController_panBy(*renderer, tx, ty, ccollide, poleSmoothScroll, animate);
 }
-JNIEXPORT void JNICALL Java_com_atakmap_map_CameraController_panTo__JDDDFFIZ
-  (JNIEnv *env, jclass clazz, jlong ptr, jdouble lat, jdouble lng, jdouble alt, jfloat x, jfloat y, jint mcollide, jboolean animate)
+JNIEXPORT void JNICALL Java_com_atakmap_map_CameraController_panTo__JDDDFFIZZ
+  (JNIEnv *env, jclass clazz, jlong ptr, jdouble lat, jdouble lng, jdouble alt, jfloat x, jfloat y, jint mcollide, jboolean poleSmoothScroll, jboolean animate)
 {
     MapRenderer2 *renderer = JLONG_TO_INTPTR(MapRenderer2, ptr);
     if(!renderer) {
@@ -53,7 +53,7 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_CameraController_panTo__JDDDFFIZ
     }
     MapRenderer::CameraCollision ccollide;
     JCAMERA_CONTROLLER_MARSHAL_COLLIDE(mcollide, ccollide);
-    CameraController_panTo(*renderer, GeoPoint2(lat, lng, alt, AltitudeReference::HAE), x, y, ccollide, animate);
+    CameraController_panTo(*renderer, GeoPoint2(lat, lng, alt, AltitudeReference::HAE), x, y, ccollide, poleSmoothScroll, animate);
 }
 JNIEXPORT void JNICALL Java_com_atakmap_map_CameraController_zoomBy__JDIZ
   (JNIEnv *env, jclass clazz, jlong ptr, jdouble scaleFactor, jint mcollide, jboolean animate)

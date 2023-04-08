@@ -20,8 +20,8 @@ public final class MapOverlayBuilder {
     private String _name;
     private MapGroup _rootGroup;
     private DeepMapItemQuery _query;
-    private Map<Long, HierarchyListItem> _item = new HashMap<>();
-    private MapOverlay2 _impl = new Impl();
+    private final Map<Long, HierarchyListItem> _item = new HashMap<>();
+    private final MapOverlay2 _impl = new Impl();
 
     public MapOverlayBuilder() {
     }

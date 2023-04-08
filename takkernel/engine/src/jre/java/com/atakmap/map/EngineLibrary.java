@@ -276,10 +276,6 @@ public final class EngineLibrary {
 
             Security.addProvider(new BouncyCastleProvider());
 
-            AtakAuthenticationDatabase.initialize(runtimeContext);
-            AtakCertificateDatabase.initialize(runtimeContext);
-            CertificateManager.getInstance().initialize(runtimeContext);
-
             DisplaySettings.setDpi(300f);
         } catch (Throwable t) {
             System.err.println("EngineLibrary: Failed to load native libraries\n" + t);

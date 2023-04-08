@@ -14,19 +14,6 @@ import android.graphics.PointF;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-
-import com.atakmap.android.data.URIContentHandler;
-import com.atakmap.android.data.URIContentManager;
-import com.atakmap.android.editableShapes.EditablePolyline;
-import com.atakmap.android.filesystem.ResourceFile;
-import com.atakmap.android.hierarchy.filters.FOVFilter;
-import com.atakmap.android.image.ImageDropDownReceiver;
-import com.atakmap.android.importexport.ImportExportMapComponent;
-import com.atakmap.android.importfiles.sort.ImportResolver;
-import com.atakmap.android.importfiles.task.ImportFilesTask;
-import com.atakmap.annotations.DeprecatedApi;
-import com.atakmap.coremap.io.IOProviderFactory;
-import com.atakmap.coremap.maps.conversion.GeomagneticField;
 import android.net.Uri;
 import android.os.Environment;
 import android.preference.PreferenceManager;
@@ -36,8 +23,18 @@ import android.util.SparseArray;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
+
+import com.atakmap.android.data.URIContentHandler;
+import com.atakmap.android.data.URIContentManager;
+import com.atakmap.android.editableShapes.EditablePolyline;
+import com.atakmap.android.filesystem.ResourceFile;
+import com.atakmap.android.hierarchy.filters.FOVFilter;
 import com.atakmap.android.icons.IconsMapComponent;
 import com.atakmap.android.icons.UserIcon;
+import com.atakmap.android.image.ImageDropDownReceiver;
+import com.atakmap.android.importexport.ImportExportMapComponent;
+import com.atakmap.android.importfiles.sort.ImportResolver;
+import com.atakmap.android.importfiles.task.ImportFilesTask;
 import com.atakmap.android.maps.AnchoredMapItem;
 import com.atakmap.android.maps.ILocation;
 import com.atakmap.android.maps.MapItem;
@@ -49,15 +46,15 @@ import com.atakmap.android.toolbars.BullseyeTool;
 import com.atakmap.android.user.icon.SpotMapPalletFragment;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.conversion.EGM96;
-import com.atakmap.coremap.maps.coords.GeoCalculations;
-import com.atakmap.coremap.maps.coords.MutableMGRSPoint;
-
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.conversion.GeomagneticField;
 import com.atakmap.coremap.maps.coords.Ellipsoid;
 import com.atakmap.coremap.maps.coords.GeoBounds;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.coremap.maps.coords.MutableMGRSPoint;
 import com.atakmap.coremap.maps.coords.MutableUTMPoint;
 import com.atakmap.coremap.maps.coords.UTMPoint;
 import com.atakmap.coremap.maps.coords.Vector2D;
@@ -84,11 +81,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import gov.tak.api.annotation.ModifierApi;
 
@@ -904,8 +900,8 @@ public class ATAKUtilities {
      */
     public static double computeGridConvergence(final GeoPoint sPoint,
             final double angle, final double distance) {
-        final GeoPoint ePoint = DistanceCalculations.metersFromAtBearing(sPoint,
-                distance, angle);
+        final GeoPoint ePoint = GeoCalculations.pointAtDistance(sPoint,
+                angle, distance);
         return computeGridConvergence(sPoint, ePoint);
     }
 
@@ -1675,7 +1671,7 @@ public class ATAKUtilities {
         Bitmap bitmap = null;
         if (IOProviderFactory.exists(iconFile)) {
             try (InputStream is = IOProviderFactory.getInputStream(iconFile)) {
-                BitmapFactory.decodeStream(is);
+                bitmap = BitmapFactory.decodeStream(is);
             } catch (IOException ioe) {
                 return null;
             } catch (RuntimeException ignored) {

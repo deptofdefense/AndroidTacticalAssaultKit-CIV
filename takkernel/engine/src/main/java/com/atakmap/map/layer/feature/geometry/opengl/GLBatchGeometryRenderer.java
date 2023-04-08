@@ -13,6 +13,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import android.graphics.Color;
 import android.graphics.PointF;
@@ -236,6 +237,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable,
     private Collection<PrimitiveBuffer> spriteTriangleBuffers = new ArrayList<>();
     private LineShader lineShader = null;
     private Shader triangleShader = null;
+    private AtomicBoolean defaultLabelRenderResUpdate = new AtomicBoolean(false);
 
     public GLBatchGeometryRenderer() {
         this(null);
@@ -325,6 +327,15 @@ public class GLBatchGeometryRenderer implements GLMapRenderable,
 
         batchSpritesSrid = -1;
         batchSurfaceSrid = -1;
+
+        // refresh the label min render resolution
+        final double labelRenderRes = ConfigOptions
+                .getOption(
+                        "overlays.default-label-render-resolution", GLBatchPoint.defaultMinLabelRenderResolution);
+        if(labelRenderRes != GLBatchPoint.defaultMinLabelRenderResolution) {
+            GLBatchPoint.defaultMinLabelRenderResolution = labelRenderRes;
+            defaultLabelRenderResUpdate.set(true);
+        }
     }
 
     private void fillBatchLists(Collection<GLBatchGeometry> geoms) {
@@ -525,7 +536,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable,
         sortInfo.centerLng = view.drawLng;
 
         view.scratch.geo.set(view.drawLat, view.drawLng);
-        GeoPoint bottomCenter = GeoCalculations.midPoint(view.lowerLeft, view.lowerRight);
+        GeoPoint bottomCenter = GeoCalculations.midPointWGS84(view.lowerLeft, view.lowerRight);
         GeoPoint measureFrom = GeoCalculations.pointAtDistance(view.scratch.geo, view.scratch.geo.bearingTo(bottomCenter), view.scratch.geo.distanceTo(bottomCenter) * 1.5d);
 
         sortInfo.measureFromLat = measureFrom.getLatitude();
@@ -553,6 +564,17 @@ public class GLBatchGeometryRenderer implements GLMapRenderable,
                 this.batchPoints2.add(point);
                 iter.remove();
                 rebuildBatchBuffers |= GLMapView.RENDER_PASS_SPRITES;
+            }
+        }
+
+        if(defaultLabelRenderResUpdate.compareAndSet(true, false)) {
+            for(GLBatchPoint point : batchPoints2) {
+                if(point.labelMinRenderResolutionIsDefault) {
+                    point.validateLabelMinResolution();
+                }
+            }
+            for(GLBatchPoint point : labels) {
+                point.validateLabelMinResolution();
             }
         }
 

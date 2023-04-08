@@ -4,6 +4,8 @@ package com.atakmap.android.missionpackage.file;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 
@@ -181,6 +183,7 @@ public class MissionPackageContents implements Parcelable {
         }
     };
 
+    @NonNull
     @Override
     public synchronized String toString() {
         return _contents == null ? "" : "" + _contents.size();

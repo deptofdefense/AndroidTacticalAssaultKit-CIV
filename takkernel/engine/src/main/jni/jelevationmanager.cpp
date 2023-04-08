@@ -1,4 +1,4 @@
-#include "jelevationmanager.h"
+#include "com_atakmap_map_elevation_ElevationManager.h"
 
 #include <vector>
 

@@ -105,7 +105,7 @@ public final class Models {
         return transform(src, srcData, dst, null);
     }
     public static Model transform(ModelInfo src, Model srcData, ModelInfo dst, OnTransformProgressListener listener) {
-        return transform(src, srcData, dst, srcData.getVertexDataLayout(), listener);
+        return transform(src, srcData, dst, srcData.getMesh(0).getVertexDataLayout(), listener);
     }
 
     public static Model transform(ModelInfo src, Model srcData, ModelInfo dst, VertexDataLayout dstLayout, OnTransformProgressListener listener) {
@@ -211,7 +211,7 @@ public final class Models {
         }
     }
 
-    private static Model transformImpl(NativeMesh src, VertexDataLayout dstLayout) {
+    private static Mesh transformImpl(NativeMesh src, VertexDataLayout dstLayout) {
         Pointer retval =
                 transform(((NativeMesh)src).pointer,
                         VertexDataLayout.getNativeAttributes(dstLayout.attributes),
@@ -230,7 +230,7 @@ public final class Models {
                         dstLayout.interleaved);
         if(retval == null)
             return null;
-        return new MeshModel(new NativeMesh(retval));
+        return new NativeMesh(retval);
     }
 
     private static boolean isScaleTranslateOnly(Matrix mx) {
@@ -311,9 +311,9 @@ public final class Models {
                     default :
                         return null;
                 }
-                if(m.getVertexAttributeType(Model.VERTEX_ATTR_POSITION) == null)
+                if(m.getVertexAttributeType(Mesh.VERTEX_ATTR_POSITION) == null)
                     return null;
-                final int verticesType = DataType.convert(m.getVertexAttributeType(Model.VERTEX_ATTR_POSITION), true);
+                final int verticesType = DataType.convert(m.getVertexAttributeType(Mesh.VERTEX_ATTR_POSITION), true);
                 final int indicesType = m.isIndexed() ? DataType.convert(m.getIndexType(), false) : DataType.TEDT_UInt16;
                 if(indicesType == GLES30.GL_NONE && m.isIndexed())
                     return null;
@@ -326,7 +326,7 @@ public final class Models {
                 isect = Models.intersect(mode,
                         m.getNumFaces(),
                         verticesType,
-                        getPointer(m.getVertices(Model.VERTEX_ATTR_POSITION), m.getVertexDataLayout().position.offset),
+                        getPointer(m.getVertices(Mesh.VERTEX_ATTR_POSITION), m.getVertexDataLayout().position.offset),
                         m.getVertexDataLayout().position.stride,
                         indicesType,
                         getPointer(m.getIndices(), m.getIndexOffset()),
@@ -563,10 +563,10 @@ public final class Models {
                         Models.getNumIndices(managed),
                         managed.isIndexed() ? Unsafe.getBufferPointer(managed.getIndices()) : 0L,
                         managed.getIndexOffset(),
-                        MathUtils.hasBits(layout.attributes, Model.VERTEX_ATTR_POSITION) ? Unsafe.getBufferPointer(managed.getVertices(Model.VERTEX_ATTR_POSITION)) : 0L,
-                        MathUtils.hasBits(layout.attributes, Model.VERTEX_ATTR_TEXCOORD_0) ? Unsafe.getBufferPointer(managed.getVertices(Model.VERTEX_ATTR_TEXCOORD_0)) : 0L,
-                        MathUtils.hasBits(layout.attributes, Model.VERTEX_ATTR_NORMAL) ? Unsafe.getBufferPointer(managed.getVertices(Model.VERTEX_ATTR_NORMAL)) : 0L,
-                        MathUtils.hasBits(layout.attributes, Model.VERTEX_ATTR_COLOR) ? Unsafe.getBufferPointer(managed.getVertices(Model.VERTEX_ATTR_COLOR)) : 0L,
+                        MathUtils.hasBits(layout.attributes, Mesh.VERTEX_ATTR_POSITION) ? Unsafe.getBufferPointer(managed.getVertices(Mesh.VERTEX_ATTR_POSITION)) : 0L,
+                        MathUtils.hasBits(layout.attributes, Mesh.VERTEX_ATTR_TEXCOORD_0) ? Unsafe.getBufferPointer(managed.getVertices(Mesh.VERTEX_ATTR_TEXCOORD_0)) : 0L,
+                        MathUtils.hasBits(layout.attributes, Mesh.VERTEX_ATTR_NORMAL) ? Unsafe.getBufferPointer(managed.getVertices(Mesh.VERTEX_ATTR_NORMAL)) : 0L,
+                        MathUtils.hasBits(layout.attributes, Mesh.VERTEX_ATTR_COLOR) ? Unsafe.getBufferPointer(managed.getVertices(Mesh.VERTEX_ATTR_COLOR)) : 0L,
                         NativeMesh.convertWindingOrder(managed.getFaceWindingOrder()),
                         NativeMesh.convertDrawMode(managed.getDrawMode()),
                         aabb.minX, aabb.minY, aabb.minZ, aabb.maxX, aabb.maxY, aabb.maxZ,

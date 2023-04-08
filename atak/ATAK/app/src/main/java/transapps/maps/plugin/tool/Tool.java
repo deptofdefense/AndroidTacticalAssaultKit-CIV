@@ -22,7 +22,7 @@ public abstract class Tool implements ToolDescriptor {
     @Override
     public Tool getTool() {
         return this;
-    };
+    }
 
     public abstract void onActivate(Activity arg0, MapView arg1, ViewGroup arg2,
             Bundle arg3,

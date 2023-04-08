@@ -113,7 +113,7 @@ public class ImportCotSort extends ImportResolver {
      */
     @Override
     public boolean beginImport(final File file, final Set<SortFlags> flags) {
-        String event = null;
+        String event;
         try (FileInputStream fis = IOProviderFactory.getInputStream(file)) {
             event = FileSystemUtils.copyStreamToString(fis, true,
                     FileSystemUtils.UTF8_CHARSET, _charBuffer);

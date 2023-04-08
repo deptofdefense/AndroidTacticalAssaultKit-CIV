@@ -1,6 +1,8 @@
 
 package com.atakmap.android.image.nitf.CGM;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.app.BuildConfig;
 
 import java.io.DataInput;
@@ -47,6 +49,7 @@ public class ScalingModeCommand extends Command {
         return this.metricScalingFactor;
     }
 
+    @NonNull
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

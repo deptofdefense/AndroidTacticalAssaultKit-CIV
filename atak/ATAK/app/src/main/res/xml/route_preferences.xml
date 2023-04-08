@@ -7,7 +7,7 @@
         android:key="waypointPrefix"
         android:title="@string/preferences_text296" />
 
-   <Preference
+   <com.atakmap.android.gui.PanPreference
         android:key="defaultRouteColor"
         android:title="@string/preferences_text301" />
 
@@ -85,7 +85,6 @@
         android:dialogTitle="@string/preferences_text314"
         android:inputType="number"
         android:key="waypointBubble.Swimming"
-
         android:title="@string/preferences_text312" />
 
     <com.atakmap.android.gui.PanEditTextPreference

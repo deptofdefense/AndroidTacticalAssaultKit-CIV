@@ -1298,7 +1298,7 @@ final class RouteNavigatorEngine {
                 Log.e(TAG, "Old route navigator engine db close unsuccessful");
             }
 
-            String query = "SELECT InitSpatialMetadata()";
+            String query;
 
             final int major = FeatureSpatialDatabase
                     .getSpatialiteMajorVersion(_db);

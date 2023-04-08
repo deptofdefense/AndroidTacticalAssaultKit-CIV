@@ -3,6 +3,8 @@ package com.atakmap.android.image.nitf.CGM;
 
 import android.graphics.Point;
 
+import androidx.annotation.NonNull;
+
 import java.io.DataInput;
 import java.io.IOException;
 
@@ -17,6 +19,7 @@ class VDCExtentCommand extends Command {
         this.upperRightCorner = makePoint();
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "VDCExtent [" + this.lowerLeftCorner + "] ["

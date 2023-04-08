@@ -1,6 +1,7 @@
 
 package com.atakmap.android.user.icon;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
 import com.atakmap.android.icons.UserIconSet;
@@ -36,6 +37,7 @@ public class UserIconPallet implements IconPallet {
         return fragment;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "UserIconPallet "

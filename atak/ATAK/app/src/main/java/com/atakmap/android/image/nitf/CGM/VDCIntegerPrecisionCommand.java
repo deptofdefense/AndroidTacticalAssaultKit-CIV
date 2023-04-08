@@ -1,6 +1,8 @@
 
 package com.atakmap.android.image.nitf.CGM;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.app.BuildConfig;
 
 import java.io.DataInput;
@@ -32,6 +34,7 @@ public class VDCIntegerPrecisionCommand extends Command {
         return VDCIntegerPrecisionCommand.precision;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "VDCIntegerPrecision "

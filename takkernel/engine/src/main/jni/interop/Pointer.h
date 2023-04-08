@@ -9,7 +9,7 @@
 #include <util/Memory.h>
 
 #include "common.h"
-#include "jpointer.h"
+#include "com_atakmap_interop_Pointer.h"
 
 namespace TAKEngineJNI {
     namespace Interop {

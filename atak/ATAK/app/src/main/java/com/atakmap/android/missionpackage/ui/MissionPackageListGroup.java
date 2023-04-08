@@ -1,6 +1,8 @@
 
 package com.atakmap.android.missionpackage.ui;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.contact.Contact;
 import com.atakmap.android.filesharing.android.service.FileInfoPersistanceHelper;
 import com.atakmap.android.filesharing.android.service.FileInfoPersistanceHelper.TABLETYPE;
@@ -96,6 +98,7 @@ public class MissionPackageListGroup {
         this._userName = userName;
     }
 
+    @NonNull
     public String toString() {
         return _manifest + ", " + isModified();
     }

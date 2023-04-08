@@ -11,6 +11,8 @@ import android.text.InputType;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.attachment.AttachmentMapOverlay;
 import com.atakmap.android.attachment.DeleteAfterSendCallback;
 import com.atakmap.android.filesystem.ResourceFile;
@@ -262,6 +264,7 @@ public abstract class ExportFileMarshal extends ExportMarshal {
                 + "." + HHmm_sdf.get().format(d);
     }
 
+    @NonNull
     @Override
     public String toString() {
         return getTargetClass().getSimpleName() + ", " + filename;

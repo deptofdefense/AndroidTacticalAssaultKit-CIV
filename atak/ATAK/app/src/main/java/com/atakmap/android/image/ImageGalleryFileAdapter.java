@@ -690,7 +690,7 @@ public class ImageGalleryFileAdapter extends ImageGalleryBaseAdapter
 
     @Override
     protected String[] getImageURIs() {
-        List<String> imageURIs = null;
+        List<String> imageURIs;
 
         synchronized (viewItems) {
             imageURIs = new ArrayList<>(viewItems.size());

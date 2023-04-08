@@ -10,8 +10,6 @@ import com.atakmap.android.maps.MapEventDispatcher;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
-import com.atakmap.coremap.cot.event.CotDetail;
-import com.atakmap.coremap.cot.event.CotEvent;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -110,7 +108,7 @@ public class FilteredContactsManager {
                             if (visible != mapItem.getVisible()) {
                                 if (mapItem.getMetaString("parent_uid", "")
                                         .equals(contactUid)) {
-                                    mapItem.setVisible(visible);
+                                    mapItem.setVisible(visible || determineHighestPriorityLevel(mapItem) || determineIsEmergencyOrBailout(mapItem));
                                 }
                             }
                             return false;
@@ -120,7 +118,7 @@ public class FilteredContactsManager {
     }
 
     private void setContactFiltered(String uid, boolean filterStatus,
-            boolean fireIntent) {
+                                    boolean fireIntent) {
         synchronized (filteredContacts) {
             MapView mv = MapView.getMapView();
             if (filterStatus == filteredContacts.contains(uid))
@@ -144,7 +142,7 @@ public class FilteredContactsManager {
             final MapItem contact = MapView.getMapView().getMapItem(uid);
             if (contact != null)
                 contact.setVisible(!filterStatus
-                        || determineIsEmergencyOrBailout(contact));
+                        || determineIsEmergencyOrBailout(contact) || determineHighestPriorityLevel(contact));
             // children adopt filter status of contact
             setChildMapItemsForContactVisible(mv, uid, !filterStatus);
 
@@ -166,15 +164,22 @@ public class FilteredContactsManager {
     }
 
     /**
+     * Determines if the map item is filtered. If it is filtered or is a child of a filtered item AND
+     * it is not an emergency or bailout point and is not something labeled as a highest priority point,
+     * it is filtered
      * @param mapItem
      * @return  <code>true</code> if the _item_ is considered filtered
      */
     private boolean isItemFiltered(MapItem mapItem) {
-        return (isContactFiltered(mapItem.getUID())
-                && !determineIsEmergencyOrBailout(mapItem)) ||
-                (!mapItem.getMetaString("parent_uid", "").isEmpty() &&
-                        isContactFiltered(
-                                mapItem.getMetaString("parent_uid", "")));
+        if(isContactFiltered(mapItem.getUID()) || (!mapItem.getMetaString("parent_uid", "").isEmpty() &&
+                isContactFiltered(
+                        mapItem.getMetaString("parent_uid", "")))) {
+            if(determineHighestPriorityLevel(mapItem) || determineIsEmergencyOrBailout(mapItem)) {
+                return false;
+            }
+            return true;
+        }
+        return false;
     }
 
     public Set<String> getFilteredContacts() {
@@ -191,7 +196,29 @@ public class FilteredContactsManager {
                         item.getMetaBoolean("isEmergencyIndicator", false));
     }
 
+    private static boolean determineHighestPriorityLevel(MapItem item) {
+        return item.getMetaString("priorityLevel", "").equals(PriorityLevel.HIGHEST.getValue());
+    }
+
     public void dispose() {
         db.close();
+    }
+
+    public enum PriorityLevel {
+        HIGHEST("HIGHEST"),
+        HIGH("HIGH"),
+        MEDIUM("MEDIUM"),
+        LOW("LOW"),
+        LOWEST("LOWEST");
+
+        private final String priorityString;
+
+        PriorityLevel(String priorityString) {
+            this.priorityString = priorityString;
+        }
+
+        public String getValue() {
+            return priorityString;
+        }
     }
 }

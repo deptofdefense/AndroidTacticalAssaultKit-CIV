@@ -149,7 +149,6 @@ public class WMSQueryLayers extends QueryLayers {
                     .makeAuthenticatedConnection(
                             (HttpURLConnection) conn, 3, true,
                             AtakAuthenticationHandlerHTTP.UNAUTHORIZED_ONLY);
-            conn = connection.conn;
             input = connection.stream;
         } else {
             conn.connect();

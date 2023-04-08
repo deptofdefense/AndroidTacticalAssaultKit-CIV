@@ -20,6 +20,7 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.assets.Icon;
+import com.atakmap.map.opengl.GLRenderGlobals;
 
 public class RelockWidget extends LinearLayoutWidget implements
         MapWidget.OnClickListener {
@@ -102,7 +103,7 @@ public class RelockWidget extends LinearLayoutWidget implements
     }
 
     private float toDx(float val) {
-        return MapView.DENSITY * val;
+        return GLRenderGlobals.getRelativeScaling() * val;
     }
 
     void setUid(final String uid) {

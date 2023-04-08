@@ -24,11 +24,11 @@
         <com.atakmap.android.gui.PanCheckBoxPreference android:title="@string/custom"
             android:key="custom_color_gps_icon_pref"
             android:checked="false" />
-       <Preference
+       <com.atakmap.android.gui.PanPreference
            android:title="@string/preferences_text334"
            android:icon="@drawable/self_color_custom"
            android:key="change_custom_gps_color" />
-       <Preference
+       <com.atakmap.android.gui.PanPreference
            android:title="@string/preferences_text470"
            android:icon="@drawable/self_color_custom"
            android:key="change_custom_gps_outline_color"/>

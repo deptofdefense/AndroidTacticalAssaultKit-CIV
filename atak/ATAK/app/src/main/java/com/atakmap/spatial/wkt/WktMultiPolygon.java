@@ -1,6 +1,8 @@
 
 package com.atakmap.spatial.wkt;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.map.layer.feature.ogr.style.FeatureStyle;
 
@@ -46,6 +48,7 @@ public class WktMultiPolygon extends WktGeometry {
         return retval;
     }
 
+    @NonNull
     public String toString() {
         return this.getClass().getSimpleName() + " " + polygons;
     }
