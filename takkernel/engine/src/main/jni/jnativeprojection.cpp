@@ -1,4 +1,4 @@
-#include "jnativeprojection.h"
+#include "com_atakmap_map_projection_NativeProjection.h"
 
 #include <cmath>
 

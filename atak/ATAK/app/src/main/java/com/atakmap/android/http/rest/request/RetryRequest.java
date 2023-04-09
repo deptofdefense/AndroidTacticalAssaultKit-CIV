@@ -4,6 +4,8 @@ package com.atakmap.android.http.rest.request;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.coremap.log.Log;
 
 /**
@@ -75,6 +77,7 @@ public class RetryRequest implements Parcelable {
         return mNotificationId;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "" + mRetryCount;
@@ -133,7 +136,7 @@ public class RetryRequest implements Parcelable {
             if (_numberAttempts <= 1)
                 return;
 
-            long delaySeconds = 0;
+            long delaySeconds;
             if (_numberAttempts == 2)
                 delaySeconds = 1;
             else if (_numberAttempts == 3)

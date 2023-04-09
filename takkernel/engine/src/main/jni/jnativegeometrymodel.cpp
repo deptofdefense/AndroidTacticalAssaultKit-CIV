@@ -1,4 +1,4 @@
-#include "jnativegeometrymodel.h"
+#include "com_atakmap_math_NativeGeometryModel.h"
 
 #include <math/AABB.h>
 #include <math/Ellipsoid2.h>

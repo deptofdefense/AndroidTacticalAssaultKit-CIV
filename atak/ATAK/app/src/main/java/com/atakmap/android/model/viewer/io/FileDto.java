@@ -1,6 +1,8 @@
 
 package com.atakmap.android.model.viewer.io;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.locale.LocaleUtil;
 import java.io.File;
@@ -125,6 +127,7 @@ public final class FileDto {
         return result;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return String.format(Locale.US,

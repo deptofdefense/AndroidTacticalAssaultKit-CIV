@@ -43,7 +43,7 @@ public class WidgetItemListParser {
 
     public WidgetItemList parse(String filePath) throws IOException,
             SAXException {
-        WidgetItemList list = null;
+        WidgetItemList list;
         try (FileInputStream fis = IOProviderFactory
                 .getInputStream(
                         new File(_currentDirectory + filePath))) {
@@ -81,7 +81,7 @@ public class WidgetItemListParser {
     private WidgetItem _parseItem(Node itemNode) throws IOException,
             SAXException {
 
-        WidgetItem.Builder b = null;
+        WidgetItem.Builder b;
 
         NamedNodeMap attrs = itemNode.getAttributes();
 

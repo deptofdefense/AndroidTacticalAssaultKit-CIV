@@ -952,6 +952,7 @@ public class CrumbDatabase {
                 while (result.moveToNext()) {
                     c = crumbPointFromCursor(result);
                     if (c.gp.isValid()) {
+                        c.gpm.setMetaValue("date", c.timestamp);
                         track.addPoint(c.gpm, false);
                         last = c;
                     }
@@ -1319,8 +1320,10 @@ public class CrumbDatabase {
         }
 
         GeoPointMetaData[] pts = new GeoPointMetaData[points.size()];
-        for (int i = 0; i < points.size(); ++i)
+        for (int i = 0; i < points.size(); ++i) {
             pts[i] = points.get(i).gpm;
+            pts[i].setMetaValue("date", points.get(i).timestamp);
+        }
         track.setPoints(pts);
         Log.d(TAG, "Found " + points.size() + " crumbs for track " + trackDbId);
         return track;
@@ -1842,7 +1845,6 @@ public class CrumbDatabase {
         int trackId;
         synchronized (lock) {
             try {
-                crumbdb.beginTransaction();
                 if (dbTrack != null) {
                     //if exists delete it and all associated crumbs
                     trackId = dbTrack.getMetaInteger(META_TRACK_DBID, -1);
@@ -2035,20 +2037,16 @@ public class CrumbDatabase {
                     }
 
                     //TODO any other error checking? NaN?
+
                     persist(geoPoint.get(), uid, callsign, timestamp, curSpeed,
                             bearing,
                             trackId, geoPoint.getGeopointSource(),
                             geoPoint.getAltitudeSource(), null, true);
                 } //end gx:track point list
-
-                //end transaction & return trackDB id
-                crumbdb.setTransactionSuccessful();
                 return trackId;
             } catch (Exception e) {
                 Log.e(TAG, "Failed to setServerTrack", e);
-            } finally {
-                crumbdb.endTransaction();
-            }
+            } 
         }
 
         return -1;
@@ -2075,7 +2073,7 @@ public class CrumbDatabase {
 
         private final Set<Crumb> localCrumbsToProcess = new HashSet<>();
         private boolean endTransactionError = false;
-        private StatementIface insertStmt = null;
+        private StatementIface insertStmt;
 
         Handler() {
             insertStmt = crumbdb.compileStatement(

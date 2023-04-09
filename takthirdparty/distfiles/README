@@ -1,7 +1,7 @@
 *** Source Bundles
 zlib - 1.2.11
 libiconv - 1.15
-openssl - 1.1.1g
+openssl - 1.1.1n
 curl - 7.62.0
 proj - 4.9.1
 expat - 2.1.0
@@ -11,6 +11,8 @@ libmicrohttpd - 0.9.73
 ogdi - 3.2.0
 geos - 3.4.3
 sqlcipher - 3.4.2
+cng-engine - https://github.com/rticommunity/openssl-cng-engine
+             at commit 974393f87058f16baeb380e7be9091440c34a194
 javasqlite-pgsc - Modified version of the native portions only of
                   javasqlite-20140624 from
                   http://www.ch-werner.de/javasqlite. Modification history
@@ -130,6 +132,8 @@ libkml-pgsc-win*.patch - Fixes for Windows project files (mostly adding 64-bit)
 pri-pgsc-winproj-vXXX.patch - Patch to update MS project file from the 
                    base supported version for PRI to the version in the patch
                    filename's suffix.
+cng-engine-pgsc.patch - Adds support for VS2015 and adds ability to obtain
+                   a complete certificate chain for a given certificate
 
 
 

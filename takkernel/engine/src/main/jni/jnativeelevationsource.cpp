@@ -1,4 +1,4 @@
-#include "jnativeelevationsource.h"
+#include "com_atakmap_map_elevation_NativeElevationSource.h"
 
 #include <list>
 

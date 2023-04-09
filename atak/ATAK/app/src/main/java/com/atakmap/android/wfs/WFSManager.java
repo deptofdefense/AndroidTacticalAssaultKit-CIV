@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.view.View;
 import android.widget.BaseAdapter;
 
+import com.atakmap.android.features.FeatureDataStoreDeepMapItemQuery;
 import com.atakmap.android.features.FeatureDataStoreHierarchyListItem;
 import com.atakmap.android.features.FeatureDataStoreMapOverlay;
 import com.atakmap.android.hierarchy.HierarchyListFilter;
@@ -29,7 +30,11 @@ import com.atakmap.android.overlay.MapOverlay2;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.map.layer.Layer;
+import com.atakmap.map.layer.feature.Adapters;
+import com.atakmap.map.layer.feature.FeatureDataStore2;
 import com.atakmap.map.layer.feature.FeatureLayer;
+import com.atakmap.map.layer.feature.FeatureLayer3;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -41,21 +46,30 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
-import java.util.TreeMap;
 import java.util.TreeSet;
 
+import gov.tak.api.annotation.DeprecatedApi;
+
 public final class WFSManager implements MapOverlay2, DeepMapItemQuery {
+
+    final static class Record {
+        String mime;
+        String uri;
+        FeatureDataStore2 dataStore;
+        /** may be `null` */
+        FeatureLayer layer;
+        FeatureLayer3 layer3;
+        DeepMapItemQuery query;
+        MapOverlay overlay;
+    }
 
     private final static String TAG = "WFSManager";
 
     private final MapView mapView;
     private final Context context;
 
-    private final Map<String, String> uriToMime;
-    private final Map<String, FeatureLayer> uriToLayer;
-    private final Map<FeatureLayer, String> layerToUri;
-    private final Map<FeatureLayer, DeepMapItemQuery> childQueries;
-    private final Map<FeatureLayer, MapOverlay> childOverlays;
+    private final Map<String, Record> records;
+    private final Map<FeatureLayer3, Record> layerToRecord;
 
     private ListImpl listModel;
 
@@ -63,78 +77,123 @@ public final class WFSManager implements MapOverlay2, DeepMapItemQuery {
         this.mapView = mapView;
         this.context = mapView.getContext();
 
-        this.uriToMime = new IdentityHashMap<>();
-        this.uriToLayer = new TreeMap<>();
-        this.layerToUri = new IdentityHashMap<>();
-        this.childQueries = new IdentityHashMap<>();
-        this.childOverlays = new IdentityHashMap<>();
+        this.records = new HashMap<>();
+        this.layerToRecord = new IdentityHashMap<>();
     }
 
     public synchronized int size() {
-        return this.layerToUri.size();
+        return this.records.size();
     }
 
     public synchronized boolean contains(String uri) {
-        return this.uriToLayer.containsKey(uri);
+        return this.records.containsKey(uri);
+    }
+
+    /** @deprecated  use {@link #add(String, String, FeatureLayer3)} */
+    @Deprecated
+    @DeprecatedApi(since = "4.6", forRemoval = true, removeAt = "4.9")
+    public synchronized boolean add(String uri, String mime,
+            FeatureLayer layer) {
+        if (!add(uri, mime, adapt(layer)))
+            return false;
+        records.get(uri).layer = layer;
+        return true;
     }
 
     public synchronized boolean add(String uri, String mime,
-            FeatureLayer layer) {
-        if (this.uriToLayer.containsKey(uri)) {
+            FeatureLayer3 layer) {
+        if (this.records.containsKey(uri)) {
             Log.w(TAG, "Layer for " + uri + " has already been added.");
             return false;
-        } else if (this.layerToUri.containsKey(layer)) {
-            Log.w(TAG,
-                    "Layer has already been added for "
-                            + this.layerToUri.get(layer));
-            return false;
+        } else {
+            boolean containsDataStore = false;
+            for (Record record : records.values()) {
+                containsDataStore |= (record.layer3 == layer);
+                if (containsDataStore)
+                    break;
+            }
+            if (containsDataStore) {
+                Log.w(TAG,
+                        "Layer has already been added for "
+                                + uri);
+                return false;
+            }
         }
 
-        this.uriToMime.put(uri, mime);
-        this.uriToLayer.put(uri, layer);
-        this.layerToUri.put(layer, uri);
+        Record record = new Record();
+        record.layer = null;
+        record.layer3 = layer;
+        record.dataStore = layer.getDataStore();
+        record.uri = uri;
+        record.mime = mime;
 
-        layer.setVisible(true);
-        MapOverlay overlay = new FeatureDataStoreMapOverlay(this.context,
-                layer, null);
+        record.layer3.setVisible(true);
+        record.overlay = new FeatureDataStoreMapOverlay(this.context,
+                layer.getDataStore(),
+                null,
+                layer.getName(),
+                null,
+                new FeatureDataStoreDeepMapItemQuery(layer),
+                null,
+                null);
 
-        this.childOverlays.put(layer, overlay);
-        final DeepMapItemQuery childQuery = overlay.getQueryFunction();
-        if (childQuery != null)
-            this.childQueries.put(layer, childQuery);
+        record.query = record.overlay.getQueryFunction();
+        records.put(uri, record);
+        layerToRecord.put(record.layer3, record);
 
         this.mapView.addLayer(MapView.RenderStack.VECTOR_OVERLAYS, layer);
 
         return true;
     }
 
+    /** @deprecated  */
+    @Deprecated
+    @DeprecatedApi(since = "4.6", forRemoval = true, removeAt = "4.9")
     public synchronized void remove(FeatureLayer layer) {
-        if (this.layerToUri.containsKey(layer))
+        for (Record record : records.values()) {
+            if (record.layer == layer) {
+                removeImpl(record.layer3);
+                break;
+            }
+        }
+    }
+
+    public synchronized void remove(FeatureLayer3 layer) {
+        if (!this.layerToRecord.containsKey(layer))
             return;
 
         this.removeImpl(layer);
     }
 
+    /** @deprecated use {@link #remove2(String)} */
+    @Deprecated
+    @DeprecatedApi(since = "4.6", forRemoval = true, removeAt = "4.9")
     public synchronized FeatureLayer remove(String uri) {
-        final FeatureLayer retval = this.uriToLayer.get(uri);
-        if (retval != null)
-            this.removeImpl(retval);
-        return retval;
+        final Record retval = this.records.get(uri);
+        if (retval == null)
+            return null;
+        this.removeImpl(retval.layer3);
+        return retval.layer;
     }
 
-    private void removeImpl(FeatureLayer layer) {
+    public synchronized FeatureLayer3 remove2(String uri) {
+        final Record retval = this.records.get(uri);
+        if (retval == null)
+            return null;
+        this.removeImpl(retval.layer3);
+        return retval.layer3;
+    }
+
+    private void removeImpl(FeatureLayer3 layer) {
         this.mapView.removeLayer(MapView.RenderStack.VECTOR_OVERLAYS, layer);
 
-        this.childQueries.remove(layer);
-        this.childOverlays.remove(layer);
-
-        final String uri = this.layerToUri.remove(layer);
-        this.uriToLayer.remove(uri);
-        this.uriToMime.remove(uri);
+        final Record record = layerToRecord.remove(layer);
+        if (record != null)
+            records.remove(record.uri);
     }
 
-    private synchronized Map<String, FeatureLayer> getUriMap() {
-        return new HashMap<>(this.uriToLayer);
+    private synchronized Map<String, Record> getUriMap() {
+        return new HashMap<>(this.records);
     }
 
     /**************************************************************************/
@@ -183,8 +242,10 @@ public final class WFSManager implements MapOverlay2, DeepMapItemQuery {
     @Override
     public synchronized MapItem deepFindItem(Map<String, String> metadata) {
         MapItem retval = null;
-        for (DeepMapItemQuery query : this.childQueries.values()) {
-            retval = query.deepFindItem(metadata);
+        for (Record record : records.values()) {
+            if (record.query == null)
+                continue;
+            retval = record.query.deepFindItem(metadata);
             if (retval != null)
                 break;
         }
@@ -194,8 +255,11 @@ public final class WFSManager implements MapOverlay2, DeepMapItemQuery {
     @Override
     public List<MapItem> deepFindItems(Map<String, String> metadata) {
         List<MapItem> retval = new LinkedList<>();
-        for (DeepMapItemQuery query : this.childQueries.values())
-            retval.addAll(query.deepFindItems(metadata));
+        for (Record record : records.values()) {
+            if (record.query == null)
+                continue;
+            retval.addAll(record.query.deepFindItems(metadata));
+        }
         return retval;
     }
 
@@ -204,8 +268,11 @@ public final class WFSManager implements MapOverlay2, DeepMapItemQuery {
             Map<String, String> metadata) {
 
         MapItem retval = null;
-        for (DeepMapItemQuery query : this.childQueries.values()) {
-            retval = query.deepFindClosestItem(location, threshold, metadata);
+        for (Record record : records.values()) {
+            if (record.query == null)
+                continue;
+            retval = record.query.deepFindClosestItem(location, threshold,
+                    metadata);
             if (retval != null)
                 break;
         }
@@ -216,8 +283,12 @@ public final class WFSManager implements MapOverlay2, DeepMapItemQuery {
     public Collection<MapItem> deepFindItems(GeoPoint location, double radius,
             Map<String, String> metadata) {
         List<MapItem> retval = new LinkedList<>();
-        for (DeepMapItemQuery query : this.childQueries.values())
-            retval.addAll(query.deepFindItems(location, radius, metadata));
+        for (Record record : records.values()) {
+            if (record.query == null)
+                continue;
+            retval.addAll(
+                    record.query.deepFindItems(location, radius, metadata));
+        }
         return retval;
     }
 
@@ -225,8 +296,11 @@ public final class WFSManager implements MapOverlay2, DeepMapItemQuery {
     public Collection<MapItem> deepFindItems(GeoBounds bounds,
             Map<String, String> metadata) {
         List<MapItem> retval = new LinkedList<>();
-        for (DeepMapItemQuery query : this.childQueries.values())
-            retval.addAll(query.deepFindItems(bounds, metadata));
+        for (Record record : records.values()) {
+            if (record.query == null)
+                continue;
+            retval.addAll(record.query.deepFindItems(bounds, metadata));
+        }
         return retval;
     }
 
@@ -234,8 +308,10 @@ public final class WFSManager implements MapOverlay2, DeepMapItemQuery {
     public MapItem deepHitTest(int xpos, int ypos, GeoPoint point,
             MapView view) {
         MapItem retval = null;
-        for (DeepMapItemQuery query : this.childQueries.values()) {
-            retval = query.deepHitTest(xpos, ypos, point, view);
+        for (Record record : records.values()) {
+            if (record.query == null)
+                continue;
+            retval = record.query.deepHitTest(xpos, ypos, point, view);
             if (retval != null)
                 break;
         }
@@ -247,8 +323,11 @@ public final class WFSManager implements MapOverlay2, DeepMapItemQuery {
             GeoPoint point, MapView view) {
         SortedSet<MapItem> retval = new TreeSet<>(
                 MapItem.ZORDER_HITTEST_COMPARATOR);
-        for (DeepMapItemQuery query : this.childQueries.values()) {
-            final SortedSet<MapItem> results = query.deepHitTestItems(xpos,
+        for (Record record : records.values()) {
+            if (record.query == null)
+                continue;
+            final SortedSet<MapItem> results = record.query.deepHitTestItems(
+                    xpos,
                     ypos, point, view);
             if (results != null)
                 retval.addAll(results);
@@ -321,7 +400,7 @@ public final class WFSManager implements MapOverlay2, DeepMapItemQuery {
         @Override
         protected void refreshImpl() {
             List<HierarchyListItem> filtered = new ArrayList<>();
-            Map<String, FeatureLayer> uriMap = getUriMap();
+            Map<String, Record> uriMap = getUriMap();
             Map<String, SourceListItem> itemMap;
             List<String> removed;
             synchronized (this.itemMap) {
@@ -330,10 +409,11 @@ public final class WFSManager implements MapOverlay2, DeepMapItemQuery {
             }
 
             // Create/refresh items
-            for (Map.Entry<String, FeatureLayer> entry : uriMap.entrySet()) {
+            for (Map.Entry<String, Record> entry : uriMap.entrySet()) {
                 SourceListItem src = itemMap.get(entry.getKey());
                 if (src == null) {
-                    src = new SourceListItem(entry.getValue(), entry.getKey(),
+                    src = new SourceListItem(entry.getValue().layer3,
+                            entry.getKey(),
                             WFSManager.this.context, this.listener,
                             this.filter);
                     itemMap.put(entry.getKey(), src);
@@ -418,10 +498,11 @@ public final class WFSManager implements MapOverlay2, DeepMapItemQuery {
 
         private final String uri;
 
-        public SourceListItem(FeatureLayer layer, String uri, Context context,
+        public SourceListItem(FeatureLayer3 layer, String uri, Context context,
                 BaseAdapter listener, HierarchyListFilter filter) {
 
-            super(layer, null, context, listener, filter);
+            super(layer.getDataStore(), layer.getName(), null, null, null,
+                    context, listener, filter);
 
             this.uri = uri;
 
@@ -445,5 +526,18 @@ public final class WFSManager implements MapOverlay2, DeepMapItemQuery {
             // Prevents user from descending into set
             return false;
         }
+    }
+
+    static FeatureLayer3 adapt(FeatureLayer layer) {
+        final FeatureLayer3 adapted = new FeatureLayer3(layer.getName(),
+                Adapters.adapt(layer.getDataStore()));
+        layer.addOnLayerVisibleChangedListener(
+                new Layer.OnLayerVisibleChangedListener() {
+                    @Override
+                    public void onLayerVisibleChanged(Layer layer) {
+                        adapted.setVisible(layer.isVisible());
+                    }
+                });
+        return adapted;
     }
 }

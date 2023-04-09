@@ -19,9 +19,13 @@
             android:title="@string/preferences_text264" />
         <com.atakmap.android.gui.PanCheckBoxPreference
             android:defaultValue="true"
-            android:summary="@string/preferences_text86"
             android:key="useGPSTime"
-
+            android:summary="@string/preferences_text86"
             android:title="@string/preferences_text85" />
+        <com.atakmap.android.gui.PanCheckBoxPreference
+            android:defaultValue="false"
+            android:summary="Discards GPS supplied elevation data in favor of digital terrain elevation data (DTED)"
+            android:key="useTerrainElevationSelfMarker"
+            android:title="Use Elevation Data instead of GPS Elevation" />
     </PreferenceCategory>
 </PreferenceScreen>

@@ -4,7 +4,6 @@ package com.atakmap.android.maps.graphics.widgets;
 import android.graphics.Color;
 import android.util.Pair;
 
-import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.graphics.GLImage;
 import com.atakmap.android.maps.graphics.GLImageCache;
 import com.atakmap.android.maps.graphics.GLTriangle;
@@ -139,10 +138,10 @@ public class GLRadialButtonWidget extends GLAbstractButtonWidget implements
                         _subIconArrowCache.getImageTextureY(),
                         _subIconArrowCache.getImageTextureWidth(),
                         _subIconArrowCache.getImageTextureHeight(),
-                        tx * MapView.DENSITY,
-                        ty * MapView.DENSITY,
-                        twidth * MapView.DENSITY,
-                        theight * MapView.DENSITY);
+                        tx * GLRenderGlobals.getRelativeScaling(),
+                        ty * GLRenderGlobals.getRelativeScaling(),
+                        twidth * GLRenderGlobals.getRelativeScaling(),
+                        theight * GLRenderGlobals.getRelativeScaling());
             }
             if (_arrowImage != null) {
                 GLES20FixedPipeline.glPushMatrix();

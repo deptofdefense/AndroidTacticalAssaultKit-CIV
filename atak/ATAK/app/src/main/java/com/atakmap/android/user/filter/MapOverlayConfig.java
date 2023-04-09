@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.config.FiltersConfig;
 import com.atakmap.android.config.FiltersConfig.Filter;
 import com.atakmap.android.maps.MapGroup;
@@ -338,6 +340,7 @@ public class MapOverlayConfig {
         return filters;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return id + "," + title + "," + order + "," + icon + ", children="

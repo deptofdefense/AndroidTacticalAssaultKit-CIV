@@ -156,8 +156,8 @@ public class GLMarkerIconWidget extends GLWidget2 implements
     private void _setIcon(Icon icon) {
         _releaseIcon();
         if (icon != null) {
-            int anchorx = 0;
-            int anchory = 0;
+            int anchorx;
+            int anchory;
             // if (icon.getAnchor() != null) {
             anchorx = icon.getAnchorX();// .x;
             anchory = icon.getAnchorY();// .y;

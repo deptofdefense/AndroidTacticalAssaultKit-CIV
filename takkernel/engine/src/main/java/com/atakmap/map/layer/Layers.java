@@ -1,13 +1,6 @@
 package com.atakmap.map.layer;
 
 import com.atakmap.map.layer.feature.opengl.GLBatchGeometryFeatureDataStoreRenderer;
-import com.atakmap.map.layer.feature.style.opengl.GLBasicFillStyle;
-import com.atakmap.map.layer.feature.style.opengl.GLBasicStrokeStyle;
-import com.atakmap.map.layer.feature.style.opengl.GLCompositeStyle;
-import com.atakmap.map.layer.feature.style.opengl.GLIconPointStyle;
-import com.atakmap.map.layer.feature.style.opengl.GLLabelPointStyle;
-import com.atakmap.map.layer.feature.style.opengl.GLLabeledIconStyle;
-import com.atakmap.map.layer.feature.style.opengl.GLStyleFactory;
 import com.atakmap.map.layer.opengl.GLLayerFactory;
 import com.atakmap.map.layer.opengl.GLMultiLayer;
 import com.atakmap.map.layer.opengl.GLProxyLayer;
@@ -69,14 +62,6 @@ public final class Layers {
         
         // batch based FeatureLayer renderers
         GLLayerFactory.register(GLBatchGeometryFeatureDataStoreRenderer.SPI);
-
-        // generic FeatureLayer renderer
-        GLStyleFactory.register(GLBasicStrokeStyle.SPI);
-        GLStyleFactory.register(GLBasicFillStyle.SPI);
-        GLStyleFactory.register(GLIconPointStyle.SPI);
-        GLStyleFactory.register(GLLabelPointStyle.SPI);
-        GLStyleFactory.register(GLLabeledIconStyle.SPI);
-        GLStyleFactory.register(GLCompositeStyle.SPI);
 
         TileReaderFactory.registerSpi(GdalTileReader.SPI);
         TileReaderFactory.registerSpi(MobacTileReader.SPI);

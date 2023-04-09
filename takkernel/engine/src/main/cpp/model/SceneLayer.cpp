@@ -1165,6 +1165,7 @@ namespace
             nested.setInt("srid", info.srid);
             nested.setInt("altitudeMode", info.altitudeMode);
             nested.setInt("capabilities", static_cast<int>(info.capabilities));
+            nested.setInt("xrayColor", static_cast<unsigned int>(info.xrayColor));
 
             if (info.localFrame.get()) {
                 double localFrame[16];
@@ -1251,6 +1252,10 @@ namespace
             value->capabilities = SceneInfo::CapabilitiesType::All;
             if(nested.containsAttribute("capabilities"))
                 value->capabilities = (SceneInfo::CapabilitiesType)nested.getInt("capabilities");
+            if (nested.containsAttribute("xrayColor"))
+                value->xrayColor = static_cast<unsigned int>(nested.getInt("xrayColor"));
+            else
+                value->xrayColor = 0;
             if (value->location.get()) {
                 switch (value->altitudeMode) {
                 case TEAM_Absolute :

@@ -126,7 +126,7 @@ public class ServerGroup {
     public static ServerGroup fromJSON(JSONObject obj) throws JSONException {
 
         String createdString = obj.getString("created");
-        long createdTime = -1;
+        long createdTime;
         try {
             createdTime = KMLUtil.KMLDateFormatter.get()
                     .parse(createdString).getTime();

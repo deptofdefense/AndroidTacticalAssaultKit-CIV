@@ -919,6 +919,22 @@
         <item>#ffff00</item>
     </string-array>
 
+    <string-array name="gridline_color_names">
+        <item>White</item>
+        <item>Magenta</item>
+        <item>Green</item>
+        <item>Yellow</item>
+        <item>Custom</item>
+    </string-array>
+
+    <string-array translatable="false" name="gridline_color_values">
+        <item>#ffffff</item>
+        <item>#ff00ff</item>
+        <item>#00ff00</item>
+        <item>#ffff00</item>
+        <item>Custom</item>
+    </string-array>
+
 
 
     <string-array name="squad_names">

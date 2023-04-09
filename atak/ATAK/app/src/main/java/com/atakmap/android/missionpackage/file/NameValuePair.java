@@ -4,6 +4,8 @@ package com.atakmap.android.missionpackage.file;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 
 import org.json.JSONException;
@@ -122,6 +124,7 @@ public class NameValuePair implements Parcelable {
         return true;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return mName + "=" + mValue;

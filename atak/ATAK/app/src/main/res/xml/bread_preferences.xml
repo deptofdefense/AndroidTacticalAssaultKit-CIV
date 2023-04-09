@@ -19,7 +19,7 @@
             android:defaultValue="true"
             android:key="toggle_rotate_track_colors"
             android:title="@string/toggle_rot_trackcolors_title"/>
-       <Preference
+       <com.atakmap.android.gui.PanPreference
             android:key="track_history_default_color"
             android:title="@string/default_color_title" />
         <com.atakmap.android.gui.PanCheckBoxPreference
@@ -59,7 +59,7 @@
            android:title="Render bread crumb line to ground in 3-D"
            android:defaultValue="false"
            android:key="track_line_to_surface"
-           android:summary="When rendering the bread crumb trail in 3-D view, draw a line to the ground for each crumb."/>/>
+           android:summary="When rendering the bread crumb trail in 3-D view, draw a line to the ground for each crumb."/>
 
 
        <com.atakmap.android.gui.PanListPreference

@@ -1,4 +1,4 @@
-#include "jstyle.h"
+#include "com_atakmap_map_layer_feature_style_Style.h"
 
 #include <feature/Style.h>
 #include <util/Memory.h>

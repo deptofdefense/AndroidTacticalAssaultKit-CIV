@@ -2,8 +2,10 @@
 package com.atakmap.android.chat;
 
 import java.io.File;
+import java.util.List;
 
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.os.Bundle;
@@ -12,7 +14,9 @@ import android.preference.Preference.OnPreferenceClickListener;
 import android.widget.Toast;
 
 import com.atakmap.android.gui.PanEditTextPreference;
+import com.atakmap.android.gui.PanPreference;
 import com.atakmap.android.preference.AtakPreferenceFragment;
+import com.atakmap.android.preference.PreferenceSearchIndex;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
@@ -27,6 +31,13 @@ import com.atakmap.coremap.maps.time.CoordinatedTime;
 public class ChatPrefsFragment extends AtakPreferenceFragment {
 
     private static final String TAG = "ChatPrefsFragment";
+
+    public static List<PreferenceSearchIndex> index(Context context) {
+        return index(context,
+                ChatPrefsFragment.class,
+                R.string.chatPreference,
+                R.drawable.ic_menu_settings);
+    }
 
     public ChatPrefsFragment() {
         super(R.xml.chat_preferences, R.string.chatPreference);
@@ -44,7 +55,8 @@ public class ChatPrefsFragment extends AtakPreferenceFragment {
 
         this.addPreferencesFromResource(getResourceID());
 
-        final Preference clearHistoryCheckBox = findPreference("clearHistory");
+        final PanPreference clearHistoryCheckBox = (PanPreference) findPreference(
+                "clearHistory");
 
         clearHistoryCheckBox
                 .setOnPreferenceClickListener(new OnPreferenceClickListener() {
@@ -71,7 +83,8 @@ public class ChatPrefsFragment extends AtakPreferenceFragment {
 
                 });
 
-        final Preference exportHistory = findPreference("exportHistory");
+        final PanPreference exportHistory = (PanPreference) findPreference(
+                "exportHistory");
         exportHistory
                 .setOnPreferenceClickListener(new OnPreferenceClickListener() {
                     @Override

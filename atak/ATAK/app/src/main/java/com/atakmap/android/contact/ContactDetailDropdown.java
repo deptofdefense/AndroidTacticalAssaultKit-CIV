@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
+
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
@@ -456,6 +458,7 @@ public class ContactDetailDropdown extends DropDownReceiver implements
             return 3;
         }
 
+        @NonNull
         @Override
         public Fragment getItem(int position) {
             if (FileSystemUtils.isEmpty(fragments)
@@ -466,7 +469,7 @@ public class ContactDetailDropdown extends DropDownReceiver implements
         }
 
         @Override
-        public int getItemPosition(Object object) {
+        public int getItemPosition(@NonNull Object object) {
             //return position none so pager will create (re)added fragments
             return PagerAdapter.POSITION_NONE;
         }

@@ -193,12 +193,12 @@ public class GLPCASCircleWidget {
         private float _start;
         private float _target;
         private float _error;
-        private float _transTime = 2f;
+        private float _transTime;
         private long _setTimeNS = 0;
         private final float _min = -Float.MAX_VALUE;
         private final float _max = Float.MAX_VALUE;
-        private float _range = 0f;
-        private boolean _isWrapped = false;
+        private float _range;
+        private boolean _isWrapped;
     }
 
     static private class AnimationKeyFrame {
@@ -288,13 +288,13 @@ public class GLPCASCircleWidget {
         }
 
         private final List<AnimationKeyFrame> _keyFrames = new LinkedList<>();
-        float _durationS = 1f;
+        float _durationS;
         float _currentTimeS = 0f;
         float _accumulatedTimeS = 0f;
         long _lastTimeMS = _getTimeMS();
-        boolean _loop = false;
+        boolean _loop;
 
-        private float _stepS = 1f / 30f;
+        private float _stepS;
     }
 
     private ByteBuffer _verts;

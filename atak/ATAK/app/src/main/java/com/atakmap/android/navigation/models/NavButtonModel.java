@@ -358,6 +358,7 @@ public class NavButtonModel {
         return Objects.hash(reference);
     }
 
+    @NonNull
     @Override
     public String toString() {
         return getName() + " [" + getReference() + "]";

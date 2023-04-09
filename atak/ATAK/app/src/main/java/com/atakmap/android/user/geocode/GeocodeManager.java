@@ -6,30 +6,30 @@ import android.content.SharedPreferences;
 import android.location.Address;
 import android.preference.PreferenceManager;
 
+import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
+import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
-
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Locale;
+import com.atakmap.coremap.xml.XMLUtils;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.log.Log;
-import com.atakmap.coremap.xml.XMLUtils;
-
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 /**
  * Ability to register a variety of types of Geocoding capabilities via a plugin architecture.
@@ -49,6 +49,8 @@ public class GeocodeManager {
     private final List<Geocoder> geocoders = new ArrayList<>();
     private final SharedPreferences _prefs;
     private final Context context;
+
+    private final ConcurrentLinkedQueue<GeocoderChangedListener> geocoderChangeListeners = new ConcurrentLinkedQueue<>();
 
     public interface Geocoder {
         /**
@@ -90,6 +92,17 @@ public class GeocodeManager {
         List<Address> getLocation(String address, GeoBounds bounds);
     }
 
+    /**
+     * The interface for listenining when the default geocoder is changed in the system.
+     */
+    public interface GeocoderChangedListener {
+        /**
+         * The new default geocoder
+         * @param geocoder the geocoder that has been selected to be the default
+         */
+        void onGeocoderChanged(Geocoder geocoder);
+    }
+
     private GeocodeManager(Context c) {
         _prefs = PreferenceManager.getDefaultSharedPreferences(c);
         context = c;
@@ -115,10 +128,10 @@ public class GeocodeManager {
      * @param geocoder the geocoder to register
      */
     synchronized public void registerGeocoder(Geocoder geocoder) {
-        if (geocoders.contains(geocoder))
-            return;
-
-        geocoders.add(geocoder);
+        synchronized (geocoders) {
+            if (!geocoders.contains(geocoder))
+                geocoders.add(geocoder);
+        }
     }
 
     /**
@@ -126,9 +139,11 @@ public class GeocodeManager {
      * @param geocoder the geocoder to unregister
      */
     synchronized public void unregisterGeocoder(Geocoder geocoder) {
-        if (geocoder.equals(AndroidGeocoder))
-            return;
-        geocoders.remove(geocoder);
+        synchronized (geocoders) {
+            if (geocoder.equals(AndroidGeocoder))
+                return;
+            geocoders.remove(geocoder);
+        }
     }
 
     /**
@@ -153,6 +168,7 @@ public class GeocodeManager {
      */
     synchronized public void setDefaultGeocoder(String uid) {
         _prefs.edit().putString("selected_geocoder_uid", uid).apply();
+        fireGeocoderChangeListener(getSelectedGeocoder());
     }
 
     synchronized public List<Geocoder> getAllGeocoders() {
@@ -368,6 +384,35 @@ public class GeocodeManager {
                     e);
         }
 
+    }
+
+    private void fireGeocoderChangeListener(Geocoder geocoder) {
+        for (GeocoderChangedListener geocoderChangedListener : geocoderChangeListeners) {
+            try {
+                geocoderChangedListener.onGeocoderChanged(geocoder);
+            } catch (Exception e) {
+                Log.e(TAG, "error notifying: " + geocoderChangedListener, e);
+            }
+        }
+    }
+
+    /**
+     * Registers a geocoder change listener.
+     * @param listener listener for the geocoder change
+     */
+    public void registerGeocoderChangeListener(
+            GeocoderChangedListener listener) {
+        if (!geocoderChangeListeners.contains(listener))
+            geocoderChangeListeners.add(listener);
+    }
+
+    /**
+     * Unregisters a geocoder change listener.
+     * @param listener listener for the geocoder change
+     */
+    public void unregisterGeocoderChangeListener(
+            GeocoderChangedListener listener) {
+        geocoderChangeListeners.remove(listener);
     }
 
 }

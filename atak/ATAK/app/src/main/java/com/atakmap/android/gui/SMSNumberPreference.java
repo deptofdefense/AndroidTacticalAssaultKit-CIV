@@ -14,10 +14,13 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.atakmap.android.maps.MapView;
+import com.atakmap.app.BuildConfig;
 import com.atakmap.app.R;
 
 import java.util.ArrayList;
@@ -28,7 +31,7 @@ import java.util.ArrayList;
 public class SMSNumberPreference extends DialogPreference {
 
     public static final String TAG = "PanEditTextPreference";
-
+    private ImageView imageView;
     private static Context appContext;
     private static final ArrayList<String> numbers = new ArrayList<>();
 
@@ -49,7 +52,44 @@ public class SMSNumberPreference extends DialogPreference {
         View v = super.onCreateView(parent);
         if (!isEnabled())
             v.setEnabled(false);
+
+        if (v instanceof LinearLayout) {
+            LinearLayout layout = (LinearLayout) v;
+            MapView view = MapView.getMapView();
+            ImageView iv = new ImageView(view.getContext());
+            if (BuildConfig.FLAVOR == "civUIMods") {
+                iv.setImageDrawable(view.getContext()
+                        .getDrawable(
+                                R.drawable.ic_baseline_keyboard_arrow_right_24));
+            } else {
+                iv.setImageDrawable(
+                        view.getContext().getDrawable(R.drawable.arrow_right));
+            }
+            layout.addView(iv);
+            imageView = iv;
+        }
+        setRightSideIconVisibility(isEnabled());
         return v;
+    }
+
+    private void setRightSideIconVisibility(boolean enabled) {
+        try {
+            imageView.setVisibility(enabled ? View.VISIBLE : View.GONE);
+        } catch (Exception ignored) {
+
+        }
+    }
+
+    @Override
+    protected void onBindView(View view) {
+        super.onBindView(view);
+        setRightSideIconVisibility(isEnabled());
+    }
+
+    @Override
+    public void setEnabled(boolean enabled) {
+        super.setEnabled(enabled);
+        setRightSideIconVisibility(isEnabled());
     }
 
     @Override

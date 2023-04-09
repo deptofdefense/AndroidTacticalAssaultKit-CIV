@@ -68,7 +68,7 @@ public abstract class IconsetAdapterBase extends BaseAdapter {
         }
 
         View row = convertView;
-        ViewHolder holder = null;
+        ViewHolder holder;
 
         if (row == null) {
             LayoutInflater inflater = ((Activity) mContext)

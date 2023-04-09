@@ -16,7 +16,6 @@ if(getProperty(project, 'maven.consume.password', null))
 
 repositories {
     mavenLocal()
-    google()
     mavenCentral()
     maven {
         url = takrepoUrl

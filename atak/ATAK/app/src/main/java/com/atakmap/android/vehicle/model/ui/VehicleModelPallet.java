@@ -9,6 +9,7 @@ import com.atakmap.android.vehicle.model.VehicleModel;
 import com.atakmap.app.R;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
 /**
@@ -42,6 +43,7 @@ public class VehicleModelPallet implements IconPallet {
         return _fragment;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return TAG;

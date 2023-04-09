@@ -1,4 +1,4 @@
-#include "jglrenderglobals.h"
+#include "com_atakmap_map_opengl_GLRenderGlobals.h"
 
 #include <renderer/core/GLMapRenderGlobals.h>
 

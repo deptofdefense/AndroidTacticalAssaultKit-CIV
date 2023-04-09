@@ -49,6 +49,9 @@ import com.atakmap.util.Disposable;
 
 import org.gdal.gdal.Dataset;
 
+import gov.tak.api.annotation.ModifierApi;
+
+@ModifierApi(since = "4.6", modifiers = {"final"}, target = "4.9")
 public class GLTiledMapLayer2 implements GLMapLayer3, GLResolvableMapRenderable, GLMapRenderable2 {
 
     public final static GLMapLayerSpi3 SPI = new GLMapLayerSpi3() {
@@ -83,10 +86,6 @@ public class GLTiledMapLayer2 implements GLMapLayer3, GLResolvableMapRenderable,
 
     protected final MapRenderer surface;
     protected final DatasetDescriptor info;
-    /** @deprecated use {@link #renderable}*/
-    @Deprecated
-    @DeprecatedApi(since="4.1", forRemoval = true, removeAt = "4.4")
-    protected GLQuadTileNode2 quadTree;
     protected GLMapRenderable2 renderable;
     protected TileReader tileReader;
     protected final TileReader.AsynchronousIO asyncio;
@@ -234,16 +233,11 @@ public class GLTiledMapLayer2 implements GLMapLayer3, GLResolvableMapRenderable,
                 ((TileClientControlImpl)this.tileClientCtrl).apply();
             this.renderable.draw(view, renderPass);
         }
-        else if (this.quadTree != null) {
-            if(this.tileClientCtrl != null)
-                ((TileClientControlImpl)this.tileClientCtrl).apply();
-            this.quadTree.draw(view);
-        }
     }
 
     /**
      * Cleans up any resources allocated as a result of {@link #init()}; always
-     * invoked AFTER {@link #quadTree} is released.
+     * invoked AFTER {@link #renderable} is released.
      * 
      * <P>The default implementation returns immediately.
      */
@@ -256,11 +250,6 @@ public class GLTiledMapLayer2 implements GLMapLayer3, GLResolvableMapRenderable,
             if(this.renderable instanceof Disposable)
                 ((Disposable)this.renderable).dispose();
             this.renderable = null;
-        }
-        else if (this.quadTree != null) {
-            this.quadTree.release();
-            this.quadTree.dispose();
-            this.quadTree = null;
         }
         if(this.tileReader != null) {
             this.tileReader.dispose();
@@ -285,8 +274,6 @@ public class GLTiledMapLayer2 implements GLMapLayer3, GLResolvableMapRenderable,
     public State getState() {
         if(this.renderable instanceof GLResolvable)
             return ((GLResolvable)this.renderable).getState();
-        else if (this.quadTree != null)
-            return this.quadTree.getState();
         return State.RESOLVED;
     }
 
@@ -352,8 +339,6 @@ public class GLTiledMapLayer2 implements GLMapLayer3, GLResolvableMapRenderable,
                 ((GLQuadTileNode4)GLTiledMapLayer2.this.renderable).setColor(color);
             else if(GLTiledMapLayer2.this.renderable instanceof GLQuadTileNode3)
                 ((GLQuadTileNode3)GLTiledMapLayer2.this.renderable).setColor(color);
-            else if(GLTiledMapLayer2.this.quadTree != null)
-                GLTiledMapLayer2.this.quadTree.setColor(color);
         }
         
         @Override
@@ -380,7 +365,8 @@ public class GLTiledMapLayer2 implements GLMapLayer3, GLResolvableMapRenderable,
             // XXX - should check resolution???
             if(GLTiledMapLayer2.this.renderable instanceof RasterDataAccess2)
                 return (RasterDataAccess2)GLTiledMapLayer2.this.renderable;
-            return GLTiledMapLayer2.this.quadTree;
+            else
+                return null;
         }
     }
 

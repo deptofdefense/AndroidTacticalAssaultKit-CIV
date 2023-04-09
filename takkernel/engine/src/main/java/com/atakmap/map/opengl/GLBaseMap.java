@@ -23,6 +23,7 @@ import com.atakmap.map.layer.raster.ImageInfo;
 import com.atakmap.map.layer.raster.tilereader.TileReader;
 import com.atakmap.map.layer.raster.tilereader.TileReaderFactory;
 import com.atakmap.map.layer.raster.tilereader.opengl.GLQuadTileNode2;
+import com.atakmap.map.layer.raster.tilereader.opengl.GLQuadTileNode3;
 import com.atakmap.map.layer.raster.tilereader.opengl.GLQuadTileNode4;
 import com.atakmap.map.layer.raster.tilereader.opengl.PrefetchedInitializer;
 import com.atakmap.map.projection.Projection;
@@ -31,7 +32,7 @@ import com.atakmap.math.PointD;
 import com.atakmap.math.Matrix;
 
 
-public final class GLBaseMap implements GLMapRenderable {
+public final class GLBaseMap implements GLMapRenderable, GLMapRenderable2 {
     
     private Matrix img2geo;
     private Matrix geo2img;
@@ -39,7 +40,7 @@ public final class GLBaseMap implements GLMapRenderable {
     private ImageInfo srcInfo;
     private boolean srcInit; 
     
-    private GLMapRenderable impl;
+    private GLMapRenderable2 impl;
     private int implSrid;
     
     
@@ -53,7 +54,7 @@ public final class GLBaseMap implements GLMapRenderable {
         this.implSrid = -1;
     }
     
-    private GLMapRenderable createRenderer(RenderContext ctx, Projection proj) {
+    private GLMapRenderable2 createRenderer(RenderContext ctx, Projection proj) {
         // obtain the bounds of the projection
         GeoPoint ul = GeoPoint.createMutable().set(proj.getMaxLatitude(), proj.getMinLongitude());
         GeoPoint ur = GeoPoint.createMutable().set(proj.getMaxLatitude(), proj.getMaxLongitude());
@@ -159,7 +160,7 @@ public final class GLBaseMap implements GLMapRenderable {
                         false);
         
         TileReaderFactory.Options readerOpts = null;
-        GLQuadTileNode2.Options opts = null;
+        GLQuadTileNode3.Options opts = null;
 
         return new GLQuadTileNode4(ctx, info, readerOpts, opts, init);
     }
@@ -212,7 +213,7 @@ public final class GLBaseMap implements GLMapRenderable {
     }
 
     @Override
-    public void draw(GLMapView view) {
+    public void draw(GLMapView view, int renderPass) {
         if(this.impl == null || this.implSrid != view.drawSrid) {
             if(!this.srcInit) {
                 this.initSource(view);
@@ -226,7 +227,12 @@ public final class GLBaseMap implements GLMapRenderable {
         }
 
         if(this.impl != null)
-            this.impl.draw(view);
+            this.impl.draw(view, renderPass);
+    }
+
+    @Override
+    public void draw(GLMapView view) {
+        draw(view, GLMapView.RENDER_PASS_SURFACE);
     }
 
     @Override
@@ -248,7 +254,12 @@ public final class GLBaseMap implements GLMapRenderable {
         
         this.srcInit = false;
     }
-    
+
+    @Override
+    public int getRenderPass() {
+        return GLMapView.RENDER_PASS_SURFACE;
+    }
+
     /**************************************************************************/
     
     private static class BitmapTileReader extends TileReader {

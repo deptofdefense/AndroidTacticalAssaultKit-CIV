@@ -175,10 +175,10 @@ public abstract class GLAbstractButtonWidget extends GLWidget implements
                     _imageEntry.getImageTextureY(),
                     _imageEntry.getImageTextureWidth(),
                     _imageEntry.getImageTextureHeight(),
-                    tx * MapView.DENSITY,
-                    ty * MapView.DENSITY,
-                    twidth * MapView.DENSITY,
-                    theight * MapView.DENSITY);
+                    tx * GLRenderGlobals.getRelativeScaling(),
+                    ty * GLRenderGlobals.getRelativeScaling(),
+                    twidth * GLRenderGlobals.getRelativeScaling(),
+                    theight * GLRenderGlobals.getRelativeScaling());
         }
 
         if (_image != null)

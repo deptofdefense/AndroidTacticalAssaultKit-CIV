@@ -82,7 +82,7 @@ public class MetricsApi {
     /**
      * Used to record an nonnull intent event.   This call will accurately 
      * capture all attributes related to the intent and pass them onto 
-     * passive listeners that implement MetricApi.METRIC_INTENT broadcast 
+     * passive listeners that implement MetricsApi.METRIC_INTENT broadcast
      * receiver.
      * @param intent either a local or system intent.
      */
@@ -96,7 +96,7 @@ public class MetricsApi {
 
     /**
      * Used to record a category and a bundle, this call will pass the bundle onto 
-     * passive listeners that implement the MetricApi.METRIC_INTENT broadcast
+     * passive listeners that implement the MetricApis.METRIC_INTENT broadcast
      * receiver.
      * @param category is the category used to bin the bundle
      * @param b the name value pairs passed in as a bundle

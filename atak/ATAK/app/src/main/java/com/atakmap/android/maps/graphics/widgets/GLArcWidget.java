@@ -4,7 +4,6 @@ package com.atakmap.android.maps.graphics.widgets;
 import android.graphics.Color;
 import android.util.Pair;
 
-import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.graphics.GLTriangle;
 import com.atakmap.android.widgets.ArcWidget;
 import com.atakmap.android.widgets.ArcWidget.OnCentralAngleChangedListener;
@@ -12,6 +11,7 @@ import com.atakmap.android.widgets.ArcWidget.OnOffsetAngleChangedListener;
 import com.atakmap.android.widgets.ArcWidget.OnRadiusChangedListener;
 import com.atakmap.android.widgets.MapWidget;
 import com.atakmap.map.opengl.GLMapView;
+import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.opengl.GLES20FixedPipeline;
 
 import gov.tak.api.annotation.DeprecatedApi;
@@ -163,7 +163,7 @@ public class GLArcWidget extends GLShapeWidget implements
     private GLTriangle.Fan _verts;
 
     private static final float LINE_WIDTH = (float) Math
-            .ceil(1f * MapView.DENSITY);
+            .ceil(1f * GLRenderGlobals.getRelativeScaling());
     // private static final float OUTLINE_WIDTH = (float) Math.ceil(3f * MapView.DENSITY);
     private static final float OUTLINE_WIDTH = LINE_WIDTH + 2;
 }

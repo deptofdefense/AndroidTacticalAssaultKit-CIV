@@ -1,6 +1,8 @@
 
 package com.atakmap.coremap.maps.coords;
 
+import androidx.annotation.NonNull;
+
 /**
  * Description from:
  * <P>
@@ -109,6 +111,7 @@ public class ECEF {
                 rlon * div_180_pi, alt);
     }
 
+    @NonNull
     public String toString() {
         return "(" + _x + "," + _y + "," + _z + ")";
     }

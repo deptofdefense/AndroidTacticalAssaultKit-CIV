@@ -11,7 +11,7 @@
             android:defaultValue="tak.gov"
             android:inputType="textUri" />
 
-       <Preference
+       <com.atakmap.android.gui.PanPreference
             android:title="@string/elevation_downloader"
             android:key="prefs_dted_download"
             android:summary="@string/elevation_downloader_summary" />

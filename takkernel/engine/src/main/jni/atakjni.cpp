@@ -1,4 +1,7 @@
-#include "atakjni.h"
+#include "com_atakmap_map_layer_feature_geometry_opengl_GLBatchGeometryRenderer.h"
+#include "com_atakmap_opengl_GLLineBatch.h"
+#include "com_atakmap_opengl_GLText.h"
+
 #include "common.h"
 #include <cstring>
 #include <cmath>

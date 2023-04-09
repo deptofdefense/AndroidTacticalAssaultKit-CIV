@@ -43,12 +43,12 @@ public class IconPointStyleTests extends ATAKInstrumentedTest {
                 alignX, alignY, rotation, rotationAbsolute);
         Assert.assertEquals(style.getColor(), color);
         Assert.assertEquals(style.getIconUri(), uri);
-        Assert.assertTrue(width == style.getIconWidth());
-        Assert.assertTrue(height == style.getIconHeight());
-        Assert.assertTrue(
-                Math.signum(alignX) == Math.signum(style.getIconAlignmentX()));
-        Assert.assertTrue(
-                Math.signum(alignY) == Math.signum(style.getIconAligmnentY()));
+        Assert.assertEquals(width, style.getIconWidth(), 0.0);
+        Assert.assertEquals(height, style.getIconHeight(), 0.0);
+        Assert.assertEquals(Math.signum(alignX),
+                Math.signum(style.getIconAlignmentX()), 0.0);
+        Assert.assertEquals(Math.signum(alignY),
+                Math.signum(style.getIconAligmnentY()), 0.0);
         StyleTestUtils.assertAngleInDegreesEqual(rotation,
                 style.getIconRotation(), 0.00001d);
         Assert.assertEquals(rotationAbsolute, style.isRotationAbsolute());
@@ -68,12 +68,12 @@ public class IconPointStyleTests extends ATAKInstrumentedTest {
                 alignX, alignY, rotation, rotationAbsolute);
         Assert.assertEquals(style.getColor(), color);
         Assert.assertEquals(style.getIconUri(), uri);
-        Assert.assertTrue(width == style.getIconWidth());
-        Assert.assertTrue(height == style.getIconHeight());
-        Assert.assertTrue(
-                Math.signum(alignX) == Math.signum(style.getIconAlignmentX()));
-        Assert.assertTrue(
-                Math.signum(alignY) == Math.signum(style.getIconAligmnentY()));
+        Assert.assertEquals(width, style.getIconWidth(), 0.0);
+        Assert.assertEquals(height, style.getIconHeight(), 0.0);
+        Assert.assertEquals(Math.signum(alignX),
+                Math.signum(style.getIconAlignmentX()), 0.0);
+        Assert.assertEquals(Math.signum(alignY),
+                Math.signum(style.getIconAligmnentY()), 0.0);
         StyleTestUtils.assertAngleInDegreesEqual(rotation,
                 style.getIconRotation(), 0.00001d);
         Assert.assertEquals(rotationAbsolute, style.isRotationAbsolute());
@@ -93,12 +93,12 @@ public class IconPointStyleTests extends ATAKInstrumentedTest {
                 alignX, alignY, rotation, rotationAbsolute);
         Assert.assertEquals(style.getColor(), color);
         Assert.assertEquals(style.getIconUri(), uri);
-        Assert.assertTrue(width == style.getIconWidth());
-        Assert.assertTrue(height == style.getIconHeight());
-        Assert.assertTrue(
-                Math.signum(alignX) == Math.signum(style.getIconAlignmentX()));
-        Assert.assertTrue(
-                Math.signum(alignY) == Math.signum(style.getIconAligmnentY()));
+        Assert.assertEquals(width, style.getIconWidth(), 0.0);
+        Assert.assertEquals(height, style.getIconHeight(), 0.0);
+        Assert.assertEquals(Math.signum(alignX),
+                Math.signum(style.getIconAlignmentX()), 0.0);
+        Assert.assertEquals(Math.signum(alignY),
+                Math.signum(style.getIconAligmnentY()), 0.0);
         StyleTestUtils.assertAngleInDegreesEqual(rotation,
                 style.getIconRotation(), 0.00001d);
         Assert.assertEquals(rotationAbsolute, style.isRotationAbsolute());
@@ -119,12 +119,12 @@ public class IconPointStyleTests extends ATAKInstrumentedTest {
         Assert.assertEquals(style.getColor(), color);
         Assert.assertEquals(style.getIconUri(), uri);
         final float iw = style.getIconWidth();
-        Assert.assertTrue(width == style.getIconWidth());
-        Assert.assertTrue(height == style.getIconHeight());
-        Assert.assertTrue(
-                Math.signum(alignX) == Math.signum(style.getIconAlignmentX()));
-        Assert.assertTrue(
-                Math.signum(alignY) == Math.signum(style.getIconAligmnentY()));
+        Assert.assertEquals(width, style.getIconWidth(), 0.0);
+        Assert.assertEquals(height, style.getIconHeight(), 0.0);
+        Assert.assertEquals(Math.signum(alignX),
+                Math.signum(style.getIconAlignmentX()), 0.0);
+        Assert.assertEquals(Math.signum(alignY),
+                Math.signum(style.getIconAligmnentY()), 0.0);
         StyleTestUtils.assertAngleInDegreesEqual(rotation,
                 style.getIconRotation(), 0.00001d);
         Assert.assertEquals(rotationAbsolute, style.isRotationAbsolute());
@@ -144,13 +144,13 @@ public class IconPointStyleTests extends ATAKInstrumentedTest {
                 alignX, alignY, rotation, rotationAbsolute);
         Assert.assertEquals(style.getColor(), color);
         Assert.assertEquals(style.getIconUri(), uri);
-        Assert.assertTrue(width == style.getIconWidth());
-        Assert.assertTrue(height == style.getIconHeight());
-        Assert.assertTrue(
-                Math.signum(alignX) == Math.signum(style.getIconAlignmentX()));
+        Assert.assertEquals(width, style.getIconWidth(), 0.0);
+        Assert.assertEquals(height, style.getIconHeight(), 0.0);
+        Assert.assertEquals(Math.signum(alignX),
+                Math.signum(style.getIconAlignmentX()), 0.0);
         final int ay = style.getIconAligmnentY();
-        Assert.assertTrue(
-                Math.signum(alignY) == Math.signum(style.getIconAligmnentY()));
+        Assert.assertEquals(Math.signum(alignY),
+                Math.signum(style.getIconAligmnentY()), 0.0);
         StyleTestUtils.assertAngleInDegreesEqual(rotation,
                 style.getIconRotation(), 0.00001d);
         Assert.assertEquals(rotationAbsolute, style.isRotationAbsolute());

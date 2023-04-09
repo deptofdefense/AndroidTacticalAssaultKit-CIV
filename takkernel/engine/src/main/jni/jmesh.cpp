@@ -1,4 +1,4 @@
-#include "jmesh.h"
+#include "com_atakmap_math_Mesh.h"
 
 #include <math/Mesh.h>
 #include <util/Memory.h>

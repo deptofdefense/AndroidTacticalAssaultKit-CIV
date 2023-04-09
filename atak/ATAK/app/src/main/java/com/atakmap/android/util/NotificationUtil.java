@@ -3,27 +3,27 @@ package com.atakmap.android.util;
 
 import android.annotation.SuppressLint;
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Bundle;
+
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
+import com.atakmap.android.metrics.MetricsApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
-import com.atakmap.android.metrics.MetricsApi;
+
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
-import java.io.File;
 import java.util.concurrent.ConcurrentLinkedQueue;
-
-import android.os.Build;
-import android.app.NotificationChannel;
-import com.atakmap.annotations.ModifierApi;
 
 public class NotificationUtil {
 
@@ -123,6 +123,7 @@ public class NotificationUtil {
     private final Map<String, Integer> _notificationMap = new HashMap<>();
 
     private final ConcurrentLinkedQueue<NotificationListener> notificationListeners = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<NotificationFilter> notificationFilters = new ConcurrentLinkedQueue<>();
 
     private final Map<Integer, Notification.Builder> builders = new HashMap<>();
 
@@ -526,7 +527,9 @@ public class NotificationUtil {
         // requires the use of currentTimeMillis
         PendingIntent contentIntent = PendingIntent.getActivity(ctx,
                 (int) System.currentTimeMillis(),
-                atakFrontIntent, PendingIntent.FLAG_CANCEL_CURRENT);
+                atakFrontIntent,
+                PendingIntentHelper
+                        .adaptFlags(PendingIntent.FLAG_CANCEL_CURRENT));
 
         int valid_icon = R.drawable.ic_menu_plus;
         try {
@@ -683,6 +686,19 @@ public class NotificationUtil {
      */
     public void postNotification(final int notifyId,
             final Notification notification, boolean fade) {
+
+        boolean filtered = false;
+        for (NotificationFilter notificationFilter : notificationFilters) {
+            try {
+                filtered |= notificationFilter.onNotificationReceived(
+                        notifyId, notification);
+            } catch (Exception e) {
+                Log.e(TAG, "error filtering: " + notificationFilter, e);
+            }
+        }
+        if (filtered)
+            return;
+
         if (nf != null) {
             if (fade) {
                 nf.notifyFader(notifyId);
@@ -721,7 +737,10 @@ public class NotificationUtil {
      * @param listener the listener to register
      */
     public void registerNotificationListener(NotificationListener listener) {
-        notificationListeners.add(listener);
+        synchronized (notificationListeners) {
+            if (!notificationListeners.contains(listener))
+                notificationListeners.add(listener);
+        }
     }
 
     /**
@@ -729,7 +748,9 @@ public class NotificationUtil {
      * @param listener the listener to unregister
      */
     public void unregisterNotificationListener(NotificationListener listener) {
-        notificationListeners.remove(listener);
+        synchronized (notificationListeners) {
+            notificationListeners.remove(listener);
+        }
     }
 
     private void fireNotificationChanged(int notificationIdentifier,
@@ -741,6 +762,47 @@ public class NotificationUtil {
             } catch (Exception e) {
                 Log.e(TAG, "error notifying: " + notificationListener, e);
             }
+        }
+    }
+
+    public interface NotificationFilter {
+        /**
+         * Allows for notification filtering to occur, if the notification is not to
+         * be displayed the call to filter return true (ie filter out this notification).
+         * In the case of multiple conflicting filters, the notification will be filtered.   If the
+         * notification is considered to be filtered, it is not shown.   If the notification has
+         * already been shown and then becomes filtered, it is up to the filterer to take
+         * appropriate action to dismiss the showing notification.
+         *
+         * @param notificationIdentifier the notification identifier, can be used in conjunction with
+         *                               notification util to cancel or dismiss the notification
+         * @param notification the notification to be examined for filtering.   This can be deeply
+         *                     inspected to find out if the notification is related to a marker type
+         *                     or event.
+         * @return true if the notification is not to be shown (ie filtered).
+         */
+        boolean onNotificationReceived(int notificationIdentifier,
+                Notification notification);
+    }
+
+    /**
+     * Registers a notification filter with the centralized notification class.
+     * @param listener the filter to register
+     */
+    public void registerNotificationFilter(NotificationFilter listener) {
+        synchronized (notificationFilters) {
+            if (!notificationFilters.contains(listener))
+                notificationFilters.add(listener);
+        }
+    }
+
+    /**
+     * Unregisters a notification listener with the centralized notification class.
+     * @param listener the listener to unregister
+     */
+    public void unregisterNotificationFilter(NotificationFilter listener) {
+        synchronized (notificationFilters) {
+            notificationFilters.remove(listener);
         }
     }
 

@@ -66,7 +66,7 @@ public class GLOffscreenIndicators extends
     };
 
     private static final float LINE_WIDTH = (float) Math.max(
-            Math.ceil(1f * MapView.DENSITY), 1.0f);
+            Math.ceil(1f * GLRenderGlobals.getRelativeScaling()), 1.0f);
     private static final float OUTLINE_WIDTH = LINE_WIDTH + 2;
 
     private final MapRenderer renderContext;
@@ -313,7 +313,7 @@ public class GLOffscreenIndicators extends
 
             String iconUri = null;
             int iconColor = 0;
-            GLImageCache.Entry entry = null;
+            GLImageCache.Entry entry;
 
             final float haloBorderSize = GLOffscreenIndicators.this.controller
                     .getHaloBorderSize();
@@ -400,7 +400,7 @@ public class GLOffscreenIndicators extends
                 // Added by Tim: This math here limits the arc to the exact area displayed for
                 // objects off any side, but does overdraw some on the corners (but not nearly as
                 // much as the full circle used to)
-                float arclen = 90;
+                float arclen;
                 float ang = (float) Math.toDegrees(Math.atan2(screenPoint.y
                         - screenCoordsHaloIcon.y,
                         screenCoordsHaloIcon.x - screenPoint.x));

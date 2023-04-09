@@ -92,5 +92,5 @@ public abstract class GLShape2 extends AbstractGLMapItem2 implements
     protected float strokeBlue;
     protected float strokeAlpha;
 
-    protected float strokeWeight = 1f;
+    protected float strokeWeight;
 }

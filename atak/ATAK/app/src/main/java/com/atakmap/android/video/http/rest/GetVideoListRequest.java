@@ -4,6 +4,8 @@ package com.atakmap.android.video.http.rest;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.video.http.VideoSyncClient;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.foxykeep.datadroid.requestmanager.Request;
@@ -35,6 +37,7 @@ public class GetVideoListRequest implements Parcelable {
         return mNotificationId;
     }
 
+    @NonNull
     @Override
     public String toString() {
         if (!isValid())

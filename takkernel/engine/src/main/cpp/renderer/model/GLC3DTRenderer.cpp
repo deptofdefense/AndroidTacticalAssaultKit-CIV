@@ -418,7 +418,7 @@ public:
     TAKErr addUpdateListener(UpdateListener* l) NOTHROWS override;
     TAKErr removeUpdateListener(const UpdateListener& l) NOTHROWS override;
     TAKErr clampToGround() NOTHROWS override;
-public:
+   public:
     void dispatchBoundsChanged(const TAK::Engine::Feature::Envelope2& aabb, const double minGsd, const double maxGsd) NOTHROWS;
     void dispatchClampToGroundOffsetComputed(const double offset) NOTHROWS;
 private:
@@ -617,16 +617,16 @@ TAKErr GLC3DTRenderer::depthTestTask(TAK::Engine::Core::GeoPoint2& value, GLC3DT
     TAK::Engine::Math::Point2<double> point;
     if (isOrtho) {
         projection.transform(&point, TAK::Engine::Math::Point2<double>(x, screenY, 0));
-        point.z = pointZ;
+    point.z = pointZ;
 
-        Matrix2 mat;
-        if (projection.createInverse(&mat) != TE_Ok)
-            return TE_Done;
+    Matrix2 mat;
+    if (projection.createInverse(&mat) != TE_Ok)
+        return TE_Done;
 
-        mat.transform(&point, point);
+    mat.transform(&point, point);
 
-        // ortho -> projection
-        sceneModel.inverseTransform.transform(&point, point);
+    // ortho -> projection
+    sceneModel.inverseTransform.transform(&point, point);
     } else {
         // transform screen location at depth to NDC
         point.x = (x / (float)(sceneModel.width)) * 2.0f - 1.0f;
@@ -1480,7 +1480,7 @@ namespace {
         RenderState stored(state);
         float proj[16];
         if (view.renderPass->scene.camera.mode == MapCamera2::Scale) {
-            atakmap::renderer::GLES20FixedPipeline::getInstance()->readMatrix(atakmap::renderer::GLES20FixedPipeline::MM_GL_PROJECTION, proj);
+        atakmap::renderer::GLES20FixedPipeline::getInstance()->readMatrix(atakmap::renderer::GLES20FixedPipeline::MM_GL_PROJECTION, proj);
         } else {
             double projd[16];
             view.renderPass->scene.camera.projection.get(projd, Matrix2::COLUMN_MAJOR);
@@ -1513,7 +1513,7 @@ namespace {
         float proj[16];
         Matrix2 modelView;
         if (sceneModel.camera.mode == MapCamera2::Scale) {
-            atakmap::renderer::GLES20FixedPipeline::getInstance()->readMatrix(atakmap::renderer::GLES20FixedPipeline::MM_GL_PROJECTION, proj);
+        atakmap::renderer::GLES20FixedPipeline::getInstance()->readMatrix(atakmap::renderer::GLES20FixedPipeline::MM_GL_PROJECTION, proj);
             modelView = sceneModel.forwardTransform;
         } else {
             double projd[16];

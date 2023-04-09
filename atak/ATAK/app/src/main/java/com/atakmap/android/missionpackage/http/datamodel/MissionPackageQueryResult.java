@@ -4,6 +4,8 @@ package com.atakmap.android.missionpackage.http.datamodel;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
@@ -70,6 +72,7 @@ public class MissionPackageQueryResult implements Parcelable {
                 PrimaryKey < 0);
     }
 
+    @NonNull
     @Override
     public String toString() {
         if (!isValid())

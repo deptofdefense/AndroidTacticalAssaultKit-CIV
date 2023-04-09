@@ -1,6 +1,8 @@
 
 package com.atakmap.android.image.nitf.CGM;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.app.BuildConfig;
 
 import java.io.DataInput;
@@ -38,6 +40,7 @@ public class IntegerPrecisionCommand extends Command {
         return IntegerPrecisionCommand.precision;
     }
 
+    @NonNull
     @Override
     public String toString() {
         String s = "IntegerPrecision "

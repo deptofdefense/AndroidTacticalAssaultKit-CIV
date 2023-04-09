@@ -6,6 +6,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.widget.ArrayAdapter;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.app.R;
 
 import com.atakmap.android.maps.MapView;
@@ -77,6 +79,7 @@ public class RegionSelectionMethodDialog {
         NEW_POLYGONAL_REGION,
         SELECT_REGION_ON_MAP;
 
+        @NonNull
         @Override
         public String toString() {
             switch (this) {

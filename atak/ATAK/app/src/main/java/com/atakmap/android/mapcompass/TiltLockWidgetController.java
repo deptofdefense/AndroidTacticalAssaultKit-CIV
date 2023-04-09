@@ -21,6 +21,7 @@ import com.atakmap.coremap.maps.assets.Icon;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.AtakMapView;
 import com.atakmap.map.CameraController;
+import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.math.MathUtils;
 
 /**
@@ -223,8 +224,12 @@ class TiltLockWidgetController implements
      * Keep widget situated to the top-right of the compass
      */
     public void refresh() {
-        float tMargin = _tiltWidget.isVisible() ? 8f * MapView.DENSITY : 0f;
-        float rMargin = _tiltWidget.isVisible() ? 8f * MapView.DENSITY : 0f;
+        float tMargin = _tiltWidget.isVisible()
+                ? 8f * GLRenderGlobals.getRelativeScaling()
+                : 0f;
+        float rMargin = _tiltWidget.isVisible()
+                ? 8f * GLRenderGlobals.getRelativeScaling()
+                : 0f;
         _compass.setMargins(0f, tMargin, rMargin, 0f);
 
         _sliderWidget.setVisible(getSliderState() != SLIDER_HIDDEN);

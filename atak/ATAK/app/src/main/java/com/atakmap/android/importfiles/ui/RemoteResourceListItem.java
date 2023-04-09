@@ -375,7 +375,7 @@ public class RemoteResourceListItem extends AbstractHierarchyListItem2
                 .getItem(FileSystemUtils.TMP_DIRECTORY);
         if (event == null || !event.isValid()
                 || !IOProviderFactory.exists(tmp)
-                && !IOProviderFactory.mkdirs(tmp)) {
+                        && !IOProviderFactory.mkdirs(tmp)) {
             Log.w(TAG, "Faild to send Remote Resource CoT");
             Toast.makeText(_context,
                     R.string.importmgr_failed_to_send_resource,

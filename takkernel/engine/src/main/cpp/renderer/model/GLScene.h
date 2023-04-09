@@ -58,7 +58,6 @@ namespace TAK {
                     TAK::Engine::Model::SceneInfo info_;
                     TAK::Engine::Model::ScenePtr scene_;
                     bool location_dirty_;
-                    unsigned int xray_color_;
 
                     std::list<std::shared_ptr<TAK::Engine::Model::SceneNode>> display_nodes_;
                     // XXX - check if cna make unique_ptr

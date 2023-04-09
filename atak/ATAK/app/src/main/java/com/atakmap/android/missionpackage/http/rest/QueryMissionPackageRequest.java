@@ -4,6 +4,8 @@ package com.atakmap.android.missionpackage.http.rest;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.missionpackage.http.MissionPackageDownloader;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.foxykeep.datadroid.requestmanager.Request;
@@ -54,6 +56,7 @@ public class QueryMissionPackageRequest implements Parcelable {
         return !FileSystemUtils.isEmpty(mTool);
     }
 
+    @NonNull
     @Override
     public String toString() {
         if (!isValid())

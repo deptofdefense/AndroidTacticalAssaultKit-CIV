@@ -130,7 +130,7 @@ public final class RuntimeDataSourceFeatureDataStore extends AbstractDataSourceF
                 while(content.moveToNext(Content.ContentPointer.FEATURE)) {
                     final FeatureDefinition fd = content.get();
                     if (fd != null) { 
-                        feature = fd.getFeature();
+                        feature = fd.get();
                         this.impl.insertFeature(set.getId(),
                                                 feature.getName(),
                                                 feature.getGeometry(),

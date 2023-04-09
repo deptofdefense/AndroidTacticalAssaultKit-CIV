@@ -36,7 +36,6 @@ import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.PointD;
-import com.atakmap.math.Rectangle;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLNinePatch;
 import com.atakmap.opengl.GLText;
@@ -51,7 +50,7 @@ class GLAngleOverlay2 extends GLShape2 implements
         AutoSizeAngleOverlayShape.OnPropertyChangedListener {
 
     static final float LINE_WIDTH = (float) Math
-            .ceil(1f * MapView.DENSITY);
+            .ceil(1f * GLRenderGlobals.getRelativeScaling());
     static int DIRECTION_IN_COLOR = 0x7FFF0000;
     static int DIRECTION_OUT_COLOR = 0x7F00FF00;
 
@@ -63,7 +62,7 @@ class GLAngleOverlay2 extends GLShape2 implements
     GeoPoint centerGP;
     PointF center = new PointF();
     PointD tmpPoint = new PointD();
-    double offsetAngle = 0;
+    double offsetAngle;
 
     boolean invalid = false;
 

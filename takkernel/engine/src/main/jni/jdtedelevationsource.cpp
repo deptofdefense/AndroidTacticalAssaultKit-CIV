@@ -1,4 +1,4 @@
-#include "jdtedelevationsource.h"
+#include "com_atakmap_map_formats_dted_DtedElevationSource.h"
 
 #include <formats/dted/DtedElevationSource.h>
 #include <util/Error.h>

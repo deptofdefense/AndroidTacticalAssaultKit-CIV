@@ -13,16 +13,21 @@ import android.text.method.PasswordTransformationMethod;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import com.atakmap.android.gui.PanPreference;
 
 import com.atakmap.android.ipc.AtakBroadcast;
+import com.atakmap.android.maps.MapView;
 import com.atakmap.android.util.AfterTextChangedWatcher;
+import com.atakmap.app.BuildConfig;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
@@ -46,6 +51,7 @@ public class CredentialsPreference extends DialogPreference {
     protected String credentialsType = AtakAuthenticationCredentials.TYPE_UNKNOWN;
     private static Context appContext;
     private final Context pContext;
+    private ImageView imageView;
 
     protected boolean passwordOnly = false;
 
@@ -69,7 +75,6 @@ public class CredentialsPreference extends DialogPreference {
         super((appContext == null) ? context : appContext, attrs, defStyle);
         PanPreference.setup(attrs, context, this, otherAttributes);
         pContext = context;
-
         if (attrs == null)
             return;
 
@@ -90,7 +95,6 @@ public class CredentialsPreference extends DialogPreference {
         super((appContext == null) ? context : appContext, attrs);
         PanPreference.setup(attrs, context, this, otherAttributes);
         pContext = context;
-
         if (attrs == null)
             return;
 
@@ -105,6 +109,45 @@ public class CredentialsPreference extends DialogPreference {
                     passwordOnly = true;
             }
         }
+    }
+
+    @Override
+    protected View onCreateView(ViewGroup parent) {
+        View v = super.onCreateView(parent);
+        if (!isEnabled())
+            v.setEnabled(false);
+
+        if (v instanceof LinearLayout) {
+            LinearLayout layout = (LinearLayout) v;
+            MapView view = MapView.getMapView();
+            ImageView iv = new ImageView(view.getContext());
+            if (BuildConfig.FLAVOR == "civUIMods") {
+                iv.setImageDrawable(view.getContext()
+                        .getDrawable(
+                                R.drawable.ic_baseline_keyboard_arrow_right_24));
+            } else {
+                iv.setImageDrawable(
+                        view.getContext().getDrawable(R.drawable.arrow_right));
+            }
+            layout.addView(iv);
+            imageView = iv;
+        }
+        setRightSideIconVisibility(isEnabled());
+        return v;
+    }
+
+    private void setRightSideIconVisibility(boolean enabled) {
+        try {
+            imageView.setVisibility(enabled ? View.VISIBLE : View.GONE);
+        } catch (Exception ignored) {
+
+        }
+    }
+
+    @Override
+    public void setEnabled(boolean enabled) {
+        super.setEnabled(enabled);
+        setRightSideIconVisibility(isEnabled());
     }
 
     @Override

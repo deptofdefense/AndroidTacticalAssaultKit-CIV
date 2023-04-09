@@ -17,6 +17,7 @@ import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
 import com.atakmap.map.layer.feature.Feature.AltitudeMode;
+import com.atakmap.map.opengl.GLRenderGlobals;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -334,7 +335,7 @@ public abstract class Shape extends MapItem implements Capturable {
      */
     public void setStrokeWeight(final double strokeWeight) {
         double oldstroke = _strokeWeight;
-        _strokeWeight = strokeWeight * MapView.DENSITY;
+        _strokeWeight = strokeWeight * GLRenderGlobals.getRelativeScaling();
         if (Double.compare(oldstroke, _strokeWeight) != 0) {
             onStrokeWeightChanged();
         }
@@ -346,7 +347,7 @@ public abstract class Shape extends MapItem implements Capturable {
      * @return the weight as a number scaled by density.
      */
     public double getStrokeWeight() {
-        return _strokeWeight / MapView.DENSITY;
+        return _strokeWeight / GLRenderGlobals.getRelativeScaling();
     }
 
     /**

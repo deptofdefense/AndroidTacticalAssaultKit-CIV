@@ -1,6 +1,8 @@
 
 package com.atakmap.android.hashtags.util;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.coremap.locale.LocaleUtil;
 
 import java.util.HashMap;
@@ -33,7 +35,7 @@ public class HashtagMap<V> extends HashMap<String, V> {
     }
 
     @Override
-    public void putAll(Map<? extends String, ? extends V> m) {
+    public void putAll(@NonNull Map<? extends String, ? extends V> m) {
         if (m instanceof HashtagMap)
             super.putAll(m);
         else {

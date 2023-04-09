@@ -236,7 +236,7 @@ public class ClosedShapeGeoFenceMonitor extends GeoFenceMonitor {
 
                     Pair<GeoPoint, Long> lastPoint = _lastPoints.get(item
                             .getUID());
-                    long pointHandle = -1;
+                    long pointHandle;
                     if (lastPoint == null) {
                         //no last point, insert
                         //Log.d(TAG, "Inserting point: " + item.getUID());

@@ -74,10 +74,13 @@ class MapTouchEventListener implements
             _mapView.getMapTouchController().onScaleEvent(event);
         } else if (MapEvent.MAP_SCROLL.equals(event.getType())) {
             PointF p = event.getPointF();
+            boolean poleSmoothScroll = false; // default to legacy
             do {
                 Bundle panExtras = event.getExtras();
                 if (panExtras == null)
                     break;
+                poleSmoothScroll = panExtras.getBoolean("poleSmoothScroll",
+                        poleSmoothScroll);
                 boolean doPanTo = panExtras.getBoolean("cameraPanTo", false);
                 if (!doPanTo)
                     break;
@@ -102,11 +105,13 @@ class MapTouchEventListener implements
                     break;
 
                 CameraController.Interactive.panTo(glglobe, originalFocus, x, y,
-                        MapRenderer3.CameraCollision.AdjustFocus, false);
+                        MapRenderer3.CameraCollision.AdjustFocus,
+                        poleSmoothScroll, false);
                 return;
             } while (false);
             CameraController.Interactive.panBy(_mapView.getRenderer3(), p.x,
-                    p.y, MapRenderer3.CameraCollision.AdjustFocus, false);
+                    p.y, MapRenderer3.CameraCollision.AdjustFocus,
+                    poleSmoothScroll, false);
         } else if (MapEvent.MAP_LONG_PRESS.equals(event.getType())) {
             if (atakTapToggleActionBar)
                 NavView.getInstance().toggleButtons();

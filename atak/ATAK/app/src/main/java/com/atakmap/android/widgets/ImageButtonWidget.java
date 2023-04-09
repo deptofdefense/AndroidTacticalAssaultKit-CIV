@@ -19,7 +19,7 @@ public class ImageButtonWidget extends ButtonWidget {
 
     public static final String TAG = "ImageButtonWidget";
 
-    private boolean _hasBackground = true;
+    private boolean _hasBackground;
     private WidgetIcon _icon;
 
     public ImageButtonWidget(Context ignored) {

@@ -1,4 +1,4 @@
-#include "jvertexdatalayout.h"
+#include "com_atakmap_map_layer_model_VertexDataLayout.h"
 
 #include <model/VertexDataLayout.h>
 

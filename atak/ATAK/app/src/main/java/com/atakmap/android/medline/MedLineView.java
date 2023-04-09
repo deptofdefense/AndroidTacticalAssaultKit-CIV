@@ -1185,8 +1185,9 @@ public class MedLineView implements PointMapItem.OnPointChangedListener {
             if (marker.getMetaString("routine", null) != null) {
                 if (!first)
                     sBuilder.append(", ");
-                if (first)
+                if (first) {
                     first = false;
+                }
 
                 sBuilder.append(marker.getMetaString("routine", null));
                 sBuilder.append("xC");

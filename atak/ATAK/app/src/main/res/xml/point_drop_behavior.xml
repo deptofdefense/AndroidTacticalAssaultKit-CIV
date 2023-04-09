@@ -2,11 +2,12 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <PreferenceCategory
         android:title="@string/pointDroppingBehavior">
+
         <com.atakmap.android.gui.PanCheckBoxPreference
-            android:summary="@string/disable_mediaserver"
-            android:key="attempt_disable_media_scanner"
-            android:title="@string/legacy_point_drop_naming"
-            android:defaultValue="false" />
+                android:title="@string/legacy_point_drop_naming"
+                android:summary="@string/legacy_point_drop_naming_summary"
+                android:defaultValue="false"
+                android:key="legacyPointDropNaming" />
     </PreferenceCategory>
 
 

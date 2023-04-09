@@ -46,6 +46,7 @@ import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.math.MathUtils;
 
 import androidx.annotation.NonNull;
+import gov.tak.api.annotation.DeprecatedApi;
 
 public class FeatureDataStoreHierarchyListItem extends
         AbstractHierarchyListItem2 implements Visibility, Search, Delete,
@@ -78,6 +79,13 @@ public class FeatureDataStoreHierarchyListItem extends
                 listener, filter);
     }
 
+    /** @deprecated use
+     *              {@link #FeatureDataStoreHierarchyListItem(FeatureDataStore, String, String, Context, BaseAdapter, HierarchyListFilter)}
+     *              or
+     *              {@link #FeatureDataStoreHierarchyListItem(FeatureDataStore2, String, String, String, String, Context, BaseAdapter, HierarchyListFilter)}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.6", forRemoval = true, removeAt = "4.9")
     public FeatureDataStoreHierarchyListItem(FeatureLayer layer,
             String iconUri, Context context, BaseAdapter listener,
             HierarchyListFilter filter) {

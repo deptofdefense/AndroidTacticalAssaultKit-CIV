@@ -23,7 +23,7 @@ public class HorizontalSliderComponent extends DexSliderComponent {
     @Override
     public Drawable getThumb(double progress, boolean isTilt) {
         ((TextView) thumbView.findViewById(R.id.progress_text_view))
-                .setText(String.valueOf((int) progress) + "°");
+                .setText((int) progress + "°");
 
         thumbView.measure(MeasureSpec.UNSPECIFIED,
                 MeasureSpec.UNSPECIFIED);

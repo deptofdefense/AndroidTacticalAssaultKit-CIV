@@ -1,4 +1,4 @@
-#include "jfeature.h"
+#include "com_atakmap_map_layer_feature_Feature.h"
 
 #include <feature/Feature2.h>
 #include <feature/LegacyAdapters.h>

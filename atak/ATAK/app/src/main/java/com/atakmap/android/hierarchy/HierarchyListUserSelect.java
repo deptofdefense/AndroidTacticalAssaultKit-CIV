@@ -378,7 +378,7 @@ public abstract class HierarchyListUserSelect extends HierarchyListFilter {
             return item.getChildCount();
         }
 
-        int childCount = 0;
+        int childCount;
         if (userObject instanceof MapItem) {
             childCount = item.getChildCount();
         } else if (userObject instanceof MapGroup) {
@@ -463,7 +463,7 @@ public abstract class HierarchyListUserSelect extends HierarchyListFilter {
             }
         }
 
-        int childrenWithLeaf = 0, tempCount = 0;
+        int childrenWithLeaf = 0, tempCount;
         Collection<MapGroup> childGroups = group.getChildGroups();
         for (MapGroup childGroup : childGroups) {
             tempCount = getDescendantCount(childGroup, bCountAllChildOverlays);

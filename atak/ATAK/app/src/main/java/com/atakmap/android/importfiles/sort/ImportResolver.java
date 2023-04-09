@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.util.Pair;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.importexport.ImportExportMapComponent;
 import com.atakmap.android.importexport.ImportListener;
 import com.atakmap.android.maps.MapView;
@@ -208,6 +210,7 @@ public abstract class ImportResolver {
             l.onFileSorted(src, dst);
     }
 
+    @NonNull
     @Override
     public String toString() {
         return String.format("Sorting %s, to %s", _ext, _folderName);

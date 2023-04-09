@@ -1,6 +1,8 @@
 
 package com.atakmap.android.missionpackage.file;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.coremap.concurrent.NamedThreadFactory;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
@@ -146,6 +148,7 @@ public class DirectoryCleanup {
             }
         }
 
+        @NonNull
         @Override
         public String toString() {
             return String.format(LocaleUtil.getCurrent(), "%s %d millis",

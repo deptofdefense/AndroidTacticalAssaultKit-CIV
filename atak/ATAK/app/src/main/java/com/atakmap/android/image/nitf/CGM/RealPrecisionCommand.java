@@ -1,6 +1,8 @@
 
 package com.atakmap.android.image.nitf.CGM;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.app.BuildConfig;
 
 import java.io.DataInput;
@@ -79,6 +81,7 @@ public class RealPrecisionCommand extends Command {
         return realPrecisionCommandProcessed;
     }
 
+    @NonNull
     @Override
     public String toString() {
         String s = "RealPrecision "

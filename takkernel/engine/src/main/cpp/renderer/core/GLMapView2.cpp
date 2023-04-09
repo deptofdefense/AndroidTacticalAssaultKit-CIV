@@ -3179,7 +3179,7 @@ namespace
                     Logger_log(TELL_Error, "GLMapView::drawTerrainTiles : invalid primary hemisphere %d", (int)view.idlHelper.getPrimaryHemisphere());
                     return;
                 }
-            }
+                }
 
             // construct the MVP matrix
             Matrix2 mvp;
@@ -3245,8 +3245,8 @@ namespace
             matrix.setToIdentity();
         }
         matrix.set(mvp);
-        for(std::size_t i = numLocal; i >= 1; i--)
-            matrix.concatenate(local[i-1u]);
+            for(std::size_t i = numLocal; i >= 1; i--)
+                matrix.concatenate(local[i-1u]);
         if(tile.data_proj.srid == state.drawSrid)
             matrix.concatenate(tile.data_proj.localFrame);
         else
@@ -3291,7 +3291,7 @@ namespace
             VertexArray ecefAttr;
             if (VertexDataLayout_getVertexArray(&ecefAttr, layout, tile.ecefAttr) == TE_Ok) {
                 glVertexAttribPointer(shader.aEcefVertCoords, 3u, GL_FLOAT, false, static_cast<GLsizei>(ecefAttr.stride), (static_cast<const uint8_t*>(vertexCoords) + ecefAttr.offset));
-            }
+        }
         }
 
         std::size_t numIndicesWireframe = 0u;

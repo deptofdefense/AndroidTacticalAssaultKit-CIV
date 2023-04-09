@@ -12,7 +12,6 @@ import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.location.LocationMapComponent;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
-import com.atakmap.android.preference.AtakPreferences;
 import com.atakmap.comms.SocketFactory;
 import com.atakmap.coremap.cot.event.CotDetail;
 import com.atakmap.coremap.cot.event.CotEvent;

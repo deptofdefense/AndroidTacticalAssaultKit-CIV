@@ -12,7 +12,6 @@ import android.os.SystemClock;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 
-import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.ATAKApplication;
 import com.atakmap.app.BuildConfig;
 import com.atakmap.coremap.io.IOProviderFactory;
@@ -324,7 +323,7 @@ public class SystemComponentLoader {
             encryptionCrashInfo = infoToJson(info.packageName, activity);
         } catch (Exception e) {
             Log.d(TAG, "no encryption system component found");
-            IOProviderFactory.registerProvider(new ATAKFileIOProvider(), true);
+            IOProviderFactory.registerProvider(new ATAKFileIOProvider());
             return;
         } finally {
             // After the SystemComponents have been loaded, ensure that the applications native
@@ -355,7 +354,7 @@ public class SystemComponentLoader {
         } catch (Throwable e) {
             Log.d(TAG, "error loading the encryption system component", e);
             encryptionComponent = null;
-            IOProviderFactory.registerProvider(new ATAKFileIOProvider(), true);
+            IOProviderFactory.registerProvider(new ATAKFileIOProvider());
         } finally {
             // After the SystemComponents have been loaded, ensure that the applications native
             // jni crash log capability is initialized correct.
@@ -473,7 +472,7 @@ public class SystemComponentLoader {
      * @param activity the ATAKApplication to call notifyEncryption changed on.
      */
     public static void disableEncryptionProvider(final Activity activity) {
-        IOProviderFactory.registerProvider(new ATAKFileIOProvider(), true);
+        IOProviderFactory.registerProvider(new ATAKFileIOProvider());
         ((ATAKApplication) activity.getApplication())
                 .notifyEncryptionChanged();
 

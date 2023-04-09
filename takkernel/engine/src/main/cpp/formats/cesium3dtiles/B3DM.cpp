@@ -416,7 +416,7 @@ namespace {
         input->read((uint8_t*)&ch, &nr, 1);
         if (nr == 1) {
             curr = ch;
-            setg(&curr, &curr, &curr);
+            setg(&curr, &curr, &curr + 1);
             return std::char_traits<char>::to_int_type(static_cast<char>(curr));
         }
         return std::char_traits<char>::eof();

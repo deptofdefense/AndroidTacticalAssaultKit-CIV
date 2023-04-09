@@ -35,7 +35,8 @@ public abstract class AbstractAtakAuthenticationDatabaseTest
             final String password = "123456";
             final boolean expires = true;
             AtakAuthenticationDatabaseIFace authdb = newInstance(f.file);
-            authdb.saveCredentialsForType(type, username, password, 3600000L * 24L * 30L);
+            authdb.saveCredentialsForType(type, username, password,
+                    3600000L * 24L * 30L);
             AtakAuthenticationCredentials creds = authdb
                     .getCredentialsForType(type);
             assertNotNull(creds);

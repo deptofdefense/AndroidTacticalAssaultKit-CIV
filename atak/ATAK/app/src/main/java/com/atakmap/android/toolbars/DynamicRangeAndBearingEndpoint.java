@@ -16,7 +16,6 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.assets.Icon;
 
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
@@ -108,7 +107,7 @@ public class DynamicRangeAndBearingEndpoint extends Marker implements
                     anchorPoint = getParent().getPoint2Item().getPoint();
                 else
                     anchorPoint = getParent().getPoint1Item().getPoint();
-                double bearing = DistanceCalculations.bearingFromSourceToTarget(
+                double bearing = GeoCalculations.bearingTo(
                         anchorPoint, _mapView.inverse(pt.x, pt.y,
                                 MapView.InverseMode.RayCast).get());
                 double range = GeoCalculations.distanceTo(anchorPoint,

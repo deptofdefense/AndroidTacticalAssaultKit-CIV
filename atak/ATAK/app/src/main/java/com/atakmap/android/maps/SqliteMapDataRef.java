@@ -1,6 +1,8 @@
 
 package com.atakmap.android.maps;
 
+import androidx.annotation.NonNull;
+
 /**
  * Engine resource reference that points to an entry inside a SQLite database
  * 
@@ -43,6 +45,7 @@ public class SqliteMapDataRef extends MapDataRef {
     /**
      * Get a human readable representation
      */
+    @NonNull
     public String toString() {
         return toUri();
     }

@@ -1,4 +1,4 @@
-#include "jstatementimpl.h"
+#include "com_atakmap_database_impl_StatementImpl.h"
 
 #include <db/Statement2.h>
 

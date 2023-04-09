@@ -3,6 +3,8 @@ package com.atakmap.coremap.conversions;
 
 import android.content.SharedPreferences;
 
+import androidx.annotation.NonNull;
+
 /**
  * Acceptable designations for displaying Coordinates within ATAK.
  */
@@ -58,6 +60,7 @@ public enum CoordinateFormat {
         return find(prefs.getString("coord_display_pref", null));
     }
 
+    @NonNull
     @Override
     public String toString() {
         return _displayName;

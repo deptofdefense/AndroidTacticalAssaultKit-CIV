@@ -56,7 +56,6 @@ import com.atakmap.map.layer.opengl.GLLayer3;
 import com.atakmap.map.layer.opengl.GLLayerFactory;
 import com.atakmap.map.layer.opengl.GLLayerSpi2;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
-import com.atakmap.map.layer.raster.mosaic.MosaicDatabase2;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.spatial.SpatialCalculator;
 

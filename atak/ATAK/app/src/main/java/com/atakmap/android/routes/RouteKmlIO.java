@@ -436,7 +436,7 @@ public class RouteKmlIO {
             altitudeMode = "clampToGround";
 
         // walk all route points
-        GeoPoint geoPoint = null;
+        GeoPoint geoPoint;
 
         List<PointMapItem> pmiList = new ArrayList<>();
 

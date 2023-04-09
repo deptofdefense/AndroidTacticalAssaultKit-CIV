@@ -46,6 +46,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
+import androidx.annotation.NonNull;
+
 public class ImageGalleryBlobAdapter
         extends ImageGalleryBaseAdapter {
     //==================================
@@ -268,7 +270,7 @@ public class ImageGalleryBlobAdapter
 
     @Override
     protected String[] getImageURIs() {
-        List<String> imageURIs = null;
+        List<String> imageURIs;
 
         synchronized (viewItems) {
             imageURIs = new ArrayList<>(viewItems.size());
@@ -385,6 +387,7 @@ public class ImageGalleryBlobAdapter
         //  Object INTERFACE
         //==================================
 
+        @NonNull
         @Override
         public String toString() {
             return uri;

@@ -175,7 +175,7 @@ public class ImportReceiver extends BroadcastReceiver {
         final String content = intent.getStringExtra(EXTRA_CONTENT);
         final String mimeType = intent.getStringExtra(EXTRA_MIME_TYPE);
 
-        ACTION action = ACTION.IMPORT;
+        ACTION action;
         if (ImportExportMapComponent.ACTION_IMPORT_DATA.equals(intent
                 .getAction())) {
             action = ACTION.IMPORT;

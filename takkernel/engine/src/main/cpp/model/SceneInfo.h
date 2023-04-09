@@ -30,6 +30,8 @@ namespace TAK {
                           ZValueColor,
                 };
 
+                static constexpr unsigned int DEFAULT_XRAY_COLOR = 0x3F07FFFFu;
+
                 /**
                  * minimum display threshold, in meters-per-pixel
                  */
@@ -64,6 +66,8 @@ namespace TAK {
 	            Feature::AltitudeMode altitudeMode;
 
                 CapabilitiesType capabilities;
+
+                unsigned int xrayColor;
 				
                 /**
                  * The AABB for the scene, in the LCS, if known.

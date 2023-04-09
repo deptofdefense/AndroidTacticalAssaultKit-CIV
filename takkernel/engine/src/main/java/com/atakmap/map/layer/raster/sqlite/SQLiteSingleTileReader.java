@@ -345,7 +345,7 @@ public class SQLiteSingleTileReader extends TileReader {
             if(opts != null && opts.asyncIO != null)
                 asyncio = opts.asyncIO;
             else
-                asyncio = GdalLibrary.getMasterIOThread();
+                asyncio = TileReader.getMasterIOThread();
             return new SQLiteSingleTileReader(uri.toString(),
                                         asyncio,
                                         db,

@@ -244,8 +244,13 @@
         <item>اصفر </item>
     </string-array>
 
-
-
+    <string-array name="gridline_color_names">
+        <item>White</item>
+        <item>Magenta</item>
+        <item>Green</item>
+        <item>Yellow</item>
+        <item>Custom</item>
+    </string-array>
 
     <string-array name="squad_names">
         <item>ابيض</item>

@@ -57,7 +57,26 @@ public class ModelInfoHierarchyListItem extends AbstractChildlessListItem
 
     @Override
     public String getTitle() {
-        return feature.getName();
+        StringBuilder title = new StringBuilder();
+        title.append(feature.getName());
+        ModelInfo modelInfo = GLModelLayer.getModelInfo(feature);
+        if (modelInfo != null && modelInfo.metadata != null) {
+            if (modelInfo.metadata.containsAttribute("callsign")) {
+                final String callsign = modelInfo.metadata
+                        .getStringAttribute("callsign");
+                title.append(String.format("\n%s", context
+                        .getString(R.string.model_updated_by, callsign)));
+                if (modelInfo.metadata.containsAttribute("terrainModel")) {
+                    final String terrainModel = modelInfo.metadata
+                            .getStringAttribute("terrainModel");
+                    title.append(String.format(" %s",
+                            context.getString(
+                                    R.string.model_updated_terrain_model,
+                                    terrainModel)));
+                }
+            }
+        }
+        return title.toString();
     }
 
     @Override

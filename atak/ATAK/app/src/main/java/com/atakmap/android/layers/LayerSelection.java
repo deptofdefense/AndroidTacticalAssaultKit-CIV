@@ -1,6 +1,8 @@
 
 package com.atakmap.android.layers;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.feature.geometry.Geometry;
@@ -124,6 +126,7 @@ public class LayerSelection {
         return "---";
     }
 
+    @NonNull
     public String toString() {
         return this.getName();
     }

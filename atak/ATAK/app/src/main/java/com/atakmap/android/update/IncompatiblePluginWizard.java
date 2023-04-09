@@ -47,6 +47,7 @@ public class IncompatiblePluginWizard {
         Drawable icon;
         boolean bUpdateAvailable;
 
+        @NonNull
         @Override
         public String toString() {
             return pkg + ", " + bUpdateAvailable + ", " + label;

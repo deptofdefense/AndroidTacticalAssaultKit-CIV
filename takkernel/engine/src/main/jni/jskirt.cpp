@@ -1,4 +1,4 @@
-#include "jskirt.h"
+#include "com_atakmap_opengl_Skirt.h"
 
 #include "common.h"
 

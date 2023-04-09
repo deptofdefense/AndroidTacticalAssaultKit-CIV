@@ -98,7 +98,7 @@ public class CreateRubberImageTask extends AbstractCreationTask {
             File destDir = new File(dir, name + "_extracted");
             try {
                 // Extract KMZ content
-                FileSystemUtils.extract(f, destDir, true);
+                FileSystemUtils.unzip(f, destDir, true);
                 File doc = new File(destDir, "doc.kml");
                 if (!IOProviderFactory.exists(doc)) {
                     Log.e(TAG, "Invalid KMZ: " + f);

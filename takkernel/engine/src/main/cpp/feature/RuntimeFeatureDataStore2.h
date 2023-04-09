@@ -14,7 +14,7 @@
 namespace TAK {
     namespace Engine {
         namespace Feature {
-            class RuntimeFeatureDataStore2 : public AbstractFeatureDataStore2
+            class ENGINE_API RuntimeFeatureDataStore2 : public AbstractFeatureDataStore2
             {
             private :
                 struct StringCaseInsensitiveWithNULL_LT
@@ -114,8 +114,6 @@ namespace TAK {
                 int64_t nextFeatureSetId;
                 int64_t nextFeatureId;
                 int64_t visibleGeneration;
-                
-                bool inBulkModify;
             };
             
             

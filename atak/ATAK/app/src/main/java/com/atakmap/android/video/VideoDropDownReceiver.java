@@ -766,7 +766,6 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
             public void run() {
 
                 // only enable structured decoding if a plugin wants structured decoding.
-                metadataDecoder.setStructuredItemDecodeEnabled(false);
 
                 // if the user has passed in an intent with specific layers specified use that
                 final String[] intentLayers = intent

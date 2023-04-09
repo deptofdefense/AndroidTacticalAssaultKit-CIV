@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.PreferenceManager;
 
+import com.atakmap.android.gui.PanPreference;
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.android.preference.PreferenceSearchIndex;
 import com.atakmap.app.R;
@@ -50,7 +51,7 @@ public class SpecificPreferenceFragment extends AtakPreferenceFragment {
                 .getDefaultSharedPreferences(getActivity());
         for (final ToolsPreferenceFragment.ToolPreference tp : ToolsPreferenceFragment
                 .getPreferenceFragments()) {
-            Preference p = new Preference(getActivity());
+            PanPreference p = new PanPreference(getActivity());
             p.setTitle(tp.title);
             p.setKey(tp.key);
             p.setIcon(tp.icon);

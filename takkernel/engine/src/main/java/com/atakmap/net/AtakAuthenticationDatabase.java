@@ -11,17 +11,10 @@ import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.filesystem.HashingUtils;
+import gov.tak.api.engine.net.ICredentialsStore;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.util.UUID;
-
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
 
 /**
  *  The AtakAuthenticationDatabase provides a secure way of storing credentials (username/password).
@@ -59,6 +52,10 @@ public class AtakAuthenticationDatabase {
         return authenticationDatabaseAdapter;
     }
 
+    public static synchronized ICredentialsStore getStore() {
+        return getAdapter().authenticationDb;
+    }
+
     /**
      * Stores the devices unique ID, as determined by _determineBestDeviceUID.
      *
@@ -81,23 +78,13 @@ public class AtakAuthenticationDatabase {
      */
     public static synchronized String getPwd(Context context, String key, String deviceId) {
         String databaseId;
-        File token = new File(context.getFilesDir(), key);
-        do {
-            if (token.exists()) {
-                try {
-                    databaseId = FileSystemUtils.copyStreamToString(token);
-                    if(databaseId != null)
-                        break;
-                } catch (IOException ignored) {}
-            }
-
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        if (prefs.contains(key)) {
+            databaseId = prefs.getString(key, null);
+        } else {
             databaseId = UUID.randomUUID().toString();
-            try {
-                try (FileOutputStream fos = new FileOutputStream(token)) {
-                    FileSystemUtils.write(fos, databaseId);
-                }
-            } catch(IOException ignored) {}
-        } while(false);
+            prefs.edit().putString(key, databaseId).apply();
+        }
 
         return HashingUtils.sha256sum(databaseId + deviceId);
     }
@@ -115,22 +102,22 @@ public class AtakAuthenticationDatabase {
                 ctx = context;
             try {
                 if (!initialized) {
-                    databaseFile = context.getDatabasePath("credentials.sqlite");
                     String pwd = null;
                     // if the default provider is in effect, use the legacy
                     // password to unlock, otherwise defer to the provider's
                     // mechanism
                     if(IOProviderFactory.isDefault()) {
                         pwd = getPwd(
-                                context,
-                                Base64.encodeToString(
-                                        databaseFile.getAbsolutePath().getBytes(FileSystemUtils.UTF8_CHARSET), Base64.NO_WRAP),
-                                deviceId);
+                                    context,
+                                    Base64.encodeToString(
+                                            TAG.getBytes(FileSystemUtils.UTF8_CHARSET), Base64.NO_WRAP),
+                                    deviceId);
                         if (pwd == null) {
                             return;
                         }
                     }
 
+                    databaseFile = context.getDatabasePath("credentials.sqlite");
                     File parent = databaseFile.getParentFile();
                     if(parent != null && !IOProviderFactory.exists(parent)){
                         Log.d(TAG, "Creating private database directory: "

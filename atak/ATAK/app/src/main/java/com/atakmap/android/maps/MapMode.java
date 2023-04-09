@@ -1,6 +1,8 @@
 
 package com.atakmap.android.maps;
 
+import androidx.annotation.NonNull;
+
 public enum MapMode {
 
     UNDEFINED(0, "com.atakmap.android.maps.UNDEFINED"),
@@ -31,6 +33,7 @@ public enum MapMode {
         return _intent;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return _intent;

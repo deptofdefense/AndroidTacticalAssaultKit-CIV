@@ -5,7 +5,7 @@
     
     <!-- this protected permission is used on NettWarrior devices and will 
          allow for the software to be notified of a shutdown -->
-    <uses-permission android:name="android.permission.DEVICE_POWER" 
+    <uses-permission android:name="android.permission.DEVICE_POWER"
                      tools:ignore="ProtectedPermissions" />  
 
     <!-- Allows for accessing the camera used to set image capture settings, 
@@ -213,6 +213,7 @@
             android:label="@string/app_name"
             android:theme="@style/ATAKTheme"
             android:windowSoftInputMode="adjustPan"
+            android:exported="true"
             android:screenOrientation="nosensor">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -224,6 +225,7 @@
             android:targetActivity=".ATAKActivity"
             android:name=".ATAKActivityMil"
             android:icon="@drawable/ic_mil_atak_launcher"
+            android:exported="true"
             android:enabled="false">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -236,6 +238,7 @@
             android:targetActivity=".ATAKActivity"
             android:name=".ATAKActivityCiv"
             android:icon="@drawable/ic_atak_launcher"
+            android:exported="true"
             android:enabled="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -264,6 +267,7 @@
         <!-- Sub Activities -->
 
         <activity
+            android:exported="true" 
             android:name="com.atakmap.android.maps.ImportFileActivity" >
             <intent-filter android:label="@string/app_name">
                 <!-- Allow ATAK to handle supported file imported by the user -->
@@ -309,34 +313,42 @@
             </intent-filter>
         </activity>
         <activity
+            android:exported="false" 
             android:name="com.atakmap.android.video.legacy.Gv2FMobilePlayer"
             android:configChanges="orientation"
             android:screenOrientation="behind" />
         <activity
+            android:exported="false" 
             android:name="com.atakmap.comms.app.CotInputsListActivity"
             android:configChanges="orientation"
             android:screenOrientation="behind" />
         <activity
+            android:exported="false" 
             android:name="com.atakmap.comms.app.AddNetInfoActivity"
             android:configChanges="orientation"
             android:screenOrientation="behind" />
         <activity
+            android:exported="false" 
             android:name="com.atakmap.comms.app.CotStreamListActivity"
             android:configChanges="orientation"
             android:screenOrientation="behind" />
         <activity
+            android:exported="false" 
             android:name="com.atakmap.android.cot.TadilJListActivity"
             android:configChanges="orientation"
             android:screenOrientation="behind" />
         <activity
+            android:exported="false" 
             android:name="com.atakmap.comms.app.CotOutputsListActivity"
             android:configChanges="orientation"
             android:screenOrientation="behind" />
         <activity
+            android:exported="false" 
             android:name="com.atakmap.android.drawing.KmlImportListActivity"
             android:configChanges="orientation"
             android:screenOrientation="behind" />
         <activity
+            android:exported="false" 
             android:name="com.atakmap.app.SettingsActivity"
             android:configChanges="orientation"
             android:screenOrientation="behind">
@@ -345,6 +357,7 @@
                 android:value=".ATAKActivity" />
         </activity>
         <activity
+            android:exported="false" 
             android:name="com.atakmap.app.preferences.LocationSettingsActivity"
             android:configChanges="orientation"
             android:screenOrientation="behind">
@@ -353,6 +366,7 @@
                 android:value=".ATAKActivity" />
         </activity>
         <activity
+            android:exported="false" 
             android:name="com.atakmap.app.preferences.NetworkSettingsActivity"
             android:configChanges="orientation"
             android:screenOrientation="behind">
@@ -361,6 +375,7 @@
                 android:value=".ATAKActivity" />
         </activity>
         <activity
+            android:exported="false" 
             android:name="com.atakmap.app.preferences.AppMgmtSettingsActivity"
             android:configChanges="orientation"
             android:screenOrientation="behind">
@@ -370,6 +385,7 @@
         </activity>
 
         <activity android:name="com.atakmap.android.update.AppMgmtActivity"
+            android:exported="false" 
             android:uiOptions="splitActionBarWhenNarrow"
             android:configChanges="orientation"
             android:screenOrientation="behind" >

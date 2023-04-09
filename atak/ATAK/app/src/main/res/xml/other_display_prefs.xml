@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <PreferenceCategory android:title="@string/other_misc_display_options">
-       <Preference
+    <com.atakmap.android.gui.PanPreference
             android:key="gridLinesPreference"
             android:title="@string/gridLinePreferences"
             android:summary="@string/preferences_text148"
             android:icon="@drawable/ic_overlay_gridlines" />
-       <Preference
+    <com.atakmap.android.gui.PanPreference
             android:key="layerOutlinesPreference"
             android:title="@string/imageryLayerPreferences"
             android:summary="@string/preferences_text149"
             android:icon="@drawable/ic_menu_maps" />
-       <Preference
+    <com.atakmap.android.gui.PanPreference
             android:key="atakOffScrIndiOptions"
             android:title="@string/offscreenIndPreferences"
             android:summary="@string/preferences_text150"
             android:icon="@drawable/ic_overlay_offscrind" />
-       <Preference
+    <com.atakmap.android.gui.PanPreference
             android:key="overlayStylePreference"
             android:title="@string/importStylePreferences"
             android:summary="@string/preferences_text151"

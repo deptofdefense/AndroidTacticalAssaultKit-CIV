@@ -283,7 +283,7 @@ public class ImageActivity {
 
     private void broadcastIntentToListeners(final String path,
             final String uid) {
-        Intent intent = null;
+        Intent intent;
         if (_broadcast != null && _broadcast.isValid()) {
             intent = new Intent(_broadcast.getAction());
             if (!FileSystemUtils.isEmpty(path)) {

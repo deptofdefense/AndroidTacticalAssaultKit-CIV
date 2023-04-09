@@ -27,26 +27,6 @@ public final class DistanceCalculations {
         // static only
     }
 
-    /**
-     * Compute a point given a starting point, distance away and direction. The resulting point will
-     * have no elevation data.
-     * 
-     * @param start starting point
-     * @param distance distance away from starting point in meters
-     * @param bearing direction away from starting point in degrees from North
-     * @return calculated point without elevation.  If elevation is desired, you need to 
-     * call computeDestinationPoint(GeoPoint, double, double, double) 
-     *
-     * @deprecated use {@link #computeDestinationPoint(GeoPoint, double, double)}
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public static GeoPoint metersFromAtBearing(GeoPoint start, double distance,
-            double bearing) {
-        final GeoPoint gp = GeoCalculations.pointAtDistance(start, bearing, distance, 0.0d);
-        return new GeoPoint(gp.getLatitude(), gp.getLongitude(),
-                GeoPoint.UNKNOWN);
-    }
 
     /**
      * See <code>GeoPoint.distanceTo</code>
@@ -64,29 +44,6 @@ public final class DistanceCalculations {
         return GeoCalculations.distanceTo(source, target);
     }
 
-    /**
-     * Returns the angle about North in degrees to the target from the source.
-     * 
-     * @param source
-     * @param target
-     * @return angle in degrees
-     *
-     * @deprecated use {@link GeoCalculations#bearingTo(GeoPoint, GeoPoint)}
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public static double bearingFromSourceToTarget(GeoPoint source,
-            GeoPoint target) {
-        double val = source.bearingTo(target);
-
-        if (val < 0)
-            val = (val % 360) + 360d;
-
-        if (val > 360)
-            val = val % 360;
-
-        return val;
-    }
 
     @Deprecated
     @DeprecatedApi(since = "4.5", forRemoval = true, removeAt = "4.8")
@@ -170,27 +127,6 @@ public final class DistanceCalculations {
     }
 
     /**
-     * @deprecated use {@link GeoCalculations#bearingTo(GeoPoint, GeoPoint)}; downstream consistency
-     *              may require subtracting <code>-90d</code> from the result and negating
-     * @param startPoint
-     * @param endPoint
-     * @return
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public static double calculateBearing(final GeoPoint startPoint,
-            final GeoPoint endPoint) {
-
-        double bearing = startPoint.bearingTo(endPoint) - 90;
-
-        // Convert to azimuth
-        if (bearing < 0)
-            bearing = bearing + 360;
-
-        return -bearing;
-    }
-
-    /**
      * Bring a bearing between [-180..180]
      * @param bearing the bearing.
      * @return A value that might be between -180..180.
@@ -202,23 +138,6 @@ public final class DistanceCalculations {
             return bearing + 360;
         }
         return bearing;
-    }
-
-    /**
-     * See <code>GeoPoint.distanceTo</code>
-     * Note, this method does _not_ account for difference in elevation
-     *
-     * @param startPoint
-     * @param endPoint
-     * @return distance in meters
-     *
-     * @deprecated use {@link GeoCalculations#distanceTo(GeoPoint, GeoPoint)}
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public static double calculateRange(final GeoPoint startPoint,
-            final GeoPoint endPoint) {
-        return GeoCalculations.distanceTo(startPoint, endPoint);
     }
 
 

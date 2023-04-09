@@ -850,7 +850,7 @@ public class AppMgmtActivity extends MetricActivity {
                                     int which) {
                                 dialog.dismiss();
 
-                                ProductInformationAdapter.Mode mode = ProductInformationAdapter.Mode.All;
+                                ProductInformationAdapter.Mode mode;
                                 switch (which) {
                                     case 0:
                                         mode = ProductInformationAdapter.Mode.MultiInstall;

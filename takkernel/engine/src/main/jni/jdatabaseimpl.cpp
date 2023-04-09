@@ -1,4 +1,4 @@
-#include "jdatabaseimpl.h"
+#include "com_atakmap_database_impl_DatabaseImpl.h"
 
 #include <cstring>
 #include <sstream>
@@ -31,8 +31,18 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_database_impl_DatabaseImpl_openImpl
     if(mpassphrase) {
         code = JNIStringUTF_get(ckey, *env, mpassphrase);
         if(code == TE_Ok) {
+            uint8_t obs = 0x00u;
+            if     (flags&0x01000000)   obs = 0x1c;
+            else if(flags&0x02000000)   obs = 0x2b;
 
             keylen = strlen(ckey);
+            if(obs) {
+                if(keylen) {
+                    for (std::size_t i = 0u; i < keylen - 1u; i++)
+                        ckey[i] = ckey[i] ^ obs ^ ckey[i+1u];
+                    ckey[keylen-1u] = ckey[keylen-1u] ^ obs;
+                }
+            }
         } else {
             // failed to get the passphrase, but try to proceed anyway
         }

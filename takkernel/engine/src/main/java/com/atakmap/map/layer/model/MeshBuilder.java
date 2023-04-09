@@ -27,12 +27,12 @@ public final class MeshBuilder implements Disposable {
 
     private Pointer pointer;
 
-    MeshBuilder(ByteBuffer vertexData, int vertexAttr, Envelope aabb, Model.DrawMode drawMode) {
+    MeshBuilder(ByteBuffer vertexData, int vertexAttr, Envelope aabb, Mesh.DrawMode drawMode) {
         throw new UnsupportedOperationException();
     }
 
 
-    public MeshBuilder(int vertexAttr, boolean indexed, Model.DrawMode drawMode) {
+    public MeshBuilder(int vertexAttr, boolean indexed, Mesh.DrawMode drawMode) {
         int tedm;
         switch(drawMode) {
             case Points:
@@ -57,7 +57,7 @@ public final class MeshBuilder implements Disposable {
         cleaner = NativePeerManager.register(this, pointer, rwlock, null, CLEANER);
     }
 
-    public MeshBuilder(int vertexAttr, Class<?> indexType, Model.DrawMode drawMode) {
+    public MeshBuilder(int vertexAttr, Class<?> indexType, Mesh.DrawMode drawMode) {
         int tedm;
         switch(drawMode) {
             case Points:
@@ -82,7 +82,7 @@ public final class MeshBuilder implements Disposable {
         cleaner = NativePeerManager.register(this, pointer, rwlock, null, CLEANER);
     }
 
-    public MeshBuilder(VertexDataLayout layout, Class<?> indexType, Model.DrawMode drawMode) {
+    public MeshBuilder(VertexDataLayout layout, Class<?> indexType, Mesh.DrawMode drawMode) {
         int tedm;
         switch(drawMode) {
             case Points:
@@ -140,7 +140,7 @@ public final class MeshBuilder implements Disposable {
             this.rwlock.releaseRead();
         }
     }
-    public void setWindingOrder(Model.WindingOrder windingOrder) {
+    public void setWindingOrder(Mesh.WindingOrder windingOrder) {
         this.rwlock.acquireRead();
         try {
             if (this.pointer.raw == 0L)

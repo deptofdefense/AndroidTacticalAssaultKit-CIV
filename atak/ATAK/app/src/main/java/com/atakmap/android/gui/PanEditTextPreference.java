@@ -12,9 +12,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 import android.text.InputFilter;
 
+import com.atakmap.android.maps.MapView;
+import com.atakmap.app.BuildConfig;
 import com.atakmap.app.R;
 import com.atakmap.coremap.log.Log;
 
@@ -38,7 +42,7 @@ import java.util.Map;
 public class PanEditTextPreference extends EditTextPreference {
 
     public static final String TAG = "PanEditTextPreference";
-
+    private ImageView imageView;
     private final Map<String, Integer> otherAttributes = new HashMap<>();
 
     private static final int MAX_VALID_WIDTH = 15;
@@ -92,7 +96,44 @@ public class PanEditTextPreference extends EditTextPreference {
         View v = super.onCreateView(parent);
         if (!isEnabled())
             v.setEnabled(false);
+
+        if (v instanceof LinearLayout) {
+            LinearLayout layout = (LinearLayout) v;
+            MapView view = MapView.getMapView();
+            ImageView iv = new ImageView(view.getContext());
+            if (BuildConfig.FLAVOR == "civUIMods") {
+                iv.setImageDrawable(view.getContext()
+                        .getDrawable(
+                                R.drawable.ic_baseline_keyboard_arrow_right_24));
+            } else {
+                iv.setImageDrawable(
+                        view.getContext().getDrawable(R.drawable.arrow_right));
+            }
+            layout.addView(iv);
+            imageView = iv;
+        }
+        setRightSideIconVisibility(isEnabled());
         return v;
+    }
+
+    private void setRightSideIconVisibility(boolean enabled) {
+        try {
+            imageView.setVisibility(enabled ? View.VISIBLE : View.GONE);
+        } catch (Exception ignored) {
+
+        }
+    }
+
+    @Override
+    protected void onBindView(View view) {
+        super.onBindView(view);
+        setRightSideIconVisibility(isEnabled());
+    }
+
+    @Override
+    public void setEnabled(boolean enabled) {
+        super.setEnabled(enabled);
+        setRightSideIconVisibility(isEnabled());
     }
 
     /**
@@ -267,7 +308,7 @@ public class PanEditTextPreference extends EditTextPreference {
      * If it does not, then the preference is not saved and a message is shown.
      * @param minVal the minimum value supported by the preference
      * @param maxVal the maximumn value supported by rhe preference
-     * @param allowForBlank allow for empty entry for the preference
+     * @param allowEmpty allow for empty entry for the preference
      */
     public void setValidIntegerRange(final int minVal, final int maxVal,
             boolean allowEmpty) {

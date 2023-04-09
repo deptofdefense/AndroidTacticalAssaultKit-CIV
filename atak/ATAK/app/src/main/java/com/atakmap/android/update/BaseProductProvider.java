@@ -3,6 +3,8 @@ package com.atakmap.android.update;
 
 import android.app.Activity;
 
+import androidx.annotation.NonNull;
+
 import com.atak.plugins.impl.AtakPluginRegistry;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
@@ -133,6 +135,7 @@ public abstract class BaseProductProvider implements
         return repo;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return this.getClass().getName();

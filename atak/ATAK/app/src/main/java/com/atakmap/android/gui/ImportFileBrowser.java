@@ -40,7 +40,6 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.math.MathUtils;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.vehicle.model.icon.PendingDrawable;
-import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.concurrent.NamedThreadFactory;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -720,6 +719,7 @@ public class ImportFileBrowser extends LinearLayout implements
             this.type = type;
         }
 
+        @NonNull
         @Override
         public String toString() {
             return file;
