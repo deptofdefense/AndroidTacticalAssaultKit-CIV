@@ -44,7 +44,8 @@ jobs:
         echo "ANDROID_COMPILE_SDK=29" >> $GITHUB_ENV
         echo "ANDROID_BUILD_TOOLS=29.0.3" >> $GITHUB_ENV
         echo "ANDROID_SDK_TOOLS=4333796" >> $GITHUB_ENV
-        echo "NDK_VERSION=12b" >> $GITHUB_ENV
+        echo "ATAK_NDK_VERSION=12b" >> $GITHUB_ENV
+        echo "TAKKERNEL_NDK_VERSION=23b" >> $GITHUB_ENV
         echo "KEYSTORE_ALIAS=CI" >> $GITHUB_ENV
         echo "KEYSTORE_STORE_PASSWORD=$(apg -a 1 -n 1 -m 16 -x 16 -E '\')" >> $GITHUB_ENV
         echo "KEYSTORE_KEY_PASSWORD=$(apg -a 1 -n 1 -m 16 -x 16 -E '\')" >> $GITHUB_ENV
@@ -65,10 +66,17 @@ jobs:
        set -o pipefail
     - name: set up Android NDK
       run: |
-       wget --quiet --tries=0 --output-document=android-ndk.zip https://dl.google.com/android/repository/android-ndk-r${NDK_VERSION}-linux-x86_64.zip;
-       unzip -qq  android-ndk.zip;
-       echo "ANDROID_NDK_HOME=$PWD/android-ndk-r${NDK_VERSION}" >> $GITHUB_ENV
-       echo "ANDROID_NDK=$PWD/android-ndk-r${NDK_VERSION}" >> $GITHUB_ENV
+       mkdir -p ${ANDROID_HOME}/ndk
+       pushd ${ANDROID_HOME}/ndk
+       wget --quiet --tries=0 --output-document=android-ndk-r${ATAK_NDK_VERSION}.zip https://dl.google.com/android/repository/android-ndk-r${ATAK_NDK_VERSION}-linux-x86_64.zip
+       unzip -qq  android-ndk-r${ATAK_NDK_VERSION}.zip
+       mv android-ndk-r${ATAK_NDK_VERSION} 12.1.2977051
+       rm -f android-ndk-r${ATAK_NDK_VERSION}.zip
+       wget --quiet --tries=0 --output-document=android-ndk-r${TAKKERNEL_NDK_VERSION}.zip https://dl.google.com/android/repository/android-ndk-r${TAKKERNEL_NDK_VERSION}-linux.zip
+       unzip -qq  android-ndk-r${TAKKERNEL_NDK_VERSION}.zip
+       mv android-ndk-r${TAKKERNEL_NDK_VERSION} 23.1.7779620
+       rm -f android-ndk-r${TAKKERNEL_NDK_VERSION}.zip
+       popd
     - name: set up CMake
       run: |
        wget --quiet --tries=0 --output-document=cmake-3.14.7.tar.gz https://cmake.org/files/v3.14/cmake-3.14.7-Linux-x86_64.tar.gz;
@@ -80,6 +88,7 @@ jobs:
       run: |
         git submodule update --init --recursive
         pushd .
+        export ANDROID_NDK=${ANDROID_HOME}/ndk/12.1.2977051
         cd scripts
         bash ./prebuild.sh
         popd
