@@ -37,11 +37,13 @@ buildscript {
         google()
         mavenCentral()
         mavenLocal()
-        maven {
-            url = consumeUrl
-            credentials {
-                username = mavenUser
-                password = mavenPassword
+        if(getProperty('takRepoMavenUrl', null) != null) {
+            maven {
+                url = consumeUrl
+                credentials {
+                    username = mavenUser
+                    password = mavenPassword
+                }
             }
         }
     }
@@ -59,11 +61,13 @@ allprojects {
         google()
         mavenCentral()
         mavenLocal()
-        maven {
-            url = consumeUrl
-            credentials {
-                username = mavenUser
-                password = mavenPassword
+        if(getProperty('takRepoMavenUrl', null) != null) {
+            maven {
+                url = consumeUrl
+                credentials {
+                    username = mavenUser
+                    password = mavenPassword
+                }
             }
         }
     }
