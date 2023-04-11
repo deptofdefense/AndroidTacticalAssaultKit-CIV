@@ -37,15 +37,13 @@ buildscript {
         google()
         mavenCentral()
         mavenLocal()
-        if(getProperty('takRepoMavenUrl', null) != null) {
-            maven {
-                url = consumeUrl
-                credentials {
-                    username = mavenUser
-                    password = mavenPassword
-                }
-            }
-        }
+        // maven {
+        //     url = consumeUrl
+        //     credentials {
+        //         username = mavenUser
+        //         password = mavenPassword
+        //     }
+        // }
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:4.2.2'
@@ -61,15 +59,13 @@ allprojects {
         google()
         mavenCentral()
         mavenLocal()
-        if(getProperty('takRepoMavenUrl', null) != null) {
-            maven {
-                url = consumeUrl
-                credentials {
-                    username = mavenUser
-                    password = mavenPassword
-                }
-            }
-        }
+        // maven {
+        //     url = consumeUrl
+        //     credentials {
+        //         username = mavenUser
+        //         password = mavenPassword
+        //     }
+        // }
     }
 }
 
