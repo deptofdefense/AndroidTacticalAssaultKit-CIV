@@ -15,15 +15,16 @@ if(getProperty(project, 'maven.consume.password', null))
     println('WARNING: \'maven.consume.password\' is deprecated and will be removed at takkernel:1.0.0 Update references to \'takRepoPassword\'')
 
 repositories {
+    google()
     mavenLocal()
     mavenCentral()
-    // maven {
-    //     url = takrepoUrl
-    //     credentials {
-    //         username takrepoUser
-    //         password takrepoPassword
-    //     }
-    // }
+    maven {
+        url = takrepoUrl
+        credentials {
+            username takrepoUser
+            password takrepoPassword
+        }
+    }
 }
 
 ext.repos = repositories
