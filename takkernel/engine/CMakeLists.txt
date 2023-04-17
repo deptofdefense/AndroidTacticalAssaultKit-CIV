@@ -34,6 +34,7 @@ if(NOT ANDROID)
                             cmake_find_package)
 else()
     conan_cmake_configure(REQUIRES
+                            khronos/1.0
                             stl-soft/1.9.119
                             tinygltf-tak/2.4.1
                             tinygltfloader-tak/0.9.5
