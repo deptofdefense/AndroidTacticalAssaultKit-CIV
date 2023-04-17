@@ -696,7 +696,6 @@ set(takengine_util_COMMON_SRCS
 
 set(takengine_vscompat_COMMON_SRCS
     # vscompat
-    ${SRC_DIR}/../cpp-cli/vscompat/unistd.cpp
 )
 
 set(takengine_COMMON_SRCS
