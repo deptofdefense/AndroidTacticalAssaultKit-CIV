@@ -130,11 +130,15 @@ pushd ../khronos
 conan export-pkg . -f
 popd
 
-echo "################# khronos repos #######################"
-find ../khronos
-
-echo "################# .conan #######################"
-find ~/.conan
+echo "################# khronos metadata #######################"
+echo "cat ~/.conan/data/khronos/1.0/_/_/metadata.json"
+cat ~/.conan/data/khronos/1.0/_/_/metadata.json
+echo "cat ~/.conan/data/khronos/1.0/_/_/package/*/conanfile.py"
+cat ~/.conan/data/khronos/1.0/_/_/package/*/conanfile.py
+echo "~/.conan/data/khronos/1.0/_/_/export/conanfile.py"
+cat ~/.conan/data/khronos/1.0/_/_/export/conanfile.py
+echo "~/.conan/data/khronos/1.0/_/_/export/conanmanifest.txt"
+cat ~/.conan/data/khronos/1.0/_/_/export/conanmanifest.txt
 
 #pushd ../takengine/thirdparty/apache-commons-lang-slim
 #./gradlew assemble
