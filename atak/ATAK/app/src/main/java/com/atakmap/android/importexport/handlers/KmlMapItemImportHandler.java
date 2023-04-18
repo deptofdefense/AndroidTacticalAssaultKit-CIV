@@ -50,7 +50,7 @@ public class KmlMapItemImportHandler {
 
     public void importKml(InputStream inputStream, boolean findName)
             throws IOException {
-        Kml kml = null;
+        Kml kml;
         try {
             Serializer serializer = new Serializer();
             kml = serializer.read(inputStream);
@@ -91,7 +91,7 @@ public class KmlMapItemImportHandler {
                             return feature.getName();
                     }
                 }
-                String retval = null;
+                String retval;
                 for (Feature child : ((Document) feature).getFeatureList()) {
                     if (isContainer(child)) {
                         retval = findName(child);
@@ -108,7 +108,7 @@ public class KmlMapItemImportHandler {
                             return feature.getName();
                     }
                 }
-                String retval = null;
+                String retval;
                 for (Feature child : ((Folder) feature).getFeatureList()) {
                     if (isContainer(child)) {
                         retval = findName(child);

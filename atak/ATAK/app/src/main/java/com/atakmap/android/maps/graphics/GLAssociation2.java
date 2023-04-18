@@ -200,7 +200,13 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
                 null
         };
         if ((pattern & 0xFF) != 0xFF) {
-            update[0] = new PatternStrokeStyle(pattern & 0xFF, 8, this.color,
+            int mask = (pattern & 0xFF);
+            mask = (mask << 8) | mask;
+            update[0] = new PatternStrokeStyle(1, (short) mask,
+                    Color.red(color) / 255f,
+                    Color.green(color) / 255f,
+                    Color.blue(color) / 255f,
+                    Color.alpha(color) / 255f,
                     strokeWidth);
         } else {
             update[0] = new BasicStrokeStyle(color, strokeWidth);

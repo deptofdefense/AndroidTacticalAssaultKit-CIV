@@ -5,7 +5,6 @@ import com.atakmap.android.routes.elevation.model.RouteData;
 import com.atakmap.android.routes.elevation.model.SegmentData;
 import com.atakmap.android.routes.elevation.model.UnitConverter;
 
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
@@ -185,7 +184,7 @@ public class RouteElevationService {
                         source.get().getCE(),
                         source.get().getLE()),
                 source.getGeopointSource(), sourceAlt.getAltitudeSource());
-
+        newSource.setMetaValue("date", source.getMetaData("date"));
         // Get target altitude in HAE and store in new target point
         if (!target.get().isAltitudeValid())
             targAlt = ElevationManager.getElevationMetadata(target.get());
@@ -197,6 +196,7 @@ public class RouteElevationService {
                         target.get().getCE(),
                         target.get().getLE()),
                 target.getGeopointSource(), targAlt.getAltitudeSource());
+        newTarget.setMetaValue("date", target.getMetaData("date"));
 
         // Add starting point data
         geoPointVec.add(newSource);
@@ -216,11 +216,11 @@ public class RouteElevationService {
             GeoPoint newPoint;
             double currentDistance = 0;
             do {
-                double bearing = DistanceCalculations
-                        .bearingFromSourceToTarget(
+                double bearing = GeoCalculations
+                        .bearingTo(
                                 newSource.get(), newTarget.get());
-                newPoint = DistanceCalculations.metersFromAtBearing(
-                        newSource.get(), incrementInMeters, bearing);
+                newPoint = GeoCalculations.pointAtDistance(
+                        newSource.get(), bearing, incrementInMeters);
 
                 /**
                  * roll in the altitude, but only if a valid altitude is found.
@@ -250,10 +250,12 @@ public class RouteElevationService {
                             alt);
                 }
 
-                geoPointVec.add(GeoPointMetaData.wrap(newPoint));
+                GeoPointMetaData npgpm = GeoPointMetaData.wrap(newPoint);
+                npgpm.setMetaValue("date", newSource.getMetaData("date"));
+                geoPointVec.add(npgpm);
                 distVec.add(i);
                 i += incrementInFeet;
-                newSource = GeoPointMetaData.wrap(newPoint);
+                newSource = npgpm;
             } while (GeoCalculations.distanceTo(newPoint,
                     newTarget.get()) > incrementInMeters);
 

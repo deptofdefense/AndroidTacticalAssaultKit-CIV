@@ -4,12 +4,13 @@ package com.atakmap.android.tools.menu;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import androidx.annotation.NonNull;
+
+import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Element;
-
-import com.atakmap.coremap.locale.LocaleUtil;
 
 /**
  * 
@@ -113,6 +114,7 @@ public class ActionClickData implements Parcelable {
         return getId();
     }
 
+    @NonNull
     @Override
     public String toString() {
         return String.format(LocaleUtil.getCurrent(), "%s %s",

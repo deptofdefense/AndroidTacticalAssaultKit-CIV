@@ -17,7 +17,7 @@ public class BasicPointStyleTests extends ATAKInstrumentedTest {
         BasicPointStyle style = new BasicPointStyle(color, size);
         Assert.assertEquals(color, style.getColor());
         final float ssize = style.getSize();
-        Assert.assertTrue(size == style.getSize());
+        Assert.assertEquals(size, style.getSize(), 0.0);
     }
 
     @Test(expected = RuntimeException.class)

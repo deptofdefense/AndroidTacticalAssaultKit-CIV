@@ -106,6 +106,7 @@ public class NetworkManagerLite extends BroadcastReceiver {
                 return description;
             }
 
+            @NonNull
             public String toString() {
                 return description;
             }
@@ -266,9 +267,9 @@ public class NetworkManagerLite extends BroadcastReceiver {
 
                     try {
                         NetworkDevice.Configuration c;
-                        if (arr[4].equals("dhcp")) {
+                        if (arr[3].equals("dhcp")) {
                             c = NetworkDevice.Configuration.DHCP;
-                        } else if (arr[4].equals("none")) {
+                        } else if (arr[3].equals("none")) {
                             c = NetworkDevice.Configuration.NONE;
                         } else {
                             c = NetworkDevice.Configuration.STATIC;

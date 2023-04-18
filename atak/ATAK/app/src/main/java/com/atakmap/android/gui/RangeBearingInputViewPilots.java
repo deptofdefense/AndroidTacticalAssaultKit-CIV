@@ -17,6 +17,8 @@ import com.atakmap.android.util.SimpleItemSelectedListener;
 import android.graphics.Color;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.ConversionFactors;
 import com.atakmap.coremap.conversions.Span;
@@ -53,6 +55,7 @@ public class RangeBearingInputViewPilots extends RangeBearingInputView {
             return _name;
         }
 
+        @NonNull
         @Override
         public String toString() {
             return _name;

@@ -1,4 +1,4 @@
-#include "jioproviderfactory.h"
+#include "com_atakmap_coremap_io_IOProviderFactory.h"
 
 #include <memory>
 #include <sstream>
@@ -126,8 +126,8 @@ namespace
     {
         LocalJNIEnv env;
         TAKErr code(TE_Ok);
-        const char *curi;
-        code = information.getUri(&curi);
+        Port::String curi;
+        code = information.getUri(curi);
         TE_CHECKRETURN_CODE(code);
         JNILocalRef mpath(*env, env->NewStringUTF(curi));
         JNILocalRef mfile(*env, env->NewObject(File_class.id, File_class.ctor, mpath.get()));

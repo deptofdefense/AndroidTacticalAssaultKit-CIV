@@ -1,4 +1,4 @@
-#include "jconfigoptions.h"
+#include "com_atakmap_util_ConfigOptions.h"
 
 #include <util/ConfigOptions.h>
 

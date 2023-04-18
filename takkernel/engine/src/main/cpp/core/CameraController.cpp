@@ -4,6 +4,7 @@
 
 #include "core/MapSceneModel2.h"
 #include "math/Ellipsoid2.h"
+#include "math/Frustum2.h"
 #include "math/Sphere2.h"
 #include "math/Vector4.h"
 #include "util/Memory.h"
@@ -43,7 +44,7 @@ namespace {
         MapRenderer2 &_renderer;
     };
     
-    TAKErr panByImpl_perspective(const MapSceneModel2 &currentModel, const float tx, const float ty, const bool animate, ICamera &camera) NOTHROWS;
+    TAKErr panByImpl_perspective(const MapSceneModel2 &currentModel, const float tx, const float ty, const bool poleSmoothScroll, const bool animate, ICamera &camera) NOTHROWS;
     TAKErr panByImpl_ortho(const MapSceneModel2 &currentModel, const float tx, const float ty, const bool animate, ICamera &camera) NOTHROWS;
 
     /*
@@ -65,10 +66,21 @@ namespace {
                       const MapRenderer::CameraCollision collide,
                       const bool animate) NOTHROWS;
     TAKErr panToImpl_ortho(const MapSceneModel2 &sm, const GeoPoint2 &focus, const float x, const float y, const bool animate, ICamera &camera) NOTHROWS;
-    TAKErr panToImpl_perspective(const MapSceneModel2 &sm, const GeoPoint2 &focus_, const float x, const float y, const bool animate, ICamera &camera) NOTHROWS;
+    TAKErr panToImpl_perspective(const MapSceneModel2 &sm, const GeoPoint2 &focus_, const float x, const float y, const bool poleSmoothScroll, const bool animate, ICamera &camera) NOTHROWS;
+
+    double adjustOrientationForPoles(const MapSceneModel2 &sm, const GeoPoint2& currentFocus, const GeoPoint2& newFocus);
+
+    const GeoPoint2 northPole(90.0, 0.0);
+    const GeoPoint2 southPole(-90.0, 0.0);
+
+    double adjustOrientationThreshold = 37.5;
 }
 
 TAKErr TAK::Engine::Core::CameraController_panBy(MapRenderer2 &renderer, const float tx, const float ty, const MapRenderer2::CameraCollision collide, const bool animate) NOTHROWS
+{
+    return CameraController_panBy(renderer, tx, ty, collide, true, animate);
+}
+TAKErr TAK::Engine::Core::CameraController_panBy(MapRenderer2 &renderer, const float tx, const float ty, const MapRenderer2::CameraCollision collide, const bool poleSmoothScroll, const bool animate) NOTHROWS
 {
     TAKErr code(TE_Ok);
     MapSceneModel2 currentModel;
@@ -78,9 +90,13 @@ TAKErr TAK::Engine::Core::CameraController_panBy(MapRenderer2 &renderer, const f
     if(currentModel.camera.mode == MapCamera2::Scale)
         return panByImpl_ortho(currentModel, tx, ty, animate, cam);
     else
-        return panByImpl_perspective(currentModel, tx, ty, animate, cam);
+        return panByImpl_perspective(currentModel, tx, ty, poleSmoothScroll, animate, cam);
 }
 TAKErr TAK::Engine::Core::CameraController_panTo(MapRenderer2 &renderer, const GeoPoint2 &focus, const float x, const float y, const MapRenderer2::CameraCollision collide, const bool animate) NOTHROWS
+{
+    return CameraController_panTo(renderer, focus, x, y, collide, true, animate);
+}
+TAKErr TAK::Engine::Core::CameraController_panTo(MapRenderer2 &renderer, const GeoPoint2 &focus, const float x, const float y, const MapRenderer2::CameraCollision collide, const bool poleSmoothScroll, const bool animate) NOTHROWS
 {
     TAKErr code(TE_Ok);
     MapSceneModel2 sm;
@@ -90,7 +106,7 @@ TAKErr TAK::Engine::Core::CameraController_panTo(MapRenderer2 &renderer, const G
     if(sm.camera.mode == MapCamera2::Scale) {
         return panToImpl_ortho(sm, focus, x, y, animate, cam);
     } else {
-        return panToImpl_perspective(sm, focus, x, y, animate, cam);
+        return panToImpl_perspective(sm, focus, x, y, poleSmoothScroll, animate, cam);
     }
 }
 TAKErr TAK::Engine::Core::CameraController_zoomBy(MapRenderer2 &renderer, const double scaleFactor, const MapRenderer2::CameraCollision collide, const bool animate) NOTHROWS
@@ -463,7 +479,7 @@ namespace {
     }
 
 
-     TAKErr panByImpl_perspective(const MapSceneModel2 &currentModel, const float tx, const float ty, const bool animate, ICamera &camera) NOTHROWS
+     TAKErr panByImpl_perspective(const MapSceneModel2 &currentModel, const float tx, const float ty, const bool poleSmoothScroll, const bool animate, ICamera &camera) NOTHROWS
      {
         // obtain the current focus
         GeoPoint2 focusLLA;
@@ -536,6 +552,11 @@ namespace {
 
         GeoPoint2 translatedLLA;
         currentModel.projection->inverse(&translatedLLA, translated);
+
+        double newAzimuth = poleSmoothScroll ?
+                adjustOrientationForPoles(sm, focusLLA, translatedLLA):
+                sm.camera.azimuth;
+
         if(translatedLLA.longitude > 180.0) {
             translatedLLA.longitude -= 360.0;
         } else if(translatedLLA.longitude < -180.0) {
@@ -547,7 +568,7 @@ namespace {
 
         return camera.lookAt(translatedLLA,
                 currentModel.gsd,
-                currentModel.camera.azimuth,
+                newAzimuth,
                 90.0+currentModel.camera.elevation,
                 animate);
     }
@@ -679,7 +700,7 @@ namespace {
             if (builder.sm.camera.mode == MapCamera2::Scale) {
                 panToImpl_ortho(builder.sm, focus, focusx, focusy, false, builder);
             } else {
-                panToImpl_perspective(builder.sm, focus, focusx, focusy, false, builder);
+                panToImpl_perspective(builder.sm, focus, focusx, focusy, false, false, builder);
             }
         }
 
@@ -696,7 +717,7 @@ namespace {
         panByImpl_ortho(sm, sm.focusX-x, sm.focusY-y, animate, camera);
         return TE_Ok;
     }
-    TAKErr panToImpl_perspective(const MapSceneModel2 &sm, const GeoPoint2 &focus_, const float x, const float y, const bool animate, ICamera &camera) NOTHROWS
+    TAKErr panToImpl_perspective(const MapSceneModel2 &sm, const GeoPoint2 &focus_, const float x, const float y, const bool poleSmoothScroll, const bool animate, ICamera &camera) NOTHROWS
     {
         TAKErr code(TE_Ok);
         GeoPoint2 focus(focus_);
@@ -745,6 +766,11 @@ namespace {
         if(sm.projection->inverse(&newFocus, Point2<double>(focusProj.x - tx, focusProj.y - ty, focusProj.z - tz)) != TE_Ok)
             return TE_Ok;
         newFocus.altitude = focus.altitude;
+
+        double newAzimuth = poleSmoothScroll ?
+                adjustOrientationForPoles(sm, curFocusAtAlt, newFocus) :
+                sm.camera.azimuth;
+
         if(newFocus.longitude > 180.0) {
             newFocus.longitude -= 360.0;
         } else if(newFocus.longitude < 180.0) {
@@ -764,8 +790,59 @@ namespace {
         return camera.lookAt(
                 newFocus,
                 MapSceneModel2_gsd(rangeAtAlt+curFocusAtAlt.altitude, sm.camera.fov, sm.height),
-                sm.camera.azimuth,
+                newAzimuth,
                 90.0 + sm.camera.elevation,
                 animate);
+    }
+
+    double adjustOrientationForPoles(const MapSceneModel2 &sm, const GeoPoint2& currentFocus, const GeoPoint2& newFocus) {
+        // planar projection does not adjust for poles
+        if (sm.displayModel->earth->getGeomClass() == GeometryModel2::PLANE)
+            return sm.camera.azimuth;
+
+        // If the poles are within the camera's frustum, adjust the orientation
+        // to rotate around the poles as we go from one N/S hemisphere to another.
+        double rotAngle = sm.camera.azimuth;
+        GeoPoint2 cameraLocation;
+        Point2<double> northPoint;
+        Point2<double> southPoint;
+        sm.projection->inverse(&cameraLocation, sm.camera.location);
+        sm.projection->forward(&northPoint, northPole);
+        sm.projection->forward(&southPoint, southPole);
+
+        // determine angle between vector extending through camera focus and
+        // vector extending through poles. If angle is greater than threshold,
+        // focus is far enough away to utilize normal panning
+        
+        // NOTE: direction is simply the point as all vectors terminate at 0,0,0
+        const double northdot = Vector2_dot(Vector2_normalize(northPoint), Vector2_normalize(sm.camera.target));
+        const double southdot = Vector2_dot(Vector2_normalize(southPoint), Vector2_normalize(sm.camera.target));
+
+        const double northAng = acos(northdot) / M_PI * 180.0;
+        const double southAng = acos(southdot) / M_PI * 180.0;
+
+        const double threshold = adjustOrientationThreshold;
+        if (northAng > threshold && southAng > threshold)
+            return sm.camera.azimuth;
+        
+        double distanceToNorthPole = GeoPoint2_distance(cameraLocation, northPole, true);
+        double distanceToSouthPole = GeoPoint2_distance(cameraLocation, southPole, true);
+        if (distanceToNorthPole < sm.camera.farMeters) {
+            Frustum2 frustum(sm.camera.projection, sm.camera.modelView);
+            if (frustum.intersects(Sphere2(northPoint, 1.0))) {
+                double shiftedCurLong = currentFocus.longitude + 180.0;
+                double shiftedNewLong = newFocus.longitude + 180.0;
+                rotAngle = (sm.camera.azimuth - shiftedCurLong) + shiftedNewLong;
+            }
+        }
+        if (distanceToSouthPole < sm.camera.farMeters) {
+            Frustum2 frustum(sm.camera.projection, sm.camera.modelView);
+            if (frustum.intersects(Sphere2(southPoint, 1.0))) {
+                double shiftedCurLong = 360.0 - currentFocus.longitude;
+                double shiftedNewLong = 360.0 - newFocus.longitude;
+                rotAngle = (sm.camera.azimuth - shiftedCurLong) + shiftedNewLong;
+            }
+        }
+        return rotAngle;
     }
 }

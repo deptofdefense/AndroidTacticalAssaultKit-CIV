@@ -1,10 +1,12 @@
 
 package com.atakmap.android.routes;
 
+import android.content.Context;
 import android.os.Bundle;
 
 import com.atakmap.android.gui.PanEditTextPreference;
 import com.atakmap.android.preference.AtakPreferenceFragment;
+import com.atakmap.android.preference.PreferenceSearchIndex;
 import com.atakmap.app.R;
 
 import android.app.AlertDialog;
@@ -17,9 +19,18 @@ import android.preference.PreferenceManager;
 import android.preference.Preference;
 import com.atakmap.coremap.log.Log;
 
+import java.util.List;
+
 public class RoutePreferenceFragment extends AtakPreferenceFragment {
 
     public static final String TAG = "RoutePreferenceFragment";
+
+    public static List<PreferenceSearchIndex> index(Context context) {
+        return index(context,
+                RoutePreferenceFragment.class,
+                R.string.routePreferences,
+                R.drawable.ic_menu_settings);
+    }
 
     public RoutePreferenceFragment() {
         super(R.xml.route_preferences, R.string.routePreferences);

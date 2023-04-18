@@ -28,16 +28,17 @@ if(NOT ANDROID)
                             stl-soft/1.9.119
                             tinygltf-tak/2.4.1
                             tinygltfloader-tak/0.9.5
-                            ttp-dist/2.6.1
+                            ttp-dist/2.7.2
                             libLAS/1.8.2c
                           GENERATORS
                             cmake_find_package)
 else()
     conan_cmake_configure(REQUIRES
+                            khronos/1.0
                             stl-soft/1.9.119
                             tinygltf-tak/2.4.1
                             tinygltfloader-tak/0.9.5
-                            ttp-dist/2.6.1
+                            ttp-dist/2.7.2
                             libLAS/1.8.2c
                           GENERATORS
                             cmake_find_package)
@@ -47,7 +48,7 @@ endif()
 if (ANDROID)
     set (conan_settings 
         build_type=Release
-    	compiler=${ANDROID_TOOLCHAIN}
+    	compiler=gcc
         compiler.libcxx=libstdc++
         compiler.version=8
         os=Android

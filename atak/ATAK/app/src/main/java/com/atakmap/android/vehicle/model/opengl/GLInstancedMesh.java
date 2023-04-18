@@ -6,7 +6,6 @@ import android.opengl.GLES30;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.layer.model.Mesh;
-import com.atakmap.map.layer.model.Model;
 import com.atakmap.map.layer.model.Models;
 import com.atakmap.map.layer.model.VertexDataLayout;
 import com.atakmap.map.layer.model.opengl.GLMaterial;
@@ -233,10 +232,10 @@ public class GLInstancedMesh extends GLInstancedRenderable {
 
         // Setup proper face culling
         final boolean disableCullFace = (_subject
-                .getFaceWindingOrder() != Model.WindingOrder.Undefined)
+                .getFaceWindingOrder() != Mesh.WindingOrder.Undefined)
                 && !GLES30.glIsEnabled(GLES30.GL_CULL_FACE);
         int[] cullFaceRestore = null;
-        if (_subject.getFaceWindingOrder() != Model.WindingOrder.Undefined) {
+        if (_subject.getFaceWindingOrder() != Mesh.WindingOrder.Undefined) {
             cullFaceRestore = new int[2];
             GLES30.glGetIntegerv(GLES30.GL_CULL_FACE, cullFaceRestore, 0);
             GLES30.glGetIntegerv(GLES30.GL_FRONT_FACE, cullFaceRestore, 1);

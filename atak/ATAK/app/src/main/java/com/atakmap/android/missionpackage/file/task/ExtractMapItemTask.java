@@ -53,7 +53,7 @@ public class ExtractMapItemTask extends MissionPackageBaseTask {
         publishProgress(new ProgressDialogUpdate(10, null));
 
         if (FileSystemUtils.isEmpty(MissionPackageExtractor.ExtractCoT(
-                getContext(), source, _content, true))) {
+                source, _manifest, _content, true))) {
             Log.e(TAG, "Failed to extract Map Item" + _content);
             cancel("Failed to extract Map Item");
         }

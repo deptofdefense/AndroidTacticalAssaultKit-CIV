@@ -39,7 +39,6 @@ import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.assets.Icon;
 
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
@@ -344,8 +343,8 @@ public class LocalRangeFinderInput implements Runnable, RangeFinderAction,
                 if (!Double.isNaN(lat) && !Double.isNaN(lon)) {
                     Marker marker = (Marker) item;
                     GeoPoint anchorPoint = new GeoPoint(lat, lon);
-                    double bearing = DistanceCalculations
-                            .bearingFromSourceToTarget(
+                    double bearing = GeoCalculations
+                            .bearingTo(
                                     anchorPoint,
                                     mapView.inverse(
                                             event.getPointF().x,

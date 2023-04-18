@@ -13,6 +13,8 @@ import java.util.Set;
 
 import static com.atakmap.android.statesaver.StateSaver.*;
 
+import androidx.annotation.NonNull;
+
 /**
  * Query parameters specifically intended for use with the {@link StateSaver}
  */
@@ -58,6 +60,7 @@ public class StateSaverQueryParameters {
                 super(true);
             }
 
+            @NonNull
             @Override
             public String toString() {
                 return COLUMN_QUERY_ORDER;
@@ -74,6 +77,7 @@ public class StateSaverQueryParameters {
                 super(true);
             }
 
+            @NonNull
             @Override
             public String toString() {
                 return COLUMN_ID;
@@ -90,6 +94,7 @@ public class StateSaverQueryParameters {
                 super(true);
             }
 
+            @NonNull
             @Override
             public String toString() {
                 return COLUMN_LAST_UPDATE;

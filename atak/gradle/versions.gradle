@@ -1,6 +1,6 @@
 ext {
     jacocoVersion = '0.8.5'
     takDevkitVersion = '3.2.0'
-    takKernelVersion = '0.59.1'
+    takKernelVersion = '1.10.5'
     priVersion = '1.1.0'
 }

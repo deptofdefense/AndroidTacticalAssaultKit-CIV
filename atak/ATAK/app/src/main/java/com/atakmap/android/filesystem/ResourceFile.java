@@ -4,6 +4,8 @@ package com.atakmap.android.filesystem;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.gpkg.GeoPackageImporter;
 import com.atakmap.android.grg.GRGMapComponent;
 import com.atakmap.android.util.ATAKUtilities;
@@ -146,6 +148,7 @@ public class ResourceFile implements Parcelable {
             ICON_URI = uri;
         }
 
+        @NonNull
         @Override
         public String toString() {
             return MIME;
@@ -250,6 +253,7 @@ public class ResourceFile implements Parcelable {
         return mContentType;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return String.format("%s %s (%s)", mMimeType, mContentType, mFilePath);

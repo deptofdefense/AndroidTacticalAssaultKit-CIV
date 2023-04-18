@@ -193,16 +193,13 @@ OGR_Content2::OGR_Content2(const char* filePath, char **openOptions, std::size_t
     TAK::Engine::Port::String openPath(filePath);
     TAK::Engine::Port::String gdalVsiPrefix;
     TAK::Engine::Util::ConfigOptions_getOption(gdalVsiPrefix, "gdal-vsi-prefix");
-    if (gdalVsiPrefix) {
+    const bool isZip = !!strstr(openPath, ".zip");
+    if (gdalVsiPrefix || isZip) {
         std::ostringstream strm;
-        strm << gdalVsiPrefix;
-        strm << openPath;
-        openPath = strm.str().c_str();
-    } else if (strstr(openPath, ".zip")) {
-        std::ostringstream strm;
-        strm << "/vsizip";
-        if (openPath[0] != '/')
-            strm << "/";
+        if(isZip)
+            strm << "/vsizip/";
+        if(gdalVsiPrefix)
+            strm << gdalVsiPrefix;
         strm << openPath;
         openPath = strm.str().c_str();
     }
@@ -220,7 +217,8 @@ OGR_Content2::OGR_Content2(const char* filePath, char **openOptions, std::size_t
         err << MEM_FN("OGR_Content2::OGR_Content2") <<
             "Unable to create DataSource from file: " <<
             filePath;
-        throw std::invalid_argument(err.str());
+        dataSource.reset();
+        return;
     }
 
     layerCount = dataSource->GetLayerCount();
@@ -230,7 +228,8 @@ OGR_Content2::OGR_Content2(const char* filePath, char **openOptions, std::size_t
         err << MEM_FN("OGR_Content2::OGR_Content2") <<
             "No Layers found in DataSource from file: " <<
             filePath;
-        throw std::invalid_argument(err.str());
+        dataSource.reset();
+        return;
     }
 
     const char* driverName(dataSource->GetDriver()->GetDescription());
@@ -259,12 +258,12 @@ OGR_Content2::~OGR_Content2() NOTHROWS
 
 TAKErr TAK::Engine::Formats::OGR::OGR_Content2_create(Feature::FeatureDataSource2::ContentPtr &content, const char *filePath, char **openOptions, std::size_t sizeThreshold) NOTHROWS
 {
-    try {
-        content = Feature::FeatureDataSource2::ContentPtr(new OGR_Content2(filePath, openOptions, sizeThreshold), Memory_deleter_const<Feature::FeatureDataSource2::Content, OGR_Content2>);
-        return TE_Ok;
-    } catch (std::invalid_argument &) {
+    std::unique_ptr<OGR_Content2> impl(new OGR_Content2(filePath, openOptions, sizeThreshold));
+    if (!impl || !impl->dataSource)
         return TE_Err;
-    }
+    content = Feature::FeatureDataSource2::ContentPtr(impl.release(),
+                                                      Memory_deleter_const<Feature::FeatureDataSource2::Content, OGR_Content2>);
+    return TE_Ok;
 }
 
 

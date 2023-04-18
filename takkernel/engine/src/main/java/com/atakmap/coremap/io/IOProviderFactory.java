@@ -51,15 +51,6 @@ public class IOProviderFactory {
     private static boolean markedAsDefault = true;
     private static boolean registered = false;
 
-    /**
-     * If the IOProviderFactory has been notified that the Application is closing, do not
-     * notify users of the factory that any providers have changed.     Notification of provider
-     * changes should only happen when the provider is loaded or unloaded.
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
-    public static synchronized void notifyOnDestroy() {
-    }
 
     /**
      * Registers a new IOProvider with the system.
@@ -68,25 +59,13 @@ public class IOProviderFactory {
      */
     public synchronized static void registerProvider(
             final IOProvider provider) {
-        registerProvider(provider, false);
-    }
-
-    /**
-     * Registers a new IOProvider with the system.
-     *
-     * @param provider the file io provider to register
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
-    public synchronized static void registerProvider(
-            final IOProvider provider, boolean def) {
 
         if (registered)
             return;
         registered = true;
 
         ioProvider = provider;
-        markedAsDefault = def;
+        markedAsDefault = false;
 
         if (markedAsDefault && nativeProxy != 0L) {
             // the registered provider is marked as default and native is
@@ -100,16 +79,6 @@ public class IOProviderFactory {
         }
     }
 
-    /**
-     * Unregisters a new IOProvider with the system.
-     *
-     * @param provider the io provider to unregister
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
-    public synchronized static void unregisterProvider(
-            final IOProvider provider) {
-    }
 
     /**
      * Returns <code>true</code> if the current provider is considered
@@ -750,7 +719,7 @@ public class IOProviderFactory {
         final DatabaseInformation info;
         if (file == null)
             info = new DatabaseInformation(
-                    Uri.parse(DatabaseInformation.SCHEME_MEMORY + "://"));
+                    Uri.parse(DatabaseInformation.SCHEME_MEMORY + ":///"));
         else
             info = new DatabaseInformation(Uri.fromFile(file));
         return createDatabase(info);

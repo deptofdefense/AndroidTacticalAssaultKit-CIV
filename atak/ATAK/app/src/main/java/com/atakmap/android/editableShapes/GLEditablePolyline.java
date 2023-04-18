@@ -25,7 +25,7 @@ class GLEditablePolyline extends GLPolyline implements
     private boolean _editable;
     private final EditablePolyline _subject;
 
-    private boolean disableVertexPointDrawing = false;
+    private final boolean disableVertexPointDrawing;
 
     public GLEditablePolyline(MapRenderer surface, EditablePolyline subject) {
         super(surface, subject);

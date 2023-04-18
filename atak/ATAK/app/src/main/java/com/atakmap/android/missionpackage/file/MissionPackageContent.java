@@ -4,6 +4,8 @@ package com.atakmap.android.missionpackage.file;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 
@@ -145,6 +147,7 @@ public class MissionPackageContent extends MissionPackageConfiguration {
         return _compressedSize;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return String.format("%s", _manifestUid);

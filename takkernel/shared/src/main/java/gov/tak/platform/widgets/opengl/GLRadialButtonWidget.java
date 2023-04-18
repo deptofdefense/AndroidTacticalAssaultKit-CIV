@@ -89,8 +89,7 @@ public class GLRadialButtonWidget extends GLAbstractButtonWidget implements
         if (bgColor != 0) {
 
             if (_bgDirty) {
-                _buildRingWedge(_span, _radius, _width, 5d);
-               // _buildRingWedge(_span, _radius, _width, 5d);
+                _bg = _buildChildWedge(_span, _radius, _width, 5d);
                 _bgDirty = false;
             }
 
@@ -122,7 +121,7 @@ public class GLRadialButtonWidget extends GLAbstractButtonWidget implements
             _bg.position(0);
             GLES30.glVertexAttribPointer(shader.getAVertexCoords(), 2, GLES30.GL_FLOAT, false, 0, _bg);
 
-            GLES30.glDrawArrays(GLES30.GL_TRIANGLE_STRIP, 0, _numPoints);
+            GLES30.glDrawArrays(GLES30.GL_TRIANGLE_STRIP, 0, _bg.capacity() / 2);
 
             GLES30.glDisable(GLES30.GL_BLEND);
             GLES30.glDisableVertexAttribArray(shader.getAVertexCoords());
@@ -132,7 +131,7 @@ public class GLRadialButtonWidget extends GLAbstractButtonWidget implements
         }
         if (draw_subm_arrow) {
             // FFFFE35E
-            _childWedge = _buildChildWedge(_span, _radius + _width, 6, 0d);
+            _childWedge = _buildChildWedge(_span, _radius + _width, 6, 5d);
             float r = Color.red(SUNRISE_YELLOW) / 255f;
             float g = Color.green(SUNRISE_YELLOW) / 255f;
             float b = Color.blue(SUNRISE_YELLOW) / 255f;
@@ -205,7 +204,7 @@ public class GLRadialButtonWidget extends GLAbstractButtonWidget implements
 
         if (draw_back_arrow) {
             // FFFFE35E
-            _childWedge = _buildChildWedge(_span, _radius, 6, 0d);
+            _childWedge = _buildChildWedge(_span, _radius, 6, 5d);
 
             float r = Color.red(SUNRISE_YELLOW) / 255f;
             float g = Color.green(SUNRISE_YELLOW) / 255f;
@@ -341,44 +340,6 @@ public class GLRadialButtonWidget extends GLAbstractButtonWidget implements
         });
     }
 
-    private void _buildRingWedge(double angle, double radius,
-            double width,
-            double spacing) {
-        double cuts = Math.floor((72 / (360d / angle)));
-        angle = (angle * Math.PI / 180d); // to radians
-
-        double slices = cuts + 1;
-        _numPoints = 2 * ((int) slices + 1);
-        _bg = gov.tak.platform.widgets.opengl.GLTriangle.createFloatBuffer(_numPoints, 2);
-
-        double r1 = radius + width;
-
-        double a0 = (angle * radius - spacing) / radius;
-        double a1 = (angle * r1 - spacing) / r1;
-
-        double step0 = a0 / slices;
-        double step1 = a1 / slices;
-
-        double t0 = 0d;
-        double t1 = 0d;
-
-        for (int i = 0; i < slices + 1; ++i) {
-
-            float x0 = (float) (radius * Math.cos(t0));
-            float x1 = (float) (r1 * Math.cos(t1));
-            float y0 = (float) (radius * Math.sin(t0));
-            float y1 = (float) (r1 * Math.sin(t1));
-
-            _bg.put(i * 4, x0);
-            _bg.put(i * 4 + 1, y0);
-            _bg.put(i * 4 + 2, x1);
-            _bg.put(i * 4 + 3, y1);
-
-            t0 += step0;
-            t1 += step1;
-        }
-    }
-
     @Override
     protected void _updateIconRef(String uri) {
         super._updateIconRef(uri);
@@ -463,7 +424,6 @@ public class GLRadialButtonWidget extends GLAbstractButtonWidget implements
     private double _radius, _angle;
     private double _width, _span;
     private FloatBuffer _bg;
-    private int _numPoints;
     private boolean _bgDirty;
     private boolean draw_subm_arrow = false;
     private boolean draw_back_arrow = false;

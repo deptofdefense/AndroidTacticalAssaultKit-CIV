@@ -7,6 +7,7 @@ import android.net.Uri;
 import com.atakmap.database.CursorIface;
 import com.atakmap.map.gdal.GdalLibrary;
 import com.atakmap.map.layer.raster.sqlite.SQLiteSingleTileReader;
+import com.atakmap.map.layer.raster.tilereader.TileReader;
 import com.atakmap.map.layer.raster.tilereader.TileReaderSpi;
 import com.atakmap.map.layer.raster.tilereader.TileReaderFactory.Options;
 
@@ -29,7 +30,7 @@ public class MBTilesSingleTileReader extends SQLiteSingleTileReader {
                 if(opts != null && opts.asyncIO != null)
                     asyncio = opts.asyncIO;
                 else
-                    asyncio = GdalLibrary.getMasterIOThread();
+                    asyncio = TileReader.getMasterIOThread();
                 return new MBTilesSingleTileReader(uri.toString(),
                                              asyncio,
                                              db,

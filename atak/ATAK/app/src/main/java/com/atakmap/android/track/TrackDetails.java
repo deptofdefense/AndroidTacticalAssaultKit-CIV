@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
@@ -316,6 +318,7 @@ public class TrackDetails
                         CrumbDatabase.META_TRACK_NODE_TITLE, "");
     }
 
+    @NonNull
     @Override
     public String toString() {
         return getTitle() + ", " + getSummary();

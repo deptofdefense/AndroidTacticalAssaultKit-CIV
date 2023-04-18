@@ -7,11 +7,11 @@ import com.atakmap.android.config.ConfigEnvironment;
 import com.atakmap.android.config.DataParser;
 import com.atakmap.android.config.FlagsParser;
 import com.atakmap.android.config.ParseUtil;
-import com.atakmap.android.maps.MapView;
 import com.atakmap.android.widgets.LayoutWidget;
 import com.atakmap.android.widgets.MapWidget;
 import com.atakmap.android.widgets.WidgetBackground;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.map.opengl.GLRenderGlobals;
 
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -225,7 +225,7 @@ public class MapMenuWidget extends LayoutWidget implements IMapMenuWidget {
                 radius = 45f;
             else
                 _explicitSizing = true;
-            radius *= MapView.DENSITY;
+            radius *= GLRenderGlobals.getRelativeScaling();
 
             float width = DataParser.parseFloatText(
                     attrs.getNamedItem("buttonWidth"), -1f);
@@ -233,7 +233,7 @@ public class MapMenuWidget extends LayoutWidget implements IMapMenuWidget {
                 width = 100f;
             else
                 _explicitSizing = true;
-            width *= MapView.DENSITY * BUTTON_WIDTH_SCALAR;
+            width *= GLRenderGlobals.getRelativeScaling() * BUTTON_WIDTH_SCALAR;
 
             float span = DataParser.parseFloatText(
                     attrs.getNamedItem("buttonSpan"), -1f);

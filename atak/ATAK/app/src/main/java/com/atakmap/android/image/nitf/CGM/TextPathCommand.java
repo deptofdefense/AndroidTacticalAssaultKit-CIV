@@ -1,6 +1,8 @@
 
 package com.atakmap.android.image.nitf.CGM;
 
+import androidx.annotation.NonNull;
+
 import java.io.DataInput;
 import java.io.IOException;
 
@@ -44,6 +46,7 @@ class TextPathCommand extends Command {
             d.setTextPath(this.path);
         }*/
 
+    @NonNull
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

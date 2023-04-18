@@ -1,4 +1,4 @@
-#include "jmodelbuilder.h"
+#include "com_atakmap_map_layer_model_ModelBuilder.h"
 
 #include <map>
 

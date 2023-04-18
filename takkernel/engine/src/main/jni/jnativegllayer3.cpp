@@ -1,4 +1,4 @@
-#include "jnativegllayer3.h"
+#include "com_atakmap_map_layer_opengl_NativeGLLayer3.h"
 
 #include <core/LegacyAdapters.h>
 #include <renderer/core/GLLayer2.h>

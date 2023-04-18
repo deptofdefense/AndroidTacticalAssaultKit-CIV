@@ -1,6 +1,8 @@
 
 package com.atakmap.coremap.conversions;
 
+import androidx.annotation.NonNull;
+
 /**
  * Provides an enumeration for the value of the angle.
  */
@@ -43,6 +45,7 @@ public enum Angle {
         return _name;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return _name;

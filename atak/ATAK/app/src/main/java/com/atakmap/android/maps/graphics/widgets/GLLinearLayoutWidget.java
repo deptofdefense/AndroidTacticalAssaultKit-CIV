@@ -42,7 +42,7 @@ public class GLLinearLayoutWidget extends GLLayoutWidget {
     };
 
     protected final LinearLayoutWidget _subject;
-    protected int _orientation = LinearLayoutWidget.VERTICAL;
+    protected int _orientation;
     protected int _gravity = Gravity.START | Gravity.TOP;
     protected float _childrenWidth, _childrenHeight;
     private GLTriangle.Fan _cropStencil;

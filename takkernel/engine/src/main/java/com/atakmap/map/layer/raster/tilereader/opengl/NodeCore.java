@@ -1,5 +1,7 @@
 package com.atakmap.map.layer.raster.tilereader.opengl;
 
+import android.util.Pair;
+
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.Interop;
@@ -13,6 +15,7 @@ import com.atakmap.map.layer.raster.controls.TileClientControl;
 import com.atakmap.map.layer.raster.tilereader.TileReader;
 import com.atakmap.map.layer.raster.tilereader.TileReaderFactory;
 import com.atakmap.map.opengl.GLDiagnostics;
+import com.atakmap.map.opengl.GLMapRenderable2;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.Matrix;
 import com.atakmap.math.PointD;
@@ -31,10 +34,10 @@ class NodeCore implements Disposable, TileCacheControl.OnTileUpdateListener {
 
     private final static Map<RenderContext, ReferenceCount<NodeContextResources>> resourcesReferences = new IdentityHashMap<>();
 
-    final GLQuadTileNode2.Initializer init;
+    final NodeInitializer init;
     Shader shader;
     final RenderState renderState = new RenderState();
-    GLQuadTileNode2.Initializer.Result initResult;
+    NodeInitializer.Result initResult;
 
     public final TileReader tileReader;
     /** Projects between the image coordinate space and WGS84. */
@@ -87,7 +90,7 @@ class NodeCore implements Disposable, TileCacheControl.OnTileUpdateListener {
     public float colorA;
 
     public boolean debugDrawEnabled;
-    public final GLQuadTileNode3.Options options;
+    public final NodeOptions options;
     public final LinkedList<Releasable> releasables;
     public boolean loadingTextureEnabled;
 
@@ -133,13 +136,15 @@ class NodeCore implements Disposable, TileCacheControl.OnTileUpdateListener {
     private Set<PointI> updatedTilesWrite = new HashSet<>();
     Set<PointI> updatedTiles = new HashSet<>();
 
+    ArrayList<Pair<GLQuadTileNode4.RequestRegion, Collection<GLMapRenderable2>>> requestRegions = new ArrayList<>();
+
     NodeCore(RenderContext ctx,
              String type,
-             GLQuadTileNode2.Initializer init,
-             GLQuadTileNode2.Initializer.Result result,
+             NodeInitializer init,
+             NodeInitializer.Result result,
              int srid,
              double gsdHint,
-             GLQuadTileNode3.Options opts) {
+             NodeOptions opts) {
 
         if (result.reader == null || result.imprecise == null)
             throw new NullPointerException();
@@ -158,7 +163,7 @@ class NodeCore implements Disposable, TileCacheControl.OnTileUpdateListener {
         this.fadeTimerLimit = ConfigOptions.getOption("glquadtilenode2.fade-timer-limit", 0L);
 
         if(opts == null)
-            opts = new GLQuadTileNode3.Options();
+            opts = new NodeOptions();
         this.options = opts;
         this.options.progressiveLoad &= this.tileReader.isMultiResolution();
 
@@ -315,8 +320,8 @@ class NodeCore implements Disposable, TileCacheControl.OnTileUpdateListener {
         this.disposed = true;
     }
 
-    static NodeCore create(RenderContext ctx, ImageInfo info, TileReaderFactory.Options readerOpts, GLQuadTileNode3.Options opts, boolean throwOnReaderFailedInit, GLQuadTileNode2.Initializer init) {
-        GLQuadTileNode2.Initializer.Result result = init.init(info, readerOpts);
+    static NodeCore create(RenderContext ctx, ImageInfo info, TileReaderFactory.Options readerOpts, NodeOptions opts, boolean throwOnReaderFailedInit, NodeInitializer init) {
+        NodeInitializer.Result result = init.init(info, readerOpts);
         if(result.error != null && throwOnReaderFailedInit)
             throw new RuntimeException(result.error);
 

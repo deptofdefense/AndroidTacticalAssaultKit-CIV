@@ -23,6 +23,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.graphics.Color;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.util.AfterTextChangedWatcher;
 import com.atakmap.android.util.SimpleItemSelectedListener;
 import com.atakmap.android.video.manager.VideoManager;
@@ -1023,6 +1025,7 @@ public class AddEditAlias {
             this.nd = nd;
         }
 
+        @NonNull
         public String toString() {
             if (nd != null) {
                 return nd.getLabel();

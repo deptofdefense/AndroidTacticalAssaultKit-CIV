@@ -5,6 +5,7 @@
 #include "feature/Geometry2.h"
 #include "math/Point2.h"
 #include "port/Platform.h"
+#include "renderer/core/GLGlyphBatch.h"
 #include "renderer/core/GLLabel.h"
 #include "renderer/core/GLMapRenderable2.h"
 #include "renderer/GLRenderBatch2.h"
@@ -58,6 +59,8 @@ namespace TAK
                     unsigned int getHints(const uint32_t id) NOTHROWS;
                     void getSize(const uint32_t id, atakmap::math::Rectangle<double>& size_rect) NOTHROWS;
                     void setVisible(const bool visible) NOTHROWS;
+                private :
+                    bool shouldUseFallbackMethod(GLLabel& label) NOTHROWS;
                 public:
                     void draw(const GLGlobeBase& view, const int render_pass) NOTHROWS override;
                     void release() NOTHROWS override;
@@ -70,13 +73,29 @@ namespace TAK
                 private:
                     static float defaultFontSize;
                     static GLText2* getDefaultText() NOTHROWS;
+                    static TextFormatParams* getDefaultTextFormatParams() NOTHROWS;
                 public:
                     float labelRotation;
                     bool absoluteLabelRotation;
                     int64_t labelFadeTimer;
+                // GlyphAtlas {
+                private:
+                    std::unique_ptr<GLGlyphBatchFactory, void(*)(const GLGlyphBatchFactory *)> glyph_batch_factory_;
+                    std::unique_ptr<GLGlyphBatch> glyph_batch_;
+
+                    Util::TAKErr loadAtlas(GLGlyphBatchFactory& factory, const char* font, const char* style, const char* type) NOTHROWS;
+                    GlyphBuffersOpts toGlyphBuffersOpts(GLLabel* label, bool adjustFontNameIfInvalid = true) NOTHROWS;
+
+                    GLGlyphBatchFactory* defaultGlyphBatchFactory() NOTHROWS;
+                    void batchGlyphs(const GLGlobeBase& view, GLGlyphBatch& glyphBatch, GLLabel& label) NOTHROWS;
+                    void batchGlyphs(const GLGlobeBase& view, GLGlyphBatch& glyphBatch, GLLabel& label, const GLLabel::LabelPlacement& placement) NOTHROWS;
+                    void drawBatchedGlyphs(const GLGlobeBase& view, const bool xrayPass) NOTHROWS;
+                // } GlyphAtlas
                 private:
                     std::map<uint32_t, GLLabel> labels_;
                     std::map<Priority, std::set<uint32_t>> label_priorities_;
+                    std::vector<std::tuple<std::string, std::string, std::string>> loadedFonts_;
+                    std::vector<std::tuple<std::string, std::string, std::string>> invalidFonts_;
                     uint32_t map_idx_;
                     uint32_t always_render_idx_;
                     int draw_version_;

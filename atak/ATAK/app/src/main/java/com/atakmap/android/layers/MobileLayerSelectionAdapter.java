@@ -27,14 +27,17 @@ import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.AtakMapView;
-import com.atakmap.map.layer.feature.FeatureDataStore;
+import com.atakmap.map.layer.feature.DataStoreException;
+import com.atakmap.map.layer.feature.FeatureDataStore2;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.feature.geometry.Geometry;
 import com.atakmap.map.layer.raster.AbstractDataStoreRasterLayer2;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
+import com.atakmap.map.layer.raster.OutlinesFeatureDataStore2;
 import com.atakmap.map.layer.raster.RasterDataStore;
 import com.atakmap.map.layer.raster.RasterDataStore.DatasetQueryParameters;
 import com.atakmap.map.layer.raster.mobileimagery.MobileImageryRasterLayer2;
+import com.atakmap.map.layer.raster.mobileimagery.MobileOutlinesDataStore2;
 import com.atakmap.map.layer.raster.osm.OSMUtils;
 import com.atakmap.map.layer.raster.service.OnlineImageryExtension;
 import com.atakmap.map.layer.raster.tilematrix.TileClient;
@@ -97,7 +100,7 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
     };
 
     MobileLayerSelectionAdapter(CardLayer cardLayer,
-            MobileImageryRasterLayer2 layer, FeatureDataStore outlinesDataStore,
+            MobileImageryRasterLayer2 layer, OutlinesFeatureDataStore2 outlinesDataStore,
             MapView mapView, Context context) {
 
         super(layer, outlinesDataStore, mapView, context);
@@ -456,12 +459,17 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
 
         h.sendBtn.setOnClickListener(this);
 
-        FeatureDataStore.FeatureQueryParameters params = new FeatureDataStore.FeatureQueryParameters();
-        params.featureNames = Collections.singleton(name);
+        FeatureDataStore2.FeatureQueryParameters params = new FeatureDataStore2.FeatureQueryParameters();
+        params.names = Collections.singleton(name);
         params.visibleOnly = true;
 
-        final boolean outlineVisible = (this.outlinesDatastore
-                .queryFeaturesCount(params) > 0);
+        boolean outlineVisible = false;
+        try {
+            outlineVisible = (this.outlinesDatastore
+                    .queryFeaturesCount(params) > 0);
+        } catch(DataStoreException ignored) {
+            // cosmetic discrepancy will result, but not critical
+        }
 
         // no outline color
         h.outlineBorder.getBackground().mutate().setColorFilter(0,
@@ -472,8 +480,8 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
         h.outlineBtn.setOnCheckedChangeListener(new OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean s) {
-                FeatureDataStore.FeatureQueryParameters params = new FeatureDataStore.FeatureQueryParameters();
-                params.featureNames = Collections.singleton(name);
+                FeatureDataStore2.FeatureQueryParameters params = new FeatureDataStore2.FeatureQueryParameters();
+                params.names = Collections.singleton(name);
                 LayersMapComponent.setFeaturesVisible(outlinesDatastore,
                         params, s);
                 invalidate(true);
@@ -919,9 +927,9 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
             svc.setOfflineOnlyMode(offline);
         invalidate(true);
 
-        FeatureDataStore fds = getOutlinesDataStore();
-        if (fds instanceof MobileOutlinesDataStore) {
-            ((MobileOutlinesDataStore) fds).setUnion(!offline);
+        FeatureDataStore2 fds = getOutlinesDataStore();
+        if (fds instanceof MobileOutlinesDataStore2) {
+            ((MobileOutlinesDataStore2) fds).setUnion(!offline);
         }
     }
 

@@ -7,6 +7,8 @@ import android.os.Environment;
 import android.content.Context;
 import android.content.Intent;
 
+import androidx.annotation.NonNull;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
@@ -181,6 +183,7 @@ public class NetworkDeviceManager {
                 return description;
             }
 
+            @NonNull
             public String toString() {
                 return description;
             }
@@ -359,6 +362,7 @@ public class NetworkDeviceManager {
         /**
          * Provides a human readable string representation of the network device.
          */
+        @NonNull
         public String toString() {
             String name = "missing";
 

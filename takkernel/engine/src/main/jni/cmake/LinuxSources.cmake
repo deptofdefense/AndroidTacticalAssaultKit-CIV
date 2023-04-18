@@ -10,6 +10,7 @@ set(takenginejni_LINUX_DEFS
 set(takenginejni_LINUX_INCS
     ${khronos_INCLUDE_DIRS}
     ${JNI_INCLUDE_DIRS}
+    ${SRC_DIR}/../../../build/java/generated/jni
 )
 
 set(takenginejni_LINUX_LDIRS

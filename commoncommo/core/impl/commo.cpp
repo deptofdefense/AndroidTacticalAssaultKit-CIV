@@ -470,6 +470,7 @@ struct CommoImpl
 Commo::Commo(CommoLogger *logger, const ContactUID *ourUID,
         const char *ourCallsign, netinterfaceenums::NetInterfaceAddressMode addrMode) : impl(NULL)
 {
+    InternalUtils::logprintf(logger, CommoLogger::LEVEL_INFO, "Commo %s initializing", getVersionString());
     impl = new impl::CommoImpl(logger, ourUID, ourCallsign, addrMode);
 }
 

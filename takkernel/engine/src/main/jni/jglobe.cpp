@@ -1,4 +1,4 @@
-#include "jglobe.h"
+#include "com_atakmap_map_Globe.h"
 
 #include <core/AtakMapController.h>
 #include <core/AtakMapView.h>

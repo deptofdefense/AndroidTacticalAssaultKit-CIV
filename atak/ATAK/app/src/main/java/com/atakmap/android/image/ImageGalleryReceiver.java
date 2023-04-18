@@ -266,7 +266,6 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
                 Log.d(TAG, "Processing directory: " + dirPath);
                 List<File> fileList = AttachmentManager.getAttachments(uid);
 
-                onDeleteAction = null;
                 onAddAction = null;
                 curPath = null;
 

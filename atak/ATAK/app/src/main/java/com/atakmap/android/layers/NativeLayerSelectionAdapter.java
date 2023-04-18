@@ -21,16 +21,17 @@ import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.AtakMapView;
+import com.atakmap.map.layer.feature.DataStoreException;
 import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.FeatureCursor;
-import com.atakmap.map.layer.feature.FeatureDataStore;
-import com.atakmap.map.layer.feature.FeatureDataStore.FeatureQueryParameters;
-import com.atakmap.map.layer.feature.FeatureDataStore.FeatureQueryParameters.RegionSpatialFilter;
+import com.atakmap.map.layer.feature.FeatureDataStore2.FeatureQueryParameters;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.feature.geometry.Geometry;
+import com.atakmap.map.layer.feature.geometry.GeometryFactory;
 import com.atakmap.map.layer.feature.style.BasicStrokeStyle;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
 import com.atakmap.map.layer.raster.LocalRasterDataStore;
+import com.atakmap.map.layer.raster.OutlinesFeatureDataStore2;
 import com.atakmap.map.layer.raster.RasterDataStore.DatasetDescriptorCursor;
 import com.atakmap.map.layer.raster.RasterDataStore.DatasetQueryParameters;
 import com.atakmap.map.layer.raster.nativeimagery.NativeImageryRasterLayer2;
@@ -77,7 +78,7 @@ class NativeLayerSelectionAdapter extends LayerSelectionAdapter
     private String expanded;
 
     public NativeLayerSelectionAdapter(NativeImageryRasterLayer2 layer,
-            FeatureDataStore outlineDatastore,
+            OutlinesFeatureDataStore2 outlineDatastore,
             MapView mapView, Context context) {
 
         super(layer, outlineDatastore, mapView, context);
@@ -266,7 +267,7 @@ class NativeLayerSelectionAdapter extends LayerSelectionAdapter
             else if (v == h.outlineBtn) {
                 try {
                     FeatureQueryParameters params = new FeatureQueryParameters();
-                    params.featureNames = Collections.singleton(
+                    params.names = Collections.singleton(
                             h.selection.getName());
                     outlinesDatastore.setFeaturesVisible(params,
                             h.outlineBtn.isChecked());
@@ -364,9 +365,9 @@ class NativeLayerSelectionAdapter extends LayerSelectionAdapter
     }
 
     private FeatureCursor queryOutlines(LayerSelection selection,
-            boolean visibleOnly) {
+            boolean visibleOnly) throws DataStoreException {
         FeatureQueryParameters params = new FeatureQueryParameters();
-        params.featureNames = Collections.singleton(selection.getName());
+        params.names = Collections.singleton(selection.getName());
         params.visibleOnly = visibleOnly;
         params.limit = 1;
         return outlinesDatastore.queryFeatures(params);
@@ -449,8 +450,11 @@ class NativeLayerSelectionAdapter extends LayerSelectionAdapter
         boolean showOutlines = getOutlinesDataStore() != null;
         CompoundButton outlinesButton = view.getOutlineToggleButton();
         if (showOutlines && outlinesButton != null) {
-            final boolean outlinesVisible = getOutlinesDataStore()
-                    .queryFeaturesCount(getAOIParams()) > 0;
+            boolean outlinesVisible = false;
+            try {
+                outlinesVisible = getOutlinesDataStore()
+                        .queryFeaturesCount(getAOIParams()) > 0;
+            } catch(DataStoreException ignored) {}
             view.setOnOutlineToggleListener(null);
             view.setOutlineToggleState(outlinesVisible);
             view.setOnOutlineToggleListener(new OnCheckedChangeListener() {
@@ -470,9 +474,9 @@ class NativeLayerSelectionAdapter extends LayerSelectionAdapter
         GeoBounds aoi = _mapView.getBounds();
         FeatureQueryParameters params = new FeatureQueryParameters();
         params.visibleOnly = true;
-        params.spatialFilter = new RegionSpatialFilter(
-                new GeoPoint(aoi.getNorth(), aoi.getWest()),
-                new GeoPoint(aoi.getSouth(), aoi.getEast()));
+        params.spatialFilter = GeometryFactory.fromEnvelope(new Envelope(
+                aoi.getWest(), aoi.getSouth(), 0d,
+                aoi.getEast(), aoi.getNorth(), 0d));
         params.limit = 1;
         return params;
     }

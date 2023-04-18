@@ -3,11 +3,17 @@ package com.atakmap.interop;
 
 import gov.tak.api.annotation.DontObfuscate;
 
+import java.lang.annotation.Native;
+
 @DontObfuscate
 public final class Pointer {
+    @Native
     public final static int RAW = 0;
+    @Native
     public final static int SHARED = 1;
+    @Native
     public final static int UNIQUE = 2;
+    @Native
     public final static int REFERENCE = 3;
 
     public final static Pointer NULL = new Pointer(0L, 0L, RAW, 0L);

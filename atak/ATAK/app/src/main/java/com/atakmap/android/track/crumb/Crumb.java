@@ -1,6 +1,8 @@
 
 package com.atakmap.android.track.crumb;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.maps.DefaultMetaDataHolder;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MetaDataHolder;
@@ -128,6 +130,7 @@ public class Crumb extends PointMapItem {
         return color;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return getPoint().getLongitude() + "," + getPoint().getLatitude() + ","

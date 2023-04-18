@@ -22,15 +22,14 @@
     </PreferenceCategory>
     <PreferenceCategory 
         android:title="@string/historyPreferences">
-       <Preference
+       <com.atakmap.android.gui.PanPreference
             android:summary="@string/preferences_text32"
             android:title="@string/preferences_text33"
             android:key="exportHistory" />
-       <Preference
+       <com.atakmap.android.gui.PanPreference
             android:summary="@string/preferences_text34"
             android:title="@string/preferences_text35"
-            android:key="clearHistory" 
-           />
+            android:key="clearHistory" />
     </PreferenceCategory>
     <PreferenceCategory
         android:title="@string/geochatPreferences">

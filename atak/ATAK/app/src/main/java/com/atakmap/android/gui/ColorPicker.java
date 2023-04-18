@@ -96,7 +96,7 @@ public class ColorPicker extends LinearLayout {
     /**
      * Update the color preview box
      */
-    @ModifierApi(since = "4.5", target = "4.8", modifiers = {
+    @ModifierApi(since = "4.6", target = "4.9", modifiers = {
             "private"
     })
     protected void updateColorPreview() {

@@ -107,6 +107,7 @@ set(takengine_feature_COMMON_SRCS
     ${SRC_DIR}/feature/DefaultDriverDefinition2.cpp
     ${SRC_DIR}/feature/DefaultSchemaDefinition.cpp
     ${SRC_DIR}/feature/DrawingTool.cpp
+    ${SRC_DIR}/feature/Envelope.cpp
     ${SRC_DIR}/feature/Envelope2.cpp
     ${SRC_DIR}/feature/FDB.cpp
     ${SRC_DIR}/feature/Feature.cpp
@@ -118,6 +119,8 @@ set(takengine_feature_COMMON_SRCS
     ${SRC_DIR}/feature/FeatureDataSource2.cpp
     ${SRC_DIR}/feature/FeatureDataStore.cpp
     ${SRC_DIR}/feature/FeatureDataStore2.cpp
+    ${SRC_DIR}/feature/FeatureDataStoreLruCacheLogic.cpp
+    ${SRC_DIR}/feature/FeatureDataStoreProxy.cpp
     ${SRC_DIR}/feature/FeatureHitTestControl.cpp
     ${SRC_DIR}/feature/FeatureLayer.cpp
     ${SRC_DIR}/feature/FeatureLayer2.cpp
@@ -511,6 +514,7 @@ set(takengine_renderer_core_COMMON_SRCS
     ${SRC_DIR}/renderer/core/GLGlobe.cpp
     ${SRC_DIR}/renderer/core/GLGlobeBase.cpp
     ${SRC_DIR}/renderer/core/GLGlobeSurfaceRenderer.cpp
+    ${SRC_DIR}/renderer/core/GLGlyphBatch.cpp
     ${SRC_DIR}/renderer/core/GLLayer2.cpp
     ${SRC_DIR}/renderer/core/GLLayerFactory2.cpp
     ${SRC_DIR}/renderer/core/GLLayerSpi2.cpp
@@ -522,6 +526,7 @@ set(takengine_renderer_core_COMMON_SRCS
     ${SRC_DIR}/renderer/core/GLOffscreenVertex.cpp
     ${SRC_DIR}/renderer/core/GLResolvable.cpp
     ${SRC_DIR}/renderer/core/GLResolvableMapRenderable2.cpp
+    ${SRC_DIR}/renderer/core/GlyphAtlas.cpp
 )
 
 set(takengine_renderer_core_controls_COMMON_SRCS
@@ -583,6 +588,7 @@ set(takengine_renderer_model_COMMON_SRCS
     ${SRC_DIR}/renderer/model/SceneLayerControl.cpp
     ${SRC_DIR}/renderer/model/SceneLayerControl2.cpp
     ${SRC_DIR}/renderer/model/SceneObjectControl.cpp
+    ${SRC_DIR}/renderer/model/SceneObjectControl2.cpp
 )
 
 set(takengine_renderer_raster_base_COMMON_SRCS
@@ -655,7 +661,6 @@ set(takengine_util_COMMON_SRCS
     # Util
     ${SRC_DIR}/util/AttributeSet.cpp
     ${SRC_DIR}/util/AtomicCounter_GCC.cpp
-    ${SRC_DIR}/util/AtomicCounter_NDK.cpp
     ${SRC_DIR}/util/AtomicCounter_OSAtomic.cpp
     ${SRC_DIR}/util/AtomicCounter_WinAPI.cpp
     ${SRC_DIR}/util/AtomicRefCountable.cpp
@@ -812,6 +817,8 @@ set(takengine_feature_COMMON_HEADERS
     ${SRC_DIR}/feature/FeatureDataSource.h
     ${SRC_DIR}/feature/FeatureDataSource2.h
     ${SRC_DIR}/feature/FeatureDataStore2.h
+    ${SRC_DIR}/feature/FeatureDataStoreLruCacheLogic.h
+    ${SRC_DIR}/feature/FeatureDataStoreProxy.h
     ${SRC_DIR}/feature/FeatureHitTestControl.h
     ${SRC_DIR}/feature/FeatureLayer.h
     ${SRC_DIR}/feature/FeatureLayer2.h
@@ -1224,6 +1231,7 @@ set(takengine_renderer_core_COMMON_HEADERS
     ${SRC_DIR}/renderer/core/GLGlobeSurfaceRenderer.h
     ${SRC_DIR}/renderer/core/GLLabel.h
     ${SRC_DIR}/renderer/core/GLLabelManager.h
+    ${SRC_DIR}/renderer/core/GLGlyphBatch.h
     ${SRC_DIR}/renderer/core/GLLayer2.h
     ${SRC_DIR}/renderer/core/GLLayerFactory2.h
     ${SRC_DIR}/renderer/core/GLLayerSpi2.h
@@ -1234,6 +1242,7 @@ set(takengine_renderer_core_COMMON_HEADERS
     ${SRC_DIR}/renderer/core/GLOffscreenVertex.h
     ${SRC_DIR}/renderer/core/GLResolvable.h
     ${SRC_DIR}/renderer/core/GLResolvableMapRenderable2.h
+    ${SRC_DIR}/renderer/core/GlyphAtlas.h
 )
 
 set(takengine_renderer_core_controls_COMMON_HEADERS
@@ -1284,6 +1293,7 @@ set(takengine_renderer_model_COMMON_HEADERS
     ${SRC_DIR}/renderer/model/SceneLayerControl.h
     ${SRC_DIR}/renderer/model/SceneLayerControl2.h
     ${SRC_DIR}/renderer/model/SceneObjectControl.h
+    ${SRC_DIR}/renderer/model/SceneObjectControl2.h
 )
 
 set(takengine_renderer_raster_base_COMMON_HEADERS

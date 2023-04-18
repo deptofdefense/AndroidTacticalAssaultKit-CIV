@@ -3,6 +3,7 @@
 #define ATAKMAP_UTIL_SYNCOBJECT_H
 
 #include <exception>
+#include <string>
 
 #include "thread/Mutex.h"
 #include "thread/Cond.h"

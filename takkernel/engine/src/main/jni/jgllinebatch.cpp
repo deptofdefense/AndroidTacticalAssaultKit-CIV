@@ -1,5 +1,5 @@
 #include "common.h"
-#include "jgllinebatch.h"
+#include "com_atakmap_opengl_GLLineBatch.h"
 
 #include <cstring>
 

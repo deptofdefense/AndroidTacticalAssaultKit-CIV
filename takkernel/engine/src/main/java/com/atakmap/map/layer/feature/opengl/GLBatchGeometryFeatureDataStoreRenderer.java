@@ -94,8 +94,6 @@ public class GLBatchGeometryFeatureDataStoreRenderer extends
             final Layer layer = object.second;
             if(layer instanceof FeatureLayer)
                 return new GLBatchGeometryFeatureDataStoreRenderer(ctx, (FeatureLayer)layer);
-            else if(layer instanceof FeatureLayer2)
-                return new GLBatchGeometryFeatureDataStoreRenderer(ctx, (FeatureLayer2)layer);
             else if(layer instanceof FeatureLayer3)
                 return new GLBatchGeometryFeatureDataStoreRenderer(ctx, (FeatureLayer3)layer);
             return null;
@@ -126,10 +124,20 @@ public class GLBatchGeometryFeatureDataStoreRenderer extends
     private final ClampToGroundControlImpl nadirClampControl;
     private final Set<MapControl> controls;
 
+    /** @deprecated use {@link #GLBatchGeometryFeatureDataStoreRenderer(MapRenderer, FeatureLayer3)}
+     *              or {@link #GLBatchGeometryFeatureDataStoreRenderer(MapRenderer, Layer2, FeatureDataStore2)}
+     */
+    @Deprecated
+    @gov.tak.api.annotation.DeprecatedApi(since = "4.6", forRemoval = true, removeAt = "4.9")
     public GLBatchGeometryFeatureDataStoreRenderer(MapRenderer surface, FeatureLayer subject) {
         this(surface, subject, Adapters.adapt(subject.getDataStore()));
     }
-    
+
+    /** @deprecated use {@link #GLBatchGeometryFeatureDataStoreRenderer(MapRenderer, FeatureLayer3)}
+     *              or {@link #GLBatchGeometryFeatureDataStoreRenderer(MapRenderer, Layer2, FeatureDataStore2)}
+     */
+    @Deprecated
+    @gov.tak.api.annotation.DeprecatedApi(since = "4.6", forRemoval = true, removeAt = "4.9")
     public GLBatchGeometryFeatureDataStoreRenderer(MapRenderer surface, FeatureLayer2 subject) {
         this(surface, subject, Adapters.adapt(subject.getDataStore()));
     }

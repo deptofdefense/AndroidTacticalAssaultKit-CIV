@@ -58,8 +58,8 @@ ManagedDatabaseProvider::create(DatabasePtr& result, const DatabaseInformation& 
 {
     LocalJNIEnv env;
 
-    const char* uriStr;
-    information.getUri(&uriStr);
+    Port::String uriStr;
+    information.getUri(uriStr);
     JNILocalRef jstr(*env, env->NewStringUTF(uriStr));
     if (env->ExceptionCheck())
     {

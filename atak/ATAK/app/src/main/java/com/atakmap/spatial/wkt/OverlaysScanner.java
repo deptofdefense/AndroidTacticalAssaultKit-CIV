@@ -5,10 +5,8 @@ import com.atakmap.coremap.concurrent.NamedThreadFactory;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.layer.feature.DataSourceFeatureDataStore;
-import com.atakmap.map.layer.feature.PersistentDataSourceFeatureDataStore;
 import com.atakmap.spatial.file.FileDatabase;
 import com.atakmap.spatial.file.SpatialDbContentSource;
-import com.atakmap.util.DirectExecutorService;
 
 import java.io.File;
 import java.util.Collection;
@@ -53,17 +51,8 @@ final class OverlaysScanner {
             Collection<FileDatabase> filedbs,
             AtomicBoolean cancelToken) {
 
-        // XXX - PersistentDataSourceFeatureDataStore requires that all inserts
-        //       occur on the originating thread if currently in a transaction.
-        //       Utilize an appropriate ExecutorService to support
-        ExecutorService ex;
-        if ((dataStore instanceof PersistentDataSourceFeatureDataStore) &&
-                dataStore.isInBulkModification()) {
-
-            ex = new DirectExecutorService();
-        } else
-            ex = Executors.newFixedThreadPool(5,
-                    new NamedThreadFactory("OverlaysScanner-Pool"));
+        ExecutorService ex = Executors.newFixedThreadPool(5,
+                new NamedThreadFactory("OverlaysScanner-Pool"));
 
         scanImpl(ex, dataStore, file, 0, sources, filedbs, cancelToken);
         ex.shutdown();

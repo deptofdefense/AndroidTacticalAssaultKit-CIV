@@ -17,6 +17,7 @@ public class SeekerBarPanelView extends LinearLayout {
     private TextView _mslText;
     private TextView _gainText;
     private TextView _slopeText;
+    private TextView _timeText;
     private TextView _cpText;
 
     public SeekerBarPanelView(Context context, AttributeSet attrs) {
@@ -33,6 +34,7 @@ public class SeekerBarPanelView extends LinearLayout {
         _mslText = _topLevelView.findViewById(R.id.MslText);
         _gainText = _topLevelView.findViewById(R.id.GainText);
         _slopeText = _topLevelView.findViewById(R.id.SlopeText);
+        _timeText = _topLevelView.findViewById(R.id.TimeText);
         _cpText = _topLevelView.findViewById(R.id.ControlPointText);
     }
 
@@ -50,6 +52,10 @@ public class SeekerBarPanelView extends LinearLayout {
 
     public TextView getSlopeText() {
         return _slopeText;
+    }
+
+    public TextView getTimeText() {
+        return _timeText;
     }
 
     public TextView getCpText() {

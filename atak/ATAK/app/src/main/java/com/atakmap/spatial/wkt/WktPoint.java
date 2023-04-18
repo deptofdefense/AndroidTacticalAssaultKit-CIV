@@ -3,6 +3,8 @@ package com.atakmap.spatial.wkt;
 
 import android.graphics.Rect;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.coremap.log.Log;
@@ -105,6 +107,7 @@ public class WktPoint extends WktGeometry {
         return 1;
     }
 
+    @NonNull
     public String toString() {
         return this.getClass().getSimpleName() + " " + coords;
     }

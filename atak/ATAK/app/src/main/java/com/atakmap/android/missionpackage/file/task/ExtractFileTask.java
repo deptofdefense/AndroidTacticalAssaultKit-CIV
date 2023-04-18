@@ -58,8 +58,7 @@ public class ExtractFileTask extends MissionPackageBaseTask {
                         + source.getAbsolutePath());
         publishProgress(new ProgressDialogUpdate(10, null));
 
-        if (!MissionPackageExtractor.ExtractFile(source, _content)) {
-            // TODO print more user friendly error message (just name of file)
+        if (!MissionPackageExtractor.ExtractFile(_manifest, source, _content)) {
             cancel("Failed to extract: " + _content.getManifestUid());
         }
 

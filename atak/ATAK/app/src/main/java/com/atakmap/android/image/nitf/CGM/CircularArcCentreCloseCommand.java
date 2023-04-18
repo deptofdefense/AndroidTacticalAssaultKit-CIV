@@ -1,6 +1,8 @@
 
 package com.atakmap.android.image.nitf.CGM;
 
+import androidx.annotation.NonNull;
+
 import java.io.DataInput;
 import java.io.IOException;
 
@@ -25,6 +27,7 @@ public class CircularArcCentreCloseCommand extends CircularArcCentreCommand {
         }
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "CircularArcCentreClose [" + this.center.x + "," + this.center.y

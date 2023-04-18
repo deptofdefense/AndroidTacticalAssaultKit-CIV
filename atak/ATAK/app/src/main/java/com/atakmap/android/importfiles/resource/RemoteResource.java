@@ -4,6 +4,8 @@ package com.atakmap.android.importfiles.resource;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.coremap.cot.event.CotDetail;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.cot.event.CotPoint;
@@ -301,6 +303,7 @@ public class RemoteResource implements Parcelable {
                         : getUrl().hashCode()));
     }
 
+    @NonNull
     @Override
     public String toString() {
         return String.format(LocaleUtil.getCurrent(), "%s %s %s %s %d %d",

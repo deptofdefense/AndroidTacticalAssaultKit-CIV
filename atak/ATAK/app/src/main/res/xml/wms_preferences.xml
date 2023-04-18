@@ -2,10 +2,12 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <PreferenceCategory 
         android:title="@string/wms_preferences">
-       <Preference android:title="@string/redeploy_wms_sources"
-                android:key="redeploywms"/>
-       <Preference android:title="@string/wms_connect_tmeout"
-                android:key="wmsconnecttimeout"/>
+       <com.atakmap.android.gui.PanPreference
+           android:title="@string/redeploy_wms_sources"
+           android:key="redeploywms"/>
+       <com.atakmap.android.gui.PanPreference
+           android:title="@string/wms_connect_tmeout"
+           android:key="wmsconnecttimeout"/>
         <com.atakmap.android.gui.PanCheckBoxPreference
             android:title="@string/preferences_text58"
             android:summary="@string/preferences_text59"

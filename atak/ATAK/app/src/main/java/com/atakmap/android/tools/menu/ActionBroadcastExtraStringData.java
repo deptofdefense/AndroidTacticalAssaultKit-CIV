@@ -4,6 +4,8 @@ package com.atakmap.android.tools.menu;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 
 import org.simpleframework.xml.Attribute;
@@ -84,6 +86,7 @@ public class ActionBroadcastExtraStringData implements Parcelable {
                         : getValue().hashCode()));
     }
 
+    @NonNull
     @Override
     public String toString() {
         return String.format(LocaleUtil.getCurrent(), "%s %s", getKey(),

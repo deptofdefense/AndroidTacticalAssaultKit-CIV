@@ -2,7 +2,8 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <PreferenceCategory
         android:title="@string/basic_display_settings">
-       <Preference android:title="@string/unitDisplayPreferences"
+       <com.atakmap.android.gui.PanPreference
+           android:title="@string/unitDisplayPreferences"
             android:key="unitPreferences"
             android:summary="@string/preferences_text132"
             android:icon="@drawable/ic_menu_ruler" />
@@ -10,13 +11,13 @@
             android:title="@string/enable_zoom_title"
             android:defaultValue="true"
             android:key="map_zoom_visible"
-            android:summary="@string/preferences_text134"
+            android:summary="@string/enable_zoom_text"
             android:icon="@drawable/zoom" />
         <com.atakmap.android.gui.PanCheckBoxPreference
             android:title="@string/preferences_text133"
             android:defaultValue="true"
             android:key="map_scale_visible"
-            android:summary="@string/preferences_text136"
+            android:summary="@string/preferences_text134"
             android:icon="@drawable/ic_mapscale" />
         <com.atakmap.android.gui.PanCheckBoxPreference
             android:title="@string/preferences_text135"

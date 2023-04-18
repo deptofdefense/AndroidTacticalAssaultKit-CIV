@@ -175,29 +175,6 @@ public interface FeatureDataSource {
             return new Feature(this);
         }
 
-        /**
-         * Creates a new feature from the associated properties based on the
-         * coding.
-         * 
-         * @return the Feature
-         * 
-         * @throws  UnsupportedOperationException   If the specified geometry
-         *                                          or style codings are not
-         *                                          defined
-         * @throws  ClassCastException              If the class for
-         *                                          {@link #rawGeom} or
-         *                                          {@link #rawStyle} does not
-         *                                          match the class expected for
-         *                                          the respective coding.
-         *                                          
-         * @deprecated use {@link #get()}
-         */
-        @Deprecated
-        @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-        public Feature getFeature() {
-            return this.get();
-        }
-
         @Override
         public Object getRawGeometry() {
             return this.rawGeom;

@@ -135,14 +135,16 @@ public class CotEventTester extends ATAKInstrumentedTest {
 
     private String getValid4() {
         return "<?xml version=\"1.0\" standalone=\"yes\"?>" +
-                "<event version=\"2.0\" type=\"b-t-f\" access=\"\" uid=\"1649717607000\" " +
-                "time=\"2022-04-11T22:53:27.000Z\" start=\"2022-04-11T22:53:27.000Z\" " +
-                "stale=\"2022-04-11T22:53:42.000Z\" how=\"m-c\" qos=\"1-r-c\">" +
-                "<point lat=\"0\" lon=\"0\" hae=\"0\" ce=\"9999999\" le=\"9999999\"/>" +
+                "<event version=\"2.0\" type=\"b-t-f\" access=\"\" uid=\"1649717607000\" "
+                +
+                "time=\"2022-04-11T22:53:27.000Z\" start=\"2022-04-11T22:53:27.000Z\" "
+                +
+                "stale=\"2022-04-11T22:53:42.000Z\" how=\"m-c\" qos=\"1-r-c\">"
+                +
+                "<point lat=\"0\" lon=\"0\" hae=\"0\" ce=\"9999999\" le=\"9999999\"/>"
+                +
                 "<detail><test>&#x411;&#x456; &#x43D;&#x435; &#x43F;&#x43E;</test></detail></event>";
 
     }
-
-
 
 }

@@ -3,6 +3,8 @@ package com.atakmap.map.layer.feature;
 import com.atakmap.map.layer.feature.geometry.Geometry;
 import com.atakmap.map.layer.feature.style.Style;
 
+import java.lang.annotation.Native;
+
 /**
  * The definition of a feature. Feature properties may be recorded as raw,
  * unprocessed data of several well-defined types. Utilization of
@@ -16,34 +18,40 @@ public interface FeatureDefinition {
      * {@link #rawGeom} is the a {@link String} that is the OGC WKT
      * representation for geometry.
      */
+    @Native
     public static final int GEOM_WKT = 0;
     
     /**
      * {@link #rawGeom} is the a <code>byte[]</code> that is the OGC WKB
      * representation for geometry.
      */
+    @Native
     public static final int GEOM_WKB = 1;
     
     /**
      * {@link #rawGeom} is the a <code>byte[]</code> that is the SpataiLite
      * blob representation for geometry.
      */
+    @Native
     public static final int GEOM_SPATIALITE_BLOB = 2;
     
     /**
      * {@link #rawGeom} is the a {@link Geometry} object..
      */
+    @Native
     public static final int GEOM_ATAK_GEOMETRY = 3;
     
     /**
      * {@link #rawGeom} is the a {@link String} that adheres toe the OGR
      * Style Specification.
      */
+    @Native
     public static final int STYLE_OGR = 0;
-    
+
     /**
      * {@link #rawGeom} is the a {@link Style} object..
      */
+    @Native
     public static final int STYLE_ATAK_STYLE = 1;
     
     /**

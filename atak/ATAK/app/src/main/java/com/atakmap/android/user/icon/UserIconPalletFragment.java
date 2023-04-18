@@ -14,6 +14,8 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -664,7 +666,7 @@ public class UserIconPalletFragment extends Fragment {
             }
 
             View row = convertView;
-            ViewHolder holder = null;
+            ViewHolder holder;
 
             if (row == null) {
                 LayoutInflater inflater = ((Activity) mContext)
@@ -715,6 +717,7 @@ public class UserIconPalletFragment extends Fragment {
         }
     }
 
+    @NonNull
     @Override
     public String toString() {
         return iconset == null ? "<no iconset>" : iconset.toString();

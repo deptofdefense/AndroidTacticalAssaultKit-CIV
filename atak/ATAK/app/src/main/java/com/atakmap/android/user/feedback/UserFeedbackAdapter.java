@@ -216,13 +216,13 @@ class UserFeedbackAdapter extends BaseAdapter {
             }
         };
     }
-    
-    
-    private void notifyUser(Feedback entry) { 
+
+    private void notifyUser(Feedback entry) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setTitle(R.string.submit);
-        builder.setMessage(context.getString(R.string.userfeedback_submit_message,
-                entry.get("title")));
+        builder.setMessage(
+                context.getString(R.string.userfeedback_submit_message,
+                        entry.get("title")));
         builder.setNegativeButton(R.string.ok, null);
         builder.show();
     }

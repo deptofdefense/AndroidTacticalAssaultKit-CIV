@@ -1,4 +1,4 @@
-#include "jglmapview.h"
+#include "com_atakmap_map_opengl_GLMapView_OsrUtils.h"
 #include "ogr_spatialref.h"
 #include "ogr_api.h"
 #include "ogr_core.h"

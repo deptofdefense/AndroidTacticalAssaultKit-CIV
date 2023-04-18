@@ -5,6 +5,8 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.SystemClock;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.drawing.mapItems.DrawingRectangle;
 import com.atakmap.android.editableShapes.EditablePolyline;
 import com.atakmap.android.hashtags.util.HashtagUtils;
@@ -63,10 +65,22 @@ public class MissionPackageManifest implements Parcelable {
     MissionPackageContents _contents;
 
     /**
-     * Path to the Mission Package .zip file
+     * Path on the filesystem to the Mission Package .zip file
      */
     String _path;
     String _lastSavedPath;
+
+    /**
+     * All of the elements of a mission package are relative to the position of the
+     * MANIFEST directory.  i.e. if MANIFEST/manifest.xml is in nested directory(ies) then all
+     * mission package content must be as well
+     *  e.g. <zip file>/MANIFEST/manifest.xml would require <zip file>/test.kml
+     * e.g. <zip file>/mydata/MANIFEST/manifest.xml would require <zip file>/mydata/test.kml
+     *
+     * This supports a parent directory e.g. typical if a Windows user right clicks to compress
+     * a directory
+     */
+    String baseDirectory;
 
     @Attribute(name = "version", required = true)
     private int VERSION = 2;
@@ -89,6 +103,7 @@ public class MissionPackageManifest implements Parcelable {
     }
 
     public MissionPackageManifest(String name, String uid, String dir) {
+        baseDirectory = "";
         _configuration = new MissionPackageConfiguration();
         _contents = new MissionPackageContents();
 
@@ -96,7 +111,7 @@ public class MissionPackageManifest implements Parcelable {
         if (!FileSystemUtils.isEmpty(name))
             setName(name);
 
-        _path = getPath(dir, name);
+        _path = getFileSystemPath(dir, name);
         _lastSavedPath = null;
     }
 
@@ -133,6 +148,41 @@ public class MissionPackageManifest implements Parcelable {
         return _configuration;
     }
 
+
+    /**
+     * All of the files pointed to in the manifest are relative to the MANIFEST directory
+     * @param manifestLocation the exact location of the MANIFEST file in the datapackage.   Setting
+     *                 this makes sure that resolution of all files is done relatively.
+     */
+    public void setManifestLocation(String manifestLocation) {
+        if (manifestLocation == null)
+            baseDirectory = "";
+        else
+            baseDirectory = manifestLocation.replaceAll(MissionPackageBuilder.MANIFEST_XML, "");
+    }
+
+    /**
+     * Returns the base directory that is to be used only when extracting files from the data
+     * package.   In a well formed datapackage this should be empty.
+     * @return in a well formed datapackage, this should be empty.   If not a well formed
+     * datapackage this is likely going to be the directory that was accidentally zipped wth the
+     * datapackage contents underneath.  Think windows right click folder, the folder now makes it
+     * so it is no longer a datapackage.
+     */
+    public String getBaseDirectory() {
+        return baseDirectory;
+    }
+
+    /**
+     * Get the path to include the base directory
+     *
+     * @param zipEntry
+     * @return
+     */
+    public String getZipPath(String zipEntry) {
+        return this.baseDirectory + zipEntry;
+    }
+
     /**
      * dir/<name>.zip
      * 
@@ -140,7 +190,7 @@ public class MissionPackageManifest implements Parcelable {
      * @param name
      * @return
      */
-    private static String getPath(String dir, String name) {
+    private static String getFileSystemPath(String dir, String name) {
         return dir + File.separator + name + ".zip";
     }
 
@@ -230,12 +280,12 @@ public class MissionPackageManifest implements Parcelable {
     public void setName(String name, String dir) {
         _lastSavedPath = _path;
         setName(name);
-        _path = getPath(dir, name);
+        _path = getFileSystemPath(dir, name);
         Log.d(TAG, "setName: " + this + ", old path: " + _lastSavedPath);
     }
 
     /**
-     * Get path (including directory and filename)
+     * Get path of zip on filesystem (including directory and filename)
      * 
      * @return
      */
@@ -248,7 +298,7 @@ public class MissionPackageManifest implements Parcelable {
     }
 
     /**
-     * Set path (including directory and filename)
+     * Set path on filesystem (including directory and filename)
      * 
      * @return
      */
@@ -521,6 +571,7 @@ public class MissionPackageManifest implements Parcelable {
         return size;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return String.format(LocaleUtil.getCurrent(),
@@ -598,7 +649,7 @@ public class MissionPackageManifest implements Parcelable {
         Serializer serializer = new Persister();
 
         // see if we should strip out local (device specific) details
-        MissionPackageManifest out = null;
+        MissionPackageManifest out;
         if (localManifest)
             out = this;
         else {

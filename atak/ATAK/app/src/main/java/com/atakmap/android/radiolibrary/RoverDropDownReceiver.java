@@ -148,10 +148,10 @@ public class RoverDropDownReceiver extends DropDownReceiver implements
     // Add ROVER vs. DDL button
     private final Button modeBtn;
 
-    private boolean sideband = false;
-    private boolean ignoreKLV = false;
-    private boolean disableCOT = true;
-    private int sideband_port = 3002;
+    private boolean sideband;
+    private boolean ignoreKLV;
+    private boolean disableCOT;
+    private int sideband_port;
 
     private String urlAnalog;
     private String urlDigital;
@@ -1725,7 +1725,7 @@ public class RoverDropDownReceiver extends DropDownReceiver implements
                 + " rover nft: " + nft);
         Log.d(TAG, "last status from rover: " + lastStatus);
 
-        String connection = "";
+        String connection;
         if (!chanmodBtn.getText().toString().endsWith("-")) {
             connection = chanmodBtn.getText().toString();
         } else {
@@ -2011,7 +2011,7 @@ public class RoverDropDownReceiver extends DropDownReceiver implements
         @Override
         public void run() {
 
-            NetworkInterface eth = null;
+            NetworkInterface eth;
 
             while (!cancelled) {
                 try {

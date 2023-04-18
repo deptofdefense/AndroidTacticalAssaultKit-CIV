@@ -203,7 +203,7 @@ public class KmzLayerInfoSpi extends AbstractDatasetDescriptorSpi {
             // If we can successfully open the inputstream to doc.kml,
             // and it has the GroundOverlay element, then this is probably a KMZ layer file.
 
-            ZipVirtualFile docFile = null;
+            ZipVirtualFile docFile;
 
             try {
                 docFile = findDocumentKML(kmzFile);

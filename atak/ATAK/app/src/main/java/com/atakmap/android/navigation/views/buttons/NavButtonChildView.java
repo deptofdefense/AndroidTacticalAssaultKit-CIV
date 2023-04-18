@@ -341,6 +341,10 @@ public class NavButtonChildView extends LinearLayout {
                     left = arrowLeft;
             }
 
+            if (left < 0) {
+                left = mapView.getWidth() - (width - 150);
+            }
+
             // Set the toolbar position
             params.setMargins(left, anchorY, 0, 0);
 

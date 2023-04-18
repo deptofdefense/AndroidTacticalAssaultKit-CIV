@@ -1,4 +1,4 @@
-#include "jtilecoord.h"
+#include "com_atakmap_map_formats_quantizedmesh_TileCoord.h"
 
 #include <formats/quantizedmesh/TileCoord.h>
 

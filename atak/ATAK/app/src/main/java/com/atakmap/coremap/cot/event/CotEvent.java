@@ -11,6 +11,8 @@ import java.util.Locale;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
@@ -516,6 +518,7 @@ public class CotEvent implements Parcelable {
         return e;
     }
 
+    @NonNull
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

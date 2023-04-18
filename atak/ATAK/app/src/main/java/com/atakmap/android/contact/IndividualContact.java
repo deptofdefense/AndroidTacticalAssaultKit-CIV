@@ -4,6 +4,8 @@ package com.atakmap.android.contact;
 import android.content.Intent;
 import android.content.SharedPreferences;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.chat.GeoChatConnector;
 import com.atakmap.android.cot.CotMapComponent;
 import com.atakmap.android.hierarchy.items.MapItemUser;
@@ -39,7 +41,7 @@ public class IndividualContact extends Contact
 
     protected final HashMap<String, Connector> connectors = new HashMap<>();
 
-    private MapItem mapItem = null;
+    private MapItem mapItem;
 
     public IndividualContact(String name) {
         this(name, UUID.randomUUID().toString(), null, null);
@@ -120,6 +122,7 @@ public class IndividualContact extends Contact
         return ret;
     }
 
+    @NonNull
     public String toString() {
         return getName() + "[" + (mapItem == null ? "" : mapItem.getUID())
                 + "]";
@@ -221,7 +224,8 @@ public class IndividualContact extends Contact
      */
     public synchronized Collection<Connector> getConnectors(boolean bUserOnly) {
         if (!bUserOnly) {
-            return Collections.unmodifiableCollection(new HashSet<>(connectors.values()));
+            return Collections
+                    .unmodifiableCollection(new HashSet<>(connectors.values()));
         } else {
             List<Connector> ret = new ArrayList<>();
             for (Connector c : connectors.values()) {

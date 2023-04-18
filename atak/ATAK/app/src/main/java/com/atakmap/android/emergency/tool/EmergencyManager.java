@@ -2,6 +2,7 @@
 package com.atakmap.android.emergency.tool;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -11,20 +12,20 @@ import android.preference.PreferenceManager;
 import android.telephony.SmsManager;
 import android.telephony.TelephonyManager;
 
-import com.atakmap.annotations.ModifierApi;
-import com.atakmap.coremap.log.Log;
-import android.annotation.SuppressLint;
-import com.atakmap.android.emergency.sms.SMSGenerator;
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.cot.CotMapComponent;
+import com.atakmap.android.emergency.sms.SMSGenerator;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
+import com.atakmap.annotations.ModifierApi;
 import com.atakmap.app.R;
-
 import com.atakmap.coremap.cot.event.CotDetail;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.cot.event.CotPoint;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 
@@ -57,7 +58,7 @@ public class EmergencyManager {
     @ModifierApi(since = "4.5", target = "4.8", modifiers = {
             "private"
     })
-    protected EmergencyType emergencyType = EmergencyType.NineOneOne;
+    protected EmergencyType emergencyType;
     @ModifierApi(since = "4.5", target = "4.8", modifiers = {
             "private"
     })
@@ -380,6 +381,7 @@ public class EmergencyManager {
         this.emergencyType = emergencyType;
     }
 
+    @NonNull
     @Override
     public String toString() {
         final Marker self = mapView.getSelfMarker();

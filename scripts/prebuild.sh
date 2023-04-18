@@ -130,4 +130,9 @@ pushd ../khronos
 conan export-pkg . -f
 popd
 
+pushd ../takengine/thirdparty/apache-commons-lang-slim
+./gradlew assemble
+./gradlew publishToMavenLocal
+popd
+
 popd

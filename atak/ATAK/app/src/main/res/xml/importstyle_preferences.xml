@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen
-    xmlns:android="http://schemas.android.com/apk/res/android">
-    <PreferenceCategory 
-    android:title="@string/importStylePreferences">
-       <Preference
-            android:summary="@string/preferences_text184"
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory android:title="@string/importStylePreferences">
+        <com.atakmap.android.gui.PanPreference
             android:key="pref_overlay_style_outline_color"
+
+            android:summary="@string/preferences_text184"
             android:title="@string/preferences_text185" />
     </PreferenceCategory>
 </PreferenceScreen>

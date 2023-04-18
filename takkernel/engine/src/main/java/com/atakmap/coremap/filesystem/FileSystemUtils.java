@@ -1787,15 +1787,6 @@ public class FileSystemUtils {
         return systemRestartRequired;
     }
 
-    /**
-     * @deprecated {@link #unzip(File, File, boolean)} instead}
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public static void extract(File zip, File destDir, boolean overwrite)
-            throws IOException {
-        unzip(zip, destDir, overwrite);
-    }
 
     /**
      * Extract the zip file to the destination directory

@@ -3,7 +3,7 @@ package gov.tak.platform.contact;
 import gov.tak.api.annotation.NonNull;
 import gov.tak.api.contact.IContact;
 import gov.tak.api.util.AttributeSet;
-import org.apache.commons.lang.StringUtils;
+import gov.tak.platform.lang.Strings;
 
 import java.util.Objects;
 
@@ -30,10 +30,10 @@ abstract class Contact implements IContact {
         this.displayName = Objects.requireNonNull(displayName, "Contact display name cannot be null.");
         this.attributes = Objects.requireNonNull(attributes, "Contact attributes cannot be null.");
 
-        if (StringUtils.isBlank(uniqueId)) {
+        if (Strings.isBlank(uniqueId)) {
             throw new IllegalArgumentException("Unique Contact ID must not be blank.");
         }
-        if (StringUtils.isBlank(displayName)) {
+        if (Strings.isBlank(displayName)) {
             throw new IllegalArgumentException("Contact display name must not be blank.");
         }
     }

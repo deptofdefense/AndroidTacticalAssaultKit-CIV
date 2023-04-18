@@ -4,12 +4,9 @@ package com.atakmap.app.preferences;
 import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
-import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceCategory;
 
-import com.atakmap.android.gui.PanEditTextPreference;
-import com.atakmap.android.gui.PanListPreference;
 import com.atakmap.android.gui.PanEditTextPreference;
 import com.atakmap.android.gui.PanListPreference;
 import com.atakmap.android.preference.AtakPreferenceFragment;

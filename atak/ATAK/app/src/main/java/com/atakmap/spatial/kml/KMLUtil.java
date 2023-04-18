@@ -263,7 +263,7 @@ public class KMLUtil {
             FeatureHandler<NetworkLink> handler) {
         List<NetworkLink> ret = new ArrayList<>();
 
-        XmlPullParser parser = null;
+        XmlPullParser parser;
         NetworkLink nl = null;
         Link link = null;
         try {
@@ -744,7 +744,7 @@ public class KMLUtil {
 
         String lon = tokens[0].trim();
         String lat = tokens[1].trim();
-        String alt = null;
+        String alt;
 
         GeoPointMetaData gpm = new GeoPointMetaData();
         if (tokens.length > 2) {
@@ -782,7 +782,7 @@ public class KMLUtil {
 
         // now serialize basic KML data out to string for Spatialite
         Serializer serializer = new Persister(new KMLMatcher());
-        T out = null;
+        T out;
         try {
             out = (T) serializer.read(clazz, s);
         } catch (Exception e) {
@@ -1259,7 +1259,7 @@ public class KMLUtil {
             throws IOException {
         File tempFile = null;
 
-        ZipFile zip = null;
+        ZipFile zip;
         try {
             zip = new ZipFile(kmzFile);
         } catch (IOException e) {

@@ -3,6 +3,8 @@ package com.atakmap.android.radiolibrary;
 
 import android.content.Context;
 
+import androidx.annotation.NonNull;
+
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.util.List;
@@ -109,6 +111,7 @@ public interface RoverInterface {
             this.number = number;
         }
 
+        @NonNull
         public String toString() {
             return "receiver: " + number + " frequency: " + frequency + " " +
                     "autoreconnect: " + autoreconnect + " " +

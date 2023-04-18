@@ -400,9 +400,7 @@ public class GLBitmapLoader {
      *
      * @deprecated Will be made private, without replacement
      */
-    @Deprecated
-    @DeprecatedApi(since = "4.1.1", forRemoval = true, removeAt = "4.4")
-    static public ZipFile getMountedArchive(String path) {
+    static private ZipFile getMountedArchive(String path) {
         synchronized (_zipCache) {
             ReferenceCount<ZipFile> zipFile = _zipCache.get(path);
             if (zipFile != null)
@@ -466,35 +464,6 @@ public class GLBitmapLoader {
         }
     }
 
-
-    /**
-     * @deprecated  always returns null, will be removed without replacement
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    static public android.database.sqlite.SQLiteDatabase getMountedDatabase(String path) {
-        return null;
-    }
-
-    /**
-     * Provides the requested database if it has been sucessfully mounted otherwise it will return
-     * null. The callee should not attempt to close the mounted database as it will make it unusable
-     * by future users. XXX: You have been warned.
-     *
-     * @param path the archive to mount in zip format.
-     * @deprecated  always returns null, will be removed without replacement
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1.1", forRemoval = true, removeAt = "4.4")
-    static public DatabaseIface getMountedDatabase2(String path) {
-        synchronized (_dbCache) {
-            ReferenceCount<DatabaseIface> db = _dbCache.get(path);
-            if (db != null)
-                return db.value;
-            else
-                return null;
-        }
-    }
 
     public FutureTask<Bitmap> loadBitmap(String uriStr, Bitmap.Config config) {
         BitmapFactory.Options opts = new BitmapFactory.Options();
@@ -794,12 +763,6 @@ public class GLBitmapLoader {
         }
     }
 
-    /** @deprecated use {@link #setIconCacheDb(File, IconCacheSeed)} */
-    @Deprecated
-    @DeprecatedApi(since = "4.1.1", forRemoval = true, removeAt = "4.4")
-    public static void setIconCacheDb(File file) {
-        setIconCacheDb(file, null);
-    }
     public synchronized static void setIconCacheDb(File file, IconCacheSeed seeder) {
         // no-op
         if(file == null && iconCacheFile == null)

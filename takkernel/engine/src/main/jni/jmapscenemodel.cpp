@@ -1,4 +1,4 @@
-#include "jmapscenemodel.h"
+#include "com_atakmap_map_MapSceneModel.h"
 
 #include <core/GeoPoint2.h>
 #include <core/MapSceneModel2.h>

@@ -10,7 +10,7 @@
 #include "feature/LineString2.h"
 #include "model/MeshTransformer.h"
 #include "renderer/model/HitTestControl.h"
-#include "renderer/model/SceneObjectControl.h"
+#include "renderer/model/SceneObjectControl2.h"
 #include "thread/Lock.h"
 #include "util/ConfigOptions.h"
 #include "util/Memory.h"
@@ -74,7 +74,7 @@ namespace
     }
 }
 
-class GLScene::SceneControlImpl : public SceneObjectControl
+class GLScene::SceneControlImpl : public SceneObjectControl2
 {
 public :
     SceneControlImpl(GLScene &owner) NOTHROWS;
@@ -84,6 +84,8 @@ public :
     TAKErr addUpdateListener(UpdateListener *l) NOTHROWS override;
     TAKErr removeUpdateListener(const UpdateListener &l) NOTHROWS override;
     TAKErr clampToGround() NOTHROWS override;
+    TAKErr setXrayColor(const unsigned int color) NOTHROWS override;
+    TAKErr getXrayColor(unsigned int *color) NOTHROWS override;
 public :
     void dispatchBoundsChanged(const Envelope2 &aabb, const double minGsd, const double maxGsd) NOTHROWS;
     void dispatchClampToGroundOffsetComputed(const double offset) NOTHROWS;
@@ -107,12 +109,12 @@ GLScene::GLScene(TAK::Engine::Core::RenderContext& ctx, const TAK::Engine::Model
     cancelInitialize(true),
     mutex_(TEMT_Recursive),
     clampRequested(info.altitudeMode == TEAM_ClampToGround),
-    location_dirty_(false),
-    xray_color_(0x3F07FFFFu) 
+    location_dirty_(false)
 {
     sceneCtrl.reset(new SceneControlImpl(*this));
 
-    controls_["TAK.Engine.Renderer.Model.SceneObjectControl"] = (void*)static_cast<SceneObjectControl*>(sceneCtrl.get());
+    controls_[SceneObjectControl_getType()] = (void*)static_cast<SceneObjectControl*>(sceneCtrl.get());
+    controls_[SceneObjectControl2_getType()] = (void*)static_cast<SceneObjectControl2*>(sceneCtrl.get());
 
     TAK::Engine::Port::String modelIcon;
     if (ConfigOptions_getOption(modelIcon, "TAK.Engine.Model.default-icon") != TE_Ok) modelIcon = "null";
@@ -264,7 +266,7 @@ void GLScene::draw(const GLGlobeBase &view, const int renderPass) NOTHROWS
     RenderState state = RenderState_getCurrent();
 
     // xray draw
-    if(xray_color_ && (renderPass&GLMapView2::XRay) && isXRayCapable()) {
+    if(info_.xrayColor && (renderPass&GLMapView2::XRay) && isXRayCapable()) {
         // only draw samples below surface
         if (!state.depth.enabled) {
             state.depth.enabled = true;
@@ -280,7 +282,7 @@ void GLScene::draw(const GLGlobeBase &view, const int renderPass) NOTHROWS
         }
 
         for (auto it_drawables = drawable.begin(); it_drawables != drawable.end(); it_drawables++) {
-            (*it_drawables)->setColor(ColorControl::Replace, xray_color_);
+            (*it_drawables)->setColor(ColorControl::Replace, info_.xrayColor);
             (*it_drawables)->draw(view, state, ((renderPass|GLMapView2::Sprites)&~GLMapView2::XRay));
         }
     }
@@ -481,16 +483,16 @@ TAKErr GLScene::depthTestTask(TAK::Engine::Core::GeoPoint2& value, GLScene* scen
     TAK::Engine::Math::Point2<double> point;
     if (isOrtho) {
         projection.transform(&point, TAK::Engine::Math::Point2<double>(x, screenY, 0));
-        point.z = pointZ;
+    point.z = pointZ;
 
-        Matrix2 mat;
-        if (projection.createInverse(&mat) != TE_Ok)
-            return TE_Done;
+    Matrix2 mat;
+    if (projection.createInverse(&mat) != TE_Ok)
+        return TE_Done;
 
-        mat.transform(&point, point);
+    mat.transform(&point, point);
 
-        // ortho -> projection
-        sceneModel.inverseTransform.transform(&point, point);
+    // ortho -> projection
+    sceneModel.inverseTransform.transform(&point, point);
     } else {
         // transform screen location at depth to NDC
         point.x = (x / (float)(sceneModel.width)) * 2.0f - 1.0f;
@@ -905,6 +907,17 @@ TAKErr GLScene::SceneControlImpl::clampToGround() NOTHROWS
     owner_.sceneCtrl->dispatchClampToGroundOffsetComputed(-sceneOriginWCS.z-sceneMinLCS.z);
     return code;
 }
+TAKErr GLScene::SceneControlImpl::setXrayColor(const unsigned int color) NOTHROWS {
+    owner_.info_.xrayColor = color;
+    return TAKErr::TE_Ok;
+}
+TAKErr GLScene::SceneControlImpl::getXrayColor(unsigned int *color) NOTHROWS {
+    if (!color)
+        return TE_InvalidArg;
+    *color = owner_.info_.xrayColor;
+    return TAKErr::TE_Ok;
+}
+
 void GLScene::SceneControlImpl::dispatchBoundsChanged(const Envelope2 &aabb, const double minGsd, const double maxGsd) NOTHROWS
 {
     Lock lock(mutex_);

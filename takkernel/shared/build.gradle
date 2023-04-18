@@ -5,7 +5,7 @@ dependencies {
 
     testImplementation "org.assertj:assertj-core:$assertjVersion"
 
-    project.plugins.withId('java-library') {
+    if(isJavaKernelBuild) {
         // This dependency is found on compile classpath of this component and consumers.
         api("com.google.guava:guava:${guavaVersion}")
 
@@ -19,3 +19,13 @@ dependencies {
 }
 
 // default source sets
+
+if(isJavaKernelBuild) {
+    test {
+        // Add dependency on jar task, since it will be main target for testing
+        dependsOn ":engine:${runtimePlatform}Jar"
+
+        // Rearrange test classpath, add compiled JAR instead of main classes
+        classpath += rootProject.findProject(':engine').tasks.findByName("${runtimePlatform}Jar").outputs.files
+    }
+}

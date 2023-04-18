@@ -24,7 +24,7 @@ public class DataMgmtMapComponent extends AbstractMapComponent {
     @Override
     public void onCreate(Context context, Intent intent, MapView view) {
 
-        _dataMgmtReceiver = new DataMgmtReceiver(view);
+        _dataMgmtReceiver = new DataMgmtReceiverCompat().getInstance(view);
         _uriContentManager = URIContentManager.getInstance();
 
         DocumentedIntentFilter intentFilter = new DocumentedIntentFilter();

@@ -1,6 +1,6 @@
 #include "interop/renderer/core/Interop.h"
 
-#include "jglmapview.h"
+#include "com_atakmap_map_opengl_GLMapView.h"
 
 #include "interop/renderer/core/ManagedGLLayer2.h"
 #include "interop/renderer/core/ManagedGLLayerSpi2.h"
@@ -277,6 +277,8 @@ namespace
             std::size_t idx = 0u;
             renderPassMapping[idx++] = GLMapView2::Surface;
             renderPassMapping[idx++] = com_atakmap_map_opengl_GLMapView_RENDER_PASS_SURFACE;
+            renderPassMapping[idx++] = GLMapView2::Surface2;
+            renderPassMapping[idx++] = com_atakmap_map_opengl_GLMapView_RENDER_PASS_SURFACE2;
             renderPassMapping[idx++] = GLMapView2::Sprites;
             renderPassMapping[idx++] = com_atakmap_map_opengl_GLMapView_RENDER_PASS_SPRITES;
             renderPassMapping[idx++] = GLMapView2::Scenes;

@@ -146,7 +146,7 @@ public abstract class AbstractGeometryTests extends ATAKInstrumentedTest {
     void wkb_encode_contents_test(Geometry g, byte[] truth, ByteOrder endian) {
         byte[] test = new byte[g.computeWkbSize()];
         g.toWkb(ByteBuffer.wrap(test).order(endian));
-        Assert.assertTrue(Arrays.equals(test, truth));
+        Assert.assertArrayEquals(test, truth);
     }
 
     void wkb_encode_size_test(Geometry g, ByteOrder endian) {
@@ -513,8 +513,8 @@ public abstract class AbstractGeometryTests extends ATAKInstrumentedTest {
         if (a == null && b == null)
             return;
 
-        Assert.assertTrue(a != null);
-        Assert.assertTrue(b != null);
+        Assert.assertNotNull(a);
+        Assert.assertNotNull(b);
 
         Assert.assertEquals(a.getDimension(), b.getDimension());
 
@@ -540,10 +540,10 @@ public abstract class AbstractGeometryTests extends ATAKInstrumentedTest {
     }
 
     static void assertEqualsImpl(Point a, Point b) {
-        Assert.assertTrue(a.getX() == b.getX());
-        Assert.assertTrue(a.getY() == b.getY());
+        Assert.assertEquals(a.getX(), b.getX(), 0.0);
+        Assert.assertEquals(a.getY(), b.getY(), 0.0);
         if (a.getDimension() == 3)
-            Assert.assertTrue(a.getZ() == b.getZ());
+            Assert.assertEquals(a.getZ(), b.getZ(), 0.0);
     }
 
     static void assertEqualsImpl(LineString a, LineString b) {
@@ -551,10 +551,10 @@ public abstract class AbstractGeometryTests extends ATAKInstrumentedTest {
         Assert.assertEquals(numPoints, b.getNumPoints());
 
         for (int i = 0; i < numPoints; i++) {
-            Assert.assertTrue(a.getX(i) == b.getX(i));
-            Assert.assertTrue(a.getY(i) == b.getY(i));
+            Assert.assertEquals(a.getX(i), b.getX(i), 0.0);
+            Assert.assertEquals(a.getY(i), b.getY(i), 0.0);
             if (a.getDimension() == 3)
-                Assert.assertTrue(a.getZ(i) == b.getZ(i));
+                Assert.assertEquals(a.getZ(i), b.getZ(i), 0.0);
         }
     }
 

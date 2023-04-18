@@ -1,4 +1,4 @@
-#include "jenginelibrary.h"
+#include "com_atakmap_map_EngineLibrary.h"
 
 #include <renderer/GLText2.h>
 

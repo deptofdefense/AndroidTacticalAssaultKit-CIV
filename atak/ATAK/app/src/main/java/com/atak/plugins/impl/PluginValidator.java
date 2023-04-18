@@ -168,7 +168,8 @@ class PluginValidator {
                         // reason to check the validity.
                         if (dex != null) {
                             inputStream = zipFile.getInputStream(dex);
-                            classesdexSha256 = HashingUtils.sha256sum(inputStream);
+                            classesdexSha256 = HashingUtils
+                                    .sha256sum(inputStream);
                         } else {
                             Log.e(TAG, "missing: " + path);
                             missing = true;

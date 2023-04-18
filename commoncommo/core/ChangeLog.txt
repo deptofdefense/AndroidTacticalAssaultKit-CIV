@@ -1,3 +1,24 @@
+** Release 1.6.3 - 2022-04-11
+MISCELLANEOUS
+* Add pdb files to Windows nuget package
+* OpenSSL dependeny updated to 1.1.1n to address CVE-2022-0778
+
+** Release 1.6.2 - 2022-02-17
+BUG FIXES
+* A very infrequently seen but permanent error condition caused by
+  extremely high surges in I/O is now guarded against. This only impacts
+  non-Windows platforms. (COMMO-12)
+
+MISCELLANEOUS
+* The commo core library version string is now emitted to the provided
+  logger during Commo instance creation to better identify version in use
+  when logs are provided with bug/issue reports.
+* Nuget packages are now published for Windows with C# bindings
+
+** Release 1.6.1 - 2022-01-19
+MISCELLANEOUS
+* Linux x86-64 build targets CentOS/RHEL 7 using gcc 4.8.x
+
 ** Release 1.6.0 - 2022-01-03
 API CHANGES
 * Commo::setMissionPackageLocalPort() (and equivalent in various language 

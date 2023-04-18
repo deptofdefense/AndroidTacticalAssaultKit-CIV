@@ -8,6 +8,8 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.view.View;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.data.URIContentHandler;
 import com.atakmap.android.data.URIContentManager;
 import com.atakmap.android.filesystem.ResourceFile;
@@ -259,6 +261,7 @@ public class GalleryFileItem extends AbstractChildlessListItem implements
         }
     }
 
+    @NonNull
     @Override
     public String toString() {
         return file.getAbsolutePath();

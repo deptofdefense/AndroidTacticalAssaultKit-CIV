@@ -1,0 +1,56 @@
+buildscript {
+    ext.libVersion = '1.0.0'
+
+    ext.getValueFromPropertiesFile = { propFile, key ->
+        if(!propFile.isFile() || !propFile.canRead())
+            return null
+        def prop = new Properties()
+        def reader = propFile.newReader()
+        try {
+            prop.load(reader)
+        } finally {
+            reader.close()
+        }
+        return prop.get(key)
+    }
+
+    def publishUrlProp = project.properties['maven.publish.url'] ?: getValueFromPropertiesFile(project.rootProject.file('local.properties'), 'maven.publish.url')
+    ext.publishUrl = null == publishUrlProp ? 'http://localhost/' : publishUrlProp
+    ext.mavenUser = project.properties['maven.publish.user'] ?: getValueFromPropertiesFile(project.rootProject.file('local.properties'), 'maven.publish.user')
+    ext.mavenPassword = project.properties['maven.publish.password'] ?: getValueFromPropertiesFile(project.rootProject.file('local.properties'), 'maven.publish.password')
+}
+
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+}
+
+publishing {
+    publications {
+        apacheCommonsLangSlim(MavenPublication) {
+            from components.java
+
+            groupId = 'gov.tak.thirdparty'
+            artifactId = 'apache-commons-lang-slim'
+            version = libVersion
+        }
+    }
+
+    repositories {
+        maven {
+            url = publishUrl
+            name = 'upstream'
+            credentials {
+                username mavenUser
+                password mavenPassword
+            }
+        }
+    }
+}

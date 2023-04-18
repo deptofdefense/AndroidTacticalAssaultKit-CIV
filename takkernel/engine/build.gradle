@@ -3,16 +3,12 @@ apply from: configProject.file('gradle/javah.gradle'), to: project
 
 javah {
     input file('src/main/jni/javah.properties')
-    outputDir file('src/main/jni/')
+    outputDir file("${buildDir}/generated/jni/")
 }
 
 externalNativeBuild {
     path 'CMakeLists.txt'
-    arguments  "-DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/android.toolchain.cmake",
-        "-DANDROID_TOOLCHAIN=gcc",
-        "-DANDROID_STL=gnustl_static",
-        "-DANDROID_PLATFORM=android-24", // 24 is the highest so available in 12 ndk??
-        "-DANDROID_ARM_NEON=ON"
+    arguments  "-DANDROID_STL=c++_static", "-DANDROID_ARM_NEON=ON"
     cFlags "-D__GXX_EXPERIMENTAL_CXX0X__"
     cppFlags "-fexceptions", "-frtti"
     buildTarget 'install'
@@ -60,6 +56,8 @@ dependencies {
     } else if(isAndroidKernelBuild) {
         api("gov.tak.thirdparty:takthirdparty:${takthirdpartyVersion}@aar")
         api("gov.tak.thirdparty:libLAS:${libLasVersion}@aar")
+
+        androidTestImplementation("gov.tak.support:android-app-stl:12.1.2977051@aar")
     }
 }
 
@@ -110,6 +108,15 @@ if(isJavaKernelBuild) {
             include '**/*.so'
             include '**/*.dylib'
         }
+    }
+
+    test {
+
+        // Add dependency on jar task, since it will be main target for testing
+        dependsOn "${runtimePlatform}Jar"
+
+        // Rearrange test classpath, add compiled JAR instead of main classes
+        classpath += project.tasks.findByName("${runtimePlatform}Jar").outputs.files
     }
 }
 

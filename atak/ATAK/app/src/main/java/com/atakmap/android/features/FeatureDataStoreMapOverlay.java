@@ -37,6 +37,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import gov.tak.api.annotation.DeprecatedApi;
+
 public class FeatureDataStoreMapOverlay extends AbstractMapOverlay2 {
 
     private static final String TAG = "FeatureDataStoreMapOverlay";
@@ -52,6 +54,9 @@ public class FeatureDataStoreMapOverlay extends AbstractMapOverlay2 {
 
     private final MapGroup mapGroup;
 
+    /** @deprecated use {@link #FeatureDataStoreMapOverlay(Context, FeatureDataStore2, String, String, String, FeatureDataStoreDeepMapItemQuery, String, String)} */
+    @Deprecated
+    @DeprecatedApi(since = "4.6", forRemoval = true, removeAt = "4.9")
     public FeatureDataStoreMapOverlay(Context context,
             FeatureLayer layer,
             String iconUri) {
@@ -66,6 +71,9 @@ public class FeatureDataStoreMapOverlay extends AbstractMapOverlay2 {
                 null);
     }
 
+    /** @deprecated use {@link #FeatureDataStoreMapOverlay(Context, FeatureDataStore2, String, String, String, FeatureDataStoreDeepMapItemQuery, String, String)} */
+    @Deprecated
+    @DeprecatedApi(since = "4.6", forRemoval = true, removeAt = "4.9")
     public FeatureDataStoreMapOverlay(Context context,
             FeatureDataStore spatialDb, String contentSource,
             String name, String iconUri,

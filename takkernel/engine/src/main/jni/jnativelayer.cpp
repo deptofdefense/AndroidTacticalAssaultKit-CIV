@@ -1,4 +1,4 @@
-#include "jnativelayer.h"
+#include "com_atakmap_map_layer_NativeLayer.h"
 
 #include <core/Layer.h>
 

@@ -1,5 +1,27 @@
 # Version History
 
+## 4.6.1.0
+
+* Security
+  * Update openssl usages by commo and video libraries to 1.1.1n
+* Feature Additions
+  * Rapid MRGS entry for long press now can be enabled/disabled under Fire Tool Preference
+  * allow for changing a geocoder in the enter location dialog without having to go to preferences to change it.
+  * SDK  addition of a notification filtering capability that can be used by plugin developers
+  * Network Monitor now automatically discovers multiple radios at the same time.
+* Bug Fixes
+  * ATAK-16123: only allow smooth pan over poles when user orientation is enabled
+  * ATAK-16089: by allowing for post import of new iconsets over the existing iconset database
+  * migrate to takkernel@1.10.5
+  * Cryllic GeoChat does not have spaces preserved
+  * follow the altitude unit preference for the display and entry of the height
+  * enable the CoT type picker in the civilian builds
+  * fix incorrect descriptions for preference controlling the scale bar
+  * when the callsign is changed, correct the SPI so that it reflects the new callsign without restarting the application
+  * support for mission packages incorrectly created on Windows machines
+  * add the ability to locate and utilize the system flavor with the civSmall/playstore version
+  * fix ICU to properly handle aliases with spaces when publishing RTSP
+
 ## 4.6.0.5
 
 * Bug Fixes

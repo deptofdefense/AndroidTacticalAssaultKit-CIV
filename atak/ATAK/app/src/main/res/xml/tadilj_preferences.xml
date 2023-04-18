@@ -2,8 +2,8 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <PreferenceCategory
         android:title="@string/tadilj_settings">
-       <Preference
+       <com.atakmap.android.gui.PanPreference
             android:key="tadiljPersistedIds"
-            android:title="@string/preferences_text340"/>
+            android:title="@string/preferences_text340" />
     </PreferenceCategory>
 </PreferenceScreen>

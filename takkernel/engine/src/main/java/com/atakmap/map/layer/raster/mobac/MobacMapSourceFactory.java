@@ -11,7 +11,7 @@ import java.util.Stack;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 
-import org.apache.commons.lang.StringEscapeUtils;
+import gov.tak.platform.lang.Strings;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -149,7 +149,7 @@ public class MobacMapSourceFactory {
                     if (inTag.equals("name")) {
                         name = parser.getText();
                     } else if (inTag.equals("url")) {
-                        url = StringEscapeUtils.unescapeHtml(parser.getText());
+                        url = Strings.unescapeHtml(parser.getText());
                     } else if (inTag.equals("minZoom")) {
                         minZoom = Integer.parseInt(parser.getText());
                     } else if (inTag.equals("maxZoom")) {
@@ -317,7 +317,7 @@ public class MobacMapSourceFactory {
                         if (parser.getText().matches("\\#[0-9A-Fa-f]"))
                             backgroundColor = Integer.parseInt(parser.getText().substring(1), 16);
                     } else if (inTag.equals("url")) {
-                        url = StringEscapeUtils.unescapeHtml(parser.getText());
+                        url = Strings.unescapeHtml(parser.getText());
                     } else if (inTag.equals("coordinatesystem")) {
                         if (parser.getText().matches("EPSG\\:\\d+"))
                             srid = Integer.parseInt(parser.getText().split("\\:")[1]);
@@ -327,7 +327,7 @@ public class MobacMapSourceFactory {
                         style = parser.getText();
                     } else if (inTag.equals("additionalparameters")
                             || inTag.equals("aditionalparameters")) {
-                        additionalParameters = StringEscapeUtils.unescapeHtml(parser.getText());
+                        additionalParameters = Strings.unescapeHtml(parser.getText());
                     } else if (inTag.equals("name")) {
                         name = parser.getText();
                     } else if (inTag.equals("tileType")) {

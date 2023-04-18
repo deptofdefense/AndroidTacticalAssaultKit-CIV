@@ -10,7 +10,6 @@ import android.os.Bundle;
 import com.atakmap.android.imagecapture.CanvasHelper;
 import com.atakmap.android.imagecapture.CapturePP;
 import com.atakmap.android.imagecapture.PointA;
-import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;

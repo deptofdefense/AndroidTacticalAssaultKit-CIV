@@ -1,6 +1,8 @@
 
 package com.atakmap.android.lrf.reader;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 
 import com.atakmap.coremap.locale.LocaleUtil;
@@ -53,6 +55,7 @@ public class RangeFinderData {
         }
     }
 
+    @NonNull
     public String toString() {
         return "type = " + type.getName() + "\n" +
                 "raw = " + raw + "\n" +

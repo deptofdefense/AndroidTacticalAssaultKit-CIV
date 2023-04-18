@@ -5,7 +5,6 @@ import android.graphics.Color;
 import android.util.Pair;
 
 import com.atakmap.android.maps.MapItem;
-import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.graphics.GLMapItem2;
 import com.atakmap.android.maps.graphics.GLMapItemSpi3;
 import com.atakmap.android.maps.graphics.GLPolyline;
@@ -17,6 +16,7 @@ import com.atakmap.map.hittest.HitTestResult;
 import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.opengl.GLMapBatchable;
 import com.atakmap.map.opengl.GLMapView;
+import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.Matrix;
 import com.atakmap.math.PointD;
@@ -126,7 +126,8 @@ public class GLTrackPolyline extends GLPolyline implements GLMapBatchable {
     // calculates and draws arrows
     private void _projectArrows(final GLMapView ortho, GLRenderBatch batch) {
 
-        float radius = _subject.getCrumbSize() * MapView.DENSITY;
+        float radius = _subject.getCrumbSize()
+                * GLRenderGlobals.getRelativeScaling();
 
         // Update base arrow when radius changes
         if (_arrowSrcBuffer == null || _radius != radius) {

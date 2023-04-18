@@ -39,7 +39,7 @@ public class ImportCertSort extends ImportInternalSDResolver {
     private static final String CONTENT_TYPE = "P12 Certificate";
 
     private final Context _context;
-    private List<Properties> initialServers = null;
+    private List<Properties> initialServers;
 
     public ImportCertSort(Context context, boolean validateExt,
             boolean copyFile) {

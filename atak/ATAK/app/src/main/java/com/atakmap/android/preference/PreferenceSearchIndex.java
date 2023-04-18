@@ -5,6 +5,8 @@ import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
 import android.preference.PreferenceManager;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.maps.MapView;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.locale.LocaleUtil;
@@ -250,6 +252,7 @@ public class PreferenceSearchIndex {
         return _lastMatch;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return String.format("%s, %s, %s", fragClass.getName(), summary,

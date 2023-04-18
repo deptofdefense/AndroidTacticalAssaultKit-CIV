@@ -1,4 +1,4 @@
-#include "jqmesourcemanager.h"
+#include "com_atakmap_map_formats_quantizedmesh_QMESourceManager.h"
 
 #include <formats/quantizedmesh/QMESourceLayer.h>
 

@@ -1,4 +1,4 @@
-#include "jgltext.h"
+#include "com_atakmap_opengl_GLText.h"
 
 #include <renderer/GLText2.h>
 #include <util/Memory.h>

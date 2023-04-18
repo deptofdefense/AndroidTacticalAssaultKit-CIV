@@ -3,7 +3,7 @@ package com.atakmap.android.widgets;
 
 import android.view.MotionEvent;
 
-import com.atakmap.android.maps.MapView;
+import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.math.MathUtils;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -94,7 +94,7 @@ public class ScrollLayoutWidget extends LinearLayoutWidget {
                 event, android.view.MotionEvent.class,
                 gov.tak.platform.ui.MotionEvent.class);
         if (_onPressWidget == null || Math.abs(_startPos - pos) > 5f
-                * MapView.DENSITY) {
+                * GLRenderGlobals.getRelativeScaling()) {
             _scrolling = true;
             if (_onPressWidget != null)
                 _onPressWidget.onUnpress(pevent);

@@ -1,4 +1,4 @@
-#ifdef __LINUX_
+#if defined(__LINUX__) || defined(__ANDROID__)
 #include "util/AtomicCounter.h"
 
 using namespace atakmap::util;
