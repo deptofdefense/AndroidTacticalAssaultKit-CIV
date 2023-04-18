@@ -694,6 +694,10 @@ set(takengine_util_COMMON_SRCS
     ${SRC_DIR}/util/ZipFile.cpp
 )
 
+set(takengine_vscompat_COMMON_SRCS
+    # vscompat
+)
+
 set(takengine_COMMON_SRCS
     ${takengine_core_COMMON_SRCS}
     ${takengine_currency_COMMON_SRCS}
@@ -1405,6 +1409,10 @@ set(takengine_util_COMMON_HEADERS
     ${SRC_DIR}/util/URIOfflineCache.h
     ${SRC_DIR}/util/Work.h
     ${SRC_DIR}/util/ZipFile.h
+)
+
+set(takengine_vscompat_COMMON_HEADERS
+    # vscompat
 )
 
 set(takengine_COMMON_HEADERS
