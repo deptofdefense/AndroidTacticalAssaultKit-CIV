@@ -89,6 +89,7 @@ jobs:
         git submodule update --init --recursive
         pushd .
         export ANDROID_NDK=${ANDROID_HOME}/ndk/12.1.2977051
+        export ANDROID_NDK_HOME=${ANDROID_NDK}
         cd scripts
         bash ./prebuild.sh
         popd
