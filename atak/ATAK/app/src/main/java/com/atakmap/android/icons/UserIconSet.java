@@ -1,8 +1,12 @@
 
 package com.atakmap.android.icons;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.database.CursorIface;
 
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.ElementList;
@@ -13,8 +17,6 @@ import org.simpleframework.xml.core.Persister;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
-import com.atakmap.coremap.locale.LocaleUtil;
-import com.atakmap.database.CursorIface;
 
 /**
  * Icon set may be loaded from XML and or SQLite
@@ -29,6 +31,7 @@ public class UserIconSet {
     protected final static String COLUMN_ICONSETS_ID = "id";
     protected final static String COLUMN_ICONSETS_NAME = "name";
     protected final static String COLUMN_ICONSETS_UID = "uid";
+    protected final static String COLUMN_ICONSETS_VERSION = "version";
     protected final static String COLUMN_ICONSETS_DEFAULT_FRIENDLY = "defaultFriendly";
     protected final static String COLUMN_ICONSETS_DEFAULT_HOSTILE = "defaultHostile";
     protected final static String COLUMN_ICONSETS_DEFAULT_NEUTRAL = "defaultNeutral";
@@ -100,6 +103,9 @@ public class UserIconSet {
                     COLUMN_ICONSETS_UID, "TEXT"
             },
             {
+                    COLUMN_ICONSETS_VERSION, "INTEGER"
+            },
+            {
                     COLUMN_ICONSETS_DEFAULT_FRIENDLY, "TEXT"
             },
             {
@@ -131,6 +137,8 @@ public class UserIconSet {
             return getName();
         } else if (COLUMN_ICONSETS_UID.equals(label)) {
             return getUid();
+        } else if (COLUMN_ICONSETS_VERSION.equals(label)) {
+            return getVersion();
         } else if (COLUMN_ICONSETS_DEFAULT_FRIENDLY.equals(label)) {
             return getDefaultFriendly();
         } else if (COLUMN_ICONSETS_DEFAULT_HOSTILE.equals(label)) {
@@ -156,13 +164,16 @@ public class UserIconSet {
         setUid(uid);
     }
 
-    public UserIconSet(int id, String name, String uid, String defaultFriendly,
+    public UserIconSet(int id, String name, String uid, int version,
+            String defaultFriendly,
             String defaultHostile, String defaultNeutral,
             String defaultUnknown,
             String selectedGroup) {
         setId(id);
         setName(name);
         setUid(uid);
+        if (version != 0)
+            setVersion(version);
         this.defaultFriendly = defaultFriendly;
         this.defaultHostile = defaultHostile;
         this.defaultNeutral = defaultNeutral;
@@ -372,6 +383,7 @@ public class UserIconSet {
                 !FileSystemUtils.isEmpty(uid);
     }
 
+    @NonNull
     public String toString() {
         return name + "/" + uid + (icons == null ? "" : "/" + icons.size());
     }
@@ -409,6 +421,8 @@ public class UserIconSet {
                         .getColumnIndex(UserIconSet.COLUMN_ICONSETS_NAME)),
                 cursor.getString(cursor
                         .getColumnIndex(UserIconSet.COLUMN_ICONSETS_UID)),
+                cursor.getInt(cursor
+                        .getColumnIndex(UserIconSet.COLUMN_ICONSETS_VERSION)),
                 cursor.getString(cursor
                         .getColumnIndex(
                                 UserIconSet.COLUMN_ICONSETS_DEFAULT_FRIENDLY)),

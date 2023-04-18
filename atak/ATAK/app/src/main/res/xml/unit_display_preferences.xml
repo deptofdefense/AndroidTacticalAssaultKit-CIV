@@ -55,27 +55,21 @@
             android:defaultValue="1"
             android:entries="@array/north_refs_label"
             android:entryValues="@array/north_refs_value"
-
             android:key="rab_north_ref_pref"
-
             android:title="@string/preferences_text352" />
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/preferences_text353">
         <com.atakmap.android.gui.PanEditTextPreference
             android:defaultValue="5280"
             android:dialogTitle="@string/preferences_text354"
-
             android:inputType="number"
             android:key="rng_feet_display_pref"
-
             android:title="@string/preferences_text356" />
         <com.atakmap.android.gui.PanEditTextPreference
             android:defaultValue="2000"
             android:dialogTitle="@string/preferences_text357"
             android:inputType="number"
             android:key="rng_meters_display_pref"
-
-
             android:title="@string/preferences_text359" />
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/visualPreferences">
@@ -84,14 +78,11 @@
             android:entries="@array/colors_label"
             android:entryValues="@array/colors_value"
             android:key="rab_color_pref"
-
-
             android:title="@string/preferences_rab_color" />
         <com.atakmap.android.gui.PanCheckBoxPreference
             android:defaultValue="false"
             android:key="rab_preference_show_eta"
             android:summary="@string/preference_rab_show_eta_summary"
-
             android:title="@string/preference_rab_show_eta_title" />
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/domain_preferences">
@@ -101,7 +92,6 @@
             android:entryValues="@array/domain_values"
             android:key="set_domain_pref"
             android:summary="@string/domain_preferences_set_summary"
-
             android:title="@string/domain_preferences_set" />
     </PreferenceCategory>
 </PreferenceScreen>

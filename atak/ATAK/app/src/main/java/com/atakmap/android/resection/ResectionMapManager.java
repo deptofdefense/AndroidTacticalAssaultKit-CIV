@@ -23,11 +23,10 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.TreeSet;
 import java.util.UUID;
-
-import gov.nist.math.jama.Matrix;
 
 public class ResectionMapManager implements MapGroup.OnItemListChangedListener,
         PointMapItem.OnPointChangedListener, MapItem.OnMetadataChangedListener {
@@ -217,7 +216,6 @@ public class ResectionMapManager implements MapGroup.OnItemListChangedListener,
                 line = new IntersectionLine(m, end, lineUID);
                 _mapGroup.addItem(line);
             }
-            line.reset();
         }
     }
 
@@ -258,24 +256,57 @@ public class ResectionMapManager implements MapGroup.OnItemListChangedListener,
         if (lines.size() < 2)
             return null;
 
-        Matrix I = Matrix.identity(2, 2);
-        Matrix inn, innp;
-        Matrix A = new Matrix(2, 2), B = new Matrix(2, 1);
-        for (IntersectionLine line : lines) {
-            inn = I.minus(line.getNormal().times(line.getNormal().transpose()));
-            innp = inn.times(line.getPoint());
-            A.plusEquals(inn);
-            B.plusEquals(innp);
+        LinkedList<GeoPoint> isects = new LinkedList<>();
+        for (int i = 0; i < lines.size(); i++) {
+            final IntersectionLine a = lines.get(i);
+            for (int j = i + 1; j < lines.size(); j++) {
+                final IntersectionLine b = lines.get(j);
+                GeoPoint isect = GeoCalculations.lineOfBearingIntersect(
+                        a.getFirstItem().getPoint(),
+                        a.getSecondItem().getPoint(),
+                        b.getFirstItem().getPoint(),
+                        b.getSecondItem().getPoint());
+                if (isect != null && isect.isValid())
+                    isects.add(isect);
+            }
         }
-        Matrix ret = A.solve(B);
-        return new GeoPoint(ret.get(0, 0), ret.get(1, 0));
+        if (isects.isEmpty())
+            return null;
+        else if (isects.size() == 1)
+            return isects.getFirst();
+
+        // https://stackoverflow.com/questions/6671183/calculate-the-center-point-of-multiple-latitude-longitude-coordinate-pairs
+        double x = 0;
+        double y = 0;
+        double z = 0;
+
+        for (GeoPoint geoCoordinate : isects) {
+            double latitude = Math.toRadians(geoCoordinate.getLatitude());
+            double longitude = Math.toRadians(geoCoordinate.getLongitude());
+
+            x += Math.cos(latitude) * Math.cos(longitude);
+            y += Math.cos(latitude) * Math.sin(longitude);
+            z += Math.sin(latitude);
+        }
+
+        final int total = isects.size();
+
+        x = x / total;
+        y = y / total;
+        z = z / total;
+
+        double centralLongitude = Math.atan2(y, x);
+        double centralSquareRoot = Math.sqrt(x * x + y * y);
+        double centralLatitude = Math.atan2(z, centralSquareRoot);
+
+        return new GeoPoint(Math.toDegrees(centralLatitude),
+                Math.toDegrees(centralLongitude));
+
     }
 
     private static class IntersectionLine extends Association {
 
         private final Marker _landmark;
-        private Matrix _normal;
-        private Matrix _point;
 
         IntersectionLine(Marker landmark, Marker end, String uid) {
             super(landmark, end, uid);
@@ -286,35 +317,6 @@ public class ResectionMapManager implements MapGroup.OnItemListChangedListener,
             setColor(Color.GREEN);
             setClampToGround(true);
             setMetaBoolean("addToObjList", false);
-        }
-
-        private Matrix getPoint() {
-            if (_point == null) {
-                GeoPoint p = _landmark.getPoint();
-                _point = new Matrix(new double[] {
-                        p.getLatitude(), p.getLongitude()
-                }, 2);
-            }
-            return _point;
-        }
-
-        private Matrix getNormal() {
-            if (_normal == null) {
-                double bearing = _landmark.getMetaDouble("landmarkBearing", 0);
-                bearing = (bearing + 180d) % 360d;
-                double aziRad = Math.toRadians(bearing);
-                _normal = new Matrix(new double[] {
-                        Math.cos(aziRad),
-                        Math.sin(aziRad) / Math.cos(Math.toRadians(
-                                _landmark.getPoint().getLatitude()))
-                }, 2);
-                _normal = _normal.times((double) 1 / _normal.norm2());
-            }
-            return _normal;
-        }
-
-        private void reset() {
-            _normal = _point = null;
         }
     }
 }

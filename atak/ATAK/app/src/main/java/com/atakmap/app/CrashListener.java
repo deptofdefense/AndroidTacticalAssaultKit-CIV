@@ -1,6 +1,8 @@
 
 package com.atakmap.app;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 
 /**
@@ -24,6 +26,7 @@ public interface CrashListener {
                     && !FileSystemUtils.isEmpty(content);
         }
 
+        @NonNull
         public String toString() {
             return toJson();
         }

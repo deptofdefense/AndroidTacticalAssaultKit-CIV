@@ -125,6 +125,7 @@ public class PLRFBluetoothLEHandler
         List<BluetoothGattCharacteristic> chars = new ArrayList<>();
         int index = 0;
 
+        @SuppressLint("MissingPermission")
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status,
                 int newState) {
@@ -143,6 +144,7 @@ public class PLRFBluetoothLEHandler
             }
         }
 
+        @SuppressLint("MissingPermission")
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
             super.onServicesDiscovered(gatt, status);
@@ -232,6 +234,7 @@ public class PLRFBluetoothLEHandler
             }
         }
 
+        @SuppressLint("MissingPermission")
         @Override
         public void onCharacteristicChanged(final BluetoothGatt gatt,
                 final BluetoothGattCharacteristic characteristic) {
@@ -247,6 +250,7 @@ public class PLRFBluetoothLEHandler
             //Log.d(TAG, "onCharacteristicWrite: " + gatt + " " + characteristic + " " + status);
         }
 
+        @SuppressLint("MissingPermission")
         @Override
         public void onCharacteristicRead(BluetoothGatt gatt,
                 BluetoothGattCharacteristic characteristic, int status) {
@@ -333,6 +337,7 @@ public class PLRFBluetoothLEHandler
         return d * 180 / Math.PI;
     }
 
+    @SuppressLint("MissingPermission")
     @Override
     public void close() {
         if (bluetoothGatt != null) {

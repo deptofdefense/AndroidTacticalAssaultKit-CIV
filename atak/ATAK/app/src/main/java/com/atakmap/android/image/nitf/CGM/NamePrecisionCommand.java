@@ -1,6 +1,8 @@
 
 package com.atakmap.android.image.nitf.CGM;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.app.BuildConfig;
 
 import java.io.DataInput;
@@ -37,6 +39,7 @@ public class NamePrecisionCommand extends Command {
         return NamePrecisionCommand.precision;
     }
 
+    @NonNull
     @Override
     public String toString() {
         String s = "NamePrecision "

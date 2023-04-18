@@ -3678,6 +3678,8 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
   <string name="location_mode_desc">This device is currently set to \'Battery saving\'.   In order to make use of GPS, Android Location Settings need to be set to \'High accuracy\' or \'Device only\'.</string>
   <string name="settings_found_in">Found in %s</string>
   <string name="wms_preferences_summary">Map Data Preferences</string>
+  <string name="model_updated_by">Updated by \'%s\'.</string>
+  <string name="model_updated_terrain_model">Terrain model was \'%s\'.</string>
   <!-- Hashtags -->
   <string name="hashtags">Hashtags</string>
   <string name="new_hashtag">New Hashtag</string>
@@ -4157,4 +4159,6 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
     <string name="would_you_like_to_export_mission_pkg">Would you like to export the file as a mission package?</string>
     <string name="import_file">Import File</string>
     <string name="userfeedback_submit_message">Submitted %s to the support/log directory.   This feedback will be automatically published to the tak server if configured.</string>
+    <string name="rapid_mgrs_entry_mode">Rapid MGRS Entry Mode</string>
+  <string name="rapid_mgrs_entry_mode_sum">When long pressing to drop a point from the point dropper tool, use the MGRS optimized coordinate entry.</string>
 </resources>

@@ -1,4 +1,4 @@
-#include "jglquadtilenode2.h"
+#include "com_atakmap_map_layer_raster_tilereader_opengl_GLQuadTileNode2.h"
 
 #include <math/Matrix2.h>
 #include <renderer/GL.h>

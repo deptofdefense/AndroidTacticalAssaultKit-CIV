@@ -1,6 +1,8 @@
 
 package com.atakmap.android.track.crumb;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.lang.Objects;
@@ -66,6 +68,7 @@ public class CrumbPoint {
                 timestamp == ogp.timestamp;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return gpm + " " + speed + " " + bearing + " " + timestamp;

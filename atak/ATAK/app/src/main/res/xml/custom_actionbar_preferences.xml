@@ -7,15 +7,15 @@
         android:switchTextOn="@string/right_caps"
         android:switchTextOff="@string/left_caps"
         android:key="nav_orientation_right"/>
-   <Preference
+   <com.atakmap.android.gui.PanPreference
         android:title="@string/preferences_text72"
         android:summary="@string/preferences_text73"
         android:key="@string/selected_actionbar_icon_color"/>
-   <Preference
+   <com.atakmap.android.gui.PanPreference
         android:title="@string/preferences_text74"
         android:summary="@string/preferences_text75"
         android:key="@string/selected_actionbar_background_color"/>
-   <Preference
+   <com.atakmap.android.gui.PanPreference
         android:title="@string/preferences_text76"
         android:summary="@string/preferences_text77"
         android:key="@string/default_actionbar_colors"/>

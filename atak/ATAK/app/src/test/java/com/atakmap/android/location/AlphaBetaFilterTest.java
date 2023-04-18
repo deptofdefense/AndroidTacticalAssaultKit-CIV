@@ -17,7 +17,7 @@ public class AlphaBetaFilterTest {
         abf.update(11, 2, 1);
         abf.update(16, 3, 1);
         abf.update(11, 1, 1);
-        assertTrue(Double.compare(abf.getEstimate(), 13.537712) == 0);
+        assertEquals(0, Double.compare(abf.getEstimate(), 13.537712));
 
     }
 
@@ -32,7 +32,7 @@ public class AlphaBetaFilterTest {
         abf.update(16, 3, 1);
         abf.update(11, 1, 1);
         abf.update(Double.NaN, 1, 1);
-        assertTrue(Double.compare(abf.getEstimate(), 13.537712) == 0);
+        assertEquals(0, Double.compare(abf.getEstimate(), 13.537712));
     }
 
 }

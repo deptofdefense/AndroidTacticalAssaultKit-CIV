@@ -22,7 +22,6 @@ import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.android.toolbar.widgets.TextContainer;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
@@ -128,8 +127,8 @@ public class SensorFOVTool extends ButtonTool
         _marker.setMetaInteger(SensorDetailHandler.RANGE_ATTRIBUTE,
                 (int) Math.round(dist));
 
-        final double trueBearing = DistanceCalculations
-                .bearingFromSourceToTarget(_marker.getPoint(), geoPoint);
+        final double trueBearing = GeoCalculations
+                .bearingTo(_marker.getPoint(), geoPoint);
         _marker.setMetaInteger(SensorDetailHandler.AZIMUTH_ATTRIBUTE,
                 (int) Math.round(trueBearing));
 

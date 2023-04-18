@@ -7,19 +7,17 @@
             android:summary="@string/preferences_text176"
             android:key="enableGeocoder"
             android:defaultValue="true"/>
-       <Preference
+       <com.atakmap.android.gui.PanPreference
             android:key="geocodeSupplier"
             android:title="@string/preferences_text179"
             android:summary="@string/preferences_text180"
             android:disableDependentsState="true"
-            android:dependency="enableGeocoder"
-            />
-       <Preference
+            android:dependency="enableGeocoder" />
+       <com.atakmap.android.gui.PanPreference
             android:key="geocodeTestConnection"
             android:title="@string/preferences_text181"
             android:disableDependentsState="true"
-            android:dependency="enableGeocoder"
-            />
+            android:dependency="enableGeocoder" />
     </PreferenceCategory>
 </PreferenceScreen>
 

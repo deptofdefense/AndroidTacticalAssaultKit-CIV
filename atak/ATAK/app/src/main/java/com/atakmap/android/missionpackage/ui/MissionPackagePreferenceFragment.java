@@ -1,13 +1,24 @@
 
 package com.atakmap.android.missionpackage.ui;
 
+import android.content.Context;
 import android.os.Bundle;
 
 import com.atakmap.android.gui.PanEditTextPreference;
 import com.atakmap.android.preference.AtakPreferenceFragment;
+import com.atakmap.android.preference.PreferenceSearchIndex;
 import com.atakmap.app.R;
 
+import java.util.List;
+
 public class MissionPackagePreferenceFragment extends AtakPreferenceFragment {
+
+    public static List<PreferenceSearchIndex> index(Context context) {
+        return index(context,
+                MissionPackagePreferenceFragment.class,
+                R.string.missionpackage_control_prefs,
+                R.drawable.ic_menu_settings);
+    }
 
     public MissionPackagePreferenceFragment() {
         super(R.xml.missionpackage_preferences,

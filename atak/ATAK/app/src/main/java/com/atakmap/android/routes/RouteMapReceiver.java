@@ -1877,7 +1877,8 @@ public class RouteMapReceiver extends BroadcastReceiver implements
                         showRerouteDialog(routePlannerManager);
                     } catch (Exception e) {
                         removeRerouteButton();
-                        Toast.makeText(_context, R.string.bloodhound_no_planners,
+                        Toast.makeText(_context,
+                                R.string.bloodhound_no_planners,
                                 Toast.LENGTH_LONG).show();
                     }
                 } else if (rerouteButton.getState() == REROUTE_BUTTON_ON) {

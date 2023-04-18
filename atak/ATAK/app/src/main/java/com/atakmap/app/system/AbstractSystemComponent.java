@@ -3,8 +3,6 @@ package com.atakmap.app.system;
 
 import android.content.Context;
 
-import com.atakmap.annotations.DeprecatedApi;
-
 /**
  * Provides the abstract class for the System Components that modify behavior for the core capability.
  */

@@ -1,4 +1,4 @@
-#include "jdatabaseimpl.h"
+#include "com_atakmap_database_impl_DatabaseImpl.h"
 
 #include <cstring>
 #include <sstream>

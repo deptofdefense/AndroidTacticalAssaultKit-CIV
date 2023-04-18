@@ -1052,7 +1052,7 @@ public class CoordinateFormatUtilities {
 
         coordinate -= minutes;
 
-        double seconds = coordinate *= 60d;
+        double seconds = coordinate * 60d;
 
         double[] out = new double[3];
 

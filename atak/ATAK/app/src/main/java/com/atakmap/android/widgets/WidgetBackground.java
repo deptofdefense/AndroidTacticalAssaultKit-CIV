@@ -40,7 +40,7 @@ public class WidgetBackground implements IWidgetBackground {
     public static WidgetBackground resolveWidgetBackground(
             ConfigEnvironment config,
             String bgUriString) throws SAXException, IOException {
-        WidgetBackground bg = null;
+        WidgetBackground bg;
 
         // InputStream in = cfgRes.resolveInputStream(bgPath);
         Uri bgUri = Uri.parse(bgUriString);

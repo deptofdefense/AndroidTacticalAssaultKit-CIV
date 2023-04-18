@@ -34,8 +34,8 @@ public class PointTests extends AbstractGeometryTests {
         final double x = r.nextDouble();
         final double y = r.nextDouble();
         Point p = new Point(x, y);
-        Assert.assertTrue(x == p.getX());
-        Assert.assertTrue(y == p.getY());
+        Assert.assertEquals(x, p.getX(), 0.0);
+        Assert.assertEquals(y, p.getY(), 0.0);
     }
 
     @Test
@@ -45,9 +45,9 @@ public class PointTests extends AbstractGeometryTests {
         final double y = r.nextDouble();
         final double z = r.nextDouble();
         Point p = new Point(x, y, z);
-        Assert.assertTrue(x == p.getX());
-        Assert.assertTrue(y == p.getY());
-        Assert.assertTrue(z == p.getZ());
+        Assert.assertEquals(x, p.getX(), 0.0);
+        Assert.assertEquals(y, p.getY(), 0.0);
+        Assert.assertEquals(z, p.getZ(), 0.0);
     }
 
     // data model tests
@@ -59,8 +59,8 @@ public class PointTests extends AbstractGeometryTests {
         final double y = r.nextDouble();
         Point p = new Point(0, 0, 0);
         p.set(x, y);
-        Assert.assertTrue(x == p.getX());
-        Assert.assertTrue(y == p.getY());
+        Assert.assertEquals(x, p.getX(), 0.0);
+        Assert.assertEquals(y, p.getY(), 0.0);
     }
 
     @Test
@@ -71,9 +71,9 @@ public class PointTests extends AbstractGeometryTests {
         final double z = r.nextDouble();
         Point p = new Point(0, 0, 0);
         p.set(x, y, z);
-        Assert.assertTrue(x == p.getX());
-        Assert.assertTrue(y == p.getY());
-        Assert.assertTrue(z == p.getZ());
+        Assert.assertEquals(x, p.getX(), 0.0);
+        Assert.assertEquals(y, p.getY(), 0.0);
+        Assert.assertEquals(z, p.getZ(), 0.0);
     }
 
     // envelope tests

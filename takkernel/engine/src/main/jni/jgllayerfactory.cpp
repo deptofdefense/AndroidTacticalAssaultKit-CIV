@@ -1,4 +1,4 @@
-#include "jgllayerfactory.h"
+#include "com_atakmap_map_layer_opengl_GLLayerFactory.h"
 
 #include <core/LegacyAdapters.h>
 #include <renderer/core/GLLayerFactory2.h>

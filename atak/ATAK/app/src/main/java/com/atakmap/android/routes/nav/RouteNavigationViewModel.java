@@ -219,7 +219,7 @@ public class RouteNavigationViewModel
         // Compute the maneuver
         List<GeoPoint> geom = computeManeuverGeom(manager, item);
         int index = route.getIndexOfPoint(item);
-        int maneuver = -1;
+        int maneuver;
         if (index == 0) {
             maneuver = RoutePanelViewModel.START;
             speak = false; //It would sound weird if we spoke this.

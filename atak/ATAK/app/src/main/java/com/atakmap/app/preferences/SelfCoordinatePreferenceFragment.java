@@ -3,7 +3,6 @@ package com.atakmap.app.preferences;
 
 import android.content.Context;
 import android.os.Bundle;
-import android.preference.Preference;
 
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.android.preference.PreferenceSearchIndex;

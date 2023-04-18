@@ -1,6 +1,8 @@
 
 package com.atakmap.comms.http;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 
@@ -181,6 +183,7 @@ public class TakHttpResponse {
         return getHeaderString("Content-Type");
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "" + _statusCode + ": " + _statusLine.getReasonPhrase();

@@ -559,12 +559,12 @@ public class GLModelCaptureRequest implements GLOffscreenCaptureRequest {
             return;
 
         // XXX - this is assuming that buffer is ByteBuffer
-        Buffer modelVertices = mesh.getVertices(Model.VERTEX_ATTR_POSITION);
+        Buffer modelVertices = mesh.getVertices(Mesh.VERTEX_ATTR_POSITION);
         modelVertices.position(layout.position.offset);
 
         GLES30.glVertexAttribPointer(aPosition, 3, GLES30.GL_FLOAT, false,
                 layout.position.stride,
-                mesh.getVertices(Model.VERTEX_ATTR_POSITION));
+                mesh.getVertices(Mesh.VERTEX_ATTR_POSITION));
         GLES30.glEnableVertexAttribArray(aPosition);
 
         // Primitive lighting (requires normals)
@@ -579,7 +579,7 @@ public class GLModelCaptureRequest implements GLOffscreenCaptureRequest {
         //pass in texture coordinate information (if any)
         if (MathUtils.hasBits(attr, Mesh.VERTEX_ATTR_TEXCOORD_0)) {
             Buffer modelTexCoords = mesh
-                    .getVertices(Model.VERTEX_ATTR_TEXCOORD_0);
+                    .getVertices(Mesh.VERTEX_ATTR_TEXCOORD_0);
             modelTexCoords.position(layout.texCoord0.offset);
             GLES30.glVertexAttribPointer(aTexCoords, 2, GLES30.GL_FLOAT, false,
                     layout.texCoord0.stride, modelTexCoords);

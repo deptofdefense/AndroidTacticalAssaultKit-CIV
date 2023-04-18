@@ -28,7 +28,7 @@
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/external_apps">
-       <Preference
+       <com.atakmap.android.gui.PanPreference
             android:summary="@string/nv_adjust_night_vision"
             android:key="external_night_vision_launch"
             android:title="@string/nv_external_settings" />

@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import gov.tak.api.util.Disposable;
+
 public class BtLowEnergyManager {
 
     private final List<BluetoothLEHandler> btleHandlers = new ArrayList<>();
@@ -51,7 +53,7 @@ public class BtLowEnergyManager {
         void pairingError(BluetoothDevice device);
     }
 
-    public interface BluetoothLEHandler {
+    public interface BluetoothLEHandler extends Disposable {
         /**
          * Is called back during the scanning process.   The handler is responsible for handling
          * the results of the scan to include bonding, handling passing of the appropriate data

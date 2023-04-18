@@ -13,7 +13,6 @@ import gov.tak.platform.widgets.config.ConfigWidgetController;
 import gov.tak.platform.widgets.config.ConfigWidgetModel;
 import gov.tak.platform.widgets.factory.MapMenuWidgetFactory;
 import gov.tak.platform.widgets.factory.xml.XmlMapMenuWidgetSpi;
-import org.apache.commons.math3.analysis.function.Abs;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;

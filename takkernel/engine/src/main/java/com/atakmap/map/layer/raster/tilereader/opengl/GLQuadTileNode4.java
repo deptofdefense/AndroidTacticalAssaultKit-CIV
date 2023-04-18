@@ -4,6 +4,8 @@ import android.graphics.Color;
 import android.graphics.PointF;
 import android.graphics.Typeface;
 import android.opengl.GLES30;
+import android.util.Pair;
+
 import com.atakmap.android.maps.MapTextFormat;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
@@ -19,6 +21,7 @@ import com.atakmap.map.layer.raster.RasterDataAccess2;
 import com.atakmap.map.layer.raster.controls.TileCacheControl;
 import com.atakmap.map.layer.raster.gdal.GdalGraphicUtils;
 import com.atakmap.map.layer.raster.gdal.GdalTileReader;
+import com.atakmap.map.layer.raster.osm.OSMUtils;
 import com.atakmap.map.layer.raster.tilereader.TileReader;
 import com.atakmap.map.layer.raster.tilereader.TileReaderFactory;
 import com.atakmap.map.opengl.*;
@@ -30,6 +33,7 @@ import com.atakmap.math.PointD;
 import com.atakmap.math.PointI;
 import com.atakmap.math.Rectangle;
 import com.atakmap.opengl.*;
+import com.atakmap.util.Collections2;
 import com.atakmap.util.ConfigOptions;
 import com.atakmap.util.Disposable;
 import com.atakmap.util.Releasable;
@@ -39,6 +43,8 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.*;
+
+import gov.tak.api.annotation.DeprecatedApi;
 
 public class GLQuadTileNode4 implements
         GLResolvableMapRenderable,
@@ -115,7 +121,7 @@ public class GLQuadTileNode4 implements
     private int glTexGridIdxCount;
     
     private boolean vertexCoordsValid;
-    private GLQuadTileNode2.GridVertex[] gridVertices;
+    private GridVertex[] gridVertices;
     private GeoPoint centroid;
     private GeoPoint centroidHemi2;
     private int primaryHemi;
@@ -175,8 +181,27 @@ public class GLQuadTileNode4 implements
      * @param opts          The render configuration {@link GLQuadTileNode2.Options}. May be
      *                      <code>null</code>.
      * @param init          The initializer for this node.
+     *
+     * @deprecated use {@link #GLQuadTileNode4(RenderContext, ImageInfo, TileReaderFactory.Options, NodeOptions, NodeInitializer)}
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.6", forRemoval = true, removeAt = "4.9")
     public GLQuadTileNode4(RenderContext ctx, ImageInfo info, TileReaderFactory.Options readerOpts, GLQuadTileNode3.Options opts, GLQuadTileNode2.Initializer init) {
+        this(null, -1, NodeCore.create(ctx, info, readerOpts, opts, true, init));
+    }
+
+    /**
+     * Creates a new root node.
+     *
+     * @param info          The image information
+     * @param readerOpts    The {@link TileReaderFactory.Options} to be used
+     *                      when creating the {@link TileReader} associated with
+     *                      this node. May be <code>null</code>
+     * @param opts          The render configuration {@link GLQuadTileNode2.Options}. May be
+     *                      <code>null</code>.
+     * @param init          The initializer for this node.
+     */
+    public GLQuadTileNode4(RenderContext ctx, ImageInfo info, TileReaderFactory.Options readerOpts, NodeOptions opts, NodeInitializer init) {
         this(null, -1, NodeCore.create(ctx, info, readerOpts, opts, true, init));
     }
 
@@ -435,7 +460,7 @@ public class GLQuadTileNode4 implements
         this.glTexGridWidth = Math.max(subsX, subsY);
         this.glTexGridHeight = Math.max(subsX, subsY);
 
-        this.gridVertices = new GLQuadTileNode2.GridVertex[(this.glTexGridWidth+1)*(this.glTexGridHeight+1)];
+        this.gridVertices = new GridVertex[(this.glTexGridWidth+1)*(this.glTexGridHeight+1)];
 
         this.centroid = GeoPoint.createMutable();
 
@@ -775,6 +800,8 @@ public class GLQuadTileNode4 implements
         }
 
         if(this.lastTouch != view.renderPump) {
+            // starting a new render pump
+
             // prioritize read requests based on camera location
             view.currentScene.scene.mapProjection.inverse(view.currentScene.scene.camera.location, view.scratch.geo);
 
@@ -787,6 +814,17 @@ public class GLQuadTileNode4 implements
                 ctrl.prioritize(view.scratch.geo);
 
             core.refreshUpdateList();
+
+            // compile prefetch list
+            Collection<RequestRegion> regions = getRequestRegions(this.core.surfaceControl);
+            this.core.requestRegions.clear();
+            this.core.requestRegions.ensureCapacity(regions.size());
+            for(RequestRegion region : regions) {
+                final Collection<GLMapRenderable2> nodes = Collections2.newIdentityHashSet();
+                recurse(view, region, nodes);
+                if(!nodes.isEmpty())
+                    core.requestRegions.add(Pair.create(region, nodes));
+            }
         }
 
         GLES30.glEnable(GLES30.GL_BLEND);
@@ -817,7 +855,11 @@ public class GLQuadTileNode4 implements
         core.mvp.concatenate(view.scene.forward);
 
         core.tilesThisFrame = 0;
-        if(!shouldDraw(view, minLng, minLat, maxLng, maxLat)) {
+        view.scratch.envelope.minX = view.currentPass.westBound;
+        view.scratch.envelope.minY = view.currentPass.southBound;
+        view.scratch.envelope.maxX = view.currentPass.eastBound;
+        view.scratch.envelope.maxY = view.currentPass.northBound;
+        if(!shouldDraw(view.scratch.envelope, minLng, minLat, maxLng, maxLat)) {
             // cull any nodes that weren't touched this pump
             if(!view.multiPartPass) {
                 cull(view.renderPump);
@@ -845,9 +887,28 @@ public class GLQuadTileNode4 implements
                 this.core.tileReader.start();
             this.core.vertexResolver.beginDraw(view);
             try {
-                this.drawImpl(
-                        view,
-                        Math.min(level, root.tileIndex.z));
+                boolean drawnFromPrefetch = false;
+                for(Pair<RequestRegion, Collection<GLMapRenderable2>> entry : core.requestRegions) {
+                    view.scratch.envelope.minX = view.currentPass.westBound;
+                    view.scratch.envelope.minY = view.currentPass.southBound;
+                    view.scratch.envelope.minZ = entry.first.bounds.minZ;
+                    view.scratch.envelope.maxX = view.currentPass.eastBound;
+                    view.scratch.envelope.maxY = view.currentPass.northBound;
+                    view.scratch.envelope.maxZ = entry.first.bounds.maxZ;
+                    if(entry.first.bounds.equals(view.scratch.envelope)) {
+                        for(GLMapRenderable2 r : entry.second)
+                            ((GLQuadTileNode4)r).drawImpl(view, entry.first.level);
+                        drawnFromPrefetch = true;
+                        break;
+                    }
+                }
+                if(!drawnFromPrefetch) {
+                    // the globe surface renderer may render offscreen tiles during idle that will
+                    // not be included in the visible set, do a regular quadtree traversal
+                    this.drawImpl(
+                            view,
+                            Math.min(level, root.tileIndex.z));
+                }
             } finally {
                 this.core.vertexResolver.endDraw(view);
             }
@@ -1153,6 +1214,48 @@ public class GLQuadTileNode4 implements
                 core.updatedTiles.contains(this.tileIndex);
     }
 
+    private void recurse(GLMapView view, RequestRegion region, Collection<GLMapRenderable2> nodes) {
+        this.lastTouch = view.renderPump;
+        if(region.level > this.tileIndex.z) {
+            // region corresponds to lower resolution data
+            return;
+        } else if(!shouldDraw(region.bounds, this.minLng, this.minLat, this.maxLng, this.maxLat)) {
+            // tile does not intersect region
+            return;
+        } else if(region.level == this.tileIndex.z) {
+            // tile intersects and is at target resolution
+            if(shouldResolve() || needsRefresh())
+                this.resolveTexture(true);
+            nodes.add(this);
+        } else {
+            // tile is lower resolution than target, but intersects. recurse children.
+
+            // load texture to support child
+            if(core.tileReader.isMultiResolution() &&
+                    (this.tileIndex.z == this.root.tileIndex.z-1 || this.tileIndex.z == (region.level + 3)) &&
+                    ((this.state == State.UNRESOLVED) || (this.state == State.UNRESOLVABLE && needsRefresh()))) {
+
+                if(state == State.UNRESOLVABLE) state = State.UNRESOLVED;
+                this.resolveTexture(core.tileReader.isMultiResolution());
+                this.touched = true;
+                view.requestRefresh();
+            }
+
+            // determine children to draw
+            for(int i = 0; i < 4; i++) {
+                if(childMbb[i] == null)
+                    continue;
+                if(!shouldDraw(region.bounds, childMbb[i].minX, childMbb[i].minY, childMbb[i].maxX, childMbb[i].maxY))
+                    continue;
+                // ensure we have child to be drawn
+                if (this.children[i] == null)
+                    this.children[i] = new GLQuadTileNode4(this, i);
+                this.children[i].verticesInvalid |= this.verticesInvalid;
+                this.children[i].recurse(view, region, nodes);
+            }
+        }
+    }
+
     /**
      * @param view The view
      * @param level The resolution level. The scale factor is equivalent to
@@ -1190,8 +1293,13 @@ public class GLQuadTileNode4 implements
         } else {
             // determine children to draw
             boolean[] drawChild = new boolean[4]; // UL, UR, LL, LR
-            for(int i = 0; i < 4; i++)
-                drawChild[i] = (childMbb[i] != null) && shouldDraw(view, childMbb[i].minX, childMbb[i].minY, childMbb[i].maxX, childMbb[i].maxY);
+            for(int i = 0; i < 4; i++) {
+                view.scratch.envelope.minX = view.currentPass.westBound;
+                view.scratch.envelope.minY = view.currentPass.southBound;
+                view.scratch.envelope.maxX = view.currentPass.eastBound;
+                view.scratch.envelope.maxY = view.currentPass.northBound;
+                drawChild[i] = (childMbb[i] != null) && shouldDraw(view.scratch.envelope, childMbb[i].minX, childMbb[i].minY, childMbb[i].maxX, childMbb[i].maxY);
+            }
 
             // ensure we have child to be drawn
             for(int i = 0; i < 4; i++) {
@@ -1222,7 +1330,7 @@ public class GLQuadTileNode4 implements
             for (int i = 0; i < 4; i++) {
                 if(!drawChild[i])
                     continue;
-                this.children[i].verticesInvalid = this.verticesInvalid;
+                this.children[i].verticesInvalid |= this.verticesInvalid;
                 descendantsRequestDraw |= this.children[i].drawImpl(view, level);
             }
             this.verticesInvalid = false;
@@ -1937,10 +2045,10 @@ public class GLQuadTileNode4 implements
 
     /**************************************************************************/
 
-    private static boolean shouldDraw(GLMapView view, double minLng, double minLat, double maxLng, double maxLat) {
-        return Rectangle.intersects(minLng, minLat, maxLng, maxLat, view.westBound, view.southBound, view.eastBound, view.northBound, false) ||
-               (minLng < -180d && Rectangle.intersects(minLng+360d, minLat, Math.min(maxLng+360d, 180d), maxLat, view.westBound, view.southBound, view.eastBound, view.northBound, false)) ||
-               (maxLng > 180d && Rectangle.intersects(Math.max(minLng-360d, -180d), minLat, maxLng-360d, maxLat, view.westBound, view.southBound, view.eastBound, view.northBound, false));
+    private static boolean shouldDraw(Envelope mbb, double minLng, double minLat, double maxLng, double maxLat) {
+        return Rectangle.intersects(minLng, minLat, maxLng, maxLat, mbb.minX, mbb.minY, mbb.maxX, mbb.maxY, false) ||
+               (minLng < -180d && Rectangle.intersects(minLng+360d, minLat, Math.min(maxLng+360d, 180d), maxLat, mbb.minX, mbb.minY, mbb.maxX, mbb.maxY, false)) ||
+               (maxLng > 180d && Rectangle.intersects(Math.max(minLng-360d, -180d), minLat, maxLng-360d, maxLat, mbb.minX, mbb.minY, mbb.maxX, mbb.maxY, false));
     }
 
     /**************************************************************************/
@@ -1978,7 +2086,7 @@ public class GLQuadTileNode4 implements
         public void endNode(GLQuadTileNode4 ignored) {}
 
         @Override
-        public void project(GLMapView view, long imgSrcX, long imgSrcY, GLQuadTileNode2.GridVertex vert) {
+        public void project(GLMapView view, long imgSrcX, long imgSrcY, GridVertex vert) {
             this.scratchImg.x = imgSrcX;
             this.scratchImg.y = imgSrcY;
             this.i2g.imageToGround(this.scratchImg, vert.value, null);
@@ -2190,7 +2298,7 @@ public class GLQuadTileNode4 implements
         }
 
         @Override
-        public void project(GLMapView view, long imgSrcX, long imgSrcY, GLQuadTileNode2.GridVertex retval) {
+        public void project(GLMapView view, long imgSrcX, long imgSrcY, GridVertex retval) {
             GeoPoint geo = null;
             if (!view.targeting) {
                 this.requested++;
@@ -2409,4 +2517,29 @@ public class GLQuadTileNode4 implements
     /**************************************************************************/
 
     public static class Options extends GLQuadTileNode3.Options {}
+
+    final static class RequestRegion {
+        Envelope bounds;
+        int level;
+
+        RequestRegion(Envelope bnds, int lvl) {
+            bounds = bnds;
+            level = lvl;
+        }
+    }
+
+    private int getLevel(Envelope envelope) {
+        final double gsd = OSMUtils.mapnikTileResolution((int)(Math.log(180.0 / (envelope.maxY - envelope.minY)) / Math.log(2.0))) / 8.0;
+        final double scale = (this.core.gsd / gsd);
+        final int level = (int) Math.ceil(Math.max((Math.log(1.0d / scale) / Math.log(2.0)) + this.core.options.levelTransitionAdjustment, 0d));
+        return Math.min(level, root.tileIndex.z);
+    }
+
+    private Collection<RequestRegion> getRequestRegions(SurfaceRendererControl ctrl) {
+        Collection<Envelope> surfaceRegions = (ctrl != null) ? ctrl.getSurfaceBounds() : Collections.emptyList();
+        ArrayList<RequestRegion> requestRegions = new ArrayList<>(surfaceRegions.size());
+        for(Envelope bnds : surfaceRegions)
+            requestRegions.add(new RequestRegion(bnds, getLevel(bnds)));
+        return requestRegions;
+    }
 }

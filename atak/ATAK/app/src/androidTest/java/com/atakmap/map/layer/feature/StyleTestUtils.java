@@ -50,12 +50,12 @@ public final class StyleTestUtils {
             BasicStrokeStyle i1 = (BasicStrokeStyle) s1;
             BasicStrokeStyle i2 = (BasicStrokeStyle) s2;
             Assert.assertEquals(i1.getColor(), i2.getColor());
-            Assert.assertTrue(i1.getStrokeWidth() == i2.getStrokeWidth());
+            Assert.assertEquals(i1.getStrokeWidth(), i2.getStrokeWidth(), 0.0);
         } else if (s1 instanceof BasicPointStyle) {
             BasicPointStyle i1 = (BasicPointStyle) s1;
             BasicPointStyle i2 = (BasicPointStyle) s2;
             Assert.assertEquals(i1.getColor(), i2.getColor());
-            Assert.assertTrue(i1.getSize() == i2.getSize());
+            Assert.assertEquals(i1.getSize(), i2.getSize(), 0.0);
         } else if (s1 instanceof IconPointStyle) {
             IconPointStyle i1 = (IconPointStyle) s1;
             IconPointStyle i2 = (IconPointStyle) s2;
@@ -63,9 +63,10 @@ public final class StyleTestUtils {
             Assert.assertEquals(i1.getColor(), i2.getColor());
             Assert.assertEquals(i1.getIconAlignmentX(), i2.getIconAlignmentX());
             Assert.assertEquals(i1.getIconAligmnentY(), i2.getIconAligmnentY());
-            Assert.assertTrue(i1.getIconWidth() == i2.getIconWidth());
-            Assert.assertTrue(i1.getIconHeight() == i2.getIconHeight());
-            Assert.assertTrue(i1.getIconRotation() == i2.getIconRotation());
+            Assert.assertEquals(i1.getIconWidth(), i2.getIconWidth(), 0.0);
+            Assert.assertEquals(i1.getIconHeight(), i2.getIconHeight(), 0.0);
+            Assert.assertEquals(i1.getIconRotation(), i2.getIconRotation(),
+                    0.0);
             Assert.assertEquals(i1.isRotationAbsolute(),
                     i2.isRotationAbsolute());
         } else if (s1 instanceof LabelPointStyle) {
@@ -80,7 +81,8 @@ public final class StyleTestUtils {
             Assert.assertEquals(i1.getLabelAlignmentY(),
                     i2.getLabelAlignmentY());
             Assert.assertEquals(i1.getScrollMode(), i2.getScrollMode());
-            Assert.assertTrue(i1.getLabelRotation() == i2.getLabelRotation());
+            Assert.assertEquals(i1.getLabelRotation(), i2.getLabelRotation(),
+                    0.0);
             Assert.assertEquals(i1.isRotationAbsolute(),
                     i2.isRotationAbsolute());
         } else if (s1 instanceof CompositeStyle) {

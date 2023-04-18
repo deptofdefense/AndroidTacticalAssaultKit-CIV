@@ -20,6 +20,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.update.sorters.ProductInformationComparator;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.android.math.MathUtils;
@@ -61,6 +63,7 @@ public class ProductInformationAdapter extends BaseAdapter {
             this.availability = availability;
         }
 
+        @NonNull
         @Override
         public String toString() {
             return overall.toString() + ", " + message;
@@ -98,6 +101,7 @@ public class ProductInformationAdapter extends BaseAdapter {
             this.stringResource = stringResource;
         }
 
+        @NonNull
         @Override
         public String toString() {
             return MapView.getMapView().getContext().getString(stringResource);
@@ -117,6 +121,7 @@ public class ProductInformationAdapter extends BaseAdapter {
             this.stringResource = stringResource;
         }
 
+        @NonNull
         @Override
         public String toString() {
             return MapView.getMapView().getContext().getString(stringResource);
@@ -139,6 +144,7 @@ public class ProductInformationAdapter extends BaseAdapter {
             this.stringResource = stringResource;
         }
 
+        @NonNull
         @Override
         public String toString() {
             return MapView.getMapView().getContext().getString(stringResource);
@@ -159,6 +165,7 @@ public class ProductInformationAdapter extends BaseAdapter {
             this.stringResource = stringResource;
         }
 
+        @NonNull
         @Override
         public String toString() {
             return MapView.getMapView().getContext().getString(stringResource);

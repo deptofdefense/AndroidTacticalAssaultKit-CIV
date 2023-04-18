@@ -32,10 +32,10 @@ import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.comms.CommsMapComponent.ImportResult;
 import com.atakmap.map.layer.Layer;
+import com.atakmap.map.layer.feature.Adapters;
 import com.atakmap.map.layer.feature.DataSourceFeatureDataStore;
 import com.atakmap.map.layer.feature.FeatureDataSourceContentFactory;
-import com.atakmap.map.layer.feature.FeatureLayer;
-import com.atakmap.map.layer.feature.PersistentDataSourceFeatureDataStore;
+import com.atakmap.map.layer.feature.FeatureLayer3;
 import com.atakmap.map.layer.feature.PersistentDataSourceFeatureDataStore2;
 import com.atakmap.map.layer.feature.ogr.OgrFeatureDataSource;
 import com.atakmap.spatial.file.FalconViewContentResolver;
@@ -87,7 +87,7 @@ public class WktMapComponent extends AbstractMapComponent {
     private DataSourceFeatureDataStore spatialDb;
     private Set<FileDatabase> fileDatabases;
     private Map<String, ContentSource> contentSources;
-    private FeatureLayer layer;
+    private FeatureLayer3 layer;
     private MapView mapView;
     private BroadcastReceiver detailsDropdownReceiver;
     private BroadcastReceiver featureEditDropdownReceiver;
@@ -251,30 +251,18 @@ public class WktMapComponent extends AbstractMapComponent {
                     + overlaysDir.getAbsolutePath());
         }
         // open spatial DB
-        if (DeveloperOptions.getIntOption("feature-metadata-enabled", 1) == 0) {
-            if (IOProviderFactory.exists(SPATIAL_DB_DIR))
-                FileSystemUtils.deleteDirectory(SPATIAL_DB_DIR, false);
+        if (IOProviderFactory.exists(SPATIAL_DB_FILE))
+            FileSystemUtils.deleteFile(SPATIAL_DB_FILE);
 
-            if (DeveloperOptions.getIntOption("force-overlays-rebuild",
-                    0) == 1) {
-                FileSystemUtils.deleteFile(SPATIAL_DB_FILE);
-            }
+        if (DeveloperOptions.getIntOption("force-overlays-rebuild", 0) == 1)
+            FileSystemUtils.deleteDirectory(SPATIAL_DB_DIR, true);
 
-            this.spatialDb = new PersistentDataSourceFeatureDataStore(
-                    SPATIAL_DB_FILE);
-        } else {
-            if (IOProviderFactory.exists(SPATIAL_DB_FILE))
-                FileSystemUtils.deleteFile(SPATIAL_DB_FILE);
+        OgrFeatureDataSource.metadataEnabled = true;
+        this.spatialDb = new PersistentDataSourceFeatureDataStore2(
+                SPATIAL_DB_DIR);
 
-            if (DeveloperOptions.getIntOption("force-overlays-rebuild", 0) == 1)
-                FileSystemUtils.deleteDirectory(SPATIAL_DB_DIR, true);
-
-            OgrFeatureDataSource.metadataEnabled = true;
-            this.spatialDb = new PersistentDataSourceFeatureDataStore2(
-                    SPATIAL_DB_DIR);
-        }
-
-        this.layer = new FeatureLayer("Spatial Database", this.spatialDb);
+        this.layer = new FeatureLayer3("Spatial Database",
+                Adapters.adapt(this.spatialDb));
         // open content sources
         if (this.contentSources == null)
             this.contentSources = new HashMap<>();
@@ -422,63 +410,53 @@ public class WktMapComponent extends AbstractMapComponent {
         synchronized (this) {
 
             try {
-                // XXX - legacy implementation needs bulk modification for
-                //       transaction, new implementation does not
-                if (this.spatialDb instanceof PersistentDataSourceFeatureDataStore)
-                    this.spatialDb.beginBulkModification();
                 boolean success = false;
-                try {
-                    // check if cancelled
-                    if (cancelToken.get())
-                        return;
 
-                    // refresh the data store and drop all invalid entries
-                    this.spatialDb.refresh();
+                // check if cancelled
+                if (cancelToken.get())
+                    return;
 
-                    // check if cancelled
-                    if (cancelToken.get())
-                        return;
+                // refresh the data store and drop all invalid entries
+                this.spatialDb.refresh();
 
-                    Collection<SpatialDbContentSource> sources = new ArrayList<>(
-                            this.contentSources.size());
-                    for (ContentSource entry : this.contentSources
-                            .values()) {
-                        sources.add(entry.impl);
-                    }
+                // check if cancelled
+                if (cancelToken.get())
+                    return;
 
-                    // Add existing content to the resolvers
-                    for (SpatialDbContentSource s : sources) {
-                        if (cancelToken.get())
-                            return;
-                        SpatialDbContentResolver res = s.getContentResolver();
-                        if (res != null)
-                            res.scan(s);
-                    }
-
-                    final String[] mountPoints = FileSystemUtils
-                            .findMountPoints();
-
-                    if (cancelToken.get())
-                        return;
-
-                    // single "Overlays" directory scan
-                    File overlaysDir;
-                    for (String mountPoint : mountPoints) {
-                        overlaysDir = new File(mountPoint, "overlays");
-                        OverlaysScanner.scan(this.spatialDb,
-                                overlaysDir,
-                                sources,
-                                this.fileDatabases,
-                                cancelToken);
-                    }
-
-                    success = true;
-                } finally {
-                    // XXX - legacy implementation needs bulk modification for
-                    //       transaction, new implementation does not
-                    if (this.spatialDb instanceof PersistentDataSourceFeatureDataStore)
-                        this.spatialDb.endBulkModification(success);
+                Collection<SpatialDbContentSource> sources = new ArrayList<>(
+                        this.contentSources.size());
+                for (ContentSource entry : this.contentSources
+                        .values()) {
+                    sources.add(entry.impl);
                 }
+
+                // Add existing content to the resolvers
+                for (SpatialDbContentSource s : sources) {
+                    if (cancelToken.get())
+                        return;
+                    SpatialDbContentResolver res = s.getContentResolver();
+                    if (res != null)
+                        res.scan(s);
+                }
+
+                final String[] mountPoints = FileSystemUtils
+                        .findMountPoints();
+
+                if (cancelToken.get())
+                    return;
+
+                // single "Overlays" directory scan
+                File overlaysDir;
+                for (String mountPoint : mountPoints) {
+                    overlaysDir = new File(mountPoint, "overlays");
+                    OverlaysScanner.scan(this.spatialDb,
+                            overlaysDir,
+                            sources,
+                            this.fileDatabases,
+                            cancelToken);
+                }
+
+                success = true;
 
             } catch (SQLiteException e) {
                 Log.e(TAG, "Scan failed.", e);

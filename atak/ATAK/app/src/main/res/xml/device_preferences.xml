@@ -28,11 +28,13 @@
             android:key="locationUnitType" 
             android:title="@string/preferences_text84"
             android:defaultValue="@string/default_cot_type" />
-       <Preference android:title="@string/networkGpsPreferences"
+       <com.atakmap.android.gui.PanPreference
+           android:title="@string/networkGpsPreferences"
             android:key="gpsSettings"
             android:summary="@string/preferences_text267"
             android:icon="@drawable/ic_menu_compass" />
-       <Preference android:title="Laser Range Finder Preferences"
+       <com.atakmap.android.gui.PanPreference
+           android:title="Laser Range Finder Preferences"
             android:key="lrfSettings"
             android:summary="Adjust the Laser Range Finder Preferences"
             android:icon="@drawable/lrf_slide" />

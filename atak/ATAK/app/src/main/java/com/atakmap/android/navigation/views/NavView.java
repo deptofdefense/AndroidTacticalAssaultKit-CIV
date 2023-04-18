@@ -904,16 +904,9 @@ public class NavView extends RelativeLayout implements View.OnClickListener,
     }
 
     private void onUserIconScaleChanged() {
-        String option = _prefs.get("relativeOverlaysScalingRadioList", "1.0");
-
-        try {
-            userIconScale = (float) DeveloperOptions.getDoubleOption(
-                    "overlays-relative-scale-" + option,
-                    Float.parseFloat(option));
-        } catch (Exception e) {
-            Log.e(TAG, "Failed to read icon scale: " + userIconScale);
-            userIconScale = 1f;
-        }
+        userIconScale = 1.5f;
+        if (!_prefs.get("largeActionBar", false))
+            userIconScale = 1.0f;
 
         updateButtonLayout();
     }

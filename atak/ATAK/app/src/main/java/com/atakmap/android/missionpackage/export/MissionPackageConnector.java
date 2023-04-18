@@ -10,7 +10,7 @@ public class MissionPackageConnector extends Connector {
 
     public final static String CONNECTOR_TYPE = "connector.missionpackage";
 
-    private NetConnectString connectionEndpoint = null;
+    private NetConnectString connectionEndpoint;
 
     public MissionPackageConnector(NetConnectString netConnectString) {
         connectionEndpoint = netConnectString;

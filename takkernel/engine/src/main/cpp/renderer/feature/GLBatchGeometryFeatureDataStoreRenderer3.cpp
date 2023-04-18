@@ -107,7 +107,8 @@ namespace
         std::shared_ptr<CallbackExchange> cbex;
         std::size_t queryCount{ 0u };
         uint32_t nextHitId{ 0u };
-        
+        std::size_t iconDimensionConstraint{ 64u };
+
         std::map<int64_t, FeatureRecord> featureRecords;
 
         FeatureRecord* current{ nullptr };
@@ -371,6 +372,10 @@ TAKErr GLBatchGeometryFeatureDataStoreRenderer3::queryImpl(QueryContext &opaque,
     TAKErr code(TE_Ok);
 
     auto &ctx = static_cast<BuilderQueryContext &>(opaque);
+
+    const int iconDimensionConstraint = ConfigOptions_getIntOptionOrDefault("overlays.icon-dimension-constraint", 64);
+    if (iconDimensionConstraint > 0)
+        ctx.iconDimensionConstraint = (std::size_t)iconDimensionConstraint;
 
     // XXX - SRIDs
     struct
@@ -887,8 +892,8 @@ namespace
             *v0 = entry->second.v0;
             *u1 = entry->second.u1;
             *v1 = entry->second.v1;
-            *w = entry->second.width;
-            *h = entry->second.height;
+            *w = std::min(entry->second.width, iconDimensionConstraint);
+            *h = std::min(entry->second.height, iconDimensionConstraint);
             *rotation = entry->second.rotation;
             *isAbsoluteRotation = entry->second.isAbsoluteRotation;
             return TE_Ok;

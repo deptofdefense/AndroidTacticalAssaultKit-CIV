@@ -30,7 +30,6 @@ import com.atakmap.map.layer.feature.FeatureDataStore.FeatureSetQueryParameters;
 import com.atakmap.map.layer.feature.FeatureDataStore.FeatureQueryParameters;
 import com.atakmap.map.layer.feature.FeatureDataStore.FeatureSetCursor;
 import com.atakmap.map.layer.feature.FeatureSet;
-import com.atakmap.map.layer.feature.PersistentDataSourceFeatureDataStore;
 import com.atakmap.map.layer.feature.PersistentDataSourceFeatureDataStore2;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
@@ -275,7 +274,9 @@ public class MCIAGRGMapOverlay extends AbstractMapOverlay2 {
             try {
                 db = new PersistentDataSourceFeatureDataStore2(dbFile);
             } catch (Exception e) {
-                db = new PersistentDataSourceFeatureDataStore(dbFile);
+                if (dbFile.exists())
+                    dbFile.delete();
+                db = new PersistentDataSourceFeatureDataStore2(dbFile);
             }
             this.spatialdb = db;
         }

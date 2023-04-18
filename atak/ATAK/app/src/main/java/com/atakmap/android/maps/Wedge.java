@@ -1,6 +1,8 @@
 
 package com.atakmap.android.maps;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.coremap.conversions.Angle;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -312,6 +314,7 @@ public class Wedge extends Polyline {
         return true;
     }
 
+    @NonNull
     public String toString() {
         GeoPoint[] gp = getPoints();
         if (gp != null && gp.length >= 3) {

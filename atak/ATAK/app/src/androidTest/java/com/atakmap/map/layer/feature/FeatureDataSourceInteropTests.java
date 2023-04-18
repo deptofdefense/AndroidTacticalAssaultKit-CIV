@@ -93,10 +93,10 @@ public class FeatureDataSourceInteropTests extends ATAKInstrumentedTest {
                 // compare feature set fields
                 Assert.assertEquals(truthContent.getFeatureSetName(),
                         testContent.getFeatureSetName());
-                Assert.assertTrue(truthContent.getMinResolution() == testContent
-                        .getMinResolution());
-                Assert.assertTrue(truthContent.getMaxResolution() == testContent
-                        .getMaxResolution());
+                Assert.assertEquals(truthContent.getMinResolution(), testContent
+                        .getMinResolution(), 0.0);
+                Assert.assertEquals(truthContent.getMaxResolution(), testContent
+                        .getMaxResolution(), 0.0);
 
                 do {
                     final boolean nextFtruth = truthContent.moveToNext(

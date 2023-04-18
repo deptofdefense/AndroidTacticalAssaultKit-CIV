@@ -191,6 +191,11 @@ public final class ModelImporter extends AbstractImporter {
                         }
                         modelAttr.setAttribute("resourceMap", modelResourceMap);
                     }
+                    if (model.metadata != null) {
+                        AttributeSet modelMetadata = new AttributeSet(
+                                model.metadata);
+                        modelAttr.setAttribute("metadata", modelMetadata);
+                    }
                     attributes.setAttribute("TAK.ModelInfo", modelAttr);
                     attributes.setAttribute(".ATTACHMENT_URIS", new String[] {
                             model.uri

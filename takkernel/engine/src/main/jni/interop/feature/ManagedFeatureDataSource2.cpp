@@ -7,7 +7,7 @@
 #include <util/Memory.h>
 
 #include "common.h"
-#include "jfeaturedefinition.h"
+#include "com_atakmap_map_layer_feature_FeatureDefinition.h"
 #include "interop/JNIByteArray.h"
 #include "interop/JNIStringUTF.h"
 #include "interop/java/JNILocalRef.h"

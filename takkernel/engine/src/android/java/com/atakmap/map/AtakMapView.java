@@ -143,18 +143,6 @@ public class AtakMapView extends ViewGroup {
     public static final int DISPLAY_LIMIT_TEXTURE_UNITS = 0x00000004;
     public static final int DISABLE_TEXTURE_FBO =         0x00000008;
 
-    /**
-     * Display density factor relative to 240DPI. For example, 120DPI would have
-     * a <code>DENSITY</code> value of 0.5f and 480DPI would have a
-     * <code>DENSITY</code> value of 2.0f.
-     *
-     * @deprecated Use {@link #getDisplayDpi()}<code>/240f</code>
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public static float DENSITY = 1f; // Used by map items to convert their SII-era sizes to scale
-                                      // with modern devices.
-
     private static float unscaledDensity = 1f;
     
     public static interface OnDisplayFlagsChangedListener {
@@ -342,12 +330,12 @@ public class AtakMapView extends ViewGroup {
                                                                      // SII, which our sizes were
                                                                      // originally based on.
 
-        DENSITY = unscaledDensity;
+        float density = unscaledDensity;
         // Things don't scale down very well, so let's keep 1 as the minimum.
-        if (DENSITY < 1.0f)
-            DENSITY = 1.0f;
+        if (density < 1.0f)
+            density = 1.0f;
 
-        GLRenderGlobals.setRelativeScaling(DENSITY);
+        GLRenderGlobals.setRelativeScaling(density);
 
         preferenceManager = PreferenceManager.getDefaultSharedPreferences(getContext());
 
@@ -435,19 +423,6 @@ public class AtakMapView extends ViewGroup {
         return this.globe;
     }
 
-    /**
-     * @deprecated use {@link #updateView(double, double, double, double, double, boolean)}
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public void updateView (double latitude,
-                             double longitude,
-                             double scale,
-                             double rotation,
-                             boolean animate)
-      {
-        this.updateView(latitude, longitude, scale, rotation, getMapTilt(), animate);
-      }
 
     /**
      * Call to update the view provided a latitude, longitude, scale, rotation, tilt and a 
@@ -1349,7 +1324,6 @@ public class AtakMapView extends ViewGroup {
 
         this.pause();
         try {
-            DENSITY = d;
             GLRenderGlobals.setRelativeScaling(d);
             if(this.glSurface != null) {
                 this.glSurface.updateDisplayDensity();

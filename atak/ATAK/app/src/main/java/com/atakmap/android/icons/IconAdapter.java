@@ -3,11 +3,13 @@ package com.atakmap.android.icons;
 
 import com.atakmap.android.maps.Marker;
 
+import gov.tak.api.util.Disposable;
+
 /**
  * 
  * 
  */
-public interface IconAdapter {
+public interface IconAdapter extends Disposable {
 
     /**
      * Return true if the icon was adapter for the specified marker
@@ -17,5 +19,4 @@ public interface IconAdapter {
      */
     boolean adapt(Marker marker);
 
-    void dispose();
 }

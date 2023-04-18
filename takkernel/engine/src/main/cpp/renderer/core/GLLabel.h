@@ -46,6 +46,7 @@ namespace TAK
                 class ENGINE_API GLLabel
                 {
                 private :
+                    static constexpr float MAX_TEXT_WIDTH = 80.f;
                     struct LabelPlacement
                     {
                         TAK::Engine::Math::Point2<double> anchor_xyz_;
@@ -125,14 +126,14 @@ namespace TAK
                     void setPriority(const Priority priority) NOTHROWS;
                     bool shouldRenderAtResolution(const double draw_resolution) const NOTHROWS;
                     void validate(const TAK::Engine::Renderer::Core::GLGlobeBase& view, const GLText2 &text) NOTHROWS;
+                    void validate(const TAK::Engine::Renderer::Core::GLGlobeBase& view, TextFormat2& text_format) NOTHROWS;
                 public :
                     void setHints(const unsigned int hints) NOTHROWS;
                     void setPlacementInsets(const float left, const float right, const float bottom, const float top) NOTHROWS;
                     Util::TAKErr setFloatWeight(const float weight) NOTHROWS;
-
                     void getRotation(float &angle, bool &absolute) const NOTHROWS;
                 private:
-                    bool place(LabelPlacement &placement, const GLGlobeBase& view, const GLText2& gl_text, const std::vector<LabelPlacement>& label_rects, bool &rePlaced) NOTHROWS;
+                    bool place(LabelPlacement& placement, const GLGlobeBase& view, TextFormat2& text_format, const std::vector<LabelPlacement>& label_rects, bool& rePlaced) NOTHROWS;
                     void draw(const GLGlobeBase& view, GLText2& gl_text) NOTHROWS;
                     void batch(const GLGlobeBase& view, GLText2& gl_text, GLRenderBatch2& batch, int render_pass) NOTHROWS;
                     void batch(const GLGlobeBase& view, GLText2& gl_text, GLRenderBatch2& batch, const LabelPlacement &anchor, int render_pass) NOTHROWS;
@@ -192,12 +193,12 @@ namespace TAK
                     bool mark_dirty_;
                     int draw_version_;
                     unsigned int hints_;
+                    GLText2 *gltext_; // Remove this once we break from legacy rendering
                     /** if `nullptr`, uses system default */
-                    GLText2 *gltext_;
+                    std::unique_ptr<TextFormatParams> textFormatParams_;
                     bool did_animate_;
 
                     friend class GLLabelManager;
-                    friend class LabelBoundingRectangle;
                 };
             }
         }

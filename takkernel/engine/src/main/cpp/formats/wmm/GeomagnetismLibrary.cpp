@@ -988,7 +988,7 @@ CALLS : none
         printf(" 4. dX/dlambda \t5. dY/dlambda \t6. dZ/dlambda\n");
         printf(" 7. dX/dz \t8. dY/dz \t9. dZ/dz\n");
         strcpy(buffer, "");
-        fgets(buffer, 32, stdin);
+        fgets(buffer, 20, stdin);
         sscanf(buffer, "%d", ElementOption);
         strcpy(buffer, "");
         *ElementOption+=16;

@@ -6,7 +6,6 @@ import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withClassName;
-import static androidx.test.espresso.matcher.ViewMatchers.withContentDescription;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static org.hamcrest.Matchers.allOf;
@@ -23,8 +22,8 @@ import android.view.ViewParent;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.espresso.DataInteraction;
 import androidx.test.espresso.ViewInteraction;
-import androidx.test.filters.LargeTest;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.filters.LargeTest;
 import androidx.test.rule.ActivityTestRule;
 
 import org.hamcrest.Description;
@@ -74,23 +73,14 @@ public class BasicStartStopTest {
                         isDisplayed()));
         imageView.perform(click());
 
-        DataInteraction loadoutAllToolsVH = onData(anything())
-                .inAdapterView(allOf(withId(R.id.toolbar_list),
-                        withContentDescription("toolbars"),
-                        childAtPosition(
-                                withId(R.id.nav_stack_container),
-                                0)))
-                .atPosition(0);
-        loadoutAllToolsVH.perform(click());
-
-        DataInteraction navSettingsGridVH = onData(anything())
-                .inAdapterView(allOf(withId(R.id.settings_list),
+        DataInteraction loadoutToolsGridVH = onData(anything())
+                .inAdapterView(allOf(withId(R.id.tools_list),
                         childAtPosition(
                                 withClassName(
                                         is("android.widget.LinearLayout")),
                                 1)))
-                .atPosition(33);
-        navSettingsGridVH.perform(click());
+                .atPosition(27);
+        loadoutToolsGridVH.perform(click());
 
         ViewInteraction button = onView(
                 allOf(withId(android.R.id.button1), withText("Yes"),

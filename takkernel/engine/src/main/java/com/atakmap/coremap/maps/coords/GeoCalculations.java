@@ -110,13 +110,6 @@ public final class GeoCalculations {
 
     }
 
-    /** @deprecated use {@link #midPointCartesian(GeoPoint, GeoPoint, boolean)} */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public static GeoPoint midPoint(GeoPoint a, GeoPoint b, boolean wrap180) {
-        return midPointCartesian(a, b, wrap180);
-    }
-
     /**
      * Deternine the midpoint between two points in carteasian space
      * @param a the first point
@@ -483,12 +476,6 @@ public final class GeoCalculations {
         return e;
     }
 
-    /** @deprecated use {@link #midPointCartesian(GeoPoint, GeoPoint, boolean)} */
-    @Deprecated
-    @DeprecatedApi(since = "4.2.1", forRemoval = true, removeAt = "4.5")
-    public static GeoPoint midPoint(GeoPoint a, GeoPoint b) {
-        return midPointCartesian(a, b, false);
-    }
 
     /**
      * Given two points, compute the midpoint utilizing WGS84.
@@ -641,6 +628,33 @@ public final class GeoCalculations {
                 + 1.175 * Math.cos(4 * rlat);
     }
 
+    /**
+     * Returns the intersection given two lines of bearing
+     * @param start1    The start point of the first line of bearing
+     * @param end1      The end point of the first line of bearing
+     * @param start2    The start point of the second line of bearing
+     * @param end2      The end point of the second line of bearing
+     * @return  The intersection of the two lines of bearing, or <code>null</code> if there is
+     *          no intersection
+     */
+    public static GeoPoint lineOfBearingIntersect(GeoPoint start1, GeoPoint end1, GeoPoint start2, GeoPoint end2) {
+        return lineOfBearingIntersect(start1, start1.bearingTo(end1), start2, start2.bearingTo(end2));
+    }
+
+    /**
+     * Returns the intersection given two lines of bearing
+     * @param aStart    The start point of the first line of bearing
+     * @param aBearing  The bearing of the first line of bearing
+     * @param bStart    The start point of the second line of bearing
+     * @param bBearing  The bearing of the second line of bearing
+     * @return  The intersection of the two lines of bearing, or <code>null</code> if there is
+     *          no intersection
+     */
+    public static GeoPoint lineOfBearingIntersect(GeoPoint aStart, double aBearing, GeoPoint bStart, double bBearing) {
+        return lineOfBearingIntersect(aStart.getLatitude(), aStart.getLongitude(), aBearing,
+                bStart.getLatitude(), bStart.getLongitude(), bBearing);
+    }
+
     static native double distance(double lat1, double lng1, double alt1,
             double lat2, double lng2, double alt2, int flags);
 
@@ -658,4 +672,7 @@ public final class GeoCalculations {
 
     static native GeoPoint pointAtDistance(double lat, double lng, double alt,
             double azimuth, double distance, double inclination, int flags);
+
+    static native GeoPoint lineOfBearingIntersect(double lat1, double lng1, double brg1,
+            double lat2, double lng2, double brg2);
 }

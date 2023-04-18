@@ -1,6 +1,8 @@
 
 package com.atakmap.android.geofence.data;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.maps.AnchoredMapItem;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
@@ -532,6 +534,7 @@ public class GeoFence {
                 _rangeKM, _minElevation, _maxElevation);
     }
 
+    @NonNull
     @Override
     public String toString() {
         return String.format(LocaleUtil.getCurrent(),

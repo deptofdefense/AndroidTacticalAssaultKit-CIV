@@ -17,6 +17,8 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.chat.GeoChatConnector;
 import com.atakmap.android.contact.ContactConnectorManager;
 import com.atakmap.android.contact.ContactDetailDropdown;
@@ -304,6 +306,7 @@ public class CotMapComponent extends AbstractMapComponent implements
         callFilter.addAction("com.atakmap.callAction");
         AtakBroadcast.getInstance().registerReceiver(
                 telephoneViewReceiver = new BroadcastReceiver() {
+                    @NonNull
                     public String toString() {
                         return "telephoneViewReceiver";
                     }
@@ -335,6 +338,7 @@ public class CotMapComponent extends AbstractMapComponent implements
         voipFilter.addAction("com.atakmap.voipAction");
         AtakBroadcast.getInstance().registerReceiver(
                 voipViewReceiver = new BroadcastReceiver() {
+                    @NonNull
                     public String toString() {
                         return "voipViewReceiver";
                     }
@@ -352,6 +356,7 @@ public class CotMapComponent extends AbstractMapComponent implements
         geoChatFilter.addAction("com.atakmap.geochatAction");
         AtakBroadcast.getInstance().registerReceiver(
                 geochatViewReceiver = new BroadcastReceiver() {
+                    @NonNull
                     public String toString() {
                         return "geochatViewReceiver";
                     }
@@ -369,6 +374,7 @@ public class CotMapComponent extends AbstractMapComponent implements
         xmppFilter.addAction("com.atakmap.xmppAction");
         AtakBroadcast.getInstance().registerReceiver(
                 xmppViewReceiver = new BroadcastReceiver() {
+                    @NonNull
                     public String toString() {
                         return "xmppViewReceiver";
                     }
@@ -386,6 +392,7 @@ public class CotMapComponent extends AbstractMapComponent implements
         emailFilter.addAction("com.atakmap.emailAction");
         AtakBroadcast.getInstance().registerReceiver(
                 emailViewReceiver = new BroadcastReceiver() {
+                    @NonNull
                     public String toString() {
                         return "emailViewReceiver";
                     }
@@ -403,6 +410,7 @@ public class CotMapComponent extends AbstractMapComponent implements
         missionPackageFilter.addAction("com.atakmap.missionPackageAction");
         AtakBroadcast.getInstance().registerReceiver(
                 missionPackageViewReceiver = new BroadcastReceiver() {
+                    @NonNull
                     public String toString() {
                         return "missionPackageViewReceiver";
                     }
@@ -676,6 +684,7 @@ public class CotMapComponent extends AbstractMapComponent implements
     };
 
     private BroadcastReceiver batteryRcvr = new BroadcastReceiver() {
+        @NonNull
         public String toString() {
             return "batteryRecvr";
         }

@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.net.Uri;
 import android.util.Pair;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.bluetooth.BluetoothDevicesConfig;
 import com.atakmap.android.favorites.FavoriteListAdapter;
 import com.atakmap.android.importexport.ImportExportMapComponent;
@@ -62,6 +64,7 @@ final public class ImportTXTSort extends ImportInternalSDResolver {
             this.action = action;
         }
 
+        @NonNull
         public String toString() {
             return signature + ": " + folder;
         }

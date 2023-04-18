@@ -28,7 +28,7 @@ public class GeometryFactoryTests extends ATAKInstrumentedTest {
         original.toWkb(ByteBuffer.wrap(wkb).order(order));
         Geometry parsed = GeometryFactory.parseWkb(wkb);
         assertNotNull(parsed);
-        assertTrue(original.equals(parsed));
+        assertEquals(original, parsed);
     }
 
     private void geometry_blob_roundtrip(Geometry original, ByteOrder order) {
@@ -38,7 +38,7 @@ public class GeometryFactoryTests extends ATAKInstrumentedTest {
                 ByteBuffer.wrap(blob).order(order));
         Geometry parsed = GeometryFactory.parseSpatiaLiteBlob(blob);
         assertNotNull(parsed);
-        assertTrue(original.equals(parsed));
+        assertEquals(original, parsed);
     }
 
     // WKB

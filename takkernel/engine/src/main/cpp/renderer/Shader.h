@@ -15,16 +15,16 @@ namespace TAK {
         namespace Renderer {
             struct ENGINE_API Shader2
             {
-                GLuint handle;
-                GLint uMVP;
-                GLint uTexture;
-                GLint uSunPosition;
-                GLint uColor;
-                GLint uInvModelView;
-                GLint aTexCoords;
-                GLint aVertexCoords;
-                GLint aNormals;
-                GLint uNormalMatrix;
+                GLuint handle {GL_NONE};
+                GLint uMVP {-1};
+                GLint uTexture {-1};
+                GLint uSunPosition {-1};
+                GLint uColor {-1};
+                GLint uInvModelView {-1};
+                GLint aTexCoords {-1};
+                GLint aVertexCoords {-1};
+                GLint aNormals {-1};
+                GLint uNormalMatrix {-1};
                 friend TAK::Engine::Util::TAKErr Shader_get(std::shared_ptr<const Shader2>&, const TAK::Engine::Core::RenderContext&, const RenderAttributes& attrs) NOTHROWS;
             };
 
@@ -33,19 +33,19 @@ namespace TAK {
             private :
                 Shader(const unsigned flags) NOTHROWS;
             public :
-                GLuint handle;
+                GLuint handle{GL_NONE};
 
-                GLint uProjection;
-                GLint uModelView;
-                GLint uTextureMx;
-                GLint uTexture;
-                GLint uAlphaDiscard;
-                GLint uColor;
-                GLint aVertexCoords;
-                GLint aTextureCoords;
-                GLint aColorPointer;
-                GLint aNormals;
-                GLint uPointSize;
+                GLint uProjection {-1};
+                GLint uModelView {-1};
+                GLint uTextureMx {-1};
+                GLint uTexture {-1};
+                GLint uAlphaDiscard {-1};
+                GLint uColor {-1};
+                GLint aVertexCoords {-1};
+                GLint aTextureCoords {-1};
+                GLint aColorPointer {-1};
+                GLint aNormals {-1};
+                GLint uPointSize {-1};
 
                 bool textured;
                 bool alphaDiscard;

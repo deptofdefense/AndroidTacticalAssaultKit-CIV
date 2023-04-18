@@ -1,0 +1,526 @@
+diff --git a/README.md b/README.md
+index 1e83ec0..cfa96c6 100644
+--- a/README.md
++++ b/README.md
+@@ -40,10 +40,33 @@ After successfully completing the build, all elements needed to run a set of fun
+ As explained above, `gtest-engine-ncrypt` requires administrator privileges to succeed because it tries to use private keys from the local computer's personal store for its signing functionality.
+ 
+ This completes the Quickstart. From this point on, it is recommended to read [the User's Manual on Read the Docs](https://openssl-cng-engine.readthedocs.io/en/latest/index.html).
+ 
+ ## Thanks
+ 
+ Many thanks go to
+ 
+ - [AppVeyor](https://www.appveyor.com) for their great Continuous Integration (CI) service used to continuously monitor the quality of this project
+ - [Read the Docs](https://www.readthedocs.org) for building and hosting the documentation for this project.
++
++## Examples
++- Get simple singular cert for current user's cert with fingerprint a54...
++
++    ```
++    openssl storeutl -engine engine-ncrypt 'cert:/CurrentUser/My/a5465b877fa4ab355128a2780b75b24c795672e9?object-kind=cert'
++    ```
++
++- Get complete cert chain for current user's cert with fingerprint a54...
++
++    ```
++    openssl storeutl -engine engine-ncrypt 'cert:/CurrentUser/My/a5465b877fa4ab355128a2780b75b24c795672e9?object-kind=certchain'
++    ```
++
++- Connect using openssl
++
++    ```
++    # First get public cert and chain:
++    openssl storeutl -engine engine-ncrypt 'cert:/CurrentUser/My/a5465b877fa4ab355128a2780b75b24c795672e9?object-kind=certchain' > mycerts.pem
++    # Connect with that plus engine-provided private key:
++    openssl s_client -engine engine-ncrypt -keyform engine -cert mycerts.pem -key cert:/CurrentUser/My/a5465b877fa4ab355128a2780b75b24c795672e9?object-kind=pkey -connect server:8089
++```
++
+diff --git a/include/s_ncrypt.h b/include/s_ncrypt.h
+index 77be89c..812d9a4 100644
+--- a/include/s_ncrypt.h
++++ b/include/s_ncrypt.h
+@@ -75,29 +75,31 @@ typedef enum {
+     NCRYPT_STORAGE_KIND_CURRENT_USER,
+     NCRYPT_STORAGE_KIND_LOCAL_MACHINE
+ } ncrypt_storage_kind;
+ 
+ /* Object kind element name for querying particular types of objects */
+ #define NCRYPT_OBJECT_KIND_ELMT "object-kind"
+ /* Object kind recognized values */
+ #define NCRYPT_OBJECT_KIND_VAL_PKEY   "pkey"
+ #define NCRYPT_OBJECT_KIND_VAL_PARAMS "parms"
+ #define NCRYPT_OBJECT_KIND_VAL_CERT   "cert"
++#define NCRYPT_OBJECT_KIND_VAL_CERT_CHAIN   "certchain"
+ #define NCRYPT_OBJECT_KIND_VAL_CRL    "crl"
+ /* There is no alias for NAME */
+ 
+ typedef enum {
+     NCRYPT_OBJECT_KIND_UNKNOWN,
+     NCRYPT_OBJECT_KIND_NAME,
+     NCRYPT_OBJECT_KIND_PKEY,
+     NCRYPT_OBJECT_KIND_PARAMS,
+     NCRYPT_OBJECT_KIND_CERT,
++    NCRYPT_OBJECT_KIND_CERT_CHAIN,
+     NCRYPT_OBJECT_KIND_CRL
+ } ncrypt_object_kind;
+ 
+ /* Distinguished name element name for querying by DN */
+ #define NCRYPT_DN_ELMT "distinguished-name"
+ 
+ /* NCrypt can use different types of key storage providers */
+ /* Storage provider element name */
+ #define NCRYPT_PROVIDERNAME_ELMT "provider-name"
+ /* Storage provider recognized values */
+diff --git a/msbuild/import-post.props b/msbuild/import-post.props
+index 9ae7589..5ddadc7 100644
+--- a/msbuild/import-post.props
++++ b/msbuild/import-post.props
+@@ -1,19 +1,18 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+   <PropertyGroup>
+     <BuildDependsOn>$(BuildDependsOn);CopyArtifacts</BuildDependsOn>
+   </PropertyGroup>
+   <Target Name="CopyArtifacts" Condition=" '$(ConfigurationType)' != 'StaticLibrary' ">
+     <PropertyGroup>
+ 	  <LibCryptoBase>$(OpenSSLDir)bin\libcrypto-1_1</LibCryptoBase>
+-      <LibCryptoSuffix Condition=" '$(Platform)'=='x64' ">-x64</LibCryptoSuffix>
+     </PropertyGroup>
+     <ItemGroup>
+       <Artifacts Include="$(OutDir)$(TargetName)$(TargetExt)" />
+       <OsslArtifacts Include="$(LibCryptoBase)$(LibCryptoSuffix).dll" />
+       <Artifacts Include="$(OutDir)$(TargetName).pdb" Condition=" '$(Configuration)'=='Debug' " />
+       <OsslArtifacts Include="$(LibCryptoBase)$(LibCryptoSuffix).pdb" Condition=" '$(Configuration)'=='Debug' And Exists('$(LibCryptoBase)$(LibCryptoSuffix).pdb') " />
+     </ItemGroup>
+     <Copy SourceFiles="@(OsslArtifacts)" SkipUnchangedFiles="true" DestinationFolder="$(OutDir)" />
+     <Copy SourceFiles="@(Artifacts);@(OsslArtifacts)" SkipUnchangedFiles="true" DestinationFolder="$(OutDir)..\" />
+   </Target>
+diff --git a/msbuild/import-pre.props b/msbuild/import-pre.props
+index ca89c5e..7b4ce02 100644
+--- a/msbuild/import-pre.props
++++ b/msbuild/import-pre.props
+@@ -17,39 +17,41 @@
+       <Platform>Win32</Platform>
+     </ProjectConfiguration>
+     <ProjectConfiguration Include="Debug|Win32">
+       <Configuration>Debug</Configuration>
+       <Platform>Win32</Platform>
+     </ProjectConfiguration>
+   </ItemGroup>
+ 
+   <PropertyGroup>
+     <!-- Hack to find requested SDK version from solution name, if provided -->
++    <LatestTargetPlatformVersion>$([Microsoft.Build.Utilities.ToolLocationHelper]::GetLatestSDKTargetPlatformVersion('Windows', '10.0'))</LatestTargetPlatformVersion>
+     <SDKVersionRequested Condition=" $(SolutionName.Split('-').Length)==4 ">$(SolutionName.Split('-')[3])</SDKVersionRequested>
+     <SDKSuffix Condition=" '$(SDKVersionRequested)'!='' ">-$(SDKVersionRequested)</SDKSuffix>
+     <WindowsTargetPlatformVersionReq Condition=" '$(SDKVersionRequested)'=='2004' ">10.0.19041.0</WindowsTargetPlatformVersionReq>
+     <WindowsTargetPlatformVersionReq Condition=" '$(SDKVersionRequested)'=='1903' ">10.0.18362.0</WindowsTargetPlatformVersionReq>
+     <WindowsTargetPlatformVersionReq Condition=" '$(SDKVersionRequested)'=='1809' ">10.0.17763.0</WindowsTargetPlatformVersionReq>
+ 	<!-- If no specific SDK has been requested, get latest from registry -->
+     <WindowsTargetPlatformVersionReq Condition=" '$(WindowsTargetPlatformVersion)'=='' ">$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion)</WindowsTargetPlatformVersionReq>
+     <WindowsTargetPlatformVersionReq Condition=" '$(WindowsTargetPlatformVersion)'=='' ">$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion)</WindowsTargetPlatformVersionReq>
+     <!-- Convert variabl to explicit version number, to make it readable in VS -->
+ 	<WindowsTargetPlatformVersion Condition=" '$(WindowsTargetPlatformVersionReq)'=='10.0.19041' ">10.0.19041.0</WindowsTargetPlatformVersion>
+     <WindowsTargetPlatformVersion Condition=" '$(WindowsTargetPlatformVersionReq)'=='10.0.18362' ">10.0.18362.0</WindowsTargetPlatformVersion>
+     <WindowsTargetPlatformVersion Condition=" '$(WindowsTargetPlatformVersionReq)'=='10.0.17763' ">10.0.17763.0</WindowsTargetPlatformVersion>
+ 	<!-- If no known SDK was found by now, set it to the latest and VS will complain about it... -->
+-	<WindowsTargetPlatformVersion Condition=" '$(WindowsTargetPlatformVersion)'=='' ">10.0.19041.0</WindowsTargetPlatformVersion>
++    <WindowsTargetPlatformVersion Condition="'$(WindowsTargetPlatformVersion)' == ''">$(LatestTargetPlatformVersion)</WindowsTargetPlatformVersion>
+   </PropertyGroup>
+ 
+   <PropertyGroup Label="Configuration">
+     <PlatformToolset Condition=" '$(VisualStudioVersion)'=='16.0' ">v142</PlatformToolset>
+     <PlatformToolset Condition=" '$(VisualStudioVersion)'=='15.0' ">v141</PlatformToolset>
++    <PlatformToolset Condition=" '$(VisualStudioVersion)'=='14.0' ">v140</PlatformToolset>
+     <OutDir>..\bld\$(PlatformTarget)-$(Configuration)-$(PlatformToolset)$(SDKSuffix)\all\</OutDir>
+     <IntDir>$(OutDir)$(ProjectName)\</IntDir>
+     <UseDebugLibraries Condition=" '$(Configuration)'=='Debug' ">true</UseDebugLibraries>
+   </PropertyGroup>
+ 
+   <PropertyGroup>
+     <Microsoft-googletest-v140-windesktop-msvcstl-static-rt-dyn-Disable-gtest_main>true</Microsoft-googletest-v140-windesktop-msvcstl-static-rt-dyn-Disable-gtest_main>
+   </PropertyGroup>
+   
+   <PropertyGroup>
+diff --git a/msbuild/lib-common.vcxproj b/msbuild/lib-common.vcxproj
+index 6525b39..bb769ed 100644
+--- a/msbuild/lib-common.vcxproj
++++ b/msbuild/lib-common.vcxproj
+@@ -1,21 +1,26 @@
+-﻿<?xml version="1.0" encoding="utf-8"?>
++<?xml version="1.0" encoding="utf-8"?>
+ <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+   <Import Project="import-pre.props" />
+   <PropertyGroup Label="Globals">
+     <ProjectGuid>{D83921E2-A6A0-414A-A974-D53F413AF37D}</ProjectGuid>
+     <Keyword>Win32Proj</Keyword>
+     <ProjectName>lib-common</ProjectName>
+   </PropertyGroup>
+   <PropertyGroup Label="Configuration">
+     <ConfigurationType>StaticLibrary</ConfigurationType>
+   </PropertyGroup>
++  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
++    <ClCompile>
++      <TreatWarningAsError>false</TreatWarningAsError>
++    </ClCompile>
++  </ItemDefinitionGroup>
+   <ItemGroup>
+     <ClCompile Include="..\src\c_cmn_dbg.c" />
+     <ClCompile Include="..\src\c_cmn_win.c" />
+   </ItemGroup>
+   <ItemGroup>
+     <ClInclude Include="..\src\c_cmn.h" />
+     <ClInclude Include="..\src\c_cmn_dbg.h" />
+     <ClInclude Include="..\src\c_cmn_ossl.h" />
+     <ClInclude Include="..\src\c_cmn_win.h" />
+   </ItemGroup>
+diff --git a/msbuild/lib-store-ncrypt.vcxproj b/msbuild/lib-store-ncrypt.vcxproj
+index 270d27e..a75008b 100644
+--- a/msbuild/lib-store-ncrypt.vcxproj
++++ b/msbuild/lib-store-ncrypt.vcxproj
+@@ -6,20 +6,23 @@
+     <Keyword>Win32Proj</Keyword>
+     <ProjectName>lib-store-ncrypt</ProjectName>
+   </PropertyGroup>
+   <PropertyGroup Label="Configuration">
+     <ConfigurationType>StaticLibrary</ConfigurationType>
+   </PropertyGroup>
+   <ItemDefinitionGroup>
+     <ProjectReference>
+       <LinkLibraryDependencies>true</LinkLibraryDependencies>
+     </ProjectReference>
++    <ClCompile>
++      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</TreatWarningAsError>
++    </ClCompile>
+   </ItemDefinitionGroup>
+   <ItemGroup>
+     <ClCompile Include="..\src\s_ncrypt.c" />
+     <ClCompile Include="..\src\s_ncrypt_ec.c" />
+     <ClCompile Include="..\src\s_ncrypt_err.c" />
+     <ClCompile Include="..\src\s_ncrypt_evp_pkey.c" />
+     <ClCompile Include="..\src\s_ncrypt_pkey.c" />
+     <ClCompile Include="..\src\s_ncrypt_rsa.c" />
+     <ClCompile Include="..\src\s_ncrypt_x509.c" />
+     <ClCompile Include="..\src\s_ncrypt_loader.c" />
+diff --git a/src/c_cmn_win.h b/src/c_cmn_win.h
+index 175be62..ae90fae 100644
+--- a/src/c_cmn_win.h
++++ b/src/c_cmn_win.h
+@@ -79,20 +79,43 @@
+ #define WIN32_LEAN_AND_MEAN
+ #define WIN32_NO_STATUS
+ #include <Windows.h>
+ #undef WIN32_NO_STATUS
+ #undef WIN32_LEAN_AND_MEAN
+ #pragma warning(pop)
+ 
+ #endif
+ #endif
+ 
++#if defined NTDDI_WIN10
++#if NTDDI_VERSION == NTDDI_WIN10
++
++#pragma warning(push)
++/* 4255: 'function' : no function prototype given: converting '()' to '(void)' */
++/* 4668: 'symbol' is not defined as a preprocessor macro,
++         replacing with '0' for 'directives' */
++#pragma warning(disable : 4255 4668)
++/* Anything that includes corecrt.h emits C4668 */
++#include <crtdbg.h>
++#include <assert.h>
++#include <stdlib.h>
++
++#define WIN32_LEAN_AND_MEAN
++#define WIN32_NO_STATUS
++#include <Windows.h>
++#undef WIN32_NO_STATUS
++#undef WIN32_LEAN_AND_MEAN
++#pragma warning(pop)
++
++#endif
++#endif
++
+ #include <synchapi.h>
+ #include <wincrypt.h>
+ #include <bcrypt.h>
+ #include <ncrypt.h>
+ 
+ #define NCRYPT_NULL       (NCRYPT_KEY_HANDLE)0
+ #define NT_FAILED(Status) (((NTSTATUS)(Status)) < 0)
+ 
+ #ifndef CMN_THIS_FILE
+ #pragma message("Definition of CMN_THIS_FILE for error information is missing")
+diff --git a/src/s_ncrypt_loader.c b/src/s_ncrypt_loader.c
+index a20c269..980a443 100644
+--- a/src/s_ncrypt_loader.c
++++ b/src/s_ncrypt_loader.c
+@@ -152,43 +152,52 @@ done:
+     }
+     return result;
+ }
+ 
+ /* State info for the CNG cert store */
+ 
+ struct cng_cert_store_st {
+     /* Handle to the certificate store */
+     HCERTSTORE store;
+     /* An internal state maintained for enumerating over certs */
++    /* The most recently returned cert */
+     PCCERT_CONTEXT cert_ctx;
++    /* chain walking; the chain and the current index where cert_ctx came from in the chain */
++    PCCERT_CHAIN_CONTEXT cert_chain;
++    DWORD cur_cert_idx;
+     /* An internal state maintained for enumerating over crls */
+     PCCRL_CONTEXT crl_ctx;
+ };
+ #define cng_cert_store_INITIALIZER                                             \
+     {                                                                          \
+-        .store = NULL, .cert_ctx = NULL, .crl_ctx = NULL,                      \
++        .store = NULL, .cert_ctx = NULL, .cert_chain = NULL, .cur_cert_idx = 0, .crl_ctx = NULL,                      \
+     }
+ 
+ /* Helper function to do the CNG stuff for closing a certstore*/
+ static void
+ cng_close_cert_store(struct cng_cert_store_st *cert_store_inout)
+ {
+     CMN_DBG_TRACE_ENTER;
+ 
+     if (cert_store_inout != NULL) {
+         if (cert_store_inout->crl_ctx != NULL) {
+             if (!CertFreeCRLContext(cert_store_inout->crl_ctx)) {
+                 DWORD last_error = GetLastError();
+                 S_NCRYPT_winwarn(last_error, CertFreeCRLContext,
+                                  "Freeing CRL context");
+             }
+         }
++        if (cert_store_inout->cert_chain != NULL) {
++            CertFreeCertificateChain(cert_store_inout->cert_chain);
++            cert_store_inout->cert_chain = NULL;
++            cert_store_inout->cur_cert_idx = 0;
++        }
+         if (cert_store_inout->cert_ctx != NULL) {
+             if (!CertFreeCertificateContext(cert_store_inout->cert_ctx)) {
+                 DWORD last_error = GetLastError();
+                 S_NCRYPT_winwarn(last_error, CertFreeCertificateContext,
+                                  "Freeing certificate context");
+             }
+         }
+         if (cert_store_inout->store != NULL) {
+             if (!CertCloseStore(cert_store_inout->store, 0)) {
+                 DWORD last_error = GetLastError();
+@@ -405,20 +414,25 @@ cng_load_next_name_info(struct cng_cert_store_st *cert_store_inout,
+             DWORD last_error = GetLastError();
+             if (last_error == CRYPT_E_NOT_FOUND) {
+                 is_eof = true;
+             } else {
+                 S_NCRYPT_winwarn(last_error, CertFindCertificateInStore,
+                                  "Finding certificate in store");
+                 had_error = true;
+             }
+         }
+         break;
++    case NCRYPT_OBJECT_KIND_CERT_CHAIN:
++        S_NCRYPT_err(cng_load_next_name_info, R_NOT_SUPPORTED,
++                     "Loading cert chain object kind");
++        goto done;
++        break;
+     case NCRYPT_OBJECT_KIND_CRL:
+         S_NCRYPT_err(cng_load_next_name_info, R_NOT_SUPPORTED,
+                      "Loading CRL object kind");
+         goto done;
+         break;
+     case NCRYPT_OBJECT_KIND_PARAMS:
+         S_NCRYPT_err(cng_load_next_name_info, R_NOT_SUPPORTED,
+                      "Loading Params object kind");
+         goto done;
+         break;
+@@ -464,23 +478,25 @@ cng_info_object_from_store(PCCERT_CONTEXT ctx, ncrypt_object_kind kind_needed)
+ 
+     OSSL_STORE_INFO *result = NULL;
+     OSSL_STORE_INFO *info = NULL;
+     X509 *ossl_cert = NULL;
+     EVP_PKEY *ossl_pkey = NULL;
+ 
+     CMN_DBG_PRECOND_NOT_NULL(ctx);
+ 
+     /* For now, only keys and certs supported */
+     CMN_DBG_PRECOND((kind_needed == NCRYPT_OBJECT_KIND_CERT) ||
++                    (kind_needed == NCRYPT_OBJECT_KIND_CERT_CHAIN) ||
+                     (kind_needed == NCRYPT_OBJECT_KIND_PKEY));
+ 
+     switch (kind_needed) {
++    case NCRYPT_OBJECT_KIND_CERT_CHAIN:
+     case NCRYPT_OBJECT_KIND_CERT:
+         ossl_cert = ncrypt_x509_new(ctx);
+         if (ossl_cert == NULL)
+             goto done;
+         info = OSSL_STORE_INFO_new_CERT(ossl_cert);
+         if (info == NULL) {
+             S_NCRYPT_osslerr(OSSL_STORE_INFO_new_CERT,
+                              "Creating new STORE INFO structure for cert");
+             goto done;
+         }
+@@ -548,53 +564,98 @@ cng_load_object_info(struct cng_cert_store_st *cert_store_inout,
+     CRYPT_DATA_BLOB hash_blob = CRYPT_DATA_BLOB_INITIALIZER;
+ 
+     /* Find next cert by hash */
+     CMN_DBG_PRECOND_NOT_NULL(cert_store_inout);
+     CMN_DBG_PRECOND_NOT_NULL(info_out);
+     CMN_DBG_PRECOND_NOT_NULL(is_eof_out);
+     CMN_DBG_PRECOND_NOT_NULL(had_error_out);
+ 
+     /* For now, only keys and certs supported */
+     CMN_DBG_PRECOND((kind_needed == NCRYPT_OBJECT_KIND_CERT) ||
+-                    (kind_needed == NCRYPT_OBJECT_KIND_PKEY));
++                    (kind_needed == NCRYPT_OBJECT_KIND_PKEY) ||
++                    (kind_needed == NCRYPT_OBJECT_KIND_CERTCHAIN));
+ 
+-    /* The identifiers represents a hash (in the shape of a hexstring) */
+-    if (!cng_hexstr_to_blob(object_id, &hash_blob))
+-        goto done;
+-    /* Identifier is not malformed, look for a cert */
+-    cert_ctx = CertFindCertificateInStore(
+-        cert_store_inout->store, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 0,
+-        CERT_FIND_SHA1_HASH, &hash_blob, cert_store_inout->cert_ctx);
+-    if (cert_ctx == NULL) {
+-        /* Did an error occur, or was eof reached? */
+-        DWORD last_error = GetLastError();
+-        if (last_error == CRYPT_E_NOT_FOUND) {
+-            is_eof = true;
++
++    if (cert_store_inout->cert_chain) {
++        if (cert_store_inout->cur_cert_idx >= cert_store_inout->cert_chain->rgpChain[0]->cElement) {
++            // Close out the chain, the last return finished it
++            CertFreeCertificateChain(cert_store_inout->cert_chain);
++            cert_store_inout->cert_chain = NULL;
++            // and now proceed to lookup main cert object again
+         } else {
+-            CMN_DBG_ERROR("Error 0x%x finding store object", last_error);
+-            had_error = true;
++            /* Not first (starting cert) or beyond last in chain, continue walking it */
++            cert_ctx = cert_store_inout->cert_chain->rgpChain[0]->rgpElement[cert_store_inout->cur_cert_idx]->pCertContext;
++            cert_store_inout->cur_cert_idx++;
++        }
++    }
++
++    if (!cert_ctx) {
++        /* The identifiers represents a hash (in the shape of a hexstring) */
++        if (!cng_hexstr_to_blob(object_id, &hash_blob))
++            goto done;
++        /* Identifier is not malformed, look for a cert */
++        cert_ctx = CertFindCertificateInStore(
++            cert_store_inout->store, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 0,
++            CERT_FIND_SHA1_HASH, &hash_blob, cert_store_inout->cert_ctx);
++        cert_store_inout->cert_ctx = cert_ctx;
++
++        if (cert_ctx == NULL) {
++            /* Did an error occur, or was eof reached? */
++            DWORD last_error = GetLastError();
++            if (last_error == CRYPT_E_NOT_FOUND) {
++                is_eof = true;
++            } else {
++                CMN_DBG_ERROR("Error 0x%x finding store object", last_error);
++                had_error = true;
++            }
++        } else if (kind_needed == NCRYPT_OBJECT_KIND_CERT_CHAIN) {
++            /* initialize a chain if possible */
++            CERT_USAGE_MATCH certUsage;
++            CERT_CHAIN_PARA params;
++            CERT_ENHKEY_USAGE enhkeyUsage;
++            enhkeyUsage.cUsageIdentifier = 0;
++            enhkeyUsage.rgpszUsageIdentifier = NULL;
++            certUsage.dwType = USAGE_MATCH_TYPE_AND;
++            certUsage.Usage = enhkeyUsage;
++            params.cbSize = sizeof(CERT_CHAIN_PARA);
++            params.RequestedUsage = certUsage;
++
++            PCCERT_CHAIN_CONTEXT chain;
++            if (CertGetCertificateChain(NULL, cert_ctx, NULL, NULL, &params, CERT_CHAIN_REVOCATION_CHECK_END_CERT, NULL, &chain) != 0) {
++
++                if (chain->cChain == 1 && chain->rgpChain[0]->cElement > 1) {
++                    // chain count of 0 - no chain?
++                    // chain count of > 1 -- multiple chains, what to do?!?
++                    // Also skip cert 0 as it is the already-added cert we started building the chain from
++                    // and will be returning back from here
++                    cert_store_inout->cur_cert_idx = 1;
++                    cert_store_inout->cert_chain = chain;
++                } else {
++                    // no good for us
++                    CertFreeCertificateChain(chain);
++                }
++            }
+         }
+     }
+ 
+     if (!is_eof && !had_error) {
+         info = cng_info_object_from_store(cert_ctx, kind_needed);
+         if (info == NULL)
+             goto done;
+     }
+ 
+     *info_out = info;
+     *is_eof_out = is_eof;
+     *had_error_out = had_error;
+     result = true;
+ 
+ done:
+-    cert_store_inout->cert_ctx = cert_ctx;
+     CRYPT_DATA_BLOB_finalize(&hash_blob);
+ 
+     CMN_DBG_TRACE_LEAVE;
+     return result;
+ }
+ 
+ #if 0
+ /* Helper function to do the CNG stuff for opening a keystore*/
+ /* Currently not used, but keep it around for the future when an actual
+  * key store mechanism is implemented */
+@@ -915,20 +976,21 @@ ncrypt_cng_ctx_load(OSSL_STORE_LOADER_CTX *ctx, const UI_METHOD *ui_method,
+     }
+ 
+     /* If kind needed is unknown at this point, it will default to certs */
+     if (kind_needed == NCRYPT_OBJECT_KIND_UNKNOWN) {
+         kind_needed = NCRYPT_OBJECT_KIND_CERT;
+     }
+ 
+     switch (kind_needed) {
+     case NCRYPT_OBJECT_KIND_PKEY:
+     case NCRYPT_OBJECT_KIND_CERT:
++    case NCRYPT_OBJECT_KIND_CERT_CHAIN:
+         if (ctx->uri.object_id == NULL) {
+             /* Walking over all certs or keys */
+             if (!cng_load_next_name_info(&ctx->cert_store,
+                                          ctx->uri.storage_kind_alias,
+                                          ctx->uri.store_name, kind_needed,
+                                          &info, &ctx->is_eof, &ctx->had_error))
+                 goto done;
+         } else {
+             /* Find a specific cert or key */
+             if (!cng_load_object_info(&ctx->cert_store, ctx->uri.object_id,
+@@ -1178,20 +1240,25 @@ object_kind_from_alias(const char *object_kind_alias,
+     if (strcmp(object_kind_alias, NCRYPT_OBJECT_KIND_VAL_PARAMS) == 0) {
+         kind = NCRYPT_OBJECT_KIND_PARAMS;
+         goto kind_found;
+     }
+ 
+     if (strcmp(object_kind_alias, NCRYPT_OBJECT_KIND_VAL_CERT) == 0) {
+         kind = NCRYPT_OBJECT_KIND_CERT;
+         goto kind_found;
+     }
+ 
++    if (strcmp(object_kind_alias, NCRYPT_OBJECT_KIND_VAL_CERT_CHAIN) == 0) {
++        kind = NCRYPT_OBJECT_KIND_CERT_CHAIN;
++        goto kind_found;
++    }
++
+     if (strcmp(object_kind_alias, NCRYPT_OBJECT_KIND_VAL_CRL) == 0) {
+         kind = NCRYPT_OBJECT_KIND_CRL;
+         goto kind_found;
+     }
+ 
+     /* Note that there is no alias for NAME */
+ 
+     S_NCRYPT_err(storage_kind_from_alias, R_INCORRECT_USAGE,
+                  "Converting unknown alias to object kind");
+     CMN_DBG_ERROR("Unknown object kind alias \"%s\"", object_kind_alias);

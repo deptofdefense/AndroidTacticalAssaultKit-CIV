@@ -18,8 +18,12 @@ struct ENGINE_API DatabaseInformation {
     DatabaseInformation(const char* uri);
     DatabaseInformation(const char* uri, const char* passphrase, int options);
 
+    /** @deprecated use getUri(Port::String& value) */
     Util::TAKErr getUri(const char** value) const NOTHROWS;
+    Util::TAKErr getUri(Port::String& value) const NOTHROWS;
+    /** @deprecated use getPassphrase(Port::String& value) */
     Util::TAKErr getPassphrase(const char** value) const NOTHROWS;
+    Util::TAKErr getPassphrase(Port::String& value) const NOTHROWS;
     Util::TAKErr getOptions(int* value) const NOTHROWS;
 
    private:

@@ -323,7 +323,7 @@ TAKErr TAK::Engine::Core::GeoPoint2_lobIntersection(GeoPoint2 &intersection, con
     // angular distance p1-p2
     const double sigma12 = 2.0 * asin(sqrt(sin(delPhi/2) * sin(delPhi/2)
                                            + cos(phi1) * cos(phi2) * sin(delLambda/2) * sin(delLambda/2)));
-    if (abs(sigma12) < epsilon) {
+    if (fabs(sigma12) < epsilon) {
         // coincident points
         intersection.latitude = p1.latitude;
         intersection.longitude = p1.longitude;
@@ -357,6 +357,10 @@ TAKErr TAK::Engine::Core::GeoPoint2_lobIntersection(GeoPoint2 &intersection, con
 
     intersection.latitude = phi3 / M_PI * 180.0;
     intersection.longitude = lambda3 / M_PI * 180.0;
+    if(intersection.longitude > 180.0)
+        intersection.longitude -= 360.0;
+    else if(intersection.longitude < -180.0)
+        intersection.longitude += 360.0;
 
     return TE_Ok;
 }

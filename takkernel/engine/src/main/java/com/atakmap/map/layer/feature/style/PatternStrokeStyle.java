@@ -8,25 +8,6 @@ public class PatternStrokeStyle extends Style {
     /**
      * Creates a new instance.
      *
-     * @param pattern       A bitwise representation of the pixel pattern, with
-     *                      the least-significant bit representing the first
-     *                      pixel, the second least-significant bit
-     *                      representing the second pixel and so on
-     * @param patternLen    The number of bits the represent the pattern
-     * @param color         The stroke color
-     * @param strokeWidth   The stroke width
-     *
-     * @deprecated use {@link #PatternStrokeStyle(int, short, float, float, float, float, float)}
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
-    public PatternStrokeStyle(long pattern, int patternLen, int color, float strokeWidth) {
-        this(PatternStrokeStyle_create((int)Math.ceil(GLRenderGlobals.getRelativeScaling()), computePattern(pattern, patternLen), color, strokeWidth*GLRenderGlobals.getRelativeScaling()), null);
-    }
-
-    /**
-     * Creates a new instance.
-     *
      * @param factor        The number of pixels to be drawn for each bit in
      *                      the pattern
      * @param pattern       A bitwise representation of the pixel pattern, with
@@ -68,15 +49,6 @@ public class PatternStrokeStyle extends Style {
         } finally {
             this.rwlock.releaseRead();
         }
-    }
-
-    /**
-     * @deprecated removed without replacemnet
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
-    public int getPatternLength() {
-        return 16;
     }
 
     public int getFactor() {

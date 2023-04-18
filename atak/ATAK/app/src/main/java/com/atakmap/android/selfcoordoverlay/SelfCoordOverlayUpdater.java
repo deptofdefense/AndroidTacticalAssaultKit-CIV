@@ -91,7 +91,7 @@ public class SelfCoordOverlayUpdater extends CotStreamListener implements
     private String _displayType;
     private boolean _noGps = true;
 
-    protected Updater calc = null;
+    protected Updater calc;
 
     private final static int ICON_WIDTH = 32;
     private final static int ICON_HEIGHT = 32;

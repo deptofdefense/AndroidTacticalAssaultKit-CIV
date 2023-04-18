@@ -1,4 +1,3 @@
-
 package com.atakmap.map.layer.raster.gdal;
 
 import android.graphics.Bitmap;
@@ -10,6 +9,7 @@ import com.atakmap.map.layer.raster.tilereader.TileCacheData;
 import com.atakmap.map.layer.raster.tilereader.TileReader;
 import com.atakmap.map.layer.raster.tilereader.TileReaderFactory;
 import com.atakmap.map.layer.raster.tilereader.TileReaderSpi;
+import com.atakmap.math.MathUtils;
 
 import org.gdal.gdal.Band;
 import org.gdal.gdal.ColorTable;
@@ -100,6 +100,7 @@ public class GdalTileReader extends TileReader {
     /**************************************************************************/
 
     protected final Dataset dataset;
+    private Dataset[] readers;
     protected final int tileWidth;
     protected final int tileHeight;
     protected final int width;
@@ -261,6 +262,8 @@ public class GdalTileReader extends TileReader {
         this.readLock = this.dataset;
         this.disposalLock = new Object();
         this.disposed = false;
+
+        this.readers = new Dataset[4];
     }
 
     public Dataset getDataset() {
@@ -342,13 +345,10 @@ public class GdalTileReader extends TileReader {
 
     @Override
     public ReadResult read(long srcX, long srcY, long srcW, long srcH, int dstW, int dstH, byte[] data) {
-        final int success;
-        synchronized (this.readLock) {
-            if (!this.valid)
-                throw new IllegalStateException();
-            this.dataset.ClearInterrupt();
-            success = this.impl.read((int)srcX, (int)srcY, (int)srcW, (int)srcH, dstW, dstH, data);
-        }
+        if (!this.valid)
+            throw new IllegalStateException();
+        final int success = this.impl.read((int)srcX, (int)srcY, (int)srcW, (int)srcH, dstW, dstH, data);
+
         // expand lookup table values
         if (this.colorTable != null
                 && !(this.colorTable.identity && this.format == Format.MONOCHROME)) {
@@ -411,6 +411,18 @@ public class GdalTileReader extends TileReader {
             if(!this.disposed) {
                 this.dataset.delete();
                 this.disposed = true;
+
+                synchronized(readers) {
+                    for(int i = 0; i < readers.length; i++) {
+                        if (readers[i] != null) {
+                            readers[i].Interrupt();
+                            synchronized(readers[i]) {
+                                readers[i].delete();
+                            }
+                            readers[i] = null;
+                        }
+                    }
+                }
             }
         }
     }
@@ -423,6 +435,22 @@ public class GdalTileReader extends TileReader {
                 return;
             }
             this.dataset.Interrupt();
+            synchronized(readers) {
+                for(int i = 0; i < readers.length; i++)
+                    if(readers[i] != null)
+                        readers[i].Interrupt();
+            }
+        }
+    }
+
+    private Dataset getReader(int subsample) {
+        final int idx = MathUtils.clamp(subsample/2, 0, readers.length-1);
+        synchronized(readers) {
+            if(readers[idx] == null) {
+                final Dataset reader = GdalLibrary.openDatasetFromPath(this.getUri());
+                readers[idx] = (reader != null) ? reader : this.dataset;
+            }
+            return readers[idx];
         }
     }
 
@@ -444,6 +472,13 @@ public class GdalTileReader extends TileReader {
         for (int i = 0; i < retval.length; i++)
             retval[i] = colorTable.GetColorEntry(i);
         return retval;
+    }
+
+    private static int getSubsample(int srcW, int srcH, int dstW, int dstH) {
+        final double ssx = (double)srcW / (double)dstW;
+        final double ssy = (double)srcH / (double)dstH;
+
+        return (int)Math.ceil(Math.log(Math.max(ssx, ssy))/Math.log(2d));
     }
 
     /**************************************************************************/
@@ -491,12 +526,6 @@ public class GdalTileReader extends TileReader {
 
             this.scaleMaxValue = (double) (0xFFFFFFFFL >>> (32 - this.abpp));
         }
-    }
-
-    final class ByteReaderImpl extends AbstractReaderImpl {
-        ByteReaderImpl() {
-            super(1);
-        }
 
         @Override
         public final int read(int srcX, int srcY, int srcW, int srcH, int dstW, int dstH,
@@ -506,13 +535,49 @@ public class GdalTileReader extends TileReader {
             final int nLineSpace = getLineSpacing(dstW, dstH, numDataElements, elemSize);
             final int nBandSpace = getBandSpacing(dstW, dstH, numDataElements, elemSize);
 
-            final int success = GdalTileReader.this.dataset.ReadRaster(srcX, srcY, srcW, srcH,
-                    dstW, dstH, gdalconst.GDT_Byte, data, GdalTileReader.this.bandRequest,
-                    nPixelSpace, nLineSpace, nBandSpace);
-            // scale if necessary
-            if (success == gdalconst.CE_None && this.abpp < this.nbpp)
-                scaleABPP(data, dstW * dstH * numDataElements, this.scaleMaxValue);
+            final int numSamples = (dstW * dstH * numDataElements);
+
+            final Object arr = createReadBuffer(data, numSamples);
+
+            final int subsample = getSubsample(srcW, srcH, dstW, dstH);
+            final Dataset ds = getReader(subsample);
+            final int success;
+            synchronized(ds) {
+                ds.ClearInterrupt();
+                success = readRaster(ds, arr, srcX, srcY, srcW, srcH,
+                        dstW, dstH,
+                        nPixelSpace, nLineSpace, nBandSpace);
+            }
+            if (success == gdalconst.CE_None) {
+                postProcess(arr, data, numSamples);
+            }
             return success;
+        }
+
+        protected abstract Object createReadBuffer(byte[] dstBuffer, int numSamples);
+        protected abstract int readRaster(Dataset reader, Object arr, int srcX, int srcY, int srcW, int srcH, int dstW, int dstH, int nPixelSpace, int nLineSpace, int nBandSpace);
+        protected abstract void postProcess(Object readerBuffer, byte[] data, int numSamples);
+    }
+
+    final class ByteReaderImpl extends AbstractReaderImpl {
+        ByteReaderImpl() {
+            super(1);
+        }
+
+        @Override
+        protected Object createReadBuffer(byte[] dstBuffer, int numSamples) {
+            return dstBuffer;
+        }
+        @Override
+        protected int readRaster(Dataset ds, Object data, int srcX, int srcY, int srcW, int srcH, int dstW, int dstH, int nPixelSpace, int nLineSpace, int nBandSpace) {
+            return ds.ReadRaster(srcX, srcY, srcW, srcH,
+                    dstW, dstH, gdalconst.GDT_Byte, (byte[])data, GdalTileReader.this.bandRequest,
+                    nPixelSpace, nLineSpace, nBandSpace);
+        }
+        @Override
+        protected void postProcess(Object readerBuffer, byte[] data, int numSamples) {
+            if (this.abpp < this.nbpp)
+                scaleABPP(data, numSamples, this.scaleMaxValue);
         }
     }
 
@@ -522,27 +587,21 @@ public class GdalTileReader extends TileReader {
         }
 
         @Override
-        public final int read(int srcX, int srcY, int srcW, int srcH, int dstW, int dstH,
-                              byte[] data) {
-            final int numDataElements = GdalTileReader.this.internalPixelSize;
-            final int nPixelSpace = getPixelSpacing(dstW, dstH, numDataElements, elemSize);
-            final int nLineSpace = getLineSpacing(dstW, dstH, numDataElements, elemSize);
-            final int nBandSpace = getBandSpacing(dstW, dstH, numDataElements, elemSize);
-
-            final int numSamples = (dstW * dstH * numDataElements);
-
-            short[] arr = new short[numSamples];
-
-            final int success = GdalTileReader.this.dataset.ReadRaster(srcX, srcY, srcW, srcH,
-                    dstW, dstH, gdalconst.GDT_Int16, arr, GdalTileReader.this.bandRequest,
+        protected Object createReadBuffer(byte[] dstBuffer, int numSamples) {
+            return new short[numSamples];
+        }
+        @Override
+        protected int readRaster(Dataset ds, Object data, int srcX, int srcY, int srcW, int srcH, int dstW, int dstH, int nPixelSpace, int nLineSpace, int nBandSpace) {
+            return ds.ReadRaster(srcX, srcY, srcW, srcH,
+                    dstW, dstH, gdalconst.GDT_Int16, (short[])data, GdalTileReader.this.bandRequest,
                     nPixelSpace, nLineSpace, nBandSpace);
-            if (success == gdalconst.CE_None) {
-                if (this.abpp < this.nbpp)
-                    scaleABPP(arr, data, numSamples, this.scaleMaxValue);
-                else
-                    scale(arr, data, numSamples);
-            }
-            return success;
+        }
+        @Override
+        protected void postProcess(Object arr, byte[] data, int numSamples) {
+            if (this.abpp < this.nbpp)
+                scaleABPP((short[])arr, data, numSamples, this.scaleMaxValue);
+            else
+                scale((short[])arr, data, numSamples);
         }
     }
 
@@ -552,27 +611,21 @@ public class GdalTileReader extends TileReader {
         }
 
         @Override
-        public final int read(int srcX, int srcY, int srcW, int srcH, int dstW, int dstH,
-                              byte[] data) {
-            final int numDataElements = GdalTileReader.this.internalPixelSize;
-            final int nPixelSpace = getPixelSpacing(dstW, dstH, numDataElements, elemSize);
-            final int nLineSpace = getLineSpacing(dstW, dstH, numDataElements, elemSize);
-            final int nBandSpace = getBandSpacing(dstW, dstH, numDataElements, elemSize);
-
-            final int numSamples = (dstW * dstH * numDataElements);
-
-            int[] arr = new int[numSamples];
-
-            final int success = GdalTileReader.this.dataset.ReadRaster(srcX, srcY, srcW, srcH,
-                    dstW, dstH, gdalconst.GDT_Int32, arr, GdalTileReader.this.bandRequest,
+        protected Object createReadBuffer(byte[] dstBuffer, int numSamples) {
+            return new int[numSamples];
+        }
+        @Override
+        protected int readRaster(Dataset ds, Object data, int srcX, int srcY, int srcW, int srcH, int dstW, int dstH, int nPixelSpace, int nLineSpace, int nBandSpace) {
+            return ds.ReadRaster(srcX, srcY, srcW, srcH,
+                    dstW, dstH, gdalconst.GDT_Int32, (int[])data, GdalTileReader.this.bandRequest,
                     nPixelSpace, nLineSpace, nBandSpace);
-            if (success == gdalconst.CE_None) {
-                if (this.abpp < this.nbpp)
-                    scaleABPP(arr, data, numSamples, this.scaleMaxValue);
-                else
-                    scale(arr, data, numSamples);
-            }
-            return success;
+        }
+        @Override
+        protected void postProcess(Object arr, byte[] data, int numSamples) {
+            if (this.abpp < this.nbpp)
+                scaleABPP((int[])arr, data, numSamples, this.scaleMaxValue);
+            else
+                scale((int[])arr, data, numSamples);
         }
     }
 
@@ -582,23 +635,18 @@ public class GdalTileReader extends TileReader {
         }
 
         @Override
-        public final int read(int srcX, int srcY, int srcW, int srcH, int dstW, int dstH,
-                              byte[] data) {
-            final int numDataElements = GdalTileReader.this.internalPixelSize;
-            final int nPixelSpace = getPixelSpacing(dstW, dstH, numDataElements, elemSize);
-            final int nLineSpace = getLineSpacing(dstW, dstH, numDataElements, elemSize);
-            final int nBandSpace = getBandSpacing(dstW, dstH, numDataElements, elemSize);
-
-            final int numSamples = (dstW * dstH * numDataElements);
-
-            float[] arr = new float[numSamples];
-
-            final int success = GdalTileReader.this.dataset.ReadRaster(srcX, srcY, srcW, srcH,
-                    dstW, dstH, gdalconst.GDT_Float32, arr, GdalTileReader.this.bandRequest,
+        protected Object createReadBuffer(byte[] dstBuffer, int numSamples) {
+            return new float[numSamples];
+        }
+        @Override
+        protected int readRaster(Dataset ds, Object data, int srcX, int srcY, int srcW, int srcH, int dstW, int dstH, int nPixelSpace, int nLineSpace, int nBandSpace) {
+            return ds.ReadRaster(srcX, srcY, srcW, srcH,
+                    dstW, dstH, gdalconst.GDT_Float32, (float[])data, GdalTileReader.this.bandRequest,
                     nPixelSpace, nLineSpace, nBandSpace);
-            if (success == gdalconst.CE_None)
-                scale(arr, data, numSamples);
-            return success;
+        }
+        @Override
+        protected void postProcess(Object arr, byte[] data, int numSamples) {
+            scale((float[])arr, data, numSamples);
         }
     }
 
@@ -606,24 +654,20 @@ public class GdalTileReader extends TileReader {
         DoubleReaderImpl() {
             super(8);
         }
+
         @Override
-        public final int read(int srcX, int srcY, int srcW, int srcH, int dstW, int dstH,
-                              byte[] data) {
-            final int numDataElements = GdalTileReader.this.internalPixelSize;
-            final int nPixelSpace = getPixelSpacing(dstW, dstH, numDataElements, elemSize);
-            final int nLineSpace = getLineSpacing(dstW, dstH, numDataElements, elemSize);
-            final int nBandSpace = getBandSpacing(dstW, dstH, numDataElements, elemSize);
-
-            final int numSamples = (dstW * dstH * numDataElements);
-
-            double[] arr = new double[numSamples];
-
-            final int success = GdalTileReader.this.dataset.ReadRaster(srcX, srcY, srcW, srcH,
-                    dstW, dstH, gdalconst.GDT_Float64, arr, GdalTileReader.this.bandRequest,
+        protected Object createReadBuffer(byte[] dstBuffer, int numSamples) {
+            return new double[numSamples];
+        }
+        @Override
+        protected int readRaster(Dataset ds, Object data, int srcX, int srcY, int srcW, int srcH, int dstW, int dstH, int nPixelSpace, int nLineSpace, int nBandSpace) {
+            return ds.ReadRaster(srcX, srcY, srcW, srcH,
+                    dstW, dstH, gdalconst.GDT_Float64, (double[])data, GdalTileReader.this.bandRequest,
                     nPixelSpace, nLineSpace, nBandSpace);
-            if (success == gdalconst.CE_None)
-                scale(arr, data, numSamples);
-            return success;
+        }
+        @Override
+        protected void postProcess(Object arr, byte[] data, int numSamples) {
+            scale((double[])arr, data, numSamples);
         }
     }
 

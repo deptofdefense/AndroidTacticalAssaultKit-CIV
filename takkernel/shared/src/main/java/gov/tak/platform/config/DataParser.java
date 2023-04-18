@@ -13,22 +13,7 @@ public class DataParser {
     static final int TYPE_STRING = 1;
     static final int TYPE_BOOLEAN = 2;
 
-    @Deprecated
-    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
-    static int getDataType(Node node) {
-        int type = TYPE_NONE;
 
-        if (node != null && node.getNodeType() == Node.ELEMENT_NODE) {
-            String n = node.getNodeName();
-            if (n.equals("string")) {
-                type = TYPE_STRING;
-            } else if (n.equals("boolean")) {
-                type = TYPE_BOOLEAN;
-            }
-        }
-
-        return type;
-    }
 
     public static String parseStringElem(Node elemNode, String fallback) {
         String r = fallback;
@@ -46,15 +31,6 @@ public class DataParser {
         return r;
     }
 
-    @Deprecated
-    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
-    public static boolean parseBooleanElem(Node elemNode, boolean fallback) {
-        boolean r = fallback;
-        if (elemNode != null) {
-            r = parseBooleanText(elemNode.getFirstChild(), fallback);
-        }
-        return r;
-    }
 
     /**
      * Given an Object, get the boolean value

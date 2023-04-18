@@ -274,7 +274,6 @@ public class PersistentCircleCrumbTrail extends MapItem {
                 for (OnCrumbTrailUpdateListener l : crumbTrailUpdateListeners) {
                     l.onCrumbRemoved(c);
                 }
-                c = null;
                 --crumbCount;
             }
         }

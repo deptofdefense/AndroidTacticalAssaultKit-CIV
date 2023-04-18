@@ -1,4 +1,4 @@
-#include "jgltf.h"
+#include "com_atakmap_map_formats_c3dt_GLTF.h"
 
 #include <memory>
 

@@ -1,6 +1,8 @@
 
 package com.atakmap.android.contact;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.maps.MapView;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -71,6 +73,7 @@ public abstract class Connector {
         return 0;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return getConnectionType() + ": " + getConnectionString();

@@ -10,7 +10,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -19,6 +18,7 @@ import android.widget.Toast;
 
 import com.atak.plugins.impl.AtakPluginRegistry;
 import com.atakmap.android.ipc.AtakBroadcast;
+import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import com.atakmap.android.util.ATAKConstants;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.R;
@@ -28,10 +28,12 @@ import com.atakmap.coremap.log.Log;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import gov.tak.api.util.Disposable;
 
 /**
  *
@@ -50,9 +52,7 @@ public class ProductProviderManager extends BroadcastReceiver {
      */
     private RepoSyncTask _ongoingSyncTask;
 
-    public interface Provider {
-
-        void dispose();
+    public interface Provider extends Disposable {
 
         /**
          * Get cached repo contents

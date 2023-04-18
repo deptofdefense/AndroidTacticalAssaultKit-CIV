@@ -1,4 +1,4 @@
-#include "jgeocalculations.h"
+#include "com_atakmap_coremap_maps_coords_GeoCalculations.h"
 
 #include <core/GeoPoint2.h>
 
@@ -81,6 +81,14 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_coremap_maps_coords_GeoCalculations_p
     const GeoPoint2 a(lat, lng);
     GeoPoint2 result = GeoPoint2_pointAtDistance(GeoPoint2(lat, lng, alt, AltitudeReference::HAE), azimuth, distance, inclination, false);
     return NewGeoPoint(*env, result.latitude, result.longitude, result.altitude);
+}
+JNIEXPORT jobject JNICALL Java_com_atakmap_coremap_maps_coords_GeoCalculations_lineOfBearingIntersect
+  (JNIEnv *env, jclass clazz, jdouble lat1, jdouble lng1, jdouble brg1, jdouble lat2, jdouble lng2, jdouble brg2)
+{
+    GeoPoint2 isect;
+    if(GeoPoint2_lobIntersection(isect, GeoPoint2(lat1, lng1), brg1, GeoPoint2(lat2, lng2), brg2) != TE_Ok)
+        return NULL;
+    return NewGeoPoint(*env, isect.latitude, isect.longitude);
 }
 
 namespace

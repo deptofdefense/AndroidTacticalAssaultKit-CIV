@@ -36,6 +36,7 @@ public class Gpx {
     /**
      * Note this is required by schema, but not always populated in practice
      */
+    @SuppressWarnings("FieldMayBeFinal")
     @Attribute(name = "creator", required = false)
     private String CREATOR = "TAK";
 

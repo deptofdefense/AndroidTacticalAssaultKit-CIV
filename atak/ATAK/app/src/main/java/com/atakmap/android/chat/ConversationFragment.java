@@ -20,6 +20,8 @@ import android.content.res.XmlResourceParser;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -66,6 +68,7 @@ public class ConversationFragment extends Fragment implements
             value = v;
         }
 
+        @NonNull
         public String toString() {
             return "Button - index: " + index + " - text: " + text
                     + " - value: " + value;
@@ -140,7 +143,7 @@ public class ConversationFragment extends Fragment implements
     }
 
     @Override
-    public void onAttach(Activity activity) {
+    public void onAttach(@NonNull Activity activity) {
         super.onAttach(activity);
         getLineAdapter();
         // Now, add history...
@@ -800,7 +803,7 @@ public class ConversationFragment extends Fragment implements
     private final List<ChatConvoFragCreateWatcher> watcherList = new ArrayList<>();
 
     @Override
-    public void onViewCreated(View view, Bundle savedInstanceState) {
+    public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         while (watcherList.size() > 0) {
             final ChatConvoFragCreateWatcher watcher = watcherList.remove(0);
             // the next call will eventually remove the watcher from

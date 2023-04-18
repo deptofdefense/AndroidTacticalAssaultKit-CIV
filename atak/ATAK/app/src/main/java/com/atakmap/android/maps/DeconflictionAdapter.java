@@ -27,7 +27,7 @@ import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
 import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.conversions.SpanUtilities;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
 import java.util.ArrayList;
@@ -162,7 +162,7 @@ public class DeconflictionAdapter extends ArrayAdapter<MapItem> {
             }
             holder.distance.setText(distanceDisplay);
 
-            double bearing = DistanceCalculations.bearingFromSourceToTarget(
+            double bearing = GeoCalculations.bearingTo(
                     sourceItemPoint.get(), targetItemPoint.get());
 
             final String bearingString;

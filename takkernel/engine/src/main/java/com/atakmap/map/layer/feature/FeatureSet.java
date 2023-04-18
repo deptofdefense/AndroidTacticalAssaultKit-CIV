@@ -91,24 +91,4 @@ public final class FeatureSet {
     public long getVersion() {
         return this.version;
     }
-
-    /**
-     * Returns a cursor to the features 
-     * @return
-     *
-     * @deprecated query the originating datastore
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public FeatureCursor getFeatures() {
-        if(this.owner == null)
-            return new MultiplexingFeatureCursor(Collections.<FeatureCursor>emptySet(), null);
-
-        if(this.featuresParam == null) {
-            this.featuresParam = new FeatureDataStore.FeatureQueryParameters();
-            this.featuresParam.featureSetIds = Collections.singleton(Long.valueOf(this.id));
-            this.featuresParam.order = Collections.<FeatureDataStore.FeatureQueryParameters.Order>singleton(FeatureDataStore.FeatureQueryParameters.FeatureName.INSTANCE);
-        }
-        return this.owner.queryFeatures(this.featuresParam);
-    }
 }

@@ -5,15 +5,13 @@ import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-
-import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
-
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
 
 import com.atakmap.android.ipc.AtakBroadcast;
+import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import com.atakmap.android.maps.AbstractMapComponent;
 import com.atakmap.android.maps.MapEvent;
 import com.atakmap.android.maps.MapEventDispatcher;
@@ -21,6 +19,7 @@ import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.graphics.GLBitmapLoader;
+import com.atakmap.android.preference.AtakPreferences;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.DatabaseInformation;
@@ -30,6 +29,8 @@ import com.atakmap.database.DatabaseIface;
 import com.atakmap.database.QueryIface;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 
 /**
  * Manages all aspects of icons and specifically iconsets within the
@@ -43,6 +44,8 @@ public class IconsMapComponent extends AbstractMapComponent {
     private IconManagerDropdown _iconsetDropdown;
     private MapView _mapView;
     private static IconsMapComponent _instance;
+
+    private static final String PREF_ICONSET_UPDATES_VERSION_KEY = "user_iconset_updates_version";
 
     public static synchronized IconsMapComponent getInstance() {
         return _instance;
@@ -88,6 +91,77 @@ public class IconsMapComponent extends AbstractMapComponent {
         filter.addAction(IconsMapAdapter.ICONSET_REMOVED);
         filter.addAction(IconManagerView.DEFAULT_MAPPING_CHANGED);
         AtakBroadcast.getInstance().registerReceiver(_iconsetRefresh, filter);
+
+        upgradeIconsets(context);
+    }
+
+    /**
+     * Moving forward the iconsets will be upgraded only when they have changed.
+     * This method extracts out each iconset and then at the end bumps the number.
+     * This assumes a base iconset has been rolled out and this is the delta set of
+     * changes that are applied on top.
+     * @param context the context to use to pull from the assets
+     */
+    private void upgradeIconsets(final Context context) {
+        // would like to upgrade the current icons based on new versions.
+        int VERSION = 2;
+        InputStream is = null;
+        try {
+            is = FileSystemUtils.getInputStreamFromAsset(context,
+                    "iconsets/version.txt");
+            VERSION = Integer.parseInt(FileSystemUtils.copyStreamToString(is,
+                    true, FileSystemUtils.UTF8_CHARSET).replace("\n", ""));
+        } catch (Exception ignored) {
+        } finally {
+            if (is != null)
+                try {
+                    is.close();
+                } catch (Exception ignored) {
+                }
+        }
+        final AtakPreferences prefs = new AtakPreferences(context);
+
+        final int recordedVersion = prefs.get(PREF_ICONSET_UPDATES_VERSION_KEY,
+                1);
+        if (recordedVersion < VERSION) {
+            FileOutputStream fos = null;
+            try {
+                final String cacheDir = context.getCacheDir().toString();
+                final String[] files = context.getAssets().list("iconsets");
+                for (String file : files) {
+                    if (file.equals("version.txt"))
+                        continue;
+
+                    boolean success;
+                    try {
+                        success = FileSystemUtils.copyFromAssets(context,
+                                "iconsets/" + file,
+                                fos = new FileOutputStream(
+                                        cacheDir + "/" + file));
+                    } catch (Exception e) {
+                        Log.e(TAG, "error", e);
+                        return;
+                    } finally {
+                        if (fos != null)
+                            try {
+                                fos.close();
+                            } catch (Exception ignored) {
+                            }
+                    }
+
+                    if (success) {
+                        Intent loadIntent = new Intent();
+                        loadIntent.setAction(IconsMapAdapter.ADD_ICONSET);
+                        loadIntent.putExtra("filepath", cacheDir + "/" + file);
+                        AtakBroadcast.getInstance().sendBroadcast(loadIntent);
+                    }
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "error", e);
+                return;
+            }
+            prefs.set(PREF_ICONSET_UPDATES_VERSION_KEY, VERSION);
+        }
     }
 
     @Override

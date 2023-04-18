@@ -37,6 +37,7 @@ import com.atakmap.map.layer.feature.geometry.GeometryCollection;
 import com.atakmap.map.layer.feature.geometry.Point;
 import com.atakmap.map.layer.feature.geometry.opengl.GLBatchPoint;
 import com.atakmap.map.layer.feature.style.IconPointStyle;
+import com.atakmap.map.layer.model.Mesh;
 import com.atakmap.map.layer.model.Model;
 import com.atakmap.map.layer.model.ModelFactory;
 import com.atakmap.map.layer.model.ModelHitTestControl;
@@ -48,6 +49,8 @@ import com.atakmap.map.layer.model.opengl.MaterialManager;
 import com.atakmap.map.opengl.GLMapRenderable2;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
+import com.atakmap.map.projection.Projection;
+import com.atakmap.map.projection.ProjectionFactory;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.Matrix;
 import com.atakmap.math.PointD;
@@ -95,9 +98,9 @@ public class GLModelRenderer2 implements GLMapRenderable2, ModelHitTestControl {
     private boolean progressVisible = false;
 
     private static final float LINE_WIDTH = (float) Math
-            .ceil(5f * MapView.DENSITY);
+            .ceil(5f * GLRenderGlobals.getRelativeScaling());
     private static final float OUTLINE_WIDTH = LINE_WIDTH
-            + (6 * MapView.DENSITY);
+            + (6 * GLRenderGlobals.getRelativeScaling());
 
     private GLMesh[] glMeshes;
     private final Map<Integer, GLMesh> instancedMeshes = new HashMap<>();
@@ -396,18 +399,10 @@ public class GLModelRenderer2 implements GLMapRenderable2, ModelHitTestControl {
                     MemoryMappedModel.SPI.getType(),
                     modelLoadCallback);
             if (retval != null) {
-                // kick off texture load as necessary
-                PointD anchor = Models.findAnchorPoint(retval);
-                synchronized (this) {
-                    this.model = retval;
-                    this.modelInfo = optimized;
-                    this.modelAnchorPoint = anchor;
-                }
-                //asyncLoadTexture(f, info, retval);
-
                 this.glpoint.init(this.glpoint.featureId, info.name);
                 progressVisible = false;
-                renderContext.requestRefresh();
+
+                this.onLoaded(optimized, retval);
                 return true;
             }
         }
@@ -578,15 +573,7 @@ public class GLModelRenderer2 implements GLMapRenderable2, ModelHitTestControl {
             }
         }
 
-        PointD anchor = Models.findAnchorPoint(m);
-
-        synchronized (this) {
-            this.modelInfo = mInfo;
-            this.model = m;
-            this.modelAnchorPoint = anchor;
-
-            renderContext.requestRefresh();
-        }
+        this.onLoaded(mInfo, m);
 
         this.glpoint.init(this.glpoint.featureId, info.name);
         buildProgressArc(45, 90, 0);
@@ -598,6 +585,91 @@ public class GLModelRenderer2 implements GLMapRenderable2, ModelHitTestControl {
         }
 
         return true;
+    }
+
+    private void onLoaded(ModelInfo info, Model model) {
+        PointD anchor = Models.findAnchorPoint(model);
+
+        if (info.altitudeMode == ModelInfo.AltitudeMode.ClampToGround) {
+            // iterate nodes and find anchor point on lowest LOD meshes
+            PointD sceneMinLCS = new PointD(Double.NaN, Double.NaN, Double.NaN);
+            for (int i = 0; i < model.getNumMeshes(); i++) {
+                Mesh mesh = model.getMesh(i);
+                if (mesh == null)
+                    continue;
+
+                final int numVerts = mesh.getNumVertices();
+                if (numVerts < 1)
+                    continue;
+
+                Envelope aabb = mesh.getAABB();
+                PointD meshMin = new PointD((aabb.minX + aabb.maxX) / 2.0,
+                        (aabb.minY + aabb.maxY) / 2.0, aabb.minZ);
+
+                // compare with current LCS reference
+                if (Double.isNaN(sceneMinLCS.z) || meshMin.z < sceneMinLCS.z)
+                    sceneMinLCS = meshMin;
+            }
+
+            do {
+                if (Double.isNaN(sceneMinLCS.z))
+                    break;
+
+                PointD sceneOriginWCS = new PointD(0.0, 0.0, 0.0);
+                if (info.localFrame != null)
+                    info.localFrame.transform(sceneOriginWCS, sceneOriginWCS);
+
+                final double clampToGroundOffset = -sceneOriginWCS.z
+                        - sceneMinLCS.z;
+                if (clampToGroundOffset == 0d)
+                    break;
+
+                ModelInfo update = new ModelInfo(info);
+
+                // set the altitude mode to relative
+                update.altitudeMode = ModelInfo.AltitudeMode.Relative;
+
+                // update the local frame
+                Matrix localFrame = Matrix.getIdentity();
+                if (update.localFrame != null)
+                    localFrame.concatenate(update.localFrame);
+                localFrame.translate(0.0, 0.0, clampToGroundOffset);
+                update.localFrame = localFrame;
+
+                if (update.location != null) {
+
+                    PointD sceneOrigin = new PointD(0.0, 0.0, 0.0);
+                    update.localFrame.transform(sceneOrigin, sceneOrigin);
+
+                    Projection proj = ProjectionFactory
+                            .getProjection(update.srid);
+                    if (proj == null)
+                        break;
+
+                    GeoPoint llaOrigin = proj.inverse(sceneOrigin, null);
+                    if (llaOrigin == null)
+                        break;
+
+                    update.location = new GeoPoint(
+                            update.location.getLatitude(),
+                            update.location.getLongitude(),
+                            llaOrigin.getAltitude(),
+                            GeoPoint.AltitudeReference.AGL);
+                }
+
+                // XXX - update AABB
+
+                info = update;
+            } while (false);
+        }
+
+        synchronized (this) {
+            this.modelInfo = info;
+            this.model = model;
+            this.modelAnchorPoint = new PointD();
+
+            renderContext.requestRefresh();
+        }
     }
 
     private void persistOptimized(Feature f, Model m, ModelInfo mInfo) {

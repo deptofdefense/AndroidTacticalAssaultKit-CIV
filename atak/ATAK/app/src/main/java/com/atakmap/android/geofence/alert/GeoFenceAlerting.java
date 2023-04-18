@@ -1,6 +1,8 @@
 
 package com.atakmap.android.geofence.alert;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.geofence.component.GeoFenceComponent;
 import com.atakmap.android.geofence.monitor.GeoFenceMonitor;
 import com.atakmap.android.geofence.ui.GeoFenceListModel;
@@ -119,6 +121,7 @@ public class GeoFenceAlerting {
             return hash.hashCode();
         }
 
+        @NonNull
         @Override
         public String toString() {
             return getMessage();

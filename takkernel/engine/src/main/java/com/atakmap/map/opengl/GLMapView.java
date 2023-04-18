@@ -2249,6 +2249,7 @@ public class GLMapView implements
         public final Matrix matrix = Matrix.getIdentity();
         @IncubatingApi(since="4.3")
         public final DepthRestore depth = new DepthRestore();
+        public final Envelope envelope = new Envelope(0d, 0d, 0d, 0d, 0d, 0d);
 
         private ScratchPad() {}
     }

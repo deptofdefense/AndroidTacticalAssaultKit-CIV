@@ -32,7 +32,6 @@ public class SeekBarPreference extends DialogPreference implements
                 .getString(R.string.SeekBarPreference_androidns);
         value = attrs.getAttributeIntValue(androidns, "defaultValue", 0);
         max = attrs.getAttributeIntValue(androidns, "max", 100);
-
     }
 
     @Override
@@ -61,15 +60,6 @@ public class SeekBarPreference extends DialogPreference implements
         numCrmbsTV.setText("" + value);
 
         return view;
-    }
-
-    @Override
-    public void setEnabled(boolean enabled) {
-        super.setEnabled(enabled);
-        if (!enabled) {
-            super.setLayoutResource(
-                    R.layout.preference_layout_switch_prefs_grey_out);
-        }
     }
 
     @Override

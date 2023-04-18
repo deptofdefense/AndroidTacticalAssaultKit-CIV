@@ -887,7 +887,7 @@ public class ExifHelper {
                 return;
 
             Map<String, String> textKV = new HashMap<>();
-            int pos, startPos = -1, endPos = -1, chunkLen = 0;
+            int pos, startPos = -1, endPos = -1, chunkLen;
             while ((pos = fis.available()) > 0) {
 
                 // Start position of this chuck (before length)

@@ -823,7 +823,7 @@ public class MemoryMappedModel {
         MemoryMappedModel retval = new MemoryMappedModel();
         //ModelBuilder builder = new ModelBuilder();
 
-        String textureUri = "";
+        String textureUri;
         // texture URI
         //if(m.getTextureUri() == null) {
         //    stream.write(0x00);
@@ -889,7 +889,7 @@ public class MemoryMappedModel {
         //}
         buf.limit(1);
         readFully(chan, buf);
-        Mesh.WindingOrder windingOrder = Mesh.WindingOrder.Undefined;
+        Mesh.WindingOrder windingOrder;
         switch (buf.get(0) & 0xFF) {
             case 0x00:
                 windingOrder = Mesh.WindingOrder.Clockwise;

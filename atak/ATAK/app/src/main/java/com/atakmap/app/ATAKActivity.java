@@ -81,6 +81,7 @@ import com.atakmap.android.user.PlacePointTool;
 import com.atakmap.android.util.ATAKConstants;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.util.NotificationUtil;
+import com.atakmap.android.util.PendingIntentHelper;
 import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.preferences.LocationSettingsActivity;
 import com.atakmap.app.preferences.NetworkSettingsActivity;
@@ -931,16 +932,35 @@ public class ATAKActivity extends MapActivity implements
         }
     }
 
+    private JSONObject readFontResources(File file) throws IOException, JSONException {
+        if (!FileSystemUtils.isFile(file))
+            return null;
+        return new JSONObject(new String(
+                FileSystemUtils.read(file),
+                FileSystemUtils.UTF8_CHARSET));
+    }
+
     private void extractFontsFromAssembly() {
         try {
             String fontResourcesPath = "fonts/font_resources.json";
             File fontResourcesFile = FileSystemUtils.getItem(fontResourcesPath);
+            JSONObject jsonObject = readFontResources(fontResourcesFile);
+            int currentVersion = jsonObject != null ? jsonObject.optInt("version", 0) : 0;
+
             FileSystemUtils.copyFromAssetsToStorageFile(getApplicationContext(),
                     fontResourcesPath, fontResourcesPath, true);
-            JSONObject jsonObject = new JSONObject(
-                    new String(FileSystemUtils.read(fontResourcesFile),
-                            FileSystemUtils.UTF8_CHARSET));
-            writeFontAssetsToStorage(jsonObject);
+            fontResourcesFile = FileSystemUtils.getItem(fontResourcesPath);
+            jsonObject = readFontResources(fontResourcesFile);
+            int embeddedVersion = jsonObject != null ? jsonObject.optInt("version", 0) : 0;
+            if (currentVersion != embeddedVersion) {
+                FileSystemUtils.delete(fontResourcesFile.getParentFile());
+                FileSystemUtils.copyFromAssetsToStorageFile(
+                        getApplicationContext(),
+                        fontResourcesPath, fontResourcesPath, true);
+            }
+            if (jsonObject != null) {
+                writeFontAssetsToStorage(jsonObject);
+            }
         } catch (Exception e) {
             Log.w(TAG, "Failed to extract fonts from assembly", e);
         }
@@ -948,16 +968,27 @@ public class ATAKActivity extends MapActivity implements
 
     private void writeFontAssetsToStorage(JSONObject jsonRootObject)
             throws JSONException {
-        JSONArray jsonAtlases = jsonRootObject.getJSONArray("atlases");
+        final String[] atlasArtifacts = {
+                "jsonFilename",
+                "binFilename",
+                "pngFilename",
+        };
+        JSONArray jsonAtlases = jsonRootObject.optJSONArray("atlases");
+        if (jsonAtlases == null)
+            return;
         for (int i = 0; i < jsonAtlases.length(); i++) {
-            JSONObject jsonAtlas = jsonAtlases.getJSONObject(i);
-            String jsonFilename = "fonts/"
-                    + jsonAtlas.getString("jsonFilename");
-            String binFilename = "fonts/" + jsonAtlas.getString("binFilename");
-            FileSystemUtils.copyFromAssetsToStorageFile(getApplicationContext(),
-                    binFilename, binFilename, true);
-            FileSystemUtils.copyFromAssetsToStorageFile(getApplicationContext(),
-                    jsonFilename, jsonFilename, true);
+            JSONObject jsonAtlas = jsonAtlases.optJSONObject(i);
+            if (jsonAtlas == null)
+                continue;
+            for (String artifact : atlasArtifacts) {
+                String filename = jsonAtlas.optString(artifact, null);
+                if (filename == null)
+                    continue;
+                filename = "fonts/" + filename;
+                FileSystemUtils.copyFromAssetsToStorageFile(
+                        getApplicationContext(), filename,
+                        filename, false);
+            }
         }
     }
 
@@ -1375,8 +1406,6 @@ public class ATAKActivity extends MapActivity implements
             monitorThread.start();
             return;
         }
-
-        IOProviderFactory.notifyOnDestroy();
 
         try {
             BackgroundServices.stopService();
@@ -2529,7 +2558,9 @@ public class ATAKActivity extends MapActivity implements
         atakFrontIntent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
 
         contentIntent = PendingIntent.getActivity(this, 113016,
-                atakFrontIntent, PendingIntent.FLAG_CANCEL_CURRENT);
+                atakFrontIntent,
+                PendingIntentHelper
+                        .adaptFlags(PendingIntent.FLAG_CANCEL_CURRENT));
 
         // if the app is swiped away, do not allow for the 
         // pending intent to run.

@@ -1,4 +1,4 @@
-#include "jelevationheatmaplayer.h"
+#include "com_atakmap_map_layer_elevation_ElevationHeatmapLayer.h"
 
 #include <core/Layer.h>
 #include <core/LegacyAdapters.h>

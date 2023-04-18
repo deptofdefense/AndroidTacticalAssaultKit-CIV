@@ -10,6 +10,7 @@ import com.atakmap.android.importfiles.sort.ImportResolver;
 import com.atakmap.android.importfiles.task.ImportFilesTask;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.missionpackage.event.MissionPackageEventProcessor;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.comms.CommsMapComponent.ImportResult;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -33,9 +34,6 @@ import java.util.List;
 public class MissionPackageExtractor implements IMissionPackageExtractor {
     private static final String TAG = "MissionPackageExtractor";
 
-    public static final String XML_MATCHER = "<MissionPackageManifest";
-    public static final String VERSION_MATCHER = "version=\"2\"";
-    public static final String VERSION_MATCHER_ALT = "version=\'2\'";
 
     /*
      * (non-Javadoc)
@@ -106,7 +104,9 @@ public class MissionPackageExtractor implements IMissionPackageExtractor {
                     continue;
                 }
 
-                ZipEntry entry = zipFile.getEntry(content.getManifestUid());
+                ZipEntry entry = zipFile.getEntry(
+                        manifest.getZipPath(content.getManifestUid()));
+
                 if (entry == null) {
                     Log.d(TAG,
                             "Package does not contain manifest content: "
@@ -191,31 +191,7 @@ public class MissionPackageExtractor implements IMissionPackageExtractor {
     }
 
     public static MissionPackageManifest GetManifest(File zip) {
-
-        String manifestXml = MissionPackageExtractorFactory.GetManifestXml(zip);
-        if (FileSystemUtils.isEmpty(manifestXml)) {
-            Log.e(TAG, "Manifest does not exist: " + zip.getAbsolutePath());
-            return null;
-        }
-
-        try {
-            MissionPackageManifest manifest = MissionPackageManifest.fromXml(
-                    manifestXml,
-                    zip.getAbsolutePath());
-            if (manifest == null || !manifest.isValid()) {
-                Log.e(TAG, "Failed to de-serialize manifest");
-                return null;
-            }
-
-            // TODO any further validation? verify content listing actually matches zip entries?
-            return manifest;
-
-        } catch (Exception e) {
-            Log.e(TAG, "Failed to get manifest for: " + zip.getAbsolutePath(),
-                    e);
-        }
-
-        return null;
+        return MissionPackageExtractorFactory.getManifest(zip);
     }
 
     public static void UnzipFile(InputStream zis, File file,
@@ -246,12 +222,13 @@ public class MissionPackageExtractor implements IMissionPackageExtractor {
 
     /**
      * Extract fileName from zipFile into targetDirectory
-     * 
-     * @param zipFilePath
-     * @param content
-     * @return
+     *
+     * @param manifest the manifest for the data package
+     * @param zipFilePath the file that is the data package
+     * @param content the content to extract associated with the data package
+     * @return true if the file is extracted that is associated with the content
      */
-    public static boolean ExtractFile(File zipFilePath,
+    public static boolean ExtractFile(MissionPackageManifest manifest, File zipFilePath,
             MissionPackageContent content) {
         if (!FileSystemUtils.isFile(zipFilePath)) {
             Log.e(TAG,
@@ -272,7 +249,7 @@ public class MissionPackageExtractor implements IMissionPackageExtractor {
         ZipFile zipFile = null;
         try {
             zipFile = new ZipFile(zipFilePath);
-            ZipEntry entry = zipFile.getEntry(content.getManifestUid());
+            ZipEntry entry = zipFile.getEntry(manifest.getZipPath(content.getManifestUid()));
             if (entry == null) {
                 Log.e(TAG,
                         "Package does not contain File: "
@@ -354,15 +331,33 @@ public class MissionPackageExtractor implements IMissionPackageExtractor {
         extras.putBoolean("visible", true);
         return cmc.processCotEvent(event, extras);
     }
+    /**
+     * Extract CoT UID from zipFile, optionally broadcast CoT for internal processing by ATAK
+     * Please note - this method does not handle properly mission packages that contain a
+     * directory in the root of the zip followed by the manifest folder and contents one level lower
+     * Please consider using ExtractCot(Context, File, MissionPackageManagement, MissionPackageContent, boolean)
+     * @param context the application context
+     * @param zipFilePath the mission package path
+     * @param content the mission package content
+     * @return null upon error
+     * @deprecated
+     */
+    @Deprecated
+    @DeprecatedApi(since="4.6.1", forRemoval = true, removeAt = "4.9.1")
+    public static String ExtractCoT(Context context, File zipFilePath,
+            MissionPackageContent content, boolean broadcast) {
+        return ExtractCoT(zipFilePath, null, content, broadcast);
+    }
 
     /**
      * Extract CoT UID from zipFile, optionally broadcast CoT for internal processing by ATAK
-     * 
-     * @param zipFilePath
-     * @param content
+     * @param zipFilePath the mission package path
+     * @param manifest the manifest, if supplied can be used to extract files relative to the manifest location.
+     * @param content the content of the mission package
      * @return null upon error
      */
-    public static String ExtractCoT(Context context, File zipFilePath,
+    public static String ExtractCoT(File zipFilePath,
+            MissionPackageManifest manifest,
             MissionPackageContent content, boolean broadcast) {
         if (!FileSystemUtils.isFile(zipFilePath)) {
             Log.e(TAG,
@@ -387,7 +382,13 @@ public class MissionPackageExtractor implements IMissionPackageExtractor {
         ZipFile zipFile = null;
         try {
             zipFile = new ZipFile(zipFilePath);
-            ZipEntry entry = zipFile.getEntry(content.getManifestUid());
+            ZipEntry entry;
+
+            if (manifest != null) 
+                  entry = zipFile.getEntry(manifest.getZipPath(content.getManifestUid()));
+            else 
+                  entry = zipFile.getEntry(content.getManifestUid());
+ 
             if (entry == null) {
                 Log.e(TAG,
                         "Package does not contain CoT UID: " + uid.getValue());

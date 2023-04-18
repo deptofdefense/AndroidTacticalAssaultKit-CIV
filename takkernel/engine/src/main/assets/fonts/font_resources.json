@@ -1,40 +1,89 @@
 {
+  "version":  2,
   "atlases": [
     {
       "fontName": "Arial",
-      "type": "sdf",
-      "jsonFilename": "arial_sdf.json",
-      "binFilename": "arial_sdf.bin"
+      "style": "regular",
+      "type": "msdf",
+      "jsonFilename": "arial_msdf.json",
+      "pngFilename": "arial_msdf.png"
     },
     {
       "fontName": "Arial",
+      "style": "bold",
       "type": "msdf",
-      "jsonFilename": "arial_msdf.json",
-      "binFilename": "arial_msdf.bin"
+      "jsonFilename": "arialbd_msdf.json",
+      "pngFilename": "arialbd_msdf.png"
+    },
+    {
+      "fontName": "Arial",
+      "style": "italic",
+      "type": "msdf",
+      "jsonFilename": "ariali_msdf.json",
+      "pngFilename": "ariali_msdf.png"
+    },
+    {
+      "fontName": "Arial",
+      "style": "bolditalic",
+      "type": "msdf",
+      "jsonFilename": "arialbi_msdf.json",
+      "pngFilename": "arialbi_msdf.png"
     },
     {
       "fontName": "Courier",
-      "type": "sdf",
-      "jsonFilename": "cour_sdf.json",
-      "binFilename": "cour_sdf.bin"
-    },
-    {
-      "fontName": "Courier",
+      "style": "regular",
       "type": "msdf",
       "jsonFilename": "cour_msdf.json",
-      "binFilename": "cour_msdf.bin"
+      "pngFilename": "cour_msdf.png"
+    },
+    {
+      "fontName": "Courier",
+      "style": "bold",
+      "type": "msdf",
+      "jsonFilename": "courbd_msdf.json",
+      "pngFilename": "courbd_msdf.png"
+    },
+    {
+      "fontName": "Courier",
+      "style": "italic",
+      "type": "msdf",
+      "jsonFilename": "couri_msdf.json",
+      "pngFilename": "couri_msdf.png"
+    },
+    {
+      "fontName": "Courier",
+      "style": "bolditalic",
+      "type": "msdf",
+      "jsonFilename": "courbi_msdf.json",
+      "pngFilename": "courbi_msdf.png"
     },
     {
       "fontName": "Segoe UI",
-      "type": "sdf",
-      "jsonFilename": "segoeui_sdf.json",
-      "binFilename": "segoeui_sdf.bin"
-    },
-    {
-      "fontName": "Segoe UI",
+      "style": "regular",
       "type": "msdf",
       "jsonFilename": "segoeui_msdf.json",
-      "binFilename": "segoeui_msdf.bin"
+      "pngFilename": "segoeui_msdf.png"
+    },
+    {
+      "fontName": "Segoe UI",
+      "style": "bold",
+      "type": "msdf",
+      "jsonFilename": "segoeuib_msdf.json",
+      "pngFilename": "segoeuib_msdf.png"
+    },
+    {
+      "fontName": "Segoe UI",
+      "style": "italic",
+      "type": "msdf",
+      "jsonFilename": "segoeuii_msdf.json",
+      "pngFilename": "segoeuii_msdf.png"
+    },
+    {
+      "fontName": "Segoe UI",
+      "style": "bolditalic",
+      "type": "msdf",
+      "jsonFilename": "segoeuiz_msdf.json",
+      "pngFilename": "segoeuiz_msdf.png"
     }
   ]
 }

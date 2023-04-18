@@ -1,4 +1,4 @@
-#include "jnativeelevationsourcecursor.h"
+#include "com_atakmap_map_elevation_NativeElevationSourceCursor.h"
 
 #include <cmath>
 

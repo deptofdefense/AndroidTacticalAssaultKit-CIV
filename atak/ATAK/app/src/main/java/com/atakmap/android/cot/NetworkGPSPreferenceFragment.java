@@ -3,7 +3,6 @@ package com.atakmap.android.cot;
 
 import android.content.Context;
 import android.os.Bundle;
-import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceChangeListener;
@@ -18,7 +17,7 @@ import com.atakmap.app.preferences.DevicePreferenceFragment;
 public class NetworkGPSPreferenceFragment extends AtakPreferenceFragment {
     private PreferenceCategory networkCategory;
     private ListPreference mockCheckPref;
-    private EditTextPreference listenPort;
+    private PanEditTextPreference listenPort;
     private String _previous = "";
 
     public static java.util.List<PreferenceSearchIndex> index(Context context) {
@@ -48,7 +47,7 @@ public class NetworkGPSPreferenceFragment extends AtakPreferenceFragment {
                 "networkGpsCategory");
         mockCheckPref = (ListPreference) findPreference("mockingOption");
 
-        listenPort = (EditTextPreference) findPreference("listenPort");
+        listenPort = (PanEditTextPreference) findPreference("listenPort");
 
         if (mockCheckPref != null) {
 

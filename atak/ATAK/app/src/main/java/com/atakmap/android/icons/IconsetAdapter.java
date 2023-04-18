@@ -146,6 +146,10 @@ public class IconsetAdapter extends BaseAdapter {
                 .findViewById(R.id.iconset_child_uid);
         txtUid.setText(iconset.getUid());
 
+        TextView txtVersion = convertView
+                .findViewById(R.id.iconset_child_version);
+        txtVersion.setText(Integer.toString(iconset.getVersion()));
+
         TextView txtCount = convertView
                 .findViewById(R.id.iconset_child_count);
         txtCount.setText(iconset.hasIcons() ? String.valueOf(iconset.getIcons()

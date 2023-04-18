@@ -6,6 +6,8 @@ import java.io.IOException;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPoint.AltitudeReference;
 import com.atakmap.coremap.maps.conversion.EGM96;
@@ -204,6 +206,7 @@ public class CotPoint implements Parcelable {
         return 0;
     }
 
+    @NonNull
     public String toString() {
         return "" + _lat + ", " + _lon + ", " + _hae + ", " + _ce + ", " + _le;
     }

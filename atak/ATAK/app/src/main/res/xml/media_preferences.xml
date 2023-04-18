@@ -28,7 +28,6 @@
 
     <PreferenceCategory android:title="@string/quick_pic_preferences">
         <com.atakmap.android.gui.PanListPreference
-
             android:summary="@string/camera_app_summary"
             android:title="@string/camera_app_title"
             android:key="quickpic.camera_chooser"

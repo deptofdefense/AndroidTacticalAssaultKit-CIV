@@ -30,6 +30,7 @@ SceneInfo::SceneInfo() NOTHROWS
       resourceAliases(nullptr, nullptr),
 	  altitudeMode(TEAM_Absolute),
       capabilities(CapabilitiesType::All),
+      xrayColor(0),
 	  srid(-1),
       aabb(nullptr, nullptr)
 {}
@@ -46,6 +47,7 @@ SceneInfo::SceneInfo(const SceneInfo &other) NOTHROWS
       resourceAliases(nullptr, nullptr),
       altitudeMode(other.altitudeMode),
       capabilities(other.capabilities),
+      xrayColor(other.xrayColor),
       srid(other.srid),
       aabb(std::move(Envelope2Ptr(other.aabb.get() ? new Envelope2(*other.aabb) : nullptr, Memory_deleter_const<Envelope2>)))
 {
@@ -98,6 +100,7 @@ SceneInfo &SceneInfo::operator=(const SceneInfo &other) NOTHROWS
     this->srid = other.srid;
     this->altitudeMode = other.altitudeMode;
     this->capabilities = other.capabilities;
+    this->xrayColor = other.xrayColor;
     this->minDisplayResolution = other.minDisplayResolution;
     this->maxDisplayResolution = other.maxDisplayResolution;
     this->resolution = other.resolution;

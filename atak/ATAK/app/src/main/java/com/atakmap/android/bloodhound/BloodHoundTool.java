@@ -1375,7 +1375,8 @@ public class BloodHoundTool extends ButtonTool implements
             if (v > 180)
                 v = -(360 - v);
 
-            if (v < 0) v+=360;
+            if (v < 0)
+                v += 360;
 
             bearingString = pad3(v);
 

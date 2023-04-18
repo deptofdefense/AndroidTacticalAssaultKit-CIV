@@ -1,8 +1,6 @@
 
 package com.atakmap.android.missionpackage.ui;
 
-import com.atakmap.annotations.DeprecatedApi;
-
 public class MissionPackageViewUserState {
 
     private static final String TAG = "MissionPackageViewUserState";

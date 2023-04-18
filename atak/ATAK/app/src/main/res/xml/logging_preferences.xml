@@ -9,13 +9,13 @@
             android:persistent="false"
             android:title="@string/crashlogs_title"
             android:summary="@string/crashlogs_summary"
-            android:icon="@drawable/ic_menu_error"/>
+            android:icon="@drawable/ic_menu_error" />
 
-       <Preference
+       <com.atakmap.android.gui.PanPreference
             android:title="@string/preferences_text374"
             android:summary="@string/preferences_text375"
             android:key="atakExportCrashLogs"
-            android:icon="@drawable/send_logs"/>
+            android:icon="@drawable/send_logs" />
         <com.atakmap.android.gui.PanCheckBoxPreference android:title="@string/preferences_text376"
             android:key="enableAutoUploadLogs"
             android:summary="@string/autoUploadLogsSummary"
@@ -37,7 +37,7 @@
             android:dependency="collect_metrics"
             android:icon="@drawable/ic_menu_network_connections"/>
 
-       <Preference
+       <com.atakmap.android.gui.PanPreference
             android:key="advanced_logging"
             android:summary="@string/advanced_logging"
             android:title="@string/advanced_logging_title"

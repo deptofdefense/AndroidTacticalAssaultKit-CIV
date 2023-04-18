@@ -1,47 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
-   <Preference
+   <com.atakmap.android.gui.PanPreference
         android:key="callSignAndDevicePrefs"
         android:summary="@string/preferences_text198"
         android:icon="@drawable/my_prefs_settings"
         android:title="@string/callsign_and_device_preferences" />
-   <Preference
+   <com.atakmap.android.gui.PanPreference
         android:key="networkPrefs"
         android:summary="@string/preferences_text200"
         android:icon="@drawable/ic_menu_network"
         android:title="@string/network_preferences" />
-   <Preference
+   <com.atakmap.android.gui.PanPreference
         android:key="toolPrefs"
         android:summary="@string/preferences_text201"
         android:icon="@drawable/ic_menu_tools"
         android:title="@string/toolPreferences" />
-   <Preference
+   <com.atakmap.android.gui.PanPreference
         android:key="displayPrefs"
         android:summary="@string/preferences_text199"
         android:icon="@drawable/ic_display_settings"
         android:title="@string/displayPreferences" />
-   <Preference
+   <com.atakmap.android.gui.PanPreference
         android:key="controlPrefs"
         android:summary="@string/preferences_text202"
         android:icon="@drawable/ic_menu_settings"
         android:title="@string/control_preferences" />
-   <Preference
+   <com.atakmap.android.gui.PanPreference
         android:key="legacyPrefs"
         android:icon="@drawable/home_settings"
         android:summary="@string/legacy_pref_summary"
         android:title="@string/legacy_preferences" />
-   <Preference
+   <com.atakmap.android.gui.PanPreference
         android:key="accounts"
         android:summary="@string/accounts_desc"
         android:icon="@drawable/passphrase"
         android:title="Accounts" />
-   <Preference
+   <com.atakmap.android.gui.PanPreference
         android:key="documentation"
         android:summary="@string/preferences_text203"
         android:icon="@drawable/ic_menu_help"
         android:title="@string/support" />
-   <Preference
+   <com.atakmap.android.gui.PanPreference
         android:key="about"
         android:icon="@drawable/ic_atak_launcher"
         android:title="@string/about_atak" />

@@ -12,6 +12,9 @@ if (isAndroidKernelBuild) {
         // transitive dependency
         api("gov.tak.thirdparty:takthirdparty:${takthirdpartyVersion}@aar")
         api("gov.tak.thirdparty:libLAS:${libLasVersion}@aar")
+
+        // ATAK has direct dependencies, retain as API for Android for 1.x
+        api("gov.tak.thirdparty:apache-commons-lang-slim:${commonsLang3SlimVersion}")
     }
 
     // bundle assets/resources

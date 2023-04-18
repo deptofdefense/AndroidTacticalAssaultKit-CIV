@@ -57,56 +57,6 @@ public final class ElevationManager {
         ElevationSourceManager.detach(src);
     }
 
-    /**
-     *
-     * @param params
-     * @return
-     *
-     * @deprecated use {@link #queryElevationSources(ElevationSource.QueryParameters)}
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public static synchronized MosaicDatabase2.Cursor queryElevationData(QueryParameters params) {
-        MosaicDatabase2.QueryParameters mparams = null;
-        Collection<Filter<MosaicDatabase2.Cursor>> filters = null;
-        boolean isReject = false;
-        if(params != null) {
-            mparams = new MosaicDatabase2.QueryParameters();
-            mparams.minGsd = params.minResolution;
-            mparams.maxGsd = params.maxResolution;
-            mparams.spatialFilter = params.spatialFilter;
-            mparams.types = params.types;
-            
-            // terrain/surface filtering
-            if(params.elevationModel != (ElevationData.MODEL_SURFACE|ElevationData.MODEL_TERRAIN)) {
-                switch (params.elevationModel) {
-                    case 0:
-                        isReject = true;
-                        break;
-                    case ElevationData.MODEL_SURFACE:
-                        filters = Collections.singleton(ElevationModelFilter.SURFACE);
-                        break;
-                    case ElevationData.MODEL_TERRAIN:
-                        filters = Collections.singleton(ElevationModelFilter.TERRAIN);
-                        break;
-                    default:
-                        filters = Collections.<Filter<MosaicDatabase2.Cursor>>singleton(new ElevationModelFilter(params.elevationModel));
-                        break;
-                }
-            }
-        }
-        
-        Collection<MosaicDatabase2.Cursor> results = new LinkedList<MosaicDatabase2.Cursor>();
-        if(!isReject) {
-            for(MosaicDatabase2 db : dbs.keySet())
-                results.add(db.query(mparams));
-        }
-        MosaicDatabase2.Cursor retval = new MultiplexingMosaicDatabaseCursor2(results, null);
-        if(filters != null)
-            retval = FilterMosaicDatabaseCursor2.filter(retval, filters);
-        return retval;
-    }
-
     public static ElevationSource.Cursor queryElevationSources(ElevationSource.QueryParameters params) {
         Pointer cparams = null;
         try {

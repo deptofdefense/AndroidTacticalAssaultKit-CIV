@@ -4,6 +4,8 @@ package com.atakmap.android.image.nitf.CGM;
 import android.graphics.Path;
 import android.graphics.Point;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.app.BuildConfig;
 
 import java.io.DataInput;
@@ -83,6 +85,7 @@ public class PolygonSetCommand extends Command {
             throw new AssertionError();
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "PolygonSet";

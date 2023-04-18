@@ -121,7 +121,7 @@ public class ImportFileDownloader extends NetworkLinkDownloader {
 
                     URI uri = new URI(urlStr);
                     String host = uri.getHost();
-                    String contentType = null;
+                    String contentType;
 
                     boolean hostIsTakServer = false;
 

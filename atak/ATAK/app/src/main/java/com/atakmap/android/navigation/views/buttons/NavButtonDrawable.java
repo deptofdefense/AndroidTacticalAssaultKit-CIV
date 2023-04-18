@@ -232,7 +232,6 @@ public class NavButtonDrawable extends Drawable implements Drawable.Callback {
         // Draw the top-right and bottom-right badges
         drawBadges(canvas);
 
-
         // restore original behavior with the layer drawable used for icons
         // for simple counting one should make use of the badging capability
         // within the following example -
@@ -247,7 +246,7 @@ public class NavButtonDrawable extends Drawable implements Drawable.Callback {
 
         if (_baseDrawable instanceof LayerDrawable) {
             LayerDrawable layer = (LayerDrawable) _baseDrawable;
-            for (int i = 1; i < layer.getNumberOfLayers();++i) {
+            for (int i = 1; i < layer.getNumberOfLayers(); ++i) {
                 Drawable d = layer.getDrawable(i);
                 d.draw(canvas);
             }

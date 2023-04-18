@@ -3,6 +3,7 @@ package com.atakmap.map.layer.raster.gdal.opengl;
 
 import android.util.Pair;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
 import com.atakmap.map.layer.raster.DatasetProjection2;
@@ -11,6 +12,9 @@ import com.atakmap.map.layer.raster.ImageDatasetDescriptor;
 import com.atakmap.map.layer.raster.opengl.GLMapLayer3;
 import com.atakmap.map.layer.raster.opengl.GLMapLayerSpi3;
 
+/** @deprecated use {@link com.atakmap.map.layer.raster.tilereader.opengl.GLTiledMapLayer2} */
+@Deprecated
+@DeprecatedApi(since = "4.6", forRemoval = true, removeAt = "4.9")
 public class GLGdalPfiMapLayer2 extends GLGdalMapLayer2 {
     public final static GLMapLayerSpi3 SPI = new GLMapLayerSpi3() {
         @Override

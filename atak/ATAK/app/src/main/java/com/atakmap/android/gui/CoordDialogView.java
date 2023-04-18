@@ -34,21 +34,21 @@ import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.util.AfterTextChangedWatcher;
 import com.atakmap.android.util.AltitudeUtilities;
 import com.atakmap.app.R;
+import com.atakmap.app.preferences.GeocoderPreferenceFragment;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
 import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.conversions.SpanUtilities;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.conversion.EGM96;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
-
-import java.text.DecimalFormat;
-
-import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.map.elevation.ElevationManager;
+
+import java.text.DecimalFormat;
 
 /**
  * 
@@ -134,6 +134,8 @@ public class CoordDialogView extends LinearLayout implements
     private Button _dtedButton;
     private Button _clearButton;
     private ImageButton _copyButton;
+
+    private GeocodeManager.GeocoderChangedListener gcl = null;
 
     public CoordDialogView(final Context context) {
         super(context);
@@ -1054,6 +1056,24 @@ public class CoordDialogView extends LinearLayout implements
 
         findViewById(R.id.button_convert_address).setOnClickListener(this);
 
+        findViewById(R.id.button_change_addresslookup).setOnClickListener(this);
+        GeocodeManager.getInstance(context).registerGeocoderChangeListener(
+                gcl = new GeocodeManager.GeocoderChangedListener() {
+                    @Override
+                    public void onGeocoderChanged(
+                            GeocodeManager.Geocoder geocoder) {
+                        if (_licenseTv != null)
+                            post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    _licenseTv
+                                            .setText(getAddressLookupSource());
+                                }
+                            });
+
+                    }
+                });
+
         _clearButton = findViewById(R.id.clearButton);
         _clearButton.setOnClickListener(this);
 
@@ -1219,8 +1239,10 @@ public class CoordDialogView extends LinearLayout implements
         else if (v == _clearButton)
             clear();
 
-        // Find address
-        else if (id == R.id.button_convert_address) {
+        else if (id == R.id.button_change_addresslookup) {
+            GeocoderPreferenceFragment.showPicker(context);
+            // Find address
+        } else if (id == R.id.button_convert_address) {
             if (isNetworkAvailable()) {
                 handleSearchButton();
             } else {
@@ -1720,4 +1742,19 @@ public class CoordDialogView extends LinearLayout implements
         INVALID
     }
 
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        if (gcl != null)
+            GeocodeManager.getInstance(context)
+                    .unregisterGeocoderChangeListener(gcl);
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        if (gcl != null)
+            GeocodeManager.getInstance(context)
+                    .registerGeocoderChangeListener(gcl);
+    }
 }

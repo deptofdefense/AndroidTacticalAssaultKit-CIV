@@ -443,7 +443,7 @@ public class MenuLayoutBase extends LayoutWidget implements
         //create back button
         MapMenuButtonWidget backButton = new MapMenuButtonWidget(_context);
         backButton.setState(AbstractButtonWidget.STATE_SELECTED);
-        WidgetIcon backIcon = null;
+        WidgetIcon backIcon;
         ConfigEnvironment.Builder b = new ConfigEnvironment.Builder();
         ConfigEnvironment ce = b.build();
         try {

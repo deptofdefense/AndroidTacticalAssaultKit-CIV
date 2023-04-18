@@ -11,6 +11,8 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 
+import androidx.annotation.NonNull;
+
 import com.atak.plugins.impl.AtakPluginRegistry;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.graphics.GLCapture;
@@ -605,6 +607,7 @@ public class ProductInformation {
         return installedVersion != AppMgmtUtils.APP_NOT_INSTALLED;
     }
 
+    @NonNull
     public String toString() {
         return this.packageName + "," + this.simpleName + ","
                 + this.version + "," + this.appUri;

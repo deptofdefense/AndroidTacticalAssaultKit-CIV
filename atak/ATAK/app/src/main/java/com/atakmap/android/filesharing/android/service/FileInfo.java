@@ -1,6 +1,8 @@
 
 package com.atakmap.android.filesharing.android.service;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.filesystem.HashingUtils;
@@ -332,6 +334,7 @@ public class FileInfo {
         return newFile;
     }
 
+    @NonNull
     public String toString() {
         return fileName + " (" + contentType + ") size=" + sizeInBytes
                 + " bytes, time="

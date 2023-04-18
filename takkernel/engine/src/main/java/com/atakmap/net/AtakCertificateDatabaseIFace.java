@@ -6,12 +6,15 @@ import com.atakmap.comms.NetConnectString;
 import java.security.cert.X509Certificate;
 import java.util.List;
 
-public interface AtakCertificateDatabaseIFace {
+import gov.tak.api.engine.net.ICertificateStore;
+import gov.tak.api.util.Disposable;
 
-    String TYPE_TRUST_STORE_CA = "TRUST_STORE_CA";
-    String TYPE_CLIENT_CERTIFICATE = "CLIENT_CERTIFICATE";
-    String TYPE_PRIVATE_KEY = "PRIVATE_KEY";
-    String TYPE_UPDATE_SERVER_TRUST_STORE_CA = "UPDATE_SERVER_TRUST_STORE_CA";
+public interface AtakCertificateDatabaseIFace extends Disposable {
+
+    String TYPE_TRUST_STORE_CA = ICertificateStore.TYPE_TRUST_STORE_CA;
+    String TYPE_CLIENT_CERTIFICATE = ICertificateStore.TYPE_CLIENT_CERTIFICATE;
+    String TYPE_PRIVATE_KEY = ICertificateStore.TYPE_PRIVATE_KEY;
+    String TYPE_UPDATE_SERVER_TRUST_STORE_CA = ICertificateStore.TYPE_UPDATE_SERVER_TRUST_STORE_CA;
 
     /**
      * Retrieves the certificate for the specified type. The certificate is
@@ -59,7 +62,6 @@ public interface AtakCertificateDatabaseIFace {
      * @param type   the certificate type
      * @param server the server
      * @param port   the port
-     * @param validateHash   true to validate the certificates hash
      * @return Null if not exists, the certificate as a <code>byte[]</code> otherwise.
      */
     byte[] getCertificateForTypeAndServerAndPort(String type, String server, int port);
@@ -77,7 +79,7 @@ public interface AtakCertificateDatabaseIFace {
      * @return
      */
     byte[] getCertificateForTypeAndServer(String type, String server,
-            boolean validateHash);
+                                          boolean validateHash);
 
     /**
      * Saves the certificate with the given type and server.
@@ -87,7 +89,7 @@ public interface AtakCertificateDatabaseIFace {
      * @param certificate the certificate as a <code>byte[]</code>
      */
     void saveCertificateForTypeAndServer(String type, String server,
-            byte[] certificate);
+                                         byte[] certificate);
 
     /**
      * Saves the certificate with the given type and server and port
@@ -154,9 +156,5 @@ public interface AtakCertificateDatabaseIFace {
      * @return a collection of server names
      */
     NetConnectString[] getServerConnectStrings(String type);
-
-    /**
-     * Closes the certificate database
-     */
-    void dispose();
+    
 }

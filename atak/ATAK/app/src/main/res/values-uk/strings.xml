@@ -3541,7 +3541,8 @@
   <string name="drag">Перетягнути</string>
   <string name="relock">Перезафіксувати</string>
   <string name="layer_details">Подробиці шару</string>
-  <string name="threehundredsixty">360</string>
+  <string name="model_updated_by">Updated by \'%s\'.</string>
+  <string name="model_updated_terrain_model">Terrain model was \'%s\'.</string>
   <string name="caseLabel">Заява про розповсюдження A: Схвалено для загальнодоступного випуску; поширення необмежене.</string>
   <string name="permission_warning">Програма вимагає дозволів, які ви раніше заборонили, виберіть \'Дозволити вручну\' щоб перейти в екран параметрів.\n\nВиберіть Дозволи -&gt; Увімкнути всі наведені дозволи</string>
   <string name="permit_manually">Дозолити вручну</string>
@@ -4014,4 +4015,6 @@
   <string name="would_you_like_to_export_mission_pkg">Бажаєте експортувати файл як пакунок місії?</string>
   <string name="import_file">Імпорт файла</string>
   <string name="userfeedback_submit_message">Збережено %s в папку support/log.   Цей відгук буде автоматично відправлено на ТАК сервер якщо він налаштований.</string>
+    <string name="rapid_mgrs_entry_mode">Rapid MGRS Entry Mode</string>
+  <string name="rapid_mgrs_entry_mode_sum">When long pressing to drop a point from the point dropper tool, use the MGRS optimized coordinate entry.</string>
 </resources>

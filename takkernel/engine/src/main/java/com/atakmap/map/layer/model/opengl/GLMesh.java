@@ -13,9 +13,7 @@ import com.atakmap.map.MapRenderer;
 import com.atakmap.map.MapSceneModel;
 import com.atakmap.map.layer.control.ColorControl;
 import com.atakmap.map.layer.control.Controls;
-import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.model.Mesh;
-import com.atakmap.map.layer.model.Model;
 import com.atakmap.map.layer.model.ModelInfo;
 import com.atakmap.map.layer.model.Models;
 import com.atakmap.map.layer.model.VertexDataLayout;
@@ -322,10 +320,10 @@ public class GLMesh implements GLMapRenderable2, Controls {
             return;
 
         final boolean disableCullFace = (this.subject
-                .getFaceWindingOrder() != Model.WindingOrder.Undefined)
+                .getFaceWindingOrder() != Mesh.WindingOrder.Undefined)
                 && !GLES30.glIsEnabled(GLES30.GL_CULL_FACE);
         int[] cullFaceRestore = null;
-        if (this.subject.getFaceWindingOrder() != Model.WindingOrder.Undefined) {
+        if (this.subject.getFaceWindingOrder() != Mesh.WindingOrder.Undefined) {
             cullFaceRestore = new int[2];
             GLES30.glGetIntegerv(GLES30.GL_CULL_FACE,
                     cullFaceRestore, 0);

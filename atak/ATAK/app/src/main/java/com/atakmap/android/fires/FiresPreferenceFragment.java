@@ -1,23 +1,22 @@
 
 package com.atakmap.android.fires;
 
+import android.content.Context;
 import android.os.Bundle;
-import android.preference.EditTextPreference;
-import android.preference.ListPreference;
 import android.preference.Preference;
 
 import com.atakmap.android.gui.PanEditTextPreference;
 import com.atakmap.android.gui.PanListPreference;
-import com.atakmap.android.gui.PanEditTextPreference;
-import com.atakmap.android.gui.PanEditTextPreference;
-import com.atakmap.android.gui.PanListPreference;
 import com.atakmap.android.preference.AtakPreferenceFragment;
+import com.atakmap.android.preference.PreferenceSearchIndex;
 import com.atakmap.app.R;
 import com.atakmap.app.system.ResourceUtil;
 
+import java.util.List;
+
 /*
- * 
- * 
+ *
+ *
  * Used to access the preferences for the Fires Tool Bar
  */
 
@@ -29,8 +28,16 @@ public class FiresPreferenceFragment extends AtakPreferenceFragment {
                         R.string.fire_control_prefs));
     }
 
+    public static List<PreferenceSearchIndex> index(Context context) {
+        return index(context,
+                FiresPreferenceFragment.class,
+                R.string.civ_fire_control_prefs,
+                R.drawable.ic_overlay_gridlines);
+    }
+
     /**
      * Set the title correctly for a Preference given a resource.
+     *
      * @param p
      * @param resource
      */
@@ -47,23 +54,21 @@ public class FiresPreferenceFragment extends AtakPreferenceFragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         this.addPreferencesFromResource(getResourceID());
-        Preference p = findPreference("fire_prefs_category");
-        setTitle(p, ResourceUtil.getResource(R.string.civ_fires_prefs,
-                R.string.fires_prefs));
 
         PanEditTextPreference spiUpdateDelay = (PanEditTextPreference) findPreference(
                 "spiUpdateDelay");
-        setTitle(p, ResourceUtil.getResource(R.string.civ_spi_update_delay,
-                R.string.spi_update_delay));
-        p.setSummary(
+        spiUpdateDelay.setTitle(
+                ResourceUtil.getResource(R.string.civ_spi_update_delay,
+                        R.string.spi_update_delay));
+        spiUpdateDelay.setSummary(
                 ResourceUtil.getResource(R.string.civ_spi_update_delay_summary,
                         R.string.spi_update_delay_summary));
 
         PanListPreference firesNumberOfSpis = (PanListPreference) findPreference(
                 "firesNumberOfSpis");
 
-        setTitle(firesNumberOfSpis,
-                ResourceUtil.getResource(R.string.civ_fireSpiNumber,
+        firesNumberOfSpis
+                .setTitle(ResourceUtil.getResource(R.string.civ_fireSpiNumber,
                         R.string.fireSpiNumber));
         firesNumberOfSpis.setSummary(
                 ResourceUtil.getResource(R.string.civ_fireSpiNumberSummary,
@@ -72,11 +77,12 @@ public class FiresPreferenceFragment extends AtakPreferenceFragment {
         PanEditTextPreference spiFahSize = (PanEditTextPreference) findPreference(
                 "spiFahSize");
         spiFahSize.setValidIntegerRange(0, 180);
-
-        setTitle(p, ResourceUtil.getResource(R.string.civ_spi_redx_fah,
+        spiFahSize.setTitle(ResourceUtil.getResource(R.string.civ_spi_redx_fah,
                 R.string.spi_redx_fah));
-        p.setSummary(ResourceUtil.getResource(R.string.civ_spi_redx_fah_summary,
-                R.string.spi_redx_fah_summary));
+
+        spiFahSize.setSummary(
+                ResourceUtil.getResource(R.string.civ_spi_redx_fah_summary,
+                        R.string.spi_redx_fah_summary));
 
     }
 

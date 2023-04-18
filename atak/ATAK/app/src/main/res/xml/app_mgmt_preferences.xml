@@ -24,7 +24,7 @@
             android:defaultValue="@string/atakUpdateServerUrlDefault"
             android:inputType="textUri"
             android:dependency="appMgmtEnableUpdateServer"/>
-       <Preference
+       <com.atakmap.android.gui.PanPreference
             android:title="@string/app_mgmt_update_server_truststore"
             android:key="updateServerCaLocation"
             android:summary="@string/app_mgmt_update_server_truststore_details"
@@ -35,7 +35,7 @@
             android:key="updateServerCaPassword"
             android:inputType="textPassword"
             android:dependency="appMgmtEnableUpdateServer"/>
-       <Preference
+       <com.atakmap.android.gui.PanPreference
             android:title="@string/app_mgmt_update_local_repo_title"
             android:key="atakUpdateLocalPath"
             android:summary="@string/app_mgmt_update_local_repo_mesage"

@@ -32,8 +32,8 @@ public class TadilJContactDatabase extends SQLiteOpenHelper {
     public static final String ARRAY_DELIMITER = ",";
 
     static class DBColumn {
-        public String key = null;
-        public String type = null;
+        public String key;
+        public String type;
 
         public DBColumn(String key, String type) {
             this.key = key;

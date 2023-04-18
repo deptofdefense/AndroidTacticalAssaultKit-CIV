@@ -98,7 +98,7 @@ public class Route extends EditablePolyline {
 
     public static final int DEFAULT_ROUTE_COLOR = Color.WHITE;
 
-    private String prefix_ = "CP";
+    private String prefix_;
 
     private RouteMethod routeMethod_ = RouteMethod.Driving;
     private RouteDirection routeDirection_ = RouteDirection.Infil;
@@ -901,7 +901,9 @@ public class Route extends EditablePolyline {
             // Process new markers
             List<GeoPointMetaData> newPoints = new ArrayList<>();
             for (PointMapItem item : items) {
-                if (item.getType().equals(WAYPOINT_TYPE)) {
+                final String type = item.getType();
+
+                if (type != null && type.equals(WAYPOINT_TYPE)) {
                     setEditable(item, editable);
                     if (editable) {
                         item.setZOrder(this.getZOrder() - 50000);
@@ -1804,7 +1806,7 @@ public class Route extends EditablePolyline {
      */
     synchronized public double getMinimumDistance(PointMapItem refPoint) {
         double minDistance = Double.NaN;
-        double distance = 0.0d;
+        double distance;
 
         for (GeoPointMetaData p : _points) {
             distance = refPoint.getPoint().distanceTo(p.get());
@@ -1823,7 +1825,7 @@ public class Route extends EditablePolyline {
      */
     synchronized public double getMaximumDistance(PointMapItem refPoint) {
         double maxDistance = Double.NaN;
-        double distance = 0.0d;
+        double distance;
 
         for (GeoPointMetaData p : _points) {
             distance = refPoint.getPoint().distanceTo(p.get());
@@ -1992,7 +1994,7 @@ public class Route extends EditablePolyline {
         final String kmlExportCheckpointMode = _prefs.getString(
                 "kmlExportCheckpointMode", "Both");
 
-        RouteKmlIO.CheckpointExportMode mode = RouteKmlIO.CheckpointExportMode.Both;
+        RouteKmlIO.CheckpointExportMode mode;
         try {
             mode = RouteKmlIO.CheckpointExportMode
                     .valueOf(kmlExportCheckpointMode);

@@ -5,10 +5,12 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Looper;
 import android.os.SystemClock;
+import android.preference.PreferenceManager;
 import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -22,11 +24,21 @@ import com.atakmap.android.data.URIContentListener;
 import com.atakmap.android.data.URIContentManager;
 import com.atakmap.android.data.URIContentProvider;
 import com.atakmap.android.data.URIHelper;
+import com.atakmap.android.filesystem.ResourceFile;
+import com.atakmap.android.filesystem.ResourceFile.MIMEType;
 import com.atakmap.android.gui.AlertDialogHelper;
 import com.atakmap.android.gui.TileButtonDialog;
 import com.atakmap.android.hierarchy.HierarchyListAdapter;
+import com.atakmap.android.hierarchy.HierarchyListFilter;
+import com.atakmap.android.hierarchy.HierarchyListItem;
+import com.atakmap.android.hierarchy.HierarchyListReceiver;
+import com.atakmap.android.hierarchy.action.Action;
 import com.atakmap.android.hierarchy.action.Export;
 import com.atakmap.android.hierarchy.action.GroupDelete;
+import com.atakmap.android.hierarchy.action.Search;
+import com.atakmap.android.hierarchy.action.Visibility;
+import com.atakmap.android.hierarchy.action.Visibility2;
+import com.atakmap.android.hierarchy.items.AbstractHierarchyListItem2;
 import com.atakmap.android.image.ImageDropDownReceiver;
 import com.atakmap.android.importexport.ExportFilters;
 import com.atakmap.android.importexport.Exportable;
@@ -36,19 +48,6 @@ import com.atakmap.android.importfiles.sort.ImportResolver;
 import com.atakmap.android.importfiles.sort.ImportResolver.SortFlags;
 import com.atakmap.android.importfiles.task.ImportFilesTask;
 import com.atakmap.android.importfiles.ui.ImportManagerFileBrowser;
-import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
-
-import com.atakmap.android.filesystem.ResourceFile;
-import com.atakmap.android.filesystem.ResourceFile.MIMEType;
-import com.atakmap.android.hierarchy.HierarchyListFilter;
-import com.atakmap.android.hierarchy.HierarchyListItem;
-import com.atakmap.android.hierarchy.HierarchyListReceiver;
-import com.atakmap.android.hierarchy.action.Action;
-import com.atakmap.android.hierarchy.action.Search;
-import com.atakmap.android.hierarchy.action.Visibility;
-import com.atakmap.android.hierarchy.action.Visibility2;
-import com.atakmap.android.hierarchy.items.AbstractHierarchyListItem2;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.DeepMapItemQuery;
 import com.atakmap.android.maps.MapGroup;
@@ -56,8 +55,8 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.math.MathUtils;
-import com.atakmap.android.missionpackage.MissionPackageMapComponent;
 import com.atakmap.android.missionpackage.MapItemSelectTool;
+import com.atakmap.android.missionpackage.MissionPackageMapComponent;
 import com.atakmap.android.missionpackage.MissionPackageReceiver;
 import com.atakmap.android.missionpackage.MissionPackageUtils;
 import com.atakmap.android.missionpackage.event.MissionPackageEventProcessor;
@@ -89,8 +88,14 @@ import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.cot.event.CotPoint;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
+import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.spatial.file.export.GPXExportWrapper;
+import com.atakmap.spatial.file.export.KMZFolder;
+import com.atakmap.spatial.file.export.OGRFeatureExportWrapper;
+import com.ekito.simpleKML.model.Feature;
+import com.ekito.simpleKML.model.Folder;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -99,13 +104,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import com.atakmap.coremap.locale.LocaleUtil;
-import com.atakmap.spatial.file.export.GPXExportWrapper;
-import com.atakmap.spatial.file.export.KMZFolder;
-import com.atakmap.spatial.file.export.OGRFeatureExportWrapper;
-import com.ekito.simpleKML.model.Feature;
-import com.ekito.simpleKML.model.Folder;
-
 import java.util.Map;
 import java.util.Set;
 
@@ -1277,9 +1275,9 @@ public class MissionPackageMapOverlay extends AbstractMapOverlay2 implements
             String how = null, type = null, point = null, callsign = null,
                     uid = ((MissionPackageListMapItem) item)
                             .getUID();
-            String cotXml = MissionPackageExtractor.ExtractCoT(_context,
-                    new File(group.getManifest().getPath()), item.getContent(),
-                    false);
+            String cotXml = MissionPackageExtractor.ExtractCoT(
+                    new File(group.getManifest().getPath()), group.getManifest(),
+                    item.getContent(), false);
             if (!FileSystemUtils.isEmpty(cotXml)) {
                 CotEvent event = CotEvent.parse(cotXml);
                 if (event != null && event.isValid()) {

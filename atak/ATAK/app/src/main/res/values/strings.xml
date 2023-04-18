@@ -866,7 +866,7 @@
   <string name="eta_jm">ETA</string>
   <string name="xtrack_jm" translatable="false">X Track</string>
   <string name="proj_dist_jm" translatable="false">Projected Distance</string>
-  <string name="unitless" translatable="false"/>
+  <string name="unitless" translatable="false"></string>
   <string name="planned_gr_alt">Planned GR at Alt</string>
   <string name="gr_to_dip">GR to DIP</string>
   <string name="color_ag_planned_gr">Color Against Planned GR</string>
@@ -3190,7 +3190,7 @@
   <string name="available">Available</string>
   <string name="app_plugin">App/Plugin</string>
   <string name="toolpref_nightvision">Tool Preferences/Night Vision Preferences</string>
-  <string name="threehundredsixty">360</string>
+  <string name="threehundredsixty" translatable="false">360</string>
   <string name="_5_line">5-Line</string>
   <string name="rw_gunship_ncff">RW/Gunship CFF</string>
   <string name="callsign_with_colon">Callsign</string>
@@ -3297,14 +3297,14 @@
   <!-- Gather strings changed in rebranding -->
   <string name="app_name" translatable="false">ATAK</string>
   <string name="atak_activity" translatable="false">com.atakmap.app.ATAKActivity</string>
-  <string name="atakUpdateServerUrlDefault" translatable="false"/>
+  <string name="atakUpdateServerUrlDefault" translatable="false"></string>
   <string name="coord_display_pref_default">MGRS</string>
   <string name="grg_lowercase">grg</string>
   <string name="friendly">Friendly</string>
   <string name="target_title">Target:</string>
-  <string name="fire_control_prefs">Fires Toolbar Preferences</string>
-  <string name="fires_prefs">Fires Preferences</string>
-  <string name="adjust_fire_settings">Adjust preferences for the Fires toolbar</string>
+  <string name="fire_control_prefs">Fire Toolbar Preferences</string>
+  <string name="fires_prefs">Fire Preferences</string>
+  <string name="adjust_fire_settings">Adjust preferences for the Fire toolbar</string>
   <string name="IntelDumpReceiver_url" translatable="false">http://172.16.0.9/IntelDumps</string>
   <string name="cot2525C" translatable="false">CoT 2525C</string>
   <string name="s2525C" translatable="false">2525C</string>
@@ -3565,7 +3565,7 @@
   <string name="alert_preferences">Alert Preferences</string>
   <string name="legacy_toolbar_mode">Legacy Toolbar Mode</string>
   <string name="fireSpiNumber">Number of SPIs</string>
-  <string name="fireSpiNumberSummary">Number of SPIs to show in the Fires toolbar</string>
+  <string name="fireSpiNumberSummary">Number of SPIs to show in the Fire toolbar</string>
   <string name="spi_redx_fah">SPI/RedX FAH Width</string>
   <string name="spi_redx_fah_summary">Sets the width of the FAH cone (in degrees) when enabled from a SPI or the Red X (rounds to the closest increment of 10)</string>
   <string name="summary_legacy_toolbar_mode">Enables the legacy display of toolbar from previous versions of the software.</string>
@@ -3902,12 +3902,16 @@
   <string name="drag">Drag</string>
   <string name="relock">Re-lock</string>
   <string name="layer_details">Layer Details</string>
+  <!--3D Models-->
+  <string name="model_updated_by">Updated by \'%s\'.</string>
+  <string name="model_updated_terrain_model">Terrain model was \'%s\'.</string>
+
+<!--Splash Screen-->
   <!--Splash Screen-->
-  <!--Splash Screen-->
-  <string name="classificationLabel" translatable="false"/>
-  <string name="statementLabel" translatable="false"/>
-  <string name="distributionLabel" translatable="false"/>
-  <string name="destructionLabel" translatable="false"/>
+  <string name="classificationLabel" translatable="false"></string>
+  <string name="statementLabel" translatable="false"></string>
+  <string name="distributionLabel" translatable="false"></string>
+  <string name="destructionLabel" translatable="false"></string>
   <!-- Even though this is the Distribution statement, we want it to
          appear at the bottom and not floating above empty text blocks -->
   <string name="caseLabel">Distribution Statement A: Approved for public release; distribution is unlimited.</string>
@@ -4400,4 +4404,6 @@
   <string name="would_you_like_to_export_mission_pkg">Would you like to export the file as a mission package?</string>
     <string name="import_file">Import File</string>
     <string name="userfeedback_submit_message">Submitted %s to the support/log directory.   This feedback will be automatically published to the tak server if configured.</string>
+  <string name="rapid_mgrs_entry_mode">Rapid MGRS Entry Mode</string>
+  <string name="rapid_mgrs_entry_mode_sum">When long pressing to drop a point from the point dropper tool, use the MGRS optimized coordinate entry.</string>
 </resources>

@@ -3,6 +3,8 @@ package com.atakmap.android.image.nitf.CGM;
 
 import android.graphics.Point;
 
+import androidx.annotation.NonNull;
+
 import java.io.DataInput;
 import java.io.IOException;
 
@@ -23,6 +25,7 @@ public class EllipseCommand extends Command {
         this.secondConjugateDiameterEndPoint = makePoint();
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "Ellipse [" + this.center.x + "," + this.center.y + "] [" +

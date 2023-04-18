@@ -121,7 +121,7 @@ public class CotPointTests {
                     });
 
         } catch (IOException e) {
-            assertFalse(e.getMessage(), true);
+            fail(e.getMessage());
         }
     }
 }

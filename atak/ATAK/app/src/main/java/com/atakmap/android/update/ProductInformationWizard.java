@@ -286,7 +286,7 @@ public class ProductInformationWizard {
             //TODO display any more details e.g. version #s, why not compat
             //TODO cache labels/icons for faster loading of views?
             View row = convertView;
-            ProductInformationViewHolder holder = null;
+            ProductInformationViewHolder holder;
             if (row == null) {
                 row = _inflater.inflate(R.layout.app_mgmt_product_wizard_row,
                         parent, false);

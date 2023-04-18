@@ -5,19 +5,16 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.PointF;
 import android.os.Bundle;
-import android.view.LayoutInflater;
-
-import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
-
-import com.atakmap.android.menu.MapMenuReceiver;
-import com.atakmap.coremap.conversions.CoordinateFormat;
-import com.atakmap.android.gui.CoordDialogView;
-import android.view.View.OnClickListener;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.View.OnClickListener;
 
+import com.atakmap.android.gui.CoordDialogView;
+import com.atakmap.android.gui.FastMGRS;
 import com.atakmap.android.gui.RangeBearingInputView;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapEvent;
@@ -25,10 +22,12 @@ import com.atakmap.android.maps.MapEventDispatcher;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.PointMapItem;
+import com.atakmap.android.menu.MapMenuReceiver;
 import com.atakmap.android.toolbar.Tool;
 import com.atakmap.android.toolbar.widgets.TextContainer;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
+import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
@@ -194,52 +193,69 @@ public class EnterLocationTool extends Tool implements
         b.show();
     }
 
+
+    private void addPoint(GeoPointMetaData p) {
+        // On click get the geopoint and elevation double in ft
+        if (p == null) {
+            return; //if the point is null, do nothing
+        }
+        MapItem marker;
+        if (_currType.equals("damaged")) {
+            marker = enterLocation.processCASEVAC(p);
+            requestEndTool();
+        } else {
+            marker = enterLocation.processPoint(p);
+        }
+        if (marker != null) {
+            RecentlyAddedDropDownReceiver.instance
+                    .addToRecentList(marker);
+            CameraController.Programmatic.panTo(
+                    _mapView.getRenderer3(),
+                    p.get(), true);
+        }
+    }
     private void launchEnter() {
         CoordinateFormat _cFormat = CoordinateFormat.find(_prefs.getString(
                 "coord_display_pref",
                 con.getString(R.string.coord_display_pref_default)));
 
-        AlertDialog.Builder b = new AlertDialog.Builder(con);
-        final CoordDialogView coordView = (CoordDialogView) LayoutInflater
-                .from(con).inflate(
-                        R.layout.draper_coord_dialog, _mapView, false);
-        b.setView(coordView);
-        b.setPositiveButton(R.string.ok, null);
-        b.setNegativeButton(R.string.cancel, null);
+        if (_prefs.getBoolean("rapid_mgrs_dialog", false)) {
 
-        coordView.setParameters(null,
-                _mapView.getPoint(), _cFormat);
-
-        final AlertDialog ad = b.create();
-        ad.show();
-        ad.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(
-                new OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        // On click get the geopoint and elevation double in ft
-                        GeoPointMetaData p = coordView.getPoint();
-                        if (p == null) {
-                            return; //if the point is null, do nothing
+            FastMGRS fastMRGS = new FastMGRS(_mapView, false,
+                    new FastMGRS.OnEnterListener() {
+                        @Override
+                        public void onEnter(GeoPointMetaData gp) {
+                            addPoint(gp);
                         }
-                        MapItem marker;
-                        if (_currType.equals("damaged")) {
-                            marker = enterLocation.processCASEVAC(p);
-                            requestEndTool();
-                        } else {
-                            marker = enterLocation.processPoint(p);
-                        }
-                        if (marker != null) {
-                            RecentlyAddedDropDownReceiver.instance
-                                    .addToRecentList(marker);
-                            CameraController.Programmatic.panTo(
-                                    _mapView.getRenderer3(),
-                                    p.get(), true);
-                        }
+                    });
+            fastMRGS.show();
+        } else {
 
-                        ad.dismiss();
 
-                    }
-                });
+            AlertDialog.Builder b = new AlertDialog.Builder(con);
+            final CoordDialogView coordView = (CoordDialogView) LayoutInflater
+                    .from(con).inflate(
+                            R.layout.draper_coord_dialog, _mapView, false);
+            b.setView(coordView);
+            b.setPositiveButton(R.string.ok, null);
+            b.setNegativeButton(R.string.cancel, null);
+
+            coordView.setParameters(null,
+                    _mapView.getPoint(), _cFormat);
+
+            final AlertDialog ad = b.create();
+            ad.show();
+            ad.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(
+                    new OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            GeoPointMetaData p = coordView.getPoint();
+                            addPoint(p);
+                            ad.dismiss();
+
+                        }
+                    });
+        }
 
     }
 

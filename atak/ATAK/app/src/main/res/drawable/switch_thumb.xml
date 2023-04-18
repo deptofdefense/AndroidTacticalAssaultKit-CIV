@@ -6,6 +6,12 @@
             <size android:width="28dp" android:height="28dp" />
         </shape>
     </item>
+    <item android:state_enabled="false">
+        <shape android:shape="oval">
+            <solid android:color="@color/black_overlay_transparent" />
+            <size android:width="28dp" android:height="28dp" />
+        </shape>
+    </item>
     <item>
         <shape android:shape="oval">
             <solid android:color="@color/pale_silver" />

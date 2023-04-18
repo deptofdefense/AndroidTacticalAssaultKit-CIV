@@ -33,19 +33,11 @@ public class GeoPointMetaData {
     public final static String DTED2 = "DTED2";
     public final static String DTED3 = "DTED3";
     public final static String LIDAR = "LIDAR";
-    /** @deprecated Will be removed without replacement */
-    @Deprecated
-    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
-    public final static String PFI = "PFI";
     public final static String USER = "USER";
     public final static String UNKNOWN = "???";
     public final static String GPS = "GPS";
     public final static String SRTM1 = "SRTM1";
     public final static String COT = "COT";
-    /** @deprecated Will be removed without replacement */
-    @Deprecated
-    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
-    public final static String PRI = "PRI";
     public final static String CALCULATED = "CALC";
     public final static String ESTIMATED = "ESTIMATED";
     public final static String RTK = "RTK";

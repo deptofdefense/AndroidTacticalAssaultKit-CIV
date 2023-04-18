@@ -4,13 +4,17 @@ dependencies {
     api project(':annotation')
     implementation fileTree(include: '*.jar', dir: 'libs')
 
+    // This dependency is found on compile classpath of this component and consumers.
+    if(isJavaKernelBuild) {
+        implementation("org.apache.commons:commons-text:${commonsTextVersion}")
 
-    project.plugins.withId('java-library') {
-        // This dependency is found on compile classpath of this component and consumers.
         api("com.google.guava:guava:${guavaVersion}")
 
         api "org.jogamp.gluegen:gluegen-rt-main:${joglVersion}"
         api "org.jogamp.jogl:jogl-all-main:${joglVersion}"
         api("gov.tak.support:android-port:${androidPortVersion}")
+    } else if(isAndroidKernelBuild) {
+        // ATAK has direct dependencies, retain as API for Android for 1.x
+        api("gov.tak.thirdparty:apache-commons-lang-slim:${commonsLang3SlimVersion}")
     }
 }

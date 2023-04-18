@@ -1,8 +1,6 @@
 
 package com.atakmap.android.emergency.tool;
 
-import com.atakmap.annotations.DeprecatedApi;
-
 public enum EmergencyType {
     NineOneOne("911 Alert", "b-a-o-tbl", 0),
     Cancel("Cancel Alert", "b-a-o-can", 1),

@@ -4,6 +4,8 @@ package com.atakmap.android.missionpackage.http.rest;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.http.rest.request.RetryRequest;
 import com.atakmap.android.missionpackage.http.MissionPackageDownloader;
 import com.atakmap.android.missionpackage.http.datamodel.FileTransfer;
@@ -80,6 +82,7 @@ public class FileTransferRequest extends RetryRequest {
         mConnectionTimeoutMS = timeoutMS;
     }
 
+    @NonNull
     @Override
     public String toString() {
         if (mFileTransfer == null)

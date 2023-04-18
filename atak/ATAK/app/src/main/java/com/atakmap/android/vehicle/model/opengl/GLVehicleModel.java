@@ -10,7 +10,6 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.rubbersheet.maps.GLRubberModel;
 import com.atakmap.android.vehicle.model.VehicleModel;
 import com.atakmap.android.vehicle.model.VehicleModelInfo;
-import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;

@@ -27,6 +27,7 @@ import com.atakmap.android.widgets.TextWidget;
 import com.atakmap.app.R;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.assets.Icon;
+import com.atakmap.map.opengl.GLRenderGlobals;
 
 import java.util.List;
 
@@ -44,7 +45,7 @@ public class NavigationInstrumentPanel implements
     //-------------------- Fields and Properties ---------------------------
 
     private static final String VOICE_CUE_PREFERENCE_KEY = "useRouteVoiceCues";
-    private float density = MapView.DENSITY;
+    private float density = GLRenderGlobals.getRelativeScaling();
     private MarkerIconWidget volumeWidget;
     private MarkerIconWidget billboardWidget;
     private boolean isdistanceAndETACheckpointBased = true;

@@ -4,6 +4,8 @@ package com.atakmap.android.image.nitf.CGM;
 import android.graphics.Color;
 import android.graphics.Point;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.app.BuildConfig;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
@@ -55,7 +57,7 @@ public class Command {
             numArgs = argCount;
         } else {
             // this is a long form command
-            boolean done = true;
+            boolean done;
             partitions = new Integer[1];
             Vector<Integer> parts = new Vector<>();
             int a = 0;
@@ -109,6 +111,7 @@ public class Command {
         return (in.readUnsignedByte() << 8) | in.readUnsignedByte();
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "Unsupported " + this.elementClass + "," + this.elementID + " ("

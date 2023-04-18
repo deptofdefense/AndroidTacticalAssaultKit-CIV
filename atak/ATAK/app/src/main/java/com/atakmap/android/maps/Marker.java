@@ -42,6 +42,7 @@ import com.atakmap.coremap.maps.assets.Icon;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.map.hittest.HitTestQueryParameters;
+import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.spatial.file.export.GPXExportWrapper;
 import com.atakmap.spatial.file.export.KMZFolder;
 import com.atakmap.spatial.file.export.OGRFeatureExportWrapper;
@@ -799,10 +800,13 @@ public class Marker extends PointMapItem implements Exportable, Capturable {
     @Deprecated
     @DeprecatedApi(since = "4.4", forRemoval = true, removeAt = "4.7")
     public void setMarkerHitBounds(int left, int top, int right, int bottom) {
-        _hitBounds.left = Math.round(left * MapView.DENSITY);
-        _hitBounds.right = Math.round(right * MapView.DENSITY);
-        _hitBounds.top = Math.round(top * MapView.DENSITY);
-        _hitBounds.bottom = Math.round(bottom * MapView.DENSITY);
+        _hitBounds.left = Math
+                .round(left * GLRenderGlobals.getRelativeScaling());
+        _hitBounds.right = Math
+                .round(right * GLRenderGlobals.getRelativeScaling());
+        _hitBounds.top = Math.round(top * GLRenderGlobals.getRelativeScaling());
+        _hitBounds.bottom = Math
+                .round(bottom * GLRenderGlobals.getRelativeScaling());
         onMarkerHitBoundsChanged();
     }
 

@@ -8,7 +8,7 @@
 #include "interop/JNIByteArray.h"
 #include "interop/db/Interop.h"
 #include "interop/java/JNILocalRef.h"
-#include "jpointer.h"
+#include "com_atakmap_interop_Pointer.h"
 #include <db/Database2.h>
 #include <db/Statement2.h>
 

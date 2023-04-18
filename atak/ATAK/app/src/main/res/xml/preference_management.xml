@@ -22,10 +22,11 @@
             android:entries="@array/filenames"
             android:summary="@string/load_category_of_setting_summary"
             android:icon="@drawable/ic_menu_import_file" />
-       <Preference android:title="@string/preferences_text126"
-            android:key="prepareForClone"
-            android:summary="@string/preferences_text127"
-            android:icon="@drawable/ic_atak_launcher" />
+       <com.atakmap.android.gui.PanPreference
+           android:title="@string/preferences_text126"
+           android:key="prepareForClone"
+           android:summary="@string/preferences_text127"
+           android:icon="@drawable/ic_atak_launcher" />
 
     </PreferenceCategory>
 </PreferenceScreen>

@@ -182,6 +182,7 @@ namespace {
         TAK::Engine::Util::TAKErr get(const FeatureSet2 **featureSet) NOTHROWS override;
         
     private:
+        bool first;
         std::vector<std::shared_ptr<T>> items;
         typename std::vector<std::shared_ptr<T>>::iterator pos;
     };
@@ -272,7 +273,6 @@ AbstractFeatureDataStore2(modificationFlags, visibilityFlags),
 featureSpatialIndex(::featureRecordQuadtreeFunction<FeatureRecord>, -180.0, -90.0, 180.0, 90.0),
 nextFeatureSetId(1),
 nextFeatureId(1),
-inBulkModify(false),
 visibleGeneration(1)
 { }
 
@@ -518,13 +518,38 @@ Util::TAKErr RuntimeFeatureDataStore2::queryFeatureSets(FeatureSetCursorPtr &cur
 }
 
 Util::TAKErr RuntimeFeatureDataStore2::queryFeatureSetsCount(int *value) NOTHROWS {
+
+    TAKErr code(TE_Ok);
+    Lock lock(mutex_);
+    code = lock.status;
+    TE_CHECKRETURN_CODE(code);
+
+    if (value != nullptr)
+        *value = static_cast<int>(this->featureSetIdIndex.size());
     
-    
-    return Util::TE_Unsupported;
+    return Util::TE_Ok;
 }
 
 Util::TAKErr RuntimeFeatureDataStore2::queryFeatureSetsCount(int *value, const FeatureSetQueryParameters &params) NOTHROWS {
-    return Util::TE_Unsupported;
+
+    FeatureSetCursorPtr cursor(nullptr, nullptr);
+    TAKErr code = this->queryFeatureSets(cursor, params);
+    TE_CHECKRETURN_CODE(code);
+
+    int count = 0;
+    while (true) {
+        code = cursor->moveToNext();
+        TE_CHECKBREAK_CODE(code);
+        ++count;
+    }
+    if (code == TE_Done)
+        code = TE_Ok;
+    TE_CHECKRETURN_CODE(code);
+
+    if (value != nullptr)
+        *value = count;
+
+    return code;
 }
 
 Util::TAKErr RuntimeFeatureDataStore2::isFeatureVisible(bool *value, const int64_t fid) NOTHROWS {
@@ -610,18 +635,11 @@ Util::TAKErr RuntimeFeatureDataStore2::close() NOTHROWS {
 }
 
 Util::TAKErr RuntimeFeatureDataStore2::beginBulkModificationImpl() NOTHROWS {
-    this->inBulkModify = true;
     return Util::TE_Ok;
 }
 
 Util::TAKErr RuntimeFeatureDataStore2::endBulkModificationImpl(const bool successful) NOTHROWS {
     // XXX - rollback on unsuccessful
-    
-    this->inBulkModify = false;
-    
-    if (successful)
-        this->dispatchDataStoreContentChangedNoSync(true);
-    
     return Util::TE_Ok;
 }
 
@@ -859,11 +877,11 @@ Util::TAKErr RuntimeFeatureDataStore2::insertFeatureImpl(FeaturePtr_const *inser
     ::insertNameindex(this->featureNameIndex, featureIdIt->second);
     this->featureSpatialIndex.add(&featureIdIt->second);
     
+    this->setContentChanged();
+    
     if (inserted) {
         return this->getFeature(*inserted, fid);
     }
-    
-    this->setContentChanged();
     
     return Util::TE_Ok;
 }
@@ -1007,7 +1025,7 @@ Util::TAKErr RuntimeFeatureDataStore2::deleteFeatureImpl(const int64_t fid) NOTH
     
     this->setContentChanged();
     
-    return Util::TE_Unsupported;
+    return Util::TE_Ok;
 }
 
 Util::TAKErr RuntimeFeatureDataStore2::deleteAllFeaturesImpl(const int64_t fsid) NOTHROWS {
@@ -1075,7 +1093,7 @@ Util::TAKErr RuntimeFeatureDataStore2::setFeatureSetVisibleImpl(const int64_t se
     
     featureSetIt->second.visibleGeneration = this->visibleGeneration++;
     featureSetIt->second.visible = visible;
-    
+    this->dispatchDataStoreContentChangedNoSync(true);
     return Util::TE_Ok;
 }
 
@@ -1095,7 +1113,9 @@ Util::TAKErr RuntimeFeatureDataStore2::setFeatureSetsVisibleImpl(const FeatureSe
         featureSetIt->second.visibleGeneration = vg;
         featureSetIt->second.visible = visible;
     }
-    
+
+    this->dispatchDataStoreContentChangedNoSync(true);
+
     return code == Util::TE_Done ? Util::TE_Ok : code;
 }
 
@@ -1355,8 +1375,7 @@ namespace {
     
     template <typename T>
     RuntimeFeatureSetCursor2<T>::RuntimeFeatureSetCursor2(std::vector<std::shared_ptr<T>> &&items) NOTHROWS
-    : items(std::move(items)) {
-        pos = this->items.begin();
+    : first(true), items(std::move(items)) {
     }
     
     template <typename T>
@@ -1365,11 +1384,16 @@ namespace {
     
     template <typename T>
     TAK::Engine::Util::TAKErr RuntimeFeatureSetCursor2<T>::moveToNext() NOTHROWS {
+
+        if (first) {
+            first = false;
+            pos = items.begin();
+        }
+        else
+            ++pos;
         
         if (pos == items.end())
             return Util::TE_Done;
-        
-        ++pos;
         
         return Util::TE_Ok;
     }

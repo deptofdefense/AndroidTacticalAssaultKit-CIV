@@ -7,13 +7,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentActivity;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentPagerAdapter;
-import androidx.viewpager.widget.PagerAdapter;
-import androidx.viewpager.widget.ViewPager;
-import androidx.viewpager.widget.ViewPager.OnPageChangeListener;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -30,11 +23,15 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.atakmap.android.maps.MapTouchController;
-import com.atakmap.android.user.icon.Icon2525cPallet;
-import com.atakmap.android.util.ATAKUtilities;
-import com.atakmap.app.system.ResourceUtil;
-import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import androidx.annotation.NonNull;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentPagerAdapter;
+import androidx.viewpager.widget.PagerAdapter;
+import androidx.viewpager.widget.ViewPager;
+import androidx.viewpager.widget.ViewPager.OnPageChangeListener;
+
 import com.atakmap.android.contact.ContactPresenceDropdown;
 import com.atakmap.android.coordoverlay.CoordOverlayMapReceiver;
 import com.atakmap.android.cotdetails.CoTInfoBroadcastReceiver;
@@ -51,20 +48,25 @@ import com.atakmap.android.maps.MapEvent;
 import com.atakmap.android.maps.MapEventDispatcher;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
+import com.atakmap.android.maps.MapTouchController;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.menu.MapMenuReceiver;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
+import com.atakmap.android.user.icon.Icon2525cPallet;
 import com.atakmap.android.user.icon.IconPallet;
 import com.atakmap.android.user.icon.IconPallet.CreatePointException;
 import com.atakmap.android.user.icon.MissionSpecificPallet;
 import com.atakmap.android.user.icon.SpotMapPallet;
 import com.atakmap.android.user.icon.UserIconPallet;
 import com.atakmap.android.user.icon.UserIconPalletFragment;
+import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
+import com.atakmap.app.system.ResourceUtil;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -1088,7 +1090,7 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
         }
 
         @Override
-        public int getItemPosition(Object object) {
+        public int getItemPosition(@NonNull Object object) {
             //return position none so pager will create (re)added fragments
             return PagerAdapter.POSITION_NONE;
         }

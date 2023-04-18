@@ -2,25 +2,25 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <PreferenceCategory
         android:title="Adjust Toolbar Preferences">
-       <Preference
+        <com.atakmap.android.gui.PanPreference
             android:key="basic_display_settings"
             android:title="@string/basic_display_settings"
             android:icon="@drawable/ic_menu_ruler" />
-       <Preference
+        <com.atakmap.android.gui.PanPreference
             android:key="usableSettings"
             android:title="@string/usability_settings" />
-       <Preference
+        <com.atakmap.android.gui.PanPreference
             android:key="dexOptions"
             android:title="@string/dex_options" />
-       <Preference
+        <com.atakmap.android.gui.PanPreference
             android:key="3DRendering"
             android:title="@string/rendering_3d_options" />
-       <Preference
+        <Preference
             android:key="my_location_icon_color"
             android:summary="@string/preferences_text128"
             android:icon="@drawable/ic_self_pref"
             android:title="@string/preferences_text129" />
-       <Preference
+        <Preference
             android:key="my_actionbar_settings"
             android:icon="@drawable/customize_actionbar_pref_icon"
             android:summary="@string/preferences_text130"

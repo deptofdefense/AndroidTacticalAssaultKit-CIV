@@ -18,17 +18,25 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.atakmap.android.chat.ChatPrefsFragment;
 import com.atakmap.android.cot.NetworkGPSPreferenceFragment;
+import com.atakmap.android.elev.ElevationOverlaysPreferenceFragment;
+import com.atakmap.android.fires.FiresPreferenceFragment;
 import com.atakmap.android.gridlines.GridLinesPreferenceFragment;
 import com.atakmap.android.image.MediaPreferenceFragment;
+import com.atakmap.android.layers.WMSPreferenceFragment;
 import com.atakmap.android.layers.app.ImportStyleDefaultPreferenceFragment;
 import com.atakmap.android.layers.app.LayerPreferenceFragment;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.metricreport.MetricReportPreferenceFragment;
+import com.atakmap.android.missionpackage.ui.MissionPackagePreferenceFragment;
 import com.atakmap.android.offscreenindicators.OffscreenIndicatorsPrefsFragment;
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.android.preference.PluginPreferenceFragment;
 import com.atakmap.android.preference.PreferenceSearchIndex;
 import com.atakmap.android.preference.UnitDisplayPreferenceFragment;
+import com.atakmap.android.radiolibrary.IsrvNetworkPreferenceFragment;
+import com.atakmap.android.routes.RoutePreferenceFragment;
 import com.atakmap.android.util.AfterTextChangedWatcher;
 import com.atakmap.android.util.LimitingThread;
 import com.atakmap.app.R;
@@ -105,6 +113,15 @@ public class PreferenceSearchDialog
         add(masterlist, UsabilityPreferenceFragment.index(context));
         add(masterlist, PromptNetworkPreferenceFragment.index(context));
         add(masterlist, LockingBehaviorFragment.index(context));
+        add(masterlist, PluginPreferenceFragment.index(context));
+        add(masterlist, ChatPrefsFragment.index(context));
+        add(masterlist, FiresPreferenceFragment.index(context));
+        add(masterlist, ElevationOverlaysPreferenceFragment.index(context));
+        add(masterlist, WMSPreferenceFragment.index(context));
+        add(masterlist, MissionPackagePreferenceFragment.index(context));
+        add(masterlist, IsrvNetworkPreferenceFragment.index(context));
+        add(masterlist, RoutePreferenceFragment.index(context));
+        add(masterlist, MetricReportPreferenceFragment.index(context));
     }
 
     /**

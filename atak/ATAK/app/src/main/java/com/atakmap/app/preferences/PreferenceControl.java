@@ -203,13 +203,13 @@ public class PreferenceControl implements ConnectionListener {
                         for (Object v : set) {
                             sb.append("<element>");
                             if (v instanceof String)
-                                v = encode((String)v);
+                                v = encode((String) v);
                             sb.append(v);
                             sb.append("</element>\r\n");
                         }
                     } else {
                         if (value instanceof String)
-                            value = encode((String)value);
+                            value = encode((String) value);
                         sb.append(value);
                     }
                     sb.append("</entry>\r\n");
@@ -1120,7 +1120,6 @@ public class PreferenceControl implements ConnectionListener {
             return false;
         }
     }
-
 
     /**
      * This method is private to enable easier backporting to prior versions.   This

@@ -2,6 +2,7 @@
 package com.atakmap.android.layers;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import android.app.AlertDialog;
 import android.content.Context;
@@ -13,6 +14,7 @@ import android.preference.PreferenceManager;
 import android.widget.Toast;
 
 import com.atakmap.android.preference.AtakPreferenceFragment;
+import com.atakmap.android.preference.PreferenceSearchIndex;
 import com.atakmap.app.R;
 import com.atakmap.app.system.ResourceUtil;
 
@@ -23,6 +25,13 @@ public class WMSPreferenceFragment extends AtakPreferenceFragment implements
         Preference.OnPreferenceClickListener {
     Context context;
     SharedPreferences _prefs;
+
+    public static List<PreferenceSearchIndex> index(Context context) {
+        return index(context,
+                WMSPreferenceFragment.class,
+                R.string.wms_preferences_summary,
+                R.drawable.ic_menu_settings);
+    }
 
     public WMSPreferenceFragment() {
         super(R.xml.wms_preferences, R.string.wms_preferences_summary);

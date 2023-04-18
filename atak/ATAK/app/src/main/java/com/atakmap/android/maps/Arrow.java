@@ -165,7 +165,7 @@ public class Arrow extends Shape {
 
     @Override
     public GeoPointMetaData[] getMetaDataPoints() {
-        GeoPointMetaData[] retval = null;
+        GeoPointMetaData[] retval;
         synchronized (_pts) {
             retval = _pts.toArray(new GeoPointMetaData[0]);
         }

@@ -1,4 +1,4 @@
-#include "jnativefeaturecursor.h"
+#include "com_atakmap_map_layer_feature_NativeFeatureCursor.h"
 
 #include <feature/FeatureCursor2.h>
 #include <feature/FeatureDataStore2.h>

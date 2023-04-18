@@ -3,6 +3,8 @@ package com.atakmap.android.geofence.monitor;
 
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.drawing.mapItems.DrawingCircle;
 import com.atakmap.android.drawing.mapItems.DrawingShape;
 import com.atakmap.android.editableShapes.Rectangle;
@@ -293,6 +295,7 @@ public abstract class GeoFenceMonitor {
         return size;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return _fence.toString();

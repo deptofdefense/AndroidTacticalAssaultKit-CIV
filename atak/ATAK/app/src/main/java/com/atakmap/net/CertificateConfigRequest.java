@@ -4,6 +4,8 @@ package com.atakmap.net;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.comms.NetConnectString;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.foxykeep.datadroid.requestmanager.Request;
@@ -108,6 +110,7 @@ public class CertificateConfigRequest implements Parcelable {
         this.quickConnect = quickConnect;
     }
 
+    @NonNull
     @Override
     public String toString() {
         if (!isValid())

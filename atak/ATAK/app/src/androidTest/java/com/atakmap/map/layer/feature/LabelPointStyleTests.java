@@ -24,8 +24,8 @@ public class LabelPointStyleTests extends ATAKInstrumentedTest {
         Assert.assertEquals(style.getBackgroundColor(), bgColor);
         Assert.assertEquals(style.getLabelAlignmentX(), 0);
         Assert.assertEquals(style.getLabelAlignmentY(), 0);
-        Assert.assertTrue(style.getLabelRotation() == 0f);
-        Assert.assertTrue(style.getScrollMode() == mode);
+        Assert.assertEquals(0f, style.getLabelRotation(), 0.0);
+        Assert.assertSame(style.getScrollMode(), mode);
     }
 
     @Test
@@ -41,8 +41,8 @@ public class LabelPointStyleTests extends ATAKInstrumentedTest {
         Assert.assertEquals(style.getBackgroundColor(), bgColor);
         Assert.assertEquals(style.getLabelAlignmentX(), 0);
         Assert.assertEquals(style.getLabelAlignmentY(), 0);
-        Assert.assertTrue(style.getLabelRotation() == 0f);
-        Assert.assertTrue(style.getScrollMode() == mode);
+        Assert.assertEquals(0f, style.getLabelRotation(), 0.0);
+        Assert.assertSame(style.getScrollMode(), mode);
     }
 
     @Test
@@ -58,8 +58,8 @@ public class LabelPointStyleTests extends ATAKInstrumentedTest {
         Assert.assertEquals(style.getBackgroundColor(), bgColor);
         Assert.assertEquals(style.getLabelAlignmentX(), 0);
         Assert.assertEquals(style.getLabelAlignmentY(), 0);
-        Assert.assertTrue(style.getLabelRotation() == 0f);
-        Assert.assertTrue(style.getScrollMode() == mode);
+        Assert.assertEquals(0f, style.getLabelRotation(), 0.0);
+        Assert.assertSame(style.getScrollMode(), mode);
     }
 
     @Test(expected = RuntimeException.class)
@@ -94,11 +94,11 @@ public class LabelPointStyleTests extends ATAKInstrumentedTest {
         Assert.assertEquals(style.getBackgroundColor(), bgColor);
         Assert.assertEquals(style.getLabelAlignmentX(), alignX);
         Assert.assertEquals(style.getLabelAlignmentY(), alignY);
-        Assert.assertTrue(style.getScrollMode() == mode);
-        Assert.assertTrue(
-                Math.signum(alignX) == Math.signum(style.getLabelAlignmentX()));
-        Assert.assertTrue(
-                Math.signum(alignY) == Math.signum(style.getLabelAlignmentY()));
+        Assert.assertSame(style.getScrollMode(), mode);
+        Assert.assertEquals(Math.signum(alignX),
+                Math.signum(style.getLabelAlignmentX()), 0.0);
+        Assert.assertEquals(Math.signum(alignY),
+                Math.signum(style.getLabelAlignmentY()), 0.0);
         StyleTestUtils.assertAngleInDegreesEqual(rotation,
                 style.getLabelRotation(), 0.001d);
         Assert.assertEquals(rotationAbsolute, style.isRotationAbsolute());
@@ -122,11 +122,11 @@ public class LabelPointStyleTests extends ATAKInstrumentedTest {
         Assert.assertEquals(style.getBackgroundColor(), bgColor);
         Assert.assertEquals(style.getLabelAlignmentX(), alignX);
         Assert.assertEquals(style.getLabelAlignmentY(), alignY);
-        Assert.assertTrue(style.getScrollMode() == mode);
-        Assert.assertTrue(
-                Math.signum(alignX) == Math.signum(style.getLabelAlignmentX()));
-        Assert.assertTrue(
-                Math.signum(alignY) == Math.signum(style.getLabelAlignmentY()));
+        Assert.assertSame(style.getScrollMode(), mode);
+        Assert.assertEquals(Math.signum(alignX),
+                Math.signum(style.getLabelAlignmentX()), 0.0);
+        Assert.assertEquals(Math.signum(alignY),
+                Math.signum(style.getLabelAlignmentY()), 0.0);
         StyleTestUtils.assertAngleInDegreesEqual(rotation,
                 style.getLabelRotation(), 0.001d);
         Assert.assertEquals(rotationAbsolute, style.isRotationAbsolute());
@@ -150,11 +150,11 @@ public class LabelPointStyleTests extends ATAKInstrumentedTest {
         Assert.assertEquals(style.getBackgroundColor(), bgColor);
         Assert.assertEquals(style.getLabelAlignmentX(), alignX);
         Assert.assertEquals(style.getLabelAlignmentY(), alignY);
-        Assert.assertTrue(style.getScrollMode() == mode);
-        Assert.assertTrue(
-                Math.signum(alignX) == Math.signum(style.getLabelAlignmentX()));
-        Assert.assertTrue(
-                Math.signum(alignY) == Math.signum(style.getLabelAlignmentY()));
+        Assert.assertSame(style.getScrollMode(), mode);
+        Assert.assertEquals(Math.signum(alignX),
+                Math.signum(style.getLabelAlignmentX()), 0.0);
+        Assert.assertEquals(Math.signum(alignY),
+                Math.signum(style.getLabelAlignmentY()), 0.0);
         StyleTestUtils.assertAngleInDegreesEqual(rotation,
                 style.getLabelRotation(), 0.001d);
         Assert.assertEquals(rotationAbsolute, style.isRotationAbsolute());
@@ -178,11 +178,11 @@ public class LabelPointStyleTests extends ATAKInstrumentedTest {
         Assert.assertEquals(style.getBackgroundColor(), bgColor);
         Assert.assertEquals(style.getLabelAlignmentX(), alignX);
         Assert.assertEquals(style.getLabelAlignmentY(), alignY);
-        Assert.assertTrue(style.getScrollMode() == mode);
-        Assert.assertTrue(
-                Math.signum(alignX) == Math.signum(style.getLabelAlignmentX()));
-        Assert.assertTrue(
-                Math.signum(alignY) == Math.signum(style.getLabelAlignmentY()));
+        Assert.assertSame(style.getScrollMode(), mode);
+        Assert.assertEquals(Math.signum(alignX),
+                Math.signum(style.getLabelAlignmentX()), 0.0);
+        Assert.assertEquals(Math.signum(alignY),
+                Math.signum(style.getLabelAlignmentY()), 0.0);
         StyleTestUtils.assertAngleInDegreesEqual(rotation,
                 style.getLabelRotation(), 0.001d);
         Assert.assertEquals(rotationAbsolute, style.isRotationAbsolute());
@@ -206,11 +206,11 @@ public class LabelPointStyleTests extends ATAKInstrumentedTest {
         Assert.assertEquals(style.getBackgroundColor(), bgColor);
         Assert.assertEquals(style.getLabelAlignmentX(), alignX);
         Assert.assertEquals(style.getLabelAlignmentY(), alignY);
-        Assert.assertTrue(style.getScrollMode() == mode);
-        Assert.assertTrue(
-                Math.signum(alignX) == Math.signum(style.getLabelAlignmentX()));
-        Assert.assertTrue(
-                Math.signum(alignY) == Math.signum(style.getLabelAlignmentY()));
+        Assert.assertSame(style.getScrollMode(), mode);
+        Assert.assertEquals(Math.signum(alignX),
+                Math.signum(style.getLabelAlignmentX()), 0.0);
+        Assert.assertEquals(Math.signum(alignY),
+                Math.signum(style.getLabelAlignmentY()), 0.0);
         StyleTestUtils.assertAngleInDegreesEqual(rotation,
                 style.getLabelRotation(), 0.001d);
         Assert.assertEquals(rotationAbsolute, style.isRotationAbsolute());

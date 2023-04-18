@@ -25,8 +25,8 @@ buildscript {
     apply from: '../../gradle/takrepo.gradle', to: project
     apply from: '../../gradle/versions.gradle', to: project
 
-    ext.ATAK_VERSION = "4.6.0"
-    ext.ATAK_VERSION_SUBMINOR = ".5"
+    ext.ATAK_VERSION = "4.6.1"
+    ext.ATAK_VERSION_SUBMINOR = ".0"
 
     ext.isDevKitEnabled = { ->
         return getProperty('takRepoMavenUrl', null) != null &&
@@ -217,7 +217,7 @@ def getCurrentFlavor() {
 
 android {
     compileSdkVersion 30
-    buildToolsVersion "30.0.2"
+    buildToolsVersion "30.0.3"
     useLibrary 'org.apache.http.legacy'
 
 
@@ -240,6 +240,21 @@ android {
          sourceCompatibility JavaVersion.VERSION_1_8
          targetCompatibility JavaVersion.VERSION_1_8
     }
+
+
+    testOptions {
+        unitTests.all {
+            if(JavaVersion.current() != JavaVersion.VERSION_1_8){
+                jvmArgs '--illegal-access=warn'
+            }
+            jacoco {
+                //includeNoLocationClasses = true
+                excludes = ['jdk.internal.*']       //This line
+            }
+        }
+        unitTests.returnDefaultValues = true
+    }
+
 
     flavorDimensions "application"
 
@@ -639,10 +654,5 @@ android.applicationVariants.all { variant ->
     }
 }
 
-// As recommended by the posts on https://github.com/mockk/mockk/issues/281 so that the Android minimum SDK would not
-// need to be bumped to Android 26
-configurations.all {
-    resolutionStrategy {
-        force("org.objenesis:objenesis:2.6")
-    }
-}
+
+

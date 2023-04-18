@@ -5,6 +5,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.contact.ContactListAdapter.ViewMode;
 import com.atakmap.android.hierarchy.HierarchyListFilter;
 import com.atakmap.android.hierarchy.HierarchyListItem;
@@ -32,7 +34,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class GroupContact extends Contact implements Search {
     //TODO: use set instead of arraylist to make sure there are no duplicate uids
     protected final Map<String, Contact> _contacts = new HashMap<>();
-    protected boolean _userCreated = false;
+    protected boolean _userCreated;
     protected boolean _unmodifiable = false;
     protected boolean _hideIfEmpty = true;
     protected boolean _hideLockedGroups = false;
@@ -664,6 +666,7 @@ public class GroupContact extends Contact implements Search {
         return c instanceof GroupContact;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return getName() + "[" + getUID() + "]";

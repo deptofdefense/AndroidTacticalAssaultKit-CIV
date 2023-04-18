@@ -120,7 +120,7 @@ public class ModelRenderer implements GLSurfaceView.Renderer {
 
         //load and generate model texture
         this.pngDataHandle = TextureHelper
-                .loadTextureFromPath(Models.getTextureUri(objModel));
+                .loadTextureFromPath(Models.getTextureUri(objModel.getMesh(0)));
         GLES30.glGenerateMipmap(GLES30.GL_TEXTURE_2D);
 
         Matrix.setIdentityM(accumulatedRotation, 0); //initialize accumulated rotation matrix
@@ -249,11 +249,12 @@ public class ModelRenderer implements GLSurfaceView.Renderer {
      * helper method to draw and connect the model's vertices
      */
     private void drawModel() {
-        final VertexDataLayout layout = objModel.getVertexDataLayout();
+        final Mesh mesh = objModel.getMesh(0);
+        final VertexDataLayout layout = mesh.getVertexDataLayout();
 
         if (MathUtils.hasBits(layout.attributes, Mesh.VERTEX_ATTR_POSITION)) {
             // XXX - this is assuming that buffer is ByteBuffer
-            Buffer modelVertices = objModel
+            Buffer modelVertices = mesh
                     .getVertices(Mesh.VERTEX_ATTR_POSITION);
             modelVertices.position(layout.position.offset);
 
@@ -265,7 +266,7 @@ public class ModelRenderer implements GLSurfaceView.Renderer {
 
         if (MathUtils.hasBits(layout.attributes, Mesh.VERTEX_ATTR_TEXCOORD_0)) {
             //pass in texture coordinate information
-            Buffer modelTexCoords = objModel
+            Buffer modelTexCoords = mesh
                     .getVertices(Mesh.VERTEX_ATTR_TEXCOORD_0);
             modelTexCoords.position(layout.texCoord0.offset);
 
@@ -284,7 +285,7 @@ public class ModelRenderer implements GLSurfaceView.Renderer {
         GLES30.glUniformMatrix4fv(mvpMatrixHandle, 1, false, mvpMatrix, 0);
 
         int mode;
-        switch (objModel.getDrawMode()) {
+        switch (mesh.getDrawMode()) {
             case Triangles:
                 mode = GLES30.GL_TRIANGLES;
                 break;
@@ -295,11 +296,11 @@ public class ModelRenderer implements GLSurfaceView.Renderer {
                 return;
         }
 
-        if (objModel.isIndexed()) {
-            GLES30.glDrawElements(mode, Models.getNumIndices(objModel),
-                    GLES30.GL_UNSIGNED_INT, objModel.getIndices());
+        if (mesh.isIndexed()) {
+            GLES30.glDrawElements(mode, Models.getNumIndices(mesh),
+                    GLES30.GL_UNSIGNED_INT, mesh.getIndices());
         } else {
-            GLES30.glDrawArrays(mode, 0, objModel.getNumVertices());
+            GLES30.glDrawArrays(mode, 0, mesh.getNumVertices());
         }
     }
 

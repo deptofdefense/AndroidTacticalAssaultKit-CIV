@@ -1,14 +1,13 @@
 
 package com.atakmap.comms;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import android.os.Bundle;
 
+import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.log.Log;
 
-import com.atakmap.coremap.cot.event.CotEvent;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  */
@@ -317,11 +316,14 @@ public class CotServiceRemote {
      */
     public void setInputsChangedListener(final InputsChangedListener listener) {
         synchronized (this) {
+            final CommsMapComponent cmc = CommsMapComponent.getInstance();
+            if (cmc == null)
+                return;
+
             if (connected) {
                 if (inListener != null)
-                    CommsMapComponent.getInstance()
-                            .removeInputsChangedListener(inListener);
-                CommsMapComponent.getInstance().addInputsChangedListener(
+                    cmc.removeInputsChangedListener(inListener);
+                cmc.addInputsChangedListener(
                         listener);
                 inListener = listener;
             } else {
@@ -338,12 +340,14 @@ public class CotServiceRemote {
     public void setOutputsChangedListener(
             final OutputsChangedListener listener) {
         synchronized (this) {
+            final CommsMapComponent cmc = CommsMapComponent.getInstance();
+            if (cmc == null)
+                return;
+
             if (connected) {
                 if (outListener != null)
-                    CommsMapComponent.getInstance()
-                            .removeOutputsChangedListener(outListener);
-                CommsMapComponent.getInstance().addOutputsChangedListener(
-                        listener);
+                    cmc.removeOutputsChangedListener(outListener);
+                cmc.addOutputsChangedListener(listener);
                 outListener = listener;
             } else {
                 dOutListener = listener;

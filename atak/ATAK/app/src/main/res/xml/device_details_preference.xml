@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-   <Preference
+   <com.atakmap.android.gui.PanPreference
         android:title="@string/device_details"
         android:key="deviceDetails" />
 
-   <Preference
+   <com.atakmap.android.gui.PanPreference
         android:title="@string/device_information"
         android:summary="@string/device_details_summary"
         android:key="settingsDebugging"

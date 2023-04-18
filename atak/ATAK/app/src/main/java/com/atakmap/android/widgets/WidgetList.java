@@ -1,6 +1,8 @@
 
 package com.atakmap.android.widgets;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.annotations.DeprecatedApi;
 
 import java.util.ArrayList;
@@ -35,12 +37,13 @@ public class WidgetList extends ArrayList<MapWidget> {
     }
 
     @Override
-    public boolean addAll(Collection<? extends MapWidget> c) {
+    public boolean addAll(@NonNull Collection<? extends MapWidget> c) {
         return impl.addAll(c);
     }
 
     @Override
-    public boolean addAll(int index, Collection<? extends MapWidget> c) {
+    public boolean addAll(int index,
+            @NonNull Collection<? extends MapWidget> c) {
         return impl.addAll(index, c);
     }
 
@@ -60,12 +63,12 @@ public class WidgetList extends ArrayList<MapWidget> {
     }
 
     @Override
-    public boolean removeAll(Collection<?> c) {
+    public boolean removeAll(@NonNull Collection<?> c) {
         return impl.removeAll(c);
     }
 
     @Override
-    public boolean retainAll(Collection<?> c) {
+    public boolean retainAll(@NonNull Collection<?> c) {
         return impl.retainAll(c);
     }
 

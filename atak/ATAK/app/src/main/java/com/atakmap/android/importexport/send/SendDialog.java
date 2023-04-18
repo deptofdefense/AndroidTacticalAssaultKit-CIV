@@ -86,26 +86,31 @@ public class SendDialog {
     }
 
     public void show() {
-        if (!MissionPackageMapComponent.getInstance().checkFileSharingEnabled()) {
-            if (_manifest != null) { 
+        if (!MissionPackageMapComponent.getInstance()
+                .checkFileSharingEnabled()) {
+            if (_manifest != null) {
                 AlertDialog.Builder builder = new AlertDialog.Builder(_context);
-                builder.setTitle(R.string.mission_package_file_sharing_disabled);
-                builder.setMessage(R.string.would_you_like_to_export_mission_pkg);
+                builder.setTitle(
+                        R.string.mission_package_file_sharing_disabled);
+                builder.setMessage(
+                        R.string.would_you_like_to_export_mission_pkg);
                 builder.setNegativeButton(R.string.cancel, null);
-                builder.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        saveMissionPackage();
-                    }
-                });
+                builder.setPositiveButton(R.string.ok,
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog,
+                                    int which) {
+                                saveMissionPackage();
+                            }
+                        });
                 builder.show();
-            } else { 
-                Toast.makeText(_context, R.string.mission_package_file_sharing_disabled,
-                    Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(_context,
+                        R.string.mission_package_file_sharing_disabled,
+                        Toast.LENGTH_LONG).show();
             }
             return;
         }
-
 
         // Determine whether we're sending a single file or a Mission Package
         String uri = _uri;
@@ -152,7 +157,8 @@ public class SendDialog {
 
         // add in the ability to save
         if (_manifest != null)
-            d.addButton(_context.getDrawable(R.drawable.export_menu_default), _context.getString(R.string.export));
+            d.addButton(_context.getDrawable(R.drawable.export_menu_default),
+                    _context.getString(R.string.export));
 
         d.setOnClickListener(new DialogInterface.OnClickListener() {
             @Override
@@ -169,40 +175,54 @@ public class SendDialog {
         d.show(_context.getString(R.string.send) + " " + name, null, true);
     }
 
-
     private void saveMissionPackage() {
         if (_manifest == null)
             return;
 
         final File f = new File(_manifest.getPath());
-        MissionPackageMapComponent.getInstance().getFileIO().save(_manifest, new MissionPackageBaseTask.Callback() {
-            @Override
-            public void onMissionPackageTaskComplete(MissionPackageBaseTask task, boolean success) {
-                File newFile = FileSystemUtils.getItem("export/" + f.getName());
-                final DialogInterface.OnClickListener docl = new DialogInterface.OnClickListener() {
+        MissionPackageMapComponent.getInstance().getFileIO().save(_manifest,
+                new MissionPackageBaseTask.Callback() {
                     @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        boolean rename = FileSystemUtils.renameTo(f, newFile);
-                        if (rename) {
-                            Toast.makeText(_context, "exported: " + FileSystemUtils.prettyPrint(newFile), Toast.LENGTH_SHORT).show();
-                        } else {
-                            Toast.makeText(_context, "failed to export: " + FileSystemUtils.prettyPrint(newFile), Toast.LENGTH_SHORT).show();
+                    public void onMissionPackageTaskComplete(
+                            MissionPackageBaseTask task, boolean success) {
+                        File newFile = FileSystemUtils
+                                .getItem("export/" + f.getName());
+                        final DialogInterface.OnClickListener docl = new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog,
+                                    int which) {
+                                boolean rename = FileSystemUtils.renameTo(f,
+                                        newFile);
+                                if (rename) {
+                                    Toast.makeText(_context,
+                                            "exported: " + FileSystemUtils
+                                                    .prettyPrint(newFile),
+                                            Toast.LENGTH_SHORT).show();
+                                } else {
+                                    Toast.makeText(_context,
+                                            "failed to export: "
+                                                    + FileSystemUtils
+                                                            .prettyPrint(
+                                                                    newFile),
+                                            Toast.LENGTH_SHORT).show();
 
+                                }
+                            }
+                        };
+                        if (newFile.exists()) {
+                            AlertDialog.Builder ad = new AlertDialog.Builder(
+                                    _context);
+                            ad.setTitle(R.string.overwrite);
+                            ad.setMessage("Overwrite existing file: "
+                                    + FileSystemUtils.prettyPrint(newFile));
+                            ad.setPositiveButton(R.string.ok, docl);
+                            ad.setNegativeButton(R.string.cancel, null);
+                            ad.show();
+                        } else {
+                            docl.onClick(null, -1);
                         }
                     }
-                };
-                if (newFile.exists()) {
-                    AlertDialog.Builder ad = new AlertDialog.Builder(_context);
-                    ad.setTitle(R.string.overwrite);
-                    ad.setMessage("Overwrite existing file: " + FileSystemUtils.prettyPrint(newFile));
-                    ad.setPositiveButton(R.string.ok, docl);
-                    ad.setNegativeButton(R.string.cancel, null);
-                    ad.show();
-                } else {
-                    docl.onClick(null, -1);
-                }
-            }
-        });
+                });
 
     }
 

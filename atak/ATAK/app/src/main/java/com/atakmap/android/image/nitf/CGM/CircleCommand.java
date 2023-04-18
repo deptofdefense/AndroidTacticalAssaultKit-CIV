@@ -3,6 +3,8 @@ package com.atakmap.android.image.nitf.CGM;
 
 import android.graphics.Point;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.app.BuildConfig;
 
 import java.io.DataInput;
@@ -27,6 +29,7 @@ public class CircleCommand extends Command {
             throw new AssertionError();
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "Circle [" + this.center.x + "," + this.center.y + "] "

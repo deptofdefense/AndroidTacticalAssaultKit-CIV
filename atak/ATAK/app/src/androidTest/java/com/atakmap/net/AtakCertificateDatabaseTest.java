@@ -11,6 +11,7 @@ import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class AtakCertificateDatabaseTest extends ATAKInstrumentedTest {
@@ -168,7 +169,7 @@ public class AtakCertificateDatabaseTest extends ATAKInstrumentedTest {
         certdb.deleteCertificateForTypeAndServerAndPort(type, server, port);
 
         byte[] certCheck = certdb.getCertificateForTypeAndServer(type, server);
-        assertEquals("checking certCheck notNull", null, certCheck);
+        assertNull("checking certCheck notNull", certCheck);
     }
 
     @Test
@@ -190,6 +191,6 @@ public class AtakCertificateDatabaseTest extends ATAKInstrumentedTest {
         certdb.deleteCertificateForTypeAndServer(type, server);
 
         byte[] certCheck = certdb.getCertificateForTypeAndServer(type, server);
-        assertEquals("checking certCheck notNull", null, certCheck);
+        assertNull("checking certCheck notNull", certCheck);
     }
 }

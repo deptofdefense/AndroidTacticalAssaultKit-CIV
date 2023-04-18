@@ -151,7 +151,7 @@ public class BufferSeekBar extends View implements View.OnTouchListener {
         float tx = curFramePct * w;
         p.setARGB(255, 255, 255, 255);
         final int knobWidth = 16;
-        canvas.drawRoundRect(tx - knobWidth / 2, 0, tx + knobWidth / 2, h,
+        canvas.drawRoundRect(tx - knobWidth / 2f, 0, tx + knobWidth / 2f, h,
                 knobWidth, knobWidth, p);
     }
 

@@ -4,6 +4,8 @@ package com.atakmap.net;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.foxykeep.datadroid.requestmanager.Request;
 
@@ -288,6 +290,7 @@ public class DeviceProfileRequest implements Parcelable {
             return "";
     }
 
+    @NonNull
     @Override
     public String toString() {
         return server + "/" + onEnrollment + "/" + onConnect + "/"

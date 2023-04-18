@@ -138,7 +138,7 @@ public class ServerVersion {
     public static boolean includeToolParam(String hostname) {
         ServerVersion ver = CotMapComponent.getInstance().getServerVersion(
                 hostname);
-        boolean bIncludeTool = false;
+        boolean bIncludeTool;
         if (ver != null && ver.isValid()) {
             bIncludeTool = ver
                     .getApiVersion() >= ServerVersion.MPT_TOOL_PARAM_MIN_VERSION;

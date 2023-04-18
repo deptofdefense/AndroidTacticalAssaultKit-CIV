@@ -1,4 +1,4 @@
-#include "jmsaccessdatabasefactory.h"
+#include "com_atakmap_map_layer_feature_falconview_FalconViewFeatureDataSource.h"
 
 #include <db/DatabaseFactory.h>
 #include <db/DatabaseProvider.h>
@@ -84,11 +84,11 @@ namespace {
     {
         LocalJNIEnv env;
         TAKErr code(TE_Ok);
-        const char *curi;
-        int *options;
-        code = information.getUri(&curi);
+        Port::String curi;
+        int options;
+        code = information.getUri(curi);
         TE_CHECKRETURN_CODE(code);
-        code = information.getOptions(options);
+        code = information.getOptions(&options);
         TE_CHECKRETURN_CODE(code);
 
         JNILocalRef mpath(*env, env->NewStringUTF(curi));

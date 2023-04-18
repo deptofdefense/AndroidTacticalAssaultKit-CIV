@@ -14,6 +14,8 @@ import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import gov.tak.api.util.Disposable;
+
 /**
  * Management tool for handling the dead reckoning implementations.
  */
@@ -32,12 +34,7 @@ public class DeadReckoningManager implements
     /**
      * Interface for a dead reckoner implementation.
      */
-    public interface DeadReckoner {
-
-        /**
-         * Allows for cleanup of the DeadRecker.
-         */
-        void dispose();
+    public interface DeadReckoner extends Disposable {
 
         /**
          * Provide the algorithm the next sample point.

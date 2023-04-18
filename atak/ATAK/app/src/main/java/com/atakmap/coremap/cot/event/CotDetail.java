@@ -12,6 +12,8 @@ import java.util.Set;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import androidx.annotation.NonNull;
+
 /**
  * A Cursor on Target root detail tag or sub tag
  */
@@ -116,6 +118,7 @@ public class CotDetail implements Parcelable {
         return attrs;
     }
 
+    @NonNull
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

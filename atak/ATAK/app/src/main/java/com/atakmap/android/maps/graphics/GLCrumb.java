@@ -3,7 +3,6 @@ package com.atakmap.android.maps.graphics;
 
 import android.graphics.Color;
 
-import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.track.crumb.Crumb;
 import com.atakmap.android.track.crumb.Crumb.OnCrumbColorChangedListener;
@@ -16,6 +15,7 @@ import com.atakmap.lang.Unsafe;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.opengl.GLMapBatchable2;
 import com.atakmap.map.opengl.GLMapView;
+import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.Matrix;
 import com.atakmap.opengl.GLES20FixedPipeline;
@@ -43,7 +43,7 @@ public class GLCrumb extends GLPointMapItem2 implements
     private final static long TRANSFORMED_VERTS_PTR = Unsafe
             .getBufferPointer(TRANSFORMED_VERTS);
 
-    private boolean drawLineToSurface = true;
+    private boolean drawLineToSurface;
     private int color;
     private float radius;
     private final Crumb sub;
@@ -63,7 +63,7 @@ public class GLCrumb extends GLPointMapItem2 implements
 
         this.color = subject.getColor();
         this.rot = subject.getDirection();
-        radius = subject.getSize() * MapView.DENSITY;
+        radius = subject.getSize() * GLRenderGlobals.getRelativeScaling();
 
         this.drawLineToSurface = subject.getDrawLineToSurface();
 
@@ -113,7 +113,7 @@ public class GLCrumb extends GLPointMapItem2 implements
 
     @Override
     public void onCrumbSizeChanged(Crumb crumb) {
-        this.radius = crumb.getSize() * MapView.DENSITY;
+        this.radius = crumb.getSize() * GLRenderGlobals.getRelativeScaling();
         initVerts2();
     }
 
@@ -224,7 +224,7 @@ public class GLCrumb extends GLPointMapItem2 implements
                     this.transformedVerts2, 0, null, r, g, b, a);
 
             // outline
-            batch.setLineWidth(2f / MapView.DENSITY);
+            batch.setLineWidth(2f / GLRenderGlobals.getRelativeScaling());
             batch.batch(-1, GLES20FixedPipeline.GL_LINE_STRIP, 3, 0,
                     this.transformedVerts2, 0, null, 0f, 0f, 0f, a);
         } else {
@@ -256,7 +256,8 @@ public class GLCrumb extends GLPointMapItem2 implements
             GLES20FixedPipeline.glColor4f(0f, 0f, 0f, a);
 
             // crumbs should not be affected by relative scaling; unscale the line
-            GLES20FixedPipeline.glLineWidth(2f / MapView.DENSITY);
+            GLES20FixedPipeline
+                    .glLineWidth(2f / GLRenderGlobals.getRelativeScaling());
 
             GLES20FixedPipeline.glDrawArrays(GLES20FixedPipeline.GL_LINE_STRIP,
                     0, 4);

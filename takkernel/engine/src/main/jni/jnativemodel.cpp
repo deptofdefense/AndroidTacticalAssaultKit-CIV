@@ -1,4 +1,4 @@
-#include "jnativemodel.h"
+#include "com_atakmap_map_layer_model_NativeMesh.h"
 
 #include <math/Point2.h>
 #include <model/Mesh.h>

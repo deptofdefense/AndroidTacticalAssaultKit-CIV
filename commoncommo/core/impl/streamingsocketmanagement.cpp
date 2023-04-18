@@ -661,6 +661,7 @@ void StreamingSocketManagement::connectionThreadProcess()
         ReadLock ctxLock(contextMutex);
 
         ContextSet newlyConnectedCtxs;
+        bool selectFatalError = false;
 
         // Run through all down contexts.
         // For each, if no connection in progress and time has come to try
@@ -722,8 +723,13 @@ void StreamingSocketManagement::connectionThreadProcess()
                         pendingContexts.insert(ctx);
                     }
                 }
-                selector.setSockets(&pendingReadSockets, &pendingSockets, &pendingConnSockets);
-                downNeedsRebuild = false;
+                try {
+                    selector.setSockets(&pendingReadSockets, &pendingSockets, &pendingConnSockets);
+                    downNeedsRebuild = false;
+                } catch (SocketException &) {
+                    InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Socket limit reached managing streaming connections; closing all and restarting");
+                    selectFatalError = true;
+                }
             }
         }
 
@@ -732,7 +738,7 @@ void StreamingSocketManagement::connectionThreadProcess()
         // any immediately connected sockets from above if we have such.
         if (newlyConnectedCtxs.empty()) {
             try {
-                if (!selector.doSelect(500)) {
+                if (!selectFatalError && !selector.doSelect(500)) {
                     // Timed out
                     CommoTime nowTime = CommoTime::now();
                     for (ctxIter = pendingContexts.begin(); ctxIter != pendingContexts.end(); ++ctxIter) {
@@ -753,8 +759,12 @@ void StreamingSocketManagement::connectionThreadProcess()
             } catch (SocketException &) {
                 // Weird to get an error here, unless your name is Solaris
                 // which will apparently error on select() for sockets in error
-                // state.  Anyway, if this happens restart all of them
+                // state.  Anyway, if this happens, flag to restart all of them
                 InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Error from tcp connection select() - retrying connections");
+                selectFatalError = true;
+            }
+            
+            if (selectFatalError) {
                 CommoTime rTime = CommoTime::now() + CONN_RETRY_SECONDS;
                 for (ctxIter = pendingContexts.begin(); ctxIter != pendingContexts.end(); ++ctxIter) {
                     ConnectionContext *ctx = *ctxIter;
@@ -1067,17 +1077,29 @@ void StreamingSocketManagement::ioThreadProcess()
                 ctx = *ctxIter;
                 txSockets.push_back(ctx->socket);
             }
-            selector.setSockets(&rxSockets, &txSockets);
-            txNeedsRebuild = false;
+            try {
+                selector.setSockets(&rxSockets, &txSockets);
+                txNeedsRebuild = false;
+            } catch (SocketException &) {
+                InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Socket limit reached managing streaming io; closing all and restarting");
+                for (ctxIter = rxSet.begin(); ctxIter != rxSet.end(); ++ctxIter) {
+                    ctx = *ctxIter;
+                    fireInterfaceErr(ctx, netinterfaceenums::ERR_OTHER);
+                    errorSet.insert(ctx);
+                }
+            }
         }
 
         if (errorSet.empty()) {
             try {
                 selector.doSelect(100);
             } catch (SocketException &) {
-                InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Error from tcp io select()?");
-                fireInterfaceErr(ctx, netinterfaceenums::ERR_OTHER);
-                errorSet.insert(rxSet.begin(), rxSet.end());
+                InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Error from streaming tcp io select()?");
+                for (ctxIter = rxSet.begin(); ctxIter != rxSet.end(); ++ctxIter) {
+                    ctx = *ctxIter;
+                    fireInterfaceErr(ctx, netinterfaceenums::ERR_OTHER);
+                    errorSet.insert(ctx);
+                }
             }
         }
 

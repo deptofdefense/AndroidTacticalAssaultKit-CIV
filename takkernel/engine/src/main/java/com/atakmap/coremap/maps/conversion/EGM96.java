@@ -25,16 +25,6 @@ public class EGM96 {
     public static final String UNKNOWN_MSL = "-- ft MSL";
     public static final String UNKNOWN_HAE = "-- ft HAE";
 
-    /**
-     * @deprecated  use static methods of {@link EGM96}
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public static EGM96 getInstance() {
-        return instance;
-
-    }
-
     private EGM96() {
     }
 

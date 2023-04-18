@@ -34,6 +34,11 @@ import com.atakmap.math.MathUtils;
 import com.atakmap.math.PointD;
 import com.atakmap.math.Matrix;
 
+import gov.tak.api.annotation.DeprecatedApi;
+
+/** @deprecated use Tile Reader or Tile Matrix APIs */
+@Deprecated
+@DeprecatedApi(since = "4.6", forRemoval = true, removeAt = "4.9")
 public class GLQuadTileNode2 implements GLResolvableMapRenderable {
 
     public static final String TAG = "GLQuadTileNode";

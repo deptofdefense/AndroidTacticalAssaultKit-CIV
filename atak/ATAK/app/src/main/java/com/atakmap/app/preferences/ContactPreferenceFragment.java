@@ -9,7 +9,6 @@ import android.preference.PreferenceCategory;
 import android.preference.PreferenceManager;
 
 import com.atakmap.android.gui.PanEditTextPreference;
-import com.atakmap.android.gui.PanEditTextPreference;
 import com.atakmap.android.gui.PanListPreference;
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.app.R;

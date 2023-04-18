@@ -87,6 +87,10 @@ namespace
         zoomed.row /= 2u;
         return zoomed;
     }
+    std::size_t computeMip(const std::size_t level, const std::size_t level0, const std::size_t maxMip) NOTHROWS
+    {
+        return std::min<unsigned>((unsigned)(level0-level)/2u, (unsigned)maxMip);
+    }
 }
 
 GLGlobeSurfaceRenderer::GLGlobeSurfaceRenderer(GLGlobe &owner_) NOTHROWS :
@@ -179,8 +183,11 @@ void GLGlobeSurfaceRenderer::update(const std::size_t limitMillis) NOTHROWS
         updateContext.basemap = owner.basemap.get();
 
         // update the resolve tiles list
-        TAK::Engine::Port::STLVectorAdapter<std::shared_ptr<const TerrainTile>> tiles_a(updateContext.resolveTiles);
-        owner.terrain->lock(tiles_a);
+        const auto &resolveTiles = *owner.offscreen.terrainTiles2;
+        updateContext.resolveTiles.reserve(resolveTiles.size());
+        for(const auto &tile : resolveTiles) {
+            updateContext.resolveTiles.push_back(tile);
+        }
 
         updateContext.dirtyTiles.visible.reserve(updateContext.resolveTiles.size());
 
@@ -213,15 +220,47 @@ void GLGlobeSurfaceRenderer::update(const std::size_t limitMillis) NOTHROWS
         }
         updateContext.limit = updateContext.dirtyTiles.visible.size()+updateContext.dirtyTiles.offscreen.size();
 
-        // XXX - we could potentially sort the `dirtyTiles` lists here,
-        //       however, time is very limited and an additional MS could be
-        //       the difference between the surface update completing in this
-        //       frame versus the next. sorting would be beneficlal in the
-        //       event that there are many tiles that need to be updated and we
-        //       end up doing several in-progress transfers. mitigation may be
-        //       to only sort if the `dirtyTiles` list exceeds some heuristic;
-        //       an extra MS for an update that is expected to span several
-        //       frames is not as significant of an impact.
+        // sort dirty tiles by
+        //   1) texture size/mip (ascending)
+        //   2) distance from camera
+        GeoPoint2 cam;
+        owner.renderPasses[0u].scene.projection->inverse(&cam, owner.renderPasses[0u].scene.camera.location);
+        auto dirtySort = [&, cam](const std::size_t aIdx, const std::size_t bIdx)
+        {
+            const auto &tiles = updateContext.resolveTiles;
+            const auto &a = *tiles[aIdx];
+            const auto &b = *tiles[bIdx];
+            const auto aKey = getIndex(a);
+            const auto bKey = getIndex(b);
+
+            const auto aMip = computeMip(aKey.level, updateContext.level0, maxLodCompression);
+            const auto bMip = computeMip(bKey.level, updateContext.level0, maxLodCompression);
+            if(aMip < bMip)
+                return true;
+            else if(aMip > bMip)
+                return false;
+
+            const double adx = (a.aabb_wgs84.minX+a.aabb_wgs84.maxX)/2.0 - cam.longitude;
+            const double ady = (a.aabb_wgs84.minY+a.aabb_wgs84.maxY)/2.0 - cam.latitude;
+            const double ad2 = ((adx*adx)+(ady*ady));
+            const double bdx = (b.aabb_wgs84.minX+b.aabb_wgs84.maxX)/2.0 - cam.longitude;
+            const double bdy = (b.aabb_wgs84.minY+b.aabb_wgs84.maxY)/2.0 - cam.latitude;
+            const double bd2 = ((bdx*bdx)+(bdy*bdy));
+            if(ad2 < bd2)
+                return true;
+            else if(ad2 > bd2)
+                return false;
+            else // same distance, prefer pointer
+                return ((intptr_t)&a) < ((intptr_t)&b);
+        };
+        std::sort(
+                updateContext.dirtyTiles.visible.begin(),
+                updateContext.dirtyTiles.visible.end(),
+                dirtySort);
+        std::sort(
+                updateContext.dirtyTiles.visible.begin(),
+                updateContext.dirtyTiles.visible.end(),
+                dirtySort);
 
         lastRefresh = Platform_systime_millis();
         updateContext.pump++;
@@ -312,8 +351,6 @@ void GLGlobeSurfaceRenderer::update(const std::size_t limitMillis) NOTHROWS
         owner.context.requestRefresh();
     } else {
         // release the tiles
-        TAK::Engine::Port::STLVectorAdapter<std::shared_ptr<const TerrainTile>> tiles_a(updateContext.resolveTiles);
-        owner.terrain->unlock(tiles_a);
         updateContext.resolveTiles.clear();
 
         // prepare for next update
@@ -368,7 +405,7 @@ bool GLGlobeSurfaceRenderer::updateTiles(ProgramCounter &pc, const std::vector<s
         const GLMegaTexture::TileIndex key = getIndex(tile);
 
         // bind the megatexture tile
-        back.bindTile(key.level, key.column, key.row, std::min<unsigned>((unsigned)(updateContext.level0-key.level)/2u, (unsigned)maxLodCompression));
+        back.bindTile(key.level, key.column, key.row, computeMip(key.level, updateContext.level0, maxLodCompression));
 
         // configure multi-pass and render pump for consumption by renderable
         owner.multiPartPass = !isRenderPumpComplete();
@@ -446,14 +483,16 @@ bool GLGlobeSurfaceRenderer::updateTiles(ProgramCounter &pc, const std::vector<s
         owner.numRenderPasses = 1u;
         owner.drawVersion = pumpState.drawVersion;
 
+        const int renderPass = allowInterrupt ?
+                               GLGlobeBase::Surface2|GLGlobeBase::Surface : GLGlobeBase::Surface;
         atakmap::renderer::GLES20FixedPipeline::getInstance()->glMatrixMode(atakmap::renderer::GLES20FixedPipeline::MM_GL_PROJECTION);
         atakmap::renderer::GLES20FixedPipeline::getInstance()->glPushMatrix();
         atakmap::renderer::GLES20FixedPipeline::getInstance()->glOrthof((float)pumpState.left, (float)pumpState.right, (float)pumpState.bottom, (float)pumpState.top, (float)pumpState.scene.camera.near, (float)pumpState.scene.camera.far);
         atakmap::renderer::GLES20FixedPipeline::getInstance()->glMatrixMode(atakmap::renderer::GLES20FixedPipeline::MM_GL_MODELVIEW);
         if(owner.basemap)
-            owner.basemap->draw(owner, GLMapView2::Surface2|GLMapView2::Surface);
+            owner.basemap->draw(owner, renderPass);
         for(auto r : owner.renderables)
-            (*r).draw(owner, GLMapView2::Surface2|GLMapView2::Surface);
+            (*r).draw(owner, renderPass);
         atakmap::renderer::GLES20FixedPipeline::getInstance()->glMatrixMode(atakmap::renderer::GLES20FixedPipeline::MM_GL_PROJECTION);
         atakmap::renderer::GLES20FixedPipeline::getInstance()->glPopMatrix();
         atakmap::renderer::GLES20FixedPipeline::getInstance()->glMatrixMode(atakmap::renderer::GLES20FixedPipeline::MM_GL_MODELVIEW);

@@ -3,6 +3,8 @@ package com.atakmap.android.image.nitf.CGM;
 
 import android.graphics.Point;
 
+import androidx.annotation.NonNull;
+
 import java.io.DataInput;
 import java.io.IOException;
 
@@ -29,6 +31,7 @@ public class CircularArcCentreCommand extends Command {
         this.radius = makeVdc();
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "CircularArcCentre [" + this.center.x + "," + this.center.y

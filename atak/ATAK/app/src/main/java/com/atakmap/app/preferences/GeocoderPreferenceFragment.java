@@ -13,6 +13,7 @@ import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.android.user.geocode.GeocodeManager;
 import com.atakmap.android.user.geocode.GeocodingTask;
 import com.atakmap.android.user.geocode.ReverseGeocodingTask;
+import com.atakmap.annotations.ModifierApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
@@ -81,18 +82,32 @@ public class GeocoderPreferenceFragment extends AtakPreferenceFragment {
                 });
     }
 
+    @ModifierApi(since = "4.7", modifiers = {
+            "private"
+    })
     public void testConnection() {
         new Thread(testConnectionRunnable,
                 "TestConnectionThread").start();
 
     }
 
+    @ModifierApi(since = "4.7", modifiers = {
+            "private"
+    }, target = "5.0")
     public void showPicker() {
+        showPicker(getActivity());
+    }
 
-        final AlertDialog.Builder adb = new AlertDialog.Builder(getActivity());
+    /**
+     * Construct a picker for use by the end user to select the geocoder
+     * @param context the ATAK activity's context
+     */
+    public static void showPicker(Context context) {
+
+        final AlertDialog.Builder adb = new AlertDialog.Builder(context);
 
         final List<GeocodeManager.Geocoder> pluginRegistered = GeocodeManager
-                .getInstance(getActivity()).getAllGeocoders();
+                .getInstance(context).getAllGeocoders();
 
         // the list is composed of suppliers found and plugin registered geocoders
 
@@ -100,7 +115,7 @@ public class GeocoderPreferenceFragment extends AtakPreferenceFragment {
 
         int selected = 0;
 
-        GeocodeManager.Geocoder curr = GeocodeManager.getInstance(getActivity())
+        GeocodeManager.Geocoder curr = GeocodeManager.getInstance(context)
                 .getSelectedGeocoder();
 
         for (int i = 0; i < pluginRegistered.size(); ++i) {
@@ -114,7 +129,7 @@ public class GeocoderPreferenceFragment extends AtakPreferenceFragment {
             @Override
             public void onClick(DialogInterface d, int n) {
                 Log.d(TAG, "selected: " + name[n]);
-                GeocodeManager.getInstance(getActivity()).setDefaultGeocoder(
+                GeocodeManager.getInstance(context).setDefaultGeocoder(
                         pluginRegistered.get(n).getUniqueIdentifier());
             }
 

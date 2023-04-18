@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-   <Preference android:title="@string/change_encryption_title"
-        android:summary="@string/change_encryption_summary"
-        android:key="encryptionPassphrase"/>
+   <com.atakmap.android.gui.PanPreference
+       android:title="@string/change_encryption_title"
+       android:summary="@string/change_encryption_summary"
+       android:key="encryptionPassphrase"/>
 </PreferenceScreen>

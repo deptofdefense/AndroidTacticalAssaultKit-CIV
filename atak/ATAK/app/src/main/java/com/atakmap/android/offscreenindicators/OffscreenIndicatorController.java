@@ -18,6 +18,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.map.layer.AbstractLayer;
+import com.atakmap.map.opengl.GLRenderGlobals;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -31,8 +32,10 @@ public class OffscreenIndicatorController extends AbstractLayer implements
 
     public static final String TAG = "OffscreenIndicatorController";
 
-    private static final float HALO_BITMAP_SIZE = 24 * MapView.DENSITY;
-    public static final float HALO_BORDER_SIZE = 48 * MapView.DENSITY;
+    private static final float HALO_BITMAP_SIZE = 24
+            * GLRenderGlobals.getRelativeScaling();
+    public static final float HALO_BORDER_SIZE = 48
+            * GLRenderGlobals.getRelativeScaling();
 
     private final static int COLOR_FRIENDLY = Color.argb(255, 128, 224, 255);
     private final static int COLOR_HOSTILE = Color.argb(255, 255, 128, 128);

@@ -232,6 +232,8 @@ namespace TAK {
                 ~FeatureQueryParameters();
             public :
                 FeatureQueryParameters &operator=(const FeatureQueryParameters &other) NOTHROWS;
+                bool operator==(const FeatureQueryParameters &rhs) const NOTHROWS;
+                bool operator!=(const FeatureQueryParameters &rhs) const NOTHROWS;
             public :
                 Port::Collection<Port::String> * const providers;
                 Port::Collection<Port::String> * const types;
@@ -256,8 +258,12 @@ namespace TAK {
             {
             public :
                 FeatureSetQueryParameters() NOTHROWS;
+                FeatureSetQueryParameters(const FeatureSetQueryParameters &other) NOTHROWS;
             public :
                 ~FeatureSetQueryParameters();
+            public :
+                bool operator==(const FeatureSetQueryParameters &rhs) const NOTHROWS;
+                bool operator!=(const FeatureSetQueryParameters &rhs) const NOTHROWS;
             public :
                 Port::Collection<Port::String> * const providers;
                 Port::Collection<Port::String> * const types;

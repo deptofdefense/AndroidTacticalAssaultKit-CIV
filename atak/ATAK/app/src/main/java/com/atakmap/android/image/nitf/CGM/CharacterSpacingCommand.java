@@ -1,6 +1,8 @@
 
 package com.atakmap.android.image.nitf.CGM;
 
+import androidx.annotation.NonNull;
+
 import java.io.DataInput;
 import java.io.IOException;
 
@@ -16,6 +18,7 @@ class CharacterSpacingCommand extends Command {
         unimplemented("CharacterSpacing");
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "CharacterSpacing " + this.additionalInterCharacterSpace;

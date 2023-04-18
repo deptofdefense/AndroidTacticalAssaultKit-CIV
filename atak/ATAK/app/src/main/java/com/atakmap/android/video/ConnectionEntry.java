@@ -3,7 +3,6 @@ package com.atakmap.android.video;
 
 import android.util.Log;
 
-import java.net.URI;
 import androidx.annotation.NonNull;
 
 import com.atakmap.android.video.manager.VideoManager;
@@ -65,6 +64,7 @@ public class ConnectionEntry implements Serializable {
             this.defaultPort = defaultPort;
         }
 
+        @NonNull
         public String toString() {
             return proto;
         }
@@ -941,6 +941,7 @@ public class ConnectionEntry implements Serializable {
                 childrenUIDs, parentUID);
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "ConnectionEntry [address=" + getAddress(true) +

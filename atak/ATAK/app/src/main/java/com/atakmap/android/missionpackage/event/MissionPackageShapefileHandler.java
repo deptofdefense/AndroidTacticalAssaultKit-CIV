@@ -315,7 +315,8 @@ public class MissionPackageShapefileHandler implements
             return false;
         }
 
-        ZipEntry entry = zipFile.getEntry(content.getManifestUid());
+        ZipEntry entry =
+                zipFile.getEntry(manifest.getZipPath(content.getManifestUid()));
         if (entry == null) {
             throw new IOException("Package does not contain manifest content: "
                     + content.getManifestUid());

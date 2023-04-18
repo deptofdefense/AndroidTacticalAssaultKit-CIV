@@ -3,10 +3,10 @@ package com.atakmap.android.layers;
 
 import androidx.annotation.NonNull;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
-import com.atakmap.map.AtakMapView;
 import com.atakmap.map.layer.feature.AttributeSet;
 import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.FeatureCursor;
@@ -21,6 +21,7 @@ import com.atakmap.map.layer.feature.style.LabelPointStyle.ScrollMode;
 import com.atakmap.map.layer.raster.AbstractDataStoreRasterLayer2;
 import com.atakmap.map.layer.raster.RasterDataStore;
 import com.atakmap.map.layer.raster.RasterLayer2;
+import com.atakmap.map.opengl.GLRenderGlobals;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -31,6 +32,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+/** @deprecated use {@link com.atakmap.map.layer.raster.OutlinesFeatureDataStore2} */
+@Deprecated
+@DeprecatedApi(since = "4.6", forRemoval = true, removeAt = "4.9")
 public class OutlinesFeatureDataStore extends RuntimeFeatureDataStore
         implements RasterDataStore.OnDataStoreContentChangedListener, Runnable {
 
@@ -165,7 +169,8 @@ public class OutlinesFeatureDataStore extends RuntimeFeatureDataStore
                                         s,
                                         cov,
                                         new BasicStrokeStyle(color,
-                                                2 * AtakMapView.DENSITY),
+                                                2 * GLRenderGlobals
+                                                        .getRelativeScaling()),
                                         EMPTY_ATTR, true)
                                 .getId();
 

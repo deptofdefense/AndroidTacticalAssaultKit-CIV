@@ -73,7 +73,7 @@ public class PlainZipExtractor implements IMissionPackageExtractor {
                 ZipOutputStream zos = FileSystemUtils
                         .getZipOutputStream(outZip)) {
             // read in from plain old zip
-            ZipEntry zinEntry = null;
+            ZipEntry zinEntry;
 
             // iterate all zip entries
             while ((zinEntry = zin.getNextEntry()) != null) {

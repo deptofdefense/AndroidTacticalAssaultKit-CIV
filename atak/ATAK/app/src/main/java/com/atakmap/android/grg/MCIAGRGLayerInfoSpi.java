@@ -9,7 +9,7 @@ import com.atakmap.io.ZipVirtualFile;
 import com.atakmap.map.gdal.VSIFileFileSystemHandler;
 import com.atakmap.map.layer.feature.DataSourceFeatureDataStore;
 import com.atakmap.map.layer.feature.FeatureDataStore.FeatureQueryParameters;
-import com.atakmap.map.layer.feature.PersistentDataSourceFeatureDataStore;
+import com.atakmap.map.layer.feature.PersistentDataSourceFeatureDataStore2;
 import com.atakmap.map.layer.feature.ogr.SchemaDefinition;
 import com.atakmap.map.layer.raster.AbstractDatasetDescriptorSpi;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
@@ -83,7 +83,8 @@ public class MCIAGRGLayerInfoSpi extends AbstractDatasetDescriptorSpi {
             File spatialdbFile = IOProviderFactory.createTempFile("layer",
                     ".private",
                     workingDir);
-            spatialdb = new PersistentDataSourceFeatureDataStore(spatialdbFile);
+            spatialdb = new PersistentDataSourceFeatureDataStore2(
+                    spatialdbFile);
 
             // XXX -- no means to obtain context !!!!
             ContentSource mciaContentSource = new ContentSource(spatialdb);

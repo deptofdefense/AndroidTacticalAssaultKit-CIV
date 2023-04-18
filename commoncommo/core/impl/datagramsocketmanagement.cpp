@@ -643,6 +643,7 @@ void DatagramSocketManagement::recvThreadProcess()
     int rebuildTimeoutSecs;
 
     while (!threadShouldStop(RX_THREADID)) {
+        bool killAllSockets = false;
         thread::ReadLock lock(globalRxMutex);
 
         {
@@ -719,13 +720,17 @@ void DatagramSocketManagement::recvThreadProcess()
                     rxCtxList.push_back(socketContext);
                     sockets.push_back(socketContext->socket);
                 }
-                rxSelector.setSockets(&sockets, NULL);
+                try {
+                    rxSelector.setSockets(&sockets, NULL);
+                } catch (SocketException &) {
+                    InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "datagram rx hit socket limit");
+                    killAllSockets = true;
+                }
             }
         }
 
         // The sockets we are selecting on are now ready
         // in the context list.
-        bool killAllSockets = false;
         bool selectTimedOut = false;
         try {
             if (!rxSelector.doSelect(500))
@@ -801,8 +806,12 @@ void DatagramSocketManagement::recvThreadProcess()
 
             }
         }
-        if (killAllSockets)
+        if (killAllSockets) {
             rxNeedsRebuild = true;
+            // Yield a short time to avoid spamming retries
+            // after select system errors
+            thread::Thread::sleep(1000);
+        }
     }
 
     delete wildcardAddr;

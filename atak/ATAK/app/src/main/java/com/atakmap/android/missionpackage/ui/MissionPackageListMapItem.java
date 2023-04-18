@@ -1,6 +1,8 @@
 
 package com.atakmap.android.missionpackage.ui;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.hierarchy.items.MapItemUser;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
@@ -69,6 +71,7 @@ public class MissionPackageListMapItem extends MissionPackageListItem
             item.removeFromGroup();
     }
 
+    @NonNull
     @Override
     public String toString() {
         return getUID();

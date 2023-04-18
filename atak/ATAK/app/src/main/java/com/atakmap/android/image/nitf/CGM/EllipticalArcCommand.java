@@ -1,6 +1,8 @@
 
 package com.atakmap.android.image.nitf.CGM;
 
+import androidx.annotation.NonNull;
+
 import java.io.DataInput;
 import java.io.IOException;
 
@@ -28,6 +30,7 @@ public class EllipticalArcCommand extends EllipseCommand {
         return 0;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "EllipticalArc [" + this.center.x + "," + this.center.y + "] [" +

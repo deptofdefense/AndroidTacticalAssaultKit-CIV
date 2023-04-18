@@ -4128,6 +4128,8 @@
   <string name="filter">Filter</string>
   <string name="filter_contacts">Filter Contacts</string>
     <string name="hide_allFiltered">Hide Filtered Contacts</string>
+  <string name="model_updated_by">Updated by \'%s\'.</string>
+  <string name="model_updated_terrain_model">Terrain model was \'%s\'.</string>
     <string name="additional_self_coord_controls">Additional Self Coordinate Controls</string>
   <string name="additional_self_coord_control_summ">Changes to the actions associated with the Self Coordinate Display</string>
     <string name="legacy_pref_summary">Display older legacy device preferences. These preferences may be removed in future versions.</string>
@@ -4136,4 +4138,6 @@
     <string name="would_you_like_to_export_mission_pkg">Would you like to export the file as a mission package?</string>
     <string name="import_file">Import File</string>
     <string name="userfeedback_submit_message">Submitted %s to the support/log directory.   This feedback will be automatically published to the tak server if configured.</string>
+    <string name="rapid_mgrs_entry_mode">Rapid MGRS Entry Mode</string>
+  <string name="rapid_mgrs_entry_mode_sum">When long pressing to drop a point from the point dropper tool, use the MGRS optimized coordinate entry.</string>
 </resources>

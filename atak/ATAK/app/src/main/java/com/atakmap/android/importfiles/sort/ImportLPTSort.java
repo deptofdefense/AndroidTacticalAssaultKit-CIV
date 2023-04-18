@@ -61,7 +61,7 @@ public class ImportLPTSort extends ImportInPlaceResolver {
         }
 
         try (FileChannel chan = IOProviderFactory.getChannel(file, "r")) {
-            Database msaccessDb = null;
+            Database msaccessDb;
             try {
                 DatabaseBuilder db = new DatabaseBuilder();
                 db.setChannel(chan);

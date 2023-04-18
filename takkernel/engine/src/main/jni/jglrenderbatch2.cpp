@@ -1,5 +1,5 @@
 #include "common.h"
-#include "jglrenderbatch2.h"
+#include "com_atakmap_opengl_GLRenderBatch2.h"
 
 #include "renderer/GL.h"
 

@@ -32,6 +32,8 @@ import android.os.SystemClock;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 
+import androidx.annotation.NonNull;
+
 /**
  * Abstract base Activity for applications using the map engine
  * 
@@ -205,7 +207,8 @@ public abstract class MapActivity extends MetricFragmentActivity {
     }
 
     @Override
-    public void onConfigurationChanged(final Configuration newConfig) {
+    public void onConfigurationChanged(@NonNull
+    final Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         for (MapComponent c : _observers) {
             try {

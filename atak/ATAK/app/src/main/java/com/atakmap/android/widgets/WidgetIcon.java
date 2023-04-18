@@ -4,6 +4,8 @@ package com.atakmap.android.widgets;
 import android.graphics.Point;
 import android.net.Uri;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.config.ConfigEnvironment;
 import com.atakmap.android.config.FlagsParser;
 import com.atakmap.android.maps.MapDataRef;
@@ -123,6 +125,7 @@ public class WidgetIcon implements Cloneable, IIcon {
         private final Icon.Builder _impl;
     }
 
+    @NonNull
     @Override
     public WidgetIcon clone() {
         // NOTE: `_impl` is immutable
@@ -132,7 +135,7 @@ public class WidgetIcon implements Cloneable, IIcon {
     public static WidgetIcon resolveWidgetIcon(ConfigEnvironment config,
             String iconUriString)
             throws IOException, SAXException {
-        WidgetIcon icon = null;
+        WidgetIcon icon;
 
         Uri iconUri = Uri.parse(iconUriString);
         String iconPath = iconUri.getPath();

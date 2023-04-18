@@ -3,6 +3,8 @@ package com.atakmap.android.widgets;
 
 import android.graphics.Point;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.maps.MapDataRef;
 
 import java.util.Collection;
@@ -252,6 +254,7 @@ public class WidgetItem {
             return _key;
         }
 
+        @NonNull
         public String toString() {
             return "{icon=" + _icon + ", color=" + _color + "}";
         }

@@ -116,7 +116,7 @@ public class TLSUtils {
      */
     public static TrustStore getDefaultTruststore(boolean bFirstAvailable) {
         //look for default truststore
-        AtakAuthenticationCredentials caCertCredentials = null;
+        AtakAuthenticationCredentials caCertCredentials;
         byte[] data = AtakCertificateDatabase
                 .getCertificate(
                         AtakCertificateDatabaseIFace.TYPE_TRUST_STORE_CA);

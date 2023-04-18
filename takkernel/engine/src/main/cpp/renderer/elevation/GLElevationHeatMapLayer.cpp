@@ -31,16 +31,9 @@ using namespace TAK::Engine::Renderer::Core::Controls;
 using namespace TAK::Engine::Thread;
 using namespace TAK::Engine::Util;
 
-
-constexpr const char* LLA2ECEF_FN_SRC =
-#include "shaders/lla2ecef.frag"
-;
-
-constexpr const char* ECEF_LO_VSH_BASE =
+constexpr const char* ECEF_LO_VSH =
 #include "shaders/HeatMapECEFLo.vert"
 ;
-
-static std::string ECEF_LO_VSH = std::string(ECEF_LO_VSH_BASE) + std::string(LLA2ECEF_FN_SRC);
 
 constexpr const char* PLANAR_SHADER_VSH =
 #include "shaders/HeatMapPlanar.vert"
@@ -106,7 +99,7 @@ namespace
         glDeleteShader(prog.fragShader);
         if (!prog.program)
             return TE_Err;
-        
+
         s.base.base.handle = prog.program;
         // vertex shader
         s.base.base.uMVP = glGetUniformLocation(s.base.base.handle, "uMVP");
@@ -131,10 +124,10 @@ namespace
         s.ecef.base = GLTerrainTile_getColorShader(ctx, 4978);
 
         // create custom shaders
-        code = createShader(s.ecef.lo, ECEF_LO_VSH.c_str(), SHADER_FSH);
+        code = createShader(s.ecef.lo, ECEF_LO_VSH, SHADER_FSH);
         TE_CHECKRETURN_CODE(code);
         s.ecef.base.lo = s.ecef.lo.base;
-        createShader(s.ecef.hi, ECEF_LO_VSH.c_str(), SHADER_FSH);
+        createShader(s.ecef.hi, ECEF_LO_VSH, SHADER_FSH);
         TE_CHECKRETURN_CODE(code);
         s.ecef.base.hi = s.ecef.hi.base;
 

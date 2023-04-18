@@ -301,6 +301,13 @@ public final class GLModelLayer
                 }
             }
         }
+        if (attrs.containsAttribute("metadata")) {
+            AttributeSet metadata = attrs
+                    .getAttributeSetAttribute("metadata");
+            if (metadata != null) {
+                retval.metadata = new AttributeSet(metadata);
+            }
+        }
         return retval;
     }
 

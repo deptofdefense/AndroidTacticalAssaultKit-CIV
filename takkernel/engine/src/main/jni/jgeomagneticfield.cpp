@@ -1,4 +1,4 @@
-#include "jgeomagneticfield.h"
+#include "com_atakmap_coremap_maps_conversion_GeomagneticField.h"
 
 #include <cmath>
 

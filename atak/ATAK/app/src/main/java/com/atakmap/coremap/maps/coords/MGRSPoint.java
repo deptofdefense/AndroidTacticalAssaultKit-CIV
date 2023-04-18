@@ -1,6 +1,8 @@
 
 package com.atakmap.coremap.maps.coords;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.coremap.log.Log;
 
 import java.text.DecimalFormat;
@@ -353,6 +355,7 @@ public class MGRSPoint {
         return new String(chars);
     }
 
+    @NonNull
     public String toString() {
         return getZoneDescriptor() +
                 getGridDescriptor() +

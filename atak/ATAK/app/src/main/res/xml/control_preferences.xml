@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <PreferenceCategory android:title="@string/control_preferences">
-       <Preference
+    <com.atakmap.android.gui.PanPreference
             android:key="mediaPreference"
             android:title="@string/mediaPreferences"
             android:summary="@string/preferences_text43"
             android:icon="@drawable/media_prefs_camera" />
-       <Preference
+    <com.atakmap.android.gui.PanPreference
             android:key="lockBehavior"
             android:title="@string/lockBehavior"
             android:summary="@string/forceCenterMovingSummary" />
-       <Preference
+    <com.atakmap.android.gui.PanPreference
             android:key="staleData"
             android:title="@string/staledataPreferences"
             android:summary="@string/stale_out_disconnected_users_summary" />
-       <Preference
+    <com.atakmap.android.gui.PanPreference
             android:key="userTouch"
             android:title="@string/usertouchPreferences"
             android:summary="@string/preferences_text49" />
-       <Preference
+    <com.atakmap.android.gui.PanPreference
             android:key="selfCoordinate"
             android:title="@string/additional_self_coord_controls"
             android:summary="@string/additional_self_coord_control_summ"

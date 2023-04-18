@@ -8,6 +8,8 @@ import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
 import android.os.AsyncTask;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.missionpackage.MissionPackageReceiver;
 import com.atakmap.android.missionpackage.file.MissionPackageBuilder;
@@ -178,6 +180,7 @@ public abstract class MissionPackageBaseTask extends
         onCancel(_progressDialog);
     }
 
+    @NonNull
     @Override
     public String toString() {
         return this.getClass().getSimpleName() + " - "

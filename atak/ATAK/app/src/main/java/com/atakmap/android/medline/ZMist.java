@@ -44,8 +44,8 @@ public class ZMist extends LinearLayout {
     private ActionButton t_line;
     private final LayoutInflater inflater;
 
-    private Map<String, String> mechanismMap = new HashMap<>();
-    private Map<String, String> injuryMap = new HashMap<>();
+    private Map<String, String> mechanismMap;
+    private Map<String, String> injuryMap;
 
     public ZMist(final Context context) {
         this(context, null);

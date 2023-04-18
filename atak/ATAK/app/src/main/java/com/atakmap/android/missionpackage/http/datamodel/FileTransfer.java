@@ -5,6 +5,8 @@ import android.content.Context;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
@@ -176,6 +178,7 @@ public class FileTransfer implements Parcelable {
         return HashingUtils.verify(file, _size, _sha256);
     }
 
+    @NonNull
     @Override
     public String toString() {
         return String.format("%s %s, %s SHA256=%s from %s", _name,

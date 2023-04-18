@@ -36,5 +36,5 @@ interface VertexResolver<T> extends Releasable {
          * @param imgSrcY   The image x-coordinate
          * @param vert       Returns the computed coordinate
          */
-        void project(GLMapView view, long imgSrcX, long imgSrcY, GLQuadTileNode2.GridVertex vert);
+        void project(GLMapView view, long imgSrcX, long imgSrcY, GridVertex vert);
 }

@@ -347,7 +347,7 @@ public class ImportFileTask extends
             String newMD5 = "";
 
             // Check if file and destPath are actually in the same place.
-            boolean sameFile = false;
+            boolean sameFile;
             try {
                 sameFile = file.getCanonicalFile().equals(
                         destPath.getCanonicalFile());

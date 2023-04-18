@@ -1,4 +1,4 @@
-#include "jglmapview.h"
+#include "com_atakmap_map_opengl_GLMapView.h"
 
 #include <core/MapSceneModel2.h>
 #include <elevation/ElevationManager.h>

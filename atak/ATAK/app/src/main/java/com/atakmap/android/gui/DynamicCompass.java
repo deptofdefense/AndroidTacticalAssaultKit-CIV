@@ -137,7 +137,7 @@ public class DynamicCompass extends RelativeLayout {
 
         heading = heading % 360;
         if (heading <= 0)
-            heading+=360;
+            heading += 360;
 
         this.heading = heading;
     }

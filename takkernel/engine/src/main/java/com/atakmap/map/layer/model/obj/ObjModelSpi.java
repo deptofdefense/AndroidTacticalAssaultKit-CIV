@@ -6,6 +6,7 @@ import com.atakmap.coremap.log.Log;
 import com.atakmap.io.ZipVirtualFile;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.layer.model.Material;
+import com.atakmap.map.layer.model.Mesh;
 import com.atakmap.map.layer.model.MeshBuilder;
 import com.atakmap.map.layer.model.Model;
 import com.atakmap.map.layer.model.ModelBuilder;
@@ -240,8 +241,8 @@ public final class ObjModelSpi implements ModelSpi {
             }
 
             s = System.currentTimeMillis();
-            MeshBuilder builder = new MeshBuilder(Model.VERTEX_ATTR_POSITION|Model.VERTEX_ATTR_TEXCOORD_0, false, Model.DrawMode.Triangles);
-            builder.setWindingOrder(Model.WindingOrder.CounterClockwise);
+            MeshBuilder builder = new MeshBuilder(Mesh.VERTEX_ATTR_POSITION|Mesh.VERTEX_ATTR_TEXCOORD_0, false, Mesh.DrawMode.Triangles);
+            builder.setWindingOrder(Mesh.WindingOrder.CounterClockwise);
 
             final int numIndices = (vertTexCoordIndices.remaining()/8);
             builder.reserveVertices(numIndices);

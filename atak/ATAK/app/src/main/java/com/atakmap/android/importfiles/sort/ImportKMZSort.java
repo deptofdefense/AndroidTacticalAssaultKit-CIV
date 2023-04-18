@@ -8,10 +8,13 @@ import com.atakmap.android.layers.kmz.KMZPackageImporter;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
+import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.io.ZipVirtualFile;
 import com.atakmap.map.gdal.VSIFileFileSystemHandler;
 import com.atakmap.spatial.file.KmlFileSpatialDb;
+import com.atakmap.util.zip.ZipEntry;
+import com.atakmap.util.zip.ZipFile;
 
 import org.gdal.ogr.DataSource;
 import org.gdal.ogr.Driver;
@@ -22,12 +25,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
-import com.atakmap.coremap.locale.LocaleUtil;
-import com.atakmap.util.zip.ZipEntry;
-
 import java.util.List;
 import java.util.zip.ZipException;
-import com.atakmap.util.zip.ZipFile;
 
 /**
  * Imports KMZ files, per https://developers.google.com/kml/documentation/kmzarchives "For clarity,
@@ -87,8 +86,6 @@ public class ImportKMZSort extends ImportInPlaceResolver {
                 path = VSIFileFileSystemHandler.PREFIX + path;
             else if (file instanceof ZipVirtualFile)
                 path = "/vsizip" + path;
-            else if (!IOProviderFactory.isDefault())
-                path = VSIFileFileSystemHandler.PREFIX + path;
 
             dataSource = ogr.Open(path, false);
             if (dataSource == null)

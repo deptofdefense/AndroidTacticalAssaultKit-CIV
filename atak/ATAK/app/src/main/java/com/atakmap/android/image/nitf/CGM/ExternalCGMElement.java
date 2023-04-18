@@ -1,6 +1,8 @@
 
 package com.atakmap.android.image.nitf.CGM;
 
+import androidx.annotation.NonNull;
+
 /**
  *
  */
@@ -26,6 +28,7 @@ public enum ExternalCGMElement {
         return elementCode;
     }
 
+    @NonNull
     public String toString() {
         return name().concat("(").concat(String.valueOf(elementCode))
                 .concat(")");

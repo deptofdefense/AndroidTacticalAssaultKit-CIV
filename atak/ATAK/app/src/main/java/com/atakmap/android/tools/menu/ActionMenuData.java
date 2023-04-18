@@ -10,6 +10,8 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.TypedValue;
 
+import androidx.annotation.NonNull;
+
 import com.atak.plugins.impl.PluginMapComponent;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.tools.AtakLayerDrawableUtil;
@@ -477,6 +479,7 @@ public class ActionMenuData implements Parcelable {
                         : pam.iconPath.hashCode()));
     }
 
+    @NonNull
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder(getTitle())

@@ -1,4 +1,4 @@
-#include "jpersistentdatasourcefeaturedatastore2.h"
+#include "com_atakmap_map_layer_feature_PersistentDataSourceFeatureDataStore2.h"
 
 #include <feature/PersistentDataSourceFeatureDataStore2.h>
 #include <util/Logging2.h>

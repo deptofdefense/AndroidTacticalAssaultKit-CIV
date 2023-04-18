@@ -1,4 +1,4 @@
-#include "jmvtfeaturedatasource.h"
+#include "com_atakmap_map_formats_mapbox_MvtFeatureDataSource.h"
 
 #include <formats/mbtiles/MVTFeatureDataSource.h>
 #include <util/Memory.h>

@@ -6,6 +6,8 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.maps.DefaultMapGroup;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.SqliteMapDataRef;
@@ -261,6 +263,7 @@ public class UserIcon {
                 && !FileSystemUtils.isEmpty(fileName);
     }
 
+    @NonNull
     public String toString() {
         return iconsetUid + "/" + group + "/" + fileName + "/" + type2525c;
     }
@@ -451,7 +454,7 @@ public class UserIcon {
         }
 
         boolean bNewGroup = false;
-        MapGroup subGroup = null;
+        MapGroup subGroup;
         synchronized (group) {
             subGroup = group.findMapGroup(groupName);
             if (subGroup == null) {
@@ -595,7 +598,7 @@ public class UserIcon {
             return -1;
         }
 
-        int id = -1;
+        int id;
         try {
             id = Integer.parseInt(query.substring(index + toMatch.length()));
         } catch (Exception e) {

@@ -63,6 +63,7 @@ import com.atakmap.map.layer.feature.style.CompositeStyle;
 import com.atakmap.map.layer.feature.style.IconPointStyle;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.hittest.HitTestQueryParameters;
+import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.spatial.file.MvtSpatialDb;
 import com.atakmap.util.Collections2;
 import com.atakmap.util.Visitor;
@@ -115,10 +116,16 @@ public class FeatureDataStoreDeepMapItemQuery implements DeepMapItemQuery,
     protected final String uidPrefix;
     protected final boolean noVisibilitySupport;
 
+    /** @deprecated use {@link #FeatureDataStoreDeepMapItemQuery(FeatureLayer3)} or {@link #FeatureDataStoreDeepMapItemQuery(Layer2, FeatureDataStore2)} */
+    @Deprecated
+    @DeprecatedApi(since = "4.6", forRemoval = true, removeAt = "4.9")
     public FeatureDataStoreDeepMapItemQuery(FeatureLayer layer) {
         this(layer, Adapters.adapt(layer.getDataStore()));
     }
 
+    /** @deprecated use {@link #FeatureDataStoreDeepMapItemQuery(FeatureLayer3)} or {@link #FeatureDataStoreDeepMapItemQuery(Layer2, FeatureDataStore2)} */
+    @Deprecated
+    @DeprecatedApi(since = "4.6", forRemoval = true, removeAt = "4.9")
     public FeatureDataStoreDeepMapItemQuery(FeatureLayer2 layer) {
         this(layer, Adapters.adapt(layer.getDataStore()));
     }
@@ -384,9 +391,9 @@ public class FeatureDataStoreDeepMapItemQuery implements DeepMapItemQuery,
                         .setImageUri(0, iconUri)
                         .setSize(
                                 (int) Math.ceil(iconWidth
-                                        * MapView.DENSITY),
+                                        * GLRenderGlobals.getRelativeScaling()),
                                 (int) Math.ceil(iconHeight
-                                        * MapView.DENSITY))
+                                        * GLRenderGlobals.getRelativeScaling()))
                         .setAnchor(Icon.ANCHOR_CENTER,
                                 Icon.ANCHOR_CENTER)
                         .setColor(0, iconColor);
@@ -777,7 +784,7 @@ public class FeatureDataStoreDeepMapItemQuery implements DeepMapItemQuery,
 
     private long getFeatureId(Map<String, String> metadata) {
         if (metadata != null) {
-            String featureId = null;
+            String featureId;
             if (metadata.containsKey("uid")) {
                 final String uid = metadata.get("uid");
                 if (uid != null && uid.startsWith(this.uidPrefix + "::")) {

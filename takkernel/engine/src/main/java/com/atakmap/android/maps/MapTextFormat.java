@@ -92,14 +92,6 @@ public final class MapTextFormat {
     {
         initTypefaceFamilyMap();
     }
-    /**
-     * @deprecated use {@link #MapTextFormat(Typeface, int)} instead
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public MapTextFormat(Typeface typeface, float densityAdjustedTextSize, boolean legacy) {
-        this(typeface, (int) (densityAdjustedTextSize / GLRenderGlobals.getRelativeScaling()));
-    }
 
     public MapTextFormat(Typeface typeface, int textSize, int textOptions)
     {

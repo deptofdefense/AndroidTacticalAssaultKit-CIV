@@ -40,8 +40,6 @@ using namespace atakmap::renderer;
 
 #define CALL_LOCALIZE 1
 
-#define MAX_TEXT_WIDTH 80.f
-
 atakmap::renderer::GLNinePatch* GLLabel::small_nine_patch_ = nullptr;
 
 template<class T>
@@ -652,12 +650,13 @@ GLLabel::GLLabel()
       back_color_b_(0),
       back_color_a_(0),
       fill_(false),
-      projected_size_(std::numeric_limits<double>::quiet_NaN()),   
+      projected_size_(std::numeric_limits<double>::quiet_NaN()),
       mark_dirty_(true),
       draw_version_(-1),
       hints_(Hints::AutoSurfaceOffsetAdjust|Hints::WeightedFloat),
       float_weight_(0.5f),
-      gltext_(nullptr)
+      gltext_(nullptr),
+      textFormatParams_(nullptr)
 {
     rotation_.angle_ = 0.0f;
     rotation_.absolute_ = false;
@@ -665,7 +664,8 @@ GLLabel::GLLabel()
 }
 
 GLLabel::GLLabel(const GLLabel& rhs) : GLLabel() {
-    Feature::Geometry_clone(geometry_, *(rhs.geometry_.get()));
+    if(rhs.geometry_)
+        Feature::Geometry_clone(geometry_, *rhs.geometry_);
     altitude_mode_ = rhs.altitude_mode_;
     text_ = rhs.text_;
     desired_offset_ = rhs.desired_offset_;
@@ -691,6 +691,8 @@ GLLabel::GLLabel(const GLLabel& rhs) : GLLabel() {
     hints_ = rhs.hints_;
     fill_ = rhs.fill_;
     gltext_ = rhs.gltext_;
+    if (rhs.textFormatParams_)
+        textFormatParams_.reset(new TextFormatParams(*rhs.textFormatParams_));
 }
 
 GLLabel::GLLabel(GLLabel&& rhs) NOTHROWS : GLLabel() {
@@ -720,6 +722,7 @@ GLLabel::GLLabel(GLLabel&& rhs) NOTHROWS : GLLabel() {
     back_color_b_ = rhs.back_color_b_;
     fill_ = rhs.fill_;
     gltext_ = rhs.gltext_;
+    textFormatParams_ = std::move(rhs.textFormatParams_);
 }
 
 GLLabel::GLLabel(Feature::Geometry2Ptr_const&& geometry, TAK::Engine::Port::String text, Point2<double> desired_offset,
@@ -749,7 +752,8 @@ GLLabel::GLLabel(Feature::Geometry2Ptr_const&& geometry, TAK::Engine::Port::Stri
       projected_size_(std::numeric_limits<double>::quiet_NaN()),
       mark_dirty_(true),
       draw_version_(-1),
-      gltext_(nullptr)
+      gltext_(nullptr),
+      textFormatParams_(nullptr)
 {
     rotation_.angle_ = 0.0f;
     rotation_.absolute_ = false;
@@ -788,6 +792,7 @@ GLLabel::GLLabel(const TextFormatParams &fmt,
     GLLabel(std::move(geometry), text, desired_offset, max_draw_resolution, alignment, vertical_alignment, color, fill_color, fill, altitude_mode, priority)
 {
     gltext_ = GLText2_intern(fmt);
+    textFormatParams_.reset(new TextFormatParams(fmt));
     rotation_.angle_ = 0.0f;
     rotation_.absolute_ = false;
     rotation_.explicit_ = false;
@@ -805,6 +810,7 @@ GLLabel::GLLabel(const TextFormatParams &fmt,
     GLLabel(std::move(geometry), text, desired_offset, max_draw_resolution, alignment, vertical_alignment, color, fill_color, fill, altitude_mode, priority)
 {
     gltext_ = GLText2_intern(fmt);
+    textFormatParams_.reset(new TextFormatParams(fmt));
     rotation_.angle_ = rotation;
     rotation_.absolute_ = rotationAbsolute;
     rotation_.explicit_ = true;
@@ -839,6 +845,7 @@ GLLabel& GLLabel::operator=(GLLabel&& rhs) NOTHROWS {
         back_color_b_ = rhs.back_color_b_;
         fill_ = rhs.fill_;
         gltext_ = rhs.gltext_;
+        textFormatParams_ = std::move(rhs.textFormatParams_);
         hints_ = rhs.hints_;
         float_weight_ = rhs.float_weight_;
     }
@@ -872,10 +879,16 @@ void GLLabel::setText(TAK::Engine::Port::String text) NOTHROWS {
 }
 
 void GLLabel::setTextFormat(const TextFormatParams* fmt) NOTHROWS {
-    if (fmt != nullptr)
+    if (fmt != nullptr) {
         gltext_ = GLText2_intern(*fmt);
-    else
+        if(textFormatParams_)
+            *textFormatParams_ = *fmt;
+        else
+            textFormatParams_.reset(new TextFormatParams(*fmt));
+    } else {
         gltext_ = nullptr;
+        textFormatParams_ = nullptr;
+    }
 }
 
 void GLLabel::setVisible(const bool visible) NOTHROWS { visible_ = visible; }
@@ -885,7 +898,7 @@ void GLLabel::setAlwaysRender(const bool always_render) NOTHROWS { always_render
 void GLLabel::setMaxDrawResolution(const double max_draw_resolution) NOTHROWS { max_draw_resolution_ = max_draw_resolution; }
 
 void GLLabel::setAlignment(const TextAlignment alignment) NOTHROWS { 
-    alignment_ = alignment; 
+    alignment_ = alignment;
 }
 
 void GLLabel::setVerticalAlignment(const VerticalAlignment vertical_alignment) NOTHROWS { vertical_alignment_ = vertical_alignment; }
@@ -927,18 +940,21 @@ bool GLLabel::shouldRenderAtResolution(const double draw_resolution) const NOTHR
     return true;
 }
 
-bool GLLabel::place(GLLabel::LabelPlacement &placement, const GLGlobeBase& view, const GLText2& gl_text, const std::vector<LabelPlacement>& label_rects, bool &rePlaced) NOTHROWS {
+bool GLLabel::place(GLLabel::LabelPlacement &placement, const GLGlobeBase& view, 
+    TextFormat2& text_format, const std::vector<LabelPlacement>& label_rects, bool& rePlaced) NOTHROWS {
 
     rePlaced = false;
 
     const auto xpos = static_cast<float>(placement.anchor_xyz_.x);
     const auto ypos = static_cast<float>(placement.anchor_xyz_.y);
+    const auto zpos = static_cast<float>(placement.anchor_xyz_.z);
 
     placement.render_xyz_.x = xpos;
     placement.render_xyz_.y = ypos;
+    placement.render_xyz_.z = zpos;
 
-    const auto textDescent = gl_text.getTextFormat().getDescent();
-    const auto textBaseline = gl_text.getTextFormat().getBaselineSpacing();
+    const auto textDescent = text_format.getDescent();
+    const auto textBaseline = text_format.getBaselineSpacing();
 
     float textWidth = 0.f;
     float textHeight = 0.f;
@@ -960,7 +976,6 @@ bool GLLabel::place(GLLabel::LabelPlacement &placement, const GLGlobeBase& view,
         offtx = (float)desired_offset_.x;
         offy = (float)desired_offset_.y;
         offz = (float)desired_offset_.z;
-
 
 #ifndef __ANDROID__
         if ((hints_&AutoSurfaceOffsetAdjust) && offy != 0.0 && view.renderPass->drawTilt > 0.0) {
@@ -1083,7 +1098,8 @@ void GLLabel::batch(const GLGlobeBase& view, GLText2& gl_text, GLRenderBatch2& b
     for(const auto &a : transformed_anchor_)
         if(a.can_draw_) this->batch(view, gl_text, batch, a, render_pass);
 }
-void GLLabel::batch(const GLGlobeBase& view, GLText2& gl_text, GLRenderBatch2& batch, const LabelPlacement &anchor, int render_pass) NOTHROWS
+
+void GLLabel::batch(const GLGlobeBase& view, GLText2& gl_text, GLRenderBatch2& batch, const LabelPlacement& anchor, int render_pass) NOTHROWS
 {
     did_animate_ = false;
     if (!text_.empty()) {
@@ -1258,12 +1274,16 @@ atakmap::renderer::GLNinePatch* GLLabel::getSmallNinePatch(TAK::Engine::Core::Re
     return small_nine_patch_;
 }
 
-void GLLabel::validate(const GLGlobeBase& view, const GLText2 &gl_text) NOTHROWS
+void GLLabel::validate(const GLGlobeBase& view, const GLText2 &text) NOTHROWS
+{
+    validate(view, text.getTextFormat());
+}
+void GLLabel::validate(const GLGlobeBase& view, TextFormat2& text_format) NOTHROWS
 {
     if (!text_.empty()) {
         const char* text = text_.c_str();
-        textSize.width = gl_text.getTextFormat().getStringWidth(text);
-        textSize.height = gl_text.getTextFormat().getStringHeight(text);
+        textSize.width = text_format.getStringWidth(text);
+        textSize.height = text_format.getStringHeight(text);
     } else {
         textSize.width = 0.f;
         textSize.height = 0.f;
@@ -1470,6 +1490,7 @@ void GLLabel::validate(const GLGlobeBase& view, const GLText2 &gl_text) NOTHROWS
     for(auto &a : transformed_anchor_)
         a.render_xyz_ = a.anchor_xyz_;
 }
+
 void GLLabel::setHints(const unsigned int hints) NOTHROWS
 {
     hints_ = hints;

@@ -1,6 +1,8 @@
 
 package com.atakmap.spatial.file;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.coremap.log.Log;
 
 import java.util.LinkedList;
@@ -27,6 +29,7 @@ final class DataIngestReport {
             this.exception = execept;
         }
 
+        @NonNull
         public String toString() {
             if (description != null)
                 return description;

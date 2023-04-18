@@ -39,7 +39,7 @@ import org.gdal.gdal.gdal;
  * @deprecated  use {@link GLTiledMapLayer2}
  */
 @Deprecated
-@DeprecatedApi(since="4.1", forRemoval = true, removeAt = "4.4")
+@DeprecatedApi(since="4.1", forRemoval = true, removeAt = "4.9")
 public class GLGdalMapLayer2 extends GLTiledMapLayer2 implements GLResolvableMapRenderable {
 
     private final static Set<String> SUPPORTED_TYPES = new HashSet<String>();
@@ -66,6 +66,11 @@ public class GLGdalMapLayer2 extends GLTiledMapLayer2 implements GLResolvableMap
     private final static String TAG = "GLGdalMapLayer";
 
     /**************************************************************************/
+
+    /** @deprecated use {@link #renderable}*/
+    @Deprecated
+    @DeprecatedApi(since="4.1", forRemoval = true, removeAt = "4.9")
+    protected GLQuadTileNode2 quadTree;
 
     protected Dataset dataset;
 

@@ -47,14 +47,6 @@ public class GLMapRenderer implements GLSurfaceView.Renderer {
         return b;
     }
 
-    /**
-     * @deprecated does nothing
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public void pauseRender(boolean state) {
-    }
-
     long lastReport = 0L;
 
     @Override

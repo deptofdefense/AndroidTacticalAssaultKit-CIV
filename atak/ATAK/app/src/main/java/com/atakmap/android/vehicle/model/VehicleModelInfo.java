@@ -6,6 +6,8 @@ import android.graphics.BitmapFactory;
 import android.graphics.PointF;
 import android.graphics.drawable.Drawable;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.rubbersheet.data.ModelProjection;
 import com.atakmap.android.rubbersheet.data.create.ModelLoader;
@@ -317,6 +319,7 @@ public class VehicleModelInfo implements ModelLoader.Callback {
         return false;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return getUID();

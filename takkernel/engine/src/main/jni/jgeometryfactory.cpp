@@ -1,4 +1,4 @@
-#include "jgeometryfactory.h"
+#include "com_atakmap_map_layer_feature_geometry_GeometryFactory.h"
 
 #include <feature/GeometryFactory.h>
 #include <util/DataInput2.h>

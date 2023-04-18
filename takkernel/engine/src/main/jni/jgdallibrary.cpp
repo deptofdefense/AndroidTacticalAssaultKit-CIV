@@ -1,4 +1,4 @@
-#include "jgdallibrary.h"
+#include "com_atakmap_map_gdal_GdalLibrary.h"
 #include "common.h"
 
 #include <memory>

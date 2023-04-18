@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
@@ -109,6 +111,7 @@ public class DangerCloseCalculator implements Runnable,
             return direction;
         }
 
+        @NonNull
         @Override
         public String toString() {
             return getMessage();

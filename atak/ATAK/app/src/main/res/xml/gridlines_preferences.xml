@@ -3,8 +3,8 @@
     <PreferenceCategory android:title="@string/disp_pref_title">
         <com.atakmap.android.gui.PanListPreference
             android:defaultValue="#ffffff"
-            android:entries="@array/color_names"
-            android:entryValues="@array/color_values"
+            android:entries="@array/gridline_color_names"
+            android:entryValues="@array/gridline_color_values"
             android:key="pref_grid_color"
             android:summary="@string/grid_color_summary"
             android:title="@string/grid_color_title" />
@@ -17,7 +17,6 @@
             android:defaultValue="MGRS"
             android:entries="@array/grid_type_names"
             android:entryValues="@array/grid_type_values"
-            android:key="pref_grid_type"
             android:summary="@string/grid_type_summary"
             android:title="@string/grid_type_title" />
     </PreferenceCategory>

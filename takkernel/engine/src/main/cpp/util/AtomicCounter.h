@@ -3,9 +3,7 @@
 
 #include "port/Platform.h"
 
-#ifdef __ANDROID__
-#include <stdatomic.h>
-#elif defined(__LINUX__)
+#if defined(__LINUX__) || defined(__ANDROID__)
 #include <atomic>
 #endif
 #include <stdint.h>
@@ -16,25 +14,13 @@ namespace atakmap {
         class AtomicCounter {
         public:
             AtomicCounter()
-#ifdef __ANDROID__
-            {
-                atomic_init(&value, 0);
-            }
-#else
                 : value(0)
             { }
-#endif
-            
+
             inline explicit AtomicCounter(int32_t initialValue)
-#ifdef __ANDROID__
-            {
-                atomic_init(&value, initialValue);
-            }
-#else
                 : value(initialValue)
             { }
-#endif
-            
+
             /**
              * Atomically add a value to the counter value with full memory barrier
              *
@@ -50,9 +36,7 @@ namespace atakmap {
         private:
 #if defined(_MSC_VER)
             long value;
-#elif defined(__ANDROID__)
-            atomic_int_fast32_t value;
-#elif defined(__LINUX__)
+#elif defined(__LINUX__) || defined(__ANDROID__)
             std::atomic<int_fast32_t> value;
 #else
             int32_t value;

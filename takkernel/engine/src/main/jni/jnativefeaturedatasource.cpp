@@ -1,4 +1,5 @@
-#include "jnativefeaturedatasource.h"
+#include "com_atakmap_map_layer_feature_NativeFeatureDataSource.h"
+#include "com_atakmap_map_layer_feature_ogr_OgrFeatureDataSource.h"
 
 #include <feature/Feature2.h>
 #include <feature/FeatureDataSource2.h>
@@ -413,12 +414,10 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_NativeFeatureDataSo
     }
     FeatureDataSource2::ContentPtr content(NULL, NULL);
     code = FeatureDataSourceFactory_parse(content, cpath, ctypeHint);
-    if(code == TE_InvalidArg)
-        return NULL;
-    else if(ATAKMapEngineJNI_checkOrThrow(env, code))
-        return NULL;
-    else
+    if(code == TE_Ok)
         return NewPointer(env, std::move(content));
+    else
+        return NULL;
 }
 
 JNIEXPORT jint JNICALL Java_com_atakmap_map_layer_feature_NativeFeatureDataSource_getFeatureDefinition_1GeometryEncoding_1GeomWkt

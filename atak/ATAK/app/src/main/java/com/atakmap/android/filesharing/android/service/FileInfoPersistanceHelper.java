@@ -33,10 +33,10 @@ public class FileInfoPersistanceHelper extends SQLiteOpenHelper {
     private static final String SAVED_TABLE_NAME = "savedFileinfo";
     private static final String LOG_TABLE_NAME = "FileTransferLog";
 
-    private static String TRANSFER_TABLE_CREATE_STR = null;
-    private static String SAVED_TABLE_CREATE_STR = null;
-    private static String LOG_TABLE_CREATE_STR = null;
-    private static String LOG_TABLE_TRIGGER_SQL = null;
+    private static final String TRANSFER_TABLE_CREATE_STR;
+    private static final String SAVED_TABLE_CREATE_STR;
+    private static final String LOG_TABLE_CREATE_STR;
+    private static final String LOG_TABLE_TRIGGER_SQL;
 
     private final Set<FileTransferLog.Listener> _ftListeners = new HashSet<>();
 
@@ -222,7 +222,9 @@ public class FileInfoPersistanceHelper extends SQLiteOpenHelper {
             ret = new LinkedList<>();
             try {
                 while (!cursor.isAfterLast()) {
-                    ret.add(fromDbCursor(cursor));
+                    AndroidFileInfo afi = fromDbCursor(cursor);
+                    if (afi != null)
+                        ret.add(afi);
                     cursor.moveToNext();
                 }
             } catch (SQLiteBlobTooBigException e) {
@@ -236,34 +238,50 @@ public class FileInfoPersistanceHelper extends SQLiteOpenHelper {
         return ret;
     }
 
+    private static int getColumnIndex(Cursor c, String label) {
+        int columnIdx = c.getColumnIndex(label);
+        if (columnIdx >= 0)
+            return columnIdx;
+        else
+            throw new IllegalStateException("column label not found: " + label);
+
+    }
+
     /**
      * Constructor from a DB cursor (using the meta-data tags from above)
+     * @param cursor the cursor to pull the android file info from
+     * @return the AndroidFileInfo or null if there is an issue building the info.
      */
-    private static AndroidFileInfo fromDbCursor(Cursor cursor) {
-        return new AndroidFileInfo(
-                new FileInfo(
-                        cursor.getInt(cursor.getColumnIndex(FileInfo.ID_LABEL)),
-                        cursor.getString(cursor
-                                .getColumnIndex(FileInfo.FILENAME_LABEL)),
-                        cursor.getString(cursor
-                                .getColumnIndex(FileInfo.CONTENT_TYPE_LABEL)),
-                        cursor.getInt(cursor
-                                .getColumnIndex(FileInfo.SIZE_LABEL)),
-                        cursor.getLong(cursor
-                                .getColumnIndex(FileInfo.UPDATE_TIME_LABEL)),
-                        cursor.getString(cursor
-                                .getColumnIndex(FileInfo.USERNAME_LABEL)),
-                        cursor.getString(cursor
-                                .getColumnIndex(FileInfo.USERLABEL_LABEL)),
-                        cursor.getString(cursor
-                                .getColumnIndex(
-                                        FileInfo.DESTINATION_PATH_LABEL)),
-                        cursor.getString(cursor
-                                .getColumnIndex(FileInfo.DOWNLOAD_URL_LABEL)),
-                        cursor.getString(cursor
-                                .getColumnIndex(FileInfo.SHA256SUM_LABEL)),
-                        cursor.getString(cursor
-                                .getColumnIndex(FileInfo.FILE_METADATA))));
+    private static AndroidFileInfo fromDbCursor(final Cursor cursor) {
+        try {
+            return new AndroidFileInfo(
+                    new FileInfo(
+                            cursor.getInt(
+                                    getColumnIndex(cursor, FileInfo.ID_LABEL)),
+                            cursor.getString(getColumnIndex(cursor,
+                                    FileInfo.FILENAME_LABEL)),
+                            cursor.getString(getColumnIndex(cursor,
+                                    FileInfo.CONTENT_TYPE_LABEL)),
+                            cursor.getInt(getColumnIndex(cursor,
+                                    FileInfo.SIZE_LABEL)),
+                            cursor.getLong(getColumnIndex(cursor,
+                                    FileInfo.UPDATE_TIME_LABEL)),
+                            cursor.getString(getColumnIndex(cursor,
+                                    FileInfo.USERNAME_LABEL)),
+                            cursor.getString(getColumnIndex(cursor,
+                                    FileInfo.USERLABEL_LABEL)),
+                            cursor.getString(getColumnIndex(cursor,
+                                    FileInfo.DESTINATION_PATH_LABEL)),
+                            cursor.getString(getColumnIndex(cursor,
+                                    FileInfo.DOWNLOAD_URL_LABEL)),
+                            cursor.getString(getColumnIndex(cursor,
+                                    FileInfo.SHA256SUM_LABEL)),
+                            cursor.getString(getColumnIndex(cursor,
+                                    FileInfo.FILE_METADATA))));
+        } catch (Exception e) {
+            Log.e(TAG, "cannot create the AndroidFileInfo", e);
+        }
+        return null;
     }
 
     public AndroidFileInfo getFileInfoFromFilename(File file, TABLETYPE type) {
@@ -442,7 +460,8 @@ public class FileInfoPersistanceHelper extends SQLiteOpenHelper {
 
     }
 
-    public synchronized boolean delete(FileInfo fi, TABLETYPE type) {
+    public synchronized boolean delete(final FileInfo fi,
+            final TABLETYPE type) {
         if (fi == null)
             return false;
 
@@ -526,7 +545,9 @@ public class FileInfoPersistanceHelper extends SQLiteOpenHelper {
 
             ret = new LinkedList<>();
             while (!cursor.isAfterLast()) {
-                ret.add(logFromDbCursor(cursor));
+                FileTransferLog ftl = logFromDbCursor(cursor);
+                if (ftl != null)
+                    ret.add(ftl);
                 cursor.moveToNext();
             }
         } finally {
@@ -541,18 +562,25 @@ public class FileInfoPersistanceHelper extends SQLiteOpenHelper {
      * Constructor from a DB cursor (using the meta-data tags from above)
      */
     private static FileTransferLog logFromDbCursor(Cursor cursor) {
-        return new FileTransferLog(
-                cursor.getInt(cursor.getColumnIndex(FileTransferLog.ID_LABEL)),
-                FileTransferLog.TYPE.valueOf(cursor.getString(cursor
-                        .getColumnIndex(FileTransferLog.TYPE_LABEL))),
-                cursor.getString(cursor
-                        .getColumnIndex(FileTransferLog.NAME_LABEL)),
-                cursor.getString(cursor
-                        .getColumnIndex(FileTransferLog.DESCRIPTION_LABEL)),
-                cursor.getLong(cursor
-                        .getColumnIndex(FileTransferLog.SIZE_LABEL)),
-                cursor.getLong(cursor
-                        .getColumnIndex(FileTransferLog.TIME_LABEL)));
+        try {
+            return new FileTransferLog(
+                    cursor.getInt(
+                            getColumnIndex(cursor, FileTransferLog.ID_LABEL)),
+                    FileTransferLog.TYPE
+                            .valueOf(cursor.getString(getColumnIndex(cursor,
+                                    FileTransferLog.TYPE_LABEL))),
+                    cursor.getString(
+                            getColumnIndex(cursor, FileTransferLog.NAME_LABEL)),
+                    cursor.getString(getColumnIndex(cursor,
+                            FileTransferLog.DESCRIPTION_LABEL)),
+                    cursor.getLong(
+                            getColumnIndex(cursor, FileTransferLog.SIZE_LABEL)),
+                    cursor.getLong(getColumnIndex(cursor,
+                            FileTransferLog.TIME_LABEL)));
+        } catch (Exception e) {
+            Log.e(TAG, "cannot create the FileTransferLog", e);
+        }
+        return null;
     }
 
     /**

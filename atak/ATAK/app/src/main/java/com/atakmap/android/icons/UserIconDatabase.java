@@ -37,7 +37,7 @@ public class UserIconDatabase extends SQLiteOpenHelper {
 
     private static final String TAG = "UserIconDatabase";
 
-    protected final static int DATABASE_VERSION = 2;
+    protected final static int DATABASE_VERSION = 3;
 
     public final static String TABLE_ICONS = "icons";
     public final static String TABLE_ICONSETS = "iconsets";
@@ -148,11 +148,23 @@ public class UserIconDatabase extends SQLiteOpenHelper {
     @Override
     public void onUpgrade(DatabaseIface database, int oldVersion,
             int newVersion) {
-        Log.i(TAG,
-                "Upgrading from version " + oldVersion + " to " + newVersion);
-        database.execute("DROP TABLE IF EXISTS " + TABLE_ICONS, null);
-        database.execute("DROP TABLE IF EXISTS " + TABLE_ICONSETS, null);
-        onCreate(database);
+
+        if (oldVersion == 2) {
+            Log.d(TAG,
+                    "adding the version field into the table for each of the iconsets");
+            database.execute("ALTER TABLE " + TABLE_ICONSETS +
+                    " ADD COLUMN " + UserIconSet.COLUMN_ICONSETS_VERSION
+                    + " INTEGER DEFAULT 1",
+                    new String[] {});
+            database.setVersion(3);
+        } else {
+            Log.i(TAG,
+                    "Upgrading from version " + oldVersion + " to "
+                            + newVersion);
+            database.execute("DROP TABLE IF EXISTS " + TABLE_ICONS, null);
+            database.execute("DROP TABLE IF EXISTS " + TABLE_ICONSETS, null);
+            onCreate(database);
+        }
     }
 
     public void dropTables() {
@@ -486,6 +498,8 @@ public class UserIconDatabase extends SQLiteOpenHelper {
         ContentValues insertValues = new ContentValues();
         insertValues.put(UserIconSet.COLUMN_ICONSETS_NAME, iconset.getName());
         insertValues.put(UserIconSet.COLUMN_ICONSETS_UID, iconset.getUid());
+        insertValues.put(UserIconSet.COLUMN_ICONSETS_VERSION,
+                iconset.getVersion());
         insertValues.put(UserIconSet.COLUMN_ICONSETS_DEFAULT_FRIENDLY,
                 iconset.getDefaultFriendly());
         insertValues.put(UserIconSet.COLUMN_ICONSETS_DEFAULT_HOSTILE,
@@ -693,7 +707,7 @@ public class UserIconDatabase extends SQLiteOpenHelper {
             throw new IOException();
         if (!outputTempPath.mkdirs())
             throw new IOException();
-        DatabaseIface assetsDb = null;
+        DatabaseIface assetsDb;
         try {
             File seedIconDbFile = new File(outputTempPath, "iconsets.sqlite");
             InputStream assetInputStream = FileSystemUtils
@@ -795,7 +809,7 @@ public class UserIconDatabase extends SQLiteOpenHelper {
                                 + UserIconSet.COLUMN_ICONSETS_DEFAULT_UNKNOWN
                                 + ","
                                 + UserIconSet.COLUMN_ICONSETS_SELECTED_GROUP
-                                + ") VALUES (?,?,?,?,?,?,?,?);";
+                                + ") VALUES (?,?, ?,?,?,?,?,?);";
                         StatementIface insert = null;
                         try {
                             insert = database.compileStatement(statement);

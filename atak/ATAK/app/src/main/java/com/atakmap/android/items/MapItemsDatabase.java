@@ -450,7 +450,7 @@ public abstract class MapItemsDatabase {
             double candidateDistance = Double.NaN;
             MapItem candidate = null;
             double itemDistance;
-            MapItem item = null;
+            MapItem item;
             while (result.moveToNext()) {
                 item = result.get();
                 itemDistance = this.computeDistance(item, location);

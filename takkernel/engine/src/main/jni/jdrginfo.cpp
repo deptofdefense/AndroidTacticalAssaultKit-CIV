@@ -1,4 +1,4 @@
-#include "jdrginfo.h"
+#include "com_atakmap_map_layer_raster_drg_DRGInfo.h"
 
 #include <formats/drg/DRG.h>
 

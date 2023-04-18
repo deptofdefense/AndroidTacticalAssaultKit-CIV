@@ -11,6 +11,7 @@ import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -73,11 +74,18 @@ public class GeocodingTask extends AsyncTask<Object, Void, List<Address>> {
         String locationAddress = (String) params[0];
         GeocodeManager.Geocoder geocoder = GeocodeManager.getInstance(context)
                 .getSelectedGeocoder();
-        List<Address> ret = geocoder.getLocation(
-                locationAddress,
-                new GeoBounds(lowerLeftLat, lowerLeftLon, upperRightLat,
-                        upperRightLon));
-        return ret;
+        try {
+            List<Address> ret = geocoder.getLocation(
+                    locationAddress,
+                    new GeoBounds(lowerLeftLat, lowerLeftLon, upperRightLat,
+                            upperRightLon));
+            return ret;
+        } catch (Exception e) {
+            Log.e(TAG,
+                    "error occurred attempting to use " + geocoder.getTitle(),
+                    e);
+            return new ArrayList<>();
+        }
     }
 
     @Override

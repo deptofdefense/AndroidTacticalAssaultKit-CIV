@@ -10,9 +10,14 @@ import com.atakmap.database.DatabaseIface;
 import com.atakmap.database.QueryIface;
 import com.atakmap.database.StatementIface;
 import com.atakmap.interop.Pointer;
+import com.atakmap.map.EngineLibrary;
 import com.atakmap.util.ReadWriteLock;
 
 public final class DatabaseImpl implements DatabaseIface {
+    static {
+        EngineLibrary.initialize();
+    }
+
     public final static int OPEN_READONLY = 0x01;
     public final static int OPEN_CREATE = 0x02;
 

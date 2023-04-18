@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.view.View;
+import android.widget.TextView;
 
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.routes.elevation.model.UnitConverter;
@@ -17,6 +18,7 @@ import com.atakmap.coremap.conversions.SpanUtilities;
 import com.atakmap.coremap.maps.conversion.EGM96;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.coremap.maps.time.CoordinatedTime;
 
 public class SeekerBarPanelPresenter implements View.OnClickListener {
 
@@ -141,6 +143,25 @@ public class SeekerBarPanelPresenter implements View.OnClickListener {
                 _seekerBarPanelView.getGainText()
                         .setText(text + " " +
                                 SpanUtilities.format(value, valueSpan, 0));
+            }
+        });
+    }
+
+    public synchronized void updateTime(final long time) {
+        _seekerBarPanelView.post(new Runnable() {
+            @Override
+            public void run() {
+                TextView tv = _seekerBarPanelView.getTimeText();
+                if (tv == null)
+                    return;
+
+                if (time == -1) {
+                    tv.setVisibility(View.GONE);
+                } else {
+                    tv.setVisibility(View.VISIBLE);
+                    tv.setText(
+                            CoordinatedTime.toCot(new CoordinatedTime(time)));
+                }
             }
         });
     }

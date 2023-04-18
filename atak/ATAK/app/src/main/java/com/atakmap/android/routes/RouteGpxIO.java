@@ -362,7 +362,7 @@ public class RouteGpxIO {
                 List<GpxWaypoint> checkpoints = new ArrayList<>();
 
                 // walk all route points
-                GeoPoint geoPoint = null, previousGeoPoint = null;
+                GeoPoint geoPoint, previousGeoPoint = null;
                 PointMapItem routePoint;
 
                 for (GpxWaypoint point : trackwaypoints) {

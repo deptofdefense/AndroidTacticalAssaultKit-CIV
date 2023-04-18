@@ -6,31 +6,32 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.PointF;
+import android.graphics.Typeface;
 import android.preference.PreferenceManager;
 import android.view.MotionEvent;
-import android.graphics.Typeface;
+
+import androidx.annotation.NonNull;
 
 import com.atakmap.android.ipc.AtakBroadcast;
-import com.atakmap.android.maps.MapMode;
-import com.atakmap.android.maps.MapTextFormat;
-import com.atakmap.android.maps.MetaMapPoint;
-import com.atakmap.android.menu.MapMenuReceiver;
-import com.atakmap.android.menu.MenuLayoutWidget;
-import com.atakmap.android.selfcoordoverlay.SelfCoordOverlayUpdater;
-import com.atakmap.android.util.SpeedFormatter;
-
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
+import com.atakmap.android.maps.MapMode;
+import com.atakmap.android.maps.MapTextFormat;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
+import com.atakmap.android.maps.MetaMapPoint;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.PointMapItem.OnPointChangedListener;
 import com.atakmap.android.maps.Shape;
+import com.atakmap.android.menu.MapMenuReceiver;
+import com.atakmap.android.menu.MenuLayoutWidget;
+import com.atakmap.android.selfcoordoverlay.SelfCoordOverlayUpdater;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.android.user.SpecialPointButtonTool;
 import com.atakmap.android.user.TLECategory;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.util.AltitudeUtilities;
+import com.atakmap.android.util.SpeedFormatter;
 import com.atakmap.android.widgets.LinearLayoutWidget;
 import com.atakmap.android.widgets.MapWidget;
 import com.atakmap.android.widgets.MapWidget.OnLongPressListener;
@@ -48,19 +49,16 @@ import com.atakmap.coremap.conversions.SpanUtilities;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.conversion.EGM96;
-
 import com.atakmap.coremap.maps.coords.ErrorCategory;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
-
 import com.atakmap.coremap.maps.coords.NorthReference;
 import com.atakmap.map.CameraController;
 import com.atakmap.map.elevation.ElevationData;
 import com.atakmap.map.elevation.ElevationManager;
+import com.atakmap.map.opengl.GLRenderGlobals;
 
 import java.util.Arrays;
-
-import androidx.annotation.NonNull;
 
 /**
  * TODO: Outline all expected behavior and rewrite this entire class
@@ -177,7 +175,7 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
                     radialFocus.setVisible(false);
                 }
 
-                float inset = 30 * MapView.DENSITY;
+                float inset = 30 * GLRenderGlobals.getRelativeScaling();
                 PointF p = widget.getAbsolutePosition();
                 p.x += inset;
                 p.y += widget.getHeight() - inset;
@@ -560,7 +558,6 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
                         point.get().getLongitude(), DSM_FILTER, el.surface);
             }
 
-            boolean estimated = false;
             double speed;
             if (_activeMarker.getType().equals("self"))
                 speed = _activeMarker.getMetaDouble("Speed", Double.NaN);
@@ -569,13 +566,11 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
 
             if (Double.isNaN(speed)) {
                 speed = _activeMarker.getMetaDouble("est.speed", Double.NaN);
-                estimated = true;
             }
 
             double heading = _activeMarker.getTrackHeading();
             if (Double.isNaN(heading)) {
                 heading = _activeMarker.getMetaDouble("est.course", Double.NaN);
-                estimated = true;
             }
 
             _updatePoint(_activeMarker.getGeoPointMetaData(), label, null,

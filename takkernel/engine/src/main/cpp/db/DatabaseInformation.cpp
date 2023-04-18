@@ -14,9 +14,20 @@ TAKErr DatabaseInformation::getUri(const char** value) const NOTHROWS {
     return TE_Ok;
 }
 
+TAKErr DatabaseInformation::getUri(Port::String& value) const NOTHROWS {
+    value = this->uri_;
+    return TE_Ok;
+}
+
 TAKErr DatabaseInformation::getPassphrase(const char** value) const NOTHROWS {
     if (value)
         *value = this->passphrase_;
+    return TE_Ok;
+}
+
+TAKErr DatabaseInformation::getPassphrase(Port::String& value) const NOTHROWS {
+    if (value)
+        value = this->passphrase_;
     return TE_Ok;
 }
 

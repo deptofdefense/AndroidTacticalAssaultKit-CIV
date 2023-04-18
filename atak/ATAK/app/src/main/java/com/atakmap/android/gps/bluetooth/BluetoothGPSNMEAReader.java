@@ -1,6 +1,7 @@
 
 package com.atakmap.android.gps.bluetooth;
 
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
 
 import com.atakmap.android.bluetooth.BluetoothASCIIClientConnection;
@@ -106,6 +107,7 @@ public class BluetoothGPSNMEAReader extends BluetoothReader {
     @Override
     public BluetoothCotManager getCotManager(MapView mapView) {
         BluetoothDevice device = connection.getDevice();
+        @SuppressLint("MissingPermission")
         String deviceName = device.getName();
 
         // ATAK-8437 BluetoothGPSNMEAReader NPE    

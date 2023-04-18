@@ -7,6 +7,8 @@ import android.database.DatabaseErrorHandler;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Pair;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.icons.UserIconDatabase;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -66,6 +68,7 @@ public class ImportSQLiteSort extends ImportInternalSDResolver {
             _tableNames = tableNames;
         }
 
+        @NonNull
         @Override
         public String toString() {
             return String.format("%s %s %s", super.toString(), _name, _folder);
@@ -164,7 +167,12 @@ public class ImportSQLiteSort extends ImportInternalSDResolver {
                 while (!c.isAfterLast()) {
                     String tblName;
                     while (!c.isAfterLast()) {
-                        tblName = c.getString(c.getColumnIndex("name"));
+                        int idx = c.getColumnIndex("name");
+                        if (idx >= 0)
+                            tblName = c.getString(idx);
+                        else
+                            tblName = null;
+
                         if (!FileSystemUtils.isEmpty(tblName))
                             foundNames.add(tblName);
                         else

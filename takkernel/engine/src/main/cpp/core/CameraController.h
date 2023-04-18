@@ -21,6 +21,36 @@ namespace TAK {
                                                 const float ty,
                                                 const MapRenderer::CameraCollision collide,
                                                 const bool animate) NOTHROWS;
+
+            /**
+             * Pan the map a given number of pixels.
+             *
+             * @param tx        Horizontal pixels to pan
+             * @param ty        Vertical pixels to pan
+             * @param animate   Pan smoothly if true; immediately if false
+             */
+            ENGINE_API Util::TAKErr CameraController_panBy(MapRenderer2 &renderer,
+                                                           const float tx,
+                                                           const float ty,
+                                                           const MapRenderer::CameraCollision collide,
+                                                           const bool poleSmoothScroll,
+                                                           const bool animate) NOTHROWS;
+            /**
+             * Pans the specified location to the specified offset within the
+             * viewport. Screen position is interpreted as upper-left origin
+             * @param renderer
+             * @param focus
+             * @param x
+             * @param y
+             * @param animate
+             */
+            ENGINE_API Util::TAKErr CameraController_panTo(MapRenderer2 &renderer,
+                                                           const GeoPoint2 &focus,
+                                                           const float x,
+                                                           const float y,
+                                                           const MapRenderer::CameraCollision collide,
+                                                           const bool animate) NOTHROWS;
+
             /**
              * Pans the specified location to the specified offset within the
              * viewport. Screen position is interpreted as upper-left origin
@@ -35,6 +65,7 @@ namespace TAK {
                                                 const float x,
                                                 const float y,
                                                 const MapRenderer::CameraCollision collide,
+                                                const bool poleSmoothScroll,
                                                 const bool animate) NOTHROWS;
 
             ENGINE_API Util::TAKErr CameraController_zoomBy(MapRenderer2 &renderer,

@@ -16,6 +16,13 @@ public abstract class PluginPreferenceFragment extends AtakPreferenceFragment {
 
     protected final Context pluginContext;
 
+    public static java.util.List<PreferenceSearchIndex> index(Context context) {
+        return index(context,
+                PluginPreferenceFragment.class,
+                R.string.pluginPreferences,
+                R.drawable.ic_menu_settings);
+    }
+
     public PluginPreferenceFragment(final Context pluginContext,
             final int resourceID) {
         this(pluginContext, resourceID, DEFAULT_PREF_SUMMARY_ID);
@@ -30,7 +37,6 @@ public abstract class PluginPreferenceFragment extends AtakPreferenceFragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         PreferenceScreen settingsView;
         settingsView = inflatePreferenceScreenFromResource(pluginContext,
                 getResourceID());

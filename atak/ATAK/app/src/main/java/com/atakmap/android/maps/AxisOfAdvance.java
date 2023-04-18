@@ -297,7 +297,7 @@ public class AxisOfAdvance extends Polyline {
     @Override
     public GeoPointMetaData getCenter() {
         return GeoPointMetaData.wrap(
-                GeoCalculations.midPoint(nock.get(), head.get()),
+                GeoCalculations.midPointWGS84(nock.get(), head.get()),
                 GeoPointMetaData.CALCULATED, GeoPointMetaData.CALCULATED);
     }
 }

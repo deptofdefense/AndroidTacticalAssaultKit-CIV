@@ -1417,8 +1417,16 @@ const std::map<const HwAddress*, const NetAddress*, HwComp>* InterfaceEnumerator
 
 
 
+// Check that platform has a fairly healthy number of select()-supported FDs
+#if !defined(FD_SETSIZE) || FD_SETSIZE < 1024
+# error Platform FD_SETSIZE undefined or smaller than expected
+#endif
 
-NetSelector::NetSelector() : rSetPtr(NULL), wSetPtr(NULL), exSetPtr(NULL), maxfd(PlatformNet::BAD_SOCKET)
+NetSelector::NetSelector() : 
+    rSetPtr(NULL), 
+    wSetPtr(NULL), 
+    exSetPtr(NULL), 
+    maxfd(PlatformNet::BAD_SOCKET)
 {
     FD_ZERO(&baseReadSet);
     FD_ZERO(&baseWriteSet);
@@ -1434,21 +1442,43 @@ NetSelector::~NetSelector()
 {
 }
 
-void NetSelector::buildSet(fd_set *set, fd_set **sptr, const std::vector<Socket *> *sockets)
+void NetSelector::buildSet(
+    fd_set *set,
+    size_t *count,
+    fd_set **sptr, 
+    const std::vector<Socket *> *sockets)
+        COMMO_THROW (SocketException)
 {
     FD_ZERO(set);
+    *count = 0;
 
-    if (!growSet(set, sptr, sockets))
+    if (!growSet(set, count, sptr, sockets))
         *sptr = NULL;
 }
 
-bool NetSelector::growSet(fd_set *set, fd_set **sptr, const std::vector<Socket *> *sockets)
+bool NetSelector::growSet(
+    fd_set *set,
+    size_t *count,
+    fd_set **sptr,
+    const std::vector<Socket *> *sockets)
+        COMMO_THROW (SocketException)
 {
     if (sockets != NULL && sockets->size() > 0) {
+        *count += sockets->size();
+#ifdef WIN32
+        // Windows limit is total sum quantity of fds
+        if (*count > FD_SETSIZE)
+            throw SocketException();
+#endif
         std::vector<Socket *>::const_iterator iter;
         for (iter = sockets->begin(); iter != sockets->end(); ++iter) {
             Socket *s = *iter;
             PlatformNet::SocketFD fd = s->getFD();
+#ifndef WIN32
+            // Linux/Mac/most others limit is integral value of fd
+            if (fd >= FD_SETSIZE)
+                throw SocketException();
+#endif
             FD_SET(fd, set);
             if (maxfd == PlatformNet::BAD_SOCKET || fd > maxfd)
                 maxfd = fd;
@@ -1461,7 +1491,7 @@ bool NetSelector::growSet(fd_set *set, fd_set **sptr, const std::vector<Socket *
 
 void NetSelector::setSockets(
     const std::vector<Socket *> *readSockets,
-    const std::vector<Socket *> *writeSockets)
+    const std::vector<Socket *> *writeSockets) COMMO_THROW (SocketException)
 {
     setSockets(readSockets, writeSockets, NULL);
 }
@@ -1470,15 +1500,19 @@ void NetSelector::setSockets(
     const std::vector<Socket *> *readSockets,
     const std::vector<Socket *> *writeSockets,
     const std::vector<Socket *> *connectingSockets)
+        COMMO_THROW (SocketException)
 {
+    size_t wCount = 0;
+    size_t rCount = 0;
     maxfd = PlatformNet::BAD_SOCKET;
-    buildSet(&wSet, &wSetPtr, writeSockets);
-    buildSet(&rSet, &rSetPtr, readSockets);
-    growSet(&wSet, &wSetPtr, connectingSockets);
+    buildSet(&wSet, &wCount, &wSetPtr, writeSockets);
+    buildSet(&rSet, &rCount, &rSetPtr, readSockets);
+    growSet(&wSet, &wCount, &wSetPtr, connectingSockets);
     baseWriteSet = wSet;
     baseReadSet = rSet;
 #ifdef WIN32
-    buildSet(&exSet, &exSetPtr, connectingSockets);
+    size_t exCount = 0;
+    buildSet(&exSet, &exCount, &exSetPtr, connectingSockets);
     baseExSet = exSet;
 #endif
     if (maxfd != PlatformNet::BAD_SOCKET)

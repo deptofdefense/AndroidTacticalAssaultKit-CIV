@@ -434,13 +434,21 @@ void TcpSocketManagement::ioThreadProcess()
             }
         }
         
-        if (resetSelect)
-            selector.setSockets(&readSocks, &writeSocks);
-
-
         bool killAllSockets = false;
+        if (resetSelect) {
+            try {
+                selector.setSockets(&readSocks, &writeSocks);
+            } catch (SocketException &) {
+                killAllSockets = true;
+                InternalUtils::logprintf(logger, 
+                    CommoLogger::LEVEL_ERROR,
+                    "tcp main io hit max socket capacity");
+            }
+        }
+
+
         try {
-            if (!selector.doSelect(250)) {
+            if (!killAllSockets && !selector.doSelect(250)) {
                 // Timeout
                 CommoTime nowTime = CommoTime::now();
                 TxCtxSet::iterator txIter;
@@ -585,6 +593,11 @@ void TcpSocketManagement::ioThreadProcess()
                 }
             } 
         }
+        
+        if (killAllSockets)
+            // Yield a short time to avoid spamming retries
+            // after select system errors
+            Thread::sleep(1000);
     }
 }
 

@@ -310,7 +310,6 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
                     ElevationOverlaysMapComponent.isHeatMapVisible());
         }
 
-
         showDropDown(tabHost, FIVE_TWELFTHS_WIDTH, FULL_HEIGHT, FULL_WIDTH,
                 HALF_HEIGHT);
         setRetain(true);
@@ -809,7 +808,6 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
         altitudeET = vsView.findViewById(R.id.altitude_et);
         setFtMLabel(altitudeET);
         setAltitudeFromPreference();
-
 
         altitudeET.addTextChangedListener(new AfterTextChangedWatcher() {
             @Override
@@ -1348,9 +1346,6 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
                 title = m.getMetaString("callsign", "");
             }
 
-
-
-
             final String msltext = formatMSL(m.getPoint());
 
             getMapView().post(new Runnable() {
@@ -1580,7 +1575,7 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
         double radius;
         double distance = refPoint1.distanceTo(refPoint2);
         double bearing = refPoint1.bearingTo(refPoint2);
-        double angle = 0;
+        double angle;
         if (bearing < 90) {
             angle = 90 - bearing;
         } else if (bearing < 180) {
@@ -1641,7 +1636,8 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
 
             // for storage the unit will always need to be meters
             prefs.edit()
-                    .putFloat(ViewShedReceiver.VIEWSHED_PREFERENCE_HEIGHT_ABOVE_KEY,
+                    .putFloat(
+                            ViewShedReceiver.VIEWSHED_PREFERENCE_HEIGHT_ABOVE_KEY,
                             heightAboveGround)
                     .apply();
             heightMap.put(vsdMarker.getUID(), heightAboveGround);
@@ -1751,13 +1747,16 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
         final String uid = vsdMarker.getUID();
 
         Double radius = radiusMap.get(uid);
-        if (radius == null) return;
+        if (radius == null)
+            return;
 
         Integer intensity = intensityMap.get(uid);
-        if (intensity == null) return;
+        if (intensity == null)
+            return;
 
         Float heightAboveGround = heightMap.get(uid);
-        if (heightAboveGround == null) return;
+        if (heightAboveGround == null)
+            return;
 
         GeoPoint refPoint = refPointMap.get(uid);
         final String msltext = formatMSL(vsdMarker.getPoint());
@@ -1768,10 +1767,9 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
 
         radiusET.setText(String.valueOf(radius));
 
-
         prefs.edit()
                 .putFloat(ViewShedReceiver.VIEWSHED_PREFERENCE_HEIGHT_ABOVE_KEY,
-                        (float) (double)heightAboveGround)
+                        (float) (double) heightAboveGround)
                 .apply();
 
         setAltitudeFromPreference();
@@ -1780,7 +1778,7 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
         intensitySeek.setProgress(intensity);
         prefs.edit()
                 .putInt(ViewShedReceiver.VIEWSHED_PREFERENCE_RADIUS_KEY,
-                        (int) (double)radius)
+                        (int) (double) radius)
                 .apply();
 
         ElevationOverlaysMapComponent.setHeatMapVisible(false);
@@ -2006,7 +2004,8 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
     private void setFtMLabel(EditText et) {
         Span altUnits = getSpan();
         final String ftunit = et.getContext().getString(R.string.ft);
-        final String munit = et.getContext().getString(R.string.meter_abbreviation);
+        final String munit = et.getContext()
+                .getString(R.string.meter_abbreviation);
 
         String unit;
         if (altUnits.equals(Span.FOOT)) {
@@ -2048,7 +2047,7 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
     private void setAltitudeFromPreference() {
         float heightAboveMarker = prefs.getFloat(
                 ViewShedReceiver.VIEWSHED_PREFERENCE_HEIGHT_ABOVE_KEY,
-                (float)(5 * ConversionFactors.FEET_TO_METERS));
+                (float) (5 * ConversionFactors.FEET_TO_METERS));
 
         // for display purposes only
         if (getSpan() == Span.FOOT) {
@@ -2058,22 +2057,23 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
         altitudeET.setText(_two.format(heightAboveMarker));
     }
 
-
     private SharedPreferences.OnSharedPreferenceChangeListener prefChanged = new SharedPreferences.OnSharedPreferenceChangeListener() {
         @Override
-        public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        public void onSharedPreferenceChanged(
+                SharedPreferences sharedPreferences, String key) {
 
             if (key == null)
                 return;
 
             if (key.equals("alt_unit_pref") && altitudeET != null) {
-                ((Activity)getMapView().getContext()).runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        setFtMLabel(altitudeET);
-                        setAltitudeFromPreference();
-                    }
-                });
+                ((Activity) getMapView().getContext())
+                        .runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                setFtMLabel(altitudeET);
+                                setAltitudeFromPreference();
+                            }
+                        });
             }
         }
     };

@@ -7,7 +7,6 @@ import java.util.Arrays;
 
 import com.atakmap.android.elev.ViewShedLayer2;
 import com.atakmap.coremap.conversions.ConversionFactors;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.lang.Objects;

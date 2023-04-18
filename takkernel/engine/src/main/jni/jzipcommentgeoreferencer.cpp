@@ -1,4 +1,4 @@
-#include "jzipcommentgeoreferencer.h"
+#include "com_atakmap_map_layer_model_zipcomment_ZipCommentGeoreferencer.h"
 
 #include "model/ZipCommentGeoreferencer.h"
 #include "common.h"

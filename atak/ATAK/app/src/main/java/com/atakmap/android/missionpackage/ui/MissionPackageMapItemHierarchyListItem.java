@@ -108,10 +108,11 @@ class MissionPackageMapItemHierarchyListItem extends
         String callsign = _mapListItem.getname();
         String uid = _mapListItem.getUID();
         if (_item == null) {
-            String cotXml = MissionPackageExtractor.ExtractCoT(_context,
+            String cotXml = MissionPackageExtractor.ExtractCoT(
                     new File(FileSystemUtils.sanitizeWithSpacesAndSlashes(
                             group.getManifest().getPath())),
-                    _mapListItem.getContent(), false);
+                            group.getManifest(),
+                            _mapListItem.getContent(), false);
             CotEvent event;
             if (!FileSystemUtils.isEmpty(cotXml)
                     && (event = CotEvent.parse(cotXml)) != null

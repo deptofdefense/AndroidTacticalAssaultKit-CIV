@@ -46,7 +46,6 @@ public class AdvancedLoggingPreferenceFragment extends AtakPreferenceFragment
         if (collectMetrics != null)
             collectMetrics.setOnPreferenceChangeListener(this);
 
-        Preference loggingDisclaimer = findPreference("loggingDisclaimer");
     }
 
     @Override

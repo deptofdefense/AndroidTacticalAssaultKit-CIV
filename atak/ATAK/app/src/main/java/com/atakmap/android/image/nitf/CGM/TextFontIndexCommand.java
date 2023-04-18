@@ -1,6 +1,8 @@
 
 package com.atakmap.android.image.nitf.CGM;
 
+import androidx.annotation.NonNull;
+
 import java.io.DataInput;
 import java.io.IOException;
 
@@ -21,6 +23,7 @@ public class TextFontIndexCommand extends Command {
             d.setFontIndex(this.fontIndex);
         }*/
 
+    @NonNull
     @Override
     public String toString() {
         return "TextFontIndex " + this.fontIndex;

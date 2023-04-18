@@ -4,6 +4,8 @@ package com.atakmap.android.track.task;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 
@@ -263,6 +265,7 @@ public class ExportTrackParams implements Parcelable {
         }
     };
 
+    @NonNull
     @Override
     public String toString() {
         return name;

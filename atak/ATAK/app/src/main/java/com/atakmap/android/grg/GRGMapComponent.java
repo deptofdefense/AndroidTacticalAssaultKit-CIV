@@ -7,7 +7,6 @@ import android.content.Intent;
 import com.atakmap.android.data.URIContentManager;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
-import android.util.Pair;
 
 import com.atakmap.android.importexport.ImporterManager;
 import com.atakmap.android.layers.ExternalLayerDataImporter;
@@ -17,21 +16,15 @@ import com.atakmap.android.maps.AbstractMapComponent;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.MapView.RenderStack;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.MultiLayer;
 import com.atakmap.map.layer.feature.Adapters;
 import com.atakmap.map.layer.feature.FeatureDataStore;
 import com.atakmap.map.layer.feature.FeatureLayer3;
 import com.atakmap.map.layer.feature.ogr.SchemaDefinitionRegistry;
-import com.atakmap.map.layer.raster.DatasetDescriptor;
 import com.atakmap.map.layer.raster.DatasetDescriptorFactory2;
 import com.atakmap.map.layer.raster.DatasetRasterLayer2;
 import com.atakmap.map.layer.raster.PersistentRasterDataStore;
 import com.atakmap.map.layer.raster.RasterLayer2;
-import com.atakmap.map.layer.raster.gdal.opengl.GLGdalMapLayer2;
-import com.atakmap.map.layer.raster.opengl.GLMapLayer3;
-import com.atakmap.map.layer.raster.opengl.GLMapLayerFactory;
-import com.atakmap.map.layer.raster.opengl.GLMapLayerSpi3;
 import com.atakmap.spatial.file.KmlFileSpatialDb;
 
 import java.io.File;
@@ -59,22 +52,6 @@ public class GRGMapComponent extends AbstractMapComponent {
             null
     };
 
-    private final static GLMapLayerSpi3 GL_MCIA_GRG_SPI = new GLMapLayerSpi3() {
-        @Override
-        public int getPriority() {
-            return 0;
-        }
-
-        @Override
-        public GLMapLayer3 create(Pair<MapRenderer, DatasetDescriptor> arg) {
-            final MapRenderer surface = arg.first;
-            final DatasetDescriptor info = arg.second;
-            if (info.getDatasetType().equals("mcia-grg"))
-                return new GLGdalMapLayer2(surface, info);
-            return null;
-        }
-
-    };
     private final static File DATABASE_FILE = FileSystemUtils
             .getItem("Databases/GRGs2.sqlite");
 
@@ -92,9 +69,6 @@ public class GRGMapComponent extends AbstractMapComponent {
     @Override
     public void onCreate(Context context, Intent intent, final MapView view) {
         DatasetDescriptorFactory2.register(new MCIAGRGLayerInfoSpi());
-
-        //GLMapItemFactory.registerSpi(GLImageOverlay.SPI);
-        GLMapLayerFactory.registerSpi(GL_MCIA_GRG_SPI);
 
         SchemaDefinitionRegistry.register(MCIA_GRG.SECTIONS_SCHEMA_DEFN);
         SchemaDefinitionRegistry.register(MCIA_GRG.SUBSECTIONS_SCHEMA_DEFN);

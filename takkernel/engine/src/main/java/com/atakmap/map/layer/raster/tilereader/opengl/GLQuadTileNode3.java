@@ -24,6 +24,11 @@ import com.atakmap.util.Disposable;
 import com.atakmap.math.PointD;
 import com.atakmap.util.ResourcePool;
 
+import gov.tak.api.annotation.DeprecatedApi;
+
+/** @deprecated use {@link GLQuadTileNode4} */
+@Deprecated
+@DeprecatedApi(since = "4.6", forRemoval = true, removeAt = "4.9")
 public class GLQuadTileNode3 implements
                                     GLMapRenderable2,
                                     GLResolvableMapRenderable,
@@ -258,23 +263,5 @@ public class GLQuadTileNode3 implements
     }
     /**************************************************************************/
 
-    public static class Options {
-        public boolean textureCopyEnabled;
-        public boolean childTextureCopyResolvesParent;
-        public GLTextureCache textureCache;
-        public boolean progressiveLoad;
-        public double levelTransitionAdjustment;
-        public boolean textureBorrowEnabled;
-        public boolean adaptiveTileLod;
-
-        public Options() {
-            this.textureCopyEnabled = true;
-            this.childTextureCopyResolvesParent = true;
-            this.textureCache = null;
-            this.progressiveLoad = true;
-            this.levelTransitionAdjustment = 0d;
-            this.textureBorrowEnabled = true;
-            this.adaptiveTileLod = false;
-        }
-    }
+    public static class Options extends NodeOptions {}
 }

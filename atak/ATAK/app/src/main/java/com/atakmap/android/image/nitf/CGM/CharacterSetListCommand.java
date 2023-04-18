@@ -1,6 +1,8 @@
 
 package com.atakmap.android.image.nitf.CGM;
 
+import androidx.annotation.NonNull;
+
 import java.io.DataInput;
 import java.io.IOException;
 import java.util.Map;
@@ -75,6 +77,7 @@ public class CharacterSetListCommand extends Command {
         //assert (this.currentArg == this.args.length);
     }
 
+    @NonNull
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

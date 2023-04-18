@@ -1,4 +1,4 @@
-#include "jelevationsourcemanager.h"
+#include "com_atakmap_map_elevation_ElevationSourceManager.h"
 
 #include <list>
 #include <map>

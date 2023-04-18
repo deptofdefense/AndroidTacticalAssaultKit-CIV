@@ -9,6 +9,7 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -28,6 +29,7 @@ import com.atakmap.database.CursorWrapper;
 import com.atakmap.database.DatabaseIface;
 import com.atakmap.database.Databases;
 import com.atakmap.database.IteratorCursor;
+import com.atakmap.database.QueryIface;
 import com.atakmap.database.StatementIface;
 import com.atakmap.map.layer.feature.AbstractFeatureDataStore2;
 import com.atakmap.map.layer.feature.AttributeSet;
@@ -111,22 +113,41 @@ abstract class FDB extends AbstractFeatureDataStore2 {
         this(db,
              true,
              modificationFlags,
-             visibilityFlags);
+             visibilityFlags,
+             (db != null) ? 2 : 3);
+    }
+
+    protected FDB(File db, int modificationFlags, int visibilityFlags, int dim) {
+        this(db,
+             true,
+             modificationFlags,
+             visibilityFlags,
+            dim);
     }
 
     protected FDB(File dbFile,
                   boolean buildIndices,
                   int modificationFlags,
                   int visibilityFlags) {
+        this(dbFile,
+             buildIndices,
+             modificationFlags,
+             visibilityFlags,
+             (dbFile != null) ? 2 : 3);
+    }
+    protected FDB(File dbFile,
+                  boolean buildIndices,
+                  int modificationFlags,
+                  int visibilityFlags,
+                  int dim) {
 
         super(modificationFlags, visibilityFlags);
 
-        this.databaseFile = dbFile.getAbsolutePath();
-        if(!IOProviderFactory.exists(dbFile) || IOProviderFactory.length(dbFile) == 0L) {
-            this.database = IOProviderFactory.createDatabase(
-                new DatabaseInformation(Uri.fromFile(dbFile)));
+        this.databaseFile = (dbFile != null) ? dbFile.getAbsolutePath() : ":memory:";
+        if(dbFile == null || !IOProviderFactory.exists(dbFile) || IOProviderFactory.length(dbFile) == 0L) {
+            this.database = IOProviderFactory.createDatabase(dbFile);
 
-            this.buildTables(buildIndices);
+            this.buildTables(buildIndices, dim);
             this.spatialIndexEnabled = buildIndices;
         } else {
             this.database = IOProviderFactory.createDatabase(
@@ -146,7 +167,7 @@ abstract class FDB extends AbstractFeatureDataStore2 {
         this.refresh();
     }
     
-    private void buildTables(boolean indices) {
+    private void buildTables(boolean indices, int dim) {
         CursorIface result;
 
         final int major = FeatureSpatialDatabase.getSpatialiteMajorVersion(this.database);
@@ -196,15 +217,15 @@ abstract class FDB extends AbstractFeatureDataStore2 {
                               "     lod_version INTEGER)",
                               null);
         
-        result = null;
+        QueryIface query = null;
         try {
-            result = this.database.query(
-                    "SELECT AddGeometryColumn(\'features\', \'geometry\', 4326, \'GEOMETRY\', \'XY\')",
-                    null);
-            result.moveToNext();
+            query = this.database.compileQuery(
+                    "SELECT AddGeometryColumn(\'features\', \'geometry\', 4326, \'GEOMETRY\',?)");
+            query.bind(1, (dim == 3) ? "XYZ" : "XY");
+            query.moveToNext();
         } finally {
-            if (result != null)
-                result.close();
+            if (query != null)
+                query.close();
         }
 
         this.database.execute("CREATE TABLE styles" +
@@ -1773,6 +1794,36 @@ abstract class FDB extends AbstractFeatureDataStore2 {
                         ctx.insertGeomArg.set((String)def.getRawGeometry());
                         break;
                     }
+                    case FeatureDataSource.FeatureDefinition.GEOM_ATAK_GEOMETRY:
+                    {
+                        if (ctx.insertFeatureWkbStatement == null) {
+                            ctx.insertFeatureWkbStatement = this.database
+                                    .compileStatement("INSERT INTO features " +
+                                            "(name, " + // 1
+                                            " geometry, " + // 2
+                                            " style_id," + // 3
+                                            " attribs_id," + // 4
+                                            " visible," + // 5
+                                            " visible_version," + // 6
+                                            " min_lod," + // 7
+                                            " max_lod," + // 8
+                                            " lod_version, " + // 9
+                                            " version, " + // 10
+                                            " fsid) " + // 11
+                                            " VALUES (?, GeomFromWKB(?, 4326), ?, ?, 1, 0, 0, ?, 0, 1, ?)");
+                            continue;
+                        }
+                        stmt = ctx.insertFeatureWkbStatement;
+
+                        byte[] wkb = null;
+                        if(def.getRawGeometry() != null) {
+                            Geometry g = (Geometry)def.getRawGeometry();
+                            wkb = new byte[g.computeWkbSize()];
+                            g.toWkb(ByteBuffer.wrap(wkb).order(ByteOrder.nativeOrder()));
+                        }
+                        ctx.insertGeomArg.set(wkb);
+                        break;
+                    }
                     default:
                         throw new IllegalArgumentException();
                 }
@@ -1835,7 +1886,7 @@ abstract class FDB extends AbstractFeatureDataStore2 {
         
         StatementIface stmt = null;
         try {
-            stmt = this.database.compileStatement("UPDATE features SET geom = GeomFromWkb(?) WHERE fid = ?");
+            stmt = this.database.compileStatement("UPDATE features SET geometry = GeomFromWKB(?, 4326) WHERE fid = ?");
             stmt.bind(1, wkb);
             stmt.bind(2, fid);
             stmt.execute();
@@ -1960,7 +2011,7 @@ abstract class FDB extends AbstractFeatureDataStore2 {
 
         stmt = null;
         try {
-            stmt = this.database.compileStatement("UPDATE features SET name = ?, geom = GeomFromWkb(?), style_id = ?, attribs_id = ? WHERE fid = ?");
+            stmt = this.database.compileStatement("UPDATE features SET name = ?, geometry = GeomFromWKB(?, 4326), style_id = ?, attribs_id = ? WHERE fid = ?");
             stmt.bind(1, name);
             stmt.bind(2, wkb);
             stmt.bind(3, styleId);

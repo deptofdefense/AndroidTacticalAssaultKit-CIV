@@ -8,6 +8,7 @@
 #include "math/Point2.h"
 #include "math/Matrix2.h"
 #include "core/ProjectionFactory3.h"
+#include "util/Error.h"
 #include "util/URI.h"
 #include "util/DataOutput2.h"
 #include "math/Vector4.h"
@@ -547,7 +548,7 @@ namespace {
         input->read((uint8_t*)&ch, &nr, 1);
         if (nr == 1) {
             curr = ch;
-            setg(&curr, &curr, &curr);
+            setg(&curr, &curr, &curr + 1);
             return std::char_traits<char>::to_int_type(static_cast<char>(curr));
         }
         return std::char_traits<char>::eof();
@@ -768,6 +769,36 @@ namespace {
         return TE_Unsupported;
     }
 
+    bool isCesiumJSON(TAK::Engine::Port::String URI) NOTHROWS {
+        DataInput2Ptr input(nullptr, nullptr);
+        URI_open(input, URI);
+        DataInput2Streambuf buf(input.get());
+        std::istream in(&buf);
+        json obj = json::parse(in, nullptr, false);
+        if (obj.is_discarded())
+            return false;
+
+        // Per https://github.com/CesiumGS/3d-tiles/blob/main/specification/README.md#:~:text=The%20tileset%20JSON%20has%20four,base%20set%20of%20tile%20formats.
+        // The tileset JSON file has four top-level properties: asset, properties, geometricError, and root.
+        // However, one of the sample files I tested with didn't have any properties (and the geometricError value seemed sketchy (i.e. 65536 vs a floating point value)
+        // It may be asset and root are the only ones worth checking for.
+
+
+        auto asset = obj.find("asset");
+        bool hasAsset = asset != obj.end();
+        // if desired specific version and tileset version support could be added
+        // through extracting those respective fields from the asset object
+        // i.e. String version = parseString(*asset, "version", "").c_str();
+
+        auto geometricError = obj.find("geometricError");
+        bool hasGeometricError = geometricError != obj.end();
+
+        auto root = obj.find("root");
+        bool hasRoot = root != obj.end();
+
+        return hasAsset && hasGeometricError && hasRoot;
+    }
+
     bool isFileSystemTileset(
         TAK::Engine::Port::String* filePath,
         TAK::Engine::Port::String* dirPath,
@@ -796,6 +827,10 @@ namespace {
                 return isZipURI(URI) && isZipTilesetWithRootFolder(filePath, dirPath, tilesetPath, type, URI);
             }
             ts = sb.c_str();
+
+            if (!isCesiumJSON(ts))
+               return false;
+
             if (filePath) *filePath = ts;
             if (type) *type = C3DTFileType_TilesetJSON;
         } else {
@@ -813,7 +848,16 @@ namespace {
 
             TAK::Engine::Port::StringBuilder sb;
             TAK::Engine::Port::StringBuilder_combine(sb, dir, TAK::Engine::Port::Platform_pathSep(), "tileset.json");
+            exists = false;
+            IO_existsV(&exists, sb.c_str());
+            if (!exists) {
+                return false; // expecting file to be named tileset.json
+            }
             ts = sb.c_str();
+
+            if (!isCesiumJSON(ts))
+               return false;
+
             if (filePath) *filePath = URI;
         }
 

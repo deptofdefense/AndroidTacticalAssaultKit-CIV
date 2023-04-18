@@ -15,6 +15,7 @@ import java.util.TreeMap;
 
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.database.FilteredRowIterator;
 import com.atakmap.database.RowIterator;
@@ -1096,10 +1097,10 @@ public class RuntimeFeatureDataStore extends AbstractFeatureDataStore {
 
     
     private static Envelope radiusAsRegion(GeoPoint center, double radius) {
-        final GeoPoint north = DistanceCalculations.metersFromAtBearing(center, radius, 0.0d);
-        final GeoPoint east = DistanceCalculations.metersFromAtBearing(center, radius, 90.0d);
-        final GeoPoint south = DistanceCalculations.metersFromAtBearing(center, radius, 180.0d);
-        final GeoPoint west = DistanceCalculations.metersFromAtBearing(center, radius, 270.0d);
+        final GeoPoint north = GeoCalculations.pointAtDistance(center, 0.0, radius);
+        final GeoPoint east = GeoCalculations.pointAtDistance(center, 90.0d, radius);
+        final GeoPoint south = GeoCalculations.pointAtDistance(center, 180.0d, radius);
+        final GeoPoint west = GeoCalculations.pointAtDistance(center, 270.0d, radius);
         
         return new Envelope(MathUtils.min(north.getLongitude(), east.getLongitude(), south.getLongitude(), west.getLongitude()),
                             MathUtils.min(north.getLatitude(), east.getLatitude(), south.getLatitude(), west.getLatitude()),

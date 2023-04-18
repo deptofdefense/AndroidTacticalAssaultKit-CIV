@@ -4,7 +4,6 @@ package com.atakmap.android.user;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -12,6 +11,7 @@ import android.widget.ImageButton;
 import android.widget.Toast;
 
 import com.atakmap.android.ipc.AtakBroadcast;
+import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
@@ -121,6 +121,11 @@ public class SpiButtonTool extends SpecialPointButtonTool implements
 
         _marker.setMetaInteger("cotDefaultStaleSeconds", staleout);
 
+        final String callsign = generateName();
+
+        _marker.setTitle(callsign);
+        _marker.setMetaString("callsign", callsign);
+
         GeoPoint point = _marker.getPoint();
         if (point.getLatitude() == 0 && point.getLongitude() == 0)
             return; // Default values, don't publish anything.
@@ -184,10 +189,17 @@ public class SpiButtonTool extends SpecialPointButtonTool implements
         }
     };
 
+    private String generateName() {
+        final String callsign = _mapView.getSelfMarker().getMetaString("callsign",
+                null);
+        return callsign + "."
+                + ResourceUtil.getString(_mapView.getContext(),
+                R.string.civ_spi_abbrev, R.string.spi_abbrev)
+                + _index;
+    }
+
     @Override
     public boolean onToolBegin(Bundle bundle) {
-        String callsign = _mapView.getSelfMarker().getMetaString("callsign",
-                null);
 
         // if the marker has already, been created - remove the original listeners
         // this keeps the behavior close to what is currently is doing - but 
@@ -199,10 +211,7 @@ public class SpiButtonTool extends SpecialPointButtonTool implements
         createMarker(
                 "icons/spi" + _index + "_icon.png",
                 _mapView.getSelfMarker().getUID() + ".SPI" + _index,
-                callsign + "."
-                        + ResourceUtil.getString(_mapView.getContext(),
-                                R.string.civ_spi_abbrev, R.string.spi_abbrev)
-                        + _index,
+                generateName(),
                 "menus/spi_menu.xml",
                 "com.atakmap.android.user.SPI_OFF");
 

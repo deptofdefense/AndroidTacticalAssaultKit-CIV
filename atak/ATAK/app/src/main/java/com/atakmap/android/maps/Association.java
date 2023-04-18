@@ -16,6 +16,7 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
+import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.spatial.file.export.KMZFolder;
 import com.atakmap.spatial.kml.KMLUtil;
 import com.ekito.simpleKML.model.Coordinates;
@@ -498,7 +499,7 @@ public class Association extends Shape implements AnchoredMapItem {
         // this does not call super.setStrokeWeight intentionally
 
         if (Double.compare(_strokeWeight, strokeWeight) != 0) {
-            _strokeWeight = strokeWeight * MapView.DENSITY;
+            _strokeWeight = strokeWeight * GLRenderGlobals.getRelativeScaling();
             onStrokeWeightChanged();
         }
     }
@@ -510,7 +511,7 @@ public class Association extends Shape implements AnchoredMapItem {
      */
     @Override
     public double getStrokeWeight() {
-        return _strokeWeight / MapView.DENSITY;
+        return _strokeWeight / GLRenderGlobals.getRelativeScaling();
     }
 
     public String getText() {

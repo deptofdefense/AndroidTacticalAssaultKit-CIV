@@ -83,6 +83,8 @@ struct Envelope
     // operator are acceptable.
     //
 
+    bool operator==(const Envelope& rhs) const NOTHROWS;
+
     //
     // Public representation.
     //

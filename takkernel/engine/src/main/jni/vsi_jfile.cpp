@@ -1,3 +1,5 @@
+#include "com_atakmap_map_gdal_VSIJFileFilesystemHandler.h"
+
 #include "common.h"
 
 #include "cpl_port.h"
@@ -30,7 +32,6 @@
 #include "interop/JNIStringUTF.h"
 #include "interop/JNIByteArray.h"
 #include "interop/java/JNILocalRef.h"
-#include "jvsijfilefilesystemhandler.h"
 
 using namespace TAKEngineJNI::Interop;
 using namespace TAKEngineJNI::Interop::Java;

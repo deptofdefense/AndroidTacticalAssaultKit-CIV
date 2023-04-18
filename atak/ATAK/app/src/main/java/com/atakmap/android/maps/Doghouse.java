@@ -91,6 +91,7 @@ public final class Doghouse extends Polyline implements
             return EMPTY;
         }
 
+        @NonNull
         @Override
         public String toString() {
             return _repr;

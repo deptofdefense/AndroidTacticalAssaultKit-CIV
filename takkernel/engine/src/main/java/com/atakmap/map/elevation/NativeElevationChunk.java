@@ -8,6 +8,7 @@ import com.atakmap.map.Interop;
 import com.atakmap.map.layer.feature.geometry.Geometry;
 import com.atakmap.map.layer.feature.geometry.Polygon;
 import com.atakmap.map.layer.model.Mesh;
+import com.atakmap.map.layer.model.MeshBuilder;
 import com.atakmap.map.layer.model.ModelBuilder;
 import com.atakmap.math.Matrix;
 import com.atakmap.util.ReadWriteLock;
@@ -138,7 +139,7 @@ final class NativeElevationChunk implements ElevationChunk {
                 data.srid = Data_getSrid(cdata.raw);
                 Pointer cdatavalue = Data_getValue(cdata.raw);
                 if(cdatavalue != null)
-                    data.value = ModelBuilder.build(Mesh_interop.create(cdatavalue));
+                    data.value = Mesh_interop.create(cdatavalue);
                 return data;
             } finally {
                 if(cdata != null)

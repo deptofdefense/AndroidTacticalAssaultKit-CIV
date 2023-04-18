@@ -8,6 +8,8 @@ package com.atakmap.android.metricreport.anrwatchdog;
 
 import android.os.Looper;
 
+import androidx.annotation.NonNull;
+
 import java.io.Serializable;
 import java.util.Comparator;
 import java.util.Map;
@@ -35,6 +37,7 @@ public class ANRError extends Error {
                 super(_name, other);
             }
 
+            @NonNull
             @Override
             public Throwable fillInStackTrace() {
                 setStackTrace(_stackTrace);
@@ -54,6 +57,7 @@ public class ANRError extends Error {
         super("Application Not Responding", st);
     }
 
+    @NonNull
     @Override
     public Throwable fillInStackTrace() {
         setStackTrace(new StackTraceElement[] {});

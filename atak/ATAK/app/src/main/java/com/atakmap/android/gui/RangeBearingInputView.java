@@ -13,6 +13,8 @@ import android.widget.Toast;
 import android.graphics.Color;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.util.SimpleItemSelectedListener;
 
 import com.atakmap.app.R;
@@ -46,6 +48,7 @@ public class RangeBearingInputView extends LinearLayout {
             return _name;
         }
 
+        @NonNull
         @Override
         public String toString() {
             return _name;

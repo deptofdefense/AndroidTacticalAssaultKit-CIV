@@ -4,6 +4,8 @@ package com.atakmap.android.importfiles.task;
 import android.app.Activity;
 import android.util.Pair;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.importfiles.http.NetworkLinkDownloader;
 import com.atakmap.android.importfiles.resource.RemoteResource;
 import com.atakmap.coremap.concurrent.NamedThreadFactory;
@@ -220,6 +222,7 @@ public class NetworkLinkRefresh {
             }
         }
 
+        @NonNull
         @Override
         public String toString() {
             return String.format("%s %s", _resource.getName(),

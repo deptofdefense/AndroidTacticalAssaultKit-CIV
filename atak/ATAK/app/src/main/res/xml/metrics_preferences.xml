@@ -5,7 +5,7 @@
         android:title="@string/metricreport_pref"
         android:key="key_for_category"/>
 
-   <Preference
+   <com.atakmap.android.gui.PanPreference
         android:key="loggingDisclaimer"
         android:selectable="false"
         android:persistent="false"
@@ -24,6 +24,7 @@
         android:defaultValue="false"
         android:key="realtime_metrics"
         android:summary="@string/metric_live"
+
         android:title="@string/metric_live_title"
         android:dependency="collect_metrics"
         android:icon="@drawable/ic_menu_network_connections"/>

@@ -17,13 +17,15 @@ import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.Shape;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
+import gov.tak.api.util.Disposable;
+
 /**
  * A Tool is a modal operation which changes the way that the user interacts with the map. Only one
  * tool can be active at a time; if the user starts a new tool, the old tool ends.
  * 
  * 
  */
-public abstract class Tool implements OnKeyListener {
+public abstract class Tool implements OnKeyListener, Disposable {
 
     private boolean _active = false;
     protected final MapView _mapView;

@@ -47,7 +47,7 @@ public class GLBatchPoint extends GLBatchGeometry {
             (int) Math.ceil(GLRenderGlobals.getRelativeScaling() * 32));
     static float iconAtlasDensity = GLRenderGlobals.getRelativeScaling();
 
-    final static double defaultMinLabelRenderResolution = 13d;
+    static double defaultMinLabelRenderResolution = 13d;
 
     private final static String defaultIconUri = "asset:/icons/reference_point.png";
 
@@ -117,7 +117,8 @@ public class GLBatchPoint extends GLBatchGeometry {
     private float labelRotation = 0;
     private boolean labelRotationAbsolute = false;
 
-    private double labelMinRenderResolution = defaultMinLabelRenderResolution;
+    double labelMinRenderResolution = defaultMinLabelRenderResolution;
+    boolean labelMinRenderResolutionIsDefault = true;
     private float labelScale = 1.0f;
 
     float iconScale = 1.0f;
@@ -864,6 +865,11 @@ public class GLBatchPoint extends GLBatchGeometry {
         return null;
     }
 
+    void validateLabelMinResolution() {
+        if(labelMinRenderResolutionIsDefault && label != null) {
+            label.setMinResolution(defaultMinLabelRenderResolution);
+        }
+    }
     /**************************************************************************/
 
     synchronized static void getOrFetchIcon(RenderContext surface, GLBatchPoint point) {

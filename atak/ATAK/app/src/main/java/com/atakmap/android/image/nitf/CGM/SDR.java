@@ -1,6 +1,8 @@
 
 package com.atakmap.android.image.nitf.CGM;
 
+import androidx.annotation.NonNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -58,6 +60,7 @@ public class SDR {
             this.data = data;
         }
 
+        @NonNull
         @Override
         public String toString() {
             StringBuilder builder = new StringBuilder();
@@ -78,6 +81,7 @@ public class SDR {
         this.entries.add(new Entry(type, count, data));
     }
 
+    @NonNull
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();

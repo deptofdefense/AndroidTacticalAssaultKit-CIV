@@ -32,7 +32,6 @@ import com.atakmap.coremap.conversions.ConversionFactors;
 import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.locale.LocaleUtil;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
@@ -196,14 +195,14 @@ public class AngleOverlayShape extends AutoSizeAngleOverlayShape
     private void calcInnerArrowlocations() {
         synchronized (innerArrowPoints) {
             if (center != null) {
-                innerArrowPoints[0] = DistanceCalculations.metersFromAtBearing(
-                        center.get(), radius, 0);
-                innerArrowPoints[1] = DistanceCalculations.metersFromAtBearing(
-                        center.get(), radius / 3, 90);
-                innerArrowPoints[2] = DistanceCalculations.metersFromAtBearing(
-                        center.get(), radius / 3, 180);
-                innerArrowPoints[3] = DistanceCalculations.metersFromAtBearing(
-                        center.get(), radius / 3, 270);
+                innerArrowPoints[0] = GeoCalculations.pointAtDistance(
+                        center.get(), 0, radius);
+                innerArrowPoints[1] = GeoCalculations.pointAtDistance(
+                        center.get(), 90, radius / 3);
+                innerArrowPoints[2] = GeoCalculations.pointAtDistance(
+                        center.get(), 180, radius / 3);
+                innerArrowPoints[3] = GeoCalculations.pointAtDistance(
+                        center.get(), 270, radius / 3);
             }
             arrowCalcRad = radius;
             if (center == null)
@@ -238,14 +237,14 @@ public class AngleOverlayShape extends AutoSizeAngleOverlayShape
             return new GeoPoint[0];
         return new GeoPoint[] {
                 center.get(),
-                DistanceCalculations.metersFromAtBearing(center.get(), radius,
-                        0),
-                DistanceCalculations.metersFromAtBearing(center.get(), radius,
-                        90),
-                DistanceCalculations.metersFromAtBearing(center.get(), radius,
-                        180),
-                DistanceCalculations.metersFromAtBearing(center.get(), radius,
-                        270)
+                GeoCalculations.pointAtDistance(center.get(), 0,
+                        radius),
+                GeoCalculations.pointAtDistance(center.get(), 90,
+                        radius),
+                GeoCalculations.pointAtDistance(center.get(), 180,
+                        radius),
+                GeoCalculations.pointAtDistance(center.get(), 270,
+                        radius)
         };
     }
 

@@ -90,14 +90,22 @@ public class GridLinesMapComponent extends AbstractMapComponent implements
         if (key == null)
             return;
 
-        if (key.equals("pref_grid_color") || key.equals("pref_grid_type")) {
+        if (key.equals("pref_grid_color") || key.equals("pref_grid_color_value")
+                || key.equals("pref_grid_type")) {
             _setPrefs(sharedPreferences);
         }
     }
 
     private void _setPrefs(SharedPreferences prefs) {
-        _gridColor = Color.parseColor(prefs.getString("pref_grid_color",
-                "#ffffff"));
+        final String color;
+
+        if (prefs.contains("pref_grid_color_value")) {
+            color = prefs.getString("pref_grid_color_value", "#ffffff");
+        } else {
+            color = prefs.getString("pref_grid_color", "#ffffff");
+        }
+
+        _gridColor = Color.parseColor(color);
         _showByDefault = prefs.getBoolean("prefs_grid_default_show", false);
         _type = prefs.getString("pref_grid_type", "MGRS");
         if (_overlay != null) {

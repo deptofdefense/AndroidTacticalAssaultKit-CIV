@@ -18,6 +18,7 @@
 #include "renderer/model/GLSceneFactory.h"
 #include "renderer/model/GLScene.h"
 #include "renderer/model/SceneObjectControl.h"
+#include "renderer/model/SceneObjectControl2.h"
 #include "thread/Lock.h"
 #include "renderer/model/GLC3DTRenderer.h"
 
@@ -67,13 +68,15 @@ public :
 public :
     TAKErr onBoundsChanged(const Envelope2 &aabb, const double minGsd, const double maxGsd) NOTHROWS override;
     TAKErr onClampToGroundOffsetComputed(const double offset) NOTHROWS override;
-public :
+    TAKErr onXrayColorChanged(const unsigned int color) NOTHROWS override;
+ public:
     GLSceneLayer &owner;
     GLMapRenderable2Ptr value;
     SceneInfo info;
     //ColorControl color;
     HitTestControl *hittest;
     SceneObjectControl *ctrl;
+    SceneObjectControl *ctrl2;
     TAK::Engine::Feature::Envelope2 featureBounds;
     int64_t fid;
     int64_t version;
@@ -164,6 +167,8 @@ TAKErr GLSceneLayer::getSceneControl(void **ctrl, const char *type, const int64_
     
     if (strcmp(type, TAK::Engine::Renderer::Model::SceneObjectControl_getType()) == 0) {
         *ctrl = entry->second->ctrl;
+    } else if (strcmp(type, TAK::Engine::Renderer::Model::SceneObjectControl2_getType()) == 0) {
+        *ctrl = entry->second->ctrl2;
     } else if (strcmp(type, TAK::Engine::Renderer::Model::HitTestControl_getType()) == 0) {
         *ctrl = entry->second->hittest;
     }
@@ -454,7 +459,8 @@ GLSceneLayer::SceneRenderer::SceneRenderer(GLSceneLayer &owner_, RenderContext &
     valid(false),
     value(nullptr, nullptr),
     hittest(nullptr),
-    ctrl(nullptr)
+    ctrl(nullptr),
+    ctrl2(nullptr)
 {
     TAKErr code(TE_Ok);
 
@@ -484,17 +490,27 @@ GLSceneLayer::SceneRenderer::SceneRenderer(GLSceneLayer &owner_, RenderContext &
         auto *scene = dynamic_cast<GLScene *>(value.get());
         if (scene) {
             void *octrl;
-            if(scene->getControl(&octrl, "TAK.Engine.Renderer.Model.SceneObjectControl") == TE_Ok)
+            if(scene->getControl(&octrl, SceneObjectControl_getType()) == TE_Ok)
                 ctrl = static_cast<SceneObjectControl *>(octrl);
+            void *octrl2;
+            if(scene->getControl(&octrl2, SceneObjectControl2_getType()) == TE_Ok)
+                ctrl2 = static_cast<SceneObjectControl2 *>(octrl2);
         }
 
         //XXX-- this should be some common interface instead of specific impls
         auto* c3dt = dynamic_cast<GLC3DTRenderer*>(value.get());
         if (c3dt) {
             void* octrl;
-            if (c3dt->getControl(&octrl, "TAK.Engine.Renderer.Model.SceneObjectControl") == TE_Ok)
-                ctrl = static_cast<SceneObjectControl*>(octrl);
+            if(c3dt->getControl(&octrl, SceneObjectControl_getType()) == TE_Ok)
+                ctrl = static_cast<SceneObjectControl *>(octrl);
+            void *octrl2;
+            if(c3dt->getControl(&octrl2, SceneObjectControl2_getType()) == TE_Ok)
+                ctrl2 = static_cast<SceneObjectControl2 *>(octrl2);
         }
+
+        // if renderer advertised v2 control, but not v1, assign out v2 for both
+        if (ctrl2 && !ctrl)
+            ctrl = ctrl2;
 
         if (ctrl)
             ctrl->addUpdateListener(this);
@@ -642,6 +658,10 @@ TAKErr GLSceneLayer::SceneRenderer::onClampToGroundOffsetComputed(const double o
     TE_CHECKRETURN_CODE(code);
 
     return code;
+}
+
+TAKErr GLSceneLayer::SceneRenderer::onXrayColorChanged(const unsigned int color) NOTHROWS {
+    return TAKErr::TE_Ok;
 }
 
 GLLayerSpi2 &TAK::Engine::Renderer::Model::GLSceneLayer_spi() NOTHROWS

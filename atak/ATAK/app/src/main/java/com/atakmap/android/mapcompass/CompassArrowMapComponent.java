@@ -49,6 +49,7 @@ import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.AtakMapView;
 
+import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.map.projection.ECEFProjection;
 import com.atakmap.map.projection.EquirectangularMapProjection;
 import com.atakmap.map.projection.Projection;
@@ -564,7 +565,7 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
             mw.openMenuOnItem(radialFocus);
             mapView.getMapController().removeOnFocusPointChangedListener(mw);
             mw.onFocusPointChanged(p.x, p.y);
-            float padding = 32f + (112f * MapView.DENSITY);
+            float padding = 32f + (112f * GLRenderGlobals.getRelativeScaling());
             compassLayout.setPadding(16f, 16f, padding, padding);
             HintDialogHelper.showHint(context,
                     context.getString(R.string.compass_tip),

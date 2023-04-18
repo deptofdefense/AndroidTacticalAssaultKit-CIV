@@ -36,7 +36,7 @@ public class LinearLayoutWidget extends LayoutWidget
 
     protected int _orientation = VERTICAL;
     protected int _gravity = Gravity.START | Gravity.TOP;
-    protected int _paramWidth = WRAP_CONTENT, _paramHeight = WRAP_CONTENT;
+    protected int _paramWidth, _paramHeight;
     protected float _childrenWidth = 0, _childrenHeight = 0;
 
     public LinearLayoutWidget() {

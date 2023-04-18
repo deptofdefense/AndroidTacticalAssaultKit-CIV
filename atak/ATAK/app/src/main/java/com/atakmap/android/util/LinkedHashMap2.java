@@ -117,6 +117,7 @@ public final class LinkedHashMap2<K, V> implements Map<K, V> {
         return false;
     }
 
+    @NonNull
     @Override
     public Set<Entry<K, V>> entrySet() {
         return new EntrySet(true);
@@ -146,6 +147,7 @@ public final class LinkedHashMap2<K, V> implements Map<K, V> {
         return this.nodes.isEmpty();
     }
 
+    @NonNull
     @Override
     public Set<K> keySet() {
         return new KeySet(true);
@@ -195,6 +197,7 @@ public final class LinkedHashMap2<K, V> implements Map<K, V> {
         return this.nodes.size();
     }
 
+    @NonNull
     @Override
     public Collection<V> values() {
         return new Values(true);
@@ -347,6 +350,7 @@ public final class LinkedHashMap2<K, V> implements Map<K, V> {
             return true;
         }
 
+        @NonNull
         @Override
         public Iterator<Map.Entry<K, V>> iterator() {
             return new EntriesIterator(this.ascending);
@@ -415,6 +419,7 @@ public final class LinkedHashMap2<K, V> implements Map<K, V> {
             return LinkedHashMap2.this.containsKey(o);
         }
 
+        @NonNull
         @Override
         public Iterator<K> iterator() {
             return new KeysIterator(this.ascending);

@@ -8,6 +8,8 @@ import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.widget.BaseAdapter;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.config.FiltersConfig;
 import com.atakmap.android.hierarchy.HierarchyListAdapter;
 import com.atakmap.android.hierarchy.HierarchyListFilter;
@@ -1025,6 +1027,7 @@ public class FilterMapOverlay extends AbstractMapOverlay2
             return prefValue.equals(item.getMetaString(metaStringName, null));
         }
 
+        @NonNull
         @Override
         public String toString() {
             return metaStringName + "," + prefStringName + ", "
@@ -1118,7 +1121,7 @@ public class FilterMapOverlay extends AbstractMapOverlay2
                 count++;
         }
 
-        int childrenWithLeaf = 0, tempCount = 0;
+        int childrenWithLeaf = 0, tempCount;
         List<FilterMapOverlay> overlays = getOverlays();
         for (FilterMapOverlay child : overlays) {
             tempCount = child.getDescendantCount(filters,
@@ -1135,6 +1138,7 @@ public class FilterMapOverlay extends AbstractMapOverlay2
         return count;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return this.getIdentifier();

@@ -16,6 +16,8 @@ namespace
 {
     template<class T>
     TAKErr addAll(Collection<T> &sink, Collection<T> &src);
+    template<class T>
+    bool compareAll(Collection<T> &lhs, Collection<T> &rhs);
 }
 
 FeatureDataStore2::~FeatureDataStore2() NOTHROWS
@@ -126,6 +128,42 @@ FeatureDataStore2::FeatureQueryParameters &FeatureDataStore2::FeatureQueryParame
     return *this;
 }
 
+bool FeatureDataStore2::FeatureQueryParameters::operator==(const FeatureDataStore2::FeatureQueryParameters &rhs) const NOTHROWS
+{
+    constexpr double epsilon = std::numeric_limits<double>::epsilon();
+    bool result = true;
+
+    result = result &&
+        (spatialFilter == nullptr && rhs.spatialFilter == nullptr) || (
+            spatialFilter != nullptr && rhs.spatialFilter != nullptr && 
+            spatialFilter->getType() == rhs.spatialFilter->getType() &&
+            spatialFilter->getDimension() == rhs.spatialFilter->getDimension() &&
+            spatialFilter->getEnvelope() == rhs.spatialFilter->getEnvelope());
+    result = result && (fabs(minResolution - rhs.minResolution) < epsilon);
+    result = result && (fabs(maxResolution - rhs.maxResolution) < epsilon);
+    result = result && visibleOnly == rhs.visibleOnly;
+    result = result && ignoredFields == rhs.ignoredFields;
+    result = result && limit == rhs.limit;
+    result = result && offset == rhs.offset;
+
+    result = result && compareAll(*providers, *rhs.providers);
+    result = result && compareAll(*types, *rhs.types);
+    result = result && compareAll(*featureSets, *rhs.featureSets);
+    result = result && compareAll(*featureSetIds, *rhs.featureSetIds);
+    result = result && compareAll(*featureNames, *rhs.featureNames);
+    result = result && compareAll(*featureIds, *rhs.featureIds);
+    result = result && compareAll(*geometryTypes, *rhs.geometryTypes);
+    result = result && compareAll(*ops, *rhs.ops);
+    result = result && compareAll(*order, *rhs.order);
+
+    return result;
+}
+
+bool FeatureDataStore2::FeatureQueryParameters::operator!=(const FeatureDataStore2::FeatureQueryParameters &rhs) const NOTHROWS
+{
+    return !operator==(rhs);
+}
+
 FeatureDataStore2::FeatureSetQueryParameters::FeatureSetQueryParameters() NOTHROWS :
     providers(new STLSetAdapter<String, StringLess>()), // Port::Collection<Port::String> * const
     types(new STLSetAdapter<String, StringLess>()), // Port::Collection<Port::String> * const
@@ -135,6 +173,21 @@ FeatureDataStore2::FeatureSetQueryParameters::FeatureSetQueryParameters() NOTHRO
     limit(0),
     offset(0)
 {}
+
+FeatureDataStore2::FeatureSetQueryParameters::FeatureSetQueryParameters(const FeatureSetQueryParameters &other) NOTHROWS :
+    providers(new STLSetAdapter<String, StringLess>()), // Port::Collection<Port::String> * const
+    types(new STLSetAdapter<String, StringLess>()), // Port::Collection<Port::String> * const
+    names(new STLSetAdapter<String, StringLess>()), // Port::Collection<Port::String> * const
+    ids(new STLSetAdapter<int64_t>()), // Port::Collection<int64_t> * const 
+    visibleOnly(other.visibleOnly),
+    limit(other.limit),
+    offset(other.offset)
+{
+    addAll(*providers, *other.providers);
+    addAll(*types, *other.types);
+    addAll(*names, *other.names);
+    addAll(*ids, *other.ids);
+}
 
 FeatureDataStore2::FeatureSetQueryParameters::~FeatureSetQueryParameters() NOTHROWS
 {
@@ -149,6 +202,24 @@ FeatureDataStore2::FeatureSetQueryParameters::~FeatureSetQueryParameters() NOTHR
     DELETE_LONG_SET(ids);
 #undef DELETE_LONG_SET
 #undef DELETE_STRING_SET
+}
+
+bool FeatureDataStore2::FeatureSetQueryParameters::operator==(const FeatureDataStore2::FeatureSetQueryParameters &rhs) const NOTHROWS
+{
+    bool result = true;
+    result = result && visibleOnly == rhs.visibleOnly;
+    result = result && limit == rhs.limit;
+    result = result && offset == rhs.offset;
+    result = result && compareAll(*providers, *rhs.providers);
+    result = result && compareAll(*types, *rhs.types);
+    result = result && compareAll(*names, *rhs.types);
+    result = result && compareAll(*ids, *rhs.ids);
+    return result;
+}
+
+bool FeatureDataStore2::FeatureSetQueryParameters::operator!=(const FeatureDataStore2::FeatureSetQueryParameters &rhs) const NOTHROWS
+{
+    return !operator==(rhs);
 }
 
 FeatureDataStore2::OnDataStoreContentChangedListener::~OnDataStoreContentChangedListener() NOTHROWS
@@ -180,5 +251,44 @@ namespace
                 code = TE_Ok;
         }
         return code;
+    }
+
+    template<class T>
+    bool compareAll(Collection<T> &lhs, Collection<T> &rhs)
+    {
+        if (lhs.size() != rhs.size())
+            return false;
+
+        if (lhs.empty())
+            return true;
+
+        TAKErr code(TE_Ok);
+        typename Collection<T>::IteratorPtr lhs_iter(nullptr, nullptr);
+        typename Collection<T>::IteratorPtr rhs_iter(nullptr, nullptr);
+        T lhs_val;
+        T rhs_val;
+
+        code = lhs.iterator(lhs_iter);
+        if (code != TE_Ok)
+            return false;
+        code = rhs.iterator(rhs_iter);
+        if (code != TE_Ok)
+            return false;
+        do {
+            code = lhs_iter->get(lhs_val);
+            TE_CHECKBREAK_CODE(code);
+            code = rhs_iter->get(rhs_val);
+            TE_CHECKBREAK_CODE(code);
+            if (!(lhs_val == rhs_val))
+                return false;
+            code = lhs_iter->next();
+            TE_CHECKBREAK_CODE(code);
+            code = rhs_iter->next();
+            TE_CHECKBREAK_CODE(code);
+        } while (true);
+        if (code == TE_Done)
+            code = TE_Ok;
+
+        return code == TE_Ok;
     }
 }

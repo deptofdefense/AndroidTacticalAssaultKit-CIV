@@ -1,6 +1,8 @@
 
 package com.atakmap.coremap.conversions;
 
+import androidx.annotation.NonNull;
+
 /**
  * Commonly used terms for the measurement of Area.
  */
@@ -58,6 +60,7 @@ public enum Area {
         return _abbrev;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return _plural;

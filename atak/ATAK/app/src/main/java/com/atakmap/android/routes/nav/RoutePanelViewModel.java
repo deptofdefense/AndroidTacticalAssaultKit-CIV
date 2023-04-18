@@ -79,9 +79,9 @@ public class RoutePanelViewModel {
 
         units %= 3;
 
-        double currentSpeedInMetersPerSecond = 0;
-        double currentDistanceToNextWaypoint = 0;
-        double currentDistanceToVdo = 0;
+        double currentSpeedInMetersPerSecond;
+        double currentDistanceToNextWaypoint;
+        double currentDistanceToVdo;
 
         synchronized (syncRoot) {
             if (units == this.units)
@@ -121,7 +121,7 @@ public class RoutePanelViewModel {
     }
 
     public void setSpeedInMetersPerSecond(double speedInMetersPerSecond) {
-        int units = 0;
+        int units;
 
         synchronized (syncRoot) {
             this.speedInMetersPerSecond = speedInMetersPerSecond;
@@ -143,7 +143,7 @@ public class RoutePanelViewModel {
     }
 
     public void setDistanceToNextWaypoint(double distanceToNextWaypoint) {
-        int units = 0;
+        int units;
 
         synchronized (syncRoot) {
             this.distanceToNextWaypoint = distanceToNextWaypoint;
@@ -167,7 +167,7 @@ public class RoutePanelViewModel {
     }
 
     public void setDistanceToVDO(double distanceToVDO) {
-        int units = 0;
+        int units;
 
         synchronized (syncRoot) {
             this.distanceToVdo = distanceToVDO;
@@ -217,8 +217,8 @@ public class RoutePanelViewModel {
 
     public void setAverageSpeedInMetersPerSecond(
             double averageSpeedInMetersPerSecond) {
-        double distanceToNextWP = 0;
-        double distanceToVdo = 0;
+        double distanceToNextWP;
+        double distanceToVdo;
 
         synchronized (syncRoot) {
             this.averageSpeedInMetersPerSecond = averageSpeedInMetersPerSecond;
@@ -243,7 +243,7 @@ public class RoutePanelViewModel {
             double speedInMetersPerSecond, int units) {
 
         String speedUnits = getSpeedUnitsText(units);
-        double conversionFactor = 0;
+        double conversionFactor;
 
         switch (units) {
             case 0:

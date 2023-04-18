@@ -171,7 +171,7 @@ public class MissionPackagePreferenceListener implements
                     currentValueSecs = MissionPackageReceiver.DEFAULT_CONNECTION_TIMEOUT_SECS;
                 }
 
-                int userValueSecs = currentValueSecs;
+                int userValueSecs;
                 try {
                     userValueSecs = getInt(sharedPreferences, key,
                             currentValueSecs);
@@ -213,7 +213,7 @@ public class MissionPackagePreferenceListener implements
                     currentValueSecs = MissionPackageReceiver.DEFAULT_TRANSFER_TIMEOUT_SECS;
                 }
 
-                int userValueSecs = currentValueSecs;
+                int userValueSecs;
                 try {
                     userValueSecs = getInt(sharedPreferences, key,
                             currentValueSecs);

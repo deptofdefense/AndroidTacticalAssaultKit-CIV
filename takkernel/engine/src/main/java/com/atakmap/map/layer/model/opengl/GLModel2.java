@@ -7,7 +7,10 @@ import com.atakmap.android.maps.tilesets.graphics.GLPendingTexture;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.feature.geometry.Envelope;
+import com.atakmap.map.layer.model.Mesh;
+import com.atakmap.map.layer.model.MeshBuilder;
 import com.atakmap.map.layer.model.Model;
+import com.atakmap.map.layer.model.ModelBuilder;
 import com.atakmap.map.layer.model.ModelInfo;
 import com.atakmap.map.layer.model.ModelFactory;
 import com.atakmap.map.layer.model.Models;
@@ -112,8 +115,10 @@ public class GLModel2 implements GLMapRenderable2, GLResolvable {
             ptex = null;
         }
 
+        final Mesh mesh = model.getMesh(0);
+
         //if(ptex != null && !ptex.isResolved()) {
-        if(Models.getTextureUri(model) == null || (ptex != null && !ptex.isResolved())) {
+        if(Models.getTextureUri(mesh) == null || (ptex != null && !ptex.isResolved())) {
             // if the model is textured but the texture is not yet resolved,
             // draw the wireframe
             GLES20FixedPipeline.glEnableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
@@ -129,8 +134,8 @@ public class GLModel2 implements GLMapRenderable2, GLResolvable {
 
                 // upload the buffer data as static
                 GLES20FixedPipeline.glBufferData(GLES20FixedPipeline.GL_ARRAY_BUFFER,
-                        model.getNumVertices() * model.getVertexStride(Model.VERTEX_ATTR_POSITION),
-                        model.getVertices(Model.VERTEX_ATTR_POSITION),
+                        model.getNumVertices() * model.getVertexStride(Mesh.VERTEX_ATTR_POSITION),
+                        model.getVertices(Mesh.VERTEX_ATTR_POSITION),
                         GLES20FixedPipeline.GL_STATIC_DRAW);
 
                 // free the vertex array
@@ -156,9 +161,9 @@ public class GLModel2 implements GLMapRenderable2, GLResolvable {
 
             //GLES20FixedPipeline.glBindBuffer(GLES20FixedPipeline.GL_ARRAY_BUFFER, 0);
         } else {
-            final boolean disableCullFace = (model.getFaceWindingOrder() != Model.WindingOrder.Undefined) && !GLES20FixedPipeline.glIsEnabled(GLES20FixedPipeline.GL_CULL_FACE);
+            final boolean disableCullFace = (mesh.getFaceWindingOrder() != Mesh.WindingOrder.Undefined) && !GLES20FixedPipeline.glIsEnabled(GLES20FixedPipeline.GL_CULL_FACE);
             int[] cullFaceRestore = null;
-            if(model.getFaceWindingOrder() != Model.WindingOrder.Undefined) {
+            if(mesh.getFaceWindingOrder() != Mesh.WindingOrder.Undefined) {
                 cullFaceRestore = new int[2];
                 GLES20FixedPipeline.glGetIntegerv(GLES20FixedPipeline.GL_CULL_FACE, cullFaceRestore, 0);
                 GLES20FixedPipeline.glGetIntegerv(GLES20FixedPipeline.GL_FRONT_FACE, cullFaceRestore, 1);
@@ -168,8 +173,8 @@ public class GLModel2 implements GLMapRenderable2, GLResolvable {
                 GLES20FixedPipeline.glFrontFace(GLES20FixedPipeline.GL_CCW);
             }
 
-            final VertexDataLayout vertexDataLayout = model.getVertexDataLayout();
-            final boolean isTextured = (MathUtils.hasBits(vertexDataLayout.attributes, Model.VERTEX_ATTR_TEXCOORD_0) && texture != null);
+            final VertexDataLayout vertexDataLayout = mesh.getVertexDataLayout();
+            final boolean isTextured = (MathUtils.hasBits(vertexDataLayout.attributes, Mesh.VERTEX_ATTR_TEXCOORD_0) && texture != null);
             GLES20FixedPipeline.glEnableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
             if (isTextured)
                 GLES20FixedPipeline.glEnableClientState(GLES20FixedPipeline.GL_TEXTURE_COORD_ARRAY);
@@ -184,8 +189,8 @@ public class GLModel2 implements GLMapRenderable2, GLResolvable {
 
                 // upload the buffer data as static
                 GLES20FixedPipeline.glBufferData(GLES20FixedPipeline.GL_ARRAY_BUFFER,
-                        model.getNumVertices() * vertexDataLayout.position.stride,
-                        model.getVertices(Model.VERTEX_ATTR_POSITION),
+                        mesh.getNumVertices() * vertexDataLayout.position.stride,
+                        mesh.getVertices(Mesh.VERTEX_ATTR_POSITION),
                         GLES20FixedPipeline.GL_STATIC_DRAW);
 
                 // free the vertex array
@@ -207,7 +212,7 @@ public class GLModel2 implements GLMapRenderable2, GLResolvable {
             GLES20FixedPipeline.glColor4f(1f, 1f, 1f, 1f);
 
             int mode;
-            switch(model.getDrawMode()) {
+            switch(mesh.getDrawMode()) {
                 case Triangles:
                     mode = GLES20FixedPipeline.GL_TRIANGLES;
                     break;
@@ -219,10 +224,10 @@ public class GLModel2 implements GLMapRenderable2, GLResolvable {
                     return;
             }
 
-            if (model.isIndexed()) {
-                GLES20FixedPipeline.glDrawElements(mode, Models.getNumIndices(model), GLES20FixedPipeline.GL_UNSIGNED_SHORT, model.getIndices());
+            if (mesh.isIndexed()) {
+                GLES20FixedPipeline.glDrawElements(mode, Models.getNumIndices(mesh), GLES20FixedPipeline.GL_UNSIGNED_SHORT, mesh.getIndices());
             } else {
-                GLES20FixedPipeline.glDrawArrays(mode, 0, model.getNumVertices());
+                GLES20FixedPipeline.glDrawArrays(mode, 0, mesh.getNumVertices());
             }
 
             GLES20FixedPipeline.glDisable(GLES20FixedPipeline.GL_BLEND);
@@ -244,7 +249,7 @@ public class GLModel2 implements GLMapRenderable2, GLResolvable {
         GLES20FixedPipeline.glPopMatrix();
 
         if(false) {
-            Envelope aabb = model.getAABB();
+            Envelope aabb = mesh.getAABB();
 
             view.scratch.pointD.x = aabb.minX;
             view.scratch.pointD.y = aabb.minY;
@@ -489,8 +494,9 @@ public class GLModel2 implements GLMapRenderable2, GLResolvable {
             if(!checkProceed())
                 return;
 
-            Model m = ModelFactory.create(sourceInfo);
-            if (m != null) {
+            Model model = ModelFactory.create(sourceInfo);
+            if (model != null && model.getNumMeshes() > 0) {
+                Mesh m = model.getMesh(0);
                 final int modelSrid = drawSrid;
                 ModelInfo mInfo = new ModelInfo(sourceInfo);
                 mInfo.altitudeMode = ModelInfo.AltitudeMode.Relative;
@@ -499,24 +505,24 @@ public class GLModel2 implements GLMapRenderable2, GLResolvable {
                         return;
                     ModelInfo dst = new ModelInfo();
                     dst.srid = modelSrid;
-                    Model xformed = Models.transform(mInfo, m, dst);
-                    m.dispose();
-                    m = xformed;
+                    m = Models.transform(mInfo, m, dst, m.getVertexDataLayout(), null);
+                    model.dispose();
+                    model = ModelBuilder.build(m);
                     mInfo = dst;
                 }
                 if(!checkProceed()) {
-                    m.dispose();
+                    model.dispose();
                     return;
                 }
                 PointD anchor = Models.findAnchorPoint(m);
                 if(!checkProceed()) {
-                    m.dispose();
+                    model.dispose();
                     return;
                 }
-                FloatBuffer wf = GLWireFrame.deriveLines(GLES20FixedPipeline.GL_TRIANGLES, 3, m.getVertexDataLayout().position.stride, (ByteBuffer)m.getVertices(Model.VERTEX_ATTR_POSITION), m.getNumVertices());
+                FloatBuffer wf = GLWireFrame.deriveLines(GLES20FixedPipeline.GL_TRIANGLES, 3, m.getVertexDataLayout().position.stride, (ByteBuffer)m.getVertices(Mesh.VERTEX_ATTR_POSITION), m.getNumVertices());
                 synchronized (GLModel2.this) {
                     if (checkProceed()) {
-                        model = m;
+                        GLModel2.this.model = model;
                         wireframe = wf;
                         drawInfo = mInfo;
                         modelAnchorPoint = anchor;
@@ -532,7 +538,7 @@ public class GLModel2 implements GLMapRenderable2, GLResolvable {
 
                         GLModel2.this.state = State.RESOLVED;
                     } else {
-                        m.dispose();
+                        model.dispose();
                     }
                 }
             } else {

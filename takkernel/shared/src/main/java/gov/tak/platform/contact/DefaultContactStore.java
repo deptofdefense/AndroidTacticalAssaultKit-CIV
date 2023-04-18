@@ -4,8 +4,7 @@ import com.atakmap.coremap.log.Log;
 import gov.tak.api.annotation.NonNull;
 import gov.tak.api.contact.IContact;
 import gov.tak.api.contact.IContactListener;
-import gov.tak.api.contact.IContactStore;
-import org.apache.commons.lang.StringUtils;
+import gov.tak.platform.lang.Strings;
 
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -22,7 +21,7 @@ import java.util.concurrent.Executors;
  *
  * @since 0.17.0
  */
-class DefaultContactStore extends ContactStore implements IContactStore {
+class DefaultContactStore extends ContactStore {
     private static final String TAG = "ContactStore";
 
     private final Set<IContactListener> contactListeners = Collections.newSetFromMap(new IdentityHashMap<>());
@@ -81,7 +80,7 @@ class DefaultContactStore extends ContactStore implements IContactStore {
     public void removeContact(@NonNull String uniqueContactId) {
         Objects.requireNonNull(uniqueContactId, "Unique Contact ID cannot be null.");
 
-        if (StringUtils.isBlank(uniqueContactId)) {
+        if (Strings.isBlank(uniqueContactId)) {
             throw new IllegalArgumentException("Unique Contact ID must not be blank.");
         }
 
@@ -103,7 +102,6 @@ class DefaultContactStore extends ContactStore implements IContactStore {
         }
     }
 
-    @Override
     public boolean containsContact(@NonNull IContact contact) {
         Objects.requireNonNull(contact, "Attempted to check for existence of null Contact, must be non-null.");
 

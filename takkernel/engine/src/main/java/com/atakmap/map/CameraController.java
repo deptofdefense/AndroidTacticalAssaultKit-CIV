@@ -51,7 +51,18 @@ public final class CameraController {
          * @param animate   Pan smoothly if true; immediately if false
          */
         public static void panBy(MapRenderer3 renderer, float tx, float ty, MapRenderer3.CameraCollision collide, boolean animate) {
-            CameraController.panBy(MapRenderer_interop.getPointer(renderer), tx, ty, marshalCollide(collide), animate);
+            CameraController.panBy(MapRenderer_interop.getPointer(renderer), tx, ty, marshalCollide(collide), true, animate);
+        }
+
+        /**
+         * Pan the map a given number of pixels.
+         *
+         * @param tx        Horizontal pixels to pan
+         * @param ty        Vertical pixels to pan
+         * @param animate   Pan smoothly if true; immediately if false
+         */
+        public static void panBy(MapRenderer3 renderer, float tx, float ty, MapRenderer3.CameraCollision collide, boolean poleSmoothScroll, boolean animate) {
+            CameraController.panBy(MapRenderer_interop.getPointer(renderer), tx, ty, marshalCollide(collide), poleSmoothScroll, animate);
         }
 
         /**
@@ -64,7 +75,20 @@ public final class CameraController {
          * @param animate
          */
         public static void panTo(MapRenderer3 renderer, GeoPoint focus, float x, float y, MapRenderer3.CameraCollision collide, boolean animate) {
-            CameraController.panTo(MapRenderer_interop.getPointer(renderer), focus.getLatitude(), focus.getLongitude(), focus.getAltitude(), x, y, marshalCollide(collide), animate);
+            CameraController.panTo(MapRenderer_interop.getPointer(renderer), focus.getLatitude(), focus.getLongitude(), focus.getAltitude(), x, y, marshalCollide(collide), true, animate);
+        }
+
+        /**
+         * Pans the specified location to the specified offset within the
+         * viewport. Screen position is interpreted as upper-left origin
+         * @param renderer
+         * @param focus
+         * @param x
+         * @param y
+         * @param animate
+         */
+        public static void panTo(MapRenderer3 renderer, GeoPoint focus, float x, float y, MapRenderer3.CameraCollision collide, boolean poleSmoothScroll, boolean animate) {
+            CameraController.panTo(MapRenderer_interop.getPointer(renderer), focus.getLatitude(), focus.getLongitude(), focus.getAltitude(), x, y, marshalCollide(collide), poleSmoothScroll, animate);
         }
 
         public static void zoomBy(MapRenderer3 renderer, double scaleFactor, MapRenderer3.CameraCollision collide, boolean animate) {
@@ -228,8 +252,8 @@ public final class CameraController {
     }
 
     // Interactive
-    static native void panBy(long rendererPtr, float tx, float ty, int collide, boolean animate);
-    static native void panTo(long rendererPtr, double focusLat, double focusLng, double focusAlt, float x, float y, int collide, boolean animate);
+    static native void panBy(long rendererPtr, float tx, float ty, int collide, boolean panSmoothScroll, boolean animate);
+    static native void panTo(long rendererPtr, double focusLat, double focusLng, double focusAlt, float x, float y, int collide, boolean panSmoothScroll, boolean animate);
     static native void zoomBy(long rendererPtr, double scaleFactor, int collide, boolean animate);
     static native void zoomBy(long rendererPtr, double scaleFactor, double focusLat, double focusLng, double focusAlt, float focusx, float focusy, int collide, boolean animate);
     static native void zoomTo(long rendererPtr, double gsd, double focusLat, double focusLng, double focusAlt, float focusx, float focusy, int collide, boolean animate);

@@ -7,7 +7,6 @@ import android.preference.Preference;
 import android.text.InputFilter;
 
 import com.atakmap.android.gui.PanEditTextPreference;
-import com.atakmap.android.gui.PanEditTextPreference;
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.android.preference.PreferenceSearchIndex;
 import com.atakmap.app.R;

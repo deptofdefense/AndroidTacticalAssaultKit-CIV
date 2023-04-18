@@ -7,6 +7,7 @@ set(takenginejni_ANDROID_DEFS
 )
 
 set(takenginejni_ANDROID_INCS
+    ${SRC_DIR}/../../../build/android/generated/jni
 )
 
 set(takenginejni_ANDROID_LDIRS

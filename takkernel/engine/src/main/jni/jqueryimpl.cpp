@@ -1,4 +1,4 @@
-#include "jqueryimpl.h"
+#include "com_atakmap_database_impl_QueryImpl.h"
 
 #include <db/Query.h>
 

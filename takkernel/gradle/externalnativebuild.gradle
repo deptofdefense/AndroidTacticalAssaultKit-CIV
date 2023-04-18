@@ -97,8 +97,12 @@ abstract class AndroidPluginExternalNativeBuild extends ExternalNativeBuild {
             defaultConfig {
                 externalNativeBuild {
                     cmake {
-                        // init arguments with the NDK location
-                        arguments = [ "-DCMAKE_ANDROID_NDK=${project.android.ndkDirectory.toString().replaceAll('\\\\', '/')}".toString() ]
+                        // init arguments with the NDK location and toolchain
+                        arguments =
+                        [
+                            "-DCMAKE_ANDROID_NDK=${project.android.ndkDirectory.toString().replaceAll('\\\\', '/')}".toString(),
+                            "-DCMAKE_TOOLCHAIN_FILE=${project.android.ndkDirectory}/build/cmake/android.toolchain.cmake".toString(),
+                        ]
                     }
                 }
             }

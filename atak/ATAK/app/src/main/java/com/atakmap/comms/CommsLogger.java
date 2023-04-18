@@ -3,6 +3,8 @@ package com.atakmap.comms;
 
 import com.atakmap.coremap.cot.event.CotEvent;
 
+import gov.tak.api.util.Disposable;
+
 /**
  * Comms logger allows for the logging of the low level cursor on target messages within 
  * the system.   Please be warned that the implementation of this logger will cause performance
@@ -10,7 +12,7 @@ import com.atakmap.coremap.cot.event.CotEvent;
  * other than metrics and debugging.
  * Usage in any other way is not RECOMMENDED
  */
-public interface CommsLogger {
+public interface CommsLogger extends Disposable {
 
     /**
      * Logs a message being sent to a specific destination.  
@@ -35,10 +37,5 @@ public interface CommsLogger {
      * @param server the server information, can be null.
      */
     void logReceive(CotEvent msg, String rxid, String server);
-
-    /**
-     * Signals the logger to clean up. 
-     */
-    void dispose();
 
 }

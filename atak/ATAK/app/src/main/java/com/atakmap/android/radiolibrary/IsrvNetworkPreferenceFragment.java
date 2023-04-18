@@ -3,6 +3,7 @@ package com.atakmap.android.radiolibrary;
 
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
@@ -11,11 +12,21 @@ import android.preference.PreferenceManager;
 import android.preference.PreferenceScreen;
 import android.util.Patterns;
 
+import com.atakmap.android.preference.PreferenceSearchIndex;
 import com.atakmap.app.R;
+
+import java.util.List;
 
 public class IsrvNetworkPreferenceFragment extends AtakPreferenceFragment
         implements
         OnSharedPreferenceChangeListener {
+
+    public static List<PreferenceSearchIndex> index(Context context) {
+        return index(context,
+                IsrvNetworkPreferenceFragment.class,
+                R.string.isrv_control_prefs,
+                R.drawable.ic_menu_settings);
+    }
 
     public IsrvNetworkPreferenceFragment() {
         super(R.xml.isrv_preferences, R.string.isrv_control_prefs);

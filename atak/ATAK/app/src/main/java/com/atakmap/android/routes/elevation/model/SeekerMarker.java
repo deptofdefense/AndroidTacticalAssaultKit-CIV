@@ -32,7 +32,7 @@ public class SeekerMarker implements OnSharedPreferenceChangeListener {
     private final MapView _mapView;
     private Marker _marker;
     private boolean bCenterMap;
-    private boolean showViewshed = false;
+    private boolean showViewshed;
     private boolean quickDraw = false;
     private final ViewShedReceiver vsdRec;
     private VsdLayer layer;

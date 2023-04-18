@@ -312,8 +312,8 @@ TAKErr FalconViewFeatureDataSource::parse(FeatureDataSource2::ContentPtr &conten
         code = MsAccessDatabaseFactory_create(db, info);
         if (code != TE_Ok) return code;
 
-        const char *uri;
-        code = info.getUri(&uri);
+        Port::String uri;
+        code = info.getUri(uri);
         TE_CHECKRETURN_CODE(code);
         Port::String name;
         code = IO_getName(name, uri);

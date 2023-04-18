@@ -47,6 +47,7 @@ public abstract class URIContentRecipient {
         return null;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "URIContentRecipient{name='" + name + '\'' + '}';

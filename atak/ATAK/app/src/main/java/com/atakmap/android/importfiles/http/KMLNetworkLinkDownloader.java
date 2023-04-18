@@ -236,7 +236,6 @@ public class KMLNetworkLinkDownloader extends NetworkLinkDownloader {
                                 connection = AtakAuthenticationHandlerHTTP
                                         .makeAuthenticatedConnection(
                                                 (HttpURLConnection) conn, 3);
-                                conn = connection.conn;
                                 input = connection.stream;
                             } else {
                                 conn.connect();

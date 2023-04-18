@@ -20,6 +20,15 @@
                android:paddingStart="3dp"
                android:maxLines="1"
                android:layout_toEndOf="@id/iconset_child_name"/>
+
+    <TextView android:id="@+id/iconset_child_version"
+        android:text="100"
+        android:layout_width="65dp"
+        android:layout_height="wrap_content"
+        android:textSize="14sp"
+        android:paddingStart="3dp"
+        android:maxLines="1"
+        android:layout_toEndOf="@id/iconset_child_uid"/>
      
     <TextView android:id="@+id/iconset_child_count"
               android:text="@string/onehundred"
@@ -29,7 +38,7 @@
               android:gravity="center"
               android:paddingStart="3dp"
               android:maxLines="1"
-              android:layout_toEndOf="@id/iconset_child_uid"/>
+              android:layout_toEndOf="@id/iconset_child_version"/>
         
      <ImageButton
          android:id="@+id/iconset_child_delete"

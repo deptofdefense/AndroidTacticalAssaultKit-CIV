@@ -3,7 +3,7 @@ package com.atakmap.android.widgets;
 
 import android.graphics.Color;
 
-import com.atakmap.android.maps.MapView;
+import com.atakmap.map.opengl.GLRenderGlobals;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -82,7 +82,7 @@ public class ShapeWidget extends MapWidget2 implements IShapeWidget {
 
     public void setStrokeWeight(float strokeWeight) {
         if (Float.compare(strokeWeight, _strokeWeight) != 0) {
-            _strokeWeight = strokeWeight * MapView.DENSITY;
+            _strokeWeight = strokeWeight * GLRenderGlobals.getRelativeScaling();
             onStrokeWeightChanged();
         }
     }

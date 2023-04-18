@@ -1,4 +1,4 @@
-#include "jterrainslopelayer.h"
+#include "com_atakmap_map_layer_elevation_TerrainSlopeLayer.h"
 
 #include <core/Layer.h>
 #include <core/LegacyAdapters.h>

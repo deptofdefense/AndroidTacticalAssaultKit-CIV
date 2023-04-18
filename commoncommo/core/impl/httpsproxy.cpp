@@ -638,18 +638,25 @@ void HttpsProxy::IOThreadContext::process()
             }
         }
         
-        selector.setSockets(&readSockets, &writeSockets, &connectingSockets);
-        updateSelector = false;
+        try {
+            selector.setSockets(&readSockets, &writeSockets, &connectingSockets);
+            updateSelector = false;
+        } catch (SocketException &) {
+            InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "https proxy io hit socket limit");
+            fatalError = true;
+        }
     }
     
-    try {
-        if (!selector.doSelect(5000))
-            // timeout
-            return;
-    } catch (SocketException &) {
-        // Unexpected error. Restart server
-        InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "https proxy io select failed");
-        fatalError = true;
+    if (!fatalError) {
+        try {
+            if (!selector.doSelect(5000))
+                // timeout
+                return;
+        } catch (SocketException &) {
+            // Unexpected error. Restart server
+            InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "https proxy io select failed");
+            fatalError = true;
+        }
     }
     
     if (!fatalError) {

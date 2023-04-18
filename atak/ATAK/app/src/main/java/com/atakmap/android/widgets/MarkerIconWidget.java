@@ -3,8 +3,8 @@ package com.atakmap.android.widgets;
 
 import android.graphics.Rect;
 
-import com.atakmap.android.maps.MapView;
 import com.atakmap.coremap.maps.assets.Icon;
+import com.atakmap.map.opengl.GLRenderGlobals;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -99,13 +99,16 @@ public class MarkerIconWidget extends MapWidget2 implements IMarkerIconWidget {
      * @param bottom offset below MapIcon anchor
      */
     public void setMarkerHitBounds(int left, int top, int right, int bottom) {
-        _hitBounds.left = Math.round(left * MapView.DENSITY);
-        _hitBounds.right = Math.round(right * MapView.DENSITY);
-        _hitBounds.top = Math.round(top * MapView.DENSITY);
-        _hitBounds.bottom = Math.round(bottom * MapView.DENSITY);
+        _hitBounds.left = Math
+                .round(left * GLRenderGlobals.getRelativeScaling());
+        _hitBounds.right = Math
+                .round(right * GLRenderGlobals.getRelativeScaling());
+        _hitBounds.top = Math.round(top * GLRenderGlobals.getRelativeScaling());
+        _hitBounds.bottom = Math
+                .round(bottom * GLRenderGlobals.getRelativeScaling());
         if (_icon != null)
-            setSize(_icon.getWidth() * MapView.DENSITY,
-                    _icon.getHeight() * MapView.DENSITY);
+            setSize(_icon.getWidth() * GLRenderGlobals.getRelativeScaling(),
+                    _icon.getHeight() * GLRenderGlobals.getRelativeScaling());
     }
 
     /**
@@ -175,8 +178,10 @@ public class MarkerIconWidget extends MapWidget2 implements IMarkerIconWidget {
      * @param height Height in pixels
      */
     public void setIconSizePx(float width, float height) {
-        setIcon(getIcon().buildUpon().setSize((int) (width / MapView.DENSITY),
-                (int) (height / MapView.DENSITY)).build());
+        setIcon(getIcon().buildUpon()
+                .setSize((int) (width / GLRenderGlobals.getRelativeScaling()),
+                        (int) (height / GLRenderGlobals.getRelativeScaling()))
+                .build());
     }
 
     @Override

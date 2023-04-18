@@ -21,6 +21,8 @@ import android.widget.ImageButton;
 import android.widget.ImageView.ScaleType;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.missionpackage.api.MissionPackageApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.io.IOProviderFactory;
@@ -707,6 +709,7 @@ public class FavoriteListAdapter extends BaseAdapter {
                     + latitude + longitude + tilt + rotation + zoomLevel);
         }
 
+        @NonNull
         @Override
         public String toString() {
             return title + ", " + layer + ", "

@@ -1,4 +1,4 @@
-#include "jgllabelmanager.h"
+#include "com_atakmap_map_opengl_GLLabelManager.h"
 
 #include <vector>
 

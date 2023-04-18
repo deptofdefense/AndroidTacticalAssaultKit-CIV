@@ -16,7 +16,7 @@ public class BasicStrokeStyleTests extends ATAKInstrumentedTest {
         final float width = RandomUtils.rng().nextFloat() * 100;
         BasicStrokeStyle style = new BasicStrokeStyle(color, width);
         Assert.assertEquals(style.getColor(), color);
-        Assert.assertTrue(style.getStrokeWidth() == width);
+        Assert.assertEquals(style.getStrokeWidth(), width, 0.0);
     }
 
     @Test(expected = RuntimeException.class)

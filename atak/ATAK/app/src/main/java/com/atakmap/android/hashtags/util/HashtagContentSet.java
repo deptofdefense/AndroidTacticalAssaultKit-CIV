@@ -32,6 +32,7 @@ public class HashtagContentSet extends HashMap<String, HashtagContent>
         remove(content.getURI());
     }
 
+    @NonNull
     @Override
     public String toString() {
         return _tag + " (" + size() + ")";

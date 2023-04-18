@@ -32,13 +32,6 @@ public class OSMUtils {
     private OSMUtils() {
     }
 
-    /** @deprecated use {@link #isOSMDroidSQLite(DatabaseIface)} */
-    @Deprecated
-    @DeprecatedApi(since = "4.1.1", forRemoval = true, removeAt = "4.4")
-    public static boolean isOSMDroidSQLite(SQLiteDatabase database) {
-        return isOSMDroidSQLite(new AndroidDatabaseAdapter(database));
-    }
-
     public static boolean isOSMDroidSQLite(DatabaseIface database) {
         try { 
             final Set<String> columns = Databases.getColumnNames(database,

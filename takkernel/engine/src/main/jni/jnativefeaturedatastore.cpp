@@ -1,4 +1,4 @@
-#include "jnativefeaturedatastore.h"
+#include "com_atakmap_map_layer_feature_NativeFeatureDataStore2.h"
 
 #include <list>
 

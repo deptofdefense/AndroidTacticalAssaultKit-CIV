@@ -4,6 +4,8 @@ package com.atakmap.android.maps.graphics.widgets;
 import android.graphics.Color;
 import android.util.Pair;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.elev.graphics.SharedDataModel;
 import com.atakmap.android.maps.MapTextFormat;
 import com.atakmap.android.maps.MapView;
@@ -255,6 +257,7 @@ class GLIsoKeyWidget extends GLWidget2 {
             return data;
         }
 
+        @NonNull
         public String toString() {
             StringBuilder ret = new StringBuilder("{ ");
             for (int i = 0; i < data.length; i++) {

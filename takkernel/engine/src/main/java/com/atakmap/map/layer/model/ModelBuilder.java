@@ -8,19 +8,12 @@ import com.atakmap.math.Matrix;
 import com.atakmap.math.PointD;
 
 import java.nio.Buffer;
-import java.nio.IntBuffer;
-import java.nio.ShortBuffer;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-/**
- * @deprecated use {@link MeshBuilder}
- */
-@Deprecated
-@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
 public final class ModelBuilder {
     private static final String TAG = "ModelBuilder";
     private MeshBuilder mesh;
@@ -31,134 +24,15 @@ public final class ModelBuilder {
 
     public ModelBuilder() { }
 
-    /**
-     * @deprecated use {@link MeshBuilder#setWindingOrder(Model.WindingOrder)} instead
-     * @param windingOrder
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public void setWindingOrder(Model.WindingOrder windingOrder) {
-        mesh.setWindingOrder(windingOrder);
-    }
-
-    /**
-     * @deprecated use {@link MeshBuilder#addMaterial(Material)} instead
-     * @param textureUri
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public void setTextureUri(String textureUri) {
-        this.mesh.addMaterial(new Material(textureUri, Material.PropertyType.Diffuse, -1));
-    }
-
-    /**
-     * @deprecated use {@link MeshBuilder#addVertex(double, double, double, float, float, float,
-     *     float, float, float, float, float, float)} instead
-     * @param posx
-     * @param posy
-     * @param posz
-     * @param texu
-     * @param texv
-     * @param nx
-     * @param ny
-     * @param nz
-     * @param r
-     * @param g
-     * @param b
-     * @param a
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public void addVertex(double posx, double posy, double posz,
-                          float texu, float texv,
-                          float nx, float ny, float nz,
-                          float r, float g, float b, float a) {
-
-        this.mesh.addVertex(posx, posy, posz,
-                texu, texv,
-                nx, ny, nz,
-                r, g, b, a);
-    }
-
-    /**
-     * @deprecated use {@link MeshBuilder#addFace(int, int, int)} instead
-     * @param a
-     * @param b
-     * @param c
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public void addFace(int a, int b, int c) {
-        this.mesh.addFace(a, b, c);
-    }
-
-    /**
-     * @deprecated use {@link MeshBuilder#addIndex(int)} instead
-     * @param index
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public void addIndex(int index) {
-        this.mesh.addIndex(index);
-    }
-
-    /**
-     * @deprecated use {@link MeshBuilder#addIndices(int[], int, int)} instead
-     */
-    @Deprecated
-    @DeprecatedApi(since="4.1", forRemoval = true, removeAt = "4.4")
-    public void addIndices(int[] indices, int off, int count) {
-        this.mesh.addIndices(indices, off, count);
-    }
-
-    /**
-     * @deprecated use {@link MeshBuilder#addIndices(short[], int, int)} instead
-     */
-    @Deprecated
-    @DeprecatedApi(since="4.1", forRemoval = true, removeAt = "4.4")
-    public void addIndices(short[] indices, int off, int count) {
-        this.mesh.addIndices(indices, off, count);
-    }
-
-    /**
-     * @deprecated use {@link MeshBuilder#addIndices(IntBuffer)} instead
-     */
-    @Deprecated
-    @DeprecatedApi(since ="4.1", forRemoval = true, removeAt="4.4")
-    public void addIndices(IntBuffer indices) {
-        this.mesh.addIndices(indices);
-    }
-
-    /**
-     * @deprecated use {@link MeshBuilder#addIndices(ShortBuffer)} instead
-     */
-    @Deprecated
-    @DeprecatedApi(since="4.1", forRemoval = true, removeAt = "4.4")
-    public void addIndices(ShortBuffer indices) {
-        // XXX -
-        while(indices.hasRemaining())
-            this.addIndex(indices.get()&0xFFFF);
-    }
-
     public void addMesh(MeshBuilder meshBuilder) {
         addMesh(meshBuilder, Model.INSTANCE_ID_NONE, null);
     }
 
-    /**
-     * @deprecated use {@link #addMesh(MeshBuilder)} instead
-     */
-    @Deprecated
-    @DeprecatedApi(since="4.1", forRemoval = true, removeAt = "4.4")
-    public MeshBuilder beginMesh(int vertexAttr, boolean indexed, Model.DrawMode drawMode) {
+    public MeshBuilder beginMesh(int vertexAttr, boolean indexed, Mesh.DrawMode drawMode) {
         addMesh(new MeshBuilder(vertexAttr, indexed, drawMode));
         return this.mesh;
     }
 
-    /**
-     * @deprecated use {@link #addMesh(MeshBuilder)} instead
-     */
-    @Deprecated
-    @DeprecatedApi(since="4.1", forRemoval = true, removeAt = "4.4")
     public MeshBuilder addMesh(int vertexAttrs, Class<?> indexType, Mesh.DrawMode drawMode) {
         addMesh(new MeshBuilder(vertexAttrs, indexType, drawMode));
         return this.mesh;
@@ -317,96 +191,6 @@ public final class ModelBuilder {
         }
 
         @Override
-        public int getNumMaterials() {
-            return meshes[0].get().getNumMaterials();
-        }
-
-        @Override
-        public Material getMaterial(int index) {
-            return meshes[0].get().getMaterial(index);
-        }
-
-        @Override
-        public Material getMaterial(Material.PropertyType propertyType) {
-            return meshes[0].get().getMaterial(propertyType);
-        }
-
-        @Override
-        public int getNumVertices() {
-            return this.meshes[0].get().getNumVertices();
-        }
-
-        @Override
-        public int getNumFaces() {
-            return this.meshes[0].get().getNumFaces();
-        }
-
-        @Override
-        public boolean isIndexed() {
-            return this.meshes[0].get().isIndexed();
-        }
-
-        @Override
-        public int getIndexOffset() {
-            return this.meshes[0].get().getIndexOffset();
-        }
-
-        @Override
-        public void getPosition(int i, PointD xyz) {
-            this.meshes[0].get().getPosition(i, xyz);
-        }
-
-        @Override
-        public void getTextureCoordinate(int texCoordNum, int i, PointD uv) {
-            this.meshes[0].get().getTextureCoordinate(texCoordNum, i, uv);
-        }
-
-        @Override
-        public void getNormal(int i, PointD xyz) {
-            this.meshes[0].get().getNormal(i, xyz);
-        }
-
-        @Override
-        public int getColor(int i) {
-            return this.meshes[0].get().getColor(i);
-        }
-
-        @Override
-        public Class<?> getVertexAttributeType(int flag) {
-            return this.meshes[0].get().getVertexAttributeType(flag);
-        }
-
-        @Override
-        public Class<?> getIndexType() {
-            return this.meshes[0].get().getIndexType();
-        }
-
-        @Override
-        public int getIndex(int i) {
-            return this.meshes[0].get().getIndex(i);
-        }
-
-        @Override
-        public Buffer getIndices() {
-            return this.meshes[0].get().getIndices();
-        }
-
-        @Override
-        public Buffer getVertices(int flag) {
-            return this.meshes[0].get().getVertices(flag);
-        }
-
-        @Override
-        public WindingOrder getFaceWindingOrder() {
-            return this.meshes[0].get().getFaceWindingOrder();
-        }
-
-        @Override
-        public DrawMode getDrawMode() {
-            return this.meshes[0].get().getDrawMode();
-        }
-
-        @Override
         public Envelope getAABB() {
             return this.aabb;
         }
@@ -416,11 +200,6 @@ public final class ModelBuilder {
             for (MeshReference mesh : meshes) {
                 mesh.dispose();
             }
-        }
-
-        @Override
-        public VertexDataLayout getVertexDataLayout() {
-            return this.meshes[0].get().getVertexDataLayout();
         }
 
         @Override

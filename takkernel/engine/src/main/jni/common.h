@@ -8,7 +8,7 @@
 #include <util/Logging2.h>
 #include <util/Error.h>
 
-#include "jpointer.h"
+#include "com_atakmap_interop_Pointer.h"
 
 /******************************************************************************/
 // MACROS

@@ -1,17 +1,18 @@
 
 package com.atakmap.android.tools.menu;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.tools.ActionBarReceiver;
 import com.atakmap.android.tools.menu.ActionMenuData.PreferredMenu;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.locale.LocaleUtil;
 
 import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Root;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import com.atakmap.coremap.locale.LocaleUtil;
 
 /**
  * Represents a list of action menus
@@ -77,6 +78,7 @@ public class ActionMenuListData {
         return 31 * ((getActions() == null ? 0 : getActions().hashCode()));
     }
 
+    @NonNull
     @Override
     public String toString() {
         return String.format(LocaleUtil.getCurrent(), "%d",

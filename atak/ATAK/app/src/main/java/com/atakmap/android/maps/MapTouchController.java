@@ -39,6 +39,7 @@ import com.atakmap.app.DeveloperOptions;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.map.CameraController;
@@ -49,9 +50,12 @@ import com.atakmap.map.elevation.ElevationManager;
 
 import com.atakmap.map.layer.control.ClampToGroundControl;
 import com.atakmap.map.hittest.HitTestQueryParameters;
+import com.atakmap.math.Frustum;
 import com.atakmap.math.MathUtils;
+import com.atakmap.math.Matrix;
 import com.atakmap.math.Plane;
 import com.atakmap.math.PointD;
+import com.atakmap.math.Sphere;
 import com.atakmap.math.Vector3D;
 import com.atakmap.util.Visitor;
 
@@ -1246,6 +1250,7 @@ public class MapTouchController implements OnTouchListener,
             panExtras.putParcelable("originalFocus", _originalFocusPoint);
             panExtras.putFloat("x", e2.getX());
             panExtras.putFloat("y", e2.getY());
+            panExtras.putBoolean("poleSmoothScroll", _userOrientation);
             eventBuilder.setExtras(panExtras);
             eventDispatcher.dispatch(eventBuilder.build());
             // draw event for telestration
@@ -1395,9 +1400,9 @@ public class MapTouchController implements OnTouchListener,
         GeoPoint ffPoint = getFreeForm3DPoint();
         if (ffPoint != null) {
             focusPoint = ffPoint;
-            PointF p = _mapView.forward(focusPoint);
-            focusx = p.x;
-            focusy = p.y;
+            //PointF p = _mapView.forward(focusPoint);
+            //focusx = p.x;
+            //focusy = p.y;
 
             // XXX - using legacy behavior for now where freeform point always
             //       returns to center on gesture. the behavior works
@@ -1418,6 +1423,13 @@ public class MapTouchController implements OnTouchListener,
             // gesture focus is used, the map will slide with the gesture focus
             // point. This motion is very intuitive for rotate and zoom, but not
             // with tilt
+            focusx = _originalCenterX;
+            focusy = _originalCenterY;
+            focusPoint = _centerOnPress;
+        }
+
+        // if the pole is in view, always use center focus for rotate/zoom
+        if (isPoleInView(sm)) {
             focusx = _originalCenterX;
             focusy = _originalCenterY;
             focusPoint = _centerOnPress;
@@ -1996,4 +2008,26 @@ public class MapTouchController implements OnTouchListener,
         }
     }
 
+    static boolean isPoleInView(MapSceneModel sm) {
+        final GeoPoint northPole = new GeoPoint(90d, 0d);
+        final GeoPoint southPole = new GeoPoint(-90d, 0d);
+        final GeoPoint camera = sm.mapProjection.inverse(sm.camera.location,
+                null);
+
+        final PointD northPoleXYZ = sm.mapProjection.forward(northPole, null);
+        final PointD southPoleXYZ = sm.mapProjection.forward(southPole, null);
+
+        Matrix mvp = Matrix.getIdentity();
+        mvp.concatenate(sm.camera.projection);
+        mvp.concatenate(sm.camera.modelView);
+        final Frustum frustum = new Frustum(mvp);
+
+        // check pole against frustum
+        return (GeoCalculations.distanceTo(camera,
+                northPole) <= sm.camera.farMeters
+                && frustum.intersects(new Sphere(northPoleXYZ, 1d))) ||
+                (GeoCalculations.distanceTo(camera,
+                        southPole) <= sm.camera.farMeters
+                        && frustum.intersects(new Sphere(southPoleXYZ, 1d)));
+    }
 }

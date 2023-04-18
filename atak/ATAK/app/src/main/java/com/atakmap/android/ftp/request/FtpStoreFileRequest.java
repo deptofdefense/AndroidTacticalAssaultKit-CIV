@@ -4,6 +4,8 @@ package com.atakmap.android.ftp.request;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.ftp.operation.FtpStoreFileOperation;
 import com.atakmap.android.http.rest.NetworkOperationManager;
 import com.atakmap.android.http.rest.UserCredentials;
@@ -157,6 +159,7 @@ public class FtpStoreFileRequest extends RetryRequest {
         return mCredentials != null && mCredentials.isValid();
     }
 
+    @NonNull
     @Override
     public String toString() {
         return String.format(LocaleUtil.getCurrent(), "%s:%d/%s; %s", mHost,

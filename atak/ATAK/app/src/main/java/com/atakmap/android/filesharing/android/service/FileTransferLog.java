@@ -1,6 +1,8 @@
 
 package com.atakmap.android.filesharing.android.service;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 
 import java.util.Date;
@@ -148,6 +150,7 @@ public class FileTransferLog {
         return description;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return type + " (" + name + ") size=" + sizeInBytes + " bytes, time="

@@ -306,7 +306,7 @@ public final class RouteNavigationManager {
     }
 
     public void setLocation(GeoPoint location) {
-        boolean initialSet = false;
+        boolean initialSet;
         GeoPoint prevLocation = this.location;
 
         synchronized (syncRoot) {

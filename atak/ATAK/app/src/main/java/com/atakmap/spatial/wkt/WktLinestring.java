@@ -1,6 +1,8 @@
 
 package com.atakmap.spatial.wkt;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.Polyline;
 import com.atakmap.android.maps.Shape;
@@ -108,6 +110,7 @@ public class WktLinestring extends WktGeometry {
         }
     }
 
+    @NonNull
     public String toString() {
         return this.getClass().getSimpleName() + " " + points;
     }

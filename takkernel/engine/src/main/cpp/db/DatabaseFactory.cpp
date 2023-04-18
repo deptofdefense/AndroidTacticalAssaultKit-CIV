@@ -30,8 +30,8 @@ TAKErr TAK::Engine::DB::DatabaseFactory_unRegisterProvider(const DatabaseProvide
 
 TAKErr TAK::Engine::DB::DatabaseFactory_create(DatabasePtr &result, const DatabaseInformation &dbInformation) NOTHROWS {
     TAKErr code = TE_Unsupported;
-    const char* tmpUri;
-    dbInformation.getUri(&tmpUri);
+    Port::String tmpUri;
+    dbInformation.getUri(tmpUri);
 
     if(!tmpUri){
         DefaultDatabaseProvider defaultProvider;

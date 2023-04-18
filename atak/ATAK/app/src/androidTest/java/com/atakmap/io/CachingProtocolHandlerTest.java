@@ -80,7 +80,7 @@ public class CachingProtocolHandlerTest {
                     FileSystemUtils.copyStream(result.inputStream, false,
                             content, false);
                     assertEquals(data.length, content.size());
-                    assertTrue(Arrays.equals(data, content.toByteArray()));
+                    assertArrayEquals(data, content.toByteArray());
                 }
             }
         }
@@ -109,7 +109,7 @@ public class CachingProtocolHandlerTest {
                     FileSystemUtils.copyStream(result.inputStream, false,
                             content, false);
                     assertEquals(data.length, content.size());
-                    assertTrue(Arrays.equals(data, content.toByteArray()));
+                    assertArrayEquals(data, content.toByteArray());
                 }
             }
         }

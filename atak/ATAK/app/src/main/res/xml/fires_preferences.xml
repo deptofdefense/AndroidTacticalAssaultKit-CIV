@@ -3,6 +3,12 @@
     <PreferenceCategory
         android:key="fire_prefs_category"
         android:title="@string/civ_fires_prefs">
+        <com.atakmap.android.gui.PanCheckBoxPreference
+            android:title="@string/rapid_mgrs_entry_mode"
+            android:summary="@string/rapid_mgrs_entry_mode_sum"
+            android:key="rapid_mgrs_dialog"
+            android:defaultValue="false" />
+
         <com.atakmap.android.gui.PanEditTextPreference
             android:title="@string/civ_spi_update_delay"
             android:key="spiUpdateDelay"
@@ -43,4 +49,5 @@
             android:defaultValue="false" />
     </PreferenceCategory>
 
+      
 </PreferenceScreen>

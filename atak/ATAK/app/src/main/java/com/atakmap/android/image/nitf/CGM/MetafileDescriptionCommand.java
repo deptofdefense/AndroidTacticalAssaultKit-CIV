@@ -1,6 +1,8 @@
 
 package com.atakmap.android.image.nitf.CGM;
 
+import androidx.annotation.NonNull;
+
 import java.io.DataInput;
 import java.io.IOException;
 
@@ -16,6 +18,7 @@ public class MetafileDescriptionCommand extends Command {
         this.S = makeString();
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "MetafileDescription: " + this.S;

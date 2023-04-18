@@ -4,6 +4,8 @@ package com.atakmap.android.maps.graphics;
 import android.graphics.Color;
 import android.graphics.Typeface;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapTextFormat;
 import com.atakmap.android.maps.MapView;
@@ -113,6 +115,7 @@ public class GLMarker2 extends GLPointMapItem2 implements
         initState(subject);
     }
 
+    @NonNull
     public String toString() {
         return "marker_marker"; // _infoText.toString();
     }
@@ -534,8 +537,10 @@ public class GLMarker2 extends GLPointMapItem2 implements
 
     private void _buildArrow() {
 
-        float tip = (float) Math.ceil(20f * MapView.DENSITY);
-        final double size = Math.ceil(6f * MapView.DENSITY);
+        float tip = (float) Math
+                .ceil(20f * GLRenderGlobals.getRelativeScaling());
+        final double size = Math
+                .ceil(6f * GLRenderGlobals.getRelativeScaling());
 
         float[] points = new float[8];
 

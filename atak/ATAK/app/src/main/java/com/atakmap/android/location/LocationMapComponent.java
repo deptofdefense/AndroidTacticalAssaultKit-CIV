@@ -18,6 +18,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.location.GnssStatus;
 import android.location.GpsSatellite;
 import android.location.GpsStatus;
 import android.location.GpsStatus.NmeaListener;
@@ -38,6 +39,8 @@ import android.util.Base64;
 import android.view.Display;
 import android.view.Surface;
 import android.view.WindowManager;
+
+import androidx.annotation.NonNull;
 
 import com.atakmap.android.gui.HintDialogHelper;
 import com.atakmap.android.icons.Icon2525cIconAdapter;
@@ -1139,8 +1142,40 @@ public class LocationMapComponent extends AbstractMapComponent implements
                 if (locMgr != null) {
                     locMgr.requestLocationUpdates(LocationManager.GPS_PROVIDER,
                             interval, 0f, this);
-                    locMgr.addGpsStatusListener(this);
 
+                    //if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    // XXX Use this until the compileSdk is bumped to 31
+                    if (Build.VERSION.SDK_INT >= 32) {
+                        locMgr.registerGnssStatusCallback(
+                                new GnssStatus.Callback() {
+                                    @Override
+                                    public void onStarted() {
+                                        onGpsStatusChanged(
+                                                GpsStatus.GPS_EVENT_STARTED);
+                                    }
+
+                                    @Override
+                                    public void onStopped() {
+                                        onGpsStatusChanged(
+                                                GpsStatus.GPS_EVENT_STOPPED);
+                                    }
+
+                                    @Override
+                                    public void onFirstFix(int ttffMillis) {
+                                        onGpsStatusChanged(
+                                                GpsStatus.GPS_EVENT_FIRST_FIX);
+                                    }
+
+                                    @Override
+                                    public void onSatelliteStatusChanged(
+                                            @NonNull GnssStatus status) {
+                                        onGpsStatusChanged(
+                                                GpsStatus.GPS_EVENT_SATELLITE_STATUS);
+                                    }
+                                });
+                    } else {
+                        locMgr.addGpsStatusListener(this);
+                    }
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                         locMgr.addNmeaListener(
                                 newerNmeaListener = new OnNmeaMessageListener() {
@@ -1875,8 +1910,18 @@ public class LocationMapComponent extends AbstractMapComponent implements
             }
 
             if (point != null && !point.equals(_locationMarker.getPoint())) {
+
+                if (locationPrefs.getBoolean("useTerrainElevationSelfMarker",
+                        false)) {
+                    GeoPointMetaData gpm = ElevationManager
+                            .getElevationMetadata(point);
+                    point = gpm.get();
+                    altitudeSource = gpm.getAltitudeSource();
+                }
+
                 _locationMarker.setPoint(GeoPointMetaData.wrap(point,
                         geoLocationSource, altitudeSource));
+
             }
 
             /*
@@ -2216,7 +2261,9 @@ public class LocationMapComponent extends AbstractMapComponent implements
         return serialNumber;
     }
 
-    @SuppressLint("HardwareIds")
+    @SuppressLint({
+            "HardwareIds", "MissingPermission"
+    })
     private static String _fetchWifiMacAddress(Context context) {
         String wifiMacAddress = null;
         final WifiManager wifi = (WifiManager) context.getApplicationContext()

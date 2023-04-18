@@ -3,6 +3,8 @@ package com.atakmap.android.image.nitf.CGM;
 
 import android.graphics.Typeface;
 
+import androidx.annotation.NonNull;
+
 import java.io.DataInput;
 import java.io.IOException;
 import java.util.HashMap;
@@ -144,6 +146,7 @@ public class FontListCommand extends Command {
         return fontName.toLowerCase(LocaleUtil.getCurrent()).replace('_', '-');
     }
 
+    @NonNull
     @Override
     public String toString() {
 

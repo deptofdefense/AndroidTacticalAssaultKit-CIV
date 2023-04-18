@@ -4,6 +4,8 @@ package com.atakmap.comms;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 
@@ -72,6 +74,7 @@ public class NetworkContact implements Parcelable {
         }
     }
 
+    @NonNull
     public String toString() {
         return connectionEndpoint.toString();
     }

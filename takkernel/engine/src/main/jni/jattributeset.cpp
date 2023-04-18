@@ -1,4 +1,4 @@
-#include "jattributeset.h"
+#include "com_atakmap_map_layer_feature_AttributeSet.h"
 
 #include <list>
 #include <vector>

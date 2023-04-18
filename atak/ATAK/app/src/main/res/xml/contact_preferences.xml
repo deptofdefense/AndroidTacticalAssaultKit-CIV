@@ -8,9 +8,9 @@
             android:key="saHasPhoneNumber"
             android:defaultValue="true"
             android:icon="@drawable/phone_icon_settings"
-            android:summary="@string/preferences_text89"
-            />
+            android:summary="@string/preferences_text89" />
         <com.atakmap.android.gui.PanListPreference
+
             android:icon="@drawable/voip_icon_settings"
             android:entryValues="@array/voip_assignment_values"
             android:entries="@array/voip_assignment_values"

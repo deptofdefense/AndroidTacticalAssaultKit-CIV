@@ -188,15 +188,17 @@ public:
     // Pass NULL or an empty vector
     // to have subsequent doSelect() calls not
     // look at anything in that category.
+    // Throws if the socket limit has been exceeded
     void setSockets(const std::vector<Socket *> *readSockets,
-                    const std::vector<Socket *> *writeSockets);
+                    const std::vector<Socket *> *writeSockets) COMMO_THROW (SocketException);
 
     // Same as above version, but specifically calls out connecting sockets.
     // Connecting sockets should be checked with getLastConnectState()
     // to return WRITEABLE
+    // Throws if the socket limit has been exceeded
     void setSockets(const std::vector<Socket *> *readSockets,
                     const std::vector<Socket *> *writeSockets,
-                    const std::vector<Socket *> *connectingSockets);
+                    const std::vector<Socket *> *connectingSockets) COMMO_THROW (SocketException);
 
     // True if something is "ready" or false if timeout happened
     // or there were no sockets to watch.
@@ -227,8 +229,8 @@ public:
 
 private:
     COMMO_DISALLOW_COPY(NetSelector);
-    void buildSet(fd_set *set, fd_set **sptr, const std::vector<Socket *> *sockets);
-    bool growSet(fd_set *set, fd_set **sptr, const std::vector<Socket *> *sockets);
+    void buildSet(fd_set *set, size_t *count, fd_set **sptr, const std::vector<Socket *> *sockets) COMMO_THROW (SocketException);
+    bool growSet(fd_set *set, size_t *count, fd_set **sptr, const std::vector<Socket *> *sockets) COMMO_THROW (SocketException);
 
     fd_set baseReadSet;
     fd_set baseWriteSet;

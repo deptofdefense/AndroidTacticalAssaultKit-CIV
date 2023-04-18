@@ -105,7 +105,6 @@ public class Icon2525cTypeResolver {
                 .getString(R.string.not_recognized);
         boolean includeType = true;
         if (_25b25bName != null && _25b25bName.length() > 3) {
-            includeType = false; // Assume we found it (we fix in a few lines)
 
             // fortify hates replaceFirst - (the later is much easier to read)
             // _25b25bName = _25b25bName.replaceFirst(_25b25bName .subSequence(1, 2).toString(), "_") + ".png";
@@ -125,7 +124,6 @@ public class Icon2525cTypeResolver {
             final String UNKNOWN_TYPE = MapView.getMapView().getContext()
                     .getString(R.string.not_recognized);
             while (description.equals(UNKNOWN_TYPE)) { // Check to see if we're defined
-                includeType = true; // We're not - display type on details screen
                 if (_25b25bName.indexOf("-") > 2) {
                     _25b25bName = _25b25bName
                             .substring(0, _25b25bName.indexOf("-") - 1) // and move

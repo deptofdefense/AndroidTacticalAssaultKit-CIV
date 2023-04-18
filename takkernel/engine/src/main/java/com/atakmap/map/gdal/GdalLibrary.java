@@ -225,14 +225,6 @@ public class GdalLibrary {
         databaseMap.put(database.getPath(), new DatabaseInfo(database));
     }
 
-    /**
-     * @deprecated use {@link TileReader#getMasterIOThread()}
-     */
-    @Deprecated
-    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
-    public static synchronized TileReader.AsynchronousIO getMasterIOThread() {
-        return TileReader.getMasterIOThread();
-    }
 
     /**
      * Returns the WKT for the associated SRID.

@@ -1,4 +1,4 @@
-#include "jfrustum.h"
+#include "com_atakmap_math_Frustum.h"
 
 #include <math/Frustum2.h>
 

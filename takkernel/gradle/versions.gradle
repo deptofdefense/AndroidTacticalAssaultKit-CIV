@@ -6,13 +6,15 @@ ext {
     androidMinSdkVersion = 21
     androidTargetSdkVersion = 29
     androidToolsBuildGradleVersion = '4.2.2'
-    androidNdkVersion = '12.1.2977051'
+    androidNdkVersion = '23.1.7779620'
 
     // general dependencies
     androidPortVersion = '3.1.0'
     assertjVersion = '3.6.1'
     avroVersion = '1.9.2'
     bouncyCastleVersion = '1.67'
+    commonsTextVersion = '1.9'
+    commonsLang3SlimVersion = '1.0.0'
     glesJoglCVersion = '1.0.3'
     gradleCmakePluginVersion = '0.1.0'
     guavaVersion = '30.0-jre'
@@ -27,5 +29,5 @@ ext {
     owaspDependencyCheckVersion = '6.5.3'
     priVersion = '1.0.0'
     slf4jApiVersion = '1.7.30'
-    takthirdpartyVersion = '2.6.1'
+    takthirdpartyVersion = '2.7.2'
 }

@@ -93,7 +93,7 @@ public abstract class AbstractCotEventImporter extends AbstractImporter
                             null, null, false);
         }
 
-        ImportResult retval = ImportResult.FAILURE;
+        ImportResult retval;
 
         if (mime.equals("application/cot+xml")) {
             @SuppressWarnings("resource")

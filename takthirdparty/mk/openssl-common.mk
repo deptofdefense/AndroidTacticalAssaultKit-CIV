@@ -20,8 +20,8 @@ $(openssl_srctouchfile): $(openssl_src)
 	cd $(OUTDIR)/$(openssl_srcdir) && chmod 755 Configure config
 	touch $@
 
-openssl: $(openssl_out_libs)
+openssl: $(openssl_out_libs) $(openssl_extra_libs)
 
-openssl_clean:
+openssl_clean: $(openssl_extra_clean)
 	rm -rf $(OUTDIR)/$(openssl_srcdir)
 	rm -f $(openssl_out_libs)

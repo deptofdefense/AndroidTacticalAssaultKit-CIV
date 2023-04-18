@@ -1,4 +1,4 @@
-#include "jnativegllayerspi2.h"
+#include "com_atakmap_map_layer_opengl_NativeGLLayerSpi2.h"
 
 #include <core/LegacyAdapters.h>
 #include <renderer/core/GLLayerSpi2.h>

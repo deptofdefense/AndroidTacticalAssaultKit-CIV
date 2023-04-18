@@ -534,6 +534,16 @@
                             android:textSize="@dimen/draper_font"
                             android:lines="1"
                             android:text="@string/find" />
+                        <ImageButton
+                            android:id="@+id/button_change_addresslookup"
+                            style="@style/darkButton"
+                            android:layout_width="32dip"
+                            android:layout_height="32dp"
+                            android:layout_weight="2"
+                            android:padding="6dp"
+                            android:layout_gravity="center_vertical"
+                            android:gravity="center"
+                            android:src="@drawable/ic_settings"/>
                     </LinearLayout>
                 </LinearLayout>
 

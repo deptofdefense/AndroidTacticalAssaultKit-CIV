@@ -34,6 +34,7 @@ import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.assets.Icon;
 import com.atakmap.filesystem.HashingUtils;
+import com.atakmap.map.opengl.GLRenderGlobals;
 
 import java.io.ByteArrayOutputStream;
 import java.util.HashMap;
@@ -272,8 +273,8 @@ public class PluginMapComponent extends AbstractMapComponent implements
         final ProgressWidget timeBar = new ProgressWidget();
         timeBar.setMax(5000);
         timeBar.setHeight(42);
-        timeBar.setMargins(0f, MapView.DENSITY * 42f, 0f,
-                MapView.DENSITY * -6f);
+        timeBar.setMargins(0f, GLRenderGlobals.getRelativeScaling() * 42f, 0f,
+                GLRenderGlobals.getRelativeScaling() * -6f);
         timeBar.setWidth(300);
         notification.addWidget(timeBar);
 
@@ -378,8 +379,8 @@ public class PluginMapComponent extends AbstractMapComponent implements
         //TODO force to desired size
         //scale to desired size
         //        BitmapDrawable scaled = new BitmapDrawable(Bitmap.createScaledBitmap(bitmap,
-        //                (int)(ActionBarReceiver.DefaultPluginIconSize * MapView.DENSITY),
-        //                (int)(ActionBarReceiver.DefaultPluginIconSize * MapView.DENSITY),
+        //                (int)(ActionBarReceiver.DefaultPluginIconSize * GLRenderGlobals.getRelativeScaling()),
+        //                (int)(ActionBarReceiver.DefaultPluginIconSize * GLRenderGlobals.getRelativeScaling()),
         //                true));
         //        Bitmap scale = scaled.getBitmap();
 

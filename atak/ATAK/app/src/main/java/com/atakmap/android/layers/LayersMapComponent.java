@@ -41,6 +41,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.MapView.RenderStack;
 import com.atakmap.android.user.VolumeSwitchManager;
 import com.atakmap.android.wfs.WFSImporter;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.DeveloperOptions;
 import com.atakmap.app.R;
 import com.atakmap.app.preferences.ToolsPreferenceFragment;
@@ -51,10 +52,18 @@ import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.map.AtakMapView;
 import com.atakmap.map.layer.ProxyLayer;
+import com.atakmap.map.layer.feature.Adapters;
+import com.atakmap.map.layer.feature.DataStoreException;
 import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.FeatureCursor;
 import com.atakmap.map.layer.feature.FeatureDataStore;
-import com.atakmap.map.layer.feature.FeatureLayer;
+import com.atakmap.map.layer.feature.FeatureDataStore2;
+import com.atakmap.map.layer.feature.FeatureLayer3;
+import com.atakmap.map.layer.feature.FeatureSetCursor;
+import com.atakmap.map.layer.feature.Utils;
+import com.atakmap.map.layer.raster.mobileimagery.MobileOutlinesDataStore2;
+import com.atakmap.map.layer.raster.OutlinesFeatureDataStore2;
+import com.atakmap.map.layer.feature.datastore.FeatureSetDatabase;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.feature.geometry.Geometry;
 import com.atakmap.map.layer.feature.geometry.GeometryCollection;
@@ -130,10 +139,10 @@ public class LayersMapComponent extends AbstractMapComponent
     private final List<ImportResolver> _importResolvers = new ArrayList<>();
     private final List<Importer> _importers = new ArrayList<>();
     private final List<FileContentResolver> _contentResolvers = new ArrayList<>();
-    protected MobileOutlinesDataStore mobileOutlines;
-    protected OutlinesFeatureDataStore nativeOutlines;
-    private FeatureLayer mobileOutlinesLayer;
-    private FeatureLayer nativeOutlinesLayer;
+    protected OutlinesFeatureDataStore2 mobileOutlines;
+    protected OutlinesFeatureDataStore2 nativeOutlines;
+    private FeatureLayer3 mobileOutlinesLayer;
+    private FeatureLayer3 nativeOutlinesLayer;
 
     public static final String IMPORTER_CONTENT_TYPE = "External Native Data";
     public static final String IMPORTER_DEFAULT_MIME_TYPE = "application/octet-stream";
@@ -260,15 +269,12 @@ public class LayersMapComponent extends AbstractMapComponent
 
         this.rasterLayers.addOnProxySubjectChangedListener(this);
 
-        mobileOutlines = new MobileOutlinesDataStore(
-                (MobileImageryRasterLayer2) this.mobileLayers2,
-                0);
-        this.mobileOutlinesLayer = new FeatureLayer("Mobile Layer Outlines",
-                mobileOutlines);
-        this.nativeOutlines = new OutlinesFeatureDataStore(this.nativeLayers,
-                0, false);
-        this.nativeOutlinesLayer = new FeatureLayer(
-                "Native Layer Outlines", nativeOutlines);
+        this.mobileOutlines = new MobileOutlinesDataStore2(this.mobileLayers2, 0, Adapters.adapt(new FeatureSetDatabase(null)));
+
+        this.mobileOutlinesLayer = new FeatureLayer3("Mobile Layer Outlines", mobileOutlines);
+        this.nativeOutlines = new OutlinesFeatureDataStore2(this.nativeLayers, 0, false, Adapters.adapt(new FeatureSetDatabase(null)));
+        this.nativeOutlinesLayer = new FeatureLayer3(
+                "Native Layer Outlines", this.nativeOutlines);
 
         // create the layers adapters
         _nativeLayersAdapter = new NativeLayerSelectionAdapter(
@@ -834,10 +840,21 @@ public class LayersMapComponent extends AbstractMapComponent
         }
     }
 
+    /** @deprecated use {@link #loadLayerState(SharedPreferences, String, RasterLayer2, FeatureDataStore2, boolean)} */
+    @Deprecated
+    @DeprecatedApi(since = "4.6", forRemoval = true, removeAt = "4.9")
     public static void loadLayerState(SharedPreferences prefs,
             String id,
             RasterLayer2 layer,
             FeatureDataStore layerOutlines,
+            boolean adoptParentVisibility) {
+        loadLayerState(prefs, id, layer, Adapters.adapt(layerOutlines), adoptParentVisibility);
+    }
+
+    public static void loadLayerState(SharedPreferences prefs,
+            String id,
+            RasterLayer2 layer,
+            FeatureDataStore2 layerOutlines,
             boolean adoptParentVisibility) {
 
         final int count = prefs
@@ -849,7 +866,7 @@ public class LayersMapComponent extends AbstractMapComponent
             boolean visible;
             Map<Long, Pair<BasicStrokeStyle, Boolean>> fids = new HashMap<>();
             FeatureCursor result;
-            FeatureDataStore.FeatureQueryParameters params = new FeatureDataStore.FeatureQueryParameters();
+            FeatureDataStore2.FeatureQueryParameters params = new FeatureDataStore2.FeatureQueryParameters();
             Feature f;
             BasicStrokeStyle style;
             synchronized (layerOutlines) {
@@ -868,7 +885,7 @@ public class LayersMapComponent extends AbstractMapComponent
                     if (type == null)
                         continue;
 
-                    params.featureNames = Collections.singleton(type);
+                    params.names = Collections.singleton(type);
                     fids.clear();
                     result = null;
                     try {
@@ -878,8 +895,7 @@ public class LayersMapComponent extends AbstractMapComponent
                             if (f.getStyle() instanceof BasicStrokeStyle) {
                                 style = (BasicStrokeStyle) f.getStyle();
                                 if (adoptParentVisibility)
-                                    visible |= layerOutlines.isFeatureVisible(f
-                                            .getId());
+                                    visible |= Utils.isFeatureVisible(layerOutlines, f.getId());
 
                                 fids.put(
                                         f.getId(),
@@ -892,6 +908,8 @@ public class LayersMapComponent extends AbstractMapComponent
                                                         visible));
                             }
                         }
+                    } catch(DataStoreException ignored) {
+                        // will revert to defaults
                     } finally {
                         if (result != null)
                             result.close();
@@ -901,7 +919,12 @@ public class LayersMapComponent extends AbstractMapComponent
                             .entrySet()) {
                         try {
                             layerOutlines.updateFeature(entry.getKey(),
-                                    entry.getValue().first);
+                                    FeatureDataStore2.PROPERTY_FEATURE_STYLE,
+                                    null,
+                                    null,
+                                    entry.getValue().first,
+                                    null,
+                                    FeatureDataStore2.UPDATE_ATTRIBUTES_ADD_OR_REPLACE);
                             layerOutlines.setFeatureVisible(
                                     entry.getKey(),
                                     entry.getValue().second);
@@ -943,14 +966,22 @@ public class LayersMapComponent extends AbstractMapComponent
         RasterUtils.loadSelectionVisibility(layer, true, prefs);
     }
 
+    /** @deprecated use {@link #saveLayerState(SharedPreferences, String, RasterLayer2, FeatureDataStore2)} */
+    @Deprecated
+    @DeprecatedApi(since = "4.6", forRemoval = true, removeAt = "4.9")
     public static void saveLayerState(SharedPreferences prefs,
             String id, RasterLayer2 layer, FeatureDataStore layerOutlines) {
+        saveLayerState(prefs, id, layer, Adapters.adapt(layerOutlines));
+    }
+
+    public static void saveLayerState(SharedPreferences prefs,
+            String id, RasterLayer2 layer, FeatureDataStore2 layerOutlines) {
 
         SharedPreferences.Editor editor = prefs.edit();
 
         if (layerOutlines != null) {
             Map<String, Pair<Integer, Boolean>> colors = new HashMap<>();
-            FeatureDataStore.FeatureQueryParameters params = new FeatureDataStore.FeatureQueryParameters();
+            FeatureDataStore2.FeatureQueryParameters params = new FeatureDataStore2.FeatureQueryParameters();
             Feature f;
             FeatureCursor result = null;
             try {
@@ -960,9 +991,11 @@ public class LayersMapComponent extends AbstractMapComponent
                     if (f.getStyle() instanceof BasicStrokeStyle) {
                         colors.put(f.getName(), Pair.create(
                                 ((BasicStrokeStyle) f.getStyle()).getColor(),
-                                layerOutlines.isFeatureVisible(f.getId())));
+                                Utils.isFeatureVisible(layerOutlines, f.getId())));
                     }
                 }
+            } catch(DataStoreException ignored) {
+                // will use defaults
             } finally {
                 if (result != null)
                     result.close();
@@ -1085,29 +1118,32 @@ public class LayersMapComponent extends AbstractMapComponent
         }
     }
 
-    static void setFeatureSetsVisible(FeatureDataStore dataStore,
-            FeatureDataStore.FeatureSetQueryParameters params,
+    static void setFeatureSetsVisible(FeatureDataStore2 dataStore,
+            FeatureDataStore2.FeatureSetQueryParameters params,
             boolean visible) {
         synchronized (dataStore) {
             LinkedList<Long> fsids = new LinkedList<>();
 
-            FeatureDataStore.FeatureSetCursor result = null;
+            FeatureSetCursor result = null;
             try {
                 result = dataStore.queryFeatureSets(params);
                 while (result.moveToNext())
-                    fsids.add(result.get().getId());
+                    fsids.add(result.getId());
+            } catch(DataStoreException ignored) {
             } finally {
                 if (result != null)
                     result.close();
             }
 
-            for (Long fid : fsids)
-                dataStore.setFeatureSetVisible(fid, visible);
+            try {
+                for (Long fid : fsids)
+                    dataStore.setFeatureSetVisible(fid, visible);
+            } catch(DataStoreException ignored) {}
         }
     }
 
-    static void setFeaturesVisible(FeatureDataStore dataStore,
-            FeatureDataStore.FeatureQueryParameters params, boolean visible) {
+    static void setFeaturesVisible(FeatureDataStore2 dataStore,
+            FeatureDataStore2.FeatureQueryParameters params, boolean visible) {
         synchronized (dataStore) {
             LinkedList<Long> fids = new LinkedList<>();
 
@@ -1116,13 +1152,16 @@ public class LayersMapComponent extends AbstractMapComponent
                 result = dataStore.queryFeatures(params);
                 while (result.moveToNext())
                     fids.add(result.get().getId());
+            } catch(DataStoreException ignored) {
             } finally {
                 if (result != null)
                     result.close();
             }
 
-            for (Long fid : fids)
-                dataStore.setFeatureVisible(fid, visible);
+            try {
+                for (Long fid : fids)
+                    dataStore.setFeatureVisible(fid, visible);
+            } catch(DataStoreException ignored) {}
         }
     }
 }

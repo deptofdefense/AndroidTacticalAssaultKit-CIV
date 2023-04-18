@@ -384,7 +384,7 @@ public class AssimpModelSpi implements ModelSpi {
             if (mat0.getTwoSided())
                 builder.setWindingOrder(Mesh.WindingOrder.Undefined);
             else
-                builder.setWindingOrder(Model.WindingOrder.CounterClockwise);
+                builder.setWindingOrder(Mesh.WindingOrder.CounterClockwise);
 
             // color modulation will occur on vertex add to reduce material switches at render time
             if(isInstance)

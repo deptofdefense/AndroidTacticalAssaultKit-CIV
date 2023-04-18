@@ -18,6 +18,8 @@ import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
+import androidx.annotation.NonNull;
+
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import com.atakmap.android.maps.MapActivity;
@@ -605,7 +607,7 @@ public final class AtakPluginRegistry {
      * @return
      */
     private <T> T loadExtension(Extension extension) {
-        Object ret = null;
+        Object ret;
         if (extension.parent == null || extension.parent.appInfo == null) {
             Log.w(TAG, "plugin extension invalid: " + extension);
             return null;
@@ -1010,6 +1012,7 @@ public final class AtakPluginRegistry {
         public transient boolean shouldLoad = false;
         public transient String pluginApi = null;
 
+        @NonNull
         public String toString() {
             StringBuilder ret = new StringBuilder(getPackageName() + ": ");
             for (Extension extension : extensions) {
@@ -1049,6 +1052,7 @@ public final class AtakPluginRegistry {
          */
         public transient PluginDescriptor parent;
 
+        @NonNull
         public String toString() {
             return "[Extension type=" + type + ", impl=" + impl + "]";
         }

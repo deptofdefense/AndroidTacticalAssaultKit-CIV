@@ -1,6 +1,7 @@
 
 package com.atakmap.android.user.icon;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
 import com.atakmap.android.maps.Marker;
@@ -37,6 +38,7 @@ public class Icon2525cPallet implements IconPallet {
         return fragment;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "Icon2525cPallet";
