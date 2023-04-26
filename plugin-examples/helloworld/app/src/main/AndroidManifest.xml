@@ -2,6 +2,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.atakmap.android.helloworld.plugin">
 
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
     <application 
         android:allowBackup="false"
         android:icon="@drawable/ic_launcher"
@@ -10,7 +12,6 @@
         android:theme="@style/AppTheme" >
         <meta-data android:name="plugin-api" android:value="${atakApiVersion}"/>
         <meta-data android:name="app_desc" android:value="@string/app_desc"/>
-
 
   
         <provider android:name="com.javacodegeeks.android.contentprovidertest.BirthProvider"
