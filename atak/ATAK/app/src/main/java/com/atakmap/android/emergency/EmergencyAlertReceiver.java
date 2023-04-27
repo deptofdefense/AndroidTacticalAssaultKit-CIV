@@ -35,6 +35,7 @@ import java.util.TimerTask;
 public class EmergencyAlertReceiver extends BroadcastReceiver {
 
     private static final String TAG = "EmergencyAlertReceiver";
+    private static final EmergencyAlertReceiver _instance;
 
     final static String ALERT_EVENT = "com.atakmap.android.emergency.ALERT_EVENT";
     final static String CANCEL_EVENT = "com.atakmap.android.emergency.CANCEL_EVENT";
@@ -45,7 +46,7 @@ public class EmergencyAlertReceiver extends BroadcastReceiver {
      * Simple container for an ongoing alert
      * Note, we could track additional data if necessary, e.g. first/last report time, CoT type, etc
      */
-    static class EmergencyAlert extends WarningComponent.Alert {
+    public static class EmergencyAlert extends WarningComponent.Alert {
         private String type;
         private String message;
         private GeoPoint point;
@@ -199,6 +200,14 @@ public class EmergencyAlertReceiver extends BroadcastReceiver {
         _initialized = false;
 
         _alertGroup = _mapView.getRootGroup().findMapGroup("Emergency");
+        _instance = this;
+    }
+
+    public static EmergencyAlertReceiver getInstance() {
+        if (_instance == null) {
+            throw new IllegalStateException("EmergencyAlertReceiver not initialized yet");
+        }
+        return _instance;
     }
 
     @Override
@@ -471,7 +480,7 @@ public class EmergencyAlertReceiver extends BroadcastReceiver {
         return null;
     }
 
-    synchronized int getAlertCount() {
+    public synchronized int getAlertCount() {
         return _alerts.size();
     }
 
@@ -479,7 +488,7 @@ public class EmergencyAlertReceiver extends BroadcastReceiver {
      * Get list of Emergency alerts
      * @return the list of emergency alerts
      */
-    synchronized List<EmergencyAlert> getAlerts() {
+    public synchronized List<EmergencyAlert> getAlerts() {
         return new ArrayList<>(_alerts);
     }
 
