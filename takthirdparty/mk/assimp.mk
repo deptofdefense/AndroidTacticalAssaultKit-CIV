@@ -7,14 +7,15 @@ assimp_out_jlib=$(OUTDIR)/lib/$(LIB_PREFIX)jassimp.$(LIB_SHAREDSUFFIX)
 
 .PHONY: assimp_build
 assimp_build: cmake_check $(assimp_local_srcdir)
-	cd $(assimp_local_srcdir)/$(assimp_builddir)               &&     \
-          $(CMAKE) -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release         \
-              -DCMAKE_INSTALL_PREFIX=../../../                            \
-              -DZLIB_HOME=$(OUTDIR_CYGSAFE)                               \
-              -DZLIB_ROOT=$(OUTDIR_CYGSAFE)                               \
-              $(assimp_CONFIG_EX)                                         \
-              ../                      &&                                 \
-	    make assimp && make jassimp
+	cd $(assimp_local_srcdir)/$(assimp_builddir)                   && \
+          $(CMAKE) -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release     \
+              -DCMAKE_INSTALL_PREFIX=../../../                        \
+              -DZLIB_HOME=$(OUTDIR_CYGSAFE)                           \
+              -DZLIB_ROOT=$(OUTDIR_CYGSAFE)                           \
+              $(assimp_CONFIG_EX)                                     \
+              ../                                                  && \
+	    $(MAKE) -j `nproc` assimp                                  && \
+		$(MAKE) -j `nproc` jassimp
 	cd $(assimp_local_srcdir)/port/jassimp && ant
 
 $(assimp_local_libfile): assimp_build

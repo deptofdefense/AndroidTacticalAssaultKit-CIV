@@ -10,7 +10,7 @@ zlib_configtouchfile=$(OUTDIR)/$(zlib_srcdir)/.configured
 
 
 $(zlib_configtouchfile): $(zlib_srctouchfile)
-	cd $(OUTDIR)/$(zlib_srcdir) &&                       \
+	cd $(OUTDIR)/$(zlib_srcdir) &&                   \
 		CFLAGS="$(zlib_CFLAGS)"                      \
 		CXXFLAGS="$(zlib_CXXFLAGS)"                  \
 		LDFLAGS="$(zlib_LDFLAGS)"                    \
@@ -29,13 +29,13 @@ $(zlib_configtouchfile): $(zlib_srctouchfile)
 # the files are up to date;  it knows if anything needs to be done
 .PHONY: zlib_build
 zlib_build: $(zlib_configtouchfile)
-	$(MAKE) -C $(OUTDIR)/$(zlib_srcdir)
+	$(MAKE) -j `nproc` -C $(OUTDIR)/$(zlib_srcdir)
 
 $(zlib_src_lib): zlib_build
 	@echo "zlib built"
 
 $(zlib_out_lib): $(zlib_src_lib)
-	$(MAKE) -C $(OUTDIR)/$(zlib_srcdir) install
+	$(MAKE) -j `nproc` -C $(OUTDIR)/$(zlib_srcdir) install
 
 zlib_clean:
 	rm -rf $(OUTDIR)/$(zlib_srcdir)

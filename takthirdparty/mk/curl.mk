@@ -27,13 +27,13 @@ $(curl_configtouchfile): $(curl_srctouchfile)
 # the files are up to date;  it knows if anything needs to be done
 .PHONY: curl_build
 curl_build: $(curl_configtouchfile)
-	$(MAKE) -C $(OUTDIR)/$(curl_srcdir)
+	$(MAKE) -j `nproc` -C $(OUTDIR)/$(curl_srcdir)
 
 $(curl_src_lib): curl_build
 	@echo "curl built"
 
 $(curl_out_lib): $(curl_src_lib)
-	$(MAKE) -C $(OUTDIR)/$(curl_srcdir) install
+	$(MAKE) -j `nproc` -C $(OUTDIR)/$(curl_srcdir) install
 	dos2unix $(OUTDIR)/bin/curl-config
 	cd $(OUTDIR)/lib && ( test "`echo *.la`" = "*.la" && true || cd $(OUTDIR)/lib && for i in *.la ; do dos2unix $$i ; done )
 

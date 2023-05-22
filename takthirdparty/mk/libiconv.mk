@@ -8,7 +8,7 @@ libiconv_configtouchfile=$(OUTDIR)/$(libiconv_srcdir)/.configured
 
 
 $(libiconv_configtouchfile): $(libiconv_srctouchfile)
-	cd $(OUTDIR)/$(libiconv_srcdir) &&                       \
+	cd $(OUTDIR)/$(libiconv_srcdir) &&                   \
 		CFLAGS="$(libiconv_CFLAGS)"                      \
 		CXXFLAGS="$(libiconv_CXXFLAGS)"                  \
 		LDFLAGS="$(libiconv_LDFLAGS)"                    \
@@ -19,8 +19,8 @@ $(libiconv_configtouchfile): $(libiconv_srctouchfile)
 		./configure                                      \
 		$(CONFIGURE_TARGET)                              \
 		$(CONFIGURE_$(BUILD_TYPE))                       \
-		--disable-shared                                  \
-		--enable-static                                 \
+		--disable-shared                                 \
+		--enable-static                                  \
 		--prefix=$(OUTDIR_CYGSAFE)
 	touch $@
 
@@ -28,7 +28,7 @@ $(libiconv_configtouchfile): $(libiconv_srctouchfile)
 # the files are up to date;  it knows if anything needs to be done
 .PHONY: libiconv_build
 libiconv_build: $(libiconv_configtouchfile)
-	$(MAKE) -C $(OUTDIR)/$(libiconv_srcdir)
+	$(MAKE) -j `nproc` -C $(OUTDIR)/$(libiconv_srcdir)
 
 $(libiconv_src_lib): libiconv_build
 	@echo "libiconv built"
@@ -36,7 +36,7 @@ $(libiconv_src_lib): libiconv_build
 # We do make install-lib here as "install" fails during iconv program
 # linking on win32 build for android.  No need for it, so skip it
 $(libiconv_out_lib): $(libiconv_src_lib)
-	$(MAKE) -C $(OUTDIR)/$(libiconv_srcdir)                  \
+	$(MAKE) -j `nproc` -C $(OUTDIR)/$(libiconv_srcdir)   \
 		mkinstalldirs="mkdir -p"                         \
 		install-lib
 	cd $(OUTDIR)/lib && ( test "`echo *.la`" = "*.la" && true || cd $(OUTDIR)/lib && for i in *.la ; do dos2unix $$i ; done )
