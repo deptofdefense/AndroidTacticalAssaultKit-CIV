@@ -25,7 +25,6 @@ jobs:
         git lfs checkout
     - name: set environment
       run: |
-        apt -y install ant
         apt -y install apg
         apt -y install dos2unix
         apt -y install autoconf
@@ -45,10 +44,17 @@ jobs:
         echo "ANDROID_BUILD_TOOLS=29.0.3" >> $GITHUB_ENV
         echo "ANDROID_SDK_TOOLS=4333796" >> $GITHUB_ENV
         echo "NDK_VERSION=12b" >> $GITHUB_ENV
+        echo "ANT_VERSION=1.10.14" >> $GITHUB_ENV
         echo "KEYSTORE_ALIAS=CI" >> $GITHUB_ENV
         echo "KEYSTORE_STORE_PASSWORD=$(apg -a 1 -n 1 -m 16 -x 16 -E '\')" >> $GITHUB_ENV
         echo "KEYSTORE_KEY_PASSWORD=$(apg -a 1 -n 1 -m 16 -x 16 -E '\')" >> $GITHUB_ENV
         mkdir $HOME/secrets
+    - name: install Apache Ant build tool
+      run: |
+        wget --quiet --tries=0 --output-document=ant.zip https://dlcdn.apache.org//ant/binaries/apache-ant-${ANT_VERSION}-bin.zip
+        unzip -qq ant.zip
+        echo "$PWD/apache-ant-${ANT_VERSION}/bin/" >> $GITHUB_PATH
+        echo "ANT_HOME=$PWD/apache-ant-${ANT_VERSION}" >> $GITHUB_ENV
     - name: set up Android SDK
       run: |
        wget --quiet --tries=0 --output-document=android-sdk.zip https://dl.google.com/android/repository/sdk-tools-linux-${ANDROID_SDK_TOOLS}.zip;
