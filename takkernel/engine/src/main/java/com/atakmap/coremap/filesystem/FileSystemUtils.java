@@ -265,17 +265,17 @@ public class FileSystemUtils {
 
     private static void legacyFindMountRootDirs(Set<File> roots) {
         File root;
+        BufferedReader br = null;
+
         try {
             Process proc = new ProcessBuilder().command("mount")
                     .redirectErrorStream(true).start();
-            proc.waitFor();
-            InputStream is = proc.getInputStream();
 
-            BufferedReader r = new BufferedReader(
-                    new InputStreamReader(is, UTF8_CHARSET));
+            br = new BufferedReader(
+                    new InputStreamReader(proc.getInputStream(), UTF8_CHARSET));
 
             String line;
-            while ((line = r.readLine()) != null) {
+            while ((line = br.readLine()) != null) {
                 // XXX - filesystem types for device storage?
                 if (line.contains("fat")) {
                     Log.d(TAG, "Found mnt line: " + line);
@@ -285,7 +285,6 @@ public class FileSystemUtils {
                         path = lineParts[2];
 
                     if (path != null) {
-
                         boolean valid = false;
 
                         for (String wlPath : ROOT_FS_WHITELIST)
@@ -309,10 +308,14 @@ public class FileSystemUtils {
                     }
                 }
             }
-            is.close();
+
+            br.close();
+            proc.waitFor();
             destroyProcess(proc);
-        } catch (IOException | InterruptedException e2) {
-            Log.e(TAG, "error: ", e2);
+        } catch (IOException | InterruptedException | SecurityException e) {
+            Log.e(TAG, "error: ", e);
+        } finally {
+            IoUtils.close(br, TAG);
         }
     }
 
