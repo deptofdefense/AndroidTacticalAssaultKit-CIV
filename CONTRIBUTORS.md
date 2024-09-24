@@ -7,6 +7,7 @@
 - _Add the copyright date, your name, and email address here. (PLEASE KEEP THIS LINE)_
 - 2021-10-29 Matt B w20682@motorolasolutions.com
 - 2022-01-11 Yuvraaj Kelkar uv@crave.io
+- 2024-09-24 Łukasz "LukeBlueLOx" Andruszkiewicz luke.blue.lox@gmail.com
 
 ## Note for U.S. Federal Employees
 
