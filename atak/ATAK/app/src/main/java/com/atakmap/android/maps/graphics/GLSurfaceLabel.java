@@ -183,7 +183,7 @@ final class GLSurfaceLabel {
                 (float) _textPoint.z);
         float rotation = _textAngle;
         if (_rotateAbsolute)
-            rotation -= view.drawRotation;
+            rotation -= view.currentPass.drawRotation;
         else
             rotation += view.currentScene.drawRotation;
 

@@ -51,7 +51,7 @@ import com.atakmap.android.maps.Marker.OnTrackChangedListener;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.PointMapItem.OnPointChangedListener;
 import com.atakmap.android.navigation.views.NavView;
-import com.atakmap.android.selfcoordoverlay.SelfCoordOverlayUpdaterCompat;
+import com.atakmap.android.selfcoordoverlay.SelfCoordOverlayUpdater;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.Permissions;
@@ -1294,7 +1294,8 @@ public class LocationMapComponent extends AbstractMapComponent implements
     public void onSharedPreferenceChanged(
             SharedPreferences sharedPreferences, String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         switch (key) {
             case "useGPSTime":
@@ -1699,6 +1700,7 @@ public class LocationMapComponent extends AbstractMapComponent implements
                 _accuracyEllipse.setStrokeWeight(4);
                 _accuracyEllipse.setMetaString("shapeName", "GPS Error");
                 _accuracyEllipse.setMetaBoolean("addToObjList", false);
+                _accuracyEllipse.setClickable(false);
             }
             _locationGroup.addItem(_accuracyEllipse);
             enableGPSError(true);
@@ -1813,7 +1815,7 @@ public class LocationMapComponent extends AbstractMapComponent implements
                         .getLong(
                                 prefix + "LocationTime")) < GPS_TIMEOUT_MILLIS) {
 
-            SelfCoordOverlayUpdaterCompat.change();
+            SelfCoordOverlayUpdater.getInstance().change();
 
             GeoPoint point = data.getParcelable(prefix + "Location");
 
@@ -1910,10 +1912,10 @@ public class LocationMapComponent extends AbstractMapComponent implements
             //_locationMarker.removeMetaData("Speed");
             //avgSpeed.reset();
 
-            SelfCoordOverlayUpdaterCompat.change();
+            SelfCoordOverlayUpdater.getInstance().change();
         } else {
             //No GPS available but still need to update location/connectcion widgets
-            SelfCoordOverlayUpdaterCompat.change();
+            SelfCoordOverlayUpdater.getInstance().change();
         }
 
         /*

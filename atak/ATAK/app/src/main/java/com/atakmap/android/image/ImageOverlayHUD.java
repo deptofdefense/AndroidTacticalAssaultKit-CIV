@@ -22,6 +22,7 @@ import com.atakmap.android.imagecapture.TiledCanvas;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.preference.UnitPreferences;
 import com.atakmap.android.util.ATAKUtilities;
+import com.atakmap.annotations.ModifierApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
@@ -79,6 +80,8 @@ class ImageOverlayHUD {
     private ProgressDialog _pd;
     private boolean _pdCanceled;
 
+
+    @ModifierApi(since = "4.5", target="4.8", modifiers={})
     public ImageOverlayHUD(MapView mapView, File inFile) {
         _mapView = mapView;
         _context = mapView.getContext();

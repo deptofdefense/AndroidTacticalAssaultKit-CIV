@@ -140,10 +140,8 @@ public class Icon2525cPalletFragment extends Fragment {
 
         if (currPair == null) {
             currPair = new subtypePair(getString(R.string.ground), "G");
-            _subtypeButton.setText(currPair.readableString);
-        } else {
-            _subtypeButton.setText(currPair.readableString);
         }
+        _subtypeButton.setText(currPair.readableString);
 
         return v;
     }

@@ -9,8 +9,6 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import com.atakmap.android.util.FileProviderHelper;
@@ -25,6 +23,7 @@ import android.annotation.SuppressLint;
 import android.graphics.drawable.BitmapDrawable;
 import android.util.DisplayMetrics;
 
+import com.atakmap.android.util.IconUtilities;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
@@ -176,15 +175,7 @@ public class AppMgmtUtils {
 
         // Create a bitmap buffer for the image
         int sizePixels = (int) size;
-        Bitmap bmp = Bitmap.createBitmap(sizePixels, sizePixels,
-                Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bmp);
-
-        // Draw the image to the bitmap
-        Rect bounds = new Rect(image.getBounds());
-        image.setBounds(0, 0, sizePixels, sizePixels);
-        image.draw(canvas);
-        image.setBounds(bounds);
+        Bitmap bmp = IconUtilities.getBitmap(image, sizePixels, sizePixels);
 
         // Create a new bitmap drawable for the scaled image
         return new BitmapDrawable(context.getResources(), bmp);

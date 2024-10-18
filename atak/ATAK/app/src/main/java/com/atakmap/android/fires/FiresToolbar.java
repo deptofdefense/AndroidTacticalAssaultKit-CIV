@@ -217,7 +217,8 @@ public class FiresToolbar implements
     public void onSharedPreferenceChanged(
             final SharedPreferences prefs, final String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         FlavorProvider fp = SystemComponentLoader.getFlavorProvider();
         if (key.equals("legacyFiresToolbarMode")) {

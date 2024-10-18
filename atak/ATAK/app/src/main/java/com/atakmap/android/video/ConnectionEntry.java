@@ -15,6 +15,7 @@ import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
 import java.io.Serializable;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -326,8 +327,6 @@ public class ConnectionEntry implements Serializable {
             setPath(u.getPath());
         else
             setPath(u.getPath() + "?" + query);
-
-
 
         if ((this.protocol == Protocol.RTSP)) {
             String q = u.getQuery();
@@ -939,18 +938,31 @@ public class ConnectionEntry implements Serializable {
         if (!address.contains("://"))
             address = "scheme://" + address;
 
-        URI u = URI.create(address);
-        final String up = u.getUserInfo();
+        String up;
+        String host;
+
+        try {
+            final URI u = URI.create(address);
+            up = u.getUserInfo();
+            host = u.getHost();
+        } catch (Exception uriException) {
+            try {
+                address = address.replace("scheme://", "http://");
+                URL url = new URL(address);
+                up = url.getUserInfo();
+                host = url.getHost();
+            } catch (Exception urlException) {
+                return retval;
+            }
+        }
         if (!FileSystemUtils.isEmpty(up)) {
             String[] upList = up.split(":");
             if (upList.length > 0)
                 retval[0] = upList[0];
             if (upList.length > 1)
                 retval[1] = upList[1];
-            retval[2] = u.getHost();
-        } else {
-            retval[2] = u.getHost();
         }
+        retval[2] = host;
         return retval;
     }
 }

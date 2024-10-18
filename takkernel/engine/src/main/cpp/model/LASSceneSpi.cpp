@@ -15,6 +15,7 @@
 #include "core/Projection2.h"
 #include "core/ProjectionFactory3.h"
 
+using namespace TAK::Engine::Formats::LAS;
 using namespace TAK::Engine::Port;
 using namespace TAK::Engine::Math;
 using namespace TAK::Engine::Model;
@@ -22,17 +23,24 @@ using namespace TAK::Engine::Feature;
 using namespace TAK::Engine::Util;
 
 namespace {
-    LASPointH LASReader_GetNextPoint(LASReaderH reader, const std::size_t pointInterval) NOTHROWS
-    {
-        for (std::size_t i = 1; i < pointInterval; i++) {
-            // read the point, break on EOF
-            if (!::LASReader_GetNextPoint(reader))
-                break;
+LASPointH LASReader_GetNextPoint(LASReaderH reader, const std::size_t pointInterval) NOTHROWS {
+    for (std::size_t i = 1; i < pointInterval; i++) {
+        // read the point, break on EOF
+        if (!::LASReader_GetNextPoint(reader)) break;
+    }
+    // read point at interval
+    return ::LASReader_GetNextPoint(reader);
+}
+}  // namespace
+
+namespace TAK {
+    namespace Engine {
+        namespace Model {
+            extern double LASSceneInfoSpi_getZScale(LASHeaderH header);
         }
-        // read point at interval
-        return ::LASReader_GetNextPoint(reader);
     }
 }
+
 
 const char *LASSceneSPI::getType() const NOTHROWS {
     return "LAS";
@@ -42,6 +50,7 @@ int LASSceneSPI::getPriority() const NOTHROWS {
     return 1;
 }
 
+// Calculates phi [0..1] along normal distribution
 double phi(double x, double mu, double sigma) {
     // constants
     double a1 = 0.254829592;
@@ -63,59 +72,41 @@ double phi(double x, double mu, double sigma) {
     return 0.5 * (1.0 + sign * y);
 }
 
-typedef struct {
-    double r;  // [0, 1]
-    double g;  // [0, 1]
-    double b;  // [0, 1]
-} rgb;
+void hsv2rgb(double h, double s, double v, float *r, float *g, float *b) {
 
-typedef struct {
-    double h;  // [0, 360]
-    double s;  // [0, 1]
-    double v;  // [0, 1]
-} hsv;
+    (h == 360.) ? (h = 0.) : (h /= 60.);
+    double fract = h - floor(h);
 
-rgb hsv2rgb(hsv HSV) {
-    rgb RGB;
-    double H = HSV.h, S = HSV.s, V = HSV.v, P, Q, T, fract;
+    double P = v * (1. - s);
+    double Q = v * (1. - s * fract);
+    double T = v * (1. - s * (1. - fract));
+#define RGB(_r, _g, _b) { *r = float(_r); *g = float(_g); *b = float(_b); }
 
-    (H == 360.) ? (H = 0.) : (H /= 60.);
-    fract = H - floor(H);
-
-    P = V * (1. - S);
-    Q = V * (1. - S * fract);
-    T = V * (1. - S * (1. - fract));
-
-    if (0. <= H && H < 1.)
-        RGB = { V,  T,  P};
-    else if (1. <= H && H < 2.)
-        RGB = { Q, V, P};
-    else if (2. <= H && H < 3.)
-        RGB = {P, V, T};
-    else if (3. <= H && H < 4.)
-        RGB = {P, Q, V};
-    else if (4. <= H && H < 5.)
-        RGB = {T, P, V};
-    else if (5. <= H && H < 6.)
-        RGB = {V, P, Q};
+    if (0. <= h && h < 1.)
+        RGB(v, T, P)
+    else if (1. <= h && h < 2.)
+        RGB(Q, v, P)
+    else if (2. <= h && h < 3.)
+        RGB(P, v, T)
+    else if (3. <= h && h < 4.)
+        RGB(P, Q, v)
+    else if (4. <= h && h < 5.)
+        RGB(T, P, v)
+    else if (5. <= h && h < 6.)
+        RGB(v, P, Q)
     else
-        RGB = {0., 0., 0.};
-
-    return RGB;
+        RGB(0., 0., 0.)
+#undef RGB
 }
 
-TAKErr TAK::Engine::Model::LASSceneSPI_computeZColor(double z, float* r, float* g, float* b) {
-    double meanRaw = 3117099.9999999995;
-    double stdDevRaw = 4822999.9999999991;
-
-    double val = phi(z, meanRaw, stdDevRaw);
-    auto RGB = hsv2rgb({ val * 360.0, 1, 1 });
-    *r = float(RGB.r);
-    *g = float(RGB.g);
-    *b = float(RGB.b);
+TAKErr TAK::Engine::Model::LASSceneSPI_computeZColor(float* r, float* g, float* b, double mean, double stddev, double z) {
+    double val = phi(z, mean, stddev);
+    hsv2rgb(val * 360.0, 1, 1, r, g, b);
     return TE_Ok;
 }
-
+TAKErr TAK::Engine::Model::LASSceneSPI_computeZColor(double z, float *r, float *g, float *b) {
+    return LASSceneSPI_computeZColor(r, g, b, 10., 6., z);
+}
 
 /**
  * This is a very basic scene implementation suitable only for small datasets.
@@ -138,14 +129,24 @@ TAKErr LASSceneSPI::create(ScenePtr &scene, const char *URI, ProcessingCallback 
         LASError_Pop();
         return TE_Unsupported;
     }
-    bool hasColorData = LASHeader_GetDataFormatId(*header) != 0 && LASHeader_GetDataFormatId(*header) != 1;
+
+    double zScale = LASSceneInfoSpi_getZScale(*header);
+
+    bool has_color = LAS_HasColor(*header);
+
+    // XXX-- libLAS has a bug in the zip reader that is triggered by the LAS_HasIntensity(reader, header); call. This happens on select sets, but the work around
+    //       here  opens a new reader which works as expected and leaves the current reader is a good state.
+    bool has_intensity = LAS_HasIntensity(URI);
+    
+    double mean = (LASHeader_GetMinZ(*header) + LASHeader_GetMaxZ(*header)) / 2.0;
+    double stddev = (LASHeader_GetMaxZ(*header) - LASHeader_GetMinZ(*header)) * 0.25;
     unsigned int pointRecordsCount = LASHeader_GetPointRecordsCount(*header);
     constexpr unsigned int pointLimit = 1000000;
     unsigned int pointsToRead = atakmap::math::min(pointLimit, pointRecordsCount);
     unsigned int skipFactor =   pointRecordsCount / pointsToRead;
 
-    TAK::Engine::Feature::Envelope2 aabb(LASHeader_GetMinX(*header), LASHeader_GetMinY(*header), LASHeader_GetMinZ(*header),
-                                         LASHeader_GetMaxX(*header), LASHeader_GetMaxY(*header), LASHeader_GetMaxZ(*header));
+    TAK::Engine::Feature::Envelope2 aabb(LASHeader_GetMinX(*header), LASHeader_GetMinY(*header), LASHeader_GetMinZ(*header) * zScale,
+                                         LASHeader_GetMaxX(*header), LASHeader_GetMaxY(*header), LASHeader_GetMaxZ(*header) * zScale);
 
     TAK::Engine::Math::Point2<double> center((aabb.minX + aabb.maxX) / 2.0, (aabb.minY + aabb.maxY) / 2.0, (aabb.minZ + aabb.maxZ) / 2.0);
 
@@ -172,22 +173,25 @@ TAKErr LASSceneSPI::create(ScenePtr &scene, const char *URI, ProcessingCallback 
     while ((point = LASReader_GetNextPoint(*reader, skipFactor)) != nullptr && (cancel = *callbacks->cancelToken) == false) {
         double x = LASPoint_GetX(point) - center.x;
         double y = LASPoint_GetY(point) - center.y;
-        double z = LASPoint_GetZ(point) - center.z;
+        double z = LASPoint_GetZ(point) * zScale - center.z;
 
-        if (hasColorData) {
+        if (has_color) {
             LASPoint_GetColorRGB(point, rgb);
-        } else {
+        } else if (has_intensity) {
             unsigned short val = LASPoint_GetIntensity(point);
             rgb[0] = val;
             rgb[1] = val;
             rgb[2] = val;
+        } else {
+            float fr, fg, fb;
+            TAK::Engine::Model::LASSceneSPI_computeZColor(&fr, &fg, &fb, mean, stddev, LASPoint_GetZ(point));
+
+            rgb[0] = uint16_t(fr * std::numeric_limits<uint16_t>::max());
+            rgb[1] = uint16_t(fg * std::numeric_limits<uint16_t>::max());
+            rgb[2] = uint16_t(fb * std::numeric_limits<uint16_t>::max());
         }
 
         meshBuilder.addVertex(x, y, z, 0, 0, 0, 0, 0, (float)rgb[0] / USHRT_MAX, (float)rgb[1] / USHRT_MAX, (float)rgb[2] / USHRT_MAX, 1);
-        // TODO
-        // if (useZColor) {
-        //    LASSceneSPI_computeZColor(rawZ, &r, &g, &b);
-        //}
 
         ++pointRecordIndex;
 

@@ -12,6 +12,11 @@ import com.atakmap.app.R;
 
 public class LayersManagerView extends AbstractLayersManagerView {
 
+
+    private ImageButton _upButton;
+    private ImageButton _downButton;
+    private CompoundButton _autoSelectButton;
+
     public LayersManagerView(Context context, AttributeSet attrs) {
         super(context, attrs, R.id.layers_manager_list,
                 R.id.layer_outline_toggle);
@@ -65,7 +70,4 @@ public class LayersManagerView extends AbstractLayersManagerView {
         return _autoSelectButton;
     }
 
-    private ImageButton _upButton;
-    private ImageButton _downButton;
-    private CompoundButton _autoSelectButton;
 }

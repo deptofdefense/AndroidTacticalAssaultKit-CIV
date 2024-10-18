@@ -85,7 +85,8 @@ public class BluetoothFragment implements OnSharedPreferenceChangeListener {
     public void onSharedPreferenceChanged(
             final SharedPreferences prefs, final String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         if (key.equals("atakControlBluetooth")) {
             if (prefs.getBoolean(key, false)) {

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center">
+
+    <RadioGroup
+        android:id="@+id/color_rg"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/shape_color_dialog_margin"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <RadioButton
+            android:id="@+id/stroke_color"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="@dimen/shape_color_dialog_margin"
+            android:text="@string/stroke_color"/>
+
+        <RadioButton
+            android:id="@+id/fill_color"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="@dimen/shape_color_dialog_margin"
+            android:text="@string/fill_color"/>
+
+        <RadioButton
+            android:id="@+id/both_colors"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/both"/>
+
+    </RadioGroup>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <GridView
+            android:id="@+id/color_grid"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/shape_color_dialog_margin"
+            android:layout_weight="1"
+            android:numColumns="5"
+            android:verticalSpacing="5dp"
+            android:horizontalSpacing="5dp"
+            android:gravity="center"
+            tools:listitem="@layout/color_palette_button"/>
+
+        <LinearLayout
+            android:id="@+id/color_preview_layout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="@dimen/shape_color_dialog_margin"
+            android:orientation="vertical">
+
+            <com.atakmap.android.gui.ShapeColorButton
+                android:id="@+id/color_preview"
+                style="@style/colorPreview"/>
+
+            <Button
+                android:id="@+id/custom_color"
+                android:layout_width="match_parent"
+                android:layout_height="42dp"
+                android:layout_marginTop="@dimen/shape_color_dialog_margin"
+                android:text="@string/custom"
+                android:textSize="14sp"
+                style="@style/darkButton"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/alpha_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/shape_color_dialog_margin"
+        android:layout_marginRight="@dimen/shape_color_dialog_margin"
+        android:layout_marginBottom="@dimen/shape_color_dialog_margin"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="@dimen/shape_color_dialog_margin"
+            android:text="@string/details_text11"/>
+
+        <SeekBar
+            android:id="@+id/alpha_bar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:max="255"
+            android:progress="255" />
+
+    </LinearLayout>
+
+</LinearLayout>

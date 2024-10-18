@@ -60,6 +60,8 @@ namespace TAK {
                 friend void Shader_get(std::shared_ptr<const Shader> &, const TAK::Engine::Core::RenderContext &, const RenderAttributes &attrs) NOTHROWS;
             };
 
+            constexpr float TE_GL_DEFAULT_POINT_SIZE = 8.0f;
+
             /**
                 * <P>MUST be invoked on render thread
                 *

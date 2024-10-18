@@ -40,6 +40,9 @@ namespace TAKEngineJNI {
             TAK::Engine::Util::TAKErr Interop_copy(TAK::Engine::Feature::Envelope2 *value, JNIEnv *env, jobject jenvelope) NOTHROWS;
             TAK::Engine::Util::TAKErr Interop_marshal(jobject value, JNIEnv &env, const TAK::Engine::Feature::Envelope2 &cenvelope) NOTHROWS;
             TAK::Engine::Util::TAKErr Interop_marshal(Java::JNILocalRef &value, JNIEnv &env, const TAK::Engine::Feature::Envelope2 &cenvelope) NOTHROWS;
+
+            TAK::Engine::Util::TAKErr Interop_marshal(Java::JNILocalRef &maltMode, JNIEnv &env, const TAK::Engine::Feature::AltitudeMode &caltMode) NOTHROWS;
+            TAK::Engine::Util::TAKErr Interop_marshal(TAK::Engine::Feature::AltitudeMode &caltMode, JNIEnv &env, jobject maltMode) NOTHROWS;
         }
     }
 }

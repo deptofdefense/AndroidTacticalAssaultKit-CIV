@@ -12,6 +12,7 @@ import com.atakmap.android.widgets.AbstractButtonWidget;
 import com.atakmap.android.widgets.MapWidget;
 import com.atakmap.android.widgets.RadialButtonWidget;
 import com.atakmap.android.widgets.WidgetIcon;
+import com.atakmap.android.widgets.WidgetBackground;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.opengl.GLES20FixedPipeline;
@@ -248,21 +249,28 @@ public class GLMapMenuButtonWidget extends GLAbstractButtonWidget implements
 
     @Override
     public void onButtonStateChanged(AbstractButtonWidget button) {
-        switch (button.getState()) {
-            case AbstractButtonWidget.STATE_PRESSED:
-            case AbstractButtonWidget.STATE_SELECTED:
-                _iconColor = Color.BLACK;
-                break;
-            case AbstractButtonWidget.STATE_DISABLED:
-                _iconColor = ColorUtils.setAlphaComponent(
-                        button.getBackground().getColor(
-                                AbstractButtonWidget.STATE_PRESSED),
-                        128);
-                break;
-            default:
-                _iconColor = button.getBackground()
-                        .getColor(AbstractButtonWidget.STATE_PRESSED);
-                break;
+
+        final WidgetBackground background = button.getBackground();
+        if (background != null) { 
+            switch (button.getState()) {
+                case AbstractButtonWidget.STATE_PRESSED:
+                case AbstractButtonWidget.STATE_SELECTED:
+                    _iconColor = Color.BLACK;
+                    break;
+                case AbstractButtonWidget.STATE_DISABLED:
+                    _iconColor = ColorUtils.setAlphaComponent(
+                            button.getBackground().getColor(
+                                    AbstractButtonWidget.STATE_PRESSED),
+                            128);
+                    break;
+                default:
+                    _iconColor = button.getBackground()
+                            .getColor(AbstractButtonWidget.STATE_PRESSED);
+                    break;
+             }
+        } else {
+             // make the broken state more obvious
+             _iconColor = Color.CYAN;
         }
         super.onButtonStateChanged(button);
     }

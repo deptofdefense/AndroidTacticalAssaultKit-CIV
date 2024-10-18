@@ -756,11 +756,29 @@ void GLMapView2::render() NOTHROWS
         atakmap::renderer::GLES20FixedPipeline::getInstance()->glOrthof((float)left, (float)right, (float)bottom, (float)top, 1.f, -1.f);
         atakmap::renderer::GLES20FixedPipeline::getInstance()->glMatrixMode(GLES20FixedPipeline::MatrixMode::MM_GL_MODELVIEW);
         atakmap::renderer::GLES20FixedPipeline::getInstance()->glLoadIdentity();
+        // report the terrain tile shader used
         {
             std::ostringstream dbg;
-            dbg << "render pump " << renderPumpElapsed << "ms";
+            const char *shader = "???";
+            if(offscreen) {
+                auto shaders = GLTerrainTile_getColorShader(context, renderPasses[0].drawSrid, TECSO_Lighting);
+                auto ctx = GLTerrainTile_begin(renderPasses[0].scene, offscreen->ecef.color);
+                if(ctx.shader.base.handle == shaders.hi.base.handle)
+                    shader = "HI";
+                else if(ctx.shader.base.handle == shaders.md.base.handle)
+                    shader = "MD";
+                else if(ctx.shader.base.handle == shaders.lo.base.handle)
+                    shader = "LO";
+                GLTerrainTile_end(ctx);
+            }
+            dbg << "Shader " << shader << " [" << ((int)(renderPasses[0].drawMapResolution*100.0)/100.0) << "m]";
             diagnosticMessages.push_back(dbg.str());
-            GLText2 *text = GLText2_intern(TextFormatParams(24));
+        }
+        // report render pump duration
+        {
+            std::ostringstream dbg;
+            dbg << "Render pump " << renderPumpElapsed << "ms";
+            diagnosticMessages.push_back(dbg.str());
         }
         GLText2 *text = GLText2_intern(TextFormatParams(14));
         if (text) {
@@ -3243,8 +3261,6 @@ namespace
                         0.0, 0.0, 0.0, 1.0);
 
         glUniformMatrix4(shader.uModelViewOffscreen, lla2tex);
-
-        glUniformMatrix4(shader.uModelViewOffscreen, matrix);
 
         glUniform4f(shader.base.uColor, r, g, b, a);
 

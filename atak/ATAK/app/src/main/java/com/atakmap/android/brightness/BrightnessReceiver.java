@@ -14,6 +14,7 @@ import com.atakmap.android.widgets.SeekBarControlCompat;
 import com.atakmap.map.layer.control.SurfaceRendererControl;
 import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.math.MathUtils;
+import com.atakmap.annotations.ModifierApi;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -32,6 +33,7 @@ public class BrightnessReceiver extends BroadcastReceiver implements
 
     private static SharedPreferences _prefs;
 
+    @ModifierApi(since = "4.5", target="4.8", modifiers={})
     public BrightnessReceiver(MapView mapView) {
         _mapView = mapView;
 
@@ -67,6 +69,7 @@ public class BrightnessReceiver extends BroadcastReceiver implements
         }
     }
 
+    @ModifierApi(since = "4.5", target="4.8", modifiers={})
     public void dismiss() {
         hideControl();
         _brightnessOverlay.scheduleDismissOnGLThread();

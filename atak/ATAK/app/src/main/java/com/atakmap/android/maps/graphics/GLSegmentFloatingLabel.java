@@ -557,7 +557,7 @@ public final class GLSegmentFloatingLabel {
         // raise the label vertically above the surface as the
         // tilt increases. use sin^2 to temper adjustment velocity
         // during tilt
-        final double sin_tilt = Math.sin(Math.toRadians(ortho.drawTilt));
+        final double sin_tilt = Math.sin(Math.toRadians(ortho.currentPass.drawTilt));
         return (float) (textHeight * sin_tilt * sin_tilt);
     }
 }

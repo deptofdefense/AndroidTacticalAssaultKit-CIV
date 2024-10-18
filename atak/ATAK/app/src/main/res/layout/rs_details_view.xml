@@ -118,14 +118,10 @@
                     android:text="@string/color"
                     android:textColor="@color/heading_yellow"
                     android:textSize="@dimen/draper_font"/>
-                <ImageButton
+                <com.atakmap.android.gui.ColorButton
+                    style="@style/darkColorButton"
                     android:id="@+id/sheetColor"
                     android:layout_gravity="center_vertical"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    style="@style/darkButton"
-                    android:src="@drawable/color_rectangle"
-                    android:padding="@dimen/auto_margin"
                     android:layout_row="5"
                     android:layout_column="1"
                     android:layout_columnSpan="1"

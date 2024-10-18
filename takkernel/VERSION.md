@@ -1,5 +1,81 @@
 # Version History
 
+## 0.38.0
+
+* Add support for rendering line segments in `GLBatchLineString`
+
+## 0.37.1
+
+* CLI `GeoMag` static constructor passing through wrong address to magnetic model struct
+
+## 0.37.0
+
+* Introduce spatial filters control for features renderer
+
+## 0.36.0
+
+* Minor modifications to support Linux compilation with GCC 4.8.x
+
+## 0.35.0
+
+* Add pre-generated SDF font representations
+
+## 0.34.1
+
+* Call SceneObjectControl's setLocation in onClampToGroundOffsetComputed.
+
+## 0.34.0
+
+* Marshal Java ModelInfo and native SceneInfo.
+* Pix4dGeoreferencer.locate will return ModelInfo from ZipCommentGeoreferencer.locate if available.
+
+## 0.33.1
+
+* Fix typo when computing default stroke style in `GLBatchPolygon`
+
+## 0.33.0
+
+* Optimize LAS -> C3DT PNTS conversion
+* Support progress callback during LAS -> C3DT PNTS conversion
+* `SceneInfo` supports mask for various supported "capabilities"
+* Add per-_scene object_ controls
+
+## 0.32.0
+
+* Add `getContact(String)` method to IContactStore, deprecate `containsContact(Contact)`
+
+## 0.31.1
+
+* Prevent a Playstore Crash: NullPointerException GdalLayerInfo
+
+## 0.31.0
+
+* Refactor shader source out of C++ files
+
+## 0.30.0
+
+* Adds CertificateManager.createSSLContext() to do SSLContext creation and initialization in a uniform way across TAK
+
+## 0.29.0
+
++ Provide a mechanism to construct a safe PullParser that defends against bombs such as a billion laughs
+
+## 0.28.2
+
+* C++/CLI `Tessellate` gracefully handles zero-length array
+
+## 0.28.1
+
+* Proguard friendly fix for addressing reflection regression in `Unsafe.allocateDirect` with Android 29. 
+
+## 0.28.0
+
+* Add `isAcceptableInFilename(character)` method to FileSystemUtils
+
+## 0.27.0
+
+* Add `withParentContact(IGroupContact)` method to GroupContactBuilder to support `IGroupContact::getParentContact()`
+
 ## 0.26.2
 
 * `ElMgrTerrainRenderService` unwinds all `ElevationSource::OnContentChangedListener`'s on destruct

@@ -170,10 +170,17 @@ public class FeatureDataStoreDeepMapItemQuery implements DeepMapItemQuery,
             if (fid != 0L)
                 fids = Collections.singleton(fid);
             if (limit == 0 && metadata.containsKey("limit"))
-                limit = Integer.parseInt(metadata.get("limit"));
-            if (metadata.containsKey("visibleOnly"))
-                visibleOnly = metadata.get("visibleOnly").equals("true");
-            else if (fid == 0L)
+                try {
+                    final String str = metadata.get("limit");
+                    if (str != null)
+                        limit = Integer.parseInt(str);
+                } catch (Exception ignored) {
+                    // invalid limit passed in - keep it as 0
+                }
+            if (metadata.containsKey("visibleOnly")) {
+                final String str = metadata.get("visibleOnly");
+                visibleOnly = (str != null && str.equals("true"));
+            } else if (fid == 0L)
                 return Collections.emptyList();
         }
 
@@ -236,11 +243,19 @@ public class FeatureDataStoreDeepMapItemQuery implements DeepMapItemQuery,
             final long fid = getFeatureId(metadata);
             if (fid != 0L)
                 fids = Collections.singleton(fid);
-            if (metadata.containsKey("limit"))
-                limit = Integer.parseInt(metadata.get("limit"));
-            if (metadata.containsKey("visibleOnly"))
-                visibleOnly = metadata.get("visibleOnly").equals("true");
-            else if (fid == 0L)
+            if (metadata.containsKey("limit")) {
+                try {
+                    final String str = metadata.get("limit");
+                    if (str != null)
+                        limit = Integer.parseInt(str);
+                } catch (Exception e) {
+                    // assume that an invalid limit is still 0
+                }
+            }
+            if (metadata.containsKey("visibleOnly")) {
+                final String str = metadata.get("visibleOnly");
+                visibleOnly = (str != null && str.equals("true"));
+            } else if (fid == 0L)
                 return Collections.emptyList();
         }
         QueryBuilder qb = new QueryBuilder();
@@ -272,10 +287,17 @@ public class FeatureDataStoreDeepMapItemQuery implements DeepMapItemQuery,
             if (fid != 0L)
                 fids = Collections.singleton(fid);
             if (limit == 0 && metadata.containsKey("limit"))
-                limit = Integer.parseInt(metadata.get("limit"));
-            if (metadata.containsKey("visibleOnly"))
-                visibleOnly = metadata.get("visibleOnly").equals("true");
-            else if (fid == 0L)
+                try {
+                    final String str = metadata.get("limit");
+                    if (str != null)
+                        limit = Integer.parseInt(str);
+                } catch (Exception e) {
+                    // assume in an error condition the limit is 0
+                }
+            if (metadata.containsKey("visibleOnly")) {
+                final String str = metadata.get("visibleOnly");
+                visibleOnly = (str != null && str.equals("true"));
+            } else if (fid == 0L)
                 return Collections.emptyList();
         }
 

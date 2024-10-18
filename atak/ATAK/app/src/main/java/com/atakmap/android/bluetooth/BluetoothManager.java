@@ -575,7 +575,8 @@ public class BluetoothManager {
 
         for (BluetoothDevice device : connectionMap.keySet()) {
             BluetoothCotManager t = connectionMap.get(device);
-            t.stop();
+            if (t != null)
+                t.stop();
         }
 
         connectionMap.clear();
@@ -604,13 +605,13 @@ public class BluetoothManager {
     void unregisterReceivers() {
         try {
             AtakBroadcast.getInstance().unregisterReceiver(deviceInfoRx);
-        } catch (Exception e) {
+        } catch (Exception ignored) {
             // chance this is not registered
         }
         try {
             AtakBroadcast.getInstance().unregisterReceiver(
                     adapterDiscoveryRx);
-        } catch (Exception e) {
+        } catch (Exception ignored) {
             // chance this is not registered
         }
     }

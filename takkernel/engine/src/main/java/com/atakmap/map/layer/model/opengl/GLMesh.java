@@ -246,48 +246,33 @@ public class GLMesh implements GLMapRenderable2, Controls {
         Matrix mx = Matrix.getIdentity();
         mx.set(view.scene.forward);
 
-        if (altitudeMode == ModelInfo.AltitudeMode.Relative) {
-            if(modelAnchorPoint != null) {
-                view.scratch.pointD.x = modelAnchorPoint.x;
-                view.scratch.pointD.y = modelAnchorPoint.y;
-                view.scratch.pointD.z = modelAnchorPoint.z;
-            } else {
-                Envelope aabb = subject.getAABB();
-                view.scratch.pointD.x = (aabb.minX+aabb.maxX)/2d;
-                view.scratch.pointD.y = (aabb.minY+aabb.maxY)/2d;
-                if(aabb.minZ < 0d)
-                    view.scratch.pointD.z = 0d;
-                else
-                    view.scratch.pointD.z = aabb.minZ;
+        if (altitudeMode != ModelInfo.AltitudeMode.Absolute) {
+            view.scratch.pointD.x = modelAnchorPoint.x;
+            view.scratch.pointD.y = modelAnchorPoint.y;
+            view.scratch.pointD.z = modelAnchorPoint.z;
+            if (localFrame != null) {
+                localFrame.transform(view.scratch.pointD, view.scratch.pointD);
             }
-            if (localFrame != null)
-                localFrame.transform(view.scratch.pointD,
-                        view.scratch.pointD);
             // XXX - assuming source is 4326
-            if(view.drawSrid == 4978) {
+            if (view.drawSrid == 4978) {
                 // XXX - obtain origin as LLA
                 view.scratch.geo.set(view.scratch.pointD.y, view.scratch.pointD.x, view.scratch.pointD.z);
             } else {
-                view.scene.mapProjection.inverse(view.scratch.pointD,
-                        view.scratch.geo);
+                view.scene.mapProjection.inverse(view.scratch.pointD, view.scratch.geo);
             }
 
-            double tz;
             final int terrainVersion = view.getTerrainVersion();
-            if(this.offsetTerrainVersion != terrainVersion || true) {
+            if (this.offsetTerrainVersion != terrainVersion || true) {
                 double localElevation = view.getTerrainMeshElevation(
                         view.scratch.geo.getLatitude(),
                         view.scratch.geo.getLongitude());
 
                 // adjust the model to the local elevation
-                this.modelZOffset = (localElevation - view.scratch.pointD.z);
+                this.modelZOffset = localElevation;
                 this.offsetTerrainVersion = terrainVersion;
             }
-
-            if(view.drawTilt > 0d)
-                tz = modelZOffset;
-            else
-                tz = -view.scratch.pointD.z;
+        } else {
+            this.modelZOffset = 0.0;
         }
 
         // XXX - assuming source is 4326

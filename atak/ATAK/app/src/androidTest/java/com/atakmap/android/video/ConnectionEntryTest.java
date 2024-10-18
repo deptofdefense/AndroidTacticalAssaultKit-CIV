@@ -208,6 +208,15 @@ public class ConnectionEntryTest extends ATAKInstrumentedTest {
     }
 
     @Test
+    public void getRtspGetUserPassFromUriBad1() {
+        String[] userPassIp = ConnectionEntry.getUserPassIp(
+                "username:password@192.168.1.100:554/axis-media|media.amp");
+        Assert.assertEquals("username", userPassIp[0]);
+        Assert.assertEquals("password", userPassIp[1]);
+        Assert.assertEquals("192.168.1.100", userPassIp[2]);
+    }
+
+    @Test
     public void getRtspGetUserPassFromUri2() {
 
         String[] userPassIp = ConnectionEntry.getUserPassIp(

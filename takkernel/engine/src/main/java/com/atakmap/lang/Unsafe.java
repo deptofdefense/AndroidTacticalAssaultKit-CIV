@@ -1,6 +1,8 @@
 
 package com.atakmap.lang;
 
+import android.os.Build;
+
 import java.lang.ref.PhantomReference;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
@@ -1008,7 +1010,7 @@ public final class Unsafe {
                         supported = isSupportedImpl();
                     } while(false);
                 } catch(Throwable t) {
-                    //Log.w(TAG, "blah", t);
+                    Log.w(TAG, "blah", t);
                 }
             }
             return supported;
@@ -1085,13 +1087,39 @@ public final class Unsafe {
 
         @Override
         protected boolean isSupportedImpl() throws Throwable {
-            DirectByteBuffer_memoryRef = DirectByteBuffer_class.getDeclaredField("memoryRef");
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                DirectByteBuffer_memoryRef = DirectByteBuffer_class.getDeclaredField("memoryRef");
+            } else {
+                // the blacklist only checks to see the calling function and in this case
+                // the reflection a second time makes the calling function is from the
+                // system and not from this application.   Warn users for future SDK's
+                // that this might not work when running debug versions - so it can be
+                // checked.
+                final Method xgetDeclaredField = Class.class
+                        .getDeclaredMethod("getDeclaredField",
+                                String.class);
+                DirectByteBuffer_memoryRef = (Field) xgetDeclaredField.invoke(DirectByteBuffer_class,
+                        "memoryRef");
+            }
             if(DirectByteBuffer_memoryRef == null)
                 return false;
             DirectByteBuffer_memoryRef.setAccessible(true);
             if(!checkField(DirectByteBuffer_memoryRef))
                 return false;
-            DirectByteBuffer_cleaner = DirectByteBuffer_class.getDeclaredMethod("cleaner");
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                DirectByteBuffer_cleaner = DirectByteBuffer_class.getDeclaredMethod("cleaner");
+            } else {
+                // the blacklist only checks to see the calling function and in this case
+                // the reflection a second time makes the calling function is from the
+                // system and not from this application.   Warn users for future SDK's
+                // that this might not work when running debug versions - so it can be
+                // checked.
+                final Method xgetDeclaredMethod = Class.class
+                        .getDeclaredMethod("getDeclaredMethod",
+                                String.class);
+                DirectByteBuffer_cleaner = (Method) xgetDeclaredMethod.invoke(DirectByteBuffer_class,
+                        "cleaner");
+            }
             if(DirectByteBuffer_cleaner == null)
                 return false;
             Cleaner_class = ByteBuffer.class.getClassLoader().loadClass("sun/misc/Cleaner");

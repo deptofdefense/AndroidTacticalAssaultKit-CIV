@@ -39,8 +39,9 @@ public class BattlePositionLayoutHandler implements View.OnClickListener {
             ViewGroup container,
             BattlePositionSelectorEventHandler bpHandler) {
         _AnchorGroup = container;
-        createView(inflater);
         handler = bpHandler;
+        createView(inflater);
+
     }
 
     public interface BattlePositionSelectorEventHandler {
@@ -104,6 +105,9 @@ public class BattlePositionLayoutHandler implements View.OnClickListener {
         }
         if (_BPHA == null) {
             _BPHA = new BattlePositionHoldingArea(row, col);
+            if (handler != null) {
+                handler.onGridSelected(_BPHA);
+            }
         }
 
         Button customOKButton = _RootView
@@ -226,6 +230,17 @@ public class BattlePositionLayoutHandler implements View.OnClickListener {
             _FixedGridSelector2.setVisibility(View.GONE);
             _CustomGridSelector.setVisibility(View.VISIBLE);
 
+            try {
+                _BPHA.setRows(Integer.parseInt(_RowsET.getText().toString()));
+            } catch (NumberFormatException nfe) {
+                _BPHA.setRows(1);
+            }
+            try {
+                _BPHA.setColumns(
+                        Integer.parseInt(_ColumnsET.getText().toString()));
+            } catch (NumberFormatException nfe) {
+                _BPHA.setColumns(1);
+            }
         }
         setSelected();
         if (handler != null) {

@@ -6,6 +6,8 @@ import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import gov.tak.api.annotation.DeprecatedApi;
+
 /**
  * A MapItem with a GeoPoint
  */
@@ -198,10 +200,20 @@ public abstract class PointMapItem extends MapItem {
         crumbTrail = trail;
     }
 
+    /**
+     * @deprecated
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.5", forRemoval = true, removeAt = "4.8")
     public PersistentCircleCrumbTrail getPersistentCircleCrumbTrail() {
         return persistentCircleCrumbTrail;
     }
 
+    /**
+     * @deprecated
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.5", forRemoval = true, removeAt = "4.8")
     public void setPersistentCircleCrumbTrail(
             PersistentCircleCrumbTrail persistentCircleCrumbTrail) {
         this.persistentCircleCrumbTrail = persistentCircleCrumbTrail;

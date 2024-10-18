@@ -1,5 +1,25 @@
 # Version History
 
+## 4.5.1.0
+
+* Bug Fixes
+  * Ellipse Vertex radial should not have a delete option
+  * Adding height to an open polyline closes the shape
+  * Wrong text entry field opens initially when selecting to change a shape's height
+  * Fix crash `NullPointerException` `EncryptedEditText`
+  * WFS Feature Styling not working for Discovered Features
+  * Verify Logic Bombs (Billion Laughs and ZipBomb) don't crash ATAK
+  * Crash `NullPointerException` `GLMapMenuButtonWidget`
+  * GeoPDF datapackage crashes when loading.
+  * Fix performance issue with Bread crumbs
+* Feature Additions
+  * Allow for Inner Signing of Plugins to allow for third party developers make use of AAB submission to the play store.
+  * Augment Feature Editing
+  * Additional Drawing and Line Capabilities to include Dotted, Dashed and Solid lines. Ability to select different fill and line colors for closed shapes.
+  * Left Right Switch for the overflow button
+  * Allow for sorting of IP's
+  * Optional lower bar for the Self Widget Information
+
 ## 4.5.0.1
 
 * Bug Fixes

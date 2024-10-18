@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="@dimen/scroll_margin"
+    android:gravity="center_vertical">
+
+    <TableLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1">
+
+        <!-- Red slider -->
+        <TableRow
+            android:gravity="center_vertical">
+            <TextView
+                android:layout_marginEnd="@dimen/scroll_margin"
+                android:text="R"
+                android:textSize="@dimen/draper_large_font"/>
+            <SeekBar
+                android:id="@+id/red"
+                android:layout_weight="1"
+                android:max="255"/>
+        </TableRow>
+
+        <!-- Green slider -->
+        <TableRow
+            android:gravity="center_vertical">
+            <TextView
+                android:layout_marginEnd="@dimen/scroll_margin"
+                android:text="G"
+                android:textSize="@dimen/draper_large_font"/>
+            <SeekBar
+                android:id="@+id/green"
+                android:layout_weight="1"
+                android:max="255"/>
+        </TableRow>
+
+        <!-- Blue slider -->
+        <TableRow
+            android:gravity="center_vertical">
+            <TextView
+                android:layout_marginEnd="@dimen/scroll_margin"
+                android:text="B"
+                android:textSize="@dimen/draper_large_font"/>
+            <SeekBar
+                android:id="@+id/blue"
+                android:layout_weight="1"
+                android:max="255"/>
+        </TableRow>
+
+        <!-- Alpha slider -->
+        <TableRow
+            android:id="@+id/alpha_layout"
+            android:gravity="center_vertical">
+            <TextView
+                android:layout_marginEnd="@dimen/scroll_margin"
+                android:text="A"
+                android:textSize="@dimen/draper_large_font"/>
+            <SeekBar
+                android:id="@+id/alpha"
+                android:layout_weight="1"
+                android:max="255"/>
+        </TableRow>
+
+    </TableLayout>
+
+    <!-- Color preview -->
+    <com.atakmap.android.gui.ColorButton
+        android:id="@+id/preview"
+        android:layout_marginStart="@dimen/auto_margin"
+        style="@style/colorPreview"/>
+
+</LinearLayout>

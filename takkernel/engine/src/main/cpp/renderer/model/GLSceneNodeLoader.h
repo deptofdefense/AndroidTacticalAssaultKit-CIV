@@ -18,18 +18,19 @@ namespace TAK {
                     GLSceneNodeLoader(const std::size_t numThreads) NOTHROWS;
                     ~GLSceneNodeLoader() NOTHROWS;
                 public :
-                    Util::TAKErr enqueue(const std::shared_ptr<GLSceneNode> &node, GLSceneNode::LoadContext &&ctx, const bool prefetch) NOTHROWS;
+                    Util::TAKErr enqueue(const std::shared_ptr<GLSceneNode> &node, GLSceneNode::LoadContext &&ctx, const bool prefetch, const int srid) NOTHROWS;
                     Util::TAKErr cancel(const GLSceneNode &node) NOTHROWS;
                     Util::TAKErr cancelAll() NOTHROWS;
                     Util::TAKErr isQueued(bool *value, const GLSceneNode &node, const bool prefetch) NOTHROWS;
 
                 private:
                     struct QueueNode {
-                        QueueNode(GLSceneNode *node, GLSceneNode::LoadContext &&ctx) NOTHROWS;
+                        QueueNode(GLSceneNode *node, GLSceneNode::LoadContext &&ctx, const int srid) NOTHROWS;
 
                         bool operator<(const QueueNode &rhs) const NOTHROWS;
 
                         GLSceneNode *node;
+                        int srid;
                         GLSceneNode::LoadContext ctx;
                     };
 

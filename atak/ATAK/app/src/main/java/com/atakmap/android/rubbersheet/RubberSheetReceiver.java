@@ -186,7 +186,7 @@ public class RubberSheetReceiver extends BroadcastReceiver implements
                     point = ((PointMapItem) item).getPoint();
                     sheet.setTouchPoint(point);
                 } else
-                    point = sheet.findTouchPoint();
+                    point = sheet.getClickPoint();
                 if (_tempMarker == null) {
                     _tempMarker = new Marker(point, "FINE_ADJUST");
                     _tempMarker.setMetaBoolean("addToObjList", false);
@@ -226,7 +226,7 @@ public class RubberSheetReceiver extends BroadcastReceiver implements
     @Override
     public void onPointChanged(PointMapItem pmi) {
         if (pmi == _tempMarker && _activeSheet != null) {
-            GeoPoint s = _activeSheet.findTouchPoint();
+            GeoPoint s = _activeSheet.getClickPoint();
             GeoPoint e = _tempMarker.getPoint();
             GeoPointMetaData c = _activeSheet.getCenter();
             float[] ra = new float[2];

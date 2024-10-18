@@ -11,7 +11,7 @@ import com.atakmap.annotations.DeprecatedApi;
  * the transapps MapView class.     The two are not related.
  * @deprecated implementation detail. Class will be refactored to package private and renamed
  * The removal was bumped to 4.5 since it will require refactoring all plugins by migrating all
- * implement Lifecycle -> extends AbstractLifecycle to reduce as much boilerplate code.
+ * implement Lifecycle -> extends AbstractPluginLifecycle to reduce as much boilerplate code.
  */
 @Deprecated
 @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.5")

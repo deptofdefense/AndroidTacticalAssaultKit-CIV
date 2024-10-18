@@ -9,6 +9,7 @@ import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 
+import com.atakmap.android.drawing.details.ShapeMsdDialog;
 import com.atakmap.android.drawing.mapItems.DrawingCircle;
 import com.atakmap.android.drawing.mapItems.DrawingEllipse;
 import com.atakmap.android.dropdown.DropDownManager;
@@ -31,6 +32,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.MultiPolyline;
 import com.atakmap.android.maps.Polyline;
+import com.atakmap.android.maps.Shape;
 import com.atakmap.android.menu.MapMenuReceiver;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.vehicle.VehicleShape;
@@ -56,6 +58,8 @@ public class DrawingToolsMapReceiver extends DropDownReceiver implements
     public static final String ZOOM_ACTION = "com.atakmap.android.maps.ZOOM_ON_SHAPE";
     public static final String LABEL_ACTION = "com.atakmap.android.maps.LABEL_TOGGLE";
     public static final String EDIT_ACTION = "com.atakmap.android.maps.DRAWING_EDIT";
+    public static final String MSD_ACTION = "com.atakmap.android.maps.SHAPE_MSD";
+
     /**
      * Extra used to define whether the drawing tools toolbar should redisplay when details are
      * closed
@@ -341,7 +345,7 @@ public class DrawingToolsMapReceiver extends DropDownReceiver implements
             return;
         }
 
-        MapItem item = getMapView().getRootGroup().deepFindUID(uid);
+        MapItem item = getMapView().getMapItem(uid);
         if (item == null) {
             Log.w(TAG, "Failed to find item with UID " + uid
                     + " for action: " + action);
@@ -400,6 +404,11 @@ public class DrawingToolsMapReceiver extends DropDownReceiver implements
                         null, getClass());
                 break;
             }
+            case MSD_ACTION:
+                item = ATAKUtilities.findAssocShape(item);
+                if (item instanceof Shape)
+                    new ShapeMsdDialog(getMapView()).show((Shape) item);
+                break;
         }
 
         // Register menu items in the tool selector

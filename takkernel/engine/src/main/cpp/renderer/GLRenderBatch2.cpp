@@ -27,74 +27,25 @@ using namespace TAK::Engine::Util;
 using namespace atakmap::renderer;
 #endif
 
-#define UNTEXTURED_VERTEX_SHADER_2D_SRC \
-            "#version 100\n" \
-            "uniform mat4 uProjection;\n" \
-            "uniform mat4 uModelView;\n" \
-            "attribute vec2 aVertexCoords;\n" \
-            "attribute vec4 aColor;\n" \
-            "varying vec4 vColor;\n" \
-            "void main() {\n" \
-            "  vColor = aColor;\n" \
-            "  gl_Position = uProjection * uModelView * vec4(aVertexCoords.xy, 0.0, 1.0);\n" \
-            "}"
+constexpr const char* UNTEXTURED_VERTEX_SHADER_2D_SRC =
+#include "shaders/RenderBatchUntextured2D.vert"
+;
 
-#define UNTEXTURED_VERTEX_SHADER_3D_SRC \
-            "#version 100\n" \
-            "uniform mat4 uProjection;\n" \
-            "uniform mat4 uModelView;\n" \
-            "attribute vec3 aVertexCoords;\n" \
-            "attribute vec4 aColor;\n" \
-            "varying vec4 vColor;\n" \
-            "void main() {\n" \
-            "  vColor = aColor;\n" \
-            "  gl_Position = uProjection * uModelView * vec4(aVertexCoords.xyz, 1.0);\n" \
-            "}"
+constexpr const char* UNTEXTURED_VERTEX_SHADER_3D_SRC =
+#include "shaders/RenderBatchUntextured3D.vert"
+;
 
-#define UNTEXTURED_FRAGMENT_SHADER_SRC \
-            "#version 100\n" \
-            "precision mediump float;\n" \
-            "varying vec4 vColor;\n" \
-            "void main(void) {\n" \
-            "  gl_FragColor = vColor;\n" \
-            "}\n"
+constexpr const char* UNTEXTURED_FRAGMENT_SHADER_SRC =
+#include "shaders/RenderBatchUntextured.frag"
+;
 
-#define SPRITE_BATCH_VERTEX_SHADER_2D_SRC \
-    "#version 100\n" \
-    "uniform mat4 uProjection;\n" \
-    "uniform mat4 uModelView;\n" \
-    "attribute vec2 aVertexCoords;\n" \
-    "attribute vec2 aTextureCoords;\n" \
-    "attribute vec4 aColor;\n" \
-    "attribute float aTexUnit;\n" \
-    "varying vec2 vTexPos;\n" \
-    "varying vec4 vColor;\n" \
-    "varying float vTexUnit;\n" \
-    "void main() {\n" \
-    "  vTexPos = aTextureCoords;\n" \
-    "  vColor = aColor;\n" \
-    "  vTexUnit = aTexUnit;\n" \
-    "  gl_Position = uProjection * uModelView * vec4(aVertexCoords.xy, 0.0, 1.0);\n" \
-    "}"
+constexpr const char* SPRITE_BATCH_VERTEX_SHADER_2D_SRC =
+#include "shaders/RenderBatchSprite2D.vert"
+;
 
-#define SPRITE_BATCH_VERTEX_SHADER_3D_SRC \
-    "#version 100\n" \
-    "uniform mat4 uProjection;\n" \
-    "uniform mat4 uModelView;\n" \
-    "attribute vec3 aVertexCoords;\n" \
-    "attribute vec2 aTextureCoords;\n" \
-    "attribute vec4 aColor;\n" \
-    "attribute float aTexUnit;\n" \
-    "varying vec2 vTexPos;\n" \
-    "varying vec4 vColor;\n" \
-    "varying float vTexUnit;\n" \
-    "void main() {\n" \
-    "  vTexPos = aTextureCoords;\n" \
-    "  vColor = aColor;\n" \
-    "  vTexUnit = aTexUnit;\n" \
-    "  gl_Position = uProjection * uModelView * vec4(aVertexCoords.xyz, 1.0);\n" \
-    "}"
-
+constexpr const char* SPRITE_BATCH_VERTEX_SHADER_3D_SRC =
+#include "shaders/RenderBatchSprite3D.vert"
+;
 #define INTERNAL_TEXTURE_UNIT_LIMIT 32u
 
 #define VERTEX_SIZE_2D 24u // 12 vertex coord

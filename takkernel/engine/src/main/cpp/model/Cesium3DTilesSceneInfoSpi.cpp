@@ -186,6 +186,12 @@ TAK::Engine::Util::TAKErr Cesium3DTilesSceneInfoSpi::create(TAK::Engine::Port::C
 		model->maxDisplayResolution = 0.0;
 		model->srid = 4326;
 		model->uri = baseURI;
+        model->capabilities = SceneInfo::CapabilitiesType::MaterialColor | SceneInfo::CapabilitiesType::ManualColor |
+                                SceneInfo::CapabilitiesType::IntensityColor | SceneInfo::CapabilitiesType::ZValueColor;
+
+        IO_getName(model->name, baseURI);
+        if (!model->name)
+			model->name = baseURI;
 
 		code = C3DTTileset_parse(input.get(), model.get(), rootVisitor);
 		if (code != TE_Ok)

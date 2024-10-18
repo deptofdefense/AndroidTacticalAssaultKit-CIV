@@ -147,11 +147,10 @@ public class ToolbarButton implements OnGestureListener {
             float distanceY) {
         if (e2.getX() - e1.getX() > 50) {
             onSwipeListener(null);
-            return true;
         } else {
             manager.closeMenu();
-            return true;
         }
+        return true;
     }
 
     @Override

@@ -65,7 +65,8 @@ public class MissionPackagePreferenceListener implements
     public void onSharedPreferenceChanged(
             SharedPreferences sharedPreferences, String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         switch (key) {
             case filesharingEnabled: {

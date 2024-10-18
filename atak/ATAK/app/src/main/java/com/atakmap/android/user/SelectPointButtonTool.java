@@ -469,7 +469,8 @@ public class SelectPointButtonTool extends SpecialPointButtonTool
     @Override
     public void onSharedPreferenceChanged(SharedPreferences p, String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         if (key.equals("spiFahSize")) {
             List<FahArrowWidget.Item> items;

@@ -202,7 +202,7 @@ public class MovePointTool extends Tool implements OnVisibleChangedListener {
 
         // If item becomes invisible, tool should stop
         itemMP.addOnVisibleChangedListener(this);
-        touchPointMP = GeoPointMetaData.wrap(itemMP.findTouchPoint());
+        touchPointMP = GeoPointMetaData.wrap(itemMP.getClickPoint());
         _mapView.getMapTouchController().skipDeconfliction(true);
     }
 

@@ -49,7 +49,8 @@ public class FauxNavBar implements OnSharedPreferenceChangeListener {
     public void onSharedPreferenceChanged(
             final SharedPreferences prefs, final String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         if (key.equals("atakControlForcePortrait")
                 || key.equals("faux_nav_bar")

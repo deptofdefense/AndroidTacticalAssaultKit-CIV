@@ -4,38 +4,39 @@ package com.atakmap.android.gui;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.res.Resources;
+import android.content.res.TypedArray;
 import android.graphics.Color;
-import android.graphics.drawable.ShapeDrawable;
-import android.graphics.drawable.shapes.RectShape;
-import android.graphics.drawable.shapes.Shape;
-import androidx.annotation.NonNull;
+
+import androidx.annotation.ColorInt;
+import androidx.annotation.LayoutRes;
+import androidx.annotation.Nullable;
+
 import android.util.AttributeSet;
-import android.view.Gravity;
+import android.util.DisplayMetrics;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AbsListView;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.TextView;
-import android.widget.FrameLayout;
+import android.widget.RadioGroup;
+import android.widget.SeekBar;
 import android.widget.GridView;
-import android.widget.ImageButton;
 import android.widget.LinearLayout;
 
+import com.atakmap.android.util.SimpleSeekBarChangeListener;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 
 /**
- * A GridView that displays various colors for the user to choose.<br>
- * This view should be displayed within an {@link AlertDialog} or another Dialog. When the
- * OnColorSelected callback is called the Dialog should be dismissed.<br>
- * 
- * 
+ * A GridView that displays various colors for the user to choose.
+ * This view is typically displayed within an {@link AlertDialog}. When the
+ * {@link OnColorSelectedListener} callback is called the dialog should be
+ * dismissed.
  */
 public class ColorPalette extends LinearLayout {
-
-    /** Callback listener for when a color is selected */
-    protected OnColorSelectedListener _listener;
-    protected boolean _enableAlphaSlider;
 
     /**
      * Note this pallet is referenced by other sections of code
@@ -64,197 +65,393 @@ public class ColorPalette extends LinearLayout {
     };
 
     /**
-     * Callback for {@see ColorPallete} to specify when a color has been selected.
-     * 
-     * 
+     * Callback to specify when a color has been selected in single-color
+     * select mode. When selecting both a stroke and fill color this callback
+     * is NOT fired. You must pull from {@link #getStrokeColor()} and
+     * {@link #getFillColor()} instead.
      */
     public interface OnColorSelectedListener {
         void onColorSelected(int color, String label);
     }
 
-    /**
-     * Creates a {@see ColorPallete} gridview that displays various colors for the user to choose.
-     * Note
-     * 
-     * @param context - {@link Context} for this view
-     * @param attrs - {@link AttributeSet} that holds the data from xml
-     * @param defStyle - style definition for this view
-     * @param listener - {@see ColorPallete.OnColorSelectedListener} is a callback when a color
-     *            from the palette is selected.
-     */
-    public ColorPalette(Context context, int initialColor, AttributeSet attrs,
-            int defStyle,
-            OnColorSelectedListener listener) {
-        super(context, attrs, defStyle);
-        _listener = listener;
-        init(initialColor);
+    private GridView _grid;
+    private RadioGroup _selector;
+    private ShapeColorButton _preview;
+    private View _alphaLayout;
+    private SeekBar _alphaBar;
+
+    private int _strokeColor = Color.WHITE, _fillColor = 0;
+    private boolean _showFill = false;
+    private OnColorSelectedListener _listener;
+
+    public ColorPalette(Context context) {
+        this(context, null);
+    }
+
+    public ColorPalette(Context context, @Nullable AttributeSet attrs) {
+        this(context, attrs, 0);
+    }
+
+    public ColorPalette(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+        this(context, attrs, defStyleAttr, 0);
+    }
+
+    public ColorPalette(Context context, @Nullable AttributeSet attrs,
+            int defStyleAttr, int defStyleRes) {
+        super(context, attrs, defStyleAttr, defStyleRes);
+
+        // Read attributes
+        final TypedArray a = context.obtainStyledAttributes(
+                attrs, R.styleable.ColorPalette, defStyleAttr, defStyleRes);
+
+        int layoutId = a.getInt(R.styleable.ColorPalette_layoutId,
+                R.layout.color_palette);
+        boolean alpha = a.getBoolean(R.styleable.ColorPalette_showAlpha, false);
+        boolean fill = a.getBoolean(R.styleable.ColorPalette_showFill, false);
+
+        a.recycle();
+
+        // Setup based on attribute values
+        setLayout(layoutId);
+        setShowAlpha(alpha);
+        setShowFill(fill);
     }
 
     /**
-     * Creates a {@see ColorPallete} gridview that displays various colors for the user to choose.
-     * Note
-     * 
-     * @param context - {@link Context} for this view
-     * @param attrs - {@link AttributeSet} that holds the data from xml
-     * @param listener - {@see ColorPallete.OnColorSelectedListener} is a callback when a color
-     *            from the palette is selected.
+     * Set the layout resource for this palette
+     * The layout MUST contain the accompanying resource IDs specified in
+     * color_palette.xml. Otherwise this will throw an exception.
+     * @param layoutId Layout ID
      */
-    public ColorPalette(Context context, int initialColor, AttributeSet attrs,
-            OnColorSelectedListener listener) {
-        super(context, attrs);
-        _listener = listener;
-        _enableAlphaSlider = false;
-        init(initialColor);
+    private void setLayout(@LayoutRes int layoutId) {
+        View root = LayoutInflater.from(getContext())
+                .inflate(layoutId, this, false);
+        _selector = root.findViewById(R.id.color_rg);
+        _preview = root.findViewById(R.id.color_preview);
+        _grid = root.findViewById(R.id.color_grid);
+        _alphaLayout = root.findViewById(R.id.alpha_layout);
+        _alphaBar = root.findViewById(R.id.alpha_bar);
+        Button customBtn = root.findViewById(R.id.custom_color);
+
+        // Stroke or fill selector
+        _selector.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup group, int checkedId) {
+                if (checkedId == R.id.fill_color
+                        || checkedId == R.id.both_colors) {
+                    _alphaBar.setEnabled(true);
+                    _alphaBar.setProgress(Color.alpha(_fillColor));
+                    if (checkedId == R.id.both_colors)
+                        selectColor(_strokeColor);
+                } else {
+                    _alphaBar.setEnabled(false);
+                    _alphaBar.setProgress(255);
+                }
+            }
+        });
+
+        _alphaBar.setOnSeekBarChangeListener(new SimpleSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar sb, int p, boolean user) {
+                if (user)
+                    selectColor(settingFill() ? _fillColor : _strokeColor);
+            }
+        });
+
+        // Color grid
+        ArrayAdapter<Integer> colorAdapter = new ArrayAdapter<Integer>(
+                getContext(),
+                android.R.layout.simple_list_item_1,
+                ColorPalette.colorArray) {
+            @Override
+            public View getView(int position, View row, ViewGroup parent) {
+                final ColorButton btn;
+                if (!(row instanceof ColorButton)) {
+                    LayoutInflater inf = LayoutInflater.from(getContext());
+                    btn = (ColorButton) inf.inflate(
+                            R.layout.color_palette_button, parent, false);
+                } else
+                    btn = (ColorButton) row;
+                btn.setColor(ColorPalette.colorArray[position]);
+                btn.setOnClickListener(new OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        selectColor(((ColorButton) v).getColor());
+                    }
+                });
+                return btn;
+            }
+        };
+        _grid.setAdapter(colorAdapter);
+
+        // Custom color button
+        customBtn.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                showCustomColorDialog();
+            }
+        });
+
+        // Set the main layout
+        removeAllViews();
+        addView(root);
     }
 
     /**
-     * Creates a {@see ColorPallete} gridview that displays various colors for the user to choose.
-     * Note
-     * 
-     * @param context - {@see Context} for this view
-     * @param listener - {@see ColorPallete.OnColorSelectedListener} is a callback when a color
-     *            from the palette is selected.
+     * Set whether to display the alpha transparency bar
+     * @param showAlpha True to show alpha
      */
-    public ColorPalette(Context context, int initialColor,
-            OnColorSelectedListener listener) {
-        super(context);
-        _listener = listener;
-        _enableAlphaSlider = false;
-        init(initialColor);
+    public void setShowAlpha(boolean showAlpha) {
+        _preview.setShowAlpha(showAlpha);
+        _alphaLayout.setVisibility(showAlpha ? VISIBLE : GONE);
     }
 
     /**
-     * Creates a {@see ColorPallete} gridview that displays various colors for the user to choose.
-     * Note
-     * 
-     * @param context - {@link Context} for this view
+     * Set whether to allow the user to select a differing fill color
+     * @param showFill True to allow the user to select a fill color
      */
-    public ColorPalette(Context context, int initialColor) {
-        super(context);
-        _enableAlphaSlider = false;
-        init(initialColor);
+    public void setShowFill(boolean showFill) {
+        _showFill = showFill;
+        _preview.setShowFill(_showFill);
+        _selector.setVisibility(_showFill ? VISIBLE : GONE);
     }
 
     /**
-     * Creates a {@see ColorPallete} gridview that displays various colors for the user to choose.
-     * Note
-     *
-     * @param context - {@link Context} for this view
-     * @param initialColor - Enables the alpha slider in the {@see ColorPicker} if equal to true.
+     * Set the current color for this palette
+     * When {@link #setShowFill(boolean)} is true this sets both the stroke
+     * and fill color.
+     * @param color Color
      */
-    public ColorPalette(Context context, int initialColor,
-            boolean enableAlphaSlider) {
-        super(context);
-        _enableAlphaSlider = enableAlphaSlider;
-        init(initialColor);
+    public void setColor(@ColorInt int color) {
+        setColors(color, color);
     }
 
     /**
-     * Set the {@see ColorPallete.OnColorSelectedListener} to be called back when a color is
-     * selected.
-     * 
-     * @param listener - The {@link OnColorSelectedListener} to be set.
+     * Set the stroke color displayed in the preview
+     * @param strokeColor Stroke color
+     */
+    public void setStrokeColor(@ColorInt int strokeColor) {
+        _strokeColor = strokeColor;
+        _preview.setStrokeColor(strokeColor);
+    }
+
+    /**
+     * Set the fill color displayed in the preview
+     * @param fillColor Fill color
+     */
+    public void setFillColor(@ColorInt int fillColor) {
+        _fillColor = fillColor;
+        _preview.setFillColor(_fillColor);
+    }
+
+    /**
+     * Set the colors displayed in the preview
+     * @param strokeColor Stroke color
+     * @param fillColor Fill color
+     */
+    public void setColors(@ColorInt int strokeColor, @ColorInt int fillColor) {
+        _strokeColor = strokeColor;
+        _fillColor = fillColor;
+        _preview.setColors(strokeColor, fillColor);
+        if ((_strokeColor & 0xFFFFFF) == (_fillColor & 0xFFFFFF))
+            _selector.check(R.id.both_colors);
+        else
+            _selector.check(R.id.stroke_color);
+    }
+
+    /**
+     * Get the currently selected stroke color
+     * @return Stroke color
+     */
+    @ColorInt
+    public int getStrokeColor() {
+        return _strokeColor;
+    }
+
+    /**
+     * Get the currently selected fill color
+     * @return Fill color
+     */
+    @ColorInt
+    public int getFillColor() {
+        return _fillColor;
+    }
+
+    @ColorInt
+    public int getColor() {
+        return settingFill() ? _fillColor : _strokeColor;
+    }
+
+    /**
+     * Set the {@link OnColorSelectedListener} to be called back when a stroke
+     * color is selected while {@link #setShowFill(boolean)} is <code>false</code>.
+     * @param listener Listener
      */
     public void setOnColorSelectedListener(OnColorSelectedListener listener) {
         _listener = listener;
     }
 
-    /*
-     * Initialize the Color Palette view with the color buttons separated and of a static height
+    /**
+     * A color has been selected from the grid
+     * @param color Color that was selected
      */
-    protected void init(final int initialColor) {
-        final Context context = this.getContext();
-        this.setOrientation(LinearLayout.VERTICAL);
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                550, LinearLayout.LayoutParams.WRAP_CONTENT);
-        params.gravity = Gravity.CENTER;
-        this.setLayoutParams(params);
+    private void selectColor(@ColorInt int color) {
+        if (!_showFill) {
+            _strokeColor = color;
+            if (_listener != null)
+                _listener.onColorSelected(color, "");
+            return;
+        }
+        if (settingFill() || settingBoth()) {
+            _fillColor = (color & 0xFFFFFF) + (_alphaBar.getProgress() << 24);
+            _preview.setFillColor(_fillColor);
+        }
+        if (!settingFill()) {
+            _strokeColor = (color & 0xFFFFFF) + 0xFF000000;
+            _preview.setStrokeColor(_strokeColor);
+        }
+    }
 
-        TextView current = new TextView(this.getContext());
-        current.setText(R.string.current_color);
-        current.setGravity(Gravity.CENTER);
-        current.setTextColor(initialColor);
+    /**
+     * Check if we're setting fill color
+     * @return True if seting fill color
+     */
+    private boolean settingFill() {
+        return _selector.getCheckedRadioButtonId() == R.id.fill_color;
+    }
 
-        GridView gv = new GridView(this.getContext());
-        gv.setNumColumns(5);
-        gv.setVerticalSpacing(5);
-        gv.setHorizontalSpacing(5);
-        gv.setColumnWidth(75);
-        gv.setGravity(Gravity.CENTER);
+    /**
+     * Check if we're setting both colors
+     * @return True if setting both colors
+     */
+    private boolean settingBoth() {
+        return _selector.getCheckedRadioButtonId() == R.id.both_colors;
+    }
 
-        ArrayAdapter<Integer> colorAdapter = new ArrayAdapter<Integer>(
-                getContext(),
-                android.R.layout.simple_list_item_1, colorArray) {
-            @NonNull
+    /**
+     * Show the custom color picker dialog
+     */
+    private void showCustomColorDialog() {
+        final ColorPicker picker = new ColorPicker(getContext(),
+                getColor());
+        AlertDialog.Builder b = new AlertDialog.Builder(getContext());
+        b.setTitle(R.string.custom_color_dialog);
+        b.setView(picker);
+        b.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
             @Override
-            public View getView(int position, View convertView,
-                    @NonNull ViewGroup parent) {
-                final ImageButton colorBtn = new ImageButton(getContext());
-                colorBtn.setBackgroundResource(R.drawable.atak_button);
-                colorBtn.setLayoutParams(new AbsListView.LayoutParams(
-                        AbsListView.LayoutParams.WRAP_CONTENT,
-                        AbsListView.LayoutParams.WRAP_CONTENT));
-                Shape rect = new RectShape();
-                rect.resize(50, 50);
-                ShapeDrawable color = new ShapeDrawable();
-                color.setBounds(0, 0, 50, 50);
-                color.setIntrinsicHeight(50);
-                color.setIntrinsicWidth(50);
-                color.getPaint().setColor(colorArray[position]);
-                color.setShape(rect);
-                final String colorLablel = colorLabelArray[position];
-
-                colorBtn.setImageDrawable(color);
-                colorBtn.invalidate();
-                colorBtn.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        int newColor = ((ShapeDrawable) colorBtn.getDrawable())
-                                .getPaint()
-                                .getColor();
-                        _listener.onColorSelected(newColor, colorLablel);
-                    }
-                });
-                return colorBtn;
-            }
-        };
-        gv.setAdapter(colorAdapter);
-        FrameLayout.LayoutParams params2 = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT);
-        params2.gravity = Gravity.CENTER;
-        gv.setLayoutParams(params2);
-
-        Button b = new Button(this.getContext());
-        b.setText(R.string.custom);
-        b.setOnClickListener(new OnClickListener() {
-
-            @Override
-            public void onClick(View arg0) {
-                final ColorPicker picker = new ColorPicker(context,
-                        initialColor, _enableAlphaSlider);
-                AlertDialog.Builder b = new AlertDialog.Builder(context)
-                        .setTitle(R.string.custom_color_dialog)
-                        .setPositiveButton(R.string.ok,
-                                new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog,
-                                            int which) {
-                                        dialog.dismiss();
-                                        _listener.onColorSelected(
-                                                picker.getColor(), "Cust");
-                                    }
-                                })
-                        .setNegativeButton(R.string.cancel, null);
-
-                b.setView(picker);
-                final AlertDialog alert = b.create();
-                alert.show();
+            public void onClick(DialogInterface d, int w) {
+                selectColor(picker.getColor());
             }
         });
-        //b.setLayoutParams(params);
-        this.addView(current);
-        this.addView(gv);
-        this.addView(b);
+        b.setNegativeButton(R.string.cancel, null);
+        fixWindowSize(b.show());
+    }
+
+    /**
+     * Fix the dialog window so it doesn't take up the entire screen
+     * Must be called after show()
+     * @param dialog Alert dialog
+     */
+    private void fixWindowSize(AlertDialog dialog) {
+        Window w = dialog.getWindow();
+        if (w == null || !dialog.isShowing())
+            return;
+
+        Resources res = getContext().getResources();
+        DisplayMetrics dm = res.getDisplayMetrics();
+        boolean isPortrait = dm.widthPixels < dm.heightPixels;
+        boolean isTablet = res.getBoolean(R.bool.isTablet);
+        boolean smallWindow = isPortrait && !isTablet;
+        _grid.setNumColumns(smallWindow ? 4 : 5);
+
+        WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
+        lp.copyFrom(w.getAttributes());
+        lp.width = (int) ((smallWindow ? 320 : 400) * dm.density);
+        lp.height = WindowManager.LayoutParams.WRAP_CONTENT;
+        w.setAttributes(lp);
+    }
+
+    /**
+     * Creates a color grid that displays various colors for the user to choose
+     * @param context {@link Context} for this view
+     * @param attrs {@link AttributeSet} that holds the data from xml
+     * @param defStyle style definition for this view
+     * @param listener {@link OnColorSelectedListener} is a callback when a color
+     *            from the palette is selected.
+     * @deprecated Please use the standard {@link ColorPalette(Context)}
+     *             constructor instead
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.5.1", forRemoval = true, removeAt = "4.8")
+    public ColorPalette(Context context, int initialColor, AttributeSet attrs,
+                        int defStyle,
+                        OnColorSelectedListener listener) {
+        this(context, attrs, defStyle);
+        _listener = listener;
+        setColor(initialColor);
+    }
+
+    /**
+     * Creates a color grid that displays various colors for the user to choose
+     * @param context - {@link Context} for this view
+     * @param attrs - {@link AttributeSet} that holds the data from xml
+     * @param listener - {@link OnColorSelectedListener} is a callback when a color
+     *            from the palette is selected.
+     * @deprecated Please use the standard {@link ColorPalette(Context)}
+     *             constructor instead
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.5.1", forRemoval = true, removeAt = "4.8")
+    public ColorPalette(Context context, int initialColor, AttributeSet attrs,
+                        OnColorSelectedListener listener) {
+        this(context, attrs);
+        setColor(initialColor);
+        setOnColorSelectedListener(listener);
+    }
+
+    /**
+     * Creates a color grid that displays various colors for the user to choose
+     * @param context - {@link Context} for this view
+     * @param listener - {@link OnColorSelectedListener} is a callback when a color
+     *            from the palette is selected.
+     * @deprecated Please use the standard {@link ColorPalette(Context)}
+     *             constructor instead
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.5.1", forRemoval = true, removeAt = "4.8")
+    public ColorPalette(Context context, int initialColor,
+                        OnColorSelectedListener listener) {
+        this(context);
+        setColor(initialColor);
+        setOnColorSelectedListener(listener);
+    }
+
+    /**
+     * Creates a color grid that displays various colors for the user to choose
+     * @param context - {@link Context} for this view
+     * @deprecated Please use the standard {@link ColorPalette(Context)}
+     *             constructor instead
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.5.1", forRemoval = true, removeAt = "4.8")
+    public ColorPalette(Context context, int initialColor) {
+        this(context);
+        setColor(initialColor);
+    }
+
+    /**
+     *  Creates a color grid that displays various colors for the user to choose
+     * @param context - {@link Context} for this view
+     * @param initialColor - Enables the alpha slider in the {@link ColorPicker} if equal to true.
+     * @deprecated Please use the standard {@link ColorPalette(Context)}
+     *             constructor instead
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.5.1", forRemoval = true, removeAt = "4.8")
+    public ColorPalette(Context context, int initialColor,
+                        boolean enableAlphaSlider) {
+        this(context);
+        setShowAlpha(enableAlphaSlider);
+        setColor(initialColor);
     }
 }

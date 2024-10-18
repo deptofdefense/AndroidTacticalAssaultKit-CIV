@@ -25,6 +25,7 @@ import android.widget.Toast;
 import android.view.Window;
 
 import com.atakmap.android.drawing.mapItems.DrawingCircle;
+import com.atakmap.android.gui.ShapeColorButton;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.Shape;
@@ -164,8 +165,8 @@ public class CircleDetailsView extends GenericDetailsView implements
         _remarksLayout = findViewById(R.id.remarksLayout);
         _noGps = findViewById(R.id.drawingCircleRangeBearingNoGps);
         rabtable = new RangeAndBearingTableHandler(this);
-        _colorButton = findViewById(
-                R.id.drawingCircleColorButton);
+        ShapeColorButton colorBtn = findViewById(R.id.drawingCircleColorButton);
+        setupShapeColorButton(colorBtn, _circle);
         _centerButton = findViewById(R.id.drawingCircleCenterButton);
         _radiusButton = findViewById(R.id.drawingCircleRadiusButton);
         _heightButton = findViewById(R.id.drawingCircleHeightButton);
@@ -209,16 +210,11 @@ public class CircleDetailsView extends GenericDetailsView implements
                 new SimpleSeekBarChangeListener() {
                     @Override
                     public void onProgressChanged(SeekBar seekBar,
-                            int progress, boolean fromUser) {
+                            int alpha, boolean fromUser) {
                         if (!fromUser)
                             return;
-                        _alpha = seekBar.getProgress();
-                        int color = _circle.getFillColor();
-                        _circle.setFillColor(Color.argb(_alpha,
-                                Color.red(color),
-                                Color.green(color),
-                                Color.blue(color)));
-                        _drawPrefs.setFillAlpha(_alpha);
+                        _circle.setFillAlpha(alpha);
+                        _drawPrefs.setFillAlpha(alpha);
                     }
                 });
 
@@ -242,10 +238,7 @@ public class CircleDetailsView extends GenericDetailsView implements
             }
         });
 
-        _alpha = _circle.getFillColor() >>> 24;
-        _transSeek.setProgress(_alpha);
-
-        _colorButton.setOnClickListener(this);
+        _transSeek.setProgress(Color.alpha(_circle.getFillColor()));
 
         ArrayAdapter<Integer> adapter = new ArrayAdapter<>(getContext(),
                 R.layout.spinner_text_view_dark, new Integer[] {
@@ -297,10 +290,6 @@ public class CircleDetailsView extends GenericDetailsView implements
         // End circle edit mode
         else if (id == R.id.drawingCircleEndEditingButton)
             endEditingMode();
-
-        // Edit circle color
-        else if (v == _colorButton)
-            promptColor(_circle.getStrokeColor());
 
         // Edit center
         else if (v == _centerButton)
@@ -385,21 +374,7 @@ public class CircleDetailsView extends GenericDetailsView implements
         _ringsSpin.setSelection(position);
         _previousPosition = position;
 
-        // Color
-        _colorButton.setColorFilter(_circle.getStrokeColor());
-
         _circle.refresh();
-    }
-
-    @Override
-    protected void _onColorSelected(int color, String label) {
-        int newColor = Color.argb(_alpha,
-                Color.red(color),
-                Color.green(color),
-                Color.blue(color));
-        _drawPrefs.setShapeColor(color);
-        _circle.setColor(newColor);
-        refresh();
     }
 
     private void _onRadiusSelected() {

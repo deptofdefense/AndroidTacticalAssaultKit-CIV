@@ -106,7 +106,7 @@ public class RangeEntryDialog implements DialogInterface.OnDismissListener {
         _input = _view.findViewById(R.id.drawingDistanceInput);
         _input.setText(DEC_FORMAT_2.format(SpanUtilities.convert(valueM,
                 Span.METER, unit)));
-        _input.setSelection(_input.getText().length());
+
         allowSignedValues(_signedValue);
 
         final Spinner units = _view.findViewById(
@@ -167,24 +167,56 @@ public class RangeEntryDialog implements DialogInterface.OnDismissListener {
                         dismiss();
                     }
                 });
-        InputMethodManager imm = ((InputMethodManager) MapView.getMapView()
-                .getContext()
-                .getSystemService(Context.INPUT_METHOD_SERVICE));
-        if (imm != null)
-            imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
+
+
+        _input.postDelayed(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        _input.setSelection(_input.getText().length());
+                        _input.requestFocus();
+                        InputMethodManager imm = ((InputMethodManager) MapView.getMapView()
+                                .getContext()
+                                .getSystemService(Context.INPUT_METHOD_SERVICE));
+
+                        if (imm != null)
+                            imm.showSoftInput(_input, InputMethodManager.SHOW_IMPLICIT);
+
+                    }
+                }, 100);
+
+
     }
 
+    /**
+     * Open the range entry dialog
+     * @param titleId Dialog title
+     * @param valueM The initial range value in meters
+     * @param unit The initial unit
+     * @param callback Callback when OK is selected
+     */
     public void show(int titleId, double valueM, Span unit,
             Callback callback) {
         show(_context.getString(titleId), valueM, unit, callback);
     }
 
+    /**
+     * Open the range entry dialog
+     * @param titleId Dialog title
+     * @param valueM The initial range value in meters
+     * @param unit The initial unit
+     * @param callback Callback when OK is selected
+     * @param acceptableValues is the array of acceptable values for consideration when modifying the range.
+     */
     public void show(int titleId, double valueM, Span unit,
             Callback callback, Span[] acceptableValues) {
         show(_context.getString(titleId), valueM, unit, callback,
                 acceptableValues);
     }
 
+    /**
+     * Close the dialog
+     */
     public void dismiss() {
         if (_dialog != null)
             _dialog.dismiss();

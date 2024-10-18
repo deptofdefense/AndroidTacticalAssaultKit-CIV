@@ -158,8 +158,11 @@ public class CotServiceRemote {
         if (!connected) {
             connected = true;
             Log.d(TAG, "connectlistener: " + cl.getClass() + " " + connected);
-            cl.onCotServiceConnected(CommsMapComponent.getInstance()
-                    .getAllPortsBundle());
+
+            final CommsMapComponent cmc = CommsMapComponent.getInstance();
+            if (cmc != null)
+                 cl.onCotServiceConnected(cmc.getAllPortsBundle());
+
 
             // Deferred registration of the inputs/outputs listeners until after
             // a connection has occurred.

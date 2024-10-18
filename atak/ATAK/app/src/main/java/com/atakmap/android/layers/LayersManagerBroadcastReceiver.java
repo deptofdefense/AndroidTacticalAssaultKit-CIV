@@ -2,6 +2,7 @@
 package com.atakmap.android.layers;
 
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
@@ -12,30 +13,30 @@ import android.graphics.PointF;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
-import android.text.InputType;
+import android.text.Editable;
 import android.text.InputFilter;
+import android.text.InputType;
+import android.text.TextWatcher;
 import android.util.Pair;
-import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnKeyListener;
 import android.view.ViewGroup;
-
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.ImageButton;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
+import android.widget.Filter;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.ScrollView;
 import android.widget.Switch;
 import android.widget.TabHost;
 import android.widget.TabHost.OnTabChangeListener;
@@ -44,6 +45,8 @@ import android.widget.TabHost.TabSpec;
 import android.widget.TabWidget;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
 
 import com.atakmap.android.contentservices.Service;
 import com.atakmap.android.contentservices.ServiceFactory;
@@ -54,6 +57,7 @@ import com.atakmap.android.dropdown.DropDownReceiver;
 import com.atakmap.android.favorites.FavoriteListAdapter;
 import com.atakmap.android.favorites.FavoriteListAdapter.Favorite;
 import com.atakmap.android.grg.GRGMapComponent;
+import com.atakmap.android.gui.AlertDialogHelper;
 import com.atakmap.android.gui.HintDialogHelper;
 import com.atakmap.android.importexport.ImportExportMapComponent;
 import com.atakmap.android.importexport.ImportReceiver;
@@ -73,9 +77,11 @@ import com.atakmap.annotations.FortifyFinding;
 import com.atakmap.app.R;
 import com.atakmap.app.system.ResourceUtil;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
+import com.atakmap.map.CameraController;
 import com.atakmap.map.Globe;
 import com.atakmap.map.MapRenderer2;
 import com.atakmap.map.MapSceneModel;
@@ -104,7 +110,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -139,7 +145,6 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
      * on the dataset.
      */
     public final static String EXTRA_ZOOM_TO = "zoomTo";
-    private static final float defaultFontSize = 26;
 
     protected final SharedPreferences _prefs;
     protected DownloadAndCacheBroadcastReceiver downloadRecv = null;
@@ -518,7 +523,8 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
     @Override
     public void onSharedPreferenceChanged(SharedPreferences p, String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         if (key.startsWith(ONLINE_USERNAME) ||
                 key.startsWith(ONLINE_PASSWORD) ||
@@ -1050,9 +1056,11 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
                     targetScale,
                     true);
         } else if (targetPoint != null) {
-            getMapView().getMapController().panTo(targetPoint, true);
+            CameraController.Programmatic.panTo(getMapView().getRenderer3(),
+                    targetPoint, true);
         } else if (!Double.isNaN(targetScale)) {
-            getMapView().getMapController().zoomTo(targetScale, true);
+            CameraController.Programmatic.zoomTo(getMapView().getRenderer3(),
+                    targetScale, true);
         }
 
         adapter.sort();
@@ -1233,32 +1241,43 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
         return isDownloadable(((MobileImagerySpec) ls.getTag()).desc);
     }
 
+    /**
+     * Given a Dataset Descriptor, determine if downloading is supported.
+     * @param desc the dataset descriptor
+     * @return true if downloading is supported
+     */
     public static boolean isDownloadable(DatasetDescriptor desc) {
         if (desc == null)
             return false;
 
-        // XXX - derive tile client
-        TileClient client = null;
         try {
-            client = TileClientFactory.create(desc.getUri(), null, null);
-            if (client == null)
-                return false;
+            // XXX - derive tile client
+            TileClient client = null;
+            try {
+                client = TileClientFactory.create(desc.getUri(), null, null);
+                if (client == null)
+                    return false;
 
-            final boolean[] retval = new boolean[] {
-                    false
-            };
-            TileContainerFactory.visitCompatibleSpis(
-                    new Visitor<Collection<TileContainerSpi>>() {
-                        @Override
-                        public void visit(Collection<TileContainerSpi> object) {
-                            retval[0] = !object.isEmpty();
-                        }
-                    }, client);
+                final boolean[] retval = new boolean[]{
+                        false
+                };
+                TileContainerFactory.visitCompatibleSpis(
+                        new Visitor<Collection<TileContainerSpi>>() {
+                            @Override
+                            public void visit(Collection<TileContainerSpi> object) {
+                                retval[0] = !object.isEmpty();
+                            }
+                        }, client);
 
-            return retval[0];
-        } finally {
-            if (client != null)
-                client.dispose();
+                return retval[0];
+            } finally {
+                if (client != null)
+                    client.dispose();
+            }
+        } catch (Exception e) {
+            // see ATAK-15809 Playstore Crash: NativeProjection forward
+            Log.e(TAG, "error occured with descriptor: " + desc, e);
+            return false;
         }
     }
 
@@ -1442,92 +1461,12 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
         if (servicePath.isEmpty())
             return;
 
-        // Map service query uses the network, must use AsyncTask
-        AsyncTask<String, Void, Set<ServiceListing>> mapServiceTask = new AsyncTask<String, Void, Set<ServiceListing>>() {
-            Exception error = null;
-            String url = null;
-
+        MapServiceTask mapServiceTask = new MapServiceTask(getMapView(), new MapServiceTaskCallback() {
             @Override
-            protected Set<ServiceListing> doInBackground(
-                    String... servicePath) {
-                try {
-                    url = servicePath[0];
-                    return ServiceFactory.queryServices(url, false);
-                } catch (Exception e) {
-                    // error should not occur, but better to be safe
-                    this.error = e;
-                }
-
-                return null;
+            public void selectQueryLayersToAdd(String uri, ServiceListing querier) {
+                LayersManagerBroadcastReceiver.this.selectQueryLayersToAdd(uri, querier);
             }
-
-            @Override
-            protected void onPostExecute(Set<ServiceListing> results) {
-                // If one of our services can be reached, select that
-                // layer. Otherwise, provide toasts that show the
-                // errors that occurred for both of them.
-                if (!results.isEmpty()) {
-                    final ServiceListing[] svcs = results
-                            .toArray(new ServiceListing[0]);
-
-                    // if more than one server type was discovered, prompt the
-                    // user for what server they want
-                    if (svcs.length > 1) {
-                        java.util.Arrays.sort(svcs,
-                                new Comparator<ServiceListing>() {
-                                    @Override
-                                    public int compare(ServiceListing lhs,
-                                            ServiceListing rhs) {
-                                        return lhs.serverType
-                                                .compareToIgnoreCase(
-                                                        rhs.serverType);
-                                    }
-                                });
-                        final String[] svcNames = new String[svcs.length];
-                        for (int i = 0; i < svcs.length; i++)
-                            svcNames[i] = svcs[i].serverType;
-
-                        new AlertDialog.Builder(getMapView().getContext())
-                                .setTitle("Select Content Type to Add")
-                                .setItems(svcNames,
-                                        new DialogInterface.OnClickListener() {
-                                            @Override
-                                            public void onClick(
-                                                    DialogInterface dialog,
-                                                    int which) {
-
-                                                selectQueryLayersToAdd(url,
-                                                        svcs[which]);
-                                            }
-                                        })
-                                .setOnCancelListener(new OnCancelListener() {
-                                    @Override
-                                    public void onCancel(
-                                            DialogInterface dialog) {
-                                    }
-                                })
-                                .show();
-
-                    } else {
-                        selectQueryLayersToAdd(url, svcs[0]);
-                    }
-                } else {
-                    String msg;
-                    if (error != null) {
-                        msg = getMapView().getContext().getString(
-                                R.string.could_not_query_wms)
-                                + error.getMessage();
-                    } else {
-                        msg = "Failed to discover services on " + url;
-                    }
-
-                    Toast.makeText(
-                            getMapView().getContext(),
-                            msg,
-                            Toast.LENGTH_LONG).show();
-                }
-            }
-        };
+        });
         mapServiceTask.execute(servicePath);
     }
 
@@ -1535,57 +1474,56 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
     // wish to add.
     private void selectQueryLayersToAdd(String uri, ServiceListing querier) {
 
-        // collect all checkboxes so we can see which one was checked
-        final Collection<CheckBox> checkboxes = new LinkedList<>();
+        List<Service> sortedLayers = new ArrayList<>(querier.services);
 
-        // collect all non-displayable layer labels so we can make the font
-        // size match that of the checkboxes, otherwise things look ugly
-        Collection<TextView> textviews = new LinkedList<>();
-
-        // map of layer names to Layers; used to grab the Layer corresponding
-        // to each checked box.
-        final HashMap<String, Service> addedLayers = new HashMap<>();
-
-        LinearLayout content = new LinearLayout(getMapView().getContext());
-        content.setOrientation(LinearLayout.VERTICAL);
-        addMapLayersToLayout(querier.services, content, 30, checkboxes,
-                textviews,
-                addedLayers);
-
-        // set textview font to match checkbox font, otherwise the textview's
-        // font is way smaller and it looks goofy
-        if (!checkboxes.isEmpty() && !textviews.isEmpty()) {
-            CheckBox template = checkboxes.iterator().next();
-            for (TextView tv : textviews) {
-                tv.setTypeface(template.getTypeface());
-                tv.setTextSize(TypedValue.COMPLEX_UNIT_PX,
-                        template.getTextSize());
+        Collections.sort(sortedLayers, new Comparator<Service>() {
+            @Override
+            public int compare(Service lhs, Service rhs) {
+                boolean lhsIsFolder = (lhs.getName().indexOf('/') >= 0);
+                boolean rhsIsFolder = (rhs.getName().indexOf('/') >= 0);
+                if (lhsIsFolder && !rhsIsFolder)
+                    return 1;
+                else if (!lhsIsFolder && rhsIsFolder)
+                    return -1;
+                else
+                    return lhs.getName().compareToIgnoreCase(rhs.getName());
             }
-        }
+        });
 
-        ScrollView scrollView = new ScrollView(getMapView().getContext());
-        scrollView.addView(content);
+        final Context context = getMapView().getContext();
+        final LayoutInflater inflater = LayoutInflater.from(context);
+        final View view = inflater.inflate(R.layout.wmswfs_results, null, false);
+        final EditText searchTerms = view.findViewById(R.id.search_filter);
+        final ListView listView = view.findViewById(R.id.results);
+        final ServiceAdapter adapter = new ServiceAdapter(context, sortedLayers);
+        listView.setAdapter(adapter);
+
+        searchTerms.addTextChangedListener(new TextWatcher() {
+
+            public void afterTextChanged(Editable s) {
+            }
+
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                adapter.getFilter().filter(s.toString());
+            }
+        });
+
 
         String title = getMapView().getContext().getString(R.string.layers_on)
                 + querier.title;
         new AlertDialog.Builder(getMapView().getContext())
                 .setTitle(title)
-                .setView(scrollView)
+                .setCancelable(false)
+                .setView(view)
                 .setPositiveButton(R.string.ok,
                         new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog,
                                     int whichButton) {
-                                List<Service> layerList = new ArrayList<>();
-                                for (CheckBox cb : checkboxes) {
-                                    if (cb.isChecked()) {
-                                        Service layer = addedLayers
-                                                .get(cb
-                                                        .getTag());
-                                        if (layer != null)
-                                            layerList.add(layer);
-                                    }
-                                }
+                                List<Service> layerList = adapter.getSelected();
 
                                 // calling right into a static definition to see if these layers
                                 // are able to be aggregated.
@@ -1604,13 +1542,8 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
                                 } else {
                                     // for each layer the user checked, add that to
                                     // our list of sources
-                                    for (CheckBox cb : checkboxes) {
-                                        if (cb.isChecked()) {
-                                            Service layer = addedLayers
-                                                    .get(cb
-                                                            .getTag());
-                                            doAddMapLayer(layer);
-                                        }
+                                    for (Service layer: layerList) {
+                                        doAddMapLayer(layer);
                                     }
                                 }
                             }
@@ -1621,10 +1554,11 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
 
     private void promptForAgregation(final List<Service> layers) {
         new AlertDialog.Builder(getMapView().getContext())
-                .setTitle("Single or Multiple layers")
+                .setCancelable(false)
+                .setTitle(R.string.single_multip_layer_prompt)
                 .setMessage(
-                        "The selected layers can be aggregated into a single layer, would you to create a single layer or multiple layers based on your selection?")
-                .setPositiveButton("Single",
+                        R.string.layers_can_be_aggregated)
+                .setPositiveButton(R.string.single,
                         new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog,
@@ -1632,7 +1566,7 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
                                 promptForName(layers);
                             }
                         })
-                .setNegativeButton("Multiple",
+                .setNegativeButton(R.string.multiple,
                         new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog,
@@ -1655,7 +1589,7 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
         AlertDialog.Builder builder = new AlertDialog.Builder(
                 getMapView().getContext());
 
-        builder.setTitle("Provide a name for the aggregated layer");
+        builder.setTitle(R.string.agregated_layer_title);
         builder.setView(input)
                 .setPositiveButton(R.string.ok,
                         new DialogInterface.OnClickListener() {
@@ -1673,60 +1607,112 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
 
                             }
                         })
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton(R.string.cancel, null)
                 .show();
     }
 
-    /**
-     * Recursive function to add layers to a dialog layout.
-     * Displayable layers get a checkbox, non-displayable just a text label.
-     * 'padding' is left-side padding of the added layer; used to increase
-     * indentation for the tree structure.
-     **/
-    private void addMapLayersToLayout(Collection<Service> layers,
-            LinearLayout content, int padding,
-            Collection<CheckBox> checkboxes,
-            Collection<TextView> textviews,
-            HashMap<String, Service> addedLayers) {
 
-        ArrayList<Service> sortedLayers = new ArrayList<>(layers);
-        Collections.sort(sortedLayers, new Comparator<Service>() {
-            @Override
-            public int compare(Service lhs, Service rhs) {
-                boolean lhsIsFolder = (lhs.getName().indexOf('/') >= 0);
-                boolean rhsIsFolder = (rhs.getName().indexOf('/') >= 0);
-                if (lhsIsFolder && !rhsIsFolder)
-                    return 1;
-                else if (!lhsIsFolder && rhsIsFolder)
-                    return -1;
-                else
-                    return lhs.getName().compareToIgnoreCase(rhs.getName());
-            }
-        });
-        for (Service layer : sortedLayers) {
-            LinearLayout ll = new LinearLayout(getMapView().getContext());
-            // XXX - what was the use case for presenting non-displayable layers
-            //       to the user?????
-            //final boolean displayable = layer.isDisplayable();
-            final boolean displayable = true;
+    private static class ServiceAdapter extends ArrayAdapter<Service> {
 
-            ll.setPadding(padding, displayable ? 0 : 5, 0, 0);
-            if (displayable) {
-                CheckBox cb = new CheckBox(getMapView().getContext());
-                cb.setText(layer.getName());
-                cb.setTag(layer.getName());
-                ll.addView(cb);
-                checkboxes.add(cb);
-                addedLayers.put(layer.getName(), layer);
-            } else {
-                TextView tv = new TextView(getMapView().getContext());
-                tv.setText(layer.getName());
-                ll.addView(tv);
-                textviews.add(tv);
-            }
-            content.addView(ll);
+        private final List<Service> original = new ArrayList<>();
+        private final List<Service> filtered = new ArrayList<>();
+        private final Collection<Service> selected = new HashSet<>();
+
+        private Filter filter;
+
+        public ServiceAdapter(Context context, List<Service> services) {
+            super(context, R.layout.wmswfs_item, services);
+            this.filtered.addAll(services);
+            this.original.addAll(services);
         }
+
+        public List<Service> getSelected() {
+            return new ArrayList<>(selected);
+        }
+
+        private static class ViewHolder {
+            TextView textView;
+            CheckBox checkbox;
+        }
+
+        @Override
+        public Filter getFilter() {
+            if (filter == null){
+                filter = new ServiceFilter();
+            }
+            return filter;
+        }
+        @Override
+        public int getCount() {
+            return filtered.size();
+        }
+
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            ViewHolder holder;
+            if (convertView == null) {
+
+                convertView = LayoutInflater.from(getContext()).
+                        inflate(R.layout.wmswfs_item, null, false);
+
+                holder = new ViewHolder();
+                holder.checkbox = convertView.findViewById(R.id.selectCB);
+                holder.textView = convertView.findViewById(R.id.result);
+                convertView.setTag(holder);
+
+            } else {
+                holder = (ViewHolder) convertView.getTag();
+            }
+            Service s = filtered.get(position);
+            holder.textView.setText(s.getName());
+            holder.checkbox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    if (isChecked)
+                        selected.add(s);
+                    else
+                        selected.remove(s);
+                }
+            });
+            holder.checkbox.setChecked(selected.contains(s));
+            return convertView;
+        }
+
+        private class ServiceFilter extends Filter {
+            @Override
+            protected FilterResults performFiltering(CharSequence term) {
+                FilterResults results = new FilterResults();
+                if (term == null || term.length() == 0) {
+                    results.values = original;
+                    results.count = original.size();
+                } else {
+                    String termLower = term.toString().toLowerCase(
+                            LocaleUtil.getCurrent());
+                    List<Service> filtered = new ArrayList<>();
+                    for (Service service : original)
+                        if (service.getName().toLowerCase(LocaleUtil.getCurrent())
+                                .contains(termLower))
+                            filtered.add(service);
+                    results.values = filtered;
+                    results.count = filtered.size();
+                }
+                return results;
+            }
+
+            @Override
+            protected void publishResults(CharSequence constraint,
+                                      FilterResults results) {
+                filtered.clear();
+                notifyDataSetChanged();
+                filtered.addAll((ArrayList<Service>)results.values);
+                notifyDataSetChanged();
+            }
+
+        }
+
     }
+
 
     // The user wants to add this Layer as an online source.
     // Create a mobac XML file so it will be persisted, and add it to the
@@ -2158,10 +2144,10 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
 
         // Add WMS / WMTS map source
         else if (v.getId() == R.id.addOnlineSource_btn) {
-            final EditText input = new EditText(c);
-            input.setInputType(InputType.TYPE_CLASS_TEXT
-                    | InputType.TYPE_TEXT_VARIATION_URI);
 
+            final LayoutInflater inflater = LayoutInflater.from(c);
+            final View view = inflater.inflate(R.layout.wmswfs_dialog, null, false);
+            final EditText input = view.findViewById(R.id.wmswfs_address);
             // Use the last string the user entered into the box, so that
             // they don't have to start from scratch in case they
             // fat-finger something
@@ -2176,8 +2162,7 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
             // a WMS or WMTS server
             AlertDialog.Builder b = new AlertDialog.Builder(c);
             b.setTitle(R.string.online_source_dialogue);
-            b.setMessage(R.string.online_source_details);
-            b.setView(input);
+            b.setView(view);
             b.setPositiveButton(R.string.ok,
                     new DialogInterface.OnClickListener() {
                         @Override
@@ -2190,7 +2175,127 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
                         }
                     });
             b.setNegativeButton(R.string.cancel, null);
-            b.show();
+            AlertDialog ad = b.create();
+            ad.show();
+            AlertDialogHelper.adjustWidth(ad, .90);
+        }
+    }
+
+    interface MapServiceTaskCallback {
+        void selectQueryLayersToAdd(String uri, ServiceListing querier);
+    }
+
+    // Map service query uses the network, must use AsyncTask
+    static class MapServiceTask extends AsyncTask<String, Void, Set<ServiceListing>> {
+        
+        private Exception error = null;
+        private String url = null;
+        private ProgressDialog pd;
+        private final MapView mapView;
+        private final MapServiceTaskCallback callback;
+
+        public MapServiceTask(@NonNull MapView mapView, @NonNull MapServiceTaskCallback callback) {
+            this.mapView = mapView;
+            this.callback = callback;
+        }
+
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            pd = new ProgressDialog(mapView.getContext());
+            pd.setTitle(mapView.getContext().getString(R.string.querying_the_server));
+            pd.setMessage(mapView.getContext().getString(R.string.please_wait));
+            pd.setCancelable(false);
+            pd.setIndeterminate(true);
+            pd.show();
+        }
+
+        @Override
+        protected Set<ServiceListing> doInBackground(
+                String... servicePath) {
+
+            try {
+                url = servicePath[0];
+                return ServiceFactory.queryServices(url, false);
+            } catch (Exception e) {
+                // error should not occur, but better to be safe
+                this.error = e;
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Set<ServiceListing> results) {
+
+            if (pd!=null) {
+                pd.dismiss();
+            }
+            // If one of our services can be reached, select that
+            // layer. Otherwise, provide toasts that show the
+            // errors that occurred for both of them.
+            if (!results.isEmpty()) {
+                final ServiceListing[] svcs = results
+                        .toArray(new ServiceListing[0]);
+
+                // if more than one server type was discovered, prompt the
+                // user for what server they want
+                if (svcs.length > 1) {
+                    java.util.Arrays.sort(svcs,
+                            new Comparator<ServiceListing>() {
+                                @Override
+                                public int compare(ServiceListing lhs,
+                                                   ServiceListing rhs) {
+                                    return lhs.serverType
+                                            .compareToIgnoreCase(
+                                                    rhs.serverType);
+                                }
+                            });
+                    final String[] svcNames = new String[svcs.length];
+                    for (int i = 0; i < svcs.length; i++)
+                        svcNames[i] = svcs[i].serverType;
+
+                    new AlertDialog.Builder(mapView.getContext())
+                            .setCancelable(false)
+                            .setTitle(R.string.select_content_type_to_add)
+                            .setItems(svcNames,
+                                    new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(
+                                                DialogInterface dialog,
+                                                int which) {
+
+                                            callback.selectQueryLayersToAdd(url,
+                                                    svcs[which]);
+                                        }
+                                    })
+                            .setOnCancelListener(new OnCancelListener() {
+                                @Override
+                                public void onCancel(
+                                        DialogInterface dialog) {
+                                }
+                            })
+                            .show();
+
+                } else {
+                    callback.selectQueryLayersToAdd(url, svcs[0]);
+                }
+            } else {
+                String msg;
+                if (error != null) {
+                    msg = mapView.getContext().getString(
+                            R.string.could_not_query_wms)
+                            + error.getMessage();
+                } else {
+                    msg = "Failed to discover services on " + url;
+                }
+
+                Toast.makeText(
+                        mapView.getContext(),
+                        msg,
+                        Toast.LENGTH_LONG).show();
+            }
         }
     }
 }

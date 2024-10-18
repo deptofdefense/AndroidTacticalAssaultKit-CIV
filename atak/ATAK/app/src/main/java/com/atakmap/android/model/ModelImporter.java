@@ -240,7 +240,7 @@ public final class ModelImporter extends AbstractImporter {
                             null, i, true);
 
             return CommsMapComponent.ImportResult.SUCCESS;
-        } catch (DataStoreException e) {
+        } catch (Throwable e) {
             NotificationUtil
                     .getInstance()
                     .postNotification(
@@ -254,21 +254,6 @@ public final class ModelImporter extends AbstractImporter {
                             null, null, true);
 
             Log.e("ModelImporter", "Failed to import model", e);
-            return CommsMapComponent.ImportResult.FAILURE;
-        } catch (Throwable t) {
-            NotificationUtil
-                    .getInstance()
-                    .postNotification(
-                            notificationId,
-                            NotificationUtil.GeneralIcon.SYNC_ERROR.getID(),
-                            NotificationUtil.RED,
-                            String.format(
-                                    ctx.getString(
-                                            R.string.importmgr_failed_import),
-                                    getContentType()),
-                            null, null, true);
-
-            Log.e("ModelImporter", "Failed to import model", t);
             return CommsMapComponent.ImportResult.FAILURE;
         }
     }

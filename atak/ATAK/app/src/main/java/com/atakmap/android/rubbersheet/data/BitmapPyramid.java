@@ -66,8 +66,8 @@ public class BitmapPyramid {
         if (_loading)
             return _bmp;
 
-        double scale = ortho.drawMapResolution;
-        double latitude = ortho.drawLat;
+        double scale = ortho.currentPass.drawMapResolution;
+        double latitude = ortho.currentPass.drawLat;
         if (_bmp != null && Double.compare(scale, _lastScale) == 0
                 && Double.compare(widthM, _lastWidthM) == 0
                 && Double.compare(lengthM, _lastLengthM) == 0

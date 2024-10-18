@@ -471,7 +471,8 @@ public abstract class AtakPreferenceFragment extends PreferenceFragment {
             public void onSharedPreferenceChanged(SharedPreferences prefs,
                     String key) {
 
-                if (key == null) return;
+                if (key == null)
+                    return;
 
                 if (key.compareToIgnoreCase("atakDisableKeyGuard") == 0) {
                     checkKeyGuard(activity);

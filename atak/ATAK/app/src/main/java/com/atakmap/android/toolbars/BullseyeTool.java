@@ -385,16 +385,13 @@ public class BullseyeTool extends ButtonTool implements
             if (hasRangeRings) {
                 if (rabCircle != null) {
                     //edit the current range rings
-                    rabCircle.setCenterMarker(centerMarker);
-                    rabCircle.setRadius(ringDist);
-                    rabCircle.setNumRings(ringNum);
                 } else {
                     //wrap range rings
                     rabCircle = new RangeCircle(mv);
-                    rabCircle.setCenterMarker(centerMarker);
-                    rabCircle.setRadius(ringDist);
-                    rabCircle.setNumRings(ringNum);
                 }
+                rabCircle.setCenterMarker(centerMarker);
+                rabCircle.setRadius(ringDist);
+                rabCircle.setNumRings(ringNum);
 
                 rabCircle = editRaBcircle(aos, rabCircle,
                         centerMarker.getVisible() && centerMarker

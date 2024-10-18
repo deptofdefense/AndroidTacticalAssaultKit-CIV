@@ -193,7 +193,8 @@ public class CoTInfoView extends RelativeLayout
             final SharedPreferences sp,
             final String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         switch (key) {
             case UnitPreferences.COORD_FMT:
@@ -447,8 +448,10 @@ public class CoTInfoView extends RelativeLayout
                                             .getMapEventDispatcher(),
                                             null,
                                             this.getClass());
-                                    mapView.getMapController().panTo(p.get(),
-                                            false);
+                                    CameraController.Programmatic.panTo(
+                                            mapView.getRenderer3(),
+                                            p.get(), false);
+
                                 }
                                 locDialog.dismiss();
                             }
@@ -1365,8 +1368,7 @@ public class CoTInfoView extends RelativeLayout
                                     if (author_marker != null) {
                                         GeoPoint gp = author_marker
                                                 .getPoint();
-                                        mapView.getMapController().panTo(gp,
-                                                false);
+                                        CameraController.Programmatic.panTo(mapView.getRenderer3(), gp, false);
                                     }
                                 }
                             });

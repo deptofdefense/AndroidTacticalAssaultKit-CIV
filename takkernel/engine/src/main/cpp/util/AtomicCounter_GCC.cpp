@@ -3,9 +3,9 @@
 using namespace atakmap::util;
 
 int32_t AtomicCounter::add(int32_t amount) {
-    return std::atomic_fetch_add(&this->value, amount);
+    return this->value.fetch_add(amount);
 }
 
 int32_t AtomicCounter::currentValue() const {
-    return std::atomic_load(&this->value);
+    return this->value.load();
 }

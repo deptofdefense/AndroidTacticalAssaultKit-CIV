@@ -855,7 +855,7 @@ public class GLQuadtreeNode2 extends
 
         @Override
         public void draw(GLMapView view, int renderPass) {
-            final boolean isLegacyRenderPump = (view.drawTilt == 0d)
+            final boolean isLegacyRenderPump = (view.currentPass.drawTilt == 0d)
                     && (renderPass == (GLMapView.RENDER_PASS_SURFACE
                             | GLMapView.RENDER_PASS_SPRITES));
 

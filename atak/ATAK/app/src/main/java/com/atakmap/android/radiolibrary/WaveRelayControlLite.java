@@ -95,7 +95,8 @@ public class WaveRelayControlLite
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
             String key) {
 
-        if (key == null) return;
+        if (key == null)
+            return;
 
         if (key.equals("waveRelayRedirect")) {
             boolean wrRedirect = sharedPreferences.getBoolean(key, false);

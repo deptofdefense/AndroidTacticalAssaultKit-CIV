@@ -224,6 +224,7 @@ public class DrawingEllipseCreationTool extends ButtonTool implements
             _ellipse.setEllipses(Collections.singletonList(ellipse));
             _ellipse.setColor(_prefs.getFillColor(), true);
             _ellipse.setStrokeWeight(_prefs.getStrokeWeight());
+            _ellipse.setStrokeStyle(_prefs.getStrokeStyle());
             _ellipse.setCenterMarker(null);
 
             // Add it to the map and persist

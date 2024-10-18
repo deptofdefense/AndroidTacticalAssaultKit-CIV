@@ -97,6 +97,8 @@ import gov.tak.api.annotation.ModifierApi;
  * findSelf that otherwise will be copy-pasted 20 times.
  */
 public class ATAKUtilities {
+    private final static char[] HEX_DIGITS = new char[]
+        { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
 
     private static final String TAG = "ATAKUtilities";
 
@@ -1065,8 +1067,7 @@ public class ATAKUtilities {
                     intersect.x, intersect.y);
             double[] ll = uIntersect.toLatLng(null);
             GeoPoint gpIntersect = new GeoPoint(ll[0], ll[1]);
-            double[] DA = DistanceCalculations.computeDirection(p, gpIntersect);
-            return DA[0];
+            return GeoCalculations.distanceTo(p, gpIntersect);
         }
         return Double.POSITIVE_INFINITY;
     }
@@ -1601,6 +1602,50 @@ public class ATAKUtilities {
             }
         }
         return strings;
+    }
+
+    /**
+     * Turn a byte array into a hex string representation
+     * @param arr the byte array
+     * @return the corresponding string
+     */
+    public static String bytesToHex(byte[] arr) {
+        StringBuilder retval = new StringBuilder();
+        retval.ensureCapacity(arr.length*2);
+        for(int i = 0; i < arr.length; i++) {
+            final int v = arr[i];
+            retval.append(HEX_DIGITS[(v>>4)&0xF]);
+            retval.append(HEX_DIGITS[(v&0xF)]);
+        }
+        return retval.toString();
+    }
+
+    /**
+     * Given a hex string, decode it into a byte array.
+     * @param hex a hex string containing characters [0-F]
+     * @return the corresponding byte array
+     * @throws IllegalArgumentException if the string contains a non hex character
+     */
+    public static byte[] hexToBytes(String hex) {
+        byte[] retval = new byte[(hex.length()+1)/2];
+        for(int i = hex.length()-1; i >= 0; i -= 2) {
+            int v = 0;
+            v |= decodeHex(hex.charAt(i));
+            if(i > 0)
+                v |= decodeHex(hex.charAt(i-1))<<4;
+            retval[i/2] = (byte)v;
+        }
+        return retval;
+    }
+
+    private static int decodeHex(char c) {
+        if(c >= '0' && c <= '9') {
+            return (int)(c-'0');
+        } else if((c&~0x20) >= 'A' && (c&~0x20) <= 'F') {
+            return (int)((char)(c&~0x20)-'A') + 10;
+        } else {
+            throw new IllegalArgumentException("Not a hex character: " + c);
+        }
     }
 
     /**

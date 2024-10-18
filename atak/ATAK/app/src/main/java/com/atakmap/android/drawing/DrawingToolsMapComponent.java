@@ -9,6 +9,7 @@ import com.atakmap.android.cot.detail.CotDetailManager;
 import com.atakmap.android.cot.importer.CotImporterManager;
 import com.atakmap.android.cot.importer.MapItemImporter;
 import com.atakmap.android.cot.importer.MarkerImporter;
+import com.atakmap.android.drawing.details.ShapeMsdDetailHandler;
 import com.atakmap.android.drawing.details.TacticalOverlayDetailHandler;
 import com.atakmap.android.cotdetails.extras.ExtraDetailsManager;
 import com.atakmap.android.drawing.importer.DrawingCircleImporter;
@@ -89,6 +90,8 @@ public class DrawingToolsMapComponent extends AbstractWidgetMapComponent {
                     "Intent to toggle labels on a shape, requires a UID string extra to be passed in.");
             f.addAction(DrawingToolsMapReceiver.IMPORT_KML_ACTION,
                     "Intent to launch importing of data from a KML file, requires a file path string extra to be passed in.");
+            f.addAction(DrawingToolsMapReceiver.MSD_ACTION,
+                    "Intent to set or remove a minimum safe distance boundary around a shape.");
 
             f.addCategory("com.atakmap.android.maps.INTEGRATION");
             f.addAction("com.atakmap.android.maps.TOOLSELECTOR_READY",
@@ -118,6 +121,7 @@ public class DrawingToolsMapComponent extends AbstractWidgetMapComponent {
                     "u-d-p", false));
 
             _detailHandlers.add(new TacticalOverlayDetailHandler());
+            _detailHandlers.add(new ShapeMsdDetailHandler(view));
 
             for (CotDetailHandler handler : _detailHandlers)
                 CotDetailManager.getInstance().registerHandler(handler);

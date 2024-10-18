@@ -360,8 +360,8 @@ public class GLOffscreenIndicators extends
                     // Test to see if point is closer by going over IDL
                     double lng = mgp.getLongitude();
                     double lng2 = lng + (lng < 0 ? 360 : -360);
-                    if (Math.abs(view.drawLng - lng2) < Math
-                            .abs(view.drawLng - lng))
+                    if (Math.abs(view.currentPass.drawLng - lng2) < Math
+                            .abs(view.currentPass.drawLng - lng))
                         mgp.set(mgp.getLatitude(), lng2);
                 }
 
@@ -370,10 +370,10 @@ public class GLOffscreenIndicators extends
                 view.scratch.pointF.y = (float) view.scratch.pointD.y;
                 screenPoint = view.scratch.pointF;
 
-                if (screenPoint.x >= view._left
-                        && screenPoint.x <= view._right
-                        && screenPoint.y >= view._bottom
-                        && screenPoint.y <= view._top)
+                if (screenPoint.x >= view.currentPass.left
+                        && screenPoint.x <= view.currentPass.right
+                        && screenPoint.y >= view.currentPass.bottom
+                        && screenPoint.y <= view.currentPass.top)
                     continue;
 
                 screenCoordsHaloIcon.x = screenPoint.x;
@@ -483,7 +483,7 @@ public class GLOffscreenIndicators extends
                                 screenCoordsHaloIcon.x, screenCoordsHaloIcon.y,
                                 0);
                         xform.rotate(Math
-                                .toRadians(view.drawRotation
+                                .toRadians(view.currentPass.drawRotation
                                         - m.getTrackHeading()));
                         xform.translate(
                                 -screenCoordsHaloIcon.x,

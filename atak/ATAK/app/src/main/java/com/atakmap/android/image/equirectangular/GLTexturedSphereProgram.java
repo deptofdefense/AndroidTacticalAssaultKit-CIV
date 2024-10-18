@@ -54,17 +54,17 @@ public class GLTexturedSphereProgram {
     private int fragmentShader;
 
     /** handle to vertices.  Invalid unless programHandle != PROGRAM_NOT_LOADED */
-    private int attribPosLocation;
+    private final int attribPosLocation;
     /** handle to texcoords.  Invalid unless programHandle != PROGRAM_NOT_LOADED */
-    private int attribTexCoordLocation;
+    private final int attribTexCoordLocation;
     /** handle to view matrix.  Invalid unless programHandle != PROGRAM_NOT_LOADED */
-    private int viewMatrixLocation;
+    private final int viewMatrixLocation;
 
     /** Our dedicated sphere geometry  */
-    private GLSphere sphere;
+    private final GLSphere sphere;
 
     /** texture id for our sphere's texture.  Invalid unless programHandle != PROGRAM_NOT_LOADED */
-    private int textureId;
+    private final int textureId;
 
     /** Exception specialization thrown by this class */
     public static class GLProgramException extends Exception {

@@ -98,8 +98,8 @@ public class GLBatchPolygon extends GLBatchLineString {
         if(hasStroke)
             return;
         final float fillColorR = Color.red(fillColor) / 255f;
-        final float fillColorG = Color.red(fillColor) / 255f;
-        final float fillColorB = Color.red(fillColor) / 255f;
+        final float fillColorG = Color.green(fillColor) / 255f;
+        final float fillColorB = Color.blue(fillColor) / 255f;
         rs[numRenderStates] = new RenderState();
         rs[numRenderStates].strokeColorR = fillColorR*0.9f;
         rs[numRenderStates].strokeColorG = fillColorG*0.9f;

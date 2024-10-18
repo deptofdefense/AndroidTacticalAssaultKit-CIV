@@ -26,6 +26,7 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
 import com.atakmap.coremap.maps.coords.NorthReference;
+import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.math.MathUtils;
 
 import java.util.ArrayList;
@@ -66,7 +67,7 @@ public class SensorFOV extends Shape implements MapItem.OnGroupChangedListener,
         arrow.setStrokeColor(Color.argb(20, 211, 211, 211));
         arrow.setStrokeWeight(1f);
         arrow.setText("");
-        arrow.setMetaBoolean("forceClampToGround", true);
+        arrow.setAltitudeMode(Feature.AltitudeMode.ClampToGround);
         addOnGroupChangedListener(this);
         addOnVisibleChangedListener(this);
     }

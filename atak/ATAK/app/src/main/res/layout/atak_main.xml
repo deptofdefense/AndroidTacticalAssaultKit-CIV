@@ -16,20 +16,7 @@
         android:layout_height="fill_parent"
         android:visibility="gone" />
 
-    <!-- Seek bar control used for brightness and GRG visibility -->
-    <SeekBar
-        android:id="@+id/map_seek_bar_control"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="50dp"
-        android:paddingStart="20dp"
-        android:paddingEnd="20dp"
-        android:paddingTop="10dp"
-        android:paddingBottom="10dp"
-        android:background="@color/actionbar_background"
-        android:visibility="gone"/>
+   <include layout="@layout/atak_seekbar"/>
 
     <!-- Container for the top-right floating toolbar -->
     <LinearLayout

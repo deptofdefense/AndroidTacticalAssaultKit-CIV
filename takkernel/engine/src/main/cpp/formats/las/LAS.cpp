@@ -18,9 +18,12 @@
 #include "util/AtomicCounter.h"
 #include "model/LASSceneSpi.h"
 #include "formats/gltf/GLTF.h"
+#include "thread/RWMutex.h"
+#include "util/ProgressInfo.h"
 
 #include <unistd.h>
 #include <sstream>
+#include <random>
 
 // Use tinygltf's copy of JSON for Modern C++
 #include <tinygltf/json.hpp>
@@ -38,7 +41,7 @@ using namespace TAK::Engine::Util::Tasking;
 using atakmap::util::AtomicCounter;
 
 constexpr std::size_t subdivisionLevels = 5;
-constexpr std::size_t tileWidth = 2 << (subdivisionLevels);
+constexpr std::size_t tileWidth = 1 << (subdivisionLevels - 1);
 constexpr std::size_t smallThreshold = 20000;
 constexpr std::size_t largeThreshold = 10000000;
 
@@ -64,6 +67,25 @@ constexpr const char* chunkExt = ".chunk";
 #define SELECT_POINTS_ALL "SELECT id, x, y, z, color from points"
 #define SELECT_POINTS_LIMIT "SELECT id, x, y, z, color from points LIMIT "
 #define SELECT_POINTS_ENVELOPE "SELECT Min(x), Min(y), Min(z), Max(x), Max(y), Max(z) FROM points"
+
+namespace TAK {
+    namespace Engine {
+        namespace Model {
+            extern double LASSceneInfoSpi_getZScale(LASHeaderH header);
+        }
+    }
+}
+
+struct ColorInfo {
+    bool has_color;
+    bool has_intensity;
+    double mean;
+    double stddev;
+};
+
+namespace {
+    bool LAS_HasIntensity(LASReaderH& reader, LASHeaderH& header) NOTHROWS;
+}
 
 std::string combinePath(const std::string& p1, const std::string& p2) {
     char sep = Platform_pathSep();
@@ -124,31 +146,31 @@ bool lasHasColor(LASHeaderH header) {
     return true;
 }
 
-TAKErr getEnvelope(Envelope2Ptr& envelope, LASHeaderH* header, SceneInfoPtr scene) NOTHROWS {
+TAKErr getEnvelope(Envelope2Ptr& envelope, LASHeaderH* header, SceneInfoPtr scene, double zScale) NOTHROWS {
     TAKErr code = TE_Ok;
 
-    Envelope2 e(LASHeader_GetMinX(*header), LASHeader_GetMinY(*header), LASHeader_GetMinZ(*header), LASHeader_GetMaxX(*header),
-        LASHeader_GetMaxY(*header), LASHeader_GetMaxZ(*header));
+    Envelope2 e(LASHeader_GetMinX(*header), LASHeader_GetMinY(*header), LASHeader_GetMinZ(*header) * zScale, LASHeader_GetMaxX(*header),
+        LASHeader_GetMaxY(*header), LASHeader_GetMaxZ(*header) * zScale);
 
     Point2<double> pmin(e.minX, e.minY, e.minZ), pmax(e.maxX, e.maxY, e.maxZ);
 
-    Projection2Ptr ecefProjection(nullptr, nullptr);
-    Projection2Ptr lasProjection(nullptr, nullptr);
+    Projection2Ptr llaProjection(nullptr, nullptr), lasProjection(nullptr, nullptr);
 
-    if (scene && scene->srid != 4978) {
-        code = ProjectionFactory3_create(ecefProjection, 4978);
-        TE_CHECKRETURN_CODE(code)
+    if (scene && scene->srid != 4326) {
         code = ProjectionFactory3_create(lasProjection, scene->srid);
+        TE_CHECKRETURN_CODE(code)
+        
+        code = ProjectionFactory3_create(llaProjection, 4326);
         TE_CHECKRETURN_CODE(code)
     }
 
-    if (lasProjection) {
+    if (lasProjection && llaProjection) {
         GeoPoint2 geo;
         lasProjection->inverse(&geo, pmin);
-        ecefProjection->forward(&pmin, geo);
+        llaProjection->forward(&pmin, geo);
 
         lasProjection->inverse(&geo, pmax);
-        ecefProjection->forward(&pmax, geo);
+        llaProjection->forward(&pmax, geo);
     }
 
     envelope = Envelope2Ptr(new Envelope2(pmin.x, pmin.y, pmin.z, pmax.x, pmax.y, pmax.z), Memory_deleter_const<Envelope2>);
@@ -157,12 +179,15 @@ TAKErr getEnvelope(Envelope2Ptr& envelope, LASHeaderH* header, SceneInfoPtr scen
 }
 
 TAKErr loadLASIntoDatabase(LASReaderH* reader, LASHeaderH* header, Envelope2Ptr& envelope, DatabasePtr& database, std::size_t maxPoints,
-    SceneInfoPtr scene) NOTHROWS {
+                           const SceneInfo& scene, const ColorInfo& colorInfo, ProgressInfo& prog) NOTHROWS {
     TAKErr code = TE_Ok;
 
-    int count = LASHeader_GetPointRecordsCount(*header);
+    size_t count = LASHeader_GetPointRecordsCount(*header);
+
     std::size_t n = 1;
     if (maxPoints > 0) n = count / maxPoints;
+
+    prog.setMinMax(0, maxPoints);
 
     StatementPtr insertPointsStmt(nullptr, nullptr);
     code = database->compileStatement(insertPointsStmt, INSERT_POINTS);
@@ -170,51 +195,53 @@ TAKErr loadLASIntoDatabase(LASReaderH* reader, LASHeaderH* header, Envelope2Ptr&
 
     LASPointH point;
 
-    bool has_color = lasHasColor(*header);
-
+    double zScale = LASSceneInfoSpi_getZScale(*header);
     double x, y, z;
 
     auto t1 = std::chrono::high_resolution_clock::now();
 
-    Projection2Ptr ecefProjection(nullptr, nullptr);
-    Projection2Ptr lasProjection(nullptr, nullptr);
+    Projection2Ptr llaProjection(nullptr, nullptr), lasProjection(nullptr, nullptr);
 
-    if (scene && scene->srid != 4978) {
-        code = ProjectionFactory3_create(ecefProjection, 4978);
+    if (scene.srid != 4326) {
+        code = ProjectionFactory3_create(lasProjection, scene.srid);
         TE_CHECKRETURN_CODE(code)
-        code = ProjectionFactory3_create(lasProjection, scene->srid);
+ 
+        code = ProjectionFactory3_create(llaProjection, 4326);
         TE_CHECKRETURN_CODE(code)
     }
 
     std::size_t a = 0;
-    int i = 0;
+    size_t i = 0;
+
     code = database->beginTransaction();
     TE_CHECKRETURN_CODE(code)
     while ((point = LASReader_GetNextPoint(*reader)) != nullptr && i++ < maxPoints) {
         x = LASPoint_GetX(point);
         y = LASPoint_GetY(point);
-        z = LASPoint_GetZ(point);
+        z = LASPoint_GetZ(point) * zScale;
 
         Point2<double> projectedPoint(x, y, z);
 
         if (lasProjection) {
             GeoPoint2 geo;
             lasProjection->inverse(&geo, projectedPoint);
-            ecefProjection->forward(&projectedPoint, geo);
+            llaProjection->forward(&projectedPoint, geo);
         }
 
         int rgba;
-        if (has_color) {
+        if (colorInfo.has_color) {
             unsigned short rgb[3];
             LASPoint_GetColorRGB(point, rgb);
             uint8_t r = (uint8_t)rgb[0];
             uint8_t g = (uint8_t)rgb[1];
             uint8_t b = (uint8_t)rgb[2];
             rgba = (b << 24) + (g << 16) + (r << 8) + 255;
-        }
-        else {
+        } else if (colorInfo.has_intensity) {
+            uint8_t intensity = (uint8_t)((double(LASPoint_GetIntensity(point)) / double(std::numeric_limits<uint16_t>::max()) * 255));
+            rgba = (intensity << 24) + (intensity << 16) + (intensity << 8) + 255;
+        } else {
             float fr, fg, fb;
-            TAK::Engine::Model::LASSceneSPI_computeZColor(LASPoint_GetRawZ(point), &fr, &fg, &fb);
+            TAK::Engine::Model::LASSceneSPI_computeZColor(&fr, &fg, &fb, colorInfo.mean, colorInfo.stddev, LASPoint_GetZ(point) * zScale);
 
             uint8_t r = uint8_t(fr * 255.0);
             uint8_t g = uint8_t(fg * 255.0);
@@ -234,6 +261,8 @@ TAKErr loadLASIntoDatabase(LASReaderH* reader, LASHeaderH* header, Envelope2Ptr&
         TE_CHECKRETURN_CODE(code)
         code = insertPointsStmt->execute();
         TE_CHECKRETURN_CODE(code)
+
+        prog.setMin(i);
     }
 
     code = database->setTransactionSuccessful();
@@ -327,9 +356,26 @@ struct OctTreeNode {
     void setAABB(const TAK::Engine::Feature::Envelope2& envelope) {
         aabb = envelope;
     }
+
+    void project(Projection2* from, Projection2* to) {
+        GeoPoint2 geo;
+
+        for (auto &pointData : points) {
+            Point2<double> projectedPoint(pointData.x, pointData.y, pointData.z);
+            from->inverse(&geo, projectedPoint);
+            to->forward(&projectedPoint, geo);
+            pointData.x = (float)projectedPoint.x;
+            pointData.y = (float)projectedPoint.y;
+            pointData.z = (float)projectedPoint.z;
+        }
+
+        for (auto& child : children) {
+            child.project(from, to);
+        }
+    }
 };
 
-json writeChildToJSON(OctTreeNode* root, std::size_t index, std::string prefix = "", float geometricError = 0) NOTHROWS {
+json writeChildToJSON(OctTreeNode* root, std::size_t index, const char *baseURI, std::string prefix, float geometricError) NOTHROWS {
     json json;
     auto& envelope = root->aabb;
 
@@ -341,24 +387,31 @@ json writeChildToJSON(OctTreeNode* root, std::size_t index, std::string prefix =
     double halfY = envelope.maxY - centerY;
     double halfZ = envelope.maxZ - centerZ;
 
-    json["geometricError"] = geometricError;
+    json["geometricError"] = std::max(1.0f, geometricError / 4.0f);
 
-    json["boundingVolume"]["box"] = {
-        centerX, centerY, centerZ,
-        halfX, 0, 0,
-        0, halfY, 0,
-        0, 0, halfZ };
+    json["boundingVolume"]["region"] = {
+        envelope.minX* M_PI / 180., envelope.minY* M_PI / 180.,
+        envelope.maxX* M_PI / 180., envelope.maxY* M_PI / 180.,
+        envelope.minZ, envelope.maxZ
+    };
 
     prefix = prefix + std::to_string(index);
+    std::string filename = "r_" + prefix + ".pnts";
+    std::string filepath = combinePath(baseURI, filename);
 
-    json["content"]["uri"] = "r_" + prefix + ".pnts";
-
+    TAKErr code;
+    bool exists;
+    code = IO_exists(&exists, filepath.c_str());
+    TE_CHECKRETURN_CODE(code);
+    if (exists) {
+        json["content"]["uri"] = filename;
+    }
     int childindex = 0;
     float childGeometricError = geometricError / 4.0f;
     if (!root->children.empty()) {
         nlohmann::json children;
         for (auto& child : root->children) {
-            children.push_back(writeChildToJSON(&child, childindex++, prefix, childGeometricError));
+            children.push_back(writeChildToJSON(&child, childindex++, baseURI, prefix, childGeometricError));
         }
         json["children"] = children;
 
@@ -366,25 +419,34 @@ json writeChildToJSON(OctTreeNode* root, std::size_t index, std::string prefix =
     return json;
 }
 
-TAKErr createProjectedFile(Envelope2& computedEnvelop, const char* lasFilePath, const char* dbFile, const SceneInfo& scene, bool has_color, std::size_t start, std::size_t numPoints) NOTHROWS {
+TAKErr createProjectedFile(Envelope2& computedEnvelop, const char* lasFilePath, const char* dbFile, const SceneInfo& scene, const ColorInfo& colorInfo, std::size_t start, std::size_t numPoints, ProgressInfo* prog) NOTHROWS {
     TAKErr code = TE_Ok;
     if (numPoints == 0)
         return TE_Ok;
+
+    prog->setMinMax(0, numPoints);
+
     double indexMult = (double)(tileWidth);
 
     auto reader = LASReader_Create(lasFilePath);
     std::unique_ptr<LASReaderH, void (*)(LASReaderH*)> readerP(&reader, [](LASReaderH* r) { LASReader_Destroy(*r); });
 
+    auto headerObj = LASReader_GetHeader(*readerP);
+    std::unique_ptr<LASHeaderH, void (*)(LASHeaderH*)> header(&headerObj, [](LASHeaderH* h) { LASHeader_Destroy(*h); });
+
+    double zScale = LASSceneInfoSpi_getZScale(*header);
+
     FileOutput2 file;
     code = file.open(dbFile, "rb+");
     TE_CHECKRETURN_CODE(code);
 
-    Projection2Ptr ecefProjection(nullptr, nullptr), lasProjection(nullptr, nullptr);
+    Projection2Ptr llaProjection(nullptr, nullptr), lasProjection(nullptr, nullptr);
 
-    if (scene.srid != 4978) {
-        code = ProjectionFactory3_create(ecefProjection, 4978);
-        TE_CHECKRETURN_CODE(code)
+    //project points now into LLA for octree generation, later into ECEF for rendering
+    if (scene.srid != 4326) {
         code = ProjectionFactory3_create(lasProjection, scene.srid);
+        TE_CHECKRETURN_CODE(code)
+        code = ProjectionFactory3_create(llaProjection, 4326);
         TE_CHECKRETURN_CODE(code)
     }
     Envelope2 e;
@@ -401,7 +463,7 @@ TAKErr createProjectedFile(Envelope2& computedEnvelop, const char* lasFilePath, 
     std::size_t i = 0;
     while ((point = LASReader_GetNextPoint(reader)) != nullptr && i++ < numPoints) {
 
-        Point2<double> projectedPoint(LASPoint_GetX(point), LASPoint_GetY(point), LASPoint_GetZ(point));
+        Point2<double> projectedPoint(LASPoint_GetX(point), LASPoint_GetY(point), LASPoint_GetZ(point) * zScale);
 
         if (LASError_GetErrorCount() != 0) {
             auto error = LASError_GetLastErrorMsg();
@@ -409,21 +471,23 @@ TAKErr createProjectedFile(Envelope2& computedEnvelop, const char* lasFilePath, 
         if (lasProjection) {
             GeoPoint2 geo;
             lasProjection->inverse(&geo, projectedPoint);
-            ecefProjection->forward(&projectedPoint, geo);
+            llaProjection->forward(&projectedPoint, geo);
         }
 
         uint32_t rgba;
-        if (has_color) {
+        if (colorInfo.has_color) {
             unsigned short rgb[3];
             LASPoint_GetColorRGB(point, rgb);
             uint8_t r = (uint8_t)((double(rgb[0]) / double(std::numeric_limits<uint16_t>::max()) * 255));
             uint8_t g = (uint8_t)((double(rgb[1]) / double(std::numeric_limits<uint16_t>::max()) * 255));
             uint8_t b = (uint8_t)((double(rgb[2]) / double(std::numeric_limits<uint16_t>::max()) * 255));
             rgba = (b << 24) + (g << 16) + (r << 8) + 255;
-        }
-        else {
+        } else if (colorInfo.has_intensity) {
+            uint8_t intensity = (uint8_t)((double(LASPoint_GetIntensity(point)) / double(std::numeric_limits<uint16_t>::max()) * 255));
+            rgba = (intensity << 24) + (intensity << 16) + (intensity << 8) + 255;
+        } else {
             float fr, fg, fb;
-            TAK::Engine::Model::LASSceneSPI_computeZColor(LASPoint_GetRawZ(point), &fr, &fg, &fb);
+            TAK::Engine::Model::LASSceneSPI_computeZColor(&fr, &fg, &fb, colorInfo.mean, colorInfo.stddev, LASPoint_GetZ(point));
 
             uint8_t r = uint8_t(fr * 255.0);
             uint8_t g = uint8_t(fg * 255.0);
@@ -441,14 +505,18 @@ TAKErr createProjectedFile(Envelope2& computedEnvelop, const char* lasFilePath, 
 
         PointData pointData{ (float)projectedPoint.x, (float)projectedPoint.y, (float)projectedPoint.z, rgba };
         file.write(reinterpret_cast<uint8_t*>(&pointData), (int)sizeof(PointData));
+
+        prog->setMin(i);
     }
+
+    prog->setMinMax(numPoints, numPoints);
     computedEnvelop = e;
     return TE_Ok;
 }
 /*
 * Reproject points into sqlite database or temporary projection file
 */
-TAKErr createDatabase(const char* lasFilePath, const char* outputPath, std::size_t maxPoints, LAS_Method method) NOTHROWS {
+TAKErr createDatabase(const char* lasFilePath, const char* outputPath, std::size_t maxPoints, LAS_Method method, ProgressInfo& prog) NOTHROWS {
     TAKErr code = TE_Ok;
 
     // Create a sceneinfo
@@ -473,10 +541,14 @@ TAKErr createDatabase(const char* lasFilePath, const char* outputPath, std::size
     // Get the LAS header and envelope
     auto headerObj = LASReader_GetHeader(*reader);
     std::unique_ptr<LASHeaderH, void (*)(LASHeaderH*)> header(&headerObj, [](LASHeaderH* h) { LASHeader_Destroy(*h); });
+    double zScale = LASSceneInfoSpi_getZScale(*header);
     Envelope2Ptr envelope(nullptr, nullptr);
-    code = getEnvelope(envelope, &headerObj, sceneInfo);
+    code = getEnvelope(envelope, &headerObj, sceneInfo, zScale);
     TE_CHECKRETURN_CODE(code)
-    bool has_color = lasHasColor(*header);
+    bool has_color = LAS_HasColor(*header);
+    bool has_intensity = ::LAS_HasIntensity(*reader, *header);
+    double mean = (LASHeader_GetMinZ(*header) + LASHeader_GetMaxZ(*header)) / 2.0;
+    double stddev = (LASHeader_GetMaxZ(*header) - LASHeader_GetMinZ(*header)) * 0.25;
     Envelope2Ptr computedEnvelope(nullptr, nullptr);
 
     if (method == LAS_Method::SQLITE) {
@@ -486,7 +558,8 @@ TAKErr createDatabase(const char* lasFilePath, const char* outputPath, std::size
         TE_CHECKRETURN_CODE(code)
         executeDb(database, CREATE_TABLE_POINTS);
 
-        code = loadLASIntoDatabase(reader.get(), header.get(), envelope, database, maxPoints, sceneInfo);
+        code = loadLASIntoDatabase(reader.get(), header.get(), envelope, database, maxPoints, *sceneInfo,
+                                   ColorInfo{has_color, has_intensity, mean, stddev}, prog);
         TE_CHECKRETURN_CODE(code)
     }
     else {
@@ -509,7 +582,9 @@ TAKErr createDatabase(const char* lasFilePath, const char* outputPath, std::size
 
                 std::size_t points = std::min(totalPoints - start, pointsPerThread);
                 const char* temp = nullptr;
-                futures.push_back(Task_begin(GeneralWorkers_flex(), createProjectedFile, lasFilePath, dbFilePath.c_str(), *sceneInfo, has_color, start, points));
+                ProgressInfo& subprog = prog.addSubinfo();
+                futures.push_back(Task_begin(GeneralWorkers_flex(), createProjectedFile, lasFilePath, dbFilePath.c_str(), *sceneInfo,
+                                             ColorInfo{has_color, has_intensity, mean, stddev}, start, points, &subprog));
             }
             TAK::Engine::Formats::GLTF::GLTF_initMeshAABB(cEnvelope);
 
@@ -526,13 +601,16 @@ TAKErr createDatabase(const char* lasFilePath, const char* outputPath, std::size
             }
         }
         else {
-            createProjectedFile(cEnvelope, lasFilePath, dbFilePath.c_str(), *sceneInfo, has_color, 0, totalPoints);
+            createProjectedFile(cEnvelope, lasFilePath, dbFilePath.c_str(), *sceneInfo, ColorInfo{has_color, has_intensity, mean, stddev},
+                                0, totalPoints, &prog);
         }
         FileOutput2 file;
         file.open(dbFilePath.c_str(), "rb+");
         file.write(reinterpret_cast<uint8_t*>(&cEnvelope), sizeof(Envelope2));
         file.close();
     }
+
+    prog.finishSubinfos();
 
     return TE_Ok;
 }
@@ -543,14 +621,17 @@ TAKErr createDatabase(const char* lasFilePath, const char* outputPath, std::size
 
 TAKErr writeNode(std::string base, OctTreeNode* root, std::string prefix) NOTHROWS {
 
+    TAKErr code;
     std::string filename = combinePath(base, "r_" + prefix + ".pnts");
 
-    if (!root->points.empty())
-        TAK::Engine::Formats::Cesium3DTiles::PNTS_write(filename.c_str(), reinterpret_cast<uint8_t*>(root->points.data()), root->points.size());
-
+    if (!root->points.empty()) {
+        code = TAK::Engine::Formats::Cesium3DTiles::PNTS_write(filename.c_str(), reinterpret_cast<uint8_t*>(root->points.data()), root->points.size());
+        TE_CHECKRETURN_CODE(code);
+    }
     int childindex = 0;
     for (auto& child : root->children) {
-        writeNode(base, &child, prefix + std::to_string(childindex));
+        code = writeNode(base, &child, prefix + std::to_string(childindex));
+        TE_CHECKRETURN_CODE(code);
         ++childindex;
     }
     return TE_Ok;
@@ -561,10 +642,12 @@ TAKErr writeNode(std::string base, OctTreeNode* root, std::string prefix) NOTHRO
 */
 TAKErr writeTree(const char* base, OctTreeNode* root, std::string basePrefix = std::string()) NOTHROWS {
 
-    constexpr std::size_t geometricError = 1024;
+    TAKErr code;
+    code = writeNode(std::string(base), root, basePrefix + std::string("0"));
+    TE_CHECKRETURN_CODE(code);
+
     json obj;
     obj["asset"]["version"] = "1.0";
-    obj["geometricError"] = geometricError;
 
     json rootjson;
 
@@ -578,11 +661,18 @@ TAKErr writeTree(const char* base, OctTreeNode* root, std::string basePrefix = s
     double halfY = envelope.maxY - centerY;
     double halfZ = envelope.maxZ - centerZ;
 
-    rootjson["boundingVolume"]["box"] = {
-        centerX, centerY, centerZ,
-        halfX, 0, 0,
-        0, halfY, 0,
-        0, 0, std::max(halfX, halfY) };
+    double latMeters = GeoPoint2_approximateMetersPerDegreeLatitude(centerY);
+    double lonMeters = GeoPoint2_approximateMetersPerDegreeLongitude(centerY);
+
+    float density = (float)root->count / float(latMeters * halfY * lonMeters * halfX);
+    float geometricError = 2048.f / sqrtf(density);
+    obj["geometricError"] = geometricError;
+
+    rootjson["boundingVolume"]["region"] = {
+        envelope.minX * M_PI / 180., envelope.minY * M_PI / 180.,
+        envelope.maxX * M_PI / 180., envelope.maxY * M_PI / 180.,
+        envelope.minZ, envelope.maxZ
+    };
 
     rootjson["content"]["uri"] = "r_0.pnts";
     rootjson["refine"] = "ADD";
@@ -591,21 +681,21 @@ TAKErr writeTree(const char* base, OctTreeNode* root, std::string basePrefix = s
     if (!root->children.empty()) {
         nlohmann::json children;
         for (auto& child : root->children) {
-            children.push_back(writeChildToJSON(&child, index++, prefix, geometricError));
+            children.push_back(writeChildToJSON(&child, index++, base, prefix, geometricError));
         }
         rootjson["children"] = children;
 
     }
-    rootjson["geometricError"] = geometricError;
+    rootjson["geometricError"] = std::max(1.0f, geometricError);
 
     obj["root"] = rootjson;
 
     FileOutput2 fileout;
     std::string filename = combinePath(base, "tileset.json");
-    fileout.open(filename.c_str());
-    fileout.writeString(obj.dump(2).c_str());
-
-    writeNode(std::string(base), root, basePrefix + std::string("0"));
+    code = fileout.open(filename.c_str());
+    TE_CHECKRETURN_CODE(code);
+    code = fileout.writeString(obj.dump(2).c_str());
+    TE_CHECKRETURN_CODE(code);
 
     return TE_Ok;
 }
@@ -613,7 +703,7 @@ TAKErr writeTree(const char* base, OctTreeNode* root, std::string basePrefix = s
 /*
 * Create a regular octree grid, and count the number of points in each grid
 */
-TAKErr countingSort(std::vector<PointData>* allPoints, atakmap::util::AtomicCounter* counts, FileInput2& input, const TAK::Engine::Feature::Envelope2& envelope) NOTHROWS {
+TAKErr countingSort(std::vector<PointData>* allPoints, atakmap::util::AtomicCounter* counts, FileInput2& input, const TAK::Engine::Feature::Envelope2& envelope, ProgressInfo& prog) NOTHROWS {
 
     double indexMult = (double)(tileWidth);
 
@@ -623,18 +713,40 @@ TAKErr countingSort(std::vector<PointData>* allPoints, atakmap::util::AtomicCoun
     std::size_t read;
     PointData pointData;
 
-    while (input.read(reinterpret_cast<uint8_t*>(&pointData), &read, sizeof(PointData)) == TE_Ok) {
+    size_t inputLen = static_cast<size_t>(input.length());
+    size_t inputOffset = 0;
+    prog.setMinMax(0, inputLen);
 
-        double indexx = std::min(((pointData.x - envelope.minX) / widthX) * indexMult, indexMult - 1);
-        double indexy = std::min(((pointData.y - envelope.minY) / widthY) * indexMult, indexMult - 1);
-        double indexz = std::min(((pointData.z - envelope.minZ) / widthZ) * indexMult, indexMult - 1);
+
+    while (input.read(reinterpret_cast<uint8_t*>(&pointData), &read, sizeof(PointData)) == TE_Ok) {
+        
+        if (pointData.x < envelope.minX || pointData.x > envelope.maxX ||
+            pointData.y < envelope.minY || pointData.y > envelope.maxY ||
+            pointData.z < envelope.minZ || pointData.z > envelope.maxZ)
+            continue;
+
+        double indexx = 0;
+        if(widthX > 0) 
+            indexx = std::min(((pointData.x - envelope.minX) / widthX) * indexMult, indexMult - 1);
+        double indexy = 0;
+        if (widthY > 0)
+            indexy = std::min(((pointData.y - envelope.minY) / widthY) * indexMult, indexMult - 1);
+        double indexz = 0;
+        if(widthZ > 0)
+            indexz = std::min(((pointData.z - envelope.minZ) / widthZ) * indexMult, indexMult - 1);
 
         std::size_t index = (((int)indexx) * tileWidth + (int)indexy) * tileWidth + (int)indexz;
 
         counts[index].add(1);
         if (allPoints)
             allPoints->push_back(pointData);
+
+        inputOffset += read;
+        prog.setMin(inputOffset);
     }
+
+    prog.setMin(inputLen);
+
     return TE_Ok;
 }
 
@@ -685,6 +797,7 @@ TAKErr mergeTiles(OctTreeNode* root, AtomicCounter* counts, std::size_t threshol
 
     if (width == 1) {
         root->count = counts[(indexx * tileWidth + indexy) * tileWidth + indexz].currentValue();
+        return TE_Ok;
     }
 
     for (std::size_t i = indexx; i < width + indexx; ++i) {
@@ -734,6 +847,18 @@ TAKErr insertPoints(const std::vector<PointData>& allPoints, OctTreeNode* root) 
     return TE_Ok;
 }
 
+TAKErr subsampleChunk(std::vector<PointData>& subsampledPoints, OctTreeNode* chunkRoot, std::size_t n) {
+    std::vector<PointData> newPoints;
+    for (std::size_t i = 0; i < chunkRoot->points.size(); ++i) {
+        if ((i % n))
+            newPoints.push_back(chunkRoot->points[i]);
+        else
+            subsampledPoints.push_back(chunkRoot->points[i]);
+    }
+    chunkRoot->points = std::move(newPoints);
+    return TE_Ok;
+}
+
 /*
 * Subsample children nodes into current node, this algorithm could be revisted 
 */
@@ -748,24 +873,67 @@ TAKErr subsamplePoints(OctTreeNode* root, std::size_t threshold) {
             childCount += child.points.size();
         }
 
-        std::size_t n = std::max(childCount / threshold, (std::size_t)1) + 1;
+        std::random_device rd;
+        std::mt19937 mt(rd());
 
         for (auto& child : root->children) {
+            std::size_t n = std::max(child.points.size() / (threshold / 8), (std::size_t)1);
+
+            std::uniform_real_distribution<double> dist(0, (double)n);
 
             std::vector<PointData> newChild;
             newChild.reserve(child.points.size());
             root->points.reserve(threshold);
             for (std::size_t i = 0; i < child.points.size(); ++i) {
-                if ((i % n) == 0)
+                if (int(dist(mt)) == 0)
                     root->points.push_back(child.points[i]);
                 else
                     newChild.push_back(child.points[i]);
             }
-            child.points.swap(newChild);
+            child.points = std::move(newChild);
         }
     }
     return TE_Ok;
 }
+
+/*
+* Color nodes by octree child, used for debugging
+*/
+TAKErr colorTreeByChild(OctTreeNode* root, std::size_t child = 0) {
+    std::vector<uint8_t> levelColors =
+    { 0, 255, 255,
+    255,0,255,
+    0,128,0,
+    255, 128, 128,
+    255,255,204,
+    128,128,0,
+    128,0,128,
+    0,128,128,
+    192,192,192,
+    128,128,128,
+    153,153,255,
+    153,51,102,
+    };
+
+    if (!root->children.empty()) {
+        int i = 0;
+        for (auto& child : root->children) {
+            colorTreeByChild(&child, i++);
+        }
+    }
+    uint8_t r = levelColors[child * 3 + 0];
+    uint8_t g = levelColors[child * 3 + 1];
+    uint8_t b = levelColors[child * 3 + 2];
+
+    uint32_t color = (r << 24) + (g << 16) + (b << 8) + 0xFF;
+
+    for (auto& point : root->points) {
+        point.color = color;
+    }
+
+    return TE_Ok;
+}
+
 
 /*
 * Color nodes by octree level, used for debugging
@@ -807,7 +975,7 @@ TAKErr colorTreeByLevel(OctTreeNode* root, std::size_t level = 0) {
 /*
 * Process an sqlite chunk
 */
-TAKErr processChunkSqlite(QueryPtr& query, std::size_t count, const Envelope2Ptr& envelope, const char* baseURI) NOTHROWS {
+TAKErr processChunkSqlite(QueryPtr& query, std::size_t count, const Envelope2Ptr& envelope, const char* baseURI, ProgressInfo& prog) NOTHROWS {
     std::vector<atakmap::util::AtomicCounter> counts(tileWidth * tileWidth * tileWidth);
     std::vector<PointData> allPoints;
     allPoints.reserve(count);
@@ -842,7 +1010,7 @@ TAKErr setChunkFiles(std::vector<std::unique_ptr<FileOutput2>>& chunkFiles, OctT
         ++count;
     }
 
-    if (root->children.empty()) {
+    if (root->children.empty() && root->count > 0) {
         std::unique_ptr<FileOutput2> file(std::make_unique<FileOutput2>());
         std::string filename = combinePath(baseURI, prefix + chunkExt);
         code = file->open(filename.c_str());
@@ -856,40 +1024,89 @@ TAKErr setChunkFiles(std::vector<std::unique_ptr<FileOutput2>>& chunkFiles, OctT
 /*
 * Write all points to approprite chunk files
 */
-TAKErr writeChunks(FileInput2& input, OctTreeNode* root, const char* baseURI, std::size_t start, std::size_t numPoints) NOTHROWS {
+TAKErr writeChunks(FileInput2& input, OctTreeNode* root, const char* baseURI, ProgressInfo& prog) NOTHROWS {
+
+    ProgressInfo& setChunkFilesProg = prog.addSubinfo();
+    ProgressInfo& writeProg = prog.addSubinfo();
 
     TAKErr code;
     std::vector<std::unique_ptr<FileOutput2>> chunkFiles;
     code = setChunkFiles(chunkFiles, root, baseURI, "0");
     TE_CHECKRETURN_CODE(code);
+
+    prog.finishSubinfo(setChunkFilesProg);
+
     code = input.seek(getProjectedFileHeaderSize());
     TE_CHECKRETURN_CODE(code);
     PointData pointData;
     std::size_t read;
+    size_t readTotal = static_cast<size_t>(input.length());
+    size_t readAccum = 0;
+    writeProg.setMinMax(0, readTotal);
+
     while (input.read(reinterpret_cast<uint8_t*>(&pointData), &read, sizeof(PointData)) == TE_Ok) {
         root->writeToChunk(pointData);
+        readAccum += read;
+        writeProg.setMin(readAccum);
     }
+
+    prog.finishSubinfos();
+
     return TE_Ok;
 }
 
-TAKErr createChunks(FileInput2& input, OctTreeNode* root, std::size_t count, const Envelope2Ptr& envelope, const char* baseURI) NOTHROWS {
+TAKErr createChunks(FileInput2& input, OctTreeNode* root, const char* baseURI, ProgressInfo& prog) NOTHROWS;
+TAKErr subdivideChunks(FileInput2& input, OctTreeNode* root, const char* baseURI, ProgressInfo& prog) NOTHROWS {
+    TAKErr code = TE_Ok;
+    if (root->children.empty() && root->count > largeThreshold) {
+        code = input.seek(getProjectedFileHeaderSize());
+        TE_CHECKRETURN_CODE(code);
+
+        code = createChunks(input, root, baseURI, prog);
+        TE_CHECKRETURN_CODE(code);
+    }
+    else if (!root->children.empty()) {
+        for (auto& child : root->children) {
+            code = subdivideChunks(input, &child, baseURI, prog);
+            TE_CHECKRETURN_CODE(code);
+        }
+    }
+
+    return TE_Ok;
+}
+
+TAKErr createChunks(FileInput2& input, OctTreeNode* root, const char* baseURI, ProgressInfo& prog) NOTHROWS {
     std::vector<atakmap::util::AtomicCounter> counts(tileWidth * tileWidth * tileWidth);
     TAKErr code;
 
-    code = countingSort(nullptr, counts.data(), input, *envelope);
+    ProgressInfo& countingSortProg = prog.addSubinfo();
+    ProgressInfo& mergeTilesProg = prog.addSubinfo();
+    ProgressInfo& writeChunksPRog = prog.addSubinfo();
+
+    code = countingSort(nullptr, counts.data(), input, root->aabb, countingSortProg);
     TE_CHECKRETURN_CODE(code);
+
+    prog.finishSubinfo(countingSortProg);
+
     code = mergeTiles(root, counts.data(), largeThreshold);
     TE_CHECKRETURN_CODE(code);
-    input.seek(0);
-    code = writeChunks(input, root, baseURI, 0, count);
+    
+    counts = std::move(std::vector< atakmap::util::AtomicCounter>());
+
+    //recurse if necessary
+    code = subdivideChunks(input, root, baseURI, writeChunksPRog);
     TE_CHECKRETURN_CODE(code);
+
+    code = input.seek(0);
+    TE_CHECKRETURN_CODE(code);
+
     return TE_Ok;
 }
 
 /* 
 * perform the main chunk processing algorithm, see comment for LAS_createTiles
 */
-TAKErr processChunk(int&, OctTreeNode* chunkRoot, const char* outputPath, std::string inputChunk, std::string prefix) {
+TAKErr processChunk(std::vector<PointData>&subsampledPoints, OctTreeNode* chunkRoot, const char* outputPath, std::string inputChunk, std::string prefix, ProgressInfo*prog) {
     std::vector<atakmap::util::AtomicCounter> counts(tileWidth * tileWidth * tileWidth);
     std::vector<PointData> allPoints;
     allPoints.reserve(largeThreshold);
@@ -899,22 +1116,43 @@ TAKErr processChunk(int&, OctTreeNode* chunkRoot, const char* outputPath, std::s
     code = input.open(inputChunk.c_str());
     TE_CHECKRETURN_CODE(code);
 
-    code = countingSort(&allPoints, counts.data(), input, chunkRoot->aabb);
-    TE_CHECKRETURN_CODE(code);
-    std::unique_ptr<OctTreeNode> root(new OctTreeNode());
-    root->setAABB(chunkRoot->aabb);
-    code = mergeTiles(root.get(), counts.data(), smallThreshold);
+    ProgressInfo& countingSortProg = prog->addSubinfo();
+    ProgressInfo& mergeTilesProg = prog->addSubinfo();;
+
+    code = countingSort(&allPoints, counts.data(), input, chunkRoot->aabb, countingSortProg);
     TE_CHECKRETURN_CODE(code);
 
-    code = insertPoints(allPoints, root.get());
+    prog->finishSubinfo(countingSortProg);
+
+    code = mergeTiles(chunkRoot, counts.data(), smallThreshold);
     TE_CHECKRETURN_CODE(code);
 
-    *chunkRoot = std::move(*root);
+    prog->finishSubinfo(mergeTilesProg);
+
+    code = insertPoints(allPoints, chunkRoot);
+    TE_CHECKRETURN_CODE(code);
 
     code = subsamplePoints(chunkRoot, smallThreshold);
     TE_CHECKRETURN_CODE(code);
 
-    //colorTreeByLevel(root.get());
+    if (prefix.size() > 1) {
+        code = subsampleChunk(subsampledPoints, chunkRoot, 7);
+        TE_CHECKRETURN_CODE(code);
+    }
+
+    //colorTreeByChild(chunkRoot);
+    Projection2Ptr ecefProjection(nullptr, nullptr);
+    Projection2Ptr llaProjection(nullptr, nullptr);
+
+    code = ProjectionFactory3_create(ecefProjection, 4978);
+    TE_CHECKRETURN_CODE(code);
+    code = ProjectionFactory3_create(llaProjection, 4326);
+    TE_CHECKRETURN_CODE(code);
+
+    //points were in LLA for octree generation, project into ECEF for rendering
+    if (ecefProjection && llaProjection) {
+        chunkRoot->project(llaProjection.get(), ecefProjection.get());
+    }
 
     code = writeNode(outputPath, chunkRoot, prefix);
     TE_CHECKRETURN_CODE(code);
@@ -923,30 +1161,38 @@ TAKErr processChunk(int&, OctTreeNode* chunkRoot, const char* outputPath, std::s
         child.clearAllPoints();
     }
 
+    prog->finishSubinfos();
+
     return TE_Ok;
 }
 
-TAKErr processChunks(std::vector<Future<int>>& futures, OctTreeNode* root, const char* outputPath, std::string prefix, LAS_Method method) NOTHROWS {
+typedef std::vector<PointData> FutureResultType;
+
+TAKErr processChunks(std::vector<std::pair<OctTreeNode*,Future<FutureResultType>>>& futures, OctTreeNode* parent, OctTreeNode* root, const char* outputPath, std::string prefix, LAS_Method method, ProgressInfo& prog) NOTHROWS {
     TAKErr code;
+
     for (int i = 0; i < root->children.size(); ++i) {
-        code = processChunks(futures, &root->children[i], outputPath, prefix + std::to_string(i), method);
+        code = processChunks(futures, root, &root->children[i], outputPath, prefix + std::to_string(i), method, prog);
         TE_CHECKRETURN_CODE(code);
     }
 
     if (root->children.empty()) {
         std::string filename = combinePath(outputPath, prefix + chunkExt);
+        ProgressInfo& subprog = prog.addSubinfo();
         if (method == LAS_Method::CHUNK_PARALLEL) {
-            futures.push_back(TAK::Engine::Util::Task_begin(GeneralWorkers_flex(), processChunk, root, outputPath, filename, prefix));
+            if (root->count > 0) {
+                futures.push_back(std::make_pair(parent,TAK::Engine::Util::Task_begin(GeneralWorkers_flex(), processChunk, root, outputPath, filename, prefix, &subprog)));
+            }
         }
         else {
-            int temp;
-            processChunk(temp, root, outputPath, filename, prefix);
+            FutureResultType temp;
+            processChunk(temp, root, outputPath, filename, prefix, &subprog);
         }
     }
     return TE_Ok;
 }
 
-TAKErr createTiles(const char* outputPath, std::size_t maxPoints, LAS_Method method) NOTHROWS {
+TAKErr createTiles(const char* outputPath, std::size_t maxPoints, LAS_Method method, ProgressInfo& prog) NOTHROWS {
     TAKErr code;
     DatabasePtr database(nullptr, nullptr);
     std::string dbFilePath = combinePath(outputPath, dbFileName);
@@ -962,7 +1208,7 @@ TAKErr createTiles(const char* outputPath, std::size_t maxPoints, LAS_Method met
         QueryPtr lasPointQuery(nullptr, nullptr);
         code = queryPoints(lasPointQuery, database, maxPoints, computedEnvelope);
         TE_CHECKRETURN_CODE(code);
-        code = processChunkSqlite(lasPointQuery, maxPoints, computedEnvelope, outputPath);
+        code = processChunkSqlite(lasPointQuery, maxPoints, computedEnvelope, outputPath, prog);
         TE_CHECKRETURN_CODE(code);
     }
     else {
@@ -975,28 +1221,57 @@ TAKErr createTiles(const char* outputPath, std::size_t maxPoints, LAS_Method met
         std::unique_ptr<OctTreeNode> root(new OctTreeNode());
         root->setAABB(*computedEnvelope);
 
-        code = createChunks(input, root.get(), maxPoints, computedEnvelope, outputPath);
+        ProgressInfo& createChunksProg = prog.addSubinfo();
+        ProgressInfo& processChunksProg = prog.addSubinfo();
+        ProgressInfo& writeChunksProg = prog.addSubinfo();
+        ProgressInfo& writeTreeProg = prog.addSubinfo();
+
+        code = createChunks(input, root.get(), outputPath, createChunksProg);
         TE_CHECKRETURN_CODE(code);
-        std::vector<Future<int>> futures;
-        code = processChunks(futures, root.get(), outputPath, "0", method);
+
+        prog.finishSubinfo(createChunksProg);
+
+        code = writeChunks(input, root.get(), outputPath, writeChunksProg);
+        TE_CHECKRETURN_CODE(code);
+
+        std::vector < std::pair<OctTreeNode*, Future<FutureResultType>>> futures;
+        code = processChunks(futures, nullptr, root.get(), outputPath, "0", method, processChunksProg);
         for (auto& future : futures) {
-            int res;
-            future.await(res, code);
+            FutureResultType res;
+            future.second.await(res, code);
             TE_CHECKRETURN_CODE(code);
         }
+        subsamplePoints(root.get(), smallThreshold);
         TE_CHECKRETURN_CODE(code);
+
+        processChunksProg.finishSubinfos();
+        prog.finishSubinfo(processChunksProg);
+
         code = writeTree(outputPath, root.get());
         TE_CHECKRETURN_CODE(code);
     }
+
+    prog.finishSubinfos();
+
     return code;
 }
 
 
-TAKErr createTilesImpl(const char* lasFilePath, const char* outputPath, std::size_t maxPoints, LAS_Method method) NOTHROWS {
-    auto code = createDatabase(lasFilePath, outputPath, maxPoints, method);
+TAKErr createTilesImpl(const char* lasFilePath, const char* outputPath, std::size_t maxPoints, LAS_Method method, ProgressInfo& prog) NOTHROWS {
+
+    ProgressInfo& createDbProg = prog.addSubinfo(prog.granularity() / 2);
+    ProgressInfo& createTilesProg = prog.addSubinfo(prog.granularity() / 2);
+
+    auto code = createDatabase(lasFilePath, outputPath, maxPoints, method, createDbProg);
     TE_CHECKRETURN_CODE(code);
-    code = createTiles(outputPath, maxPoints, method);
+
+    prog.finishSubinfo(createDbProg);
+
+    code = createTiles(outputPath, maxPoints, method, createTilesProg);
     TE_CHECKRETURN_CODE(code);
+    
+    prog.finishSubinfos();
+
     return TE_Ok;
 }
 
@@ -1011,6 +1286,51 @@ TAKErr cleanupDirectory(const char* outputPath) {
 
             return code;
         }, nullptr, outputPath, TELFM_ImmediateFiles);
+}
+
+bool TAK::Engine::Formats::LAS::LAS_HasColor(LASHeaderH& header) NOTHROWS {
+    uint8_t dataFormat = LASHeader_GetDataFormatId(header);
+    if (dataFormat == 0 || dataFormat == 1) return false;
+    return true;
+}
+
+namespace {
+    // There is no way to definitively determine whether an LAS file has intensity data without scanning the entire dataset for non-zero
+    // intensity values. Instead of scanning all points, we'll sample a few and make a determination from that.
+    bool LAS_HasIntensity(LASReaderH& reader, LASHeaderH& header) NOTHROWS {
+        unsigned int recordCount = LASHeader_GetPointRecordsCount(header);
+        constexpr int samples = 10;
+        for (int a = 0; a < samples; a++) {
+            unsigned int index = (recordCount / samples) * a;
+            auto point = LASReader_GetPointAt(reader, index);
+            unsigned short intensity = LASPoint_GetIntensity(point);
+            if (intensity != 0) return true;
+        }
+        return false;
+    }
+
+    
+}
+
+bool TAK::Engine::Formats::LAS::LAS_HasIntensity(const char* URI) NOTHROWS {
+
+    auto readerObj = LASReader_Create(URI);
+    std::unique_ptr<LASReaderH, void (*)(LASReaderH*)> reader(&readerObj, [](LASReaderH* r) { LASReader_Destroy(*r); });
+    if (*reader == nullptr) {
+        LASError_Print(LASError_GetLastErrorMsg());
+        LASError_Pop();
+        return false;
+    }
+
+    auto headerObj = LASReader_GetHeader(*reader);
+    std::unique_ptr<LASHeaderH, void (*)(LASHeaderH*)> header(&headerObj, [](LASHeaderH* h) { LASHeader_Destroy(*h); });
+    if (*header == nullptr) {
+        LASError_Print(LASError_GetLastErrorMsg());
+        LASError_Pop();
+        return false;
+    }
+
+    return ::LAS_HasIntensity(*reader, *header);
 }
 
 /*  
@@ -1028,10 +1348,13 @@ TAKErr cleanupDirectory(const char* outputPath) {
 *   See also:
 *   Fast Out-of-Core Octree Generation for Massive Point Clouds
 *   https://www.cg.tuwien.ac.at/research/publications/2020/SCHUETZ-2020-MPC/SCHUETZ-2020-MPC-paper.pdf
+* 
+*   Projection note: for best results, need to create octree in LLA space and then project points into ECEF for rendering
 */
 
-ENGINE_API TAKErr TAK::Engine::Formats::LAS::LAS_createTiles(const char* lasFilePath, const char* outputPath, std::size_t maxPoints, LAS_Method method) NOTHROWS {
-    TAKErr code = createTilesImpl(lasFilePath, outputPath, maxPoints, method);
+ENGINE_API TAKErr TAK::Engine::Formats::LAS::LAS_createTiles(const char* lasFilePath, const char* outputPath, std::size_t maxPoints, LAS_Method method, ProcessingCallback* cb) NOTHROWS {
+    TAK::Engine::Util::ProgressInfo prog(cb, 250);
+    TAKErr code = createTilesImpl(lasFilePath, outputPath, maxPoints, method, prog);
     TE_CHECKRETURN_CODE(cleanupDirectory(outputPath));
     return code;
 }

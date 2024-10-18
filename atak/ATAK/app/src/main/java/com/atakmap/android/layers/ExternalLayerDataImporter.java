@@ -5,6 +5,9 @@ import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
 
+import com.atakmap.android.data.URIContentHandler;
+import com.atakmap.android.data.URIContentManager;
+import com.atakmap.android.hierarchy.action.Visibility;
 import com.atakmap.android.importexport.ImportReceiver;
 import com.atakmap.android.importexport.Importer;
 import com.atakmap.coremap.log.Log;
@@ -72,10 +75,11 @@ public class ExternalLayerDataImporter implements Importer {
             return ImportResult.FAILURE;
 
         boolean showNotifications = false;
-        if (b != null
-                && b.containsKey(ImportReceiver.EXTRA_SHOW_NOTIFICATIONS)) {
-            showNotifications = b
-                    .getBoolean(ImportReceiver.EXTRA_SHOW_NOTIFICATIONS);
+        boolean hidden = false;
+        if (b != null) {
+            showNotifications = b.getBoolean(
+                    ImportReceiver.EXTRA_SHOW_NOTIFICATIONS, false);
+            hidden = b.getBoolean(ImportReceiver.EXTRA_HIDE_FILE, false);
         }
 
         File file = FileSystemUtils.getFile(uri);
@@ -107,6 +111,11 @@ public class ExternalLayerDataImporter implements Importer {
         } finally {
             if (showNotifications)
                 LayersNotificationManager.notifyImportComplete(file, success);
+            if (hidden) {
+                URIContentHandler h = URIContentManager.getInstance().getHandler(file);
+                if (h != null && h.isActionSupported(Visibility.class))
+                    ((Visibility) h).setVisible(false);
+            }
         }
 
         return success ? ImportResult.SUCCESS : ImportResult.FAILURE;

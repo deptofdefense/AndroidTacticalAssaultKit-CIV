@@ -14,6 +14,7 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
+import com.atakmap.map.layer.feature.Feature;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -182,6 +183,11 @@ public class Arrow extends Shape {
     @Override
     public GeoBounds getBounds(MutableGeoBounds bounds) {
         return new GeoBounds(this.minimumBoundingBox);
+    }
+
+    @Override
+    public void setAltitudeMode(Feature.AltitudeMode altitudeMode) {
+        super.setAltitudeMode(altitudeMode);
     }
 
     @Override

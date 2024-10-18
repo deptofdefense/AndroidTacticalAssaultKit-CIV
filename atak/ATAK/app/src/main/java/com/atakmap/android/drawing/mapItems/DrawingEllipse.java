@@ -200,6 +200,7 @@ public class DrawingEllipse extends Shape implements AnchoredMapItem,
             e.setClickable(getClickable());
             e.setCenter(_center);
             e.setStyle(getStyle());
+            e.setStrokeStyle(getStrokeStyle());
             e.setStrokeColor(getStrokeColor());
             e.setStrokeWeight(getStrokeWeight());
             e.setFillColor(getFillColor());
@@ -283,7 +284,7 @@ public class DrawingEllipse extends Shape implements AnchoredMapItem,
         marker.addOnPointChangedListener(this);
         marker.addOnGroupChangedListener(this);
         marker.setMetaString("shapeUID", getUID());
-        setTitle(getTitle());
+        refresh();
     }
 
     /**
@@ -424,10 +425,26 @@ public class DrawingEllipse extends Shape implements AnchoredMapItem,
         return new GeoBounds(0, 0, 0, 0);
     }
 
+    /**
+     * Set the title of the ellipse, including the name of its center marker
+     * @param title Ellipse title
+     */
+    @Override
+    public void setTitle(String title) {
+        super.setTitle(title);
+        refresh();
+    }
+
     @Override
     protected void onStyleChanged() {
         refresh();
         super.onStyleChanged();
+    }
+
+    @Override
+    protected void onStrokeStyleChanged() {
+        super.onStrokeStyleChanged();
+        refresh();
     }
 
     @Override
@@ -634,7 +651,9 @@ public class DrawingEllipse extends Shape implements AnchoredMapItem,
         shape.addChild(styleLink);
 
         // Marker reference
-        shape.addChild(createLinkDetail(getCenterMarker(), "p-p-CenterAnchor"));
+        if (!isCenterShapeMarker())
+            shape.addChild(
+                    createLinkDetail(getCenterMarker(), "p-p-CenterAnchor"));
 
         detail.addChild(shape);
 

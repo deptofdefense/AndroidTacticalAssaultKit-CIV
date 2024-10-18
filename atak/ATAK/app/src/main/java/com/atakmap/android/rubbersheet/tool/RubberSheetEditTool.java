@@ -35,6 +35,7 @@ import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.NorthReference;
+import com.atakmap.map.CameraController;
 import com.atakmap.map.MapRenderer2;
 import com.atakmap.map.MapSceneModel;
 
@@ -146,7 +147,7 @@ public class RubberSheetEditTool extends RectangleEditTool
         _oldTiltEnabled = _mapView.getMapTouchController()
                 .getTiltEnabledState() == MapTouchController.STATE_TILT_ENABLED;
         if (_oldTilt != 0d)
-            _mapView.getMapController().tiltTo(0, false);
+            CameraController.Programmatic.tiltTo(_mapView.getRenderer3(), 0, false);
         MapTouchController.goTo(_sheet, false);
 
         // Register listeners on top of the current stack used by the rectangle
@@ -185,7 +186,7 @@ public class RubberSheetEditTool extends RectangleEditTool
             _sheet.persist(_mapView.getMapEventDispatcher(), null, getClass());
         unregisterListeners();
         _mapView.getMapTouchController().setUserOrientation(_oldFreeRotate);
-        _mapView.getMapController().tiltTo(_oldTilt, false);
+        CameraController.Programmatic.tiltTo(_mapView.getRenderer3(), _oldTilt, false);
         NavView.getInstance().setTiltEnabled(_oldTiltEnabled);
         _subText.setVisible(false);
         super.onToolEnd();

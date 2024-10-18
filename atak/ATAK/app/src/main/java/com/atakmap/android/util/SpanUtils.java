@@ -1,12 +1,16 @@
 
 package com.atakmap.android.util;
 
+import android.graphics.Typeface;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
+import android.text.TextPaint;
 import android.text.style.ForegroundColorSpan;
+import android.text.style.MetricAffectingSpan;
 
 import androidx.annotation.ColorInt;
+import androidx.annotation.NonNull;
 
 public class SpanUtils {
     public static Spannable applyForegroundColorSpan(String text,
@@ -39,4 +43,25 @@ public class SpanUtils {
                 end,
                 Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
     }
-}
+
+    public CustomTypefaceSpan boldTypeFace() {
+        return new CustomTypefaceSpan(Typeface.DEFAULT_BOLD);
+    }
+
+    public static class CustomTypefaceSpan extends MetricAffectingSpan {
+        private final Typeface typeface;
+
+        public CustomTypefaceSpan(Typeface typeface) {
+            this.typeface = typeface;
+        }
+
+        @Override
+        public void updateMeasureState(@NonNull TextPaint textPaint) {
+            textPaint.setTypeface(typeface);
+        }
+
+        @Override
+        public void updateDrawState(TextPaint tp) {
+            tp.setTypeface(typeface);
+        }
+    }}

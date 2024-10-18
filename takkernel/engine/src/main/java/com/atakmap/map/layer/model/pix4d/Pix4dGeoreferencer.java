@@ -12,6 +12,7 @@ import com.atakmap.math.Matrix;
 import com.atakmap.math.PointD;
 import com.atakmap.coremap.log.Log;
 import org.gdal.osr.SpatialReference;
+import com.atakmap.map.layer.model.zipcomment.ZipCommentGeoreferencer;
 
 import java.io.File;
 
@@ -32,6 +33,9 @@ public final class Pix4dGeoreferencer implements Georeferencer {
             }
             if(!IOProviderFactory.exists(f))
                 return false;
+
+            if (ZipCommentGeoreferencer.locate(model))
+                return true;
 
             // derive the base filename
             String baseFileName = f.getName();
@@ -82,7 +86,7 @@ public final class Pix4dGeoreferencer implements Georeferencer {
 
             // XXX - altitude mode must stay relative until we have some kind
             //       of "rubber sheet" functionality in core
-            model.altitudeMode = ModelInfo.AltitudeMode.Relative;
+            model.altitudeMode = ModelInfo.AltitudeMode.ClampToGround;
 
             // XXX - this should really be the center of the AABB
             model.location = ProjectionFactory.getProjection(srid).inverse(localFrameOrigin, null);

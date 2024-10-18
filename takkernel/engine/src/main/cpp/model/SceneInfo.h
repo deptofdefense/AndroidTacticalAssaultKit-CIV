@@ -17,6 +17,18 @@ namespace TAK {
         namespace Model {
 
             struct ENGINE_API SceneInfo {
+                enum CapabilitiesType {
+                    AltitudeAdjustable = 1 << 0,
+                    BoundsAdjustable = 1 << 1,
+                    OpacityAdjustable = 1 << 2,
+                    XRay = 1 << 3,
+                    MaterialColor = 1 << 4,
+                    ManualColor = 1 << 5,
+                    IntensityColor = 1 << 6,
+                    ZValueColor = 1 << 7,
+                    All = AltitudeAdjustable | BoundsAdjustable | OpacityAdjustable | XRay | MaterialColor | ManualColor | IntensityColor |
+                          ZValueColor,
+                };
 
                 /**
                  * minimum display threshold, in meters-per-pixel
@@ -50,6 +62,8 @@ namespace TAK {
                 ResourceAliasCollectionPtr resourceAliases;
 
 	            Feature::AltitudeMode altitudeMode;
+
+                CapabilitiesType capabilities;
 				
                 /**
                  * The AABB for the scene, in the LCS, if known.
@@ -71,6 +85,14 @@ namespace TAK {
 
                 SceneInfo &operator=(const SceneInfo &other) NOTHROWS;
             };
+
+            inline SceneInfo::CapabilitiesType operator|(SceneInfo::CapabilitiesType a, SceneInfo::CapabilitiesType b) {
+                return static_cast<SceneInfo::CapabilitiesType>(static_cast<unsigned short>(a) | static_cast<unsigned short>(b));
+            }
+
+            inline SceneInfo::CapabilitiesType operator&(SceneInfo::CapabilitiesType a, SceneInfo::CapabilitiesType b) {
+                return static_cast<SceneInfo::CapabilitiesType>(static_cast<unsigned short>(a) & static_cast<unsigned short>(b));
+            }
 
             typedef std::shared_ptr<SceneInfo> SceneInfoPtr;
 

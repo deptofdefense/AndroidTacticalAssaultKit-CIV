@@ -52,6 +52,10 @@ public class ImageOverlay extends Shape implements Exportable {
                         (mbb.maxX + mbb.minX) / 2.0d));
     }
 
+    /**
+     * Enable or disable map touch for a image overlay
+     * @param b true to enable or false to disable
+     */
     public void enableMapTouch(boolean b) {
         setClickable(b);
     }

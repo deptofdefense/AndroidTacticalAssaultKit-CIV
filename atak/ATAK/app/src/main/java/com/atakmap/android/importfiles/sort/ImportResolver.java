@@ -35,8 +35,9 @@ public abstract class ImportResolver {
     // to configure options that might not be necessary for
     // all places were the ImportResolver interface is used.
     public enum SortFlags {
-        SHOW_NOTIFICATIONS,
-        ZOOM_TO_FILE
+        SHOW_NOTIFICATIONS, // Show notifications related to the import process
+        ZOOM_TO_FILE, // Zoom to the file when it's finished importing
+        HIDE_FILE, // Turn file visibility off by default
         //IMPORT_STRATEGY_TYPES,
         //IMPORT_STRATEGY_INDIVIDUAL,
         //IMPORT_STRATEGY_LEGACY

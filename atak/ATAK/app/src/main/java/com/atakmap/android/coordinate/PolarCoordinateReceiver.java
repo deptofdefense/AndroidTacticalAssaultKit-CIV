@@ -244,9 +244,7 @@ public class PolarCoordinateReceiver extends BroadcastReceiver implements
                         //init UI
                         _bearingText.setText(TWO_DEC_FORMAT.format(bearing));
 
-                        //TODO need to review this math for setting inclination angle...
-                        double slantRange = DistanceCalculations
-                                .calculateSlantRange(
+                         final double slantRange = GeoCalculations.slantDistanceTo(
                                         _relativeMarker.getPoint(),
                                         _destMarker.getPoint());
                         if (!Double.isNaN(slantRange)) {

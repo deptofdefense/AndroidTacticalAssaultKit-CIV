@@ -23,11 +23,20 @@ public class AtakPreferences {
     protected final Context _context;
     protected final SharedPreferences _prefs;
 
+    /**
+     * Construct an ATAK core preference manager
+     * @param appContext the application contrext used by the preference manager
+     */
     public AtakPreferences(Context appContext) {
         _context = appContext;
         _prefs = PreferenceManager.getDefaultSharedPreferences(_context);
     }
 
+    /**
+     * Construct an ATAK core preference manager
+     * @param mapView the map view in order to get the application contrext
+     *                used by the preference manager
+     */
     public AtakPreferences(MapView mapView) {
         this(mapView.getContext());
     }
@@ -46,11 +55,11 @@ public class AtakPreferences {
      * @param value Preference value (any type)
      * @return True if successful, false if failed
      */
-    public boolean set(String key, Object value) {
+    public boolean set(final String key, final Object value) {
         if (value == null)
             return false;
         try {
-            SharedPreferences.Editor editor = _prefs.edit();
+            final SharedPreferences.Editor editor = _prefs.edit();
             if (value instanceof Integer)
                 editor.putInt(key, (Integer) value);
             else if (value instanceof Long)

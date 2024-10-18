@@ -1,7 +1,6 @@
 
 package com.atakmap.android.dropdown;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -11,7 +10,6 @@ import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 
 import com.atakmap.android.dropdown.DropDown.OnStateListener;
 import com.atakmap.android.ipc.AtakBroadcast;
-import com.atakmap.android.maps.MapActivity;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.app.R;
 import com.atakmap.coremap.log.Log;
@@ -46,6 +44,8 @@ public class DropDownManager extends BroadcastReceiver {
     public static final String CLOSE_DROPDOWN = "com.android.arrowmaker.BACK_PRESS";
     public static final String BACK_PRESS_NOT_HANDLED = "com.android.arrowmaker.BACK_PRESS_NOT_HANDLED";
     public static final String SHOW_DROPDOWN = "com.android.arrowmaker.SHOW_DROPDOWN";
+    public static final String SHOW_DROPDOWN_DIVIDER = "com.android.atak.SHOW_DROPDOWN_DIVIDER";
+    public static final String HIDE_DROPDOWN_DIVIDER = "com.android.atak.HIDE_DROPDOWN_DIVIDER";
 
     protected DropDownManager() {
     }
@@ -369,24 +369,22 @@ public class DropDownManager extends BroadcastReceiver {
      */
     public void closeAllDropDowns() {
         MapView mv = MapView.getMapView();
-        ((MapActivity) mv.getContext()).executeOnActive(new Runnable() {
+        mv.postOnActive(new Runnable() {
             @Override
             public void run() {
-                mv.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (leftSide != null)
-                            closeLeftDropDown();
+                if (leftSide != null)
+                    closeLeftDropDown();
 
-                        while (rightSide != null)
-                            closeRightDropDown(true, true);
+                while (rightSide != null)
+                    closeRightDropDown(true, true);
 
-                        if (sidePane != null && sidePane.isOpen())
-                            sidePane.close();
+                if (sidePane != null) {
+                    if (sidePane.isOpen())
+                        sidePane.close();
+                    sidePane.dispose();
+                }
 
-                        sidePane = null;
-                    }
-                });
+                sidePane = null;
             }
         });
     }

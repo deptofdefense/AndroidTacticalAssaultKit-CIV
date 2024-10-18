@@ -94,10 +94,8 @@ public class OnlineLayersDownloadManager {
                                     .getSecondaryProgress() != secondaryProg) {
                         downloadPB.setMax(maxProg);
                         downloadPB.setSecondaryProgress(secondaryProg);
-                        downloadPB.setProgress(currentProg);
-                    } else {
-                        downloadPB.setProgress(currentProg);
                     }
+                    downloadPB.setProgress(currentProg);
                 } catch (Exception e) {
                     Log.d(TAG, "error occurred setting the progress bar", e);
                 }

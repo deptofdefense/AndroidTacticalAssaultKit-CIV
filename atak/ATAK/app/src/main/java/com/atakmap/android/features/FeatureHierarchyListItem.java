@@ -14,6 +14,7 @@ import com.atakmap.android.hierarchy.action.Visibility;
 import com.atakmap.android.hierarchy.items.AbstractChildlessListItem;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.ILocation;
+import com.atakmap.android.maps.MapView;
 import com.atakmap.android.menu.MapMenuReceiver;
 import com.atakmap.android.user.FocusBroadcastReceiver;
 import com.atakmap.android.util.ATAKUtilities;
@@ -29,6 +30,7 @@ import com.atakmap.map.layer.feature.DataStoreException;
 import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.FeatureDataStore;
 import com.atakmap.map.layer.feature.FeatureDataStore2;
+import com.atakmap.map.layer.feature.FeatureDataStore2.FeatureQueryParameters;
 import com.atakmap.map.layer.feature.Utils;
 import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.map.layer.feature.geometry.Point;
@@ -37,14 +39,18 @@ import com.atakmap.map.layer.feature.style.BasicPointStyle;
 import com.atakmap.map.layer.feature.style.BasicStrokeStyle;
 import com.atakmap.map.layer.feature.style.CompositeStyle;
 import com.atakmap.map.layer.feature.style.IconPointStyle;
+import com.atakmap.math.MathUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import androidx.annotation.NonNull;
+
 public class FeatureHierarchyListItem extends
         AbstractChildlessListItem implements GoTo,
-        Visibility, ILocation, Delete, View.OnClickListener {
+        Visibility, ILocation, Delete, FeatureEdit, View.OnClickListener {
 
     private final FeatureDataStore2 spatialDb;
     private final long fid;
@@ -117,12 +123,16 @@ public class FeatureHierarchyListItem extends
                 & FeatureDataStore2.MODIFY_FEATURESET_FEATURE_DELETE) == FeatureDataStore2.MODIFY_FEATURESET_FEATURE_DELETE)
             this.actions.add(Delete.class);
 
+        if (isStyleEditable())
+            this.actions.add(FeatureEdit.class);
+
         this.actions.add(GoTo.class);
 
         GeoPointMetaData alt;
         try {
             Feature f = Utils.getFeature(spatialDb, fid);
-            if (f.getGeometry() instanceof Point) {
+
+            if (f != null && f.getGeometry() instanceof Point) {
                 alt = FeatureHierarchyUtils
                         .getAltitude(((Point) f.getGeometry()),
                                 f.getAltitudeMode());
@@ -207,6 +217,15 @@ public class FeatureHierarchyListItem extends
         return dominant;
     }
 
+    /**
+     * Check if the style properties are editable in this database
+     * @return True if editable
+     */
+    private boolean isStyleEditable() {
+        return MathUtils.hasBits(spatialDb.getModificationFlags(),
+                FeatureDataStore.MODIFY_FEATURE_STYLE);
+    }
+
     protected GeoBounds getBounds() {
         return bounds;
     }
@@ -258,7 +277,7 @@ public class FeatureHierarchyListItem extends
             return null;
 
         // Button for editing this feature
-        h.edit.setVisibility(View.VISIBLE);
+        h.edit.setVisibility(isStyleEditable() ? View.VISIBLE : View.GONE);
         h.edit.setOnClickListener(this);
 
         // Hide pan and send
@@ -270,12 +289,9 @@ public class FeatureHierarchyListItem extends
 
     @Override
     public void onClick(View v) {
-        if (v.getId() == R.id.editButton) {
-            Intent i = new Intent(FeatureEditDropdownReceiver.SHOW_EDIT);
-            i.putExtra("fid", this.fid);
-            i.putExtra("title", this.getTitle());
-            i.putExtra("databaseUri", this.spatialDb.getUri());
-            AtakBroadcast.getInstance().sendBroadcast(i);
+        if (v.getId() == R.id.editButton && isStyleEditable()) {
+            new FeatureEditDropdownReceiver(MapView.getMapView(), spatialDb)
+                    .show(getTitle(), fid);
         }
     }
 
@@ -354,5 +370,20 @@ public class FeatureHierarchyListItem extends
             return bounds;
         }
         return this.bounds;
+    }
+
+    @Override
+    @NonNull
+    public FeatureDataStore2 getFeatureDatabase() {
+        return spatialDb;
+    }
+
+    @NonNull
+    @Override
+    public FeatureQueryParameters getFeatureQueryParams() {
+        // Query parameters for this single feature
+        FeatureQueryParameters params = new FeatureQueryParameters();
+        params.ids = Collections.singleton(this.fid);
+        return params;
     }
 }

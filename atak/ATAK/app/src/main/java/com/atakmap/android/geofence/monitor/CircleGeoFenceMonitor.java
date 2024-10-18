@@ -15,6 +15,7 @@ import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 class CircleGeoFenceMonitor extends GeoFenceMonitor {
@@ -128,11 +129,11 @@ class CircleGeoFenceMonitor extends GeoFenceMonitor {
     /**
      * Run a quick check of the specified search parameters
      *
-     * @param center
-     * @param radiusKM
+     * @param center the center point
+     * @param radiusKM the radius to consider in kilometers
      * @param trigger   Note, should be Entry or Exit. Both returns all items searched
-     * @param item
-     * @return
+     * @param item the item to check
+     * @return true if the item satisfies the criteria
      */
     static boolean QuickCheck(GeoPoint center, int radiusKM,
             GeoFence.Trigger trigger, PointMapItem item) {
@@ -141,21 +142,18 @@ class CircleGeoFenceMonitor extends GeoFenceMonitor {
             return false;
         }
 
-        List<PointMapItem> items = new ArrayList<>();
-        items.add(item);
-
         return !FileSystemUtils.isEmpty(QuickCheck(center, radiusKM, trigger,
-                items));
+                Collections.singletonList(item)));
     }
 
     /**
      * Run a quick check of the specified search parameters
      *
-     * @param center
-     * @param radiusKM
+     * @param center the center point
+     * @param radiusKM the radius to consider in kilometers
      * @param trigger   Note, should be Entry or Exit. Both returns all items searched
-     * @param items
-     * @return
+     * @param items the items to check
+     * @return true if the item satisfies the criteria
      */
     static List<PointMapItem> QuickCheck(GeoPoint center, int radiusKM,
             GeoFence.Trigger trigger, List<PointMapItem> items) {

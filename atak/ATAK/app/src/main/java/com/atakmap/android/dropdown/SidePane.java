@@ -1,9 +1,11 @@
 
 package com.atakmap.android.dropdown;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import androidx.fragment.app.FragmentActivity;
+import gov.tak.api.util.Disposable;
+
 import android.view.View;
 import android.view.View.OnTouchListener;
 import android.view.MotionEvent;
@@ -14,51 +16,60 @@ import android.widget.RelativeLayout.LayoutParams;
 
 import com.atakmap.android.maps.MapEvent;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.navigation.views.NavView;
+import com.atakmap.android.navigation.views.buttons.NavButtonsVisibilityListener;
+import com.atakmap.android.preference.AtakPreferences;
 import com.atakmap.app.R;
 import com.atakmap.coremap.log.Log;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-class SidePane implements OnTouchListener {
+public class SidePane implements OnTouchListener,
+        SharedPreferences.OnSharedPreferenceChangeListener,
+        View.OnLayoutChangeListener,
+        NavButtonsVisibilityListener,
+        Disposable {
 
     public static final String TAG = "SidePane";
 
     private int state;
 
+    private final AtakPreferences prefs;
     private final FrameLayout mapLayout;
     private final ViewGroup rightLayout, leftLayout;
     private final ViewGroup rightContainer;
+    private final View rightBorder;
+    private final ViewGroup rightToolbar;
+    private final View menuButton;
     private final RelativeLayout parent;
 
-    final private View sideHandle;
-    final private View bottomHandle; // for portrait mode
+    final protected View sideHandle;
+    final protected View bottomHandle; // for portrait mode
     private final MapView mapView;
-    private final boolean layoutIsPortrait;
-    private DropDown dd, leftDD;
+    protected final boolean layoutIsPortrait;
+    protected DropDown dd, leftDD;
 
     private double heightFraction = DropDownReceiver.FULL_HEIGHT;
     private double widthFraction = DropDownReceiver.HALF_WIDTH;
-
-    private final int pHeight;
-    private final int pWidth;
 
     private double tap;
 
     /**
      * A SidePane is what a dropdown needs to be open in order to display.
-     * 
+     *
      * @param view ATAK's content view.
      */
-    SidePane(MapView view) {
+    public SidePane(MapView view) {
+        prefs = new AtakPreferences(view);
         FragmentActivity act = (FragmentActivity) view.getContext();
         mapLayout = act.findViewById(R.id.main_map_container);
         rightLayout = act.findViewById(R.id.right_drop_down);
+        rightBorder = act.findViewById(R.id.right_drop_down_border);
         leftLayout = act.findViewById(R.id.left_drop_down);
         rightContainer = act.findViewById(R.id.right_drop_down_container);
+        rightToolbar = act.findViewById(R.id.embedded_toolbar);
+        menuButton = act.findViewById(R.id.tak_nav_menu_button);
         parent = act.findViewById(R.id.map_parent);
-
-        pHeight = parent.getHeight();
-        pWidth = parent.getWidth();
 
         sideHandle = act.findViewById(R.id.sidepanehandle_background);
         bottomHandle = act
@@ -69,14 +80,46 @@ class SidePane implements OnTouchListener {
 
         // switching between portrait and landscape is handled by disposing the side pane and rebuilding it.
         // needs a restart so just check for it once
-        layoutIsPortrait = PreferenceManager
-                .getDefaultSharedPreferences(view.getContext())
-                .getBoolean("atakControlForcePortrait", false);
+        layoutIsPortrait = prefs.get("atakControlForcePortrait", false);
 
         state = DropDownReceiver.DROPDOWN_STATE_NONE;
         mapView = view;
         showHandle();
 
+        // Register listeners
+        menuButton.addOnLayoutChangeListener(this);
+        rightToolbar.addOnLayoutChangeListener(this);
+        parent.addOnLayoutChangeListener(this);
+        NavView.getInstance().addButtonVisibilityListener(this);
+        prefs.registerListener(this);
+    }
+
+    @Override
+    public void dispose() {
+        parent.removeOnLayoutChangeListener(this);
+        menuButton.removeOnLayoutChangeListener(this);
+        rightToolbar.removeOnLayoutChangeListener(this);
+        NavView.getInstance().removeButtonVisibilityListener(this);
+        prefs.unregisterListener(this);
+    }
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences p, String key) {
+        if (key.equals(NavView.PREF_NAV_ORIENTATION_RIGHT))
+            resize();
+    }
+
+    @Override
+    public void onLayoutChange(View v, int l, int t, int r, int b,
+            int ol, int ot, int or, int ob) {
+        // Relevant view has changed position
+        if (l != ol || t != ot || r != or || b != ob)
+            resize();
+    }
+
+    @Override
+    public void onNavButtonsVisible(boolean visible) {
+        resize();
     }
 
     @Override
@@ -133,7 +176,7 @@ class SidePane implements OnTouchListener {
 
     /**
      * Open the pane to the given fractions.
-     * 
+     *
      */
     public void open() {
 
@@ -162,8 +205,18 @@ class SidePane implements OnTouchListener {
 
         double leftWidth, leftHeight;
 
-        final int width = pWidth;
-        final int height = pHeight;
+        // Get the dimensions of the parent container
+        final int width = parent.getWidth();
+        final int height = parent.getHeight();
+
+        // Used to offset the top of the right-side drop-down if the nav buttons
+        // are placed in the top-right corner of the screen
+        final boolean navRight = prefs.get(NavView.PREF_NAV_ORIENTATION_RIGHT,
+                false);
+        final boolean menuVisible = menuButton.getVisibility() != View.GONE;
+        final int navBottom = Math.max(
+                navRight && menuVisible ? menuButton.getBottom() : 0,
+                rightToolbar.getWidth() > 0 ? rightToolbar.getBottom() : 0);
 
         if (!layoutIsPortrait) {
             int x, y, w, h;
@@ -173,7 +226,7 @@ class SidePane implements OnTouchListener {
                         (int) (width - (width * widthFraction)),
                         height);
                 x = (int) (width - (width * widthFraction));
-                y = 0;
+                y = navBottom;
                 w = (int) (width * widthFraction);
                 h = height;
             } else {
@@ -234,6 +287,10 @@ class SidePane implements OnTouchListener {
                 ? View.GONE
                 : View.VISIBLE);
 
+        // Show the border if the drop-down doesn't take up the full height
+        rightBorder.setVisibility(!layoutIsPortrait
+                && rightPanelLP.topMargin > 0 ? View.VISIBLE : View.GONE);
+
         refresh(prevValue);
 
         //By shear virtue if the drawer size changes, then we probably want to tell the dropdown.
@@ -264,7 +321,7 @@ class SidePane implements OnTouchListener {
     }
 
     /**
-     * Close the pane and remove all views attached to it. 
+     * Close the pane and remove all views attached to it.
      */
     public void close() {
         state = DropDownReceiver.DROPDOWN_STATE_NONE;
@@ -310,7 +367,7 @@ class SidePane implements OnTouchListener {
         }
     }
 
-    private void showHandle() {
+    protected void showHandle() {
         if (dd == null) {
             sideHandle.setVisibility(View.GONE);
             bottomHandle.setVisibility(View.GONE);
@@ -370,6 +427,11 @@ class SidePane implements OnTouchListener {
         // Show map view again in case visibility was turned off
         mapView.setVisibility(View.VISIBLE);
         updatePaneVisibility();
+    }
+
+    private void resize() {
+        if (isOpen())
+            open();
     }
 
     private void refresh(final int prevValue) {

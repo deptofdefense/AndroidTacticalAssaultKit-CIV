@@ -199,8 +199,8 @@ public class GLCrumb extends GLPointMapItem2 implements
 
         // transform the vertices
         BATCH_XFORM.setToTranslation(this.xpos, this.ypos, this.zpos);
-        BATCH_XFORM.rotate(Math.toRadians(view.drawTilt), 1.0, 0.0, 0.0);
-        BATCH_XFORM.rotate(-Math.toRadians(this.rot - view.drawRotation));
+        BATCH_XFORM.rotate(Math.toRadians(view.currentPass.drawTilt), 1.0, 0.0, 0.0);
+        BATCH_XFORM.rotate(-Math.toRadians(this.rot - view.currentPass.drawRotation));
 
         this.transformedVerts2.clear();
         final int numVerts = 4;
@@ -351,7 +351,7 @@ public class GLCrumb extends GLPointMapItem2 implements
 
         // transform the vertices
         BATCH_XFORM.setToTranslation(x, y);
-        BATCH_XFORM.rotate(Math.toRadians(rotation + view.drawRotation));
+        BATCH_XFORM.rotate(Math.toRadians(rotation + view.currentPass.drawRotation));
 
         final int numVerts = 4;
         for (int i = 0; i < numVerts; i++) {

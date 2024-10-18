@@ -28,7 +28,6 @@ import com.atakmap.coremap.log.Log;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 import java.io.InputStream;
@@ -136,7 +135,9 @@ public class ImageActivity {
                     "Unable to copy image from %s with plain File I/O -- to %s with IOProviderFactory",
                     input.getAbsolutePath(), output.getAbsolutePath()), e);
         } finally {
-            input.delete();
+
+            if (!input.delete())
+                Log.d(TAG, "unable to delete the file: " + input);
         }
     }
 
@@ -241,8 +242,6 @@ public class ImageActivity {
 
             insertExifLocationData(_output);
             broadcastIntentToListeners(_output.getAbsolutePath(), _uid);
-        } catch (FileNotFoundException e) {
-            Log.e(TAG, "error: ", e);
         } catch (IOException e) {
             Log.e(TAG, "error: ", e);
         }

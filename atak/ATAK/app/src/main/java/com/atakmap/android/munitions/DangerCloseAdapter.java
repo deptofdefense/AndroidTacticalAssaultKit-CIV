@@ -695,9 +695,7 @@ public class DangerCloseAdapter extends BaseAdapter
                         transformer.transform(source, result);
                     }
 
-                } catch (ParserConfigurationException e) {
-                    Log.w(TAG, e);
-                } catch (SAXException e) {
+                } catch (ParserConfigurationException | SAXException e) {
                     Log.w(TAG, e);
                 }
 
@@ -944,9 +942,7 @@ public class DangerCloseAdapter extends BaseAdapter
                             Log.w(TAG, "Custom element does not exist");
                     }
 
-                } catch (ParserConfigurationException e) {
-                    Log.w(TAG, e);
-                } catch (SAXException e) {
+                } catch (ParserConfigurationException | SAXException e) {
                     Log.w(TAG, e);
                 }
 
@@ -984,9 +980,7 @@ public class DangerCloseAdapter extends BaseAdapter
             }
         } catch (IOException i) {
             Log.w(TAG, "Error " + i);
-        } catch (ParserConfigurationException e) {
-            Log.w(TAG, "Error: " + e);
-        } catch (TransformerException e) {
+        } catch (ParserConfigurationException | TransformerException e) {
             Log.w(TAG, "Error: " + e);
         }
 
@@ -1067,11 +1061,7 @@ public class DangerCloseAdapter extends BaseAdapter
                             new File(location + item));
                     transformer.transform(source, result);
 
-                } catch (ParserConfigurationException e) {
-                    Log.w(TAG, e);
-                } catch (SAXException e) {
-                    Log.w(TAG, e);
-                } catch (TransformerException e) {
+                } catch (ParserConfigurationException | TransformerException | SAXException e) {
                     Log.w(TAG, e);
                 }
 
@@ -1213,13 +1203,7 @@ public class DangerCloseAdapter extends BaseAdapter
 
             customNode = custom;
 
-        } catch (ParserConfigurationException e) {
-            Log.e(TAG, "error: ", e);
-        } catch (SAXException e) {
-            Log.e(TAG, "error: ", e);
-        } catch (TransformerException e) {
-            Log.e(TAG, "error: ", e);
-        } catch (IOException e) {
+        } catch (ParserConfigurationException | IOException | TransformerException | SAXException e) {
             Log.e(TAG, "error: ", e);
         }
     }
@@ -1238,11 +1222,7 @@ public class DangerCloseAdapter extends BaseAdapter
                 checkEachItemForActiveStatus(dom.getChildNodes());
                 flightsNode = dom.getFirstChild(); // OSRMunitions
 
-            } catch (ParserConfigurationException e) {
-                Log.e(TAG, "error: ", e);
-            } catch (IOException e) {
-                Log.e(TAG, "error: ", e);
-            } catch (SAXException e) {
+            } catch (ParserConfigurationException | SAXException | IOException e) {
                 Log.e(TAG, "error: ", e);
             }
         }
@@ -1274,11 +1254,7 @@ public class DangerCloseAdapter extends BaseAdapter
 
             updateList(currNode);
 
-        } catch (ParserConfigurationException e) {
-            Log.e(TAG, "error: ", e);
-        } catch (IOException e) {
-            Log.e(TAG, "error: ", e);
-        } catch (SAXException e) {
+        } catch (ParserConfigurationException | SAXException | IOException e) {
             Log.e(TAG, "error: ", e);
         }
     }

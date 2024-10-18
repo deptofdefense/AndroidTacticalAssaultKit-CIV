@@ -54,10 +54,10 @@ class RectangleGeoFenceMonitor extends GeoFenceMonitor {
     /**
      * ctor
      *
-     * @param view
-     * @param spatialCalc
-     * @param fence
-     * @param item shape with at least 3 points
+     * @param view the map view
+     * @param spatialCalc the spatial caculator to use
+     * @param fence the geofence
+     * @param item the rectangle to use
      */
     public RectangleGeoFenceMonitor(MapView view,
             SpatialCalculator spatialCalc, GeoFence fence, Rectangle item) {

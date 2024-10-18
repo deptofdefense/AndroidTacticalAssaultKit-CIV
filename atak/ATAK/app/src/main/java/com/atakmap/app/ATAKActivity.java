@@ -702,7 +702,8 @@ public class ATAKActivity extends MapActivity implements
     @Override
     public void onSharedPreferenceChanged(
             final SharedPreferences prefs, final String key) {
-        if (key == null) return;
+        if (key == null)
+            return;
 
         if (key.equals("atakDisableSoftkeyIllumination")) {
             AtakPreferenceFragment.setSoftKeyIllumination(this);
@@ -1260,12 +1261,9 @@ public class ATAKActivity extends MapActivity implements
                 revalidate(viewGroup.getChildAt(i));
 
             }
-            //Log.d(TAG, "revalidating container: " + v);
-            v.requestLayout();
-        } else {
-            //Log.d(TAG, "revalidating component: " + v);
-            v.requestLayout();
         }
+        //Log.d(TAG, "revalidating component: " + v);
+        v.requestLayout();
     }
 
     /**

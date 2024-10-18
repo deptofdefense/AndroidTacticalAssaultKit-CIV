@@ -12,7 +12,7 @@ import com.atakmap.coremap.conversions.AngleUtilities;
 import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.conversions.SpanUtilities;
 import com.atakmap.coremap.maps.coords.DirectionType;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
 public class RangeAndBearingTableHandler {
@@ -87,31 +87,33 @@ public class RangeAndBearingTableHandler {
     public void update(final GeoPoint from, final GeoPoint to) {
 
         if (from != null && to != null) {
-            final double[] da = DistanceCalculations.computeDirection(from, to);
+
+            final double distance = GeoCalculations.distanceTo(from, to);
+            final double bearing = GeoCalculations.bearingTo(from, to);
             // Adjust the displayed bearing based on the north reference pref
 
             final double m = ATAKUtilities.convertFromTrueToMagnetic(from,
-                    da[1]);
+                    bearing);
 
             v.post(new Runnable() {
                 @Override
                 public void run() {
                     _rangeEnglishText.setText(SpanUtilities.formatType(
-                            Span.ENGLISH, da[0],
+                            Span.ENGLISH, distance,
                             Span.METER));
                     _rangeMetricText.setText(SpanUtilities.formatType(
-                            Span.METRIC, da[0],
+                            Span.METRIC, distance,
                             Span.METER));
                     _rangeNauticalText
-                            .setText(SpanUtilities.formatType(Span.NM, da[0],
+                            .setText(SpanUtilities.formatType(Span.NM, distance,
                                     Span.METER));
                     _bearingMagText.setText(AngleUtilities.format(m,
                             Angle.DEGREE) + "M");
-                    _bearingTrueText.setText(AngleUtilities.format(da[1],
+                    _bearingTrueText.setText(AngleUtilities.format(bearing,
                             Angle.DEGREE) + "T");
                     _bearingMMagText.setText(AngleUtilities
                             .format(m, Angle.MIL) + "M");
-                    _bearingMTrueText.setText(AngleUtilities.format(da[1],
+                    _bearingMTrueText.setText(AngleUtilities.format(bearing,
                             Angle.MIL) + "T");
                     _bearingCardinal.setText(DirectionType.getDirection(m)
                             .getAbbreviation());

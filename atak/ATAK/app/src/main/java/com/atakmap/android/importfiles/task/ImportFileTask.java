@@ -92,6 +92,8 @@ public class ImportFileTask extends
 
     public static final int FlagZoomToFile = 1 << 8;
 
+    public static final int FlagHideFile = 1 << 9;
+
     protected static abstract class ProgressUpdate {
         public abstract void callOnUIThread();
     }
@@ -445,6 +447,9 @@ public class ImportFileTask extends
 
             if (checkFlag(FlagZoomToFile))
                 flags.add(SortFlags.ZOOM_TO_FILE);
+
+            if (checkFlag(FlagHideFile))
+                flags.add(SortFlags.HIDE_FILE);
 
             if (container.strategy != null) {
                 flags.add(container.strategy);

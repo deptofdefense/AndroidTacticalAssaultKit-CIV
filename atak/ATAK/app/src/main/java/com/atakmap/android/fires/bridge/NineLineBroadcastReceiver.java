@@ -6,8 +6,11 @@ import android.graphics.drawable.Drawable;
 import com.atakmap.android.dropdown.DropDown;
 import com.atakmap.android.dropdown.DropDownReceiver;
 import com.atakmap.android.maps.MapGroup;
+import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.coremap.cot.event.CotEvent;
+
+import java.util.Collection;
 
 /**
  * Bridge component in support of the the flavor subsystem.
@@ -26,6 +29,11 @@ public abstract class NineLineBroadcastReceiver extends DropDownReceiver
      * @return true if processing was successful, false if it failed.
      */
     public interface ExternalNineLineProcessor {
+        /**
+         * Called when a CoT event is formed and ready to be sent.
+         * @param ce the cot event
+         * @return true if the cot event is able to be processed.
+         */
         boolean processNineLine(CotEvent ce);
     }
 
@@ -39,9 +47,15 @@ public abstract class NineLineBroadcastReceiver extends DropDownReceiver
         return impl;
     }
 
+    /**
+     * Used by the system plugin to register a concrete implementation of the
+     * call for fire capability.
+     * @param concreteImpl the concrete call for fire implementation
+     */
     public static void registerImplementation(
             NineLineBroadcastReceiver concreteImpl) {
-        impl = concreteImpl;
+        if (impl == null)
+            impl = concreteImpl;
     }
 
     /**
@@ -60,4 +74,24 @@ public abstract class NineLineBroadcastReceiver extends DropDownReceiver
      */
     public abstract void addExternalNineLineProcessor(final Drawable icon,
             String txt, final ExternalNineLineProcessor enlp);
+
+
+    /**
+     * Add a MapItem that can be used as an Initial Point or Egress Control Point.
+     * @param point the map item that can be used.
+     */
+    public abstract void addPoint(final MapItem point);
+
+    /**
+     * Remove a MapItem that can be used as an Initial Point or Egress Control Point.
+     * @param point the map item that can be used.
+     */
+    public abstract void removePoint(final MapItem point);
+
+    /**
+     * Retrieve a unmodificable set of points currently being considered as an Initial
+     * Point or Egress Control Point.
+     */
+    public abstract Collection<MapItem> getPoints();
+
 }

@@ -58,7 +58,7 @@ public final class MvtMapOverlay extends FeatureDataStoreMapOverlay {
             for (HierarchyListItem i : items) {
                 try {
                     final FeatureSet fs = Utils.getFeatureSet(spatialDb,
-                            ((Long) i.getUserObject()).longValue());
+                            (Long) i.getUserObject());
                     if (fs != null) {
                         final File f = Utils.getSourceFile(spatialDb, fs);
                         List<HierarchyListItem> mapped = m.get(f);

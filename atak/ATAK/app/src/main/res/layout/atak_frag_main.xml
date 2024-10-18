@@ -65,9 +65,10 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/horizontal_slider"
-        android:layout_above="@id/bottom_side_panel_container"
+        android:layout_above="@id/self_coordinate_bar"
         android:layout_toEndOf="@id/vertical_slider"
-        android:layout_toStartOf="@id/right_side_panel_container">
+        android:layout_toStartOf="@id/right_side_panel_container"
+        android:background="#222">
 
         <!-- The MapView is placed in here -->
         <FrameLayout
@@ -105,15 +106,13 @@
             android:layout_alignParentEnd="true"
             tools:layout_width="128dp">
 
-            <!-- Embedded toolbar -->
-            <LinearLayout
-                android:id="@+id/right_drop_down_toolbar"
+            <!-- Top border -->
+            <View
+                android:id="@+id/right_drop_down_border"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="end"
-                android:background="#000"
-                tools:layout_height="32dp"/>
+                android:layout_height="2dp"
+                android:background="#333"
+                android:visibility="gone"/>
 
             <!-- Right-side drop-down (primary drop-down view) -->
             <FrameLayout
@@ -126,6 +125,18 @@
         </LinearLayout>
 
     </RelativeLayout>
+
+    <!-- Self coordinate bar -->
+    <com.atakmap.android.navigation.SelfCoordBottomBar
+        android:id="@+id/self_coordinate_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/bottom_side_panel_container"
+        android:layout_toStartOf="@id/right_side_panel_container"
+        android:layout_toEndOf="@id/vertical_slider"
+        android:visibility="gone"
+        tools:layout_height="24dp"
+        tools:visibility="visible"/>
 
     <!-- Right border container -->
     <FrameLayout
@@ -146,7 +157,7 @@
         android:layout_above="@id/faux_button_portrait"
         android:layout_toStartOf="@id/faux_button_landscape"
         tools:background="#080"
-        tools:layout_height="32dp"/>
+        tools:layout_height="32dp" />
 
     <!-- Portrait faux nav bar -->
     <include
@@ -166,19 +177,5 @@
         android:layout_height="match_parent"
         android:layout_alignParentEnd="true"
         tools:layout_width="wrap_content"/>
-
-    <!-- Self coordinate bar (not used in 4.5)
-    <com.atakmap.android.navigation.SelfCoordBottomBar
-        android:layout_width="match_parent"
-        android:layout_height="43dp"
-        android:background="@color/black"
-        android:fontFamily="@font/nunito_regular"
-        android:textSize="12sp"
-        android:textColor="@color/pale_silver"
-        android:textAlignment="viewStart"
-        android:text="THIS IS A TEST"
-        android:paddingStart="8dp"
-        android:paddingEnd="5dp"/>
-    -->
 
 </RelativeLayout>

@@ -125,6 +125,9 @@ jclass ATAKMapEngineJNI_findClass(JNIEnv *env, const char *name) NOTHROWS;
 JavaVM *ATAKMapEngineJNI_getJVM();
 bool ATAKMapEngineJNI_equals(JNIEnv *env, jobject a, jobject b) NOTHROWS;
 
+TAK::Engine::Util::TAKErr ATAKMapEngineJNI_SetStringField(JNIEnv &env, jobject obj, jfieldID fieldid, const char *cstr) NOTHROWS;
+TAK::Engine::Util::TAKErr ATAKMapEngineJNI_GetStringField(TAK::Engine::Port::String &value, JNIEnv &env, jobject obj, jfieldID fieldid) NOTHROWS;
+
 /**
  * Registers the specified shutdown hook.
  */

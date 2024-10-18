@@ -8,6 +8,7 @@
 #include "math/Point2.h"
 #include "model/MeshBuilder.h"
 #include "util/Memory.h"
+#include "math/Utils.h"
 
 using namespace TAK::Engine::Model;
 
@@ -132,6 +133,47 @@ TAKErr TAK::Engine::Model::Mesh_transform(MeshPtr &value, MeshTransformOptions *
             valueOpts->localFrame = Matrix2Ptr(new Matrix2(), Memory_deleter_const<Matrix2>);
             valueOpts->localFrame->setToTranslate(translateX, translateY, translateZ);
             valueOpts->localFrame->scale(scaleX, scaleY, scaleZ);
+        } else if ((srcOpts.srid / 200) == 163 && valueOpts->srid == 4326) { // UTM 326xx/327xx
+            // obtain the AABB in the WCS
+            Envelope2 aabb(src.getAABB());
+            {
+                MeshTransformOptions tmpOpts;
+                tmpOpts.srid = srcOpts.srid;
+                Mesh_transform(&aabb, aabb, srcOpts, tmpOpts);
+            }
+
+            // get center of AABB
+            const TAK::Engine::Math::Point2<double> cxyz((aabb.minX + aabb.maxX) / 2.0, (aabb.minY + aabb.maxY) / 2.0, (aabb.minZ + aabb.maxZ) / 2.0);
+            // compute radius
+            const double radius = atakmap::math::max((aabb.maxX - aabb.minX) / 2.0, (aabb.maxY - aabb.minY) / 2.0, (aabb.maxZ - aabb.minZ) / 2.0);
+
+            // compute convergence angle from center to +y at the radius
+            Projection2Ptr proj(nullptr, nullptr);
+            ProjectionFactory3_create(proj, srcOpts.srid);
+
+            GeoPoint2 cgeo;
+            proj->inverse(&cgeo, cxyz);
+            GeoPoint2 cup;
+            proj->inverse(&cup, TAK::Engine::Math::Point2<double>(cxyz.x, cxyz.y + radius, cxyz.z));
+
+            const double bearing = GeoPoint2_bearing(cgeo, cup, false);
+
+            // construct new local frame
+            Matrix2 localFrame;
+            // translate to location
+            localFrame.translate(cgeo.longitude, cgeo.latitude, cgeo.altitude);
+            // scale
+            const double metersPerDegLat = GeoPoint2_approximateMetersPerDegreeLatitude(cgeo.latitude);
+            const double metersPerDegLng = GeoPoint2_approximateMetersPerDegreeLongitude(cgeo.latitude);
+            localFrame.scale(1.0/metersPerDegLng, 1.0/metersPerDegLat, 1.0);
+            // rotate by convergence angle
+            localFrame.rotate(-bearing*M_PI/180.0, 0.0, 0.0, 1.0);
+            // translate center of AABB to origin (new LCS)
+            localFrame.translate(-cxyz.x, -cxyz.y, -cxyz.z);
+            // apply the original LCS to get coordinates into the WCS
+            if (srcOpts.localFrame.get())
+                localFrame.concatenate(*srcOpts.localFrame);
+            valueOpts->localFrame = Matrix2Ptr(new Matrix2(localFrame), Memory_deleter_const<Matrix2>);
         } else {
             // XXX - this will likely produce a bad local frame if we just adopt the source local frame. instead, try to compute
             valueOpts->localFrame = Matrix2Ptr(new Matrix2(), Memory_deleter_const<Matrix2>);
