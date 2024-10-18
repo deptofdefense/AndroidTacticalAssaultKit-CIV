@@ -1,5 +1,10 @@
 # Version History
 
+## 4.6.0.5
+
+* Bug Fixes
+  * migrate over the apk's from master to correct the issue with the camera
+
 ## 4.6.0.4
 
 * Bug Fixes
