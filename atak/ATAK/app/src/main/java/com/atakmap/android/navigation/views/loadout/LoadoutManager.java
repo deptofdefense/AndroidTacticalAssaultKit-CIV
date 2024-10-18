@@ -254,12 +254,14 @@ public class LoadoutManager implements OnSharedPreferenceChangeListener {
     }
 
     @Override
-    public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
+    public void onSharedPreferenceChanged(final SharedPreferences prefs, final String key) {
 
         if (key == null)
             return;
 
-        if (key.startsWith(LOADOUT_PREFIX)) {
+        if (key.equals(PREF_SELECTED_LOADOUT)) {
+            setCurrentLoadout(_prefs.get(key, DEFAULT_LOADOUT_UID));
+        } else if (key.startsWith(LOADOUT_PREFIX)) {
 
             // Check if this change is in response to a local edit
             synchronized (_prefEditing) {
@@ -293,7 +295,7 @@ public class LoadoutManager implements OnSharedPreferenceChangeListener {
             }
         }
     }
-
+    
     /**
      * Persist or remove a loadout to/from preferences
      * @param loadout Loadout

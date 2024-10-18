@@ -1,5 +1,10 @@
 # Version History
 
+## 4.5.1.6
+
+* Bug Fixes
+  * display the angle correctly for Grid North when showing doghouses.
+
 ## 4.5.1.5
 
 * Bug Fixes
