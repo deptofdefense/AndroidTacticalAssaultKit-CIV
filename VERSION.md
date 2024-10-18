@@ -1,5 +1,11 @@
 # Version History
 
+## 4.5.1.7
+
+* Bug Fixes
+  * if the preference specifies a change to the default loadout, then trigger a change.
+  * protect against a non-fatal null pointer exception when triggering a rotation to portrait mode loading defaults preferences during start
+
 ## 4.5.1.6
 
 * Bug Fixes
