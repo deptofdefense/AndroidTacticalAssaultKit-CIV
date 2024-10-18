@@ -1,9 +1,6 @@
 
 package com.atakmap.android.elev;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -14,10 +11,12 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapOverlayManager;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.overlay.MapOverlayRenderer;
-
 import com.atakmap.coremap.maps.coords.GeoCalculations;
-import com.atakmap.coremap.maps.coords.GeoPoint.AltitudeReference;
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.coremap.maps.coords.GeoPoint.AltitudeReference;
+
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class ViewShedReceiver extends BroadcastReceiver {
 
@@ -104,7 +103,7 @@ public class ViewShedReceiver extends BroadcastReceiver {
     public static final String VIEWSHED_PREFERENCE_CIRCULAR_VIEWSHED = "viewshed_prefs_circular_viewshed";
     public static final String VIEWSHED_PREFERENCE_RADIUS_KEY = "viewshed_prefs_radius";
 
-    public static final String VIEWSHED_PREFERENCE_HEIGHT_ABOVE_KEY = "viewshed_prefs_height_above";
+    public static final String VIEWSHED_PREFERENCE_HEIGHT_ABOVE_KEY = "viewshed_prefs_height_above_meters";
 
     public static final String VIEWSHED_LINE_UID_SEPERATOR = "*";
 

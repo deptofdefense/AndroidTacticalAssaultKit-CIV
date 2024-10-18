@@ -1819,8 +1819,8 @@ public class RouteMapReceiver extends BroadcastReceiver implements
         final RoutePlannerManager routePlannerManager = ((RouteMapComponent) mc)
                 .getRoutePlannerManager();
 
-        // No route planners - remove button if it exists
-        if (routePlannerManager.getCount() == 0) {
+        // No reroute capable route planners - hide the button
+        if (routePlannerManager.getReroutePlanners().size() == 0) {
             removeRerouteButton();
             return;
         }
@@ -1860,8 +1860,8 @@ public class RouteMapReceiver extends BroadcastReceiver implements
             public void onMapWidgetPress(MapWidget widget, MotionEvent event) {
 
                 // Make sure there are route planners available
-                if (routePlannerManager.getCount() == 0) {
-                    // No route planners - hide the button
+                if (routePlannerManager.getReroutePlanners().size() == 0) {
+                    // No reroute capable route planners - hide the button
                     // XXX - Ideally we'd hide the button when the last planner
                     // is unregistered but there's no hook for this...
                     removeRerouteButton();
@@ -1871,7 +1871,15 @@ public class RouteMapReceiver extends BroadcastReceiver implements
                 }
 
                 if (rerouteButton.getState() == REROUTE_BUTTON_OFF) {
-                    showRerouteDialog(routePlannerManager);
+                    try {
+                        // showRerouteDialog can throw an IllegalStateException
+                        // handle it by removing the reroute button and toasting
+                        showRerouteDialog(routePlannerManager);
+                    } catch (Exception e) {
+                        removeRerouteButton();
+                        Toast.makeText(_context, R.string.bloodhound_no_planners,
+                                Toast.LENGTH_LONG).show();
+                    }
                 } else if (rerouteButton.getState() == REROUTE_BUTTON_ON) {
                     rerouteButton.setIcon(rerouteInactiveIcon);
                     rerouteButton.setState(REROUTE_BUTTON_OFF);
