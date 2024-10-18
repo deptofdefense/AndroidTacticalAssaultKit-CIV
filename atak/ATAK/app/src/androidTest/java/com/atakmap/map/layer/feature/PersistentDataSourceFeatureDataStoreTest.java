@@ -1,6 +1,8 @@
 
 package com.atakmap.map.layer.feature;
 
+import static org.junit.Assert.assertTrue;
+
 import com.atakmap.android.androidtest.ATAKInstrumentedTest;
 import com.atakmap.android.androidtest.util.FileUtils;
 import com.atakmap.coremap.io.DatabaseInformation;
@@ -14,8 +16,6 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-
-import static org.junit.Assert.assertTrue;
 
 public class PersistentDataSourceFeatureDataStoreTest
         extends ATAKInstrumentedTest {
@@ -44,7 +44,6 @@ public class PersistentDataSourceFeatureDataStoreTest
                 fds.dispose();
             }
         } finally {
-            IOProviderFactory.unregisterProvider(provider);
         }
     }
 
@@ -80,7 +79,6 @@ public class PersistentDataSourceFeatureDataStoreTest
                 fds.dispose();
             }
         } finally {
-            IOProviderFactory.unregisterProvider(provider);
         }
     }
 }

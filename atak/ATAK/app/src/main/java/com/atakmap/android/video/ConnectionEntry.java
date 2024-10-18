@@ -4,8 +4,10 @@ package com.atakmap.android.video;
 import android.util.Log;
 
 import java.net.URI;
+import androidx.annotation.NonNull;
 
 import com.atakmap.android.video.manager.VideoManager;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.annotations.FortifyFinding;
 import com.atakmap.comms.NetworkDeviceManager;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -15,6 +17,7 @@ import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
 import java.io.Serializable;
+import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -22,7 +25,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import com.atakmap.annotations.DeprecatedApi;
 
 public class ConnectionEntry implements Serializable {
 
@@ -335,6 +337,15 @@ public class ConnectionEntry implements Serializable {
                     final String value = nv.replace("passphrase=", "");
                     if (!FileSystemUtils.isEmpty(value))
                         setPassphrase(value);
+                } else if (nv.startsWith("timeout=")) {
+                    final String value = nv.replace("timeout=", "");
+                    try {
+                        int timeout = Integer.parseInt(value);
+                        if (timeout > 0)
+                            setNetworkTimeout(timeout);
+                    } catch (NumberFormatException nfe) {
+                        Log.e(TAG, "error parsing port number: " + nv);
+                    }
                 } else {
                     if (!newQuery.isEmpty())
                         newQuery = newQuery + "&";

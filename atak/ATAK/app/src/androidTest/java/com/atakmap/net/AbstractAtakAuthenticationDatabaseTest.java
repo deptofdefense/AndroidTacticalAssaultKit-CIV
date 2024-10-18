@@ -1,6 +1,10 @@
 
 package com.atakmap.net;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+
 import com.atakmap.android.androidtest.ATAKInstrumentedTest;
 import com.atakmap.android.androidtest.util.FileUtils;
 
@@ -8,10 +12,6 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 
 public abstract class AbstractAtakAuthenticationDatabaseTest
         extends ATAKInstrumentedTest {
@@ -35,7 +35,7 @@ public abstract class AbstractAtakAuthenticationDatabaseTest
             final String password = "123456";
             final boolean expires = true;
             AtakAuthenticationDatabaseIFace authdb = newInstance(f.file);
-            authdb.saveCredentialsForType(type, username, password, expires);
+            authdb.saveCredentialsForType(type, username, password, 3600000L * 24L * 30L);
             AtakAuthenticationCredentials creds = authdb
                     .getCredentialsForType(type);
             assertNotNull(creds);
@@ -54,7 +54,7 @@ public abstract class AbstractAtakAuthenticationDatabaseTest
             final String password = "123456";
             final boolean expires = false;
             AtakAuthenticationDatabaseIFace authdb = newInstance(f.file);
-            authdb.saveCredentialsForType(type, username, password, expires);
+            authdb.saveCredentialsForType(type, username, password, -1);
             AtakAuthenticationCredentials creds = authdb
                     .getCredentialsForType(type);
             assertNotNull(creds);
@@ -76,7 +76,7 @@ public abstract class AbstractAtakAuthenticationDatabaseTest
             final boolean expires = true;
             AtakAuthenticationDatabaseIFace authdb = newInstance(f.file);
             authdb.saveCredentialsForType(type, site, username, password,
-                    expires);
+                    3600000L * 24L * 30L);
             AtakAuthenticationCredentials creds = authdb
                     .getCredentialsForType(type, site);
             assertNotNull(creds);
@@ -99,7 +99,7 @@ public abstract class AbstractAtakAuthenticationDatabaseTest
             final boolean expires = false;
             AtakAuthenticationDatabaseIFace authdb = newInstance(f.file);
             authdb.saveCredentialsForType(type, site, username, password,
-                    expires);
+                    -1);
             AtakAuthenticationCredentials creds = authdb
                     .getCredentialsForType(type, site);
             assertNotNull(creds);
@@ -121,7 +121,7 @@ public abstract class AbstractAtakAuthenticationDatabaseTest
             final boolean expires = true;
             AtakAuthenticationDatabaseIFace authdb = newInstance(f.file);
             authdb.saveCredentialsForType(type, site, username, password,
-                    expires);
+                    3600000L * 24L * 30L);
             authdb.invalidateForType(type, site);
             AtakAuthenticationCredentials creds = authdb
                     .getCredentialsForType(type);
@@ -138,7 +138,7 @@ public abstract class AbstractAtakAuthenticationDatabaseTest
             final String password = "123456";
             final boolean expires = false;
             AtakAuthenticationDatabaseIFace authdb = newInstance(f.file);
-            authdb.saveCredentialsForType(type, username, password, expires);
+            authdb.saveCredentialsForType(type, username, password, -1);
             authdb.invalidateForType(type, type);
             AtakAuthenticationCredentials creds = authdb
                     .getCredentialsForType(type);
